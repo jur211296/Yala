@@ -116,6 +116,54 @@ final class DraftService {
             )
         }
 
+        // A0-Bridge V2.0 (D7): drafts groupSettlement crean TX nueva en cuenta real
+        // (subcat sistema "Liquidación enviada/recibida" ya asignada por el bridge).
+        // La TX queda como TX MANUAL INDEPENDIENTE — NO setear splitSettlementID/splitGroupZoneID.
+        // Razón: el bridge hace delete+recreate sobre TX con splitSettlementID al editar el
+        // settlement. Mantener esos campos haría que una edición posterior del settlement
+        // borre la TX manual del user (ej: transferiste vía Yape, después editas el monto del
+        // settlement → tu TX en Yape desaparece). La TX virtual (lado bridge) sigue ligada
+        // al settlement y se regenera correctamente.
+        if draft.sourceType == .groupSettlement, let account = draft.account,
+           let amount = draft.amount, let subcategory = draft.subcategory {
+            let preferredCode = CurrencyDefaults.currentPreferred
+            let amountInPreferred = currencyConverter.convert(
+                Decimal(amount),
+                from: account.currencyCode,
+                to: preferredCode,
+                on: draft.effectiveDate,
+                context: context
+            )
+
+            let exchangeRate: Double = abs(amount) > 0.0001
+                ? (amountInPreferred as NSDecimalNumber).doubleValue / amount
+                : 1.0
+
+            let tx = TransactionItem(
+                date: draft.effectiveDate,
+                amount: amount,
+                currencyCode: account.currencyCode
+            )
+            tx.note = draft.note.isEmpty ? nil : draft.note
+            tx.account = account
+            tx.subcategory = subcategory
+            tx.category = subcategory.safeCategory
+            tx.exchangeRate = abs(exchangeRate)
+            tx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
+            tx.preferredCurrencyCode = preferredCode
+            // D7: NO setear tx.splitSettlementID ni tx.splitGroupZoneID — TX queda manual independiente.
+
+            context.insert(tx)
+            cacheDisplayValues(draft)
+            context.delete(draft)
+            try context.save()
+
+            SessionState.shared.incrementDataVersion()
+            WidgetDataCache.updateCache(context: context)
+            TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
+            return tx
+        }
+
         // Validate: block future dates
         guard draft.effectiveDate <= Date.now else {
             throw DraftServiceError.futureDateNotAllowed

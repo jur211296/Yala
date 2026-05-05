@@ -146,23 +146,37 @@ struct InboxView: View {
                     viewModel.loadData()
                 }
             }) { draft in
-                InboxDraftEditSheet(
-                    draft: draft,
-                    onApproved: { shouldDismissAfterApproval = true },
-                    onApproveNext: { nextDraft in
-                        // Store the ID and close sheet - onChange will open the next
-                        pendingNextDraftID = nextDraft.persistentModelID
-                    },
-                    onEditTransaction: { transaction in
-                        // Open transaction editor after sheet dismiss
-                        Task {
-                            do {
-                                try await Task.sleep(for: .milliseconds(300))
-                            } catch { return }
-                            selectedTransaction = transaction
-                        }
+                // A0-Bridge V2.0 (P1-4): drafts de grupo usan sheets dedicadas que solo permiten
+                // asignar lo que falta (subcat para groupExpense, cuenta para groupSettlement).
+                // Drafts personales mantienen el flujo edit-completo existente.
+                switch draft.sourceType {
+                case .groupExpense:
+                    GroupExpenseDraftFinalizationSheet(draft: draft) {
+                        shouldDismissAfterApproval = true
                     }
-                )
+                case .groupSettlement:
+                    GroupSettlementDraftFinalizationSheet(draft: draft) {
+                        shouldDismissAfterApproval = true
+                    }
+                default:
+                    InboxDraftEditSheet(
+                        draft: draft,
+                        onApproved: { shouldDismissAfterApproval = true },
+                        onApproveNext: { nextDraft in
+                            // Store the ID and close sheet - onChange will open the next
+                            pendingNextDraftID = nextDraft.persistentModelID
+                        },
+                        onEditTransaction: { transaction in
+                            // Open transaction editor after sheet dismiss
+                            Task {
+                                do {
+                                    try await Task.sleep(for: .milliseconds(300))
+                                } catch { return }
+                                selectedTransaction = transaction
+                            }
+                        }
+                    )
+                }
             }
             .onChange(of: selectedDraft) { oldValue, newValue in
                 // When sheet closes and we have a pending next draft, open it

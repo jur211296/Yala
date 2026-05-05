@@ -4262,6 +4262,22 @@ enum L10n {
         }
         // A0-Bridge V2.0 (P1-3): CTA desde TX bridgeada read-only con draft pendiente
         static var openInbox: String { ls("inbox.openInbox", comment: "") }
+
+        // A0-Bridge V2.0 (P1-4): sheets finalización drafts especializados
+        enum GroupExpenseDraft {
+            static var title: String { ls("inbox.groupExpenseDraft.title", comment: "") }
+            static var assignSubcategory: String { ls("inbox.groupExpenseDraft.assignSubcategory", comment: "") }
+        }
+
+        enum GroupSettlementDraft {
+            static var title: String { ls("inbox.groupSettlementDraft.title", comment: "") }
+            static var assignAccount: String { ls("inbox.groupSettlementDraft.assignAccount", comment: "") }
+        }
+
+        enum GroupDraft {
+            static var finalize: String { ls("inbox.groupDraft.finalize", comment: "") }
+            static var fromGroup: String { ls("inbox.groupDraft.fromGroup", comment: "") }
+        }
         static var pending: String {
             ls("inbox.pending", comment: "")
         }
