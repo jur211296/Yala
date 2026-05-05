@@ -4016,3 +4016,46 @@
 "panel.widgetInfo.trend.fxMatchA" = "Ostatni punkt odzwierciedla saldo po bieżącym kursie wymiany. Poprzednie punkty używają kursu z dnia każdej operacji. Różnica to zysk lub strata kursowa — widoczna tylko gdy masz konta w różnych walutach.";
 "panel.widgetInfo.exchangeRate.balanceImpactQ" = "Jak kurs wymiany wpływa na moje saldo?";
 "panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala oblicza saldo w preferowanej walucie używając bieżącego kursu wymiany na saldzie każdego konta. Dlatego, jeśli kurs się zmienia i nie wykonujesz operacji, saldo i tak może wzrosnąć lub spaść.";
+
+// MARK: - A0-Bridge Settings & Filters
+"settings.sectionGroups" = "Grupy";
+"settings.sectionGroupsHint" = "Skonfiguruj, jak Yala łączy Twoje konta i transakcje grupowe z danymi osobistymi.";
+"settings.includeGroupsInPanelTotal" = "Uwzględnij grupy w saldzie całkowitym";
+"settings.includeGroupTransactionsInStats" = "Uwzględnij transakcje grupowe w statystykach";
+"filters.sectionShared" = "Współdzielone";
+"filters.includeGroupTransactions" = "Uwzględnij transakcje grupowe";
+"filters.includeGroupTransactionsHint" = "Gdy włączone, ruchy generowane przez wspólne wydatki pojawiają się na Twojej liście.";
+
+// MARK: - A0-Bridge Bridge messages
+"groups.bridge.deleteExpenseBlocked" = "Ten wydatek ma późniejsze rozliczenia. Usuń lub uregulj najpierw rozliczenia, aby go usunąć.";
+"groups.bridge.editFromGroup" = "Ta transakcja synchronizuje się z grupą. Edytuj ją z poziomu wspólnego wydatku.";
+"groups.bridge.assignFromInbox" = "Przypisz podkategorię z Inbox, aby ją sfinalizować.";
+"groups.bridge.editSettlementInGroup" = "Ta transakcja pochodzi z rozliczenia. Edytuj settlement w grupie.";
+"groups.bridge.activateTitle" = "Włącz automatyczne transakcje";
+"groups.bridge.activateBody" = "Od teraz wspólne wydatki będą odzwierciedlane na Twoim koncie grupowym. Masz %d wcześniejszych wydatków w tej grupie. Co z nimi zrobimy?";
+"groups.bridge.activateOptionFromNow" = "Zacznij od teraz";
+"groups.bridge.activateOptionFromNowHint" = "Tylko nowe wydatki będą odzwierciedlane.";
+"groups.bridge.activateOptionImportAll" = "Importuj całą historię";
+"groups.bridge.activateOptionImportAllHint" = "Zostaną utworzone transakcje dla %d wcześniejszych wydatków i ich rozliczeń.";
+"groups.bridge.activateImportRegenerationNote" = "Istniejące wygenerowane transakcje zostaną odtworzone zgodnie z aktualnymi regułami.";
+"groups.bridge.deactivateTitle" = "Wyłącz automatyczne transakcje";
+"groups.bridge.deactivateBody" = "Masz %d transakcji wygenerowanych przez tę grupę. Jeśli je usuniesz, saldo grup zostanie dostosowane.";
+"groups.bridge.deactivateOptionDelete" = "Usuń je";
+"groups.bridge.deactivateOptionKeep" = "Zachowaj jako historię";
+"groups.bridge.importing" = "Importowanie %d wydatków…";
+"groups.bridge.importError" = "Wystąpił problem podczas importu. Spróbuj ponownie.";
+"groups.bridge.upsellGroupInviteSettlement" = "Aktywuj pełnego Yala, aby uzgodnić tę płatność ze swoim prawdziwym kontem.";
+
+// MARK: - A0-Bridge System Categories & Subcategories (Grupy)
+"account.system.groups" = "Grupy %@";
+"account.system.badge" = "System";
+"category.system.groups" = "Grupy";
+"category.system.groupCollections" = "Wpływy z grup";
+"subcategory.system.loanToGroups" = "Pożyczka dla grup";
+"subcategory.system.loanCollection" = "Spłata pożyczki";
+"subcategory.system.settlementPayment" = "Płatność rozliczenia";
+"subcategory.system.settlementSent" = "Rozliczenie wysłane";
+"subcategory.system.settlementReceived" = "Rozliczenie otrzymane";
+"inbox.sourceGroupExpense" = "Wspólny wydatek";
+"inbox.sourceGroupSettlement" = "Rozliczenie";
+"inbox.groupDraftCannotDelete" = "Tę transakcję można usunąć tylko w grupie źródłowej.";

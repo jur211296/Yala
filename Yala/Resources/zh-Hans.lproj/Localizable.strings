@@ -4016,3 +4016,46 @@
 "panel.widgetInfo.trend.fxMatchA" = "最后一个点反映的是按当前汇率计算的余额。前面的点使用每笔交易日期的汇率。差额是汇率波动产生的损益,只有当你有不同币种的账户时才会出现。";
 "panel.widgetInfo.exchangeRate.balanceImpactQ" = "汇率如何影响我的余额?";
 "panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala 使用当前汇率对每个账户的余额计算你的首选币种总余额。所以,即使你不进行任何交易,只要汇率变动,你的余额也可能上升或下降。";
+
+// MARK: - A0-Bridge Settings & Filters
+"settings.sectionGroups" = "群组";
+"settings.sectionGroupsHint" = "配置 Yala 如何将你的群组账户和交易与个人数据合并。";
+"settings.includeGroupsInPanelTotal" = "在总余额中包含群组";
+"settings.includeGroupTransactionsInStats" = "在统计中包含群组交易";
+"filters.sectionShared" = "共享";
+"filters.includeGroupTransactions" = "包含群组交易";
+"filters.includeGroupTransactionsHint" = "开启时,由共享支出生成的动态会出现在你的列表中。";
+
+// MARK: - A0-Bridge Bridge messages
+"groups.bridge.deleteExpenseBlocked" = "此支出有后续结算。请先删除或调整结算后再移除。";
+"groups.bridge.editFromGroup" = "此交易与一个群组同步。请从共享支出处编辑。";
+"groups.bridge.assignFromInbox" = "从 Inbox 分配子分类以完成它。";
+"groups.bridge.editSettlementInGroup" = "此交易来自结算。请在群组中编辑 settlement。";
+"groups.bridge.activateTitle" = "启用自动交易";
+"groups.bridge.activateBody" = "从现在起,共享支出将反映在你的群组账户中。此群组中你有 %d 笔之前的支出。我们要怎么处理它们?";
+"groups.bridge.activateOptionFromNow" = "从现在开始";
+"groups.bridge.activateOptionFromNowHint" = "只有新支出会被反映。";
+"groups.bridge.activateOptionImportAll" = "导入所有历史记录";
+"groups.bridge.activateOptionImportAllHint" = "将为 %d 笔之前的支出及其结算创建交易。";
+"groups.bridge.activateImportRegenerationNote" = "现有生成的交易将根据当前规则重新生成。";
+"groups.bridge.deactivateTitle" = "禁用自动交易";
+"groups.bridge.deactivateBody" = "此群组生成了 %d 笔交易。如果你删除它们,你的群组余额将被调整。";
+"groups.bridge.deactivateOptionDelete" = "删除它们";
+"groups.bridge.deactivateOptionKeep" = "保留为历史记录";
+"groups.bridge.importing" = "正在导入 %d 笔支出…";
+"groups.bridge.importError" = "导入时出现问题。请重试。";
+"groups.bridge.upsellGroupInviteSettlement" = "激活 Yala 完整版以将此付款与你的真实账户对账。";
+
+// MARK: - A0-Bridge System Categories & Subcategories (群组)
+"account.system.groups" = "群组 %@";
+"account.system.badge" = "系统";
+"category.system.groups" = "群组";
+"category.system.groupCollections" = "群组收款";
+"subcategory.system.loanToGroups" = "向群组借出";
+"subcategory.system.loanCollection" = "借款回收";
+"subcategory.system.settlementPayment" = "结算付款";
+"subcategory.system.settlementSent" = "结算已发送";
+"subcategory.system.settlementReceived" = "结算已收到";
+"inbox.sourceGroupExpense" = "共享支出";
+"inbox.sourceGroupSettlement" = "结算";
+"inbox.groupDraftCannotDelete" = "此交易只能从源群组中删除。";

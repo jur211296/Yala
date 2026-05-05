@@ -31,3 +31,46 @@
 
 // === "Haz una foto" suena natural en España; "Toma foto" suena LatAm ===
 "tips.camera.detail" = "Haz una foto de tu recibo o captura del banco. Yala extrae los importes y crea borradores automáticamente.";
+
+// MARK: - A0-Bridge Settings & Filters
+"settings.sectionGroups" = "Grupos";
+"settings.sectionGroupsHint" = "Configura cómo Yala mezcla tus cuentas y transacciones de grupos con tus datos personales.";
+"settings.includeGroupsInPanelTotal" = "Incluir grupos en saldo total";
+"settings.includeGroupTransactionsInStats" = "Incluir transacciones de grupos en estadísticas";
+"filters.sectionShared" = "Compartidos";
+"filters.includeGroupTransactions" = "Incluir transacciones de grupos";
+"filters.includeGroupTransactionsHint" = "Cuando está activo, los movimientos generados por gastos compartidos aparecen en tu lista.";
+
+// MARK: - A0-Bridge Bridge messages
+"groups.bridge.deleteExpenseBlocked" = "Este gasto tiene liquidaciones asociadas posteriores. Primero elimina o regulariza las liquidaciones para poder borrar el gasto.";
+"groups.bridge.editFromGroup" = "Esta transacción se sincroniza con un grupo. Edítala desde el gasto compartido.";
+"groups.bridge.assignFromInbox" = "Asigna subcategoría desde el Inbox para finalizarla.";
+"groups.bridge.editSettlementInGroup" = "Esta transacción proviene de una liquidación. Edita el settlement en el grupo.";
+"groups.bridge.activateTitle" = "Activar transacciones automáticas";
+"groups.bridge.activateBody" = "A partir de ahora, los gastos compartidos se reflejarán en tu cuenta de grupos. Tienes %d gastos previos en este grupo. ¿Qué hacemos con ellos?";
+"groups.bridge.activateOptionFromNow" = "Empezar desde ahora";
+"groups.bridge.activateOptionFromNowHint" = "Solo los gastos nuevos se reflejarán.";
+"groups.bridge.activateOptionImportAll" = "Importar todo el historial";
+"groups.bridge.activateOptionImportAllHint" = "Se crearán transacciones para los %d gastos previos y sus liquidaciones.";
+"groups.bridge.activateImportRegenerationNote" = "Las transacciones existentes se regenerarán según las reglas actuales.";
+"groups.bridge.deactivateTitle" = "Desactivar transacciones automáticas";
+"groups.bridge.deactivateBody" = "Tienes %d transacciones generadas por este grupo. Si las eliminas, tu saldo de grupos se ajustará.";
+"groups.bridge.deactivateOptionDelete" = "Eliminarlas";
+"groups.bridge.deactivateOptionKeep" = "Mantenerlas como histórico";
+"groups.bridge.importing" = "Importando %d gastos…";
+"groups.bridge.importError" = "Hubo un problema importando. Intenta de nuevo.";
+"groups.bridge.upsellGroupInviteSettlement" = "Activa Yala completo para reconciliar este pago con tu cuenta real.";
+
+// MARK: - A0-Bridge System Categories & Subcategories (Grupos)
+"account.system.groups" = "Grupos %@";
+"account.system.badge" = "Sistema";
+"category.system.groups" = "Grupos";
+"category.system.groupCollections" = "Cobros de grupos";
+"subcategory.system.loanToGroups" = "Préstamo a grupos";
+"subcategory.system.loanCollection" = "Cobro de préstamo";
+"subcategory.system.settlementPayment" = "Pago de liquidación";
+"subcategory.system.settlementSent" = "Liquidación enviada";
+"subcategory.system.settlementReceived" = "Liquidación recibida";
+"inbox.sourceGroupExpense" = "Gasto compartido";
+"inbox.sourceGroupSettlement" = "Liquidación";
+"inbox.groupDraftCannotDelete" = "Esta transacción se elimina solo desde el grupo origen.";

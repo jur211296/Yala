@@ -4016,3 +4016,46 @@
 "panel.widgetInfo.trend.fxMatchA" = "最後のポイントは、現在の為替レートでの残高を反映します。それより前のポイントは、各取引日のレートを使用します。差額は為替変動による利益または損失で、異なる通貨の口座をお持ちの場合にのみ表示されます。";
 "panel.widgetInfo.exchangeRate.balanceImpactQ" = "為替レートは残高にどのように影響しますか？";
 "panel.widgetInfo.exchangeRate.balanceImpactA" = "Yalaは、各口座の残高に現在の為替レートを適用して、優先通貨での残高を計算します。そのため、レートが変動して取引をしなくても、残高は上下することがあります。";
+
+// MARK: - A0-Bridge Settings & Filters
+"settings.sectionGroups" = "グループ";
+"settings.sectionGroupsHint" = "Yalaがグループの口座と取引を個人データとどのように組み合わせるかを設定します。";
+"settings.includeGroupsInPanelTotal" = "総残高にグループを含める";
+"settings.includeGroupTransactionsInStats" = "統計にグループ取引を含める";
+"filters.sectionShared" = "共有";
+"filters.includeGroupTransactions" = "グループ取引を含める";
+"filters.includeGroupTransactionsHint" = "オンの場合、共有支出から生成された動きがリストに表示されます。";
+
+// MARK: - A0-Bridge Bridge messages
+"groups.bridge.deleteExpenseBlocked" = "この支出には後の精算があります。削除する前に精算を削除または整理してください。";
+"groups.bridge.editFromGroup" = "この取引はグループと同期しています。共有支出から編集してください。";
+"groups.bridge.assignFromInbox" = "Inboxからサブカテゴリを割り当てて完了させてください。";
+"groups.bridge.editSettlementInGroup" = "この取引は精算から来ています。グループ内でsettlementを編集してください。";
+"groups.bridge.activateTitle" = "自動取引を有効にする";
+"groups.bridge.activateBody" = "今後、共有支出はあなたのグループ口座に反映されます。このグループには%d件の過去の支出があります。それらをどうしますか?";
+"groups.bridge.activateOptionFromNow" = "今から始める";
+"groups.bridge.activateOptionFromNowHint" = "新しい支出のみが反映されます。";
+"groups.bridge.activateOptionImportAll" = "全履歴をインポート";
+"groups.bridge.activateOptionImportAllHint" = "%d件の過去の支出とその精算の取引が作成されます。";
+"groups.bridge.activateImportRegenerationNote" = "既存の生成された取引は現在のルールに従って再生成されます。";
+"groups.bridge.deactivateTitle" = "自動取引を無効にする";
+"groups.bridge.deactivateBody" = "このグループによって生成された%d件の取引があります。削除すると、グループの残高が調整されます。";
+"groups.bridge.deactivateOptionDelete" = "削除する";
+"groups.bridge.deactivateOptionKeep" = "履歴として保持";
+"groups.bridge.importing" = "%d件の支出をインポート中…";
+"groups.bridge.importError" = "インポート中に問題が発生しました。もう一度お試しください。";
+"groups.bridge.upsellGroupInviteSettlement" = "Yalaを完全にアクティベートして、この支払いを実際の口座と照合しましょう。";
+
+// MARK: - A0-Bridge System Categories & Subcategories (グループ)
+"account.system.groups" = "グループ %@";
+"account.system.badge" = "システム";
+"category.system.groups" = "グループ";
+"category.system.groupCollections" = "グループ収入";
+"subcategory.system.loanToGroups" = "グループへの貸付";
+"subcategory.system.loanCollection" = "貸付の回収";
+"subcategory.system.settlementPayment" = "精算支払い";
+"subcategory.system.settlementSent" = "精算送信";
+"subcategory.system.settlementReceived" = "精算受領";
+"inbox.sourceGroupExpense" = "共有支出";
+"inbox.sourceGroupSettlement" = "精算";
+"inbox.groupDraftCannotDelete" = "この取引はソースグループからのみ削除できます。";

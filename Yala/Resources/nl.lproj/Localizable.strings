@@ -4016,3 +4016,46 @@
 "panel.widgetInfo.trend.fxMatchA" = "Het laatste punt weerspiegelt je saldo tegen de huidige wisselkoers. De vorige punten gebruiken de koers van de dag van elke beweging. Het verschil is wisselkoerswinst of -verlies — alleen zichtbaar als je rekeningen in verschillende valuta's hebt.";
 "panel.widgetInfo.exchangeRate.balanceImpactQ" = "Hoe beïnvloedt de wisselkoers mijn saldo?";
 "panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala berekent je saldo in je voorkeursvaluta met de huidige wisselkoers op het saldo van elke rekening. Dus als de koers verandert en je doet geen bewegingen, kan je saldo toch stijgen of dalen.";
+
+// MARK: - A0-Bridge Settings & Filters
+"settings.sectionGroups" = "Groepen";
+"settings.sectionGroupsHint" = "Configureer hoe Yala je groepsrekeningen en -transacties combineert met je persoonlijke gegevens.";
+"settings.includeGroupsInPanelTotal" = "Groepen opnemen in totaal saldo";
+"settings.includeGroupTransactionsInStats" = "Groepstransacties opnemen in statistieken";
+"filters.sectionShared" = "Gedeeld";
+"filters.includeGroupTransactions" = "Groepstransacties opnemen";
+"filters.includeGroupTransactionsHint" = "Indien ingeschakeld verschijnen bewegingen gegenereerd door gedeelde uitgaven in je lijst.";
+
+// MARK: - A0-Bridge Bridge messages
+"groups.bridge.deleteExpenseBlocked" = "Deze uitgave heeft latere afrekeningen. Verwijder of regel eerst de afrekeningen voordat je het verwijdert.";
+"groups.bridge.editFromGroup" = "Deze transactie synchroniseert met een groep. Bewerk deze vanuit de gedeelde uitgave.";
+"groups.bridge.assignFromInbox" = "Wijs een subcategorie toe vanuit je Inbox om deze af te ronden.";
+"groups.bridge.editSettlementInGroup" = "Deze transactie komt uit een afrekening. Bewerk het settlement in de groep.";
+"groups.bridge.activateTitle" = "Automatische transacties inschakelen";
+"groups.bridge.activateBody" = "Vanaf nu worden gedeelde uitgaven weerspiegeld in je groepsrekening. Je hebt %d eerdere uitgaven in deze groep. Wat doen we ermee?";
+"groups.bridge.activateOptionFromNow" = "Vanaf nu beginnen";
+"groups.bridge.activateOptionFromNowHint" = "Alleen nieuwe uitgaven worden weerspiegeld.";
+"groups.bridge.activateOptionImportAll" = "Volledige geschiedenis importeren";
+"groups.bridge.activateOptionImportAllHint" = "Er worden transacties aangemaakt voor de %d eerdere uitgaven en hun afrekeningen.";
+"groups.bridge.activateImportRegenerationNote" = "Bestaande gegenereerde transacties worden opnieuw gegenereerd volgens de huidige regels.";
+"groups.bridge.deactivateTitle" = "Automatische transacties uitschakelen";
+"groups.bridge.deactivateBody" = "Je hebt %d transacties gegenereerd door deze groep. Als je ze verwijdert, wordt je groepssaldo aangepast.";
+"groups.bridge.deactivateOptionDelete" = "Verwijderen";
+"groups.bridge.deactivateOptionKeep" = "Bewaren als geschiedenis";
+"groups.bridge.importing" = "%d uitgaven importeren…";
+"groups.bridge.importError" = "Er is een probleem opgetreden bij het importeren. Probeer opnieuw.";
+"groups.bridge.upsellGroupInviteSettlement" = "Activeer Yala volledig om deze betaling met je echte rekening af te stemmen.";
+
+// MARK: - A0-Bridge System Categories & Subcategories (Groepen)
+"account.system.groups" = "Groepen %@";
+"account.system.badge" = "Systeem";
+"category.system.groups" = "Groepen";
+"category.system.groupCollections" = "Groepsinkomsten";
+"subcategory.system.loanToGroups" = "Lening aan groepen";
+"subcategory.system.loanCollection" = "Leningterugbetaling";
+"subcategory.system.settlementPayment" = "Afrekeningsbetaling";
+"subcategory.system.settlementSent" = "Afrekening verzonden";
+"subcategory.system.settlementReceived" = "Afrekening ontvangen";
+"inbox.sourceGroupExpense" = "Gedeelde uitgave";
+"inbox.sourceGroupSettlement" = "Afrekening";
+"inbox.groupDraftCannotDelete" = "Deze transactie kan alleen worden verwijderd uit de bron groep.";
