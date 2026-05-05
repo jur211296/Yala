@@ -1769,6 +1769,9 @@ enum L10n {
             static var settleHint: String { ls("groups.settlement.settleHint", comment: "") }
             static var confirmQuestion: String { ls("groups.settlement.confirmQuestion", comment: "") }
             static var rejectQuestion: String { ls("groups.settlement.rejectQuestion", comment: "") }
+            // A0-Bridge Caso C proactivo
+            static var fromAccount: String { ls("groups.settlement.fromAccount", comment: "") }
+            static var fromAccountNone: String { ls("groups.settlement.fromAccountNone", comment: "") }
         }
 
         enum Notifications {

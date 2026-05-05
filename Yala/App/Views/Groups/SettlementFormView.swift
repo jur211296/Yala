@@ -15,6 +15,7 @@ struct SettlementFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(SessionState.self) private var sessionState
 
     // MARK: - Input
 
@@ -31,6 +32,10 @@ struct SettlementFormView: View {
     @State private var isSaving: Bool = false
     @State private var showSaveError: Bool = false
     @State private var saveErrorMessage: String = ""
+
+    // A0-Bridge: Caso C proactivo — cuenta para liquidación (solo .full/.completed)
+    @State private var selectedAccount: Account? = nil
+    @State private var showAccountSelector: Bool = false
 
     // MARK: - Init
 
@@ -58,6 +63,9 @@ struct SettlementFormView: View {
 
                     // Amount
                     amountSection
+
+                    // A0-Bridge: cuenta de origen (oculto para .groupInvite)
+                    accountSection
 
                     // Details
                     detailsSection
@@ -89,7 +97,68 @@ struct SettlementFormView: View {
             } message: {
                 Text(saveErrorMessage)
             }
+            .sheet(isPresented: $showAccountSelector) {
+                AccountSelectorSheet(
+                    selectedAccount: $selectedAccount,
+                    title: L10n.Groups.Settlement.fromAccount,
+                    currencyFilter: debt.currencyCode
+                )
+            }
+            .onAppear { resolvePreselectedAccount() }
         }
+    }
+
+    // MARK: - Account Section (A0-Bridge Caso C proactivo)
+
+    @ViewBuilder
+    private var accountSection: some View {
+        if !sessionState.isGroupInviteMode {
+            SectionBox(title: L10n.Groups.Settlement.fromAccount) {
+                Button {
+                    showAccountSelector = true
+                } label: {
+                    HStack(spacing: DS.Spacing.md) {
+                        if let account = selectedAccount {
+                            Circle()
+                                .fill(Color(hex: account.colorHex))
+                                .frame(width: 24, height: 24) // A11Y-DT: row icon decorative
+                            Text(account.name).font(DS.Typography.body).foregroundStyle(.primary)
+                        } else {
+                            Text(L10n.Groups.Settlement.fromAccountNone)
+                                .font(DS.Typography.body)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .contentShape(Rectangle())
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.vertical, DS.FormRow.paddingV)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+        }
+    }
+
+    private func resolvePreselectedAccount() {
+        guard selectedAccount == nil,
+              let preselectName = GroupPersonalPreferences.defaultSettlementAccount(
+                  for: group.cloudKitZoneID,
+                  currencyCode: debt.currencyCode
+              ) else { return }
+        let currency = debt.currencyCode
+        let descriptor = FetchDescriptor<Account>(
+            predicate: #Predicate { account in
+                account.name == preselectName
+                && !account.isArchived
+                && !account.isSystemAccount
+                && account.currencyCode == currency
+            }
+        )
+        selectedAccount = try? modelContext.fetch(descriptor).first
     }
 
     // MARK: - Payment Header
@@ -194,15 +263,28 @@ struct SettlementFormView: View {
         isSaving = true
 
         do {
-            try GroupExpenseService.shared.createSettlement(
+            // A0-Bridge: Caso C proactivo — para .full/.completed pasamos cuenta seleccionada;
+            // para .groupInvite no aplica (solo TX virtual).
+            let accountToPass = sessionState.isGroupInviteMode ? nil : selectedAccount
+
+            let settlement = try GroupExpenseService.shared.createSettlement(
                 in: group,
                 fromMemberID: debt.fromMemberID,
                 toMemberID: debt.toMemberID,
                 amount: parsedAmount,
                 currencyCode: debt.currencyCode,
                 note: note.isEmpty ? nil : note,
-                date: date
+                date: date,
+                accountForCurrentUser: accountToPass
             )
+
+            // Marca confirmed + dispara bridge con cuenta (Caso C proactivo end-to-end).
+            try GroupExpenseService.shared.confirmSettlement(
+                settlement,
+                in: group,
+                accountForCurrentUser: accountToPass
+            )
+
             DS.Haptic.success()
             TelemetryService.track(.groupSettlementCreated)
             isSaving = false

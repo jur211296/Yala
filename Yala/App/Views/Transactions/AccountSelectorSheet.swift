@@ -20,11 +20,18 @@ struct AccountSelectorSheet: View {
     @Binding var selectedAccount: Account?
     let title: String
     var excludeAccount: Account?
+    var currencyFilter: String?
 
-    init(selectedAccount: Binding<Account?>, title: String? = nil, excludeAccount: Account? = nil) {
+    init(
+        selectedAccount: Binding<Account?>,
+        title: String? = nil,
+        excludeAccount: Account? = nil,
+        currencyFilter: String? = nil
+    ) {
         _selectedAccount = selectedAccount
         self.title = title ?? L10n.Account.selectAccount
         self.excludeAccount = excludeAccount
+        self.currencyFilter = currencyFilter
     }
 
     var body: some View {
@@ -35,8 +42,14 @@ struct AccountSelectorSheet: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         let filteredAccounts = viewModel.activeAccounts.filter { account in
-                            guard let exclude = excludeAccount else { return true }
-                            return account.persistentModelID != exclude.persistentModelID
+                            if let exclude = excludeAccount,
+                               account.persistentModelID == exclude.persistentModelID {
+                                return false
+                            }
+                            if let currencyFilter, account.currencyCode != currencyFilter {
+                                return false
+                            }
+                            return true
                         }
 
                         if filteredAccounts.isEmpty {
