@@ -412,6 +412,73 @@ final class GroupTransactionBridge {
         }
     }
 
+    // MARK: - Activation/Deactivation Helpers (F12)
+
+    /// A0-Bridge: importa todo el historial de un grupo (expenses + settlements) cuando
+    /// user activa autoCreateTransaction OFF→ON con expenses/settlements pre-existentes.
+    ///
+    /// Procesa cronológicamente (por date ASC). Yield cada 5 items con `Task.sleep`
+    /// para garantizar ≥1 frame de UI redraw (ProcessingProgressView responde sin freeze).
+    ///
+    /// `progress(done, total)` callback se invoca al inicio (0,total) y cada 5 items.
+    ///
+    /// Nota: si crashea mid-way, `bridgePending` flag + AppBootstrapper retry recuperan.
+    @MainActor
+    func importGroupHistory(
+        for group: SplitGroup,
+        progress: @escaping (Int, Int) -> Void
+    ) async throws {
+        let context = try requireContext()
+        let zoneID = group.cloudKitZoneID
+
+        let expenseDescriptor = FetchDescriptor<SplitExpense>(
+            predicate: #Predicate { $0.groupZoneID == zoneID },
+            sortBy: [SortDescriptor(\.date, order: .forward)]
+        )
+        let expenses = (try? context.fetch(expenseDescriptor)) ?? []
+
+        let settlementDescriptor = FetchDescriptor<SplitSettlement>(
+            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isConfirmed == true },
+            sortBy: [SortDescriptor(\.date, order: .forward)]
+        )
+        let settlements = (try? context.fetch(settlementDescriptor)) ?? []
+
+        let total = expenses.count + settlements.count
+        progress(0, total)
+        var done = 0
+
+        for (i, expense) in expenses.enumerated() {
+            try bridgeExpense(expense, in: group, shouldSave: false)
+            done += 1
+            if i % 5 == 0 {
+                // Sleep 10ms cada 5 items para dar al run loop ≥1 frame de redraw
+                try await Task.sleep(for: .milliseconds(10))
+                progress(done, total)
+            }
+        }
+
+        for (i, settlement) in settlements.enumerated() {
+            try bridgeSettlement(settlement, in: group, accountForCurrentUser: nil, shouldSave: false)
+            done += 1
+            if i % 5 == 0 {
+                try await Task.sleep(for: .milliseconds(10))
+                progress(done, total)
+            }
+        }
+
+        try context.save()
+        progress(total, total)
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+    }
+
+    /// A0-Bridge: borra TODAS las TX/Drafts vinculadas a un grupo (para cuando user
+    /// desactiva autoCreateTransaction y elige "Eliminarlas" en BridgeDeactivationSheet).
+    @MainActor
+    func unbridgeAllForGroup(_ group: SplitGroup) throws {
+        try unbridgeExpenses(for: group)
+    }
+
     /// Bridge remote settlements received via sync. Llamado desde SplitSyncManager.
     /// Solo procesa settlements confirmed (skipea unconfirmed).
     func bridgeRemoteSettlements(_ settlements: [SplitSettlement]) throws {
