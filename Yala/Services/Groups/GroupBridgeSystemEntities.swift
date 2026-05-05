@@ -167,6 +167,57 @@ enum GroupBridgeSystemEntities {
         return account
     }
 
+    // MARK: - Auto-Archive
+
+    /// A0-Bridge F13: archiva la cuenta sistema `Grupos [currency]` si:
+    /// 1) No existe ningún grupo activo con `autoCreateTransaction=true` en esa moneda Y
+    /// 2) No hay TX en la cuenta con `splitExpenseID/splitSettlementID != nil`.
+    ///
+    /// Si solo el primer condicional aplica pero hay TX históricas, la cuenta queda visible
+    /// (preserva historial). Si user crea grupo nuevo en esa moneda: `ensureSystemAccount`
+    /// la desarchiva automáticamente.
+    ///
+    /// **Trigger**: post-`unbridgeAllForGroup` o post-desactivación de último grupo en moneda.
+    /// NO se invoca por delete de un solo expense (la cuenta sigue visible con saldo 0).
+    static func archiveSystemAccountIfEmpty(currencyCode: String, context: ModelContext) throws {
+        // 1. Fetch cuenta sistema activa para esta moneda.
+        let descriptor = FetchDescriptor<Account>(
+            predicate: #Predicate {
+                $0.isSystemAccount == true && $0.currencyCode == currencyCode && $0.isArchived == false
+            }
+        )
+        guard let account = try context.fetch(descriptor).first else { return }
+
+        // 2. Chequear que no haya TX bridgeadas (con splitExpenseID o splitSettlementID).
+        // SwiftData #Predicate no soporta `||` con nil-checks complejos; usamos 2 fetches.
+        let accountID = account.persistentModelID
+        let txWithExpense = try context.fetchCount(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate {
+                $0.account?.persistentModelID == accountID && $0.splitExpenseID != nil
+            }
+        ))
+        let txWithSettlement = try context.fetchCount(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate {
+                $0.account?.persistentModelID == accountID && $0.splitSettlementID != nil
+            }
+        ))
+        let bridgedTxs = txWithExpense + txWithSettlement
+        if bridgedTxs > 0 {
+            #if DEBUG
+            print("GroupBridgeSystemEntities: skipping archive de Grupos \(currencyCode) — \(bridgedTxs) TX bridgeadas remanentes")
+            #endif
+            return
+        }
+
+        // 3. Archivar.
+        account.isArchived = true
+        try context.save()
+
+        #if DEBUG
+        print("GroupBridgeSystemEntities: archivada cuenta sistema Grupos \(currencyCode) (sin TX bridgeadas)")
+        #endif
+    }
+
     // MARK: - System Subcategory
 
     /// Devuelve la subcategoría sistema correspondiente al role.
