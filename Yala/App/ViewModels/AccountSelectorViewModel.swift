@@ -24,8 +24,10 @@ final class AccountSelectorViewModel {
 
     // MARK: - Computed Properties
 
+    /// A0-Bridge: excluye cuentas sistema (`isSystemAccount`) de pickers manuales —
+    /// solo el bridge puede asignarlas, nunca el usuario.
     var activeAccounts: [Account] {
-        accounts.filter { !$0.isArchived }
+        accounts.filter { !$0.isArchived && !$0.isSystemAccount }
     }
 
     // MARK: - Context Injection

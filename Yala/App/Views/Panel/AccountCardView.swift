@@ -123,6 +123,18 @@ struct AccountCardView: View {
                     .padding(DS.Spacing.sm)
                     .accessibilityHidden(true)
             }
+
+            // A0-Bridge: badge "Sistema" para cuentas virtuales `Grupos [moneda]`.
+            if account.isSystemAccount {
+                Text(L10n.Account.System.badge)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(theme.secondaryText)
+                    .padding(.horizontal, DS.Spacing.xs)
+                    .padding(.vertical, 2)
+                    .glassEffect(.regular, in: Capsule())
+                    .padding(DS.Spacing.sm)
+                    .accessibilityLabel(L10n.Account.System.badge)
+            }
         }
         .opacity(isExcluded ? 0.5 : 1.0)
         .accessibilityElement(children: .combine)

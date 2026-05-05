@@ -193,7 +193,7 @@ enum TransactionCSVImportService {
             )
 
             // Mark transfers and adjustments so they're excluded from income/expense stats
-            if draft.subcategory.isSystemSubcategory {
+            if draft.subcategory.isAnySystem {
                 let subcategoryName = draft.subcategory.name
                 if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
@@ -1104,7 +1104,7 @@ enum TransactionCSVImportService {
             )
 
             // Mark transfers and adjustments so they're excluded from income/expense stats
-            if draft.subcategory.isSystemSubcategory {
+            if draft.subcategory.isAnySystem {
                 let subcategoryName = draft.subcategory.name
                 if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
@@ -1488,7 +1488,7 @@ enum TransactionCSVImportService {
                 isExchangeRateProvisional: !hasExactRate
             )
 
-            if draft.subcategory.isSystemSubcategory {
+            if draft.subcategory.isAnySystem {
                 let subcategoryName = draft.subcategory.name
                 if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
@@ -1639,7 +1639,7 @@ enum TransactionCSVImportService {
                 isExchangeRateProvisional: !hasExactRate
             )
 
-            if draft.subcategory.isSystemSubcategory {
+            if draft.subcategory.isAnySystem {
                 let subcategoryName = draft.subcategory.name
                 if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment

@@ -63,14 +63,17 @@ final class SubcategorySelectorViewModel {
         return result
     }
 
-    /// Groups subcategories by their parent category, filtered by transaction type
+    /// Groups subcategories by their parent category, filtered by transaction type.
+    /// A0-Bridge: excluye subcategorías sistema (`isAnySystem`) — solo el bridge
+    /// puede asignarlas, nunca el usuario en pickers manuales.
     var groupedSubcategories: [(category: Category, subcategories: [Subcategory])] {
-        // Filter subcategories by transaction type and visibility
         let filtered = allSubcategories.filter { subcategory in
             guard subcategory.isVisible else { return false }
+            guard !subcategory.isAnySystem else { return false }
 
             let category = subcategory.safeCategory
             guard category.isVisible else { return false }
+            guard !category.isSystem else { return false }
 
             switch transactionType {
             case .expense:

@@ -543,7 +543,7 @@ final class RecordsViewModel: Filterable {
         for transaction in selected {
             // Skip transactions without subcategory and transfers (system subcategory)
             guard let subcategory = transaction.subcategory else { continue }
-            if subcategory.isSystemSubcategory { continue }
+            if subcategory.isAnySystem { continue }
 
             if subcategory.safeCategory.isIncome {
                 hasIncome = true

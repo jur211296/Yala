@@ -318,7 +318,7 @@ struct CategoryDetailView: View {
                         VStack(spacing: DS.Spacing.none) {
                             ForEach(Array(visibles.enumerated()), id: \.element.id) { index, subcategory in
                                 HStack(spacing: DS.Spacing.none) {
-                                    if isEditingSubcategories && !subcategory.isSystemSubcategory {
+                                    if isEditingSubcategories && !subcategory.isAnySystem {
                                         Button {
                                             handleSubcategoryDelete(subcategory)
                                         } label: {
@@ -344,13 +344,13 @@ struct CategoryDetailView: View {
                                         }
                                     }
                                     .buttonStyle(.plain)
-                                    .padding(.horizontal, isEditingSubcategories && !subcategory.isSystemSubcategory ? DS.Spacing.sm : DS.Spacing.lg)
+                                    .padding(.horizontal, isEditingSubcategories && !subcategory.isAnySystem ? DS.Spacing.sm : DS.Spacing.lg)
                                     .padding(.vertical, DS.Spacing.sm)
                                 }
 
                                 if index < visibles.count - 1 {
                                     Divider()
-                                        .padding(.leading, isEditingSubcategories && !subcategory.isSystemSubcategory ? DS.Spacing.xxxxl + DS.Spacing.sm : DS.Spacing.lg)
+                                        .padding(.leading, isEditingSubcategories && !subcategory.isAnySystem ? DS.Spacing.xxxxl + DS.Spacing.sm : DS.Spacing.lg)
                                 }
                             }
                         }
@@ -397,7 +397,7 @@ struct CategoryDetailView: View {
                     VStack(spacing: DS.Spacing.none) {
                         ForEach(Array(ocultas.enumerated()), id: \.element.id) { index, subcategory in
                             HStack(spacing: DS.Spacing.none) {
-                                if isEditingSubcategories && !subcategory.isSystemSubcategory {
+                                if isEditingSubcategories && !subcategory.isAnySystem {
                                     Button {
                                         handleSubcategoryDelete(subcategory)
                                     } label: {
@@ -423,13 +423,13 @@ struct CategoryDetailView: View {
                                     }
                                 }
                                 .buttonStyle(.plain)
-                                .padding(.horizontal, isEditingSubcategories && !subcategory.isSystemSubcategory ? DS.Spacing.sm : DS.Spacing.lg)
+                                .padding(.horizontal, isEditingSubcategories && !subcategory.isAnySystem ? DS.Spacing.sm : DS.Spacing.lg)
                                 .padding(.vertical, DS.Spacing.sm)
                             }
 
                             if index < ocultas.count - 1 {
                                 Divider()
-                                    .padding(.leading, isEditingSubcategories && !subcategory.isSystemSubcategory ? DS.Spacing.xxxxl + DS.Spacing.sm : DS.Spacing.lg)
+                                    .padding(.leading, isEditingSubcategories && !subcategory.isAnySystem ? DS.Spacing.xxxxl + DS.Spacing.sm : DS.Spacing.lg)
                             }
                         }
                     }

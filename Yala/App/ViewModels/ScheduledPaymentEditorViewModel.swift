@@ -29,8 +29,9 @@ final class ScheduledPaymentEditorViewModel {
 
     // MARK: - Computed Properties
 
+    /// A0-Bridge: excluye cuentas sistema (`isSystemAccount`) de pickers manuales.
     var activeAccounts: [Account] {
-        allAccounts.filter { !$0.isArchived }
+        allAccounts.filter { !$0.isArchived && !$0.isSystemAccount }
     }
 
     var activeTags: [Tag] {
