@@ -24,6 +24,10 @@ final class Account {
     var excludeFromStatistics: Bool = false
     var isArchived: Bool = false
 
+    /// True para cuentas sistema auto-creadas por el bridge de grupos (`Grupos PEN`, etc.).
+    /// CloudKit: must have default value. No editable, no eliminable, excluida de pickers manuales.
+    var isSystemAccount: Bool = false
+
     /// Stable identifier for App Intents (Siri/Shortcuts). Unaffected by `name` renames.
     /// CloudKit: must have default value, no `@Attribute(.unique)`. Migration: legacy entities
     /// receive a UUID at first save via AppBootstrapper.persistAppEntityShortcutIDsIfNeeded.
@@ -62,7 +66,8 @@ final class Account {
         accountNumber: String? = nil,
         adjustmentMode: String = "Ajustar por registro",
         excludeFromStatistics: Bool = false,
-        isArchived: Bool = false
+        isArchived: Bool = false,
+        isSystemAccount: Bool = false
     ) {
         self.name = name
         self.currencyCode = currencyCode
@@ -73,5 +78,6 @@ final class Account {
         self.adjustmentMode = adjustmentMode
         self.excludeFromStatistics = excludeFromStatistics
         self.isArchived = isArchived
+        self.isSystemAccount = isSystemAccount
     }
 }

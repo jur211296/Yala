@@ -27,6 +27,10 @@ final class Category {
     /// Nombre del icono SF Symbol (opcional)
     var iconName: String?
 
+    /// True para categorías sistema (`Grupos`, `Cobros de grupos`).
+    /// CloudKit: must have default value. No editables, no eliminables, sus subcategorías excluidas de pickers manuales.
+    var isSystem: Bool = false
+
     /// Relación 1 -> N con subcategorías - CloudKit: must be optional
     /// NOTE: Using nullify instead of cascade - manual deletion handles subcategories to avoid SwiftUI @Query conflicts
     @Relationship(deleteRule: .nullify, inverse: \Subcategory.category)
@@ -52,6 +56,7 @@ final class Category {
         isVisible: Bool = true,
         sortOrder: Int = 0,
         iconName: String? = nil,
+        isSystem: Bool = false,
         subcategories: [Subcategory] = []
     ) {
         self.name = name
@@ -61,6 +66,7 @@ final class Category {
         self.isVisible = isVisible
         self.sortOrder = sortOrder
         self.iconName = iconName
+        self.isSystem = isSystem
         self.subcategories = subcategories
     }
 }

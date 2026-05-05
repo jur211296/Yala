@@ -305,6 +305,8 @@ struct InboxDraftRowView: View {
             return .gray
         case .siri:
             return .blue
+        case .groupExpense, .groupSettlement:
+            return .purple
         }
     }
 

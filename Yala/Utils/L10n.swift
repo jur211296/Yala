@@ -4271,6 +4271,12 @@ enum L10n {
         static var sourceSiri: String {
             ls("inbox.sourceSiri", comment: "")
         }
+        static var sourceGroupExpense: String {
+            ls("inbox.sourceGroupExpense", comment: "")
+        }
+        static var sourceGroupSettlement: String {
+            ls("inbox.sourceGroupSettlement", comment: "")
+        }
         static var errorNoAccount: String {
             ls("inbox.errorNoAccount", comment: "")
         }

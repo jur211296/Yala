@@ -79,6 +79,9 @@ final class TransactionItem {
     var splitExpenseID: String?
     /// Zone ID del grupo para queries rápidos
     var splitGroupZoneID: String?
+    /// ID del SplitSettlement vinculado (nil = gasto personal o expense bridgeado)
+    /// Permite distinguir TX de liquidaciones para `unbridgeSettlement` y bloqueo de edición.
+    var splitSettlementID: String?
 
     // MARK: - Metadata
     /// Timestamp de creación del registro (usado para ordenar registros del mismo día)

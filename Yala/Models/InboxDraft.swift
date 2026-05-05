@@ -22,6 +22,13 @@ enum DraftSourceType: String, Codable {
     case applePay
     case automation     // External automation (email parsed by AI, etc.)
     case siri           // Siri natural language entry
+    case groupExpense   // A0-Bridge: caso A/B sin match — apunta a TX existente via targetTransactionID
+    case groupSettlement // A0-Bridge: caso C/D — TX cuenta real diferida hasta asignar cuenta
+
+    /// True para sources de grupos que NO permiten eliminar/rechazar (solo asignar+finalizar).
+    var isFromGroup: Bool {
+        self == .groupExpense || self == .groupSettlement
+    }
 }
 
 enum DraftStatus: String, Codable {
@@ -120,6 +127,14 @@ final class InboxDraft: Identifiable {
     var splitExpenseID: String?
     /// Zone ID del grupo para queries rápidos
     var splitGroupZoneID: String?
+    /// ID del SplitSettlement que originó este draft (drafts source=.groupSettlement)
+    var splitSettlementID: String?
+
+    // MARK: - Group Bridge Draft Link (A0-Bridge)
+    /// Para drafts source=.groupExpense: apunta a la TransactionItem existente con subcat=nil.
+    /// Al finalizar el draft, se UPDATEa la subcategory de esa TX (no se crea TX nueva).
+    /// Para drafts source=.groupSettlement: nil (la TX se crea al finalizar con cuenta asignada).
+    var targetTransactionID: String?
 
     // MARK: - Timestamps (CloudKit: defaults required)
 
@@ -233,8 +248,14 @@ final class InboxDraft: Identifiable {
         case .applePay: return "apple.logo"
         case .automation: return "gearshape.fill"
         case .siri: return "mic.badge.plus"
+        case .groupExpense: return "person.2.fill"
+        case .groupSettlement: return "arrow.left.arrow.right.circle.fill"
         }
     }
+
+    /// True si este draft NO permite eliminar/rechazar (solo asignar+finalizar).
+    /// Drafts de grupos solo se eliminan al borrar el expense/settlement origen.
+    var isFromGroup: Bool { sourceType.isFromGroup }
 
     // MARK: - Init
 
@@ -254,7 +275,11 @@ final class InboxDraft: Identifiable {
         confidenceSubcategory: Double? = nil,
         needsUserInput: [String] = ["account", "subcategory"],
         status: DraftStatus = .pending,
-        newlyCreatedTagNames: [String] = []
+        newlyCreatedTagNames: [String] = [],
+        splitExpenseID: String? = nil,
+        splitGroupZoneID: String? = nil,
+        splitSettlementID: String? = nil,
+        targetTransactionID: String? = nil
     ) {
         self.note = note
         self.amount = amount
@@ -272,6 +297,10 @@ final class InboxDraft: Identifiable {
         self.needsUserInput = needsUserInput
         self.newlyCreatedTagNames = newlyCreatedTagNames
         self.statusRaw = status.rawValue
+        self.splitExpenseID = splitExpenseID
+        self.splitGroupZoneID = splitGroupZoneID
+        self.splitSettlementID = splitSettlementID
+        self.targetTransactionID = targetTransactionID
         self.createdAt = Date.now
         self.updatedAt = Date.now
     }
