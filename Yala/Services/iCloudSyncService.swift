@@ -337,6 +337,41 @@ final class iCloudSyncService {
 
     // MARK: - Force Sync
 
+    /// Espera hasta que CloudKit complete su primer importEvent (o ya esté completo) hasta `timeout`.
+    /// - Parameter timeout: Máximo de segundos a esperar antes de devolver `false`.
+    /// - Returns: `true` si el fetch terminó OK; `false` si timeout o iCloud no disponible.
+    ///
+    /// Observa `Notification.Name.iCloudFirstImportCompleted` que se postea una vez
+    /// tras el primer `importEvent` exitoso (ver `apply` línea ~227). Single-resume
+    /// guard via `NSLock` + flag para garantizar que el continuation se invoca solo una vez.
+    func forceFetchAndWait(timeout: TimeInterval = 15) async -> Bool {
+        guard isAccountAvailable else { return false }
+        if hasCompletedFirstImport { return true }
+
+        return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            let lock = NSLock()
+            nonisolated(unsafe) var didResume = false
+            nonisolated(unsafe) var observer: NSObjectProtocol?
+
+            func resumeOnce(_ value: Bool) {
+                lock.lock(); defer { lock.unlock() }
+                guard !didResume else { return }
+                didResume = true
+                if let observer { NotificationCenter.default.removeObserver(observer) }
+                continuation.resume(returning: value)
+            }
+
+            observer = NotificationCenter.default.addObserver(
+                forName: .iCloudFirstImportCompleted, object: nil, queue: .main
+            ) { _ in resumeOnce(true) }
+
+            Task {
+                try? await Task.sleep(for: .seconds(timeout))
+                resumeOnce(false)
+            }
+        }
+    }
+
     /// Pings CloudKit to wake up the sync engine, saves local changes,
     /// deduplicates seed categories, and refreshes all views.
     /// The observer now reflects real progress during this call.
@@ -430,4 +465,57 @@ extension Notification.Name {
     /// Posted on the main queue tras el primer importEvent exitoso
     /// (con endDate, sin error). Se emite una sola vez por proceso.
     static let iCloudFirstImportCompleted = Notification.Name("iCloudFirstImportCompleted")
+}
+
+// MARK: - iCloud Account Summary
+
+/// Resumen de data del usuario en iCloud, usado por el Welcome Chooser rama B
+/// para decidir qué steps del onboarding saltar tras restore.
+///
+/// EXCLUYE infraestructura A0-Bridge (cuentas sistema, TX bridgeadas, subcat sistema)
+/// para reflejar data REAL del user, no derivados.
+struct ICloudAccountSummary: Equatable {
+    let userName: String?
+    let accountsCount: Int
+    let transactionsCount: Int
+    let budgetsCount: Int
+    let groupsCount: Int
+    let primaryCurrencyCode: String?
+    let categoriesCount: Int
+
+    var hasAnyData: Bool {
+        accountsCount > 0 || transactionsCount > 0 || categoriesCount > 0
+    }
+}
+
+@MainActor
+extension ModelContext {
+    /// Construye un resumen de la data del user excluyendo infraestructura A0-Bridge.
+    /// - Parameter appPreferences: Fuente del `userName` y `defaultCurrencyCode` (synced via iCloud KV).
+    func iCloudAccountSummary(appPreferences: AppPreferences) throws -> ICloudAccountSummary {
+        let accounts = try fetchCount(FetchDescriptor<Account>(
+            predicate: #Predicate { !$0.isArchived && !$0.isSystemAccount }
+        ))
+        let txs = try fetchCount(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID == nil && $0.splitSettlementID == nil }
+        ))
+        let budgets = try fetchCount(FetchDescriptor<Budget>())
+        let groups = try fetchCount(FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { !$0.isArchived }
+        ))
+        let categories = try fetchCount(FetchDescriptor<Subcategory>(
+            predicate: #Predicate { !$0.isSystem }
+        ))
+        let trimmedName = appPreferences.userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let userName: String? = (trimmedName.isEmpty || trimmedName == "Usuario") ? nil : trimmedName
+        return ICloudAccountSummary(
+            userName: userName,
+            accountsCount: accounts,
+            transactionsCount: txs,
+            budgetsCount: budgets,
+            groupsCount: groups,
+            primaryCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
+            categoriesCount: categories
+        )
+    }
 }

@@ -354,6 +354,16 @@ final class AppPreferences {
         }
     }
 
+    /// Welcome Chooser pre-onboarding (A4). Per-device (no synced) — cada device pregunta
+    /// una vez al user. Se setea SOLO tras tap consciente en una de las 3 cards (no en
+    /// dismissals programáticos por race con CKShare).
+    var hasShownWelcomeChooser: Bool = false {
+        didSet {
+            guard oldValue != hasShownWelcomeChooser else { return }
+            persistBool(hasShownWelcomeChooser, forKey: Keys.hasShownWelcomeChooser, synced: false)
+        }
+    }
+
     var lastSeenAppVersion: String = "" {
         didSet {
             guard oldValue != lastSeenAppVersion else { return }
@@ -891,6 +901,7 @@ final class AppPreferences {
             showSiriTip = defaults.bool(forKey: Keys.showSiriTip)
         }
         hasCompletedOnboarding = defaults.bool(forKey: Keys.hasCompletedOnboarding)
+        hasShownWelcomeChooser = defaults.bool(forKey: Keys.hasShownWelcomeChooser)
         lastSeenAppVersion = defaults.string(forKey: Keys.lastSeenAppVersion) ?? ""
         expensesOnlyMode = defaults.bool(forKey: Keys.expensesOnlyMode)
 
@@ -1065,6 +1076,7 @@ final class AppPreferences {
         // UI Feature Flags
         static let showSiriTip = "showSiriTip"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
+        static let hasShownWelcomeChooser = "hasShownWelcomeChooser"
         static let lastSeenAppVersion = "lastSeenAppVersion"
         nonisolated static let expensesOnlyMode = "expensesOnlyMode"  // accedida cross-process desde intents
 

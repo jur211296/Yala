@@ -220,4 +220,37 @@ struct iCloudSyncServiceTests {
             #expect(kind == .importing)
         }
     }
+
+    // MARK: - forceFetchAndWait (A4 Welcome Restore)
+
+    @MainActor @Test func forceFetchAndWait_returnsTrueImmediatelyWhenAlreadyImported() async {
+        let service = freshService()
+        // Simula que ya hubo primer importEvent exitoso.
+        service.apply(eventType: .importEvent, error: nil, endDate: .now)
+        #expect(service.hasCompletedFirstImport)
+
+        let result = await service.forceFetchAndWait(timeout: 0.5)
+        #expect(result == true)
+    }
+
+    @MainActor @Test func forceFetchAndWait_returnsTrueWhenNotificationFires() async {
+        let service = freshService()
+        #expect(service.hasCompletedFirstImport == false)
+
+        // Lanza el wait + dispara el evento mid-flight.
+        async let result = service.forceFetchAndWait(timeout: 2.0)
+        try? await Task.sleep(for: .milliseconds(50))
+        service.apply(eventType: .importEvent, error: nil, endDate: .now)
+
+        let value = await result
+        #expect(value == true)
+    }
+
+    @MainActor @Test func forceFetchAndWait_returnsFalseOnTimeout() async {
+        let service = freshService()
+        #expect(service.hasCompletedFirstImport == false)
+
+        let result = await service.forceFetchAndWait(timeout: 0.3)
+        #expect(result == false)
+    }
 }

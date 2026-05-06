@@ -22,6 +22,7 @@ enum AnalyticsEvent: String {
     case exportCompleted
     case aiInsightsGenerated
     case onboardingCompleted
+    case welcomeChooserBranchSelected   // A4 — params: branch (new|restore|invite)
     case purchaseAttempted
     case featureGateHit
     case reviewPromptShown
