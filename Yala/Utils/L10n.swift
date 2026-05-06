@@ -4064,36 +4064,21 @@ enum L10n {
             static var cta: String { ls("welcome.hero.cta", comment: "") }
             static var trust: String { ls("welcome.hero.trust", comment: "") }
 
-            enum Cards {
-                enum Capture {
-                    static var title: String { ls("welcome.hero.cards.capture.title", comment: "") }
-                    static var body: String { ls("welcome.hero.cards.capture.body", comment: "") }
-                }
-                enum Voice {
-                    static var title: String { ls("welcome.hero.cards.voice.title", comment: "") }
-                    static var body: String { ls("welcome.hero.cards.voice.body", comment: "") }
-                }
-                enum Import {
-                    static var title: String { ls("welcome.hero.cards.import.title", comment: "") }
-                    static var body: String { ls("welcome.hero.cards.import.body", comment: "") }
-                }
-                enum MultiAccount {
-                    static var title: String { ls("welcome.hero.cards.multiAccount.title", comment: "") }
-                    static var body: String { ls("welcome.hero.cards.multiAccount.body", comment: "") }
-                }
-                enum Currencies {
-                    static var title: String { ls("welcome.hero.cards.currencies.title", comment: "") }
-                    static var body: String { ls("welcome.hero.cards.currencies.body", comment: "") }
-                }
-                enum Icloud {
-                    static var title: String { ls("welcome.hero.cards.icloud.title", comment: "") }
-                    static var body: String { ls("welcome.hero.cards.icloud.body", comment: "") }
-                }
-                enum More {
-                    static var title: String { ls("welcome.hero.cards.more.title", comment: "") }
-                    static var body: String { ls("welcome.hero.cards.more.body", comment: "") }
-                }
-            }
+            // 7 cards animadas (capture/voice/import/multiAccount/currencies/icloud/more).
+            static var captureTitle: String { ls("welcome.hero.cards.capture.title", comment: "") }
+            static var captureBody: String { ls("welcome.hero.cards.capture.body", comment: "") }
+            static var voiceTitle: String { ls("welcome.hero.cards.voice.title", comment: "") }
+            static var voiceBody: String { ls("welcome.hero.cards.voice.body", comment: "") }
+            static var importTitle: String { ls("welcome.hero.cards.import.title", comment: "") }
+            static var importBody: String { ls("welcome.hero.cards.import.body", comment: "") }
+            static var multiAccountTitle: String { ls("welcome.hero.cards.multiAccount.title", comment: "") }
+            static var multiAccountBody: String { ls("welcome.hero.cards.multiAccount.body", comment: "") }
+            static var currenciesTitle: String { ls("welcome.hero.cards.currencies.title", comment: "") }
+            static var currenciesBody: String { ls("welcome.hero.cards.currencies.body", comment: "") }
+            static var icloudTitle: String { ls("welcome.hero.cards.icloud.title", comment: "") }
+            static var icloudBody: String { ls("welcome.hero.cards.icloud.body", comment: "") }
+            static var moreTitle: String { ls("welcome.hero.cards.more.title", comment: "") }
+            static var moreBody: String { ls("welcome.hero.cards.more.body", comment: "") }
         }
 
         // MARK: - DetectedData (A4 v3.1: alert post-Hero cuando iCloud tiene data residual)

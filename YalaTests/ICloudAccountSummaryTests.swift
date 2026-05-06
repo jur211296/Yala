@@ -263,20 +263,8 @@ struct ICloudAccountSummaryTests {
     }
 
     /// `hasAnyData` decide si el alert "Detectamos tu cuenta" se muestra (post-Hero).
-    /// Pure-logic complement a los tests integration de arriba.
-
-    @Test func hasAnyData_returnsFalse_whenAllZero_pureLogic() {
-        let summary = ICloudAccountSummary(
-            userName: nil,
-            accountsCount: 0,
-            transactionsCount: 0,
-            budgetsCount: 0,
-            groupsCount: 0,
-            primaryCurrencyCode: "PEN",
-            categoriesCount: 0
-        )
-        #expect(summary.hasAnyData == false)
-    }
+    /// Caso "todos cero" ya cubierto por `iCloudAccountSummary_emptyContext_returnsZeros`
+    /// arriba (integration). Aquí solo el caso no obvio: budgets+groups ≠ data REAL.
 
     @Test func hasAnyData_ignoresBudgetsAndGroups() {
         // Budgets y groups por sí solos NO triggerean el alert: el user puede tener

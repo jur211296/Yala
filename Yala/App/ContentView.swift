@@ -200,10 +200,7 @@ struct ContentView: View {
         // Gate `!showGroupInviteOnboarding`: si un CKShare aterriza mid-chooser,
         // el cover se cierra solo y `hasShownWelcomeChooser` queda en `false` —
         // si el invite onboarding se cancela, el chooser reaparece en el próximo cold launch.
-        .fullScreenCover(isPresented: Binding(
-            get: { showWelcomeChooser && !showGroupInviteOnboarding },
-            set: { showWelcomeChooser = $0 }
-        )) {
+        .fullScreenCover(isPresented: $showWelcomeChooser.gated(by: showGroupInviteOnboarding)) {
             WelcomeChooserView { branch in
                 hasShownWelcomeChooser = true
                 showWelcomeChooser = false
@@ -236,11 +233,7 @@ struct ContentView: View {
                     showOnboarding = true
                 },
                 onCompleteSkipAll: {
-                    if !FeatureGateService.shared.isProUser {
-                        SessionState.shared.needsPostOnboardingTrial = true
-                    }
-                    hasCompletedOnboarding = true
-                    SetupChecklistManager.shared.markAsNewInstall()
+                    completeOnboardingAsRestoreSkip()
                     showWelcomeRestore = false
                 },
                 onStartFresh: {
@@ -678,10 +671,7 @@ private struct WelcomeFlowModifier: ViewModifier {
             // Welcome Hero pre-Chooser. El user lee cards animadas mientras corre fetch
             // iCloud invisible. Tap "Empezar" → si hay data, alert; si no, Chooser.
             // Gate `!showGroupInviteOnboarding`: si llega CKShare mid-Hero, invite takes over.
-            .fullScreenCover(isPresented: Binding(
-                get: { showWelcomeHero && !showGroupInviteOnboarding },
-                set: { showWelcomeHero = $0 }
-            )) {
+            .fullScreenCover(isPresented: $showWelcomeHero.gated(by: showGroupInviteOnboarding)) {
                 WelcomeHeroView { decision in
                     showWelcomeHero = false
                     switch decision {
@@ -694,13 +684,9 @@ private struct WelcomeFlowModifier: ViewModifier {
                 }
                 .environment(SessionState.shared)
             }
-            // Alert post-Hero cuando iCloud tiene data residual.
             .alert(
                 L10n.Welcome.DetectedData.title,
-                isPresented: Binding(
-                    get: { showDetectedDataAlert && !showGroupInviteOnboarding },
-                    set: { showDetectedDataAlert = $0 }
-                ),
+                isPresented: $showDetectedDataAlert.gated(by: showGroupInviteOnboarding),
                 presenting: detectedICloudSummary
             ) { summary in
                 Button(L10n.Welcome.DetectedData.loadMyData) {
@@ -720,8 +706,8 @@ private struct WelcomeFlowModifier: ViewModifier {
                 ))
             }
             .onChange(of: showGroupInviteOnboarding) { _, newValue in
-                // Si llega CKShare, invite onboarding takes over.
-                // Reset del flow Hero/alert para evitar resurgir el alert al volver.
+                // Si llega CKShare, invite onboarding takes over. Reset del flow Hero/alert
+                // para evitar resurgir el alert al volver.
                 if newValue {
                     showWelcomeHero = false
                     showDetectedDataAlert = false
@@ -733,17 +719,39 @@ private struct WelcomeFlowModifier: ViewModifier {
     /// Replica logic de `WelcomeRestoreView` callbacks SIN re-fetch (alert ya tiene summary).
     private func consumeDetectedSummary(_ summary: ICloudAccountSummary) {
         if summary.isFullyPrefilled {
-            // Skip total — equivalente a WelcomeRestoreView.onCompleteSkipAll.
-            if !FeatureGateService.shared.isProUser {
-                SessionState.shared.needsPostOnboardingTrial = true
-            }
-            hasCompletedOnboarding = true
-            SetupChecklistManager.shared.markAsNewInstall()
+            // Skip total — mismo side-effect que WelcomeRestoreView.onCompleteSkipAll.
+            completeOnboardingAsRestoreSkip()
         } else {
             // Carga prefilled steps — equivalente a WelcomeRestoreView.onContinueWithSummary.
             prefilledOnboardingData = summary
             showOnboarding = true
         }
+    }
+}
+
+// MARK: - Helpers (file-private SSOT)
+
+/// Side-effect compartido entre `WelcomeRestoreView.onCompleteSkipAll` (callback en
+/// ContentView body) y `WelcomeFlowModifier.consumeDetectedSummary` (rama
+/// fullyPrefilled). Setea trial pendiente, completion flag y new-install marker.
+fileprivate func completeOnboardingAsRestoreSkip() {
+    if !FeatureGateService.shared.isProUser {
+        SessionState.shared.needsPostOnboardingTrial = true
+    }
+    UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+    SetupChecklistManager.shared.markAsNewInstall()
+}
+
+/// Binding gate: el flag solo se refleja `true` si `inhibitor == false`.
+/// Setear el binding a `false` siempre llega al storage. Centraliza el patrón
+/// "auto-cerrar Hero/alert/chooser cuando llega un CKShare" en el flow de
+/// onboarding A4 v3.1.
+fileprivate extension Binding where Value == Bool {
+    func gated(by inhibitor: Bool) -> Binding<Bool> {
+        Binding(
+            get: { wrappedValue && !inhibitor },
+            set: { wrappedValue = $0 }
+        )
     }
 }
 
