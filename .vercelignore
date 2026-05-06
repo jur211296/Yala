@@ -15,3 +15,8 @@ Yala_Spark_Assets_DARK-2/
 Yala_Spark_Assets_LIGHT-2/
 Yala_Spark_Assets_NEON-2/
 *.xcconfig
+.deriveddata/
+.spm/
+.spm-cache/
+DerivedData/
+build_output_*.txt
