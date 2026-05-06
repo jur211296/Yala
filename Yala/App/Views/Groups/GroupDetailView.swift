@@ -95,6 +95,15 @@ struct GroupDetailView: View {
                         .padding(.top, DS.Spacing.sm)
                     }
 
+                    // banner pending/rejected. Refresh ya cubierto por onChange(dataVersion) abajo.
+                    if viewModel.currentUserMember?.isPendingApproval == true {
+                        PendingApprovalBanner(state: .pending, onLeave: nil)
+                    } else if viewModel.currentUserMember?.isRejected == true {
+                        PendingApprovalBanner(state: .rejected, onLeave: {
+                            viewModel.activeSheet = .settings
+                        })
+                    }
+
                     tabContent
                 }
 
@@ -337,5 +346,46 @@ struct GroupDetailView: View {
         return viewModel.members.filter { member in
             member.isActive || referencedMemberIDs.contains(member.id.uuidString)
         }
+    }
+}
+
+// MARK: - A3: Pending Approval Banner
+
+private struct PendingApprovalBanner: View {
+    enum BannerState { case pending, rejected }
+    let state: BannerState
+    var onLeave: (() -> Void)?
+
+    var body: some View {
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            Image(systemName: state == .pending ? "clock.arrow.circlepath" : "xmark.circle.fill")
+                .font(DS.Typography.title2)
+                .foregroundStyle(state == .pending ? DS.Semantic.warningForeground : DS.Semantic.errorForeground)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(state == .pending ? L10n.Groups.Invite.waitingApprovalBanner : L10n.Groups.Invite.rejectedTitle)
+                    .font(DS.Typography.subheadlineEmphasized)
+                if state == .rejected {
+                    Text(L10n.Groups.Invite.rejectedBody)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+
+            if state == .rejected, let onLeave {
+                Button(L10n.Groups.Settings.leaveGroup, action: onLeave)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(DS.Semantic.errorForeground)
+            }
+        }
+        .padding(DS.Spacing.md)
+        .background(
+            (state == .pending ? DS.Semantic.warningBackground : DS.Semantic.errorBackground),
+            in: RoundedRectangle(cornerRadius: DS.Radius.md)
+        )
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.sm)
     }
 }

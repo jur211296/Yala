@@ -61,6 +61,13 @@ struct GroupSettingsView: View {
     @State private var shareErrorMessage: String = ""
     @State private var showActionError = false
     @State private var actionErrorMessage: String = ""
+
+    @State private var pendingActionMember: SplitMember?
+    @State private var showApproveConfirm: Bool = false
+    @State private var showRejectConfirm: Bool = false
+    @State private var pendingErrorMessage: String?
+    @State private var showPendingError: Bool = false
+
     // MARK: - Body
 
     var body: some View {
@@ -72,6 +79,10 @@ struct GroupSettingsView: View {
 
                     // Members section
                     membersSection
+
+                    if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
+                        pendingApprovalSection
+                    }
 
                     // Group options section
                     optionsSection
@@ -173,6 +184,27 @@ struct GroupSettingsView: View {
                 Button(L10n.Common.ok) {}
             } message: {
                 Text(actionErrorMessage)
+            }
+            .confirmationDialog(
+                pendingActionMember.map { L10n.Groups.Member.approveConfirm($0.displayName) } ?? "",
+                isPresented: $showApproveConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Groups.Member.approve) { performApprove() }
+                Button(L10n.Common.cancel, role: .cancel) { pendingActionMember = nil }
+            }
+            .confirmationDialog(
+                pendingActionMember.map { L10n.Groups.Member.rejectConfirm($0.displayName) } ?? "",
+                isPresented: $showRejectConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Groups.Member.reject, role: .destructive) { performReject() }
+                Button(L10n.Common.cancel, role: .cancel) { pendingActionMember = nil }
+            }
+            .alert(L10n.Common.error, isPresented: $showPendingError) {
+                Button(L10n.Common.ok) {}
+            } message: {
+                Text(pendingErrorMessage ?? "")
             }
             .sheet(isPresented: $showBridgeActivationSheet) {
                 BridgeActivationSheet(
@@ -442,6 +474,113 @@ struct GroupSettingsView: View {
 
     private var canRegenerateInviteLink: Bool {
         viewModel.activeMembers.count <= 1
+    }
+
+    // MARK: - A3: Pending Approval Section
+
+    private var pendingApprovalSection: some View {
+        SectionBox(title: L10n.Groups.Member.pendingRequestsSection) {
+            VStack(spacing: DS.Spacing.none) {
+                Text(L10n.Groups.Member.pendingRequestsCount(viewModel.pendingApprovalMembers.count))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.top, DS.FormRow.paddingV)
+
+                ForEach(viewModel.pendingApprovalMembers, id: \.id) { member in
+                    pendingApprovalRow(member)
+                    if member.id != viewModel.pendingApprovalMembers.last?.id {
+                        Divider()
+                            .padding(.leading, DS.FormRow.paddingH)
+                    }
+                }
+            }
+        }
+    }
+
+    private func pendingApprovalRow(_ member: SplitMember) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: group.colorHex).opacity(0.18))
+                        .frame(width: 36, height: 36) // A11Y-DT: avatar inicial fixed size matching GroupMemberRow
+
+                    Text(String(member.displayName.prefix(1)).uppercased())
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(Color(hex: group.colorHex))
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(member.displayName)
+                        .font(DS.Typography.body)
+                    Text(L10n.Groups.Member.statusPending)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                }
+
+                Spacer()
+            }
+
+            HStack(spacing: DS.Spacing.sm) {
+                Button {
+                    pendingActionMember = member
+                    showApproveConfirm = true
+                } label: {
+                    Text(L10n.Groups.Member.approve)
+                        .font(DS.Typography.label)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, DS.Spacing.md)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .background(.thAccent, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    pendingActionMember = member
+                    showRejectConfirm = true
+                } label: {
+                    Text(L10n.Groups.Member.reject)
+                        .font(DS.Typography.label)
+                        .foregroundStyle(DS.Semantic.errorForeground)
+                        .padding(.horizontal, DS.Spacing.md)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .background(DS.Semantic.errorBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+            }
+        }
+        .padding(.horizontal, DS.FormRow.paddingH)
+        .padding(.vertical, DS.FormRow.paddingV)
+    }
+
+    private func performApprove() {
+        runPendingMemberAction(label: "approveMember", GroupService.shared.approveMember)
+    }
+
+    private func performReject() {
+        runPendingMemberAction(label: "rejectMember", GroupService.shared.rejectMember)
+    }
+
+    private func runPendingMemberAction(
+        label: String,
+        _ action: (SplitMember, SplitGroup) throws -> Void
+    ) {
+        guard let member = pendingActionMember else { return }
+        do {
+            try action(member, group)
+            viewModel.loadData()
+        } catch {
+            pendingErrorMessage = error.localizedDescription
+            showPendingError = true
+            #if DEBUG
+            print("GroupSettingsView: \(label) failed: \(error)")
+            #endif
+        }
+        pendingActionMember = nil
     }
 
     // MARK: - Options Section

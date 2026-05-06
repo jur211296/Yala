@@ -19,6 +19,7 @@ struct GroupInviteOnboardingView: View {
 
     @State private var userName: String = ""
     @State private var currentStep: Int = 1
+    @State private var isProcessing: Bool = false
 
     var onComplete: () -> Void
 
@@ -29,10 +30,11 @@ struct GroupInviteOnboardingView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: DS.Spacing.xxl) {
-                    if currentStep == 1 {
-                        welcomeStep
-                    } else {
-                        completionStep
+                    switch currentStep {
+                    case 1: welcomeStep
+                    case 2: completionStep
+                    case 3: pendingApprovalStep
+                    default: completionStep
                     }
                 }
                 .padding(.horizontal, DS.Spacing.xxl)
@@ -85,12 +87,78 @@ struct GroupInviteOnboardingView: View {
             Spacer()
 
             YalaPrimaryButton(L10n.Groups.Invite.joinButton) {
-                performSilentSetup()
-                withAnimation { currentStep = 2 }
+                handleJoinTap()
             }
+            .disabled(isProcessing)
             .padding(.bottom, DS.Spacing.xxl)
         }
         .dismissKeyboardOnTap()
+    }
+
+    // MARK: - Step 3: Pending Approval
+
+    private var pendingApprovalStep: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            Spacer()
+
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 56)) // A11Y-DT: decorative hero icon, fixed size
+                .foregroundStyle(DS.Semantic.warningForeground)
+
+            VStack(spacing: DS.Spacing.sm) {
+                Text(L10n.Groups.Invite.waitingApprovalTitle)
+                    .font(DS.Typography.title2)
+                    .multilineTextAlignment(.center)
+
+                Text(L10n.Groups.Invite.waitingApprovalBody)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.lg)
+            }
+
+            Spacer()
+
+            YalaPrimaryButton(L10n.Action.continueAction) {
+                TelemetryService.track(.groupInviteOnboardingCompleted)
+                NudgeService.shared.recordGroupJoinIfNeeded()
+                onComplete()
+                Task {
+                    try? await Task.sleep(for: .milliseconds(300))
+                    AppRouter.shared.enqueue(.navigate(.groups))
+                }
+            }
+            .padding(.bottom, DS.Spacing.xxl)
+        }
+    }
+
+    // MARK: - Join handler (A3)
+
+    private func handleJoinTap() {
+        guard !isProcessing else { return }
+        performSilentSetup()
+        isProcessing = true
+        Task {
+            let nextStep = await detectFinalStep()
+            await MainActor.run {
+                withAnimation { currentStep = nextStep }
+                isProcessing = false
+            }
+        }
+    }
+
+    /// tras setup, detecta si el SplitMember quedó en `.pendingApproval` (step 3)
+    /// o `.active` (step 2). Defensive: cualquier error → step 2 para no bloquear al user.
+    private func detectFinalStep() async -> Int {
+        guard let group = SplitSyncManager.shared.mostRecentGroup() else { return 2 }
+        do {
+            let member = try await GroupService.shared.ensureCurrentUserMemberExists(
+                in: group, reactivateInactive: true
+            )
+            return member.isPendingApproval ? 3 : 2
+        } catch {
+            return 2
+        }
     }
 
     // MARK: - Step 2: Completion

@@ -44,7 +44,13 @@ final class GroupDetailViewModel {
     }
 
     var isCurrentUserAdmin: Bool {
-        currentUserMember?.isActive == true && currentUserMember?.role == "admin"
+        guard let me = currentUserMember, me.isActive else { return false }
+        return me.isAdmin
+    }
+
+    /// members awaiting admin approval — visible solo en sección "Solicitudes pendientes" para admins.
+    var pendingApprovalMembers: [SplitMember] {
+        members.filter { $0.isPendingApproval }
     }
 
     // MARK: - UI State
