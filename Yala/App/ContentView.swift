@@ -146,10 +146,12 @@ struct ContentView: View {
             }
         }
         .onChange(of: hasCompletedOnboarding) { _, newValue in
-            // Data wipe path: invalida summary stale antes de re-mostrar onboarding.
+            // Data wipe path: invalida summary stale + respeta el flag del chooser.
+            // `performLocalWipeForRemoteSync` resetea `hasShownWelcomeChooser=false` cuando
+            // el wipe requiere re-onboarding completo, así que el chooser vuelve a presentarse.
             if !newValue {
                 prefilledOnboardingData = nil
-                showOnboarding = true
+                presentNextOnboardingScreen()
             }
         }
         .onChange(of: hasExistingData) { oldValue, newValue in
