@@ -186,4 +186,111 @@ struct ICloudAccountSummaryTests {
 
         #expect(summary.hasAnyData == true)
     }
+
+    // MARK: - Pure-logic tests (sin makeTestContext) — A4 v3.1 SSOT extension
+
+    /// `isFullyPrefilled` lo consume `WelcomeRestoreView.isAllPrefilled` y el
+    /// `WelcomeFlowModifier.consumeDetectedSummary` (alert post-Hero). Tests
+    /// pure-logic — no requieren ModelContext.
+
+    @Test func isFullyPrefilled_trueWhenAllSet_pureLogic() {
+        let summary = ICloudAccountSummary(
+            userName: "Juan",
+            accountsCount: 3,
+            transactionsCount: 50,
+            budgetsCount: 2,
+            groupsCount: 1,
+            primaryCurrencyCode: "PEN",
+            categoriesCount: 12
+        )
+        #expect(summary.isFullyPrefilled == true)
+    }
+
+    @Test func isFullyPrefilled_falseWhenUserNameNil() {
+        let summary = ICloudAccountSummary(
+            userName: nil,
+            accountsCount: 3,
+            transactionsCount: 50,
+            budgetsCount: 0,
+            groupsCount: 0,
+            primaryCurrencyCode: "PEN",
+            categoriesCount: 12
+        )
+        #expect(summary.isFullyPrefilled == false)
+    }
+
+    @Test func isFullyPrefilled_falseWhenZeroAccounts() {
+        let summary = ICloudAccountSummary(
+            userName: "Juan",
+            accountsCount: 0,
+            transactionsCount: 0,
+            budgetsCount: 0,
+            groupsCount: 0,
+            primaryCurrencyCode: "PEN",
+            categoriesCount: 12
+        )
+        #expect(summary.isFullyPrefilled == false)
+    }
+
+    @Test func isFullyPrefilled_falseWhenZeroCategories() {
+        // Caso edge: cuentas + nombre pero sin categorías (mid-restore o delete manual).
+        // Onboarding sigue siendo necesario para seedearlas.
+        let summary = ICloudAccountSummary(
+            userName: "Juan",
+            accountsCount: 2,
+            transactionsCount: 0,
+            budgetsCount: 0,
+            groupsCount: 0,
+            primaryCurrencyCode: "PEN",
+            categoriesCount: 0
+        )
+        #expect(summary.isFullyPrefilled == false)
+    }
+
+    @Test func isFullyPrefilled_doesNotRequirePrimaryCurrencyCode() {
+        // El currencyCode siempre está populated (default desde appPreferences),
+        // así que NO se chequea para isFullyPrefilled.
+        let summary = ICloudAccountSummary(
+            userName: "Juan",
+            accountsCount: 3,
+            transactionsCount: 50,
+            budgetsCount: 0,
+            groupsCount: 0,
+            primaryCurrencyCode: nil,
+            categoriesCount: 12
+        )
+        #expect(summary.isFullyPrefilled == true)
+    }
+
+    /// `hasAnyData` decide si el alert "Detectamos tu cuenta" se muestra (post-Hero).
+    /// Pure-logic complement a los tests integration de arriba.
+
+    @Test func hasAnyData_returnsFalse_whenAllZero_pureLogic() {
+        let summary = ICloudAccountSummary(
+            userName: nil,
+            accountsCount: 0,
+            transactionsCount: 0,
+            budgetsCount: 0,
+            groupsCount: 0,
+            primaryCurrencyCode: "PEN",
+            categoriesCount: 0
+        )
+        #expect(summary.hasAnyData == false)
+    }
+
+    @Test func hasAnyData_ignoresBudgetsAndGroups() {
+        // Budgets y groups por sí solos NO triggerean el alert: el user puede tener
+        // budgets sin haber registrado nada. La intención del flag es "hay data REAL"
+        // (cuentas/registros/categorías), no "hay artefactos secundarios".
+        let summary = ICloudAccountSummary(
+            userName: "Juan",
+            accountsCount: 0,
+            transactionsCount: 0,
+            budgetsCount: 5,
+            groupsCount: 3,
+            primaryCurrencyCode: "PEN",
+            categoriesCount: 0
+        )
+        #expect(summary.hasAnyData == false)
+    }
 }
