@@ -4088,3 +4088,44 @@
 "groups.invite.rejected.body" = "管理员没有批准你的请求。如果你想再次尝试，可以请管理员发送新的链接。";
 "groups.notifications.newPendingRequest" = "%1$@ 想要加入 %2$@";
 "groups.errors.pendingApproval" = "暂时还不能执行此操作。管理员需要先批准你的请求。";
+
+// MARK: - Welcome (A4 — Chooser pre-onboarding)
+"welcome.chooser.title" = "你好！你是怎么找到 Yala 的？";
+"welcome.chooser.subtitle" = "告诉我们，我们会为你定制体验。";
+"welcome.chooser.optionNew.title" = "我是新用户";
+"welcome.chooser.optionNew.body" = "和我从零开始吧。我会一步步帮你配置好一切。";
+"welcome.chooser.optionExisting.title" = "我已经有账户了";
+"welcome.chooser.optionExisting.body" = "我重新安装了 Yala，想从 iCloud 恢复我的数据。";
+"welcome.chooser.optionInvite.title" = "有人邀请我加入群组";
+"welcome.chooser.optionInvite.body" = "我有一个邀请链接，想要加入。";
+
+"welcome.restore.searching" = "正在 iCloud 中查找你的数据…";
+"welcome.restore.searchingTip" = "这可能需要几秒钟。";
+"welcome.restore.foundTitle" = "你好 %@！很高兴再次见到你。";
+"welcome.restore.foundTitleAnonymous" = "很高兴再次见到你！";
+"welcome.restore.foundBody" = "我们在 iCloud 中找到了你的数据：";
+"welcome.restore.foundAccounts" = "%d 个账户";
+"welcome.restore.foundTransactions" = "%d 条记录";
+"welcome.restore.foundBudgets" = "%d 个预算";
+"welcome.restore.foundGroups" = "%d 个共享群组";
+"welcome.restore.continue" = "继续";
+"welcome.restore.notFoundTitle" = "未找到数据";
+"welcome.restore.notFoundBody" = "你的 iCloud 账户没有关联的数据。想要重新开始吗？";
+"welcome.restore.startFresh" = "开始配置";
+"welcome.restore.retry" = "重新查找";
+"welcome.restore.errorTitle" = "出现了问题";
+"welcome.restore.errorBody" = "无法查找你的 iCloud 数据。请重试或从零开始配置。";
+"welcome.restore.iCloudDisabledTitle" = "请启用 iCloud 以继续";
+"welcome.restore.iCloudDisabledBody" = "你需要启用 iCloud 才能恢复数据。请在设置中启用并重试。";
+"welcome.restore.openSettings" = "打开设置";
+"welcome.restore.startFreshConfirm.title" = "重新开始？";
+"welcome.restore.startFreshConfirm.body" = "这将创建一个新账户，不会保留你之前的数据。继续吗？";
+"welcome.restore.startFreshConfirm.confirm" = "是，重新开始";
+"welcome.restore.startFreshConfirm.cancel" = "取消";
+
+"welcome.invite.title" = "粘贴你的邀请链接";
+"welcome.invite.body" = "如果有人邀请你加入 Yala 群组，请在这里粘贴你收到的链接。";
+"welcome.invite.placeholder" = "https://yala-app.pe/invite?...";
+"welcome.invite.invalidLink" = "这看起来不像是 Yala 的链接。请检查是否复制了完整的链接。";
+"welcome.invite.join" = "加入群组";
+"welcome.invite.back" = "返回";

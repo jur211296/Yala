@@ -4088,3 +4088,44 @@
 "groups.invite.rejected.body" = "管理者がリクエストを承認しませんでした。再度試したい場合は、新しいリンクを依頼してください。";
 "groups.notifications.newPendingRequest" = "%1$@ さんが %2$@ への参加を希望しています";
 "groups.errors.pendingApproval" = "まだこの操作はできません。管理者があなたのリクエストを承認する必要があります。";
+
+// MARK: - Welcome (A4 — Chooser pre-onboarding)
+"welcome.chooser.title" = "こんにちは！どうやってYalaにたどり着きましたか？";
+"welcome.chooser.subtitle" = "あなたに合わせた体験をご提供するため、教えてください。";
+"welcome.chooser.optionNew.title" = "初めて利用します";
+"welcome.chooser.optionNew.body" = "ゼロから始めましょう。一緒にステップごとに設定していきます。";
+"welcome.chooser.optionExisting.title" = "すでにアカウントがあります";
+"welcome.chooser.optionExisting.body" = "Yalaを再インストールしました。iCloudからデータを復元したいです。";
+"welcome.chooser.optionInvite.title" = "グループに招待されました";
+"welcome.chooser.optionInvite.body" = "招待リンクを持っています。グループに参加したいです。";
+
+"welcome.restore.searching" = "iCloudでデータを検索しています…";
+"welcome.restore.searchingTip" = "数秒かかることがあります。";
+"welcome.restore.foundTitle" = "%@さん、おかえりなさい！";
+"welcome.restore.foundTitleAnonymous" = "おかえりなさい！";
+"welcome.restore.foundBody" = "iCloudにデータが見つかりました：";
+"welcome.restore.foundAccounts" = "%d 件のアカウント";
+"welcome.restore.foundTransactions" = "%d 件の記録";
+"welcome.restore.foundBudgets" = "%d 件の予算";
+"welcome.restore.foundGroups" = "%d 件の共有グループ";
+"welcome.restore.continue" = "続ける";
+"welcome.restore.notFoundTitle" = "データが見つかりませんでした";
+"welcome.restore.notFoundBody" = "iCloudアカウントに関連するデータが見つかりません。最初から始めますか？";
+"welcome.restore.startFresh" = "設定を開始";
+"welcome.restore.retry" = "再検索";
+"welcome.restore.errorTitle" = "問題が発生しました";
+"welcome.restore.errorBody" = "iCloudのデータを検索できませんでした。もう一度試すか、最初から設定してください。";
+"welcome.restore.iCloudDisabledTitle" = "続行するにはiCloudを有効にしてください";
+"welcome.restore.iCloudDisabledBody" = "データを復元するにはiCloudが必要です。設定で有効にしてからもう一度お試しください。";
+"welcome.restore.openSettings" = "設定を開く";
+"welcome.restore.startFreshConfirm.title" = "最初から始めますか？";
+"welcome.restore.startFreshConfirm.body" = "以前のデータなしで新しいアカウントが作成されます。続行しますか？";
+"welcome.restore.startFreshConfirm.confirm" = "はい、最初から";
+"welcome.restore.startFreshConfirm.cancel" = "キャンセル";
+
+"welcome.invite.title" = "招待リンクを貼り付けてください";
+"welcome.invite.body" = "Yalaのグループに招待された場合は、受け取ったリンクをここに貼り付けてください。";
+"welcome.invite.placeholder" = "https://yala-app.pe/invite?...";
+"welcome.invite.invalidLink" = "Yalaのリンクではないようです。完全なリンクをコピーしたか確認してください。";
+"welcome.invite.join" = "グループに参加";
+"welcome.invite.back" = "戻る";

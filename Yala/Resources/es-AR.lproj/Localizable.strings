@@ -270,3 +270,44 @@
 "groups.invite.rejected.body" = "El admin no aprobó tu solicitud. Pedile un nuevo link si querés volver a intentarlo.";
 "groups.notifications.newPendingRequest" = "%@ quiere unirse a %@";
 "groups.errors.pendingApproval" = "Todavía no podés hacer esto. El admin tiene que aprobar tu solicitud primero.";
+
+// MARK: - Welcome (A4 — Chooser pre-onboarding) — voseo
+"welcome.chooser.title" = "¡Hola! ¿Cómo llegaste a Yala?";
+"welcome.chooser.subtitle" = "Contános para acomodar tu experiencia.";
+"welcome.chooser.optionNew.title" = "Soy nuevo";
+"welcome.chooser.optionNew.body" = "Empezá desde cero conmigo. Te ayudo a configurar todo paso a paso.";
+"welcome.chooser.optionExisting.title" = "Ya tengo una cuenta";
+"welcome.chooser.optionExisting.body" = "Reinstalé Yala y quiero recuperar mis datos desde iCloud.";
+"welcome.chooser.optionInvite.title" = "Me invitaron a un grupo";
+"welcome.chooser.optionInvite.body" = "Tengo un link de invitación y quiero unirme.";
+
+"welcome.restore.searching" = "Buscando tus datos en iCloud…";
+"welcome.restore.searchingTip" = "Puede tardar unos segundos.";
+"welcome.restore.foundTitle" = "¡Hola %@! Qué bueno verte de vuelta.";
+"welcome.restore.foundTitleAnonymous" = "¡Qué bueno verte de vuelta!";
+"welcome.restore.foundBody" = "Encontramos tus datos en iCloud:";
+"welcome.restore.foundAccounts" = "%d cuentas";
+"welcome.restore.foundTransactions" = "%d registros";
+"welcome.restore.foundBudgets" = "%d presupuestos";
+"welcome.restore.foundGroups" = "%d grupos compartidos";
+"welcome.restore.continue" = "Continuar";
+"welcome.restore.notFoundTitle" = "No encontramos tus datos";
+"welcome.restore.notFoundBody" = "No hay datos asociados a tu cuenta de iCloud. ¿Querés empezar de cero?";
+"welcome.restore.startFresh" = "Empezar configuración";
+"welcome.restore.retry" = "Reintentar búsqueda";
+"welcome.restore.errorTitle" = "Hubo un problema";
+"welcome.restore.errorBody" = "No pudimos buscar tus datos en iCloud. Probá de nuevo o configurá desde cero.";
+"welcome.restore.iCloudDisabledTitle" = "Activá iCloud para continuar";
+"welcome.restore.iCloudDisabledBody" = "Necesitás tener iCloud activado para recuperar tus datos. Activalo en Ajustes y volvé a probar.";
+"welcome.restore.openSettings" = "Abrir Ajustes";
+"welcome.restore.startFreshConfirm.title" = "¿Empezar de cero?";
+"welcome.restore.startFreshConfirm.body" = "Esto va a crear una cuenta nueva sin tus datos previos. ¿Continuar?";
+"welcome.restore.startFreshConfirm.confirm" = "Sí, empezar de cero";
+"welcome.restore.startFreshConfirm.cancel" = "Cancelar";
+
+"welcome.invite.title" = "Pegá tu link de invitación";
+"welcome.invite.body" = "Si te invitaron a un grupo en Yala, pegá acá el link que recibiste.";
+"welcome.invite.placeholder" = "https://yala-app.pe/invite?...";
+"welcome.invite.invalidLink" = "Este link no parece de Yala. Verificá que copiaste el link completo.";
+"welcome.invite.join" = "Unirme al grupo";
+"welcome.invite.back" = "Volver";

@@ -4088,3 +4088,44 @@
 "groups.invite.rejected.body" = "De beheerder heeft je verzoek niet goedgekeurd. Vraag een nieuwe link als je het opnieuw wilt proberen.";
 "groups.notifications.newPendingRequest" = "%@ wil meedoen aan %@";
 "groups.errors.pendingApproval" = "Dat kan nog niet — de beheerder moet eerst je verzoek goedkeuren.";
+
+// MARK: - Welcome (A4 — Chooser pre-onboarding)
+"welcome.chooser.title" = "Hoi! Hoe ben je bij Yala terechtgekomen?";
+"welcome.chooser.subtitle" = "Vertel het ons zodat we je ervaring kunnen aanpassen.";
+"welcome.chooser.optionNew.title" = "Ik ben nieuw";
+"welcome.chooser.optionNew.body" = "Begin met mij vanaf nul. Ik help je stap voor stap alles in te stellen.";
+"welcome.chooser.optionExisting.title" = "Ik heb al een account";
+"welcome.chooser.optionExisting.body" = "Ik heb Yala opnieuw geïnstalleerd en wil mijn gegevens uit iCloud terugzetten.";
+"welcome.chooser.optionInvite.title" = "Ik ben uitgenodigd voor een groep";
+"welcome.chooser.optionInvite.body" = "Ik heb een uitnodigingslink en wil meedoen.";
+
+"welcome.restore.searching" = "Je gegevens zoeken in iCloud…";
+"welcome.restore.searchingTip" = "Dit kan een paar seconden duren.";
+"welcome.restore.foundTitle" = "Hoi %@! Fijn dat je terug bent.";
+"welcome.restore.foundTitleAnonymous" = "Fijn dat je terug bent!";
+"welcome.restore.foundBody" = "We hebben je gegevens in iCloud gevonden:";
+"welcome.restore.foundAccounts" = "%d rekeningen";
+"welcome.restore.foundTransactions" = "%d records";
+"welcome.restore.foundBudgets" = "%d budgetten";
+"welcome.restore.foundGroups" = "%d gedeelde groepen";
+"welcome.restore.continue" = "Doorgaan";
+"welcome.restore.notFoundTitle" = "Geen gegevens gevonden";
+"welcome.restore.notFoundBody" = "Er zijn geen gegevens gekoppeld aan je iCloud-account. Wil je opnieuw beginnen?";
+"welcome.restore.startFresh" = "Configuratie starten";
+"welcome.restore.retry" = "Opnieuw zoeken";
+"welcome.restore.errorTitle" = "Er ging iets mis";
+"welcome.restore.errorBody" = "We konden je iCloud-gegevens niet ophalen. Probeer het opnieuw of stel alles handmatig in.";
+"welcome.restore.iCloudDisabledTitle" = "Schakel iCloud in om door te gaan";
+"welcome.restore.iCloudDisabledBody" = "Je hebt iCloud nodig om je gegevens terug te zetten. Schakel het in via Instellingen en probeer opnieuw.";
+"welcome.restore.openSettings" = "Instellingen openen";
+"welcome.restore.startFreshConfirm.title" = "Opnieuw beginnen?";
+"welcome.restore.startFreshConfirm.body" = "Hiermee maak je een nieuwe account zonder je vorige gegevens. Doorgaan?";
+"welcome.restore.startFreshConfirm.confirm" = "Ja, opnieuw beginnen";
+"welcome.restore.startFreshConfirm.cancel" = "Annuleren";
+
+"welcome.invite.title" = "Plak je uitnodigingslink";
+"welcome.invite.body" = "Als je bent uitgenodigd voor een groep op Yala, plak hier de link die je hebt ontvangen.";
+"welcome.invite.placeholder" = "https://yala-app.pe/invite?...";
+"welcome.invite.invalidLink" = "Dit lijkt geen Yala-link. Controleer of je de volledige link hebt gekopieerd.";
+"welcome.invite.join" = "Lid worden";
+"welcome.invite.back" = "Terug";
