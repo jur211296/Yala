@@ -4072,3 +4072,19 @@
 "inbox.groupDraft.finalize" = "完成";
 "inbox.groupDraft.fromGroup" = "群组：%@";
 "action.continue" = "继续";
+
+// MARK: - A3: Pending approval flow
+"groups.member.statusPending" = "等待批准";
+"groups.member.statusRejected" = "已拒绝";
+"groups.member.approve" = "批准";
+"groups.member.reject" = "拒绝";
+"groups.member.approveConfirm" = "批准 %@ 加入群组？";
+"groups.member.rejectConfirm" = "拒绝 %@ 的请求吗？对方可以使用其他链接重新申请加入。";
+"groups.member.pendingRequestsSection" = "待处理的请求";
+"groups.invite.waitingApproval.title" = "请求已发送";
+"groups.invite.waitingApproval.body" = "群组管理员需要批准你的加入请求。准备好后我们会通知你。";
+"groups.invite.waitingApproval.banner" = "等待管理员批准";
+"groups.invite.rejected.title" = "请求被拒绝";
+"groups.invite.rejected.body" = "管理员没有批准你的请求。如果你想再次尝试，可以请管理员发送新的链接。";
+"groups.notifications.newPendingRequest" = "%1$@ 想要加入 %2$@";
+"groups.errors.pendingApproval" = "暂时还不能执行此操作。管理员需要先批准你的请求。";

@@ -163,3 +163,19 @@
 "inbox.groupDraft.finalize" = "Finalise";
 "inbox.groupDraft.fromGroup" = "Group: %@";
 "action.continue" = "Continue";
+
+// MARK: - A3: Pending approval flow
+"groups.member.statusPending" = "Pending approval";
+"groups.member.statusRejected" = "Rejected";
+"groups.member.approve" = "Approve";
+"groups.member.reject" = "Reject";
+"groups.member.approveConfirm" = "Approve %@ as a group member?";
+"groups.member.rejectConfirm" = "Reject %@'s request? They can request access again with another link.";
+"groups.member.pendingRequestsSection" = "Pending requests";
+"groups.invite.waitingApproval.title" = "Request sent";
+"groups.invite.waitingApproval.body" = "The group admin needs to approve you before you can join. We'll let you know when you're in.";
+"groups.invite.waitingApproval.banner" = "Awaiting admin approval";
+"groups.invite.rejected.title" = "Request rejected";
+"groups.invite.rejected.body" = "The admin didn't approve your request. Ask them for a new link if you'd like to try again.";
+"groups.notifications.newPendingRequest" = "%@ wants to join %@";
+"groups.errors.pendingApproval" = "You can't do this yet — the admin needs to approve your request first.";

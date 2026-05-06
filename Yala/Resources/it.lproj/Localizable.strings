@@ -4071,3 +4071,19 @@
 "inbox.groupDraft.finalize" = "Finalizza";
 "inbox.groupDraft.fromGroup" = "Gruppo: %@";
 "action.continue" = "Continua";
+
+// MARK: - A3: Pending approval flow
+"groups.member.statusPending" = "In attesa di approvazione";
+"groups.member.statusRejected" = "Rifiutato";
+"groups.member.approve" = "Approva";
+"groups.member.reject" = "Rifiuta";
+"groups.member.approveConfirm" = "Approvare %@ come membro del gruppo?";
+"groups.member.rejectConfirm" = "Rifiutare la richiesta di %@? Potrà richiedere di nuovo l'accesso con un altro link.";
+"groups.member.pendingRequestsSection" = "Richieste in sospeso";
+"groups.invite.waitingApproval.title" = "Richiesta inviata";
+"groups.invite.waitingApproval.body" = "L'admin del gruppo deve approvarti prima che tu possa partecipare. Ti avviseremo non appena è pronto.";
+"groups.invite.waitingApproval.banner" = "In attesa dell'approvazione dell'admin";
+"groups.invite.rejected.title" = "Richiesta rifiutata";
+"groups.invite.rejected.body" = "L'admin non ha approvato la tua richiesta. Chiedigli un nuovo link se vuoi riprovare.";
+"groups.notifications.newPendingRequest" = "%@ vuole unirsi a %@";
+"groups.errors.pendingApproval" = "Non puoi ancora farlo — l'admin deve prima approvare la tua richiesta.";

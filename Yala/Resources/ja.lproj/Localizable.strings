@@ -4072,3 +4072,19 @@
 "inbox.groupDraft.finalize" = "完了する";
 "inbox.groupDraft.fromGroup" = "グループ：%@";
 "action.continue" = "続ける";
+
+// MARK: - A3: Pending approval flow
+"groups.member.statusPending" = "承認待ち";
+"groups.member.statusRejected" = "拒否されました";
+"groups.member.approve" = "承認する";
+"groups.member.reject" = "拒否する";
+"groups.member.approveConfirm" = "%@ をグループメンバーとして承認しますか？";
+"groups.member.rejectConfirm" = "%@ のリクエストを拒否しますか？別のリンクで再度アクセスをリクエストできます。";
+"groups.member.pendingRequestsSection" = "保留中のリクエスト";
+"groups.invite.waitingApproval.title" = "リクエストを送信しました";
+"groups.invite.waitingApproval.body" = "参加するには、グループの管理者の承認が必要です。準備ができたらお知らせします。";
+"groups.invite.waitingApproval.banner" = "管理者の承認を待っています";
+"groups.invite.rejected.title" = "リクエストが拒否されました";
+"groups.invite.rejected.body" = "管理者がリクエストを承認しませんでした。再度試したい場合は、新しいリンクを依頼してください。";
+"groups.notifications.newPendingRequest" = "%1$@ さんが %2$@ への参加を希望しています";
+"groups.errors.pendingApproval" = "まだこの操作はできません。管理者があなたのリクエストを承認する必要があります。";

@@ -4072,3 +4072,19 @@
 "inbox.groupDraft.finalize" = "Sfinalizuj";
 "inbox.groupDraft.fromGroup" = "Grupa: %@";
 "action.continue" = "Kontynuuj";
+
+// MARK: - A3: Pending approval flow
+"groups.member.statusPending" = "Oczekuje na akceptację";
+"groups.member.statusRejected" = "Odrzucone";
+"groups.member.approve" = "Zaakceptuj";
+"groups.member.reject" = "Odrzuć";
+"groups.member.approveConfirm" = "Zaakceptować %@ jako członka grupy?";
+"groups.member.rejectConfirm" = "Odrzucić prośbę od %@? Może ponownie poprosić o dostęp, jeśli otrzyma kolejny link.";
+"groups.member.pendingRequestsSection" = "Oczekujące prośby";
+"groups.invite.waitingApproval.title" = "Prośba wysłana";
+"groups.invite.waitingApproval.body" = "Administrator grupy musi Cię zaakceptować, zanim będziesz mógł dołączyć. Powiadomimy Cię, gdy będzie gotowe.";
+"groups.invite.waitingApproval.banner" = "Oczekiwanie na akceptację administratora";
+"groups.invite.rejected.title" = "Prośba odrzucona";
+"groups.invite.rejected.body" = "Administrator nie zaakceptował Twojej prośby. Poproś o nowy link, jeśli chcesz spróbować jeszcze raz.";
+"groups.notifications.newPendingRequest" = "%@ chce dołączyć do %@";
+"groups.errors.pendingApproval" = "Nie możesz jeszcze tego zrobić. Administrator musi najpierw zaakceptować Twoją prośbę.";

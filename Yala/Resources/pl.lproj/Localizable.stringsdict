@@ -462,5 +462,25 @@
 			<string>%d kroku</string>
 		</dict>
 	</dict>
+	<key>groups.member.pendingRequestsCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d prośba</string>
+			<key>few</key>
+			<string>%d prośby</string>
+			<key>many</key>
+			<string>%d próśb</string>
+			<key>other</key>
+			<string>%d prośby</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

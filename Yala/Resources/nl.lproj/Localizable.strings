@@ -4072,3 +4072,19 @@
 "inbox.groupDraft.finalize" = "Afronden";
 "inbox.groupDraft.fromGroup" = "Groep: %@";
 "action.continue" = "Doorgaan";
+
+// MARK: - A3: Pending approval flow
+"groups.member.statusPending" = "Wacht op goedkeuring";
+"groups.member.statusRejected" = "Afgewezen";
+"groups.member.approve" = "Goedkeuren";
+"groups.member.reject" = "Afwijzen";
+"groups.member.approveConfirm" = "%@ goedkeuren als groepslid?";
+"groups.member.rejectConfirm" = "Het verzoek van %@ afwijzen? Diegene kan opnieuw toegang vragen met een andere link.";
+"groups.member.pendingRequestsSection" = "Openstaande verzoeken";
+"groups.invite.waitingApproval.title" = "Verzoek verstuurd";
+"groups.invite.waitingApproval.body" = "De groepsbeheerder moet je goedkeuren voordat je kunt meedoen. We laten het je weten zodra het zover is.";
+"groups.invite.waitingApproval.banner" = "Wacht op goedkeuring van de beheerder";
+"groups.invite.rejected.title" = "Verzoek afgewezen";
+"groups.invite.rejected.body" = "De beheerder heeft je verzoek niet goedgekeurd. Vraag een nieuwe link als je het opnieuw wilt proberen.";
+"groups.notifications.newPendingRequest" = "%@ wil meedoen aan %@";
+"groups.errors.pendingApproval" = "Dat kan nog niet — de beheerder moet eerst je verzoek goedkeuren.";

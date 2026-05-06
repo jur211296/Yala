@@ -370,5 +370,21 @@
 			<string>%d passos</string>
 		</dict>
 	</dict>
+	<key>groups.member.pendingRequestsCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d solicitação</string>
+			<key>other</key>
+			<string>%d solicitações</string>
+		</dict>
+	</dict>
 </dict>
 </plist>
