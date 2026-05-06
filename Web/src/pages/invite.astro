@@ -2,10 +2,16 @@
 export const prerender = false;
 
 import '../styles/global.css';
+import { detectLanguage, getTranslations } from '../i18n/translations';
+
+// i18n: detect locale via Accept-Language (SSR), fallback handled by detectLanguage
+const lang = detectLanguage(Astro.request.headers.get('accept-language'));
+const t = getTranslations(lang);
+Astro.response.headers.set('Vary', 'Accept-Language');
 
 // Parse query params server-side for OG tags
 const url = Astro.url;
-const groupName = url.searchParams.get('n') || 'Grupo';
+const groupName = url.searchParams.get('n') || t.inviteFallbackGroupName;
 const colorHex = url.searchParams.get('c') || '8B5CF6';
 const membersParam = url.searchParams.get('m') || '';
 const shareParam = url.searchParams.get('s') || '';
@@ -14,15 +20,16 @@ const iconParam = url.searchParams.get('i') || 'person.2.fill';
 const members = membersParam ? membersParam.split(',').map((m: string) => decodeURIComponent(m.trim())).filter(Boolean) : [];
 
 const pageTitle = inviterName
-  ? `${inviterName} te invita a unirte al grupo "${groupName}"`
-  : `Te han invitado a unirte al grupo "${groupName}"`;
-const pageDescription = `¿Qué esperas para descargar Yala y unirte al grupo "${groupName}" con el resto de miembros?`;
+  ? t.invitePageTitleWithInviter.replace('{inviter}', inviterName).replace('{group}', groupName)
+  : t.invitePageTitle.replace('{group}', groupName);
+const pageDescription = t.invitePageDescription.replace('{group}', groupName);
 
 const appStoreURL = 'https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109';
 const groupColor = `#${colorHex}`;
 
-// TODO: Revertir a yala:// antes de release a producción
-const appDeepLink = shareParam ? `yaladev://invite?s=${shareParam}` : null;
+// Deep link scheme parametrized via env var (yaladev for dev/preview, yala for production).
+const scheme = import.meta.env.PUBLIC_DEEP_LINK_SCHEME || 'yala';
+const appDeepLink = shareParam ? `${scheme}://invite?s=${shareParam}` : null;
 
 // SF Symbol → SVG path mapping (Lucide-inspired, 24x24 viewBox)
 const sfSymbolSVGs: Record<string, string> = {
@@ -92,7 +99,7 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -105,6 +112,7 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
     <meta property="og:image" content="https://yala-app.pe/icon-192.png" />
     <meta property="og:url" content={url.href} />
     <meta property="og:site_name" content="Yala" />
+    <meta property="og:locale" content={lang === 'pt' ? 'pt_BR' : lang} />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary" />
@@ -152,7 +160,7 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
       <!-- Members -->
       {members.length > 0 && (
         <div class="mb-5">
-          <p class="text-sm text-neutral-400 mb-2">Miembros</p>
+          <p class="text-sm text-neutral-400 mb-2">{t.inviteMembers}</p>
           <div class="flex flex-wrap justify-center gap-2">
             {members.map((name: string) => (
               <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border"
@@ -165,7 +173,7 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
       )}
 
       {members.length === 0 && (
-        <p class="text-sm text-neutral-400 mb-5">Te invitaron a este grupo en Yala</p>
+        <p class="text-sm text-neutral-400 mb-5">{t.inviteInvitedFallback}</p>
       )}
 
       <!-- CTA Buttons -->
@@ -173,20 +181,20 @@ const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
         {appDeepLink && (
           <a href={appDeepLink}
              class="block w-full px-6 py-3 rounded-xl font-semibold bg-yala-indigo text-white text-center transition-all duration-300 hover:shadow-yala hover:scale-[1.02] active:scale-[0.98]">
-            Abrir en Yala
+            {t.inviteOpenInYala}
           </a>
         )}
 
         <a href={appStoreURL} target="_blank" rel="noopener"
            class="block w-full px-6 py-3 rounded-xl font-semibold border-2 border-yala-indigo text-yala-indigo text-center transition-all duration-300 hover:bg-yala-indigo hover:text-white">
-          Descargar en App Store
+          {t.inviteDownloadAppStore}
         </a>
       </div>
     </div>
 
     <!-- Footer -->
     <p class="mt-8 text-xs text-neutral-500">
-      Yala — Finanzas personales, sin esfuerzo
+      {t.inviteFooter}
     </p>
 
   </body>

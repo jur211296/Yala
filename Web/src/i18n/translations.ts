@@ -276,6 +276,17 @@ export const translations = {
     supportTrustBadge1: 'Respuesta rápida',
     supportTrustBadge2: 'Soporte personalizado',
     supportTrustBadge3: 'Tu privacidad primero',
+
+    // Invite landing (deep link)
+    inviteFallbackGroupName: 'Grupo',
+    inviteMembers: 'Miembros',
+    inviteInvitedFallback: 'Te invitaron a este grupo en Yala',
+    inviteOpenInYala: 'Abrir en Yala',
+    inviteDownloadAppStore: 'Descargar en App Store',
+    inviteFooter: 'Yala — Finanzas personales, sin esfuerzo',
+    invitePageTitle: 'Te han invitado a unirte al grupo "{group}"',
+    invitePageTitleWithInviter: '{inviter} te invita a unirte al grupo "{group}"',
+    invitePageDescription: 'Descarga Yala y únete al grupo "{group}" con el resto de miembros.',
   },
 
   en: {
@@ -507,6 +518,17 @@ export const translations = {
     supportTrustBadge1: 'Fast response',
     supportTrustBadge2: 'Personalized support',
     supportTrustBadge3: 'Your privacy first',
+
+    // Invite landing (deep link)
+    inviteFallbackGroupName: 'Group',
+    inviteMembers: 'Members',
+    inviteInvitedFallback: 'You\'ve been invited to this group on Yala',
+    inviteOpenInYala: 'Open in Yala',
+    inviteDownloadAppStore: 'Download on App Store',
+    inviteFooter: 'Yala — Personal finance, effortless',
+    invitePageTitle: 'You\'ve been invited to join the group "{group}"',
+    invitePageTitleWithInviter: '{inviter} invites you to join the group "{group}"',
+    invitePageDescription: 'Download Yala and join the group "{group}" with the rest of the members.',
   },
 
   de: {
@@ -738,6 +760,17 @@ export const translations = {
     supportTrustBadge1: 'Schnelle Antwort',
     supportTrustBadge2: 'Persönlicher Support',
     supportTrustBadge3: 'Deine Privatsphäre zuerst',
+
+    // Invite landing (deep link)
+    inviteFallbackGroupName: 'Gruppe',
+    inviteMembers: 'Mitglieder',
+    inviteInvitedFallback: 'Du wurdest zu dieser Gruppe in Yala eingeladen',
+    inviteOpenInYala: 'In Yala öffnen',
+    inviteDownloadAppStore: 'Im App Store laden',
+    inviteFooter: 'Yala — Persönliche Finanzen, mühelos',
+    invitePageTitle: 'Du wurdest zur Gruppe "{group}" eingeladen',
+    invitePageTitleWithInviter: '{inviter} lädt dich zur Gruppe "{group}" ein',
+    invitePageDescription: 'Lade Yala herunter und tritt der Gruppe "{group}" mit den anderen Mitgliedern bei.',
   },
 
   fr: {
@@ -969,6 +1002,17 @@ export const translations = {
     supportTrustBadge1: 'Réponse rapide',
     supportTrustBadge2: 'Support personnalisé',
     supportTrustBadge3: 'Votre vie privée d\'abord',
+
+    // Invite landing (deep link)
+    inviteFallbackGroupName: 'Groupe',
+    inviteMembers: 'Membres',
+    inviteInvitedFallback: 'Vous avez été invité à rejoindre ce groupe sur Yala',
+    inviteOpenInYala: 'Ouvrir dans Yala',
+    inviteDownloadAppStore: 'Télécharger sur l\'App Store',
+    inviteFooter: 'Yala — Finances personnelles, sans effort',
+    invitePageTitle: 'Vous avez été invité à rejoindre le groupe "{group}"',
+    invitePageTitleWithInviter: '{inviter} vous invite à rejoindre le groupe "{group}"',
+    invitePageDescription: 'Téléchargez Yala et rejoignez le groupe "{group}" avec les autres membres.',
   },
 
   it: {
@@ -1200,6 +1244,17 @@ export const translations = {
     supportTrustBadge1: 'Risposta rapida',
     supportTrustBadge2: 'Supporto personalizzato',
     supportTrustBadge3: 'La tua privacy prima di tutto',
+
+    // Invite landing (deep link)
+    inviteFallbackGroupName: 'Gruppo',
+    inviteMembers: 'Membri',
+    inviteInvitedFallback: 'Sei stato invitato a questo gruppo su Yala',
+    inviteOpenInYala: 'Apri in Yala',
+    inviteDownloadAppStore: 'Scarica su App Store',
+    inviteFooter: 'Yala — Finanze personali, senza fatica',
+    invitePageTitle: 'Sei stato invitato a unirti al gruppo "{group}"',
+    invitePageTitleWithInviter: '{inviter} ti invita a unirti al gruppo "{group}"',
+    invitePageDescription: 'Scarica Yala e unisciti al gruppo "{group}" con il resto dei membri.',
   },
 
   pt: {
@@ -1431,6 +1486,17 @@ export const translations = {
     supportTrustBadge1: 'Resposta rápida',
     supportTrustBadge2: 'Suporte personalizado',
     supportTrustBadge3: 'Sua privacidade em primeiro lugar',
+
+    // Invite landing (deep link)
+    inviteFallbackGroupName: 'Grupo',
+    inviteMembers: 'Membros',
+    inviteInvitedFallback: 'Você foi convidado para este grupo no Yala',
+    inviteOpenInYala: 'Abrir no Yala',
+    inviteDownloadAppStore: 'Baixar na App Store',
+    inviteFooter: 'Yala — Finanças pessoais, sem esforço',
+    invitePageTitle: 'Você foi convidado para o grupo "{group}"',
+    invitePageTitleWithInviter: '{inviter} convida você para o grupo "{group}"',
+    invitePageDescription: 'Baixe Yala e junte-se ao grupo "{group}" com os outros membros.',
   },
 };
 
