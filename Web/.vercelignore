@@ -1,0 +1,8 @@
+node_modules/
+dist/
+Screenshots/
+.vercel/output/
+.astro/
+build_out.txt
+.DS_Store
+.vscode/
