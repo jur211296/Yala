@@ -17,10 +17,13 @@ struct RemoteChangeSet {
     var modifiedExpenses: [(id: UUID, groupID: UUID)] = []
     var newSettlements: [(id: UUID, groupID: UUID)] = []
     var newMembers: [(id: UUID, groupID: UUID)] = []
+    /// members nuevos con status `pendingApproval`. Solo se appendea cuando current user es admin del grupo.
+    var newPendingMembers: [(id: UUID, groupID: UUID)] = []
 
     var isEmpty: Bool {
         newExpenses.isEmpty && modifiedExpenses.isEmpty
             && newSettlements.isEmpty && newMembers.isEmpty
+            && newPendingMembers.isEmpty
     }
 }
 
@@ -90,6 +93,9 @@ final class GroupNotificationService {
         for entry in changes.newMembers {
             changesByGroup[entry.groupID, default: GroupChangeSummary()].newMemberIDs.append(entry.id)
         }
+        for entry in changes.newPendingMembers {
+            changesByGroup[entry.groupID, default: GroupChangeSummary()].newPendingMemberIDs.append(entry.id)
+        }
 
         // Send notification per group (with rate limiting)
         for (groupID, summary) in changesByGroup {
@@ -142,6 +148,10 @@ final class GroupNotificationService {
         }
         if let settlementID = summary.newSettlementIDs.first {
             return buildSettlementNotification(settlementID: settlementID, groupName: groupName)
+        }
+        // prioridad sobre newMember para asegurar que admin vea solicitudes antes que joins normales.
+        if let memberID = summary.newPendingMemberIDs.first {
+            return buildPendingMemberNotification(memberID: memberID, groupName: groupName)
         }
         if let memberID = summary.newMemberIDs.first {
             return buildMemberNotification(memberID: memberID, groupName: groupName)
@@ -204,6 +214,19 @@ final class GroupNotificationService {
         }
     }
 
+    /// notificación local "X quiere unirse a [grupo]" — solo recibida por admins (filtrado en SplitSyncManager).
+    private func buildPendingMemberNotification(memberID: UUID, groupName: String) -> (String, String)? {
+        guard let modelContext else { return nil }
+
+        do {
+            let descriptor = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.id == memberID })
+            guard let member = try modelContext.fetch(descriptor).first else { return nil }
+            return (groupName, L10n.Groups.Notifications.newPendingRequest(member.displayName, groupName))
+        } catch {
+            return nil
+        }
+    }
+
     /// Resolves member display name from a member ID string (UUID format).
     private func resolveMemberName(memberID: String) -> String {
         guard let modelContext,
@@ -227,9 +250,11 @@ private struct GroupChangeSummary {
     var modifiedExpenseIDs: [UUID] = []
     var newSettlementIDs: [UUID] = []
     var newMemberIDs: [UUID] = []
+    var newPendingMemberIDs: [UUID] = []
 
     var totalCount: Int {
         newExpenseIDs.count + modifiedExpenseIDs.count
             + newSettlementIDs.count + newMemberIDs.count
+            + newPendingMemberIDs.count
     }
 }

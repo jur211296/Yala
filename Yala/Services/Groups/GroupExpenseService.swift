@@ -448,6 +448,9 @@ final class GroupExpenseService {
             if group.isOwner { return }
             throw GroupExpenseServiceError.inactiveMember
         }
+        if current.isPendingApproval {
+            throw GroupExpenseServiceError.pendingApproval
+        }
         guard current.isActive else { throw GroupExpenseServiceError.inactiveMember }
     }
 
@@ -495,6 +498,8 @@ enum GroupExpenseServiceError: LocalizedError {
     case noPayer
     case selfSettlement
     case inactiveMember
+    /// el current user está esperando aprobación del admin para participar en el grupo.
+    case pendingApproval
     /// A0-Bridge F8: el expense no se puede borrar porque hay settlements confirmed
     /// posteriores en el mismo grupo. El user debe regularizar o eliminar settlements primero.
     case expenseHasAssociatedSettlements
@@ -516,6 +521,8 @@ enum GroupExpenseServiceError: LocalizedError {
             return "GroupExpenseService: Cannot settle with yourself"
         case .inactiveMember:
             return "GroupExpenseService: Inactive members cannot create or edit shared expenses"
+        case .pendingApproval:
+            return L10n.Groups.Errors.pendingApproval
         case .expenseHasAssociatedSettlements:
             return L10n.Groups.Bridge.deleteExpenseBlocked
         case .saveFailed(let error):

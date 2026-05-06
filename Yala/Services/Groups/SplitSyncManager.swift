@@ -577,6 +577,9 @@ final class SplitSyncManager {
             #endif
         }
 
+        // cache `isCurrentUserAdmin` por zoneID dentro del batch — evita fetch repetido.
+        var adminCache: [String: Bool] = [:]
+
         for modification in fetched.modifications {
             let record = modification.record
 
@@ -596,7 +599,15 @@ final class SplitSyncManager {
                     }
                 case CKConstants.RecordType.splitMember:
                     if !existingMemberIDs.contains(modelID) {
-                        changeSet.newMembers.append((modelID, groupID))
+                        // bifurca pendingApproval vs active. Solo admins reciben notif "X quiere unirse".
+                        let zoneName = record.recordID.zoneID.zoneName
+                        let isPending = (record[CKConstants.MemberField.status] as? String) == SplitMemberStatus.pendingApproval.rawValue
+                        if isPending,
+                           isCurrentUserAdminOfGroup(zoneName: zoneName, context: modelContext, cache: &adminCache) {
+                            changeSet.newPendingMembers.append((modelID, groupID))
+                        } else {
+                            changeSet.newMembers.append((modelID, groupID))
+                        }
                     }
                 default: break
                 }
@@ -626,6 +637,7 @@ final class SplitSyncManager {
         pendingBridgeChangeSet.modifiedExpenses.append(contentsOf: changeSet.modifiedExpenses)
         pendingBridgeChangeSet.newSettlements.append(contentsOf: changeSet.newSettlements)
         pendingBridgeChangeSet.newMembers.append(contentsOf: changeSet.newMembers)
+        pendingBridgeChangeSet.newPendingMembers.append(contentsOf: changeSet.newPendingMembers)
 
         // Cancel previous deferred task and restart — coalescing rapid events
         deferredBridgeTask?.cancel()
@@ -683,6 +695,18 @@ final class SplitSyncManager {
             // Trigger UI refresh — single notification after everything settles
             SessionState.shared.markRemoteChangePending()
         }
+    }
+
+    /// ¿el current user es admin del grupo (o owner) en la zona? Cacheado por batch
+    /// para evitar fetch repetido cuando llegan múltiples members de un mismo grupo.
+    private func isCurrentUserAdminOfGroup(zoneName: String, context: ModelContext, cache: inout [String: Bool]) -> Bool {
+        if let cached = cache[zoneName] { return cached }
+        let descriptor = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneName && $0.isCurrentUser == true }
+        )
+        let result = (try? context.fetch(descriptor).first?.isAdmin) ?? false
+        cache[zoneName] = result
+        return result
     }
 
     private func handleSentDatabaseChanges(_ sent: CKSyncEngine.Event.SentDatabaseChanges, engineName: String) {

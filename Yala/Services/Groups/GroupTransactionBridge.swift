@@ -75,12 +75,14 @@ final class GroupTransactionBridge {
         // pero SÍ procesan TX virtuales (saldo virtual del grupo es relevante).
         // Se evalúa caso por caso abajo.
 
-        // Find current user's member in this group
+        // Find current user's member in this group.
+        // pending/rejected members no triguean bridge (no pueden tener gastos relevantes).
         let zoneID = group.cloudKitZoneID
         let memberDescriptor = FetchDescriptor<SplitMember>(
             predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
         )
-        guard let currentMember = try context.fetch(memberDescriptor).first else { return }
+        guard let currentMember = try context.fetch(memberDescriptor).first,
+              currentMember.isActive else { return }
 
         let currentMemberID = currentMember.id.uuidString
 
@@ -261,11 +263,13 @@ final class GroupTransactionBridge {
         guard settlement.isConfirmed else { return }
 
         // Find current user.
+        // pending/rejected members no triguean bridge.
         let zoneID = group.cloudKitZoneID
         let memberDescriptor = FetchDescriptor<SplitMember>(
             predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
         )
-        guard let currentMember = try context.fetch(memberDescriptor).first else { return }
+        guard let currentMember = try context.fetch(memberDescriptor).first,
+              currentMember.isActive else { return }
         let currentMemberID = currentMember.id.uuidString
 
         // Determinar caso C/D. Skip si user no es from ni to (settlement entre otros).

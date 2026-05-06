@@ -1711,6 +1711,11 @@ enum L10n {
             static var hideArchived: String { ls("groups.settings.hideArchived", comment: "") }
         }
 
+        enum Errors {
+            /// surfaced cuando el current user pending intenta una acción que requiere active.
+            static var pendingApproval: String { ls("groups.errors.pendingApproval", comment: "") }
+        }
+
         enum Member {
             static var admin: String { ls("groups.member.admin", comment: "") }
             static var member: String { ls("groups.member.member", comment: "") }
@@ -1723,6 +1728,20 @@ enum L10n {
             static var removeWithDebtWarning: String { ls("groups.member.removeWithDebtWarning", comment: "") }
             static var actions: String { ls("groups.member.actions", comment: "") }
             static func people(_ count: Int) -> String { String(format: ls("groups.member.people %d", comment: ""), count) }
+            static var statusPending: String { ls("groups.member.statusPending", comment: "") }
+            static var statusRejected: String { ls("groups.member.statusRejected", comment: "") }
+            static var approve: String { ls("groups.member.approve", comment: "") }
+            static var reject: String { ls("groups.member.reject", comment: "") }
+            static func approveConfirm(_ name: String) -> String {
+                String(format: ls("groups.member.approveConfirm", comment: ""), name)
+            }
+            static func rejectConfirm(_ name: String) -> String {
+                String(format: ls("groups.member.rejectConfirm", comment: ""), name)
+            }
+            static var pendingRequestsSection: String { ls("groups.member.pendingRequestsSection", comment: "") }
+            static func pendingRequestsCount(_ count: Int) -> String {
+                String(format: ls("groups.member.pendingRequestsCount", comment: ""), count)
+            }
         }
 
         enum Balance {
@@ -1782,6 +1801,10 @@ enum L10n {
             static var promptTitle: String { ls("groups.notifications.prompt.title", comment: "") }
             static var promptMessage: String { ls("groups.notifications.prompt.message", comment: "") }
             static var promptEnable: String { ls("groups.notifications.prompt.enable", comment: "") }
+            /// cuerpo de la notif "%@ quiere unirse a %@" — solo recibida por admins.
+            static func newPendingRequest(_ name: String, _ groupName: String) -> String {
+                String(format: ls("groups.notifications.newPendingRequest", comment: ""), name, groupName)
+            }
         }
 
         enum Invite {
@@ -1792,6 +1815,11 @@ enum L10n {
             static var joinButton: String { ls("groups.invite.joinButton", comment: "") }
             static var ready: String { ls("groups.invite.ready", comment: "") }
             static var goToGroup: String { ls("groups.invite.goToGroup", comment: "") }
+            static var waitingApprovalTitle: String { ls("groups.invite.waitingApproval.title", comment: "") }
+            static var waitingApprovalBody: String { ls("groups.invite.waitingApproval.body", comment: "") }
+            static var waitingApprovalBanner: String { ls("groups.invite.waitingApproval.banner", comment: "") }
+            static var rejectedTitle: String { ls("groups.invite.rejected.title", comment: "") }
+            static var rejectedBody: String { ls("groups.invite.rejected.body", comment: "") }
         }
 
         enum Reconnect {

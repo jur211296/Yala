@@ -11,6 +11,8 @@ import SwiftData
 
 enum SplitMemberStatus: String, CaseIterable, Sendable {
     case active
+    case pendingApproval
+    case rejected
     case left
     case removed
 }
@@ -35,6 +37,22 @@ final class SplitMember {
 
     var isActive: Bool {
         memberStatus == .active
+    }
+
+    var isPendingApproval: Bool {
+        memberStatus == .pendingApproval
+    }
+
+    var isRejected: Bool {
+        memberStatus == .rejected
+    }
+
+    var canWrite: Bool {
+        isActive
+    }
+
+    var isAdmin: Bool {
+        isGroupOwner || role == "admin"
     }
 
     init(

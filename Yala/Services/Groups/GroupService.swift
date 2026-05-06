@@ -268,6 +268,44 @@ final class GroupService {
         SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
     }
 
+    /// members awaiting admin approval (status `.pendingApproval`).
+    func pendingMembers(in group: SplitGroup) throws -> [SplitMember] {
+        try fetchMembers(for: group).filter { $0.isPendingApproval }
+    }
+
+    /// admin approves a pending member, marking them as active and enqueuing sync.
+    func approveMember(_ member: SplitMember, in group: SplitGroup) throws {
+        try transitionPendingMember(member, to: .active, in: group)
+    }
+
+    /// admin rejects a pending member's request, marking them as rejected and enqueuing sync.
+    func rejectMember(_ member: SplitMember, in group: SplitGroup) throws {
+        try transitionPendingMember(member, to: .rejected, in: group)
+    }
+
+    private func transitionPendingMember(
+        _ member: SplitMember,
+        to newStatus: SplitMemberStatus,
+        in group: SplitGroup
+    ) throws {
+        let context = try requireContext()
+        try requireCurrentUserAdmin(in: group, context: context)
+
+        guard member.groupZoneID == group.cloudKitZoneID else { throw GroupServiceError.memberNotInGroup }
+        guard member.isPendingApproval else { throw GroupServiceError.notPendingApproval }
+
+        member.memberStatus = newStatus
+
+        do {
+            try context.save()
+        } catch {
+            throw GroupServiceError.saveFailed(error)
+        }
+
+        SessionState.shared.incrementDataVersion()
+        SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
+    }
+
     /// Change a member's role.
     func changeRole(_ member: SplitMember, to newRole: String, in group: SplitGroup) throws {
         let context = try requireContext()
@@ -360,8 +398,19 @@ final class GroupService {
                 changed = true
             }
             if reactivateInactive && !existing.isActive {
-                existing.memberStatus = .active
-                changed = true
+                if existing.memberStatus == .pendingApproval {
+                    // No-op: solo el admin puede sacar a un member de pending.
+                } else if group.isOwner {
+                    existing.memberStatus = .active
+                    changed = true
+                } else if existing.memberStatus == .rejected || existing.memberStatus == .removed {
+                    existing.memberStatus = .pendingApproval
+                    changed = true
+                } else {
+                    // Legacy left → active (preserva semántica previa para users que se fueron voluntariamente).
+                    existing.memberStatus = .active
+                    changed = true
+                }
             }
             if group.isOwner && !existing.isGroupOwner {
                 existing.isGroupOwner = true
@@ -411,12 +460,15 @@ final class GroupService {
         guard reactivateInactive else { throw GroupServiceError.currentUserMemberNotFound }
 
         // Create a new member record for the current user.
+        // invitados entran como pendingApproval; owner siempre active.
         let zoneID = group.cloudKitZoneID
+        let initialStatus: SplitMemberStatus = group.isOwner ? .active : .pendingApproval
         let member = SplitMember(
             groupZoneID: zoneID,
             displayName: currentUserDisplayName(),
             cloudKitUserRecordID: recordName,
             role: "member",
+            status: initialStatus,
             isCurrentUser: true
         )
         member.id = GroupUserIdentityService.deterministicUUID(
@@ -639,8 +691,10 @@ final class GroupService {
     private func statusSortOrder(_ status: SplitMemberStatus) -> Int {
         switch status {
         case .active: 0
-        case .left: 1
-        case .removed: 2
+        case .pendingApproval: 1
+        case .left: 2
+        case .removed: 3
+        case .rejected: 4
         }
     }
 }
@@ -662,6 +716,8 @@ enum GroupServiceError: LocalizedError {
     case ownerMemberImmutable
     case currentUserMemberNotFound
     case deleteDisabled
+    case notPendingApproval
+    case currentUserPendingApproval
     case saveFailed(Error)
 
     var errorDescription: String? {
@@ -694,6 +750,10 @@ enum GroupServiceError: LocalizedError {
             return "GroupService: Current user member was not found in this group"
         case .deleteDisabled:
             return "GroupService: Permanent group deletion is disabled; archive groups instead"
+        case .notPendingApproval:
+            return "GroupService: Member is not awaiting approval"
+        case .currentUserPendingApproval:
+            return "GroupService: Your membership is pending admin approval"
         case .saveFailed(let error):
             return "GroupService: Save failed - \(error.localizedDescription)"
         }
