@@ -25,8 +25,11 @@ struct ContentView: View {
     @State private var prefilledOnboardingData: ICloudAccountSummary?
     @State private var showSplash: Bool = true
     @State private var splashOpacity: Double = 1
-    @State private var showICloudDataFound: Bool = false
-    @State private var isWaitingForSync: Bool = false
+    /// A4 v3.1: Welcome Hero pre-Chooser (presenta beneficios + corre fetch iCloud invisible).
+    @State private var showWelcomeHero: Bool = false
+    /// Summary detectado por el Hero. Si tiene data, se muestra alert "Detectamos tu cuenta".
+    @State private var detectedICloudSummary: ICloudAccountSummary?
+    @State private var showDetectedDataAlert: Bool = false
     /// Positive confirmation toast for reactive events (remote onboarding / restore).
     /// Replaces the noisy "Syncing…" banner. Nil when hidden.
     @State private var positiveToast: String?
@@ -85,8 +88,6 @@ struct ContentView: View {
                 MainTabView()
                     .environment(SessionState.shared)
                     .id(languageVersion) // re-render on .languageDidChange
-            } else if isWaitingForSync {
-                iCloudSyncWaitingView
             } else {
                 theme.background
                     .ignoresSafeArea()
@@ -139,11 +140,9 @@ struct ContentView: View {
         .onChange(of: SessionState.shared.dataVersion) { _, _ in
             // Replaces @Query-based observation. dataVersion increments on CRUD, CloudKit sync,
             // and sheet dismissals — covers all cases where data may have arrived or changed.
-            let nowHasData = checkHasExistingData()
-            hasExistingData = nowHasData
-            if isWaitingForSync && nowHasData {
-                showICloudDataFound = true
-            }
+            // A4 v3.1: el `wipeGraceTask` (onChange hasExistingData abajo) sigue usando este flag
+            // para detectar data desaparecida. El gate isWaitingForSync se eliminó con el rediseño.
+            hasExistingData = checkHasExistingData()
         }
         .onChange(of: hasCompletedOnboarding) { _, newValue in
             // Data wipe path: invalida summary stale + respeta el flag del chooser.
@@ -183,15 +182,6 @@ struct ContentView: View {
             Button(L10n.iCloud.remoteWipeCancel, role: .cancel) {}
         } message: {
             Text(L10n.iCloud.remoteWipeMessage)
-        }
-        .alert(L10n.iCloud.dataFoundTitle, isPresented: $showICloudDataFound) {
-            Button(L10n.iCloud.dataFoundAction) {
-                PreferenceSyncService.shared.applyDetectedDefaultsIfNeeded()
-                showOnboarding = false
-                hasCompletedOnboarding = true
-            }
-        } message: {
-            Text(L10n.iCloud.dataFoundMessage)
         }
         .alert(L10n.iCloud.mismatchTitle, isPresented: $showICloudRestartAlert) {
             Button(L10n.iCloud.mismatchAction) {}
@@ -279,6 +269,17 @@ struct ContentView: View {
             }
             .environment(SessionState.shared)
         }
+        .modifier(WelcomeFlowModifier(
+            showWelcomeHero: $showWelcomeHero,
+            showWelcomeChooser: $showWelcomeChooser,
+            showOnboarding: $showOnboarding,
+            showDetectedDataAlert: $showDetectedDataAlert,
+            detectedICloudSummary: $detectedICloudSummary,
+            prefilledOnboardingData: $prefilledOnboardingData,
+            hasShownWelcomeChooser: $hasShownWelcomeChooser,
+            hasCompletedOnboarding: $hasCompletedOnboarding,
+            showGroupInviteOnboarding: showGroupInviteOnboarding
+        ))
         .modifier(GroupInviteModifier(
             showGroupInviteOnboarding: $showGroupInviteOnboarding,
             showGroupReconnect: $showGroupReconnect,
@@ -580,8 +581,12 @@ struct ContentView: View {
         return (features: features, version: currentVersion)
     }
 
-    /// Check initial state and decide whether to show language selection, onboarding, or go straight to app.
-    /// Runs during splash so the wait is invisible to the user.
+    /// Check initial state and decide whether to show language selection, hero, chooser
+    /// or main app. Runs during splash so el wait es invisible.
+    ///
+    /// A4 v3.1: NO hace autopromote por data en iCloud. NO espera 8s con spinner.
+    /// El fetch de iCloud lo hace `WelcomeHeroView` invisible mientras el user lee
+    /// las cards animadas. Decisión consciente del user — no se carga data sin tap explícito.
     private func checkInitialSyncState() async {
         // GC-08: If group invite onboarding is pending, skip normal flow entirely.
         // The CKShare was already accepted eagerly — just let the invite UI take over.
@@ -590,96 +595,50 @@ struct ContentView: View {
             return
         }
 
-        // Wait during splash to give iCloud time to deliver data
-        do {
-            try await Task.sleep(for: .seconds(2))
-        } catch {
-            // Task cancelled, continue with state check
-        }
+        hasExistingData = checkHasExistingData()
 
-        let existingData = checkHasExistingData()
-        hasExistingData = existingData
-        if hasCompletedOnboarding || existingData {
-            // Returning user (data from iCloud or previous install)
-            // R6 mitigation: hasCompletedOnboarding is per-device (not synced).
-            // If iCloud data exists but flag is false (reinstall without backup),
-            // auto-promote here. Late arrivals handled by dedup service + onChange.
-            if existingData {
-                hasCompletedOnboarding = true
-            }
-            // GC-08: Skip trial/What's New for groupInvite users — they have no context yet
-            if !SessionState.shared.isGroupInviteMode {
-                if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
-                    // Returning user — check for pending trial (app was killed before trial could show)
-                    SessionState.shared.needsPostOnboardingTrial = false
-                    Task {
-                        await waitForBootstrap()
-                        AppRouter.shared.enqueue(.presentTrialOffer)
-                    }
-                } else if let data = whatsNewDataIfPending() {
-                    AppRouter.shared.enqueue(.presentWhatsNew(features: data.features, version: data.version))
-                }
-            }
-            // Check for app updates (non-blocking)
-            Task { await AppUpdateService.shared.checkForUpdate() }
-            // Still check if language selection is needed (new feature, per-device)
-            if needsLanguageSelection {
-                showLanguageSelection = true
-            }
+        if hasCompletedOnboarding {
+            // Returning user este device — ya completó onboarding antes.
+            runReturningUserPostChecks()
             isInitialCheckDone = true
             return
         }
 
-        // No data yet — if iCloud is available, wait for sync before showing onboarding
-        if SwiftDataConfiguration.isICloudAvailable() {
-            isWaitingForSync = true
-
-            for _ in 0..<4 { // 4 × 2s = 8s max (was 15 × 2s = 30s; late data handled by dedup + onChange)
-                do {
-                    try await Task.sleep(for: .seconds(2))
-                } catch {
-                    break // Task cancelled
-                }
-                let txCount: Int
-                do {
-                    txCount = try modelContext.fetchCount(FetchDescriptor<TransactionItem>())
-                } catch {
-                    #if DEBUG
-                    print("ContentView: Error fetching transaction count: \(error)")
-                    #endif
-                    txCount = 0
-                }
-                let latestCheck = checkHasExistingData()
-                hasExistingData = latestCheck
-                if latestCheck || txCount > 0 {
-                    hasCompletedOnboarding = true
-                    isWaitingForSync = false
-                    isInitialCheckDone = true
-                    scheduleDeduplication()
-                    if !SessionState.shared.isWipingData {
-                        showPositiveToast(L10n.iCloud.remoteOnboardingCompleted)
-                    }
-                    return
-                }
-            }
-
-            // Timeout: proceed to onboarding — schedule dedup for late sync arrival
-            isWaitingForSync = false
-            scheduleDeduplication()
-        }
-
+        // First launch este device — Hero/Chooser es decisión consciente del user.
+        // NO se autopromueve por data en iCloud (eso lo decide el user en el alert post-Hero).
         presentNextOnboardingScreen()
         isInitialCheckDone = true
     }
 
+    /// Post-checks de returning user: trial pendiente, What's New, language, app update.
+    /// Extraído para SSOT — antes vivía inline en `checkInitialSyncState`.
+    private func runReturningUserPostChecks() {
+        // GC-08: Skip trial/What's New for groupInvite users — they have no context yet
+        if !SessionState.shared.isGroupInviteMode {
+            if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
+                SessionState.shared.needsPostOnboardingTrial = false
+                Task {
+                    await waitForBootstrap()
+                    AppRouter.shared.enqueue(.presentTrialOffer)
+                }
+            } else if let data = whatsNewDataIfPending() {
+                AppRouter.shared.enqueue(.presentWhatsNew(features: data.features, version: data.version))
+            }
+        }
+        Task { await AppUpdateService.shared.checkForUpdate() }
+        if needsLanguageSelection {
+            showLanguageSelection = true
+        }
+    }
+
     /// Routing único para presentar la siguiente pantalla del flow inicial.
-    /// Usado desde `checkInitialSyncState`, callback de `LanguageSelectionView` y
-    /// el skip CTA del waiting view. Single source of truth — evita drift entre callsites.
+    /// Usado desde `checkInitialSyncState` + callback de `LanguageSelectionView`.
+    /// A4 v3.1: si Chooser no se ha visto, primero va al Hero (que decide entre alert o Chooser).
     private func presentNextOnboardingScreen() {
         if needsLanguageSelection {
             showLanguageSelection = true
         } else if !hasShownWelcomeChooser {
-            showWelcomeChooser = true
+            showWelcomeHero = true
         } else {
             showOnboarding = true
         }
@@ -694,41 +653,96 @@ struct ContentView: View {
             .padding(.top, 48)
     }
 
-    /// Inline view shown while waiting for iCloud sync on a new device
-    private var iCloudSyncWaitingView: some View {
-        ZStack {
-            theme.background
-                .ignoresSafeArea()
+    // A4 v3.1: `iCloudSyncWaitingView` eliminada. El fetch de iCloud ahora corre
+    // invisible dentro de `WelcomeHeroView` mientras el user lee las cards animadas.
+}
 
-            VStack(spacing: DS.Spacing.xl) {
-                ProgressView()
-                    .scaleEffect(1.5)
+// MARK: - Welcome Flow Modifier (A4 v3.1)
 
+/// Encapsula el flow de Welcome: Hero pre-Chooser + alert "Detectamos tu cuenta" + reset
+/// del flow cuando llega un CKShare. Extraído a ViewModifier para evitar typecheck timeout
+/// en ContentView body — patrón ya usado por `GroupInviteModifier`.
+private struct WelcomeFlowModifier: ViewModifier {
+    @Binding var showWelcomeHero: Bool
+    @Binding var showWelcomeChooser: Bool
+    @Binding var showOnboarding: Bool
+    @Binding var showDetectedDataAlert: Bool
+    @Binding var detectedICloudSummary: ICloudAccountSummary?
+    @Binding var prefilledOnboardingData: ICloudAccountSummary?
+    @Binding var hasShownWelcomeChooser: Bool
+    @Binding var hasCompletedOnboarding: Bool
+    let showGroupInviteOnboarding: Bool
 
-                VStack(spacing: DS.Spacing.sm) {
-                    Text(L10n.iCloud.syncingData)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
-
-                    Text(L10n.iCloud.syncingDescription)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+    func body(content: Content) -> some View {
+        content
+            // Welcome Hero pre-Chooser. El user lee cards animadas mientras corre fetch
+            // iCloud invisible. Tap "Empezar" → si hay data, alert; si no, Chooser.
+            // Gate `!showGroupInviteOnboarding`: si llega CKShare mid-Hero, invite takes over.
+            .fullScreenCover(isPresented: Binding(
+                get: { showWelcomeHero && !showGroupInviteOnboarding },
+                set: { showWelcomeHero = $0 }
+            )) {
+                WelcomeHeroView { decision in
+                    showWelcomeHero = false
+                    switch decision {
+                    case .proceedNoData:
+                        showWelcomeChooser = true
+                    case .proceedWithData(let summary):
+                        detectedICloudSummary = summary
+                        showDetectedDataAlert = true
+                    }
                 }
-
-                Button {
-                    isWaitingForSync = false
-                    scheduleDeduplication()
-                    presentNextOnboardingScreen()
-                } label: {
-                    Text(L10n.iCloud.syncingSkip)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.secondary)
-                }
-                .accessibilityHint(L10n.Accessibility.skipSync)
-                .padding(.top, DS.Spacing.lg)
+                .environment(SessionState.shared)
             }
-            .padding(.horizontal, DS.Spacing.xxl)
+            // Alert post-Hero cuando iCloud tiene data residual.
+            .alert(
+                L10n.Welcome.DetectedData.title,
+                isPresented: Binding(
+                    get: { showDetectedDataAlert && !showGroupInviteOnboarding },
+                    set: { showDetectedDataAlert = $0 }
+                ),
+                presenting: detectedICloudSummary
+            ) { summary in
+                Button(L10n.Welcome.DetectedData.loadMyData) {
+                    // Alert ES Chooser-equivalent: decisión consciente del user.
+                    hasShownWelcomeChooser = true
+                    consumeDetectedSummary(summary)
+                }
+                Button(L10n.Welcome.DetectedData.startFresh) {
+                    // User decide explorar las 3 opciones del Chooser. El flag se setea al tap card.
+                    showWelcomeChooser = true
+                }
+            } message: { summary in
+                Text(L10n.Welcome.DetectedData.message(
+                    summary.accountsCount,
+                    summary.transactionsCount,
+                    summary.categoriesCount
+                ))
+            }
+            .onChange(of: showGroupInviteOnboarding) { _, newValue in
+                // Si llega CKShare, invite onboarding takes over.
+                // Reset del flow Hero/alert para evitar resurgir el alert al volver.
+                if newValue {
+                    showWelcomeHero = false
+                    showDetectedDataAlert = false
+                    detectedICloudSummary = nil
+                }
+            }
+    }
+
+    /// Replica logic de `WelcomeRestoreView` callbacks SIN re-fetch (alert ya tiene summary).
+    private func consumeDetectedSummary(_ summary: ICloudAccountSummary) {
+        if summary.isFullyPrefilled {
+            // Skip total — equivalente a WelcomeRestoreView.onCompleteSkipAll.
+            if !FeatureGateService.shared.isProUser {
+                SessionState.shared.needsPostOnboardingTrial = true
+            }
+            hasCompletedOnboarding = true
+            SetupChecklistManager.shared.markAsNewInstall()
+        } else {
+            // Carga prefilled steps — equivalente a WelcomeRestoreView.onContinueWithSummary.
+            prefilledOnboardingData = summary
+            showOnboarding = true
         }
     }
 }

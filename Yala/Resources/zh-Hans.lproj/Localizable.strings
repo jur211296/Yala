@@ -4129,3 +4129,31 @@
 "welcome.invite.invalidLink" = "这看起来不像是 Yala 的链接。请检查是否复制了完整的链接。";
 "welcome.invite.join" = "加入群组";
 "welcome.invite.back" = "返回";
+
+// MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
+"welcome.hero.title" = "你的个人财务,";
+"welcome.hero.titleAccent" = "轻松搞定。";
+"welcome.hero.subtitle" = "几秒内记录。Yala 帮你整理。";
+"welcome.hero.cta" = "开始";
+"welcome.hero.trust" = "100% 私密 · 你的信息始终与你同在";
+
+"welcome.hero.cards.capture.title" = "智能拍摄";
+"welcome.hero.cards.capture.body" = "对准相机,自动记录。";
+"welcome.hero.cards.voice.title" = "懂你的语音";
+"welcome.hero.cards.voice.body" = "说一声就好。";
+"welcome.hero.cards.import.title" = "导入你的历史";
+"welcome.hero.cards.import.body" = "CSV 或 Excel,几秒内完成。";
+"welcome.hero.cards.multiAccount.title" = "多账户";
+"welcome.hero.cards.multiAccount.body" = "现金、卡片,全部在一起。";
+"welcome.hero.cards.currencies.title" = "48+ 种货币";
+"welcome.hero.cards.currencies.body" = "旅行时也能掌控全局。";
+"welcome.hero.cards.icloud.title" = "iCloud 同步";
+"welcome.hero.cards.icloud.body" = "在你所有的 Apple 设备上。";
+"welcome.hero.cards.more.title" = "还有更多";
+"welcome.hero.cards.more.body" = "让我们一起去发现。";
+
+// MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
+"welcome.detectedData.title" = "欢迎回来!我们找到了你的账户";
+"welcome.detectedData.message" = "我们在你的 iCloud 中找到了 %d 个账户、%d 笔支出和 %d 个分类。你想怎么做?";
+"welcome.detectedData.loadMyData" = "加载我的数据";
+"welcome.detectedData.startFresh" = "从零开始";

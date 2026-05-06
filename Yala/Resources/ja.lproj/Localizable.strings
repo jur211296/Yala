@@ -4129,3 +4129,31 @@
 "welcome.invite.invalidLink" = "Yalaのリンクではないようです。完全なリンクをコピーしたか確認してください。";
 "welcome.invite.join" = "グループに参加";
 "welcome.invite.back" = "戻る";
+
+// MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
+"welcome.hero.title" = "あなたの個人ファイナンスを、";
+"welcome.hero.titleAccent" = "簡単に。";
+"welcome.hero.subtitle" = "数秒で記録。Yalaが整理します。";
+"welcome.hero.cta" = "はじめる";
+"welcome.hero.trust" = "100%プライベート · あなたの情報はあなたのもの";
+
+"welcome.hero.cards.capture.title" = "スマートキャプチャ";
+"welcome.hero.cards.capture.body" = "カメラを向けて、記録完了。";
+"welcome.hero.cards.voice.title" = "理解する音声入力";
+"welcome.hero.cards.voice.body" = "話すだけ。";
+"welcome.hero.cards.import.title" = "履歴をインポート";
+"welcome.hero.cards.import.body" = "CSVやExcelを数秒で。";
+"welcome.hero.cards.multiAccount.title" = "マルチアカウント";
+"welcome.hero.cards.multiAccount.body" = "現金、カード、すべて一緒に。";
+"welcome.hero.cards.currencies.title" = "48以上の通貨";
+"welcome.hero.cards.currencies.body" = "旅行中も管理を失わずに。";
+"welcome.hero.cards.icloud.title" = "iCloud同期";
+"welcome.hero.cards.icloud.body" = "すべてのAppleデバイスで。";
+"welcome.hero.cards.more.title" = "さらに多くの機能";
+"welcome.hero.cards.more.body" = "一緒に発見していきましょう。";
+
+// MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
+"welcome.detectedData.title" = "おかえりなさい！アカウントを見つけました";
+"welcome.detectedData.message" = "iCloudに%d件のアカウント、%d件の支出、%d件のカテゴリが保存されています。どうしますか?";
+"welcome.detectedData.loadMyData" = "データを読み込む";
+"welcome.detectedData.startFresh" = "ゼロから始める";

@@ -4054,6 +4054,58 @@ enum L10n {
             static var join: String { ls("welcome.invite.join", comment: "") }
             static var back: String { ls("welcome.invite.back", comment: "") }
         }
+
+        // MARK: - Hero (A4 v3.1: pantalla de presentación pre-Chooser)
+
+        enum Hero {
+            static var title: String { ls("welcome.hero.title", comment: "") }
+            static var titleAccent: String { ls("welcome.hero.titleAccent", comment: "") }
+            static var subtitle: String { ls("welcome.hero.subtitle", comment: "") }
+            static var cta: String { ls("welcome.hero.cta", comment: "") }
+            static var trust: String { ls("welcome.hero.trust", comment: "") }
+
+            enum Cards {
+                enum Capture {
+                    static var title: String { ls("welcome.hero.cards.capture.title", comment: "") }
+                    static var body: String { ls("welcome.hero.cards.capture.body", comment: "") }
+                }
+                enum Voice {
+                    static var title: String { ls("welcome.hero.cards.voice.title", comment: "") }
+                    static var body: String { ls("welcome.hero.cards.voice.body", comment: "") }
+                }
+                enum Import {
+                    static var title: String { ls("welcome.hero.cards.import.title", comment: "") }
+                    static var body: String { ls("welcome.hero.cards.import.body", comment: "") }
+                }
+                enum MultiAccount {
+                    static var title: String { ls("welcome.hero.cards.multiAccount.title", comment: "") }
+                    static var body: String { ls("welcome.hero.cards.multiAccount.body", comment: "") }
+                }
+                enum Currencies {
+                    static var title: String { ls("welcome.hero.cards.currencies.title", comment: "") }
+                    static var body: String { ls("welcome.hero.cards.currencies.body", comment: "") }
+                }
+                enum Icloud {
+                    static var title: String { ls("welcome.hero.cards.icloud.title", comment: "") }
+                    static var body: String { ls("welcome.hero.cards.icloud.body", comment: "") }
+                }
+                enum More {
+                    static var title: String { ls("welcome.hero.cards.more.title", comment: "") }
+                    static var body: String { ls("welcome.hero.cards.more.body", comment: "") }
+                }
+            }
+        }
+
+        // MARK: - DetectedData (A4 v3.1: alert post-Hero cuando iCloud tiene data residual)
+
+        enum DetectedData {
+            static var title: String { ls("welcome.detectedData.title", comment: "") }
+            static func message(_ accounts: Int, _ transactions: Int, _ categories: Int) -> String {
+                String(format: ls("welcome.detectedData.message", comment: ""), accounts, transactions, categories)
+            }
+            static var loadMyData: String { ls("welcome.detectedData.loadMyData", comment: "") }
+            static var startFresh: String { ls("welcome.detectedData.startFresh", comment: "") }
+        }
     }
 
     // MARK: - Onboarding

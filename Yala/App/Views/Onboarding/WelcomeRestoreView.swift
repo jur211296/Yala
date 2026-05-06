@@ -185,9 +185,9 @@ struct WelcomeRestoreView: View {
     }
 
     /// Si los 3 inputs que el user introduciría manualmente ya están en iCloud, salta a home.
-    /// (`primaryCurrencyCode` no se chequea: siempre viene poblado desde `defaultCurrencyCode.rawValue`.)
+    /// SSOT: `ICloudAccountSummary.isFullyPrefilled` en `iCloudSyncService.swift` (reusado por WelcomeHero alert).
     private func isAllPrefilled(_ s: ICloudAccountSummary) -> Bool {
-        s.userName != nil && s.accountsCount > 0 && s.categoriesCount > 0
+        s.isFullyPrefilled
     }
 
     /// Filas visibles del resumen `.found`: solo las categorías con count > 0.

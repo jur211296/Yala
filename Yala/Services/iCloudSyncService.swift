@@ -486,6 +486,12 @@ struct ICloudAccountSummary: Equatable {
     var hasAnyData: Bool {
         accountsCount > 0 || transactionsCount > 0 || categoriesCount > 0
     }
+
+    /// El user puede saltar el onboarding completo si tiene nombre + cuentas + categorías.
+    /// (`primaryCurrencyCode` no se chequea: siempre viene poblado desde `defaultCurrencyCode.rawValue`.)
+    var isFullyPrefilled: Bool {
+        userName != nil && accountsCount > 0 && categoriesCount > 0
+    }
 }
 
 @MainActor

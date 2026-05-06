@@ -4128,3 +4128,31 @@
 "welcome.invite.invalidLink" = "Questo link non sembra di Yala. Controlla di aver copiato il link completo.";
 "welcome.invite.join" = "Unisciti al gruppo";
 "welcome.invite.back" = "Indietro";
+
+// MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
+"welcome.hero.title" = "Le tue finanze personali,";
+"welcome.hero.titleAccent" = "senza sforzo.";
+"welcome.hero.subtitle" = "Registra in pochi secondi. Yala le organizza.";
+"welcome.hero.cta" = "Iniziare";
+"welcome.hero.trust" = "100% privato · Le tue info rimangono con te";
+
+"welcome.hero.cards.capture.title" = "Cattura intelligente";
+"welcome.hero.cards.capture.body" = "Punta la fotocamera, registrato.";
+"welcome.hero.cards.voice.title" = "Voce che capisce";
+"welcome.hero.cards.voice.body" = "Dillo e basta.";
+"welcome.hero.cards.import.title" = "Importa il tuo storico";
+"welcome.hero.cards.import.body" = "CSV o Excel, in pochi secondi.";
+"welcome.hero.cards.multiAccount.title" = "Multi-conto";
+"welcome.hero.cards.multiAccount.body" = "Contanti, carte, tutto insieme.";
+"welcome.hero.cards.currencies.title" = "48+ valute";
+"welcome.hero.cards.currencies.body" = "Viaggia senza perdere il controllo.";
+"welcome.hero.cards.icloud.title" = "Sincronizzazione iCloud";
+"welcome.hero.cards.icloud.body" = "Su tutti i tuoi dispositivi Apple.";
+"welcome.hero.cards.more.title" = "E molto altro";
+"welcome.hero.cards.more.body" = "Scopriamolo insieme.";
+
+// MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
+"welcome.detectedData.title" = "Bentornato! Abbiamo trovato il tuo account";
+"welcome.detectedData.message" = "Abbiamo trovato %d conti, %d spese e %d categorie salvati nel tuo iCloud. Cosa facciamo?";
+"welcome.detectedData.loadMyData" = "Carica i miei dati";
+"welcome.detectedData.startFresh" = "Ricominciare da zero";

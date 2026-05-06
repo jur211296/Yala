@@ -4129,3 +4129,31 @@
 "welcome.invite.invalidLink" = "Dit lijkt geen Yala-link. Controleer of je de volledige link hebt gekopieerd.";
 "welcome.invite.join" = "Lid worden";
 "welcome.invite.back" = "Terug";
+
+// MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
+"welcome.hero.title" = "Jouw persoonlijke financiën,";
+"welcome.hero.titleAccent" = "moeiteloos.";
+"welcome.hero.subtitle" = "Registreer in seconden. Yala organiseert ze.";
+"welcome.hero.cta" = "Beginnen";
+"welcome.hero.trust" = "100% privé · Jouw info blijft bij jou";
+
+"welcome.hero.cards.capture.title" = "Slimme opname";
+"welcome.hero.cards.capture.body" = "Richt de camera, geregistreerd.";
+"welcome.hero.cards.voice.title" = "Stem die begrijpt";
+"welcome.hero.cards.voice.body" = "Zeg het maar.";
+"welcome.hero.cards.import.title" = "Importeer je geschiedenis";
+"welcome.hero.cards.import.body" = "CSV of Excel, in seconden.";
+"welcome.hero.cards.multiAccount.title" = "Multi-account";
+"welcome.hero.cards.multiAccount.body" = "Contant, kaarten, alles samen.";
+"welcome.hero.cards.currencies.title" = "48+ valuta";
+"welcome.hero.cards.currencies.body" = "Reis zonder de controle te verliezen.";
+"welcome.hero.cards.icloud.title" = "iCloud-synchronisatie";
+"welcome.hero.cards.icloud.body" = "Op al je Apple-apparaten.";
+"welcome.hero.cards.more.title" = "En nog veel meer";
+"welcome.hero.cards.more.body" = "Laten we het samen ontdekken.";
+
+// MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
+"welcome.detectedData.title" = "Welkom terug! We hebben je account gevonden";
+"welcome.detectedData.message" = "We hebben %d accounts, %d uitgaven en %d categorieën in je iCloud gevonden. Wat doen we?";
+"welcome.detectedData.loadMyData" = "Mijn gegevens laden";
+"welcome.detectedData.startFresh" = "Opnieuw beginnen";
