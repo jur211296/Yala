@@ -69,7 +69,15 @@ struct OnboardingView: View {
     @State private var selectedBudgetCategoryIndex: Int? = nil
     @State private var budgetAmountText: String = ""
 
+    /// Optional prefilled data from iCloud restore (A4 Welcome Restore rama B).
+    /// Cuando != nil, popula campos en `.task` y amplía `skippedSteps` automáticamente.
+    let prefilledData: ICloudAccountSummary?
     var onComplete: () -> Void
+
+    init(prefilledData: ICloudAccountSummary? = nil, onComplete: @escaping () -> Void) {
+        self.prefilledData = prefilledData
+        self.onComplete = onComplete
+    }
 
     // MARK: - Step Definition
 
@@ -89,13 +97,35 @@ struct OnboardingView: View {
 
     // MARK: - Step Navigation
 
-    private var skippedSteps: Set<Step> {
+    /// Steps a saltar derivados del flow interno (binary decisions del user).
+    private var usageModeSkippedSteps: Set<Step> {
         if expensesOnlyMode {
             return [.accounts, .accountType, .balance]
         } else if selectedUsageMode == .dayToDay {
             return [.accountType]
         }
         return []
+    }
+
+    /// Steps a saltar derivados de prefilled iCloud data (A4 rama B).
+    /// Si el user ya tiene cuentas en iCloud, no preguntamos por crear una; etc.
+    private var prefilledSkippedSteps: Set<Step> {
+        guard let summary = prefilledData else { return [] }
+        var skip: Set<Step> = []
+        if summary.userName != nil { skip.insert(.name) }
+        if summary.accountsCount > 0 {
+            skip.insert(.accounts)
+            skip.insert(.accountType)
+            skip.insert(.balance)
+        }
+        if summary.primaryCurrencyCode != nil { skip.insert(.currencyName) }
+        if summary.categoriesCount > 0 { skip.insert(.categories) }
+        // .purpose y .confirmation siempre visibles (tracking + resumen final).
+        return skip
+    }
+
+    private var skippedSteps: Set<Step> {
+        usageModeSkippedSteps.union(prefilledSkippedSteps)
     }
 
     private var effectiveSteps: [Step] {
@@ -152,6 +182,16 @@ struct OnboardingView: View {
             dismissKeyboard()
         }
         .task {
+            // A4: prefilled data from iCloud restore takes precedence over UserDefaults
+            // because it represents the most recent synced state of the user.
+            if let summary = prefilledData {
+                if let name = summary.userName { userName = name }
+                if let raw = summary.primaryCurrencyCode,
+                   let currency = CurrencyCode(rawValue: raw) {
+                    selectedCurrency = currency
+                    accountCurrency = currency
+                }
+            }
             let defaults = UserDefaults.standard
             if let name = defaults.string(forKey: "userName"), !name.isEmpty, name != "Usuario" {
                 userName = name

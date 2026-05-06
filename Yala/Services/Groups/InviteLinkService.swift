@@ -14,6 +14,16 @@ enum InviteLinkService {
     static let host = "yala-app.pe"
     static let path = "/invite"
 
+    /// Hosts canónicos + alternos aceptados al validar/extraer un invite URL.
+    /// Universal links siguen redirects HTTP a `yala-app.pe` automáticamente,
+    /// pero el paste manual (A4 rama C) NO sigue redirects — debe aceptar todos.
+    /// Lista de redirects en `Web/vercel.json`.
+    static let alternateHosts: [String] = [
+        "yala-app.pe", "www.yala-app.pe",
+        "yala-pe.com", "www.yala-pe.com",
+        "yala-app.com.pe", "www.yala-app.com.pe",
+    ]
+
     // MARK: - Build
 
     /// Construye un invite URL branded a partir de un CKShare URL y metadata del grupo.
@@ -68,8 +78,8 @@ enum InviteLinkService {
               let shareURL = URL(string: urlString)
         else { return nil }
 
-        // Validate: universal link (yala-app.pe/invite) or custom scheme (yaladev://invite)
-        let isUniversalLink = (components.host == host || components.host == "www.\(host)")
+        // Validate: universal link en cualquier host alterno O custom scheme (yala/yaladev://invite).
+        let isUniversalLink = alternateHosts.contains(components.host ?? "")
             && components.path == path
         let isCustomSchemeInvite = components.host == "invite"
 
@@ -96,11 +106,11 @@ enum InviteLinkService {
 
     // MARK: - Check
 
-    /// Verifica si una URL es un invite link de Yala (universal link o custom scheme).
+    /// Verifica si una URL es un invite link de Yala (universal link en cualquier host alterno o custom scheme).
     static func isInviteLink(_ url: URL) -> Bool {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return false }
         let hasShareParam = components.queryItems?.contains(where: { $0.name == "s" }) == true
-        let isUniversalLink = (components.host == host || components.host == "www.\(host)")
+        let isUniversalLink = alternateHosts.contains(components.host ?? "")
             && components.path == path
         let isCustomSchemeInvite = components.host == "invite"
         return (isUniversalLink || isCustomSchemeInvite) && hasShareParam

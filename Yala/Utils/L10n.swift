@@ -3996,6 +3996,66 @@ enum L10n {
         }
     }
 
+    // MARK: - Welcome (Chooser pre-onboarding A4)
+
+    enum Welcome {
+        enum Chooser {
+            static var title: String { ls("welcome.chooser.title", comment: "") }
+            static var subtitle: String { ls("welcome.chooser.subtitle", comment: "") }
+            static var optionNewTitle: String { ls("welcome.chooser.optionNew.title", comment: "") }
+            static var optionNewBody: String { ls("welcome.chooser.optionNew.body", comment: "") }
+            static var optionExistingTitle: String { ls("welcome.chooser.optionExisting.title", comment: "") }
+            static var optionExistingBody: String { ls("welcome.chooser.optionExisting.body", comment: "") }
+            static var optionInviteTitle: String { ls("welcome.chooser.optionInvite.title", comment: "") }
+            static var optionInviteBody: String { ls("welcome.chooser.optionInvite.body", comment: "") }
+        }
+
+        enum Restore {
+            static var searching: String { ls("welcome.restore.searching", comment: "") }
+            static var searchingTip: String { ls("welcome.restore.searchingTip", comment: "") }
+            static func foundTitle(_ name: String) -> String {
+                String(format: ls("welcome.restore.foundTitle", comment: ""), name)
+            }
+            static var foundTitleAnonymous: String { ls("welcome.restore.foundTitleAnonymous", comment: "") }
+            static var foundBody: String { ls("welcome.restore.foundBody", comment: "") }
+            static func foundAccounts(_ count: Int) -> String {
+                String(format: ls("welcome.restore.foundAccounts", comment: ""), count)
+            }
+            static func foundTransactions(_ count: Int) -> String {
+                String(format: ls("welcome.restore.foundTransactions", comment: ""), count)
+            }
+            static func foundBudgets(_ count: Int) -> String {
+                String(format: ls("welcome.restore.foundBudgets", comment: ""), count)
+            }
+            static func foundGroups(_ count: Int) -> String {
+                String(format: ls("welcome.restore.foundGroups", comment: ""), count)
+            }
+            static var continueAction: String { ls("welcome.restore.continue", comment: "") }
+            static var notFoundTitle: String { ls("welcome.restore.notFoundTitle", comment: "") }
+            static var notFoundBody: String { ls("welcome.restore.notFoundBody", comment: "") }
+            static var startFresh: String { ls("welcome.restore.startFresh", comment: "") }
+            static var retry: String { ls("welcome.restore.retry", comment: "") }
+            static var errorTitle: String { ls("welcome.restore.errorTitle", comment: "") }
+            static var errorBody: String { ls("welcome.restore.errorBody", comment: "") }
+            static var iCloudDisabledTitle: String { ls("welcome.restore.iCloudDisabledTitle", comment: "") }
+            static var iCloudDisabledBody: String { ls("welcome.restore.iCloudDisabledBody", comment: "") }
+            static var openSettings: String { ls("welcome.restore.openSettings", comment: "") }
+            static var startFreshConfirmTitle: String { ls("welcome.restore.startFreshConfirm.title", comment: "") }
+            static var startFreshConfirmBody: String { ls("welcome.restore.startFreshConfirm.body", comment: "") }
+            static var startFreshConfirmConfirm: String { ls("welcome.restore.startFreshConfirm.confirm", comment: "") }
+            static var startFreshConfirmCancel: String { ls("welcome.restore.startFreshConfirm.cancel", comment: "") }
+        }
+
+        enum Invite {
+            static var title: String { ls("welcome.invite.title", comment: "") }
+            static var body: String { ls("welcome.invite.body", comment: "") }
+            static var placeholder: String { ls("welcome.invite.placeholder", comment: "") }
+            static var invalidLink: String { ls("welcome.invite.invalidLink", comment: "") }
+            static var join: String { ls("welcome.invite.join", comment: "") }
+            static var back: String { ls("welcome.invite.back", comment: "") }
+        }
+    }
+
     // MARK: - Onboarding
 
     enum Onboarding {

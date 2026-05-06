@@ -14,8 +14,15 @@ import SwiftUI
 
 struct ContentView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    @AppStorage("hasShownWelcomeChooser") private var hasShownWelcomeChooser: Bool = false
     @State private var showOnboarding: Bool = false
     @State private var showLanguageSelection: Bool = false
+    @State private var showWelcomeChooser: Bool = false
+    @State private var showWelcomeRestore: Bool = false
+    @State private var showInviteRecovery: Bool = false
+    /// Prefilled summary from iCloud restore (rama B). Pasado a OnboardingView
+    /// como `prefilledData`. Reseteado tras data wipe para evitar values stale.
+    @State private var prefilledOnboardingData: ICloudAccountSummary?
     @State private var showSplash: Bool = true
     @State private var splashOpacity: Double = 1
     @State private var showICloudDataFound: Bool = false
@@ -139,8 +146,9 @@ struct ContentView: View {
             }
         }
         .onChange(of: hasCompletedOnboarding) { _, newValue in
-            // React to data wipe: show onboarding when flag is reset
+            // Data wipe path: invalida summary stale antes de re-mostrar onboarding.
             if !newValue {
+                prefilledOnboardingData = nil
                 showOnboarding = true
             }
         }
@@ -191,15 +199,73 @@ struct ContentView: View {
         .fullScreenCover(isPresented: $showLanguageSelection) {
             LanguageSelectionView {
                 showLanguageSelection = false
-                // Only show onboarding if the user hasn't completed it before
                 if !hasCompletedOnboarding {
-                    showOnboarding = true
+                    presentNextOnboardingScreen()
                 }
             }
             .environment(SessionState.shared)
         }
+        // Gate `!showGroupInviteOnboarding`: si un CKShare aterriza mid-chooser,
+        // el cover se cierra solo y `hasShownWelcomeChooser` queda en `false` —
+        // si el invite onboarding se cancela, el chooser reaparece en el próximo cold launch.
+        .fullScreenCover(isPresented: Binding(
+            get: { showWelcomeChooser && !showGroupInviteOnboarding },
+            set: { showWelcomeChooser = $0 }
+        )) {
+            WelcomeChooserView { branch in
+                hasShownWelcomeChooser = true
+                showWelcomeChooser = false
+                switch branch {
+                case .new: showOnboarding = true
+                case .restore: showWelcomeRestore = true
+                case .invite: showInviteRecovery = true
+                }
+            }
+            .environment(SessionState.shared)
+        }
+        .fullScreenCover(isPresented: $showInviteRecovery) {
+            InviteRecoveryView(
+                onSuccess: { url in
+                    showInviteRecovery = false
+                    AppBootstrapper.shared.handleInviteLink(url)
+                },
+                onBack: {
+                    showInviteRecovery = false
+                    showWelcomeChooser = true
+                }
+            )
+            .environment(SessionState.shared)
+        }
+        .fullScreenCover(isPresented: $showWelcomeRestore) {
+            WelcomeRestoreView(
+                onContinueWithSummary: { summary in
+                    prefilledOnboardingData = summary
+                    showWelcomeRestore = false
+                    showOnboarding = true
+                },
+                onCompleteSkipAll: {
+                    if !FeatureGateService.shared.isProUser {
+                        SessionState.shared.needsPostOnboardingTrial = true
+                    }
+                    hasCompletedOnboarding = true
+                    SetupChecklistManager.shared.markAsNewInstall()
+                    showWelcomeRestore = false
+                },
+                onStartFresh: {
+                    prefilledOnboardingData = nil
+                    showWelcomeRestore = false
+                    showOnboarding = true
+                },
+                onOpenSettings: {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            )
+            .environment(SessionState.shared)
+        }
         .fullScreenCover(isPresented: $showOnboarding) {
-            OnboardingView {
+            OnboardingView(prefilledData: prefilledOnboardingData) {
                 // Set flag BEFORE dismiss — onChange picks it up reliably
                 if !FeatureGateService.shared.isProUser {
                     SessionState.shared.needsPostOnboardingTrial = true
@@ -207,6 +273,7 @@ struct ContentView: View {
                 hasCompletedOnboarding = true
                 SetupChecklistManager.shared.markAsNewInstall()
                 showOnboarding = false
+                prefilledOnboardingData = nil
             }
             .environment(SessionState.shared)
         }
@@ -490,6 +557,8 @@ struct ContentView: View {
                 hasCompletedOnboarding = true
                 showPositiveToast(L10n.iCloud.remoteRestoreCompleted)
             } else {
+                // Reset chooser flag: tras wipe completo, el user vuelve a ver las 3 ramas.
+                hasShownWelcomeChooser = false
                 hasCompletedOnboarding = false  // onChange triggers onboarding
             }
         }
@@ -597,12 +666,21 @@ struct ContentView: View {
             scheduleDeduplication()
         }
 
+        presentNextOnboardingScreen()
+        isInitialCheckDone = true
+    }
+
+    /// Routing único para presentar la siguiente pantalla del flow inicial.
+    /// Usado desde `checkInitialSyncState`, callback de `LanguageSelectionView` y
+    /// el skip CTA del waiting view. Single source of truth — evita drift entre callsites.
+    private func presentNextOnboardingScreen() {
         if needsLanguageSelection {
             showLanguageSelection = true
+        } else if !hasShownWelcomeChooser {
+            showWelcomeChooser = true
         } else {
             showOnboarding = true
         }
-        isInitialCheckDone = true
     }
 
     /// Extracted from body so the overlay isn't recreated on every ContentView
@@ -639,11 +717,7 @@ struct ContentView: View {
                 Button {
                     isWaitingForSync = false
                     scheduleDeduplication()
-                    if needsLanguageSelection {
-                        showLanguageSelection = true
-                    } else {
-                        showOnboarding = true
-                    }
+                    presentNextOnboardingScreen()
                 } label: {
                     Text(L10n.iCloud.syncingSkip)
                         .font(DS.Typography.label)

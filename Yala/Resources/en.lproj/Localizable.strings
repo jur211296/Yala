@@ -4088,3 +4088,46 @@
 "groups.invite.rejected.body" = "The admin didn't approve your request. Ask them for a new link if you'd like to try again.";
 "groups.notifications.newPendingRequest" = "%@ wants to join %@";
 "groups.errors.pendingApproval" = "You can't do this yet — the admin needs to approve your request first.";
+
+// MARK: - Welcome (A4 — Chooser pre-onboarding)
+"welcome.chooser.title" = "Hi! How did you get to Yala?";
+"welcome.chooser.subtitle" = "Tell us so we can tailor your experience.";
+"welcome.chooser.optionNew.title" = "I'm new";
+"welcome.chooser.optionNew.body" = "Start from scratch with me. I'll help you set everything up step by step.";
+"welcome.chooser.optionExisting.title" = "I already have an account";
+"welcome.chooser.optionExisting.body" = "I reinstalled Yala and want to restore my data from iCloud.";
+"welcome.chooser.optionInvite.title" = "I was invited to a group";
+"welcome.chooser.optionInvite.body" = "I have an invitation link and want to join.";
+
+// Welcome Restore (branch B)
+"welcome.restore.searching" = "Looking for your data in iCloud…";
+"welcome.restore.searchingTip" = "This may take a few seconds.";
+"welcome.restore.foundTitle" = "Hi %@! Welcome back.";
+"welcome.restore.foundTitleAnonymous" = "Welcome back!";
+"welcome.restore.foundBody" = "We found your data in iCloud:";
+"welcome.restore.foundAccounts" = "%d accounts";
+"welcome.restore.foundTransactions" = "%d records";
+"welcome.restore.foundBudgets" = "%d budgets";
+"welcome.restore.foundGroups" = "%d shared groups";
+"welcome.restore.continue" = "Continue";
+"welcome.restore.notFoundTitle" = "No data found";
+"welcome.restore.notFoundBody" = "There's no data linked to your iCloud account. Want to start fresh?";
+"welcome.restore.startFresh" = "Start setup";
+"welcome.restore.retry" = "Retry search";
+"welcome.restore.errorTitle" = "Something went wrong";
+"welcome.restore.errorBody" = "We couldn't search your iCloud data. Try again or set up from scratch.";
+"welcome.restore.iCloudDisabledTitle" = "Turn on iCloud to continue";
+"welcome.restore.iCloudDisabledBody" = "You need iCloud enabled to restore your data. Turn it on in Settings and try again.";
+"welcome.restore.openSettings" = "Open Settings";
+"welcome.restore.startFreshConfirm.title" = "Start fresh?";
+"welcome.restore.startFreshConfirm.body" = "This will create a new account without your previous data. Continue?";
+"welcome.restore.startFreshConfirm.confirm" = "Yes, start fresh";
+"welcome.restore.startFreshConfirm.cancel" = "Cancel";
+
+// Welcome Invite Recovery (branch C)
+"welcome.invite.title" = "Paste your invitation link";
+"welcome.invite.body" = "If you were invited to a group on Yala, paste the link you received here.";
+"welcome.invite.placeholder" = "https://yala-app.pe/invite?...";
+"welcome.invite.invalidLink" = "This doesn't look like a Yala link. Check that you copied the full URL.";
+"welcome.invite.join" = "Join the group";
+"welcome.invite.back" = "Back";
