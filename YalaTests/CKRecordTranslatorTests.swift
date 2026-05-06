@@ -211,6 +211,42 @@ struct MemberTranslatorTests {
         #expect(member?.memberStatus == .left)
         #expect(member?.isCurrentUser == false)
     }
+
+    // MARK: - A3: pendingApproval / rejected round-trip
+
+    @Test func memberRoundTrip_preservesPendingApprovalStatus() {
+        let member = SplitMember(
+            groupZoneID: "SplitGroup-test",
+            displayName: "Pending User",
+            cloudKitUserRecordID: "user-pending-1",
+            role: "member",
+            status: .pendingApproval,
+            isCurrentUser: true
+        )
+        let record = CKRecordTranslator.record(from: member, in: zoneID)
+        #expect(record["status"] as? String == "pendingApproval")
+
+        let parsed = CKRecordTranslator.member(from: record)
+        #expect(parsed?.memberStatus == .pendingApproval)
+        #expect(parsed?.isPendingApproval == true)
+        #expect(parsed?.isActive == false)
+    }
+
+    @Test func memberRoundTrip_preservesRejectedStatus() {
+        let member = SplitMember(
+            groupZoneID: "SplitGroup-test",
+            displayName: "Rejected User",
+            cloudKitUserRecordID: "user-rejected-1",
+            role: "member",
+            status: .rejected
+        )
+        let record = CKRecordTranslator.record(from: member, in: zoneID)
+        #expect(record["status"] as? String == "rejected")
+
+        let parsed = CKRecordTranslator.member(from: record)
+        #expect(parsed?.memberStatus == .rejected)
+        #expect(parsed?.isRejected == true)
+    }
 }
 
 // MARK: - SplitShare Translation

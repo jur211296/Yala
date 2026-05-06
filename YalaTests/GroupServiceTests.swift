@@ -75,6 +75,20 @@ struct GroupServiceTests {
         #expect(error.errorDescription!.contains("Save failed"))
     }
 
+    // MARK: - A3: pendingApproval errors
+
+    @Test func error_notPendingApproval_hasDescription() {
+        let error = GroupServiceError.notPendingApproval
+        #expect(error.errorDescription != nil)
+        #expect(error.errorDescription!.contains("approval"))
+    }
+
+    @Test func error_currentUserPendingApproval_hasDescription() {
+        let error = GroupServiceError.currentUserPendingApproval
+        #expect(error.errorDescription != nil)
+        #expect(error.errorDescription!.contains("approval"))
+    }
+
     // MARK: - Singleton
 
     @Test func singleton_isSameInstance() {

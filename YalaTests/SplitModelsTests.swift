@@ -46,6 +46,35 @@ struct SplitModelsTests {
         #expect(member.isCurrentUser == false)
     }
 
+    // MARK: - A3: pendingApproval / rejected
+
+    @Test func pendingApprovalRawValueIsStable() {
+        // Estabilidad de rawValues — viajan vía CloudKit y deben ser invariables.
+        #expect(SplitMemberStatus.pendingApproval.rawValue == "pendingApproval")
+        #expect(SplitMemberStatus.rejected.rawValue == "rejected")
+    }
+
+    @Test func pendingApprovalNotActive() {
+        let member = SplitMember(status: .pendingApproval)
+        #expect(member.isActive == false)
+        #expect(member.isPendingApproval == true)
+        #expect(member.canWrite == false)
+    }
+
+    @Test func rejectedNotActive() {
+        let member = SplitMember(status: .rejected)
+        #expect(member.isRejected == true)
+        #expect(member.isActive == false)
+        #expect(member.canWrite == false)
+    }
+
+    @Test func unknownRawValueFallsBackToActive() {
+        // Defensive: rawValue desde CloudKit con string desconocido cae a .active (no crashea).
+        let member = SplitMember()
+        member.status = "garbage"
+        #expect(member.memberStatus == .active)
+    }
+
     // MARK: - SplitExpense
 
     @Test func splitExpenseDefaults() {
