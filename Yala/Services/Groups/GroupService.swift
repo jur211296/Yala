@@ -508,6 +508,21 @@ final class GroupService {
         let allGroups = try fetchAllGroups()
         let groupByZoneID = Dictionary(allGroups.map { ($0.cloudKitZoneID, $0) },
                                        uniquingKeysWith: { first, _ in first })
+        if groupByZoneID.count < allGroups.count {
+            let conflictCount = allGroups.count - groupByZoneID.count
+            #if DEBUG
+            print("GroupService: \(conflictCount) duplicate SplitGroups detected during updateCurrentUserDisplayName")
+            #endif
+            TelemetryService.trackOnce(
+                .cloudkitDuplicateDetected,
+                key: "SplitGroup:uniquing-updateDisplayName:\(conflictCount)",
+                parameters: [
+                    "model": "SplitGroup",
+                    "count": String(conflictCount),
+                    "context": "uniquing-fallback"
+                ]
+            )
+        }
 
         for member in pending {
             member.displayName = trimmed
@@ -538,6 +553,21 @@ final class GroupService {
         do {
             let allGroups = try context.fetch(FetchDescriptor<SplitGroup>())
             let groupsByZone = Dictionary(allGroups.map { ($0.cloudKitZoneID, $0) }, uniquingKeysWith: { first, _ in first })
+            if groupsByZone.count < allGroups.count {
+                let conflictCount = allGroups.count - groupsByZone.count
+                #if DEBUG
+                print("GroupService: \(conflictCount) duplicate SplitGroups detected during refreshCurrentUserFlags")
+                #endif
+                TelemetryService.trackOnce(
+                    .cloudkitDuplicateDetected,
+                    key: "SplitGroup:uniquing-refreshFlags:\(conflictCount)",
+                    parameters: [
+                        "model": "SplitGroup",
+                        "count": String(conflictCount),
+                        "context": "uniquing-fallback"
+                    ]
+                )
+            }
 
             let members = try context.fetch(FetchDescriptor<SplitMember>())
             let membersByZone = Dictionary(grouping: members, by: \.groupZoneID)
