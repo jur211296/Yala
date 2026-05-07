@@ -97,6 +97,8 @@ enum AnalyticsEvent: String {
     case cloudkitExportSucceeded
     case cloudkitStalledDetected
     case cloudkitIndicatorTapped
+    // Sprint extra TODO #10 — params: model, count, context (boot-cleanup|runtime-fetch|sync-apply|uniquing-fallback)
+    case cloudkitDuplicateDetected
 }
 
 // MARK: - Telemetry Service

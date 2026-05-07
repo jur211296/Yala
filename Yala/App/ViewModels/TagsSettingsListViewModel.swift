@@ -48,7 +48,8 @@ final class TagsSettingsListViewModel {
         if let cache = tagSortIndexCache {
             return cache
         }
-        let index = Dictionary(uniqueKeysWithValues: tagsSortOrderNames.enumerated().map { ($1, $0) })
+        let index = Dictionary(tagsSortOrderNames.enumerated().map { ($1, $0) },
+                               uniquingKeysWith: { first, _ in first })
         tagSortIndexCache = index
         return index
     }

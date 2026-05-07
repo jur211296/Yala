@@ -936,7 +936,8 @@ final class PanelViewModel {
     func orderedActiveAccounts(from accounts: [Account], sortOrderNames: [String]) -> [Account] {
         let activeAccounts = accounts.filter { !$0.isArchived }
         let indexByName = Dictionary(
-            uniqueKeysWithValues: sortOrderNames.enumerated().map { ($1, $0) })
+            sortOrderNames.enumerated().map { ($1, $0) },
+            uniquingKeysWith: { first, _ in first })
 
         return activeAccounts.sorted { a, b in
             let ia = indexByName[a.name]

@@ -45,7 +45,8 @@ final class AccountsSettingsListViewModel {
         if let cache = accountSortIndexCache {
             return cache
         }
-        let index = Dictionary(uniqueKeysWithValues: accountsSortOrderNames.enumerated().map { ($1, $0) })
+        let index = Dictionary(accountsSortOrderNames.enumerated().map { ($1, $0) },
+                               uniquingKeysWith: { first, _ in first })
         accountSortIndexCache = index
         return index
     }

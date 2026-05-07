@@ -35,7 +35,8 @@ struct TrendsTabView: View {
     /// Sort accounts by user-defined order (from AccountsSettingsListView)
     private func sortedAccountIDs(_ ids: [PersistentIdentifier]) -> [PersistentIdentifier] {
         let order = appPreferences.accountsSortOrderNames
-        let indexByName = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+        let indexByName = Dictionary(order.enumerated().map { ($1, $0) },
+                                     uniquingKeysWith: { first, _ in first })
 
         return ids.sorted { id1, id2 in
             let name1 = accounts.first(where: { $0.persistentModelID == id1 })?.name ?? ""
