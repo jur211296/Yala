@@ -205,7 +205,14 @@ struct ContentView: View {
                 hasShownWelcomeChooser = true
                 showWelcomeChooser = false
                 switch branch {
-                case .new: showOnboarding = true
+                case .new:
+                    // A4 v3.2: clean slate para "Soy nuevo". Limpia prefs
+                    // residuales del KV-Store del Apple ID (userName, currency)
+                    // que sobreviven al uninstall y aparecen pre-llenadas en el
+                    // OnboardingView. Solo strings — booleans no se tocan por
+                    // riesgo cross-device.
+                    OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+                    showOnboarding = true
                 case .restore: showWelcomeRestore = true
                 case .invite: showInviteRecovery = true
                 }
