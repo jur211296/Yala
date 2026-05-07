@@ -503,8 +503,21 @@ struct ContentView: View {
     // MARK: - Cross-Device Wipe Handling
 
     private func handleRemoteWipeSignal(onboardingAlreadyDone: Bool) {
-        // Don't react to our own wipe
-        guard !SessionState.shared.isWipingData else { return }
+        let remoteWipe = NSUbiquitousKeyValueStore.default.double(forKey: "lastWipeTimestamp")
+        let decision = RemoteWipeSignalDecider.decide(
+            hasCompletedOnboarding: hasCompletedOnboarding,
+            isWipingData: SessionState.shared.isWipingData,
+            hasRemoteWipeTimestamp: remoteWipe > 0
+        )
+
+        if decision.shouldMarkSignalsAsProcessed {
+            // A4 v3.2: fresh-install con KV-Store contaminado por install previa.
+            // Marcar timestamps localmente para que checkForRemoteWipeSignal no
+            // re-postee la notif en próximos launches. Bug #6 P0.
+            markRemoteSignalsAsProcessed()
+        }
+
+        guard decision.shouldProcess else { return }
 
         // Cancel the hasExistingData-based wipe grace to avoid double-alert
         wipeGraceTask?.cancel()
@@ -514,10 +527,30 @@ struct ContentView: View {
         performLocalWipeForRemoteSync(skipOnboarding: onboardingAlreadyDone)
     }
 
+    /// Idempotencia para el guard fresh-install: marca AMBOS timestamps remotos
+    /// (wipe + onboarding) como procesados localmente para que tanto el "Caso A"
+    /// (`.remoteWipeDetected`) como el "Caso B" (`.remoteOnboardingCompleted`)
+    /// de `PreferenceSyncService.checkForRemoteWipeSignal` queden silenciados.
+    private func markRemoteSignalsAsProcessed() {
+        let iKV = NSUbiquitousKeyValueStore.default
+        let local = UserDefaults.standard
+        let remoteWipe = iKV.double(forKey: "lastWipeTimestamp")
+        let remoteOnboarding = iKV.double(forKey: "lastOnboardingTimestamp")
+        if remoteWipe > 0 {
+            local.set(remoteWipe, forKey: "lastKnownWipeTimestamp")
+        }
+        if remoteOnboarding > 0 {
+            local.set(remoteOnboarding, forKey: "lastKnownOnboardingTimestamp")
+        }
+    }
+
     private func handleRemoteOnboardingCompleted() {
         // Only act if this device is mid-onboarding — otherwise ignore
         guard showOnboarding else { return }
-        hasCompletedOnboarding = true
+        // A4 v3.2: simetría con handleRemoteWipeSignal — si user está mid-onboarding
+        // pero hasCompletedOnboarding=false (este device no completó setup), ignorar
+        // signal del KV-Store. User debe terminar onboarding aquí. Bug #6 P0.
+        guard hasCompletedOnboarding else { return }
         showOnboarding = false
         showPositiveToast(L10n.iCloud.remoteOnboardingCompleted)
     }
