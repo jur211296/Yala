@@ -3,7 +3,7 @@
 //  YalaTests
 //
 //  Pure-logic tests for SplitGroupDeduplicationService.computeDedupPlan.
-//  Sprint extra TODO #10. Avoids `makeTestContext()` (R8 blacklist).
+//  Avoids `makeTestContext()` per R8 (CloudKit container race crashes the runner).
 //
 
 import Foundation
@@ -13,7 +13,9 @@ import Testing
 
 struct SplitGroupDeduplicationServiceTests {
 
-    // Helper — build a SplitGroup directly without inserting into a ModelContext.
+    // R8: builds @Model directly without ModelContext.insert — properties and
+    // persistentModelID are valid without a context, and avoids the CloudKit race
+    // that crashes `makeTestContext()`.
     private func makeGroup(zoneID: String, createdAt: Date) -> SplitGroup {
         let g = SplitGroup()
         g.cloudKitZoneID = zoneID

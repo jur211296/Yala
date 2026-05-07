@@ -97,8 +97,14 @@ enum AnalyticsEvent: String {
     case cloudkitExportSucceeded
     case cloudkitStalledDetected
     case cloudkitIndicatorTapped
-    // Sprint extra TODO #10 — params: model, count, context (boot-cleanup|runtime-fetch|sync-apply|uniquing-fallback)
     case cloudkitDuplicateDetected
+}
+
+enum DuplicateDetectionContext: String {
+    case bootCleanup = "boot-cleanup"
+    case runtimeFetch = "runtime-fetch"
+    case syncApply = "sync-apply"
+    case uniquingFallback = "uniquing-fallback"
 }
 
 // MARK: - Telemetry Service
@@ -156,5 +162,26 @@ enum TelemetryService {
         guard !trackedOnceKeys.contains(compositeKey) else { return }
         trackedOnceKeys.insert(compositeKey)
         track(event, parameters: parameters)
+    }
+
+    /// Reports a CloudKit-driven duplicate observation. The composite key includes
+    /// `keySuffix` (typically a zoneID or count) so each distinct duplicate fires once
+    /// instead of collapsing every dup in a session into a single event. The suffix
+    /// is local-only — it never reaches the backend.
+    static func cloudkitDuplicateDetected(
+        model: String,
+        count: Int,
+        context: DuplicateDetectionContext,
+        keySuffix: String
+    ) {
+        trackOnce(
+            .cloudkitDuplicateDetected,
+            key: "\(model):\(context.rawValue):\(keySuffix)",
+            parameters: [
+                "model": model,
+                "count": String(count),
+                "context": context.rawValue
+            ]
+        )
     }
 }

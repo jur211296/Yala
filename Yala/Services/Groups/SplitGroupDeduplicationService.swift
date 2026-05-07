@@ -86,14 +86,11 @@ enum SplitGroupDeduplicationService {
                 #if DEBUG
                 print("SplitGroupDedup:   zone=\(dup.zoneID) count=\(dup.count)")
                 #endif
-                TelemetryService.trackOnce(
-                    .cloudkitDuplicateDetected,
-                    key: "SplitGroup:boot-cleanup:\(dup.zoneID)",
-                    parameters: [
-                        "model": "SplitGroup",
-                        "count": String(dup.count),
-                        "context": "boot-cleanup"
-                    ]
+                TelemetryService.cloudkitDuplicateDetected(
+                    model: "SplitGroup",
+                    count: dup.count,
+                    context: .bootCleanup,
+                    keySuffix: dup.zoneID
                 )
             }
         } catch {

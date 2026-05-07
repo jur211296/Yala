@@ -254,16 +254,14 @@ final class SplitSyncManager {
     func groupName(for zoneID: String) -> String? {
         guard let context = modelContext else { return nil }
         let descriptor = FetchDescriptor<SplitGroup>(
-            predicate: #Predicate { $0.cloudKitZoneID == zoneID },
-            sortBy: [SortDescriptor(\.createdAt, order: .forward)]
+            predicate: #Predicate { $0.cloudKitZoneID == zoneID }
         )
         return (try? context.fetch(descriptor))?.first?.name
     }
 
     /// Fetch the local SplitGroup for a given zone ID (resolved after sync).
     /// Sorted by `createdAt asc` so the canonical (oldest) group wins consistently
-    /// if a CloudKit sync race produced duplicates with the same `cloudKitZoneID`.
-    /// Sprint extra TODO #10: telemetry fires `cloudkitDuplicateDetected` (runtime-fetch).
+    /// if a CloudKit sync race produced duplicates sharing the same `cloudKitZoneID`.
     func group(for zoneID: String) -> SplitGroup? {
         guard let context = modelContext else { return nil }
         let descriptor = FetchDescriptor<SplitGroup>(
@@ -275,14 +273,11 @@ final class SplitSyncManager {
             #if DEBUG
             logger.error("SplitSyncManager.group(for:): \(results.count) duplicate SplitGroups for zone \(zoneID)")
             #endif
-            TelemetryService.trackOnce(
-                .cloudkitDuplicateDetected,
-                key: "SplitGroup:group(for:):\(zoneID)",
-                parameters: [
-                    "model": "SplitGroup",
-                    "count": String(results.count),
-                    "context": "runtime-fetch"
-                ]
+            TelemetryService.cloudkitDuplicateDetected(
+                model: "SplitGroup",
+                count: results.count,
+                context: .runtimeFetch,
+                keySuffix: zoneID
             )
         }
         return results.first

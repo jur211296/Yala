@@ -513,14 +513,11 @@ final class GroupService {
             #if DEBUG
             print("GroupService: \(conflictCount) duplicate SplitGroups detected during updateCurrentUserDisplayName")
             #endif
-            TelemetryService.trackOnce(
-                .cloudkitDuplicateDetected,
-                key: "SplitGroup:uniquing-updateDisplayName:\(conflictCount)",
-                parameters: [
-                    "model": "SplitGroup",
-                    "count": String(conflictCount),
-                    "context": "uniquing-fallback"
-                ]
+            TelemetryService.cloudkitDuplicateDetected(
+                model: "SplitGroup",
+                count: conflictCount,
+                context: .uniquingFallback,
+                keySuffix: "updateDisplayName:\(conflictCount)"
             )
         }
 
@@ -558,14 +555,11 @@ final class GroupService {
                 #if DEBUG
                 print("GroupService: \(conflictCount) duplicate SplitGroups detected during refreshCurrentUserFlags")
                 #endif
-                TelemetryService.trackOnce(
-                    .cloudkitDuplicateDetected,
-                    key: "SplitGroup:uniquing-refreshFlags:\(conflictCount)",
-                    parameters: [
-                        "model": "SplitGroup",
-                        "count": String(conflictCount),
-                        "context": "uniquing-fallback"
-                    ]
+                TelemetryService.cloudkitDuplicateDetected(
+                    model: "SplitGroup",
+                    count: conflictCount,
+                    context: .uniquingFallback,
+                    keySuffix: "refreshFlags:\(conflictCount)"
                 )
             }
 

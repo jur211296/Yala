@@ -182,9 +182,8 @@ final class AppBootstrapper {
         GroupExpenseService.shared.setContext(context)
         GroupTransactionBridge.shared.setContext(context)
 
-        // 16.4. Sprint extra TODO #10: cleanup duplicate SplitGroups from CloudKit sync race.
-        // Idempotent — no-op when no duplicates. Telemetry fires `cloudkitDuplicateDetected`.
-        // Runs sync (not Task) before retry/reconcile so consumers downstream see canonical groups only.
+        // 16.4. Cleanup duplicate SplitGroups from CloudKit sync race.
+        // Runs sync (not Task) so consumers downstream see canonical groups only.
         SplitGroupDeduplicationService.deduplicateSplitGroups(in: context)
 
         // 16.5. Retry bridge operations that failed in a previous launch
