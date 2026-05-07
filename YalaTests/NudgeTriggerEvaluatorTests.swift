@@ -81,8 +81,15 @@ struct NudgeTriggerEvaluatorTests {
 
     // MARK: - Dormant Nudges
 
-    @Test func dormantGroupsAsMain_alwaysTrue() {
-        let ctx = context()
+    @Test func dormantGroupsAsMain_withoutGroups_returnsFalse() {
+        // Bug #2 (2026-05-07): banner "Tienes gastos compartidos pendientes" no
+        // debe aparecer en users post-onboarding sin grupos.
+        let ctx = context(groupMemberCount: 0)
+        #expect(NudgeTriggerEvaluator.shouldShow(.dormantGroupsAsMain, context: ctx) == false)
+    }
+
+    @Test func dormantGroupsAsMain_withGroups_returnsTrue() {
+        let ctx = context(groupMemberCount: 1)
         #expect(NudgeTriggerEvaluator.shouldShow(.dormantGroupsAsMain, context: ctx) == true)
     }
 
@@ -175,7 +182,8 @@ Tests generated:
 6. invitedMonthTwo_at11Expenses_returnsTrue - Boundary above
 7. invitedSocialProof_at2Members_returnsFalse - Below member threshold
 8. invitedSocialProof_at3Members_returnsTrue - At member threshold (>=3)
-9. dormantGroupsAsMain_alwaysTrue - Always eligible
+9a. dormantGroupsAsMain_withoutGroups_returnsFalse - Bug #2 fix: gate por groupMemberCount
+9b. dormantGroupsAsMain_withGroups_returnsTrue - Eligible cuando hay grupos
 10. dormantNewExpenses_at0Expenses_returnsFalse - Zero expenses
 11. dormantNewExpenses_at1Expense_returnsTrue - Has expenses
 12. dormantSpendingGap_at5Expenses_returnsFalse - At boundary (not >5)

@@ -172,7 +172,10 @@ struct NudgeTriggerEvaluator {
 
         // Dormant
         case .dormantGroupsAsMain:
-            return true // Always eligible, gated by minimumWeek
+            // Gate por presencia de grupos: el copy habla de "gastos compartidos
+            // pendientes" — sin grupos no aplica. Las otras nudges dormant ya
+            // gating por sharedExpenseCount/enteredViaGroupNotification.
+            return context.groupMemberCount > 0
         case .dormantNewExpenses:
             return context.sharedExpenseCount > 0
         case .dormantSpendingGap:
