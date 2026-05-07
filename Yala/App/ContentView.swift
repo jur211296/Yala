@@ -244,6 +244,10 @@ struct ContentView: View {
                     showWelcomeRestore = false
                 },
                 onStartFresh: {
+                    // A4 v3.2 (#9b): clean slate también desde WelcomeRestoreView.
+                    // Cubre paths .notFound/.error/.iCloudDisabled → "Empezar
+                    // configuración" + confirmation dialog desde state .found.
+                    OnboardingResetHelper.clearResidualPreferencesForFreshStart()
                     prefilledOnboardingData = nil
                     showWelcomeRestore = false
                     showOnboarding = true
