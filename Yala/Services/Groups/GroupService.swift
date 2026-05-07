@@ -502,8 +502,12 @@ final class GroupService {
         guard !pending.isEmpty else { return }
 
         // Cache groups by zoneID — typical user has 1-3 groups, fetch once.
+        // `uniquingKeysWith` evita crash si CloudKit sync trae duplicados con el
+        // mismo zoneID (no hay @Attribute(.unique) por compat CloudKit). Cualquier
+        // duplicado sirve igual para enqueueSave — todos apuntan al mismo zone.
         let allGroups = try fetchAllGroups()
-        let groupByZoneID = Dictionary(uniqueKeysWithValues: allGroups.map { ($0.cloudKitZoneID, $0) })
+        let groupByZoneID = Dictionary(allGroups.map { ($0.cloudKitZoneID, $0) },
+                                       uniquingKeysWith: { first, _ in first })
 
         for member in pending {
             member.displayName = trimmed
