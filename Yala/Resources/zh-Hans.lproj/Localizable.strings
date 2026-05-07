@@ -4111,7 +4111,7 @@
 "welcome.restore.continue" = "继续";
 "welcome.restore.notFoundTitle" = "未找到数据";
 "welcome.restore.notFoundBody" = "你的 iCloud 账户没有关联的数据。想要重新开始吗？";
-"welcome.restore.startFresh" = "开始配置";
+"welcome.restore.startFresh" = "从零开始";
 "welcome.restore.retry" = "重新查找";
 "welcome.restore.errorTitle" = "出现了问题";
 "welcome.restore.errorBody" = "无法查找你的 iCloud 数据。请重试或从零开始配置。";
@@ -4137,20 +4137,22 @@
 "welcome.hero.cta" = "开始";
 "welcome.hero.trust" = "100% 私密 · 你的信息始终与你同在";
 
-"welcome.hero.cards.capture.title" = "智能拍摄";
-"welcome.hero.cards.capture.body" = "对准相机,自动记录。";
-"welcome.hero.cards.voice.title" = "懂你的语音";
-"welcome.hero.cards.voice.body" = "说一声就好。";
+"welcome.hero.cards.capture.title" = "拍照即录";
+"welcome.hero.cards.capture.body" = "拍下来,Yala 自动识别。";
+"welcome.hero.cards.assistant.title" = "语音 + AI 助手";
+"welcome.hero.cards.assistant.body" = "跟它说,问它。Yala 都懂。";
+"welcome.hero.cards.groups.title" = "共享账目";
+"welcome.hero.cards.groups.body" = "跟谁都能分账。";
+"welcome.hero.cards.budgets.title" = "预算与目标";
+"welcome.hero.cards.budgets.body" = "设定上限,照做不误。";
+"welcome.hero.cards.multiAndCurrencies.title" = "多账户多币种";
+"welcome.hero.cards.multiAndCurrencies.body" = "银行卡、现金、48+ 种货币。";
 "welcome.hero.cards.import.title" = "导入你的历史";
-"welcome.hero.cards.import.body" = "CSV 或 Excel,几秒内完成。";
-"welcome.hero.cards.multiAccount.title" = "多账户";
-"welcome.hero.cards.multiAccount.body" = "现金、卡片,全部在一起。";
-"welcome.hero.cards.currencies.title" = "48+ 种货币";
-"welcome.hero.cards.currencies.body" = "旅行时也能掌控全局。";
-"welcome.hero.cards.icloud.title" = "iCloud 同步";
-"welcome.hero.cards.icloud.body" = "在你所有的 Apple 设备上。";
+"welcome.hero.cards.import.body" = "PDF、CSV、Excel,一键搞定。";
+"welcome.hero.cards.icloud.title" = "私享 iCloud";
+"welcome.hero.cards.icloud.body" = "你的数据,在你的 iCloud。无服务器。";
 "welcome.hero.cards.more.title" = "还有更多";
-"welcome.hero.cards.more.body" = "让我们一起去发现。";
+"welcome.hero.cards.more.body" = "我们一起来发现。";
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
 "welcome.detectedData.title" = "欢迎回来!我们找到了你的账户";

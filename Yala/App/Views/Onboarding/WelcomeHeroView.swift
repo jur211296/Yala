@@ -2,7 +2,7 @@
 //  WelcomeHeroView.swift
 //  Yala
 //
-//  A4 v3.1 — Pantalla de presentación entre splash y Welcome Chooser.
+//  Pantalla de presentación entre splash y Welcome Chooser.
 //  Mientras el user lee las cards animadas, el fetch de iCloud corre invisible.
 //  Al tap "Empezar", ContentView decide entre alert (con data) o Chooser (sin data).
 //
@@ -26,7 +26,7 @@ struct WelcomeHeroView: View {
 
     // MARK: Constants
 
-    /// Intervalo entre rotaciones de cards. Spring animation 0.6s ya cubre el movimiento.
+    /// Intervalo entre rotaciones de cards. Spring animation 0.55s ya cubre el movimiento.
     private static let cardRotationInterval: Duration = .seconds(3.5)
     /// Timeout del fetch background de iCloud durante el Hero.
     private static let iCloudFetchTimeout: TimeInterval = 10
@@ -63,17 +63,18 @@ struct WelcomeHeroView: View {
         let accentColor: Color
     }
 
-    /// Cacheado en `@State`: 14 lookups `ls(...)` × cada body recompute (animation
+    /// Cacheado en `@State`: 16 lookups `ls(...)` × cada body recompute (animation
     /// 60fps) sería derroche. Se popula una vez en `.task`.
     private static func makeCards() -> [HeroCard] {
         [
             HeroCard(icon: "camera.fill", title: L10n.Welcome.Hero.captureTitle, body: L10n.Welcome.Hero.captureBody, accentColor: .electricIndigo),
-            HeroCard(icon: "mic.fill", title: L10n.Welcome.Hero.voiceTitle, body: L10n.Welcome.Hero.voiceBody, accentColor: .neonCyan),
-            HeroCard(icon: "arrow.down.doc.fill", title: L10n.Welcome.Hero.importTitle, body: L10n.Welcome.Hero.importBody, accentColor: .priorityNeed),
-            HeroCard(icon: "creditcard.fill", title: L10n.Welcome.Hero.multiAccountTitle, body: L10n.Welcome.Hero.multiAccountBody, accentColor: .hotPink),
-            HeroCard(icon: "globe", title: L10n.Welcome.Hero.currenciesTitle, body: L10n.Welcome.Hero.currenciesBody, accentColor: .essentialNeed),
-            HeroCard(icon: "icloud.fill", title: L10n.Welcome.Hero.icloudTitle, body: L10n.Welcome.Hero.icloudBody, accentColor: .electricIndigo),
-            HeroCard(icon: "sparkles", title: L10n.Welcome.Hero.moreTitle, body: L10n.Welcome.Hero.moreBody, accentColor: .neonCyan),
+            HeroCard(icon: "bubble.left.and.bubble.right.fill", title: L10n.Welcome.Hero.assistantTitle, body: L10n.Welcome.Hero.assistantBody, accentColor: .hotPink),
+            HeroCard(icon: "person.2.fill", title: L10n.Welcome.Hero.groupsTitle, body: L10n.Welcome.Hero.groupsBody, accentColor: .priorityNeed),
+            HeroCard(icon: "target", title: L10n.Welcome.Hero.budgetsTitle, body: L10n.Welcome.Hero.budgetsBody, accentColor: .essentialNeed),
+            HeroCard(icon: "creditcard.fill", title: L10n.Welcome.Hero.multiAndCurrenciesTitle, body: L10n.Welcome.Hero.multiAndCurrenciesBody, accentColor: .priorityNeedNew),
+            HeroCard(icon: "arrow.down.doc.fill", title: L10n.Welcome.Hero.importTitle, body: L10n.Welcome.Hero.importBody, accentColor: .electricIndigo),
+            HeroCard(icon: "icloud.fill", title: L10n.Welcome.Hero.icloudTitle, body: L10n.Welcome.Hero.icloudBody, accentColor: .hotPink),
+            HeroCard(icon: "sparkles", title: L10n.Welcome.Hero.moreTitle, body: L10n.Welcome.Hero.moreBody, accentColor: .essentialNeed),
         ]
     }
 
@@ -88,13 +89,14 @@ struct WelcomeHeroView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(height: 36)
+                    .colorMultiply(.white)
                     .padding(.top, DS.Spacing.lg)
                     .accessibilityHidden(true)
 
                 Spacer(minLength: DS.Spacing.lg)
 
                 cardStack
-                    .frame(height: 380)
+                    .frame(height: 260)
 
                 Spacer(minLength: DS.Spacing.lg)
 
@@ -127,29 +129,24 @@ struct WelcomeHeroView: View {
     // MARK: Background
 
     private var heroBackground: some View {
-        ZStack {
-            theme.background
-                .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [
-                    Color.hotPink.opacity(0.35),
-                    Color.electricIndigo.opacity(0.18),
-                    .clear
-                ],
-                startPoint: .bottom,
-                endPoint: .top
-            )
-            .ignoresSafeArea()
-        }
+        LinearGradient(
+            colors: DS.Gradients.heroIndigoBlack,
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
     }
 
     // MARK: Card stack
 
+    /// Front card con `.id(currentCardIndex)` + transition asymmetric horizontal.
+    /// Back/middle se animan implícitamente dentro del `withAnimation(spring)` del
+    /// incremento de índice porque cambian sus offset/scale/rotation derivados.
     private var cardStack: some View {
         ZStack {
             if !cards.isEmpty {
-                ForEach(0..<3, id: \.self) { offset in
+                // Back y middle: decorativos, sin transition propia — interpolan con spring.
+                ForEach([2, 1], id: \.self) { offset in
                     let cardIdx = (currentCardIndex + offset) % cards.count
                     let card = cards[cardIdx]
                     heroCardView(card)
@@ -158,73 +155,91 @@ struct WelcomeHeroView: View {
                         .offset(Self.cardOffsets[offset])
                         .opacity(Self.cardOpacities[offset])
                         .zIndex(Double(2 - offset))
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel(offset == 0 ? "\(card.title). \(card.body)" : "")
-                        .accessibilityHidden(offset != 0)
+                        .accessibilityHidden(true)
                 }
+
+                // Front card: con `.id` para forzar re-creación + transition horizontal.
+                let frontCard = cards[currentCardIndex]
+                heroCardView(frontCard)
+                    .id(currentCardIndex)
+                    .scaleEffect(Self.cardScales[0])
+                    .zIndex(2)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)
+                    ))
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(frontCard.title). \(frontCard.body)")
             }
         }
+        .clipped()
     }
 
-    /// Stack visual: front (offset 0, full) → middle (offset 1, leve rotation) → back
-    /// (offset 2, más pequeño y rotado al lado opuesto). Coreografiado para sentirse
-    /// "fanned" sin overlap visual pesado.
-    private static let cardScales: [CGFloat] = [1.0, 0.92, 0.85]
-    private static let cardRotations: [Double] = [0, 5, -7]
-    private static let cardOffsets: [CGSize] = [.zero, CGSize(width: 12, height: 8), CGSize(width: -14, height: 16)]
-    private static let cardOpacities: [Double] = [1.0, 0.6, 0.32]
+    /// Front (offset 0, full) → middle (offset 1, leve rotation) → back
+    /// (offset 2, más pequeño y rotado al lado opuesto).
+    private static let cardScales: [CGFloat] = [1.0, 0.88, 0.78]
+    private static let cardRotations: [Double] = [0, 7, -9]
+    private static let cardOffsets: [CGSize] = [.zero, CGSize(width: 32, height: 12), CGSize(width: -32, height: 18)]
+    private static let cardOpacities: [Double] = [1.0, 0.55, 0.28]
 
     private func heroCardView(_ card: HeroCard) -> some View {
-        VStack(spacing: DS.Spacing.lg) {
+        VStack(spacing: DS.Spacing.md) {
             Image(systemName: card.icon)
                 // A11Y-DT: tamaño hero del icono dentro del card animado (no escala con DT).
-                .font(.system(size: 56, weight: .semibold))
+                .font(.system(size: 44, weight: .semibold))
                 .foregroundStyle(.white)
-                .frame(width: 96, height: 96)
-                .background(.white.opacity(0.15))
+                .frame(width: 72, height: 72)
+                .background(.white.opacity(0.18))
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
 
             Text(card.title)
-                .font(DS.Typography.title)
+                .font(DS.Typography.title2)
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.85)
+                .lineLimit(2)
 
             Text(card.body)
-                .font(DS.Typography.body)
-                .foregroundStyle(.white.opacity(0.85))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.white.opacity(0.88))
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.85)
-                .padding(.horizontal, DS.Spacing.md)
+                .lineLimit(2)
+                .padding(.horizontal, DS.Spacing.sm)
         }
-        .padding(DS.Spacing.xl)
-        // A11Y-DT: card width fijo 280pt + idealHeight permite escalado vertical
-        // hasta 420pt antes de limitar; minimumScaleFactor(0.85) en title/body
-        // absorbe el resto del Dynamic Type XXL.
+        .padding(DS.Spacing.lg)
+        // A11Y-DT: card width 280pt + idealHeight 200 / maxHeight 240 absorbe DT XXL
+        // con minimumScaleFactor(0.85) en title/body.
         .frame(width: 280)
-        .frame(idealHeight: 360, maxHeight: 420)
+        .frame(idealHeight: 200, maxHeight: 240)
         .background(
-            LinearGradient(
-                colors: [card.accentColor.opacity(0.95), card.accentColor.opacity(0.75)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            ZStack {
+                // Sólido base + difuminado claro/oscuro suave para textura.
+                card.accentColor
+                LinearGradient(
+                    colors: [.white.opacity(0.12), .clear, .black.opacity(0.10)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
         )
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .shadow(color: card.accentColor.opacity(0.4), radius: 24, x: 0, y: 12)
+        .shadow(color: card.accentColor.opacity(0.3), radius: 18, x: 0, y: 10)
     }
 
     // MARK: Title + subtitle
 
+    /// Texto sobre fondo dark: `.white` para title base + gradient
+    /// `.hotPink → .white` para titleAccent (contraste >4.5:1 sobre indigo).
     private var titleAndSubtitle: some View {
         VStack(spacing: DS.Spacing.sm) {
             VStack(spacing: 0) {
                 Text(L10n.Welcome.Hero.title)
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                 Text(L10n.Welcome.Hero.titleAccent)
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [.electricIndigo, .hotPink],
+                            colors: [.hotPink, .white],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -237,7 +252,7 @@ struct WelcomeHeroView: View {
 
             Text(L10n.Welcome.Hero.subtitle)
                 .font(DS.Typography.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
         }
     }
@@ -256,7 +271,7 @@ struct WelcomeHeroView: View {
 
             Text(L10n.Welcome.Hero.trust)
                 .font(DS.Typography.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.white.opacity(0.55))
                 .multilineTextAlignment(.center)
         }
     }
@@ -355,7 +370,7 @@ struct WelcomeHeroView: View {
                 await MainActor.run {
                     let animation: Animation? = reduceMotion
                         ? nil
-                        : .spring(response: 0.6, dampingFraction: 0.75)
+                        : .spring(response: 0.55, dampingFraction: 0.78)
                     withAnimation(animation) {
                         currentCardIndex = (currentCardIndex + 1) % cards.count
                     }

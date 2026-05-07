@@ -121,9 +121,15 @@ struct WelcomeRestoreView: View {
         VStack(spacing: DS.Spacing.xl) {
             Spacer(minLength: DS.Spacing.xxl)
 
-            Image(systemName: "icloud.and.arrow.down.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(.blue)
+            Image(systemName: "sparkles")
+                .font(.system(size: 56, weight: .semibold))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: DS.Gradients.heroIntense,
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
 
             VStack(spacing: DS.Spacing.sm) {
                 Text(summary.userName.map { L10n.Welcome.Restore.foundTitle($0) } ?? L10n.Welcome.Restore.foundTitleAnonymous)
@@ -137,19 +143,8 @@ struct WelcomeRestoreView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
 
-            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                ForEach(visibleSummaryItems(for: summary), id: \.icon) { item in
-                    summaryRow(icon: item.icon, text: item.text)
-                }
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .padding(.horizontal, DS.Spacing.lg)
+            countCards(for: summary)
+                .padding(.horizontal, DS.Spacing.lg)
 
             Spacer()
 
@@ -190,22 +185,97 @@ struct WelcomeRestoreView: View {
         s.isFullyPrefilled
     }
 
-    /// Filas visibles del resumen `.found`: solo las categorías con count > 0.
-    private func visibleSummaryItems(for s: ICloudAccountSummary) -> [(icon: String, text: String)] {
-        var items: [(icon: String, text: String)] = []
+    /// Items visibles del resumen `.found` (count > 0), cada uno renderizado
+    /// como card individual.
+    private struct CountItem: Identifiable {
+        let id = UUID()
+        let icon: String
+        let count: Int
+        let label: String
+    }
+
+    private func visibleCountItems(for s: ICloudAccountSummary) -> [CountItem] {
+        var items: [CountItem] = []
         if s.accountsCount > 0 {
-            items.append(("creditcard.fill", L10n.Welcome.Restore.foundAccounts(s.accountsCount)))
+            items.append(CountItem(icon: "creditcard.fill", count: s.accountsCount,
+                                   label: L10n.Welcome.Restore.foundAccounts(s.accountsCount)))
         }
         if s.transactionsCount > 0 {
-            items.append(("list.bullet.rectangle", L10n.Welcome.Restore.foundTransactions(s.transactionsCount)))
+            items.append(CountItem(icon: "list.bullet.rectangle.fill", count: s.transactionsCount,
+                                   label: L10n.Welcome.Restore.foundTransactions(s.transactionsCount)))
         }
         if s.budgetsCount > 0 {
-            items.append(("chart.pie.fill", L10n.Welcome.Restore.foundBudgets(s.budgetsCount)))
+            items.append(CountItem(icon: "chart.pie.fill", count: s.budgetsCount,
+                                   label: L10n.Welcome.Restore.foundBudgets(s.budgetsCount)))
         }
         if s.groupsCount > 0 {
-            items.append(("person.2.fill", L10n.Welcome.Restore.foundGroups(s.groupsCount)))
+            items.append(CountItem(icon: "person.2.fill", count: s.groupsCount,
+                                   label: L10n.Welcome.Restore.foundGroups(s.groupsCount)))
         }
         return items
+    }
+
+    /// Layout adaptativo según número de categorías visibles:
+    /// 1 → card centrado max-width 280pt; 2 → HStack 2 cols;
+    /// 3 → HStack 3 cols; 4 → grid 2×2.
+    @ViewBuilder
+    private func countCards(for summary: ICloudAccountSummary) -> some View {
+        let items = visibleCountItems(for: summary)
+        switch items.count {
+        case 1:
+            HStack {
+                Spacer()
+                countCard(items[0])
+                    .frame(maxWidth: 280)
+                Spacer()
+            }
+        case 2, 3:
+            HStack(spacing: DS.Spacing.md) {
+                ForEach(items) { item in
+                    countCard(item)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+        default:
+            // 4 items o más → grid 2×2.
+            LazyVGrid(
+                columns: [GridItem(.flexible(), spacing: DS.Spacing.md),
+                          GridItem(.flexible(), spacing: DS.Spacing.md)],
+                spacing: DS.Spacing.md
+            ) {
+                ForEach(items) { item in
+                    countCard(item)
+                }
+            }
+        }
+    }
+
+    private func countCard(_ item: CountItem) -> some View {
+        VStack(spacing: DS.Spacing.sm) {
+            Image(systemName: item.icon)
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(theme.accent)
+            Text("\(item.count)")
+                .font(DS.Typography.amount)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(item.label)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+        }
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .fill(.thCard)
+        )
+        .dsCardShadow()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(item.label)
     }
 
     private var notFoundView: some View {
@@ -248,19 +318,6 @@ struct WelcomeRestoreView: View {
     }
 
     // MARK: - Helpers
-
-    private func summaryRow(icon: String, text: String) -> some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(theme.accent)
-                .frame(width: 24)
-            Text(text)
-                .font(DS.Typography.body)
-                .foregroundStyle(.primary)
-            Spacer()
-        }
-    }
 
     private func emptyStateView(
         icon: String,

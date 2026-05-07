@@ -4064,17 +4064,19 @@ enum L10n {
             static var cta: String { ls("welcome.hero.cta", comment: "") }
             static var trust: String { ls("welcome.hero.trust", comment: "") }
 
-            // 7 cards animadas (capture/voice/import/multiAccount/currencies/icloud/more).
+            // 8 cards animadas (Sprint 2): capture/assistant/groups/budgets/multiAndCurrencies/import/icloud/more.
             static var captureTitle: String { ls("welcome.hero.cards.capture.title", comment: "") }
             static var captureBody: String { ls("welcome.hero.cards.capture.body", comment: "") }
-            static var voiceTitle: String { ls("welcome.hero.cards.voice.title", comment: "") }
-            static var voiceBody: String { ls("welcome.hero.cards.voice.body", comment: "") }
+            static var assistantTitle: String { ls("welcome.hero.cards.assistant.title", comment: "") }
+            static var assistantBody: String { ls("welcome.hero.cards.assistant.body", comment: "") }
+            static var groupsTitle: String { ls("welcome.hero.cards.groups.title", comment: "") }
+            static var groupsBody: String { ls("welcome.hero.cards.groups.body", comment: "") }
+            static var budgetsTitle: String { ls("welcome.hero.cards.budgets.title", comment: "") }
+            static var budgetsBody: String { ls("welcome.hero.cards.budgets.body", comment: "") }
+            static var multiAndCurrenciesTitle: String { ls("welcome.hero.cards.multiAndCurrencies.title", comment: "") }
+            static var multiAndCurrenciesBody: String { ls("welcome.hero.cards.multiAndCurrencies.body", comment: "") }
             static var importTitle: String { ls("welcome.hero.cards.import.title", comment: "") }
             static var importBody: String { ls("welcome.hero.cards.import.body", comment: "") }
-            static var multiAccountTitle: String { ls("welcome.hero.cards.multiAccount.title", comment: "") }
-            static var multiAccountBody: String { ls("welcome.hero.cards.multiAccount.body", comment: "") }
-            static var currenciesTitle: String { ls("welcome.hero.cards.currencies.title", comment: "") }
-            static var currenciesBody: String { ls("welcome.hero.cards.currencies.body", comment: "") }
             static var icloudTitle: String { ls("welcome.hero.cards.icloud.title", comment: "") }
             static var icloudBody: String { ls("welcome.hero.cards.icloud.body", comment: "") }
             static var moreTitle: String { ls("welcome.hero.cards.more.title", comment: "") }

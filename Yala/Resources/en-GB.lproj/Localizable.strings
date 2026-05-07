@@ -202,7 +202,7 @@
 "welcome.restore.continue" = "Continue";
 "welcome.restore.notFoundTitle" = "No data found";
 "welcome.restore.notFoundBody" = "There's no data linked to your iCloud account. Would you like to start fresh?";
-"welcome.restore.startFresh" = "Start setup";
+"welcome.restore.startFresh" = "Start fresh";
 "welcome.restore.retry" = "Retry search";
 "welcome.restore.errorTitle" = "Something went wrong";
 "welcome.restore.errorBody" = "We couldn't search your iCloud data. Try again or set up from scratch.";
@@ -228,18 +228,20 @@
 "welcome.hero.cta" = "Get started";
 "welcome.hero.trust" = "100% private · Your info stays with you";
 
-"welcome.hero.cards.capture.title" = "Smart capture";
-"welcome.hero.cards.capture.body" = "Point the camera and it's logged.";
-"welcome.hero.cards.voice.title" = "Voice that understands";
-"welcome.hero.cards.voice.body" = "Just say it.";
+"welcome.hero.cards.capture.title" = "Snap a receipt";
+"welcome.hero.cards.capture.body" = "Point your camera. Yala reads it.";
+"welcome.hero.cards.assistant.title" = "Voice & AI assistant";
+"welcome.hero.cards.assistant.body" = "Tell it or ask it. Yala answers.";
+"welcome.hero.cards.groups.title" = "Shared expenses";
+"welcome.hero.cards.groups.body" = "Split with anyone.";
+"welcome.hero.cards.budgets.title" = "Budgets & goals";
+"welcome.hero.cards.budgets.body" = "Set limits. Hit them.";
+"welcome.hero.cards.multiAndCurrencies.title" = "Accounts & currencies";
+"welcome.hero.cards.multiAndCurrencies.body" = "Cards, cash, 48+ currencies.";
 "welcome.hero.cards.import.title" = "Import your history";
-"welcome.hero.cards.import.body" = "CSV or Excel, in seconds.";
-"welcome.hero.cards.multiAccount.title" = "Multi-account";
-"welcome.hero.cards.multiAccount.body" = "Cash, cards, all in one place.";
-"welcome.hero.cards.currencies.title" = "48+ currencies";
-"welcome.hero.cards.currencies.body" = "Travel without losing track.";
-"welcome.hero.cards.icloud.title" = "iCloud sync";
-"welcome.hero.cards.icloud.body" = "Across all your Apple devices.";
+"welcome.hero.cards.import.body" = "PDF, CSV, Excel. Done.";
+"welcome.hero.cards.icloud.title" = "Private iCloud";
+"welcome.hero.cards.icloud.body" = "Your data, in your iCloud. No servers.";
 "welcome.hero.cards.more.title" = "And much more";
 "welcome.hero.cards.more.body" = "Let's discover it together.";
 

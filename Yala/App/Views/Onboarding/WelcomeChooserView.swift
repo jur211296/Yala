@@ -2,11 +2,9 @@
 //  WelcomeChooserView.swift
 //  Yala
 //
-//  A4 — Welcome Chooser pre-onboarding (épico Groups Pulido Final).
-//
-//  Pantalla full-screen presentada UNA SOLA VEZ al primer launch fresh, ANTES del
-//  OnboardingView, cuando NO hay data en iCloud y NO hay invite via universal link.
-//  3 ramas: nuevo / restore desde iCloud / paste invite link.
+//  Welcome Chooser pre-onboarding. Full-screen presentado UNA SOLA VEZ al primer
+//  launch fresh, ANTES del OnboardingView, cuando NO hay data en iCloud y NO hay
+//  invite via universal link. 3 ramas: nuevo / restore desde iCloud / paste invite.
 //
 //  El flag `hasShownWelcomeChooser` se setea SOLO tras tap consciente en una de
 //  las 3 cards (no en dismissals programáticos por race con CKShare).
@@ -46,22 +44,27 @@ struct WelcomeChooserView: View {
         }
     }
 
-    @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var onSelect: (Branch) -> Void
+    var onBack: (() -> Void)? = nil
 
     private func iconTint(for branch: Branch) -> Color {
         switch branch {
-        case .new: theme.accent
-        case .restore: .blue
-        case .invite: .green
+        case .new: .hotPink
+        case .restore: .neonCyan
+        case .invite: .priorityNeed
         }
     }
 
     var body: some View {
         ZStack {
-            theme.background.ignoresSafeArea()
+            LinearGradient(
+                colors: DS.Gradients.heroIndigoBlack,
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {
@@ -71,17 +74,18 @@ struct WelcomeChooserView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(height: 64)
+                        .colorMultiply(.white)
                         .accessibilityHidden(true)
 
                     VStack(spacing: DS.Spacing.sm) {
                         Text(L10n.Welcome.Chooser.title)
                             .font(DS.Typography.title2)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.white)
                             .multilineTextAlignment(.center)
 
                         Text(L10n.Welcome.Chooser.subtitle)
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.white.opacity(0.7))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, DS.Spacing.lg)
                     }
@@ -103,6 +107,7 @@ struct WelcomeChooserView: View {
                 }
             }
         }
+        .welcomeBackButton(tint: .white, action: onBack)
     }
 
     private func handleSelect(_ branch: Branch) {
@@ -124,7 +129,7 @@ struct WelcomeChooserView: View {
             HStack(spacing: DS.Spacing.md) {
                 ZStack {
                     Circle()
-                        .fill(iconTint.opacity(0.15))
+                        .fill(iconTint.opacity(0.25))
                         .frame(width: 48, height: 48)
                     Image(systemName: icon)
                         .font(.system(size: 22, weight: .semibold))
@@ -134,12 +139,12 @@ struct WelcomeChooserView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(title)
                         .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.white)
                         .multilineTextAlignment(.leading)
 
                     Text(bodyText)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.7))
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -148,7 +153,7 @@ struct WelcomeChooserView: View {
 
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.chevron)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.white.opacity(0.4))
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
@@ -156,14 +161,13 @@ struct WelcomeChooserView: View {
             .contentShape(Rectangle())
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
+                    .fill(.ultraThinMaterial)
             )
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
+                    .stroke(Color.white.opacity(0.12), lineWidth: 0.8)
             )
-            .dsSubtleShadow()
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)

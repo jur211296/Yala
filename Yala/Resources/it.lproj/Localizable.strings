@@ -4110,7 +4110,7 @@
 "welcome.restore.continue" = "Continua";
 "welcome.restore.notFoundTitle" = "Nessun dato trovato";
 "welcome.restore.notFoundBody" = "Non ci sono dati collegati al tuo account iCloud. Vuoi ricominciare da zero?";
-"welcome.restore.startFresh" = "Inizia la configurazione";
+"welcome.restore.startFresh" = "Ricomincia da zero";
 "welcome.restore.retry" = "Riprova la ricerca";
 "welcome.restore.errorTitle" = "Si è verificato un problema";
 "welcome.restore.errorBody" = "Non siamo riusciti a cercare i tuoi dati iCloud. Riprova o configura da zero.";
@@ -4136,18 +4136,20 @@
 "welcome.hero.cta" = "Iniziare";
 "welcome.hero.trust" = "100% privato · Le tue info rimangono con te";
 
-"welcome.hero.cards.capture.title" = "Cattura intelligente";
-"welcome.hero.cards.capture.body" = "Punta la fotocamera, registrato.";
-"welcome.hero.cards.voice.title" = "Voce che capisce";
-"welcome.hero.cards.voice.body" = "Dillo e basta.";
+"welcome.hero.cards.capture.title" = "Foto degli scontrini";
+"welcome.hero.cards.capture.body" = "Inquadra. Yala legge.";
+"welcome.hero.cards.assistant.title" = "Voce e assistente IA";
+"welcome.hero.cards.assistant.body" = "Detta o chiedi. Yala risponde.";
+"welcome.hero.cards.groups.title" = "Spese condivise";
+"welcome.hero.cards.groups.body" = "Dividi con chiunque.";
+"welcome.hero.cards.budgets.title" = "Budget e obiettivi";
+"welcome.hero.cards.budgets.body" = "Stabilisci limiti. Rispettali.";
+"welcome.hero.cards.multiAndCurrencies.title" = "Conti e valute";
+"welcome.hero.cards.multiAndCurrencies.body" = "Carte, contanti, 48+ valute.";
 "welcome.hero.cards.import.title" = "Importa il tuo storico";
-"welcome.hero.cards.import.body" = "CSV o Excel, in pochi secondi.";
-"welcome.hero.cards.multiAccount.title" = "Multi-conto";
-"welcome.hero.cards.multiAccount.body" = "Contanti, carte, tutto insieme.";
-"welcome.hero.cards.currencies.title" = "48+ valute";
-"welcome.hero.cards.currencies.body" = "Viaggia senza perdere il controllo.";
-"welcome.hero.cards.icloud.title" = "Sincronizzazione iCloud";
-"welcome.hero.cards.icloud.body" = "Su tutti i tuoi dispositivi Apple.";
+"welcome.hero.cards.import.body" = "PDF, CSV, Excel. Fatto.";
+"welcome.hero.cards.icloud.title" = "iCloud privato";
+"welcome.hero.cards.icloud.body" = "I tuoi dati, nel tuo iCloud. Niente server.";
 "welcome.hero.cards.more.title" = "E molto altro";
 "welcome.hero.cards.more.body" = "Scopriamolo insieme.";
 

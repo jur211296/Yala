@@ -4114,17 +4114,17 @@
 "welcome.restore.foundGroups" = "%d grupos compartidos";
 "welcome.restore.continue" = "Continuar";
 "welcome.restore.notFoundTitle" = "No encontramos tus datos";
-"welcome.restore.notFoundBody" = "No hay datos asociados a tu cuenta de iCloud. ¿Quieres empezar de cero?";
-"welcome.restore.startFresh" = "Empezar configuración";
+"welcome.restore.notFoundBody" = "No hay datos asociados a tu cuenta de iCloud. ¿Quieres empezar desde cero?";
+"welcome.restore.startFresh" = "Empezar desde cero";
 "welcome.restore.retry" = "Reintentar búsqueda";
 "welcome.restore.errorTitle" = "Hubo un problema";
 "welcome.restore.errorBody" = "No pudimos buscar tus datos en iCloud. Intenta de nuevo o configura desde cero.";
 "welcome.restore.iCloudDisabledTitle" = "Activa iCloud para continuar";
 "welcome.restore.iCloudDisabledBody" = "Necesitas tener iCloud activado para recuperar tus datos. Actívalo en Ajustes y vuelve a intentar.";
 "welcome.restore.openSettings" = "Abrir Ajustes";
-"welcome.restore.startFreshConfirm.title" = "¿Empezar de cero?";
+"welcome.restore.startFreshConfirm.title" = "¿Empezar desde cero?";
 "welcome.restore.startFreshConfirm.body" = "Esto creará una cuenta nueva sin tus datos previos. ¿Continuar?";
-"welcome.restore.startFreshConfirm.confirm" = "Sí, empezar de cero";
+"welcome.restore.startFreshConfirm.confirm" = "Sí, empezar desde cero";
 "welcome.restore.startFreshConfirm.cancel" = "Cancelar";
 
 // Welcome Invite Recovery (rama C)
@@ -4142,18 +4142,20 @@
 "welcome.hero.cta" = "Empezar";
 "welcome.hero.trust" = "100% privado · Tu info siempre contigo";
 
-"welcome.hero.cards.capture.title" = "Captura inteligente";
-"welcome.hero.cards.capture.body" = "Apunta la cámara y registrado.";
-"welcome.hero.cards.voice.title" = "Voz que entiende";
-"welcome.hero.cards.voice.body" = "Dilo y listo.";
+"welcome.hero.cards.capture.title" = "Captura por foto";
+"welcome.hero.cards.capture.body" = "Apunta el ticket. Yala lo lee.";
+"welcome.hero.cards.assistant.title" = "Voz y asistente IA";
+"welcome.hero.cards.assistant.body" = "Cuenta o pregunta. Yala responde.";
+"welcome.hero.cards.groups.title" = "Gastos compartidos";
+"welcome.hero.cards.groups.body" = "Reparte con quien sea.";
+"welcome.hero.cards.budgets.title" = "Presupuestos y metas";
+"welcome.hero.cards.budgets.body" = "Ponte límites. Cúmplelos.";
+"welcome.hero.cards.multiAndCurrencies.title" = "Multi-cuenta y divisas";
+"welcome.hero.cards.multiAndCurrencies.body" = "Tarjetas, efectivo, 48+ divisas.";
 "welcome.hero.cards.import.title" = "Importa tu historial";
-"welcome.hero.cards.import.body" = "CSV o Excel, en segundos.";
-"welcome.hero.cards.multiAccount.title" = "Multi-cuenta";
-"welcome.hero.cards.multiAccount.body" = "Efectivo, tarjetas, todo junto.";
-"welcome.hero.cards.currencies.title" = "48+ divisas";
-"welcome.hero.cards.currencies.body" = "Viaja sin perder el control.";
-"welcome.hero.cards.icloud.title" = "Sincronización iCloud";
-"welcome.hero.cards.icloud.body" = "Entre todos tus dispositivos Apple.";
+"welcome.hero.cards.import.body" = "PDF, CSV, Excel. Listo.";
+"welcome.hero.cards.icloud.title" = "iCloud privado";
+"welcome.hero.cards.icloud.body" = "Tu info, en tu iCloud. Sin servidores.";
 "welcome.hero.cards.more.title" = "Y mucho más";
 "welcome.hero.cards.more.body" = "Vamos a descubrirlo juntos.";
 
@@ -4161,4 +4163,4 @@
 "welcome.detectedData.title" = "¡Hola de nuevo! Detectamos tu cuenta";
 "welcome.detectedData.message" = "Encontramos %d cuentas, %d gastos y %d categorías guardados en tu iCloud. ¿Qué hacemos?";
 "welcome.detectedData.loadMyData" = "Cargar mis datos";
-"welcome.detectedData.startFresh" = "Empezar de cero";
+"welcome.detectedData.startFresh" = "Empezar desde cero";

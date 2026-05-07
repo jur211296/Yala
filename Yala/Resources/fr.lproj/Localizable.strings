@@ -4109,7 +4109,7 @@
 "welcome.restore.continue" = "Continuer";
 "welcome.restore.notFoundTitle" = "Aucune donnée trouvée";
 "welcome.restore.notFoundBody" = "Aucune donnée n'est associée à votre compte iCloud. Voulez-vous repartir de zéro ?";
-"welcome.restore.startFresh" = "Commencer la configuration";
+"welcome.restore.startFresh" = "Repartir de zéro";
 "welcome.restore.retry" = "Réessayer la recherche";
 "welcome.restore.errorTitle" = "Un problème est survenu";
 "welcome.restore.errorBody" = "Impossible de rechercher vos données iCloud. Réessayez ou configurez depuis zéro.";
@@ -4135,18 +4135,20 @@
 "welcome.hero.cta" = "Commencer";
 "welcome.hero.trust" = "100% privé · Vos infos restent avec vous";
 
-"welcome.hero.cards.capture.title" = "Capture intelligente";
-"welcome.hero.cards.capture.body" = "Pointez la caméra, enregistré.";
-"welcome.hero.cards.voice.title" = "Voix qui comprend";
-"welcome.hero.cards.voice.body" = "Dites-le, c'est fait.";
+"welcome.hero.cards.capture.title" = "Photo de ticket";
+"welcome.hero.cards.capture.body" = "Photographiez. Yala lit.";
+"welcome.hero.cards.assistant.title" = "Voix et assistant IA";
+"welcome.hero.cards.assistant.body" = "Dictez ou demandez. Yala répond.";
+"welcome.hero.cards.groups.title" = "Dépenses partagées";
+"welcome.hero.cards.groups.body" = "Partagez avec qui vous voulez.";
+"welcome.hero.cards.budgets.title" = "Budgets et objectifs";
+"welcome.hero.cards.budgets.body" = "Fixez des limites. Tenez-les.";
+"welcome.hero.cards.multiAndCurrencies.title" = "Comptes et devises";
+"welcome.hero.cards.multiAndCurrencies.body" = "Cartes, espèces, 48+ devises.";
 "welcome.hero.cards.import.title" = "Importez votre historique";
-"welcome.hero.cards.import.body" = "CSV ou Excel, en secondes.";
-"welcome.hero.cards.multiAccount.title" = "Multi-compte";
-"welcome.hero.cards.multiAccount.body" = "Espèces, cartes, tout réuni.";
-"welcome.hero.cards.currencies.title" = "48+ devises";
-"welcome.hero.cards.currencies.body" = "Voyagez sans perdre le contrôle.";
-"welcome.hero.cards.icloud.title" = "Synchronisation iCloud";
-"welcome.hero.cards.icloud.body" = "Sur tous vos appareils Apple.";
+"welcome.hero.cards.import.body" = "PDF, CSV, Excel. Voilà.";
+"welcome.hero.cards.icloud.title" = "iCloud privé";
+"welcome.hero.cards.icloud.body" = "Vos données, dans votre iCloud. Sans serveur.";
 "welcome.hero.cards.more.title" = "Et bien plus";
 "welcome.hero.cards.more.body" = "Découvrons-le ensemble.";
 

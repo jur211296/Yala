@@ -255,6 +255,9 @@ enum DS {
         /// without relying on red/orange (reserved for `warning`).
         static let heroIntense: [Color] = [.hotPink, .indigo]
 
+        /// Indigo→negro vertical — fondo unificado del flow Welcome (Hero + Chooser).
+        static let heroIndigoBlack: [Color] = [.electricIndigo, .black]
+
         /// Picks the hero gradient for a given 0–100 financial score. `nil`
         /// uses `heroCalm` as a neutral fallback for placeholder/empty states.
         /// Single source of truth for card + detail sheet so thresholds stay

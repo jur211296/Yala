@@ -201,22 +201,30 @@ struct ContentView: View {
         // el cover se cierra solo y `hasShownWelcomeChooser` queda en `false` —
         // si el invite onboarding se cancela, el chooser reaparece en el próximo cold launch.
         .fullScreenCover(isPresented: $showWelcomeChooser.gated(by: showGroupInviteOnboarding)) {
-            WelcomeChooserView { branch in
-                hasShownWelcomeChooser = true
-                showWelcomeChooser = false
-                switch branch {
-                case .new:
-                    // A4 v3.2: clean slate para "Soy nuevo". Limpia prefs
-                    // residuales del KV-Store del Apple ID (userName, currency)
-                    // que sobreviven al uninstall y aparecen pre-llenadas en el
-                    // OnboardingView. Solo strings — booleans no se tocan por
-                    // riesgo cross-device.
-                    OnboardingResetHelper.clearResidualPreferencesForFreshStart()
-                    showOnboarding = true
-                case .restore: showWelcomeRestore = true
-                case .invite: showInviteRecovery = true
+            WelcomeChooserView(
+                onSelect: { branch in
+                    hasShownWelcomeChooser = true
+                    showWelcomeChooser = false
+                    switch branch {
+                    case .new:
+                        // A4 v3.2: clean slate para "Soy nuevo". Limpia prefs
+                        // residuales del KV-Store del Apple ID (userName, currency)
+                        // que sobreviven al uninstall y aparecen pre-llenadas en el
+                        // OnboardingView. Solo strings — booleans no se tocan por
+                        // riesgo cross-device.
+                        OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+                        showOnboarding = true
+                    case .restore: showWelcomeRestore = true
+                    case .invite: showInviteRecovery = true
+                    }
+                },
+                onBack: {
+                    // NO setea `hasShownWelcomeChooser` — sigue false hasta tap
+                    // consciente en una card del Chooser.
+                    showWelcomeChooser = false
+                    showWelcomeHero = true
                 }
-            }
+            )
             .environment(SessionState.shared)
         }
         .fullScreenCover(isPresented: $showInviteRecovery) {
@@ -261,7 +269,17 @@ struct ContentView: View {
             .environment(SessionState.shared)
         }
         .fullScreenCover(isPresented: $showOnboarding) {
-            OnboardingView(prefilledData: prefilledOnboardingData) {
+            OnboardingView(
+                prefilledData: prefilledOnboardingData,
+                onCancelFromStep1: {
+                    // Resetea `hasShownWelcomeChooser` para que el Hero se vuelva
+                    // a presentar (no salta al Chooser automáticamente).
+                    showOnboarding = false
+                    hasShownWelcomeChooser = false
+                    prefilledOnboardingData = nil
+                    presentNextOnboardingScreen()
+                }
+            ) {
                 // Set flag BEFORE dismiss — onChange picks it up reliably
                 if !FeatureGateService.shared.isProUser {
                     SessionState.shared.needsPostOnboardingTrial = true

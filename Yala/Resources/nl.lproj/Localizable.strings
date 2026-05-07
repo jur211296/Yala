@@ -4111,7 +4111,7 @@
 "welcome.restore.continue" = "Doorgaan";
 "welcome.restore.notFoundTitle" = "Geen gegevens gevonden";
 "welcome.restore.notFoundBody" = "Er zijn geen gegevens gekoppeld aan je iCloud-account. Wil je opnieuw beginnen?";
-"welcome.restore.startFresh" = "Configuratie starten";
+"welcome.restore.startFresh" = "Opnieuw beginnen";
 "welcome.restore.retry" = "Opnieuw zoeken";
 "welcome.restore.errorTitle" = "Er ging iets mis";
 "welcome.restore.errorBody" = "We konden je iCloud-gegevens niet ophalen. Probeer het opnieuw of stel alles handmatig in.";
@@ -4137,18 +4137,20 @@
 "welcome.hero.cta" = "Beginnen";
 "welcome.hero.trust" = "100% privé · Jouw info blijft bij jou";
 
-"welcome.hero.cards.capture.title" = "Slimme opname";
-"welcome.hero.cards.capture.body" = "Richt de camera, geregistreerd.";
-"welcome.hero.cards.voice.title" = "Stem die begrijpt";
-"welcome.hero.cards.voice.body" = "Zeg het maar.";
+"welcome.hero.cards.capture.title" = "Foto van bonnen";
+"welcome.hero.cards.capture.body" = "Richt op de bon. Yala leest 'm.";
+"welcome.hero.cards.assistant.title" = "Stem en AI-assistent";
+"welcome.hero.cards.assistant.body" = "Vertel of vraag. Yala antwoordt.";
+"welcome.hero.cards.groups.title" = "Gedeelde uitgaven";
+"welcome.hero.cards.groups.body" = "Verdeel met iedereen.";
+"welcome.hero.cards.budgets.title" = "Budgetten en doelen";
+"welcome.hero.cards.budgets.body" = "Stel grenzen. Houd ze aan.";
+"welcome.hero.cards.multiAndCurrencies.title" = "Rekeningen en valuta's";
+"welcome.hero.cards.multiAndCurrencies.body" = "Kaarten, contant, 48+ valuta's.";
 "welcome.hero.cards.import.title" = "Importeer je geschiedenis";
-"welcome.hero.cards.import.body" = "CSV of Excel, in seconden.";
-"welcome.hero.cards.multiAccount.title" = "Multi-account";
-"welcome.hero.cards.multiAccount.body" = "Contant, kaarten, alles samen.";
-"welcome.hero.cards.currencies.title" = "48+ valuta";
-"welcome.hero.cards.currencies.body" = "Reis zonder de controle te verliezen.";
-"welcome.hero.cards.icloud.title" = "iCloud-synchronisatie";
-"welcome.hero.cards.icloud.body" = "Op al je Apple-apparaten.";
+"welcome.hero.cards.import.body" = "PDF, CSV, Excel. Klaar.";
+"welcome.hero.cards.icloud.title" = "Privé iCloud";
+"welcome.hero.cards.icloud.body" = "Jouw data, in jouw iCloud. Geen servers.";
 "welcome.hero.cards.more.title" = "En nog veel meer";
 "welcome.hero.cards.more.body" = "Laten we het samen ontdekken.";
 

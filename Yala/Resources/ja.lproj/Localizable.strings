@@ -4111,7 +4111,7 @@
 "welcome.restore.continue" = "続ける";
 "welcome.restore.notFoundTitle" = "データが見つかりませんでした";
 "welcome.restore.notFoundBody" = "iCloudアカウントに関連するデータが見つかりません。最初から始めますか？";
-"welcome.restore.startFresh" = "設定を開始";
+"welcome.restore.startFresh" = "ゼロから始める";
 "welcome.restore.retry" = "再検索";
 "welcome.restore.errorTitle" = "問題が発生しました";
 "welcome.restore.errorBody" = "iCloudのデータを検索できませんでした。もう一度試すか、最初から設定してください。";
@@ -4137,18 +4137,20 @@
 "welcome.hero.cta" = "はじめる";
 "welcome.hero.trust" = "100%プライベート · あなたの情報はあなたのもの";
 
-"welcome.hero.cards.capture.title" = "スマートキャプチャ";
-"welcome.hero.cards.capture.body" = "カメラを向けて、記録完了。";
-"welcome.hero.cards.voice.title" = "理解する音声入力";
-"welcome.hero.cards.voice.body" = "話すだけ。";
+"welcome.hero.cards.capture.title" = "レシートを撮影";
+"welcome.hero.cards.capture.body" = "カメラを向けるだけ。Yalaが読み取ります。";
+"welcome.hero.cards.assistant.title" = "音声とAIアシスタント";
+"welcome.hero.cards.assistant.body" = "話しかけるだけ。Yalaが答えます。";
+"welcome.hero.cards.groups.title" = "グループ精算";
+"welcome.hero.cards.groups.body" = "誰とでも割り勘。";
+"welcome.hero.cards.budgets.title" = "予算と目標";
+"welcome.hero.cards.budgets.body" = "限度を決めて、守る。";
+"welcome.hero.cards.multiAndCurrencies.title" = "複数口座と通貨";
+"welcome.hero.cards.multiAndCurrencies.body" = "カード、現金、48以上の通貨。";
 "welcome.hero.cards.import.title" = "履歴をインポート";
-"welcome.hero.cards.import.body" = "CSVやExcelを数秒で。";
-"welcome.hero.cards.multiAccount.title" = "マルチアカウント";
-"welcome.hero.cards.multiAccount.body" = "現金、カード、すべて一緒に。";
-"welcome.hero.cards.currencies.title" = "48以上の通貨";
-"welcome.hero.cards.currencies.body" = "旅行中も管理を失わずに。";
-"welcome.hero.cards.icloud.title" = "iCloud同期";
-"welcome.hero.cards.icloud.body" = "すべてのAppleデバイスで。";
+"welcome.hero.cards.import.body" = "PDF、CSV、Excel。完了。";
+"welcome.hero.cards.icloud.title" = "プライベートiCloud";
+"welcome.hero.cards.icloud.body" = "あなたのデータは、あなたのiCloudに。サーバーなし。";
 "welcome.hero.cards.more.title" = "さらに多くの機能";
 "welcome.hero.cards.more.body" = "一緒に発見していきましょう。";
 

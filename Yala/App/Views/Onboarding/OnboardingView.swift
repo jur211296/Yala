@@ -73,9 +73,15 @@ struct OnboardingView: View {
     /// Cuando != nil, popula campos en `.task` y amplía `skippedSteps` automáticamente.
     let prefilledData: ICloudAccountSummary?
     var onComplete: () -> Void
+    /// Chevron back en step 1. Solo se setea cuando el OnboardingView viene
+    /// del flow Welcome — descarta state silenciosamente y vuelve al Hero.
+    var onCancelFromStep1: (() -> Void)? = nil
 
-    init(prefilledData: ICloudAccountSummary? = nil, onComplete: @escaping () -> Void) {
+    init(prefilledData: ICloudAccountSummary? = nil,
+         onCancelFromStep1: (() -> Void)? = nil,
+         onComplete: @escaping () -> Void) {
         self.prefilledData = prefilledData
+        self.onCancelFromStep1 = onCancelFromStep1
         self.onComplete = onComplete
     }
 
@@ -178,26 +184,25 @@ struct OnboardingView: View {
             floatingNavigationButtons
         }
         .background(.thBackground)
+        .welcomeBackButton(
+            tint: .secondary,
+            action: currentStep == .name ? onCancelFromStep1 : nil
+        )
         .onTapGesture {
             dismissKeyboard()
         }
         .task {
-            // A4: prefilled data from iCloud restore takes precedence over UserDefaults
-            // because it represents the most recent synced state of the user.
-            if let summary = prefilledData {
-                if let name = summary.userName { userName = name }
-                if let raw = summary.primaryCurrencyCode,
-                   let currency = CurrencyCode(rawValue: raw) {
-                    selectedCurrency = currency
-                    accountCurrency = currency
-                }
-            }
             let defaults = UserDefaults.standard
-            if let name = defaults.string(forKey: "userName"), !name.isEmpty, name != "Usuario" {
+            if let name = OnboardingPrefillResolver.resolveUserName(
+                prefilled: prefilledData,
+                defaultsName: defaults.string(forKey: "userName")
+            ) {
                 userName = name
             }
-            if let raw = defaults.string(forKey: "defaultCurrencyCode"),
-               let currency = CurrencyCode(rawValue: raw) {
+            if let raw = OnboardingPrefillResolver.resolveCurrencyCode(
+                prefilled: prefilledData,
+                defaultsCode: defaults.string(forKey: "defaultCurrencyCode")
+            ), let currency = CurrencyCode(rawValue: raw) {
                 selectedCurrency = currency
                 accountCurrency = currency
             }
