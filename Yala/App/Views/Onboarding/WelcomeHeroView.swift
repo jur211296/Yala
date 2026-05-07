@@ -26,12 +26,34 @@ struct WelcomeHeroView: View {
 
     // MARK: Constants
 
-    /// Intervalo entre rotaciones de cards. Spring animation 0.55s ya cubre el movimiento.
+    /// Intervalo entre rotaciones de cards. Spring animation 0.45s ya cubre el movimiento.
     private static let cardRotationInterval: Duration = .seconds(3.5)
     /// Timeout del fetch background de iCloud durante el Hero.
     private static let iCloudFetchTimeout: TimeInterval = 10
     /// Espera adicional tras tap "Empezar" si el fetch aún no completó.
     private static let postTapWaitTimeout: Duration = .seconds(3)
+
+    /// Dimensiones del card.
+    private static let cardWidth: CGFloat = 200
+    private static let cardIdealHeight: CGFloat = 130
+    private static let cardMaxHeight: CGFloat = 160
+
+    /// Animación canónica del carousel (rotación auto + tap en page indicator).
+    private static let cardAnimation: Animation = .smooth(duration: 0.45, extraBounce: 0.15)
+
+    /// Layout del stack visual: front centrado → side (peek lateral) → back (más detrás).
+    /// Front siempre en (0,0) con scale 1; side/back se reflejan con signo según
+    /// `relative` sea +/- en `position(for:)`.
+    private static let scaleSide: CGFloat = 0.82
+    private static let scaleBack: CGFloat = 0.7
+    private static let offsetSideX: CGFloat = 140
+    private static let offsetBackX: CGFloat = 185
+    private static let offsetSideY: CGFloat = 10
+    private static let offsetBackY: CGFloat = 16
+    private static let rotationSide: Double = 5
+    private static let rotationBack: Double = 8
+    private static let opacitySide: Double = 0.55
+    private static let opacityBack: Double = 0.22
 
     // MARK: State
 
@@ -47,7 +69,6 @@ struct WelcomeHeroView: View {
     @State private var isCheckingFetch: Bool = false
     @State private var hasTappedEmpezar: Bool = false
 
-    @Environment(\.yalaTheme) private var theme
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -88,15 +109,18 @@ struct WelcomeHeroView: View {
                 Image("YalaLogo")
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 36)
+                    .frame(height: 64)
                     .colorMultiply(.white)
                     .padding(.top, DS.Spacing.lg)
                     .accessibilityHidden(true)
 
                 Spacer(minLength: DS.Spacing.lg)
 
-                cardStack
-                    .frame(height: 260)
+                cardCarousel
+                    .frame(height: 200)
+
+                pageIndicator
+                    .padding(.top, DS.Spacing.md)
 
                 Spacer(minLength: DS.Spacing.lg)
 
@@ -137,100 +161,150 @@ struct WelcomeHeroView: View {
         .ignoresSafeArea()
     }
 
-    // MARK: Card stack
+    // MARK: Card carousel
 
-    /// Front card con `.id(currentCardIndex)` + transition asymmetric horizontal.
-    /// Back/middle se animan implícitamente dentro del `withAnimation(spring)` del
-    /// incremento de índice porque cambian sus offset/scale/rotation derivados.
-    private var cardStack: some View {
+    /// Renderiza las 8 cards a la vez con posiciones relativas al `currentCardIndex`.
+    /// Cada card cambia sus propiedades visuales (offset/scale/rotation/opacity)
+    /// según la posición relativa, animadas implícitamente por `withAnimation`
+    /// del rotationTask. Sin `.id` + transition → no hay re-mount, todas las
+    /// cards se mueven en sincro como un carousel real.
+    private var cardCarousel: some View {
         ZStack {
             if !cards.isEmpty {
-                // Back y middle: decorativos, sin transition propia — interpolan con spring.
-                ForEach([2, 1], id: \.self) { offset in
-                    let cardIdx = (currentCardIndex + offset) % cards.count
-                    let card = cards[cardIdx]
+                ForEach(Array(cards.enumerated()), id: \.element.id) { index, card in
+                    let pos = position(for: index)
                     heroCardView(card)
-                        .scaleEffect(Self.cardScales[offset])
-                        .rotationEffect(.degrees(Self.cardRotations[offset]))
-                        .offset(Self.cardOffsets[offset])
-                        .opacity(Self.cardOpacities[offset])
-                        .zIndex(Double(2 - offset))
-                        .accessibilityHidden(true)
+                        .scaleEffect(pos.scale)
+                        .rotationEffect(.degrees(pos.rotation))
+                        .offset(x: pos.offsetX, y: pos.offsetY)
+                        .opacity(pos.opacity)
+                        .zIndex(pos.zIndex)
+                        .accessibilityHidden(index != currentCardIndex)
+                        .accessibilityLabel(index == currentCardIndex ? "\(card.title). \(card.body)" : "")
                 }
-
-                // Front card: con `.id` para forzar re-creación + transition horizontal.
-                let frontCard = cards[currentCardIndex]
-                heroCardView(frontCard)
-                    .id(currentCardIndex)
-                    .scaleEffect(Self.cardScales[0])
-                    .zIndex(2)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                        removal: .move(edge: .leading).combined(with: .opacity)
-                    ))
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("\(frontCard.title). \(frontCard.body)")
             }
         }
-        .clipped()
     }
 
-    /// Front (offset 0, full) → middle (offset 1, leve rotation) → back
-    /// (offset 2, más pequeño y rotado al lado opuesto).
-    private static let cardScales: [CGFloat] = [1.0, 0.88, 0.78]
-    private static let cardRotations: [Double] = [0, 7, -9]
-    private static let cardOffsets: [CGSize] = [.zero, CGSize(width: 32, height: 12), CGSize(width: -32, height: 18)]
-    private static let cardOpacities: [Double] = [1.0, 0.55, 0.28]
+    /// Posición visual derivada de la distancia signed `(idx - currentCardIndex) mod n`.
+    /// Mostramos -2..+2; el resto invisible.
+    private func position(for index: Int) -> CardPosition {
+        let n = cards.count
+        guard n > 0 else { return .hidden }
+        let raw = ((index - currentCardIndex) % n + n) % n
+        let relative = raw > n / 2 ? raw - n : raw
+        let sign: Double = relative > 0 ? 1 : -1
+        switch abs(relative) {
+        case 0:
+            return CardPosition(scale: 1.0, offsetX: 0, offsetY: 0, rotation: 0, opacity: 1, zIndex: 100)
+        case 1:
+            return CardPosition(
+                scale: Self.scaleSide,
+                offsetX: Self.offsetSideX * sign,
+                offsetY: Self.offsetSideY,
+                rotation: Self.rotationSide * sign,
+                opacity: Self.opacitySide,
+                zIndex: 90
+            )
+        case 2:
+            return CardPosition(
+                scale: Self.scaleBack,
+                offsetX: Self.offsetBackX * sign,
+                offsetY: Self.offsetBackY,
+                rotation: Self.rotationBack * sign,
+                opacity: Self.opacityBack,
+                zIndex: 80
+            )
+        default:
+            return .hidden
+        }
+    }
 
+    private struct CardPosition {
+        let scale: CGFloat
+        let offsetX: CGFloat
+        let offsetY: CGFloat
+        let rotation: Double
+        let opacity: Double
+        let zIndex: Double
+        static let hidden = CardPosition(scale: 0.6, offsetX: 0, offsetY: 0, rotation: 0, opacity: 0, zIndex: 0)
+    }
+
+    /// Card translúcida estilo widgets del Panel: `.thCard` + stroke `cardBorder`
+    /// del theme, padding compacto. Icono mantiene gradient brand para diferenciar.
     private func heroCardView(_ card: HeroCard) -> some View {
-        VStack(spacing: DS.Spacing.md) {
-            Image(systemName: card.icon)
-                // A11Y-DT: tamaño hero del icono dentro del card animado (no escala con DT).
-                .font(.system(size: 44, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 72, height: 72)
-                .background(.white.opacity(0.18))
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+        VStack(spacing: DS.Spacing.sm) {
+            ZStack {
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                    .fill(card.accentColor.opacity(0.18))
+                    .frame(width: 56, height: 56)
+                Image(systemName: card.icon)
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [card.accentColor, card.accentColor.opacity(0.75)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
 
             Text(card.title)
-                .font(DS.Typography.title2)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.85)
-                .lineLimit(2)
+                .lineLimit(1)
 
             Text(card.body)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.white.opacity(0.88))
+                .font(DS.Typography.caption)
+                .foregroundStyle(.white.opacity(0.75))
                 .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.85)
                 .lineLimit(2)
-                .padding(.horizontal, DS.Spacing.sm)
         }
-        .padding(DS.Spacing.lg)
-        // A11Y-DT: card width 280pt + idealHeight 200 / maxHeight 240 absorbe DT XXL
-        // con minimumScaleFactor(0.85) en title/body.
-        .frame(width: 280)
-        .frame(idealHeight: 200, maxHeight: 240)
-        .background(
-            ZStack {
-                // Sólido base + difuminado claro/oscuro suave para textura.
-                card.accentColor
-                LinearGradient(
-                    colors: [.white.opacity(0.12), .clear, .black.opacity(0.10)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            }
+        .padding(DS.Spacing.md)
+        .frame(width: Self.cardWidth)
+        .frame(idealHeight: Self.cardIdealHeight, maxHeight: Self.cardMaxHeight)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Panel.widgetRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Panel.widgetRadius, style: .continuous)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .shadow(color: card.accentColor.opacity(0.3), radius: 18, x: 0, y: 10)
+    }
+
+    // MARK: Page indicator
+
+    private var pageIndicator: some View {
+        HStack(spacing: DS.Spacing.xs) {
+            ForEach(cards.indices, id: \.self) { idx in
+                Capsule()
+                    .fill(idx == currentCardIndex ? Color.white : Color.white.opacity(0.3))
+                    .frame(width: idx == currentCardIndex ? 18 : 6, height: 3)
+                    .contentShape(Rectangle().inset(by: -8))
+                    .onTapGesture {
+                        DS.Haptic.selection()
+                        jumpTo(idx)
+                    }
+                    .accessibilityLabel("Card \(idx + 1) of \(cards.count)")
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Navega a una card específica + reset del timer de rotación.
+    private func jumpTo(_ idx: Int) {
+        guard idx != currentCardIndex, !cards.isEmpty else { return }
+        withAnimation(reduceMotion ? nil : Self.cardAnimation) {
+            currentCardIndex = idx
+        }
+        rotationTask?.cancel()
+        startCardRotation()
     }
 
     // MARK: Title + subtitle
 
-    /// Texto sobre fondo dark: `.white` para title base + gradient
-    /// `.hotPink → .white` para titleAccent (contraste >4.5:1 sobre indigo).
     private var titleAndSubtitle: some View {
         VStack(spacing: DS.Spacing.sm) {
             VStack(spacing: 0) {
@@ -368,10 +442,7 @@ struct WelcomeHeroView: View {
                 // Pausa rotation si VoiceOver activo (a11y).
                 if voiceOverEnabled { continue }
                 await MainActor.run {
-                    let animation: Animation? = reduceMotion
-                        ? nil
-                        : .spring(response: 0.55, dampingFraction: 0.78)
-                    withAnimation(animation) {
+                    withAnimation(reduceMotion ? nil : Self.cardAnimation) {
                         currentCardIndex = (currentCardIndex + 1) % cards.count
                     }
                 }

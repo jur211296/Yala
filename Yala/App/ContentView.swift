@@ -17,7 +17,6 @@ struct ContentView: View {
     @AppStorage("hasShownWelcomeChooser") private var hasShownWelcomeChooser: Bool = false
     @State private var showOnboarding: Bool = false
     @State private var showLanguageSelection: Bool = false
-    @State private var showWelcomeChooser: Bool = false
     @State private var showWelcomeRestore: Bool = false
     @State private var showInviteRecovery: Bool = false
     /// Prefilled summary from iCloud restore (rama B). Pasado a OnboardingView
@@ -25,11 +24,11 @@ struct ContentView: View {
     @State private var prefilledOnboardingData: ICloudAccountSummary?
     @State private var showSplash: Bool = true
     @State private var splashOpacity: Double = 1
-    /// A4 v3.1: Welcome Hero pre-Chooser (presenta beneficios + corre fetch iCloud invisible).
-    @State private var showWelcomeHero: Bool = false
-    /// Summary detectado por el Hero. Si tiene data, se muestra alert "Detectamos tu cuenta".
-    @State private var detectedICloudSummary: ICloudAccountSummary?
-    @State private var showDetectedDataAlert: Bool = false
+    /// Sprint 2.1: Hero + Chooser unificados en un solo cover. El step interno
+    /// (hero/chooser) lo maneja `WelcomeFlowContainer` — el ContentView solo
+    /// decide cuándo presentar el flow y con qué `initialStep`.
+    @State private var showWelcomeFlow: Bool = false
+    @State private var welcomeFlowInitialStep: WelcomeFlowStep = .hero
     /// Positive confirmation toast for reactive events (remote onboarding / restore).
     /// Replaces the noisy "Syncing…" banner. Nil when hidden.
     @State private var positiveToast: String?
@@ -197,36 +196,6 @@ struct ContentView: View {
             }
             .environment(SessionState.shared)
         }
-        // Gate `!showGroupInviteOnboarding`: si un CKShare aterriza mid-chooser,
-        // el cover se cierra solo y `hasShownWelcomeChooser` queda en `false` —
-        // si el invite onboarding se cancela, el chooser reaparece en el próximo cold launch.
-        .fullScreenCover(isPresented: $showWelcomeChooser.gated(by: showGroupInviteOnboarding)) {
-            WelcomeChooserView(
-                onSelect: { branch in
-                    hasShownWelcomeChooser = true
-                    showWelcomeChooser = false
-                    switch branch {
-                    case .new:
-                        // A4 v3.2: clean slate para "Soy nuevo". Limpia prefs
-                        // residuales del KV-Store del Apple ID (userName, currency)
-                        // que sobreviven al uninstall y aparecen pre-llenadas en el
-                        // OnboardingView. Solo strings — booleans no se tocan por
-                        // riesgo cross-device.
-                        OnboardingResetHelper.clearResidualPreferencesForFreshStart()
-                        showOnboarding = true
-                    case .restore: showWelcomeRestore = true
-                    case .invite: showInviteRecovery = true
-                    }
-                },
-                onBack: {
-                    // NO setea `hasShownWelcomeChooser` — sigue false hasta tap
-                    // consciente en una card del Chooser.
-                    showWelcomeChooser = false
-                    showWelcomeHero = true
-                }
-            )
-            .environment(SessionState.shared)
-        }
         .fullScreenCover(isPresented: $showInviteRecovery) {
             InviteRecoveryView(
                 onSuccess: { url in
@@ -234,8 +203,10 @@ struct ContentView: View {
                     AppBootstrapper.shared.handleInviteLink(url)
                 },
                 onBack: {
+                    // Sprint 2.1: vuelve al WelcomeFlow en step .chooser (donde estaba).
                     showInviteRecovery = false
-                    showWelcomeChooser = true
+                    welcomeFlowInitialStep = .chooser
+                    showWelcomeFlow = true
                 }
             )
             .environment(SessionState.shared)
@@ -292,11 +263,11 @@ struct ContentView: View {
             .environment(SessionState.shared)
         }
         .modifier(WelcomeFlowModifier(
-            showWelcomeHero: $showWelcomeHero,
-            showWelcomeChooser: $showWelcomeChooser,
+            showWelcomeFlow: $showWelcomeFlow,
+            welcomeFlowInitialStep: $welcomeFlowInitialStep,
             showOnboarding: $showOnboarding,
-            showDetectedDataAlert: $showDetectedDataAlert,
-            detectedICloudSummary: $detectedICloudSummary,
+            showWelcomeRestore: $showWelcomeRestore,
+            showInviteRecovery: $showInviteRecovery,
             prefilledOnboardingData: $prefilledOnboardingData,
             hasShownWelcomeChooser: $hasShownWelcomeChooser,
             hasCompletedOnboarding: $hasCompletedOnboarding,
@@ -687,13 +658,13 @@ struct ContentView: View {
     }
 
     /// Routing único para presentar la siguiente pantalla del flow inicial.
-    /// Usado desde `checkInitialSyncState` + callback de `LanguageSelectionView`.
-    /// A4 v3.1: si Chooser no se ha visto, primero va al Hero (que decide entre alert o Chooser).
+    /// Si Chooser no se ha visto, presenta el flow Welcome (Hero+Chooser unificado).
     private func presentNextOnboardingScreen() {
         if needsLanguageSelection {
             showLanguageSelection = true
         } else if !hasShownWelcomeChooser {
-            showWelcomeHero = true
+            welcomeFlowInitialStep = .hero
+            showWelcomeFlow = true
         } else {
             showOnboarding = true
         }
@@ -712,17 +683,17 @@ struct ContentView: View {
     // invisible dentro de `WelcomeHeroView` mientras el user lee las cards animadas.
 }
 
-// MARK: - Welcome Flow Modifier (A4 v3.1)
+// MARK: - Welcome Flow Modifier (Sprint 2.1)
 
-/// Encapsula el flow de Welcome: Hero pre-Chooser + alert "Detectamos tu cuenta" + reset
-/// del flow cuando llega un CKShare. Extraído a ViewModifier para evitar typecheck timeout
-/// en ContentView body — patrón ya usado por `GroupInviteModifier`.
+/// Encapsula el flow Welcome con Hero + Chooser unificados en un solo
+/// `fullScreenCover` (sin frame "azul vacío" entre ambos). El alert
+/// "Detectamos tu cuenta" vive dentro del `WelcomeFlowContainer`.
 private struct WelcomeFlowModifier: ViewModifier {
-    @Binding var showWelcomeHero: Bool
-    @Binding var showWelcomeChooser: Bool
+    @Binding var showWelcomeFlow: Bool
+    @Binding var welcomeFlowInitialStep: WelcomeFlowStep
     @Binding var showOnboarding: Bool
-    @Binding var showDetectedDataAlert: Bool
-    @Binding var detectedICloudSummary: ICloudAccountSummary?
+    @Binding var showWelcomeRestore: Bool
+    @Binding var showInviteRecovery: Bool
     @Binding var prefilledOnboardingData: ICloudAccountSummary?
     @Binding var hasShownWelcomeChooser: Bool
     @Binding var hasCompletedOnboarding: Bool
@@ -730,61 +701,43 @@ private struct WelcomeFlowModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            // Welcome Hero pre-Chooser. El user lee cards animadas mientras corre fetch
-            // iCloud invisible. Tap "Empezar" → si hay data, alert; si no, Chooser.
-            // Gate `!showGroupInviteOnboarding`: si llega CKShare mid-Hero, invite takes over.
-            .fullScreenCover(isPresented: $showWelcomeHero.gated(by: showGroupInviteOnboarding)) {
-                WelcomeHeroView { decision in
-                    showWelcomeHero = false
-                    switch decision {
-                    case .proceedNoData:
-                        showWelcomeChooser = true
-                    case .proceedWithData(let summary):
-                        detectedICloudSummary = summary
-                        showDetectedDataAlert = true
+            // Cover único Hero+Chooser. Gate `!showGroupInviteOnboarding`: si
+            // llega CKShare, el cover se cierra y `hasShownWelcomeChooser` queda
+            // false — el flow reaparece desde el Hero en el próximo cold launch
+            // si el invite onboarding se cancela.
+            .fullScreenCover(isPresented: $showWelcomeFlow.gated(by: showGroupInviteOnboarding)) {
+                WelcomeFlowContainer(
+                    initialStep: welcomeFlowInitialStep,
+                    onSelectBranch: { branch in
+                        hasShownWelcomeChooser = true
+                        showWelcomeFlow = false
+                        switch branch {
+                        case .new:
+                            // Limpia prefs residuales del KV-Store del Apple ID
+                            // (userName, currency) que sobreviven al uninstall.
+                            OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+                            showOnboarding = true
+                        case .restore: showWelcomeRestore = true
+                        case .invite: showInviteRecovery = true
+                        }
+                    },
+                    onLoadMyData: { summary in
+                        // Alert "Detectamos tu cuenta" → "Cargar mis datos":
+                        // decisión consciente equivalente a tap card del Chooser.
+                        hasShownWelcomeChooser = true
+                        showWelcomeFlow = false
+                        consumeDetectedSummary(summary)
                     }
-                }
+                )
                 .environment(SessionState.shared)
-            }
-            .alert(
-                L10n.Welcome.DetectedData.title,
-                isPresented: $showDetectedDataAlert.gated(by: showGroupInviteOnboarding),
-                presenting: detectedICloudSummary
-            ) { summary in
-                Button(L10n.Welcome.DetectedData.loadMyData) {
-                    // Alert ES Chooser-equivalent: decisión consciente del user.
-                    hasShownWelcomeChooser = true
-                    consumeDetectedSummary(summary)
-                }
-                Button(L10n.Welcome.DetectedData.startFresh) {
-                    // User decide explorar las 3 opciones del Chooser. El flag se setea al tap card.
-                    showWelcomeChooser = true
-                }
-            } message: { summary in
-                Text(L10n.Welcome.DetectedData.message(
-                    summary.accountsCount,
-                    summary.transactionsCount,
-                    summary.categoriesCount
-                ))
-            }
-            .onChange(of: showGroupInviteOnboarding) { _, newValue in
-                // Si llega CKShare, invite onboarding takes over. Reset del flow Hero/alert
-                // para evitar resurgir el alert al volver.
-                if newValue {
-                    showWelcomeHero = false
-                    showDetectedDataAlert = false
-                    detectedICloudSummary = nil
-                }
             }
     }
 
     /// Replica logic de `WelcomeRestoreView` callbacks SIN re-fetch (alert ya tiene summary).
     private func consumeDetectedSummary(_ summary: ICloudAccountSummary) {
         if summary.isFullyPrefilled {
-            // Skip total — mismo side-effect que WelcomeRestoreView.onCompleteSkipAll.
             completeOnboardingAsRestoreSkip()
         } else {
-            // Carga prefilled steps — equivalente a WelcomeRestoreView.onContinueWithSummary.
             prefilledOnboardingData = summary
             showOnboarding = true
         }

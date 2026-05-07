@@ -4133,7 +4133,7 @@
 // MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
 "welcome.hero.title" = "あなたの個人ファイナンスを、";
 "welcome.hero.titleAccent" = "簡単に。";
-"welcome.hero.subtitle" = "数秒で記録。Yalaが整理します。";
+"welcome.hero.subtitle" = "あなたは撮るだけ。Yalaが処理します。";
 "welcome.hero.cta" = "はじめる";
 "welcome.hero.trust" = "100%プライベート · あなたの情報はあなたのもの";
 

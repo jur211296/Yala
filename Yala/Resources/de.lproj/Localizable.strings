@@ -4130,7 +4130,7 @@
 // MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
 "welcome.hero.title" = "Ihre persönlichen Finanzen,";
 "welcome.hero.titleAccent" = "mühelos.";
-"welcome.hero.subtitle" = "In Sekunden erfasst. Yala ordnet alles.";
+"welcome.hero.subtitle" = "Sie erfassen. Yala kümmert sich.";
 "welcome.hero.cta" = "Loslegen";
 "welcome.hero.trust" = "100% privat · Ihre Daten bleiben bei Ihnen";
 

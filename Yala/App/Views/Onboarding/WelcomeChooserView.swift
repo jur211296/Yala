@@ -159,15 +159,7 @@ struct WelcomeChooserView: View {
             .padding(.vertical, DS.Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(Color.white.opacity(0.12), lineWidth: 0.8)
-            )
+            .solidCard(padding: 0, radius: DS.Radius.xl)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
