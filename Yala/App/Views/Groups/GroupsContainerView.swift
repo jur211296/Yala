@@ -15,6 +15,7 @@ struct GroupsContainerView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.openURL) private var openURL
 
     // MARK: - State
 
@@ -22,6 +23,7 @@ struct GroupsContainerView: View {
     @State private var isPresentingSettings = false
     @Environment(AppPreferences.self) private var appPreferences
     @State private var showNotificationPrompt = false
+    @State private var showPermissionDeniedAlert = false
     @State private var showNudgeBanner = false
 
     // MARK: - Body
@@ -162,6 +164,16 @@ struct GroupsContainerView: View {
             } message: {
                 Text(L10n.Groups.Notifications.promptMessage)
             }
+            .alert(L10n.Notifications.permissionRequired, isPresented: $showPermissionDeniedAlert) {
+                Button(L10n.Notifications.openSettings) {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        openURL(url)
+                    }
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Notifications.permissionMessage)
+            }
         }
     }
 
@@ -215,6 +227,18 @@ struct GroupsContainerView: View {
             #if DEBUG
             print("GroupsContainerView: Error activating groups notification: \(error)")
             #endif
+        }
+
+        Task { @MainActor in
+            let status = await NotificationService.shared.checkPermissionStatus()
+            switch status {
+            case .notDetermined:
+                _ = await NotificationService.shared.requestPermission()
+            case .denied:
+                showPermissionDeniedAlert = true
+            default:
+                break
+            }
         }
     }
 
