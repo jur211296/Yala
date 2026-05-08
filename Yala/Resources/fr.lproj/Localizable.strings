@@ -3143,7 +3143,11 @@
 "groups.balance.confirmed" = "Confirmé";
 "groups.balance.pending" = "En attente";
 "groups.expense.noExpenses" = "Aucune dépense";
-"groups.expense.paidBy" = "Payé par";
+"groups.expense.youPaid" = "Vous avez payé %@";
+"groups.expense.memberPaid" = "%@ a payé %@";
+"groups.expense.youAreOwed" = "Prêté";
+"groups.expense.youOwe" = "Emprunté";
+"groups.expense.notIncluded" = "Non inclus";
 "groups.expense.newExpense" = "Nouvelle dépense";
 
 "export.column.splitTotal" = "Total original";

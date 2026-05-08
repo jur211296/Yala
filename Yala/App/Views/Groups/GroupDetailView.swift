@@ -298,6 +298,9 @@ struct GroupDetailView: View {
                 shares: viewModel.shares,
                 memberNameLookup: viewModel.memberNameLookup,
                 currencyCode: group.currencyCode,
+                txBridgeMap: viewModel.txBridgeMap,
+                mySharesByExpense: viewModel.mySharesByExpense,
+                currentMemberID: viewModel.currentMemberID,
                 onTapExpense: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .editExpense($0) } : nil,
                 onDeleteExpense: viewModel.canCurrentUserParticipate ? { viewModel.deleteExpense($0) } : nil,
                 onInvite: group.isOwner && viewModel.isCurrentUserAdmin ? {

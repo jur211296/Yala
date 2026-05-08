@@ -3145,7 +3145,11 @@
 "groups.balance.confirmed" = "確認済み";
 "groups.balance.pending" = "保留中";
 "groups.expense.noExpenses" = "支出はありません";
-"groups.expense.paidBy" = "支払者";
+"groups.expense.youPaid" = "%@を支払いました";
+"groups.expense.memberPaid" = "%1$@さんが%2$@を支払いました";
+"groups.expense.youAreOwed" = "貸している";
+"groups.expense.youOwe" = "借りている";
+"groups.expense.notIncluded" = "不参加";
 "groups.expense.newExpense" = "新規支出";
 
 "export.column.splitTotal" = "元の合計";

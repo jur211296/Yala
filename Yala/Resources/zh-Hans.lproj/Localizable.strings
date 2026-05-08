@@ -3145,7 +3145,11 @@
 "groups.balance.confirmed" = "已确认";
 "groups.balance.pending" = "待处理";
 "groups.expense.noExpenses" = "无支出";
-"groups.expense.paidBy" = "付款人";
+"groups.expense.youPaid" = "你支付了 %@";
+"groups.expense.memberPaid" = "%1$@ 支付了 %2$@";
+"groups.expense.youAreOwed" = "你借出";
+"groups.expense.youOwe" = "你借入";
+"groups.expense.notIncluded" = "未参与";
 "groups.expense.newExpense" = "新支出";
 
 "export.column.splitTotal" = "原总额";

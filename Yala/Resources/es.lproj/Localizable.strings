@@ -3186,7 +3186,11 @@
 "groups.balance.confirmed" = "Confirmada";
 "groups.balance.pending" = "Pendiente";
 "groups.expense.noExpenses" = "Sin gastos";
-"groups.expense.paidBy" = "Pagó";
+"groups.expense.youPaid" = "Pagaste %@";
+"groups.expense.memberPaid" = "%@ pagó %@";
+"groups.expense.youAreOwed" = "Prestaste";
+"groups.expense.youOwe" = "Te prestaron";
+"groups.expense.notIncluded" = "No participaste";
 "groups.expense.newExpense" = "Nuevo gasto";
 
 "export.column.splitTotal" = "Total original";

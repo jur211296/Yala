@@ -1755,9 +1755,22 @@ enum L10n {
 
         enum Expense {
             static var noExpenses: String { ls("groups.expense.noExpenses", comment: "") }
-            static var paidBy: String { ls("groups.expense.paidBy", comment: "") }
             static var newExpense: String { ls("groups.expense.newExpense", comment: "") }
             static var paidByTitle: String { ls("groups.expense.paidByTitle", comment: "") }
+            /// "Pagaste %@" — when current user is the payer.
+            static func youPaid(_ amount: String) -> String {
+                String(format: ls("groups.expense.youPaid", comment: ""), amount)
+            }
+            /// "%@ pagó %@" — when another member is the payer.
+            static func memberPaid(_ name: String, _ amount: String) -> String {
+                String(format: ls("groups.expense.memberPaid", comment: ""), name, amount)
+            }
+            /// Caption: "Prestaste" — current user paid, others owe.
+            static var youAreOwed: String { ls("groups.expense.youAreOwed", comment: "") }
+            /// Caption: "Te prestaron" — current user owes their share.
+            static var youOwe: String { ls("groups.expense.youOwe", comment: "") }
+            /// Caption: "No participaste" — current user not in the split.
+            static var notIncluded: String { ls("groups.expense.notIncluded", comment: "") }
             static var divideBetween: String { ls("groups.expense.divideBetween", comment: "") }
             static var selectAll: String { ls("groups.expense.selectAll", comment: "") }
             static var deselectAll: String { ls("groups.expense.deselectAll", comment: "") }

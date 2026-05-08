@@ -3145,7 +3145,11 @@
 "groups.balance.confirmed" = "Bevestigd";
 "groups.balance.pending" = "Openstaand";
 "groups.expense.noExpenses" = "Geen uitgaven";
-"groups.expense.paidBy" = "Betaald door";
+"groups.expense.youPaid" = "Jij betaalde %@";
+"groups.expense.memberPaid" = "%@ betaalde %@";
+"groups.expense.youAreOwed" = "Geleend";
+"groups.expense.youOwe" = "Geleend van";
+"groups.expense.notIncluded" = "Niet meegedaan";
 "groups.expense.newExpense" = "Nieuwe uitgave";
 
 "export.column.splitTotal" = "Oorspronkelijk totaal";

@@ -13,6 +13,13 @@ struct GroupRecordsView: View {
     let shares: [SplitShare]
     let memberNameLookup: [String: String]
     let currencyCode: String
+    /// Per-user bridge: expense.id.uuidString → TX1 con subcat manual asignada por current user.
+    /// Si la entrada no existe (auto-match falló o user es .groupInvite), fallback al splitTypeBadge.
+    let txBridgeMap: [String: TransactionItem]
+    /// Mi share por expense (nil si no participo → render "No participaste").
+    let mySharesByExpense: [UUID: SplitShare]
+    /// uuidString del current member (para detectar si yo soy el payer).
+    let currentMemberID: String?
 
     // Callbacks (optional for backwards compatibility)
     var onTapExpense: ((SplitExpense) -> Void)?
@@ -91,9 +98,21 @@ struct GroupRecordsView: View {
     // MARK: - Expense Row
 
     private func expenseRow(_ expense: SplitExpense) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            // Split type badge
-            splitTypeBadge(expense.splitType)
+        let amountStr = appPreferences.currency(expense.amount, currencyCode: expense.currencyCode)
+        let isPayer = expense.paidByMemberID == currentMemberID
+        let payerLabel: String = {
+            if isPayer { return L10n.Groups.Expense.youPaid(amountStr) }
+            let name = memberNameLookup[expense.paidByMemberID] ?? "?"
+            return L10n.Groups.Expense.memberPaid(name, amountStr)
+        }()
+        let status = GroupExpenseAmountResolver.resolve(
+            expense: expense,
+            share: mySharesByExpense[expense.id],
+            currentMemberID: currentMemberID ?? ""
+        )
+
+        return HStack(spacing: DS.Spacing.md) {
+            subcategoryBadge(for: expense)
 
             // Description + payer
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
@@ -102,25 +121,34 @@ struct GroupRecordsView: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
-                HStack(spacing: DS.Spacing.xs) {
-                    Text(L10n.Groups.Expense.paidBy)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-
-                    Text(memberNameLookup[expense.paidByMemberID] ?? "?")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text(payerLabel)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
             Spacer()
 
-            // Amount
-            Text(appPreferences.currency(expense.amount, currencyCode: expense.currencyCode))
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
+            GroupExpenseAmountView(status: status, currencyCode: expense.currencyCode)
         }
         .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+    }
+
+    /// Subcat icon+color del bridge personal, si la auto-match exitosa. Sino → splitTypeBadge.
+    @ViewBuilder
+    private func subcategoryBadge(for expense: SplitExpense) -> some View {
+        if let tx = txBridgeMap[expense.id.uuidString],
+           let sub = tx.subcategory,
+           !sub.isAnySystem {
+            let color = Color(hex: sub.safeCategory.colorHex)
+            Image(systemName: sub.iconName ?? "tag.fill")
+                .font(DS.Typography.label)
+                .foregroundStyle(color)
+                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                .background(Circle().fill(color.opacity(0.12)))
+        } else {
+            splitTypeBadge(expense.splitType)
+        }
     }
 
     // MARK: - Split Type Badge

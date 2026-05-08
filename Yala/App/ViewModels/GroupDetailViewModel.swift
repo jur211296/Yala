@@ -31,6 +31,16 @@ final class GroupDetailViewModel {
     /// memberID.uuidString → displayName (rebuilt in loadData)
     private(set) var memberNameLookup: [String: String] = [:]
 
+    /// expense.id.uuidString → bridged personal TX1 (subcat manual o nil; nunca TX2 sistema).
+    /// Permite renderizar icono+color de la subcat per-user en el feed.
+    private(set) var txBridgeMap: [String: TransactionItem] = [:]
+
+    /// expense.id → mi share. Filtrado por currentMemberID en loadData (no soy miembro → vacío).
+    private(set) var mySharesByExpense: [UUID: SplitShare] = [:]
+
+    /// uuidString del current member (para resolver perspectiva personal en el feed).
+    var currentMemberID: String? { currentUserMember?.id.uuidString }
+
     var currentUserMember: SplitMember? {
         members.first { $0.isCurrentUser }
     }
@@ -79,7 +89,7 @@ final class GroupDetailViewModel {
     // MARK: - Data Loading
 
     func loadData() {
-        guard modelContext != nil else { return }
+        guard let context = modelContext else { return }
 
         do {
             members = try GroupService.shared.fetchMembers(for: group)
@@ -104,10 +114,40 @@ final class GroupDetailViewModel {
                 settlements: settlements,
                 simplifyDebts: group.simplifyDebts
             )
+
+            rebuildBridgeMaps(context: context)
         } catch {
             #if DEBUG
             print("GroupDetailViewModel: Error loading data: \(error)")
             #endif
+        }
+    }
+
+    /// Prefetch TX bridge personal por `splitExpenseID` filtrado a la zona del grupo +
+    /// build `mySharesByExpense` con el share del current user. Evita N+1 query en el feed.
+    private func rebuildBridgeMaps(context: ModelContext) {
+        let zoneID = group.cloudKitZoneID
+        let bridgedTXs: [TransactionItem] = (try? context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitGroupZoneID == zoneID }
+        ))) ?? []
+
+        // TX1 preferida: subcat manual O nil (no TX2 sistema "Préstamo a grupos").
+        txBridgeMap = Dictionary(grouping: bridgedTXs, by: { $0.splitExpenseID ?? "" })
+            .compactMapValues { txs in
+                txs.first(where: { tx in
+                    guard let sub = tx.subcategory else { return true }
+                    return !sub.isAnySystem
+                })
+            }
+
+        // mySharesByExpense: filter shares to current user only.
+        if let currentID = currentMemberID {
+            mySharesByExpense = Dictionary(
+                shares.filter { $0.memberID == currentID }.map { ($0.expenseID, $0) },
+                uniquingKeysWith: { first, _ in first }
+            )
+        } else {
+            mySharesByExpense = [:]
         }
     }
 
