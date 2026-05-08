@@ -290,28 +290,29 @@ struct GroupExpenseFormView: View {
         } label: {
             HStack(spacing: DS.Spacing.xs) {
                 Image(systemName: viewModel.splitType.iconName)
-                    .font(DS.Typography.labelSmall)
+                    .font(DS.Typography.label)
                 Text(viewModel.splitType.displayName)
-                    .font(DS.Typography.labelSmall)
+                    .font(DS.Typography.label)
                 if viewModel.splitType != .equal && !viewModel.isSharesBalanced {
                     Image(systemName: "exclamationmark.circle.fill")
                         .font(DS.Typography.labelTiny)
                         .foregroundStyle(Color.hotPink)
                 }
             }
-            .foregroundStyle(.secondary)
+            .foregroundStyle(DS.Semantic.splitMethodForeground)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.xs)
-            .background(Capsule().fill(Color.secondary.opacity(0.1)))
+            .background(Capsule().fill(DS.Semantic.splitMethodBackground))
         }
     }
 
     // MARK: - Note Field
 
     private var noteField: some View {
+        // A11Y-DM: tertiaryLabel system-managed dark mode (placeholder más claro que .secondary).
         TextField(L10n.Groups.Expense.notePlaceholder, text: $viewModel.note)
             .font(DS.Typography.caption)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color(.tertiaryLabel))
             .multilineTextAlignment(.center)
             .frame(maxWidth: 200)
             .focused($focusedField, equals: .note)

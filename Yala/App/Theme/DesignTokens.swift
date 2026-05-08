@@ -204,6 +204,9 @@ enum DS {
         static let infoForeground = Color.blue
         static let undoForeground = Color.teal
         static let imageAccent = Color.teal
+        // Group expense split-method chip — teal con mejor contraste que infoBackground (azul) en dark mode.
+        static let splitMethodBackground = Color.teal.opacity(0.18)
+        static let splitMethodForeground = Color.teal
     }
 
     // MARK: - Shadow
