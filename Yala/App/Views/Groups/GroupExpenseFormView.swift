@@ -89,6 +89,11 @@ struct GroupExpenseFormView: View {
                 }
                 .dismissKeyboardOnTap()
             }
+            // #35: GroupDetailView padre tiene `.refreshable { viewModel.loadData() }`
+            // que en iOS 26 se propaga al sheet del form, generando "gelatina"
+            // visual en bottomChips y permitiendo pull-to-refresh sin sentido.
+            // No-op refreshable absorbe el gesto sin acción.
+            .refreshable {}
             .navigationTitle(viewModel.isEditMode ? L10n.Groups.Expense.editTitle : L10n.Groups.Expense.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
