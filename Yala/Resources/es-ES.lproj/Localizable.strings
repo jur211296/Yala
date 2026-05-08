@@ -101,7 +101,8 @@
 "groups.invite.waitingApproval.banner" = "Esperando la aprobación del administrador";
 "groups.invite.rejected.title" = "Solicitud rechazada";
 "groups.invite.rejected.body" = "El administrador no aprobó tu solicitud. Pídele un nuevo enlace si quieres volver a intentarlo.";
-"groups.notifications.newPendingRequest" = "%@ quiere unirse a %@";
+"groups.notifications.newPendingRequest" = "👋 %@ quiere unirse a %@";
+"groups.notifications.newPendingRequestBody" = "Aprueba o rechaza desde Yala.";
 "groups.errors.pendingApproval" = "Aún no puedes hacer esto. El administrador debe aprobar tu solicitud primero.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)

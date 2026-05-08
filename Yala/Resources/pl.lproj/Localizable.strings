@@ -4082,7 +4082,8 @@
 "groups.invite.waitingApproval.banner" = "Oczekiwanie na akceptację administratora";
 "groups.invite.rejected.title" = "Prośba odrzucona";
 "groups.invite.rejected.body" = "Administrator nie zaakceptował Twojej prośby. Poproś o nowy link, jeśli chcesz spróbować jeszcze raz.";
-"groups.notifications.newPendingRequest" = "%@ chce dołączyć do %@";
+"groups.notifications.newPendingRequest" = "👋 %@ chce dołączyć do %@";
+"groups.notifications.newPendingRequestBody" = "Zatwierdź lub odrzuć w Yala.";
 "groups.errors.pendingApproval" = "Nie możesz jeszcze tego zrobić. Administrator musi najpierw zaakceptować Twoją prośbę.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)

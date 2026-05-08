@@ -225,14 +225,15 @@ final class GroupNotificationService {
         }
     }
 
-    /// notificación local "X quiere unirse a [grupo]" — solo recibida por admins (filtrado en SplitSyncManager).
+    /// notificación local "👋 X quiere unirse a [grupo]" — solo recibida por admins (filtrado en SplitSyncManager).
     private func buildPendingMemberNotification(memberID: UUID, groupName: String) -> (String, String)? {
         guard let modelContext else { return nil }
 
         do {
             let descriptor = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.id == memberID })
             guard let member = try modelContext.fetch(descriptor).first else { return nil }
-            return (groupName, L10n.Groups.Notifications.newPendingRequest(member.displayName, groupName))
+            let title = L10n.Groups.Notifications.newPendingRequest(member.displayName, groupName)
+            return (title, L10n.Groups.Notifications.newPendingRequestBody)
         } catch {
             return nil
         }

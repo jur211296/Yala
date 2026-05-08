@@ -4079,7 +4079,8 @@
 "groups.invite.waitingApproval.banner" = "Warten auf Admin-Freigabe";
 "groups.invite.rejected.title" = "Anfrage abgelehnt";
 "groups.invite.rejected.body" = "Der Admin hat Ihre Anfrage nicht freigegeben. Bitten Sie um einen neuen Link, falls Sie es erneut versuchen möchten.";
-"groups.notifications.newPendingRequest" = "%@ möchte %@ beitreten";
+"groups.notifications.newPendingRequest" = "👋 %@ möchte %@ beitreten";
+"groups.notifications.newPendingRequestBody" = "In Yala annehmen oder ablehnen.";
 "groups.errors.pendingApproval" = "Diese Aktion ist noch nicht möglich. Der Admin muss Ihre Anfrage zuerst genehmigen.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)

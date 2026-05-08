@@ -4082,7 +4082,8 @@
 "groups.invite.waitingApproval.banner" = "管理者の承認を待っています";
 "groups.invite.rejected.title" = "リクエストが拒否されました";
 "groups.invite.rejected.body" = "管理者がリクエストを承認しませんでした。再度試したい場合は、新しいリンクを依頼してください。";
-"groups.notifications.newPendingRequest" = "%1$@ さんが %2$@ への参加を希望しています";
+"groups.notifications.newPendingRequest" = "👋 %1$@ さんが %2$@ への参加を希望しています";
+"groups.notifications.newPendingRequestBody" = "Yalaから承認または拒否してください。";
 "groups.errors.pendingApproval" = "まだこの操作はできません。管理者があなたのリクエストを承認する必要があります。";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)

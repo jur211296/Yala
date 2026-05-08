@@ -178,7 +178,8 @@
 "groups.invite.waitingApproval.banner" = "Awaiting admin approval";
 "groups.invite.rejected.title" = "Request rejected";
 "groups.invite.rejected.body" = "The admin didn't approve your request. Ask them for a new link if you'd like to try again.";
-"groups.notifications.newPendingRequest" = "%@ wants to join %@";
+"groups.notifications.newPendingRequest" = "👋 %@ wants to join %@";
+"groups.notifications.newPendingRequestBody" = "Approve or reject from Yala.";
 "groups.errors.pendingApproval" = "You can't do this yet — the admin needs to approve your request first.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)

@@ -4082,7 +4082,8 @@
 "groups.invite.waitingApproval.banner" = "等待管理员批准";
 "groups.invite.rejected.title" = "请求被拒绝";
 "groups.invite.rejected.body" = "管理员没有批准你的请求。如果你想再次尝试，可以请管理员发送新的链接。";
-"groups.notifications.newPendingRequest" = "%1$@ 想要加入 %2$@";
+"groups.notifications.newPendingRequest" = "👋 %1$@ 想要加入 %2$@";
+"groups.notifications.newPendingRequestBody" = "在 Yala 中批准或拒绝。";
 "groups.errors.pendingApproval" = "暂时还不能执行此操作。管理员需要先批准你的请求。";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)

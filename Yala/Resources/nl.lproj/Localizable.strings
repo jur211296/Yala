@@ -4082,7 +4082,8 @@
 "groups.invite.waitingApproval.banner" = "Wacht op goedkeuring van de beheerder";
 "groups.invite.rejected.title" = "Verzoek afgewezen";
 "groups.invite.rejected.body" = "De beheerder heeft je verzoek niet goedgekeurd. Vraag een nieuwe link als je het opnieuw wilt proberen.";
-"groups.notifications.newPendingRequest" = "%@ wil meedoen aan %@";
+"groups.notifications.newPendingRequest" = "👋 %@ wil meedoen aan %@";
+"groups.notifications.newPendingRequestBody" = "Goedkeuren of afwijzen in Yala.";
 "groups.errors.pendingApproval" = "Dat kan nog niet — de beheerder moet eerst je verzoek goedkeuren.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)

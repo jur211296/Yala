@@ -1807,9 +1807,13 @@ enum L10n {
             static var promptTitle: String { ls("groups.notifications.prompt.title", comment: "") }
             static var promptMessage: String { ls("groups.notifications.prompt.message", comment: "") }
             static var promptEnable: String { ls("groups.notifications.prompt.enable", comment: "") }
-            /// cuerpo de la notif "%@ quiere unirse a %@" — solo recibida por admins.
+            /// title de la notif "👋 %@ quiere unirse a %@" — solo recibida por admins.
             static func newPendingRequest(_ name: String, _ groupName: String) -> String {
                 String(format: ls("groups.notifications.newPendingRequest", comment: ""), name, groupName)
+            }
+            /// body de la notif: "Aprueba o rechaza desde Yala."
+            static var newPendingRequestBody: String {
+                ls("groups.notifications.newPendingRequestBody", comment: "")
             }
         }
 
