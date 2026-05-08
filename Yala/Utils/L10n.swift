@@ -1841,6 +1841,38 @@ enum L10n {
             static var title: String { ls("groups.reconnect.title", comment: "") }
             static var subtitle: String { ls("groups.reconnect.subtitle", comment: "") }
             static func subtitleWithGroup(_ name: String) -> String { String(format: ls("groups.reconnect.subtitleWithGroup", comment: ""), name) }
+            /// Fallback nombre genérico cuando el invite link no trae `n=` (ej. CKShare nativo).
+            static var fallbackGroupName: String { ls("groups.reconnect.fallbackGroupName", comment: "") }
+
+            // E1 — archived
+            static func archivedTitle(_ name: String) -> String { String(format: ls("groups.reconnect.archived.title", comment: ""), name) }
+            static var archivedBody: String { ls("groups.reconnect.archived.body", comment: "") }
+            static var archivedCta: String { ls("groups.reconnect.archived.cta", comment: "") }
+
+            // E2 — alreadyMember
+            static func alreadyMemberTitle(_ name: String) -> String { String(format: ls("groups.reconnect.alreadyMember.title", comment: ""), name) }
+            static var alreadyMemberBody: String { ls("groups.reconnect.alreadyMember.body", comment: "") }
+            static var alreadyMemberCta: String { ls("groups.reconnect.alreadyMember.cta", comment: "") }
+
+            // E3 — pendingDuplicate
+            static func pendingDuplicateTitle(_ name: String) -> String { String(format: ls("groups.reconnect.pendingDuplicate.title", comment: ""), name) }
+            static var pendingDuplicateBody: String { ls("groups.reconnect.pendingDuplicate.body", comment: "") }
+            static var pendingDuplicateCta: String { ls("groups.reconnect.pendingDuplicate.cta", comment: "") }
+
+            // E4 — rejectedRetry
+            static var rejectedRetryTitle: String { ls("groups.reconnect.rejectedRetry.title", comment: "") }
+            static var rejectedRetryBody: String { ls("groups.reconnect.rejectedRetry.body", comment: "") }
+
+            // E5 — leftRetry
+            static func leftRetryTitle(_ name: String) -> String { String(format: ls("groups.reconnect.leftRetry.title", comment: ""), name) }
+            static var leftRetryBody: String { ls("groups.reconnect.leftRetry.body", comment: "") }
+
+            // E6 — removedRetry
+            static func removedRetryTitle(_ name: String) -> String { String(format: ls("groups.reconnect.removedRetry.title", comment: ""), name) }
+            static var removedRetryBody: String { ls("groups.reconnect.removedRetry.body", comment: "") }
+
+            /// CTA compartido por rejectedRetry / leftRetry / removedRetry: "Volver a pedir".
+            static var retryCta: String { ls("groups.reconnect.retryCta", comment: "") }
         }
 
         enum Activate {

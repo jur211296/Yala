@@ -3520,6 +3520,23 @@
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "グループに参加";
 "groups.reconnect.subtitle" = "シェアグループに招待されました";
+"groups.reconnect.fallbackGroupName" = "このグループ";
+"groups.reconnect.archived.title" = "%@はアーカイブされました";
+"groups.reconnect.archived.body" = "管理者がアーカイブしたため、変更はもう受け付けられません。";
+"groups.reconnect.archived.cta" = "OK";
+"groups.reconnect.alreadyMember.title" = "あなたはすでに%@に参加しています";
+"groups.reconnect.alreadyMember.body" = "グループへご案内します。";
+"groups.reconnect.alreadyMember.cta" = "グループを開く";
+"groups.reconnect.pendingDuplicate.title" = "%@への申請は審査中です";
+"groups.reconnect.pendingDuplicate.body" = "管理者がまだあなたの申請を承認していません。";
+"groups.reconnect.pendingDuplicate.cta" = "グループを表示";
+"groups.reconnect.rejectedRetry.title" = "申請は拒否されました";
+"groups.reconnect.rejectedRetry.body" = "もう一度申請すると、管理者が新しい申請を確認します。";
+"groups.reconnect.leftRetry.title" = "%@から退会しました";
+"groups.reconnect.leftRetry.body" = "戻りたい場合はもう一度申請してください。";
+"groups.reconnect.removedRetry.title" = "%@から削除されました";
+"groups.reconnect.removedRetry.body" = "戻りたい場合はもう一度申請してください。";
+"groups.reconnect.retryCta" = "もう一度申請";
 "groups.reconnect.subtitleWithGroup" = "%@に招待されました";
 
 // Groups — Activate Full Mode (GC-08)

@@ -283,6 +283,17 @@ final class SplitSyncManager {
         return results.first
     }
 
+    /// Estado local del current user en una zone. Nil si no soy miembro local.
+    /// Usado para detectar `.alreadyMember` / `.pendingDuplicate` / `.rejectedRetry` /
+    /// `.leftRetry` / `.removedRetry` antes de aceptar el share.
+    func currentMemberStatus(zoneName: String) -> SplitMemberStatus? {
+        guard let context = modelContext else { return nil }
+        let descriptor = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneName && $0.isCurrentUser == true }
+        )
+        return (try? context.fetch(descriptor).first)?.memberStatus
+    }
+
     /// Find the most recently synced group (useful after accepting a share).
     func mostRecentGroup() -> SplitGroup? {
         guard let context = modelContext else { return nil }

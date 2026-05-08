@@ -3517,6 +3517,23 @@
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "Entrar no grupo";
 "groups.reconnect.subtitle" = "Você foi convidado para um grupo compartilhado";
+"groups.reconnect.fallbackGroupName" = "este grupo";
+"groups.reconnect.archived.title" = "%@ foi arquivado";
+"groups.reconnect.archived.body" = "O admin arquivou-o e já não aceita alterações.";
+"groups.reconnect.archived.cta" = "Entendido";
+"groups.reconnect.alreadyMember.title" = "Já pertences a %@";
+"groups.reconnect.alreadyMember.body" = "Levamos-te ao grupo.";
+"groups.reconnect.alreadyMember.cta" = "Abrir grupo";
+"groups.reconnect.pendingDuplicate.title" = "Pedido pendente em %@";
+"groups.reconnect.pendingDuplicate.body" = "O admin ainda não aprovou o teu pedido.";
+"groups.reconnect.pendingDuplicate.cta" = "Ver grupos";
+"groups.reconnect.rejectedRetry.title" = "O teu pedido foi rejeitado";
+"groups.reconnect.rejectedRetry.body" = "Pede novamente e o admin verá o teu novo pedido.";
+"groups.reconnect.leftRetry.title" = "Saíste de %@";
+"groups.reconnect.leftRetry.body" = "Pede novamente se quiseres voltar.";
+"groups.reconnect.removedRetry.title" = "Foste removido de %@";
+"groups.reconnect.removedRetry.body" = "Pede novamente se quiseres voltar.";
+"groups.reconnect.retryCta" = "Pedir novamente";
 "groups.reconnect.subtitleWithGroup" = "Você foi convidado para %@";
 
 // Groups — Activate Full Mode (GC-08)

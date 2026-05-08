@@ -52,8 +52,8 @@ struct ContentView: View {
     @State private var showFullModeActivation: Bool = false
     /// Inbox alert payload, driven by .contentView drain of .showInboxAlert.
     @State private var activeInboxNotification: PendingInboxNotification = .init()
-    /// Group reconnect metadata, carried by .presentGroupReconnect intent.
-    @State private var pendingReconnectMetadata: CKShare.Metadata?
+    /// Group reconnect invite (metadata + mode), carried by .presentGroupReconnect intent.
+    @State private var pendingReconnectInvite: InviteMetadata?
     /// Invite error detail, carried by .showInviteError intent.
     @State private var activeInviteError: String?
     /// Group bridge/sync error message, carried by .showGroupSyncError intent (P0-1).
@@ -281,7 +281,7 @@ struct ContentView: View {
             pendingInviteMetadata: $pendingInviteMetadata,
             showGroupReconnect: $showGroupReconnect,
             hasCompletedOnboarding: $hasCompletedOnboarding,
-            pendingReconnectMetadata: $pendingReconnectMetadata,
+            pendingReconnectInvite: $pendingReconnectInvite,
             activeInviteError: $activeInviteError,
             activeGroupSyncError: $activeGroupSyncError
         ))
@@ -445,7 +445,7 @@ struct ContentView: View {
             pendingInviteMetadata = invite
             showGroupInviteOnboarding = true
         case .presentGroupReconnect(let invite):
-            pendingReconnectMetadata = invite.shareMetadata
+            pendingReconnectInvite = invite
             showGroupReconnect = true
         case .showInviteError(let detail):
             activeInviteError = detail
@@ -504,6 +504,7 @@ struct ContentView: View {
             withAnimation(.easeInOut) { positiveToast = nil }
         }
     }
+
 
     // MARK: - Cross-Device Wipe Handling
 
@@ -779,11 +780,52 @@ fileprivate extension Binding where Value == Bool {
 
 /// Extracted to a ViewModifier to avoid type-checker complexity in ContentView body.
 private struct GroupInviteModifier: ViewModifier {
+
+    /// Handler del CTA de GroupReconnectView según el mode del invite. Cada mode dispara
+    /// una acción distinta: archived no debe llegar acá (CTA es solo dismiss); alreadyMember/
+    /// pendingDuplicate solo navegan; los retry modes (rejected/left/removed) aceptan el
+    /// share + reactivan al member como pending.
+    @MainActor
+    static func handleReconnectJoin(invite: InviteMetadata) async {
+        let metadata = invite.shareMetadata
+        let zoneName = metadata.share.recordID.zoneID.zoneName
+
+        switch invite.mode {
+        case .archived:
+            return
+
+        case .alreadyMember:
+            if let group = SplitSyncManager.shared.group(for: zoneName) {
+                AppRouter.shared.enqueue(.navigate(.groupDetail(groupID: group.id.uuidString)))
+            } else {
+                AppRouter.shared.enqueue(.navigate(.groups))
+            }
+
+        case .pendingDuplicate:
+            AppRouter.shared.enqueue(.navigate(.groups))
+
+        case .rejectedRetry, .leftRetry, .removedRetry:
+            await SplitSyncManager.shared.acceptShare(metadata: metadata)
+            try? await Task.sleep(for: .seconds(2))
+            SessionState.shared.incrementDataVersion()
+            if let group = SplitSyncManager.shared.group(for: zoneName) {
+                try? await GroupService.shared.ensureCurrentUserMemberExists(in: group, reactivateInactive: true)
+            }
+            AppRouter.shared.enqueue(.navigate(.groups))
+
+        case .standardReconnect:
+            await SplitSyncManager.shared.acceptShare(metadata: metadata)
+            try? await Task.sleep(for: .seconds(2))
+            SessionState.shared.incrementDataVersion()
+            AppRouter.shared.enqueue(.navigate(.groups))
+        }
+    }
+
     @Binding var showGroupInviteOnboarding: Bool
     @Binding var pendingInviteMetadata: InviteMetadata?
     @Binding var showGroupReconnect: Bool
     @Binding var hasCompletedOnboarding: Bool
-    @Binding var pendingReconnectMetadata: CKShare.Metadata?
+    @Binding var pendingReconnectInvite: InviteMetadata?
     @Binding var activeInviteError: String?
     @Binding var activeGroupSyncError: String?
 
@@ -822,27 +864,24 @@ private struct GroupInviteModifier: ViewModifier {
                 .environment(SessionState.shared)
             }
             .sheet(isPresented: $showGroupReconnect, onDismiss: {
-                pendingReconnectMetadata = nil
+                pendingReconnectInvite = nil
             }) {
-                GroupReconnectView(
-                    onJoin: {
-                        let metadata = pendingReconnectMetadata
-                        showGroupReconnect = false
-                        Task {
-                            if let metadata {
-                                await SplitSyncManager.shared.acceptShare(metadata: metadata)
-                                // Give CKSyncEngine time to fetch group data before navigating (UX).
-                                try? await Task.sleep(for: .seconds(2))
-                                SessionState.shared.incrementDataVersion()
+                if let invite = pendingReconnectInvite {
+                    GroupReconnectView(
+                        invite: invite,
+                        onJoin: {
+                            let captured = invite
+                            showGroupReconnect = false
+                            Task { @MainActor in
+                                await Self.handleReconnectJoin(invite: captured)
                             }
-                            AppRouter.shared.enqueue(.navigate(.groups))
+                        },
+                        onDismiss: {
+                            showGroupReconnect = false
                         }
-                    },
-                    onDismiss: {
-                        showGroupReconnect = false
-                    }
-                )
-                .environment(SessionState.shared)
+                    )
+                    .environment(SessionState.shared)
+                }
             }
     }
 }

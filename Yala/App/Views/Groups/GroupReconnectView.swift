@@ -2,8 +2,9 @@
 //  GroupReconnectView.swift
 //  Yala
 //
-//  Confirmation screen for existing users accepting a group invitation.
-//  Shows group icon/color/name/members. X to dismiss, Join to accept.
+//  Confirmation/info screen mostrado tras tap a un invite link cuando el usuario
+//  ya tenía estado relevante (member status local o grupo archivado). UI condicional
+//  por `mode` del invite — copy + CTA cambian según escenario.
 //
 
 import SwiftUI
@@ -12,6 +13,7 @@ struct GroupReconnectView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
 
+    let invite: InviteMetadata
     var onJoin: () -> Void
     var onDismiss: () -> Void
 
@@ -24,16 +26,14 @@ struct GroupReconnectView: View {
                 VStack(spacing: DS.Spacing.xxl) {
                     Spacer()
 
-                    // Group icon with color
                     groupIcon
 
-                    // Group info
                     VStack(spacing: DS.Spacing.sm) {
-                        Text(L10n.Groups.Reconnect.title)
+                        Text(title)
                             .font(DS.Typography.title2)
                             .multilineTextAlignment(.center)
 
-                        Text(L10n.Groups.Reconnect.subtitle)
+                        Text(subtitle)
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -41,8 +41,13 @@ struct GroupReconnectView: View {
 
                     Spacer()
 
-                    YalaPrimaryButton(L10n.Groups.Invite.joinButton) {
-                        onJoin()
+                    YalaPrimaryButton(ctaLabel) {
+                        if invite.mode == .archived {
+                            // .archived: el CTA solo dismissa.
+                            onDismiss()
+                        } else {
+                            onJoin()
+                        }
                     }
                     .padding(.bottom, DS.Spacing.xxl)
                 }
@@ -59,6 +64,43 @@ struct GroupReconnectView: View {
         .presentationDetents([.medium])
     }
 
+    // MARK: - Mode-driven copy
+
+    private var title: String {
+        let groupName = invite.groupName ?? L10n.Groups.Reconnect.fallbackGroupName
+        switch invite.mode {
+        case .standardReconnect: return L10n.Groups.Reconnect.title
+        case .archived: return L10n.Groups.Reconnect.archivedTitle(groupName)
+        case .alreadyMember: return L10n.Groups.Reconnect.alreadyMemberTitle(groupName)
+        case .pendingDuplicate: return L10n.Groups.Reconnect.pendingDuplicateTitle(groupName)
+        case .rejectedRetry: return L10n.Groups.Reconnect.rejectedRetryTitle
+        case .leftRetry: return L10n.Groups.Reconnect.leftRetryTitle(groupName)
+        case .removedRetry: return L10n.Groups.Reconnect.removedRetryTitle(groupName)
+        }
+    }
+
+    private var subtitle: String {
+        switch invite.mode {
+        case .standardReconnect: return L10n.Groups.Reconnect.subtitle
+        case .archived: return L10n.Groups.Reconnect.archivedBody
+        case .alreadyMember: return L10n.Groups.Reconnect.alreadyMemberBody
+        case .pendingDuplicate: return L10n.Groups.Reconnect.pendingDuplicateBody
+        case .rejectedRetry: return L10n.Groups.Reconnect.rejectedRetryBody
+        case .leftRetry: return L10n.Groups.Reconnect.leftRetryBody
+        case .removedRetry: return L10n.Groups.Reconnect.removedRetryBody
+        }
+    }
+
+    private var ctaLabel: String {
+        switch invite.mode {
+        case .standardReconnect: return L10n.Groups.Invite.joinButton
+        case .archived: return L10n.Groups.Reconnect.archivedCta
+        case .alreadyMember: return L10n.Groups.Reconnect.alreadyMemberCta
+        case .pendingDuplicate: return L10n.Groups.Reconnect.pendingDuplicateCta
+        case .rejectedRetry, .leftRetry, .removedRetry: return L10n.Groups.Reconnect.retryCta
+        }
+    }
+
     // MARK: - Group Icon
 
     private var groupIcon: some View {
@@ -67,7 +109,7 @@ struct GroupReconnectView: View {
                 .fill(groupColor)
                 .frame(width: 64, height: 64) // A11Y-DT: decorative hero icon, fixed size
 
-            Image(systemName: "person.2.fill")
+            Image(systemName: invite.groupIcon ?? "person.2.fill")
                 .font(.system(size: 28)) // A11Y-DT: decorative icon inside circle
                 .foregroundStyle(.white)
         }
@@ -75,6 +117,7 @@ struct GroupReconnectView: View {
     }
 
     private var groupColor: Color {
-        theme.accent
+        if let hex = invite.groupColor, !hex.isEmpty { return Color(hex: hex) }
+        return theme.accent
     }
 }

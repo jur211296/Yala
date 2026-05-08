@@ -672,18 +672,32 @@ final class AppBootstrapper {
     enum InviteRouteDecision: Equatable {
         /// Invitado nuevo (sin onboarding completo y NO mid-invite): acepta eagerly + muestra invite onboarding.
         case acceptAndShowInviteOnboarding
-        /// Todos los demás (onboarded o mid-invite): muestra reconnect; el `acceptShare` lo hace `onJoin`.
-        case showReconnect
+        /// Todos los demás casos: muestra reconnect con el mode apropiado.
+        case showReconnect(mode: ReconnectMode)
     }
 
+    /// Decide el routing tras leer metadata del share + estado local del grupo.
+    /// Orden de evaluación: archived (CKShare custom key) > member status local > onboarding.
     static func inviteRouteDecision(
         hasCompletedOnboarding: Bool,
-        onboardingMode: OnboardingMode
+        onboardingMode: OnboardingMode,
+        isArchived: Bool = false,
+        currentMemberStatus: SplitMemberStatus? = nil
     ) -> InviteRouteDecision {
+        if isArchived { return .showReconnect(mode: .archived) }
+        if let status = currentMemberStatus {
+            switch status {
+            case .active: return .showReconnect(mode: .alreadyMember)
+            case .pendingApproval: return .showReconnect(mode: .pendingDuplicate)
+            case .rejected: return .showReconnect(mode: .rejectedRetry)
+            case .left: return .showReconnect(mode: .leftRetry)
+            case .removed: return .showReconnect(mode: .removedRetry)
+            }
+        }
         if !hasCompletedOnboarding && onboardingMode != .groupInvite {
             return .acceptAndShowInviteOnboarding
         }
-        return .showReconnect
+        return .showReconnect(mode: .standardReconnect)
     }
 
     /// Acepta un CKShare a partir de su URL.
@@ -698,23 +712,42 @@ final class AppBootstrapper {
             let metadata = try await InviteLinkService.fetchShareMetadata(for: shareURL)
 
             let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
-            let invite = InviteMetadata(
-                groupName: brandedMetadata.name,
-                groupIcon: brandedMetadata.icon,
-                groupColor: brandedMetadata.color,
-                groupMembers: brandedMetadata.members,
-                shareMetadata: metadata
+            // CKShare custom key `isArchived` (escrita por owner en setArchived). Race-tolerant:
+            // si key ausente → false → standardReconnect; sync posterior trae estado al SplitGroup local.
+            let isArchived = (metadata.share["isArchived"] as? Int) == 1
+            // Member status local (si ya hubo accept previo en este device).
+            let zoneName = metadata.share.recordID.zoneID.zoneName
+            let currentMemberStatus = SplitSyncManager.shared.currentMemberStatus(zoneName: zoneName)
+
+            let decision = Self.inviteRouteDecision(
+                hasCompletedOnboarding: hasCompletedOnboarding,
+                onboardingMode: sessionState.onboardingMode,
+                isArchived: isArchived,
+                currentMemberStatus: currentMemberStatus
             )
 
-            switch Self.inviteRouteDecision(
-                hasCompletedOnboarding: hasCompletedOnboarding,
-                onboardingMode: sessionState.onboardingMode
-            ) {
+            switch decision {
             case .acceptAndShowInviteOnboarding:
+                let invite = InviteMetadata(
+                    groupName: brandedMetadata.name,
+                    groupIcon: brandedMetadata.icon,
+                    groupColor: brandedMetadata.color,
+                    groupMembers: brandedMetadata.members,
+                    shareMetadata: metadata,
+                    mode: .standardReconnect
+                )
                 await SplitSyncManager.shared.acceptShare(metadata: metadata, skipNavigation: true)
                 AppRouter.shared.enqueue(.presentGroupInviteOnboarding(invite))
-            case .showReconnect:
-                // NO acceptShare eagerly — `GroupReconnectView.onJoin` lo invoca al confirmar.
+            case .showReconnect(let mode):
+                // NO acceptShare eagerly — `GroupReconnectView.onJoin` lo invoca al confirmar (según mode).
+                let invite = InviteMetadata(
+                    groupName: brandedMetadata.name,
+                    groupIcon: brandedMetadata.icon,
+                    groupColor: brandedMetadata.color,
+                    groupMembers: brandedMetadata.members,
+                    shareMetadata: metadata,
+                    mode: mode
+                )
                 AppRouter.shared.enqueue(.presentGroupReconnect(invite))
             }
         } catch {

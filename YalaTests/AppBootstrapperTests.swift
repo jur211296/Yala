@@ -74,33 +74,95 @@ struct AppBootstrapperTests {
         #expect(decision == .acceptAndShowInviteOnboarding)
     }
 
-    @Test func inviteRouteDecision_onboardedActiveUser_showsReconnect() {
-        // hasCompletedOnboarding=true → reconnect (regardless of segment, including .active).
+    @Test func inviteRouteDecision_onboardedActiveUser_showsReconnectStandard() {
+        // hasCompletedOnboarding=true sin member status → reconnect standard.
         let decision = AppBootstrapper.inviteRouteDecision(
             hasCompletedOnboarding: true,
             onboardingMode: .full
         )
-        #expect(decision == .showReconnect)
+        #expect(decision == .showReconnect(mode: .standardReconnect))
     }
 
-    @Test func inviteRouteDecision_dormantOnboardedUser_showsReconnect() {
-        // Regression: dormant users (segment-based) used to have a special branch.
-        // Now they go via the shared "onboarded → reconnect" path.
-        let decision = AppBootstrapper.inviteRouteDecision(
-            hasCompletedOnboarding: true,
-            onboardingMode: .full
-        )
-        #expect(decision == .showReconnect)
-    }
-
-    @Test func inviteRouteDecision_midGroupInviteOnboarding_showsReconnect() {
-        // User mid-invite-onboarding receives another link → reconnect (the in-progress
-        // onboarding view IS the confirmation; reconnect on top is acceptable for the rare
-        // edge case of two simultaneous invitations).
+    @Test func inviteRouteDecision_midGroupInviteOnboarding_showsReconnectStandard() {
+        // User mid-invite-onboarding receives another link → reconnect standard.
         let decision = AppBootstrapper.inviteRouteDecision(
             hasCompletedOnboarding: false,
             onboardingMode: .groupInvite
         )
-        #expect(decision == .showReconnect)
+        #expect(decision == .showReconnect(mode: .standardReconnect))
+    }
+
+    // MARK: - 5 escenarios extendidos: archived + member status
+
+    @Test func inviteRouteDecision_archived_returnsArchived() {
+        // isArchived gana sobre todo lo demás (incluso member status).
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full,
+            isArchived: true,
+            currentMemberStatus: .active
+        )
+        #expect(decision == .showReconnect(mode: .archived))
+    }
+
+    @Test func inviteRouteDecision_alreadyMember_returnsAlreadyMember() {
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full,
+            isArchived: false,
+            currentMemberStatus: .active
+        )
+        #expect(decision == .showReconnect(mode: .alreadyMember))
+    }
+
+    @Test func inviteRouteDecision_pendingApproval_returnsPendingDuplicate() {
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full,
+            isArchived: false,
+            currentMemberStatus: .pendingApproval
+        )
+        #expect(decision == .showReconnect(mode: .pendingDuplicate))
+    }
+
+    @Test func inviteRouteDecision_rejected_returnsRejectedRetry() {
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full,
+            isArchived: false,
+            currentMemberStatus: .rejected
+        )
+        #expect(decision == .showReconnect(mode: .rejectedRetry))
+    }
+
+    @Test func inviteRouteDecision_left_returnsLeftRetry() {
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full,
+            isArchived: false,
+            currentMemberStatus: .left
+        )
+        #expect(decision == .showReconnect(mode: .leftRetry))
+    }
+
+    @Test func inviteRouteDecision_removed_returnsRemovedRetry() {
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full,
+            isArchived: false,
+            currentMemberStatus: .removed
+        )
+        #expect(decision == .showReconnect(mode: .removedRetry))
+    }
+
+    @Test func inviteRouteDecision_archivedTrumpsRemoved() {
+        // Even if I'm a removed member, archived takes priority.
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full,
+            isArchived: true,
+            currentMemberStatus: .removed
+        )
+        #expect(decision == .showReconnect(mode: .archived))
     }
 }

@@ -3520,6 +3520,23 @@
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "加入群组";
 "groups.reconnect.subtitle" = "你被邀请加入一个共享群组";
+"groups.reconnect.fallbackGroupName" = "此群组";
+"groups.reconnect.archived.title" = "%@ 已归档";
+"groups.reconnect.archived.body" = "管理员已归档此群组，不再接受变更。";
+"groups.reconnect.archived.cta" = "知道了";
+"groups.reconnect.alreadyMember.title" = "你已是 %@ 的成员";
+"groups.reconnect.alreadyMember.body" = "我们带你前往群组。";
+"groups.reconnect.alreadyMember.cta" = "打开群组";
+"groups.reconnect.pendingDuplicate.title" = "对 %@ 的申请仍在审核中";
+"groups.reconnect.pendingDuplicate.body" = "管理员尚未批准你的申请。";
+"groups.reconnect.pendingDuplicate.cta" = "查看群组";
+"groups.reconnect.rejectedRetry.title" = "你的申请被拒绝了";
+"groups.reconnect.rejectedRetry.body" = "再次申请，管理员会看到你的新申请。";
+"groups.reconnect.leftRetry.title" = "你已离开 %@";
+"groups.reconnect.leftRetry.body" = "如果想回来，请再次申请。";
+"groups.reconnect.removedRetry.title" = "你已被移出 %@";
+"groups.reconnect.removedRetry.body" = "如果想回来，请再次申请。";
+"groups.reconnect.retryCta" = "再次申请";
 "groups.reconnect.subtitleWithGroup" = "你被邀请加入「%@」";
 
 // Groups — Activate Full Mode (GC-08)

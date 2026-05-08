@@ -49,21 +49,32 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         Task { @MainActor in
             let sessionState = SessionState.shared
             let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            let isArchived = (cloudKitShareMetadata.share["isArchived"] as? Int) == 1
+            let zoneName = cloudKitShareMetadata.share.recordID.zoneID.zoneName
+            let currentMemberStatus = SplitSyncManager.shared.currentMemberStatus(zoneName: zoneName)
 
-            let invite = InviteMetadata(
-                groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
-                shareMetadata: cloudKitShareMetadata
+            let decision = AppBootstrapper.inviteRouteDecision(
+                hasCompletedOnboarding: hasCompletedOnboarding,
+                onboardingMode: sessionState.onboardingMode,
+                isArchived: isArchived,
+                currentMemberStatus: currentMemberStatus
             )
 
-            // A12: shared decision logic — keep symmetry with branded link path in AppBootstrapper.
-            switch AppBootstrapper.inviteRouteDecision(
-                hasCompletedOnboarding: hasCompletedOnboarding,
-                onboardingMode: sessionState.onboardingMode
-            ) {
+            switch decision {
             case .acceptAndShowInviteOnboarding:
+                let invite = InviteMetadata(
+                    groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
+                    shareMetadata: cloudKitShareMetadata,
+                    mode: .standardReconnect
+                )
                 await SplitSyncManager.shared.acceptShare(metadata: cloudKitShareMetadata, skipNavigation: true)
                 AppRouter.shared.enqueue(.presentGroupInviteOnboarding(invite))
-            case .showReconnect:
+            case .showReconnect(let mode):
+                let invite = InviteMetadata(
+                    groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
+                    shareMetadata: cloudKitShareMetadata,
+                    mode: mode
+                )
                 AppRouter.shared.enqueue(.presentGroupReconnect(invite))
             }
         }

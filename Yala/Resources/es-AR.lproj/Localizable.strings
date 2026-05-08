@@ -347,3 +347,20 @@
 "groups.stats.assignCategoriesHint" = "Asigná categorías a tus gastos para ver el desglose por tipo.";
 
 "settings.wipeGroupsExclusionNote" = "Esto no incluye tus grupos. Para salir, andá a Grupos, saldá lo pendiente y abandonalos.";
+"groups.reconnect.fallbackGroupName" = "este grupo";
+"groups.reconnect.archived.title" = "%@ fue archivado";
+"groups.reconnect.archived.body" = "Su admin lo archivó y ya no acepta cambios.";
+"groups.reconnect.archived.cta" = "Entendido";
+"groups.reconnect.alreadyMember.title" = "Ya pertenecés a %@";
+"groups.reconnect.alreadyMember.body" = "Te llevamos al grupo.";
+"groups.reconnect.alreadyMember.cta" = "Ver grupo";
+"groups.reconnect.pendingDuplicate.title" = "Solicitud pendiente en %@";
+"groups.reconnect.pendingDuplicate.body" = "El admin aún no aprueba tu solicitud.";
+"groups.reconnect.pendingDuplicate.cta" = "Ver grupos";
+"groups.reconnect.rejectedRetry.title" = "Tu solicitud fue rechazada";
+"groups.reconnect.rejectedRetry.body" = "Pedí entrar de nuevo y el admin va a ver tu nueva solicitud.";
+"groups.reconnect.leftRetry.title" = "Saliste de %@";
+"groups.reconnect.leftRetry.body" = "Pedí entrar de nuevo si querés volver.";
+"groups.reconnect.removedRetry.title" = "Te sacaron de %@";
+"groups.reconnect.removedRetry.body" = "Pedí entrar de nuevo si querés volver.";
+"groups.reconnect.retryCta" = "Volver a pedir";

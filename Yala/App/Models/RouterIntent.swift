@@ -17,17 +17,54 @@ enum UpgradeFeature: String {
     case voice, image, accounts, chat
 }
 
+/// Mode del banner de reconnect según el estado del invite + membresía actual.
+/// Drives copy + CTA en GroupReconnectView.
+enum ReconnectMode: String, Equatable, Sendable {
+    /// Invitación normal de un user con onboarding completo (path por defecto).
+    case standardReconnect
+    /// Grupo archivado por el owner — no acepta nuevos miembros.
+    case archived
+    /// Yo ya soy miembro `.active` (mismo Apple ID en otro device, retap link).
+    case alreadyMember
+    /// Yo ya envié solicitud, está pendiente de aprobación admin.
+    case pendingDuplicate
+    /// Admin me rechazó antes — ofrecer volver a pedir.
+    case rejectedRetry
+    /// Yo abandoné voluntariamente — ofrecer volver a pedir.
+    case leftRetry
+    /// Admin me removió — ofrecer volver a pedir.
+    case removedRetry
+}
+
 /// Invite metadata carried by group invite intents. CKShare.Metadata is NOT
-/// Equatable; comparison delegates to the share record ID.
+/// Equatable; comparison delegates to the share record ID + mode.
 struct InviteMetadata: Equatable {
     let groupName: String?
     let groupIcon: String?
     let groupColor: String?
     let groupMembers: [String]?
     let shareMetadata: CKShare.Metadata
+    /// Mode del reconnect — default `.standardReconnect` para call-sites pre-existentes.
+    let mode: ReconnectMode
+
+    init(
+        groupName: String?,
+        groupIcon: String?,
+        groupColor: String?,
+        groupMembers: [String]?,
+        shareMetadata: CKShare.Metadata,
+        mode: ReconnectMode = .standardReconnect
+    ) {
+        self.groupName = groupName
+        self.groupIcon = groupIcon
+        self.groupColor = groupColor
+        self.groupMembers = groupMembers
+        self.shareMetadata = shareMetadata
+        self.mode = mode
+    }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.shareMetadata.share.recordID == rhs.shareMetadata.share.recordID
+        lhs.shareMetadata.share.recordID == rhs.shareMetadata.share.recordID && lhs.mode == rhs.mode
     }
 }
 

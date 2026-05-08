@@ -3520,6 +3520,23 @@
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "Aansluiten bij groep";
 "groups.reconnect.subtitle" = "Je bent uitgenodigd voor een gedeelde groep";
+"groups.reconnect.fallbackGroupName" = "deze groep";
+"groups.reconnect.archived.title" = "%@ is gearchiveerd";
+"groups.reconnect.archived.body" = "De beheerder heeft de groep gearchiveerd en accepteert geen wijzigingen meer.";
+"groups.reconnect.archived.cta" = "Begrepen";
+"groups.reconnect.alreadyMember.title" = "Je bent al lid van %@";
+"groups.reconnect.alreadyMember.body" = "We brengen je naar de groep.";
+"groups.reconnect.alreadyMember.cta" = "Groep openen";
+"groups.reconnect.pendingDuplicate.title" = "Verzoek in behandeling voor %@";
+"groups.reconnect.pendingDuplicate.body" = "De beheerder heeft je verzoek nog niet goedgekeurd.";
+"groups.reconnect.pendingDuplicate.cta" = "Groepen bekijken";
+"groups.reconnect.rejectedRetry.title" = "Je verzoek is afgewezen";
+"groups.reconnect.rejectedRetry.body" = "Vraag opnieuw aan en de beheerder ziet je nieuwe verzoek.";
+"groups.reconnect.leftRetry.title" = "Je hebt %@ verlaten";
+"groups.reconnect.leftRetry.body" = "Vraag opnieuw aan als je terug wilt komen.";
+"groups.reconnect.removedRetry.title" = "Je bent verwijderd uit %@";
+"groups.reconnect.removedRetry.body" = "Vraag opnieuw aan als je terug wilt komen.";
+"groups.reconnect.retryCta" = "Opnieuw aanvragen";
 "groups.reconnect.subtitleWithGroup" = "Je bent uitgenodigd voor %@";
 
 // Groups — Activate Full Mode (GC-08)

@@ -3520,6 +3520,23 @@
 // Groups — Reconnect (GC-08)
 "groups.reconnect.title" = "Dołącz do grupy";
 "groups.reconnect.subtitle" = "Zostałeś zaproszony do grupy współdzielonej";
+"groups.reconnect.fallbackGroupName" = "tę grupę";
+"groups.reconnect.archived.title" = "Grupa %@ została zarchiwizowana";
+"groups.reconnect.archived.body" = "Administrator ją zarchiwizował i nie przyjmuje już zmian.";
+"groups.reconnect.archived.cta" = "Rozumiem";
+"groups.reconnect.alreadyMember.title" = "Już należysz do %@";
+"groups.reconnect.alreadyMember.body" = "Przenosimy Cię do grupy.";
+"groups.reconnect.alreadyMember.cta" = "Otwórz grupę";
+"groups.reconnect.pendingDuplicate.title" = "Oczekująca prośba dla %@";
+"groups.reconnect.pendingDuplicate.body" = "Administrator jeszcze nie zaakceptował Twojej prośby.";
+"groups.reconnect.pendingDuplicate.cta" = "Zobacz grupy";
+"groups.reconnect.rejectedRetry.title" = "Twoja prośba została odrzucona";
+"groups.reconnect.rejectedRetry.body" = "Poproś ponownie, a administrator zobaczy Twoją nową prośbę.";
+"groups.reconnect.leftRetry.title" = "Opuściłeś %@";
+"groups.reconnect.leftRetry.body" = "Poproś ponownie, jeśli chcesz wrócić.";
+"groups.reconnect.removedRetry.title" = "Zostałeś usunięty z %@";
+"groups.reconnect.removedRetry.body" = "Poproś ponownie, jeśli chcesz wrócić.";
+"groups.reconnect.retryCta" = "Poproś ponownie";
 "groups.reconnect.subtitleWithGroup" = "Zostałeś zaproszony do %@";
 
 // Groups — Activate Full Mode (GC-08)

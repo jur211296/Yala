@@ -161,6 +161,33 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
+
+        // Propaga la flag al CKShare custom key para que invitados pre-accept
+        // (otros devices, retap del link) la vean ANTES de aceptar y reciban
+        // mode `.archived`. Falla silenciosa: red de seguridad es el sync normal
+        // del SplitGroup que también lleva isArchived al device del invitado.
+        let zoneID = group.cloudKitZoneID
+        Task {
+            await Self.propagateArchivedToShare(zoneID: zoneID, isArchived: isArchived)
+        }
+    }
+
+    /// Escribe `isArchived` como custom key del CKShare zone-wide del grupo.
+    /// Solo el owner del CKShare puede modificarlo (admin = owner por construcción).
+    private static func propagateArchivedToShare(zoneID: String, isArchived: Bool) async {
+        let zoneIDObj = CKRecordZone.ID(zoneName: zoneID, ownerName: CKCurrentUserDefaultName)
+        let shareRecordID = CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneIDObj)
+        let database = CKContainer(identifier: CKConstants.containerID).privateCloudDatabase
+        do {
+            let record = try await database.record(for: shareRecordID)
+            guard let share = record as? CKShare else { return }
+            share["isArchived"] = isArchived ? 1 : 0
+            _ = try await database.modifyRecords(saving: [share], deleting: [])
+        } catch {
+            #if DEBUG
+            print("GroupService.propagateArchivedToShare: failed for zone \(zoneID): \(error)")
+            #endif
+        }
     }
 
     /// Delete a group permanently (owner only).
