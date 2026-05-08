@@ -80,10 +80,6 @@ struct GroupSettingsView: View {
                     // Members section
                     membersSection
 
-                    if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
-                        pendingApprovalSection
-                    }
-
                     // Group options section
                     optionsSection
 
@@ -386,7 +382,15 @@ struct GroupSettingsView: View {
                         onRemove: {
                             memberToRemove = member
                             showRemoveMemberConfirm = true
-                        }
+                        },
+                        onApprove: viewModel.isCurrentUserAdmin && member.isPendingApproval ? {
+                            pendingActionMember = member
+                            showApproveConfirm = true
+                        } : nil,
+                        onReject: viewModel.isCurrentUserAdmin && member.isPendingApproval ? {
+                            pendingActionMember = member
+                            showRejectConfirm = true
+                        } : nil
                     )
 
                     if member.id != viewModel.members.last?.id {
@@ -476,86 +480,7 @@ struct GroupSettingsView: View {
         viewModel.activeMembers.count <= 1
     }
 
-    // MARK: - A3: Pending Approval Section
-
-    private var pendingApprovalSection: some View {
-        SectionBox(title: L10n.Groups.Member.pendingRequestsSection) {
-            VStack(spacing: DS.Spacing.none) {
-                Text(L10n.Groups.Member.pendingRequestsCount(viewModel.pendingApprovalMembers.count))
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.top, DS.FormRow.paddingV)
-
-                ForEach(viewModel.pendingApprovalMembers, id: \.id) { member in
-                    pendingApprovalRow(member)
-                    if member.id != viewModel.pendingApprovalMembers.last?.id {
-                        Divider()
-                            .padding(.leading, DS.FormRow.paddingH)
-                    }
-                }
-            }
-        }
-    }
-
-    private func pendingApprovalRow(_ member: SplitMember) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack(spacing: DS.Spacing.md) {
-                ZStack {
-                    Circle()
-                        .fill(Color(hex: group.colorHex).opacity(0.18))
-                        .frame(width: 36, height: 36) // A11Y-DT: avatar inicial fixed size matching GroupMemberRow
-
-                    Text(String(member.displayName.prefix(1)).uppercased())
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(Color(hex: group.colorHex))
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(member.displayName)
-                        .font(DS.Typography.body)
-                    Text(L10n.Groups.Member.statusPending)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(DS.Semantic.warningForeground)
-                }
-
-                Spacer()
-            }
-
-            HStack(spacing: DS.Spacing.sm) {
-                Button {
-                    pendingActionMember = member
-                    showApproveConfirm = true
-                } label: {
-                    Text(L10n.Groups.Member.approve)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, DS.Spacing.md)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .background(.thAccent, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    pendingActionMember = member
-                    showRejectConfirm = true
-                } label: {
-                    Text(L10n.Groups.Member.reject)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(DS.Semantic.errorForeground)
-                        .padding(.horizontal, DS.Spacing.md)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .background(DS.Semantic.errorBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
-                }
-                .buttonStyle(.plain)
-
-                Spacer()
-            }
-        }
-        .padding(.horizontal, DS.FormRow.paddingH)
-        .padding(.vertical, DS.FormRow.paddingV)
-    }
+    // MARK: - A3: Pending Approval Actions
 
     private func performApprove() {
         runPendingMemberAction(label: "approveMember", GroupService.shared.approveMember)

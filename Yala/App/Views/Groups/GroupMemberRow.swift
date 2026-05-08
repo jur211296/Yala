@@ -14,6 +14,8 @@ struct GroupMemberRow: View {
     let isCurrentUserAdmin: Bool
     let onChangeRole: () -> Void
     let onRemove: () -> Void
+    var onApprove: (() -> Void)? = nil
+    var onReject: (() -> Void)? = nil
 
     @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
@@ -40,35 +42,57 @@ struct GroupMemberRow: View {
                     adminBadge
                 }
 
-                if !member.isActive {
-                    statusBadge
-                }
+                statusBadge
             }
 
             Spacer()
 
             // Admin actions
-            if isCurrentUserAdmin && !member.isCurrentUser && member.isActive && !member.isGroupOwner {
-                Menu {
-                    Button {
-                        onChangeRole()
-                    } label: {
-                        Label(L10n.Groups.Member.changeRole, systemImage: "arrow.left.arrow.right")
-                    }
+            if isCurrentUserAdmin && !member.isCurrentUser && !member.isGroupOwner {
+                if member.memberStatus == .pendingApproval, let onApprove, let onReject {
+                    HStack(spacing: DS.Spacing.sm) {
+                        Button(action: onApprove) {
+                            Text(L10n.Groups.Member.approve)
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, DS.Spacing.sm)
+                                .padding(.vertical, DS.Spacing.xxs)
+                                .background(.thAccent, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+                        }
+                        .buttonStyle(.plain)
 
-                    Button(role: .destructive) {
-                        onRemove()
-                    } label: {
-                        Label(L10n.Groups.Member.remove, systemImage: "person.badge.minus")
+                        Button(action: onReject) {
+                            Text(L10n.Groups.Member.reject)
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(DS.Semantic.errorForeground)
+                                .padding(.horizontal, DS.Spacing.sm)
+                                .padding(.vertical, DS.Spacing.xxs)
+                                .background(DS.Semantic.errorBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+                        }
+                        .buttonStyle(.plain)
                     }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.secondary)
-                        .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
-                        .contentShape(Rectangle())
+                } else if member.isActive {
+                    Menu {
+                        Button {
+                            onChangeRole()
+                        } label: {
+                            Label(L10n.Groups.Member.changeRole, systemImage: "arrow.left.arrow.right")
+                        }
+
+                        Button(role: .destructive) {
+                            onRemove()
+                        } label: {
+                            Label(L10n.Groups.Member.remove, systemImage: "person.badge.minus")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.secondary)
+                            .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityLabel(L10n.Groups.Member.actions)
                 }
-                .accessibilityLabel(L10n.Groups.Member.actions)
             }
         }
         .padding(.horizontal, DS.FormRow.paddingH)
@@ -101,15 +125,30 @@ struct GroupMemberRow: View {
             )
     }
 
+    @ViewBuilder
     private var statusBadge: some View {
-        Text(member.memberStatus == .left ? L10n.Groups.Member.left : L10n.Groups.Member.removed)
-            .font(DS.Typography.captionSmall)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, DS.Spacing.sm)
-            .padding(.vertical, DS.Spacing.xxs)
-            .background(
-                Capsule().fill(Color.secondary.opacity(0.12))
-            )
+        if member.memberStatus != .active {
+            let (text, fg, bg): (String, Color, Color) = {
+                switch member.memberStatus {
+                case .pendingApproval:
+                    return (L10n.Groups.Member.statusPending, DS.Semantic.warningForeground, DS.Semantic.warningBackground)
+                case .rejected:
+                    return (L10n.Groups.Member.statusRejected, DS.Semantic.errorForeground, DS.Semantic.errorBackground)
+                case .left:
+                    return (L10n.Groups.Member.left, .secondary, Color.secondary.opacity(0.12))
+                case .removed:
+                    return (L10n.Groups.Member.removed, .secondary, Color.secondary.opacity(0.12))
+                case .active:
+                    return ("", .clear, .clear)
+                }
+            }()
+            Text(text)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(fg)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, DS.Spacing.xxs)
+                .background(Capsule().fill(bg))
+        }
     }
 
     private var initialLetter: String {
