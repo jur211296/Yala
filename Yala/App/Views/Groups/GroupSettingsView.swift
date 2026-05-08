@@ -38,17 +38,6 @@ struct GroupSettingsView: View {
     @State private var selectedCurrency: CurrencyCode = .pen
     @State private var showCurrencyPicker: Bool = false
     @State private var defaultSplitType: SplitType = .equal
-    @State private var personalAutoCreate: Bool = true
-    @State private var groupCurrencies: [String] = []
-    @State private var accountPrefs: [String: String] = [:]   // currencyCode → accountName
-    @State private var accountsByCurrency: [String: [Account]] = [:]
-
-    // A0-Bridge V2.0: sheets activación/desactivación tardía
-    @State private var showBridgeActivationSheet: Bool = false
-    @State private var showBridgeDeactivationSheet: Bool = false
-    @State private var pendingActivationExpensesCount: Int = 0
-    @State private var pendingDeactivationBridgedCount: Int = 0
-    @State private var isInternalToggleRevert: Bool = false  // D8: guard contra recursión onChange
 
     // Leave group
     @State private var showLeaveGroupConfirm = false
@@ -80,9 +69,6 @@ struct GroupSettingsView: View {
 
                     // Group options section
                     optionsSection
-
-                    // Personal settings section
-                    mySettingsSection
 
                     // Leave group (non-owner)
                     if !group.isOwner {
@@ -189,101 +175,7 @@ struct GroupSettingsView: View {
             } message: {
                 Text(pendingErrorMessage ?? "")
             }
-            .sheet(isPresented: $showBridgeActivationSheet) {
-                BridgeActivationSheet(
-                    group: group,
-                    expensesCount: pendingActivationExpensesCount,
-                    onConfirm: { importHistory in
-                        GroupPersonalPreferences.setAutoCreateTransaction(true, for: group.cloudKitZoneID)
-                        isInternalToggleRevert = true
-                        personalAutoCreate = true
-                        isInternalToggleRevert = false
-                        if importHistory {
-                            Task { @MainActor in
-                                try? await GroupTransactionBridge.shared.importGroupHistory(for: group) { _, _ in
-                                    // Progress se maneja internamente en la sheet.
-                                }
-                            }
-                        }
-                    },
-                    onCancel: { /* No-op: el toggle ya quedó revertido. */ }
-                )
-            }
-            .sheet(isPresented: $showBridgeDeactivationSheet) {
-                BridgeDeactivationSheet(
-                    group: group,
-                    bridgedCount: pendingDeactivationBridgedCount,
-                    onConfirm: { deleteAll in
-                        GroupPersonalPreferences.setAutoCreateTransaction(false, for: group.cloudKitZoneID)
-                        isInternalToggleRevert = true
-                        personalAutoCreate = false
-                        isInternalToggleRevert = false
-                        if deleteAll {
-                            try? GroupTransactionBridge.shared.unbridgeAllForGroup(group)
-                        }
-                    },
-                    onCancel: { /* No-op: el toggle ya quedó revertido. */ }
-                )
-            }
         }
-    }
-
-    // MARK: - A0-Bridge Toggle Handler (D8 anti-loop guard)
-
-    private func handleAutoCreateToggleChange(oldValue: Bool, newValue: Bool) {
-        guard !isInternalToggleRevert else { return }
-        guard oldValue != newValue else { return }
-
-        let zoneID = group.cloudKitZoneID
-
-        if newValue == true && oldValue == false {
-            // OFF → ON: si hay expenses pre-existentes, ofrecer import.
-            let count = a0BridgeExpensesCount(zoneID: zoneID)
-            if count > 0 {
-                pendingActivationExpensesCount = count
-                showBridgeActivationSheet = true
-                isInternalToggleRevert = true
-                personalAutoCreate = false
-                isInternalToggleRevert = false
-                return
-            }
-        } else if newValue == false && oldValue == true {
-            // ON → OFF: si hay TX/drafts bridgeadas, ofrecer delete.
-            let txCount = a0BridgeTxsCount(zoneID: zoneID)
-            let draftCount = a0BridgeDraftsCount(zoneID: zoneID)
-            let total = txCount + draftCount
-            if total > 0 {
-                pendingDeactivationBridgedCount = total
-                showBridgeDeactivationSheet = true
-                isInternalToggleRevert = true
-                personalAutoCreate = true
-                isInternalToggleRevert = false
-                return
-            }
-        }
-        // Caso simple (sin TX previas): aplicar directo.
-        GroupPersonalPreferences.setAutoCreateTransaction(newValue, for: zoneID)
-    }
-
-    @MainActor
-    private func a0BridgeExpensesCount(zoneID: String) -> Int {
-        (try? modelContext.fetchCount(FetchDescriptor<SplitExpense>(
-            predicate: #Predicate { $0.groupZoneID == zoneID }
-        ))) ?? 0
-    }
-
-    @MainActor
-    private func a0BridgeTxsCount(zoneID: String) -> Int {
-        (try? modelContext.fetchCount(FetchDescriptor<TransactionItem>(
-            predicate: #Predicate { $0.splitGroupZoneID == zoneID }
-        ))) ?? 0
-    }
-
-    @MainActor
-    private func a0BridgeDraftsCount(zoneID: String) -> Int {
-        (try? modelContext.fetchCount(FetchDescriptor<InboxDraft>(
-            predicate: #Predicate { $0.splitGroupZoneID == zoneID }
-        ))) ?? 0
     }
 
     // MARK: - Info Section
@@ -564,86 +456,6 @@ struct GroupSettingsView: View {
         }
     }
 
-    // MARK: - My Settings Section
-
-    private var mySettingsSection: some View {
-        SectionBox(title: L10n.Groups.Settings.mySettings) {
-            VStack(spacing: DS.Spacing.none) {
-                // Auto-create transaction (personal)
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Toggle(L10n.Groups.Form.autoCreate, isOn: $personalAutoCreate)
-                        .font(DS.Typography.body)
-
-                    Text(L10n.Groups.Form.autoCreateHint)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .onChange(of: personalAutoCreate) { oldValue, newValue in
-                    handleAutoCreateToggleChange(oldValue: oldValue, newValue: newValue)
-                }
-
-                if personalAutoCreate {
-                    Divider()
-                        .padding(.leading, DS.FormRow.paddingH)
-
-                    Text(L10n.Groups.Form.defaultAccountPickerHint)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, DS.FormRow.paddingH)
-                        .padding(.top, DS.Spacing.sm)
-
-                    ForEach(groupCurrencies, id: \.self) { code in
-                        let info = currencyInfo(for: CurrencyCode(rawValue: code) ?? .usd)
-
-                        HStack(spacing: DS.Spacing.md) {
-                            Text(info.flag)
-                                .font(DS.Typography.body)
-
-                            Text(info.code)
-                                .font(DS.Typography.body)
-
-                            Spacer()
-
-                            Picker("", selection: accountBinding(for: code)) {
-                                Text(L10n.Groups.Form.none).tag("")
-                                ForEach(accountsByCurrency[code] ?? [], id: \.persistentModelID) { account in
-                                    Text(account.name).tag(account.name)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .fixedSize()
-                        }
-                        .padding(.horizontal, DS.FormRow.paddingH)
-                        .padding(.vertical, DS.FormRow.paddingV)
-
-                        if code != groupCurrencies.last {
-                            Divider()
-                                .padding(.leading, DS.FormRow.paddingH)
-                        }
-                    }
-                }
-
-                // Hint
-                Text(L10n.Groups.Settings.mySettingsHint)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, DS.FormRow.paddingH)
-                    .padding(.top, DS.Spacing.md)
-                    .padding(.bottom, DS.Spacing.sm)
-            }
-        }
-        .onAppear {
-            personalAutoCreate = GroupPersonalPreferences.autoCreateTransaction(for: group.cloudKitZoneID)
-                ?? group.autoCreateTransaction
-            loadAccountPreferences()
-        }
-        .onChange(of: selectedCurrency) {
-            loadAccountPreferences()
-        }
-    }
-
     // MARK: - Danger Zone (Archive)
 
     private var dangerZoneSection: some View {
@@ -734,22 +546,6 @@ struct GroupSettingsView: View {
             leaveErrorMessage = error.localizedDescription
             showLeaveError = true
         }
-    }
-
-    // MARK: - Bindings
-
-    private func accountBinding(for code: String) -> Binding<String> {
-        Binding<String>(
-            get: { accountPrefs[code] ?? "" },
-            set: { newValue in
-                accountPrefs[code] = newValue
-                GroupPersonalPreferences.setAccountName(
-                    newValue.isEmpty ? nil : newValue,
-                    for: group.cloudKitZoneID,
-                    currencyCode: code
-                )
-            }
-        )
     }
 
     // MARK: - Actions
@@ -881,40 +677,4 @@ struct GroupSettingsView: View {
         }
     }
 
-    private func loadAccountPreferences() {
-        do {
-            // Get distinct currencies from group expenses
-            var currencies = try GroupExpenseService.shared.fetchDistinctCurrencyCodes(for: group)
-            // Always include group's preferred currency first
-            if let idx = currencies.firstIndex(of: group.currencyCode) {
-                currencies.remove(at: idx)
-            }
-            currencies.insert(group.currencyCode, at: 0)
-            groupCurrencies = currencies
-
-            // Load all non-archived accounts
-            let descriptor = FetchDescriptor<Account>(
-                predicate: #Predicate { !$0.isArchived },
-                sortBy: [SortDescriptor(\.name)]
-            )
-            let allAccounts = try modelContext.fetch(descriptor)
-
-            // Group accounts by currency
-            var byCurrency: [String: [Account]] = [:]
-            for code in currencies {
-                byCurrency[code] = allAccounts.filter { $0.currencyCode == code }
-            }
-            accountsByCurrency = byCurrency
-
-            // Load saved preferences
-            accountPrefs = GroupPersonalPreferences.allAccountPreferences(
-                for: group.cloudKitZoneID,
-                currencies: currencies
-            )
-        } catch {
-            #if DEBUG
-            print("GroupSettingsView: Error loading account preferences: \(error)")
-            #endif
-        }
-    }
 }

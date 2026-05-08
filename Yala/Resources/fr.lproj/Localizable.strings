@@ -3097,12 +3097,6 @@
 "groups.form.icon" = "Icône";
 "groups.form.simplifyDebts" = "Simplifier les dettes";
 "groups.form.simplifyDebtsHint" = "Réduit le nombre de paiements nécessaires entre les membres";
-"groups.form.defaultAccount" = "Compte pour les registres";
-"groups.form.defaultAccountHint" = "Compte où les dépenses du groupe sont enregistrées";
-"groups.form.defaultAccountPickerHint" = "Choisis un compte par devise pour tes registres";
-"groups.form.autoCreate" = "Enregistrer aussi dans mes registres";
-"groups.form.autoCreateHint" = "Chaque dépense du groupe apparaît aussi dans vos registres personnels";
-"groups.form.none" = "Aucun";
 "groups.form.showDebtsInSingleCurrency" = "Devise unique pour les dettes";
 "groups.form.showDebtsInSingleCurrencyHint" = "Convertir tous les soldes dans une devise préférée";
 "groups.form.defaultSplitType" = "Répartition par défaut";
@@ -3130,8 +3124,6 @@
 "groups.settings.options" = "Options";
 "groups.settings.info" = "Informations";
 "groups.settings.dangerZone" = "Zone de danger";
-"groups.settings.mySettings" = "Mes paramètres";
-"groups.settings.mySettingsHint" = "Ces paramètres ne s'appliquent qu'à vous";
 "groups.member.admin" = "Admin";
 "groups.member.member" = "Membre";
 "groups.member.you" = "(Vous)";
@@ -3533,8 +3525,6 @@
 "groups.activate.enableNotifications" = "Activer les notifications";
 "groups.activate.skipNotifications" = "Pas maintenant";
 "groups.activate.done" = "Commencer";
-"groups.activate.importYes" = "Oui, ajouter";
-"groups.activate.importNo" = "Non, merci";
 
 // Groups — Nudges (GC-09)
 "groups.nudge.invitedSpendingInsight.title" = "Vos dépenses partagées augmentent";

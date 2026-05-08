@@ -107,25 +107,7 @@ final class GroupTransactionBridge {
         ))
         for draft in existingDrafts { context.delete(draft) }
 
-        let shouldAutoCreate = GroupPersonalPreferences.autoCreateTransaction(for: group.cloudKitZoneID) ?? group.autoCreateTransaction
-
-        // Legacy path: autoCreate=false → 1 InboxDraft (no especializado) con cuenta resuelta
-        // del flujo previo. User revisa manualmente.
-        if !shouldAutoCreate {
-            // Skip para .groupInvite users sin contexto personal completo.
-            guard !SessionState.shared.isGroupInviteMode else { return }
-            let account = try GroupTransactionBridge.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
-            let subcategory = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
-            let draft = Self.makeBridgedDraft(from: expense, share: myShare, account: account, subcategory: subcategory)
-            context.insert(draft)
-            if shouldSave {
-                try context.save()
-                SessionState.shared.incrementDataVersion()
-            }
-            return
-        }
-
-        // Modelo M5 (autoCreate=true): TX siempre en cuenta virtual.
+        // Modelo M5: TX siempre en cuenta virtual.
         let virtualAccount = try GroupBridgeSystemEntities.ensureSystemAccount(
             currencyCode: expense.currencyCode,
             colorHint: group.colorHex,
@@ -414,73 +396,6 @@ final class GroupTransactionBridge {
         }
     }
 
-    // MARK: - Activation/Deactivation Helpers (F12)
-
-    /// A0-Bridge: importa todo el historial de un grupo (expenses + settlements) cuando
-    /// user activa autoCreateTransaction OFF→ON con expenses/settlements pre-existentes.
-    ///
-    /// Procesa cronológicamente (por date ASC). Yield cada 5 items con `Task.sleep`
-    /// para garantizar ≥1 frame de UI redraw (ProcessingProgressView responde sin freeze).
-    ///
-    /// `progress(done, total)` callback se invoca al inicio (0,total) y cada 5 items.
-    ///
-    /// Nota: si crashea mid-way, `bridgePending` flag + AppBootstrapper retry recuperan.
-    @MainActor
-    func importGroupHistory(
-        for group: SplitGroup,
-        progress: @escaping (Int, Int) -> Void
-    ) async throws {
-        let context = try requireContext()
-        let zoneID = group.cloudKitZoneID
-
-        let expenseDescriptor = FetchDescriptor<SplitExpense>(
-            predicate: #Predicate { $0.groupZoneID == zoneID },
-            sortBy: [SortDescriptor(\.date, order: .forward)]
-        )
-        let expenses = (try? context.fetch(expenseDescriptor)) ?? []
-
-        let settlementDescriptor = FetchDescriptor<SplitSettlement>(
-            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isConfirmed == true },
-            sortBy: [SortDescriptor(\.date, order: .forward)]
-        )
-        let settlements = (try? context.fetch(settlementDescriptor)) ?? []
-
-        let total = expenses.count + settlements.count
-        progress(0, total)
-        var done = 0
-
-        for (i, expense) in expenses.enumerated() {
-            try bridgeExpense(expense, in: group, shouldSave: false)
-            done += 1
-            if i % 5 == 0 {
-                // Sleep 10ms cada 5 items para dar al run loop ≥1 frame de redraw
-                try await Task.sleep(for: .milliseconds(10))
-                progress(done, total)
-            }
-        }
-
-        for (i, settlement) in settlements.enumerated() {
-            try bridgeSettlement(settlement, in: group, accountForCurrentUser: nil, shouldSave: false)
-            done += 1
-            if i % 5 == 0 {
-                try await Task.sleep(for: .milliseconds(10))
-                progress(done, total)
-            }
-        }
-
-        try context.save()
-        progress(total, total)
-        SessionState.shared.incrementDataVersion()
-        WidgetDataCache.updateCache(context: context)
-    }
-
-    /// A0-Bridge: borra TODAS las TX/Drafts vinculadas a un grupo (para cuando user
-    /// desactiva autoCreateTransaction y elige "Eliminarlas" en BridgeDeactivationSheet).
-    @MainActor
-    func unbridgeAllForGroup(_ group: SplitGroup) throws {
-        try unbridgeExpenses(for: group)
-    }
-
     /// Bridge remote settlements received via sync. Llamado desde SplitSyncManager.
     /// Solo procesa settlements confirmed (skipea unconfirmed).
     func bridgeRemoteSettlements(_ settlements: [SplitSettlement]) throws {
@@ -567,100 +482,6 @@ final class GroupTransactionBridge {
         WidgetDataCache.updateCache(context: context)
     }
 
-    // MARK: - Import Group History (GC-08)
-
-    /// Import all group expenses as InboxDrafts for a user activating full mode.
-    /// Creates drafts (not TransactionItems) so the user can review before committing.
-    func importGroupHistoryAsDrafts(for groups: [SplitGroup]) throws {
-        let context = try requireContext()
-
-        // Batch pre-fetch to avoid N+1 queries
-        let allSubcategories = try context.fetch(FetchDescriptor<Subcategory>())
-        let allDrafts = try context.fetch(FetchDescriptor<InboxDraft>())
-        let bridgedDraftIDs = Set(allDrafts.compactMap(\.splitExpenseID))
-        let allTxs = try context.fetch(FetchDescriptor<TransactionItem>())
-        let bridgedTxIDs = Set(allTxs.compactMap(\.splitExpenseID))
-
-        for group in groups {
-            let zoneID = group.cloudKitZoneID
-
-            let memberDescriptor = FetchDescriptor<SplitMember>(
-                predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
-            )
-            guard let currentMember = try context.fetch(memberDescriptor).first else { continue }
-            let currentMemberID = currentMember.id.uuidString
-
-            let expenseDescriptor = FetchDescriptor<SplitExpense>(
-                predicate: #Predicate { $0.groupZoneID == zoneID }
-            )
-            let expenses = try context.fetch(expenseDescriptor)
-
-            var accountCache: [String: Account?] = [:]
-            for expense in expenses {
-                let existingID = expense.id.uuidString
-                if bridgedDraftIDs.contains(existingID) || bridgedTxIDs.contains(existingID) { continue }
-
-                let expenseID = expense.id
-                let shareDescriptor = FetchDescriptor<SplitShare>(
-                    predicate: #Predicate { $0.expenseID == expenseID && $0.memberID == currentMemberID }
-                )
-                guard let myShare = try context.fetch(shareDescriptor).first else { continue }
-
-                if accountCache[expense.currencyCode] == nil {
-                    // Batch import: a missing account for one currency must NOT block the entire batch.
-                    accountCache[expense.currencyCode] = try? Self.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context)
-                }
-                let account = accountCache[expense.currencyCode] ?? nil
-                let subcategory = Self.matchSubcategoryFromList(name: expense.subcategoryName, allSubcategories: allSubcategories)
-                let draft = Self.makeBridgedDraft(from: expense, share: myShare, account: account, subcategory: subcategory)
-                context.insert(draft)
-            }
-        }
-
-        try context.save()
-        SessionState.shared.incrementDataVersion()
-    }
-
-    // MARK: - Draft Factory
-
-    /// Creates a bridged InboxDraft from a shared expense and the user's share.
-    static func makeBridgedDraft(
-        from expense: SplitExpense,
-        share: SplitShare,
-        account: Account?,
-        subcategory: Subcategory?
-    ) -> InboxDraft {
-        let needsInput: [String] = subcategory == nil ? ["subcategory"] : []
-        let draft = InboxDraft(
-            note: expense.expenseDescription,
-            amount: -share.amount,
-            date: expense.date,
-            account: account,
-            subcategory: subcategory,
-            sourceType: .automation,
-            confidenceAmount: 1.0,
-            confidenceDate: 1.0,
-            confidenceMerchant: 1.0,
-            confidenceSubcategory: subcategory != nil ? 0.8 : nil,
-            needsUserInput: needsInput
-        )
-        draft.splitExpenseID = expense.id.uuidString
-        draft.splitGroupZoneID = expense.groupZoneID
-        return draft
-    }
-
-    /// Match subcategory from a pre-fetched list (avoids per-expense refetch).
-    static func matchSubcategoryFromList(name: String?, allSubcategories: [Subcategory]) -> Subcategory? {
-        guard let name, !name.isEmpty else { return nil }
-        if let exact = allSubcategories.first(where: { $0.name.lowercased() == name.lowercased() }) {
-            return exact
-        }
-        if let partial = allSubcategories.first(where: { $0.name.localizedCaseInsensitiveContains(name) }) {
-            return partial
-        }
-        return nil
-    }
-
     // MARK: - Category Matching
 
     /// Match a subcategory name to a user's personal Subcategory.
@@ -689,120 +510,17 @@ final class GroupTransactionBridge {
         return nil
     }
 
-    // MARK: - Account Resolution
-
-    /// Resolve account: per-currency preference → legacy single preference → first account with matching currency → any first account.
-    /// - Throws: `GroupTransactionBridgeError.noAccountsAvailable` when there are no usable accounts (empty fetch or fetch error).
-    static func resolveAccount(group: SplitGroup, currencyCode: String, context: ModelContext) throws -> Account {
-        let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate { !$0.isArchived },
-            sortBy: [SortDescriptor(\.name)]
-        )
-        let allAccounts: [Account]
-        do {
-            allAccounts = try context.fetch(descriptor)
-        } catch {
-            logger.error("Error fetching accounts: \(error.localizedDescription, privacy: .public)")
-            throw GroupTransactionBridgeError.noAccountsAvailable
-        }
-
-        guard !allAccounts.isEmpty else {
-            throw GroupTransactionBridgeError.noAccountsAvailable
-        }
-
-        // 1. Per-currency preference
-        if let preferredName = GroupPersonalPreferences.accountName(for: group.cloudKitZoneID, currencyCode: currencyCode),
-           !preferredName.isEmpty,
-           let match = allAccounts.first(where: { $0.name == preferredName }) {
-            return match
-        }
-
-        // 2. Legacy single-account preference (migration)
-        if let legacyName = GroupPersonalPreferences.defaultAccountName(for: group.cloudKitZoneID),
-           !legacyName.isEmpty,
-           let match = allAccounts.first(where: { $0.name == legacyName }) {
-            return match
-        }
-
-        // 3. First account matching the expense currency
-        if let match = allAccounts.first(where: { $0.currencyCode == currencyCode }) {
-            return match
-        }
-
-        // 4. Absolute fallback: any first account (guard above ensures non-empty).
-        if let first = allAccounts.first { return first }
-        throw GroupTransactionBridgeError.noAccountsAvailable
-    }
-
-    // MARK: - Private Helpers
-
-    private func updateTransaction(
-        _ tx: TransactionItem,
-        from expense: SplitExpense,
-        share: SplitShare,
-        group: SplitGroup,
-        context: ModelContext
-    ) {
-        // Re-resolve account only if currency changed.
-        // Resilient: if no account exists for the new currency, skip account update —
-        // other fields (note, date, amount) still get updated. NO surface alert here.
-        if tx.currencyCode != expense.currencyCode {
-            if let newAccount = try? Self.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context) {
-                tx.account = newAccount
-            }
-        }
-        // Re-resolve subcategory only if name changed
-        if tx.subcategory?.name.lowercased() != expense.subcategoryName?.lowercased() {
-            let newSub = Self.matchSubcategory(name: expense.subcategoryName, context: context)
-            tx.subcategory = newSub
-            tx.category = newSub?.safeCategory
-        }
-        tx.amount = -share.amount
-        tx.currencyCode = expense.currencyCode
-        tx.date = expense.date
-        tx.note = expense.expenseDescription.isEmpty ? nil : expense.expenseDescription
-        tx.splitTotalAmount = expense.amount
-        tx.splitType = expense.splitType
-        tx.recalculatePreferredCurrency(context: context)
-    }
-
-    private func updateDraft(
-        _ draft: InboxDraft,
-        from expense: SplitExpense,
-        share: SplitShare,
-        group: SplitGroup,
-        context: ModelContext
-    ) {
-        // Re-resolve account if currency changed (InboxDraft currency comes from account).
-        // Resilient: if no account exists for the new currency, skip account update.
-        if draft.account?.currencyCode != expense.currencyCode {
-            if let newAccount = try? Self.resolveAccount(group: group, currencyCode: expense.currencyCode, context: context) {
-                draft.account = newAccount
-            }
-        }
-        // Re-resolve subcategory only if name changed
-        if draft.subcategory?.name.lowercased() != expense.subcategoryName?.lowercased() {
-            let newSub = Self.matchSubcategory(name: expense.subcategoryName, context: context)
-            if let newSub { draft.subcategory = newSub }
-        }
-        draft.amount = -share.amount
-        draft.date = expense.date
-        draft.note = expense.expenseDescription
-    }
 }
 
 // MARK: - Errors
 
 enum GroupTransactionBridgeError: LocalizedError {
     case noContext
-    case noAccountsAvailable
 
     var errorDescription: String? {
         switch self {
         case .noContext:
             return "GroupTransactionBridge: No ModelContext available"
-        case .noAccountsAvailable:
-            return "GroupTransactionBridge: No accounts available to bridge expense"
         }
     }
 }

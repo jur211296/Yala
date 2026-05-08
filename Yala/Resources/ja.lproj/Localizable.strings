@@ -3099,12 +3099,6 @@
 "groups.form.icon" = "アイコン";
 "groups.form.simplifyDebts" = "貸し借りを簡素化";
 "groups.form.simplifyDebtsHint" = "メンバー間で必要な支払い回数を減らします";
-"groups.form.defaultAccount" = "記録用の口座";
-"groups.form.defaultAccountHint" = "グループの支出が記録される口座";
-"groups.form.defaultAccountPickerHint" = "記録用に通貨ごとの口座を選択してください";
-"groups.form.autoCreate" = "自分の記録にも追加";
-"groups.form.autoCreateHint" = "グループの支出は、自分の個人記録にも記録されます";
-"groups.form.none" = "なし";
 "groups.form.showDebtsInSingleCurrency" = "貸し借りを単一通貨で表示";
 "groups.form.showDebtsInSingleCurrencyHint" = "すべての残高を優先通貨に変換します";
 "groups.form.defaultSplitType" = "既定の分け方";
@@ -3132,8 +3126,6 @@
 "groups.settings.options" = "オプション";
 "groups.settings.info" = "情報";
 "groups.settings.dangerZone" = "危険ゾーン";
-"groups.settings.mySettings" = "自分の設定";
-"groups.settings.mySettingsHint" = "これらの設定はあなただけに適用されます";
 "groups.member.admin" = "管理者";
 "groups.member.member" = "メンバー";
 "groups.member.you" = "(あなた)";
@@ -3535,8 +3527,6 @@
 "groups.activate.enableNotifications" = "通知を有効化";
 "groups.activate.skipNotifications" = "あとで";
 "groups.activate.done" = "始める";
-"groups.activate.importYes" = "はい、追加する";
-"groups.activate.importNo" = "結構です";
 
 // Groups — Nudges (GC-09)
 "groups.nudge.invitedSpendingInsight.title" = "シェア支出が増えています";

@@ -120,10 +120,6 @@ final class GroupExpenseService {
         if GroupTransactionBridge.shared.isReady {
             do {
                 try GroupTransactionBridge.shared.bridgeExpense(expense, in: group)
-            } catch GroupTransactionBridgeError.noAccountsAvailable {
-                surfaceBridgeError(GroupTransactionBridgeError.noAccountsAvailable,
-                                   expense: expense, context: context,
-                                   messageKey: "groups.bridge.errorNoAccounts")
             } catch {
                 surfaceBridgeError(error, expense: expense, context: context, messageKey: "groups.bridge.errorTransaction")
             }
@@ -200,10 +196,6 @@ final class GroupExpenseService {
         if GroupTransactionBridge.shared.isReady {
             do {
                 try GroupTransactionBridge.shared.bridgeExpense(expense, in: group)
-            } catch GroupTransactionBridgeError.noAccountsAvailable {
-                surfaceBridgeError(GroupTransactionBridgeError.noAccountsAvailable,
-                                   expense: expense, context: context,
-                                   messageKey: "groups.bridge.errorNoAccounts")
             } catch {
                 surfaceBridgeError(error, expense: expense, context: context, messageKey: "groups.bridge.errorTransactionUpdate")
             }

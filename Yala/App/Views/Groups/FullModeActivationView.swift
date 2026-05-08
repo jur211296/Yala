@@ -17,8 +17,6 @@ struct FullModeActivationView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
 
-    @State private var showImportPrompt = false
-    @State private var groupExpenseCount = 0
     @State private var prefilledSummary: ICloudAccountSummary?
 
     var body: some View {
@@ -32,15 +30,6 @@ struct FullModeActivationView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(L10n.Action.cancel) { onComplete() }
                 }
-            }
-        }
-        .alert(L10n.Groups.Activate.importPrompt(groupExpenseCount), isPresented: $showImportPrompt) {
-            Button(L10n.Groups.Activate.importYes) {
-                importGroupHistory()
-                onComplete()
-            }
-            Button(L10n.Groups.Activate.importNo, role: .cancel) {
-                onComplete()
             }
         }
         .onAppear {
@@ -84,8 +73,9 @@ struct FullModeActivationView: View {
     }
 
     /// `OnboardingView.completeOnboarding` ya hizo seeds + account + notifs +
-    /// `hasCompletedOnboarding=true`. Aquí cambiamos al modo `.completed`,
-    /// expandimos el TabBar y, si hay group expenses, ofrecemos importarlas.
+    /// `hasCompletedOnboarding=true`. Aquí cambiamos al modo `.completed` y
+    /// expandimos el TabBar. Las TX virtuales de gastos pre-existentes ya están
+    /// creadas por el bridge automático (modelo M5) — no requiere import.
     private func completeFullActivation() {
         let sync = PreferenceSyncService.shared
         sync.set(string: OnboardingMode.completed.rawValue, forKey: OnboardingMode.userDefaultsKey)
@@ -104,27 +94,6 @@ struct FullModeActivationView: View {
             "fromSegment": UserSegmentService.shared.currentSegment.rawValue,
         ])
 
-        let count = (try? modelContext.fetchCount(FetchDescriptor<SplitExpense>())) ?? 0
-        if count > 0 {
-            groupExpenseCount = count
-            showImportPrompt = true
-        } else {
-            onComplete()
-        }
-    }
-
-    private func importGroupHistory() {
-        let descriptor = FetchDescriptor<SplitGroup>()
-        guard let groups = try? modelContext.fetch(descriptor), !groups.isEmpty else { return }
-        do {
-            try GroupTransactionBridge.shared.importGroupHistoryAsDrafts(for: groups)
-            TelemetryService.track(.groupHistoryImported, parameters: [
-                "count": String(groupExpenseCount),
-            ])
-        } catch {
-            #if DEBUG
-            print("FullModeActivationView: Import error: \(error)")
-            #endif
-        }
+        onComplete()
     }
 }

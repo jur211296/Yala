@@ -3099,12 +3099,6 @@
 "groups.form.icon" = "图标";
 "groups.form.simplifyDebts" = "简化债务";
 "groups.form.simplifyDebtsHint" = "减少成员间所需的付款次数";
-"groups.form.defaultAccount" = "记录账户";
-"groups.form.defaultAccountHint" = "群组支出记录到的账户";
-"groups.form.defaultAccountPickerHint" = "为每种货币选一个账户用于你的记录";
-"groups.form.autoCreate" = "也添加到我的记录";
-"groups.form.autoCreateHint" = "群组的每笔支出也会记入你的个人记录";
-"groups.form.none" = "无";
 "groups.form.showDebtsInSingleCurrency" = "债务用单一货币";
 "groups.form.showDebtsInSingleCurrencyHint" = "把所有余额转换为首选货币";
 "groups.form.defaultSplitType" = "默认分摊";
@@ -3132,8 +3126,6 @@
 "groups.settings.options" = "选项";
 "groups.settings.info" = "信息";
 "groups.settings.dangerZone" = "危险区";
-"groups.settings.mySettings" = "我的设置";
-"groups.settings.mySettingsHint" = "这些设置只对你有效";
 "groups.member.admin" = "管理员";
 "groups.member.member" = "成员";
 "groups.member.you" = "(你)";
@@ -3535,8 +3527,6 @@
 "groups.activate.enableNotifications" = "启用通知";
 "groups.activate.skipNotifications" = "暂时不用";
 "groups.activate.done" = "开始";
-"groups.activate.importYes" = "好,导入";
-"groups.activate.importNo" = "不用,谢谢";
 
 // Groups — Nudges (GC-09)
 "groups.nudge.invitedSpendingInsight.title" = "你的共享支出在增长";

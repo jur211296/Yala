@@ -3096,12 +3096,6 @@
 "groups.form.icon" = "Ícone";
 "groups.form.simplifyDebts" = "Simplificar dívidas";
 "groups.form.simplifyDebtsHint" = "Reduz o número de pagamentos necessários entre membros";
-"groups.form.defaultAccount" = "Conta para registros";
-"groups.form.defaultAccountHint" = "Conta onde as despesas do grupo são registradas";
-"groups.form.defaultAccountPickerHint" = "Escolha uma conta por moeda para seus registros";
-"groups.form.autoCreate" = "Salvar também nos meus registros";
-"groups.form.autoCreateHint" = "Cada despesa do grupo é registrada também nos seus registros pessoais";
-"groups.form.none" = "Nenhuma";
 "groups.form.showDebtsInSingleCurrency" = "Moeda única para dívidas";
 "groups.form.showDebtsInSingleCurrencyHint" = "Converter todos os saldos para uma moeda preferida";
 "groups.form.defaultSplitType" = "Divisão padrão";
@@ -3129,8 +3123,6 @@
 "groups.settings.options" = "Opções";
 "groups.settings.info" = "Informação";
 "groups.settings.dangerZone" = "Zona de perigo";
-"groups.settings.mySettings" = "Minhas configurações";
-"groups.settings.mySettingsHint" = "Estas configurações se aplicam apenas a você";
 "groups.member.admin" = "Admin";
 "groups.member.member" = "Membro";
 "groups.member.you" = "(Você)";
@@ -3532,8 +3524,6 @@
 "groups.activate.enableNotifications" = "Ativar notificações";
 "groups.activate.skipNotifications" = "Agora não";
 "groups.activate.done" = "Começar";
-"groups.activate.importYes" = "Sim, adicionar";
-"groups.activate.importNo" = "Não, obrigado";
 
 // Groups — Nudges (GC-09)
 "groups.nudge.invitedSpendingInsight.title" = "Seus gastos compartilhados estão crescendo";

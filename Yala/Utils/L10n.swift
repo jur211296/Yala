@@ -1668,12 +1668,6 @@ enum L10n {
             static var icon: String { ls("groups.form.icon", comment: "") }
             static var simplifyDebts: String { ls("groups.form.simplifyDebts", comment: "") }
             static var simplifyDebtsHint: String { ls("groups.form.simplifyDebtsHint", comment: "") }
-            static var defaultAccount: String { ls("groups.form.defaultAccount", comment: "") }
-            static var defaultAccountHint: String { ls("groups.form.defaultAccountHint", comment: "") }
-            static var defaultAccountPickerHint: String { ls("groups.form.defaultAccountPickerHint", comment: "") }
-            static var autoCreate: String { ls("groups.form.autoCreate", comment: "") }
-            static var autoCreateHint: String { ls("groups.form.autoCreateHint", comment: "") }
-            static var none: String { ls("groups.form.none", comment: "") }
             static var showDebtsInSingleCurrency: String { ls("groups.form.showDebtsInSingleCurrency", comment: "") }
             static var showDebtsInSingleCurrencyHint: String { ls("groups.form.showDebtsInSingleCurrencyHint", comment: "") }
             static var defaultSplitType: String { ls("groups.form.defaultSplitType", comment: "") }
@@ -1700,8 +1694,6 @@ enum L10n {
             static var archiveHint: String { ls("groups.settings.archiveHint", comment: "") }
             static var options: String { ls("groups.settings.options", comment: "") }
             static var info: String { ls("groups.settings.info", comment: "") }
-            static var mySettings: String { ls("groups.settings.mySettings", comment: "") }
-            static var mySettingsHint: String { ls("groups.settings.mySettingsHint", comment: "") }
             static var showArchived: String { ls("groups.settings.showArchived", comment: "") }
             static func showArchivedCount(_ count: Int) -> String { String(format: ls("groups.settings.showArchivedCount", comment: ""), count) }
             static var hideArchived: String { ls("groups.settings.hideArchived", comment: "") }
@@ -1848,9 +1840,6 @@ enum L10n {
             static var enableNotifications: String { ls("groups.activate.enableNotifications", comment: "") }
             static var skipNotifications: String { ls("groups.activate.skipNotifications", comment: "") }
             static var done: String { ls("groups.activate.done", comment: "") }
-            static func importPrompt(_ count: Int) -> String { String(format: ls("groups.activate.importPrompt", comment: ""), count) }
-            static var importYes: String { ls("groups.activate.importYes", comment: "") }
-            static var importNo: String { ls("groups.activate.importNo", comment: "") }
         }
 
         // MARK: Nudge (GC-09)

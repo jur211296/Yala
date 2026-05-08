@@ -172,14 +172,14 @@ enum GroupBridgeSystemEntities {
     // MARK: - Auto-Archive
 
     /// A0-Bridge F13: archiva la cuenta sistema `Grupos [currency]` si:
-    /// 1) No existe ningún grupo activo con `autoCreateTransaction=true` en esa moneda Y
+    /// 1) No existe ningún grupo activo en esa moneda Y
     /// 2) No hay TX en la cuenta con `splitExpenseID/splitSettlementID != nil`.
     ///
     /// Si solo el primer condicional aplica pero hay TX históricas, la cuenta queda visible
     /// (preserva historial). Si user crea grupo nuevo en esa moneda: `ensureSystemAccount`
     /// la desarchiva automáticamente.
     ///
-    /// **Trigger**: post-`unbridgeAllForGroup` o post-desactivación de último grupo en moneda.
+    /// **Trigger**: post-leave/delete de último grupo en moneda.
     /// NO se invoca por delete de un solo expense (la cuenta sigue visible con saldo 0).
     static func archiveSystemAccountIfEmpty(currencyCode: String, context: ModelContext) throws {
         // 1. Fetch cuenta sistema activa para esta moneda.

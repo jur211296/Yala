@@ -3099,12 +3099,6 @@
 "groups.form.icon" = "Icoon";
 "groups.form.simplifyDebts" = "Schulden vereenvoudigen";
 "groups.form.simplifyDebtsHint" = "Vermindert het aantal benodigde betalingen tussen leden";
-"groups.form.defaultAccount" = "Rekening voor boekingen";
-"groups.form.defaultAccountHint" = "Rekening waarop groepsuitgaven worden geboekt";
-"groups.form.defaultAccountPickerHint" = "Kies per valuta een rekening voor je boekingen";
-"groups.form.autoCreate" = "Ook in mijn boekingen opnemen";
-"groups.form.autoCreateHint" = "Elke uitgave van de groep wordt ook in je persoonlijke boekingen genoteerd";
-"groups.form.none" = "Geen";
 "groups.form.showDebtsInSingleCurrency" = "Eén valuta voor schulden";
 "groups.form.showDebtsInSingleCurrencyHint" = "Zet alle saldi om naar een voorkeursvaluta";
 "groups.form.defaultSplitType" = "Standaardverdeling";
@@ -3132,8 +3126,6 @@
 "groups.settings.options" = "Opties";
 "groups.settings.info" = "Info";
 "groups.settings.dangerZone" = "Gevarenzone";
-"groups.settings.mySettings" = "Mijn instellingen";
-"groups.settings.mySettingsHint" = "Deze instellingen gelden alleen voor jou";
 "groups.member.admin" = "Beheerder";
 "groups.member.member" = "Lid";
 "groups.member.you" = "(Jij)";
@@ -3535,8 +3527,6 @@
 "groups.activate.enableNotifications" = "Notificaties inschakelen";
 "groups.activate.skipNotifications" = "Nu niet";
 "groups.activate.done" = "Aan de slag";
-"groups.activate.importYes" = "Ja, voeg ze toe";
-"groups.activate.importNo" = "Nee, bedankt";
 
 // Groups — Nudges (GC-09)
 "groups.nudge.invitedSpendingInsight.title" = "Je gedeelde uitgaven groeien";

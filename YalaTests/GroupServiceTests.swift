@@ -109,7 +109,6 @@ struct GroupServiceTests {
         let group = SplitGroup()
         #expect(group.isOwner == false)
         #expect(group.isArchived == false)
-        #expect(group.autoCreateTransaction == true)
         #expect(group.simplifyDebts == false)
         #expect(group.currencyCode == "PEN")
         #expect(group.showDebtsInSingleCurrency == false)

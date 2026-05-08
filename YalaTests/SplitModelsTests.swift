@@ -25,7 +25,6 @@ struct SplitModelsTests {
         #expect(group.isOwner == false)
         #expect(group.isArchived == false)
         #expect(group.defaultAccountID == nil)
-        #expect(group.autoCreateTransaction == true)
         #expect(group.showDebtsInSingleCurrency == false)
         #expect(group.defaultSplitType == "equal")
         #expect(group.membersCanInvite == false)
@@ -119,7 +118,6 @@ struct SplitModelsTests {
             name: "Depa Miraflores",
             currencyCode: "PEN",
             isOwner: true,
-            autoCreateTransaction: false,
             showDebtsInSingleCurrency: true,
             defaultSplitType: "percentage",
             membersCanInvite: false
@@ -127,7 +125,6 @@ struct SplitModelsTests {
         #expect(group.name == "Depa Miraflores")
         #expect(group.currencyCode == "PEN")
         #expect(group.isOwner == true)
-        #expect(group.autoCreateTransaction == false)
         #expect(group.showDebtsInSingleCurrency == true)
         #expect(group.defaultSplitType == "percentage")
         #expect(group.membersCanInvite == false)
