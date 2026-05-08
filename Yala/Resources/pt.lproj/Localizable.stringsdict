@@ -386,5 +386,37 @@
 			<string>%d solicitações</string>
 		</dict>
 	</dict>
+	<key>groups.member.activeCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d pessoa ativa</string>
+			<key>other</key>
+			<string>%d pessoas ativas</string>
+		</dict>
+	</dict>
+	<key>groups.member.pendingCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d solicitação pendente</string>
+			<key>other</key>
+			<string>%d solicitações pendentes</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -69,6 +69,22 @@ struct GroupsViewModelTests {
         #expect(vm.memberCount(for: group) == 0)
     }
 
+    @Test func pendingMemberCount_noData_returnsZero() {
+        let vm = GroupsViewModel()
+        let group = SplitGroup(name: "Empty")
+
+        #expect(vm.pendingMemberCount(for: group) == 0)
+    }
+
+    @Test func pendingMemberCount_archivedGroup_returnsZero() {
+        // Gate explícito para grupos archivados (mostrar pending sobre card opacity-0.6 sería confuso).
+        let vm = GroupsViewModel()
+        let group = SplitGroup(name: "Archived")
+        group.isArchived = true
+
+        #expect(vm.pendingMemberCount(for: group) == 0)
+    }
+
     @Test func currentUserBalance_noData_returnsNil() {
         let vm = GroupsViewModel()
         let group = SplitGroup(name: "Empty")

@@ -80,6 +80,7 @@ struct GroupsContainerView: View {
                                 GroupCardView(
                                     group: group,
                                     memberCount: viewModel.memberCount(for: group),
+                                    pendingCount: viewModel.pendingMemberCount(for: group),
                                     balance: viewModel.currentUserBalance(for: group)
                                 ) {
                                     viewModel.openDetail(for: group)
@@ -270,6 +271,7 @@ struct GroupsContainerView: View {
                     GroupCardView(
                         group: group,
                         memberCount: viewModel.memberCount(for: group),
+                        pendingCount: viewModel.pendingMemberCount(for: group),
                         balance: viewModel.currentUserBalance(for: group)
                     ) {
                         viewModel.openDetail(for: group)

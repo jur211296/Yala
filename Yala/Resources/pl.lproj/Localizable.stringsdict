@@ -482,5 +482,45 @@
 			<string>%d prośby</string>
 		</dict>
 	</dict>
+	<key>groups.member.activeCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d aktywna osoba</string>
+			<key>few</key>
+			<string>%d aktywne osoby</string>
+			<key>many</key>
+			<string>%d aktywnych osób</string>
+			<key>other</key>
+			<string>%d aktywnych osób</string>
+		</dict>
+	</dict>
+	<key>groups.member.pendingCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d oczekujący wniosek</string>
+			<key>few</key>
+			<string>%d oczekujące wnioski</string>
+			<key>many</key>
+			<string>%d oczekujących wniosków</string>
+			<key>other</key>
+			<string>%d oczekujących wniosków</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

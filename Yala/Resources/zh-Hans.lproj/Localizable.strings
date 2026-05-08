@@ -3143,7 +3143,6 @@
 "groups.member.removeConfirm" = "把这个成员从群组移除?";
 "groups.member.removeWithDebtWarning" = "这位成员在群组中有未结清的余额。如果你将其删除，欠款仍会保留。要继续吗？";
 "groups.member.actions" = "成员操作";
-"groups.member.people %d" = "%d 人";
 "groups.balance.title" = "余额";
 "groups.balance.owes" = "欠";
 "groups.balance.isOwed" = "应收";
@@ -4155,3 +4154,5 @@
 "welcome.detectedData.message" = "我们在你的 iCloud 中找到了 %d 个账户、%d 笔支出和 %d 个分类。你想怎么做?";
 "welcome.detectedData.loadMyData" = "加载我的数据";
 "welcome.detectedData.startFresh" = "从零开始";
+"groups.member.activeCount" = "%d 位活跃成员";
+"groups.member.pendingCount" = "%d 个待处理请求";

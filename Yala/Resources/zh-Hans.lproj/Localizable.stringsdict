@@ -338,5 +338,37 @@
 			<string>%d 条请求</string>
 		</dict>
 	</dict>
+	<key>groups.member.activeCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d 位活跃成员</string>
+			<key>other</key>
+			<string>%d 位活跃成员</string>
+		</dict>
+	</dict>
+	<key>groups.member.pendingCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d 个待处理请求</string>
+			<key>other</key>
+			<string>%d 个待处理请求</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

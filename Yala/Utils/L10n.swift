@@ -1723,7 +1723,8 @@ enum L10n {
             static var removeConfirm: String { ls("groups.member.removeConfirm", comment: "") }
             static var removeWithDebtWarning: String { ls("groups.member.removeWithDebtWarning", comment: "") }
             static var actions: String { ls("groups.member.actions", comment: "") }
-            static func people(_ count: Int) -> String { String(format: ls("groups.member.people %d", comment: ""), count) }
+            static func activeCount(_ count: Int) -> String { String(format: ls("groups.member.activeCount", comment: ""), count) }
+            static func pendingCount(_ count: Int) -> String { String(format: ls("groups.member.pendingCount", comment: ""), count) }
             static var statusPending: String { ls("groups.member.statusPending", comment: "") }
             static var statusRejected: String { ls("groups.member.statusRejected", comment: "") }
             static var approve: String { ls("groups.member.approve", comment: "") }

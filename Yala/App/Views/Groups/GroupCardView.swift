@@ -11,6 +11,7 @@ struct GroupCardView: View {
 
     let group: SplitGroup
     let memberCount: Int
+    let pendingCount: Int
     let balance: MemberBalance?
     let action: () -> Void
 
@@ -30,9 +31,15 @@ struct GroupCardView: View {
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
-                    Text(L10n.Groups.Member.people(memberCount))
+                    Text(L10n.Groups.Member.activeCount(memberCount))
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
+
+                    if pendingCount > 0 {
+                        Text(L10n.Groups.Member.pendingCount(pendingCount))
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(DS.Semantic.warningForeground)
+                    }
                 }
 
                 Spacer()
@@ -59,7 +66,8 @@ struct GroupCardView: View {
     }
 
     private var accessibilityText: String {
-        var parts = [group.name, L10n.Groups.Member.people(memberCount)]
+        var parts = [group.name, L10n.Groups.Member.activeCount(memberCount)]
+        if pendingCount > 0 { parts.append(L10n.Groups.Member.pendingCount(pendingCount)) }
         if let balance {
             let amount = appPreferences.currency(abs(balance.netBalance), currencyCode: balance.currencyCode)
             let label = balanceLabel(balance.netBalance)

@@ -3143,7 +3143,6 @@
 "groups.member.removeConfirm" = "Usunąć tego członka z grupy?";
 "groups.member.removeWithDebtWarning" = "Ta osoba ma otwarte saldo w grupie. Jeśli ją usuniesz, dług pozostanie otwarty. Kontynuować?";
 "groups.member.actions" = "Akcje członka";
-"groups.member.people %d" = "Osób: %d";
 "groups.balance.title" = "Salda";
 "groups.balance.owes" = "winien jest";
 "groups.balance.isOwed" = "należy się mu";
@@ -4155,3 +4154,5 @@
 "welcome.detectedData.message" = "Znaleźliśmy %d kont, %d wydatków i %d kategorii w Twoim iCloud. Co robimy?";
 "welcome.detectedData.loadMyData" = "Załaduj moje dane";
 "welcome.detectedData.startFresh" = "Zacznij od zera";
+"groups.member.activeCount" = "%d aktywne osoby";
+"groups.member.pendingCount" = "%d oczekujące wnioski";

@@ -3141,7 +3141,6 @@
 "groups.member.removeConfirm" = "Supprimer ce membre du groupe ?";
 "groups.member.removeWithDebtWarning" = "Cette personne a un solde ouvert dans le groupe. Si vous la supprimez, la dette reste ouverte. Continuer ?";
 "groups.member.actions" = "Actions du membre";
-"groups.member.people %d" = "%d personnes";
 "groups.balance.title" = "Soldes";
 "groups.balance.owes" = "doit";
 "groups.balance.isOwed" = "est dû";
@@ -4153,3 +4152,5 @@
 "welcome.detectedData.message" = "Nous avons trouvé %d comptes, %d dépenses et %d catégories dans votre iCloud. Que faisons-nous ?";
 "welcome.detectedData.loadMyData" = "Charger mes données";
 "welcome.detectedData.startFresh" = "Repartir de zéro";
+"groups.member.activeCount" = "%d personnes actives";
+"groups.member.pendingCount" = "%d demandes en attente";

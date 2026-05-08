@@ -250,3 +250,5 @@
 "welcome.detectedData.message" = "We found %d accounts, %d expenses and %d categories saved in your iCloud. What should we do?";
 "welcome.detectedData.loadMyData" = "Load my data";
 "welcome.detectedData.startFresh" = "Start fresh";
+"groups.member.activeCount" = "%d active people";
+"groups.member.pendingCount" = "%d pending requests";

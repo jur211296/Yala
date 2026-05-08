@@ -3186,7 +3186,6 @@
 "groups.member.removeConfirm" = "Remove this member from the group?";
 "groups.member.removeWithDebtWarning" = "This person has an open balance in the group. If you remove them, the debt stays open. Continue?";
 "groups.member.actions" = "Member actions";
-"groups.member.people %d" = "%d people";
 "groups.balance.title" = "Balances";
 "groups.balance.owes" = "owes";
 "groups.balance.isOwed" = "is owed";
@@ -4157,3 +4156,5 @@
 "welcome.detectedData.message" = "We found %d accounts, %d expenses and %d categories saved in your iCloud. What should we do?";
 "welcome.detectedData.loadMyData" = "Load my data";
 "welcome.detectedData.startFresh" = "Start fresh";
+"groups.member.activeCount" = "%d active people";
+"groups.member.pendingCount" = "%d pending requests";

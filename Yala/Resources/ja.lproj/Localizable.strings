@@ -3143,7 +3143,6 @@
 "groups.member.removeConfirm" = "このメンバーをグループから削除しますか？";
 "groups.member.removeWithDebtWarning" = "このメンバーにはグループ内で未精算の残高があります。削除しても債務は引き続き残ります。続けますか？";
 "groups.member.actions" = "メンバーのアクション";
-"groups.member.people %d" = "%d人";
 "groups.balance.title" = "残高";
 "groups.balance.owes" = "借りがある";
 "groups.balance.isOwed" = "貸しがある";
@@ -4155,3 +4154,5 @@
 "welcome.detectedData.message" = "iCloudに%d件のアカウント、%d件の支出、%d件のカテゴリが保存されています。どうしますか?";
 "welcome.detectedData.loadMyData" = "データを読み込む";
 "welcome.detectedData.startFresh" = "ゼロから始める";
+"groups.member.activeCount" = "%d人のアクティブメンバー";
+"groups.member.pendingCount" = "%d件の保留中のリクエスト";

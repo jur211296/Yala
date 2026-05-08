@@ -174,3 +174,5 @@
 "welcome.detectedData.message" = "Encontramos %d cuentas, %d gastos y %d categorías guardados en tu iCloud. ¿Qué hacemos?";
 "welcome.detectedData.loadMyData" = "Cargar mis datos";
 "welcome.detectedData.startFresh" = "Empezar desde cero";
+"groups.member.activeCount" = "%d personas activas";
+"groups.member.pendingCount" = "%d solicitudes pendientes";

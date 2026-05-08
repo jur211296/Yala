@@ -134,6 +134,14 @@ final class GroupsViewModel {
         membersByGroup[group.cloudKitZoneID]?.filter(\.isActive).count ?? 0
     }
 
+    /// Pending approval member count for a group. Returns 0 for archived groups
+    /// (UX: nadie aprueba pending en un grupo archivado; mostrar el badge sobre
+    /// card opacity-0.6 sería confuso).
+    func pendingMemberCount(for group: SplitGroup) -> Int {
+        guard !group.isArchived else { return 0 }
+        return membersByGroup[group.cloudKitZoneID]?.filter(\.isPendingApproval).count ?? 0
+    }
+
     // MARK: - Actions
 
     func archiveGroup(_ group: SplitGroup) {
