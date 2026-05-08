@@ -102,7 +102,11 @@ struct WelcomeHeroView: View {
             heroBackground
 
             VStack(spacing: 0) {
-                Spacer(minLength: DS.Spacing.lg)
+                // minLength 80 fuerza el top Spacer al mismo valor que el Chooser
+                // alcanza naturalmente (cuyo contenido fijo es menor). Sin esto,
+                // el flex del Hero solo expande a ~65pt y el logo queda más arriba
+                // que en el Chooser (~80pt) — la transición Hero→Chooser saltaba.
+                Spacer(minLength: 80)
 
                 Image("YalaLogo")
                     .resizable()
