@@ -714,7 +714,7 @@ final class AppBootstrapper {
             let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
             // CKShare custom key `isArchived` (escrita por owner en setArchived). Race-tolerant:
             // si key ausente → false → standardReconnect; sync posterior trae estado al SplitGroup local.
-            let isArchived = (metadata.share["isArchived"] as? Int) == 1
+            let isArchived = (metadata.share[CKShareCustomKey.isArchived] as? Int) == 1
             // Member status local (si ya hubo accept previo en este device).
             let zoneName = metadata.share.recordID.zoneID.zoneName
             let currentMemberStatus = SplitSyncManager.shared.currentMemberStatus(zoneName: zoneName)

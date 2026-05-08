@@ -17,6 +17,12 @@ enum UpgradeFeature: String {
     case voice, image, accounts, chat
 }
 
+/// Custom keys del CKShare zone-wide (escritas/leídas por owner via `setArchived`,
+/// leídas por invitados pre-accept via `metadata.share[key]`).
+enum CKShareCustomKey {
+    static let isArchived = "isArchived"
+}
+
 /// Mode del banner de reconnect según el estado del invite + membresía actual.
 /// Drives copy + CTA en GroupReconnectView.
 enum ReconnectMode: String, Equatable, Sendable {

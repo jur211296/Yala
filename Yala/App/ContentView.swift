@@ -786,6 +786,10 @@ private struct GroupInviteModifier: ViewModifier {
     /// pendingDuplicate solo navegan; los retry modes (rejected/left/removed) aceptan el
     /// share + reactivan al member como pending.
     @MainActor
+    /// Grace period tras `acceptShare` para que CKSyncEngine fetch + propague el grupo
+    /// antes de navegar — sin esto el detalle abre vacío.
+    private static let postAcceptGracePeriod: Duration = .seconds(2)
+
     static func handleReconnectJoin(invite: InviteMetadata) async {
         let metadata = invite.shareMetadata
         let zoneName = metadata.share.recordID.zoneID.zoneName
@@ -805,20 +809,22 @@ private struct GroupInviteModifier: ViewModifier {
             AppRouter.shared.enqueue(.navigate(.groups))
 
         case .rejectedRetry, .leftRetry, .removedRetry:
-            await SplitSyncManager.shared.acceptShare(metadata: metadata)
-            try? await Task.sleep(for: .seconds(2))
-            SessionState.shared.incrementDataVersion()
+            await acceptAndSettle(metadata: metadata)
             if let group = SplitSyncManager.shared.group(for: zoneName) {
                 try? await GroupService.shared.ensureCurrentUserMemberExists(in: group, reactivateInactive: true)
             }
             AppRouter.shared.enqueue(.navigate(.groups))
 
         case .standardReconnect:
-            await SplitSyncManager.shared.acceptShare(metadata: metadata)
-            try? await Task.sleep(for: .seconds(2))
-            SessionState.shared.incrementDataVersion()
+            await acceptAndSettle(metadata: metadata)
             AppRouter.shared.enqueue(.navigate(.groups))
         }
+    }
+
+    private static func acceptAndSettle(metadata: CKShare.Metadata) async {
+        await SplitSyncManager.shared.acceptShare(metadata: metadata)
+        try? await Task.sleep(for: postAcceptGracePeriod)
+        SessionState.shared.incrementDataVersion()
     }
 
     @Binding var showGroupInviteOnboarding: Bool

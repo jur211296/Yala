@@ -181,7 +181,7 @@ final class GroupService {
         do {
             let record = try await database.record(for: shareRecordID)
             guard let share = record as? CKShare else { return }
-            share["isArchived"] = isArchived ? 1 : 0
+            share[CKShareCustomKey.isArchived] = isArchived ? 1 : 0
             _ = try await database.modifyRecords(saving: [share], deleting: [])
         } catch {
             #if DEBUG

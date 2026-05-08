@@ -49,7 +49,7 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         Task { @MainActor in
             let sessionState = SessionState.shared
             let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
-            let isArchived = (cloudKitShareMetadata.share["isArchived"] as? Int) == 1
+            let isArchived = (cloudKitShareMetadata.share[CKShareCustomKey.isArchived] as? Int) == 1
             let zoneName = cloudKitShareMetadata.share.recordID.zoneID.zoneName
             let currentMemberStatus = SplitSyncManager.shared.currentMemberStatus(zoneName: zoneName)
 
