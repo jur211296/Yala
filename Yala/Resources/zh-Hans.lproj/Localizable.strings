@@ -1217,6 +1217,7 @@
 "settings.deleteDataConfirmation" = "删除你所有的数据?";
 "settings.deleteDataWarning" = "此操作不可逆。你的全部账户、交易、预算、汇率和类别都将被删除。之后 Yala 会重置到类似初始设置的状态,你无法恢复数据。";
 "settings.wipeICloudWarning" = "这也会删除你的 iCloud 数据。其他已同步设备将丢失这些数据。";
+"settings.wipeGroupsExclusionNote" = "这不会影响你的群组。要退出群组：进入「群组」，结算未结款项，逐一退出。";
 "settings.delete" = "删除";
 "settings.cancel" = "取消";
 "settings.iconOriginal" = "原版";

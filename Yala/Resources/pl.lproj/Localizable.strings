@@ -1217,6 +1217,7 @@
 "settings.deleteDataConfirmation" = "Usunąć wszystkie dane?";
 "settings.deleteDataWarning" = "Tej operacji nie można cofnąć. Wszystkie konta, transakcje, budżety, kursy wymiany i kategorie zostaną usunięte. Po tym Yala wróci do stanu początkowego i nie odzyskasz danych.";
 "settings.wipeICloudWarning" = "To usunie również twoje dane w iCloud. Inne zsynchronizowane urządzenia stracą te dane.";
+"settings.wipeGroupsExclusionNote" = "To nie obejmuje Twoich grup. Aby je opuścić, przejdź do Grupy, ureguluj zaległości i opuść każdą po kolei.";
 "settings.delete" = "Usuń";
 "settings.cancel" = "Anuluj";
 "settings.iconOriginal" = "Oryginalna";

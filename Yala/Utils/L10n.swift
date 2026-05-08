@@ -3478,6 +3478,10 @@ enum L10n {
         static var wipeICloudWarning: String {
             ls("settings.wipeICloudWarning", comment: "")
         }
+        /// Aclaración: el wipe NO toca grupos (separación A0-Bridge V2.0).
+        static var wipeGroupsExclusionNote: String {
+            ls("settings.wipeGroupsExclusionNote", comment: "")
+        }
         static var delete: String { ls("settings.delete", comment: "") }
         static var cancel: String { ls("settings.cancel", comment: "") }
         static var iconOriginal: String { ls("settings.iconOriginal", comment: "") }

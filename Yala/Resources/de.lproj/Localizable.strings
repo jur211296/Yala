@@ -1220,6 +1220,7 @@
 "settings.deleteDataConfirmation" = "Alle deine Daten löschen?";
 "settings.deleteDataWarning" = "Diese Aktion ist unwiderruflich. Alle deine Konten, Transaktionen, Budgets, Wechselkurse und Kategorien werden gelöscht. Danach wird Yala auf einen Anfangszustand zurückgesetzt und du kannst deine Daten nicht wiederherstellen.";
 "settings.wipeICloudWarning" = "Dies löscht auch deine iCloud-Daten. Andere synchronisierte Geräte verlieren diese Daten.";
+"settings.wipeGroupsExclusionNote" = "Ihre Gruppen sind nicht eingeschlossen. Um sie zu verlassen, gehen Sie zu Gruppen, begleichen Sie offene Posten und verlassen Sie jede.";
 "settings.delete" = "Löschen";
 "settings.cancel" = "Abbrechen";
 "settings.iconOriginal" = "Original";

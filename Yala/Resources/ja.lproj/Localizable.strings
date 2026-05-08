@@ -1217,6 +1217,7 @@
 "settings.deleteDataConfirmation" = "すべてのデータを削除しますか？";
 "settings.deleteDataWarning" = "この操作は取り消せません。すべての口座、取引、予算、為替レート、カテゴリーが削除されます。Yalaは初期設定に近い状態にリセットされ、データは復元できません。";
 "settings.wipeICloudWarning" = "iCloudのデータも削除されます。同期している他のデバイスからもこのデータが消えます。";
+"settings.wipeGroupsExclusionNote" = "これにはグループは含まれません。グループから抜けるには、グループタブで保留中を清算してから退会してください。";
 "settings.delete" = "削除";
 "settings.cancel" = "キャンセル";
 "settings.iconOriginal" = "オリジナル";

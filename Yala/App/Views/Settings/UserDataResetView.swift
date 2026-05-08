@@ -97,7 +97,9 @@ struct UserDataResetView: View {
             }
         } message: {
             Text(
-                L10n.Settings.deleteDataWarning + "\n\n" + L10n.Settings.wipeICloudWarning
+                L10n.Settings.deleteDataWarning + "\n\n"
+                + L10n.Settings.wipeICloudWarning + "\n\n"
+                + L10n.Settings.wipeGroupsExclusionNote
             )
         }
 

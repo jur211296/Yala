@@ -1220,6 +1220,7 @@
 "settings.deleteDataConfirmation" = "Supprimer toutes vos donnees?";
 "settings.deleteDataWarning" = "Cette action est irreversible. Tous vos comptes, transactions, budgets, taux de change et categories seront supprimes. Apres cela, Yala sera reinitialise a un etat similaire a l'initial et vous ne pourrez pas recuperer vos donnees.";
 "settings.wipeICloudWarning" = "Cela supprimera également vos données iCloud. Les autres appareils synchronisés perdront ces données.";
+"settings.wipeGroupsExclusionNote" = "Cela n'inclut pas vos groupes. Pour les quitter, allez dans Groupes, réglez les soldes en attente et quittez-les un par un.";
 "settings.delete" = "Supprimer";
 "settings.cancel" = "Annuler";
 "settings.iconOriginal" = "Original";

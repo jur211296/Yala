@@ -1217,6 +1217,7 @@
 "settings.deleteDataConfirmation" = "Al je gegevens verwijderen?";
 "settings.deleteDataWarning" = "Deze actie is onomkeerbaar. Al je rekeningen, transacties, budgetten, wisselkoersen en categorieën worden verwijderd. Daarna keert Yala terug naar de begininstelling en kun je je gegevens niet meer terughalen.";
 "settings.wipeICloudWarning" = "Hiermee verwijder je ook je iCloud-gegevens. Andere gesynchroniseerde apparaten verliezen deze gegevens.";
+"settings.wipeGroupsExclusionNote" = "Dit omvat niet je groepen. Om ze te verlaten: ga naar Groepen, vereffen openstaande saldi en verlaat elke groep.";
 "settings.delete" = "Verwijderen";
 "settings.cancel" = "Annuleren";
 "settings.iconOriginal" = "Origineel";

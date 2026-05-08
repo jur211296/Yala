@@ -345,3 +345,5 @@
 "groups.member.activeCount" = "%d personas activas";
 "groups.member.pendingCount" = "%d solicitudes pendientes";
 "groups.stats.assignCategoriesHint" = "Asigná categorías a tus gastos para ver el desglose por tipo.";
+
+"settings.wipeGroupsExclusionNote" = "Esto no incluye tus grupos. Para salir, andá a Grupos, saldá lo pendiente y abandonalos.";
