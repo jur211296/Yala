@@ -29,3 +29,27 @@ enum WelcomeFlowLayout {
         max(logoTopFloor, geo.size.height * logoTopProportion)
     }
 }
+
+/// Wrapper compartido por Hero y Chooser que encapsula el background gradient
+/// indigo→negro, el `GeometryReader` root, y el cálculo del `logoTopSpacing`.
+/// El content recibe el spacing como parámetro y lo aplica al primer Spacer
+/// para que el logo aparezca al mismo y en ambas pantallas.
+struct WelcomeFlowScreen<Content: View>: View {
+    @ViewBuilder let content: (_ logoTopSpacing: CGFloat) -> Content
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                LinearGradient(
+                    colors: DS.Gradients.heroIndigoBlack,
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+
+                content(WelcomeFlowLayout.logoTopSpacing(in: geo))
+                    .frame(width: geo.size.width, height: geo.size.height)
+            }
+        }
+    }
+}

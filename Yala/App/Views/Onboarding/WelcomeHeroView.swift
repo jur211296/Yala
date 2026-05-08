@@ -98,40 +98,35 @@ struct WelcomeHeroView: View {
     // MARK: Body
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                heroBackground
+        WelcomeFlowScreen { logoTopSpacing in
+            VStack(spacing: 0) {
+                Spacer(minLength: logoTopSpacing)
 
-                VStack(spacing: 0) {
-                    Spacer(minLength: WelcomeFlowLayout.logoTopSpacing(in: geo))
+                Image("YalaLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 128)
+                    .colorMultiply(.white)
+                    .accessibilityHidden(true)
 
-                    Image("YalaLogo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 128)
-                        .colorMultiply(.white)
-                        .accessibilityHidden(true)
+                Spacer(minLength: DS.Spacing.lg)
 
-                    Spacer(minLength: DS.Spacing.lg)
+                cardCarousel
+                    .frame(height: 200)
 
-                    cardCarousel
-                        .frame(height: 200)
+                pageIndicator
+                    .padding(.top, DS.Spacing.md)
 
-                    pageIndicator
-                        .padding(.top, DS.Spacing.md)
+                Spacer(minLength: DS.Spacing.lg)
 
-                    Spacer(minLength: DS.Spacing.lg)
+                titleAndSubtitle
+                    .padding(.horizontal, DS.Spacing.xl)
 
-                    titleAndSubtitle
-                        .padding(.horizontal, DS.Spacing.xl)
+                Spacer(minLength: DS.Spacing.xl)
 
-                    Spacer(minLength: DS.Spacing.xl)
-
-                    ctaSection
-                        .padding(.horizontal, DS.Spacing.xl)
-                        .padding(.bottom, DS.Spacing.xl)
-                }
-                .frame(width: geo.size.width, height: geo.size.height)
+                ctaSection
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.bottom, DS.Spacing.xl)
             }
         }
         .task {
@@ -148,17 +143,6 @@ struct WelcomeHeroView: View {
             for waiter in fetchWaiters { waiter.resume() }
             fetchWaiters = []
         }
-    }
-
-    // MARK: Background
-
-    private var heroBackground: some View {
-        LinearGradient(
-            colors: DS.Gradients.heroIndigoBlack,
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .ignoresSafeArea()
     }
 
     // MARK: Card carousel
