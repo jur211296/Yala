@@ -53,7 +53,7 @@ struct WelcomeChooserView: View {
         switch branch {
         case .new: .hotPink
         case .restore: .neonCyan
-        case .invite: .priorityNeed
+        case .invite: .essentialNeed
         }
     }
 
