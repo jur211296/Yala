@@ -4157,3 +4157,7 @@
 "welcome.detectedData.startFresh" = "Zacznij od zera";
 "groups.member.activeCount" = "%d aktywne osoby";
 "groups.member.pendingCount" = "%d oczekujące wnioski";
+"groups.card.pendingApprovalChip" = "Oczekuje na zatwierdzenie";
+"groups.card.rejectedChip" = "Prośba odrzucona";
+"groups.card.leaveGroupAlertTitle" = "Opuścić grupę?";
+"groups.card.leaveGroupAlertBody" = "Twoja prośba została odrzucona. Po opuszczeniu grupa zostanie usunięta z Twojej listy. Twoje osobiste wpisy pozostają.";

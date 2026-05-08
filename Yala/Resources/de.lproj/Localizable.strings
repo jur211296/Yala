@@ -4154,3 +4154,7 @@
 "welcome.detectedData.startFresh" = "Neu beginnen";
 "groups.member.activeCount" = "%d aktive Personen";
 "groups.member.pendingCount" = "%d ausstehende Anfragen";
+"groups.card.pendingApprovalChip" = "Warte auf Freigabe";
+"groups.card.rejectedChip" = "Anfrage abgelehnt";
+"groups.card.leaveGroupAlertTitle" = "Gruppe verlassen?";
+"groups.card.leaveGroupAlertBody" = "Ihre Anfrage wurde abgelehnt. Beim Verlassen wird diese Gruppe aus Ihrer Liste entfernt. Ihre persönlichen Einträge bleiben.";

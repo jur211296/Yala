@@ -4154,3 +4154,7 @@
 "welcome.detectedData.startFresh" = "Começar do zero";
 "groups.member.activeCount" = "%d pessoas ativas";
 "groups.member.pendingCount" = "%d solicitações pendentes";
+"groups.card.pendingApprovalChip" = "Aguardando aprovação";
+"groups.card.rejectedChip" = "Pedido recusado";
+"groups.card.leaveGroupAlertTitle" = "Sair do grupo?";
+"groups.card.leaveGroupAlertBody" = "Seu pedido foi recusado. Se sair, este grupo será removido da sua lista. Seus registros pessoais permanecem.";

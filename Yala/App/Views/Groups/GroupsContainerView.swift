@@ -25,6 +25,8 @@ struct GroupsContainerView: View {
     @State private var showNotificationPrompt = false
     @State private var showPermissionDeniedAlert = false
     @State private var showNudgeBanner = false
+    /// #26: grupo seleccionado al tap card .rejected → alert "¿Salir del grupo?".
+    @State private var rejectedGroupPendingLeave: SplitGroup?
 
     // MARK: - Body
 
@@ -81,10 +83,13 @@ struct GroupsContainerView: View {
                                     group: group,
                                     memberCount: viewModel.memberCount(for: group),
                                     pendingCount: viewModel.pendingMemberCount(for: group),
-                                    balance: viewModel.currentUserBalance(for: group)
-                                ) {
-                                    viewModel.openDetail(for: group)
-                                }
+                                    balance: viewModel.currentUserBalance(for: group),
+                                    displayMode: GroupCardDisplayLogic.displayMode(
+                                        memberStatus: viewModel.currentMemberStatus(for: group)
+                                    ),
+                                    action: { viewModel.openDetail(for: group) },
+                                    onRejectedTap: { rejectedGroupPendingLeave = group }
+                                )
                             }
 
                             // Archived groups
@@ -174,6 +179,36 @@ struct GroupsContainerView: View {
                 Button(L10n.Action.cancel, role: .cancel) {}
             } message: {
                 Text(L10n.Notifications.permissionMessage)
+            }
+            // #26: alert "¿Salir del grupo?" cuando user con status .rejected
+            // tap su card en lista. leaveGroup limpia local + remote.
+            .alert(
+                L10n.Groups.Card.leaveGroupAlertTitle,
+                isPresented: Binding(
+                    get: { rejectedGroupPendingLeave != nil },
+                    set: { if !$0 { rejectedGroupPendingLeave = nil } }
+                )
+            ) {
+                Button(L10n.Groups.Settings.leaveGroup, role: .destructive) {
+                    if let group = rejectedGroupPendingLeave {
+                        Task { @MainActor in
+                            do {
+                                try await GroupService.shared.leaveGroup(group)
+                                viewModel.loadData()
+                            } catch {
+                                #if DEBUG
+                                print("GroupsContainerView: leaveGroup failed: \(error)")
+                                #endif
+                            }
+                            rejectedGroupPendingLeave = nil
+                        }
+                    }
+                }
+                Button(L10n.Action.cancel, role: .cancel) {
+                    rejectedGroupPendingLeave = nil
+                }
+            } message: {
+                Text(L10n.Groups.Card.leaveGroupAlertBody)
             }
         }
     }
@@ -272,10 +307,13 @@ struct GroupsContainerView: View {
                         group: group,
                         memberCount: viewModel.memberCount(for: group),
                         pendingCount: viewModel.pendingMemberCount(for: group),
-                        balance: viewModel.currentUserBalance(for: group)
-                    ) {
-                        viewModel.openDetail(for: group)
-                    }
+                        balance: viewModel.currentUserBalance(for: group),
+                        displayMode: GroupCardDisplayLogic.displayMode(
+                            memberStatus: viewModel.currentMemberStatus(for: group)
+                        ),
+                        action: { viewModel.openDetail(for: group) },
+                        onRejectedTap: { rejectedGroupPendingLeave = group }
+                    )
                     .opacity(0.6)
                 }
             }

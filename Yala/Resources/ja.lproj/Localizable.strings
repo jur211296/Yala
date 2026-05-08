@@ -4157,3 +4157,7 @@
 "welcome.detectedData.startFresh" = "ゼロから始める";
 "groups.member.activeCount" = "%d人のアクティブメンバー";
 "groups.member.pendingCount" = "%d件の保留中のリクエスト";
+"groups.card.pendingApprovalChip" = "承認待ち";
+"groups.card.rejectedChip" = "リクエスト却下";
+"groups.card.leaveGroupAlertTitle" = "グループから退出しますか？";
+"groups.card.leaveGroupAlertBody" = "リクエストが却下されました。退出するとこのグループはリストから削除されます。個人の記録はそのまま残ります。";

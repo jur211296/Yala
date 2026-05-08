@@ -360,7 +360,7 @@ struct GroupSettingsView: View {
     private var membersSection: some View {
         SectionBox(title: L10n.Groups.Settings.members) {
             VStack(spacing: DS.Spacing.none) {
-                ForEach(viewModel.members, id: \.id) { member in
+                ForEach(viewModel.visibleMembers, id: \.id) { member in
                     GroupMemberRow(
                         member: member,
                         groupColorHex: group.colorHex,

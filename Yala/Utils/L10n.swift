@@ -1712,6 +1712,15 @@ enum L10n {
             static var pendingApproval: String { ls("groups.errors.pendingApproval", comment: "") }
         }
 
+        /// #26: chips mostrados en GroupCardView cuando el current user está
+        /// en estado pendingApproval o rejected (en lugar del balance trailing).
+        enum Card {
+            static var pendingApprovalChip: String { ls("groups.card.pendingApprovalChip", comment: "") }
+            static var rejectedChip: String { ls("groups.card.rejectedChip", comment: "") }
+            static var leaveGroupAlertTitle: String { ls("groups.card.leaveGroupAlertTitle", comment: "") }
+            static var leaveGroupAlertBody: String { ls("groups.card.leaveGroupAlertBody", comment: "") }
+        }
+
         enum Member {
             static var admin: String { ls("groups.member.admin", comment: "") }
             static var member: String { ls("groups.member.member", comment: "") }

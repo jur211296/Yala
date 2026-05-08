@@ -4157,3 +4157,7 @@
 "welcome.detectedData.startFresh" = "从零开始";
 "groups.member.activeCount" = "%d 位活跃成员";
 "groups.member.pendingCount" = "%d 个待处理请求";
+"groups.card.pendingApprovalChip" = "等待批准";
+"groups.card.rejectedChip" = "申请被拒绝";
+"groups.card.leaveGroupAlertTitle" = "退出该群组？";
+"groups.card.leaveGroupAlertBody" = "你的申请被拒绝。退出后，该群组将从你的列表中移除。你的个人记录会保留。";

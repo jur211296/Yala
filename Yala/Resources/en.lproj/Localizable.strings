@@ -4159,3 +4159,7 @@
 "welcome.detectedData.startFresh" = "Start fresh";
 "groups.member.activeCount" = "%d active people";
 "groups.member.pendingCount" = "%d pending requests";
+"groups.card.pendingApprovalChip" = "Pending approval";
+"groups.card.rejectedChip" = "Request rejected";
+"groups.card.leaveGroupAlertTitle" = "Leave group?";
+"groups.card.leaveGroupAlertBody" = "Your request was rejected. Leaving will remove this group from your list. Your personal records stay.";
