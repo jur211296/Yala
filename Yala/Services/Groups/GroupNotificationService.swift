@@ -76,6 +76,10 @@ final class GroupNotificationService {
             #endif
             return
         }
+        #if DEBUG
+        let summarySig = "newExp=\(changes.newExpenses.count) modExp=\(changes.modifiedExpenses.count) newSet=\(changes.newSettlements.count) newMem=\(changes.newMembers.count) newPend=\(changes.newPendingMembers.count)"
+        print("GroupNotif[#16-debug]: typeRaw=groups itemFound=\(item != nil) isActive=\(item?.isActive ?? false) changes={\(summarySig)}")
+        #endif
         guard let item, item.isActive else { return }
 
         // Group changes by groupID
@@ -99,12 +103,19 @@ final class GroupNotificationService {
 
         // Send notification per group (with rate limiting)
         for (groupID, summary) in changesByGroup {
-            guard !isRateLimited(groupID: groupID) else { continue }
+            let rateLimited = isRateLimited(groupID: groupID)
+            #if DEBUG
+            print("GroupNotif[#16-debug]: groupID=\(groupID) total=\(summary.totalCount) rateLimited=\(rateLimited) pendingMembers=\(summary.newPendingMemberIDs.count)")
+            #endif
+            guard !rateLimited else { continue }
 
             if let (title, body) = buildNotification(groupID: groupID, summary: summary) {
                 let deepLink = "groups/\(groupID.uuidString)"
                 lastNotifiedDates[groupID] = Date.now
                 persistTimestamp(for: groupID)
+                #if DEBUG
+                print("GroupNotif[#16-debug]: scheduling title=\"\(title)\" body=\"\(body)\" deepLink=\(deepLink)")
+                #endif
                 Task {
                     await NotificationService.shared.sendNotification(
                         title: title, body: body, deepLink: deepLink

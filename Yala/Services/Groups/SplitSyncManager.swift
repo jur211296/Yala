@@ -616,9 +616,13 @@ final class SplitSyncManager {
                     if !existingMemberIDs.contains(modelID) {
                         // bifurca pendingApproval vs active. Solo admins reciben notif "X quiere unirse".
                         let zoneName = record.recordID.zoneID.zoneName
-                        let isPending = (record[CKConstants.MemberField.status] as? String) == SplitMemberStatus.pendingApproval.rawValue
-                        if isPending,
-                           isCurrentUserAdminOfGroup(zoneName: zoneName, context: modelContext, cache: &adminCache) {
+                        let rawStatus = record[CKConstants.MemberField.status] as? String
+                        let isPending = rawStatus == SplitMemberStatus.pendingApproval.rawValue
+                        let isAdmin = isPending && isCurrentUserAdminOfGroup(zoneName: zoneName, context: modelContext, cache: &adminCache)
+                        #if DEBUG
+                        print("SplitSync[#16-debug]: splitMember zone=\(zoneName) modelID=\(modelID) status=\(rawStatus ?? "nil") isPending=\(isPending) isAdmin=\(isAdmin)")
+                        #endif
+                        if isPending, isAdmin {
                             changeSet.newPendingMembers.append((modelID, groupID))
                         } else {
                             changeSet.newMembers.append((modelID, groupID))

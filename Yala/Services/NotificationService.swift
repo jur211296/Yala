@@ -213,7 +213,14 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     ///   - deepLink: Optional deep link destination (e.g., "statistics", "planning", "budgets")
     func sendNotification(title: String, body: String, deepLink: String? = nil) async {
         // Check permission first
+        #if DEBUG
+        let settings = await notificationCenter.notificationSettings()
+        let authorized = settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional
+        print("NotifService[#16-debug]: sendNotification title=\"\(title)\" authStatus=\(settings.authorizationStatus.rawValue) authorized=\(authorized) alert=\(settings.alertSetting.rawValue) center=\(settings.notificationCenterSetting.rawValue) lockScreen=\(settings.lockScreenSetting.rawValue)")
+        guard authorized else { return }
+        #else
         guard await isAuthorized() else { return }
+        #endif
 
         let content = UNMutableNotificationContent()
         content.title = title
@@ -235,9 +242,12 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
         do {
             try await notificationCenter.add(request)
+            #if DEBUG
+            print("NotifService[#16-debug]: notificationCenter.add OK identifier=\(request.identifier)")
+            #endif
         } catch {
             #if DEBUG
-            print("Error sending notification: \(error)")
+            print("NotifService[#16-debug]: Error sending notification: \(error)")
             #endif
         }
     }
