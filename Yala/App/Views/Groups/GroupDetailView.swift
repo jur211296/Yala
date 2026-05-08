@@ -128,9 +128,26 @@ struct GroupDetailView: View {
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    YalaToolbarButton(systemName: "gearshape", label: L10n.Groups.Settings.title) {
+                    Button {
                         viewModel.activeSheet = .settings
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "gearshape")
+                                .fontWeight(.medium)
+                                .foregroundStyle(Color.primary)
+
+                            if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: DS.Spacing.xxs, y: -DS.Spacing.xxs)
+                            }
+                        }
                     }
+                    .accessibilityLabel(viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty
+                        ? "\(L10n.Groups.Settings.title), \(L10n.Groups.Member.pendingRequestsCount(viewModel.pendingApprovalMembers.count))"
+                        : L10n.Groups.Settings.title)
+                    .buttonBorderShape(.circle)
                 }
             }
             .sheet(item: $viewModel.activeSheet, onDismiss: {
