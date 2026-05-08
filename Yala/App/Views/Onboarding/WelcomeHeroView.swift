@@ -98,41 +98,40 @@ struct WelcomeHeroView: View {
     // MARK: Body
 
     var body: some View {
-        ZStack {
-            heroBackground
+        GeometryReader { geo in
+            ZStack {
+                heroBackground
 
-            VStack(spacing: 0) {
-                // minLength 80 fuerza el top Spacer al mismo valor que el Chooser
-                // alcanza naturalmente (cuyo contenido fijo es menor). Sin esto,
-                // el flex del Hero solo expande a ~65pt y el logo queda más arriba
-                // que en el Chooser (~80pt) — la transición Hero→Chooser saltaba.
-                Spacer(minLength: 80)
+                VStack(spacing: 0) {
+                    Spacer(minLength: WelcomeFlowLayout.logoTopSpacing(in: geo))
 
-                Image("YalaLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 128)
-                    .colorMultiply(.white)
-                    .accessibilityHidden(true)
+                    Image("YalaLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 128)
+                        .colorMultiply(.white)
+                        .accessibilityHidden(true)
 
-                Spacer(minLength: DS.Spacing.lg)
+                    Spacer(minLength: DS.Spacing.lg)
 
-                cardCarousel
-                    .frame(height: 200)
+                    cardCarousel
+                        .frame(height: 200)
 
-                pageIndicator
-                    .padding(.top, DS.Spacing.md)
+                    pageIndicator
+                        .padding(.top, DS.Spacing.md)
 
-                Spacer(minLength: DS.Spacing.lg)
+                    Spacer(minLength: DS.Spacing.lg)
 
-                titleAndSubtitle
-                    .padding(.horizontal, DS.Spacing.xl)
+                    titleAndSubtitle
+                        .padding(.horizontal, DS.Spacing.xl)
 
-                Spacer(minLength: DS.Spacing.xl)
+                    Spacer(minLength: DS.Spacing.xl)
 
-                ctaSection
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .padding(.bottom, DS.Spacing.xl)
+                    ctaSection
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .padding(.bottom, DS.Spacing.xl)
+                }
+                .frame(width: geo.size.width, height: geo.size.height)
             }
         }
         .task {

@@ -58,55 +58,58 @@ struct WelcomeChooserView: View {
     }
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: DS.Gradients.heroIndigoBlack,
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+        GeometryReader { geo in
+            ZStack {
+                LinearGradient(
+                    colors: DS.Gradients.heroIndigoBlack,
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Spacer(minLength: DS.Spacing.lg)
+                VStack(spacing: 0) {
+                    Spacer(minLength: WelcomeFlowLayout.logoTopSpacing(in: geo))
 
-                Image("YalaLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 128)
-                    .colorMultiply(.white)
-                    .accessibilityHidden(true)
+                    Image("YalaLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 128)
+                        .colorMultiply(.white)
+                        .accessibilityHidden(true)
 
-                Spacer(minLength: DS.Spacing.lg)
+                    Spacer(minLength: DS.Spacing.lg)
 
-                VStack(spacing: DS.Spacing.sm) {
-                    Text(L10n.Welcome.Chooser.title)
-                        .font(DS.Typography.title2)
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
+                    VStack(spacing: DS.Spacing.sm) {
+                        Text(L10n.Welcome.Chooser.title)
+                            .font(DS.Typography.title2)
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
 
-                    Text(L10n.Welcome.Chooser.subtitle)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, DS.Spacing.lg)
-                }
-
-                Spacer(minLength: DS.Spacing.lg)
-
-                VStack(spacing: DS.Spacing.md) {
-                    ForEach(Branch.allCases, id: \.self) { branch in
-                        chooserCard(
-                            icon: branch.icon,
-                            iconTint: iconTint(for: branch),
-                            title: branch.title,
-                            body: branch.body,
-                            action: { handleSelect(branch) }
-                        )
+                        Text(L10n.Welcome.Chooser.subtitle)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.lg)
                     }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
 
-                Spacer(minLength: DS.Spacing.xl)
+                    Spacer(minLength: DS.Spacing.lg)
+
+                    VStack(spacing: DS.Spacing.md) {
+                        ForEach(Branch.allCases, id: \.self) { branch in
+                            chooserCard(
+                                icon: branch.icon,
+                                iconTint: iconTint(for: branch),
+                                title: branch.title,
+                                body: branch.body,
+                                action: { handleSelect(branch) }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, DS.Spacing.lg)
+
+                    Spacer(minLength: DS.Spacing.xl)
+                }
+                .frame(width: geo.size.width, height: geo.size.height)
             }
         }
         .welcomeBackButton(tint: .white, action: onBack)
