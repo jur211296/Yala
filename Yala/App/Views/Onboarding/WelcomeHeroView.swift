@@ -107,7 +107,7 @@ struct WelcomeHeroView: View {
                 Image("YalaLogo")
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 64)
+                    .frame(height: 128)
                     .colorMultiply(.white)
                     .accessibilityHidden(true)
 
