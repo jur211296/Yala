@@ -3099,8 +3099,8 @@
 "groups.form.defaultAccount" = "Conta para registros";
 "groups.form.defaultAccountHint" = "Conta onde as despesas do grupo são registradas";
 "groups.form.defaultAccountPickerHint" = "Escolha uma conta por moeda para seus registros";
-"groups.form.autoCreate" = "Adicionar aos meus registros";
-"groups.form.autoCreateHint" = "Cria automaticamente uma despesa pessoal ao registrar uma despesa compartilhada";
+"groups.form.autoCreate" = "Salvar também nos meus registros";
+"groups.form.autoCreateHint" = "Cada despesa do grupo é registrada também nos seus registros pessoais";
 "groups.form.none" = "Nenhuma";
 "groups.form.showDebtsInSingleCurrency" = "Moeda única para dívidas";
 "groups.form.showDebtsInSingleCurrencyHint" = "Converter todos os saldos para uma moeda preferida";
@@ -3113,9 +3113,6 @@
 "groups.settings.addMemberPrompt" = "Nome do membro";
 "groups.settings.invite" = "Convidar por link";
 "groups.settings.inviteLinkHint" = "Qualquer pessoa com este link pode entrar no grupo enquanto o acesso por link estiver ativo. Compartilhe apenas com pessoas de confiança.";
-"groups.settings.regenerateLink" = "Regenerar link";
-"groups.settings.regenerateLinkConfirm" = "O link atual deixará de funcionar. Quer gerar um novo?";
-"groups.settings.regenerateLinkDisabledHint" = "Por segurança, redefina o link de convite apenas antes de outras pessoas entrarem.";
 "groups.settings.leaveGroup" = "Sair do grupo";
 "groups.settings.leaveGroupConfirm" = "Tem certeza? Suas despesas pessoais serão mantidas.";
 "groups.settings.leaveGroupWithDebtWarning" = "Você vai sair do grupo com um saldo pendente. A outra parte vai continuar vendo essa dívida como pendente. Continuar?";

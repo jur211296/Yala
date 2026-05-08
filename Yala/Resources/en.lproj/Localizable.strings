@@ -3145,8 +3145,8 @@
 "groups.form.defaultAccount" = "Account for records";
 "groups.form.defaultAccountHint" = "Account where group expenses are recorded";
 "groups.form.defaultAccountPickerHint" = "Choose an account per currency for your records";
-"groups.form.autoCreate" = "Add to my records";
-"groups.form.autoCreateHint" = "Automatically creates a personal expense when registering a shared expense";
+"groups.form.autoCreate" = "Also save to my records";
+"groups.form.autoCreateHint" = "Each group expense also shows up in your personal records";
 "groups.form.none" = "None";
 "groups.form.showDebtsInSingleCurrency" = "Single currency for debts";
 "groups.form.showDebtsInSingleCurrencyHint" = "Convert all balances to a preferred currency";
@@ -3159,9 +3159,6 @@
 "groups.settings.addMemberPrompt" = "Member name";
 "groups.settings.invite" = "Invite by link";
 "groups.settings.inviteLinkHint" = "Anyone with this link can join this group while link access is enabled. Share it only with people you trust.";
-"groups.settings.regenerateLink" = "Regenerate link";
-"groups.settings.regenerateLinkConfirm" = "The current link will stop working. Generate a new one?";
-"groups.settings.regenerateLinkDisabledHint" = "For safety, reset the invite link only before other members have joined.";
 "groups.settings.leaveGroup" = "Leave group";
 "groups.settings.leaveGroupConfirm" = "Are you sure? Your personal expenses will be kept.";
 "groups.settings.leaveGroupWithDebtWarning" = "You're leaving the group with an open balance. The other party will keep seeing that debt as pending. Continue?";

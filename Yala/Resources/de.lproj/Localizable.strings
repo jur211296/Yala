@@ -3099,8 +3099,8 @@
 "groups.form.defaultAccount" = "Konto für Einträge";
 "groups.form.defaultAccountHint" = "Konto, auf dem Gruppenausgaben verbucht werden";
 "groups.form.defaultAccountPickerHint" = "Wähle ein Konto pro Währung für deine Einträge";
-"groups.form.autoCreate" = "Zu meinen Einträgen hinzufügen";
-"groups.form.autoCreateHint" = "Erstellt automatisch eine persönliche Ausgabe bei gemeinsamen Ausgaben";
+"groups.form.autoCreate" = "Auch in meinen Einträgen erfassen";
+"groups.form.autoCreateHint" = "Jede Gruppenausgabe erscheint auch in Ihren persönlichen Einträgen";
 "groups.form.none" = "Keine";
 "groups.form.showDebtsInSingleCurrency" = "Einheitliche Währung für Schulden";
 "groups.form.showDebtsInSingleCurrencyHint" = "Alle Salden in eine bevorzugte Währung umrechnen";
@@ -3113,9 +3113,6 @@
 "groups.settings.addMemberPrompt" = "Name des Mitglieds";
 "groups.settings.invite" = "Per Link einladen";
 "groups.settings.inviteLinkHint" = "Jede Person mit diesem Link kann der Gruppe beitreten, solange der Linkzugriff aktiv ist. Teile ihn nur mit Personen, denen du vertraust.";
-"groups.settings.regenerateLink" = "Link neu generieren";
-"groups.settings.regenerateLinkConfirm" = "Der aktuelle Link funktioniert dann nicht mehr. Einen neuen generieren?";
-"groups.settings.regenerateLinkDisabledHint" = "Setze den Einladungslink aus Sicherheitsgründen nur zurück, bevor andere Mitglieder beigetreten sind.";
 "groups.settings.leaveGroup" = "Gruppe verlassen";
 "groups.settings.leaveGroupConfirm" = "Bist du sicher? Deine persönlichen Ausgaben bleiben erhalten.";
 "groups.settings.leaveGroupWithDebtWarning" = "Du verlässt die Gruppe mit einem offenen Saldo. Die andere Partei sieht diese Schuld weiterhin als ausstehend. Fortfahren?";

@@ -3100,8 +3100,8 @@
 "groups.form.defaultAccount" = "Compte pour les registres";
 "groups.form.defaultAccountHint" = "Compte où les dépenses du groupe sont enregistrées";
 "groups.form.defaultAccountPickerHint" = "Choisis un compte par devise pour tes registres";
-"groups.form.autoCreate" = "Ajouter à mes registres";
-"groups.form.autoCreateHint" = "Crée automatiquement une dépense personnelle lors de l'enregistrement d'une dépense partagée";
+"groups.form.autoCreate" = "Enregistrer aussi dans mes registres";
+"groups.form.autoCreateHint" = "Chaque dépense du groupe apparaît aussi dans vos registres personnels";
 "groups.form.none" = "Aucun";
 "groups.form.showDebtsInSingleCurrency" = "Devise unique pour les dettes";
 "groups.form.showDebtsInSingleCurrencyHint" = "Convertir tous les soldes dans une devise préférée";
@@ -3114,9 +3114,6 @@
 "groups.settings.addMemberPrompt" = "Nom du membre";
 "groups.settings.invite" = "Inviter par lien";
 "groups.settings.inviteLinkHint" = "Toute personne disposant de ce lien peut rejoindre le groupe tant que l'accès par lien est activé. Ne le partagez qu'avec des personnes de confiance.";
-"groups.settings.regenerateLink" = "Régénérer le lien";
-"groups.settings.regenerateLinkConfirm" = "Le lien actuel cessera de fonctionner. En générer un nouveau ?";
-"groups.settings.regenerateLinkDisabledHint" = "Par sécurité, réinitialisez le lien d'invitation uniquement avant que d'autres membres aient rejoint le groupe.";
 "groups.settings.leaveGroup" = "Quitter le groupe";
 "groups.settings.leaveGroupConfirm" = "Êtes-vous sûr ? Vos dépenses personnelles seront conservées.";
 "groups.settings.leaveGroupWithDebtWarning" = "Vous quittez le groupe avec un solde ouvert. L'autre partie continuera à voir cette dette comme en attente. Continuer ?";

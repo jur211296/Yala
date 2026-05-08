@@ -3101,8 +3101,8 @@
 "groups.form.defaultAccount" = "Conto per i registri";
 "groups.form.defaultAccountHint" = "Conto in cui vengono registrate le spese del gruppo";
 "groups.form.defaultAccountPickerHint" = "Scegli un conto per valuta per i tuoi registri";
-"groups.form.autoCreate" = "Aggiungi ai miei registri";
-"groups.form.autoCreateHint" = "Crea automaticamente una spesa personale quando registri una spesa condivisa";
+"groups.form.autoCreate" = "Salva anche nei miei registri";
+"groups.form.autoCreateHint" = "Ogni spesa del gruppo viene registrata anche nei tuoi registri personali";
 "groups.form.none" = "Nessuno";
 "groups.form.showDebtsInSingleCurrency" = "Valuta unica per i debiti";
 "groups.form.showDebtsInSingleCurrencyHint" = "Converti tutti i saldi in una valuta preferita";
@@ -3115,9 +3115,6 @@
 "groups.settings.addMemberPrompt" = "Nome del membro";
 "groups.settings.invite" = "Invita tramite link";
 "groups.settings.inviteLinkHint" = "Chiunque abbia questo link può unirsi al gruppo finché l'accesso tramite link è attivo. Condividilo solo con persone di cui ti fidi.";
-"groups.settings.regenerateLink" = "Rigenera link";
-"groups.settings.regenerateLinkConfirm" = "Il link attuale smetterà di funzionare. Vuoi generarne uno nuovo?";
-"groups.settings.regenerateLinkDisabledHint" = "Per sicurezza, reimposta il link di invito solo prima che altri membri si siano uniti.";
 "groups.settings.leaveGroup" = "Lascia il gruppo";
 "groups.settings.leaveGroupConfirm" = "Sei sicuro? Le tue spese personali verranno mantenute.";
 "groups.settings.leaveGroupWithDebtWarning" = "Stai lasciando il gruppo con un saldo aperto. L'altra parte continuerà a vedere quel debito come in sospeso. Continuare?";

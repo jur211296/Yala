@@ -3143,8 +3143,8 @@
 "groups.form.defaultAccount" = "Cuenta para registros";
 "groups.form.defaultAccountHint" = "Cuenta donde se registran los gastos del grupo";
 "groups.form.defaultAccountPickerHint" = "Elige una cuenta por divisa para tus registros";
-"groups.form.autoCreate" = "Agregar a mis registros";
-"groups.form.autoCreateHint" = "Crea automáticamente un gasto personal al registrar un gasto compartido";
+"groups.form.autoCreate" = "Llevar también a mis registros";
+"groups.form.autoCreateHint" = "Cada gasto del grupo se anota también en tus registros personales";
 "groups.form.none" = "Ninguna";
 "groups.form.showDebtsInSingleCurrency" = "Moneda única para deudas";
 "groups.form.showDebtsInSingleCurrencyHint" = "Convierte todos los balances a una moneda preferida";
@@ -3157,9 +3157,6 @@
 "groups.settings.addMemberPrompt" = "Nombre del miembro";
 "groups.settings.invite" = "Invitar por enlace";
 "groups.settings.inviteLinkHint" = "Cualquier persona con este enlace puede unirse al grupo mientras el acceso por enlace esté activo. Compártelo solo con personas de confianza.";
-"groups.settings.regenerateLink" = "Regenerar enlace";
-"groups.settings.regenerateLinkConfirm" = "El enlace actual dejará de funcionar. ¿Quieres generar uno nuevo?";
-"groups.settings.regenerateLinkDisabledHint" = "Por seguridad, restablece el enlace solo antes de que otras personas se hayan unido.";
 "groups.settings.leaveGroup" = "Salir del grupo";
 "groups.settings.leaveGroupConfirm" = "¿Seguro que quieres salir? Tus gastos personales se mantendrán.";
 "groups.settings.leaveGroupWithDebtWarning" = "Saldrás del grupo con un saldo pendiente. La otra parte seguirá viendo esa deuda como pendiente. ¿Continuar?";

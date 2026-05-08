@@ -3102,8 +3102,8 @@
 "groups.form.defaultAccount" = "記録用の口座";
 "groups.form.defaultAccountHint" = "グループの支出が記録される口座";
 "groups.form.defaultAccountPickerHint" = "記録用に通貨ごとの口座を選択してください";
-"groups.form.autoCreate" = "個人記録に追加";
-"groups.form.autoCreateHint" = "シェア支出を登録すると個人の支出を自動作成します";
+"groups.form.autoCreate" = "自分の記録にも追加";
+"groups.form.autoCreateHint" = "グループの支出は、自分の個人記録にも記録されます";
 "groups.form.none" = "なし";
 "groups.form.showDebtsInSingleCurrency" = "貸し借りを単一通貨で表示";
 "groups.form.showDebtsInSingleCurrencyHint" = "すべての残高を優先通貨に変換します";
@@ -3116,9 +3116,6 @@
 "groups.settings.addMemberPrompt" = "メンバー名";
 "groups.settings.invite" = "リンクで招待";
 "groups.settings.inviteLinkHint" = "リンクアクセスが有効な間は、このリンクを持つ人なら誰でもグループに参加できます。信頼できる人にだけ共有してください。";
-"groups.settings.regenerateLink" = "リンクを再生成";
-"groups.settings.regenerateLinkConfirm" = "現在のリンクは無効になります。新しく生成しますか？";
-"groups.settings.regenerateLinkDisabledHint" = "安全のため、招待リンクのリセットは他のメンバーが参加する前だけにしてください。";
 "groups.settings.leaveGroup" = "グループを退出";
 "groups.settings.leaveGroupConfirm" = "本当に退出しますか？個人の支出は残ります。";
 "groups.settings.leaveGroupWithDebtWarning" = "未精算の残高があるまま、グループから退出します。相手側にはこの債務が引き続き未精算として表示されます。続けますか？";

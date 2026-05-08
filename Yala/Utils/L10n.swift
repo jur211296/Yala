@@ -1688,9 +1688,6 @@ enum L10n {
             static var addMemberPrompt: String { ls("groups.settings.addMemberPrompt", comment: "") }
             static var invite: String { ls("groups.settings.invite", comment: "") }
             static var inviteLinkHint: String { ls("groups.settings.inviteLinkHint", comment: "") }
-            static var regenerateLink: String { ls("groups.settings.regenerateLink", comment: "") }
-            static var regenerateLinkConfirm: String { ls("groups.settings.regenerateLinkConfirm", comment: "") }
-            static var regenerateLinkDisabledHint: String { ls("groups.settings.regenerateLinkDisabledHint", comment: "") }
             static var leaveGroup: String { ls("groups.settings.leaveGroup", comment: "") }
             static var leaveGroupConfirm: String { ls("groups.settings.leaveGroupConfirm", comment: "") }
             static var leaveGroupWithDebtWarning: String { ls("groups.settings.leaveGroupWithDebtWarning", comment: "") }

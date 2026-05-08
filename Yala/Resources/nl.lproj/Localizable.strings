@@ -3102,8 +3102,8 @@
 "groups.form.defaultAccount" = "Rekening voor boekingen";
 "groups.form.defaultAccountHint" = "Rekening waarop groepsuitgaven worden geboekt";
 "groups.form.defaultAccountPickerHint" = "Kies per valuta een rekening voor je boekingen";
-"groups.form.autoCreate" = "Toevoegen aan mijn boekingen";
-"groups.form.autoCreateHint" = "Maakt automatisch een persoonlijke uitgave aan bij het boeken van een gedeelde uitgave";
+"groups.form.autoCreate" = "Ook in mijn boekingen opnemen";
+"groups.form.autoCreateHint" = "Elke uitgave van de groep wordt ook in je persoonlijke boekingen genoteerd";
 "groups.form.none" = "Geen";
 "groups.form.showDebtsInSingleCurrency" = "Eén valuta voor schulden";
 "groups.form.showDebtsInSingleCurrencyHint" = "Zet alle saldi om naar een voorkeursvaluta";
@@ -3116,9 +3116,6 @@
 "groups.settings.addMemberPrompt" = "Naam van lid";
 "groups.settings.invite" = "Uitnodigen via link";
 "groups.settings.inviteLinkHint" = "Iedereen met deze link kan lid worden van de groep zolang linktoegang actief is. Deel hem alleen met mensen die je vertrouwt.";
-"groups.settings.regenerateLink" = "Link opnieuw genereren";
-"groups.settings.regenerateLinkConfirm" = "De huidige link werkt niet meer. Een nieuwe genereren?";
-"groups.settings.regenerateLinkDisabledHint" = "Reset de uitnodigingslink voor de veiligheid alleen voordat andere leden zijn toegetreden.";
 "groups.settings.leaveGroup" = "Groep verlaten";
 "groups.settings.leaveGroupConfirm" = "Weet je het zeker? Je persoonlijke uitgaven blijven behouden.";
 "groups.settings.leaveGroupWithDebtWarning" = "Je verlaat de groep met een openstaand saldo. De andere partij blijft die schuld als openstaand zien. Doorgaan?";

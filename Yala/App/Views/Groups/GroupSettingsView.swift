@@ -38,8 +38,6 @@ struct GroupSettingsView: View {
     @State private var selectedCurrency: CurrencyCode = .pen
     @State private var showCurrencyPicker: Bool = false
     @State private var defaultSplitType: SplitType = .equal
-    @State private var showRegenerateLinkConfirm = false
-    @State private var isRegeneratingLink = false
     @State private var personalAutoCreate: Bool = true
     @State private var groupCurrencies: [String] = []
     @State private var accountPrefs: [String: String] = [:]   // currencyCode → accountName
@@ -139,17 +137,6 @@ struct GroupSettingsView: View {
                 } else {
                     Text(L10n.Groups.Member.removeConfirm)
                 }
-            }
-            .confirmationDialog(
-                L10n.Groups.Settings.regenerateLink,
-                isPresented: $showRegenerateLinkConfirm,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.Groups.Settings.regenerateLink, role: .destructive) {
-                    Task { await regenerateShareLink() }
-                }
-            } message: {
-                Text(L10n.Groups.Settings.regenerateLinkConfirm)
             }
             .confirmationDialog(
                 L10n.Groups.Settings.leaveGroup,
@@ -434,50 +421,9 @@ struct GroupSettingsView: View {
                         .padding(.horizontal, DS.FormRow.paddingH)
                         .padding(.bottom, DS.Spacing.sm)
 
-                    // Regenerate link (visible if a share exists in CloudKit)
-                    if hasExistingShare {
-                        Divider()
-                        Button {
-                            showRegenerateLinkConfirm = true
-                        } label: {
-                            HStack(spacing: DS.Spacing.md) {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                                    .font(DS.Typography.title2)
-                                    .foregroundStyle(DS.Semantic.errorForeground)
-
-                                Text(L10n.Groups.Settings.regenerateLink)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(DS.Semantic.errorForeground)
-
-                                Spacer()
-
-                                if isRegeneratingLink {
-                                    ProgressView()
-                                }
-                            }
-                            .padding(.horizontal, DS.FormRow.paddingH)
-                            .padding(.vertical, DS.FormRow.paddingV)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(isRegeneratingLink || !canRegenerateInviteLink)
-
-                        if !canRegenerateInviteLink {
-                            Text(L10n.Groups.Settings.regenerateLinkDisabledHint)
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, DS.FormRow.paddingH)
-                                .padding(.bottom, DS.Spacing.sm)
-                        }
-                    }
                 }
             }
         }
-    }
-
-    private var canRegenerateInviteLink: Bool {
-        viewModel.activeMembers.count <= 1
     }
 
     // MARK: - A3: Pending Approval Actions
@@ -858,33 +804,6 @@ struct GroupSettingsView: View {
             }
         } catch {
             isCreatingShare = false
-            shareErrorMessage = error.localizedDescription
-            showShareError = true
-        }
-    }
-
-    private func regenerateShareLink() async {
-        guard group.isOwner else { return }
-        guard !isRegeneratingLink else { return }
-        guard canRegenerateInviteLink else {
-            shareErrorMessage = L10n.Groups.Settings.regenerateLinkDisabledHint
-            showShareError = true
-            return
-        }
-        isRegeneratingLink = true
-        do {
-            try await SplitZoneManager(syncManager: .shared).deleteShare(for: group)
-            shareURL = nil
-            let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
-            if let ckURL {
-                shareURL = buildBrandedInviteURL(from: ckURL)
-            }
-            isRegeneratingLink = false
-            if shareURL != nil {
-                showShareSheet = true
-            }
-        } catch {
-            isRegeneratingLink = false
             shareErrorMessage = error.localizedDescription
             showShareError = true
         }

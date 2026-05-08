@@ -3102,8 +3102,8 @@
 "groups.form.defaultAccount" = "记录账户";
 "groups.form.defaultAccountHint" = "群组支出记录到的账户";
 "groups.form.defaultAccountPickerHint" = "为每种货币选一个账户用于你的记录";
-"groups.form.autoCreate" = "添加到我的记录";
-"groups.form.autoCreateHint" = "登记共享支出时自动创建一笔个人支出";
+"groups.form.autoCreate" = "也添加到我的记录";
+"groups.form.autoCreateHint" = "群组的每笔支出也会记入你的个人记录";
 "groups.form.none" = "无";
 "groups.form.showDebtsInSingleCurrency" = "债务用单一货币";
 "groups.form.showDebtsInSingleCurrencyHint" = "把所有余额转换为首选货币";
@@ -3116,9 +3116,6 @@
 "groups.settings.addMemberPrompt" = "成员名称";
 "groups.settings.invite" = "通过链接邀请";
 "groups.settings.inviteLinkHint" = "链接访问开启时，任何拥有此链接的人都可以加入群组。请只分享给你信任的人。";
-"groups.settings.regenerateLink" = "重新生成链接";
-"groups.settings.regenerateLinkConfirm" = "当前链接将失效。要生成新链接吗?";
-"groups.settings.regenerateLinkDisabledHint" = "为安全起见，请只在其他成员加入前重置邀请链接。";
 "groups.settings.leaveGroup" = "离开群组";
 "groups.settings.leaveGroupConfirm" = "你确定吗?你的个人支出将被保留。";
 "groups.settings.leaveGroupWithDebtWarning" = "你将带着未结清的余额离开群组。对方仍会看到这笔欠款处于未结清状态。要继续吗？";

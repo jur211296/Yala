@@ -3102,8 +3102,8 @@
 "groups.form.defaultAccount" = "Konto dla wpisów";
 "groups.form.defaultAccountHint" = "Konto, na którym zapisywane są wydatki grupy";
 "groups.form.defaultAccountPickerHint" = "Wybierz konto na walutę dla swoich wpisów";
-"groups.form.autoCreate" = "Dodaj do moich wpisów";
-"groups.form.autoCreateHint" = "Automatycznie tworzy osobisty wydatek przy rejestracji wydatku współdzielonego";
+"groups.form.autoCreate" = "Zapisz także w moich wpisach";
+"groups.form.autoCreateHint" = "Każdy wydatek grupy jest zapisywany także w Twoich osobistych wpisach";
 "groups.form.none" = "Brak";
 "groups.form.showDebtsInSingleCurrency" = "Jedna waluta dla długów";
 "groups.form.showDebtsInSingleCurrencyHint" = "Konwertuj wszystkie salda na preferowaną walutę";
@@ -3116,9 +3116,6 @@
 "groups.settings.addMemberPrompt" = "Imię członka";
 "groups.settings.invite" = "Zaproś linkiem";
 "groups.settings.inviteLinkHint" = "Każda osoba z tym linkiem może dołączyć do grupy, dopóki dostęp przez link jest włączony. Udostępniaj go tylko zaufanym osobom.";
-"groups.settings.regenerateLink" = "Wygeneruj nowy link";
-"groups.settings.regenerateLinkConfirm" = "Bieżący link przestanie działać. Wygenerować nowy?";
-"groups.settings.regenerateLinkDisabledHint" = "Dla bezpieczeństwa resetuj link zaproszenia tylko zanim dołączą inni członkowie.";
 "groups.settings.leaveGroup" = "Opuść grupę";
 "groups.settings.leaveGroupConfirm" = "Na pewno? Twoje osobiste wydatki zostaną zachowane.";
 "groups.settings.leaveGroupWithDebtWarning" = "Opuszczasz grupę z otwartym saldem. Druga strona nadal będzie widzieć ten dług jako oczekujący. Kontynuować?";
