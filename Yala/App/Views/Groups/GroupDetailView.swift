@@ -125,17 +125,14 @@ struct GroupDetailView: View {
                     }
                 }
 
-                // #28: header con identidad visual del grupo (icono coloreado + nombre).
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: DS.Spacing.sm) {
-                        ZStack {
-                            Circle()
-                                .fill(Color(hex: group.colorHex))
-                                .frame(width: 28, height: 28)
-                            Image(systemName: group.iconName)
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.white)
-                        }
+                        GroupIconBadge(
+                            colorHex: group.colorHex,
+                            iconName: group.iconName,
+                            size: 28,
+                            iconFont: DS.Typography.captionSmall
+                        )
                         Text(group.name)
                             .font(.headline)
                             .lineLimit(1)

@@ -25,7 +25,8 @@ struct GroupsContainerView: View {
     @State private var showNotificationPrompt = false
     @State private var showPermissionDeniedAlert = false
     @State private var showNudgeBanner = false
-    /// #26: grupo seleccionado al tap card .rejected → alert "¿Salir del grupo?".
+    /// Drives el alert "¿Salir del grupo?" cuando un current user `.rejected`
+    /// toca su card. Single-modal global vs N alerts montados por card.
     @State private var rejectedGroupPendingLeave: SplitGroup?
 
     // MARK: - Body
@@ -79,17 +80,7 @@ struct GroupsContainerView: View {
 
                             // Group cards
                             ForEach(viewModel.filteredGroups, id: \.id) { group in
-                                GroupCardView(
-                                    group: group,
-                                    memberCount: viewModel.memberCount(for: group),
-                                    pendingCount: viewModel.pendingMemberCount(for: group),
-                                    balance: viewModel.currentUserBalance(for: group),
-                                    displayMode: GroupCardDisplayLogic.displayMode(
-                                        memberStatus: viewModel.currentMemberStatus(for: group)
-                                    ),
-                                    action: { viewModel.openDetail(for: group) },
-                                    onRejectedTap: { rejectedGroupPendingLeave = group }
-                                )
+                                groupCardRow(group: group)
                             }
 
                             // Archived groups
@@ -180,8 +171,6 @@ struct GroupsContainerView: View {
             } message: {
                 Text(L10n.Notifications.permissionMessage)
             }
-            // #26: alert "¿Salir del grupo?" cuando user con status .rejected
-            // tap su card en lista. leaveGroup limpia local + remote.
             .alert(
                 L10n.Groups.Card.leaveGroupAlertTitle,
                 isPresented: Binding(
@@ -214,6 +203,20 @@ struct GroupsContainerView: View {
     }
 
     // MARK: - Helpers
+
+    private func groupCardRow(group: SplitGroup) -> some View {
+        GroupCardView(
+            group: group,
+            memberCount: viewModel.memberCount(for: group),
+            pendingCount: viewModel.pendingMemberCount(for: group),
+            balance: viewModel.currentUserBalance(for: group),
+            displayMode: GroupCardDisplayLogic.displayMode(
+                memberStatus: viewModel.currentMemberStatus(for: group)
+            ),
+            action: { viewModel.openDetail(for: group) },
+            onRejectedTap: { rejectedGroupPendingLeave = group }
+        )
+    }
 
     private func evaluateNudge() {
         NudgeService.shared.evaluate()
@@ -303,18 +306,8 @@ struct GroupsContainerView: View {
 
             if viewModel.showArchived {
                 ForEach(viewModel.archivedGroups, id: \.id) { group in
-                    GroupCardView(
-                        group: group,
-                        memberCount: viewModel.memberCount(for: group),
-                        pendingCount: viewModel.pendingMemberCount(for: group),
-                        balance: viewModel.currentUserBalance(for: group),
-                        displayMode: GroupCardDisplayLogic.displayMode(
-                            memberStatus: viewModel.currentMemberStatus(for: group)
-                        ),
-                        action: { viewModel.openDetail(for: group) },
-                        onRejectedTap: { rejectedGroupPendingLeave = group }
-                    )
-                    .opacity(0.6)
+                    groupCardRow(group: group)
+                        .opacity(0.6)
                 }
             }
         }

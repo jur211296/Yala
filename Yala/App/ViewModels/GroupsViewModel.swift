@@ -142,8 +142,8 @@ final class GroupsViewModel {
         return membersByGroup[group.cloudKitZoneID]?.filter(\.isPendingApproval).count ?? 0
     }
 
-    /// #26: status del current user en el grupo. Drives display mode de
-    /// `GroupCardView` (chip pending/rejected vs balance normal).
+    /// Status del current user en el grupo. Drives `GroupCardView.displayMode`
+    /// para mostrar chip pending/rejected en lugar del balance trailing.
     func currentMemberStatus(for group: SplitGroup) -> SplitMemberStatus? {
         membersByGroup[group.cloudKitZoneID]?
             .first(where: { $0.isCurrentUser })?

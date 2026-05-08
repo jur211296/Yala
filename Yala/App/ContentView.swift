@@ -45,8 +45,8 @@ struct ContentView: View {
     @AppStorage("lastSeenAppVersion") private var lastSeenAppVersion: String = ""
     @State private var isInitialCheckDone: Bool = false
     @State private var showGroupInviteOnboarding: Bool = false
-    /// #22: metadata branded del invite (nombre/icono/color del grupo) para
-    /// personalizar el banner de "Unirme a [grupo]" en GroupInviteOnboardingView.
+    /// Metadata branded del invite (nombre/icono/color del grupo) para
+    /// personalizar el welcome de `GroupInviteOnboardingView`.
     @State private var pendingInviteMetadata: InviteMetadata?
     @State private var showGroupReconnect: Bool = false
     @State private var showFullModeActivation: Bool = false

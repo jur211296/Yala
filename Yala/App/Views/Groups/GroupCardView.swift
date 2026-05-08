@@ -13,11 +13,11 @@ struct GroupCardView: View {
     let memberCount: Int
     let pendingCount: Int
     let balance: MemberBalance?
-    /// #26: drives chip pending/rejected en lugar de balance.
+    /// Drives chip pending/rejected en lugar del balance trailing.
     let displayMode: GroupCardDisplayMode
     let action: () -> Void
-    /// #26: callback cuando current user está rejected y tap card → padre
-    /// muestra alert "¿Salir del grupo?".
+    /// Disparado cuando current user `.rejected` toca la card. El padre
+    /// presenta el alert "¿Salir del grupo?" (un solo modal global).
     var onRejectedTap: (() -> Void)?
 
     @Environment(\.yalaTheme) private var theme
@@ -74,7 +74,6 @@ struct GroupCardView: View {
 
                 Spacer()
 
-                // #26: trailing area según displayMode.
                 trailingArea
             }
             .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
@@ -90,18 +89,18 @@ struct GroupCardView: View {
     private var trailingArea: some View {
         switch displayMode {
         case .pendingApproval:
-            membershipChip(
+            StatusChip(
                 icon: "clock.arrow.circlepath",
                 text: L10n.Groups.Card.pendingApprovalChip,
-                fg: DS.Semantic.warningForeground,
-                bg: DS.Semantic.warningBackground
+                foregroundColor: DS.Semantic.warningForeground,
+                backgroundColor: DS.Semantic.warningBackground
             )
         case .rejected:
-            membershipChip(
+            StatusChip(
                 icon: "xmark.circle.fill",
                 text: L10n.Groups.Card.rejectedChip,
-                fg: DS.Semantic.errorForeground,
-                bg: DS.Semantic.errorBackground
+                foregroundColor: DS.Semantic.errorForeground,
+                backgroundColor: DS.Semantic.errorBackground
             )
         case .active:
             if let balance {
@@ -118,23 +117,11 @@ struct GroupCardView: View {
         }
     }
 
-    private func membershipChip(icon: String, text: String, fg: Color, bg: Color) -> some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Image(systemName: icon)
-                .font(DS.Typography.captionSmall)
-            Text(text)
-                .font(DS.Typography.captionSmall)
-        }
-        .foregroundStyle(fg)
-        .padding(.horizontal, DS.Spacing.sm)
-        .padding(.vertical, DS.Spacing.xxs)
-        .background(Capsule().fill(bg))
-    }
-
     private func handleTap() {
         switch displayMode {
         case .pendingApproval:
-            // No-op: card disabled via `.disabled(...)`. Defensa-en-profundidad.
+            // Defensa-en-profundidad: la card está `.disabled` para pending,
+            // pero si el modifier no aplica (ej. fallback de a11y), no abrir detail.
             break
         case .rejected:
             onRejectedTap?()
@@ -164,15 +151,7 @@ struct GroupCardView: View {
     // MARK: - Components
 
     private var groupIcon: some View {
-        ZStack {
-            Circle()
-                .fill(Color(hex: group.colorHex))
-                .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
-
-            Image(systemName: group.iconName)
-                .font(DS.Typography.label)
-                .foregroundStyle(.white)
-        }
+        GroupIconBadge(colorHex: group.colorHex, iconName: group.iconName)
     }
 
     // MARK: - Helpers

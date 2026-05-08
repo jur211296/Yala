@@ -51,6 +51,12 @@ final class SplitMember {
         isActive
     }
 
+    /// Member que aparece en listas activas de UI: activos + pending approval.
+    /// Excluye estados terminales (left/removed/rejected) que son ruido sin acción posible.
+    var isVisible: Bool {
+        isActive || isPendingApproval
+    }
+
     var isAdmin: Bool {
         isGroupOwner || role == "admin"
     }

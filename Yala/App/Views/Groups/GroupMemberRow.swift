@@ -97,9 +97,9 @@ struct GroupMemberRow: View {
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
-        // #20-bis: pending mantiene opacity 1.0 para que botones aprobar/rechazar
-        // sean prominentes. Solo estados no-actionable (left/removed/rejected) se dimean.
-        .opacity(member.isActive || member.isPendingApproval ? 1 : 0.72)
+        // Pending mantiene opacity 1.0 para que los botones inline aprobar/rechazar
+        // del admin sean visibles. Solo estados terminales se dimean.
+        .opacity(member.isVisible ? 1 : 0.72)
     }
 
     // MARK: - Components

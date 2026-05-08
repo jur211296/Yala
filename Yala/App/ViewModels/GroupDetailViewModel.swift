@@ -53,12 +53,10 @@ final class GroupDetailViewModel {
         members.filter { $0.isPendingApproval }
     }
 
-    /// #27: members visibles en GroupSettingsView lista de miembros. Filtra
-    /// `.left`/`.removed`/`.rejected` (estados terminales no actionable). El
-    /// admin sigue viendo `.pendingApproval` para usar los botones inline
-    /// Aprobar/Rechazar.
+    /// Members visibles en GroupSettingsView (activos + pending approval).
+    /// Estados terminales (left/removed/rejected) se ocultan vía `isVisible`.
     var visibleMembers: [SplitMember] {
-        members.filter { $0.isActive || $0.isPendingApproval }
+        members.filter(\.isVisible)
     }
 
     // MARK: - UI State

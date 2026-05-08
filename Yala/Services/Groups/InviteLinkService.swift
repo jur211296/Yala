@@ -90,18 +90,30 @@ enum InviteLinkService {
 
     // MARK: - Extract Metadata
 
+    /// Metadata branded del invite link (parámetros n/i/c/m del URL). Usada
+    /// para personalizar el banner de invitación con identidad del grupo.
+    struct BrandedMetadata: Equatable, Sendable {
+        let name: String?
+        let icon: String?
+        let color: String?
+        let members: [String]?
+
+        nonisolated static let empty = BrandedMetadata(name: nil, icon: nil, color: nil, members: nil)
+    }
+
     /// Extrae metadata del grupo desde un invite URL branded (params n, i, c, m).
-    static func extractMetadata(from url: URL) -> (name: String?, icon: String?, color: String?, members: [String]?) {
+    static func extractMetadata(from url: URL) -> BrandedMetadata {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            return (nil, nil, nil, nil)
+            return .empty
         }
         let items = components.queryItems ?? []
-        let name = items.first(where: { $0.name == "n" })?.value
-        let icon = items.first(where: { $0.name == "i" })?.value
-        let color = items.first(where: { $0.name == "c" })?.value
         let membersRaw = items.first(where: { $0.name == "m" })?.value
-        let members = membersRaw?.split(separator: ",").map(String.init)
-        return (name, icon, color, members)
+        return BrandedMetadata(
+            name: items.first(where: { $0.name == "n" })?.value,
+            icon: items.first(where: { $0.name == "i" })?.value,
+            color: items.first(where: { $0.name == "c" })?.value,
+            members: membersRaw?.split(separator: ",").map(String.init)
+        )
     }
 
     // MARK: - Check

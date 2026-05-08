@@ -49,8 +49,9 @@ final class AppBootstrapper {
     private(set) var isInitialized = false
     /// Invite share URL buffered before bootstrap completes. Drained inside bootstrap().
     var deferredInviteShareURL: URL?
-    /// #22: branded metadata (n/i/c/m) capturada cuando el invite llega antes de bootstrap.
-    var deferredInviteBrandedMetadata: (name: String?, icon: String?, color: String?, members: [String]?) = (nil, nil, nil, nil)
+    /// Branded metadata del invite (n/i/c/m del URL) capturada cuando el invite
+    /// llega antes de que bootstrap termine. Drenada junto con `deferredInviteShareURL`.
+    var deferredInviteBrandedMetadata: InviteLinkService.BrandedMetadata = .empty
     private var subscriptionCheckTask: Task<Void, Never>?
     private var remoteChangeTask: Task<Void, Never>?
     private var remoteChangeLeadingFired = false
@@ -225,7 +226,7 @@ final class AppBootstrapper {
         if let pendingShareURL = deferredInviteShareURL {
             deferredInviteShareURL = nil
             let pendingBranded = deferredInviteBrandedMetadata
-            deferredInviteBrandedMetadata = (nil, nil, nil, nil)
+            deferredInviteBrandedMetadata = .empty
             Task { await acceptShareFromURL(pendingShareURL, brandedMetadata: pendingBranded) }
         }
     }
@@ -648,8 +649,6 @@ final class AppBootstrapper {
             return
         }
 
-        // #22: extraer metadata branded (n/i/c/m) del URL original para
-        // personalizar el banner de invitación con nombre/icono/color del grupo.
         let brandedMetadata = InviteLinkService.extractMetadata(from: url)
 
         #if DEBUG
@@ -689,11 +688,11 @@ final class AppBootstrapper {
 
     /// Acepta un CKShare a partir de su URL.
     /// A12: Comportamiento simétrico con `YalaAppDelegate.userDidAcceptCloudKitShareWith`.
-    /// #22: `brandedMetadata` lleva nombre/icono/color del grupo extraídos del URL
-    /// branded (params n/i/c/m) para personalizar el banner de invitación.
+    /// `brandedMetadata` lleva nombre/icono/color del grupo extraídos del URL
+    /// branded para personalizar el banner de invitación.
     private func acceptShareFromURL(
         _ shareURL: URL,
-        brandedMetadata: (name: String?, icon: String?, color: String?, members: [String]?) = (nil, nil, nil, nil)
+        brandedMetadata: InviteLinkService.BrandedMetadata = .empty
     ) async {
         do {
             let metadata = try await InviteLinkService.fetchShareMetadata(for: shareURL)
