@@ -55,8 +55,8 @@ struct GroupMemberRow: View {
                             Text(L10n.Groups.Member.approve)
                                 .font(DS.Typography.labelSmall)
                                 .foregroundStyle(.white)
-                                .padding(.horizontal, DS.Spacing.sm)
-                                .padding(.vertical, DS.Spacing.xxs)
+                                .padding(.horizontal, DS.Spacing.md)
+                                .padding(.vertical, DS.Spacing.sm)
                                 .background(.thAccent, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
                         }
                         .buttonStyle(.plain)
@@ -65,8 +65,8 @@ struct GroupMemberRow: View {
                             Text(L10n.Groups.Member.reject)
                                 .font(DS.Typography.labelSmall)
                                 .foregroundStyle(DS.Semantic.errorForeground)
-                                .padding(.horizontal, DS.Spacing.sm)
-                                .padding(.vertical, DS.Spacing.xxs)
+                                .padding(.horizontal, DS.Spacing.md)
+                                .padding(.vertical, DS.Spacing.sm)
                                 .background(DS.Semantic.errorBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
                         }
                         .buttonStyle(.plain)
@@ -97,7 +97,9 @@ struct GroupMemberRow: View {
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
-        .opacity(member.isActive ? 1 : 0.72)
+        // #20-bis: pending mantiene opacity 1.0 para que botones aprobar/rechazar
+        // sean prominentes. Solo estados no-actionable (left/removed/rejected) se dimean.
+        .opacity(member.isActive || member.isPendingApproval ? 1 : 0.72)
     }
 
     // MARK: - Components

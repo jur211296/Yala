@@ -31,15 +31,22 @@ struct GroupCardView: View {
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
-                    Text(L10n.Groups.Member.activeCount(memberCount))
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(L10n.Groups.Member.activeCount(memberCount))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
 
-                    if pendingCount > 0 {
-                        Text(L10n.Groups.Member.pendingCount(pendingCount))
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(DS.Semantic.warningForeground)
+                        if pendingCount > 0 {
+                            Text("·")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                            Text(L10n.Groups.Member.pendingCount(pendingCount))
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(DS.Semantic.warningForeground)
+                        }
                     }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 }
 
                 Spacer()

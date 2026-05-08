@@ -21,7 +21,15 @@ struct GroupInviteOnboardingView: View {
     @State private var currentStep: Int = 1
     @State private var isProcessing: Bool = false
 
+    /// #22: metadata branded del invite (nombre/icono/color del grupo) para
+    /// personalizar el banner. Si nil → fallback al copy/visual genérico.
+    let inviteMetadata: InviteMetadata?
     var onComplete: () -> Void
+
+    init(inviteMetadata: InviteMetadata? = nil, onComplete: @escaping () -> Void) {
+        self.inviteMetadata = inviteMetadata
+        self.onComplete = onComplete
+    }
 
     var body: some View {
         NavigationStack {
@@ -53,14 +61,14 @@ struct GroupInviteOnboardingView: View {
                     .fill(groupColor)
                     .frame(width: 72, height: 72) // A11Y-DT: decorative hero icon, fixed size
 
-                Image(systemName: "person.2.fill")
+                Image(systemName: groupIcon)
                     .font(.system(size: 32)) // A11Y-DT: decorative icon inside circle
                     .foregroundStyle(.white)
             }
             .glassEffect(.regular, in: Circle())
 
             VStack(spacing: DS.Spacing.sm) {
-                Text(L10n.Groups.Invite.welcome)
+                Text(welcomeTitle)
                     .font(DS.Typography.title2)
                     .multilineTextAlignment(.center)
 
@@ -255,6 +263,23 @@ struct GroupInviteOnboardingView: View {
     }
 
     private var groupColor: Color {
-        theme.accent
+        if let hex = inviteMetadata?.groupColor, !hex.isEmpty {
+            return Color(hex: hex)
+        }
+        return theme.accent
+    }
+
+    private var groupIcon: String {
+        if let icon = inviteMetadata?.groupIcon, !icon.isEmpty {
+            return icon
+        }
+        return "person.2.fill"
+    }
+
+    private var welcomeTitle: String {
+        if let name = inviteMetadata?.groupName, !name.isEmpty {
+            return L10n.Groups.Invite.welcomeWithGroup(name)
+        }
+        return L10n.Groups.Invite.welcome
     }
 }

@@ -49,6 +49,8 @@ final class AppBootstrapper {
     private(set) var isInitialized = false
     /// Invite share URL buffered before bootstrap completes. Drained inside bootstrap().
     var deferredInviteShareURL: URL?
+    /// #22: branded metadata (n/i/c/m) capturada cuando el invite llega antes de bootstrap.
+    var deferredInviteBrandedMetadata: (name: String?, icon: String?, color: String?, members: [String]?) = (nil, nil, nil, nil)
     private var subscriptionCheckTask: Task<Void, Never>?
     private var remoteChangeTask: Task<Void, Never>?
     private var remoteChangeLeadingFired = false
@@ -222,7 +224,9 @@ final class AppBootstrapper {
         // 19. Process deferred invite link (cold launch via universal link)
         if let pendingShareURL = deferredInviteShareURL {
             deferredInviteShareURL = nil
-            Task { await acceptShareFromURL(pendingShareURL) }
+            let pendingBranded = deferredInviteBrandedMetadata
+            deferredInviteBrandedMetadata = (nil, nil, nil, nil)
+            Task { await acceptShareFromURL(pendingShareURL, brandedMetadata: pendingBranded) }
         }
     }
 
@@ -644,19 +648,24 @@ final class AppBootstrapper {
             return
         }
 
+        // #22: extraer metadata branded (n/i/c/m) del URL original para
+        // personalizar el banner de invitación con nombre/icono/color del grupo.
+        let brandedMetadata = InviteLinkService.extractMetadata(from: url)
+
         #if DEBUG
-        print("AppBootstrapper: Invite link received, CKShare URL: \(shareURL.absoluteString)")
+        print("AppBootstrapper: Invite link received, CKShare URL: \(shareURL.absoluteString) brandedName=\(brandedMetadata.name ?? "nil")")
         #endif
 
         if !isInitialized {
             deferredInviteShareURL = shareURL
+            deferredInviteBrandedMetadata = brandedMetadata
             #if DEBUG
             print("AppBootstrapper: Deferring invite — not yet initialized")
             #endif
             return
         }
 
-        Task { await acceptShareFromURL(shareURL) }
+        Task { await acceptShareFromURL(shareURL, brandedMetadata: brandedMetadata) }
     }
 
     /// A12: Decisión de routing para un share aceptado. Pure function — testeable.
@@ -680,13 +689,21 @@ final class AppBootstrapper {
 
     /// Acepta un CKShare a partir de su URL.
     /// A12: Comportamiento simétrico con `YalaAppDelegate.userDidAcceptCloudKitShareWith`.
-    private func acceptShareFromURL(_ shareURL: URL) async {
+    /// #22: `brandedMetadata` lleva nombre/icono/color del grupo extraídos del URL
+    /// branded (params n/i/c/m) para personalizar el banner de invitación.
+    private func acceptShareFromURL(
+        _ shareURL: URL,
+        brandedMetadata: (name: String?, icon: String?, color: String?, members: [String]?) = (nil, nil, nil, nil)
+    ) async {
         do {
             let metadata = try await InviteLinkService.fetchShareMetadata(for: shareURL)
 
             let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
             let invite = InviteMetadata(
-                groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
+                groupName: brandedMetadata.name,
+                groupIcon: brandedMetadata.icon,
+                groupColor: brandedMetadata.color,
+                groupMembers: brandedMetadata.members,
                 shareMetadata: metadata
             )
 

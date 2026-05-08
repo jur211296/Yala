@@ -45,6 +45,9 @@ struct ContentView: View {
     @AppStorage("lastSeenAppVersion") private var lastSeenAppVersion: String = ""
     @State private var isInitialCheckDone: Bool = false
     @State private var showGroupInviteOnboarding: Bool = false
+    /// #22: metadata branded del invite (nombre/icono/color del grupo) para
+    /// personalizar el banner de "Unirme a [grupo]" en GroupInviteOnboardingView.
+    @State private var pendingInviteMetadata: InviteMetadata?
     @State private var showGroupReconnect: Bool = false
     @State private var showFullModeActivation: Bool = false
     /// Inbox alert payload, driven by .contentView drain of .showInboxAlert.
@@ -275,6 +278,7 @@ struct ContentView: View {
         ))
         .modifier(GroupInviteModifier(
             showGroupInviteOnboarding: $showGroupInviteOnboarding,
+            pendingInviteMetadata: $pendingInviteMetadata,
             showGroupReconnect: $showGroupReconnect,
             hasCompletedOnboarding: $hasCompletedOnboarding,
             pendingReconnectMetadata: $pendingReconnectMetadata,
@@ -437,7 +441,8 @@ struct ContentView: View {
         case .presentWhatsNew(let features, let version):
             whatsNewData = (features: features, version: version)
             showWhatsNew = true
-        case .presentGroupInviteOnboarding:
+        case .presentGroupInviteOnboarding(let invite):
+            pendingInviteMetadata = invite
             showGroupInviteOnboarding = true
         case .presentGroupReconnect(let invite):
             pendingReconnectMetadata = invite.shareMetadata
@@ -775,6 +780,7 @@ fileprivate extension Binding where Value == Bool {
 /// Extracted to a ViewModifier to avoid type-checker complexity in ContentView body.
 private struct GroupInviteModifier: ViewModifier {
     @Binding var showGroupInviteOnboarding: Bool
+    @Binding var pendingInviteMetadata: InviteMetadata?
     @Binding var showGroupReconnect: Bool
     @Binding var hasCompletedOnboarding: Bool
     @Binding var pendingReconnectMetadata: CKShare.Metadata?
@@ -808,9 +814,10 @@ private struct GroupInviteModifier: ViewModifier {
                 Text(activeGroupSyncError ?? "")
             }
             .fullScreenCover(isPresented: $showGroupInviteOnboarding) {
-                GroupInviteOnboardingView {
+                GroupInviteOnboardingView(inviteMetadata: pendingInviteMetadata) {
                     hasCompletedOnboarding = true
                     showGroupInviteOnboarding = false
+                    pendingInviteMetadata = nil
                 }
                 .environment(SessionState.shared)
             }
