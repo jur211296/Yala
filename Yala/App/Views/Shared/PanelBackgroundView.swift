@@ -11,14 +11,14 @@ import SwiftUI
 
 struct PanelBackgroundView: View {
     @Environment(\.yalaTheme) private var theme
-    @Environment(ThemeManager.self) private var themeManager
 
     var body: some View {
         Group {
             if theme.usesMaterial {
-                AnimatedMeshBackground(
-                    variant: themeManager.translucentVariant,
-                    isLiquidGlass: themeManager.userChoice == .liquidGlass
+                LinearGradient(
+                    colors: [theme.accent.mix(with: .black, by: 0.5), .black],
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
             } else if theme.hasGradient {
                 LinearGradient(
@@ -119,3 +119,30 @@ struct AnimatedMeshBackground: View {
         )
     }
 }
+
+// MARK: - Previews
+
+#if DEBUG
+#Preview("LiquidGlass + 3 translucent backgrounds") {
+    HStack(spacing: 0) {
+        ForEach(
+            [
+                ("liquidGlass", YalaTheme.liquidGlass),
+                ("translucent", YalaTheme.translucent),
+                ("rosa", YalaTheme.translucentRosa),
+                ("teal", YalaTheme.translucentTeal),
+            ],
+            id: \.0
+        ) { name, theme in
+            ZStack {
+                PanelBackgroundView()
+                Text(name)
+                    .font(.caption2)
+                    .foregroundStyle(.white)
+            }
+            .environment(\.yalaTheme, theme)
+        }
+    }
+    .ignoresSafeArea()
+}
+#endif
