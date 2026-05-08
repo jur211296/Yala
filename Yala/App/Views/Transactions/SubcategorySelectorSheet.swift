@@ -36,8 +36,15 @@ struct SubcategorySelectorSheet: View {
                     VStack(spacing: DS.Spacing.xl) {
                     if viewModel.isEmpty {
                         YalaEmptyState(
-                            icon: "tag.slash",
-                            title: L10n.Empty.noSubcategories
+                            icon: "tag.fill",
+                            title: L10n.Empty.activateCategoriesTitle,
+                            message: L10n.Empty.activateCategoriesMessage,
+                            actionTitle: L10n.Empty.activateCategoriesAction,
+                            action: {
+                                seedCategoriesIfNeeded(in: modelContext)
+                                seedSystemGroupCategoriesIfNeeded(in: modelContext)
+                                viewModel.loadData()
+                            }
                         )
                         .frame(maxWidth: .infinity)
                         .padding(.top, DS.Spacing.xxxl)

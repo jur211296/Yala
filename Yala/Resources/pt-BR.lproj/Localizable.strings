@@ -285,6 +285,9 @@
 "empty.noAccounts" = "Ainda não há contas";
 "empty.noCategories" = "Ainda não há categorias";
 "empty.noSubcategories" = "Ainda não há subcategorias";
+"empty.activateCategoriesTitle" = "Ainda sem categorias";
+"empty.activateCategoriesMessage" = "Crie-as agora para classificar suas despesas de grupo e ver estatísticas. Você as gerenciará pelo seu perfil.";
+"empty.activateCategoriesAction" = "Criar categorias";
 
 // MARK: - Transaction
 
@@ -3086,6 +3089,7 @@
 "groups.stats.last6Months" = "6 meses";
 "groups.stats.thisYear" = "Este ano";
 "groups.stats.allTime" = "Tudo";
+"groups.stats.assignCategoriesHint" = "Atribua categorias às suas despesas para ver a distribuição por tipo.";
 "groups.form.name" = "Nome";
 "groups.form.namePlaceholder" = "Nome do grupo";
 "groups.form.currency" = "Moeda";

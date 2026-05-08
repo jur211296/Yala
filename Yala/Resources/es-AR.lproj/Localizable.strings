@@ -27,6 +27,9 @@
 "empty.noAccounts" = "Aún no tenés cuentas";
 "empty.noCategories" = "Aún no tenés categorías";
 "empty.noSubcategories" = "Aún no tenés subcategorías";
+"empty.activateCategoriesTitle" = "Aún no tenés categorías";
+"empty.activateCategoriesMessage" = "Creá las categorías ahora para clasificar tus gastos del grupo y ver estadísticas. Las vas a poder gestionar desde tu perfil.";
+"empty.activateCategoriesAction" = "Crear categorías";
 "alert.unsavedChanges" = "Tenés cambios sin guardar";
 "import.templateGeneratedMessage" = "La plantilla se generó correctamente. Ahora podés editarla y volver a esta pantalla para importarla.";
 "favorites.noFavorites" = "Aún no tenés favoritos";
@@ -342,3 +345,4 @@
 "welcome.detectedData.startFresh" = "Empezar desde cero";
 "groups.member.activeCount" = "%d personas activas";
 "groups.member.pendingCount" = "%d solicitudes pendientes";
+"groups.stats.assignCategoriesHint" = "Asigná categorías a tus gastos para ver el desglose por tipo.";

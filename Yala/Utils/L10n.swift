@@ -1629,6 +1629,9 @@ enum L10n {
             static var last6Months: String { ls("groups.stats.last6Months", comment: "") }
             static var thisYear: String { ls("groups.stats.thisYear", comment: "") }
             static var allTime: String { ls("groups.stats.allTime", comment: "") }
+            static var assignCategoriesHint: String {
+                ls("groups.stats.assignCategoriesHint", comment: "")
+            }
         }
 
         // MARK: - Bridge (A0-Bridge)
@@ -2317,6 +2320,15 @@ enum L10n {
         }
         static var accountsDescription: String {
             ls("empty.accountsDescription", comment: "")
+        }
+        static var activateCategoriesTitle: String {
+            ls("empty.activateCategoriesTitle", comment: "")
+        }
+        static var activateCategoriesMessage: String {
+            ls("empty.activateCategoriesMessage", comment: "")
+        }
+        static var activateCategoriesAction: String {
+            ls("empty.activateCategoriesAction", comment: "")
         }
     }
 

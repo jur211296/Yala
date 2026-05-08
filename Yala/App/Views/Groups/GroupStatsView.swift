@@ -35,7 +35,9 @@ struct GroupStatsView: View {
                     if !viewModel.memberSpending.isEmpty {
                         memberBarChart
                     }
-                    if !viewModel.categoryBreakdown.isEmpty {
+                    if viewModel.allUncategorized {
+                        uncategorizedHint
+                    } else if !viewModel.categoryBreakdown.isEmpty {
                         categoryPieChart
                     }
                     if viewModel.monthlyTrend.count >= 2 {
@@ -142,6 +144,24 @@ struct GroupStatsView: View {
             .frame(height: CGFloat(max(viewModel.memberSpending.count, 1)) * 44)
             .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
         }
+    }
+
+    // MARK: - Uncategorized Hint (placeholder en vez del pie chart de 1 segmento)
+
+    private var uncategorizedHint: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "chart.pie")
+                .font(DS.Typography.title2)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            Text(L10n.Groups.Stats.assignCategoriesHint)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.vertical, DS.Spacing.xl)
+        .frame(maxWidth: .infinity)
+        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
     }
 
     // MARK: - Category Pie Chart

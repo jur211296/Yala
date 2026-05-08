@@ -28,6 +28,7 @@
 "action.saveAsFavorite" = "Save as favourite";
 "action.savedAsFavorite" = "Saved as favourite";
 "empty.noFavorites" = "You don't have any favourites yet";
+"empty.activateCategoriesMessage" = "Create them now to organise your group expenses and see stats. You'll manage them from your profile.";
 "favorites.title" = "Favourite Payments";
 "favorites.new" = "New Favourite";
 "favorites.edit" = "Edit Favourite";

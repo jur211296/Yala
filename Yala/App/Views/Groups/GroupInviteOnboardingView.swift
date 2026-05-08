@@ -214,13 +214,10 @@ struct GroupInviteOnboardingView: View {
         seedCategoriesIfNeeded(in: modelContext)
         seedSystemGroupCategoriesIfNeeded(in: modelContext)
 
-        // 5. Create "General" account if none exists
-        createGeneralAccountIfNeeded(currency: currency)
-
-        // 6. Create default notifications (uses existing service — idempotent)
+        // 5. Create default notifications (uses existing service — idempotent)
         NotificationService.shared.seedDefaultNotificationsIfNeeded(context: modelContext)
 
-        // 7. Save
+        // 6. Save
         do {
             try modelContext.save()
         } catch {
@@ -229,10 +226,10 @@ struct GroupInviteOnboardingView: View {
             #endif
         }
 
-        // 8. Signal other devices
+        // 7. Signal other devices
         PreferenceSyncService.shared.signalOnboardingCompleted()
 
-        // 8.5. Propagate the real displayName to the SplitMember already created
+        // 7.5. Propagate the real displayName to the SplitMember already created
         // during share acceptance (avoids "Usuario" appearing to other members until
         // some unrelated update triggers sync).
         Task {
@@ -245,7 +242,7 @@ struct GroupInviteOnboardingView: View {
             }
         }
 
-        // 9. Track telemetry
+        // 8. Track telemetry
         TelemetryService.track(.onboardingCompleted, parameters: [
             "mode": "groupInvite",
         ])
@@ -255,29 +252,6 @@ struct GroupInviteOnboardingView: View {
         guard let group = SplitSyncManager.shared.mostRecentGroup(),
               let code = CurrencyCode(rawValue: group.currencyCode) else { return nil }
         return code
-    }
-
-    private func createGeneralAccountIfNeeded(currency: CurrencyCode) {
-        let descriptor = FetchDescriptor<Account>()
-        let existingCount: Int
-        do {
-            existingCount = try modelContext.fetchCount(descriptor)
-        } catch {
-            #if DEBUG
-            print("GroupInviteOnboardingView: Error fetching accounts: \(error)")
-            #endif
-            return
-        }
-        guard existingCount == 0 else { return }
-
-        let account = Account(
-            name: L10n.Account.AccountType.general,
-            currencyCode: currency.rawValue,
-            colorHex: AppConstants.defaultColorHex,
-            iconName: "banknote.fill",
-            type: AccountType.general.rawValue
-        )
-        modelContext.insert(account)
     }
 
     private var groupColor: Color {

@@ -84,6 +84,14 @@ final class GroupStatsViewModel {
     private(set) var monthlyTrend: [GroupMonthlyTrend] = []
     var selectedPeriod: GroupStatsPeriod = .thisMonth
 
+    /// True cuando el desglose tiene un único bucket "Sin categoría" (todos los
+    /// gastos sin clasificar). El view muestra un hint explicativo en vez del
+    /// pie chart de un solo segmento.
+    var allUncategorized: Bool {
+        categoryBreakdown.count == 1
+            && categoryBreakdown[0].subcategoryName == L10n.Groups.Stats.uncategorized
+    }
+
     // MARK: - Private
 
     private var allExpenses: [SplitExpense] = []

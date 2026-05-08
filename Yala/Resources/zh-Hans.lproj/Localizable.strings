@@ -287,6 +287,9 @@
 "empty.noAccounts" = "你还没有任何账户";
 "empty.noCategories" = "你还没有任何类别";
 "empty.noSubcategories" = "你还没有任何子类别";
+"empty.activateCategoriesTitle" = "还没有分类";
+"empty.activateCategoriesMessage" = "现在创建分类来整理你的群组支出并查看统计。你可以从个人资料管理它们。";
+"empty.activateCategoriesAction" = "创建分类";
 
 // MARK: - Transaction
 
@@ -3089,6 +3092,7 @@
 "groups.stats.last6Months" = "6 个月";
 "groups.stats.thisYear" = "今年";
 "groups.stats.allTime" = "全部时间";
+"groups.stats.assignCategoriesHint" = "为你的支出分配分类即可查看按类型的明细。";
 "groups.form.name" = "名称";
 "groups.form.namePlaceholder" = "群组名称";
 "groups.form.currency" = "货币";

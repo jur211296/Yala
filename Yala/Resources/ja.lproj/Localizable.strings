@@ -287,6 +287,9 @@
 "empty.noAccounts" = "口座はまだありません";
 "empty.noCategories" = "カテゴリーはまだありません";
 "empty.noSubcategories" = "サブカテゴリーはまだありません";
+"empty.activateCategoriesTitle" = "カテゴリがまだありません";
+"empty.activateCategoriesMessage" = "今すぐ作成して、グループの支出を整理し、統計を見ましょう。プロフィールから管理できます。";
+"empty.activateCategoriesAction" = "カテゴリを作成";
 
 // MARK: - Transaction
 
@@ -3089,6 +3092,7 @@
 "groups.stats.last6Months" = "6ヶ月";
 "groups.stats.thisYear" = "今年";
 "groups.stats.allTime" = "全期間";
+"groups.stats.assignCategoriesHint" = "支出にカテゴリを割り当てると、タイプ別の内訳が表示されます。";
 "groups.form.name" = "名前";
 "groups.form.namePlaceholder" = "グループ名";
 "groups.form.currency" = "通貨";

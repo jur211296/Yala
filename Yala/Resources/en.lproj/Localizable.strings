@@ -287,6 +287,9 @@
 "empty.noAccounts" = "You don't have any accounts yet";
 "empty.noCategories" = "You don't have any categories yet";
 "empty.noSubcategories" = "You don't have any subcategories yet";
+"empty.activateCategoriesTitle" = "No categories yet";
+"empty.activateCategoriesMessage" = "Create them now to organize your group expenses and see stats. You'll manage them from your profile.";
+"empty.activateCategoriesAction" = "Create categories";
 
 // MARK: - Transaction
 
@@ -3132,6 +3135,7 @@
 "groups.stats.last6Months" = "6 months";
 "groups.stats.thisYear" = "This year";
 "groups.stats.allTime" = "All time";
+"groups.stats.assignCategoriesHint" = "Assign categories to your expenses to see the breakdown by type.";
 "groups.form.name" = "Name";
 "groups.form.namePlaceholder" = "Group name";
 "groups.form.currency" = "Currency";

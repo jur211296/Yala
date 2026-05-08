@@ -287,6 +287,9 @@
 "empty.noAccounts" = "Je hebt nog geen rekeningen";
 "empty.noCategories" = "Je hebt nog geen categorieën";
 "empty.noSubcategories" = "Je hebt nog geen subcategorieën";
+"empty.activateCategoriesTitle" = "Nog geen categorieën";
+"empty.activateCategoriesMessage" = "Maak ze nu aan om je groepsuitgaven te ordenen en statistieken te zien. Je beheert ze via je profiel.";
+"empty.activateCategoriesAction" = "Categorieën aanmaken";
 
 // MARK: - Transaction
 
@@ -3089,6 +3092,7 @@
 "groups.stats.last6Months" = "6 maanden";
 "groups.stats.thisYear" = "Dit jaar";
 "groups.stats.allTime" = "Altijd";
+"groups.stats.assignCategoriesHint" = "Wijs categorieën toe aan je uitgaven om de uitsplitsing per type te zien.";
 "groups.form.name" = "Naam";
 "groups.form.namePlaceholder" = "Naam van groep";
 "groups.form.currency" = "Valuta";
