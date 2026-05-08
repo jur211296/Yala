@@ -41,19 +41,15 @@ struct WelcomeHeroView: View {
     /// Animación canónica del carousel (rotación auto + tap en page indicator).
     private static let cardAnimation: Animation = .smooth(duration: 0.45, extraBounce: 0.15)
 
-    /// Layout del stack visual: front centrado → side (peek lateral) → back (más detrás).
-    /// Front siempre en (0,0) con scale 1; side/back se reflejan con signo según
-    /// `relative` sea +/- en `position(for:)`.
+    /// Layout del stack visual: front centrado → 1 side card a cada lado.
+    /// Front siempre en (0,0) con scale 1; side se refleja con signo según
+    /// `relative` sea +/- en `position(for:)`. Las cards a distancia ≥2 quedan
+    /// invisibles para evitar cruce/transparencia con la front card.
     private static let scaleSide: CGFloat = 0.82
-    private static let scaleBack: CGFloat = 0.7
-    private static let offsetSideX: CGFloat = 140
-    private static let offsetBackX: CGFloat = 185
+    private static let offsetSideX: CGFloat = 200
     private static let offsetSideY: CGFloat = 10
-    private static let offsetBackY: CGFloat = 16
     private static let rotationSide: Double = 5
-    private static let rotationBack: Double = 8
     private static let opacitySide: Double = 0.55
-    private static let opacityBack: Double = 0.22
 
     // MARK: State
 
@@ -106,12 +102,13 @@ struct WelcomeHeroView: View {
             heroBackground
 
             VStack(spacing: 0) {
+                Spacer(minLength: DS.Spacing.lg)
+
                 Image("YalaLogo")
                     .resizable()
                     .scaledToFit()
                     .frame(height: 64)
                     .colorMultiply(.white)
-                    .padding(.top, DS.Spacing.lg)
                     .accessibilityHidden(true)
 
                 Spacer(minLength: DS.Spacing.lg)
@@ -205,15 +202,6 @@ struct WelcomeHeroView: View {
                 rotation: Self.rotationSide * sign,
                 opacity: Self.opacitySide,
                 zIndex: 90
-            )
-        case 2:
-            return CardPosition(
-                scale: Self.scaleBack,
-                offsetX: Self.offsetBackX * sign,
-                offsetY: Self.offsetBackY,
-                rotation: Self.rotationBack * sign,
-                opacity: Self.opacityBack,
-                zIndex: 80
             )
         default:
             return .hidden
