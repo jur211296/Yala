@@ -2966,16 +2966,12 @@
 "insights.ruleMostExpensiveGroup.normal" = "%@ is je duurste groep met %d%% van de gedeelde uitgaven";
 "insights.ruleMostExpensiveGroup.considerate" = "%@ is goed voor %d%% van je gedeelde uitgaven — je belangrijkste groep";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ pakt %d%% van je gedeelde uitgaven. Dominant.";
-"insights.ruleHighDebt.normal" = "Je hebt %@ openstaand in groepsschulden";
-"insights.ruleHighDebt.considerate" = "Er staat %@ aan schulden open — handig om te checken";
-"insights.ruleHighDebt.sarcastic" = "%@ aan groepsschulden. Tijd om te innen.";
 "insights.ruleDominantSharedCategory.normal" = "%@ domineert je gedeelde uitgaven (%d%%)";
 "insights.ruleDominantSharedCategory.considerate" = "Het meeste van je gedeelde uitgaven (%d%%) zit in %@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ is %d%% van je gedeelde uitgaven. Alleen samen eten?";
 "insights.ruleSharedMoM.normal" = "Je gedeelde uitgaven gingen %@ omhoog vs de vorige periode";
 "insights.ruleSharedMoM.considerate" = "Gedeelde uitgaven %@ omhoog — kijk of er extra uitgaven waren";
 "insights.ruleSharedMoM.sarcastic" = "Gedeelde uitgaven +%@. Wat vierde je?";
-"insights.tipHighDebt" = "Bekijk je groepssaldi en stuur herinneringen";
 // Tone & Focus settings
 "insights.tone.normal" = "Normaal";
 "insights.tone.considerate" = "Voorzichtig";

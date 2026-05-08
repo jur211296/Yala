@@ -2966,16 +2966,12 @@
 "insights.ruleMostExpensiveGroup.normal" = "%@はシェア支出の%d%%を占める最大のグループです";
 "insights.ruleMostExpensiveGroup.considerate" = "%@はシェア支出の%d%% — メインのグループです";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@がシェア支出の%d%%。圧倒的ですね。";
-"insights.ruleHighDebt.normal" = "グループの未払い金額は%@です";
-"insights.ruleHighDebt.considerate" = "未払い金額が%@あります — 確認しましょう";
-"insights.ruleHighDebt.sarcastic" = "グループの借りが%@。回収のタイミングですね。";
 "insights.ruleDominantSharedCategory.normal" = "%@がシェア支出の大部分を占めています(%d%%)";
 "insights.ruleDominantSharedCategory.considerate" = "シェア支出の大部分(%d%%)は%@です";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@がシェア支出の%d%%。一緒に食べてばかり？";
 "insights.ruleSharedMoM.normal" = "前期間と比べてシェア支出が%@増えました";
 "insights.ruleSharedMoM.considerate" = "シェア支出が%@アップ — 臨時の支出がなかったか確認しましょう";
 "insights.ruleSharedMoM.sarcastic" = "シェア支出+%@。何かお祝いでも？";
-"insights.tipHighDebt" = "グループの残高を確認してリマインダーを送りましょう";
 // Tone & Focus settings
 "insights.tone.normal" = "通常";
 "insights.tone.considerate" = "丁寧";

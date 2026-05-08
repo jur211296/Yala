@@ -2965,16 +2965,12 @@
 "insights.ruleMostExpensiveGroup.normal" = "%@ e il tuo gruppo piu costoso con il %d%% delle spese condivise";
 "insights.ruleMostExpensiveGroup.considerate" = "%@ rappresenta il %d%% delle spese condivise — il tuo gruppo principale";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ prende il %d%% delle spese condivise. Dominante.";
-"insights.ruleHighDebt.normal" = "Hai %@ in sospeso nei debiti di gruppo";
-"insights.ruleHighDebt.considerate" = "Ci sono %@ di debiti in sospeso — vale la pena controllare";
-"insights.ruleHighDebt.sarcastic" = "%@ di debiti di gruppo. Ora di riscuotere.";
 "insights.ruleDominantSharedCategory.normal" = "%@ domina le tue spese condivise (%d%%)";
 "insights.ruleDominantSharedCategory.considerate" = "La maggior parte delle spese condivise (%d%%) sono in %@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ e il %d%% delle spese condivise. Mangiate solo insieme?";
 "insights.ruleSharedMoM.normal" = "Le tue spese condivise sono aumentate del %@ rispetto al periodo precedente";
 "insights.ruleSharedMoM.considerate" = "Spese condivise in aumento del %@ — controlla se ci sono stati extra";
 "insights.ruleSharedMoM.sarcastic" = "Spese condivise +%@. Cosa avete festeggiato?";
-"insights.tipHighDebt" = "Controlla i saldi del gruppo e invia promemoria";
 // Tone & Focus settings
 "insights.tone.normal" = "Normale";
 "insights.tone.considerate" = "Prudente";

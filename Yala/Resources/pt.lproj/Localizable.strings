@@ -2963,16 +2963,12 @@
 "insights.ruleMostExpensiveGroup.normal" = "%@ e seu grupo mais caro com %d%% dos gastos compartilhados";
 "insights.ruleMostExpensiveGroup.considerate" = "%@ representa %d%% dos gastos compartilhados — seu grupo principal";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ leva %d%% dos gastos compartilhados. Dominante.";
-"insights.ruleHighDebt.normal" = "Voce tem %@ pendentes em dividas de grupo";
-"insights.ruleHighDebt.considerate" = "Ha %@ em dividas pendentes — vale conferir";
-"insights.ruleHighDebt.sarcastic" = "%@ em dividas de grupo. Hora de cobrar.";
 "insights.ruleDominantSharedCategory.normal" = "%@ domina seus gastos compartilhados (%d%%)";
 "insights.ruleDominantSharedCategory.considerate" = "A maioria dos gastos compartilhados (%d%%) sao de %@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ e %d%% do gasto compartilhado. So comem juntos?";
 "insights.ruleSharedMoM.normal" = "Seu gasto compartilhado subiu %@ vs o periodo anterior";
 "insights.ruleSharedMoM.considerate" = "Gasto compartilhado subiu %@ — verifique se houve gastos extras";
 "insights.ruleSharedMoM.sarcastic" = "Gasto compartilhado +%@. O que celebraram?";
-"insights.tipHighDebt" = "Confira seus saldos de grupo e envie lembretes";
 // Tone & Focus settings
 "insights.tone.normal" = "Normal";
 "insights.tone.considerate" = "Cuidadoso";

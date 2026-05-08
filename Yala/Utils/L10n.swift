@@ -1262,16 +1262,12 @@ enum L10n {
         static func ruleSharedFrequency(_ count: Int, tone: InsightTone = .normal) -> String {
             String(format: ls("insights.ruleSharedFrequency.\(tone.rawValue)", comment: ""), count)
         }
-        static func ruleHighDebt(_ amount: String, tone: InsightTone = .normal) -> String {
-            String(format: ls("insights.ruleHighDebt.\(tone.rawValue)", comment: ""), amount)
-        }
         static func ruleDominantSharedCategory(_ name: String, _ pct: Int, tone: InsightTone = .normal) -> String {
             String(format: ls("insights.ruleDominantSharedCategory.\(tone.rawValue)", comment: ""), name, pct)
         }
         static func ruleSharedMoM(_ variation: String, tone: InsightTone = .normal) -> String {
             String(format: ls("insights.ruleSharedMoM.\(tone.rawValue)", comment: ""), variation)
         }
-        static var tipHighDebt: String { ls("insights.tipHighDebt", comment: "") }
 
         // Tone/Focus display names
         static func toneName(_ tone: InsightTone) -> String {

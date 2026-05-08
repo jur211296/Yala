@@ -2964,16 +2964,12 @@
 "insights.ruleMostExpensiveGroup.normal" = "%@ est votre groupe le plus couteux avec %d%% des depenses partagees";
 "insights.ruleMostExpensiveGroup.considerate" = "%@ represente %d%% des depenses partagees — votre groupe principal";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ prend %d%% des depenses partagees. Dominant.";
-"insights.ruleHighDebt.normal" = "Vous avez %@ en attente de dettes de groupe";
-"insights.ruleHighDebt.considerate" = "Il y a %@ de dettes en attente — a verifier";
-"insights.ruleHighDebt.sarcastic" = "%@ de dettes de groupe. Il est temps de collecter.";
 "insights.ruleDominantSharedCategory.normal" = "%@ domine vos depenses partagees (%d%%)";
 "insights.ruleDominantSharedCategory.considerate" = "La plupart des depenses partagees (%d%%) sont en %@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ c'est %d%% des depenses partagees. Vous ne mangez qu'ensemble?";
 "insights.ruleSharedMoM.normal" = "Vos depenses partagees ont augmente de %@ vs la periode precedente";
 "insights.ruleSharedMoM.considerate" = "Depenses partagees en hausse de %@ — verifiez s'il y a eu des extras";
 "insights.ruleSharedMoM.sarcastic" = "Depenses partagees +%@. Qu'avez-vous fete?";
-"insights.tipHighDebt" = "Verifiez vos soldes de groupe et envoyez des rappels";
 // Tone & Focus settings
 "insights.tone.normal" = "Normal";
 "insights.tone.considerate" = "Prudent";

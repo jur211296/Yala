@@ -3009,16 +3009,12 @@
 "insights.ruleMostExpensiveGroup.normal" = "%@ is your most expensive group with %d%% of shared spending";
 "insights.ruleMostExpensiveGroup.considerate" = "%@ accounts for %d%% of your shared spending — your main group";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ takes %d%% of your shared spending. Dominant.";
-"insights.ruleHighDebt.normal" = "You have %@ pending in group debts";
-"insights.ruleHighDebt.considerate" = "There's %@ in pending debts — worth checking";
-"insights.ruleHighDebt.sarcastic" = "%@ in group debts. Time to collect.";
 "insights.ruleDominantSharedCategory.normal" = "%@ dominates your shared expenses (%d%%)";
 "insights.ruleDominantSharedCategory.considerate" = "Most of your shared expenses (%d%%) are in %@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ is %d%% of your shared spending. Only eat together?";
 "insights.ruleSharedMoM.normal" = "Your shared spending went up %@ vs the previous period";
 "insights.ruleSharedMoM.considerate" = "Shared spending up %@ — check if there were extra expenses";
 "insights.ruleSharedMoM.sarcastic" = "Shared spending +%@. What were you celebrating?";
-"insights.tipHighDebt" = "Check your group balances and send reminders";
 // Tone & Focus settings
 "insights.tone.normal" = "Normal";
 "insights.tone.considerate" = "Careful";

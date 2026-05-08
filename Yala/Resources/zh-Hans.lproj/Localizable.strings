@@ -2966,16 +2966,12 @@
 "insights.ruleMostExpensiveGroup.normal" = "%@ 是你最贵的群组,占共享支出的 %d%%";
 "insights.ruleMostExpensiveGroup.considerate" = "%@ 占你共享支出的 %d%% — 是你的主要群组";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ 占了你 %d%% 的共享支出。压倒性。";
-"insights.ruleHighDebt.normal" = "你在群组中有 %@ 的待结债务";
-"insights.ruleHighDebt.considerate" = "有 %@ 的待结债务 — 值得关注";
-"insights.ruleHighDebt.sarcastic" = "群组里 %@ 的债。是时候收账了。";
 "insights.ruleDominantSharedCategory.normal" = "%@ 主导你的共享支出 (%d%%)";
 "insights.ruleDominantSharedCategory.considerate" = "你的共享支出大部分 (%d%%) 在 %@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ 占你共享支出的 %d%%。只一起吃饭吗?";
 "insights.ruleSharedMoM.normal" = "你的共享支出比上一时段多 %@";
 "insights.ruleSharedMoM.considerate" = "共享支出多 %@ — 看看是否有额外支出";
 "insights.ruleSharedMoM.sarcastic" = "共享支出 +%@。在庆祝什么?";
-"insights.tipHighDebt" = "查看你的群组余额并发送提醒";
 // Tone & Focus settings
 "insights.tone.normal" = "正常";
 "insights.tone.considerate" = "谨慎";

@@ -843,26 +843,6 @@ struct InsightsCalculator {
             ))
         }
 
-        // R4: High pending debt
-        if ctx.pendingDebtTotal > 0 {
-            let debtThreshold = focus == .cautious ? dailyAverage * 3 : dailyAverage * 7
-            if ctx.pendingDebtTotal > debtThreshold {
-                // Snapshot intencional: insights se regeneran al recompute del calc, no al cambiar
-                // prefs en runtime. YalaFormatter deprecated permitido aquí.
-                let formatted = YalaFormatterStatic.currency(value: ctx.pendingDebtTotal, currencyCode: currencyCode)
-                let text = AttributedString(L10n.Insights.ruleHighDebt(formatted, tone: tone))
-                let tip = AttributedString(L10n.Insights.tipHighDebt)
-                insights.append(InsightResult(
-                    id: "high_pending_debt",
-                    icon: "exclamationmark.triangle",
-                    text: text,
-                    sentiment: .attention,
-                    isProOnly: false,
-                    tip: tip
-                ))
-            }
-        }
-
         // R5: Dominant shared category
         if let topCat = ctx.sharedCategoryBreakdown.first, ctx.totalSharedExpense > 0 {
             let pct = Int((topCat.amount / ctx.totalSharedExpense) * 100)

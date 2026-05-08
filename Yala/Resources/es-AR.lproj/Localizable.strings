@@ -136,7 +136,6 @@
 "subscription.success.subtitle" = "Ahora tenés acceso a todas las funciones";
 "siriShortcuts.siri.alt1" = "También podés decir: \"Anota un gasto en Yala\"";
 "aiPrivacy.revokeConfirmMessage" = "Dejaremos de procesar tus datos de IA para esta función. Podés reactivarla cuando quieras.";
-"insights.ruleHighDebt.normal" = "Tenés %@ pendientes en deudas de grupo";
 "account.secondaryCurrency.message" = "Agregaste una cuenta en %@. ¿Querés ver el tipo de cambio %@ → %@? Podés cambiarlo en Perfil > Divisa.";
 "notificationPrimer.hint" = "Podés activarlas en Perfil > Notificaciones";
 "whatsNew.v11.exclude.description" = "Filtra excluyendo lo que no querés ver en lugar de seleccionar todo.";

@@ -2963,16 +2963,12 @@
 "insights.ruleMostExpensiveGroup.normal" = "%@ ist deine teuerste Gruppe mit %d%% der geteilten Ausgaben";
 "insights.ruleMostExpensiveGroup.considerate" = "%@ macht %d%% der geteilten Ausgaben aus — deine Hauptgruppe";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ nimmt %d%% der geteilten Ausgaben. Dominant.";
-"insights.ruleHighDebt.normal" = "Du hast %@ ausstehend in Gruppenschulden";
-"insights.ruleHighDebt.considerate" = "Es gibt %@ an ausstehenden Schulden — es lohnt sich zu prufen";
-"insights.ruleHighDebt.sarcastic" = "%@ an Gruppenschulden. Zeit einzusammeln.";
 "insights.ruleDominantSharedCategory.normal" = "%@ dominiert deine geteilten Ausgaben (%d%%)";
 "insights.ruleDominantSharedCategory.considerate" = "Die meisten geteilten Ausgaben (%d%%) sind in %@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ ist %d%% der geteilten Ausgaben. Esst ihr nur zusammen?";
 "insights.ruleSharedMoM.normal" = "Deine geteilten Ausgaben stiegen um %@ gegenuber dem vorherigen Zeitraum";
 "insights.ruleSharedMoM.considerate" = "Geteilte Ausgaben um %@ gestiegen — pruf ob es Extras gab";
 "insights.ruleSharedMoM.sarcastic" = "Geteilte Ausgaben +%@. Was habt ihr gefeiert?";
-"insights.tipHighDebt" = "Pruf deine Gruppensalden und sende Erinnerungen";
 // Tone & Focus settings
 "insights.tone.normal" = "Normal";
 "insights.tone.considerate" = "Behutsam";
