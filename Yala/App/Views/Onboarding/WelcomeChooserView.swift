@@ -66,7 +66,7 @@ struct WelcomeChooserView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: DS.Spacing.xl) {
+            VStack(spacing: 0) {
                 Spacer(minLength: DS.Spacing.lg)
 
                 Image("YalaLogo")
@@ -90,6 +90,8 @@ struct WelcomeChooserView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, DS.Spacing.lg)
                 }
+
+                Spacer(minLength: DS.Spacing.lg)
 
                 VStack(spacing: DS.Spacing.md) {
                     ForEach(Branch.allCases, id: \.self) { branch in
