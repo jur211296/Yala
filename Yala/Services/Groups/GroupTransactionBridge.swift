@@ -26,6 +26,19 @@ final class GroupTransactionBridge {
     /// Whether the bridge has been initialized with a context.
     var isReady: Bool { modelContext != nil }
 
+    /// M6: Flag interno para que `withSkippedDraftCleanup` permita que
+    /// `DraftService.approveGroupExpenseAccountDraft` invoque `bridgeExpense` sin que el
+    /// bridge borre el draft activo. NO setear directamente — usar el closure helper.
+    private(set) var skipDraftCleanup: Bool = false
+
+    /// Ejecuta `body` con `skipDraftCleanup=true` y resetea garantizado vía `defer`,
+    /// incluso si `body` lanza. Único path autorizado para mutar el flag.
+    func withSkippedDraftCleanup<T>(_ body: () throws -> T) rethrows -> T {
+        skipDraftCleanup = true
+        defer { skipDraftCleanup = false }
+        return try body()
+    }
+
     // MARK: - Init
 
     private init() {}
@@ -45,87 +58,281 @@ final class GroupTransactionBridge {
 
     // MARK: - Bridge Operations
 
-    /// A0-Bridge: Create or replace personal TransactionItems for a shared expense (modelo M5).
+    /// M6: Bridge SplitExpense ↔ TransactionItem con preserve+update Caso A.
     ///
-    /// Estrategia: idempotency vía delete+recreate. Si ya existen TX/Drafts vinculadas,
-    /// se eliminan y se recrean según las reglas A/B actuales (más simple que update
-    /// in-place y evita estado inconsistente al cambiar payer/monto/splits).
+    /// **Caso A** (yo pago, modo `.full/.completed`):
+    /// - **TX cuenta REAL** (`-totalAmount` con subcat manual): refleja "salió de mi bolsillo"
+    ///   en mi cuenta personal. Si ya existe Y currency compatible → **preserve+update** (solo
+    ///   monto/fecha/splitTotalAmount/splitType; cuenta/subcat/note/tags/category INTACTOS).
+    ///   Si currency incompatible → delete + draft con hint "currencyChanged".
+    /// - **TX virtual lent** (`+lentAmount` sistema "Préstamo a grupos"): siempre derivada,
+    ///   delete+recreate. Skip si `lentAmount == 0` (yo solo en split).
     ///
-    /// **Reglas (TX siempre en cuenta virtual `Grupos [moneda]`):**
-    /// - **Caso A** (yo pago): TX1 virtual `-myShare` (subcat manual o nil) +
-    ///   TX2 virtual `+totalAmount` con sistema "Préstamo a grupos" (income).
-    ///   Skip TX2 si `lentAmount == 0` (yo solo en split).
-    /// - **Caso B** (paga otro): TX1 virtual `-myShare` (subcat manual o nil).
+    /// **Caso A modo `.groupInvite`** (sin cuentas reales): fallback a M5 puro — TX1 virtual
+    /// `-myShare` con subcat manual + TX2 virtual `+totalAmount` sistema. Sin TX cuenta real.
     ///
-    /// Si `subcategory` queda nil (auto-match falló) Y `autoCreate=true`: TX1 se crea
-    /// con `subcategory=nil` + `InboxDraft` source=`.groupExpense` con `targetTransactionID`
-    /// apuntando a TX1. Saldo virtual cuadra desde t=0; user finaliza draft → UPDATE subcat.
+    /// **Caso B** (paga otro): TX1 virtual `-myShare` con subcat manual o nil. Sin cambios M5.
     ///
-    /// Si `autoCreate=false`: comportamiento legacy (1 InboxDraft con monto -myShare),
-    /// el user revisa y aprueba manualmente. Sin TX-puntero.
+    /// **Auto-match subcat**: si falla Y Caso B (o A groupInvite): draft con TX-puntero. En
+    /// Caso A `.full/.completed` la TX cuenta real se crea con subcat=nil + draft con puntero
+    /// (path heredado M5 para subcat assignment via Inbox).
+    ///
+    /// **Idempotency Caso A `.full/.completed`**: TX cuenta real preservada cross-reinvocación.
+    /// **Idempotency demás**: delete+recreate normal (todas las TX son derivadas).
+    ///
+    /// **Race race con DraftService.approve**: si `skipDraftCleanup == true`, el cleanup de
+    /// `existingPendingDrafts` se omite (DraftService gestiona el draft activo).
     ///
     /// - Parameters:
     ///   - expense: The shared expense to bridge.
     ///   - group: The group containing the expense.
+    ///   - accountForCurrentUser: Cuenta real para Caso A `.full/.completed` (form/draft input).
+    ///     `nil` cuando el bridge se invoca por sync remoto o cuando user no proveyó (groupInvite, draft pending).
+    ///   - isRemoteSync: `true` cuando se invoca desde `bridgeRemoteExpenses` (sync de grupos).
+    ///     Distingue path local vs sync para guard defensivo.
     ///   - shouldSave: Whether to save the context (false when called from sync batch).
-    func bridgeExpense(_ expense: SplitExpense, in group: SplitGroup, shouldSave: Bool = true) throws {
+    func bridgeExpense(
+        _ expense: SplitExpense,
+        in group: SplitGroup,
+        accountForCurrentUser: Account? = nil,
+        isRemoteSync: Bool = false,
+        shouldSave: Bool = true
+    ) throws {
         let context = try requireContext()
 
-        // GC-08: groupInvite users have no personal finance context for legacy drafts —
-        // pero SÍ procesan TX virtuales (saldo virtual del grupo es relevante).
-        // Se evalúa caso por caso abajo.
-
         // Find current user's member in this group.
-        // pending/rejected members no triguean bridge (no pueden tener gastos relevantes).
+        // pending/rejected members no triguean bridge.
         let zoneID = group.cloudKitZoneID
         let memberDescriptor = FetchDescriptor<SplitMember>(
             predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true }
         )
         guard let currentMember = try context.fetch(memberDescriptor).first,
               currentMember.isActive else { return }
-
         let currentMemberID = currentMember.id.uuidString
 
-        // Find current user's share in this expense
+        // Find current user's share in this expense.
         let expenseID = expense.id
         let shareDescriptor = FetchDescriptor<SplitShare>(
             predicate: #Predicate { $0.expenseID == expenseID && $0.memberID == currentMemberID }
         )
         guard let myShare = try context.fetch(shareDescriptor).first else { return }
 
-        // Idempotency: @MainActor + sync función garantiza atomicidad fetch+insert.
-        // Strategy: delete + recreate (más simple que update in-place y evita estado
-        // inconsistente al cambiar payer/monto/splits). Si futuro await: NSLock/actor.
+        // Identidad y cantidades.
         let expenseIDStr = expense.id.uuidString
-        let existingTxs = try context.fetch(FetchDescriptor<TransactionItem>(
+        let isCaseA = expense.paidByMemberID == currentMemberID
+        let isGroupInvite = SessionState.shared.onboardingMode == .groupInvite
+        let totalAmount = expense.amount
+        let mySharedAmount = myShare.amount
+        let lentAmount = totalAmount - mySharedAmount
+
+        // Fetch existing entities.
+        let allExistingTxs = try context.fetch(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitExpenseID == expenseIDStr }
         ))
-        for tx in existingTxs { context.delete(tx) }
+        let existingVirtualTxs = allExistingTxs.filter { $0.account?.isSystemAccount == true }
+        var existingRealTx = allExistingTxs.first { $0.account?.isSystemAccount == false }
 
-        let existingDrafts = try context.fetch(FetchDescriptor<InboxDraft>(
+        let existingPendingDrafts = try context.fetch(FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitExpenseID == expenseIDStr }
         ))
-        for draft in existingDrafts { context.delete(draft) }
 
-        // Modelo M5: TX siempre en cuenta virtual.
+        // Cleanup: TX virtuales son derivadas, siempre delete+recreate.
+        for tx in existingVirtualTxs { context.delete(tx) }
+        // Drafts pendientes: cleanup salvo si DraftService los está procesando (race).
+        if !skipDraftCleanup {
+            for draft in existingPendingDrafts { context.delete(draft) }
+        }
+
+        // Resolve cuenta virtual + subcat.
         let virtualAccount = try GroupBridgeSystemEntities.ensureSystemAccount(
             currencyCode: expense.currencyCode,
             colorHint: group.colorHex,
             context: context
         )
         let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
-        // Filter: si match es subcat sistema, ignorar (no tiene sentido para mi parte real)
         let realSubcat: Subcategory? = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
 
-        let isCaseA = expense.paidByMemberID == currentMemberID
-        let totalAmount = expense.amount
-        let mySharedAmount = myShare.amount
-        let lentAmount = totalAmount - mySharedAmount  // Solo relevante en Caso A
+        // Path Caso B (otro pagó): cleanup TX cuenta real residual + TX virtual -myShare como M5.
+        if !isCaseA {
+            if let stale = existingRealTx { context.delete(stale) }
+            createCaseBVirtualMyShare(
+                expense: expense,
+                myShareAmount: mySharedAmount,
+                realSubcat: realSubcat,
+                virtualAccount: virtualAccount,
+                context: context
+            )
+            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            return
+        }
 
-        // TX1 (común a Caso A y B): -myShare en virtual con subcat real (manual) o nil.
+        // Path Caso A modo .groupInvite: fallback M5 puro (TX1 virtual -myShare + TX2 virtual +totalAmount).
+        if isGroupInvite {
+            if let stale = existingRealTx { context.delete(stale) }
+            createGroupInviteCaseAVirtualPair(
+                expense: expense,
+                myShareAmount: mySharedAmount,
+                lentAmount: lentAmount,
+                totalAmount: totalAmount,
+                realSubcat: realSubcat,
+                virtualAccount: virtualAccount,
+                context: context
+            )
+            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            return
+        }
+
+        // Path Caso A modo .full/.completed: gestionar TX cuenta real con preserve+update.
+        if let realTx = existingRealTx {
+            if realTx.currencyCode == expense.currencyCode {
+                // PRESERVE+UPDATE: actualizar SOLO campos del grupo.
+                realTx.amount = -totalAmount
+                realTx.date = expense.date
+                realTx.splitTotalAmount = totalAmount
+                realTx.splitType = expense.splitType
+                // NUNCA tocar: account, subcategory, category, note, tags, currencyCode.
+            } else {
+                // INCOMPATIBLE currency: delete TX real + draft hint impersonal.
+                context.delete(realTx)
+                existingRealTx = nil
+                createDraftCaseA(
+                    expense: expense,
+                    reason: .currencyChanged,
+                    actorName: nil,  // sync remoto no expone "modifiedBy" → impersonal.
+                    groupName: group.name,
+                    context: context
+                )
+            }
+        } else if let providedAccount = accountForCurrentUser,
+                  providedAccount.currencyCode == expense.currencyCode {
+            // PRIMERA VEZ con cuenta proveída (form local crea, o DraftService.approve).
+            let realTx = TransactionItem(
+                date: expense.date,
+                amount: -totalAmount,
+                currencyCode: expense.currencyCode,
+                note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
+                category: realSubcat?.safeCategory,
+                subcategory: realSubcat,
+                account: providedAccount
+            )
+            realTx.splitExpenseID = expenseIDStr
+            realTx.splitGroupZoneID = expense.groupZoneID
+            realTx.splitTotalAmount = totalAmount
+            realTx.splitType = expense.splitType
+            context.insert(realTx)
+            realTx.recalculatePreferredCurrency(context: context)
+        } else if isRemoteSync {
+            // Sync remoto sin cuenta local: draft pendiente con hint contextual.
+            let payerName = resolveMemberDisplayName(memberID: expense.paidByMemberID, in: group, context: context)
+            createDraftCaseA(
+                expense: expense,
+                reason: .remoteCreate,
+                actorName: payerName,
+                groupName: group.name,
+                context: context
+            )
+        } else {
+            // Path local sin cuenta: F4.canSave debió bloquear el form. Defensa profundidad.
+            #if DEBUG
+            assertionFailure("Caso A local sin cuenta — F4 canSave debió bloquear el form")
+            #endif
+            createDraftCaseA(
+                expense: expense,
+                reason: .remoteCreate,  // copy más cercano disponible
+                actorName: nil,
+                groupName: group.name,
+                context: context
+            )
+        }
+
+        // TX virtual lent (+lentAmount) — siempre regenerada en Caso A `.full/.completed`. Skip si lent==0.
+        if lentAmount > 0 {
+            let loanSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .loanToGroups, context: context)
+            let virtualLent = TransactionItem(
+                date: expense.date,
+                amount: lentAmount,  // M6: lent (no totalAmount como M5).
+                currencyCode: expense.currencyCode,
+                note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
+                category: loanSubcat.safeCategory,
+                subcategory: loanSubcat,
+                account: virtualAccount
+            )
+            virtualLent.splitExpenseID = expenseIDStr
+            virtualLent.splitGroupZoneID = expense.groupZoneID
+            virtualLent.splitTotalAmount = totalAmount  // ref al gasto total origen.
+            virtualLent.splitType = expense.splitType
+            context.insert(virtualLent)
+            virtualLent.recalculatePreferredCurrency(context: context)
+        }
+
+        try saveIfNeeded(shouldSave: shouldSave, context: context)
+    }
+
+    // MARK: - Helpers (M6)
+
+    /// Caso B (otro pagó): TX virtual -myShare con subcat manual o draft TX-puntero.
+    private func createCaseBVirtualMyShare(
+        expense: SplitExpense,
+        myShareAmount: Double,
+        realSubcat: Subcategory?,
+        virtualAccount: Account,
+        context: ModelContext
+    ) {
+        let expenseIDStr = expense.id.uuidString
+        let tx = TransactionItem(
+            date: expense.date,
+            amount: -myShareAmount,
+            currencyCode: expense.currencyCode,
+            note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
+            category: realSubcat?.safeCategory,
+            subcategory: realSubcat,
+            account: virtualAccount
+        )
+        tx.splitExpenseID = expenseIDStr
+        tx.splitGroupZoneID = expense.groupZoneID
+        tx.splitTotalAmount = expense.amount
+        tx.splitType = expense.splitType
+        context.insert(tx)
+        tx.recalculatePreferredCurrency(context: context)
+
+        // Draft TX-puntero para asignar subcat si auto-match falló (path heredado M5).
+        if realSubcat == nil {
+            let draft = InboxDraft(
+                note: expense.expenseDescription,
+                amount: -myShareAmount,
+                date: expense.date,
+                account: virtualAccount,
+                subcategory: nil,
+                sourceType: .groupExpense,
+                confidenceAmount: 1.0,
+                confidenceDate: 1.0,
+                confidenceMerchant: 1.0,
+                confidenceSubcategory: nil,
+                needsUserInput: [DraftInputRequirement.subcategory],
+                splitExpenseID: expenseIDStr,
+                splitGroupZoneID: expense.groupZoneID,
+                splitSettlementID: nil,
+                targetTransactionID: nil
+            )
+            context.insert(draft)
+        }
+    }
+
+    /// Caso A modo .groupInvite: M5 puro (TX1 virtual -myShare + TX2 virtual +totalAmount sistema).
+    private func createGroupInviteCaseAVirtualPair(
+        expense: SplitExpense,
+        myShareAmount: Double,
+        lentAmount: Double,
+        totalAmount: Double,
+        realSubcat: Subcategory?,
+        virtualAccount: Account,
+        context: ModelContext
+    ) {
+        let expenseIDStr = expense.id.uuidString
+        // TX1 virtual -myShare.
         let tx1 = TransactionItem(
             date: expense.date,
-            amount: -mySharedAmount,
+            amount: -myShareAmount,
             currencyCode: expense.currencyCode,
             note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
             category: realSubcat?.safeCategory,
@@ -139,12 +346,10 @@ final class GroupTransactionBridge {
         context.insert(tx1)
         tx1.recalculatePreferredCurrency(context: context)
 
-        // Si auto-match falló: draft groupExpense que apunta a TX1 por splitExpenseID.
-        // Al finalizar, DraftService refetcha la TX por splitExpenseID + subcategory == nil.
         if realSubcat == nil {
             let draft = InboxDraft(
                 note: expense.expenseDescription,
-                amount: -mySharedAmount,
+                amount: -myShareAmount,
                 date: expense.date,
                 account: virtualAccount,
                 subcategory: nil,
@@ -153,7 +358,7 @@ final class GroupTransactionBridge {
                 confidenceDate: 1.0,
                 confidenceMerchant: 1.0,
                 confidenceSubcategory: nil,
-                needsUserInput: ["subcategory"],
+                needsUserInput: [DraftInputRequirement.subcategory],
                 splitExpenseID: expenseIDStr,
                 splitGroupZoneID: expense.groupZoneID,
                 splitSettlementID: nil,
@@ -162,32 +367,74 @@ final class GroupTransactionBridge {
             context.insert(draft)
         }
 
-        // Caso A: TX2 sistema income "Préstamo a grupos" (+totalAmount). Skip si lent=0.
-        if isCaseA && lentAmount > 0 {
-            let loanSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .loanToGroups, context: context)
-            let tx2 = TransactionItem(
-                date: expense.date,
-                amount: totalAmount,  // positivo: yo presté al grupo
-                currencyCode: expense.currencyCode,
-                note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
-                category: loanSubcat.safeCategory,
-                subcategory: loanSubcat,
-                account: virtualAccount
-            )
-            tx2.splitExpenseID = expenseIDStr
-            tx2.splitGroupZoneID = expense.groupZoneID
-            tx2.splitTotalAmount = totalAmount
-            tx2.splitType = expense.splitType
-            context.insert(tx2)
-            tx2.recalculatePreferredCurrency(context: context)
+        // TX2 virtual +totalAmount sistema (préstamo). Skip si lent==0.
+        if lentAmount > 0 {
+            if let loanSubcat = try? GroupBridgeSystemEntities.systemSubcategory(role: .loanToGroups, context: context) {
+                let tx2 = TransactionItem(
+                    date: expense.date,
+                    amount: totalAmount,
+                    currencyCode: expense.currencyCode,
+                    note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
+                    category: loanSubcat.safeCategory,
+                    subcategory: loanSubcat,
+                    account: virtualAccount
+                )
+                tx2.splitExpenseID = expenseIDStr
+                tx2.splitGroupZoneID = expense.groupZoneID
+                tx2.splitTotalAmount = totalAmount
+                tx2.splitType = expense.splitType
+                context.insert(tx2)
+                tx2.recalculatePreferredCurrency(context: context)
+            }
         }
+    }
 
-        if shouldSave {
-            try context.save()
-            SessionState.shared.incrementDataVersion()
-            WidgetDataCache.updateCache(context: context)
-            Task { await BudgetAlertService.shared.checkBudgetsAndNotify() }
-        }
+    /// M6: Crea InboxDraft pendiente de cuenta para Caso A cuando bridge no puede crear TX real.
+    private func createDraftCaseA(
+        expense: SplitExpense,
+        reason: DraftOriginReason,
+        actorName: String?,
+        groupName: String,
+        context: ModelContext
+    ) {
+        let draft = InboxDraft(
+            note: expense.expenseDescription,
+            amount: -expense.amount,
+            date: expense.date,
+            account: nil,
+            subcategory: nil,
+            sourceType: .groupExpense,
+            confidenceAmount: 1.0,
+            confidenceDate: 1.0,
+            confidenceMerchant: 1.0,
+            confidenceSubcategory: nil,
+            needsUserInput: [DraftInputRequirement.account],
+            splitExpenseID: expense.id.uuidString,
+            splitGroupZoneID: expense.groupZoneID,
+            splitSettlementID: nil,
+            targetTransactionID: nil,
+            originReasonKey: reason.rawValue,
+            originActorName: actorName,
+            originGroupName: groupName
+        )
+        context.insert(draft)
+    }
+
+    /// Resolver displayName del miembro pagador (snapshot al crear draft).
+    private func resolveMemberDisplayName(memberID: String, in group: SplitGroup, context: ModelContext) -> String? {
+        let zoneID = group.cloudKitZoneID
+        let descriptor = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneID && $0.id.uuidString == memberID }
+        )
+        return try? context.fetch(descriptor).first?.displayName
+    }
+
+    private func saveIfNeeded(shouldSave: Bool, context: ModelContext) throws {
+        guard shouldSave else { return }
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        Task { await BudgetAlertService.shared.checkBudgetsAndNotify() }
     }
 
     /// Bridge remote expenses received in a sync batch. Called after context.save().
@@ -203,7 +450,9 @@ final class GroupTransactionBridge {
             guard let group = try context.fetch(groupDescriptor).first else { continue }
 
             do {
-                try bridgeExpense(expense, in: group, shouldSave: false)
+                // M6: isRemoteSync=true marca path remoto. Sin accountForCurrentUser local
+                // → bridge crea draft pendiente con hint si Caso A y no existe TX real.
+                try bridgeExpense(expense, in: group, accountForCurrentUser: nil, isRemoteSync: true, shouldSave: false)
             } catch {
                 #if DEBUG
                 print("GroupTransactionBridge: Failed to bridge expense \(expense.id): \(error)")
@@ -316,8 +565,7 @@ final class GroupTransactionBridge {
                     tx2.splitGroupZoneID = zoneID
                     context.insert(tx2)
                     tx2.recalculatePreferredCurrency(context: context)
-                    // Persistir default account preference para futuros settlements.
-                    GroupPersonalPreferences.setDefaultSettlementAccount(account.name, for: zoneID, currencyCode: currencyCode)
+                    // M6: NO defaults — eliminada persistencia de defaultSettlementAccount.
                 } else {
                     // Sin cuenta proveída: draft pendiente.
                     let draft = InboxDraft(
@@ -331,7 +579,7 @@ final class GroupTransactionBridge {
                         confidenceDate: 1.0,
                         confidenceMerchant: 1.0,
                         confidenceSubcategory: 1.0,
-                        needsUserInput: ["account"],
+                        needsUserInput: [DraftInputRequirement.account],
                         splitExpenseID: nil,
                         splitGroupZoneID: zoneID,
                         splitSettlementID: settlementIDStr,
@@ -358,28 +606,21 @@ final class GroupTransactionBridge {
             tx1.recalculatePreferredCurrency(context: context)
 
             // Para .full/.completed: draft groupSettlement para asignar cuenta real.
+            // M6: NO defaults universales — sin preselect, user siempre elige cuenta.
             if userType != .groupInvite {
                 let receivedSubcat = try? GroupBridgeSystemEntities.systemSubcategory(role: .settlementReceived, context: context)
-                let preselectAccount: Account? = {
-                    guard let preferredName = GroupPersonalPreferences.defaultSettlementAccount(for: zoneID, currencyCode: currencyCode),
-                          !preferredName.isEmpty else { return nil }
-                    let descriptor = FetchDescriptor<Account>(
-                        predicate: #Predicate { $0.name == preferredName && !$0.isArchived }
-                    )
-                    return try? context.fetch(descriptor).first
-                }()
                 let draft = InboxDraft(
                     note: settlement.note ?? "",
                     amount: amount,
                     date: settlement.date,
-                    account: preselectAccount,
+                    account: nil,
                     subcategory: receivedSubcat,
                     sourceType: .groupSettlement,
                     confidenceAmount: 1.0,
                     confidenceDate: 1.0,
                     confidenceMerchant: 1.0,
                     confidenceSubcategory: 1.0,
-                    needsUserInput: preselectAccount == nil ? ["account"] : [],
+                    needsUserInput: [DraftInputRequirement.account],
                     splitExpenseID: nil,
                     splitGroupZoneID: zoneID,
                     splitSettlementID: settlementIDStr,
