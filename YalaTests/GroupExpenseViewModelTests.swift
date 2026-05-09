@@ -138,7 +138,10 @@ struct GroupExpenseViewModelTests {
         let (vm, _) = makeViewModel()
         vm.amountString = "100"
         vm.expenseDescription = "Dinner"
-        // All members selected by default, split is equal by default
+        // All members selected by default, split is equal by default.
+        // M6: Caso A (Alice = current user = payer default) requiere cuenta personal.
+        // Override a `.groupInvite` para skip account requirement (test legacy semantics).
+        vm.isGroupInviteOverride = true
         #expect(vm.canSave == true)
     }
 

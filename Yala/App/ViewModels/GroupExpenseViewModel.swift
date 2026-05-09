@@ -38,6 +38,10 @@ final class GroupExpenseViewModel {
     }
     var splitType: SplitType = .equal
 
+    /// M6: Cuenta personal real para Caso A `.full/.completed`. `nil` cuando user aún no eligió,
+    /// está en modo `.groupInvite`, o no es Caso A. El form la resuelve via `AccountSelectorSheet`.
+    var selectedAccount: Account?
+
     // Per-participant state
     var selectedMemberIDs: Set<String> = []
     var exactAmounts: [String: String] = [:]
@@ -88,8 +92,57 @@ final class GroupExpenseViewModel {
     var hasSelectedMembers: Bool { !selectedMemberIDs.isEmpty }
     var isPaidByValid: Bool { !paidByMemberID.isEmpty }
 
+    // MARK: - M6 computed
+
+    /// MemberID del current user en este grupo. `nil` si no está como miembro (caso edge raro).
+    var currentUserMemberID: String? {
+        members.first(where: { $0.isCurrentUser })?.id.uuidString
+    }
+
+    /// Form puede abrirse: current user resuelto como miembro del grupo.
+    /// Gating en `GroupDetailView` para evitar form sin contexto válido.
+    var isReady: Bool { currentUserMemberID != nil }
+
+    /// `true` cuando el current user es el payer del gasto (Caso A del bridge).
+    var isCaseA: Bool {
+        guard let myID = currentUserMemberID else { return false }
+        return paidByMemberID == myID && !paidByMemberID.isEmpty
+    }
+
+    /// User en modo `.groupInvite` no tiene cuentas reales — bridge fallback a M5 puro.
+    /// Default: lee `SessionState.shared`. Tests inyectan via `isGroupInviteOverride`.
+    var isGroupInviteMode: Bool {
+        isGroupInviteOverride ?? (SessionState.shared.onboardingMode == .groupInvite)
+    }
+
+    /// Override solo para tests (pure-logic sin singletons). Producción: nil → lee SessionState.
+    var isGroupInviteOverride: Bool?
+
+    /// Caso A `.full/.completed` requiere cuenta personal real seleccionada para guardar.
+    var isAccountRequired: Bool {
+        isCaseA && !isGroupInviteMode
+    }
+
+    /// Cuenta seleccionada compatible con la moneda actual del gasto.
+    var isAccountCompatibleWithCurrency: Bool {
+        guard let account = selectedAccount else { return false }
+        return account.currencyCode == currencyCode
+    }
+
     var canSave: Bool {
-        isAmountValid && isDescriptionValid && hasSelectedMembers && isPaidByValid && isSharesBalanced
+        isAmountValid
+            && isDescriptionValid
+            && hasSelectedMembers
+            && isPaidByValid
+            && isSharesBalanced
+            && (!isAccountRequired || isAccountCompatibleWithCurrency)
+    }
+
+    /// Llamado desde el form `onChange(of: currencyCode)`. Limpia selectedAccount si la moneda
+    /// dejó de ser compatible — el user deberá re-seleccionar antes de guardar.
+    func resetAccountIfIncompatible() {
+        guard let account = selectedAccount, account.currencyCode != currencyCode else { return }
+        selectedAccount = nil
     }
 
     // MARK: - Init
@@ -121,6 +174,8 @@ final class GroupExpenseViewModel {
         saveError = nil
 
         do {
+            // M6: pasar selectedAccount solo si Caso A (en Caso B, la cuenta del user no aplica).
+            let accountToPass: Account? = isCaseA ? selectedAccount : nil
             if let existing = editingExpense {
                 try GroupExpenseService.shared.updateExpense(
                     existing,
@@ -133,7 +188,8 @@ final class GroupExpenseViewModel {
                     paidByMemberID: paidByMemberID,
                     splitType: splitType.rawValue,
                     subcategoryName: subcategoryName,
-                    shares: shares
+                    shares: shares,
+                    accountForCurrentUser: accountToPass
                 )
             } else {
                 try GroupExpenseService.shared.createExpense(
@@ -146,7 +202,8 @@ final class GroupExpenseViewModel {
                     paidByMemberID: paidByMemberID,
                     splitType: splitType.rawValue,
                     subcategoryName: subcategoryName,
-                    shares: shares
+                    shares: shares,
+                    accountForCurrentUser: accountToPass
                 )
             }
             isSaving = false
@@ -192,6 +249,33 @@ final class GroupExpenseViewModel {
             case .equal:
                 break
             }
+        }
+
+        // M6: si edit Caso A `.full/.completed`, recupera la cuenta personal real bridgeada.
+        // Si TX aún no llegó vía sync personal (race), `selectedAccount` queda nil y form
+        // pide selección antes de guardar (canSave bloquea).
+        resolveSelectedAccountForCaseA(expense: expense)
+    }
+
+    /// Fetch TX cuenta real existente (`splitExpenseID == X && account.isSystemAccount == false`)
+    /// y popula `selectedAccount`. Solo aplica si Caso A `.full/.completed`.
+    private func resolveSelectedAccountForCaseA(expense: SplitExpense) {
+        guard isCaseA, !isGroupInviteMode, let ctx = modelContext else { return }
+        let expenseIDStr = expense.id.uuidString
+        let descriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { tx in
+                tx.splitExpenseID == expenseIDStr
+                    && tx.account?.isSystemAccount == false
+            }
+        )
+        do {
+            if let realTx = try ctx.fetch(descriptor).first, let account = realTx.account {
+                selectedAccount = account
+            }
+        } catch {
+            #if DEBUG
+            print("GroupExpenseViewModel: error resolving selectedAccount for case A: \(error)")
+            #endif
         }
     }
 

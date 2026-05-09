@@ -40,6 +40,7 @@ struct GroupExpenseFormView: View {
     @State private var showDatePicker = false
     @State private var showSubcategorySelector = false
     @State private var showSplitDetail = false
+    @State private var showAccountSelector = false  // M6 Caso A
 
     // Amount scaling
     @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
@@ -110,6 +111,13 @@ struct GroupExpenseFormView: View {
                 } else {
                     focusedField = .amount
                 }
+                // M6: defensa profundidad — si VM no resolvió current user (members no cargados),
+                // canSave queda bloqueado pero el form sigue navegable.
+                #if DEBUG
+                if !viewModel.isReady {
+                    print("GroupExpenseFormView: VM not ready (currentUserMemberID nil) — canSave will block save")
+                }
+                #endif
             }
             .sheet(isPresented: $showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.date)
@@ -144,6 +152,14 @@ struct GroupExpenseFormView: View {
             .sheet(isPresented: $showCurrencyPicker) {
                 CurrencySelectorView(selectedCurrency: currencyCodeBinding)
                 }
+            .sheet(isPresented: $showAccountSelector) {
+                // M6: filtrado por moneda para que la cuenta seleccionada siempre sea compatible.
+                AccountSelectorSheet(
+                    selectedAccount: $viewModel.selectedAccount,
+                    title: L10n.Transaction.account,
+                    currencyFilter: viewModel.currencyCode
+                )
+            }
             .sheet(isPresented: $showSubcategorySelector) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $viewModel.selectedSubcategory,
@@ -153,6 +169,11 @@ struct GroupExpenseFormView: View {
             .sheet(isPresented: $showSplitDetail) {
                 splitDetailSheet
                 }
+            // M6: si user cambia moneda y la cuenta seleccionada deja de ser compatible,
+            // se limpia. El form vuelve a pedir cuenta antes de guardar (canSave bloquea).
+            .onChange(of: viewModel.currencyCode) { _, _ in
+                viewModel.resetAccountIfIncompatible()
+            }
         }
     }
 
@@ -373,6 +394,19 @@ struct GroupExpenseFormView: View {
                 ) {
                     dismissKeyboard()
                     showMemberSelector = true
+                }
+
+                // M6: chip cuenta personal real solo si Caso A `.full/.completed`.
+                if viewModel.isAccountRequired {
+                    SelectionChip(
+                        icon: "creditcard",
+                        text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
+                        isSelected: viewModel.selectedAccount != nil,
+                        color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) }
+                    ) {
+                        dismissKeyboard()
+                        showAccountSelector = true
+                    }
                 }
             }
             .padding(.horizontal, DS.Spacing.xl)
