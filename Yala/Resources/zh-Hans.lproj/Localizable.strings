@@ -4039,6 +4039,12 @@
 "groups.bridge.editFromGroup" = "此交易与一个群组同步。请从共享支出处编辑。";
 "groups.bridge.assignFromInbox" = "从 Inbox 分配子分类以完成它。";
 "groups.bridge.editSettlementInGroup" = "此交易来自结算。请在群组中编辑 settlement。";
+"groups.bridge.editPartialBanner" = "这笔支出来自群组。你可以编辑账户、分类、标签和备注。金额和日期与群组同步。";
+"groups.bridge.draftReasonRemoteCreate" = "%1$@在%2$@中记录了这笔支出。选择一个账户将其纳入你的记录。";
+"groups.bridge.draftReasonCurrencyChanged" = "%@中支出的货币已更改。选择一个账户来记录你的份额。";
+"groups.card.moreDebts" = "+%d 更多";
+"inbox.groupExpenseAccountDraft.title" = "分配账户";
+"inbox.groupExpenseAccountDraft.assignAccount" = "来源账户";
 "groups.bridge.activateTitle" = "启用自动交易";
 "groups.bridge.activateBody" = "从现在起,共享支出将反映在你的群组账户中。此群组中你有 %d 笔之前的支出。我们要怎么处理它们?";
 "groups.bridge.activateOptionFromNow" = "从现在开始";

@@ -1643,6 +1643,10 @@ enum L10n {
             static var editFromGroup: String { ls("groups.bridge.editFromGroup", comment: "") }
             static var assignFromInbox: String { ls("groups.bridge.assignFromInbox", comment: "") }
             static var editSettlementInGroup: String { ls("groups.bridge.editSettlementInGroup", comment: "") }
+            // M6: Caso A edit parcial banner + draft hint reasons
+            static var editPartialBanner: String { ls("groups.bridge.editPartialBanner", comment: "") }
+            static var draftReasonRemoteCreate: String { ls("groups.bridge.draftReasonRemoteCreate", comment: "") }
+            static var draftReasonCurrencyChanged: String { ls("groups.bridge.draftReasonCurrencyChanged", comment: "") }
             // Activation/deactivation modals (F12)
             static var activateTitle: String { ls("groups.bridge.activateTitle", comment: "") }
             static var activateBody: String { ls("groups.bridge.activateBody", comment: "") }
@@ -1711,6 +1715,10 @@ enum L10n {
             static var rejectedChip: String { ls("groups.card.rejectedChip", comment: "") }
             static var leaveGroupAlertTitle: String { ls("groups.card.leaveGroupAlertTitle", comment: "") }
             static var leaveGroupAlertBody: String { ls("groups.card.leaveGroupAlertBody", comment: "") }
+            // M6 D3: chip overflow cuando hay más de 3 deudas en la card.
+            static func moreDebts(_ count: Int) -> String {
+                String(format: ls("groups.card.moreDebts", comment: ""), count)
+            }
         }
 
         enum Member {
@@ -4456,6 +4464,12 @@ enum L10n {
         enum GroupSettlementDraft {
             static var title: String { ls("inbox.groupSettlementDraft.title", comment: "") }
             static var assignAccount: String { ls("inbox.groupSettlementDraft.assignAccount", comment: "") }
+        }
+
+        // M6: sheet finalización Caso A pendiente cuenta.
+        enum GroupExpenseAccountDraft {
+            static var title: String { ls("inbox.groupExpenseAccountDraft.title", comment: "") }
+            static var assignAccount: String { ls("inbox.groupExpenseAccountDraft.assignAccount", comment: "") }
         }
 
         enum GroupDraft {

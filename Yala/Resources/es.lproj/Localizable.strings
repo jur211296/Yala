@@ -2863,6 +2863,9 @@
 "groups.bridge.editFromGroup" = "Esta transacción se sincroniza con un grupo. Edítala desde el gasto compartido.";
 "groups.bridge.assignFromInbox" = "Asigna subcategoría desde el Inbox para finalizarla.";
 "groups.bridge.editSettlementInGroup" = "Esta transacción proviene de una liquidación. Edita el settlement en el grupo.";
+"groups.bridge.editPartialBanner" = "Este gasto viene del grupo. Puedes editar cuenta, categoría, etiquetas y nota. El monto y la fecha se sincronizan con el grupo.";
+"groups.bridge.draftReasonRemoteCreate" = "%1$@ registró este gasto en %2$@. Elige cuenta para llevarlo a tus registros.";
+"groups.bridge.draftReasonCurrencyChanged" = "La moneda del gasto en %@ cambió. Elige cuenta para registrar tu parte.";
 "groups.bridge.activateTitle" = "Activar transacciones automáticas";
 "groups.bridge.activateBody" = "A partir de ahora, los gastos compartidos se reflejarán en tu cuenta de grupos. Tienes %d gastos previos en este grupo. ¿Qué hacemos con ellos?";
 "groups.bridge.activateOptionFromNow" = "Empezar desde ahora";
@@ -4080,6 +4083,8 @@
 "inbox.groupExpenseDraft.assignSubcategory" = "Subcategoría";
 "inbox.groupSettlementDraft.title" = "Asigna cuenta";
 "inbox.groupSettlementDraft.assignAccount" = "Cuenta de destino";
+"inbox.groupExpenseAccountDraft.title" = "Asignar cuenta";
+"inbox.groupExpenseAccountDraft.assignAccount" = "Cuenta de origen";
 "inbox.groupDraft.finalize" = "Finalizar";
 "inbox.groupDraft.fromGroup" = "Grupo: %@";
 "action.continue" = "Continuar";
@@ -4176,6 +4181,7 @@
 "groups.member.activeCount" = "%d personas activas";
 "groups.member.pendingCount" = "%d solicitudes pendientes";
 "groups.card.pendingApprovalChip" = "Esperando aprobación";
+"groups.card.moreDebts" = "+%d más";
 "groups.card.rejectedChip" = "Solicitud rechazada";
 "groups.card.leaveGroupAlertTitle" = "¿Salir del grupo?";
 "groups.card.leaveGroupAlertBody" = "Tu solicitud fue rechazada. Si sales del grupo, se eliminará de tu lista. Tus registros personales se mantienen.";

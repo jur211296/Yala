@@ -4039,6 +4039,12 @@
 "groups.bridge.editFromGroup" = "Ta transakcja synchronizuje się z grupą. Edytuj ją z poziomu wspólnego wydatku.";
 "groups.bridge.assignFromInbox" = "Przypisz podkategorię z Inbox, aby ją sfinalizować.";
 "groups.bridge.editSettlementInGroup" = "Ta transakcja pochodzi z rozliczenia. Edytuj settlement w grupie.";
+"groups.bridge.editPartialBanner" = "Ten wydatek pochodzi z grupy. Możesz edytować konto, kategorię, etykiety i notatkę. Kwota i data są synchronizowane z grupą.";
+"groups.bridge.draftReasonRemoteCreate" = "%1$@ zarejestrował ten wydatek w %2$@. Wybierz konto, aby uwzględnić go w swoich zapisach.";
+"groups.bridge.draftReasonCurrencyChanged" = "Waluta wydatku w %@ uległa zmianie. Wybierz konto, aby zarejestrować swoją część.";
+"groups.card.moreDebts" = "+%d więcej";
+"inbox.groupExpenseAccountDraft.title" = "Przypisz konto";
+"inbox.groupExpenseAccountDraft.assignAccount" = "Konto źródłowe";
 "groups.bridge.activateTitle" = "Włącz automatyczne transakcje";
 "groups.bridge.activateBody" = "Od teraz wspólne wydatki będą odzwierciedlane na Twoim koncie grupowym. Masz %d wcześniejszych wydatków w tej grupie. Co z nimi zrobimy?";
 "groups.bridge.activateOptionFromNow" = "Zacznij od teraz";

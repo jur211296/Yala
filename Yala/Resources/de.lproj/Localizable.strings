@@ -4036,6 +4036,12 @@
 "groups.bridge.editFromGroup" = "Diese Transaktion synchronisiert mit einer Gruppe. Bearbeiten Sie sie in der geteilten Ausgabe.";
 "groups.bridge.assignFromInbox" = "Weisen Sie eine Unterkategorie aus dem Inbox zu, um sie abzuschließen.";
 "groups.bridge.editSettlementInGroup" = "Diese Transaktion stammt aus einer Abrechnung. Bearbeiten Sie das Settlement in der Gruppe.";
+"groups.bridge.editPartialBanner" = "Diese Ausgabe stammt aus der Gruppe. Sie können Konto, Kategorie, Tags und Notiz bearbeiten. Betrag und Datum werden mit der Gruppe synchronisiert.";
+"groups.bridge.draftReasonRemoteCreate" = "%1$@ hat diese Ausgabe in %2$@ erfasst. Wählen Sie ein Konto, um sie in Ihren Aufzeichnungen zu führen.";
+"groups.bridge.draftReasonCurrencyChanged" = "Die Währung der Ausgabe in %@ wurde geändert. Wählen Sie ein Konto, um Ihren Anteil zu erfassen.";
+"groups.card.moreDebts" = "+%d weitere";
+"inbox.groupExpenseAccountDraft.title" = "Konto zuweisen";
+"inbox.groupExpenseAccountDraft.assignAccount" = "Quellkonto";
 "groups.bridge.activateTitle" = "Automatische Transaktionen aktivieren";
 "groups.bridge.activateBody" = "Ab jetzt werden geteilte Ausgaben in Ihrem Gruppenkonto reflektiert. Sie haben %d frühere Ausgaben in dieser Gruppe. Was tun wir mit ihnen?";
 "groups.bridge.activateOptionFromNow" = "Ab jetzt starten";
