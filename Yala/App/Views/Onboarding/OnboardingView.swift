@@ -45,7 +45,7 @@ struct OnboardingView: View {
 
     private var expensesOnlyMode: Bool { selectedUsageMode == .expensesOnly }
 
-    private enum UsageMode {
+    private enum UsageMode: String {
         case expensesOnly, dayToDay, fullControl
     }
 
@@ -63,6 +63,9 @@ struct OnboardingView: View {
     @State private var calcFieldState = BalanceCalculatorFieldState()
     @FocusState private var accountNameFocused: Bool
     @State private var lastAutoName: String = ""
+    /// Snapshot del currency cuando se abre el picker — permite detectar cambio
+    /// y disparar `onboardingCurrencyPicked` solo si user efectivamente eligió.
+    @State private var currencyAtPickerOpen: CurrencyCode? = nil
 
     // Budget state (preserved for completeOnboarding — budget step removed from flow)
     @State private var wantsBudget: Bool = false
@@ -72,15 +75,30 @@ struct OnboardingView: View {
     /// Optional prefilled data from iCloud restore (A4 Welcome Restore rama B).
     /// Cuando != nil, popula campos en `.task` y amplía `skippedSteps` automáticamente.
     let prefilledData: ICloudAccountSummary?
+    /// Background visual del flow. `.heroFlow` (default) = continuidad post-Welcome
+    /// con gradient indigo→negro y texto blanco rígido. `.themedPanel` =
+    /// FullModeActivation, adapta al tema del user.
+    let backgroundStyle: OnboardingBackgroundStyle
+    /// Modo del flow para telemetría. NO afecta layout.
+    let mode: OnboardingFlowMode
     var onComplete: () -> Void
+    /// X cancel total en cualquier step. Usado por FullModeActivationView para
+    /// permitir abortar la activación del modo completo desde cualquier punto.
+    var onCancel: (() -> Void)? = nil
     /// Chevron back en step 1. Solo se setea cuando el OnboardingView viene
     /// del flow Welcome — descarta state silenciosamente y vuelve al Hero.
     var onCancelFromStep1: (() -> Void)? = nil
 
     init(prefilledData: ICloudAccountSummary? = nil,
+         backgroundStyle: OnboardingBackgroundStyle = .heroFlow,
+         mode: OnboardingFlowMode = .initial,
+         onCancel: (() -> Void)? = nil,
          onCancelFromStep1: (() -> Void)? = nil,
          onComplete: @escaping () -> Void) {
         self.prefilledData = prefilledData
+        self.backgroundStyle = backgroundStyle
+        self.mode = mode
+        self.onCancel = onCancel
         self.onCancelFromStep1 = onCancelFromStep1
         self.onComplete = onComplete
     }
@@ -96,10 +114,36 @@ struct OnboardingView: View {
         case balance = 5       // skip if expensesOnly
         case categories = 6
         case confirmation = 7  // Resumen + privacidad (último paso)
+
+        /// String estable para telemetría — desacoplado del rawValue Int.
+        var trackingName: String {
+            switch self {
+            case .name:         return "name"
+            case .purpose:      return "purpose"
+            case .accounts:     return "accounts"
+            case .accountType:  return "accountType"
+            case .currencyName: return "currencyName"
+            case .balance:      return "balance"
+            case .categories:   return "categories"
+            case .confirmation: return "confirmation"
+            }
+        }
     }
 
     /// Account types for fullControl picker (no .general — separate accounts have real types)
     private let fullControlAccountTypes: [AccountType] = [.checking, .savings, .creditCard, .cash]
+
+    /// Color de tint del icono por tipo de cuenta. Diferenciado para que el user
+    /// asocie visualmente cada tipo con un color distinto en lugar del azul plano.
+    private func iconTint(for type: AccountType) -> Color {
+        switch type {
+        case .checking:   return .electricIndigo
+        case .savings:    return .priorityNeed
+        case .creditCard: return .hotPink
+        case .cash:       return .essentialNeed
+        default:          return .electricIndigo
+        }
+    }
 
     // MARK: - Step Navigation
 
@@ -155,43 +199,120 @@ struct OnboardingView: View {
         return effectiveSteps[idx - 1]
     }
 
+    // MARK: - Style helpers (background-aware)
+
+    /// `.heroFlow` usa paleta blanca rígida sobre indigo→negro; `.themedPanel`
+    /// hereda los tokens del tema del user. Tipos concretos `Color` (no
+    /// `AnyShapeStyle`) reducen typecheck pressure en body invocations.
+    private var primaryTextStyle: Color {
+        backgroundStyle == .heroFlow ? .white : theme.primaryText
+    }
+
+    private var secondaryTextStyle: Color {
+        backgroundStyle == .heroFlow ? .white.opacity(0.7) : theme.secondaryText
+    }
+
+    private var mutedTextStyle: Color {
+        backgroundStyle == .heroFlow ? .white.opacity(0.4) : .secondary.opacity(0.6)
+    }
+
+    private var cardStroke: Color {
+        switch backgroundStyle {
+        case .heroFlow:    return Color.white.opacity(0.1)
+        case .themedPanel: return theme.cardBorder
+        }
+    }
+
+    /// Color de acento para iconos hero, selección de cards y gradient parts.
+    private var styleAccentColor: Color {
+        switch backgroundStyle {
+        case .heroFlow:    return Color.electricIndigo
+        case .themedPanel: return theme.accent
+        }
+    }
+
+    /// Gradient del title accent (la palabra-acento del largeTitle). Sobre dark
+    /// indigo el gradient `.hotPink → .white` da contraste; sobre tema claro la
+    /// `.white` desaparece — usamos `.hotPink → accentColor`.
+    private var titleAccentGradient: LinearGradient {
+        switch backgroundStyle {
+        case .heroFlow:
+            return LinearGradient(
+                colors: [.hotPink, .white],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        case .themedPanel:
+            return LinearGradient(
+                colors: [.hotPink, theme.accent],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        }
+    }
+
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: DS.Spacing.none) {
-            progressIndicator
-                .padding(.top, DS.Spacing.xl)
-                .padding(.bottom, DS.Spacing.xxxl)
-
-            Group {
-                switch currentStep {
-                case .name: nameStep
-                case .purpose: purposeStep
-                case .accounts: accountsStep
-                case .accountType: accountTypeStep
-                case .currencyName: currencyNameStep
-                case .balance: balanceStep
-                case .categories: categoriesStep
-                case .confirmation: confirmationStep
+        NavigationStack {
+            OnboardingFlowScreen(style: backgroundStyle) { logoTopSpacing in
+                VStack(spacing: DS.Spacing.none) {
+                    Group {
+                        switch currentStep {
+                        case .name: nameStep(logoTopSpacing: logoTopSpacing)
+                        case .purpose: purposeStep
+                        case .accounts: accountsStep
+                        case .accountType: accountTypeStep
+                        case .currencyName: currencyNameStep
+                        case .balance: balanceStep
+                        case .categories: categoriesStep
+                        case .confirmation: confirmationStep
+                        }
+                    }
+                    .transition(.asymmetric(
+                        insertion: .move(edge: navigatingForward ? .trailing : .leading),
+                        removal: .move(edge: navigatingForward ? .leading : .trailing)
+                    ))
                 }
             }
-            .transition(.asymmetric(
-                insertion: .move(edge: navigatingForward ? .trailing : .leading),
-                removal: .move(edge: navigatingForward ? .leading : .trailing)
-            ))
-        }
-        .safeAreaInset(edge: .bottom) {
-            floatingNavigationButtons
-        }
-        .background(.thBackground)
-        .welcomeBackButton(
-            tint: .secondary,
-            action: currentStep == .name ? onCancelFromStep1 : nil
-        )
-        .onTapGesture {
-            dismissKeyboard()
+            .safeAreaInset(edge: .bottom) {
+                floatingNavigationButtons
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    leadingToolbarButton
+                }
+                ToolbarItem(placement: .principal) {
+                    progressIndicator
+                }
+            }
+            .onTapGesture {
+                dismissKeyboard()
+            }
         }
         .task {
+            // Telemetría de mount: started (funnel inicio) + stepViewed Step 1
+            // (drop-off por step). Por separado son correctos: started=mount,
+            // stepViewed=visit a step.
+            TelemetryService.track(
+                .onboardingStarted,
+                parameters: OnboardingTelemetryEventBuilder.paramsForStarted(
+                    mode: mode,
+                    prefilled: prefilledData != nil
+                )
+            )
+            TelemetryService.track(
+                .onboardingStepViewed,
+                parameters: OnboardingTelemetryEventBuilder.paramsForStepViewed(
+                    step: currentStep.trackingName,
+                    stepIndex: effectiveSteps.firstIndex(of: currentStep) ?? 0,
+                    totalSteps: effectiveTotalSteps,
+                    mode: mode
+                )
+            )
+
             let defaults = UserDefaults.standard
             if let name = OnboardingPrefillResolver.resolveUserName(
                 prefilled: prefilledData,
@@ -229,73 +350,157 @@ struct OnboardingView: View {
         HStack(spacing: DS.Spacing.sm) {
             ForEach(0..<effectiveTotalSteps, id: \.self) { step in
                 Capsule()
-                    .fill(step <= effectiveStepIndex ? Color.electricIndigo : theme.secondaryText.opacity(0.2))
+                    .fill(step <= effectiveStepIndex ? styleAccentColor : theme.secondaryText.opacity(0.2))
                     .frame(width: step == effectiveStepIndex ? 24 : 8, height: 8)
                     .dsAnimation(.spring(response: 0.3), value: effectiveStepIndex, reduceMotion: reduceMotion)
             }
         }
     }
 
+    /// Toolbar leading button. En `.heroFlow`: X cancel solo si Step 1 vino del
+    /// Welcome (`onCancelFromStep1`), chevron back en Steps 2-8. En `.themedPanel`:
+    /// X cancel total siempre (FullModeActivation requiere escape persistente).
+    @ViewBuilder
+    private var leadingToolbarButton: some View {
+        switch (backgroundStyle, currentStep) {
+        case (.heroFlow, .name):
+            if let cancel = onCancelFromStep1 {
+                YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
+                    trackCancelled()
+                    cancel()
+                }
+            }
+        case (.heroFlow, _):
+            YalaToolbarButton(systemName: "chevron.backward", label: L10n.Action.back, action: goBack)
+        case (.themedPanel, _):
+            if let cancel = onCancel {
+                YalaToolbarButton(systemName: "xmark", label: L10n.Action.cancel) {
+                    trackCancelled()
+                    cancel()
+                }
+            }
+        }
+    }
+
+    private func trackCancelled() {
+        TelemetryService.track(
+            .onboardingCancelled,
+            parameters: OnboardingTelemetryEventBuilder.paramsForCancelled(
+                atStep: currentStep.trackingName,
+                mode: mode
+            )
+        )
+    }
+
+    /// Navega un step atrás con la animación canónica del flow Welcome.
+    /// Llamado por el chevron del toolbar (`.heroFlow`) y la back capsule
+    /// del bottom (`.themedPanel`). Dispara telemetría ANTES del withAnimation.
+    private func goBack() {
+        guard let prev = previousStep(before: currentStep) else { return }
+
+        TelemetryService.track(
+            .onboardingBackTapped,
+            parameters: OnboardingTelemetryEventBuilder.paramsForBackTapped(
+                fromStep: currentStep.trackingName,
+                mode: mode
+            )
+        )
+        TelemetryService.track(
+            .onboardingStepViewed,
+            parameters: OnboardingTelemetryEventBuilder.paramsForStepViewed(
+                step: prev.trackingName,
+                stepIndex: effectiveSteps.firstIndex(of: prev) ?? 0,
+                totalSteps: effectiveTotalSteps,
+                mode: mode
+            )
+        )
+
+        navigatingForward = false
+        dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
+            currentStep = prev
+        }
+    }
+
     // MARK: - Step 1: Name
 
-    private var nameStep: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: DS.Spacing.xl) {
-                    Spacer()
-
+    /// `logoTopSpacing` proviene del wrapper `OnboardingFlowScreen` y anchora
+    /// el logo a la misma altura visual que `WelcomeFlowContainer`. Logo 128pt
+    /// solo en `.heroFlow` (FullMode skipea Step 1 vía prefilled y nunca pasa
+    /// por aquí; el branch `.themedPanel` queda como fallback defensivo).
+    private func nameStep(logoTopSpacing: CGFloat) -> some View {
+        ScrollView {
+            VStack(spacing: DS.Spacing.lg) {
+                if backgroundStyle == .heroFlow {
+                    Spacer(minLength: logoTopSpacing)
+                    Image("YalaLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 128)
+                        .colorMultiply(.white)
+                        .accessibilityHidden(true)
+                } else {
+                    Spacer(minLength: DS.Spacing.xl)
                     Image(uiImage: UIImage(named: "IconOriginal@3x") ?? UIImage())
                         .resizable()
                         .scaledToFit()
                         .frame(width: appIconSize, height: appIconSize)
                         .clipShape(RoundedRectangle(cornerRadius: 26))
                         .accessibilityHidden(true)
-
-                    VStack(spacing: DS.Spacing.md) {
-                        Text(L10n.Onboarding.welcomeTitle)
-                            .font(DS.Typography.largeTitle)
-                            .foregroundStyle(.primary)
-                            .multilineTextAlignment(.center)
-
-                        Text(L10n.Onboarding.welcomeSubtitle)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, DS.Spacing.xl)
-                    }
-
-                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                        Text(L10n.Onboarding.nameLabel)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.secondary)
-
-                        TextField(L10n.Onboarding.namePlaceholder, text: $userName)
-                            .textContentType(.nickname)
-                            .font(DS.Typography.body)
-                            .padding(DS.Spacing.md)
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                            .accessibilityIdentifier("onboarding_name_field")
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.md)
-                                    .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-                            )
-
-                        Text(L10n.Onboarding.nameHint)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .padding(.top, DS.Spacing.xl)
-
-                    Spacer()
-                    Spacer()
                 }
-                .frame(minHeight: geometry.size.height)
+
+                VStack(spacing: DS.Spacing.sm) {
+                    Text(L10n.Onboarding.welcomeTitle)
+                        .font(DS.Typography.largeTitle)
+                        .foregroundStyle(titleAccentGradient)
+                        .multilineTextAlignment(.center)
+
+                    Text(L10n.Onboarding.welcomeSubtitle)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(secondaryTextStyle)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, DS.Spacing.xl)
+                }
+                .padding(.top, DS.Spacing.md)
+
+                WelcomeBubblePreview(
+                    userName: userName,
+                    primaryTextStyle: primaryTextStyle,
+                    secondaryTextStyle: secondaryTextStyle,
+                    cardStroke: cardStroke,
+                    accentColor: styleAccentColor
+                )
+                .padding(.horizontal, DS.Spacing.xl)
+
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    Text(L10n.Onboarding.nameLabel)
+                        .font(DS.Typography.label)
+                        .foregroundStyle(secondaryTextStyle)
+
+                    TextField(L10n.Onboarding.namePlaceholder, text: $userName)
+                        .textContentType(.nickname)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(primaryTextStyle)
+                        .padding(DS.Spacing.md)
+                        .background(.thCard)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                        .accessibilityIdentifier("onboarding_name_field")
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DS.Radius.md)
+                                .stroke(cardStroke, lineWidth: 1)
+                        )
+
+                    Text(L10n.Onboarding.nameHint)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(mutedTextStyle)
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.top, DS.Spacing.md)
+
+                Spacer(minLength: DS.Spacing.xl)
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .scrollDismissesKeyboard(.interactively)
         }
+        .scrollBounceBehavior(.basedOnSize)
+        .scrollDismissesKeyboard(.interactively)
     }
 
     // MARK: - Step 2: Purpose (binary)
@@ -307,14 +512,14 @@ struct OnboardingView: View {
                     VStack(spacing: DS.Spacing.md) {
                         Image(systemName: "target")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(styleAccentColor)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.purposeTitle)
                             .font(DS.Typography.title)
                             .fontWeight(.bold)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(primaryTextStyle)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, DS.Spacing.xl)
@@ -323,6 +528,7 @@ struct OnboardingView: View {
                         binaryCard(
                             isSelected: !expensesOnlyMode,
                             icon: "dollarsign.circle",
+                            iconColor: styleAccentColor,
                             title: L10n.Onboarding.purposeControl,
                             description: L10n.Onboarding.purposeControlDesc,
                             accessibilityId: "onboarding_purpose_control"
@@ -335,6 +541,7 @@ struct OnboardingView: View {
                         binaryCard(
                             isSelected: expensesOnlyMode,
                             icon: "list.bullet.clipboard",
+                            iconColor: .essentialNeed,
                             title: L10n.Onboarding.purposeExpenses,
                             description: L10n.Onboarding.purposeExpensesDesc,
                             accessibilityId: "onboarding_purpose_expenses"
@@ -362,14 +569,14 @@ struct OnboardingView: View {
                     VStack(spacing: DS.Spacing.md) {
                         Image(systemName: "building.columns.fill")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(styleAccentColor)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.accountsTitle)
                             .font(DS.Typography.title)
                             .fontWeight(.bold)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(primaryTextStyle)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, DS.Spacing.xl)
@@ -378,6 +585,7 @@ struct OnboardingView: View {
                         binaryCard(
                             isSelected: !wantsSeparateAccounts,
                             icon: "creditcard",
+                            iconColor: .neonCyan,
                             title: L10n.Onboarding.accountsSingle,
                             description: L10n.Onboarding.accountsSingleDesc,
                             accessibilityId: "onboarding_accounts_single"
@@ -390,6 +598,7 @@ struct OnboardingView: View {
                         binaryCard(
                             isSelected: wantsSeparateAccounts,
                             icon: "rectangle.stack",
+                            iconColor: .priorityNeedNew,
                             title: L10n.Onboarding.accountsMultiple,
                             description: L10n.Onboarding.accountsMultipleDesc,
                             accessibilityId: "onboarding_accounts_multiple"
@@ -419,9 +628,14 @@ struct OnboardingView: View {
 
     // MARK: - Reusable Binary Card
 
+    /// Card de selección estilo capabilityCard del AI Onboarding: icono con halo
+    /// gradient, sin checkmark/circle, selección visualizada con stroke 2pt
+    /// `styleAccentColor`. Background siempre `.thCard` — bifurca correctamente
+    /// entre `.heroFlow` (translúcido sobre dark) y `.themedPanel` (themed).
     private func binaryCard(
         isSelected: Bool,
         icon: String,
+        iconColor: Color,
         title: String,
         description: String,
         accessibilityId: String,
@@ -429,35 +643,36 @@ struct OnboardingView: View {
     ) -> some View {
         Button(action: action) {
             HStack(spacing: DS.Spacing.md) {
-                Image(systemName: icon)
-                    .font(.system(size: 22))
-                    .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
-                    .frame(width: 32)
+                ZStack {
+                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                        .fill(iconColor.opacity(0.18))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: icon)
+                        .font(.system(size: 20, weight: .semibold)) // A11Y-DT: card icon
+                        .foregroundStyle(iconColor)
+                }
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(title)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(primaryTextStyle)
 
                     Text(description)
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(secondaryTextStyle)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Spacer()
-
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
-                    .foregroundStyle(isSelected ? Color.electricIndigo : theme.secondaryText.opacity(0.3))
+                Spacer(minLength: 0)
             }
-            .padding(DS.Spacing.lg)
-            .background(isSelected ? Color.electricIndigo.opacity(0.1) : theme.card)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+            .padding(DS.Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl)
-                    .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                    .stroke(isSelected ? styleAccentColor : cardStroke, lineWidth: isSelected ? 2 : 1)
             )
-            .shadow(color: .black.opacity(theme.shadowOpacity), radius: 10, x: 0, y: 5)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(accessibilityId)
@@ -472,66 +687,39 @@ struct OnboardingView: View {
                     VStack(spacing: DS.Spacing.md) {
                         Image(systemName: "wallet.bifold")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(styleAccentColor)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.accountTypeTitle)
                             .font(DS.Typography.title)
                             .fontWeight(.bold)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(primaryTextStyle)
                             .multilineTextAlignment(.center)
 
                         Text(L10n.Onboarding.accountTypeSubtitle)
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(secondaryTextStyle)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, DS.Spacing.xl)
                     }
                     .padding(.top, DS.Spacing.xl)
 
-                    // 4 account type cards
                     VStack(spacing: DS.Spacing.sm) {
                         ForEach(fullControlAccountTypes) { type in
-                            let isSelected = selectedAccountType == type
-                            Button {
+                            binaryCard(
+                                isSelected: selectedAccountType == type,
+                                icon: iconName(for: type),
+                                iconColor: iconTint(for: type),
+                                title: type.localizedName,
+                                description: type.typeDescription,
+                                accessibilityId: "onboarding_account_type_\(type.rawValue)"
+                            ) {
                                 if selectedAccountType != type {
                                     selectedAccountType = type
                                     calcFieldState.reset()
                                 }
-                            } label: {
-                                HStack(spacing: DS.Spacing.md) {
-                                    Image(systemName: iconName(for: type))
-                                        .font(.system(size: 22))
-                                        .foregroundStyle(isSelected ? Color.electricIndigo : .secondary)
-                                        .frame(width: 32)
-
-                                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                                        Text(type.localizedName)
-                                            .font(DS.Typography.bodyBold)
-                                            .foregroundStyle(.primary)
-
-                                        Text(type.typeDescription)
-                                            .font(DS.Typography.subheadline)
-                                            .foregroundStyle(.secondary)
-                                    }
-
-                                    Spacer()
-
-                                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                        .font(.system(size: 22))
-                                        .foregroundStyle(isSelected ? Color.electricIndigo : theme.secondaryText.opacity(0.3))
-                                }
-                                .padding(DS.Spacing.lg)
-                                .background(isSelected ? Color.electricIndigo.opacity(0.1) : theme.card)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DS.Radius.xl)
-                                        .stroke(isSelected ? Color.electricIndigo.opacity(0.3) : DS.Colors.borderSubtle, lineWidth: 1)
-                                )
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("onboarding_account_type_\(type.rawValue)")
                         }
                     }
                     .padding(.horizontal, DS.Spacing.xl)
@@ -576,7 +764,7 @@ struct OnboardingView: View {
                 VStack(spacing: DS.Spacing.md) {
                     Image(systemName: wantsSeparateAccounts ? "pencil.circle" : "star.circle")
                         .font(.system(size: heroIconSize))
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(styleAccentColor)
                         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .accessibilityHidden(true)
 
@@ -585,36 +773,44 @@ struct OnboardingView: View {
                          : L10n.Onboarding.currencyNameTitleSingle)
                         .font(DS.Typography.title)
                         .fontWeight(.bold)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(primaryTextStyle)
                         .multilineTextAlignment(.center)
 
                     Text(wantsSeparateAccounts
                          ? L10n.Onboarding.currencyNameSubtitleSeparate
                          : L10n.Onboarding.currencyNameSubtitleSingle)
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(secondaryTextStyle)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, DS.Spacing.xl)
                 }
                 .padding(.top, DS.Spacing.md)
 
                 // Account name
-                SectionBox(title: L10n.Onboarding.accountNameLabel) {
+                OnboardingFieldSection(
+                    title: L10n.Onboarding.accountNameLabel,
+                    titleStyle: secondaryTextStyle
+                ) {
                     HStack(spacing: DS.Spacing.md) {
                         Image(systemName: "pencil")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(secondaryTextStyle)
                         TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName)
                             .focused($accountNameFocused)
                             .accessibilityIdentifier("onboarding_account_name")
+                            .foregroundStyle(primaryTextStyle)
                     }
                     .padding()
                 }
                 .padding(.horizontal, DS.Spacing.lg)
 
                 // Currency
-                SectionBox(title: L10n.Onboarding.accountCurrencyLabel) {
+                OnboardingFieldSection(
+                    title: L10n.Onboarding.accountCurrencyLabel,
+                    titleStyle: secondaryTextStyle
+                ) {
                     Button {
                         accountNameFocused = false
+                        currencyAtPickerOpen = accountCurrency
                         showCurrencyPicker = true
                     } label: {
                         HStack(spacing: DS.Spacing.md) {
@@ -622,13 +818,13 @@ struct OnboardingView: View {
                                 .font(DS.Typography.title)
                             Text(accountCurrency.localizedName)
                                 .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(primaryTextStyle)
                             Spacer()
                             Text(accountCurrency.rawValue)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(secondaryTextStyle)
                             Image(systemName: "chevron.right")
                                 .font(DS.Typography.caption)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(mutedTextStyle)
                         }
                         .padding()
                         .contentShape(Rectangle())
@@ -648,7 +844,16 @@ struct OnboardingView: View {
                 lastAutoName = suggested
             }
         }
-        .sheet(isPresented: $showCurrencyPicker) {
+        .sheet(isPresented: $showCurrencyPicker, onDismiss: {
+            // Track solo si user efectivamente cambió la divisa en el sheet.
+            if let initial = currencyAtPickerOpen, initial != accountCurrency {
+                TelemetryService.track(
+                    .onboardingCurrencyPicked,
+                    parameters: ["currency": accountCurrency.rawValue]
+                )
+            }
+            currencyAtPickerOpen = nil
+        }) {
             accountCurrencyPickerSheet
         }
     }
@@ -662,30 +867,41 @@ struct OnboardingView: View {
                     VStack(spacing: DS.Spacing.md) {
                         Image(systemName: "dollarsign.circle.fill")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(styleAccentColor)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.balanceTitle)
                             .font(DS.Typography.title)
                             .fontWeight(.bold)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(primaryTextStyle)
                             .multilineTextAlignment(.center)
 
                         Text(L10n.Onboarding.balanceSubtitle)
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(secondaryTextStyle)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, DS.Spacing.xl)
                     }
                     .padding(.top, DS.Spacing.md)
 
+                    // Live preview del monto formateado — eyecatcher emocional.
+                    // `.numericText()` trasiciona los dígitos; el currency symbol y
+                    // el signo "-" son estáticos (jitter aceptable al cambiar signo).
+                    balanceLivePreview
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.bottom, DS.Spacing.sm)
+
                     // Balance display (filled by calculator or manual input)
-                    SectionBox(title: L10n.Onboarding.accountBalanceLabel) {
+                    OnboardingFieldSection(
+                        title: L10n.Onboarding.accountBalanceLabel,
+                        titleStyle: secondaryTextStyle
+                    ) {
                         VStack(spacing: DS.Spacing.none) {
                             HStack(spacing: DS.Spacing.md) {
                                 Text(L10n.Account.sign)
                                     .font(DS.Typography.subheadline)
+                                    .foregroundStyle(secondaryTextStyle)
                                 Spacer()
                                 Picker(L10n.Account.sign, selection: $balanceIsPositive) {
                                     Text(L10n.Account.positive).tag(true)
@@ -702,11 +918,12 @@ struct OnboardingView: View {
                                 HStack(spacing: DS.Spacing.xs) {
                                     Text(accountCurrency.symbol)
                                         .font(DS.Typography.body)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(secondaryTextStyle)
                                     TextField("0", text: $initialBalanceText)
                                         .font(DS.Typography.largeTitle)
                                         .keyboardType(.decimalPad)
                                         .multilineTextAlignment(.trailing)
+                                        .foregroundStyle(primaryTextStyle)
                                         .accessibilityIdentifier("onboarding_balance")
                                 }
                             }
@@ -726,7 +943,7 @@ struct OnboardingView: View {
                                 .font(DS.Typography.subheadline)
                                 .fontWeight(.semibold)
                         }
-                        .foregroundStyle(Color.electricIndigo)
+                        .foregroundStyle(styleAccentColor)
                     }
                     .buttonStyle(.plain)
 
@@ -776,6 +993,28 @@ struct OnboardingView: View {
         }
     }
 
+    /// Preview en vivo del monto formateado en la moneda elegida.
+    /// Una sola `.animation()` con key compuesto `(text, sign)` evita stacking
+    /// de modifiers que invalidaban dos veces por keystroke (ver review #balance).
+    private var balanceLivePreview: some View {
+        let trimmed = initialBalanceText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let isEmpty = trimmed.isEmpty
+        let amount = AmountInputHelper.parseDecimal(initialBalanceText)
+        let signed = balanceIsPositive ? amount : -amount
+        let formatted = isEmpty
+            ? "\(accountCurrency.symbol) 0"
+            : appPreferences.currency(signed, currencyCode: accountCurrency.rawValue)
+
+        return Text(formatted)
+            .font(DS.Typography.largeTitle)
+            .fontWeight(.semibold)
+            .foregroundStyle(isEmpty ? mutedTextStyle : primaryTextStyle)
+            .contentTransition(.numericText())
+            .animation(.smooth(duration: 0.3), value: formatted)
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel(formatted)
+    }
+
     // MARK: - Step 7: Confirmation
 
     private var confirmationMotivation: String {
@@ -787,109 +1026,127 @@ struct OnboardingView: View {
     }
 
     private var confirmationStep: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: DS.Spacing.xl) {
-                    // Motivational message at top
+        ScrollView {
+            VStack(spacing: DS.Spacing.lg) {
+                // Ready header — Circle 96pt gradient + sparkles 44pt
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(
+                            colors: [Color.hotPink.opacity(0.25), styleAccentColor.opacity(0.18)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
+                        .frame(width: 96, height: 96)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 44, weight: .semibold)) // A11Y-DT: hero icon
+                        .foregroundStyle(LinearGradient(
+                            colors: [.hotPink, styleAccentColor],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
+                }
+                .padding(.top, DS.Spacing.xl)
+                .accessibilityHidden(true)
+
+                VStack(spacing: DS.Spacing.sm) {
+                    // Motivational message como subtitle (replaces el largeTitle previo)
                     Text(confirmationMotivation)
-                        .font(DS.Typography.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundStyle(Color.electricIndigo)
+                        .font(DS.Typography.title2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(primaryTextStyle)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, DS.Spacing.xl)
-                        .padding(.top, DS.Spacing.xxxl)
 
                     Text(L10n.Onboarding.confirmTitle)
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(secondaryTextStyle)
                         .multilineTextAlignment(.center)
-
-                    // Visual summary items
-                    VStack(spacing: DS.Spacing.lg) {
-                        confirmItem(
-                            icon: "person.fill",
-                            color: Color.electricIndigo,
-                            value: userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                ? L10n.Profile.defaultName : userName
-                        )
-
-                        confirmItem(
-                            icon: iconName(for: selectedAccountType),
-                            color: .hotPink,
-                            value: (accountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                    ? selectedAccountType.localizedName : accountName)
-                                + " · \(accountCurrency.rawValue)"
-                        )
-
-                        if !expensesOnlyMode {
-                            let amount = AmountInputHelper.parseDecimal(initialBalanceText)
-                            let displayAmount = amount > 0 ? (balanceIsPositive ? amount : -amount) : 0.0
-                            let formattedBalance = appPreferences.currency(displayAmount,
-                                currencyCode: accountCurrency.rawValue
-                            )
-
-                            confirmItem(
-                                icon: "banknote",
-                                color: Color.electricIndigo,
-                                value: formattedBalance
-                            )
-                        }
-
-                        if expensesOnlyMode {
-                            confirmItem(
-                                icon: "list.bullet.clipboard",
-                                color: .secondary,
-                                value: L10n.Onboarding.purposeExpenses
-                            )
-                        }
-
-                        confirmItem(
-                            icon: "folder.fill",
-                            color: .orange,
-                            value: loadSeedCategories
-                                ? L10n.Onboarding.categoriesDefault
-                                : L10n.Onboarding.categoriesCustom
-                        )
-                    }
-                    .padding(.horizontal, DS.Spacing.xl)
-
-                    // Privacy section — visually distinct from user data
-                    VStack(spacing: DS.Spacing.md) {
-                        HStack {
-                            Rectangle()
-                                .fill(.thSecondaryText.opacity(0.2))
-                                .frame(height: 1)
-                            Text(L10n.Onboarding.privacyTitle)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .layoutPriority(1)
-                            Rectangle()
-                                .fill(.thSecondaryText.opacity(0.2))
-                                .frame(height: 1)
-                        }
-
-                        VStack(spacing: DS.Spacing.xs) {
-                            privacyBullet(icon: "iphone", text: L10n.Onboarding.privacyLocal)
-                            privacyBullet(icon: "eye.slash.fill", text: L10n.Onboarding.privacyNoTracking)
-                            privacyBullet(icon: "person.badge.key.fill", text: L10n.Onboarding.privacyIcloud)
-                            privacyBullet(icon: "lock.shield.fill", text: L10n.Onboarding.privacyNoSharing)
-                        }
-                    }
-                    .padding(.horizontal, DS.Spacing.xl)
-
-                    Spacer()
                 }
-                .frame(minHeight: geometry.size.height)
+
+                // Visual summary items
+                VStack(spacing: DS.Spacing.sm) {
+                    confirmItem(
+                        icon: "person.fill",
+                        color: styleAccentColor,
+                        value: userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? L10n.Profile.defaultName : userName
+                    )
+
+                    confirmItem(
+                        icon: iconName(for: selectedAccountType),
+                        color: .hotPink,
+                        value: (accountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                ? selectedAccountType.localizedName : accountName)
+                            + " · \(accountCurrency.rawValue)"
+                    )
+
+                    if !expensesOnlyMode {
+                        let amount = AmountInputHelper.parseDecimal(initialBalanceText)
+                        let displayAmount = amount > 0 ? (balanceIsPositive ? amount : -amount) : 0.0
+                        let formattedBalance = appPreferences.currency(displayAmount,
+                            currencyCode: accountCurrency.rawValue
+                        )
+
+                        confirmItem(
+                            icon: "banknote",
+                            color: styleAccentColor,
+                            value: formattedBalance
+                        )
+                    }
+
+                    if expensesOnlyMode {
+                        confirmItem(
+                            icon: "list.bullet.clipboard",
+                            color: .essentialNeed,
+                            value: L10n.Onboarding.purposeExpenses
+                        )
+                    }
+
+                    confirmItem(
+                        icon: "folder.fill",
+                        color: .priorityNeed,
+                        value: loadSeedCategories
+                            ? L10n.Onboarding.categoriesDefault
+                            : L10n.Onboarding.categoriesCustom
+                    )
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+
+                // Privacy section como card translúcida
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    Text(L10n.Onboarding.privacyTitle)
+                        .font(DS.Typography.label)
+                        .foregroundStyle(secondaryTextStyle)
+                        .padding(.horizontal, DS.Spacing.xs)
+
+                    VStack(spacing: DS.Spacing.xs) {
+                        privacyBullet(icon: "iphone", text: L10n.Onboarding.privacyLocal)
+                        privacyBullet(icon: "eye.slash.fill", text: L10n.Onboarding.privacyNoTracking)
+                        privacyBullet(icon: "person.badge.key.fill", text: L10n.Onboarding.privacyIcloud)
+                        privacyBullet(icon: "lock.shield.fill", text: L10n.Onboarding.privacyNoSharing)
+                    }
+                    .padding(DS.Spacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.thCard)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                            .stroke(cardStroke, lineWidth: 1)
+                    )
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+
+                Spacer(minLength: DS.Spacing.lg)
             }
-            .scrollBounceBehavior(.basedOnSize)
         }
+        .scrollBounceBehavior(.basedOnSize)
     }
 
     private func confirmItem(icon: String, color: Color, value: String) -> some View {
         HStack(spacing: DS.Spacing.md) {
             ZStack {
                 Circle()
-                    .fill(color.opacity(0.15))
+                    .fill(color.opacity(0.18))
                     .frame(width: badgeSize, height: badgeSize)
 
                 Image(systemName: icon)
@@ -899,13 +1156,18 @@ struct OnboardingView: View {
 
             Text(value)
                 .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
+                .foregroundStyle(primaryTextStyle)
 
             Spacer()
         }
         .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.md)
+                .stroke(cardStroke, lineWidth: 1)
+        )
     }
 
     // MARK: - Step 8: Categories
@@ -926,19 +1188,19 @@ struct OnboardingView: View {
                     VStack(spacing: DS.Spacing.md) {
                         Image(systemName: "square.grid.2x2.fill")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(styleAccentColor)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
                         Text(L10n.Onboarding.categoriesTitle)
                             .font(DS.Typography.title)
                             .fontWeight(.bold)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(primaryTextStyle)
                             .multilineTextAlignment(.center)
 
                         Text(L10n.Onboarding.categoriesSubtitle)
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(secondaryTextStyle)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, DS.Spacing.xl)
                     }
@@ -952,7 +1214,7 @@ struct OnboardingView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Text(L10n.Onboarding.categoriesInfo)
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(secondaryTextStyle)
                             .multilineTextAlignment(.center)
 
                         Button {
@@ -965,7 +1227,7 @@ struct OnboardingView: View {
                                     .font(DS.Typography.subheadline)
                                     .fontWeight(.semibold)
                             }
-                            .foregroundStyle(Color.electricIndigo)
+                            .foregroundStyle(styleAccentColor)
                         }
                         .buttonStyle(.plain)
                     }
@@ -976,6 +1238,7 @@ struct OnboardingView: View {
                         binaryCard(
                             isSelected: loadSeedCategories,
                             icon: "checkmark.circle",
+                            iconColor: .priorityNeed,
                             title: L10n.Onboarding.categoriesYes,
                             description: L10n.Onboarding.categoriesRecommended,
                             accessibilityId: "onboarding_categories_yes"
@@ -986,6 +1249,7 @@ struct OnboardingView: View {
                         binaryCard(
                             isSelected: !loadSeedCategories,
                             icon: "xmark.circle",
+                            iconColor: .secondary,
                             title: L10n.Onboarding.categoriesNo,
                             description: "",
                             accessibilityId: "onboarding_categories_no"
@@ -1017,12 +1281,14 @@ struct OnboardingView: View {
             GridItem(.flexible())
         ]
 
+        let circleOpacity: Double = (backgroundStyle == .heroFlow ? 0.25 : 0.2)
+
         return LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
             ForEach(Array(filteredSeedCategories.enumerated()), id: \.element.name) { index, category in
                 VStack(spacing: DS.Spacing.xs) {
                     ZStack {
                         Circle()
-                            .fill(Color(hex: category.colorHex).opacity(0.2))
+                            .fill(Color(hex: category.colorHex).opacity(circleOpacity))
                             .frame(width: notifIconSize, height: notifIconSize)
 
                         Image(systemName: category.iconName)
@@ -1033,7 +1299,7 @@ struct OnboardingView: View {
 
                     Text(category.name)
                         .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(secondaryTextStyle)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }
@@ -1102,12 +1368,12 @@ struct OnboardingView: View {
         HStack(spacing: DS.Spacing.sm) {
             Image(systemName: icon)
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(secondaryTextStyle)
                 .frame(width: 24)
                 .accessibilityHidden(true)
             Text(text)
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(secondaryTextStyle)
             Spacer()
         }
     }
@@ -1247,38 +1513,38 @@ struct OnboardingView: View {
         }
     }
 
+    /// Footer del flow. En `.heroFlow`: solo CTA único (back vive en toolbar).
+    /// En `.themedPanel`: back capsule + CTA + fade gradient (el PanelBackground
+    /// puede ser claro y necesita la separación visual).
     private var floatingNavigationButtons: some View {
         VStack(spacing: DS.Spacing.none) {
-            Rectangle()
-                .fill(.thBackground)
-                .mask(
-                    LinearGradient(
-                        colors: [.clear, .black],
-                        startPoint: .top,
-                        endPoint: .bottom
+            if backgroundStyle == .themedPanel {
+                Rectangle()
+                    .fill(.thBackground)
+                    .mask(
+                        LinearGradient(
+                            colors: [.clear, .black],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-                )
-                .frame(height: DS.Spacing.xxl)
-                .allowsHitTesting(false)
+                    .frame(height: DS.Spacing.xxl)
+                    .allowsHitTesting(false)
+            }
 
             navigationButtons
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.bottom, DS.Spacing.xxxl)
                 .padding(.top, DS.Spacing.sm)
-                .background(.thBackground)
         }
     }
 
     private var navigationButtons: some View {
         HStack(spacing: DS.Spacing.md) {
-            if currentStep != .name {
+            // Back capsule SOLO en .themedPanel — heroFlow tiene back en toolbar
+            if backgroundStyle == .themedPanel && currentStep != .name {
                 Button {
-                    navigatingForward = false
-                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
-                        if let prev = previousStep(before: currentStep) {
-                            currentStep = prev
-                        }
-                    }
+                    goBack()
                 } label: {
                     Text(L10n.Action.back)
                         .font(DS.Typography.bodyBold)
@@ -1292,25 +1558,76 @@ struct OnboardingView: View {
             }
 
             YalaPrimaryButton(
-                currentStep == .confirmation ? L10n.Onboarding.finish : L10n.Action.next,
+                currentStep == .confirmation ? L10n.Onboarding.startUsingYala : L10n.Action.next,
                 isDisabled: isNextDisabled
             ) {
-                dismissKeyboard()
-
-                if currentStep == .confirmation {
-                    // Sync currency before completing
-                    selectedCurrency = accountCurrency
-                    completeOnboarding()
-                } else if let next = nextStep(after: currentStep) {
-                    navigatingForward = true
-                    dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
-                        currentStep = next
-                    }
-                    if next == .categories {
-                        triggerCategoryAnimation()
-                    }
-                }
+                advance()
             }
+        }
+    }
+
+    /// Avanza al siguiente step (o completa el onboarding si es el último).
+    /// Dispara picks del step que dejamos (state final efectivo, evita ruido
+    /// de picks parciales) + stepViewed del próximo step ANTES del withAnimation.
+    private func advance() {
+        dismissKeyboard()
+        trackPickIfApplicable(forStep: currentStep)
+
+        if currentStep == .confirmation {
+            // Sync currency before completing
+            selectedCurrency = accountCurrency
+            completeOnboarding()
+            return
+        }
+
+        guard let next = nextStep(after: currentStep) else { return }
+
+        TelemetryService.track(
+            .onboardingStepViewed,
+            parameters: OnboardingTelemetryEventBuilder.paramsForStepViewed(
+                step: next.trackingName,
+                stepIndex: effectiveSteps.firstIndex(of: next) ?? 0,
+                totalSteps: effectiveTotalSteps,
+                mode: mode
+            )
+        )
+
+        navigatingForward = true
+        dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
+            currentStep = next
+        }
+        if next == .categories {
+            triggerCategoryAnimation()
+        }
+    }
+
+    /// Dispara el evento de pick del step que estamos dejando, leyendo el state
+    /// final del view (no el handler — evita disparar 3 veces si user toca
+    /// `control → expenses → control` antes de avanzar).
+    private func trackPickIfApplicable(forStep step: Step) {
+        switch step {
+        case .purpose:
+            TelemetryService.track(
+                .onboardingPurposePicked,
+                parameters: ["purpose": selectedUsageMode.rawValue]
+            )
+        case .accounts:
+            TelemetryService.track(
+                .onboardingAccountsPicked,
+                parameters: ["accounts": wantsSeparateAccounts ? "multiple" : "single"]
+            )
+        case .accountType:
+            TelemetryService.track(
+                .onboardingAccountTypePicked,
+                parameters: ["type": selectedAccountType.rawValue]
+            )
+        case .categories:
+            TelemetryService.track(
+                .onboardingCategoriesPicked,
+                parameters: ["loadSeed": String(loadSeedCategories)]
+            )
+        default:
+            break
         }
     }
 
@@ -1362,6 +1679,7 @@ struct OnboardingView: View {
         }
 
         TelemetryService.track(.onboardingCompleted, parameters: [
+            "mode": mode.rawValue,
             "expensesOnly": String(expensesOnlyMode),
             "usedSeedCategories": String(loadSeedCategories),
         ])
@@ -1496,6 +1814,79 @@ struct OnboardingView: View {
             print("OnboardingView: Created \(inserted) notification types (all inactive)")
         }
         #endif
+    }
+}
+
+// MARK: - Welcome Bubble Preview (Step 1 saludo en vivo)
+
+/// Bubble del bot que muestra saludo personalizado mientras el user escribe.
+/// `.smooth(0.45)` animación keyed en el text → fade-in cuando user empieza
+/// a escribir, transición suave si edita. Reduce Motion: sin animación.
+fileprivate struct WelcomeBubblePreview: View {
+    let userName: String
+    let primaryTextStyle: Color
+    let secondaryTextStyle: Color
+    let cardStroke: Color
+    let accentColor: Color
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let isEmpty = trimmed.isEmpty
+        let text: String = isEmpty
+            ? L10n.Onboarding.greetingBubbleEmpty
+            : L10n.Onboarding.greetingBubble(trimmed)
+
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 16, weight: .semibold)) // A11Y-DT: bot avatar
+                .foregroundStyle(accentColor)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(.thCard))
+                .accessibilityHidden(true)
+
+            Text(text)
+                .font(DS.Typography.body)
+                .foregroundStyle(isEmpty ? secondaryTextStyle : primaryTextStyle)
+                .multilineTextAlignment(.leading)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.sm)
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(cardStroke, lineWidth: 1)
+                )
+                .animation(reduceMotion ? nil : .smooth(duration: 0.45, extraBounce: 0.15), value: text)
+
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(text)
+    }
+}
+
+// MARK: - Field Section (background-aware reemplazo de SectionBox)
+
+/// Sustituto de `SectionBox(title:)` para el flow Onboarding. Label arriba con
+/// estilo proporcionado por el owner (background-aware) + content envuelto en
+/// `.solidCard()` modifier para fondo consistente con el resto de cards.
+fileprivate struct OnboardingFieldSection<Content: View>: View {
+    let title: String
+    let titleStyle: Color
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(title)
+                .font(DS.Typography.label)
+                .foregroundStyle(titleStyle)
+                .padding(.horizontal, DS.Spacing.xs)
+
+            content()
+                .solidCard(padding: 0, radius: DS.Radius.lg)
+        }
     }
 }
 

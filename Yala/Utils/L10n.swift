@@ -4175,6 +4175,12 @@ enum L10n {
         static var namePlaceholder: String {
             ls("onboarding.namePlaceholder", comment: "")
         }
+        static func greetingBubble(_ name: String) -> String {
+            String(format: ls("onboarding.greetingBubble", comment: ""), name)
+        }
+        static var greetingBubbleEmpty: String {
+            ls("onboarding.greetingBubbleEmpty", comment: "")
+        }
         static var currencyTitle: String {
             ls("onboarding.currencyTitle", comment: "")
         }
@@ -4198,6 +4204,9 @@ enum L10n {
         }
         static var finish: String {
             ls("onboarding.finish", comment: "")
+        }
+        static var startUsingYala: String {
+            ls("onboarding.startUsingYala", comment: "")
         }
         static var categoriesTitle: String {
             ls("onboarding.categoriesTitle", comment: "")

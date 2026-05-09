@@ -1823,6 +1823,8 @@
 "onboarding.welcomeSubtitle" = "Yalaを設定するのに数ステップだけです。";
 "onboarding.nameLabel" = "なんとお呼びしましょう？";
 "onboarding.namePlaceholder" = "お名前";
+"onboarding.greetingBubble" = "こんにちは、%@ 👋 — Yalaを準備しています…";
+"onboarding.greetingBubbleEmpty" = "お名前は?";
 "onboarding.currencyTitle" = "メイン通貨";
 "onboarding.currencySubtitle" = "最もよく使う通貨を選択してください。";
 "onboarding.secondaryTitle" = "副通貨";
@@ -1831,6 +1833,7 @@
 "onboarding.periodTitle" = "既定の期間";
 "onboarding.periodSubtitle" = "アプリを開いたときに既定で表示する期間はどれにしますか？";
 "onboarding.finish" = "始めましょう";
+"onboarding.startUsingYala" = "Yalaを始める";
 "onboarding.categoriesTitle" = "始めるためのカテゴリー";
 "onboarding.categoriesSubtitle" = "初日から支出を整理しやすいよう、よく使うカテゴリーを用意しました。";
 "onboarding.categoriesYes" = "このカテゴリーで始める";

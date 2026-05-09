@@ -1823,6 +1823,8 @@
 "onboarding.welcomeSubtitle" = "Slechts een paar stappen om Yala voor jou in te stellen.";
 "onboarding.nameLabel" = "Hoe mogen we je noemen?";
 "onboarding.namePlaceholder" = "Je naam";
+"onboarding.greetingBubble" = "Hoi, %@ 👋 — ik bereid je Yala voor…";
+"onboarding.greetingBubbleEmpty" = "Hoe heet je?";
 "onboarding.currencyTitle" = "Je hoofdvaluta";
 "onboarding.currencySubtitle" = "Kies de valuta die je het vaakst gebruikt.";
 "onboarding.secondaryTitle" = "Secundaire valuta's";
@@ -1831,6 +1833,7 @@
 "onboarding.periodTitle" = "Standaardperiode";
 "onboarding.periodSubtitle" = "Welk tijdsbereik zie je het liefst bij het openen van de app?";
 "onboarding.finish" = "We gaan ervoor";
+"onboarding.startUsingYala" = "Yala starten";
 "onboarding.categoriesTitle" = "Categorieën om mee te beginnen";
 "onboarding.categoriesSubtitle" = "We hebben veelgebruikte categorieën klaargezet zodat je vanaf dag één je uitgaven kunt ordenen.";
 "onboarding.categoriesYes" = "Begin met deze categorieën";

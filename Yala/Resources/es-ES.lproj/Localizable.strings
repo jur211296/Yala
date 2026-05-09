@@ -223,3 +223,7 @@
 "yalaAI.onboarding.step5.subtitle" = "Cuando quieras, dile a Yala lo que necesitas.";
 "yalaAI.onboarding.step5.tip" = "💡 Prueba: \"Registra un café de 2 euros\" o \"¿Cuánto gasté hoy?\"";
 "yalaAI.onboarding.step5.cta" = "Empezar a chatear";
+
+"onboarding.greetingBubble" = "Hola, %@ 👋 — voy preparando tu Yala…";
+"onboarding.greetingBubbleEmpty" = "¿Cómo te llamas?";
+"onboarding.startUsingYala" = "Empezar a usar Yala";

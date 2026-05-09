@@ -1824,6 +1824,8 @@
 "onboarding.welcomeSubtitle" = "Nur ein paar Schritte, um Yala für dich einzurichten.";
 "onboarding.nameLabel" = "Wie sollen wir dich nennen?";
 "onboarding.namePlaceholder" = "Ihr Name";
+"onboarding.greetingBubble" = "Hallo, %@ 👋 — dein Yala wird vorbereitet…";
+"onboarding.greetingBubbleEmpty" = "Wie heißt du?";
 "onboarding.currencyTitle" = "Hauptwährung";
 "onboarding.currencySubtitle" = "Wählen Sie die Währung, die Sie am häufigsten verwenden.";
 "onboarding.secondaryTitle" = "Sekundäre Währungen";
@@ -1832,6 +1834,7 @@
 "onboarding.periodTitle" = "Standardzeitraum";
 "onboarding.periodSubtitle" = "Welchen Zeitraum möchten Sie beim Öffnen der App sehen?";
 "onboarding.finish" = "Los geht's";
+"onboarding.startUsingYala" = "Yala starten";
 "onboarding.categoriesTitle" = "Kategorien zum Starten";
 "onboarding.categoriesSubtitle" = "Wir haben gängige Kategorien vorbereitet, um Ihre Ausgaben von Anfang an zu organisieren.";
 "onboarding.categoriesYes" = "Mit diesen Kategorien starten";

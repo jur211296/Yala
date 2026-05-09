@@ -300,3 +300,7 @@
 "yalaAI.onboarding.step5.subtitle" = "Whenever you like, tell Yala what you need.";
 "yalaAI.onboarding.step5.tip" = "💡 Try: \"Log a £5 coffee\" or \"How much did I spend today?\"";
 "yalaAI.onboarding.step5.cta" = "Start chatting";
+
+"onboarding.greetingBubble" = "Hi, %@ 👋 — getting your Yala ready…";
+"onboarding.greetingBubbleEmpty" = "What's your name?";
+"onboarding.startUsingYala" = "Start using Yala";

@@ -20,18 +20,13 @@ struct FullModeActivationView: View {
     @State private var prefilledSummary: ICloudAccountSummary?
 
     var body: some View {
-        NavigationStack {
-            OnboardingView(
-                prefilledData: prefilledSummary,
-                onCancelFromStep1: { onComplete() },
-                onComplete: { completeFullActivation() }
-            )
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.Action.cancel) { onComplete() }
-                }
-            }
-        }
+        OnboardingView(
+            prefilledData: prefilledSummary,
+            backgroundStyle: .themedPanel,
+            mode: .fullActivation,
+            onCancel: { onComplete() },
+            onComplete: { completeFullActivation() }
+        )
         .onAppear {
             cleanupResidualGeneralAccount()
             if prefilledSummary == nil { prefilledSummary = buildPrefilledSummary() }
@@ -87,9 +82,8 @@ struct FullModeActivationView: View {
         )
         sessionState.selectedMainTab = .panel
 
-        TelemetryService.track(.onboardingCompleted, parameters: [
-            "mode": "fullActivation",
-        ])
+        // `.onboardingCompleted` lo dispara `OnboardingView.completeOnboarding`
+        // con el `mode` correcto — invariante: un solo fire por flow.
         TelemetryService.track(.fullModeActivationCompleted, parameters: [
             "fromSegment": UserSegmentService.shared.currentSegment.rawValue,
         ])

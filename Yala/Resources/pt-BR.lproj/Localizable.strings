@@ -1824,6 +1824,8 @@
 "onboarding.welcomeSubtitle" = "Só alguns passos para personalizar o Yala para você.";
 "onboarding.nameLabel" = "Como queres que te chamemos?";
 "onboarding.namePlaceholder" = "Seu nome";
+"onboarding.greetingBubble" = "Oi, %@ 👋 — estou preparando seu Yala…";
+"onboarding.greetingBubbleEmpty" = "Qual é o seu nome?";
 "onboarding.currencyTitle" = "Moeda principal";
 "onboarding.currencySubtitle" = "Selecione a moeda que você usa com mais frequência.";
 "onboarding.secondaryTitle" = "Moedas secundárias";
@@ -1832,6 +1834,7 @@
 "onboarding.periodTitle" = "Período padrão";
 "onboarding.periodSubtitle" = "Qual intervalo de tempo você prefere ver ao abrir o aplicativo?";
 "onboarding.finish" = "Começar";
+"onboarding.startUsingYala" = "Começar a usar o Yala";
 "onboarding.categoriesTitle" = "Categorias para começar";
 "onboarding.categoriesSubtitle" = "Preparamos categorias comuns para ajudar a organizar suas despesas desde o primeiro dia.";
 "onboarding.categoriesYes" = "Começar com estas categorias";

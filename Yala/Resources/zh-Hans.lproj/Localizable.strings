@@ -1823,6 +1823,8 @@
 "onboarding.welcomeSubtitle" = "几步就能为你设置好 Yala。";
 "onboarding.nameLabel" = "我们怎么称呼你?";
 "onboarding.namePlaceholder" = "你的名字";
+"onboarding.greetingBubble" = "你好，%@ 👋 — 正在为你准备 Yala…";
+"onboarding.greetingBubbleEmpty" = "你叫什么名字?";
 "onboarding.currencyTitle" = "你的主货币";
 "onboarding.currencySubtitle" = "选择你最常用的货币。";
 "onboarding.secondaryTitle" = "次要货币";
@@ -1831,6 +1833,7 @@
 "onboarding.periodTitle" = "默认时段";
 "onboarding.periodSubtitle" = "打开应用时你想看哪个时间范围?";
 "onboarding.finish" = "开始吧";
+"onboarding.startUsingYala" = "开始使用 Yala";
 "onboarding.categoriesTitle" = "起始类别";
 "onboarding.categoriesSubtitle" = "我们准备了常用类别,帮你从第一天开始就把支出整理好。";
 "onboarding.categoriesYes" = "使用这些类别开始";

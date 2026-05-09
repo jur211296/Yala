@@ -1823,6 +1823,8 @@
 "onboarding.welcomeSubtitle" = "Just a few steps to set up Yala for you.";
 "onboarding.nameLabel" = "What should we call you?";
 "onboarding.namePlaceholder" = "Your name";
+"onboarding.greetingBubble" = "Hi, %@ 👋 — getting your Yala ready…";
+"onboarding.greetingBubbleEmpty" = "What's your name?";
 "onboarding.currencyTitle" = "Your main currency";
 "onboarding.currencySubtitle" = "Select the currency you use most frequently.";
 "onboarding.secondaryTitle" = "Secondary currencies";
@@ -1831,6 +1833,7 @@
 "onboarding.periodTitle" = "Default period";
 "onboarding.periodSubtitle" = "What time range do you prefer to see when opening the app?";
 "onboarding.finish" = "Let's Go";
+"onboarding.startUsingYala" = "Start using Yala";
 "onboarding.categoriesTitle" = "Categories to start";
 "onboarding.categoriesSubtitle" = "We've prepared common categories to help you organize your expenses from day one.";
 "onboarding.categoriesYes" = "Start with these categories";

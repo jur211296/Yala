@@ -21,7 +21,16 @@ enum AnalyticsEvent: String {
     case accountCreated
     case exportCompleted
     case aiInsightsGenerated
-    case onboardingCompleted
+    case onboardingCompleted             // params: mode, expensesOnly, usedSeedCategories
+    case onboardingStarted               // params: mode (initial|fullActivation), prefilled (true|false)
+    case onboardingStepViewed            // params: step, stepIndex, totalSteps, mode
+    case onboardingPurposePicked         // params: purpose (expensesOnly|dayToDay|fullControl)
+    case onboardingAccountsPicked        // params: accounts (single|multiple)
+    case onboardingAccountTypePicked     // params: type (checking|savings|creditCard|cash)
+    case onboardingCurrencyPicked        // params: currency (rawValue)
+    case onboardingCategoriesPicked      // params: loadSeed (true|false)
+    case onboardingBackTapped            // params: fromStep, mode
+    case onboardingCancelled             // params: atStep, mode
     case welcomeChooserBranchSelected   // A4 — params: branch (new|restore|invite)
     case purchaseAttempted
     case featureGateHit
