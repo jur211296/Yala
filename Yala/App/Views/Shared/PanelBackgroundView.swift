@@ -37,7 +37,7 @@ struct PanelBackgroundView: View {
     }
 }
 
-// MARK: - Animated Mesh Background (Translucent theme)
+// MARK: - AnimatedMeshBackground (sin callers; preservado para reactivación futura opt-in)
 
 struct AnimatedMeshBackground: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

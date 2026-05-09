@@ -811,7 +811,13 @@ private struct GroupInviteModifier: ViewModifier {
         case .rejectedRetry, .leftRetry, .removedRetry:
             await acceptAndSettle(metadata: metadata)
             if let group = SplitSyncManager.shared.group(for: zoneName) {
-                try? await GroupService.shared.ensureCurrentUserMemberExists(in: group, reactivateInactive: true)
+                do {
+                    _ = try await GroupService.shared.ensureCurrentUserMemberExists(in: group, reactivateInactive: true)
+                } catch {
+                    #if DEBUG
+                    print("ContentView: ensureCurrentUserMemberExists retry failed: \(error)")
+                    #endif
+                }
             }
             AppRouter.shared.enqueue(.navigate(.groups))
 
