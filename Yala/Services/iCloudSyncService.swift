@@ -231,6 +231,14 @@ final class iCloudSyncService {
                         object: nil
                     )
                 }
+                // M6: cada import successful dispara este event (no solo el primero).
+                // Consumido por GroupBridgeRaceCleaner para autodelete drafts pendientes
+                // Caso A cuando llega TX cuenta real vía sync personal.
+                // TODO post-M6: añadir debounce 1s coalesce si cold launch dispara muchas veces.
+                NotificationCenter.default.post(
+                    name: .transactionsImportedFromSync,
+                    object: nil
+                )
             } else {
                 setStatus(.syncing(kind: .importing))
             }
@@ -465,6 +473,11 @@ extension Notification.Name {
     /// Posted on the main queue tras el primer importEvent exitoso
     /// (con endDate, sin error). Se emite una sola vez por proceso.
     static let iCloudFirstImportCompleted = Notification.Name("iCloudFirstImportCompleted")
+
+    /// M6: dispara cada vez que llegan TXs vía CKSync personal (no solo first import).
+    /// Consumido por `GroupBridgeRaceCleaner` para autodelete drafts pendientes Caso A
+    /// cuando la TX cuenta real ya llegó vía sync personal.
+    static let transactionsImportedFromSync = Notification.Name("transactionsImportedFromSync")
 }
 
 // MARK: - iCloud Account Summary

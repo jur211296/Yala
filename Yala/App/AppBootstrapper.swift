@@ -176,6 +176,10 @@ final class AppBootstrapper {
         // 14. Observe iCloud account changes — detect mismatch if container was created without CloudKit
         observeICloudAccountChanges()
 
+        // 14.5 (M6). Observe TX imports from CKSync personal — autodelete drafts pendientes Caso A
+        // cuyo splitExpenseID ya tiene TX cuenta real (race resuelto por sync).
+        observeTransactionsImportedFromSync(context: context)
+
         // 15. Initialize CKSyncEngine for shared group data (separate groups store)
         SplitSyncManager.shared.setContext(context)
         SplitSyncManager.shared.initialize()
@@ -256,6 +260,24 @@ final class AppBootstrapper {
         ) { _ in
             MainActor.assumeIsolated {
                 AppBootstrapper.shared.checkForICloudMismatch()
+            }
+        }
+    }
+
+    // MARK: - M6: Race Cleaner Hook
+
+    /// Subscribe a `.transactionsImportedFromSync` (cada import successful de CKSync personal).
+    /// Dispara `GroupBridgeRaceCleaner` para borrar drafts pendientes Caso A obsoletos —
+    /// su TX cuenta real ya llegó vía sync personal, el draft ya no aplica.
+    /// TODO post-M6: añadir debounce 1s coalesce si cold launch dispara muchas veces.
+    private func observeTransactionsImportedFromSync(context: ModelContext) {
+        NotificationCenter.default.addObserver(
+            forName: .transactionsImportedFromSync,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                _ = GroupBridgeRaceCleaner.cleanupPendingDraftsWithMatchingTX(in: context)
             }
         }
     }
@@ -381,7 +403,15 @@ final class AppBootstrapper {
                 do {
                     // shouldSave:false — save once at the end of the loop instead of
                     // per-expense to avoid N widget rebuilds + N budget checks on launch.
-                    try GroupTransactionBridge.shared.bridgeExpense(expense, in: group, shouldSave: false)
+                    // M6: isRemoteSync=true porque el retry no tiene cuenta del user en memoria.
+                    // Si Caso A `.full/.completed` y no hay TX real previa: crea draft con hint.
+                    try GroupTransactionBridge.shared.bridgeExpense(
+                        expense,
+                        in: group,
+                        accountForCurrentUser: nil,
+                        isRemoteSync: true,
+                        shouldSave: false
+                    )
                     expense.bridgePending = false
                     expense.bridgeAttempts = 0
                 } catch {
