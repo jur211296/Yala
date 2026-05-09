@@ -4183,8 +4183,12 @@
 "yalaAI.onboarding.progressLabel" = "Stap %1$d van %2$d";
 "yalaAI.onboarding.step1.title" = "Maak kennis met Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Je rechterhand voor je financiën.";
-"yalaAI.onboarding.step1.demoUserMessage" = "€12 uitgegeven aan lunch";
-"yalaAI.onboarding.step1.demoBotMessage" = "Klaar! Ik heb je uitgave vastgelegd";
+"yalaAI.onboarding.step1.demoScenario1User" = "€12 uitgegeven aan lunch";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Klaar! Ik heb je uitgave vastgelegd";
+"yalaAI.onboarding.step1.demoScenario2User" = "Hoeveel aan koffie?";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "€35 aan koffie deze maand";
+"yalaAI.onboarding.step1.demoScenario3User" = "Een tip?";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "Je bezorging is 20% hoger dan vorige maand";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Lunch";
 "yalaAI.onboarding.step1.a11yLabel" = "Voorbeeldchat met Yala AI die een uitgave vastlegt";
 "yalaAI.onboarding.step2.title" = "Dit kun je doen";

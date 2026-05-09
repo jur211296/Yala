@@ -29,21 +29,29 @@ struct YalaAIOnboardingView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
 
-            VStack(spacing: 0) {
-                header
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.top, DS.Spacing.md)
+                VStack(spacing: 0) {
+                    stepContent
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.horizontal, DS.Spacing.lg)
 
-                stepContent
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.horizontal, DS.Spacing.lg)
-
-                ctaSection
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.bottom, DS.Spacing.xl)
+                    ctaSection
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.bottom, DS.Spacing.xl)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    leadingButton
+                }
+                ToolbarItem(placement: .principal) {
+                    progressIndicator
+                }
             }
         }
         .onAppear {
@@ -51,17 +59,16 @@ struct YalaAIOnboardingView: View {
         }
     }
 
-    private var header: some View {
-        HStack(spacing: DS.Spacing.md) {
+    @ViewBuilder
+    private var leadingButton: some View {
+        if currentStep == .hero {
             YalaToolbarButton(systemName: "xmark", label: L10n.YalaAI.Onboarding.close) {
                 onResult(.close)
             }
-
-            progressIndicator
-                .frame(maxWidth: .infinity)
-
-            // Spacer simétrico con el width del YalaToolbarButton para que el progress quede centrado.
-            Color.clear.frame(width: 32, height: 32)
+        } else {
+            YalaToolbarButton(systemName: "chevron.left", label: L10n.YalaAI.Onboarding.back) {
+                goBack()
+            }
         }
     }
 
@@ -452,6 +459,13 @@ struct YalaAIOnboardingView: View {
 
         return YalaPrimaryButton(label) {
             advance()
+        }
+    }
+
+    private func goBack() {
+        guard let prev = Step(rawValue: currentStep.rawValue - 1) else { return }
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.3)) {
+            currentStep = prev
         }
     }
 

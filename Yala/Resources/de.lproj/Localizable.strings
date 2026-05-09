@@ -4180,8 +4180,12 @@
 "yalaAI.onboarding.progressLabel" = "Schritt %1$d von %2$d";
 "yalaAI.onboarding.step1.title" = "Das ist Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Ihre rechte Hand bei den Finanzen.";
-"yalaAI.onboarding.step1.demoUserMessage" = "12 € fürs Mittagessen ausgegeben";
-"yalaAI.onboarding.step1.demoBotMessage" = "Erledigt! Ausgabe gespeichert";
+"yalaAI.onboarding.step1.demoScenario1User" = "12 € fürs Mittagessen ausgegeben";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Erledigt! Ausgabe gespeichert";
+"yalaAI.onboarding.step1.demoScenario2User" = "Wie viel für Kaffee?";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Diesen Monat 35 € für Kaffee";
+"yalaAI.onboarding.step1.demoScenario3User" = "Ein Tipp?";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "Ihr Lieferdienst liegt 20% höher als letzten Monat";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Mittagessen";
 "yalaAI.onboarding.step1.a11yLabel" = "Beispielchat mit Yala AI: Eine Ausgabe wird erfasst";
 "yalaAI.onboarding.step2.title" = "Das können Sie hier tun";

@@ -3,15 +3,11 @@
 //  Yala
 //
 //  Animación dummy del chat para Step 1 del onboarding de Yala AI.
-//  Loop infinito: bubble user → typing dots → bubble bot → card transacción → fade-out.
+//  Loop infinito que rota 3 escenarios (registrar / preguntar / sugerencia)
+//  con crossfade entre iteraciones para evitar parpadeo.
 //
-//  Reutiliza componentes reales (`ChatMessageBubble`, `ChatLoadingIndicator`) con
-//  `ChatMessage` struct mockeado (Codable, no SwiftData), para que la animación
-//  se vea idéntica al chat real al que el user va a entrar después.
-//
-//  - Delay inicial 800ms permite leer título antes de empezar la primera iteración.
-//  - VoiceOver activo: pausa total en estado final visible.
-//  - Reduce Motion: solo fades, sin slides/typing dots animados.
+//  - VoiceOver activo: pausa total con scenario 1 en estado final visible.
+//  - Reduce Motion: solo fades, sin slides ni typing dots animados.
 //  - Cancel safety: animation task cancelado en `.onDisappear`.
 //
 
@@ -22,90 +18,89 @@ struct YalaAIChatPreview: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var phase: AnimationPhase = .idle
+    @State private var stage: Stage = .userVisible
+    @State private var scenarioIndex: Int = 0
+    @State private var scenarios: [Scenario] = []
     @State private var animationTask: Task<Void, Never>?
 
-    @State private var userMessage: ChatMessage?
-    @State private var botMessage: ChatMessage?
-
-    /// Fases de la iteración. Cada fase controla qué subviews son visibles + transitions.
-    private enum AnimationPhase: Int, CaseIterable {
-        case idle           // 0.0–0.8s — pantalla vacía (deja leer título)
-        case userVisible    // 0.8–1.6s — bubble user entra slide+fade desde la derecha
-        case typing         // 1.6–2.6s — typing dots (3 dots animados)
-        case botVisible     // 2.6–3.4s — bubble bot entra slide+fade desde la izquierda
-        case cardVisible    // 3.4–5.0s — draft preview card slide-up
-        case fadeOut        // 5.0–5.5s — fade general antes del loop
+    /// Una conversación completa user→bot, con card opcional. `ChatMessage` se cachea
+    /// junto con el scenario para evitar reconstruir UUIDs/timestamps en cada render.
+    private struct Scenario {
+        let userMessage: ChatMessage
+        let botMessage: ChatMessage
+        let showsCard: Bool
     }
 
-    private static let initialDelay: Duration = .milliseconds(800)
-    private static let phaseDelays: [AnimationPhase: Duration] = [
-        .userVisible: .milliseconds(800),
-        .typing: .milliseconds(1000),
-        .botVisible: .milliseconds(800),
-        .cardVisible: .milliseconds(1600),
-        .fadeOut: .milliseconds(500)
-    ]
+    private enum Stage: Int {
+        case userVisible
+        case typing
+        case botVisible
+        case cardVisible
+        case holding
+
+        /// Delay tras entrar en el stage. `cardVisible` y `holding` se manejan en el
+        /// loop con duraciones propias (la card tarda más en ser apreciada; el holding
+        /// depende de si el scenario tuvo card o no).
+        var delay: Duration {
+            switch self {
+            case .userVisible: .milliseconds(900)
+            case .typing:      .milliseconds(1000)
+            case .botVisible:  .milliseconds(800)
+            case .cardVisible: .milliseconds(1600)
+            case .holding:     .zero
+            }
+        }
+    }
+
+    private static let holdDelayWithCard: Duration = .milliseconds(1500)
+    private static let holdDelayBubblesOnly: Duration = .milliseconds(1300)
+    /// Crossfade entre el final de un scenario y el inicio del siguiente.
+    private static let crossfadeDuration: Duration = .milliseconds(350)
 
     var body: some View {
         VStack(spacing: DS.Spacing.sm) {
-            if let userMessage, phase.rawValue >= AnimationPhase.userVisible.rawValue {
-                ChatMessageBubble(message: userMessage, viewModel: nil)
-                    .transition(reduceMotion
-                        ? .opacity
-                        : .asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .opacity
-                        )
-                    )
-            }
+            if let scenario = scenarios[safe: scenarioIndex] {
+                if stage.rawValue >= Stage.userVisible.rawValue {
+                    ChatMessageBubble(message: scenario.userMessage, viewModel: nil)
+                        .id("user-\(scenarioIndex)")
+                        .transition(bubbleTransition(fromTrailing: true))
+                }
 
-            if phase == .typing {
-                ChatLoadingIndicator()
-                    .transition(.opacity)
-            }
+                if stage == .typing {
+                    ChatLoadingIndicator()
+                        .transition(.opacity)
+                }
 
-            if let botMessage, phase.rawValue >= AnimationPhase.botVisible.rawValue {
-                ChatMessageBubble(message: botMessage, viewModel: nil)
-                    .transition(reduceMotion
-                        ? .opacity
-                        : .asymmetric(
-                            insertion: .move(edge: .leading).combined(with: .opacity),
-                            removal: .opacity
-                        )
-                    )
-            }
+                if stage.rawValue >= Stage.botVisible.rawValue {
+                    ChatMessageBubble(message: scenario.botMessage, viewModel: nil)
+                        .id("bot-\(scenarioIndex)")
+                        .transition(bubbleTransition(fromTrailing: false))
+                }
 
-            if phase.rawValue >= AnimationPhase.cardVisible.rawValue {
-                ChatDraftPreviewCard()
-                    .transition(reduceMotion
-                        ? .opacity
-                        : .asymmetric(
-                            insertion: .move(edge: .bottom).combined(with: .opacity),
-                            removal: .opacity
+                if scenario.showsCard, stage.rawValue >= Stage.cardVisible.rawValue {
+                    ChatDraftPreviewCard()
+                        .id("card-\(scenarioIndex)")
+                        .transition(reduceMotion
+                            ? .opacity
+                            : .asymmetric(
+                                insertion: .move(edge: .bottom).combined(with: .opacity),
+                                removal: .opacity
+                            )
                         )
-                    )
+                }
             }
 
             Spacer(minLength: 0)
         }
-        .opacity(phase == .fadeOut ? 0 : 1)
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: phase)
+        // Un único modifier con tuple (stage, scenarioIndex) cubre tanto las
+        // transiciones internas del scenario como el crossfade entre scenarios.
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: AnimationKey(stage: stage, scenarioIndex: scenarioIndex))
         .frame(maxWidth: .infinity, alignment: .top)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(L10n.YalaAI.Onboarding.step1A11yLabel)
         .task {
-            if userMessage == nil {
-                userMessage = ChatMessage(
-                    role: .user,
-                    text: L10n.YalaAI.Onboarding.step1DemoUserMessage,
-                    timestamp: .now
-                )
-                botMessage = ChatMessage(
-                    role: .assistant,
-                    text: L10n.YalaAI.Onboarding.step1DemoBotMessage,
-                    timestamp: .now
-                )
+            if scenarios.isEmpty {
+                scenarios = Self.makeScenarios()
             }
             startAnimation()
         }
@@ -115,35 +110,90 @@ struct YalaAIChatPreview: View {
         }
     }
 
-    // MARK: - Animation loop
+    private struct AnimationKey: Equatable {
+        let stage: Stage
+        let scenarioIndex: Int
+    }
+
+    private static func makeScenarios() -> [Scenario] {
+        [
+            Scenario(
+                userMessage: ChatMessage(role: .user, text: L10n.YalaAI.Onboarding.step1DemoScenario1User, timestamp: .now),
+                botMessage: ChatMessage(role: .assistant, text: L10n.YalaAI.Onboarding.step1DemoScenario1Bot, timestamp: .now),
+                showsCard: true
+            ),
+            Scenario(
+                userMessage: ChatMessage(role: .user, text: L10n.YalaAI.Onboarding.step1DemoScenario2User, timestamp: .now),
+                botMessage: ChatMessage(role: .assistant, text: L10n.YalaAI.Onboarding.step1DemoScenario2Bot, timestamp: .now),
+                showsCard: false
+            ),
+            Scenario(
+                userMessage: ChatMessage(role: .user, text: L10n.YalaAI.Onboarding.step1DemoScenario3User, timestamp: .now),
+                botMessage: ChatMessage(role: .assistant, text: L10n.YalaAI.Onboarding.step1DemoScenario3Bot, timestamp: .now),
+                showsCard: false
+            )
+        ]
+    }
+
+    private func bubbleTransition(fromTrailing: Bool) -> AnyTransition {
+        if reduceMotion { return .opacity }
+        let edge: Edge = fromTrailing ? .trailing : .leading
+        return .asymmetric(
+            insertion: .move(edge: edge).combined(with: .opacity),
+            removal: .opacity
+        )
+    }
 
     private func startAnimation() {
         animationTask?.cancel()
         animationTask = Task { @MainActor in
-            // Pausa total con VoiceOver: muestra estado final completo, deja al
-            // user explorar con el cursor sin interrupciones.
+            // VoiceOver: estado final visible del scenario 1 (con card), sin loop —
+            // permite al user explorar con el cursor sin que la animación cambie debajo.
             if voiceOverEnabled {
-                phase = .cardVisible
+                stage = .cardVisible
                 return
             }
 
-            // Delay inicial — deja leer título y subtítulo antes de la primera
-            // iteración. Sin esto la animación compite con la lectura.
-            try? await Task.sleep(for: Self.initialDelay)
-            guard !Task.isCancelled else { return }
-
             while !Task.isCancelled {
-                for nextPhase in AnimationPhase.allCases.dropFirst() {
-                    guard !Task.isCancelled else { return }
-                    phase = nextPhase
-                    if let delay = Self.phaseDelays[nextPhase] {
-                        try? await Task.sleep(for: delay)
-                    }
-                }
+                guard let scenario = scenarios[safe: scenarioIndex] else { return }
+
+                stage = .userVisible
+                try? await Task.sleep(for: Stage.userVisible.delay)
                 guard !Task.isCancelled else { return }
-                phase = .idle  // reset para siguiente loop (estado oculto)
-                try? await Task.sleep(for: .milliseconds(400))
+
+                stage = .typing
+                try? await Task.sleep(for: Stage.typing.delay)
+                guard !Task.isCancelled else { return }
+
+                stage = .botVisible
+                try? await Task.sleep(for: Stage.botVisible.delay)
+                guard !Task.isCancelled else { return }
+
+                if scenario.showsCard {
+                    stage = .cardVisible
+                    try? await Task.sleep(for: Stage.cardVisible.delay)
+                    guard !Task.isCancelled else { return }
+                }
+
+                stage = .holding
+                try? await Task.sleep(for: scenario.showsCard ? Self.holdDelayWithCard : Self.holdDelayBubblesOnly)
+                guard !Task.isCancelled else { return }
+
+                // Avance al siguiente scenario: el cambio de scenarioIndex desmonta los
+                // bubbles vía `.id` mientras los nuevos entran. Sin gap intermedio —
+                // ambas transiciones corren simultáneas.
+                scenarioIndex = (scenarioIndex + 1) % scenarios.count
+                stage = .userVisible
+                try? await Task.sleep(for: Self.crossfadeDuration)
             }
         }
+    }
+}
+
+// MARK: - Helpers
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }

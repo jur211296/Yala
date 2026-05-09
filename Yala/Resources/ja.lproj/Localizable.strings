@@ -4183,8 +4183,12 @@
 "yalaAI.onboarding.progressLabel" = "ステップ %1$d / %2$d";
 "yalaAI.onboarding.step1.title" = "Yala AIをご紹介します";
 "yalaAI.onboarding.step1.subtitle" = "あなたの家計のパートナーです。";
-"yalaAI.onboarding.step1.demoUserMessage" = "ランチに1,200円使いました";
-"yalaAI.onboarding.step1.demoBotMessage" = "完了しました。支出を記録しました";
+"yalaAI.onboarding.step1.demoScenario1User" = "ランチに1,200円使いました";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "完了しました。支出を記録しました";
+"yalaAI.onboarding.step1.demoScenario2User" = "コーヒーにいくら使いましたか？";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "今月のコーヒーは4,500円です";
+"yalaAI.onboarding.step1.demoScenario3User" = "アドバイスは？";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "デリバリーが先月より20%増えています";
 "yalaAI.onboarding.step1.demoAmountLabel" = "ランチ";
 "yalaAI.onboarding.step1.a11yLabel" = "Yala AIが支出を記録するチャットの例";
 "yalaAI.onboarding.step2.title" = "できることはこちら";

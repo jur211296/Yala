@@ -263,8 +263,12 @@
 "yalaAI.onboarding.progressLabel" = "Step %1$d of %2$d";
 "yalaAI.onboarding.step1.title" = "Meet Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Your financial right hand.";
-"yalaAI.onboarding.step1.demoUserMessage" = "Spent £12 on lunch";
-"yalaAI.onboarding.step1.demoBotMessage" = "Done! I've logged your expense";
+"yalaAI.onboarding.step1.demoScenario1User" = "Spent £12 on lunch";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Done! I've logged your expense";
+"yalaAI.onboarding.step1.demoScenario2User" = "How much on coffee?";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "£35 on coffee this month";
+"yalaAI.onboarding.step1.demoScenario3User" = "Any tip?";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "Your takeaway is 20% higher than last month";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Lunch";
 "yalaAI.onboarding.step1.a11yLabel" = "Example chat with Yala AI logging an expense";
 "yalaAI.onboarding.step2.title" = "Here's what you can do";

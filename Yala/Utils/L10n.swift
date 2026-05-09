@@ -5712,11 +5712,15 @@ enum L10n {
                 String(format: ls("yalaAI.onboarding.progressLabel", comment: ""), current, total)
             }
 
-            // Step 1 — Hero with chat preview animation
+            // Step 1 — Hero with chat preview animation (3 scenarios)
             static var step1Title: String { ls("yalaAI.onboarding.step1.title", comment: "") }
             static var step1Subtitle: String { ls("yalaAI.onboarding.step1.subtitle", comment: "") }
-            static var step1DemoUserMessage: String { ls("yalaAI.onboarding.step1.demoUserMessage", comment: "") }
-            static var step1DemoBotMessage: String { ls("yalaAI.onboarding.step1.demoBotMessage", comment: "") }
+            static var step1DemoScenario1User: String { ls("yalaAI.onboarding.step1.demoScenario1User", comment: "") }
+            static var step1DemoScenario1Bot: String { ls("yalaAI.onboarding.step1.demoScenario1Bot", comment: "") }
+            static var step1DemoScenario2User: String { ls("yalaAI.onboarding.step1.demoScenario2User", comment: "") }
+            static var step1DemoScenario2Bot: String { ls("yalaAI.onboarding.step1.demoScenario2Bot", comment: "") }
+            static var step1DemoScenario3User: String { ls("yalaAI.onboarding.step1.demoScenario3User", comment: "") }
+            static var step1DemoScenario3Bot: String { ls("yalaAI.onboarding.step1.demoScenario3Bot", comment: "") }
             static var step1DemoAmountLabel: String { ls("yalaAI.onboarding.step1.demoAmountLabel", comment: "") }
             static var step1A11yLabel: String { ls("yalaAI.onboarding.step1.a11yLabel", comment: "") }
 

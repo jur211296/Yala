@@ -4183,8 +4183,12 @@
 "yalaAI.onboarding.progressLabel" = "第 %1$d 步，共 %2$d 步";
 "yalaAI.onboarding.step1.title" = "向你介绍 Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "你的财务好帮手。";
-"yalaAI.onboarding.step1.demoUserMessage" = "午餐花了 12 元";
-"yalaAI.onboarding.step1.demoBotMessage" = "搞定！已记录你的支出";
+"yalaAI.onboarding.step1.demoScenario1User" = "午餐花了 12 元";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "搞定！已记录你的支出";
+"yalaAI.onboarding.step1.demoScenario2User" = "咖啡花了多少？";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "本月咖啡花了 320 元";
+"yalaAI.onboarding.step1.demoScenario3User" = "有什么建议吗？";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "你的外卖比上月高出 20%";
 "yalaAI.onboarding.step1.demoAmountLabel" = "午餐";
 "yalaAI.onboarding.step1.a11yLabel" = "Yala AI 记录支出的聊天示例";
 "yalaAI.onboarding.step2.title" = "你可以这样做";
