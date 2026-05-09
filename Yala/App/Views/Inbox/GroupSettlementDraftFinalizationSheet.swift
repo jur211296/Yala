@@ -115,7 +115,8 @@ struct GroupSettlementDraftFinalizationSheet: View {
             } message: {
                 Text(saveErrorMessage ?? L10n.Common.unknownError)
             }
-            .onAppear { loadMetadata(); resolvePreselectedAccount() }
+            // M6: NO defaults — eliminado resolvePreselectedAccount, user siempre elige cuenta.
+            .onAppear { loadMetadata() }
         }
     }
 
@@ -140,39 +141,12 @@ struct GroupSettlementDraftFinalizationSheet: View {
         }
     }
 
-    private func resolvePreselectedAccount() {
-        guard selectedAccount == nil,
-              let zoneID = draft.splitGroupZoneID,
-              !resolvedCurrency.isEmpty,
-              let preselectName = GroupPersonalPreferences.defaultSettlementAccount(
-                  for: zoneID,
-                  currencyCode: resolvedCurrency
-              ) else { return }
-        let currency = resolvedCurrency
-        let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate { account in
-                account.name == preselectName
-                && !account.isArchived
-                && !account.isSystemAccount
-                && account.currencyCode == currency
-            }
-        )
-        selectedAccount = try? modelContext.fetch(descriptor).first
-    }
-
     private func handleFinalize() {
         guard let account = selectedAccount else { return }
         draft.account = account
         do {
             _ = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
-            // Persistir preferencia para futuras liquidaciones del mismo grupo+moneda.
-            if let zoneID = draft.splitGroupZoneID, !resolvedCurrency.isEmpty {
-                GroupPersonalPreferences.setDefaultSettlementAccount(
-                    account.name,
-                    for: zoneID,
-                    currencyCode: resolvedCurrency
-                )
-            }
+            // M6: NO defaults — eliminada persistencia setDefaultSettlementAccount.
             DS.Haptic.success()
             onApproved()
             dismiss()

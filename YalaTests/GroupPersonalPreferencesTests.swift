@@ -2,7 +2,8 @@
 //  GroupPersonalPreferencesTests.swift
 //  YalaTests
 //
-//  Unit tests for GroupPersonalPreferences UserDefaults storage.
+//  M6: regla "NO defaults universales" eliminó las funciones default account.
+//  Solo queda `removeAll(for:)` para limpiar prefs legacy heredadas en leaveGroup.
 //
 
 import Foundation
@@ -12,68 +13,27 @@ import Testing
 
 struct GroupPersonalPreferencesTests {
 
-    // Use unique zone IDs per test to avoid cross-test interference.
-
-    // MARK: - Default Settlement Account (per currency)
-
-    @Test func settlementAccount_nilByDefault() {
+    @Test func removeAll_idempotentWhenNoKeys() {
         let zoneID = "test-zone-\(UUID().uuidString)"
-        #expect(GroupPersonalPreferences.defaultSettlementAccount(for: zoneID, currencyCode: "USD") == nil)
+        // No hay keys (M6+ runtime nunca las setea). Verificar que no crashea.
+        GroupPersonalPreferences.removeAll(for: zoneID)
+        // Doble invocación: idempotente.
         GroupPersonalPreferences.removeAll(for: zoneID)
     }
 
-    @Test func settlementAccount_setAndRead() {
+    @Test func removeAll_clearsLegacyKeys() {
+        // Simula keys legacy escritas por versión pre-M6 (UserDefaults directo).
         let zoneID = "test-zone-\(UUID().uuidString)"
-        GroupPersonalPreferences.setDefaultSettlementAccount("Cuenta USD", for: zoneID, currencyCode: "USD")
-        #expect(GroupPersonalPreferences.defaultSettlementAccount(for: zoneID, currencyCode: "USD") == "Cuenta USD")
-        GroupPersonalPreferences.removeAll(for: zoneID)
-    }
-
-    @Test func settlementAccount_setNil_removes() {
-        let zoneID = "test-zone-\(UUID().uuidString)"
-        GroupPersonalPreferences.setDefaultSettlementAccount("Cuenta USD", for: zoneID, currencyCode: "USD")
-        GroupPersonalPreferences.setDefaultSettlementAccount(nil, for: zoneID, currencyCode: "USD")
-        #expect(GroupPersonalPreferences.defaultSettlementAccount(for: zoneID, currencyCode: "USD") == nil)
-        GroupPersonalPreferences.removeAll(for: zoneID)
-    }
-
-    @Test func settlementAccount_independentPerCurrency() {
-        let zoneID = "test-zone-\(UUID().uuidString)"
-        GroupPersonalPreferences.setDefaultSettlementAccount("Cuenta USD", for: zoneID, currencyCode: "USD")
-        GroupPersonalPreferences.setDefaultSettlementAccount("Cuenta PEN", for: zoneID, currencyCode: "PEN")
-
-        #expect(GroupPersonalPreferences.defaultSettlementAccount(for: zoneID, currencyCode: "USD") == "Cuenta USD")
-        #expect(GroupPersonalPreferences.defaultSettlementAccount(for: zoneID, currencyCode: "PEN") == "Cuenta PEN")
-        GroupPersonalPreferences.removeAll(for: zoneID)
-    }
-
-    // MARK: - Zone Isolation
-
-    @Test func differentZones_independentValues() {
-        let zone1 = "test-zone-\(UUID().uuidString)"
-        let zone2 = "test-zone-\(UUID().uuidString)"
-
-        GroupPersonalPreferences.setDefaultSettlementAccount("Acc1", for: zone1, currencyCode: "USD")
-        GroupPersonalPreferences.setDefaultSettlementAccount("Acc2", for: zone2, currencyCode: "USD")
-
-        #expect(GroupPersonalPreferences.defaultSettlementAccount(for: zone1, currencyCode: "USD") == "Acc1")
-        #expect(GroupPersonalPreferences.defaultSettlementAccount(for: zone2, currencyCode: "USD") == "Acc2")
-
-        GroupPersonalPreferences.removeAll(for: zone1)
-        GroupPersonalPreferences.removeAll(for: zone2)
-    }
-
-    // MARK: - Remove All
-
-    @Test func removeAll_clearsAllSettlementKeys() {
-        let zoneID = "test-zone-\(UUID().uuidString)"
-
-        GroupPersonalPreferences.setDefaultSettlementAccount("USD Acc", for: zoneID, currencyCode: "USD")
-        GroupPersonalPreferences.setDefaultSettlementAccount("PEN Acc", for: zoneID, currencyCode: "PEN")
+        let prefix = "groupPrefs_\(zoneID)"
+        let defaults = UserDefaults.standard
+        defaults.set(["USD", "PEN"], forKey: "\(prefix)_currencies")
+        defaults.set("Cuenta USD", forKey: "\(prefix)_settlementAccount_USD")
+        defaults.set("Cuenta PEN", forKey: "\(prefix)_settlementAccount_PEN")
 
         GroupPersonalPreferences.removeAll(for: zoneID)
 
-        #expect(GroupPersonalPreferences.defaultSettlementAccount(for: zoneID, currencyCode: "USD") == nil)
-        #expect(GroupPersonalPreferences.defaultSettlementAccount(for: zoneID, currencyCode: "PEN") == nil)
+        #expect(defaults.stringArray(forKey: "\(prefix)_currencies") == nil)
+        #expect(defaults.string(forKey: "\(prefix)_settlementAccount_USD") == nil)
+        #expect(defaults.string(forKey: "\(prefix)_settlementAccount_PEN") == nil)
     }
 }

@@ -104,7 +104,7 @@ struct SettlementFormView: View {
                     currencyFilter: debt.currencyCode
                 )
             }
-            .onAppear { resolvePreselectedAccount() }
+            // M6: NO defaults — selectedAccount inicial nil, user siempre elige.
         }
     }
 
@@ -141,24 +141,6 @@ struct SettlementFormView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
         }
-    }
-
-    private func resolvePreselectedAccount() {
-        guard selectedAccount == nil,
-              let preselectName = GroupPersonalPreferences.defaultSettlementAccount(
-                  for: group.cloudKitZoneID,
-                  currencyCode: debt.currencyCode
-              ) else { return }
-        let currency = debt.currencyCode
-        let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate { account in
-                account.name == preselectName
-                && !account.isArchived
-                && !account.isSystemAccount
-                && account.currencyCode == currency
-            }
-        )
-        selectedAccount = try? modelContext.fetch(descriptor).first
     }
 
     // MARK: - Payment Header
