@@ -83,6 +83,18 @@ struct NewTransactionView: View {
         return tx.splitExpenseID != nil || tx.splitSettlementID != nil
     }
 
+    /// M6: True si la TX bridgeada es Caso A (cuenta personal real, no virtual).
+    /// En este caso el form permite **edit parcial** — campos personales editables
+    /// (cuenta/note/subcat/tags), campos del grupo read-only (monto/fecha/moneda/tipo).
+    private var isBridgedCasoA: Bool {
+        guard let tx = transactionToEdit,
+              tx.splitExpenseID != nil,
+              let account = tx.account,
+              !account.isSystemAccount
+        else { return false }
+        return true
+    }
+
     /// Hidrata `cachedPendingGroupDraft` una vez al aparecer (evita fetch en hot path del body).
     private func loadPendingGroupDraftIfNeeded() {
         guard isBridgedReadOnly,
@@ -103,6 +115,9 @@ struct NewTransactionView: View {
                     return L10n.Groups.Bridge.assignFromInbox
                 } else if tx.splitSettlementID != nil {
                     return L10n.Groups.Bridge.editSettlementInGroup
+                } else if isBridgedCasoA {
+                    // M6: Caso A — edit parcial habilitado para campos personales.
+                    return L10n.Groups.Bridge.editPartialBanner
                 } else {
                     return L10n.Groups.Bridge.editFromGroup
                 }
@@ -227,26 +242,33 @@ struct NewTransactionView: View {
                             .padding(.top, DS.Spacing.xs)
                     }
 
-                    // Resto del form: disabled + opacity reducida en read-only.
+                    // Resto del form: disabled granular según tipo bridged (M5 vs M6 Caso A).
                     Group {
                         Spacer()
 
-                        // Central content area
+                        // Central content area: campos del grupo (monto/fecha/tipo) — always
+                        // disabled si bridged (M5 + M6 Caso A: el grupo es la fuente de verdad).
                         centralContent
+                            .disabled(isBridgedReadOnly)
+                            .opacity(isBridgedReadOnly ? 0.5 : 1.0)
 
                         Spacer()
 
-                        // Bottom selection chips
+                        // Bottom selection chips: campos personales (cuenta/subcat/tags) —
+                        // M6 Caso A los habilita. M5 puro (Caso B/settlements) sigue disabled.
                         bottomChips
+                            .disabled(isBridgedReadOnly && !isBridgedCasoA)
+                            .opacity(isBridgedReadOnly && !isBridgedCasoA ? 0.5 : 1.0)
                             .padding(.bottom, DS.Spacing.lg)
 
-                        // Register button
+                        // Register button: M6 Caso A puede guardar cambios personales (solo
+                        // toca campos personales en SwiftData, no invoca service del grupo).
                         registerButton
+                            .disabled(isBridgedReadOnly && !isBridgedCasoA)
+                            .opacity(isBridgedReadOnly && !isBridgedCasoA ? 0.5 : 1.0)
                             .padding(.horizontal, DS.Spacing.xl)
                             .padding(.bottom, DS.Spacing.xxl)
                     }
-                    .disabled(isBridgedReadOnly)
-                    .opacity(isBridgedReadOnly ? 0.5 : 1.0)
                 }
                 .scaleEffect(duplicateAnimationVisible ? 1.0 : 0.92)
                 .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
@@ -280,9 +302,12 @@ struct NewTransactionView: View {
                 }
             }
             .sheet(isPresented: $viewModel.showAccountSelector) {
+                // M6: en edit Caso A bridgeado, limitar a cuentas de la misma moneda del expense
+                // (la moneda viene del grupo y no es editable desde aquí — read-only).
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.selectedAccount,
-                    title: L10n.Transaction.account
+                    title: L10n.Transaction.account,
+                    currencyFilter: isBridgedCasoA ? transactionToEdit?.currencyCode : nil
                 )
                 .onChange(of: viewModel.selectedAccount) { _, newAccount in
                     if let account = newAccount {
@@ -764,6 +789,8 @@ struct NewTransactionView: View {
                 ) {
                     duplicateTransaction()
                 }
+                .disabled(isBridgedCasoA)  // M6: duplicar TX bridgeada generaría TX huérfana sin splitExpenseID
+                .opacity(isBridgedCasoA ? 0.4 : 1.0)
             }
 
             // Delete (only in edit mode)
@@ -774,6 +801,8 @@ struct NewTransactionView: View {
                 ) {
                     viewModel.showDeleteConfirmation = true
                 }
+                .disabled(isBridgedCasoA)  // M6: delete reaparece como draft via próximo sync. Bloqueamos.
+                .opacity(isBridgedCasoA ? 0.4 : 1.0)
             }
 
             // Split calculator (only for expenses)
