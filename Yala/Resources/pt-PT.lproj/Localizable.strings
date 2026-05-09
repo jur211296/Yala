@@ -192,12 +192,12 @@
 "yalaAI.onboarding.progressLabel" = "Passo %1$d de %2$d";
 "yalaAI.onboarding.step1.title" = "Apresento-te o Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "A tua mão direita financeira.";
-"yalaAI.onboarding.step1.demoScenario1User" = "Gastei 12 € no almoço";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "Pronto! Registei o teu gasto";
-"yalaAI.onboarding.step1.demoScenario2User" = "Quanto gastei em café?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "11 € em café este mês";
+"yalaAI.onboarding.step1.demoScenario1User" = "Gastei 12 € no almoço.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Pronto! Registei o teu almoço de 12 €.";
+"yalaAI.onboarding.step1.demoScenario2User" = "Quanto gastei em café este mês?";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Levas 11 € em café este mês ☕ — 12% menos que em abril, mas 2 € acima da tua média habitual.";
 "yalaAI.onboarding.step1.demoScenario3User" = "Algum conselho?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "As tuas entregas estão 20% mais altas que o mês passado";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 As tuas entregas subiram 20% vs o mês passado. Voltando ao teu ritmo normal, poupas 25 € por mês — quase 300 € por ano.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Almoço";
 "yalaAI.onboarding.step1.a11yLabel" = "Exemplo de conversa com o Yala AI a registar um gasto";
 "yalaAI.onboarding.step2.title" = "Eis o que podes fazer";

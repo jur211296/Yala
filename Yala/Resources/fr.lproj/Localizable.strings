@@ -4187,12 +4187,12 @@
 "yalaAI.onboarding.progressLabel" = "Étape %1$d sur %2$d";
 "yalaAI.onboarding.step1.title" = "Voici Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Votre bras droit financier.";
-"yalaAI.onboarding.step1.demoScenario1User" = "12 € dépensés au déjeuner";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "C'est noté ! J'ai enregistré votre dépense";
-"yalaAI.onboarding.step1.demoScenario2User" = "Combien dépensé en café ?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "35 € en café ce mois-ci";
+"yalaAI.onboarding.step1.demoScenario1User" = "12 € dépensés au déjeuner.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "C'est noté ! J'ai enregistré votre déjeuner de 12 €.";
+"yalaAI.onboarding.step1.demoScenario2User" = "Combien dépensé en café ce mois-ci ?";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Vous en êtes à 35 € en café ce mois-ci ☕ — 12 % de moins qu'en avril, mais 6 € de plus que votre moyenne habituelle.";
 "yalaAI.onboarding.step1.demoScenario3User" = "Un conseil ?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "Vos livraisons sont 20% plus élevées que le mois dernier";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Vos livraisons ont augmenté de 20 % par rapport au mois dernier. En revenant à votre rythme habituel, vous économisez 60 € par mois — près de 720 € par an.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Déjeuner";
 "yalaAI.onboarding.step1.a11yLabel" = "Exemple de chat avec Yala AI enregistrant une dépense";
 "yalaAI.onboarding.step2.title" = "Voici ce que vous pouvez faire";

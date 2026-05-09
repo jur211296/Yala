@@ -4189,12 +4189,12 @@
 "yalaAI.onboarding.progressLabel" = "Krok %1$d z %2$d";
 "yalaAI.onboarding.step1.title" = "Poznaj Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Twoja prawa ręka w finansach.";
-"yalaAI.onboarding.step1.demoScenario1User" = "Wydałem 12 zł na lunch";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "Gotowe! Zapisałem Twój wydatek";
-"yalaAI.onboarding.step1.demoScenario2User" = "Ile na kawę?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "120 zł na kawę w tym miesiącu";
+"yalaAI.onboarding.step1.demoScenario1User" = "Wydałem 12 zł na lunch.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Gotowe! Zapisałem Twój lunch za 12 zł.";
+"yalaAI.onboarding.step1.demoScenario2User" = "Ile na kawę w tym miesiącu?";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Masz 120 zł na kawę w tym miesiącu ☕ — o 12% mniej niż w kwietniu, ale 20 zł powyżej Twojej zwykłej średniej.";
 "yalaAI.onboarding.step1.demoScenario3User" = "Masz radę?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "Twoje dostawy są o 20% wyższe niż w zeszłym miesiącu";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Twoje dostawy wzrosły o 20% vs zeszły miesiąc. Wracając do zwykłego tempa, oszczędzasz 200 zł miesięcznie — prawie 2.400 zł rocznie.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Lunch";
 "yalaAI.onboarding.step1.a11yLabel" = "Przykładowy czat z Yala AI zapisujący wydatek";
 "yalaAI.onboarding.step2.title" = "Oto co możesz zrobić";

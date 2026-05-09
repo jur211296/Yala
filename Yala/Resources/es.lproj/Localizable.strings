@@ -4198,12 +4198,12 @@
 // Step 1 — Hero with chat preview animation
 "yalaAI.onboarding.step1.title" = "Te presento a Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Tu mano derecha financiera.";
-"yalaAI.onboarding.step1.demoScenario1User" = "Gasté S/12 en almuerzo";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "¡Listo! Registré tu gasto";
-"yalaAI.onboarding.step1.demoScenario2User" = "¿Cuánto gasté en café?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "S/45 este mes en café";
+"yalaAI.onboarding.step1.demoScenario1User" = "Gasté S/12 en almuerzo.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "¡Listo! Registré tu almuerzo de S/12.";
+"yalaAI.onboarding.step1.demoScenario2User" = "¿Cuánto gasté en café este mes?";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Llevas S/45 en café este mes ☕ — un 12% menos que en abril, pero S/8 sobre tu promedio habitual.";
 "yalaAI.onboarding.step1.demoScenario3User" = "¿Algún consejo?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "Tus delivery están 20% más altos que el mes pasado";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Tus delivery subieron 20% vs el mes pasado. Volviendo a tu ritmo normal ahorras S/80 al mes — son casi S/1.000 al año.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Almuerzo";
 "yalaAI.onboarding.step1.a11yLabel" = "Ejemplo de chat con Yala AI registrando un gasto";
 

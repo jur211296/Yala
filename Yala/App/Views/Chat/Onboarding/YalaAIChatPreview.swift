@@ -45,15 +45,15 @@ struct YalaAIChatPreview: View {
             switch self {
             case .userVisible: .milliseconds(900)
             case .typing:      .milliseconds(1000)
-            case .botVisible:  .milliseconds(800)
-            case .cardVisible: .milliseconds(1600)
+            case .botVisible:  .milliseconds(900)
+            case .cardVisible: .milliseconds(1300)
             case .holding:     .zero
             }
         }
     }
 
-    private static let holdDelayWithCard: Duration = .milliseconds(1500)
-    private static let holdDelayBubblesOnly: Duration = .milliseconds(1300)
+    private static let holdDelayWithCard: Duration = .milliseconds(700)
+    private static let holdDelayBubblesOnly: Duration = .milliseconds(1000)
     /// Crossfade entre el final de un scenario y el inicio del siguiente.
     private static let crossfadeDuration: Duration = .milliseconds(350)
 

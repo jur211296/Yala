@@ -4191,12 +4191,12 @@
 "yalaAI.onboarding.progressLabel" = "Step %1$d of %2$d";
 "yalaAI.onboarding.step1.title" = "Meet Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Your financial right hand.";
-"yalaAI.onboarding.step1.demoScenario1User" = "Spent $12 on lunch";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "Done! I logged your expense";
-"yalaAI.onboarding.step1.demoScenario2User" = "How much on coffee?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "$45 on coffee this month";
+"yalaAI.onboarding.step1.demoScenario1User" = "Spent $12 on lunch.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Done! I logged your $12 lunch.";
+"yalaAI.onboarding.step1.demoScenario2User" = "How much on coffee this month?";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "You're at $45 on coffee this month ☕ — 12% less than April, but $8 above your usual average.";
 "yalaAI.onboarding.step1.demoScenario3User" = "Any tip?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "Your delivery is 20% higher than last month";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Your delivery is up 20% vs last month. Back to your usual pace and you save $80 a month — nearly $1,000 a year.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Lunch";
 "yalaAI.onboarding.step1.a11yLabel" = "Example chat with Yala AI logging an expense";
 "yalaAI.onboarding.step2.title" = "Here's what you can do";
