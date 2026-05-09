@@ -242,7 +242,7 @@ struct GroupsContainerView: View {
         case .activateFullMode:
             AppRouter.shared.enqueue(.presentFullModeActivation)
         case .openPanel:
-            sessionState.selectedMainTab = .panel
+            sessionState.selectMainTab(.panel)
         case .openGroupDetail:
             if let group = viewModel.activeGroups.first {
                 viewModel.openDetail(for: group)

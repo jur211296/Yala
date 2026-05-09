@@ -165,4 +165,30 @@ extension TabBarConfiguration {
         config.ensurePanelFirst()
         return config
     }
+
+    /// Reads the stored configuration from `UserDefaults.standard`. Use only
+    /// outside SwiftUI views; views should bind via `@AppStorage(storageKey)`
+    /// to stay reactive.
+    static func loadFromStandardDefaults() -> TabBarConfiguration {
+        let json = UserDefaults.standard.string(forKey: storageKey) ?? Self.default.toJSON()
+        return fromJSON(json)
+    }
+}
+
+// MARK: - AppTab → ConfigurableTab Mapping
+
+extension AppTab {
+    /// Inverse of `ConfigurableTab.appTab`. Returns nil for `.more` and `.search`,
+    /// which are always-visible system tabs without a configurable equivalent.
+    var asConfigurable: ConfigurableTab? {
+        switch self {
+        case .panel: return .panel
+        case .statistics: return .statistics
+        case .planning: return .planning
+        case .records: return .records
+        case .reports: return .reports
+        case .groups: return .groups
+        case .more, .search: return nil
+        }
+    }
 }

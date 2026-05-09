@@ -1040,14 +1040,12 @@ final class PanelViewModel {
 
     // MARK: - Navigation
 
-    /// Navigates to a Statistics detail tab, setting temporary tab if Statistics is hidden.
-    /// Moved from PanelView to eliminate closure parameters in child views.
+    /// Navigates to a Statistics detail tab. Visibility (and the
+    /// temporaryTab + delay dance for tabs hidden in "More") is handled by
+    /// `SessionState.selectMainTab(_:)`.
     func navigateToStatistics(_ detailTab: DetailViewTab) {
-        let json = UserDefaults.standard.string(forKey: TabBarConfiguration.storageKey)
-            ?? TabBarConfiguration.default.toJSON()
-        let isVisible = TabBarConfiguration.fromJSON(json).activeTabs.contains(.statistics)
-        if !isVisible { sessionState?.temporaryTab = .statistics }
-        sessionState?.navigateToDetail(detailTab)
+        sessionState?.selectedDetailTab = detailTab
+        sessionState?.selectMainTab(.statistics)
     }
 
     /// Whether voice input can be used (requires active accounts and visible subcategories).

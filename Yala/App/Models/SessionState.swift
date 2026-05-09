@@ -527,22 +527,61 @@ class SessionState {
     /// Currently selected tab within Planning (Budgets, Scheduled Payments)
     var selectedPlanningTab: PlanningTab = .budgets
 
+    /// Pending Task that finalizes a deferred main tab selection (when the
+    /// destination tab is hidden in "More" and we need to mount it via
+    /// `temporaryTab` first). Cancelled if a new selection comes in while a
+    /// previous one is still waiting for the runloop tick — prevents the
+    /// `didSet` of a concurrent mutation from clearing `temporaryTab` before
+    /// the deferred selection lands.
+    private var pendingTabSelectionTask: Task<Void, Never>?
+
+    /// Single entry point to change `selectedMainTab` safely. Centralizes the
+    /// "mount-then-select" rule required by iOS 18+ TabView when the target
+    /// tab is hidden in "More": adding it via `temporaryTab` and waiting one
+    /// runloop tick (50 ms) before assigning `selectedMainTab`. If the tab is
+    /// already visible, assigns directly with no latency.
+    ///
+    /// Honors GC-08 invariant: in `groupInvite` mode, only `.groups`, `.more`
+    /// and `.search` are reachable; other tabs are silently rejected.
+    func selectMainTab(_ tab: AppTab) {
+        if isGroupInviteMode {
+            let allowed: Set<AppTab> = [.groups, .more, .search]
+            guard allowed.contains(tab) else { return }
+        }
+
+        let stored = TabBarConfiguration.loadFromStandardDefaults()
+        let config = TabBarConfiguration.forMode(onboardingMode, stored: stored)
+        let decision = MainTabSelectionLogic.decide(requested: tab, config: config)
+
+        pendingTabSelectionTask?.cancel()
+        if decision.requiresDelay, let temp = decision.temporaryTab {
+            temporaryTab = temp
+            pendingTabSelectionTask = Task {
+                try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled else { return }
+                selectedMainTab = decision.selectedTab
+            }
+        } else {
+            selectedMainTab = decision.selectedTab
+        }
+    }
+
     /// Navigate to a specific detail view from any tab
     func navigateToDetail(_ tab: DetailViewTab) {
         selectedDetailTab = tab
-        selectedMainTab = .statistics
+        selectMainTab(.statistics)
     }
 
     /// Navigate to Scheduled Payments in Planning
     func navigateToScheduledPayments() {
         selectedPlanningTab = .scheduledPayments
-        selectedMainTab = .planning
+        selectMainTab(.planning)
     }
 
     /// Navigate to Budgets in Planning
     func navigateToBudgets() {
         selectedPlanningTab = .budgets
-        selectedMainTab = .planning
+        selectMainTab(.planning)
     }
 
     /// Navigate to the standalone Records tab (`RecordsStandaloneView`). When
@@ -556,7 +595,7 @@ class SessionState {
 
     /// Navigate to Groups tab
     func navigateToGroups() {
-        selectedMainTab = .groups
+        selectMainTab(.groups)
     }
 
     /// Toggle budget filters - if same budget is tapped again, clear filters

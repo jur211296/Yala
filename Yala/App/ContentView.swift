@@ -992,55 +992,38 @@ struct MainTabView: View {
     private func handleMainTabIntent(_ intent: RouterIntent) {
         switch intent {
         case .navigate(let dest):
-            // GC-08: For groupInvite mode, only handle .groups and .groupDetail.
-            if sessionState.isGroupInviteMode {
-                switch dest {
-                case .groups, .groupDetail:
-                    break
-                default:
-                    return
-                }
-            }
+            // GC-08 guard centralizado en SessionState.selectMainTab — los
+            // intents no-groups en modo groupInvite se descartan ahí.
             switch dest {
             case .panel:
-                sessionState.selectedMainTab = .panel
+                sessionState.selectMainTab(.panel)
             case .statistics:
-                sessionState.selectedMainTab = .statistics
+                sessionState.selectMainTab(.statistics)
             case .records:
                 sessionState.selectedDetailTab = .records
-                sessionState.selectedMainTab = .statistics
+                sessionState.selectMainTab(.statistics)
             case .categories:
                 sessionState.selectedDetailTab = .categories
-                sessionState.selectedMainTab = .statistics
+                sessionState.selectMainTab(.statistics)
             case .planning:
-                sessionState.selectedMainTab = .planning
+                sessionState.selectMainTab(.planning)
             case .budgets:
                 sessionState.selectedPlanningTab = .budgets
-                sessionState.selectedMainTab = .planning
+                sessionState.selectMainTab(.planning)
             case .inbox:
-                sessionState.selectedMainTab = .panel
+                sessionState.selectMainTab(.panel)
                 AppRouter.shared.enqueue(.presentInboxSheet)
             case .scheduledPayments:
                 sessionState.selectedPlanningTab = .scheduledPayments
-                sessionState.selectedMainTab = .planning
+                sessionState.selectMainTab(.planning)
             case .recordsStandalone:
-                sessionState.temporaryTab = .records
-                // UI layout delay — SwiftUI needs a tick between adding
-                // the temporary tab and selecting it. Not a sync delay.
-                Task {
-                    try? await Task.sleep(for: .milliseconds(50))
-                    sessionState.selectedMainTab = .records
-                }
+                sessionState.selectMainTab(.records)
             case .groups, .groupDetail:
-                sessionState.temporaryTab = .groups
                 sessionState.enteredViaGroupNotification = true
                 if case .groupDetail(let groupID) = dest {
                     sessionState.pendingGroupID = groupID
                 }
-                Task {
-                    try? await Task.sleep(for: .milliseconds(50))
-                    sessionState.selectedMainTab = .groups
-                }
+                sessionState.selectMainTab(.groups)
             }
         case .presentDowngradeResolution:
             let accounts = (try? modelContext.fetch(FetchDescriptor<Account>())) ?? []
@@ -1215,20 +1198,17 @@ struct MorePlaceholderView: View {
 
     private func hiddenTabRow(_ tab: ConfigurableTab) -> some View {
         Button {
-            // Router handles the temporaryTab → selectedMainTab sequencing.
-            // Other tabs (not .records/.groups) don't route through widgets
-            // so we keep the direct flow.
+            // .records and .groups go through AppRouter so their special
+            // side-effects (recordsStandalone destination, group notification
+            // flags) run through handleMainTabIntent. Other tabs go directly
+            // through selectMainTab.
             switch tab.appTab {
             case .records:
                 AppRouter.shared.enqueue(.navigate(.recordsStandalone))
             case .groups:
                 AppRouter.shared.enqueue(.navigate(.groups))
             default:
-                SessionState.shared.temporaryTab = tab
-                Task {
-                    try? await Task.sleep(for: .milliseconds(50))
-                    SessionState.shared.selectedMainTab = tab.appTab
-                }
+                SessionState.shared.selectMainTab(tab.appTab)
             }
         } label: {
             HStack(spacing: DS.FormRow.iconSpacing) {

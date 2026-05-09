@@ -80,7 +80,7 @@ struct FullModeActivationView: View {
             TabBarConfiguration.default.toJSON(),
             forKey: TabBarConfiguration.storageKey
         )
-        sessionState.selectedMainTab = .panel
+        sessionState.selectMainTab(.panel)
 
         // `.onboardingCompleted` lo dispara `OnboardingView.completeOnboarding`
         // con el `mode` correcto — invariante: un solo fire por flow.
