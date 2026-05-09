@@ -52,6 +52,7 @@ final class GroupExpenseService {
     // MARK: - Expense CRUD
 
     /// Create an expense with its shares, enqueue sync, and bridge to personal transaction.
+    /// M6: `accountForCurrentUser` se pasa al bridge para crear TX cuenta real Caso A.
     @discardableResult
     func createExpense(
         in group: SplitGroup,
@@ -63,7 +64,8 @@ final class GroupExpenseService {
         paidByMemberID: String,
         splitType: String,
         subcategoryName: String?,
-        shares: [(memberID: String, amount: Double)]
+        shares: [(memberID: String, amount: Double)],
+        accountForCurrentUser: Account? = nil
     ) throws -> SplitExpense {
         let context = try requireContext()
 
@@ -119,7 +121,12 @@ final class GroupExpenseService {
         // Bridge to personal transaction/draft (guard: bridge may not be initialized yet)
         if GroupTransactionBridge.shared.isReady {
             do {
-                try GroupTransactionBridge.shared.bridgeExpense(expense, in: group)
+                try GroupTransactionBridge.shared.bridgeExpense(
+                    expense,
+                    in: group,
+                    accountForCurrentUser: accountForCurrentUser,
+                    isRemoteSync: false
+                )
             } catch {
                 surfaceBridgeError(error, expense: expense, context: context, messageKey: "groups.bridge.errorTransaction")
             }
@@ -129,6 +136,7 @@ final class GroupExpenseService {
     }
 
     /// Update an existing expense. Deletes old shares and creates new ones.
+    /// M6: `accountForCurrentUser` propaga al bridge — preserve+update TX cuenta real Caso A.
     func updateExpense(
         _ expense: SplitExpense,
         in group: SplitGroup,
@@ -140,7 +148,8 @@ final class GroupExpenseService {
         paidByMemberID: String,
         splitType: String,
         subcategoryName: String?,
-        shares: [(memberID: String, amount: Double)]
+        shares: [(memberID: String, amount: Double)],
+        accountForCurrentUser: Account? = nil
     ) throws {
         let context = try requireContext()
 
@@ -195,7 +204,12 @@ final class GroupExpenseService {
         // Update bridged record
         if GroupTransactionBridge.shared.isReady {
             do {
-                try GroupTransactionBridge.shared.bridgeExpense(expense, in: group)
+                try GroupTransactionBridge.shared.bridgeExpense(
+                    expense,
+                    in: group,
+                    accountForCurrentUser: accountForCurrentUser,
+                    isRemoteSync: false
+                )
             } catch {
                 surfaceBridgeError(error, expense: expense, context: context, messageKey: "groups.bridge.errorTransactionUpdate")
             }
