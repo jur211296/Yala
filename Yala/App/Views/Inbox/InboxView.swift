@@ -151,8 +151,17 @@ struct InboxView: View {
                 // Drafts personales mantienen el flujo edit-completo existente.
                 switch draft.sourceType {
                 case .groupExpense:
-                    GroupExpenseDraftFinalizationSheet(draft: draft) {
-                        shouldDismissAfterApproval = true
+                    // M6: Caso A pendiente cuenta usa sheet dedicado para asignar cuenta personal real.
+                    // Detección: targetTransactionID==nil + needsUserInput contains "account".
+                    // El path subcat heredado (M5: targetTransactionID != nil) sigue usando el sheet existing.
+                    if draft.targetTransactionID == nil && draft.needsUserInput.contains(DraftInputRequirement.account) {
+                        GroupExpenseAccountFinalizationSheet(draft: draft) {
+                            shouldDismissAfterApproval = true
+                        }
+                    } else {
+                        GroupExpenseDraftFinalizationSheet(draft: draft) {
+                            shouldDismissAfterApproval = true
+                        }
                     }
                 case .groupSettlement:
                     GroupSettlementDraftFinalizationSheet(draft: draft) {

@@ -92,6 +92,15 @@ final class DraftService {
     ) throws -> TransactionItem {
         let context = try requireContext()
 
+        // M6: drafts groupExpense Caso A pendiente cuenta. Crea TX cuenta real con
+        // splitExpenseID + invoca bridge para regenerar TX virtual lent.
+        // Detección: groupExpense + targetTransactionID==nil + needsUserInput contains "account".
+        if draft.sourceType == .groupExpense,
+           draft.targetTransactionID == nil,
+           draft.needsUserInput.contains(DraftInputRequirement.account) {
+            return try approveGroupExpenseAccountDraft(draft, currencyConverter: currencyConverter, context: context)
+        }
+
         // Drafts groupExpense apuntan a una TX virtual con subcategory=nil creada por
         // GroupTransactionBridge. Aprobar = asignar subcat a la TX existente, no crear una nueva.
         if draft.sourceType == .groupExpense, let subcategory = draft.subcategory,
@@ -481,6 +490,120 @@ final class DraftService {
         }
 
         try context.save()
+    }
+
+    // MARK: - M6: Approve groupExpense Caso A pendiente cuenta
+
+    /// Crea TX cuenta real con `splitExpenseID` setteado e invoca el bridge para regenerar
+    /// la TX virtual lent. La TX cuenta real recién creada activa el path preserve+update
+    /// del bridge (no se duplica).
+    ///
+    /// **Orden de operaciones**:
+    /// 1. Guard: campos requeridos del draft.
+    /// 2. Fetch SplitExpense + SplitGroup origen.
+    /// 3. Crear TX cuenta real con todos los fields del expense.
+    /// 4. Set bridge.skipDraftCleanup=true (defer reset) para que el bridge no borre el draft activo.
+    /// 5. Invocar bridge.bridgeExpense(...) → preserve+update detecta TX recién creada,
+    ///    regenera virtual lent.
+    /// 6. Cache display + delete draft + save.
+    private func approveGroupExpenseAccountDraft(
+        _ draft: InboxDraft,
+        currencyConverter: CurrencyConverter,
+        context: ModelContext
+    ) throws -> TransactionItem {
+        // 1. Guards.
+        guard let account = draft.account else {
+            throw DraftServiceError.missingAccount
+        }
+        guard let amount = draft.amount else {
+            throw DraftServiceError.missingAmount
+        }
+        guard let splitID = draft.splitExpenseID,
+              let zoneID = draft.splitGroupZoneID else {
+            // Inválido: draft groupExpense sin splitExpenseID/zoneID — no pertenece al M6 path.
+            throw DraftServiceError.missingAccount  // reuse error code; UX displays generic message.
+        }
+
+        // 2. Fetch SplitExpense + SplitGroup.
+        let expenseDescriptor = FetchDescriptor<SplitExpense>(
+            predicate: #Predicate { $0.id.uuidString == splitID }
+        )
+        guard let expense = try context.fetch(expenseDescriptor).first else {
+            // Expense origen ya no existe (sync race con remote delete) — limpia draft y aborta.
+            context.delete(draft)
+            try context.save()
+            throw DraftServiceError.missingAccount
+        }
+        let groupDescriptor = FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { $0.cloudKitZoneID == zoneID }
+        )
+        guard let group = try context.fetch(groupDescriptor).first else {
+            throw DraftServiceError.missingAccount
+        }
+
+        // 3. Crear TX cuenta real. Currency desde el expense (fuente de verdad del grupo).
+        let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
+        let realSubcat = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
+        let preferredCode = CurrencyDefaults.currentPreferred
+        let amountInPreferred = currencyConverter.convert(
+            Decimal(amount),
+            from: expense.currencyCode,
+            to: preferredCode,
+            on: draft.effectiveDate,
+            context: context
+        )
+        let exchangeRate: Double = abs(amount) > 0.0001
+            ? (amountInPreferred as NSDecimalNumber).doubleValue / amount
+            : 1.0
+
+        let realTx = TransactionItem(
+            date: expense.date,
+            amount: amount,  // -totalAmount (draft fue creado con -expense.amount).
+            currencyCode: expense.currencyCode,
+            note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
+            category: realSubcat?.safeCategory,
+            subcategory: realSubcat,
+            account: account
+        )
+        realTx.splitExpenseID = splitID
+        realTx.splitGroupZoneID = expense.groupZoneID
+        realTx.splitTotalAmount = expense.amount
+        realTx.splitType = expense.splitType
+        realTx.exchangeRate = abs(exchangeRate)
+        realTx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
+        realTx.preferredCurrencyCode = preferredCode
+        context.insert(realTx)
+
+        // 4 + 5. Invocar bridge con flag para no borrar este draft activo.
+        // Bridge detecta realTx existente → preserve+update path → regenera virtual lent.
+        // El closure `withSkippedDraftCleanup` garantiza reset del flag aunque body lance.
+        do {
+            try GroupTransactionBridge.shared.withSkippedDraftCleanup {
+                try GroupTransactionBridge.shared.bridgeExpense(
+                    expense,
+                    in: group,
+                    accountForCurrentUser: account,
+                    isRemoteSync: false,
+                    shouldSave: false  // save abajo en step 6.
+                )
+            }
+        } catch {
+            #if DEBUG
+            print("DraftService.approveGroupExpenseAccountDraft: bridge failed: \(error)")
+            #endif
+            // Bridge falló — TX real ya creada, draft permanece para retry.
+            throw error
+        }
+
+        // 6. Cache + delete draft + save.
+        cacheDisplayValues(draft)
+        context.delete(draft)
+        try context.save()
+
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
+        return realTx
     }
 }
 
