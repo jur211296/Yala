@@ -2,7 +2,10 @@
 //  GroupCardView.swift
 //  Yala
 //
-//  Card de un grupo en la lista principal — icono, nombre, miembros, balance.
+//  Card de un grupo en la lista principal — icono, nombre, miembros, deudas perspectiva.
+//
+//  M6 D3: trailing area muestra hasta 3 rows estilo Splitwise (deudas simplificadas que
+//  involucran al current user). Si hay más de 3, chip "+N más" → CTA al GroupDetailView.
 //
 
 import SwiftUI
@@ -12,7 +15,8 @@ struct GroupCardView: View {
     let group: SplitGroup
     let memberCount: Int
     let pendingCount: Int
-    let balance: MemberBalance?
+    /// M6 D3: deudas simplificadas perspectiva del current user (max display 3 + chip overflow).
+    let debts: [GroupsViewModel.DebtRow]
     /// Drives chip pending/rejected en lugar del balance trailing.
     let displayMode: GroupCardDisplayMode
     let action: () -> Void
@@ -23,11 +27,14 @@ struct GroupCardView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
 
+    /// Max rows visibles en el trailing antes de truncate con "+N más".
+    private static let maxVisibleDebts = 3
+
     init(
         group: SplitGroup,
         memberCount: Int,
         pendingCount: Int,
-        balance: MemberBalance?,
+        debts: [GroupsViewModel.DebtRow],
         displayMode: GroupCardDisplayMode = .active,
         action: @escaping () -> Void,
         onRejectedTap: (() -> Void)? = nil
@@ -35,7 +42,7 @@ struct GroupCardView: View {
         self.group = group
         self.memberCount = memberCount
         self.pendingCount = pendingCount
-        self.balance = balance
+        self.debts = debts
         self.displayMode = displayMode
         self.action = action
         self.onRejectedTap = onRejectedTap
@@ -103,17 +110,59 @@ struct GroupCardView: View {
                 backgroundColor: DS.Semantic.errorBackground
             )
         case .active:
-            if let balance {
-                VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                    Text(appPreferences.currency(abs(balance.netBalance), currencyCode: balance.currencyCode))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(Color.groupBalance(balance.netBalance))
+            debtsTrailing
+        }
+    }
 
-                    Text(balanceLabel(balance.netBalance))
+    /// M6 D3: layout estilo Splitwise — hasta 3 rows + chip "+N más" si overflow.
+    @ViewBuilder
+    private var debtsTrailing: some View {
+        if debts.isEmpty {
+            EmptyView()
+        } else {
+            let visibleDebts = Array(debts.prefix(Self.maxVisibleDebts))
+            let extraCount = max(0, debts.count - Self.maxVisibleDebts)
+            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                ForEach(visibleDebts) { row in
+                    debtRowView(row)
+                }
+                if extraCount > 0 {
+                    Text(L10n.Groups.Card.moreDebts(extraCount))
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                 }
             }
+        }
+    }
+
+    private func debtRowView(_ row: GroupsViewModel.DebtRow) -> some View {
+        VStack(alignment: .trailing, spacing: 0) {
+            Text(perspectiveCopy(for: row))
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Text(appPreferences.currency(row.amount, currencyCode: row.currencyCode))
+                .font(DS.Typography.label)
+                .foregroundStyle(amountColor(for: row.perspective))
+                .lineLimit(1)
+        }
+    }
+
+    private func perspectiveCopy(for row: GroupsViewModel.DebtRow) -> String {
+        switch row.perspective {
+        case .iOwe:
+            // "Le debes a {name}"
+            return L10n.Groups.Balance.owes + " " + row.counterpartyName
+        case .theyOweMe:
+            // "{name} te debe"
+            return row.counterpartyName + " " + L10n.Groups.Balance.isOwed
+        }
+    }
+
+    private func amountColor(for perspective: GroupsViewModel.Perspective) -> Color {
+        switch perspective {
+        case .iOwe: return DS.Semantic.errorForeground
+        case .theyOweMe: return DS.Semantic.successForeground
         }
     }
 
@@ -139,11 +188,12 @@ struct GroupCardView: View {
         case .rejected:
             parts.append(L10n.Groups.Card.rejectedChip)
         case .active:
-            if let balance {
-                let amount = appPreferences.currency(abs(balance.netBalance), currencyCode: balance.currencyCode)
-                let label = balanceLabel(balance.netBalance)
-                if !label.isEmpty { parts.append("\(amount) \(label)") }
+            for row in debts.prefix(Self.maxVisibleDebts) {
+                let amount = appPreferences.currency(row.amount, currencyCode: row.currencyCode)
+                parts.append("\(perspectiveCopy(for: row)) \(amount)")
             }
+            let extra = max(0, debts.count - Self.maxVisibleDebts)
+            if extra > 0 { parts.append(L10n.Groups.Card.moreDebts(extra)) }
         }
         return parts.joined(separator: ", ")
     }
@@ -152,16 +202,5 @@ struct GroupCardView: View {
 
     private var groupIcon: some View {
         GroupIconBadge(colorHex: group.colorHex, iconName: group.iconName)
-    }
-
-    // MARK: - Helpers
-
-    private func balanceLabel(_ net: Double) -> String {
-        if net > 0.01 {
-            return L10n.Groups.Balance.isOwed
-        } else if net < -0.01 {
-            return L10n.Groups.Balance.owes
-        }
-        return ""
     }
 }

@@ -209,7 +209,7 @@ struct GroupsContainerView: View {
             group: group,
             memberCount: viewModel.memberCount(for: group),
             pendingCount: viewModel.pendingMemberCount(for: group),
-            balance: viewModel.currentUserBalance(for: group),
+            debts: viewModel.currentUserDebts(for: group),
             displayMode: GroupCardDisplayLogic.displayMode(
                 memberStatus: viewModel.currentMemberStatus(for: group)
             ),

@@ -23,6 +23,29 @@ final class GroupsViewModel {
     private(set) var balancesByGroup: [String: [MemberBalance]] = [:]    // zoneID → balances
     private(set) var globalSummary: GroupGlobalSummary?
 
+    /// M6 D3: cached fuentes para recalcular `currentUserDebts(for:)` on-demand.
+    /// Pobladas en `loadData()` para evitar fetch repetido por cada card render.
+    private(set) var expensesByGroup: [String: [SplitExpense]] = [:]
+    private(set) var sharesByGroup: [String: [SplitShare]] = [:]
+    private(set) var settlementsByGroup: [String: [SplitSettlement]] = [:]
+
+    // MARK: - DebtRow (M6 D3)
+
+    /// Una deuda perspectiva del current user para renderizar en la card del grupo.
+    /// Estilo Splitwise: "Maria te debe S/X" / "Le debes a Juan USD Y".
+    struct DebtRow: Identifiable, Equatable {
+        let id: String
+        let counterpartyName: String
+        let amount: Double
+        let currencyCode: String
+        let perspective: Perspective
+    }
+
+    enum Perspective: Equatable {
+        case iOwe
+        case theyOweMe
+    }
+
     // MARK: - UI State
 
     var showCreateGroup: Bool = false
@@ -81,6 +104,11 @@ final class GroupsViewModel {
                 let shares = try GroupExpenseService.shared.fetchAllShares(for: group)
                 let settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
 
+                // M6 D3: cache para recalcular debts on-demand (currentUserDebts).
+                expensesByGroup[group.cloudKitZoneID] = expenses
+                sharesByGroup[group.cloudKitZoneID] = shares
+                settlementsByGroup[group.cloudKitZoneID] = settlements
+
                 let balances = GroupBalanceService.calculateBalances(
                     expenses: expenses,
                     shares: shares,
@@ -127,6 +155,72 @@ final class GroupsViewModel {
         }
         let memberID = currentMember.id.uuidString
         return balances.first { $0.memberID == memberID }
+    }
+
+    /// M6 D3: Devuelve las deudas simplificadas (estilo Splitwise) que involucran al
+    /// current user, ordenadas por monto descendente. Cada `DebtRow` tiene perspectiva
+    /// (`.iOwe` / `.theyOweMe`) + counterpartyName resuelto.
+    ///
+    /// Worst case (5p × 3 monedas) puede generar 15 rows; la card aplica truncation max 3.
+    func currentUserDebts(for group: SplitGroup) -> [DebtRow] {
+        guard let members = membersByGroup[group.cloudKitZoneID],
+              let expenses = expensesByGroup[group.cloudKitZoneID],
+              let shares = sharesByGroup[group.cloudKitZoneID],
+              let settlements = settlementsByGroup[group.cloudKitZoneID] else {
+            return []
+        }
+        return Self.computeCurrentUserDebts(
+            members: members,
+            expenses: expenses,
+            shares: shares,
+            settlements: settlements
+        )
+    }
+
+    /// Pure-logic helper para tests sin contexto. Calcula debts simplificadas filtradas
+    /// al current user, con perspectiva resuelta + nameLookup, sort by amount desc.
+    static func computeCurrentUserDebts(
+        members: [SplitMember],
+        expenses: [SplitExpense],
+        shares: [SplitShare],
+        settlements: [SplitSettlement]
+    ) -> [DebtRow] {
+        guard let currentMember = members.first(where: { $0.isCurrentUser }) else {
+            return []
+        }
+        let currentMemberID = currentMember.id.uuidString
+        let nameLookup = Dictionary(
+            members.map { ($0.id.uuidString, $0.displayName) },
+            uniquingKeysWith: { first, _ in first }
+        )
+
+        let allDebts = GroupBalanceService.calculateDebts(
+            expenses: expenses,
+            shares: shares,
+            settlements: settlements,
+            simplifyDebts: true
+        )
+
+        return allDebts.compactMap { debt -> DebtRow? in
+            if debt.fromMemberID == currentMemberID {
+                return DebtRow(
+                    id: "\(debt.fromMemberID)-\(debt.toMemberID)-\(debt.currencyCode)",
+                    counterpartyName: nameLookup[debt.toMemberID] ?? "?",
+                    amount: debt.amount,
+                    currencyCode: debt.currencyCode,
+                    perspective: .iOwe
+                )
+            } else if debt.toMemberID == currentMemberID {
+                return DebtRow(
+                    id: "\(debt.fromMemberID)-\(debt.toMemberID)-\(debt.currencyCode)",
+                    counterpartyName: nameLookup[debt.fromMemberID] ?? "?",
+                    amount: debt.amount,
+                    currencyCode: debt.currencyCode,
+                    perspective: .theyOweMe
+                )
+            }
+            return nil
+        }.sorted { $0.amount > $1.amount }
     }
 
     /// Member count for a group.
