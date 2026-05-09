@@ -37,6 +37,23 @@ enum DraftStatus: String, Codable {
     case rejected
 }
 
+/// M6: Razón por la que el bridge creó un InboxDraft pendiente Caso A. Mapea a una
+/// L10n key estable que se interpola en `GroupExpenseAccountFinalizationSheet`.
+enum DraftOriginReason: String {
+    /// Sync remoto trajo el SplitExpense pero la TX cuenta real local aún no llegó.
+    case remoteCreate = "groups.bridge.draftReasonRemoteCreate"
+    /// Cambio de moneda en el grupo invalidó la cuenta personal previa.
+    case currencyChanged = "groups.bridge.draftReasonCurrencyChanged"
+}
+
+/// M6: Campos que un draft espera del user para finalizar. Centraliza los strings
+/// dispersos en `needsUserInput: [String]` para evitar typos cross-file.
+enum DraftInputRequirement {
+    static let account = "account"
+    static let subcategory = "subcategory"
+    static let amount = "amount"
+}
+
 // MARK: - InboxDraft
 
 @Model
@@ -135,6 +152,21 @@ final class InboxDraft: Identifiable {
     /// Al finalizar el draft, se UPDATEa la subcategory de esa TX (no se crea TX nueva).
     /// Para drafts source=.groupSettlement: nil (la TX se crea al finalizar con cuenta asignada).
     var targetTransactionID: String?
+
+    // MARK: - Origin Hint (M6: drafts creados por bridge ante modificaciones remotas)
+
+    /// Key L10n del hint contextual cuando draft viene de modificación remota.
+    /// Ej: "groups.bridge.draftReasonRemoteCreate", "groups.bridge.draftReasonCurrencyChanged".
+    /// Renderizado en `GroupExpenseAccountFinalizationSheet` con interpolación de actor/group.
+    var originReasonKey: String?
+
+    /// Nombre snapshot del actor visible en el contexto del draft (ej. payer del expense).
+    /// Snapshot al crear — no se actualiza si el actor renombra después.
+    var originActorName: String?
+
+    /// Nombre snapshot del grupo en el contexto del draft.
+    /// Snapshot al crear para evitar fetch en hot path del UI render.
+    var originGroupName: String?
 
     // MARK: - Timestamps (CloudKit: defaults required)
 
@@ -279,7 +311,10 @@ final class InboxDraft: Identifiable {
         splitExpenseID: String? = nil,
         splitGroupZoneID: String? = nil,
         splitSettlementID: String? = nil,
-        targetTransactionID: String? = nil
+        targetTransactionID: String? = nil,
+        originReasonKey: String? = nil,
+        originActorName: String? = nil,
+        originGroupName: String? = nil
     ) {
         self.note = note
         self.amount = amount
@@ -301,6 +336,9 @@ final class InboxDraft: Identifiable {
         self.splitGroupZoneID = splitGroupZoneID
         self.splitSettlementID = splitSettlementID
         self.targetTransactionID = targetTransactionID
+        self.originReasonKey = originReasonKey
+        self.originActorName = originActorName
+        self.originGroupName = originGroupName
         self.createdAt = Date.now
         self.updatedAt = Date.now
     }
