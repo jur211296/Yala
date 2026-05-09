@@ -4172,12 +4172,12 @@
 "groups.card.leaveGroupAlertTitle" = "Gruppe verlassen?";
 "groups.card.leaveGroupAlertBody" = "Ihre Anfrage wurde abgelehnt. Beim Verlassen wird diese Gruppe aus Ihrer Liste entfernt. Ihre persönlichen Einträge bleiben.";
 
-// MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
-"yalaAI.onboarding.skip" = "Überspringen";
+// MARK: - Yala AI Onboarding (5-step tutorial first-use post-consent)
 "yalaAI.onboarding.continue" = "Weiter";
 "yalaAI.onboarding.back" = "Zurück";
 "yalaAI.onboarding.close" = "Schließen";
-"yalaAI.onboarding.stepIndicator" = "%1$d/%2$d";
+"yalaAI.onboarding.previewLabel" = "Vorschau";
+"yalaAI.onboarding.progressLabel" = "Schritt %1$d von %2$d";
 "yalaAI.onboarding.step1.title" = "Das ist Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Ihre rechte Hand bei den Finanzen.";
 "yalaAI.onboarding.step1.demoUserMessage" = "12 € fürs Mittagessen ausgegeben";
@@ -4193,15 +4193,23 @@
 "yalaAI.onboarding.step2.card2.body" = "Wie viel für Kaffee? Mein teuerster Monat?";
 "yalaAI.onboarding.step2.card3.title" = "Vorschläge erhalten";
 "yalaAI.onboarding.step2.card3.body" = "Muster, Anomalien, Ideen zum Sparen.";
-"yalaAI.onboarding.step3.title" = "Wählen Sie, wie Yala spricht";
-"yalaAI.onboarding.step3.subtitle" = "Sie können es jederzeit in den Einstellungen ändern.";
-"yalaAI.onboarding.step3.toneSection" = "Tonfall";
-"yalaAI.onboarding.step3.focusSection" = "Stil";
+"yalaAI.onboarding.step3.title" = "Wählen Sie den Tonfall";
+"yalaAI.onboarding.step3.subtitle" = "So spricht Yala mit Ihnen in jeder Antwort.";
+"yalaAI.onboarding.step3.toneNormalDescription" = "Ausgewogen und klar. Fakten ohne Schnörkel.";
+"yalaAI.onboarding.step3.toneConsiderateDescription" = "Sanft und einfühlsam. Achtet auf Ihre Stimmung und feiert Erfolge.";
+"yalaAI.onboarding.step3.toneSarcasticDescription" = "Direkt mit Humor. Sagt es Ihnen mit einem Augenzwinkern.";
 "yalaAI.onboarding.step3.toneNormalQuote" = "Sie hatten 3 Kaffees diese Woche. Ihr Budget liegt im Plan.";
 "yalaAI.onboarding.step3.toneConsiderateQuote" = "Ein Kaffee tut gut. Er passt ins Budget, alles in Ordnung.";
 "yalaAI.onboarding.step3.toneSarcasticQuote" = "Noch drei Kaffees und wir brechen den Rekord. Passt aber noch ins Budget.";
-"yalaAI.onboarding.step3.previewLabel" = "Vorschau";
-"yalaAI.onboarding.step4.title" = "Alles bereit!";
-"yalaAI.onboarding.step4.subtitle" = "Sagen Sie Yala jederzeit, was Sie brauchen.";
-"yalaAI.onboarding.step4.tip" = "💡 Versuchen Sie: \"Erfasse einen Kaffee für 5 Euro\" oder \"Wie viel habe ich heute ausgegeben?\"";
-"yalaAI.onboarding.step4.cta" = "Chat starten";
+"yalaAI.onboarding.step4.title" = "Wählen Sie den Stil";
+"yalaAI.onboarding.step4.subtitle" = "Worauf Yala bei Ihren Finanzen achtet.";
+"yalaAI.onboarding.step4.focusBalancedDescription" = "Behält Ausgaben und Einnahmen gleichermaßen im Blick.";
+"yalaAI.onboarding.step4.focusSaverDescription" = "Hilft Ihnen, jeden Monat mehr zurückzulegen.";
+"yalaAI.onboarding.step4.focusCautiousDescription" = "Warnt bei jeder Abweichung, damit nichts schiefgeht.";
+"yalaAI.onboarding.step4.focusBalancedQuote" = "Ihre Einnahmen decken die Ausgaben des Monats. Guter Rhythmus.";
+"yalaAI.onboarding.step4.focusSaverQuote" = "10% weniger im Restaurant: 30 € Ersparnis pro Monat.";
+"yalaAI.onboarding.step4.focusCautiousQuote" = "Achtung: Sie sind beim Lieferdienst schneller als letzten Monat.";
+"yalaAI.onboarding.step5.title" = "Alles bereit!";
+"yalaAI.onboarding.step5.subtitle" = "Sagen Sie Yala jederzeit, was Sie brauchen.";
+"yalaAI.onboarding.step5.tip" = "💡 Versuchen Sie: \"Erfasse einen Kaffee für 5 Euro\" oder \"Wie viel habe ich heute ausgegeben?\"";
+"yalaAI.onboarding.step5.cta" = "Chat starten";

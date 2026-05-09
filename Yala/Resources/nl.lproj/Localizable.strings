@@ -4175,12 +4175,12 @@
 "groups.card.leaveGroupAlertTitle" = "Groep verlaten?";
 "groups.card.leaveGroupAlertBody" = "Je verzoek is geweigerd. Als je vertrekt, wordt deze groep uit je lijst verwijderd. Je persoonlijke boekingen blijven.";
 
-// MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
-"yalaAI.onboarding.skip" = "Overslaan";
+// MARK: - Yala AI Onboarding (5-step tutorial first-use post-consent)
 "yalaAI.onboarding.continue" = "Doorgaan";
 "yalaAI.onboarding.back" = "Terug";
 "yalaAI.onboarding.close" = "Sluiten";
-"yalaAI.onboarding.stepIndicator" = "%1$d/%2$d";
+"yalaAI.onboarding.previewLabel" = "Voorbeeld";
+"yalaAI.onboarding.progressLabel" = "Stap %1$d van %2$d";
 "yalaAI.onboarding.step1.title" = "Maak kennis met Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Je rechterhand voor je financiën.";
 "yalaAI.onboarding.step1.demoUserMessage" = "€12 uitgegeven aan lunch";
@@ -4196,15 +4196,23 @@
 "yalaAI.onboarding.step2.card2.body" = "Hoeveel aan koffie? Mijn duurste maand?";
 "yalaAI.onboarding.step2.card3.title" = "Ontvang suggesties";
 "yalaAI.onboarding.step2.card3.body" = "Patronen, afwijkingen, ideeën om te besparen.";
-"yalaAI.onboarding.step3.title" = "Kies hoe Yala je toespreekt";
-"yalaAI.onboarding.step3.subtitle" = "Je kunt het altijd wijzigen in Instellingen.";
-"yalaAI.onboarding.step3.toneSection" = "Toon";
-"yalaAI.onboarding.step3.focusSection" = "Stijl";
+"yalaAI.onboarding.step3.title" = "Kies de toon van Yala";
+"yalaAI.onboarding.step3.subtitle" = "Zo praat Yala met je in elk antwoord.";
+"yalaAI.onboarding.step3.toneNormalDescription" = "Evenwichtig en helder. De feiten, zonder franje.";
+"yalaAI.onboarding.step3.toneConsiderateDescription" = "Zacht en empathisch. Let op je stemming en viert je vooruitgang.";
+"yalaAI.onboarding.step3.toneSarcasticDescription" = "Direct met humor. Vertelt het je met een speelse knipoog.";
 "yalaAI.onboarding.step3.toneNormalQuote" = "Je hebt 3 koffies deze week gehad. Je zit goed met je budget.";
 "yalaAI.onboarding.step3.toneConsiderateQuote" = "Een koffie doet je goed. Past binnen je budget, alles in orde.";
 "yalaAI.onboarding.step3.toneSarcasticQuote" = "Nog drie koffies en we breken het record. Nog steeds binnen budget.";
-"yalaAI.onboarding.step3.previewLabel" = "Voorbeeld";
-"yalaAI.onboarding.step4.title" = "Helemaal klaar!";
-"yalaAI.onboarding.step4.subtitle" = "Vertel Yala wanneer je maar wilt wat je nodig hebt.";
-"yalaAI.onboarding.step4.tip" = "💡 Probeer: \"Leg een koffie van €5 vast\" of \"Hoeveel heb ik vandaag uitgegeven?\"";
-"yalaAI.onboarding.step4.cta" = "Beginnen met chatten";
+"yalaAI.onboarding.step4.title" = "Kies de stijl van Yala";
+"yalaAI.onboarding.step4.subtitle" = "Waar Yala op let bij jouw financiën.";
+"yalaAI.onboarding.step4.focusBalancedDescription" = "Kijkt evenveel naar uitgaven als inkomsten.";
+"yalaAI.onboarding.step4.focusSaverDescription" = "Helpt je elke maand meer opzij te zetten.";
+"yalaAI.onboarding.step4.focusCautiousDescription" = "Waarschuwt bij elke afwijking, zodat je niets ontgaat.";
+"yalaAI.onboarding.step4.focusBalancedQuote" = "Je inkomsten dekken de uitgaven van deze maand. Goed ritme.";
+"yalaAI.onboarding.step4.focusSaverQuote" = "10% minder restaurants: €30 besparing per maand.";
+"yalaAI.onboarding.step4.focusCautiousQuote" = "Let op: je gaat sneller dan vorige maand met bezorging.";
+"yalaAI.onboarding.step5.title" = "Helemaal klaar!";
+"yalaAI.onboarding.step5.subtitle" = "Vertel Yala wanneer je maar wilt wat je nodig hebt.";
+"yalaAI.onboarding.step5.tip" = "💡 Probeer: \"Leg een koffie van €5 vast\" of \"Hoeveel heb ik vandaag uitgegeven?\"";
+"yalaAI.onboarding.step5.cta" = "Beginnen met chatten";

@@ -4175,12 +4175,12 @@
 "groups.card.leaveGroupAlertTitle" = "退出该群组？";
 "groups.card.leaveGroupAlertBody" = "你的申请被拒绝。退出后，该群组将从你的列表中移除。你的个人记录会保留。";
 
-// MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
-"yalaAI.onboarding.skip" = "跳过";
+// MARK: - Yala AI Onboarding (5-step tutorial first-use post-consent)
 "yalaAI.onboarding.continue" = "继续";
 "yalaAI.onboarding.back" = "返回";
 "yalaAI.onboarding.close" = "关闭";
-"yalaAI.onboarding.stepIndicator" = "%1$d/%2$d";
+"yalaAI.onboarding.previewLabel" = "预览";
+"yalaAI.onboarding.progressLabel" = "第 %1$d 步，共 %2$d 步";
 "yalaAI.onboarding.step1.title" = "向你介绍 Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "你的财务好帮手。";
 "yalaAI.onboarding.step1.demoUserMessage" = "午餐花了 12 元";
@@ -4196,15 +4196,23 @@
 "yalaAI.onboarding.step2.card2.body" = "咖啡花了多少？最贵的月份是哪个？";
 "yalaAI.onboarding.step2.card3.title" = "获取建议";
 "yalaAI.onboarding.step2.card3.body" = "规律、异常、节省的想法。";
-"yalaAI.onboarding.step3.title" = "选择 Yala 的说话方式";
-"yalaAI.onboarding.step3.subtitle" = "你随时可以在设置中更改。";
-"yalaAI.onboarding.step3.toneSection" = "语气";
-"yalaAI.onboarding.step3.focusSection" = "风格";
+"yalaAI.onboarding.step3.title" = "选择 Yala 的语气";
+"yalaAI.onboarding.step3.subtitle" = "Yala 在每次回复时与你交流的方式。";
+"yalaAI.onboarding.step3.toneNormalDescription" = "平衡清晰。直陈事实，不加修饰。";
+"yalaAI.onboarding.step3.toneConsiderateDescription" = "温柔贴心。关注你的情绪，为进步喝彩。";
+"yalaAI.onboarding.step3.toneSarcasticDescription" = "幽默直接。带点俏皮地把事情讲清楚。";
 "yalaAI.onboarding.step3.toneNormalQuote" = "本周喝了 3 杯咖啡。预算执行良好。";
 "yalaAI.onboarding.step3.toneConsiderateQuote" = "喝咖啡让你身心愉悦。在预算之内，一切都好。";
 "yalaAI.onboarding.step3.toneSarcasticQuote" = "再来三杯就破纪录了。不过仍在预算内。";
-"yalaAI.onboarding.step3.previewLabel" = "预览";
-"yalaAI.onboarding.step4.title" = "全部就绪！";
-"yalaAI.onboarding.step4.subtitle" = "随时告诉 Yala 你需要什么。";
-"yalaAI.onboarding.step4.tip" = "💡 试试：\"记录一杯 5 元的咖啡\" 或 \"今天我花了多少？\"";
-"yalaAI.onboarding.step4.cta" = "开始聊天";
+"yalaAI.onboarding.step4.title" = "选择 Yala 的风格";
+"yalaAI.onboarding.step4.subtitle" = "Yala 在打理你的财务时关注的重点。";
+"yalaAI.onboarding.step4.focusBalancedDescription" = "同样关注支出与收入。";
+"yalaAI.onboarding.step4.focusSaverDescription" = "帮你削减开支，每月多攒一些。";
+"yalaAI.onboarding.step4.focusCautiousDescription" = "任何偏差都会提醒你，避免被动。";
+"yalaAI.onboarding.step4.focusBalancedQuote" = "本月收入足以覆盖支出。节奏不错。";
+"yalaAI.onboarding.step4.focusSaverQuote" = "餐饮开支减少 10%，每月可省 80 元。";
+"yalaAI.onboarding.step4.focusCautiousQuote" = "注意：本月外卖花费比上月更快。";
+"yalaAI.onboarding.step5.title" = "全部就绪！";
+"yalaAI.onboarding.step5.subtitle" = "随时告诉 Yala 你需要什么。";
+"yalaAI.onboarding.step5.tip" = "💡 试试：\"记录一杯 5 元的咖啡\" 或 \"今天我花了多少？\"";
+"yalaAI.onboarding.step5.cta" = "开始聊天";

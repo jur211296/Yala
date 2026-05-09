@@ -5704,12 +5704,12 @@ enum L10n {
     enum YalaAI {
         enum Onboarding {
             // Common (shared across steps)
-            static var skip: String { ls("yalaAI.onboarding.skip", comment: "") }
             static var continueAction: String { ls("yalaAI.onboarding.continue", comment: "") }
             static var back: String { ls("yalaAI.onboarding.back", comment: "") }
             static var close: String { ls("yalaAI.onboarding.close", comment: "") }
-            static func stepIndicator(_ current: Int, _ total: Int) -> String {
-                String(format: ls("yalaAI.onboarding.stepIndicator", comment: ""), current, total)
+            static var previewLabel: String { ls("yalaAI.onboarding.previewLabel", comment: "") }
+            static func progressLabel(_ current: Int, _ total: Int) -> String {
+                String(format: ls("yalaAI.onboarding.progressLabel", comment: ""), current, total)
             }
 
             // Step 1 — Hero with chat preview animation
@@ -5731,21 +5731,31 @@ enum L10n {
             static var step2Card3Title: String { ls("yalaAI.onboarding.step2.card3.title", comment: "") }
             static var step2Card3Body: String { ls("yalaAI.onboarding.step2.card3.body", comment: "") }
 
-            // Step 3 — Personalize tone & focus
+            // Step 3 — Tone (3 options + quote in preview)
             static var step3Title: String { ls("yalaAI.onboarding.step3.title", comment: "") }
             static var step3Subtitle: String { ls("yalaAI.onboarding.step3.subtitle", comment: "") }
-            static var step3ToneSection: String { ls("yalaAI.onboarding.step3.toneSection", comment: "") }
-            static var step3FocusSection: String { ls("yalaAI.onboarding.step3.focusSection", comment: "") }
+            static var step3ToneNormalDescription: String { ls("yalaAI.onboarding.step3.toneNormalDescription", comment: "") }
+            static var step3ToneConsiderateDescription: String { ls("yalaAI.onboarding.step3.toneConsiderateDescription", comment: "") }
+            static var step3ToneSarcasticDescription: String { ls("yalaAI.onboarding.step3.toneSarcasticDescription", comment: "") }
             static var step3ToneNormalQuote: String { ls("yalaAI.onboarding.step3.toneNormalQuote", comment: "") }
             static var step3ToneConsiderateQuote: String { ls("yalaAI.onboarding.step3.toneConsiderateQuote", comment: "") }
             static var step3ToneSarcasticQuote: String { ls("yalaAI.onboarding.step3.toneSarcasticQuote", comment: "") }
-            static var step3PreviewLabel: String { ls("yalaAI.onboarding.step3.previewLabel", comment: "") }
 
-            // Step 4 — Done
+            // Step 4 — Focus / style (3 options + quote in preview)
             static var step4Title: String { ls("yalaAI.onboarding.step4.title", comment: "") }
             static var step4Subtitle: String { ls("yalaAI.onboarding.step4.subtitle", comment: "") }
-            static var step4Tip: String { ls("yalaAI.onboarding.step4.tip", comment: "") }
-            static var step4CTA: String { ls("yalaAI.onboarding.step4.cta", comment: "") }
+            static var step4FocusBalancedDescription: String { ls("yalaAI.onboarding.step4.focusBalancedDescription", comment: "") }
+            static var step4FocusSaverDescription: String { ls("yalaAI.onboarding.step4.focusSaverDescription", comment: "") }
+            static var step4FocusCautiousDescription: String { ls("yalaAI.onboarding.step4.focusCautiousDescription", comment: "") }
+            static var step4FocusBalancedQuote: String { ls("yalaAI.onboarding.step4.focusBalancedQuote", comment: "") }
+            static var step4FocusSaverQuote: String { ls("yalaAI.onboarding.step4.focusSaverQuote", comment: "") }
+            static var step4FocusCautiousQuote: String { ls("yalaAI.onboarding.step4.focusCautiousQuote", comment: "") }
+
+            // Step 5 — Done
+            static var step5Title: String { ls("yalaAI.onboarding.step5.title", comment: "") }
+            static var step5Subtitle: String { ls("yalaAI.onboarding.step5.subtitle", comment: "") }
+            static var step5Tip: String { ls("yalaAI.onboarding.step5.tip", comment: "") }
+            static var step5CTA: String { ls("yalaAI.onboarding.step5.cta", comment: "") }
         }
     }
 

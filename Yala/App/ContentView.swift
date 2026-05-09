@@ -15,6 +15,7 @@ import SwiftUI
 struct ContentView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     @AppStorage("hasShownWelcomeChooser") private var hasShownWelcomeChooser: Bool = false
+    @AppStorage(AppPreferences.Keys.hasShownYalaAIOnboarding) private var hasShownYalaAIOnboarding: Bool = false
     @State private var showOnboarding: Bool = false
     @State private var showLanguageSelection: Bool = false
     @State private var showWelcomeRestore: Bool = false
@@ -594,6 +595,7 @@ struct ContentView: View {
             } else {
                 // Reset chooser flag: tras wipe completo, el user vuelve a ver las 3 ramas.
                 hasShownWelcomeChooser = false
+                hasShownYalaAIOnboarding = false  // tras wipe vuelve a verse el onboarding del chat
                 hasCompletedOnboarding = false  // onChange triggers onboarding
             }
         }

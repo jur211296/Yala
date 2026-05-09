@@ -56,10 +56,8 @@ enum YalaAIOnboardingLauncher: String {
 /// Resultado del onboarding cuando el sheet se cierra. Cada caso define
 /// efectos distintos sobre la flag `hasShownYalaAIOnboarding` y la apertura del chat.
 enum YalaAIOnboardingResult: Equatable {
-    /// CTA "Empezar a chatear" (Step 4): persistir flag + abrir chat tras dismiss.
+    /// CTA final "Empezar a chatear": persistir flag + abrir chat tras dismiss.
     case complete
-    /// Tap "Saltar" topRight (steps 1-3): persistir flag, no abrir chat.
-    case skip
     /// Tap "X" topLeft (cualquier step): NO persistir flag (volverá a aparecer).
     case close
 }

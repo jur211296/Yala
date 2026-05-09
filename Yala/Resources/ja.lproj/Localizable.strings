@@ -4175,12 +4175,12 @@
 "groups.card.leaveGroupAlertTitle" = "グループから退出しますか？";
 "groups.card.leaveGroupAlertBody" = "リクエストが却下されました。退出するとこのグループはリストから削除されます。個人の記録はそのまま残ります。";
 
-// MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
-"yalaAI.onboarding.skip" = "スキップ";
+// MARK: - Yala AI Onboarding (5-step tutorial first-use post-consent)
 "yalaAI.onboarding.continue" = "続ける";
 "yalaAI.onboarding.back" = "戻る";
 "yalaAI.onboarding.close" = "閉じる";
-"yalaAI.onboarding.stepIndicator" = "%1$d/%2$d";
+"yalaAI.onboarding.previewLabel" = "プレビュー";
+"yalaAI.onboarding.progressLabel" = "ステップ %1$d / %2$d";
 "yalaAI.onboarding.step1.title" = "Yala AIをご紹介します";
 "yalaAI.onboarding.step1.subtitle" = "あなたの家計のパートナーです。";
 "yalaAI.onboarding.step1.demoUserMessage" = "ランチに1,200円使いました";
@@ -4196,15 +4196,23 @@
 "yalaAI.onboarding.step2.card2.body" = "コーヒーにいくら使いましたか？最も高かった月は？";
 "yalaAI.onboarding.step2.card3.title" = "提案を受け取る";
 "yalaAI.onboarding.step2.card3.body" = "パターン、異常、節約のためのアイデア。";
-"yalaAI.onboarding.step3.title" = "Yalaの話し方を選んでください";
-"yalaAI.onboarding.step3.subtitle" = "設定からいつでも変更できます。";
-"yalaAI.onboarding.step3.toneSection" = "トーン";
-"yalaAI.onboarding.step3.focusSection" = "スタイル";
+"yalaAI.onboarding.step3.title" = "Yalaのトーンを選んでください";
+"yalaAI.onboarding.step3.subtitle" = "Yalaが返答するときの話し方です。";
+"yalaAI.onboarding.step3.toneNormalDescription" = "バランスよく明確に。事実を飾らずにお伝えします。";
+"yalaAI.onboarding.step3.toneConsiderateDescription" = "やさしく寄り添う口調で。気分に配慮し、進歩を称えます。";
+"yalaAI.onboarding.step3.toneSarcasticDescription" = "ユーモアを交えて率直に。少し茶目っ気のある言い回しでお伝えします。";
 "yalaAI.onboarding.step3.toneNormalQuote" = "今週はコーヒーを3杯飲みました。予算内で順調です。";
 "yalaAI.onboarding.step3.toneConsiderateQuote" = "コーヒーは気分転換になります。予算内に収まっていますよ。";
 "yalaAI.onboarding.step3.toneSarcasticQuote" = "あと3杯で記録を更新ですね。それでも予算内です。";
-"yalaAI.onboarding.step3.previewLabel" = "プレビュー";
-"yalaAI.onboarding.step4.title" = "準備完了！";
-"yalaAI.onboarding.step4.subtitle" = "いつでもYalaに必要なことを伝えてください。";
-"yalaAI.onboarding.step4.tip" = "💡 例：「500円のコーヒーを記録して」「今日いくら使った？」";
-"yalaAI.onboarding.step4.cta" = "チャットを始める";
+"yalaAI.onboarding.step4.title" = "Yalaのスタイルを選んでください";
+"yalaAI.onboarding.step4.subtitle" = "家計を見るときに重視するポイントです。";
+"yalaAI.onboarding.step4.focusBalancedDescription" = "支出と収入を同じ重みで見ます。";
+"yalaAI.onboarding.step4.focusSaverDescription" = "毎月、より多く節約できるようサポートします。";
+"yalaAI.onboarding.step4.focusCautiousDescription" = "ずれがあればお知らせし、見落としを防ぎます。";
+"yalaAI.onboarding.step4.focusBalancedQuote" = "今月の支出は収入でカバーできています。良いペースです。";
+"yalaAI.onboarding.step4.focusSaverQuote" = "外食を10%減らすと、月3,000円の節約になります。";
+"yalaAI.onboarding.step4.focusCautiousQuote" = "注意：デリバリーのペースが先月より速くなっています。";
+"yalaAI.onboarding.step5.title" = "準備完了！";
+"yalaAI.onboarding.step5.subtitle" = "いつでもYalaに必要なことを伝えてください。";
+"yalaAI.onboarding.step5.tip" = "💡 例：「500円のコーヒーを記録して」「今日いくら使った？」";
+"yalaAI.onboarding.step5.cta" = "チャットを始める";

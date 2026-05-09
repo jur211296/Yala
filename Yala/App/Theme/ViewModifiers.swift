@@ -435,8 +435,6 @@ struct YalaAIOnboardingSheetModifier: ViewModifier {
                     case .complete:
                         onPersistFlag()
                         pendingOpenChat = true
-                    case .skip:
-                        onPersistFlag()
                     case .close:
                         TelemetryService.track(
                             .yalaAIOnboardingDismissed,
