@@ -5699,6 +5699,56 @@ enum L10n {
         static var stepReloading: String { ls("devseed.stepReloading", comment: "") }
     }
 
+    // MARK: - Yala AI Onboarding
+
+    enum YalaAI {
+        enum Onboarding {
+            // Common (shared across steps)
+            static var skip: String { ls("yalaAI.onboarding.skip", comment: "") }
+            static var continueAction: String { ls("yalaAI.onboarding.continue", comment: "") }
+            static var back: String { ls("yalaAI.onboarding.back", comment: "") }
+            static var close: String { ls("yalaAI.onboarding.close", comment: "") }
+            static func stepIndicator(_ current: Int, _ total: Int) -> String {
+                String(format: ls("yalaAI.onboarding.stepIndicator", comment: ""), current, total)
+            }
+
+            // Step 1 — Hero with chat preview animation
+            static var step1Title: String { ls("yalaAI.onboarding.step1.title", comment: "") }
+            static var step1Subtitle: String { ls("yalaAI.onboarding.step1.subtitle", comment: "") }
+            static var step1DemoUserMessage: String { ls("yalaAI.onboarding.step1.demoUserMessage", comment: "") }
+            static var step1DemoBotMessage: String { ls("yalaAI.onboarding.step1.demoBotMessage", comment: "") }
+            static var step1DemoAmountLabel: String { ls("yalaAI.onboarding.step1.demoAmountLabel", comment: "") }
+            static var step1A11yLabel: String { ls("yalaAI.onboarding.step1.a11yLabel", comment: "") }
+
+            // Step 2 — What you can do (3 cards)
+            static var step2Title: String { ls("yalaAI.onboarding.step2.title", comment: "") }
+            static var step2Subtitle: String { ls("yalaAI.onboarding.step2.subtitle", comment: "") }
+            static var step2Card1Badge: String { ls("yalaAI.onboarding.step2.card1.badge", comment: "") }
+            static var step2Card1Title: String { ls("yalaAI.onboarding.step2.card1.title", comment: "") }
+            static var step2Card1Body: String { ls("yalaAI.onboarding.step2.card1.body", comment: "") }
+            static var step2Card2Title: String { ls("yalaAI.onboarding.step2.card2.title", comment: "") }
+            static var step2Card2Body: String { ls("yalaAI.onboarding.step2.card2.body", comment: "") }
+            static var step2Card3Title: String { ls("yalaAI.onboarding.step2.card3.title", comment: "") }
+            static var step2Card3Body: String { ls("yalaAI.onboarding.step2.card3.body", comment: "") }
+
+            // Step 3 — Personalize tone & focus
+            static var step3Title: String { ls("yalaAI.onboarding.step3.title", comment: "") }
+            static var step3Subtitle: String { ls("yalaAI.onboarding.step3.subtitle", comment: "") }
+            static var step3ToneSection: String { ls("yalaAI.onboarding.step3.toneSection", comment: "") }
+            static var step3FocusSection: String { ls("yalaAI.onboarding.step3.focusSection", comment: "") }
+            static var step3ToneNormalQuote: String { ls("yalaAI.onboarding.step3.toneNormalQuote", comment: "") }
+            static var step3ToneConsiderateQuote: String { ls("yalaAI.onboarding.step3.toneConsiderateQuote", comment: "") }
+            static var step3ToneSarcasticQuote: String { ls("yalaAI.onboarding.step3.toneSarcasticQuote", comment: "") }
+            static var step3PreviewLabel: String { ls("yalaAI.onboarding.step3.previewLabel", comment: "") }
+
+            // Step 4 — Done
+            static var step4Title: String { ls("yalaAI.onboarding.step4.title", comment: "") }
+            static var step4Subtitle: String { ls("yalaAI.onboarding.step4.subtitle", comment: "") }
+            static var step4Tip: String { ls("yalaAI.onboarding.step4.tip", comment: "") }
+            static var step4CTA: String { ls("yalaAI.onboarding.step4.cta", comment: "") }
+        }
+    }
+
 }
 
 // MARK: - App Locale

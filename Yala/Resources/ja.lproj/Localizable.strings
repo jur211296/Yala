@@ -4174,3 +4174,37 @@
 "groups.card.rejectedChip" = "リクエスト却下";
 "groups.card.leaveGroupAlertTitle" = "グループから退出しますか？";
 "groups.card.leaveGroupAlertBody" = "リクエストが却下されました。退出するとこのグループはリストから削除されます。個人の記録はそのまま残ります。";
+
+// MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
+"yalaAI.onboarding.skip" = "スキップ";
+"yalaAI.onboarding.continue" = "続ける";
+"yalaAI.onboarding.back" = "戻る";
+"yalaAI.onboarding.close" = "閉じる";
+"yalaAI.onboarding.stepIndicator" = "%1$d/%2$d";
+"yalaAI.onboarding.step1.title" = "Yala AIをご紹介します";
+"yalaAI.onboarding.step1.subtitle" = "あなたの家計のパートナーです。";
+"yalaAI.onboarding.step1.demoUserMessage" = "ランチに1,200円使いました";
+"yalaAI.onboarding.step1.demoBotMessage" = "完了しました。支出を記録しました";
+"yalaAI.onboarding.step1.demoAmountLabel" = "ランチ";
+"yalaAI.onboarding.step1.a11yLabel" = "Yala AIが支出を記録するチャットの例";
+"yalaAI.onboarding.step2.title" = "できることはこちら";
+"yalaAI.onboarding.step2.subtitle" = "Yala AIを活用する3つの方法です。";
+"yalaAI.onboarding.step2.card1.badge" = "新機能";
+"yalaAI.onboarding.step2.card1.title" = "支出を即座に記録";
+"yalaAI.onboarding.step2.card1.body" = "テキストまたは音声で、フォームなし。話すだけです。";
+"yalaAI.onboarding.step2.card2.title" = "家計について質問";
+"yalaAI.onboarding.step2.card2.body" = "コーヒーにいくら使いましたか？最も高かった月は？";
+"yalaAI.onboarding.step2.card3.title" = "提案を受け取る";
+"yalaAI.onboarding.step2.card3.body" = "パターン、異常、節約のためのアイデア。";
+"yalaAI.onboarding.step3.title" = "Yalaの話し方を選んでください";
+"yalaAI.onboarding.step3.subtitle" = "設定からいつでも変更できます。";
+"yalaAI.onboarding.step3.toneSection" = "トーン";
+"yalaAI.onboarding.step3.focusSection" = "スタイル";
+"yalaAI.onboarding.step3.toneNormalQuote" = "今週はコーヒーを3杯飲みました。予算内で順調です。";
+"yalaAI.onboarding.step3.toneConsiderateQuote" = "コーヒーは気分転換になります。予算内に収まっていますよ。";
+"yalaAI.onboarding.step3.toneSarcasticQuote" = "あと3杯で記録を更新ですね。それでも予算内です。";
+"yalaAI.onboarding.step3.previewLabel" = "プレビュー";
+"yalaAI.onboarding.step4.title" = "準備完了！";
+"yalaAI.onboarding.step4.subtitle" = "いつでもYalaに必要なことを伝えてください。";
+"yalaAI.onboarding.step4.tip" = "💡 例：「500円のコーヒーを記録して」「今日いくら使った？」";
+"yalaAI.onboarding.step4.cta" = "チャットを始める";

@@ -402,6 +402,71 @@ extension View {
     }
 }
 
+// MARK: - Yala AI Onboarding Sheet
+
+/// Compartido entre los 3 launchers del chat (Panel, Records, Statistics) — encapsula
+/// el sheet con encadenamiento `onDismiss:` callback nativo iOS para abrir el chat
+/// tras completar el onboarding (sin Task.sleep frágil).
+///
+/// Pattern:
+/// 1. CTA Step 4 → setea `pendingOpenChat=true` y cierra el sheet del onboarding.
+/// 2. `onDismiss:` se dispara post-animación nativa de iOS, abre el chat.
+/// 3. Skip / Close cierran sin pendingOpenChat → no abren chat.
+struct YalaAIOnboardingSheetModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    @Binding var pendingOpenChat: Bool
+    @Binding var showChatSheet: Bool
+    let launcher: YalaAIOnboardingLauncher
+    let onPersistFlag: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(
+                isPresented: $isPresented,
+                onDismiss: {
+                    if pendingOpenChat {
+                        pendingOpenChat = false
+                        showChatSheet = true
+                    }
+                }
+            ) {
+                YalaAIOnboardingView(launcher: launcher) { result in
+                    switch result {
+                    case .complete:
+                        onPersistFlag()
+                        pendingOpenChat = true
+                    case .skip:
+                        onPersistFlag()
+                    case .close:
+                        TelemetryService.track(
+                            .yalaAIOnboardingDismissed,
+                            parameters: ["launcher": launcher.rawValue]
+                        )
+                    }
+                    isPresented = false
+                }
+            }
+    }
+}
+
+extension View {
+    func yalaAIOnboardingSheet(
+        isPresented: Binding<Bool>,
+        pendingOpenChat: Binding<Bool>,
+        showChatSheet: Binding<Bool>,
+        launcher: YalaAIOnboardingLauncher,
+        onPersistFlag: @escaping () -> Void
+    ) -> some View {
+        modifier(YalaAIOnboardingSheetModifier(
+            isPresented: isPresented,
+            pendingOpenChat: pendingOpenChat,
+            showChatSheet: showChatSheet,
+            launcher: launcher,
+            onPersistFlag: onPersistFlag
+        ))
+    }
+}
+
 // MARK: - Dismiss Keyboard on Tap
 
 /// Global function to dismiss keyboard from anywhere

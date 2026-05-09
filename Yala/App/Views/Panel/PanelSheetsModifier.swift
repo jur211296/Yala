@@ -167,11 +167,26 @@ struct PanelSheetsModifier: ViewModifier {
             .sheet(isPresented: $sheets.showChatSheet) {
                 ChatSheetView()
             }
+            .yalaAIOnboardingSheet(
+                isPresented: $sheets.showYalaAIOnboarding,
+                pendingOpenChat: $sheets.pendingOpenChatAfterOnboarding,
+                showChatSheet: $sheets.showChatSheet,
+                launcher: .panel,
+                onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
+            )
             .sheet(isPresented: $sheets.showUpgradeForChat) {
                 UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
             }
             .chatConsentAlert(isPresented: $sheets.showChatConsentAlert) {
-                sheets.showChatSheet = true
+                // Consent recién aceptado por el alert. Decidimos siguiente paso vía pure-logic.
+                switch YalaAIOnboardingLogic.nextScreen(
+                    consentAccepted: true,
+                    onboardingShown: appPreferences.hasShownYalaAIOnboarding
+                ) {
+                case .onboarding: sheets.showYalaAIOnboarding = true
+                case .chat:       sheets.showChatSheet = true
+                case .consent:    break  // imposible: consent acaba de aceptarse
+                }
             }
             .aiConsentAlert(isPresented: $sheets.showAIConsentAlert, pendingInput: $sheets.pendingAIInput) { input in
                 switch input {

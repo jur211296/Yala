@@ -364,6 +364,17 @@ final class AppPreferences {
         }
     }
 
+    /// Onboarding del chat de Yala AI (4 pasos). Per-device (no synced) — cada device
+    /// muestra una vez al user. Se setea con tap consciente en CTA Step 4 ("Empezar a
+    /// chatear") o "Saltar" topRight. NO se setea con "X" topLeft (interrupción
+    /// accidental → reaparece en próxima apertura del chat).
+    var hasShownYalaAIOnboarding: Bool = false {
+        didSet {
+            guard oldValue != hasShownYalaAIOnboarding else { return }
+            persistBool(hasShownYalaAIOnboarding, forKey: Keys.hasShownYalaAIOnboarding, synced: false)
+        }
+    }
+
     var lastSeenAppVersion: String = "" {
         didSet {
             guard oldValue != lastSeenAppVersion else { return }
@@ -902,6 +913,7 @@ final class AppPreferences {
         }
         hasCompletedOnboarding = defaults.bool(forKey: Keys.hasCompletedOnboarding)
         hasShownWelcomeChooser = defaults.bool(forKey: Keys.hasShownWelcomeChooser)
+        hasShownYalaAIOnboarding = defaults.bool(forKey: Keys.hasShownYalaAIOnboarding)
         lastSeenAppVersion = defaults.string(forKey: Keys.lastSeenAppVersion) ?? ""
         expensesOnlyMode = defaults.bool(forKey: Keys.expensesOnlyMode)
 
@@ -1077,6 +1089,7 @@ final class AppPreferences {
         static let showSiriTip = "showSiriTip"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let hasShownWelcomeChooser = "hasShownWelcomeChooser"
+        static let hasShownYalaAIOnboarding = "hasShownYalaAIOnboarding"
         static let lastSeenAppVersion = "lastSeenAppVersion"
         nonisolated static let expensesOnlyMode = "expensesOnlyMode"  // accedida cross-process desde intents
 

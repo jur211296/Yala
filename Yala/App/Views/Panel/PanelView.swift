@@ -477,7 +477,18 @@ struct PanelView: View {
                         onManualTap: { sheets.showNewTransaction = true },
                         onUpgradeVoice: { sheets.showUpgradeForVoice = true },
                         onUpgradeImage: { sheets.showUpgradeForImage = true },
-                        onChatTap: { sheets.showChatSheet = true },
+                        onChatTap: {
+                            // Helper compartido: si onboarding pendiente, mostrarlo ANTES del chat.
+                            // Reusa pure-logic (consent ya aceptado, sino onChatConsentNeeded gatea antes).
+                            switch YalaAIOnboardingLogic.nextScreen(
+                                consentAccepted: appPreferences.aiChatConsentAccepted,
+                                onboardingShown: appPreferences.hasShownYalaAIOnboarding
+                            ) {
+                            case .onboarding: sheets.showYalaAIOnboarding = true
+                            case .chat:       sheets.showChatSheet = true
+                            case .consent:    sheets.showChatConsentAlert = true
+                            }
+                        },
                         onUpgradeChat: { sheets.showUpgradeForChat = true },
                         onChatConsentNeeded: { sheets.showChatConsentAlert = true }
                     )

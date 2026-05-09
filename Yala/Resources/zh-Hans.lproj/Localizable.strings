@@ -4174,3 +4174,37 @@
 "groups.card.rejectedChip" = "申请被拒绝";
 "groups.card.leaveGroupAlertTitle" = "退出该群组？";
 "groups.card.leaveGroupAlertBody" = "你的申请被拒绝。退出后，该群组将从你的列表中移除。你的个人记录会保留。";
+
+// MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
+"yalaAI.onboarding.skip" = "跳过";
+"yalaAI.onboarding.continue" = "继续";
+"yalaAI.onboarding.back" = "返回";
+"yalaAI.onboarding.close" = "关闭";
+"yalaAI.onboarding.stepIndicator" = "%1$d/%2$d";
+"yalaAI.onboarding.step1.title" = "向你介绍 Yala AI";
+"yalaAI.onboarding.step1.subtitle" = "你的财务好帮手。";
+"yalaAI.onboarding.step1.demoUserMessage" = "午餐花了 12 元";
+"yalaAI.onboarding.step1.demoBotMessage" = "搞定！已记录你的支出";
+"yalaAI.onboarding.step1.demoAmountLabel" = "午餐";
+"yalaAI.onboarding.step1.a11yLabel" = "Yala AI 记录支出的聊天示例";
+"yalaAI.onboarding.step2.title" = "你可以这样做";
+"yalaAI.onboarding.step2.subtitle" = "三种方式充分利用 Yala AI。";
+"yalaAI.onboarding.step2.card1.badge" = "新";
+"yalaAI.onboarding.step2.card1.title" = "即刻记录支出";
+"yalaAI.onboarding.step2.card1.body" = "文字或语音，无需表单。说一声就行。";
+"yalaAI.onboarding.step2.card2.title" = "询问你的财务";
+"yalaAI.onboarding.step2.card2.body" = "咖啡花了多少？最贵的月份是哪个？";
+"yalaAI.onboarding.step2.card3.title" = "获取建议";
+"yalaAI.onboarding.step2.card3.body" = "规律、异常、节省的想法。";
+"yalaAI.onboarding.step3.title" = "选择 Yala 的说话方式";
+"yalaAI.onboarding.step3.subtitle" = "你随时可以在设置中更改。";
+"yalaAI.onboarding.step3.toneSection" = "语气";
+"yalaAI.onboarding.step3.focusSection" = "风格";
+"yalaAI.onboarding.step3.toneNormalQuote" = "本周喝了 3 杯咖啡。预算执行良好。";
+"yalaAI.onboarding.step3.toneConsiderateQuote" = "喝咖啡让你身心愉悦。在预算之内，一切都好。";
+"yalaAI.onboarding.step3.toneSarcasticQuote" = "再来三杯就破纪录了。不过仍在预算内。";
+"yalaAI.onboarding.step3.previewLabel" = "预览";
+"yalaAI.onboarding.step4.title" = "全部就绪！";
+"yalaAI.onboarding.step4.subtitle" = "随时告诉 Yala 你需要什么。";
+"yalaAI.onboarding.step4.tip" = "💡 试试：\"记录一杯 5 元的咖啡\" 或 \"今天我花了多少？\"";
+"yalaAI.onboarding.step4.cta" = "开始聊天";

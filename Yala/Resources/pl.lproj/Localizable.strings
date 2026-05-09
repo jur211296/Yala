@@ -4174,3 +4174,37 @@
 "groups.card.rejectedChip" = "Prośba odrzucona";
 "groups.card.leaveGroupAlertTitle" = "Opuścić grupę?";
 "groups.card.leaveGroupAlertBody" = "Twoja prośba została odrzucona. Po opuszczeniu grupa zostanie usunięta z Twojej listy. Twoje osobiste wpisy pozostają.";
+
+// MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
+"yalaAI.onboarding.skip" = "Pomiń";
+"yalaAI.onboarding.continue" = "Dalej";
+"yalaAI.onboarding.back" = "Wstecz";
+"yalaAI.onboarding.close" = "Zamknij";
+"yalaAI.onboarding.stepIndicator" = "%1$d/%2$d";
+"yalaAI.onboarding.step1.title" = "Poznaj Yala AI";
+"yalaAI.onboarding.step1.subtitle" = "Twoja prawa ręka w finansach.";
+"yalaAI.onboarding.step1.demoUserMessage" = "Wydałem 12 zł na lunch";
+"yalaAI.onboarding.step1.demoBotMessage" = "Gotowe! Zapisałem Twój wydatek";
+"yalaAI.onboarding.step1.demoAmountLabel" = "Lunch";
+"yalaAI.onboarding.step1.a11yLabel" = "Przykładowy czat z Yala AI zapisujący wydatek";
+"yalaAI.onboarding.step2.title" = "Oto co możesz zrobić";
+"yalaAI.onboarding.step2.subtitle" = "Trzy sposoby, by w pełni wykorzystać Yala AI.";
+"yalaAI.onboarding.step2.card1.badge" = "Nowość";
+"yalaAI.onboarding.step2.card1.title" = "Zapisuj wydatki natychmiast";
+"yalaAI.onboarding.step2.card1.body" = "Tekstem lub głosem, bez formularzy. Po prostu powiedz.";
+"yalaAI.onboarding.step2.card2.title" = "Pytaj o swoje finanse";
+"yalaAI.onboarding.step2.card2.body" = "Ile na kawę? Mój najdroższy miesiąc?";
+"yalaAI.onboarding.step2.card3.title" = "Otrzymuj sugestie";
+"yalaAI.onboarding.step2.card3.body" = "Wzorce, anomalie, pomysły na oszczędzanie.";
+"yalaAI.onboarding.step3.title" = "Wybierz, jak Yala ma do Ciebie mówić";
+"yalaAI.onboarding.step3.subtitle" = "Możesz to zmienić w każdej chwili w Ustawieniach.";
+"yalaAI.onboarding.step3.toneSection" = "Ton";
+"yalaAI.onboarding.step3.focusSection" = "Styl";
+"yalaAI.onboarding.step3.toneNormalQuote" = "W tym tygodniu wypiłaś/eś 3 kawy. Mieścisz się w budżecie.";
+"yalaAI.onboarding.step3.toneConsiderateQuote" = "Kawa dobrze Ci robi. Mieści się w budżecie, wszystko w porządku.";
+"yalaAI.onboarding.step3.toneSarcasticQuote" = "Jeszcze trzy kawy i pobijemy rekord. Wciąż mieści się w budżecie.";
+"yalaAI.onboarding.step3.previewLabel" = "Podgląd";
+"yalaAI.onboarding.step4.title" = "Gotowe!";
+"yalaAI.onboarding.step4.subtitle" = "Kiedy zechcesz, powiedz Yali czego potrzebujesz.";
+"yalaAI.onboarding.step4.tip" = "💡 Spróbuj: \"Zapisz kawę za 5 zł\" albo \"Ile wydałem dzisiaj?\"";
+"yalaAI.onboarding.step4.cta" = "Zacznij rozmawiać";

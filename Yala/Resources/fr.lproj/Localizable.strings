@@ -4172,3 +4172,37 @@
 "groups.card.rejectedChip" = "Demande refusée";
 "groups.card.leaveGroupAlertTitle" = "Quitter le groupe ?";
 "groups.card.leaveGroupAlertBody" = "Votre demande a été refusée. En quittant, ce groupe sera retiré de votre liste. Vos registres personnels sont conservés.";
+
+// MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
+"yalaAI.onboarding.skip" = "Passer";
+"yalaAI.onboarding.continue" = "Continuer";
+"yalaAI.onboarding.back" = "Retour";
+"yalaAI.onboarding.close" = "Fermer";
+"yalaAI.onboarding.stepIndicator" = "%1$d/%2$d";
+"yalaAI.onboarding.step1.title" = "Voici Yala AI";
+"yalaAI.onboarding.step1.subtitle" = "Votre bras droit financier.";
+"yalaAI.onboarding.step1.demoUserMessage" = "12 € dépensés au déjeuner";
+"yalaAI.onboarding.step1.demoBotMessage" = "C'est noté ! J'ai enregistré votre dépense";
+"yalaAI.onboarding.step1.demoAmountLabel" = "Déjeuner";
+"yalaAI.onboarding.step1.a11yLabel" = "Exemple de chat avec Yala AI enregistrant une dépense";
+"yalaAI.onboarding.step2.title" = "Voici ce que vous pouvez faire";
+"yalaAI.onboarding.step2.subtitle" = "Trois façons de profiter de Yala AI.";
+"yalaAI.onboarding.step2.card1.badge" = "Nouveau";
+"yalaAI.onboarding.step2.card1.title" = "Enregistrez vos dépenses à l'instant";
+"yalaAI.onboarding.step2.card1.body" = "Par texte ou par voix, sans formulaires. Dites-le, c'est tout.";
+"yalaAI.onboarding.step2.card2.title" = "Posez des questions sur vos finances";
+"yalaAI.onboarding.step2.card2.body" = "Combien dépensé en café ? Mon mois le plus cher ?";
+"yalaAI.onboarding.step2.card3.title" = "Recevez des suggestions";
+"yalaAI.onboarding.step2.card3.body" = "Schémas, anomalies, idées pour économiser.";
+"yalaAI.onboarding.step3.title" = "Choisissez le ton de Yala";
+"yalaAI.onboarding.step3.subtitle" = "Vous pouvez le changer à tout moment dans les Réglages.";
+"yalaAI.onboarding.step3.toneSection" = "Ton";
+"yalaAI.onboarding.step3.focusSection" = "Style";
+"yalaAI.onboarding.step3.toneNormalQuote" = "Vous avez pris 3 cafés cette semaine. Vous tenez votre budget.";
+"yalaAI.onboarding.step3.toneConsiderateQuote" = "Un café fait du bien. Il rentre dans votre budget, tout va bien.";
+"yalaAI.onboarding.step3.toneSarcasticQuote" = "Trois cafés de plus et on bat le record. Ça tient encore dans le budget.";
+"yalaAI.onboarding.step3.previewLabel" = "Aperçu";
+"yalaAI.onboarding.step4.title" = "Tout est prêt !";
+"yalaAI.onboarding.step4.subtitle" = "Quand vous voulez, dites à Yala ce dont vous avez besoin.";
+"yalaAI.onboarding.step4.tip" = "💡 Essayez : « Enregistre un café à 5 euros » ou « Combien j'ai dépensé aujourd'hui ? »";
+"yalaAI.onboarding.step4.cta" = "Commencer à chatter";

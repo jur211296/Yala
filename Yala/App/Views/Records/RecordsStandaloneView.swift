@@ -46,6 +46,8 @@ struct RecordsStandaloneView: View {
     @State private var showChatSheet = false
     @State private var showUpgradeForChat = false
     @State private var showChatConsentAlert = false
+    @State private var showYalaAIOnboarding = false
+    @State private var pendingOpenChatAfterOnboarding = false
 
     // MARK: - Pro Feature Gates
 
@@ -80,6 +82,8 @@ struct RecordsStandaloneView: View {
                 showChatSheet: $showChatSheet,
                 showUpgradeForChat: $showUpgradeForChat,
                 showChatConsentAlert: $showChatConsentAlert,
+                showYalaAIOnboarding: $showYalaAIOnboarding,
+                pendingOpenChatAfterOnboarding: $pendingOpenChatAfterOnboarding,
                 isPresentingSettings: $isPresentingSettings,
                 modelContext: modelContext,
                 recalculateData: recalculateData,
@@ -157,7 +161,16 @@ struct RecordsStandaloneView: View {
                                 onManualTap: { recordsViewModel.showNewTransaction = true },
                                 onUpgradeVoice: { showUpgradeForVoice = true },
                                 onUpgradeImage: { showUpgradeForImage = true },
-                                onChatTap: { showChatSheet = true },
+                                onChatTap: {
+                                    switch YalaAIOnboardingLogic.nextScreen(
+                                        consentAccepted: appPreferences.aiChatConsentAccepted,
+                                        onboardingShown: appPreferences.hasShownYalaAIOnboarding
+                                    ) {
+                                    case .onboarding: showYalaAIOnboarding = true
+                                    case .chat:       showChatSheet = true
+                                    case .consent:    showChatConsentAlert = true
+                                    }
+                                },
                                 onUpgradeChat: { showUpgradeForChat = true },
                                 onChatConsentNeeded: { showChatConsentAlert = true }
                             )
@@ -380,6 +393,8 @@ private struct RecordsStandaloneSheets: ViewModifier {
     @Binding var showChatSheet: Bool
     @Binding var showUpgradeForChat: Bool
     @Binding var showChatConsentAlert: Bool
+    @Binding var showYalaAIOnboarding: Bool
+    @Binding var pendingOpenChatAfterOnboarding: Bool
     @Binding var isPresentingSettings: Bool
     let modelContext: ModelContext
     let recalculateData: () -> Void
@@ -411,11 +426,25 @@ private struct RecordsStandaloneSheets: ViewModifier {
             .sheet(isPresented: $showChatSheet) {
                 ChatSheetView()
             }
+            .yalaAIOnboardingSheet(
+                isPresented: $showYalaAIOnboarding,
+                pendingOpenChat: $pendingOpenChatAfterOnboarding,
+                showChatSheet: $showChatSheet,
+                launcher: .records,
+                onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
+            )
             .sheet(isPresented: $showUpgradeForChat) {
                 UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
             }
             .chatConsentAlert(isPresented: $showChatConsentAlert) {
-                showChatSheet = true
+                switch YalaAIOnboardingLogic.nextScreen(
+                    consentAccepted: true,
+                    onboardingShown: appPreferences.hasShownYalaAIOnboarding
+                ) {
+                case .onboarding: showYalaAIOnboarding = true
+                case .chat:       showChatSheet = true
+                case .consent:    break
+                }
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {

@@ -68,7 +68,10 @@ struct DetailContainerView: View {
     @State private var showChatSheet = false
     @State private var showUpgradeForChat = false
     @State private var showChatConsentAlert = false
+    @State private var showYalaAIOnboarding = false
+    @State private var pendingOpenChatAfterOnboarding = false
     @AppStorage(AppPreferences.Keys.aiChatConsentAccepted) private var aiChatConsentAccepted: Bool = false
+    @AppStorage(AppPreferences.Keys.hasShownYalaAIOnboarding) private var hasShownYalaAIOnboarding: Bool = false
     @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
 
     // MARK: - Pro Feature Gates
@@ -142,7 +145,10 @@ struct DetailContainerView: View {
                     showChatSheet: $showChatSheet,
                     showUpgradeForChat: $showUpgradeForChat,
                     showChatConsentAlert: $showChatConsentAlert,
+                    showYalaAIOnboarding: $showYalaAIOnboarding,
+                    pendingOpenChatAfterOnboarding: $pendingOpenChatAfterOnboarding,
                     aiChatConsentAccepted: $aiChatConsentAccepted,
+                    hasShownYalaAIOnboarding: $hasShownYalaAIOnboarding,
                     modelContext: modelContext,
                     recalculateData: recalculateData,
                     reloadAndRecalculate: reloadAndRecalculate
@@ -248,7 +254,16 @@ struct DetailContainerView: View {
                             onManualTap: { recordsViewModel.showNewTransaction = true },
                             onUpgradeVoice: { showUpgradeForVoice = true },
                             onUpgradeImage: { showUpgradeForImage = true },
-                            onChatTap: { showChatSheet = true },
+                            onChatTap: {
+                                switch YalaAIOnboardingLogic.nextScreen(
+                                    consentAccepted: aiChatConsentAccepted,
+                                    onboardingShown: hasShownYalaAIOnboarding
+                                ) {
+                                case .onboarding: showYalaAIOnboarding = true
+                                case .chat:       showChatSheet = true
+                                case .consent:    showChatConsentAlert = true
+                                }
+                            },
                             onUpgradeChat: { showUpgradeForChat = true },
                             onChatConsentNeeded: { showChatConsentAlert = true }
                         )
@@ -666,7 +681,10 @@ private struct DetailContainerSheets: ViewModifier {
     @Binding var showChatSheet: Bool
     @Binding var showUpgradeForChat: Bool
     @Binding var showChatConsentAlert: Bool
+    @Binding var showYalaAIOnboarding: Bool
+    @Binding var pendingOpenChatAfterOnboarding: Bool
     @Binding var aiChatConsentAccepted: Bool
+    @Binding var hasShownYalaAIOnboarding: Bool
     let modelContext: ModelContext
     let recalculateData: () -> Void
     let reloadAndRecalculate: () -> Void
@@ -697,11 +715,25 @@ private struct DetailContainerSheets: ViewModifier {
             .sheet(isPresented: $showChatSheet) {
                 ChatSheetView()
             }
+            .yalaAIOnboardingSheet(
+                isPresented: $showYalaAIOnboarding,
+                pendingOpenChat: $pendingOpenChatAfterOnboarding,
+                showChatSheet: $showChatSheet,
+                launcher: .stats,
+                onPersistFlag: { hasShownYalaAIOnboarding = true }
+            )
             .sheet(isPresented: $showUpgradeForChat) {
                 UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
             }
             .chatConsentAlert(isPresented: $showChatConsentAlert) {
-                showChatSheet = true
+                switch YalaAIOnboardingLogic.nextScreen(
+                    consentAccepted: true,
+                    onboardingShown: hasShownYalaAIOnboarding
+                ) {
+                case .onboarding: showYalaAIOnboarding = true
+                case .chat:       showChatSheet = true
+                case .consent:    break
+                }
             }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {

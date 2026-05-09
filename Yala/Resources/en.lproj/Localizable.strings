@@ -4176,3 +4176,37 @@
 "groups.card.rejectedChip" = "Request rejected";
 "groups.card.leaveGroupAlertTitle" = "Leave group?";
 "groups.card.leaveGroupAlertBody" = "Your request was rejected. Leaving will remove this group from your list. Your personal records stay.";
+
+// MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
+"yalaAI.onboarding.skip" = "Skip";
+"yalaAI.onboarding.continue" = "Continue";
+"yalaAI.onboarding.back" = "Back";
+"yalaAI.onboarding.close" = "Close";
+"yalaAI.onboarding.stepIndicator" = "%1$d/%2$d";
+"yalaAI.onboarding.step1.title" = "Meet Yala AI";
+"yalaAI.onboarding.step1.subtitle" = "Your financial right hand.";
+"yalaAI.onboarding.step1.demoUserMessage" = "Spent $12 on lunch";
+"yalaAI.onboarding.step1.demoBotMessage" = "Done! I logged your expense";
+"yalaAI.onboarding.step1.demoAmountLabel" = "Lunch";
+"yalaAI.onboarding.step1.a11yLabel" = "Example chat with Yala AI logging an expense";
+"yalaAI.onboarding.step2.title" = "Here's what you can do";
+"yalaAI.onboarding.step2.subtitle" = "Three ways to get the most from Yala AI.";
+"yalaAI.onboarding.step2.card1.badge" = "New";
+"yalaAI.onboarding.step2.card1.title" = "Log expenses instantly";
+"yalaAI.onboarding.step2.card1.body" = "By text or voice, no forms. Just say it.";
+"yalaAI.onboarding.step2.card2.title" = "Ask about your finances";
+"yalaAI.onboarding.step2.card2.body" = "How much on coffee? My priciest month?";
+"yalaAI.onboarding.step2.card3.title" = "Get suggestions";
+"yalaAI.onboarding.step2.card3.body" = "Patterns, anomalies, ideas to save more.";
+"yalaAI.onboarding.step3.title" = "Pick how Yala talks to you";
+"yalaAI.onboarding.step3.subtitle" = "You can change it anytime in Settings.";
+"yalaAI.onboarding.step3.toneSection" = "Tone";
+"yalaAI.onboarding.step3.focusSection" = "Style";
+"yalaAI.onboarding.step3.toneNormalQuote" = "You've had 3 coffees this week. You're on track with your budget.";
+"yalaAI.onboarding.step3.toneConsiderateQuote" = "A coffee feels good. It fits your budget, all in order.";
+"yalaAI.onboarding.step3.toneSarcasticQuote" = "Three more coffees and we'll break the record. Still within budget.";
+"yalaAI.onboarding.step3.previewLabel" = "Preview";
+"yalaAI.onboarding.step4.title" = "All set!";
+"yalaAI.onboarding.step4.subtitle" = "Whenever you want, tell Yala what you need.";
+"yalaAI.onboarding.step4.tip" = "💡 Try: \"Log a $5 coffee\" or \"How much did I spend today?\"";
+"yalaAI.onboarding.step4.cta" = "Start chatting";

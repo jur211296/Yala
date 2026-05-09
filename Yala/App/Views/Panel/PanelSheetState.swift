@@ -44,6 +44,12 @@ struct PanelSheetState {
     var showChatSheet = false
     var showUpgradeForChat = false
     var showChatConsentAlert = false
+    var showYalaAIOnboarding = false
+    /// Encadenamiento de sheets: cuando el onboarding completa con CTA "Empezar a chatear",
+    /// se setea a true ANTES de cerrar el sheet del onboarding. El callback `onDismiss:` del
+    /// `.sheet` lo lee tras la animación de cierre nativa de iOS y abre el ChatSheet sin race.
+    /// Patrón canónico iOS 26 — reemplaza el frágil `Task.sleep(350ms)`.
+    var pendingOpenChatAfterOnboarding = false
 
     // AI consent
     var showAIConsentAlert = false

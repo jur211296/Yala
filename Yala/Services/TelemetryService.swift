@@ -48,6 +48,12 @@ enum AnalyticsEvent: String {
     case chatVoiceInputUsed
     case chatTopicsSheetOpened
     case chatPersistedSessionRehydrated
+    // Yala AI Onboarding (4-step tutorial first-use post-consent)
+    case yalaAIOnboardingShown          // params: launcher (panel|records|stats)
+    case yalaAIOnboardingCompleted      // tap CTA Step 4 "Empezar a chatear"
+    case yalaAIOnboardingSkipped        // tap "Saltar" topRight (steps 1-3)
+    case yalaAIOnboardingDismissed      // tap "X" topLeft — flag NO se setea
+    case yalaAIOnboardingTonePicked     // params: tone (normal|considerate|sarcastic), focus (balanced|saver|cautious)
     // Chat → Registrar transacciones
     case chatIntentClassified           // params: intent, used_force_intent
     case chatDraftProposed              // params: count

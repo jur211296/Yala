@@ -364,3 +364,37 @@
 "groups.reconnect.removedRetry.title" = "Te sacaron de %@";
 "groups.reconnect.removedRetry.body" = "Pedí entrar de nuevo si querés volver.";
 "groups.reconnect.retryCta" = "Volver a pedir";
+
+// MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
+"yalaAI.onboarding.skip" = "Saltar";
+"yalaAI.onboarding.continue" = "Continuar";
+"yalaAI.onboarding.back" = "Volver";
+"yalaAI.onboarding.close" = "Cerrar";
+"yalaAI.onboarding.stepIndicator" = "%1$d/%2$d";
+"yalaAI.onboarding.step1.title" = "Te presento a Yala AI";
+"yalaAI.onboarding.step1.subtitle" = "Tu mano derecha financiera.";
+"yalaAI.onboarding.step1.demoUserMessage" = "Gasté $12 en almuerzo";
+"yalaAI.onboarding.step1.demoBotMessage" = "¡Listo! Registré tu gasto";
+"yalaAI.onboarding.step1.demoAmountLabel" = "Almuerzo";
+"yalaAI.onboarding.step1.a11yLabel" = "Ejemplo de chat con Yala AI registrando un gasto";
+"yalaAI.onboarding.step2.title" = "Esto es lo que podés hacer";
+"yalaAI.onboarding.step2.subtitle" = "Tres formas de aprovechar a Yala AI.";
+"yalaAI.onboarding.step2.card1.badge" = "Nuevo";
+"yalaAI.onboarding.step2.card1.title" = "Registrá gastos al instante";
+"yalaAI.onboarding.step2.card1.body" = "Por texto o voz, sin formularios. Solo decilo.";
+"yalaAI.onboarding.step2.card2.title" = "Preguntá sobre tus finanzas";
+"yalaAI.onboarding.step2.card2.body" = "¿Cuánto gasté en café? ¿Mi mes más caro?";
+"yalaAI.onboarding.step2.card3.title" = "Recibí sugerencias";
+"yalaAI.onboarding.step2.card3.body" = "Patrones, anomalías, ideas para ahorrar.";
+"yalaAI.onboarding.step3.title" = "Elegí cómo te habla Yala";
+"yalaAI.onboarding.step3.subtitle" = "Lo podés cambiar cuando quieras desde Ajustes.";
+"yalaAI.onboarding.step3.toneSection" = "Tono";
+"yalaAI.onboarding.step3.focusSection" = "Estilo";
+"yalaAI.onboarding.step3.toneNormalQuote" = "Llevás 3 cafés esta semana. Vas bien con el presupuesto.";
+"yalaAI.onboarding.step3.toneConsiderateQuote" = "Tomarte un café te hace bien. Va dentro de tu presupuesto, todo en orden.";
+"yalaAI.onboarding.step3.toneSarcasticQuote" = "Tres cafés más y rompemos la marca. Aún caben en el presupuesto.";
+"yalaAI.onboarding.step3.previewLabel" = "Vista previa";
+"yalaAI.onboarding.step4.title" = "¡Todo listo!";
+"yalaAI.onboarding.step4.subtitle" = "Cuando quieras, decile a Yala lo que necesitás.";
+"yalaAI.onboarding.step4.tip" = "💡 Probá: \"Registrá un café de 5 pesos\" o \"¿Cuánto gasté hoy?\"";
+"yalaAI.onboarding.step4.cta" = "Empezar a chatear";
