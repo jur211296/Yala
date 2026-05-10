@@ -4308,6 +4308,11 @@ enum L10n {
         static var accountBalanceHintChecking: String { ls("onboarding.accountBalanceHintChecking", comment: "") }
         static var accountBalanceHintSavings: String { ls("onboarding.accountBalanceHintSavings", comment: "") }
         static var accountBalanceLearnMore: String { ls("onboarding.accountBalanceLearnMore", comment: "") }
+        static var balanceGuideHint: String { ls("onboarding.balanceGuideHint", comment: "") }
+        static var privacyLocalShort: String { ls("onboarding.privacyLocalShort", comment: "") }
+        static var privacyNoTrackingShort: String { ls("onboarding.privacyNoTrackingShort", comment: "") }
+        static var privacyIcloudShort: String { ls("onboarding.privacyIcloudShort", comment: "") }
+        static var privacyNoSharingShort: String { ls("onboarding.privacyNoSharingShort", comment: "") }
         static var accountBalanceGuideTitle: String { ls("onboarding.accountBalanceGuideTitle", comment: "") }
         static var accountBalanceGuideIntro: String { ls("onboarding.accountBalanceGuideIntro", comment: "") }
         static var accountBalanceGuideGeneral: String { ls("onboarding.accountBalanceGuideGeneral", comment: "") }

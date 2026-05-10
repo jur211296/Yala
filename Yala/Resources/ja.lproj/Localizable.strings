@@ -1823,7 +1823,7 @@
 "onboarding.welcomeSubtitle" = "Yalaを設定するのに数ステップだけです。";
 "onboarding.nameLabel" = "なんとお呼びしましょう？";
 "onboarding.namePlaceholder" = "お名前";
-"onboarding.greetingBubble" = "こんにちは、%@ 👋 — Yalaを準備しています…";
+"onboarding.greetingBubble" = "こんにちは、%@。Yala の準備ができました";
 "onboarding.greetingBubbleEmpty" = "お名前は?";
 "onboarding.currencyTitle" = "メイン通貨";
 "onboarding.currencySubtitle" = "最もよく使う通貨を選択してください。";
@@ -1893,6 +1893,11 @@
 "onboarding.accountBalanceHintChecking" = "今日使える銀行残高。正確でなくて大丈夫、あとから調整できます。";
 "onboarding.accountBalanceHintSavings" = "この口座に貯めている合計。正確でなくて大丈夫、あとから調整できます。";
 "onboarding.accountBalanceLearnMore" = "残高を一緒に計算しましょう";
+"onboarding.balanceGuideHint" = "ステップごとにご案内します";
+"onboarding.privacyLocalShort" = "データはあなたの端末に";
+"onboarding.privacyNoTrackingShort" = "追跡や広告なし";
+"onboarding.privacyIcloudShort" = "あなただけがアクセス";
+"onboarding.privacyNoSharingShort" = "安全な AI";
 "onboarding.accountBalanceGuideTitle" = "残高はどう計算する？";
 "onboarding.accountBalanceGuideIntro" = "初期残高は、Yalaに「いくらから始めるか」を伝えるものです。1円単位の正確さは不要、おおよその額で十分です。選んだ口座の種類ごとの考え方を以下に示します。";
 "onboarding.accountBalanceGuideGeneral" = "1つの通貨で支払い手段をまとめた一般口座を使う場合、残高は使えるお金の合計を表します。\n\n計算するには普通預金、貯蓄、現金などすべてを合算します。クレジットカードの未払い分があれば、より正確に把握するために差し引いてもよいですし、あとで各カードを別の口座として管理することもできます。\n\nその最終値が初期残高です。";

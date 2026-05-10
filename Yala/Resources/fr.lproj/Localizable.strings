@@ -1825,7 +1825,7 @@
 "onboarding.welcomeSubtitle" = "Quelques étapes pour personnaliser Yala rien que pour toi.";
 "onboarding.nameLabel" = "Comment veux-tu qu'on t'appelle ?";
 "onboarding.namePlaceholder" = "Votre nom";
-"onboarding.greetingBubble" = "Bonjour %@ 👋 — je prépare votre Yala…";
+"onboarding.greetingBubble" = "Bonjour %@. Yala est prêt pour vous";
 "onboarding.greetingBubbleEmpty" = "Comment vous appelez-vous ?";
 "onboarding.currencyTitle" = "Devise principale";
 "onboarding.currencySubtitle" = "Sélectionnez la devise que vous utilisez le plus souvent.";
@@ -1891,6 +1891,11 @@
 "onboarding.accountBalanceHintChecking" = "Le solde disponible sur ton compte bancaire aujourd'hui. Pas besoin d'être exact, tu pourras l'ajuster plus tard.";
 "onboarding.accountBalanceHintSavings" = "Le total que tu as épargné sur ce compte. Pas besoin d'être exact, tu pourras l'ajuster plus tard.";
 "onboarding.accountBalanceLearnMore" = "Calculons ton solde ensemble";
+"onboarding.balanceGuideHint" = "Nous vous guidons étape par étape";
+"onboarding.privacyLocalShort" = "Données sur votre appareil";
+"onboarding.privacyNoTrackingShort" = "Sans suivi ni publicités";
+"onboarding.privacyIcloudShort" = "Vous seul y accédez";
+"onboarding.privacyNoSharingShort" = "IA sécurisée";
 "onboarding.accountBalanceGuideTitle" = "Comment calculer mon solde ?";
 "onboarding.accountBalanceGuideIntro" = "Ton solde initial indique à Yala avec combien d'argent tu démarres. Pas besoin d'être exact au centime — une approximation suffit. Voici comment y réfléchir selon le type de compte que tu as choisi.";
 "onboarding.accountBalanceGuideGeneral" = "Si tu utilises un compte général pour regrouper tous tes moyens de paiement dans une devise, ton solde reflète combien d'argent tu as disponible.\n\nPour le calculer, additionne tout : comptes courants, épargne, espèces. Si tu as des dépenses en cours sur des cartes de crédit, tu peux les soustraire pour une image plus précise — ou suivre chaque carte comme un compte séparé plus tard.\n\nCe chiffre final est ton solde initial.";

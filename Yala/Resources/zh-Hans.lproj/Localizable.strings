@@ -1823,7 +1823,7 @@
 "onboarding.welcomeSubtitle" = "几步就能为你设置好 Yala。";
 "onboarding.nameLabel" = "我们怎么称呼你?";
 "onboarding.namePlaceholder" = "你的名字";
-"onboarding.greetingBubble" = "你好，%@ 👋 — 正在为你准备 Yala…";
+"onboarding.greetingBubble" = "你好，%@。Yala 已经为你准备好了";
 "onboarding.greetingBubbleEmpty" = "你叫什么名字?";
 "onboarding.currencyTitle" = "你的主货币";
 "onboarding.currencySubtitle" = "选择你最常用的货币。";
@@ -1893,6 +1893,11 @@
 "onboarding.accountBalanceHintChecking" = "你银行账户今天的可用余额。不需要精确 — 之后可以调整。";
 "onboarding.accountBalanceHintSavings" = "你在此账户中存的总额。不需要精确 — 之后可以调整。";
 "onboarding.accountBalanceLearnMore" = "我们一起算算你的余额";
+"onboarding.balanceGuideHint" = "我们一步步引导你";
+"onboarding.privacyLocalShort" = "数据保存在你的设备";
+"onboarding.privacyNoTrackingShort" = "无跟踪、无广告";
+"onboarding.privacyIcloudShort" = "只有你可以访问";
+"onboarding.privacyNoSharingShort" = "安全 AI";
 "onboarding.accountBalanceGuideTitle" = "我怎么算我的余额?";
 "onboarding.accountBalanceGuideIntro" = "初始余额告诉 Yala 你从多少开始。不需要精确到分 — 粗略估计就行。下面是按你所选账户类型的思考方式。";
 "onboarding.accountBalanceGuideGeneral" = "如果你用一个通用账户来汇总同一货币的所有付款方式,你的余额反映你有多少可用的钱。\n\n要计算它,把所有相加:活期账户、储蓄、现金。如果有未付的信用卡费用,可以减去以更精确 — 或者之后把每张卡作为单独账户跟踪。\n\n最终的数字就是你的初始余额。";

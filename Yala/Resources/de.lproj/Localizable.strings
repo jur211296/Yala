@@ -1824,7 +1824,7 @@
 "onboarding.welcomeSubtitle" = "Nur ein paar Schritte, um Yala für dich einzurichten.";
 "onboarding.nameLabel" = "Wie sollen wir dich nennen?";
 "onboarding.namePlaceholder" = "Ihr Name";
-"onboarding.greetingBubble" = "Hallo, %@ 👋 — dein Yala wird vorbereitet…";
+"onboarding.greetingBubble" = "Hallo, %@. Yala ist bereit für dich";
 "onboarding.greetingBubbleEmpty" = "Wie heißt du?";
 "onboarding.currencyTitle" = "Hauptwährung";
 "onboarding.currencySubtitle" = "Wählen Sie die Währung, die Sie am häufigsten verwenden.";
@@ -1889,6 +1889,11 @@
 "onboarding.accountBalanceHintChecking" = "Dein verfügbares Bankguthaben heute. Muss nicht exakt sein — du kannst es später anpassen.";
 "onboarding.accountBalanceHintSavings" = "Der Gesamtbetrag, den du auf diesem Konto gespart hast. Muss nicht exakt sein — du kannst ihn später anpassen.";
 "onboarding.accountBalanceLearnMore" = "Lass uns deinen Saldo zusammen berechnen";
+"onboarding.balanceGuideHint" = "Wir führen dich Schritt für Schritt";
+"onboarding.privacyLocalShort" = "Daten auf deinem Gerät";
+"onboarding.privacyNoTrackingShort" = "Kein Tracking, keine Werbung";
+"onboarding.privacyIcloudShort" = "Nur du hast Zugriff";
+"onboarding.privacyNoSharingShort" = "Sichere KI";
 "onboarding.accountBalanceGuideTitle" = "Wie berechne ich meinen Saldo?";
 "onboarding.accountBalanceGuideIntro" = "Dein Anfangssaldo zeigt Yala, mit wie viel Geld du startest. Es muss nicht auf den Cent genau sein — eine Schätzung reicht völlig. Hier erfährst du, wie du es je nach gewähltem Kontotyp berechnen kannst.";
 "onboarding.accountBalanceGuideGeneral" = "Wenn du ein allgemeines Konto verwendest, um alle Zahlungsmittel in einer Währung zusammenzufassen, zeigt dein Saldo, wie viel Geld du verfügbar hast.\n\nUm ihn zu berechnen, addiere alles: Girokonten, Sparguthaben, Bargeld. Wenn du ausstehende Kreditkartenausgaben hast, kannst du sie abziehen für ein genaueres Bild — oder jede Karte später als eigenes Konto führen.\n\nDiese Endsumme ist dein Anfangssaldo.";

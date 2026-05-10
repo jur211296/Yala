@@ -24,7 +24,6 @@ struct OnboardingView: View {
     @ScaledMetric(relativeTo: .body) private var appIconSize: CGFloat = 120
     @ScaledMetric(relativeTo: .body) private var categoryIconSize: CGFloat = 40
     @ScaledMetric(relativeTo: .body) private var badgeSize: CGFloat = 36
-    @ScaledMetric(relativeTo: .body) private var notifIconSize: CGFloat = 52
     @ScaledMetric(relativeTo: .largeTitle) private var privacyIconSize: CGFloat = 100
 
     // User preferences (saved on completion)
@@ -134,14 +133,15 @@ struct OnboardingView: View {
     private let fullControlAccountTypes: [AccountType] = [.checking, .savings, .creditCard, .cash]
 
     /// Color de tint del icono por tipo de cuenta. Diferenciado para que el user
-    /// asocie visualmente cada tipo con un color distinto en lugar del azul plano.
+    /// asocie visualmente cada tipo con un color distinto, restringido a la
+    /// paleta R3 (sin indigo/cyan) para coherencia con el flow heroFlow.
     private func iconTint(for type: AccountType) -> Color {
         switch type {
-        case .checking:   return .electricIndigo
+        case .checking:   return .hotPink
         case .savings:    return .priorityNeed
-        case .creditCard: return .hotPink
+        case .creditCard: return .priorityNeedNew
         case .cash:       return .essentialNeed
-        default:          return .electricIndigo
+        default:          return .hotPink
         }
     }
 
@@ -223,31 +223,13 @@ struct OnboardingView: View {
         }
     }
 
-    /// Color de acento para iconos hero, selección de cards y gradient parts.
+    /// Color de acento para selección de cards (stroke 2pt). Hero icons y
+    /// titles usan `primaryTextStyle` directamente — accent solo señala
+    /// estado seleccionado, no jerarquía visual.
     private var styleAccentColor: Color {
         switch backgroundStyle {
         case .heroFlow:    return Color.electricIndigo
         case .themedPanel: return theme.accent
-        }
-    }
-
-    /// Gradient del title accent (la palabra-acento del largeTitle). Sobre dark
-    /// indigo el gradient `.hotPink → .white` da contraste; sobre tema claro la
-    /// `.white` desaparece — usamos `.hotPink → accentColor`.
-    private var titleAccentGradient: LinearGradient {
-        switch backgroundStyle {
-        case .heroFlow:
-            return LinearGradient(
-                colors: [.hotPink, .white],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        case .themedPanel:
-            return LinearGradient(
-                colors: [.hotPink, theme.accent],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
         }
     }
 
@@ -350,10 +332,22 @@ struct OnboardingView: View {
         HStack(spacing: DS.Spacing.sm) {
             ForEach(0..<effectiveTotalSteps, id: \.self) { step in
                 Capsule()
-                    .fill(step <= effectiveStepIndex ? styleAccentColor : theme.secondaryText.opacity(0.2))
+                    .fill(progressCapsuleColor(active: step <= effectiveStepIndex))
                     .frame(width: step == effectiveStepIndex ? 24 : 8, height: 8)
                     .dsAnimation(.spring(response: 0.3), value: effectiveStepIndex, reduceMotion: reduceMotion)
             }
+        }
+    }
+
+    /// Bifurca activo+inactivo según background. En heroFlow ambos son blancos
+    /// (rígido + opacity bajo); en themedPanel hereda accent + secondaryText
+    /// con la misma opacity para coherencia con el resto de tabs/progress.
+    private func progressCapsuleColor(active: Bool) -> Color {
+        switch (backgroundStyle, active) {
+        case (.heroFlow, true):     return Color.white
+        case (.heroFlow, false):    return Color.white.opacity(0.2)
+        case (.themedPanel, true):  return theme.accent
+        case (.themedPanel, false): return theme.secondaryText.opacity(0.2)
         }
     }
 
@@ -451,7 +445,8 @@ struct OnboardingView: View {
                 VStack(spacing: DS.Spacing.sm) {
                     Text(L10n.Onboarding.welcomeTitle)
                         .font(DS.Typography.largeTitle)
-                        .foregroundStyle(titleAccentGradient)
+                        .fontWeight(.bold)
+                        .foregroundStyle(primaryTextStyle)
                         .multilineTextAlignment(.center)
 
                     Text(L10n.Onboarding.welcomeSubtitle)
@@ -462,14 +457,8 @@ struct OnboardingView: View {
                 }
                 .padding(.top, DS.Spacing.md)
 
-                WelcomeBubblePreview(
-                    userName: userName,
-                    primaryTextStyle: primaryTextStyle,
-                    secondaryTextStyle: secondaryTextStyle,
-                    cardStroke: cardStroke,
-                    accentColor: styleAccentColor
-                )
-                .padding(.horizontal, DS.Spacing.xl)
+                welcomeGreetingText
+                    .padding(.horizontal, DS.Spacing.xl)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     Text(L10n.Onboarding.nameLabel)
@@ -512,7 +501,7 @@ struct OnboardingView: View {
                     VStack(spacing: DS.Spacing.md) {
                         Image(systemName: "target")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(styleAccentColor)
+                            .foregroundStyle(primaryTextStyle)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
@@ -528,7 +517,7 @@ struct OnboardingView: View {
                         binaryCard(
                             isSelected: !expensesOnlyMode,
                             icon: "dollarsign.circle",
-                            iconColor: styleAccentColor,
+                            iconColor: .priorityNeed,
                             title: L10n.Onboarding.purposeControl,
                             description: L10n.Onboarding.purposeControlDesc,
                             accessibilityId: "onboarding_purpose_control"
@@ -569,7 +558,7 @@ struct OnboardingView: View {
                     VStack(spacing: DS.Spacing.md) {
                         Image(systemName: "building.columns.fill")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(styleAccentColor)
+                            .foregroundStyle(primaryTextStyle)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
@@ -585,7 +574,7 @@ struct OnboardingView: View {
                         binaryCard(
                             isSelected: !wantsSeparateAccounts,
                             icon: "creditcard",
-                            iconColor: .neonCyan,
+                            iconColor: .hotPink,
                             title: L10n.Onboarding.accountsSingle,
                             description: L10n.Onboarding.accountsSingleDesc,
                             accessibilityId: "onboarding_accounts_single"
@@ -687,7 +676,7 @@ struct OnboardingView: View {
                     VStack(spacing: DS.Spacing.md) {
                         Image(systemName: "wallet.bifold")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(styleAccentColor)
+                            .foregroundStyle(primaryTextStyle)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
@@ -764,7 +753,7 @@ struct OnboardingView: View {
                 VStack(spacing: DS.Spacing.md) {
                     Image(systemName: wantsSeparateAccounts ? "pencil.circle" : "star.circle")
                         .font(.system(size: heroIconSize))
-                        .foregroundStyle(styleAccentColor)
+                        .foregroundStyle(primaryTextStyle)
                         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .accessibilityHidden(true)
 
@@ -867,7 +856,7 @@ struct OnboardingView: View {
                     VStack(spacing: DS.Spacing.md) {
                         Image(systemName: "dollarsign.circle.fill")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(styleAccentColor)
+                            .foregroundStyle(primaryTextStyle)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
@@ -932,20 +921,10 @@ struct OnboardingView: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
 
-                    // Recalculate button
-                    Button {
-                        showBalanceGuide = true
-                    } label: {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .font(DS.Typography.subheadline)
-                            Text(L10n.Onboarding.accountBalanceLearnMore)
-                                .font(DS.Typography.subheadline)
-                                .fontWeight(.semibold)
-                        }
-                        .foregroundStyle(styleAccentColor)
-                    }
-                    .buttonStyle(.plain)
+                    // CTA card prominente "Calculemos juntos" — reemplaza el
+                    // auto-launch del calculator. User-driven explícito.
+                    balanceGuideCTA
+                        .padding(.horizontal, DS.Spacing.lg)
 
                     Spacer()
                 }
@@ -961,16 +940,6 @@ struct OnboardingView: View {
                 selectedMindset = "patrimonial"
             } else if selectedUsageMode == .fullControl {
                 selectedMindset = "cashFlow"
-            }
-
-            // Auto-launch calculadora si balance vacío
-            if initialBalanceText.isEmpty && !showBalanceGuide {
-                do {
-                    try await Task.sleep(for: .milliseconds(400))
-                    showBalanceGuide = true
-                } catch {
-                    // Task cancelled (user navigated away) — skip auto-launch
-                }
             }
         }
         .sheet(isPresented: $showBalanceGuide) {
@@ -991,6 +960,25 @@ struct OnboardingView: View {
                 onDismiss: { showBalanceGuide = false }
             )
         }
+    }
+
+    /// Saludo inline simple del Step 1 — sin contenedor ni avatar sparkles.
+    /// `.smooth(0.45)` keyed en text → fade-in al escribir, transición suave
+    /// si el user edita. Reduce Motion: sin animación.
+    private var welcomeGreetingText: some View {
+        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let isEmpty = trimmed.isEmpty
+        let text: String = isEmpty
+            ? L10n.Onboarding.greetingBubbleEmpty
+            : L10n.Onboarding.greetingBubble(trimmed)
+
+        return Text(text)
+            .font(DS.Typography.body)
+            .foregroundStyle(isEmpty ? secondaryTextStyle : primaryTextStyle)
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity)
+            .animation(reduceMotion ? nil : .smooth(duration: 0.45, extraBounce: 0.15), value: text)
+            .accessibilityLabel(text)
     }
 
     /// Preview en vivo del monto formateado en la moneda elegida.
@@ -1015,6 +1003,56 @@ struct OnboardingView: View {
             .accessibilityLabel(formatted)
     }
 
+    /// CTA card prominente que invita a abrir el calculator sheet — reemplaza
+    /// el auto-launch + el link inline pequeño. Icon halo + chip "Recomendado"
+    /// señalan jerarquía sin competir con el balance input arriba.
+    private var balanceGuideCTA: some View {
+        Button {
+            showBalanceGuide = true
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(Color.priorityNeed.opacity(0.18))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 20, weight: .semibold)) // A11Y-DT: card icon
+                        .foregroundStyle(Color.priorityNeed)
+                }
+
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.Onboarding.accountBalanceLearnMore)
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(primaryTextStyle)
+                        .multilineTextAlignment(.leading)
+                    Text(L10n.Onboarding.balanceGuideHint)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(secondaryTextStyle)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer(minLength: DS.Spacing.sm)
+
+                Text(L10n.Onboarding.categoriesRecommended)
+                    .font(DS.Typography.captionSmall.weight(.semibold))
+                    .foregroundStyle(Color.essentialNeed)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xxs)
+                    .background(Capsule().fill(Color.essentialNeed.opacity(0.22)))
+            }
+            .padding(DS.Spacing.md)
+            .frame(maxWidth: .infinity)
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                    .stroke(cardStroke, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("onboarding_balance_guide_cta")
+    }
+
     // MARK: - Step 7: Confirmation
 
     private var confirmationMotivation: String {
@@ -1028,113 +1066,30 @@ struct OnboardingView: View {
     private var confirmationStep: some View {
         ScrollView {
             VStack(spacing: DS.Spacing.lg) {
-                // Ready header — Circle 96pt gradient + sparkles 44pt
-                ZStack {
-                    Circle()
-                        .fill(LinearGradient(
-                            colors: [Color.hotPink.opacity(0.25), styleAccentColor.opacity(0.18)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ))
-                        .frame(width: 96, height: 96)
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 44, weight: .semibold)) // A11Y-DT: hero icon
-                        .foregroundStyle(LinearGradient(
-                            colors: [.hotPink, styleAccentColor],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ))
-                }
-                .padding(.top, DS.Spacing.xl)
-                .accessibilityHidden(true)
-
+                // Header tipográfico estilo Apple Settings — sin Circle/sparkles.
                 VStack(spacing: DS.Spacing.sm) {
-                    // Motivational message como subtitle (replaces el largeTitle previo)
                     Text(confirmationMotivation)
-                        .font(DS.Typography.title2)
-                        .fontWeight(.semibold)
+                        .font(DS.Typography.largeTitle)
+                        .fontWeight(.bold)
                         .foregroundStyle(primaryTextStyle)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, DS.Spacing.xl)
 
                     Text(L10n.Onboarding.confirmTitle)
-                        .font(DS.Typography.subheadline)
+                        .font(DS.Typography.body)
                         .foregroundStyle(secondaryTextStyle)
                         .multilineTextAlignment(.center)
                 }
+                .padding(.top, DS.Spacing.xl)
 
-                // Visual summary items
-                VStack(spacing: DS.Spacing.sm) {
-                    confirmItem(
-                        icon: "person.fill",
-                        color: styleAccentColor,
-                        value: userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            ? L10n.Profile.defaultName : userName
-                    )
+                // Lista compacta con dividers internos (UNA card grande con
+                // rows separadas por Rectangle bifurcado por background).
+                confirmItemsCard
+                    .padding(.horizontal, DS.Spacing.xl)
 
-                    confirmItem(
-                        icon: iconName(for: selectedAccountType),
-                        color: .hotPink,
-                        value: (accountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                ? selectedAccountType.localizedName : accountName)
-                            + " · \(accountCurrency.rawValue)"
-                    )
-
-                    if !expensesOnlyMode {
-                        let amount = AmountInputHelper.parseDecimal(initialBalanceText)
-                        let displayAmount = amount > 0 ? (balanceIsPositive ? amount : -amount) : 0.0
-                        let formattedBalance = appPreferences.currency(displayAmount,
-                            currencyCode: accountCurrency.rawValue
-                        )
-
-                        confirmItem(
-                            icon: "banknote",
-                            color: styleAccentColor,
-                            value: formattedBalance
-                        )
-                    }
-
-                    if expensesOnlyMode {
-                        confirmItem(
-                            icon: "list.bullet.clipboard",
-                            color: .essentialNeed,
-                            value: L10n.Onboarding.purposeExpenses
-                        )
-                    }
-
-                    confirmItem(
-                        icon: "folder.fill",
-                        color: .priorityNeed,
-                        value: loadSeedCategories
-                            ? L10n.Onboarding.categoriesDefault
-                            : L10n.Onboarding.categoriesCustom
-                    )
-                }
-                .padding(.horizontal, DS.Spacing.xl)
-
-                // Privacy section como card translúcida
-                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                    Text(L10n.Onboarding.privacyTitle)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(secondaryTextStyle)
-                        .padding(.horizontal, DS.Spacing.xs)
-
-                    VStack(spacing: DS.Spacing.xs) {
-                        privacyBullet(icon: "iphone", text: L10n.Onboarding.privacyLocal)
-                        privacyBullet(icon: "eye.slash.fill", text: L10n.Onboarding.privacyNoTracking)
-                        privacyBullet(icon: "person.badge.key.fill", text: L10n.Onboarding.privacyIcloud)
-                        privacyBullet(icon: "lock.shield.fill", text: L10n.Onboarding.privacyNoSharing)
-                    }
-                    .padding(DS.Spacing.md)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                            .stroke(cardStroke, lineWidth: 1)
-                    )
-                }
-                .padding(.horizontal, DS.Spacing.xl)
+                // Privacy → grid 2x2 cards individuales con copys cortos.
+                privacyGrid
+                    .padding(.horizontal, DS.Spacing.xl)
 
                 Spacer(minLength: DS.Spacing.lg)
             }
@@ -1142,6 +1097,95 @@ struct OnboardingView: View {
         .scrollBounceBehavior(.basedOnSize)
     }
 
+    /// Items resumen en lista compacta tipo Apple Settings: rows separadas
+    /// por Rectangle 1pt bifurcado (heroFlow vs themedPanel) — Divider()
+    /// default es invisible sobre indigo translúcido.
+    private var confirmItemsCard: some View {
+        VStack(spacing: 0) {
+            confirmItem(
+                icon: "person.fill",
+                color: .hotPink,
+                value: userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    ? L10n.Profile.defaultName : userName
+            )
+            rowDivider
+            confirmItem(
+                icon: iconName(for: selectedAccountType),
+                color: .hotPink,
+                value: (accountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        ? selectedAccountType.localizedName : accountName)
+                    + " · \(accountCurrency.rawValue)"
+            )
+
+            if !expensesOnlyMode {
+                rowDivider
+                let amount = AmountInputHelper.parseDecimal(initialBalanceText)
+                let displayAmount = amount > 0 ? (balanceIsPositive ? amount : -amount) : 0.0
+                let formattedBalance = appPreferences.currency(displayAmount,
+                    currencyCode: accountCurrency.rawValue
+                )
+                confirmItem(
+                    icon: "banknote",
+                    color: .priorityNeed,
+                    value: formattedBalance
+                )
+            }
+
+            if expensesOnlyMode {
+                rowDivider
+                confirmItem(
+                    icon: "list.bullet.clipboard",
+                    color: .essentialNeed,
+                    value: L10n.Onboarding.purposeExpenses
+                )
+            }
+
+            rowDivider
+            confirmItem(
+                icon: "folder.fill",
+                color: .priorityNeed,
+                value: loadSeedCategories
+                    ? L10n.Onboarding.categoriesDefault
+                    : L10n.Onboarding.categoriesCustom
+            )
+        }
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .stroke(cardStroke, lineWidth: 1)
+        )
+    }
+
+    /// Divider 1pt bifurcado: en heroFlow `Color(.separator)` se pierde sobre
+    /// indigo translúcido — usar white opacity 0.1. Padding leading alinea el
+    /// divider con el inicio del Text del row (después del icon halo).
+    private var rowDivider: some View {
+        let iconColumnWidth = DS.Spacing.md + badgeSize + DS.Spacing.md
+        return Rectangle()
+            .fill(backgroundStyle == .heroFlow ? Color.white.opacity(0.1) : Color(.separator))
+            .frame(height: 1)
+            .padding(.leading, iconColumnWidth)
+    }
+
+    private var privacyGrid: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.Onboarding.privacyTitle)
+                .font(DS.Typography.bodyBold)
+                .foregroundStyle(primaryTextStyle)
+                .padding(.horizontal, DS.Spacing.xs)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: DS.Spacing.sm) {
+                privacyCard(icon: "iphone", text: L10n.Onboarding.privacyLocalShort)
+                privacyCard(icon: "eye.slash.fill", text: L10n.Onboarding.privacyNoTrackingShort)
+                privacyCard(icon: "person.badge.key.fill", text: L10n.Onboarding.privacyIcloudShort)
+                privacyCard(icon: "lock.shield.fill", text: L10n.Onboarding.privacyNoSharingShort)
+            }
+        }
+    }
+
+    /// Row individual de la lista compacta — sin background propio (la card
+    /// `confirmItemsCard` lo envuelve con `.thCard` + cardStroke).
     private func confirmItem(icon: String, color: Color, value: String) -> some View {
         HStack(spacing: DS.Spacing.md) {
             ZStack {
@@ -1162,12 +1206,6 @@ struct OnboardingView: View {
         }
         .padding(DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.md)
-                .stroke(cardStroke, lineWidth: 1)
-        )
     }
 
     // MARK: - Step 8: Categories
@@ -1188,7 +1226,7 @@ struct OnboardingView: View {
                     VStack(spacing: DS.Spacing.md) {
                         Image(systemName: "square.grid.2x2.fill")
                             .font(.system(size: heroIconSize))
-                            .foregroundStyle(styleAccentColor)
+                            .foregroundStyle(primaryTextStyle)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                             .accessibilityHidden(true)
 
@@ -1289,10 +1327,10 @@ struct OnboardingView: View {
                     ZStack {
                         Circle()
                             .fill(Color(hex: category.colorHex).opacity(circleOpacity))
-                            .frame(width: notifIconSize, height: notifIconSize)
+                            .frame(width: categoryIconSize, height: categoryIconSize)
 
                         Image(systemName: category.iconName)
-                            .font(DS.Typography.title)
+                            .font(DS.Typography.subheadline)
                             .foregroundStyle(Color(hex: category.colorHex))
                             .accessibilityHidden(true)
                     }
@@ -1364,18 +1402,30 @@ struct OnboardingView: View {
 
     // MARK: - Reusable Components
 
-    private func privacyBullet(icon: String, text: String) -> some View {
-        HStack(spacing: DS.Spacing.sm) {
+    /// Mini-card del grid 2x2 de privacidad — VStack icon + text breve, card
+    /// individual `.thCard` + cardStroke. Iconos privacidad mantienen tints
+    /// neutros (no aplica R3 — son contexto distinto a las cards de selección).
+    private func privacyCard(icon: String, text: String) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Image(systemName: icon)
-                .font(DS.Typography.subheadline)
+                .font(.system(size: 24, weight: .semibold)) // A11Y-DT: privacy card
                 .foregroundStyle(secondaryTextStyle)
-                .frame(width: 24)
                 .accessibilityHidden(true)
             Text(text)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(secondaryTextStyle)
-            Spacer()
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.md)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.md)
+                .stroke(cardStroke, lineWidth: 1)
+        )
     }
 
     private func triggerCategoryAnimation() {
@@ -1814,56 +1864,6 @@ struct OnboardingView: View {
             print("OnboardingView: Created \(inserted) notification types (all inactive)")
         }
         #endif
-    }
-}
-
-// MARK: - Welcome Bubble Preview (Step 1 saludo en vivo)
-
-/// Bubble del bot que muestra saludo personalizado mientras el user escribe.
-/// `.smooth(0.45)` animación keyed en el text → fade-in cuando user empieza
-/// a escribir, transición suave si edita. Reduce Motion: sin animación.
-fileprivate struct WelcomeBubblePreview: View {
-    let userName: String
-    let primaryTextStyle: Color
-    let secondaryTextStyle: Color
-    let cardStroke: Color
-    let accentColor: Color
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let isEmpty = trimmed.isEmpty
-        let text: String = isEmpty
-            ? L10n.Onboarding.greetingBubbleEmpty
-            : L10n.Onboarding.greetingBubble(trimmed)
-
-        HStack(alignment: .top, spacing: DS.Spacing.sm) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 16, weight: .semibold)) // A11Y-DT: bot avatar
-                .foregroundStyle(accentColor)
-                .frame(width: 28, height: 28)
-                .background(Circle().fill(.thCard))
-                .accessibilityHidden(true)
-
-            Text(text)
-                .font(DS.Typography.body)
-                .foregroundStyle(isEmpty ? secondaryTextStyle : primaryTextStyle)
-                .multilineTextAlignment(.leading)
-                .padding(.horizontal, DS.Spacing.md)
-                .padding(.vertical, DS.Spacing.sm)
-                .background(.thCard)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                        .stroke(cardStroke, lineWidth: 1)
-                )
-                .animation(reduceMotion ? nil : .smooth(duration: 0.45, extraBounce: 0.15), value: text)
-
-            Spacer(minLength: 0)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(text)
     }
 }
 

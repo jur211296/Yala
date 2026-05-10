@@ -1823,7 +1823,7 @@
 "onboarding.welcomeSubtitle" = "Slechts een paar stappen om Yala voor jou in te stellen.";
 "onboarding.nameLabel" = "Hoe mogen we je noemen?";
 "onboarding.namePlaceholder" = "Je naam";
-"onboarding.greetingBubble" = "Hoi, %@ 👋 — ik bereid je Yala voor…";
+"onboarding.greetingBubble" = "Hoi, %@. Yala is klaar voor jou";
 "onboarding.greetingBubbleEmpty" = "Hoe heet je?";
 "onboarding.currencyTitle" = "Je hoofdvaluta";
 "onboarding.currencySubtitle" = "Kies de valuta die je het vaakst gebruikt.";
@@ -1893,6 +1893,11 @@
 "onboarding.accountBalanceHintChecking" = "Je beschikbare banksaldo van vandaag. Hoeft niet exact — je kunt het later aanpassen.";
 "onboarding.accountBalanceHintSavings" = "Het totaal dat je op deze rekening gespaard hebt. Hoeft niet exact — je kunt het later aanpassen.";
 "onboarding.accountBalanceLearnMore" = "Laten we je saldo samen uitrekenen";
+"onboarding.balanceGuideHint" = "We helpen je stap voor stap";
+"onboarding.privacyLocalShort" = "Gegevens op je apparaat";
+"onboarding.privacyNoTrackingShort" = "Geen tracking of advertenties";
+"onboarding.privacyIcloudShort" = "Alleen jij hebt toegang";
+"onboarding.privacyNoSharingShort" = "Veilige AI";
 "onboarding.accountBalanceGuideTitle" = "Hoe bereken ik mijn saldo?";
 "onboarding.accountBalanceGuideIntro" = "Je beginsaldo vertelt Yala met hoeveel geld je begint. Het hoeft niet tot op de cent te kloppen — een ruwe schatting is prima. Hier lees je hoe je erover kunt nadenken, afhankelijk van het type rekening dat je hebt gekozen.";
 "onboarding.accountBalanceGuideGeneral" = "Als je een algemene rekening gebruikt om al je betaalmiddelen in één valuta te bundelen, weerspiegelt je saldo hoeveel geld je beschikbaar hebt.\n\nTel alles op: betaalrekeningen, spaarrekeningen, contant geld. Heb je openstaande creditcardkosten, dan kun je die aftrekken voor een nauwkeuriger beeld — of later elke kaart als aparte rekening bijhouden.\n\nDat eindgetal is je beginsaldo.";

@@ -1823,7 +1823,7 @@
 "onboarding.welcomeSubtitle" = "Kilka kroków, aby skonfigurować Yala dla ciebie.";
 "onboarding.nameLabel" = "Jak mamy się do ciebie zwracać?";
 "onboarding.namePlaceholder" = "Twoje imię";
-"onboarding.greetingBubble" = "Cześć, %@ 👋 — przygotowuję Twoje Yala…";
+"onboarding.greetingBubble" = "Cześć, %@. Yala jest gotowa dla Ciebie";
 "onboarding.greetingBubbleEmpty" = "Jak masz na imię?";
 "onboarding.currencyTitle" = "Twoja główna waluta";
 "onboarding.currencySubtitle" = "Wybierz walutę, której używasz najczęściej.";
@@ -1893,6 +1893,11 @@
 "onboarding.accountBalanceHintChecking" = "Twoje dziś dostępne saldo bankowe. Nie musi być dokładne — możesz je skorygować później.";
 "onboarding.accountBalanceHintSavings" = "Łączna kwota odłożona na tym koncie. Nie musi być dokładna — możesz ją skorygować później.";
 "onboarding.accountBalanceLearnMore" = "Policzmy razem twoje saldo";
+"onboarding.balanceGuideHint" = "Poprowadzimy Cię krok po kroku";
+"onboarding.privacyLocalShort" = "Dane na Twoim urządzeniu";
+"onboarding.privacyNoTrackingShort" = "Bez śledzenia ani reklam";
+"onboarding.privacyIcloudShort" = "Dostęp tylko dla Ciebie";
+"onboarding.privacyNoSharingShort" = "Bezpieczna SI";
 "onboarding.accountBalanceGuideTitle" = "Jak obliczyć moje saldo?";
 "onboarding.accountBalanceGuideIntro" = "Saldo początkowe mówi Yala, z jaką kwotą startujesz. Nie musi być co do grosza — szacunek wystarczy. Oto jak o nim myśleć w zależności od typu wybranego konta.";
 "onboarding.accountBalanceGuideGeneral" = "Jeśli używasz konta ogólnego, aby zgromadzić wszystkie metody płatności w jednej walucie, twoje saldo odzwierciedla, ile masz dostępnych pieniędzy.\n\nZsumuj wszystko: konta bieżące, oszczędności, gotówka. Jeśli masz oczekujące obciążenia karty kredytowej, możesz je odjąć dla większej precyzji — albo śledzić każdą kartę jako osobne konto.\n\nTa końcowa liczba to twoje saldo początkowe.";

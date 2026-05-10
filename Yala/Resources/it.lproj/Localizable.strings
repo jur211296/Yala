@@ -1825,7 +1825,7 @@
 "onboarding.welcomeSubtitle" = "Pochi passi per personalizzare Yala su misura per te.";
 "onboarding.nameLabel" = "Come vuoi che ti chiamiamo?";
 "onboarding.namePlaceholder" = "Il tuo nome";
-"onboarding.greetingBubble" = "Ciao, %@ 👋 — sto preparando il tuo Yala…";
+"onboarding.greetingBubble" = "Ciao, %@. Yala è pronta per te";
 "onboarding.greetingBubbleEmpty" = "Come ti chiami?";
 "onboarding.currencyTitle" = "Valuta principale";
 "onboarding.currencySubtitle" = "Seleziona la valuta che usi più frequentemente.";
@@ -1891,6 +1891,11 @@
 "onboarding.accountBalanceHintChecking" = "Il saldo disponibile nel tuo conto bancario oggi. Non deve essere esatto, puoi regolarlo dopo.";
 "onboarding.accountBalanceHintSavings" = "Il totale che hai risparmiato su questo conto. Non deve essere esatto, puoi regolarlo dopo.";
 "onboarding.accountBalanceLearnMore" = "Calcoliamo il tuo saldo insieme";
+"onboarding.balanceGuideHint" = "Ti guidiamo passo dopo passo";
+"onboarding.privacyLocalShort" = "Dati sul tuo dispositivo";
+"onboarding.privacyNoTrackingShort" = "Niente tracciamento né annunci";
+"onboarding.privacyIcloudShort" = "Solo tu accedi";
+"onboarding.privacyNoSharingShort" = "IA sicura";
 "onboarding.accountBalanceGuideTitle" = "Come calcolo il mio saldo?";
 "onboarding.accountBalanceGuideIntro" = "Il tuo saldo iniziale dice a Yala con quanti soldi parti. Non deve essere esatto al centesimo — una stima va benissimo. Ecco come ragionarci in base al tipo di conto che hai scelto.";
 "onboarding.accountBalanceGuideGeneral" = "Se usi un conto generale per raggruppare tutti i tuoi metodi di pagamento in una valuta, il tuo saldo riflette quanti soldi hai disponibili.\n\nPer calcolarlo, somma tutto: conti correnti, risparmi, contanti. Se hai spese in sospeso su carte di credito, puoi sottrarle per un'immagine più precisa — o gestire ogni carta come conto separato in seguito.\n\nQuel numero finale è il tuo saldo iniziale.";

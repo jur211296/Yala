@@ -1823,7 +1823,7 @@
 "onboarding.welcomeSubtitle" = "Just a few steps to set up Yala for you.";
 "onboarding.nameLabel" = "What should we call you?";
 "onboarding.namePlaceholder" = "Your name";
-"onboarding.greetingBubble" = "Hi, %@ 👋 — getting your Yala ready…";
+"onboarding.greetingBubble" = "Hi, %@. Yala is ready for you";
 "onboarding.greetingBubbleEmpty" = "What's your name?";
 "onboarding.currencyTitle" = "Your main currency";
 "onboarding.currencySubtitle" = "Select the currency you use most frequently.";
@@ -1893,6 +1893,11 @@
 "onboarding.accountBalanceHintChecking" = "Your available bank balance today. It doesn't need to be exact — you can adjust it later.";
 "onboarding.accountBalanceHintSavings" = "The total you have saved in this account. It doesn't need to be exact — you can adjust it later.";
 "onboarding.accountBalanceLearnMore" = "Let's figure out your balance together";
+"onboarding.balanceGuideHint" = "We'll guide you step by step";
+"onboarding.privacyLocalShort" = "Data on your device";
+"onboarding.privacyNoTrackingShort" = "No tracking or ads";
+"onboarding.privacyIcloudShort" = "Only you have access";
+"onboarding.privacyNoSharingShort" = "Safe AI";
 "onboarding.accountBalanceGuideTitle" = "How do I calculate my balance?";
 "onboarding.accountBalanceGuideIntro" = "Your initial balance tells Yala how much money you're starting with. It doesn't need to be exact to the penny — a rough estimate works great. Here's how to think about it depending on the type of account you chose.";
 "onboarding.accountBalanceGuideGeneral" = "If you're using a general account to group all your payment methods in one currency, your balance reflects how much money you have available.\n\nTo calculate it, add up everything: checking accounts, savings, cash. If you have pending credit card charges, you can subtract them for a more precise picture — or track each card as a separate account later.\n\nThat final number is your initial balance.";
