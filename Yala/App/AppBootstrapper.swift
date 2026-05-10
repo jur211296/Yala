@@ -58,6 +58,10 @@ final class AppBootstrapper {
     private var lastNotificationCheckDate = Date.distantPast
     private var lastProcessDuePaymentsDate = Date.distantPast
     private let logger = Logger(subsystem: "com.yala", category: "Bootstrap")
+    /// Cached on the main actor so the `.transactionsImportedFromSync` observer
+    /// can resolve it without capturing a non-Sendable `ModelContext` in its
+    /// `@Sendable` callback closure.
+    private var raceCleanerModelContext: ModelContext?
 
     // MARK: - Initialization
 
@@ -271,12 +275,14 @@ final class AppBootstrapper {
     /// su TX cuenta real ya llegó vía sync personal, el draft ya no aplica.
     /// TODO post-M6: añadir debounce 1s coalesce si cold launch dispara muchas veces.
     private func observeTransactionsImportedFromSync(context: ModelContext) {
+        raceCleanerModelContext = context
         NotificationCenter.default.addObserver(
             forName: .transactionsImportedFromSync,
             object: nil,
             queue: .main
         ) { _ in
             MainActor.assumeIsolated {
+                guard let context = AppBootstrapper.shared.raceCleanerModelContext else { return }
                 _ = GroupBridgeRaceCleaner.cleanupPendingDraftsWithMatchingTX(in: context)
             }
         }
