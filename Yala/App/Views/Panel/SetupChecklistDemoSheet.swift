@@ -51,8 +51,9 @@ struct SetupChecklistDemoSheet: View {
                 onStartReal: { handleStartReal(for: .tryImageInput) }
             )
         case .exploreSettings:
-            // F5 — carrusel standalone (chrome propio)
-            placeholderDemo(title: "Explore Settings Carousel")
+            ProfileSectionsCarouselDemo(onOpenSettings: {
+                handleStartReal(for: .exploreSettings)
+            })
         case .discoverFeatures:
             // Step 7 sin demo. Defensive fallback.
             #if DEBUG
