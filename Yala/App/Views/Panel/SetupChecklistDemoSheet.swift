@@ -29,11 +29,16 @@ struct SetupChecklistDemoSheet: View {
                 onStartReal: { handleStartReal(for: .scheduledPayment) }
             )
         case .firstExpense:
-            // F3
-            placeholderDemo(title: "First Expense Demo")
+            NewTransactionView(
+                mode: .demo,
+                onStartReal: { handleStartReal(for: .firstExpense) }
+            )
         case .firstBudget:
-            // F3
-            placeholderDemo(title: "First Budget Demo")
+            BudgetEditorView(
+                budget: nil,
+                mode: .demo,
+                onStartReal: { handleStartReal(for: .firstBudget) }
+            )
         case .tryVoiceInput:
             // F4
             placeholderDemo(title: "Voice Input Demo")
