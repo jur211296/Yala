@@ -453,6 +453,7 @@ struct OnboardingView: View {
                         .fontWeight(.bold)
                         .foregroundStyle(primaryTextStyle)
                         .multilineTextAlignment(.center)
+                        .padding(.horizontal, DS.Spacing.xl)
 
                     Text(L10n.Onboarding.welcomeSubtitle)
                         .font(DS.Typography.body)
@@ -512,6 +513,7 @@ struct OnboardingView: View {
                             .fontWeight(.bold)
                             .foregroundStyle(primaryTextStyle)
                             .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
                     }
                     .padding(.top, DS.Spacing.xl)
 
@@ -569,6 +571,7 @@ struct OnboardingView: View {
                             .fontWeight(.bold)
                             .foregroundStyle(primaryTextStyle)
                             .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
                     }
                     .padding(.top, DS.Spacing.xl)
 
@@ -687,6 +690,7 @@ struct OnboardingView: View {
                             .fontWeight(.bold)
                             .foregroundStyle(primaryTextStyle)
                             .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
 
                         Text(L10n.Onboarding.accountTypeSubtitle)
                             .font(DS.Typography.subheadline)
@@ -766,6 +770,7 @@ struct OnboardingView: View {
                         .fontWeight(.bold)
                         .foregroundStyle(primaryTextStyle)
                         .multilineTextAlignment(.center)
+                        .padding(.horizontal, DS.Spacing.xl)
 
                     Text(wantsSeparateAccounts
                          ? L10n.Onboarding.currencyNameSubtitleSeparate
@@ -867,6 +872,7 @@ struct OnboardingView: View {
                             .fontWeight(.bold)
                             .foregroundStyle(primaryTextStyle)
                             .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
 
                         Text(L10n.Onboarding.balanceSubtitle)
                             .font(DS.Typography.subheadline)
@@ -1298,6 +1304,7 @@ struct OnboardingView: View {
                             .fontWeight(.bold)
                             .foregroundStyle(primaryTextStyle)
                             .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
 
                         Text(L10n.Onboarding.categoriesSubtitle)
                             .font(DS.Typography.subheadline)
