@@ -104,7 +104,7 @@ struct SubscriptionView: View {
                         } label: {
                             Text(L10n.Subscription.restore)
                                 .font(DS.Typography.subheadline)
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(.thPrimaryText)
                         }
                     }
                     .padding(.horizontal, DS.Spacing.lg)
@@ -121,6 +121,7 @@ struct SubscriptionView: View {
                             Link(L10n.Subscription.privacyPolicyLink, destination: AppConstants.privacyURL)
                         }
                         .font(DS.Typography.caption)
+                        .tint(theme.accent)
                     }
                     .padding(.horizontal, DS.Spacing.xl)
                     .padding(.bottom, DS.Spacing.xxl)
@@ -242,7 +243,7 @@ struct SubscriptionView: View {
                 } label: {
                     Text(L10n.Subscription.manageInAppStore)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.thPrimaryText)
                 }
                 .manageSubscriptionsSheet(isPresented: $showManageSubscription)
             }
@@ -262,12 +263,7 @@ struct SubscriptionView: View {
             featureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
         }
         .padding(.vertical, DS.Spacing.sm)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-        )
+        .solidCard(radius: DS.Radius.xl)
         .padding(.horizontal, DS.Spacing.lg)
     }
 
@@ -278,7 +274,7 @@ struct SubscriptionView: View {
                 .foregroundStyle(.white)
                 .frame(width: 30, height: 30)
                 .background(
-                    RoundedRectangle(cornerRadius: 7)
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .fill(color)
                 )
 
@@ -377,28 +373,20 @@ struct SubscriptionView: View {
                 ZStack {
                     Circle()
                         .stroke(
-                            isSelected ? Color.brandPrimary : theme.secondaryText.opacity(0.3),
+                            isSelected ? theme.accent : theme.secondaryText.opacity(0.3),
                             lineWidth: 2
                         )
                         .frame(width: 24, height: 24)
 
                     if isSelected {
                         Circle()
-                            .fill(Color.brandPrimary)
+                            .fill(theme.accent)
                             .frame(width: 16, height: 16)
                     }
                 }
             }
             .padding(DS.Spacing.lg)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(
-                        isSelected ? Color.brandPrimary : Color.primary.opacity(0.05),
-                        lineWidth: isSelected ? 2 : 1
-                    )
-            )
+            .selectableCard(isSelected: isSelected, radius: DS.Radius.lg)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -440,13 +428,7 @@ struct SubscriptionView: View {
                 }
             }
         }
-        .padding(DS.Spacing.lg)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.lg)
-                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-        )
+        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.lg)
         .padding(.horizontal, DS.Spacing.lg)
     }
 

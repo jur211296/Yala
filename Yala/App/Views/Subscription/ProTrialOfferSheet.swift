@@ -76,7 +76,7 @@ struct ProTrialOfferSheet: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Text(L10n.Subscription.errorTitle)
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.thSecondaryText)
                         Button(L10n.Action.retry) {
                             productLoadFailed = false
                             Task { await loadProductsWithTimeout() }
@@ -105,7 +105,7 @@ struct ProTrialOfferSheet: View {
                     } label: {
                         Text(L10n.TrialOffer.maybeLater)
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.thSecondaryText)
                     }
 
                     VStack(spacing: DS.Spacing.xs) {
@@ -119,6 +119,7 @@ struct ProTrialOfferSheet: View {
                             Link(L10n.Subscription.privacyPolicyLink, destination: AppConstants.privacyURL)
                         }
                         .font(DS.Typography.caption)
+                        .tint(theme.accent)
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
@@ -176,12 +177,7 @@ struct ProTrialOfferSheet: View {
             featureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
         }
         .padding(.vertical, DS.Spacing.sm)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-        )
+        .solidCard(radius: DS.Radius.xl)
         .padding(.horizontal, DS.Spacing.lg)
     }
 
@@ -192,7 +188,7 @@ struct ProTrialOfferSheet: View {
                 .foregroundStyle(.white)
                 .frame(width: 26, height: 26)
                 .background(
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(color)
                 )
                 .accessibilityHidden(true)
@@ -293,28 +289,20 @@ struct ProTrialOfferSheet: View {
                 ZStack {
                     Circle()
                         .stroke(
-                            isSelected ? Color.brandPrimary : theme.secondaryText.opacity(0.3),
+                            isSelected ? theme.accent : theme.secondaryText.opacity(0.3),
                             lineWidth: 2
                         )
                         .frame(width: 24, height: 24)
 
                     if isSelected {
                         Circle()
-                            .fill(Color.brandPrimary)
+                            .fill(theme.accent)
                             .frame(width: 16, height: 16)
                     }
                 }
             }
             .padding(DS.Spacing.lg)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(
-                        isSelected ? Color.brandPrimary : Color.primary.opacity(0.05),
-                        lineWidth: isSelected ? 2 : 1
-                    )
-            )
+            .selectableCard(isSelected: isSelected, radius: DS.Radius.lg)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

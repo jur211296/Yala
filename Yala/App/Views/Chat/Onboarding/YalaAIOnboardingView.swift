@@ -369,12 +369,7 @@ struct YalaAIOnboardingView: View {
             }
             .padding(DS.Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                    .stroke(isSelected ? theme.accent : theme.cardBorder, lineWidth: isSelected ? 2 : 1)
-            )
+            .selectableCard(isSelected: isSelected, radius: DS.Radius.lg)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

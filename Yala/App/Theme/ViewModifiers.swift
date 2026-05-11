@@ -103,6 +103,24 @@ extension View {
             radius: small ? DS.Panel.smallWidgetRadius : DS.Panel.widgetRadius
         )
     }
+
+    /// Card seleccionable: mismo fondo `.thCard` + esquinas `.continuous` que `solidCard`,
+    /// con stroke condicional 2pt cuando `isSelected`, 1pt cuando no. Inyectar
+    /// `activeColor`/`inactiveColor` cuando el contexto requiera strokes no temáticos
+    /// (ej. fondos hero sobre dark donde `theme.accent` no contrasta).
+    func selectableCard(
+        isSelected: Bool,
+        radius: CGFloat = DS.Card.radius,
+        activeColor: Color? = nil,
+        inactiveColor: Color? = nil
+    ) -> some View {
+        modifier(SelectableCardModifier(
+            isSelected: isSelected,
+            radius: radius,
+            activeColor: activeColor,
+            inactiveColor: inactiveColor
+        ))
+    }
 }
 
 // MARK: - Solid Card Modifier (matches PanelView widget styling)
@@ -120,6 +138,29 @@ struct SolidCardModifier: ViewModifier {
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .stroke(theme.cardBorder, lineWidth: 1)
+            )
+    }
+}
+
+// MARK: - Selectable Card Modifier
+
+struct SelectableCardModifier: ViewModifier {
+    @Environment(\.yalaTheme) private var theme
+    let isSelected: Bool
+    let radius: CGFloat
+    let activeColor: Color?
+    let inactiveColor: Color?
+
+    func body(content: Content) -> some View {
+        content
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(
+                        isSelected ? (activeColor ?? theme.accent) : (inactiveColor ?? theme.cardBorder),
+                        lineWidth: isSelected ? 2 : 1
+                    )
             )
     }
 }

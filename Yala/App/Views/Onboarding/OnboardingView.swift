@@ -661,11 +661,11 @@ struct OnboardingView: View {
             }
             .padding(DS.Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(isSelected ? styleAccentColor : cardStroke, lineWidth: isSelected ? 2 : 1)
+            .selectableCard(
+                isSelected: isSelected,
+                radius: DS.Radius.xl,
+                activeColor: styleAccentColor,
+                inactiveColor: cardStroke
             )
         }
         .buttonStyle(.plain)
