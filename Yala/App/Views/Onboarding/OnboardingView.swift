@@ -36,7 +36,7 @@ struct OnboardingView: View {
     @State private var navigatingForward: Bool = true
 
     // Purpose & accounts (binary decisions)
-    @State private var selectedUsageMode: UsageMode = .dayToDay
+    @State private var selectedUsageMode: UsageMode = .fullControl
     @State private var selectedMindset: String = "patrimonial"
 
     /// Derived from selectedUsageMode — true when user chose "varias cuentas"
@@ -525,7 +525,7 @@ struct OnboardingView: View {
                             accessibilityId: "onboarding_purpose_control"
                         ) {
                             if expensesOnlyMode {
-                                selectedUsageMode = .dayToDay
+                                selectedUsageMode = .fullControl
                             }
                         }
 
@@ -574,19 +574,6 @@ struct OnboardingView: View {
 
                     VStack(spacing: DS.Spacing.sm) {
                         binaryCard(
-                            isSelected: !wantsSeparateAccounts,
-                            icon: "creditcard",
-                            iconColor: .hotPink,
-                            title: L10n.Onboarding.accountsSingle,
-                            description: L10n.Onboarding.accountsSingleDesc,
-                            accessibilityId: "onboarding_accounts_single"
-                        ) {
-                            selectedUsageMode = .dayToDay
-                            selectedMindset = "patrimonial"
-                            selectedAccountType = .general
-                        }
-
-                        binaryCard(
                             isSelected: wantsSeparateAccounts,
                             icon: "rectangle.stack",
                             iconColor: .priorityNeedNew,
@@ -597,6 +584,19 @@ struct OnboardingView: View {
                             selectedUsageMode = .fullControl
                             selectedMindset = "cashFlow"
                             selectedAccountType = .checking
+                        }
+
+                        binaryCard(
+                            isSelected: !wantsSeparateAccounts,
+                            icon: "creditcard",
+                            iconColor: .hotPink,
+                            title: L10n.Onboarding.accountsSingle,
+                            description: L10n.Onboarding.accountsSingleDesc,
+                            accessibilityId: "onboarding_accounts_single"
+                        ) {
+                            selectedUsageMode = .dayToDay
+                            selectedMindset = "patrimonial"
+                            selectedAccountType = .general
                         }
                     }
                     .padding(.horizontal, DS.Spacing.xl)
@@ -876,14 +876,7 @@ struct OnboardingView: View {
                     }
                     .padding(.top, DS.Spacing.md)
 
-                    // Live preview del monto formateado — eyecatcher emocional.
-                    // `.numericText()` trasiciona los dígitos; el currency symbol y
-                    // el signo "-" son estáticos (jitter aceptable al cambiar signo).
-                    balanceLivePreview
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.bottom, DS.Spacing.sm)
-
-                    // Dos opciones (manual vs guided) + form/hint contextual
+                    // Dos opciones (manual vs guided) + form/preview/hint contextual
                     VStack(spacing: DS.Spacing.sm) {
                         binaryCard(
                             isSelected: balanceMode == .manual,
@@ -912,8 +905,12 @@ struct OnboardingView: View {
                             showBalanceGuide = true
                         }
 
-                        if balanceMode == .guided && initialBalanceText.isEmpty {
-                            balanceIncompleteHint
+                        if balanceMode == .guided {
+                            if initialBalanceText.isEmpty {
+                                balanceIncompleteHint
+                            } else {
+                                guidedBalancePreview
+                            }
                         }
                     }
                     .padding(.horizontal, DS.Spacing.xl)
@@ -954,26 +951,45 @@ struct OnboardingView: View {
         }
     }
 
-    /// Preview en vivo del monto formateado en la moneda elegida.
-    /// Una sola `.animation()` con key compuesto `(text, sign)` evita stacking
-    /// de modifiers que invalidaban dos veces por keystroke (ver review #balance).
-    private var balanceLivePreview: some View {
-        let trimmed = initialBalanceText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let isEmpty = trimmed.isEmpty
+    /// Preview read-only bajo la card `.guided` cuando el user completó el
+    /// cálculo. Muestra el monto formateado + botón "Editar" que reabre el
+    /// sheet. Mismo `OnboardingFieldSection` que el form manual para que el
+    /// salto entre modos sea visualmente consistente.
+    private var guidedBalancePreview: some View {
         let amount = AmountInputHelper.parseDecimal(initialBalanceText)
         let signed = balanceIsPositive ? amount : -amount
-        let formatted = isEmpty
-            ? "\(accountCurrency.symbol) 0"
-            : appPreferences.currency(signed, currencyCode: accountCurrency.rawValue)
+        let formatted = appPreferences.currency(signed, currencyCode: accountCurrency.rawValue)
 
-        return Text(formatted)
-            .font(DS.Typography.largeTitle)
-            .fontWeight(.semibold)
-            .foregroundStyle(isEmpty ? mutedTextStyle : primaryTextStyle)
-            .contentTransition(.numericText())
-            .animation(.smooth(duration: 0.3), value: formatted)
-            .frame(maxWidth: .infinity)
-            .accessibilityLabel(formatted)
+        return OnboardingFieldSection(
+            title: L10n.Onboarding.accountBalanceLabel,
+            titleStyle: secondaryTextStyle
+        ) {
+            HStack(spacing: DS.Spacing.md) {
+                Text(formatted)
+                    .font(DS.Typography.largeTitle)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(primaryTextStyle)
+                    .accessibilityLabel(formatted)
+
+                Spacer(minLength: DS.Spacing.sm)
+
+                Button {
+                    showBalanceGuide = true
+                } label: {
+                    HStack(spacing: DS.Spacing.xxs) {
+                        Image(systemName: "square.and.pencil")
+                            .font(DS.Typography.subheadline)
+                        Text(L10n.Action.edit)
+                            .font(DS.Typography.subheadline)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundStyle(Color.hotPink)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("onboarding_balance_edit")
+            }
+            .padding()
+        }
     }
 
     /// Form de input manual expandido bajo la card `.manual`. Sign segmented +
