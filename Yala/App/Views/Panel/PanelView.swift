@@ -73,43 +73,19 @@ struct PanelView: View {
 
     private func handleSetupStep(_ step: SetupStepID) {
         switch step {
-        case .firstExpense:
-            sheets.showNewTransaction = true
-        case .firstBudget:
-            AppRouter.shared.enqueue(.navigate(.budgets))
-            AppRouter.shared.enqueue(.autoOpenBudgetEditor)
-        case .scheduledPayment:
-            AppRouter.shared.enqueue(.navigate(.scheduledPayments))
-            AppRouter.shared.enqueue(.autoOpenScheduledEditor)
-        case .exploreSettings:
-            sheets.isPresentingSettings = true
-            SetupChecklistManager.shared.markCompleted(.exploreSettings)
+        case .firstExpense, .firstBudget, .scheduledPayment,
+             .tryVoiceInput, .tryImageInput, .exploreSettings:
+            // Steps 1-6 abren primero un demo sheet (vista previa interactiva).
+            // El callback `onStartReal` del demo enruta al flow real con micro-delay.
+            sheets.setupDemoStep = step
         case .discoverFeatures:
+            // Step 7 sin demo — paywall directo (decisión spec: demoizar paywall es metarecursivo).
             if FeatureGateService.shared.isProUser {
                 SetupChecklistManager.shared.markCompleted(.discoverFeatures)
             } else {
                 sheets.subscriptionBannerSource = "setupChecklist"
                 sheets.showSubscriptionFromBanner = true
                 SetupChecklistManager.shared.markCompleted(.discoverFeatures)
-            }
-        case .tryVoiceInput:
-            FeatureGateService.shared.enableSetupTrial(for: .voiceInput)
-            sheets.isVoiceSetupTrial = true
-            if appPreferences.aiDataConsentAccepted {
-                sheets.showVoiceRecording = true
-            } else {
-                sheets.pendingAIInput = .voice
-                sheets.showAIConsentAlert = true
-            }
-        case .tryImageInput:
-            FeatureGateService.shared.enableSetupTrial(for: .imageInput)
-            sheets.isImageSetupTrial = true
-            sheets.setupTrialExampleImages = loadExampleImages()
-            if appPreferences.aiDataConsentAccepted {
-                sheets.showImageSelection = true
-            } else {
-                sheets.pendingAIInput = .image
-                sheets.showAIConsentAlert = true
             }
         }
     }

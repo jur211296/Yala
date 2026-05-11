@@ -23,8 +23,11 @@ struct SetupChecklistDemoSheet: View {
     var body: some View {
         switch step {
         case .scheduledPayment:
-            // F2 — primer boceto. Implementado en próxima fase.
-            placeholderDemo(title: "Scheduled Payment Demo")
+            ScheduledPaymentEditorView(
+                payment: nil,
+                mode: .demo,
+                onStartReal: { handleStartReal(for: .scheduledPayment) }
+            )
         case .firstExpense:
             // F3
             placeholderDemo(title: "First Expense Demo")
@@ -46,6 +49,35 @@ struct SetupChecklistDemoSheet: View {
             let _ = assertionFailure("Step 7 (discoverFeatures) no debería abrir demo sheet")
             #endif
             EmptyView()
+        }
+    }
+
+    /// Dispatcher invocado desde el callback `onStartReal` del demo. Cierra el sheet
+    /// y enruta al flow real del step (con micro-delay de 350ms para evitar race
+    /// entre dismiss y present del sheet/alert siguiente — patrón canónico).
+    @MainActor
+    private func handleStartReal(for step: SetupStepID) {
+        sheets.setupDemoStep = nil
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(350))
+            switch step {
+            case .scheduledPayment:
+                AppRouter.shared.enqueue(.navigate(.scheduledPayments))
+                AppRouter.shared.enqueue(.autoOpenScheduledEditor)
+            case .firstExpense:
+                sheets.showNewTransaction = true
+            case .firstBudget:
+                AppRouter.shared.enqueue(.navigate(.budgets))
+                AppRouter.shared.enqueue(.autoOpenBudgetEditor)
+            case .tryVoiceInput, .tryImageInput:
+                // F4 — consent flow con race guard
+                break
+            case .exploreSettings:
+                sheets.isPresentingSettings = true
+                SetupChecklistManager.shared.markCompleted(.exploreSettings)
+            case .discoverFeatures:
+                break
+            }
         }
     }
 

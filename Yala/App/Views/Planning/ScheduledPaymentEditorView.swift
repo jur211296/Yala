@@ -37,6 +37,13 @@ struct ScheduledPaymentEditorView: View {
     var onDelete: (() -> Void)?
     let prefill: ScheduledPaymentPrefill?
     let onSaved: ((UUID) -> Void)?
+    let mode: ViewMode
+    let onStartReal: (() -> Void)?
+
+    // Demo state
+    @State private var demoTask: Task<Void, Never>?
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // Error state
     @State private var showSaveError = false
@@ -103,13 +110,17 @@ struct ScheduledPaymentEditorView: View {
         defaultCategory: String? = nil,
         onDelete: (() -> Void)? = nil,
         prefill: ScheduledPaymentPrefill? = nil,
-        onSaved: ((UUID) -> Void)? = nil
+        onSaved: ((UUID) -> Void)? = nil,
+        mode: ViewMode = .interactive,
+        onStartReal: (() -> Void)? = nil
     ) {
         self.payment = payment
         self.defaultCategory = defaultCategory
         self.onDelete = onDelete
         self.prefill = prefill
         self.onSaved = onSaved
+        self.mode = mode
+        self.onStartReal = onStartReal
     }
 
     var body: some View {
@@ -123,6 +134,19 @@ struct ScheduledPaymentEditorView: View {
                         selectedSubcategory: $selectedSubcategory,
                         transactionType: transactionType == "income" ? .income : .expense
                     )
+                }
+                .disabled(mode.isDemo)
+                .overlay(alignment: .top) {
+                    if mode.isDemo {
+                        DemoBanner(onStartReal: { onStartReal?() })
+                    }
+                }
+                .task {
+                    if mode.isDemo { startDemoScript() }
+                }
+                .onDisappear {
+                    demoTask?.cancel()
+                    demoTask = nil
                 }
                 .onAppear { handleOnAppear() }
                 .onChange(of: isRecurring) { _, _ in dismissEditorKeyboard(); updatePreviewDates() }
@@ -1090,6 +1114,7 @@ struct ScheduledPaymentEditorView: View {
     }
 
     private func savePayment() {
+        guard mode == .interactive else { return }
         let amountValue = AmountInputHelper.parseDecimal(amount)
         guard amountValue > 0 else { return }
 
@@ -1165,6 +1190,97 @@ struct ScheduledPaymentEditorView: View {
         if viewModel.deletePayment(payment) {
             dismiss()
             onDelete?()
+        }
+    }
+
+    // MARK: - Demo Script (mode: .demo)
+
+    /// Auto-play scripted demo del flujo "Crear pago programado".
+    /// Patrón canónico: caching strings en `.task`, guard VoiceOver/Reduce Motion,
+    /// while !Task.isCancelled, cancel explícito en `.onDisappear`.
+    /// Stages: typing Netflix → monto 45 → recurrente mensual → preview fechas → fade reset.
+    @MainActor
+    private func startDemoScript() {
+        demoTask?.cancel()
+
+        // VoiceOver: estado final visible sin loop (a11y).
+        if voiceOverEnabled {
+            applyFinalDemoState()
+            return
+        }
+
+        demoTask = Task { @MainActor in
+            let nameExample = L10n.SetupChecklist.Demo.scheduledNameExample
+            let useAnimations = !reduceMotion
+
+            while !Task.isCancelled {
+                resetDemoState(animated: false)
+                try? await Task.sleep(for: .milliseconds(500))
+
+                // Stage 1: typing nombre letra a letra
+                for (idx, _) in nameExample.enumerated() {
+                    guard !Task.isCancelled else { return }
+                    let endIdx = nameExample.index(nameExample.startIndex, offsetBy: idx + 1)
+                    name = String(nameExample[..<endIdx])
+                    try? await Task.sleep(for: .milliseconds(useAnimations ? 90 : 0))
+                }
+
+                guard !Task.isCancelled else { return }
+                try? await Task.sleep(for: .milliseconds(400))
+
+                // Stage 2: monto "45" con animation
+                if useAnimations {
+                    withAnimation(.smooth(duration: 0.3)) { amount = "45" }
+                } else {
+                    amount = "45"
+                }
+                try? await Task.sleep(for: .milliseconds(600))
+
+                // Stage 3: confirma recurrente mensual (ya defaults — solo dispara preview update)
+                if useAnimations {
+                    withAnimation(.smooth(duration: 0.3)) {
+                        isRecurring = true
+                        recurrenceType = .monthly
+                    }
+                } else {
+                    isRecurring = true
+                    recurrenceType = .monthly
+                }
+                try? await Task.sleep(for: .milliseconds(500))
+
+                // Stage 4: trigger preview de 3 fechas futuras
+                updatePreviewDates()
+                try? await Task.sleep(for: .milliseconds(1500))
+
+                // Stage 5: hold y fade
+                try? await Task.sleep(for: .milliseconds(1500))
+
+                guard !Task.isCancelled else { return }
+            }
+        }
+    }
+
+    @MainActor
+    private func applyFinalDemoState() {
+        name = L10n.SetupChecklist.Demo.scheduledNameExample
+        amount = "45"
+        isRecurring = true
+        recurrenceType = .monthly
+        updatePreviewDates()
+    }
+
+    @MainActor
+    private func resetDemoState(animated: Bool) {
+        if animated {
+            withAnimation(.smooth(duration: 0.3)) {
+                name = ""
+                amount = ""
+                previewDates = []
+            }
+        } else {
+            name = ""
+            amount = ""
+            previewDates = []
         }
     }
 }
