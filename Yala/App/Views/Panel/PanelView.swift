@@ -90,18 +90,6 @@ struct PanelView: View {
         }
     }
 
-    private func loadExampleImages() -> [UIImage]? {
-        let supportedLangs: Set<String> = ["de", "en", "es", "fr", "it", "pt"]
-        let lang = Bundle.main.preferredLocalizations.first ?? "en"
-        let suffix = supportedLangs.contains(lang) ? lang : "en"
-        let images = [
-            "ExampleImages/example-receipt-\(suffix)",
-            "ExampleImages/example-bank-alert-\(suffix)",
-            "ExampleImages/example-transaction-list-\(suffix)"
-        ].compactMap { UIImage(named: $0) }
-        return images.isEmpty ? nil : images
-    }
-
     // MARK: - Nudge CTA Routing
 
     private func handleNudgeAction(_ nudge: NudgeType) {

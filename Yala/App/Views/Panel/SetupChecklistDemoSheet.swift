@@ -4,10 +4,9 @@
 //
 //  Wrapper que despacha al View correcto en `mode: .demo` para cada step del
 //  Setup Checklist. Steps 2-6 renderizan la View real existente (que ya trae su
-//  propia navegación) + overlay `DemoBanner`. Step 1 (`exploreSettings`) es la
-//  excepción: tiene chrome propio (carrusel standalone sin NavigationStack del
-//  View real). Step 7 (`discoverFeatures`) NO está en el switch — va directo al
-//  paywall sin demo (decisión de spec: paywall es metarecursivo demoizar).
+//  propia navegación) + overlay `DemoBanner`. Step 1 (`exploreSettings`) tiene
+//  chrome propio (carrusel standalone). Step 7 (`discoverFeatures`) NO está en
+//  el switch — va directo al paywall sin demo.
 //
 
 import SwiftData
@@ -55,7 +54,6 @@ struct SetupChecklistDemoSheet: View {
                 handleStartReal(for: .exploreSettings)
             })
         case .discoverFeatures:
-            // Step 7 sin demo. Defensive fallback.
             #if DEBUG
             let _ = assertionFailure("Step 7 (discoverFeatures) no debería abrir demo sheet")
             #endif
@@ -63,19 +61,16 @@ struct SetupChecklistDemoSheet: View {
         }
     }
 
-    /// Dispatcher invocado desde el callback `onStartReal` del demo. Cierra el sheet
-    /// y enruta al flow real del step (con micro-delay de 350ms para evitar race
-    /// entre dismiss y present del sheet/alert siguiente — patrón canónico).
+    /// Cierra el demo sheet y enruta al flow real con micro-delay anti-race.
+    /// El race guard `pendingConsentForStep` cubre el caso en que el user
+    /// dismissa manualmente entre tap CTA y el sleep.
     @MainActor
     private func handleStartReal(for step: SetupStepID) {
-        // Race guard: snapshot del intent ANTES del dismiss. Si el user dismissa
-        // manualmente entre el tap y el sleep, el sheet real / consent alert NO aparece.
         sheets.pendingConsentForStep = step
         sheets.setupDemoStep = nil
 
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(350))
-            // Guard: intent cancelado
             guard sheets.pendingConsentForStep == step else { return }
             sheets.pendingConsentForStep = nil
 
@@ -100,7 +95,7 @@ struct SetupChecklistDemoSheet: View {
             case .tryImageInput:
                 FeatureGateService.shared.enableSetupTrial(for: .imageInput)
                 sheets.isImageSetupTrial = true
-                sheets.setupTrialExampleImages = SetupChecklistDemoSheet.loadExampleImages()
+                sheets.setupTrialExampleImages = ExampleImagesLoader.load()
                 if appPreferences.aiDataConsentAccepted {
                     sheets.showImageSelection = true
                 } else {
@@ -113,36 +108,6 @@ struct SetupChecklistDemoSheet: View {
             case .discoverFeatures:
                 break
             }
-        }
-    }
-
-    /// Loader de example images bundled (replica de PanelView.loadExampleImages).
-    static func loadExampleImages() -> [UIImage]? {
-        let supportedLangs: Set<String> = ["de", "en", "es", "fr", "it", "pt"]
-        let lang = Bundle.main.preferredLocalizations.first ?? "en"
-        let suffix = supportedLangs.contains(lang) ? lang : "en"
-        let images = [
-            "ExampleImages/example-receipt-\(suffix)",
-            "ExampleImages/example-bank-alert-\(suffix)",
-            "ExampleImages/example-transaction-list-\(suffix)"
-        ]
-        let loaded = images.compactMap { UIImage(named: $0) }
-        return loaded.isEmpty ? nil : loaded
-    }
-
-    @ViewBuilder
-    private func placeholderDemo(title: String) -> some View {
-        VStack {
-            Text(title)
-                .font(.title2)
-                .padding()
-            Spacer()
-            Text("F2-F5 implementarán esta demo.")
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
-        .overlay(alignment: .top) {
-            DemoBanner(onStartReal: { dismiss() })
         }
     }
 }

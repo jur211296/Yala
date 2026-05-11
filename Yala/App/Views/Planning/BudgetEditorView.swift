@@ -213,10 +213,9 @@ struct BudgetEditorView: View {
                 try? await Task.sleep(for: .milliseconds(500))
 
                 // typing name
-                for (idx, _) in nameExample.enumerated() {
+                for idx in 1...nameExample.count {
                     guard !Task.isCancelled else { return }
-                    let endIdx = nameExample.index(nameExample.startIndex, offsetBy: idx + 1)
-                    name = String(nameExample[..<endIdx])
+                    name = String(nameExample.prefix(idx))
                     try? await Task.sleep(for: .milliseconds(useAnimations ? 90 : 0))
                 }
                 try? await Task.sleep(for: .milliseconds(400))
