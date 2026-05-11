@@ -3303,6 +3303,29 @@
 "setup.imageTrial.exampleBank" = "Bankbenachrichtigung";
 "setup.imageTrial.exampleList" = "Transaktionen";
 "setup.imageTrial.useThisImage" = "Dieses Bild verwenden";
+// Setup Demo (vista previa interactiva)
+"setup.demo.bannerLabel" = "Vorschau";
+"setup.demo.cta" = "Tippen zum Starten";
+"setup.demo.ctaA11yHint" = "Öffnet den echten Bildschirm, damit Sie Ihren ersten Eintrag erstellen können";
+"setup.demo.proTrialBadge" = "Pro · Kostenlos beim Einrichten";
+"setup.demo.proBadge" = "Pro";
+"setup.demo.settings.title" = "Entdecken Sie Ihre Einstellungen";
+"setup.demo.settings.cta" = "Einstellungen öffnen";
+"setup.demo.settings.card1Title" = "Konten und Kategorien";
+"setup.demo.settings.card1Caption" = "Organisieren Sie wo und worauf";
+"setup.demo.settings.card2Title" = "Themes und Personalisierung";
+"setup.demo.settings.card2Caption" = "9 Themes für Ihren Stil";
+"setup.demo.settings.card3Title" = "Benachrichtigungen";
+"setup.demo.settings.card3Caption" = "Sie entscheiden wann";
+"setup.demo.settings.card4Title" = "Biometrie und iCloud";
+"setup.demo.settings.card4Caption" = "Ihre Daten, sicher";
+"setup.demo.settings.card5Title" = "KI-Datenschutz";
+"setup.demo.settings.card5Caption" = "Sie kontrollieren, was verarbeitet wird";
+"setup.demo.budget.nameExample" = "Essen";
+"setup.demo.budget.alertCaption" = "Wir benachrichtigen Sie bei 80%";
+"setup.demo.scheduled.nameExample" = "Netflix";
+"setup.demo.scheduled.notifCaption" = "Wir benachrichtigen Sie 3 Tage vorher";
+
 
 "setup.personalize.navTitle" = "Personalisiere dein Yala";
 "setup.personalize.title" = "Mach es zu deinem";

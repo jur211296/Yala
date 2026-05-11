@@ -3306,6 +3306,29 @@
 "setup.imageTrial.exampleBank" = "银行提醒";
 "setup.imageTrial.exampleList" = "交易";
 "setup.imageTrial.useThisImage" = "使用这张图片";
+// Setup Demo (vista previa interactiva)
+"setup.demo.bannerLabel" = "预览";
+"setup.demo.cta" = "点击开始";
+"setup.demo.ctaA11yHint" = "打开真实屏幕,以便你创建第一条记录";
+"setup.demo.proTrialBadge" = "Pro · 设置期间免费";
+"setup.demo.proBadge" = "Pro";
+"setup.demo.settings.title" = "探索你的设置";
+"setup.demo.settings.cta" = "打开设置";
+"setup.demo.settings.card1Title" = "账户和分类";
+"setup.demo.settings.card1Caption" = "整理在哪里花在什么上";
+"setup.demo.settings.card2Title" = "主题和个性化";
+"setup.demo.settings.card2Caption" = "9 种主题适合你的风格";
+"setup.demo.settings.card3Title" = "通知";
+"setup.demo.settings.card3Caption" = "你决定何时";
+"setup.demo.settings.card4Title" = "生物识别和 iCloud";
+"setup.demo.settings.card4Caption" = "你的数据,安全";
+"setup.demo.settings.card5Title" = "AI 隐私";
+"setup.demo.settings.card5Caption" = "你控制处理的内容";
+"setup.demo.budget.nameExample" = "餐饮";
+"setup.demo.budget.alertCaption" = "我们会在 80% 时提醒你";
+"setup.demo.scheduled.nameExample" = "Netflix";
+"setup.demo.scheduled.notifCaption" = "我们会在 3 天前提醒你";
+
 
 "setup.personalize.navTitle" = "个性化你的 Yala";
 "setup.personalize.title" = "让它属于你";

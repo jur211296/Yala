@@ -241,3 +241,26 @@
 "onboarding.privacyNoTrackingShort" = "Sem rastreio nem anúncios";
 "onboarding.privacyIcloudShort" = "Só tu acedes";
 "onboarding.privacyNoSharingShort" = "IA segura";
+
+// Setup Demo (vista previa interactiva)
+"setup.demo.bannerLabel" = "Pré-visualização";
+"setup.demo.cta" = "Toque para começar";
+"setup.demo.ctaA11yHint" = "Abre o ecrã real para poderes criar o teu primeiro registo";
+"setup.demo.proTrialBadge" = "Pro · Grátis durante a configuração";
+"setup.demo.proBadge" = "Pro";
+"setup.demo.settings.title" = "Explora as tuas definições";
+"setup.demo.settings.cta" = "Abrir Definições";
+"setup.demo.settings.card1Title" = "Contas e categorias";
+"setup.demo.settings.card1Caption" = "Organiza onde e em quê";
+"setup.demo.settings.card2Title" = "Temas e personalização";
+"setup.demo.settings.card2Caption" = "9 temas para o teu estilo";
+"setup.demo.settings.card3Title" = "Notificações";
+"setup.demo.settings.card3Caption" = "Tu decides quando";
+"setup.demo.settings.card4Title" = "Biometria e iCloud";
+"setup.demo.settings.card4Caption" = "Os teus dados, seguros";
+"setup.demo.settings.card5Title" = "Privacidade IA";
+"setup.demo.settings.card5Caption" = "Tu controlas o que é processado";
+"setup.demo.budget.nameExample" = "Comida";
+"setup.demo.budget.alertCaption" = "Avisamos-te aos 80%";
+"setup.demo.scheduled.nameExample" = "Netflix";
+"setup.demo.scheduled.notifCaption" = "Avisamos-te 3 dias antes";

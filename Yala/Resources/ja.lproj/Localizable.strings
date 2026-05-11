@@ -3306,6 +3306,29 @@
 "setup.imageTrial.exampleBank" = "銀行通知";
 "setup.imageTrial.exampleList" = "取引一覧";
 "setup.imageTrial.useThisImage" = "この画像を使う";
+// Setup Demo (vista previa interactiva)
+"setup.demo.bannerLabel" = "プレビュー";
+"setup.demo.cta" = "タップして開始";
+"setup.demo.ctaA11yHint" = "実際の画面を開いて、最初の記録を作成できます";
+"setup.demo.proTrialBadge" = "Pro · セットアップ中は無料";
+"setup.demo.proBadge" = "Pro";
+"setup.demo.settings.title" = "設定を探索する";
+"setup.demo.settings.cta" = "設定を開く";
+"setup.demo.settings.card1Title" = "アカウントとカテゴリ";
+"setup.demo.settings.card1Caption" = "どこで何に整理します";
+"setup.demo.settings.card2Title" = "テーマとパーソナライズ";
+"setup.demo.settings.card2Caption" = "あなたのスタイルに合う9つのテーマ";
+"setup.demo.settings.card3Title" = "通知";
+"setup.demo.settings.card3Caption" = "あなたがいつ決めます";
+"setup.demo.settings.card4Title" = "生体認証とiCloud";
+"setup.demo.settings.card4Caption" = "データを安全に保ちます";
+"setup.demo.settings.card5Title" = "AIプライバシー";
+"setup.demo.settings.card5Caption" = "処理する内容を制御します";
+"setup.demo.budget.nameExample" = "食費";
+"setup.demo.budget.alertCaption" = "80%でお知らせします";
+"setup.demo.scheduled.nameExample" = "Netflix";
+"setup.demo.scheduled.notifCaption" = "3日前にお知らせします";
+
 
 "setup.personalize.navTitle" = "Yalaをパーソナライズ";
 "setup.personalize.title" = "自分仕様にする";
