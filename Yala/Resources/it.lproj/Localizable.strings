@@ -1825,8 +1825,6 @@
 "onboarding.welcomeSubtitle" = "Pochi passi per personalizzare Yala su misura per te.";
 "onboarding.nameLabel" = "Come vuoi che ti chiamiamo?";
 "onboarding.namePlaceholder" = "Il tuo nome";
-"onboarding.greetingBubble" = "Ciao, %@. Yala è pronta per te";
-"onboarding.greetingBubbleEmpty" = "Come ti chiami?";
 "onboarding.currencyTitle" = "Valuta principale";
 "onboarding.currencySubtitle" = "Seleziona la valuta che usi più frequentemente.";
 "onboarding.secondaryTitle" = "Valute secondarie";
@@ -1892,6 +1890,9 @@
 "onboarding.accountBalanceHintSavings" = "Il totale che hai risparmiato su questo conto. Non deve essere esatto, puoi regolarlo dopo.";
 "onboarding.accountBalanceLearnMore" = "Calcoliamo il tuo saldo insieme";
 "onboarding.balanceGuideHint" = "Ti guidiamo passo dopo passo";
+"onboarding.balanceManualOption" = "Conosco il mio saldo";
+"onboarding.balanceManualHint" = "Lo inserisci tu";
+"onboarding.balanceGuidedIncompleteHint" = "Non hai completato il calcolo. Tocca per riprenderlo.";
 "onboarding.privacyLocalShort" = "Dati sul tuo dispositivo";
 "onboarding.privacyNoTrackingShort" = "Niente tracciamento né annunci";
 "onboarding.privacyIcloudShort" = "Solo tu accedi";

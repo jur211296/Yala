@@ -59,7 +59,12 @@ struct OnboardingView: View {
     @State private var balanceIsPositive: Bool = true
     @State private var showCurrencyPicker: Bool = false
     @State private var showBalanceGuide: Bool = false
+    @State private var balanceMode: BalanceMode = .manual
     @State private var calcFieldState = BalanceCalculatorFieldState()
+
+    private enum BalanceMode {
+        case manual, guided
+    }
     @FocusState private var accountNameFocused: Bool
     @State private var lastAutoName: String = ""
     /// Snapshot del currency cuando se abre el picker — permite detectar cambio
@@ -456,9 +461,6 @@ struct OnboardingView: View {
                         .padding(.horizontal, DS.Spacing.xl)
                 }
                 .padding(.top, DS.Spacing.md)
-
-                welcomeGreetingText
-                    .padding(.horizontal, DS.Spacing.xl)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     Text(L10n.Onboarding.nameLabel)
@@ -881,50 +883,40 @@ struct OnboardingView: View {
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.bottom, DS.Spacing.sm)
 
-                    // Balance display (filled by calculator or manual input)
-                    OnboardingFieldSection(
-                        title: L10n.Onboarding.accountBalanceLabel,
-                        titleStyle: secondaryTextStyle
-                    ) {
-                        VStack(spacing: DS.Spacing.none) {
-                            HStack(spacing: DS.Spacing.md) {
-                                Text(L10n.Account.sign)
-                                    .font(DS.Typography.subheadline)
-                                    .foregroundStyle(secondaryTextStyle)
-                                Spacer()
-                                Picker(L10n.Account.sign, selection: $balanceIsPositive) {
-                                    Text(L10n.Account.positive).tag(true)
-                                    Text(L10n.Account.negative).tag(false)
-                                }
-                                .pickerStyle(.segmented)
-                            }
-                            .padding()
+                    // Dos opciones (manual vs guided) + form/hint contextual
+                    VStack(spacing: DS.Spacing.sm) {
+                        binaryCard(
+                            isSelected: balanceMode == .manual,
+                            icon: "pencil",
+                            iconColor: .priorityNeed,
+                            title: L10n.Onboarding.balanceManualOption,
+                            description: L10n.Onboarding.balanceManualHint,
+                            accessibilityId: "onboarding_balance_manual"
+                        ) {
+                            balanceMode = .manual
+                        }
 
-                            SubsectionDivider()
+                        if balanceMode == .manual {
+                            manualBalanceForm
+                        }
 
-                            HStack {
-                                Spacer()
-                                HStack(spacing: DS.Spacing.xs) {
-                                    Text(accountCurrency.symbol)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(secondaryTextStyle)
-                                    TextField("0", text: $initialBalanceText)
-                                        .font(DS.Typography.largeTitle)
-                                        .keyboardType(.decimalPad)
-                                        .multilineTextAlignment(.trailing)
-                                        .foregroundStyle(primaryTextStyle)
-                                        .accessibilityIdentifier("onboarding_balance")
-                                }
-                            }
-                            .padding()
+                        binaryCard(
+                            isSelected: balanceMode == .guided,
+                            icon: "arrow.triangle.2.circlepath",
+                            iconColor: .hotPink,
+                            title: L10n.Onboarding.accountBalanceLearnMore,
+                            description: L10n.Onboarding.balanceGuideHint,
+                            accessibilityId: "onboarding_balance_guided"
+                        ) {
+                            balanceMode = .guided
+                            showBalanceGuide = true
+                        }
+
+                        if balanceMode == .guided && initialBalanceText.isEmpty {
+                            balanceIncompleteHint
                         }
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-
-                    // CTA card prominente "Calculemos juntos" — reemplaza el
-                    // auto-launch del calculator. User-driven explícito.
-                    balanceGuideCTA
-                        .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.horizontal, DS.Spacing.xl)
 
                     Spacer()
                 }
@@ -962,25 +954,6 @@ struct OnboardingView: View {
         }
     }
 
-    /// Saludo inline simple del Step 1 — sin contenedor ni avatar sparkles.
-    /// `.smooth(0.45)` keyed en text → fade-in al escribir, transición suave
-    /// si el user edita. Reduce Motion: sin animación.
-    private var welcomeGreetingText: some View {
-        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let isEmpty = trimmed.isEmpty
-        let text: String = isEmpty
-            ? L10n.Onboarding.greetingBubbleEmpty
-            : L10n.Onboarding.greetingBubble(trimmed)
-
-        return Text(text)
-            .font(DS.Typography.body)
-            .foregroundStyle(isEmpty ? secondaryTextStyle : primaryTextStyle)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
-            .animation(reduceMotion ? nil : .smooth(duration: 0.45, extraBounce: 0.15), value: text)
-            .accessibilityLabel(text)
-    }
-
     /// Preview en vivo del monto formateado en la moneda elegida.
     /// Una sola `.animation()` con key compuesto `(text, sign)` evita stacking
     /// de modifiers que invalidaban dos veces por keystroke (ver review #balance).
@@ -1003,54 +976,66 @@ struct OnboardingView: View {
             .accessibilityLabel(formatted)
     }
 
-    /// CTA card prominente que invita a abrir el calculator sheet — reemplaza
-    /// el auto-launch + el link inline pequeño. Icon halo + chip "Recomendado"
-    /// señalan jerarquía sin competir con el balance input arriba.
-    private var balanceGuideCTA: some View {
-        Button {
-            showBalanceGuide = true
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                ZStack {
-                    Circle()
-                        .fill(Color.priorityNeed.opacity(0.18))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 20, weight: .semibold)) // A11Y-DT: card icon
-                        .foregroundStyle(Color.priorityNeed)
-                }
-
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.Onboarding.accountBalanceLearnMore)
-                        .font(DS.Typography.bodyBold)
-                        .foregroundStyle(primaryTextStyle)
-                        .multilineTextAlignment(.leading)
-                    Text(L10n.Onboarding.balanceGuideHint)
+    /// Form de input manual expandido bajo la card `.manual`. Sign segmented +
+    /// TextField gigante con currency symbol. Se monta sólo si el user eligió
+    /// el modo manual — el `.guided` lo colapsa.
+    private var manualBalanceForm: some View {
+        OnboardingFieldSection(
+            title: L10n.Onboarding.accountBalanceLabel,
+            titleStyle: secondaryTextStyle
+        ) {
+            VStack(spacing: DS.Spacing.none) {
+                HStack(spacing: DS.Spacing.md) {
+                    Text(L10n.Account.sign)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(secondaryTextStyle)
-                        .multilineTextAlignment(.leading)
+                    Spacer()
+                    Picker(L10n.Account.sign, selection: $balanceIsPositive) {
+                        Text(L10n.Account.positive).tag(true)
+                        Text(L10n.Account.negative).tag(false)
+                    }
+                    .pickerStyle(.segmented)
                 }
+                .padding()
 
-                Spacer(minLength: DS.Spacing.sm)
+                SubsectionDivider()
 
-                Text(L10n.Onboarding.categoriesRecommended)
-                    .font(DS.Typography.captionSmall.weight(.semibold))
-                    .foregroundStyle(Color.essentialNeed)
-                    .padding(.horizontal, DS.Spacing.sm)
-                    .padding(.vertical, DS.Spacing.xxs)
-                    .background(Capsule().fill(Color.essentialNeed.opacity(0.22)))
+                HStack {
+                    Spacer()
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(accountCurrency.symbol)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(secondaryTextStyle)
+                        TextField("0", text: $initialBalanceText)
+                            .font(DS.Typography.largeTitle)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .foregroundStyle(primaryTextStyle)
+                            .accessibilityIdentifier("onboarding_balance")
+                    }
+                }
+                .padding()
             }
-            .padding(DS.Spacing.md)
-            .frame(maxWidth: .infinity)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(cardStroke, lineWidth: 1)
-            )
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("onboarding_balance_guide_cta")
+    }
+
+    /// Hint amber bajo la card `.guided` cuando el user cerró el sheet sin
+    /// completar el cálculo. Re-tappear la card reabre el calculator.
+    private var balanceIncompleteHint: some View {
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(Color.essentialNeed)
+                .accessibilityHidden(true)
+            Text(L10n.Onboarding.balanceGuidedIncompleteHint)
+                .font(DS.Typography.caption)
+                .foregroundStyle(Color.essentialNeed)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.top, DS.Spacing.xxs)
     }
 
     // MARK: - Step 7: Confirmation

@@ -4175,12 +4175,6 @@ enum L10n {
         static var namePlaceholder: String {
             ls("onboarding.namePlaceholder", comment: "")
         }
-        static func greetingBubble(_ name: String) -> String {
-            String(format: ls("onboarding.greetingBubble", comment: ""), name)
-        }
-        static var greetingBubbleEmpty: String {
-            ls("onboarding.greetingBubbleEmpty", comment: "")
-        }
         static var currencyTitle: String {
             ls("onboarding.currencyTitle", comment: "")
         }
@@ -4309,6 +4303,9 @@ enum L10n {
         static var accountBalanceHintSavings: String { ls("onboarding.accountBalanceHintSavings", comment: "") }
         static var accountBalanceLearnMore: String { ls("onboarding.accountBalanceLearnMore", comment: "") }
         static var balanceGuideHint: String { ls("onboarding.balanceGuideHint", comment: "") }
+        static var balanceManualOption: String { ls("onboarding.balanceManualOption", comment: "") }
+        static var balanceManualHint: String { ls("onboarding.balanceManualHint", comment: "") }
+        static var balanceGuidedIncompleteHint: String { ls("onboarding.balanceGuidedIncompleteHint", comment: "") }
         static var privacyLocalShort: String { ls("onboarding.privacyLocalShort", comment: "") }
         static var privacyNoTrackingShort: String { ls("onboarding.privacyNoTrackingShort", comment: "") }
         static var privacyIcloudShort: String { ls("onboarding.privacyIcloudShort", comment: "") }

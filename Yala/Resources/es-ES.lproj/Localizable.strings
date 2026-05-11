@@ -224,12 +224,13 @@
 "yalaAI.onboarding.step5.tip" = "💡 Prueba: \"Registra un café de 2 euros\" o \"¿Cuánto gasté hoy?\"";
 "yalaAI.onboarding.step5.cta" = "Empezar a chatear";
 
-"onboarding.greetingBubble" = "Hola, %@. Yala está listo para ti";
-"onboarding.greetingBubbleEmpty" = "¿Cómo te llamas?";
 "onboarding.startUsingYala" = "Empezar a usar Yala";
 
 // onboarding-restyle iter1
 "onboarding.balanceGuideHint" = "Te guiamos paso a paso";
+"onboarding.balanceManualOption" = "Conozco mi saldo";
+"onboarding.balanceManualHint" = "Lo escribes a mano";
+"onboarding.balanceGuidedIncompleteHint" = "Aún no has completado el cálculo. Toca para retomar.";
 "onboarding.privacyLocalShort" = "Datos en tu dispositivo";
 "onboarding.privacyNoTrackingShort" = "Sin rastreo ni anuncios";
 "onboarding.privacyIcloudShort" = "Solo tú accedes";

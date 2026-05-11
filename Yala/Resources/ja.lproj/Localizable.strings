@@ -1823,8 +1823,6 @@
 "onboarding.welcomeSubtitle" = "Yalaを設定するのに数ステップだけです。";
 "onboarding.nameLabel" = "なんとお呼びしましょう？";
 "onboarding.namePlaceholder" = "お名前";
-"onboarding.greetingBubble" = "こんにちは、%@。Yala の準備ができました";
-"onboarding.greetingBubbleEmpty" = "お名前は?";
 "onboarding.currencyTitle" = "メイン通貨";
 "onboarding.currencySubtitle" = "最もよく使う通貨を選択してください。";
 "onboarding.secondaryTitle" = "副通貨";
@@ -1894,6 +1892,9 @@
 "onboarding.accountBalanceHintSavings" = "この口座に貯めている合計。正確でなくて大丈夫、あとから調整できます。";
 "onboarding.accountBalanceLearnMore" = "残高を一緒に計算しましょう";
 "onboarding.balanceGuideHint" = "ステップごとにご案内します";
+"onboarding.balanceManualOption" = "残高を知っています";
+"onboarding.balanceManualHint" = "自分で入力します";
+"onboarding.balanceGuidedIncompleteHint" = "計算が完了していません。タップして再開してください。";
 "onboarding.privacyLocalShort" = "データはあなたの端末に";
 "onboarding.privacyNoTrackingShort" = "追跡や広告なし";
 "onboarding.privacyIcloudShort" = "あなただけがアクセス";

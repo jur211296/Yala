@@ -1823,8 +1823,6 @@
 "onboarding.welcomeSubtitle" = "Slechts een paar stappen om Yala voor jou in te stellen.";
 "onboarding.nameLabel" = "Hoe mogen we je noemen?";
 "onboarding.namePlaceholder" = "Je naam";
-"onboarding.greetingBubble" = "Hoi, %@. Yala is klaar voor jou";
-"onboarding.greetingBubbleEmpty" = "Hoe heet je?";
 "onboarding.currencyTitle" = "Je hoofdvaluta";
 "onboarding.currencySubtitle" = "Kies de valuta die je het vaakst gebruikt.";
 "onboarding.secondaryTitle" = "Secundaire valuta's";
@@ -1894,6 +1892,9 @@
 "onboarding.accountBalanceHintSavings" = "Het totaal dat je op deze rekening gespaard hebt. Hoeft niet exact — je kunt het later aanpassen.";
 "onboarding.accountBalanceLearnMore" = "Laten we je saldo samen uitrekenen";
 "onboarding.balanceGuideHint" = "We helpen je stap voor stap";
+"onboarding.balanceManualOption" = "Ik ken mijn saldo";
+"onboarding.balanceManualHint" = "Je voert het zelf in";
+"onboarding.balanceGuidedIncompleteHint" = "Je hebt de berekening niet afgerond. Tik om verder te gaan.";
 "onboarding.privacyLocalShort" = "Gegevens op je apparaat";
 "onboarding.privacyNoTrackingShort" = "Geen tracking of advertenties";
 "onboarding.privacyIcloudShort" = "Alleen jij hebt toegang";
