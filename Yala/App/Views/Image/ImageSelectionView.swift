@@ -60,6 +60,15 @@ struct ImageSelectionView: View {
     /// Setup trial: called when user taps "Ahora no" to skip
     var onSetupTrialSkipped: (() -> Void)?
 
+    /// Modo de presentación (.interactive default — retrocompat 100%).
+    var mode: ViewMode = .interactive
+    /// Callback "Toca para empezar" desde DemoBanner.
+    var onStartReal: (() -> Void)?
+
+    // Demo state
+    @State private var demoTask: Task<Void, Never>?
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+
     // Network monitor
     private let networkMonitor = NetworkMonitor.shared
 
@@ -108,6 +117,7 @@ struct ImageSelectionView: View {
                 }
             }
             .onChange(of: selectedPhotos) { oldValue, newValue in
+                guard mode == .interactive else { return }
                 if !newValue.isEmpty {
                     Task {
                         await loadImagesAndStartCountdown(from: newValue)
@@ -222,6 +232,63 @@ struct ImageSelectionView: View {
             .onDisappear {
                 countdownTask?.cancel()
                 countdownTask = nil
+                demoTask?.cancel()
+                demoTask = nil
+            }
+            .disabled(mode.isDemo)
+            .overlay(alignment: .top) {
+                if mode.isDemo {
+                    DemoBanner(onStartReal: { onStartReal?() })
+                }
+            }
+            .task {
+                if mode.isDemo { startDemoScript() }
+            }
+        }
+    }
+
+    // MARK: - Demo Script
+
+    @MainActor
+    private func startDemoScript() {
+        demoTask?.cancel()
+        if voiceOverEnabled {
+            isProcessing = false
+            return
+        }
+        demoTask = Task { @MainActor in
+            while !Task.isCancelled {
+                // Stage 1: selection idle
+                isProcessing = false
+                showingResult = false
+                processingProgress = (0, 0)
+                try? await Task.sleep(for: .milliseconds(1500))
+
+                // Stage 2: processing simulado
+                guard !Task.isCancelled else { return }
+                withAnimation(.smooth(duration: 0.3)) {
+                    isProcessing = true
+                    processingProgress = (1, 3)
+                }
+                try? await Task.sleep(for: .milliseconds(800))
+                guard !Task.isCancelled else { return }
+                withAnimation(.smooth(duration: 0.3)) {
+                    processingProgress = (2, 3)
+                }
+                try? await Task.sleep(for: .milliseconds(800))
+                guard !Task.isCancelled else { return }
+                withAnimation(.smooth(duration: 0.3)) {
+                    processingProgress = (3, 3)
+                }
+                try? await Task.sleep(for: .milliseconds(1500))
+
+                // Stage 3: reset
+                guard !Task.isCancelled else { return }
+                withAnimation(.smooth(duration: 0.3)) {
+                    isProcessing = false
+                    processingProgress = (0, 0)
+                }
+                try? await Task.sleep(for: .milliseconds(800))
             }
         }
     }
@@ -837,6 +904,7 @@ struct ImageSelectionView: View {
 
     /// Process image using GPT-4o Vision API (online) - returns drafts (not yet inserted)
     private func processImageWithVisionReturning(_ uiImage: UIImage) async throws -> [InboxDraft] {
+        guard mode == .interactive else { return [] }
         let response = try await imageVisionService.analyze(image: uiImage)
 
         // Check if we got valid transactions

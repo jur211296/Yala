@@ -53,6 +53,16 @@ struct VoiceRecordingView: View {
     /// Setup trial: called when user taps "Ahora no" to skip
     var onSetupTrialSkipped: (() -> Void)?
 
+    /// Modo de presentación (.interactive default — retrocompat 100%).
+    var mode: ViewMode = .interactive
+
+    /// Callback "Toca para empezar" desde DemoBanner (solo en mode == .demo).
+    var onStartReal: (() -> Void)?
+
+    // Demo state
+    @State private var demoTask: Task<Void, Never>?
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+
     /// Types of errors that need special handling
     private enum VoiceErrorType {
         case noApiKey
@@ -176,6 +186,59 @@ struct VoiceRecordingView: View {
                 countdownTimer = nil
                 processingTask?.cancel()
                 processingTask = nil
+                demoTask?.cancel()
+                demoTask = nil
+            }
+            .disabled(mode.isDemo)
+            .overlay(alignment: .top) {
+                if mode.isDemo {
+                    DemoBanner(onStartReal: { onStartReal?() })
+                }
+            }
+            .task {
+                if mode.isDemo { startDemoScript() }
+            }
+        }
+    }
+
+    // MARK: - Demo Script
+
+    @MainActor
+    private func startDemoScript() {
+        demoTask?.cancel()
+        if voiceOverEnabled {
+            // Estado final visible
+            isProcessing = false
+            return
+        }
+        demoTask = Task { @MainActor in
+            while !Task.isCancelled {
+                // Stage 1: idle
+                isProcessing = false
+                processingStepIndex = 0
+                try? await Task.sleep(for: .milliseconds(1500))
+
+                // Stage 2: processing con 3 steps simulados
+                guard !Task.isCancelled else { return }
+                withAnimation(.smooth(duration: 0.3)) {
+                    isProcessing = true
+                    processingStatus = L10n.Voice.analyzing
+                }
+                for step in 0..<3 {
+                    guard !Task.isCancelled else { return }
+                    withAnimation(.smooth(duration: 0.3)) {
+                        processingStepIndex = step
+                    }
+                    try? await Task.sleep(for: .milliseconds(900))
+                }
+
+                // hold + reset
+                try? await Task.sleep(for: .milliseconds(1200))
+                guard !Task.isCancelled else { return }
+                withAnimation(.smooth(duration: 0.3)) {
+                    isProcessing = false
+                }
+                try? await Task.sleep(for: .milliseconds(800))
             }
         }
     }
@@ -643,6 +706,7 @@ struct VoiceRecordingView: View {
     // MARK: - Recording Actions
 
     private func startRecording() async {
+        guard mode == .interactive else { return }
         errorMessage = nil
         errorType = nil
 
@@ -773,6 +837,7 @@ struct VoiceRecordingView: View {
     }
 
     private func processAudio(_ audioData: Data) async {
+        guard mode == .interactive else { return }
         errorMessage = nil
         isProcessing = true
 

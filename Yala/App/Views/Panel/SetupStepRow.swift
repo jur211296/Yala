@@ -56,6 +56,12 @@ struct SetupStepRow: View {
                 .font(isCurrent ? DS.Typography.label : DS.Typography.caption)
                 .foregroundStyle((step.isCompleted || step.isLocked) ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
 
+            // Pro trial badge — solo Steps tryVoiceInput / tryImageInput
+            if step.id == .tryVoiceInput || step.id == .tryImageInput, !step.isCompleted {
+                let feature: ProFeature = step.id == .tryVoiceInput ? .voiceInput : .imageInput
+                ProTrialBadge(isTrialActive: FeatureGateService.shared.isSetupTrialActive(for: feature))
+            }
+
             Spacer()
 
             if isCurrent {
