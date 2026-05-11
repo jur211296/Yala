@@ -3351,6 +3351,29 @@
 "setup.imageTrial.exampleList" = "Movimientos";
 "setup.imageTrial.useThisImage" = "Usar esta imagen";
 
+// Setup Demo (vista previa interactiva)
+"setup.demo.bannerLabel" = "Vista previa";
+"setup.demo.cta" = "Toca para empezar";
+"setup.demo.ctaA11yHint" = "Abre la pantalla real para que puedas crear tu primer registro";
+"setup.demo.proTrialBadge" = "Pro · Gratis durante setup";
+"setup.demo.proBadge" = "Pro";
+"setup.demo.settings.title" = "Explora tus ajustes";
+"setup.demo.settings.cta" = "Abrir Ajustes";
+"setup.demo.settings.card1Title" = "Cuentas y categorías";
+"setup.demo.settings.card1Caption" = "Organiza dónde y en qué";
+"setup.demo.settings.card2Title" = "Temas y personalización";
+"setup.demo.settings.card2Caption" = "9 temas para tu estilo";
+"setup.demo.settings.card3Title" = "Notificaciones";
+"setup.demo.settings.card3Caption" = "Tú decides cuándo";
+"setup.demo.settings.card4Title" = "Biometría e iCloud";
+"setup.demo.settings.card4Caption" = "Tus datos, seguros";
+"setup.demo.settings.card5Title" = "Privacidad IA";
+"setup.demo.settings.card5Caption" = "Tú controlas qué procesa";
+"setup.demo.budget.nameExample" = "Comida";
+"setup.demo.budget.alertCaption" = "Te avisamos al 80%";
+"setup.demo.scheduled.nameExample" = "Netflix";
+"setup.demo.scheduled.notifCaption" = "Te avisamos 3 días antes";
+
 // Setup Personalize
 "setup.personalize.navTitle" = "Personaliza tu Yala";
 "setup.personalize.title" = "Haz tuyo a Yala";

@@ -208,5 +208,72 @@ extension L10n {
                 NSLocalizedString("setup.imageTrial.useThisImage", comment: "Use this example image")
             }
         }
+
+        // Demo (vista previa interactiva)
+        enum Demo {
+            static var bannerLabel: String {
+                NSLocalizedString("setup.demo.bannerLabel", comment: "Vista previa")
+            }
+            static var cta: String {
+                NSLocalizedString("setup.demo.cta", comment: "Toca para empezar")
+            }
+            static var ctaA11yHint: String {
+                NSLocalizedString("setup.demo.ctaA11yHint", comment: "Abre la pantalla real para crear")
+            }
+            static var proTrialBadge: String {
+                NSLocalizedString("setup.demo.proTrialBadge", comment: "Pro · Gratis durante setup")
+            }
+            static var proBadge: String {
+                NSLocalizedString("setup.demo.proBadge", comment: "Pro")
+            }
+            static var settingsTitle: String {
+                NSLocalizedString("setup.demo.settings.title", comment: "Explora tus ajustes")
+            }
+            static var settingsCta: String {
+                NSLocalizedString("setup.demo.settings.cta", comment: "Abrir Ajustes")
+            }
+            static var settingsCard1Title: String {
+                NSLocalizedString("setup.demo.settings.card1Title", comment: "Cuentas y categorías")
+            }
+            static var settingsCard1Caption: String {
+                NSLocalizedString("setup.demo.settings.card1Caption", comment: "Organiza dónde y en qué")
+            }
+            static var settingsCard2Title: String {
+                NSLocalizedString("setup.demo.settings.card2Title", comment: "Temas y personalización")
+            }
+            static var settingsCard2Caption: String {
+                NSLocalizedString("setup.demo.settings.card2Caption", comment: "9 temas para tu estilo")
+            }
+            static var settingsCard3Title: String {
+                NSLocalizedString("setup.demo.settings.card3Title", comment: "Notificaciones")
+            }
+            static var settingsCard3Caption: String {
+                NSLocalizedString("setup.demo.settings.card3Caption", comment: "Tú decides cuándo")
+            }
+            static var settingsCard4Title: String {
+                NSLocalizedString("setup.demo.settings.card4Title", comment: "Biometría e iCloud")
+            }
+            static var settingsCard4Caption: String {
+                NSLocalizedString("setup.demo.settings.card4Caption", comment: "Tus datos, seguros")
+            }
+            static var settingsCard5Title: String {
+                NSLocalizedString("setup.demo.settings.card5Title", comment: "Privacidad IA")
+            }
+            static var settingsCard5Caption: String {
+                NSLocalizedString("setup.demo.settings.card5Caption", comment: "Tú controlas qué procesa")
+            }
+            static var budgetNameExample: String {
+                NSLocalizedString("setup.demo.budget.nameExample", comment: "Comida")
+            }
+            static var budgetAlertCaption: String {
+                NSLocalizedString("setup.demo.budget.alertCaption", comment: "Te avisamos al 80%")
+            }
+            static var scheduledNameExample: String {
+                NSLocalizedString("setup.demo.scheduled.nameExample", comment: "Netflix")
+            }
+            static var scheduledNotifCaption: String {
+                NSLocalizedString("setup.demo.scheduled.notifCaption", comment: "Te avisamos 3 días antes")
+            }
+        }
     }
 }
