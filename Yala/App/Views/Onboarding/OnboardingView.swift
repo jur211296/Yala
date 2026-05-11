@@ -902,7 +902,11 @@ struct OnboardingView: View {
                             accessibilityId: "onboarding_balance_guided"
                         ) {
                             balanceMode = .guided
-                            showBalanceGuide = true
+                            // Si ya tenemos monto, mostramos el preview con
+                            // "Editar" — no abrimos sheet automáticamente.
+                            if initialBalanceText.isEmpty {
+                                openBalanceGuide()
+                            }
                         }
 
                         if balanceMode == .guided {
@@ -951,6 +955,45 @@ struct OnboardingView: View {
         }
     }
 
+    /// Abre el sheet del calculator, pre-poblando el campo apropiado del
+    /// `fieldState` si está vacío pero ya tenemos un monto en
+    /// `initialBalanceText` (caso típico: user calculó, regresó al `.manual`,
+    /// y reabre `.guided` — la sheet debe mostrar el monto previo, no 0).
+    private func openBalanceGuide() {
+        prefillCalculatorFromInitialBalance()
+        showBalanceGuide = true
+    }
+
+    private func prefillCalculatorFromInitialBalance() {
+        let amount = AmountInputHelper.parseDecimal(initialBalanceText)
+        guard amount > 0 else { return }
+        let formatted = AmountInputHelper.formatWithGrouping(amount)
+
+        switch selectedAccountType {
+        case .creditCard:
+            let allEmpty = calcFieldState.directSpendingText.isEmpty
+                && calcFieldState.creditLineText.isEmpty
+                && calcFieldState.availableCreditText.isEmpty
+            if allEmpty {
+                calcFieldState.directSpendingText = formatted
+            }
+        case .general:
+            let allEmpty = calcFieldState.bankAccountsText.isEmpty
+                && calcFieldState.savingsText.isEmpty
+                && calcFieldState.cashText.isEmpty
+                && calcFieldState.creditCardSpendingText.isEmpty
+                && calcFieldState.othersOweMeText.isEmpty
+                && calcFieldState.iOweText.isEmpty
+            if allEmpty {
+                calcFieldState.bankAccountsText = formatted
+            }
+        default: // .checking, .savings, .cash → variant `.simple`
+            if calcFieldState.simpleAmountText.isEmpty {
+                calcFieldState.simpleAmountText = formatted
+            }
+        }
+    }
+
     /// Preview read-only bajo la card `.guided` cuando el user completó el
     /// cálculo. Muestra el monto formateado + botón "Editar" que reabre el
     /// sheet. Mismo `OnboardingFieldSection` que el form manual para que el
@@ -958,23 +1001,36 @@ struct OnboardingView: View {
     private var guidedBalancePreview: some View {
         let amount = AmountInputHelper.parseDecimal(initialBalanceText)
         let signed = balanceIsPositive ? amount : -amount
-        let formatted = appPreferences.currency(signed, currencyCode: accountCurrency.rawValue)
+        let amountStr = appPreferences.number(abs(signed), forceFullPrecision: true)
+        let a11yLabel = appPreferences.currency(signed, currencyCode: accountCurrency.rawValue)
 
         return OnboardingFieldSection(
             title: L10n.Onboarding.accountBalanceLabel,
             titleStyle: secondaryTextStyle
         ) {
             HStack(spacing: DS.Spacing.md) {
-                Text(formatted)
-                    .font(DS.Typography.largeTitle)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(primaryTextStyle)
-                    .accessibilityLabel(formatted)
+                HStack(spacing: DS.Spacing.xs) {
+                    if signed < 0 {
+                        Text("-")
+                            .font(DS.Typography.largeTitle)
+                            .foregroundStyle(primaryTextStyle)
+                            .accessibilityHidden(true)
+                    }
+                    Text(accountCurrency.symbol)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(secondaryTextStyle)
+                    Text(amountStr)
+                        .font(DS.Typography.largeTitle)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(primaryTextStyle)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(a11yLabel)
 
                 Spacer(minLength: DS.Spacing.sm)
 
                 Button {
-                    showBalanceGuide = true
+                    openBalanceGuide()
                 } label: {
                     HStack(spacing: DS.Spacing.xxs) {
                         Image(systemName: "square.and.pencil")
@@ -983,7 +1039,7 @@ struct OnboardingView: View {
                             .font(DS.Typography.subheadline)
                             .fontWeight(.semibold)
                     }
-                    .foregroundStyle(Color.hotPink)
+                    .foregroundStyle(primaryTextStyle)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("onboarding_balance_edit")
@@ -1019,6 +1075,12 @@ struct OnboardingView: View {
                 HStack {
                     Spacer()
                     HStack(spacing: DS.Spacing.xs) {
+                        if !balanceIsPositive {
+                            Text("-")
+                                .font(DS.Typography.largeTitle)
+                                .foregroundStyle(primaryTextStyle)
+                                .accessibilityHidden(true)
+                        }
                         Text(accountCurrency.symbol)
                             .font(DS.Typography.body)
                             .foregroundStyle(secondaryTextStyle)
