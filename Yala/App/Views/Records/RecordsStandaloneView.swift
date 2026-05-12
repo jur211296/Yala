@@ -62,6 +62,11 @@ struct RecordsStandaloneView: View {
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
 
+    /// Controla visibilidad del title navbar (scroll-driven). Patrón espejo
+    /// del que vive en DetailContainerView — RecordsTabView reporta scroll
+    /// via el binding `inlineTitleVisible`.
+    @State private var showInlineTitle: Bool = false
+
     /// Check if voice input can be used (requires accounts and subcategories)
     private var canUseVoiceInput: Bool {
         dataViewModel.canUseVoiceInput
@@ -140,7 +145,8 @@ struct RecordsStandaloneView: View {
                     subcategories: dataViewModel.allSubcategories,
                     transactionDateRange: dataViewModel.computeTransactionDateRange(),
                     defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                    onFilterChange: { recalculateData() }
+                    onFilterChange: { recalculateData() },
+                    inlineTitleVisible: $showInlineTitle
                 )
 
                 // FAB (only when not in selection mode)
@@ -185,7 +191,8 @@ struct RecordsStandaloneView: View {
             }
             .animation(.spring(response: DS.Animation.springResponse, dampingFraction: DS.Animation.springDamping), value: recordsViewModel.isSelectionMode)
             .animation(.spring(response: DS.Animation.springResponse, dampingFraction: DS.Animation.springDamping), value: recordsViewModel.selectedRecordIDs.isEmpty)
-            .navigationTitle(L10n.Tab.records)
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(showInlineTitle ? L10n.Records.title : "")
             .toolbar {
                 if recordsViewModel.isSelectionMode {
                     selectionModeToolbar

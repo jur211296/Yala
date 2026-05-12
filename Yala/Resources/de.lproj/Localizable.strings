@@ -4255,3 +4255,11 @@
 "yalaAI.onboarding.step5.subtitle" = "Sagen Sie Yala jederzeit, was Sie brauchen.";
 "yalaAI.onboarding.step5.tip" = "💡 Versuchen Sie: \"Erfasse einen Kaffee für 5 Euro\" oder \"Wie viel habe ich heute ausgegeben?\"";
 "yalaAI.onboarding.step5.cta" = "Chat starten";
+
+
+// MARK: - Stats Records polish
+
+"stats.records.heroChip" = "Ihre Einträge";
+"stats.records.balanceLabel" = "Saldo";
+"stats.records.motivationalOne" = "1 Eintrag · Guter Anfang";
+"stats.records.motivationalMany %d" = "%d Einträge · Weiter so";

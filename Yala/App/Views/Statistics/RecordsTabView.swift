@@ -3,7 +3,8 @@
 //  Yala
 //
 //  Records tab content extracted from DetailContainerView.
-//  Provides the records list, control bar, filter chips, and empty state.
+//  Provides the records list, hero edge-to-edge (panel-aligned), panel-style
+//  filter bar, and empty state.
 //
 
 import SwiftData
@@ -11,7 +12,7 @@ import SwiftUI
 
 // MARK: - Records Tab View
 
-/// Records tab content with control bar, filter chips, and record list.
+/// Records tab content with hero, filter chips, and record list.
 /// Extracted from DetailContainerView to reduce complexity.
 struct RecordsTabView: View {
     @Environment(SessionState.self) private var sessionState
@@ -30,25 +31,44 @@ struct RecordsTabView: View {
     let defaultCurrencyCode: String
     var onFilterChange: () -> Void
 
+    /// Reporta visibilidad del title navbar al host (DetailContainerView /
+    /// RecordsStandaloneView). `nil` cuando el host no controla title
+    /// scroll-driven — vista sigue funcionando sin reportar.
+    var inlineTitleVisible: Binding<Bool>? = nil
+
     // Custom period picker state
     @State private var showCustomPeriodPicker: Bool = false
 
     var body: some View {
         ScrollView {
-            VStack(spacing: DS.Spacing.none) {
-                controlBar
-                    .padding(.vertical, DS.Spacing.sm)
+            VStack(spacing: DS.Spacing.lg) {
+                // Hero SIEMPRE visible (preserva acceso al period menu incluso en empty state)
+                heroSection
+
+                // FilterBar solo cuando hay filtros activos (panel style)
+                filterBarPanel
 
                 if viewModel.groupedRecords.isEmpty {
                     emptyStateContent
                 } else {
-                    summaryRow
-
                     recordsListContent
                 }
             }
+            .padding(.top, DS.Spacing.sm)
         }
         .scrollViewGlassEdges()
+        .onScrollGeometryChange(for: CGFloat.self) { geo in
+            geo.contentOffset.y
+        } action: { _, offsetY in
+            guard let binding = inlineTitleVisible else { return }
+            let shouldShow = binding.wrappedValue
+                ? offsetY > 0           // hideAt = 0 (oculta al volver al tope)
+                : offsetY >= 4          // showAt = 4 (defensivo vs oscilación con bounce)
+            guard binding.wrappedValue != shouldShow else { return }
+            withAnimation(.easeInOut(duration: 0.2)) {
+                binding.wrappedValue = shouldShow
+            }
+        }
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
@@ -62,11 +82,11 @@ struct RecordsTabView: View {
     }
 
 
-    // MARK: - Control Bar
+    // MARK: - Filter Bar (panel style)
 
-    private var controlBar: some View {
+    private var filterBarPanel: some View {
         FilterControlBar(
-            periodSelector: periodSelector,
+            periodSelector: EmptyView(),                    // vive en heroTopRow
             viewModel: viewModel,
             accounts: accounts,
             categories: categories,
@@ -75,7 +95,9 @@ struct RecordsTabView: View {
             animationValue: viewModel.period,
             transactionTypeFilter: viewModel.transactionTypeFilter,
             onClearTransactionType: { viewModel.transactionTypeFilter = .all },
-            onFilterChange: onFilterChange
+            onFilterChange: onFilterChange,
+            panelStyle: true,
+            inlinePeriodSelector: false
         )
     }
 
@@ -98,90 +120,149 @@ struct RecordsTabView: View {
         .equatable()
     }
 
-    // MARK: - Summary Row
+    // MARK: - Hero Section (edge-to-edge, panel-aligned)
 
-    private var summaryRow: some View {
-        let isIncomeFiltered = viewModel.selectedTransactionNatures == [.income]
-        let isExpenseFiltered = viewModel.selectedTransactionNatures == [.expense]
-        let hasNeedFilter = isIncomeFiltered || isExpenseFiltered
+    private var heroSection: some View {
+        VStack(spacing: DS.Spacing.md) {
+            heroTopRow
+            heroSummaryColumn
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, summaryVerticalPadding)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isHeader)
+    }
 
-        return VStack(alignment: .center, spacing: DS.Spacing.xs) {
-            // Balance (Saldo) - Large and centered (hidden in expenses-only mode)
-            if !sessionState.isExpensesOnlyMode {
+    private var heroTopRow: some View {
+        HStack {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "list.bullet.rectangle")
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                Text(L10n.Stats.Records.heroChip)
+                    .font(DS.Typography.title)
+                    .foregroundStyle(.primary)
+            }
+            Spacer()
+            periodSelector
+        }
+    }
+
+    @ViewBuilder
+    private var heroSummaryColumn: some View {
+        let hasRecords = viewModel.filteredCount > 0
+
+        VStack(alignment: .center, spacing: DS.Spacing.xs) {
+            // Balance label + amount — ocultos en empty state (no hay saldo)
+            // y en isExpensesOnlyMode (idéntico a summaryRow original L110-116).
+            if !sessionState.isExpensesOnlyMode && hasRecords {
+                HStack(spacing: DS.Spacing.xxs) {
+                    Text(L10n.Stats.Records.balanceLabel)
+                    Text("·")
+                    Text(viewModel.period.displayName)
+                }
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+
                 Text(
                     appPreferences.currency(recordsSummary.balance, currencyCode: defaultCurrencyCode)
                 )
                 .font(DS.Typography.largeTitle)
                 .foregroundStyle(.primary)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
             }
 
-            // Income and Expense indicators below (tappable to filter)
-            HStack(spacing: DS.Spacing.md) {
-                // Income button (hidden in expenses-only mode)
-                if !sessionState.isExpensesOnlyMode {
-                    Button {
-                        dsWithAnimation(reduceMotion) {
-                            // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
-                            if isIncomeFiltered {
-                                viewModel.selectedTransactionNatures.removeAll()
-                            } else {
-                                viewModel.selectedTransactionNatures = [.income]
-                            }
-                            onFilterChange()
-                        }
-                    } label: {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Image(systemName: "arrow.up.right")
-                                .font(DS.Typography.labelSmall)
-                                .foregroundStyle(Color.incomeGraph)
-                                .accessibilityHidden(true)
-                            Text(
-                                appPreferences.currency(recordsSummary.income, currencyCode: defaultCurrencyCode)
-                            )
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
-                        }
-                        .opacity(hasNeedFilter && !isIncomeFiltered ? 0.3 : 1.0)
-                    }
-                    .buttonStyle(.plain)
-                }
+            // Income / Expense chips (tappables para filtrar nature).
+            // Visibles también en empty state — patrón actual de summaryRow.
+            incomeExpenseChips
 
-                // Expense button
+            // Subtítulo motivacional (helper retorna nil si count<=0)
+            if let subtitle = RecordsMotivationalLogic.subtitle(forCount: viewModel.filteredCount) {
+                Text(localizedMotivational(subtitle))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func localizedMotivational(_ subtitle: RecordsHeroSubtitle) -> String {
+        switch subtitle {
+        case .one: return L10n.Stats.Records.motivationalOne
+        case .many(let n): return L10n.Stats.Records.motivationalMany(n)
+        }
+    }
+
+    // MARK: - Income / Expense Chips (preserva interacción tap-to-filter del summaryRow original)
+
+    private var incomeExpenseChips: some View {
+        let isIncomeFiltered = viewModel.selectedTransactionNatures == [.income]
+        let isExpenseFiltered = viewModel.selectedTransactionNatures == [.expense]
+        let hasNeedFilter = isIncomeFiltered || isExpenseFiltered
+
+        return HStack(spacing: DS.Spacing.md) {
+            // Income button (hidden in expenses-only mode)
+            if !sessionState.isExpensesOnlyMode {
                 Button {
                     dsWithAnimation(reduceMotion) {
-                        // SSOT: viewModel.selectedTransactionNatures writes to SessionState.shared
-                        if isExpenseFiltered {
-                            // In expenses-only mode, don't allow clearing the expense filter
-                            if !sessionState.isExpensesOnlyMode {
-                                viewModel.selectedTransactionNatures.removeAll()
-                            }
+                        if isIncomeFiltered {
+                            viewModel.selectedTransactionNatures.removeAll()
                         } else {
-                            viewModel.selectedTransactionNatures = [.expense]
+                            viewModel.selectedTransactionNatures = [.income]
                         }
                         onFilterChange()
                     }
                 } label: {
                     HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "arrow.down.right")
+                        Image(systemName: "arrow.up.right")
                             .font(DS.Typography.labelSmall)
-                            .foregroundStyle(Color.expenseGraph)
+                            .foregroundStyle(Color.incomeGraph)
                             .accessibilityHidden(true)
                         Text(
-                            appPreferences.currency(recordsSummary.expense, currencyCode: defaultCurrencyCode)
+                            appPreferences.currency(recordsSummary.income, currencyCode: defaultCurrencyCode)
                         )
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.secondary)
                     }
-                    .opacity(hasNeedFilter && !isExpenseFiltered ? 0.3 : 1.0)
+                    .opacity(hasNeedFilter && !isIncomeFiltered ? 0.3 : 1.0)
                 }
                 .buttonStyle(.plain)
             }
+
+            // Expense button
+            Button {
+                dsWithAnimation(reduceMotion) {
+                    if isExpenseFiltered {
+                        // En expenses-only mode no permitir limpiar el expense filter
+                        if !sessionState.isExpensesOnlyMode {
+                            viewModel.selectedTransactionNatures.removeAll()
+                        }
+                    } else {
+                        viewModel.selectedTransactionNatures = [.expense]
+                    }
+                    onFilterChange()
+                }
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "arrow.down.right")
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(Color.expenseGraph)
+                        .accessibilityHidden(true)
+                    Text(
+                        appPreferences.currency(recordsSummary.expense, currencyCode: defaultCurrencyCode)
+                    )
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                }
+                .opacity(hasNeedFilter && !isExpenseFiltered ? 0.3 : 1.0)
+            }
+            .buttonStyle(.plain)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, summaryVerticalPadding)
     }
 
-    /// Summary from ViewModel (cached, calculated once per filter change instead of per render)
+    /// Summary from ViewModel (cached, calculated once per filter change)
     private var recordsSummary: (balance: Double, income: Double, expense: Double) {
         viewModel.recordsSummary
     }

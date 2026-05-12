@@ -5788,6 +5788,25 @@ enum L10n {
         }
     }
 
+    // MARK: - Stats Records polish (stats-polish-panel-alignment)
+
+    enum Stats {
+        enum Records {
+            static var heroChip: String {
+                ls("stats.records.heroChip", comment: "Records hero chip identity label (e.g. 'Tus registros')")
+            }
+            static var balanceLabel: String {
+                ls("stats.records.balanceLabel", comment: "Records hero balance label preceding the period name (e.g. 'Saldo')")
+            }
+            static var motivationalOne: String {
+                ls("stats.records.motivationalOne", comment: "Records hero motivational subtitle when filteredCount == 1")
+            }
+            static func motivationalMany(_ count: Int) -> String {
+                String(format: ls("stats.records.motivationalMany %d", comment: "Records hero motivational subtitle when filteredCount >= 2 (use %d placeholder)"), count)
+            }
+        }
+    }
+
 }
 
 // MARK: - App Locale

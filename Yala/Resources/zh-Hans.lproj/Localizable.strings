@@ -4258,3 +4258,11 @@
 "yalaAI.onboarding.step5.subtitle" = "随时告诉 Yala 你需要什么。";
 "yalaAI.onboarding.step5.tip" = "💡 试试：\"记录一杯 5 元的咖啡\" 或 \"今天我花了多少？\"";
 "yalaAI.onboarding.step5.cta" = "开始聊天";
+
+
+// MARK: - Stats Records polish
+
+"stats.records.heroChip" = "你的记录";
+"stats.records.balanceLabel" = "余额";
+"stats.records.motivationalOne" = "1 条记录 · 好的开始";
+"stats.records.motivationalMany %d" = "%d 条记录 · 继续保持";

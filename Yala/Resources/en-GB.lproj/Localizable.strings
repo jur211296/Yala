@@ -335,3 +335,11 @@
 "setup.demo.budget.alertCaption" = "We notify you at 80%";
 "setup.demo.scheduled.nameExample" = "Netflix";
 "setup.demo.scheduled.notifCaption" = "We notify you 3 days before";
+
+
+// MARK: - Stats Records polish
+
+"stats.records.heroChip" = "Your records";
+"stats.records.balanceLabel" = "Balance";
+"stats.records.motivationalOne" = "1 record · Great start";
+"stats.records.motivationalMany %d" = "%d records · Keep it up";

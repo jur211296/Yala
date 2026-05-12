@@ -32,6 +32,11 @@ struct DetailContainerView: View {
 
     @State private var selectedTab: DetailViewTab = .records
 
+    /// Controla visibilidad del title navbar (scroll-driven). Solo Records
+    /// reporta scroll en este commit; las otras 3 tabs muestran su tab.title
+    /// estático inline hasta que su sesión de polish las migre.
+    @State private var showInlineTitle: Bool = false
+
     // MARK: - UI State
 
     @State private var showDeleteConfirmation = false
@@ -118,6 +123,28 @@ struct DetailContainerView: View {
         _selectedTab = State(initialValue: initialTab)
     }
 
+    // MARK: - Navigation Title
+
+    /// Title navbar dinámico según tab y reporte de scroll.
+    /// - Records: scroll-driven (vacío al tope, "Registros" al scrollear ≥4pt).
+    /// - Otras 3 tabs: tab.title estático inline durante la transición del épico.
+    ///
+    /// TODO(stats-polish-epic): cuando Insights/Trends/Categories migren al patrón
+    /// scroll-driven (cada uno reportará via `inlineTitleVisible` binding),
+    /// reemplazar este switch por:
+    ///   private var currentNavigationTitle: String {
+    ///       showInlineTitle ? selectedTab.title : ""
+    ///   }
+    /// Y eliminar la rama estática actual de las 3 tabs.
+    private var currentNavigationTitle: String {
+        switch selectedTab {
+        case .records:    return showInlineTitle ? L10n.Records.title : ""
+        case .insights:   return DetailViewTab.insights.title
+        case .trends:     return DetailViewTab.trends.title
+        case .categories: return DetailViewTab.categories.title
+        }
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -186,6 +213,9 @@ struct DetailContainerView: View {
                     sessionState.selectedDetailTab = newTab
                 }
                 if newTab == .insights { scheduleRecalculation(reload: false) }
+                // Reset title scroll-driven al cambiar tab. Records lo re-actualiza
+                // en el primer frame post-reaparición via onScrollGeometryChange.
+                showInlineTitle = false
             }
             .onChange(of: sessionState.selectedMainTab) { _, newTab in
                 // Sync filters when navigating to Statistics tab (view may already be mounted)
@@ -216,6 +246,8 @@ struct DetailContainerView: View {
                 case .image: showImageSelection = true
                 }
             }
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(currentNavigationTitle)
     }
 
     // MARK: - Main Content
@@ -338,7 +370,8 @@ struct DetailContainerView: View {
                 subcategories: dataViewModel.allSubcategories,
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
                 defaultCurrencyCode: defaultCurrencyCode,
-                onFilterChange: { recalculateData() }
+                onFilterChange: { recalculateData() },
+                inlineTitleVisible: $showInlineTitle
             )
         }
     }

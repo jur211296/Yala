@@ -4258,3 +4258,11 @@
 "yalaAI.onboarding.step5.subtitle" = "Vertel Yala wanneer je maar wilt wat je nodig hebt.";
 "yalaAI.onboarding.step5.tip" = "💡 Probeer: \"Leg een koffie van €5 vast\" of \"Hoeveel heb ik vandaag uitgegeven?\"";
 "yalaAI.onboarding.step5.cta" = "Beginnen met chatten";
+
+
+// MARK: - Stats Records polish
+
+"stats.records.heroChip" = "Jouw boekingen";
+"stats.records.balanceLabel" = "Saldo";
+"stats.records.motivationalOne" = "1 boeking · Goede start";
+"stats.records.motivationalMany %d" = "%d boekingen · Ga zo door";

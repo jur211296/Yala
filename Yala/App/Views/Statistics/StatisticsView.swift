@@ -12,10 +12,9 @@ struct StatisticsView: View {
 
     var body: some View {
         NavigationStack {
-            // DetailContainerView manages its own content, navigation, and toolbar
+            // DetailContainerView manages its own content, navigation, toolbar,
+            // and navigation title (scroll-driven inline title per tab).
             DetailContainerView(initialTab: sessionState.selectedDetailTab)
-                .navigationTitle(L10n.Statistics.title)
-                .navigationBarTitleDisplayMode(.large)
         }
     }
 }

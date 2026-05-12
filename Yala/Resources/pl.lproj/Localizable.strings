@@ -4258,3 +4258,11 @@
 "yalaAI.onboarding.step5.subtitle" = "Kiedy zechcesz, powiedz Yali czego potrzebujesz.";
 "yalaAI.onboarding.step5.tip" = "💡 Spróbuj: \"Zapisz kawę za 5 zł\" albo \"Ile wydałem dzisiaj?\"";
 "yalaAI.onboarding.step5.cta" = "Zacznij rozmawiać";
+
+
+// MARK: - Stats Records polish
+
+"stats.records.heroChip" = "Twoje wpisy";
+"stats.records.balanceLabel" = "Saldo";
+"stats.records.motivationalOne" = "1 wpis · Dobry początek";
+"stats.records.motivationalMany %d" = "%d wpisów · Tak trzymaj";
