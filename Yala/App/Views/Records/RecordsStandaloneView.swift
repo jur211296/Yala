@@ -62,9 +62,7 @@ struct RecordsStandaloneView: View {
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
 
-    /// Controla visibilidad del title navbar (scroll-driven). Patrón espejo
-    /// del que vive en DetailContainerView — RecordsTabView reporta scroll
-    /// via el binding `inlineTitleVisible`.
+    /// Visibilidad scroll-driven del title navbar (reportada por RecordsTabView).
     @State private var showInlineTitle: Bool = false
 
     /// Check if voice input can be used (requires accounts and subcategories)

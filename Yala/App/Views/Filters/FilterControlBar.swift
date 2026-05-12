@@ -2,29 +2,20 @@
 //  FilterControlBar.swift
 //  Yala
 //
-//  Shared control bar with period selector, filter chips, and optional trailing content.
-//  Used by TrendsTabView, CategoriesTabView, InsightsTabView, RecordsTabView and
-//  FinancialReportView.
+//  Shared control bar with period selector, filter chips, and optional trailing
+//  content. Used by TrendsTabView, CategoriesTabView, InsightsTabView, RecordsTabView
+//  and FinancialReportView.
 //
-//  Modos:
-//  - Legacy (default): HStack inline con periodSelector + chips + trailingContent.
-//    Usado por Insights/Trends/Categories/FinancialReport hasta su migración.
-//  - Panel style (`panelStyle: true`): chips dentro de `PanelSection` con
-//    `GlassEffectContainer` (alineado con PanelFilterControlBar). Period selector
-//    vive en el hero del host; `trailingContent` se ignora.
+//  Two render modes:
+//  - Legacy (`panelStyle = false`, default): HStack inline con periodSelector + chips
+//    + trailingContent. Comportamiento pre-polish para callsites no migrados.
+//  - Panel style (`panelStyle = true`): chips dentro de `PanelSection` con
+//    `GlassEffectContainer` (mismo lenguaje que `PanelFilterControlBar`). El host
+//    coloca el periodSelector en su hero; `trailingContent` se ignora.
 //
-//  TODO(stats-polish-epic): Cuando InsightsTabView, TrendsTabView, CategoriesTabView
-//  y FinancialReportView migren al panel style, eliminar:
-//    - Property `panelStyle: Bool = false` (siempre true en Stats)
-//    - Property `inlinePeriodSelector: Bool = true` (siempre false)
-//    - Branch legacy entero del body (HStack inline)
-//    - Param `periodSelector` (vive en el hero, no en el control bar)
-//    - Param `trailingContent` (host lo coloca aparte)
-//    - Convenience init `where TrailingContent == EmptyView` con sus
-//      2 params extra `panelStyle`/`inlinePeriodSelector` (queda obsoleta entera)
-//    - Helper `FilterControlBarLogic` + sus tests
-//  Resultado: componente único panel-style sin flags.
-//  Ver Backlog/stats-polish-panel-alignment.md — sección "Cleanup post-épico".
+//  TODO(stats-polish-epic): eliminar `panelStyle`/`inlinePeriodSelector`, el branch
+//  legacy y la convenience init cuando las 4 tabs Stats + FinancialReport migren.
+//  Ver Backlog/stats-polish-panel-alignment.md "Cleanup post-épico".
 //
 
 import SwiftData

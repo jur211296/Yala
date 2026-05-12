@@ -121,6 +121,26 @@ extension View {
             inactiveColor: inactiveColor
         ))
     }
+
+    /// Reporta visibilidad scroll-driven al binding según thresholds con histéresis:
+    /// muestra cuando `offset >= showAt`, oculta cuando `offset <= hideAt`. Valores
+    /// intermedios preservan el estado previo (evita oscilación con bounce).
+    ///
+    /// Aplicar al ScrollView; el host controla el binding y decide qué hacer con
+    /// la visibilidad (típicamente `.navigationTitle(visible ? title : "")`).
+    /// Si `visible` es `nil`, el modifier no monta el listener — útil cuando el
+    /// host no controla title scroll-driven.
+    func scrollDrivenVisibility(
+        _ visible: Binding<Bool>?,
+        showAt: CGFloat = 4,
+        hideAt: CGFloat = 0
+    ) -> some View {
+        modifier(ScrollDrivenVisibilityModifier(
+            visible: visible,
+            showAt: showAt,
+            hideAt: hideAt
+        ))
+    }
 }
 
 // MARK: - Solid Card Modifier (matches PanelView widget styling)
@@ -545,6 +565,34 @@ extension View {
             from: nil,
             for: nil
         )
+    }
+}
+
+// MARK: - Scroll-Driven Visibility
+
+/// Histeresis-based visibility flag driven by scroll offset. When `visible == nil`
+/// the listener is not attached at all — zero cost for callers that don't need it.
+struct ScrollDrivenVisibilityModifier: ViewModifier {
+    let visible: Binding<Bool>?
+    let showAt: CGFloat
+    let hideAt: CGFloat
+
+    func body(content: Content) -> some View {
+        if let visible {
+            content.onScrollGeometryChange(for: CGFloat.self) { geo in
+                geo.contentOffset.y
+            } action: { _, offsetY in
+                let shouldShow = visible.wrappedValue
+                    ? offsetY > hideAt
+                    : offsetY >= showAt
+                guard visible.wrappedValue != shouldShow else { return }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    visible.wrappedValue = shouldShow
+                }
+            }
+        } else {
+            content
+        }
     }
 }
 

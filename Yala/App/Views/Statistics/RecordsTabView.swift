@@ -31,9 +31,8 @@ struct RecordsTabView: View {
     let defaultCurrencyCode: String
     var onFilterChange: () -> Void
 
-    /// Reporta visibilidad del title navbar al host (DetailContainerView /
-    /// RecordsStandaloneView). `nil` cuando el host no controla title
-    /// scroll-driven — vista sigue funcionando sin reportar.
+    /// Cuando el host quiere title scroll-driven, pasa un binding aquí.
+    /// `nil` desactiva el listener (la vista funciona idéntico sin reportar).
     var inlineTitleVisible: Binding<Bool>? = nil
 
     // Custom period picker state
@@ -57,18 +56,7 @@ struct RecordsTabView: View {
             .padding(.top, DS.Spacing.sm)
         }
         .scrollViewGlassEdges()
-        .onScrollGeometryChange(for: CGFloat.self) { geo in
-            geo.contentOffset.y
-        } action: { _, offsetY in
-            guard let binding = inlineTitleVisible else { return }
-            let shouldShow = binding.wrappedValue
-                ? offsetY > 0           // hideAt = 0 (oculta al volver al tope)
-                : offsetY >= 4          // showAt = 4 (defensivo vs oscilación con bounce)
-            guard binding.wrappedValue != shouldShow else { return }
-            withAnimation(.easeInOut(duration: 0.2)) {
-                binding.wrappedValue = shouldShow
-            }
-        }
+        .scrollDrivenVisibility(inlineTitleVisible)
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
