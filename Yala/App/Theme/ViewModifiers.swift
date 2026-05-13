@@ -121,6 +121,7 @@ extension View {
             inactiveColor: inactiveColor
         ))
     }
+
 }
 
 // MARK: - Solid Card Modifier (matches PanelView widget styling)

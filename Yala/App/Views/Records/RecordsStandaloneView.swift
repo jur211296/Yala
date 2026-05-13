@@ -185,7 +185,7 @@ struct RecordsStandaloneView: View {
             }
             .animation(.spring(response: DS.Animation.springResponse, dampingFraction: DS.Animation.springDamping), value: recordsViewModel.isSelectionMode)
             .animation(.spring(response: DS.Animation.springResponse, dampingFraction: DS.Animation.springDamping), value: recordsViewModel.selectedRecordIDs.isEmpty)
-            .navigationTitle(L10n.Tab.records)
+            .navigationTitle(L10n.Records.title)
             .toolbar {
                 if recordsViewModel.isSelectionMode {
                     selectionModeToolbar

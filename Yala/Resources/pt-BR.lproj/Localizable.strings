@@ -4255,3 +4255,9 @@
 "yalaAI.onboarding.step5.subtitle" = "Quando quiser, fale com o Yala o que precisa.";
 "yalaAI.onboarding.step5.tip" = "💡 Tente: \"Registra um café de 5 reais\" ou \"Quanto gastei hoje?\"";
 "yalaAI.onboarding.step5.cta" = "Começar a conversar";
+
+
+// MARK: - Stats Records polish
+
+"stats.records.motivationalOne" = "1 registro · Bom começo";
+"stats.records.motivationalMany %d" = "%d registros · Continue assim";

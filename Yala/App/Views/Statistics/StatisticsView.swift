@@ -12,7 +12,6 @@ struct StatisticsView: View {
 
     var body: some View {
         NavigationStack {
-            // DetailContainerView manages its own content, navigation, and toolbar
             DetailContainerView(initialTab: sessionState.selectedDetailTab)
                 .navigationTitle(L10n.Statistics.title)
                 .navigationBarTitleDisplayMode(.large)

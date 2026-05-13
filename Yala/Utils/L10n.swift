@@ -5788,6 +5788,19 @@ enum L10n {
         }
     }
 
+    // MARK: - Stats Records polish (stats-polish-panel-alignment)
+
+    enum Stats {
+        enum Records {
+            static var motivationalOne: String {
+                ls("stats.records.motivationalOne", comment: "Records hero motivational subtitle when filteredCount == 1")
+            }
+            static func motivationalMany(_ count: Int) -> String {
+                String(format: ls("stats.records.motivationalMany %d", comment: "Records hero motivational subtitle when filteredCount >= 2 (use %d placeholder)"), count)
+            }
+        }
+    }
+
 }
 
 // MARK: - App Locale

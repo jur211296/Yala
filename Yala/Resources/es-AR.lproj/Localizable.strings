@@ -451,3 +451,8 @@
 "setup.demo.budget.alertCaption" = "Te avisamos al 80%";
 "setup.demo.scheduled.nameExample" = "Netflix";
 "setup.demo.scheduled.notifCaption" = "Te avisamos 3 días antes";
+
+
+// MARK: - Stats Records polish
+
+"stats.records.motivationalMany %d" = "%d registros · Seguí así";

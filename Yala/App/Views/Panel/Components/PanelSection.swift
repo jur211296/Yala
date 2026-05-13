@@ -30,13 +30,22 @@ struct PanelSection<Content: View, Footer: View>: View {
     var seeMoreAccessibilityLabel: String? = nil
     var seeMoreAccessibilityHint: String? = nil
 
+    /// Modo compacto: reduce el spacing header → content y content → footer
+    /// de `.lg` (16) a `.sm` (8). Útil cuando la section es secundaria
+    /// (ej. "Filtros aplicados" en Records).
+    var compact: Bool = false
+
     @ViewBuilder var content: () -> Content
     @ViewBuilder var footer: () -> Footer
 
+    private var sectionSpacing: CGFloat {
+        compact ? DS.Spacing.sm : DS.Spacing.lg
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+        VStack(alignment: .leading, spacing: sectionSpacing) {
             header
-            VStack(spacing: DS.Spacing.lg) { content() }
+            VStack(spacing: sectionSpacing) { content() }
             footer()
         }
     }
@@ -47,7 +56,7 @@ struct PanelSection<Content: View, Footer: View>: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 HStack(spacing: DS.Spacing.xs) {
                     Text(title)
-                        .font(DS.Typography.title)
+                        .font(compact ? DS.Typography.subheadlineEmphasized : DS.Typography.title)
                     if let onSeeMore {
                         seeMoreButton(action: onSeeMore)
                     }
@@ -111,6 +120,7 @@ extension PanelSection where Footer == EmptyView {
         onSeeMore: (() -> Void)? = nil,
         seeMoreAccessibilityLabel: String? = nil,
         seeMoreAccessibilityHint: String? = nil,
+        compact: Bool = false,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.title = title
@@ -119,6 +129,7 @@ extension PanelSection where Footer == EmptyView {
         self.onSeeMore = onSeeMore
         self.seeMoreAccessibilityLabel = seeMoreAccessibilityLabel
         self.seeMoreAccessibilityHint = seeMoreAccessibilityHint
+        self.compact = compact
         self.content = content
         self.footer = { EmptyView() }
     }

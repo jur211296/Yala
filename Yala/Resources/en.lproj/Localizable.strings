@@ -4260,3 +4260,9 @@
 "yalaAI.onboarding.step5.subtitle" = "Whenever you want, tell Yala what you need.";
 "yalaAI.onboarding.step5.tip" = "💡 Try: \"Log a $5 coffee\" or \"How much did I spend today?\"";
 "yalaAI.onboarding.step5.cta" = "Start chatting";
+
+
+// MARK: - Stats Records polish
+
+"stats.records.motivationalOne" = "1 record · Great start";
+"stats.records.motivationalMany %d" = "%d records · Keep it up";

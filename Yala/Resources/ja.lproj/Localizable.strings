@@ -4258,3 +4258,9 @@
 "yalaAI.onboarding.step5.subtitle" = "いつでもYalaに必要なことを伝えてください。";
 "yalaAI.onboarding.step5.tip" = "💡 例：「500円のコーヒーを記録して」「今日いくら使った？」";
 "yalaAI.onboarding.step5.cta" = "チャットを始める";
+
+
+// MARK: - Stats Records polish
+
+"stats.records.motivationalOne" = "1件の記録 · 良いスタートです";
+"stats.records.motivationalMany %d" = "%d件の記録 · その調子です";

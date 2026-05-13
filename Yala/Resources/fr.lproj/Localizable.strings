@@ -4256,3 +4256,9 @@
 "yalaAI.onboarding.step5.subtitle" = "Quand vous voulez, dites à Yala ce dont vous avez besoin.";
 "yalaAI.onboarding.step5.tip" = "💡 Essayez : « Enregistre un café à 5 euros » ou « Combien j'ai dépensé aujourd'hui ? »";
 "yalaAI.onboarding.step5.cta" = "Commencer à chatter";
+
+
+// MARK: - Stats Records polish
+
+"stats.records.motivationalOne" = "1 enregistrement · Bon début";
+"stats.records.motivationalMany %d" = "%d enregistrements · Continuez ainsi";
