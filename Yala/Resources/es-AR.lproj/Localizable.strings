@@ -452,7 +452,6 @@
 "setup.demo.scheduled.nameExample" = "Netflix";
 "setup.demo.scheduled.notifCaption" = "Te avisamos 3 días antes";
 
-
 // MARK: - Stats Records polish
 
 "stats.records.motivationalMany %d" = "%d registros · Seguí así";
@@ -468,6 +467,11 @@
 
 "stats.insights.modeDetail" = "Detalle";
 
+// MARK: - Stats Trends polish (stats-polish-panel-alignment)
+
+"stats.trends.insight.varDownExpense %d %@" = "Bajaste tu gasto %d%% vs %@. Mantené el ritmo.";
+
 // MARK: - Stats Insights universal rules (voseo es-AR override)
 "insights.ruleDailyAverage %@" = "Promediás %@ por día.";
 "insights.ruleSavingsPositive %d" = "Ahorrás un %d%% de tus ingresos.";
+"stats.trends.heroVarUp %d %@" = "%d%% por encima vs %@ · Seguí así";

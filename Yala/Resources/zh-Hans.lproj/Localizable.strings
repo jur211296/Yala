@@ -795,7 +795,6 @@
 "widget.ofExpense" = "占支出";
 "widget.categoryAbbr" = "类";
 
-
 "common.others" = "其他";
 "common.remaining" = "剩余";
 "widget.categories" = "类别";
@@ -811,7 +810,6 @@
 "widget.recordsWillAppear" = "添加交易后,它们将显示在这里。";
 "widget.total" = "总计";
 "widget.average" = "平均";
-
 
 "common.uncategorized" = "未分类";
 "cashFlow.netFlow" = "净流量";
@@ -976,9 +974,7 @@
 "common.deleteError" = "无法删除。请再试一次。";
 "widget.noExpensesNeedPeriod" = "本时间段没有按需求记录的支出。";
 
-
 "account.addAccount" = "添加账户";
-
 
 "common.date" = "日期";
 "common.amount" = "金额";
@@ -989,12 +985,10 @@
 "common.details" = "详情";
 "common.select" = "选择";
 
-
 "statistics.title" = "统计";
 "statistics.trends" = "趋势";
 "statistics.categories" = "分布";
 "statistics.records" = "记录";
-
 
 "period.thisWeek" = "本周";
 "period.last7Days" = "最近 7 天";
@@ -1018,11 +1012,9 @@
 "trendType.income" = "收入";
 "trendType.expense" = "支出";
 
-
 "cashFlowViewType.total" = "总计";
 "cashFlowViewType.byAccount" = "按账户";
 "cashFlowViewType.byCurrency" = "按货币";
-
 
 "listViewType.categories" = "类别";
 "listViewType.subcategories" = "子类别";
@@ -1149,7 +1141,6 @@
 "profile.importSuccess" = "导入完成";
 "profile.importError" = "导入错误";
 
-
 "profile.personalDetails" = "个人详情";
 "profile.changePhoto" = "更换照片";
 "profile.addPhoto" = "添加照片";
@@ -1179,14 +1170,12 @@
 "settings.recommendedCurrencies" = "推荐";
 "common.lastUpdate" = "最后更新:";
 
-
 "common.inactive" = "未活跃";
 "common.hidden" = "已隐藏";
 "common.archived" = "已归档";
 "empty.tagsDescription" = "创建标签来灵活地组织你的交易。";
 "empty.categoriesDescription" = "创建类别来分类你的收入和支出。";
 "empty.accountsDescription" = "创建账户来按银行、现金或其他方式组织你的财务。";
-
 
 "profile.appearance" = "外观";
 "settings.theme" = "主题";
@@ -1231,7 +1220,6 @@
 "settings.iconChangeFailed" = "更改图标失败:%@";
 "settings.deleteDataError" = "删除数据时出现问题";
 "settings.deleteDataUnknownError" = "删除数据时出了点问题。请重试。";
-
 
 "transaction.newTransaction" = "新交易";
 "transaction.editTransaction" = "编辑交易";
@@ -1437,7 +1425,6 @@
 "subcategory.unassigned" = "未分配";
 "subcategory.deleteTransactionsConfirmMessage" = "%d 笔交易将被永久删除。此操作无法撤销。";
 
-
 "account.deleteBalanceError" = "无法删除此账户,因为它的余额不为零。请将余额调为 0 后再删除。";
 "account.type.general" = "通用";
 "account.type.cash" = "现金";
@@ -1447,8 +1434,6 @@
 "account.type.investment" = "投资";
 "account.type.loan" = "贷款";
 "account.type.other" = "其他";
-
-
 
 "iconPicker.title" = "自定义";
 "iconPicker.preview" = "预览";
@@ -1474,7 +1459,6 @@
 "iconPicker.symbols" = "符号";
 "iconPicker.direction" = "方向";
 "iconPicker.other" = "其他";
-
 
 "need.title" = "支出需求";
 "need.incomeNotApplicable" = "需求分类仅适用于支出";
@@ -2234,7 +2218,6 @@
 "tipkit.cfTable.available.message" = "在这里你可以看到每月还剩多少(或还差多少)。";
 "tipkit.cfTable.add.title" = "添加行";
 "tipkit.cfTable.add.message" = "如果缺少某项收入或支出,在此添加。";
-
 
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "语音输入";
@@ -3333,7 +3316,6 @@
 "setup.demo.scheduled.nameExample" = "Netflix";
 "setup.demo.scheduled.notifCaption" = "我们会在 3 天前提醒你";
 
-
 "setup.personalize.navTitle" = "个性化你的 Yala";
 "setup.personalize.title" = "让它属于你";
 "setup.personalize.subtitle" = "加点个人风格。更换主题、图标或小组件外观。";
@@ -3640,7 +3622,6 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "我没听懂。试试:「咖啡 50」或「午餐 25」";
 "shortcut.siriNatural.success.partial" = "已记录 %1$lld / %2$lld(有些我没听懂)。请到收件箱查看。";
 
-
 /* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
 "panel.widgetInfo.addToPanel" = "添加到面板";
 
@@ -3664,7 +3645,6 @@
 
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "按期间";
-
 
 // MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
@@ -3716,7 +3696,6 @@
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
 "panel.widgetInfo.cashFlow.chip4" = "可交互";
-
 
 /* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
 "panel.widgetInfo.categoriesPie.title" = "按类别分布";
@@ -3874,7 +3853,6 @@
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
 "panel.widgetInfo.expensesByNeed.largeHowA" = "在柱上滑动手指可查看某一时间点的分项——必要、优先等各占多少及合计。点击图例中的某个胶囊,可仅显示该需求类型并据此筛选面板。";
 
-
 /* Panel Polish #2 — Title sheet pedagógico TopCategories */
 "panel.widgetInfo.topCategories.title" = "主要类别";
 
@@ -3937,7 +3915,6 @@
 
 /* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
 "panel.widgetInfo.topSubcategories.regularHowA" = "点击某一行可按该子类别筛选面板其余内容。使用上方的胶囊筛选某一类别——或者,若你已在其他小组件筛选了某个类别,选择器会锁定为该类别。";
-
 
 /* Panel Polish #2 — Title sheet pedagógico RecentRecords */
 "panel.widgetInfo.recentRecords.title" = "最近的记录";
@@ -4013,7 +3990,6 @@
 
 /* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
 "panel.widgetInfo.budgets.howA" = "点击某个预算可按其类别或标签的交易筛选面板其余内容。再次点击可取消筛选。";
-
 
 /* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
 "panel.widgetInfo.exchangeRate.title" = "汇率";
@@ -4263,7 +4239,6 @@
 "yalaAI.onboarding.step5.tip" = "💡 试试：\"记录一杯 5 元的咖啡\" 或 \"今天我花了多少？\"";
 "yalaAI.onboarding.step5.cta" = "开始聊天";
 
-
 // MARK: - Stats Records polish
 
 "stats.records.motivationalOne" = "1 条记录 · 好的开始";
@@ -4279,3 +4254,27 @@
 "stats.insights.need.dailyFormat %@" = "≈ %@/天";
 
 "stats.insights.modeDetail" = "详情";
+
+// MARK: - Stats Trends polish (stats-polish-panel-alignment)
+
+"stats.trends.comparisonTitle" = "对比";
+"stats.trends.insightTitleFree %@" = "你的%@速览";
+"stats.trends.insightTitlePro" = "周期分析";
+"stats.trends.refineWithAI" = "用 AI 进一步分析";
+"stats.trends.generateAI" = "生成 AI 分析";
+"stats.trends.regenerate" = "重新生成";
+"stats.trends.aiFootnote" = "AI 分析";
+"stats.trends.heroOnset" = "你与 Yala 的第一个周期";
+"stats.trends.heroStable" = "你的余额保持稳定";
+"stats.trends.heroVarUp %d %@" = "比%2$@高出%1$d%% · 继续保持";
+"stats.trends.heroVarDown %d %@" = "比%2$@低%1$d%% · 加油，一步一步来";
+"stats.trends.insight.onset %@" = "这是你与 Yala 的第一个%@";
+"stats.trends.insight.varUpExpense %d %@" = "你的支出比%2$@增加了 %1$d%%。一起来调整吧。";
+"stats.trends.insight.varDownExpense %d %@" = "你的支出比%2$@减少了 %1$d%%。继续保持。";
+"stats.trends.insight.varUpIncome %d %@" = "你的收入比%2$@增长了 %1$d%%。做得好。";
+"stats.trends.insight.varDownIncome %d %@" = "你的收入比%2$@减少了 %1$d%%。";
+"stats.trends.insight.varUpBalance %d %@" = "你的余额比%2$@增长了 %1$d%%。";
+"stats.trends.insight.varDownBalance %d %@" = "你的余额比%2$@减少了 %1$d%%。";
+"stats.trends.insight.stableExpense" = "你的支出保持稳定。";
+"stats.trends.insight.stableIncome" = "你的收入保持稳定。";
+"stats.trends.insight.stableBalance" = "你的余额保持稳定。";

@@ -5836,6 +5836,73 @@ enum L10n {
                 ls("stats.insights.modeDetail", comment: "Content mode pill label: detailed monthly figures view")
             }
         }
+        enum Trends {
+            static var comparisonTitle: String {
+                ls("stats.trends.comparisonTitle", comment: "Title for the period comparison section (M/A selector to the right)")
+            }
+            static func insightTitleFree(_ period: String) -> String {
+                String(format: ls("stats.trends.insightTitleFree %@", comment: "Trend Insight Card title for Free users (param: period name, e.g., 'mes')"), period)
+            }
+            static var insightTitlePro: String {
+                ls("stats.trends.insightTitlePro", comment: "Trend Insight Card title for Pro users")
+            }
+            static var refineWithAI: String {
+                ls("stats.trends.refineWithAI", comment: "CTA chip in Free trend insight card — opens upsell sheet")
+            }
+            static var generateAI: String {
+                ls("stats.trends.generateAI", comment: "CTA in Pro pre-AI trend insight card — triggers AI generation")
+            }
+            static var regenerate: String {
+                ls("stats.trends.regenerate", comment: "CTA in Pro post-AI trend insight card — regenerates AI analysis")
+            }
+            static var aiFootnote: String {
+                ls("stats.trends.aiFootnote", comment: "Footer label in Pro post-AI trend insight card balancing the Regenerate chip — identitarian tag")
+            }
+            static var heroOnset: String {
+                ls("stats.trends.heroOnset", comment: "Hero subtitle when no previous period comparable (first month / .allTime)")
+            }
+            static var heroStable: String {
+                ls("stats.trends.heroStable", comment: "Hero subtitle when |balance variation| < 5% (no significant change)")
+            }
+            static func heroVarUp(_ percent: Int, _ previousPeriod: String) -> String {
+                String(format: ls("stats.trends.heroVarUp %d %@", comment: "Hero subtitle when balance variation positive ≥5% (params: percent, previousPeriod label e.g. 'Abr 26')"), percent, previousPeriod)
+            }
+            static func heroVarDown(_ percent: Int, _ previousPeriod: String) -> String {
+                String(format: ls("stats.trends.heroVarDown %d %@", comment: "Hero subtitle when balance variation negative ≥5% (params: percent, previousPeriod label e.g. 'Abr 26')"), percent, previousPeriod)
+            }
+            enum Insight {
+                static func onset(_ period: String) -> String {
+                    String(format: ls("stats.trends.insight.onset %@", comment: "Trend Insight: user has no previous period (first %@: period name)"), period)
+                }
+                static func varUpExpense(_ percent: Int, _ previousPeriod: String) -> String {
+                    String(format: ls("stats.trends.insight.varUpExpense %d %@", comment: "Trend Insight: expense rose %d%% vs %@ (previous period label)"), percent, previousPeriod)
+                }
+                static func varDownExpense(_ percent: Int, _ previousPeriod: String) -> String {
+                    String(format: ls("stats.trends.insight.varDownExpense %d %@", comment: "Trend Insight: expense fell %d%% vs %@ (previous period label)"), percent, previousPeriod)
+                }
+                static func varUpIncome(_ percent: Int, _ previousPeriod: String) -> String {
+                    String(format: ls("stats.trends.insight.varUpIncome %d %@", comment: "Trend Insight: income rose %d%% vs %@ (previous period label)"), percent, previousPeriod)
+                }
+                static func varDownIncome(_ percent: Int, _ previousPeriod: String) -> String {
+                    String(format: ls("stats.trends.insight.varDownIncome %d %@", comment: "Trend Insight: income fell %d%% vs %@ (previous period label)"), percent, previousPeriod)
+                }
+                static func varUpBalance(_ percent: Int, _ previousPeriod: String) -> String {
+                    String(format: ls("stats.trends.insight.varUpBalance %d %@", comment: "Trend Insight: balance rose %d%% vs %@ (previous period label)"), percent, previousPeriod)
+                }
+                static func varDownBalance(_ percent: Int, _ previousPeriod: String) -> String {
+                    String(format: ls("stats.trends.insight.varDownBalance %d %@", comment: "Trend Insight: balance fell %d%% vs %@ (previous period label)"), percent, previousPeriod)
+                }
+                static var stableExpense: String {
+                    ls("stats.trends.insight.stableExpense", comment: "Trend Insight: expense holds stable (variation < 5%)")
+                }
+                static var stableIncome: String {
+                    ls("stats.trends.insight.stableIncome", comment: "Trend Insight: income holds stable (variation < 5%)")
+                }
+                static var stableBalance: String {
+                    ls("stats.trends.insight.stableBalance", comment: "Trend Insight: balance holds stable (variation < 5%)")
+                }
+            }
+        }
     }
 
 }

@@ -795,7 +795,6 @@
 "widget.ofExpense" = "支出に対して";
 "widget.categoryAbbr" = "カテ.";
 
-
 "common.others" = "その他";
 "common.remaining" = "残り";
 "widget.categories" = "カテゴリー";
@@ -811,7 +810,6 @@
 "widget.recordsWillAppear" = "取引を追加すると、ここに表示されます。";
 "widget.total" = "合計";
 "widget.average" = "平均";
-
 
 "common.uncategorized" = "未分類";
 "cashFlow.netFlow" = "純フロー";
@@ -976,9 +974,7 @@
 "common.deleteError" = "削除できませんでした。もう一度お試しください。";
 "widget.noExpensesNeedPeriod" = "この期間に性質別の支出記録はありません。";
 
-
 "account.addAccount" = "口座を追加";
-
 
 "common.date" = "日付";
 "common.amount" = "金額";
@@ -989,12 +985,10 @@
 "common.details" = "詳細";
 "common.select" = "選択";
 
-
 "statistics.title" = "統計";
 "statistics.trends" = "推移";
 "statistics.categories" = "内訳";
 "statistics.records" = "記録";
-
 
 "period.thisWeek" = "今週";
 "period.last7Days" = "過去7日間";
@@ -1018,11 +1012,9 @@
 "trendType.income" = "収入";
 "trendType.expense" = "支出";
 
-
 "cashFlowViewType.total" = "合計";
 "cashFlowViewType.byAccount" = "口座別";
 "cashFlowViewType.byCurrency" = "通貨別";
-
 
 "listViewType.categories" = "カテゴリー";
 "listViewType.subcategories" = "サブカテゴリー";
@@ -1149,7 +1141,6 @@
 "profile.importSuccess" = "インポート完了";
 "profile.importError" = "インポートエラー";
 
-
 "profile.personalDetails" = "個人情報";
 "profile.changePhoto" = "写真を変更";
 "profile.addPhoto" = "写真を追加";
@@ -1179,14 +1170,12 @@
 "settings.recommendedCurrencies" = "おすすめ";
 "common.lastUpdate" = "最終更新:";
 
-
 "common.inactive" = "非アクティブ";
 "common.hidden" = "非表示";
 "common.archived" = "アーカイブ済み";
 "empty.tagsDescription" = "タグを作成して取引を柔軟に整理しましょう。";
 "empty.categoriesDescription" = "カテゴリーを作成して収入と支出を分類しましょう。";
 "empty.accountsDescription" = "口座を作成して銀行、現金などで資産を整理しましょう。";
-
 
 "profile.appearance" = "外観";
 "settings.theme" = "テーマ";
@@ -1231,7 +1220,6 @@
 "settings.iconChangeFailed" = "アイコンの変更に失敗しました: %@";
 "settings.deleteDataError" = "データの削除中に問題が発生しました";
 "settings.deleteDataUnknownError" = "データの削除中に問題が発生しました。もう一度お試しください。";
-
 
 "transaction.newTransaction" = "新規取引";
 "transaction.editTransaction" = "取引を編集";
@@ -1437,7 +1425,6 @@
 "subcategory.unassigned" = "未割り当て";
 "subcategory.deleteTransactionsConfirmMessage" = "%d件の取引が完全に削除されます。この操作は取り消せません。";
 
-
 "account.deleteBalanceError" = "残高が0でないため、この口座は削除できません。削除する前に残高を0に調整してください。";
 "account.type.general" = "一般";
 "account.type.cash" = "現金";
@@ -1447,8 +1434,6 @@
 "account.type.investment" = "投資";
 "account.type.loan" = "ローン";
 "account.type.other" = "その他";
-
-
 
 "iconPicker.title" = "カスタマイズ";
 "iconPicker.preview" = "プレビュー";
@@ -1474,7 +1459,6 @@
 "iconPicker.symbols" = "シンボル";
 "iconPicker.direction" = "方向";
 "iconPicker.other" = "その他";
-
 
 "need.title" = "支出の性質";
 "need.incomeNotApplicable" = "性質の分類は支出にのみ適用されます";
@@ -2234,7 +2218,6 @@
 "tipkit.cfTable.available.message" = "毎月いくら残るか(または足りないか)を確認できます。";
 "tipkit.cfTable.add.title" = "項目を追加";
 "tipkit.cfTable.add.message" = "収入や支出が抜けている場合はここから追加してください。";
-
 
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "音声入力";
@@ -3333,7 +3316,6 @@
 "setup.demo.scheduled.nameExample" = "Netflix";
 "setup.demo.scheduled.notifCaption" = "3日前にお知らせします";
 
-
 "setup.personalize.navTitle" = "Yalaをパーソナライズ";
 "setup.personalize.title" = "自分仕様にする";
 "setup.personalize.subtitle" = "あなたの個性を加えましょう。テーマ、アイコン、ウィジェットの見た目を変更できます。";
@@ -3640,7 +3622,6 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "理解できませんでした。例: 「コーヒーに50ドル」「ランチに25ドル記録」のようにお試しください";
 "shortcut.siriNatural.success.partial" = "%2$lld件中%1$lld件を記録しました(理解できなかったものがあります)。受信箱を確認してください。";
 
-
 /* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
 "panel.widgetInfo.addToPanel" = "パネルに追加";
 
@@ -3664,7 +3645,6 @@
 
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "期間別";
-
 
 // MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
@@ -3716,7 +3696,6 @@
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
 "panel.widgetInfo.cashFlow.chip4" = "インタラクティブ";
-
 
 /* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
 "panel.widgetInfo.categoriesPie.title" = "カテゴリー別の内訳";
@@ -3874,7 +3853,6 @@
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
 "panel.widgetInfo.expensesByNeed.largeHowA" = "バーの上で指をスライドさせると、特定の時点での内訳 (必須、優先などの金額と合計) が表示されます。凡例のチップをタップすると、そのニーズタイプだけを表示してパネルをフィルターできます。";
 
-
 /* Panel Polish #2 — Title sheet pedagógico TopCategories */
 "panel.widgetInfo.topCategories.title" = "主要なカテゴリー";
 
@@ -3937,7 +3915,6 @@
 
 /* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
 "panel.widgetInfo.topSubcategories.regularHowA" = "行をタップすると、そのサブカテゴリーでパネル全体をフィルタリングできます。上のチップで一覧を1つのカテゴリーに絞り込めます。他のウィジェットですでにカテゴリーをフィルターしている場合は、セレクターはそのカテゴリーにロックされます。";
-
 
 /* Panel Polish #2 — Title sheet pedagógico RecentRecords */
 "panel.widgetInfo.recentRecords.title" = "最近の記録";
@@ -4013,7 +3990,6 @@
 
 /* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
 "panel.widgetInfo.budgets.howA" = "予算をタップすると、その予算のカテゴリーまたはタグに対応する取引でパネル全体をフィルタリングできます。もう一度タップするとフィルターが解除されます。";
-
 
 /* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
 "panel.widgetInfo.exchangeRate.title" = "為替レート";
@@ -4263,7 +4239,6 @@
 "yalaAI.onboarding.step5.tip" = "💡 例：「500円のコーヒーを記録して」「今日いくら使った？」";
 "yalaAI.onboarding.step5.cta" = "チャットを始める";
 
-
 // MARK: - Stats Records polish
 
 "stats.records.motivationalOne" = "1件の記録 · 良いスタートです";
@@ -4279,3 +4254,27 @@
 "stats.insights.need.dailyFormat %@" = "≈ %@/日";
 
 "stats.insights.modeDetail" = "詳細";
+
+// MARK: - Stats Trends polish (stats-polish-panel-alignment)
+
+"stats.trends.comparisonTitle" = "比較";
+"stats.trends.insightTitleFree %@" = "あなたの%@をひと言で";
+"stats.trends.insightTitlePro" = "期間分析";
+"stats.trends.refineWithAI" = "AIで詳しく分析";
+"stats.trends.generateAI" = "AI分析を生成";
+"stats.trends.regenerate" = "再生成";
+"stats.trends.aiFootnote" = "AI分析";
+"stats.trends.heroOnset" = "Yalaを始めて最初の期間";
+"stats.trends.heroStable" = "残高は安定しています";
+"stats.trends.heroVarUp %d %@" = "%2$@より%1$d%%上 · この調子で";
+"stats.trends.heroVarDown %d %@" = "%2$@より%1$d%%下 · 頑張って、一歩ずつ";
+"stats.trends.insight.onset %@" = "Yalaを始めて最初の%@です";
+"stats.trends.insight.varUpExpense %d %@" = "支出が%2$@より%1$d%%増加。一緒に調整しましょう。";
+"stats.trends.insight.varDownExpense %d %@" = "支出が%2$@より%1$d%%減少。この調子で。";
+"stats.trends.insight.varUpIncome %d %@" = "収入が%2$@より%1$d%%増加。お見事です。";
+"stats.trends.insight.varDownIncome %d %@" = "収入が%2$@より%1$d%%減少。";
+"stats.trends.insight.varUpBalance %d %@" = "残高が%2$@より%1$d%%増加。";
+"stats.trends.insight.varDownBalance %d %@" = "残高が%2$@より%1$d%%減少。";
+"stats.trends.insight.stableExpense" = "支出は安定しています。";
+"stats.trends.insight.stableIncome" = "収入は安定しています。";
+"stats.trends.insight.stableBalance" = "残高は安定しています。";

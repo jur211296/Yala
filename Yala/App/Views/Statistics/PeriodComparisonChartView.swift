@@ -153,10 +153,13 @@ struct PeriodComparisonChartView: View {
                 .symbolSize(100)
                 .foregroundStyle(.thCard)
 
-                // Invisible anchor point at top of chart for tooltip
+                // Invisible anchor para tooltip ~25% bajo el top — evita choque con
+                // el KPI del header del card (consistente con TrendChartView).
+                let tooltipAnchorY = yDomain.upperBound
+                    - (yDomain.upperBound - yDomain.lowerBound) * 0.25
                 PointMark(
                     x: .value("Selected Date", activeDate),
-                    y: .value("Top", yDomain.upperBound)
+                    y: .value("TooltipAnchor", tooltipAnchorY)
                 )
                 .symbolSize(0)
                 .annotation(
@@ -237,7 +240,7 @@ struct PeriodComparisonChartView: View {
         .accessibilityLabel(L10n.Accessibility.periodComparison)
         .accessibilityValue(currentPeriodPoints.isEmpty ? L10n.Accessibility.noData :
             L10n.Accessibility.periodComparisonValue(currentPeriodPoints.count))
-        .frame(height: 220)  // Match TrendChartView height
+        .frame(height: chartHeight)  // Respect prop (callsite controls height)
         .chartLegend(position: .top, alignment: .leading) {
             HStack(spacing: DS.Spacing.lg) {
                 // Current period legend

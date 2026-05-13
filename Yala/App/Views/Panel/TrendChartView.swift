@@ -167,10 +167,11 @@ struct TrendChartView: View {
                 .symbolSize(100)
                 .foregroundStyle(.thCard)
 
-                // Invisible anchor point for tooltip — placed ~15% below the chart top
-                // so the bubble doesn't hover off-canvas on tall charts.
+                // Invisible anchor point for tooltip — placed ~35% below the chart top
+                // so the bubble doesn't choque con el KPI del header del card (Statistics
+                // tab + Panel widget) ni se salga off-canvas.
                 let tooltipAnchorY = yDomain.upperBound
-                    - (yDomain.upperBound - yDomain.lowerBound) * 0.15
+                    - (yDomain.upperBound - yDomain.lowerBound) * 0.35
                 PointMark(
                     x: .value(L10n.Common.selectedDate, activeDate),
                     y: .value("TooltipAnchor", tooltipAnchorY)
@@ -315,18 +316,29 @@ struct TrendChartView: View {
     @ChartContentBuilder
     private func todayMarker(today: Date) -> some ChartContent {
         if !compact && paddedXDomain.contains(today) {
+            // Línea vertical (sin annotation — el label vive en un anchor separado).
             RuleMark(x: .value(L10n.Widget.today, today))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
                 .foregroundStyle(.thSecondaryText.opacity(0.5))
-                .annotation(position: .top, alignment: .center, spacing: DS.Spacing.sm) {
-                    Text(L10n.Widget.today)
-                        .font(DS.Typography.labelTiny)
-                        .foregroundStyle(.thPrimaryText)
-                        .padding(.horizontal, DS.Spacing.xs)
-                        .padding(.vertical, DS.Spacing.xs)
-                        .background(.thCard, in: RoundedRectangle(cornerRadius: DS.Radius.xs))
-                        .shadow(radius: 1)
-                }
+
+            // Anchor invisible para el label "Hoy" ~12% bajo el top — evita choque
+            // con el chip de variación del header del card.
+            let todayLabelY = yDomain.upperBound
+                - (yDomain.upperBound - yDomain.lowerBound) * 0.12
+            PointMark(
+                x: .value(L10n.Widget.today, today),
+                y: .value("TodayLabelAnchor", todayLabelY)
+            )
+            .symbolSize(0)
+            .annotation(position: .top, alignment: .center, spacing: DS.Spacing.xs) {
+                Text(L10n.Widget.today)
+                    .font(DS.Typography.labelTiny)
+                    .foregroundStyle(.thPrimaryText)
+                    .padding(.horizontal, DS.Spacing.xs)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(.thCard, in: RoundedRectangle(cornerRadius: DS.Radius.xs))
+                    .shadow(radius: 1)
+            }
         }
     }
 

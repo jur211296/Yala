@@ -793,7 +793,6 @@
 "widget.ofExpense" = "da despesa";
 "widget.categoryAbbr" = "Categ.";
 
-
 "common.others" = "Outros";
 "common.remaining" = "Restante";
 "widget.categories" = "Categorias";
@@ -809,7 +808,6 @@
 "widget.recordsWillAppear" = "Quando voce registrar transacoes, elas aparecerao aqui.";
 "widget.total" = "Total";
 "widget.average" = "Média";
-
 
 "common.uncategorized" = "Sem categoria";
 "cashFlow.netFlow" = "Fluxo liquido";
@@ -974,9 +972,7 @@
 "common.deleteError" = "Não foi possível excluir. Tente novamente.";
 "widget.noExpensesNeedPeriod" = "Não há despesas registradas por necessidade para este período.";
 
-
 "account.addAccount" = "Adicionar conta";
-
 
 "common.date" = "Data";
 "common.amount" = "Valor";
@@ -987,12 +983,10 @@
 "common.details" = "Detalhes";
 "common.select" = "Selecionar";
 
-
 "statistics.title" = "Estatisticas";
 "statistics.trends" = "Tendencias";
 "statistics.categories" = "Distribuição";
 "statistics.records" = "Registros";
-
 
 "period.thisWeek" = "Esta semana";
 "period.last7Days" = "Ultimos 7 dias";
@@ -1016,11 +1010,9 @@
 "trendType.income" = "Receitas";
 "trendType.expense" = "Despesas";
 
-
 "cashFlowViewType.total" = "Total";
 "cashFlowViewType.byAccount" = "Por conta";
 "cashFlowViewType.byCurrency" = "Por moeda";
-
 
 "listViewType.categories" = "Categorias";
 "listViewType.subcategories" = "Subcategorias";
@@ -1092,7 +1084,6 @@
 "trend.filterBlockedTitle" = "Opção não disponível";
 "need.incomeNotApplicable" = "A classificação por necessidade aplica-se apenas a despesas";
 
-
 "settings.organization" = "Organizacao";
 "settings.preferences" = "Preferencias";
 "settings.aiFeatures" = "Funcionalidades com IA";
@@ -1152,7 +1143,6 @@
 "profile.importSuccess" = "Importacao concluida";
 "profile.importError" = "Erro na importacao";
 
-
 "profile.personalDetails" = "Detalhes pessoais";
 "profile.changePhoto" = "Mudar foto";
 "profile.addPhoto" = "Adicionar foto";
@@ -1182,14 +1172,12 @@
 "settings.recommendedCurrencies" = "Recomendadas";
 "common.lastUpdate" = "Ultima atualizacao:";
 
-
 "common.inactive" = "Inativas";
 "common.hidden" = "Ocultas";
 "common.archived" = "Arquivadas";
 "empty.tagsDescription" = "Crie etiquetas para organizar suas transacoes de forma flexivel.";
 "empty.categoriesDescription" = "Crie categorias para classificar suas receitas e despesas.";
 "empty.accountsDescription" = "Crie contas para organizar suas financas por banco, dinheiro ou outros.";
-
 
 "profile.appearance" = "Aparencia";
 "settings.theme" = "Temas";
@@ -1234,7 +1222,6 @@
 "settings.iconChangeFailed" = "Nao foi possivel mudar o icone: %@";
 "settings.deleteDataError" = "Erro ao eliminar dados";
 "settings.deleteDataUnknownError" = "Ocorreu um erro desconhecido ao eliminar os dados.";
-
 
 "transaction.newTransaction" = "Novo registro";
 "transaction.editTransaction" = "Editar registro";
@@ -1440,7 +1427,6 @@
 "subcategory.unassigned" = "Nao atribuido";
 "subcategory.deleteTransactionsConfirmMessage" = "%d transacoes serao eliminadas permanentemente. Esta acao nao pode ser desfeita.";
 
-
 "account.deleteBalanceError" = "Voce nao pode eliminar esta conta porque ela tem saldo diferente de zero. Ajuste o saldo para 0 antes de elimina-la.";
 "account.type.general" = "Geral";
 "account.type.cash" = "Dinheiro";
@@ -1450,8 +1436,6 @@
 "account.type.investment" = "Investimento";
 "account.type.loan" = "Emprestimo";
 "account.type.other" = "Outro";
-
-
 
 "iconPicker.title" = "Personalizar";
 "iconPicker.preview" = "Visualizacao";
@@ -1477,7 +1461,6 @@
 "iconPicker.symbols" = "Simbolos";
 "iconPicker.direction" = "Direcao";
 "iconPicker.other" = "Outros";
-
 
 "need.title" = "Necessidade do gasto";
 
@@ -2231,7 +2214,6 @@
 "tipkit.cfTable.available.message" = "Aqui você vê quanto dinheiro sobra (ou falta) a cada mês.";
 "tipkit.cfTable.add.title" = "Adicionar linhas";
 "tipkit.cfTable.add.message" = "Se falta alguma receita ou despesa, adicione aqui.";
-
 
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Registro por voz";
@@ -3330,7 +3312,6 @@
 "setup.demo.scheduled.nameExample" = "Netflix";
 "setup.demo.scheduled.notifCaption" = "Avisamos você 3 dias antes";
 
-
 "setup.personalize.navTitle" = "Personalize seu Yala";
 "setup.personalize.title" = "Deixe a sua cara";
 "setup.personalize.subtitle" = "Dê seu toque pessoal. Mude o tema, o ícone ou a aparência dos widgets.";
@@ -3637,7 +3618,6 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "Não entendi. Tente: 'Anota 50 reais em café' ou 'Registra 25 reais em almoço'";
 "shortcut.siriNatural.success.partial" = "Registrei %1$lld de %2$lld (alguns não entendi). Verifique sua caixa.";
 
-
 /* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
 "panel.widgetInfo.addToPanel" = "Adicionar ao Painel";
 
@@ -3661,7 +3641,6 @@
 
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "Por período";
-
 
 // MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
@@ -3713,7 +3692,6 @@
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
 "panel.widgetInfo.cashFlow.chip4" = "Interativa";
-
 
 /* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
 "panel.widgetInfo.categoriesPie.title" = "Distribuição por categoria";
@@ -3871,7 +3849,6 @@
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
 "panel.widgetInfo.expensesByNeed.largeHowA" = "Deslize o dedo sobre as barras para ver o detalhamento de um ponto no tempo — quanto foi essencial, prioritário, etc., com o total. Toque em um chip da legenda para mostrar apenas esse tipo de necessidade e filtrar o Painel.";
 
-
 /* Panel Polish #2 — Title sheet pedagógico TopCategories */
 "panel.widgetInfo.topCategories.title" = "Categorias principais";
 
@@ -3934,7 +3911,6 @@
 
 /* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
 "panel.widgetInfo.topSubcategories.regularHowA" = "Toque em uma linha para filtrar o resto do Painel por essa subcategoria. Use os chips de cima para restringir a lista a uma categoria — ou, se você já tem uma categoria filtrada em outro widget, o seletor fica bloqueado nessa.";
-
 
 /* Panel Polish #2 — Title sheet pedagógico RecentRecords */
 "panel.widgetInfo.recentRecords.title" = "Últimos registros";
@@ -4010,7 +3986,6 @@
 
 /* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
 "panel.widgetInfo.budgets.howA" = "Toque em um orçamento para filtrar o resto do Painel pelas transações de sua categoria ou tag. Toque novamente para remover o filtro.";
-
 
 /* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
 "panel.widgetInfo.exchangeRate.title" = "Câmbio";
@@ -4260,7 +4235,6 @@
 "yalaAI.onboarding.step5.tip" = "💡 Tente: \"Registra um café de 5 reais\" ou \"Quanto gastei hoje?\"";
 "yalaAI.onboarding.step5.cta" = "Começar a conversar";
 
-
 // MARK: - Stats Records polish
 
 "stats.records.motivationalOne" = "1 registro · Bom começo";
@@ -4276,3 +4250,27 @@
 "stats.insights.need.dailyFormat %@" = "≈ %@/dia";
 
 "stats.insights.modeDetail" = "Detalhe";
+
+// MARK: - Stats Trends polish (stats-polish-panel-alignment)
+
+"stats.trends.comparisonTitle" = "Comparação";
+"stats.trends.insightTitleFree %@" = "Seu %@ em poucas palavras";
+"stats.trends.insightTitlePro" = "Análise do período";
+"stats.trends.refineWithAI" = "Refinar com IA";
+"stats.trends.generateAI" = "Gerar análise com IA";
+"stats.trends.regenerate" = "Regenerar";
+"stats.trends.aiFootnote" = "Análise com IA";
+"stats.trends.heroOnset" = "Seu primeiro período com Yala";
+"stats.trends.heroStable" = "Seu saldo se mantém estável";
+"stats.trends.heroVarUp %d %@" = "%d%% acima vs %@ · Continue assim";
+"stats.trends.heroVarDown %d %@" = "%d%% abaixo vs %@ · Força, passo a passo";
+"stats.trends.insight.onset %@" = "Este é seu primeiro %@ com Yala";
+"stats.trends.insight.varUpExpense %d %@" = "Você aumentou seus gastos em %d%% vs %@. Vamos ajustar juntos.";
+"stats.trends.insight.varDownExpense %d %@" = "Você reduziu seus gastos em %d%% vs %@. Continue assim.";
+"stats.trends.insight.varUpIncome %d %@" = "Sua renda cresceu %d%% vs %@. Bom trabalho.";
+"stats.trends.insight.varDownIncome %d %@" = "Sua renda caiu %d%% vs %@.";
+"stats.trends.insight.varUpBalance %d %@" = "Seu saldo cresceu %d%% vs %@.";
+"stats.trends.insight.varDownBalance %d %@" = "Seu saldo caiu %d%% vs %@.";
+"stats.trends.insight.stableExpense" = "Seus gastos se mantêm estáveis.";
+"stats.trends.insight.stableIncome" = "Sua renda se mantém estável.";
+"stats.trends.insight.stableBalance" = "Seu saldo se mantém estável.";

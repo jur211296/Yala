@@ -795,7 +795,6 @@
 "widget.ofExpense" = "del gasto";
 "widget.categoryAbbr" = "Categ.";
 
-
 "common.others" = "Otros";
 "common.remaining" = "Restante";
 "widget.categories" = "Categorías";
@@ -811,7 +810,6 @@
 "widget.recordsWillAppear" = "Cuando registres movimientos, aparecerán aquí";
 "widget.total" = "Total";
 "widget.average" = "Promedio";
-
 
 "common.uncategorized" = "Sin categoría";
 "cashFlow.netFlow" = "Flujo neto";
@@ -976,9 +974,7 @@
 "common.deleteError" = "No se pudo eliminar. Intenta una vez más.";
 "widget.noExpensesNeedPeriod" = "No hay gastos registrados por necesidad para este periodo.";
 
-
 "account.addAccount" = "Agregar cuenta";
-
 
 "common.date" = "Fecha";
 "common.amount" = "Monto";
@@ -989,12 +985,10 @@
 "common.details" = "Detalles";
 "common.select" = "Seleccionar";
 
-
 "statistics.title" = "Estadísticas";
 "statistics.trends" = "Tendencias";
 "statistics.categories" = "Distribución";
 "statistics.records" = "Registros";
-
 
 "period.thisWeek" = "Esta semana";
 "period.last7Days" = "Últimos 7 días";
@@ -1018,11 +1012,9 @@
 "trendType.income" = "Ingresos";
 "trendType.expense" = "Gastos";
 
-
 "cashFlowViewType.total" = "Total";
 "cashFlowViewType.byAccount" = "Por cuenta";
 "cashFlowViewType.byCurrency" = "Por moneda";
-
 
 "listViewType.categories" = "Categorías";
 "listViewType.subcategories" = "Subcategorías";
@@ -1149,7 +1141,6 @@
 "profile.importSuccess" = "Importación completada";
 "profile.importError" = "Error al importar";
 
-
 "profile.personalDetails" = "Detalles personales";
 "profile.changePhoto" = "Cambiar foto";
 "profile.addPhoto" = "Añadir foto";
@@ -1179,14 +1170,12 @@
 "settings.recommendedCurrencies" = "Recomendadas";
 "common.lastUpdate" = "Última actualización:";
 
-
 "common.inactive" = "Inactivas";
 "common.hidden" = "Ocultas";
 "common.archived" = "Archivadas";
 "empty.tagsDescription" = "Crea etiquetas para organizar tus transacciones de forma flexible.";
 "empty.categoriesDescription" = "Crea categorías para clasificar tus ingresos y gastos.";
 "empty.accountsDescription" = "Crea cuentas para organizar tus finanzas por banco, efectivo u otros.";
-
 
 "profile.appearance" = "Apariencia";
 "settings.theme" = "Temas";
@@ -1231,7 +1220,6 @@
 "settings.iconChangeFailed" = "No pudimos cambiar el icono: %@";
 "settings.deleteDataError" = "Hubo un problema al eliminar los datos";
 "settings.deleteDataUnknownError" = "Algo salió mal al eliminar los datos. Intenta de nuevo.";
-
 
 "transaction.newTransaction" = "Nuevo registro";
 "transaction.editTransaction" = "Editar registro";
@@ -1437,7 +1425,6 @@
 "subcategory.unassigned" = "Sin asignar";
 "subcategory.deleteTransactionsConfirmMessage" = "Se eliminarán permanentemente %d transacciones. Esta acción no se puede deshacer.";
 
-
 "account.deleteBalanceError" = "No puedes eliminar esta cuenta porque tiene saldo distinto de cero. Ajusta el saldo a 0 antes de eliminarla.";
 "account.type.general" = "General";
 "account.type.cash" = "Efectivo";
@@ -1447,8 +1434,6 @@
 "account.type.investment" = "Inversión";
 "account.type.loan" = "Préstamo";
 "account.type.other" = "Otro";
-
-
 
 "iconPicker.title" = "Personalizar";
 "iconPicker.preview" = "Vista previa";
@@ -1474,7 +1459,6 @@
 "iconPicker.symbols" = "Símbolos";
 "iconPicker.direction" = "Dirección";
 "iconPicker.other" = "Otros";
-
 
 "need.title" = "Necesidad del gasto";
 "need.incomeNotApplicable" = "La clasificación por necesidad solo aplica a gastos";
@@ -2232,7 +2216,6 @@
 "tipkit.cfTable.available.message" = "Aquí ves cuánto dinero te sobra (o falta) cada mes.";
 "tipkit.cfTable.add.title" = "Agrega líneas";
 "tipkit.cfTable.add.message" = "Si te falta un ingreso o gasto, agrégalo aquí.";
-
 
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Registro por voz";
@@ -3689,7 +3672,6 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "No entendí. Prueba con: 'Anota 50 soles en café' o 'Registra gasto de 25 dólares en almuerzo'";
 "shortcut.siriNatural.success.partial" = "Registré %1$lld de %2$lld (algunos no se entendieron). Revisa tu bandeja.";
 
-
 /* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
 "panel.widgetInfo.addToPanel" = "Añadir al Panel";
 
@@ -3713,7 +3695,6 @@
 
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "Por período";
-
 
 // MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
@@ -3765,7 +3746,6 @@
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
 "panel.widgetInfo.cashFlow.chip4" = "Interactiva";
-
 
 /* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
 "panel.widgetInfo.categoriesPie.title" = "Distribución por categoría";
@@ -3923,7 +3903,6 @@
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
 "panel.widgetInfo.expensesByNeed.largeHowA" = "Desliza el dedo sobre las barras para ver el desglose de un punto en el tiempo —cuánto fue esencial, prioritario, etc., con el total. Toca un chip de la leyenda para mostrar solo ese tipo de necesidad y filtrar el Panel.";
 
-
 /* Panel Polish #2 — Title sheet pedagógico TopCategories */
 "panel.widgetInfo.topCategories.title" = "Categorías principales";
 
@@ -3986,7 +3965,6 @@
 
 /* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
 "panel.widgetInfo.topSubcategories.regularHowA" = "Toca una fila para filtrar el resto del Panel por esa subcategoría. Usa los chips de arriba para acotar la lista a una categoría — o, si ya tienes una categoría filtrada en otro widget, el selector queda bloqueado en esa.";
-
 
 /* Panel Polish #2 — Title sheet pedagógico RecentRecords */
 "panel.widgetInfo.recentRecords.title" = "Últimos registros";
@@ -4062,7 +4040,6 @@
 
 /* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
 "panel.widgetInfo.budgets.howA" = "Toca un presupuesto para filtrar el resto del Panel por las transacciones de su categoría o etiqueta. Vuelve a tocarlo para quitar el filtro.";
-
 
 /* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
 "panel.widgetInfo.exchangeRate.title" = "Tipo de cambio";
@@ -4280,7 +4257,6 @@
 "yalaAI.onboarding.step5.tip" = "💡 Prueba: \"Registra un café de 5 soles\" o \"¿Cuánto gasté hoy?\"";
 "yalaAI.onboarding.step5.cta" = "Empezar a chatear";
 
-
 // MARK: - Stats Records polish
 
 "stats.records.motivationalOne" = "1 registro · Buen comienzo";
@@ -4296,3 +4272,27 @@
 "stats.insights.need.dailyFormat %@" = "≈ %@/día";
 
 "stats.insights.modeDetail" = "Detalle";
+
+// MARK: - Stats Trends polish (stats-polish-panel-alignment)
+
+"stats.trends.comparisonTitle" = "Comparativa";
+"stats.trends.insightTitleFree %@" = "Tu %@ en pocas palabras";
+"stats.trends.insightTitlePro" = "Análisis del período";
+"stats.trends.refineWithAI" = "Refinar con IA";
+"stats.trends.generateAI" = "Generar análisis IA";
+"stats.trends.regenerate" = "Regenerar";
+"stats.trends.aiFootnote" = "Análisis con IA";
+"stats.trends.heroOnset" = "Tu primer período con Yala";
+"stats.trends.heroStable" = "Tu balance se mantiene estable";
+"stats.trends.heroVarUp %d %@" = "%d%% por encima vs %@ · Sigue así";
+"stats.trends.heroVarDown %d %@" = "%d%% por debajo vs %@ · Ánimo, paso a paso";
+"stats.trends.insight.onset %@" = "Este es tu primer %@ con Yala";
+"stats.trends.insight.varUpExpense %d %@" = "Subiste tu gasto %d%% vs %@. Ajustemos juntos.";
+"stats.trends.insight.varDownExpense %d %@" = "Bajaste tu gasto %d%% vs %@. Mantén el ritmo.";
+"stats.trends.insight.varUpIncome %d %@" = "Tus ingresos crecieron %d%% vs %@. Buen trabajo.";
+"stats.trends.insight.varDownIncome %d %@" = "Tus ingresos bajaron %d%% vs %@.";
+"stats.trends.insight.varUpBalance %d %@" = "Tu balance creció %d%% vs %@.";
+"stats.trends.insight.varDownBalance %d %@" = "Tu balance bajó %d%% vs %@.";
+"stats.trends.insight.stableExpense" = "Tu gasto se mantiene estable.";
+"stats.trends.insight.stableIncome" = "Tus ingresos se mantienen estables.";
+"stats.trends.insight.stableBalance" = "Tu balance se mantiene estable.";

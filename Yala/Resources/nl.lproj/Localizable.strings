@@ -795,7 +795,6 @@
 "widget.ofExpense" = "van uitgave";
 "widget.categoryAbbr" = "Cat.";
 
-
 "common.others" = "Overige";
 "common.remaining" = "Resterend";
 "widget.categories" = "Categorieën";
@@ -811,7 +810,6 @@
 "widget.recordsWillAppear" = "Wanneer je transacties toevoegt, verschijnen ze hier.";
 "widget.total" = "Totaal";
 "widget.average" = "Gemiddelde";
-
 
 "common.uncategorized" = "Zonder categorie";
 "cashFlow.netFlow" = "Nettostroom";
@@ -976,9 +974,7 @@
 "common.deleteError" = "Verwijderen lukte niet. Probeer het nog eens.";
 "widget.noExpensesNeedPeriod" = "Geen uitgaven per behoefte geboekt voor deze periode.";
 
-
 "account.addAccount" = "Rekening toevoegen";
-
 
 "common.date" = "Datum";
 "common.amount" = "Bedrag";
@@ -989,12 +985,10 @@
 "common.details" = "Details";
 "common.select" = "Selecteren";
 
-
 "statistics.title" = "Statistieken";
 "statistics.trends" = "Trends";
 "statistics.categories" = "Verdeling";
 "statistics.records" = "Boekingen";
-
 
 "period.thisWeek" = "Deze week";
 "period.last7Days" = "Laatste 7 dagen";
@@ -1018,11 +1012,9 @@
 "trendType.income" = "Inkomsten";
 "trendType.expense" = "Uitgaven";
 
-
 "cashFlowViewType.total" = "Totaal";
 "cashFlowViewType.byAccount" = "Per rekening";
 "cashFlowViewType.byCurrency" = "Per valuta";
-
 
 "listViewType.categories" = "Categorieën";
 "listViewType.subcategories" = "Subcategorieën";
@@ -1149,7 +1141,6 @@
 "profile.importSuccess" = "Import voltooid";
 "profile.importError" = "Importfout";
 
-
 "profile.personalDetails" = "Persoonlijke gegevens";
 "profile.changePhoto" = "Foto wijzigen";
 "profile.addPhoto" = "Foto toevoegen";
@@ -1179,14 +1170,12 @@
 "settings.recommendedCurrencies" = "Aanbevolen";
 "common.lastUpdate" = "Laatst bijgewerkt:";
 
-
 "common.inactive" = "Inactief";
 "common.hidden" = "Verborgen";
 "common.archived" = "Gearchiveerd";
 "empty.tagsDescription" = "Maak labels om je transacties flexibel te organiseren.";
 "empty.categoriesDescription" = "Maak categorieën om je inkomsten en uitgaven te ordenen.";
 "empty.accountsDescription" = "Maak rekeningen om je financiën te ordenen per bank, contant of anders.";
-
 
 "profile.appearance" = "Weergave";
 "settings.theme" = "Thema's";
@@ -1231,7 +1220,6 @@
 "settings.iconChangeFailed" = "Icoon wijzigen mislukt: %@";
 "settings.deleteDataError" = "Er ging iets mis bij het verwijderen van gegevens";
 "settings.deleteDataUnknownError" = "Er ging iets mis bij het verwijderen van gegevens. Probeer het opnieuw.";
-
 
 "transaction.newTransaction" = "Nieuwe transactie";
 "transaction.editTransaction" = "Transactie bewerken";
@@ -1437,7 +1425,6 @@
 "subcategory.unassigned" = "Niet-toegewezen";
 "subcategory.deleteTransactionsConfirmMessage" = "%d transacties worden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.";
 
-
 "account.deleteBalanceError" = "Je kunt deze rekening niet verwijderen omdat het saldo niet nul is. Pas het saldo aan naar 0 voordat je hem verwijdert.";
 "account.type.general" = "Algemeen";
 "account.type.cash" = "Contant";
@@ -1447,8 +1434,6 @@
 "account.type.investment" = "Beleggingen";
 "account.type.loan" = "Lening";
 "account.type.other" = "Anders";
-
-
 
 "iconPicker.title" = "Aanpassen";
 "iconPicker.preview" = "Voorvertoning";
@@ -1474,7 +1459,6 @@
 "iconPicker.symbols" = "Symbolen";
 "iconPicker.direction" = "Richting";
 "iconPicker.other" = "Anders";
-
 
 "need.title" = "Aard van uitgave";
 "need.incomeNotApplicable" = "Indeling naar behoefte geldt alleen voor uitgaven";
@@ -2234,7 +2218,6 @@
 "tipkit.cfTable.available.message" = "Hier zie je hoeveel geld je per maand overhoudt (of tekort komt).";
 "tipkit.cfTable.add.title" = "Regels toevoegen";
 "tipkit.cfTable.add.message" = "Mis je inkomsten of een uitgave, voeg ze hier toe.";
-
 
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Spraakinvoer";
@@ -3333,7 +3316,6 @@
 "setup.demo.scheduled.nameExample" = "Netflix";
 "setup.demo.scheduled.notifCaption" = "We waarschuwen je 3 dagen van tevoren";
 
-
 "setup.personalize.navTitle" = "Personaliseer je Yala";
 "setup.personalize.title" = "Maak het van jou";
 "setup.personalize.subtitle" = "Geef het je persoonlijke touch. Wijzig het thema, icoon of hoe je widgets eruitzien.";
@@ -3640,7 +3622,6 @@
 "shortcut.siriNatural.error.parsingFailedHelp" = "Ik begreep het niet. Probeer: 'Noteer 50 euro aan koffie' of 'Boek 25 euro aan lunch'";
 "shortcut.siriNatural.success.partial" = "%1$lld van %2$lld geboekt (sommige kon ik niet begrijpen). Check je inbox.";
 
-
 /* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
 "panel.widgetInfo.addToPanel" = "Toevoegen aan paneel";
 
@@ -3664,7 +3645,6 @@
 
 /* Panel Polish #2 — Chip 2 Trend */
 "panel.widgetInfo.trend.chip2" = "Per periode";
-
 
 // MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
@@ -3716,7 +3696,6 @@
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
 "panel.widgetInfo.cashFlow.chip4" = "Interactief";
-
 
 /* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
 "panel.widgetInfo.categoriesPie.title" = "Verdeling per categorie";
@@ -3874,7 +3853,6 @@
 /* Panel Polish #2 — ExpensesByNeed L: respuesta */
 "panel.widgetInfo.expensesByNeed.largeHowA" = "Veeg met je vinger over de balken om de uitsplitsing van een moment te zien — hoeveel essentieel, prioritair, enz., met het totaal. Tik op een chip in de legenda om alleen dat type behoefte te tonen en het Paneel te filteren.";
 
-
 /* Panel Polish #2 — Title sheet pedagógico TopCategories */
 "panel.widgetInfo.topCategories.title" = "Belangrijkste categorieën";
 
@@ -3937,7 +3915,6 @@
 
 /* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
 "panel.widgetInfo.topSubcategories.regularHowA" = "Tik op een rij om de rest van het Paneel te filteren op die subcategorie. Gebruik de chips boven om de lijst te beperken tot één categorie — of, als er al een categorie is gefilterd in een ander widget, blijft de selector vergrendeld op die categorie.";
-
 
 /* Panel Polish #2 — Title sheet pedagógico RecentRecords */
 "panel.widgetInfo.recentRecords.title" = "Recente boekingen";
@@ -4013,7 +3990,6 @@
 
 /* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
 "panel.widgetInfo.budgets.howA" = "Tik op een budget om de rest van het Paneel te filteren op de transacties van zijn categorie of tag. Tik er nogmaals op om het filter op te heffen.";
-
 
 /* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
 "panel.widgetInfo.exchangeRate.title" = "Wisselkoers";
@@ -4263,7 +4239,6 @@
 "yalaAI.onboarding.step5.tip" = "💡 Probeer: \"Leg een koffie van €5 vast\" of \"Hoeveel heb ik vandaag uitgegeven?\"";
 "yalaAI.onboarding.step5.cta" = "Beginnen met chatten";
 
-
 // MARK: - Stats Records polish
 
 "stats.records.motivationalOne" = "1 boeking · Goede start";
@@ -4279,3 +4254,27 @@
 "stats.insights.need.dailyFormat %@" = "≈ %@/dag";
 
 "stats.insights.modeDetail" = "Details";
+
+// MARK: - Stats Trends polish (stats-polish-panel-alignment)
+
+"stats.trends.comparisonTitle" = "Vergelijking";
+"stats.trends.insightTitleFree %@" = "Jouw %@ in het kort";
+"stats.trends.insightTitlePro" = "Periode-analyse";
+"stats.trends.refineWithAI" = "Verfijnen met AI";
+"stats.trends.generateAI" = "AI-analyse genereren";
+"stats.trends.regenerate" = "Opnieuw genereren";
+"stats.trends.aiFootnote" = "AI-analyse";
+"stats.trends.heroOnset" = "Jouw eerste periode met Yala";
+"stats.trends.heroStable" = "Je saldo blijft stabiel";
+"stats.trends.heroVarUp %d %@" = "%d%% boven vs %@ · Ga zo door";
+"stats.trends.heroVarDown %d %@" = "%d%% onder vs %@ · Houd vol, stap voor stap";
+"stats.trends.insight.onset %@" = "Dit is jouw eerste %@ met Yala";
+"stats.trends.insight.varUpExpense %d %@" = "Je uitgaven stegen met %d%% vs %@. Laten we samen aanpassen.";
+"stats.trends.insight.varDownExpense %d %@" = "Je uitgaven daalden met %d%% vs %@. Blijf zo doorgaan.";
+"stats.trends.insight.varUpIncome %d %@" = "Je inkomen groeide met %d%% vs %@. Goed werk.";
+"stats.trends.insight.varDownIncome %d %@" = "Je inkomen daalde met %d%% vs %@.";
+"stats.trends.insight.varUpBalance %d %@" = "Je saldo groeide met %d%% vs %@.";
+"stats.trends.insight.varDownBalance %d %@" = "Je saldo daalde met %d%% vs %@.";
+"stats.trends.insight.stableExpense" = "Je uitgaven blijven stabiel.";
+"stats.trends.insight.stableIncome" = "Je inkomen blijft stabiel.";
+"stats.trends.insight.stableBalance" = "Je saldo blijft stabiel.";

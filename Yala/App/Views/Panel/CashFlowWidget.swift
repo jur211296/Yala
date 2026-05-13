@@ -796,10 +796,11 @@ struct CashFlowWidget: View {
                             )
                             .fixedSize()
                             .position(
+                                // Centrado verticalmente en el plot area — evita choque con
+                                // el KPI del header del card (Statistics tab + Panel widget).
                                 x: max(80, min(xPos + plotFrame.origin.x, geo.size.width - 80)),
-                                y: plotFrame.minY + 20
+                                y: plotFrame.midY
                             )
-                            .offset(y: -50)
                         }
                     }
                 }

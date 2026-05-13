@@ -315,8 +315,8 @@ struct DetailContainerView: View {
                 tags: dataViewModel.tags,
                 allTransactions: dataViewModel.allTransactions,
                 trendsViewModel: trendsViewModel,
-                defaultCurrencyCode: defaultCurrencyCode,
-                onNavigateToRecords: { selectedTab = .records }
+                insightsViewModel: insightsViewModel,
+                defaultCurrencyCode: defaultCurrencyCode
             )
         case .categories:
             CategoriesTabView(
