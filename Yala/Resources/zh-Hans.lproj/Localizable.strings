@@ -2973,6 +2973,10 @@
 "insights.tipExpenseUp" = "和你支出最少的月份对比看看变了什么";
 "insights.tipBudgetRisk" = "还剩几天 — 试着克制 %@ 的剩余支出";
 "insights.tipOptionalHigh" = "查看你的可选支出,看看哪些可以推迟";
+
+"insights.ruleDailyAverage %@" = "你平均每天花费 %@。";
+"insights.ruleSavingsPositive %d" = "你正在储蓄收入的 %d%%。";
+"insights.ruleSavingsNegative" = "本期支出超过了收入。";
 "insights.ruleSharedRatio.normal" = "你本时段 %d%% 的支出是共享的";
 "insights.ruleSharedRatio.considerate" = "你 %d%% 的支出是共享的 — 分担即关怀";
 "insights.ruleSharedRatio.sarcastic" = "你 %d%% 的支出是共享的。下次轮谁付?";
@@ -4264,3 +4268,14 @@
 
 "stats.records.motivationalOne" = "1 条记录 · 好的开始";
 "stats.records.motivationalMany %d" = "%d 条记录 · 继续保持";
+
+"stats.insights.motivationalOne" = "1 笔交易 · 好的开始";
+"stats.insights.motivationalMany %d" = "%d 笔交易 · 继续保持";
+"stats.insights.detailHeader" = "你的数据";
+"stats.insights.aiCardTitle" = "智能摘要";
+"stats.insights.aiCardSubtitle" = "由AI个性化";
+"stats.insights.dailyAvgIn %@" = "每天 %@";
+
+"stats.insights.need.dailyFormat %@" = "≈ %@/天";
+
+"stats.insights.modeDetail" = "详情";

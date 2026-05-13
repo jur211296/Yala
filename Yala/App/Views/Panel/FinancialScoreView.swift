@@ -14,6 +14,11 @@ struct FinancialScoreView: View {
     /// necesita porque allí no hay selector encima de la card.
     var subtitle: String? = nil
 
+    /// Oculta el header interno (título + subtítulo + botón help) para que el
+    /// callsite pueda dibujar el título fuera de la card (consistente con el
+    /// resto de section headers en Insights / Stats).
+    var hideHeader: Bool = false
+
     // A11Y-DT: ring diameter scales with Dynamic Type.
     @ScaledMetric(relativeTo: .largeTitle) private var mainRingSize: CGFloat = 88
 
@@ -21,7 +26,7 @@ struct FinancialScoreView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            header
+            if !hideHeader { header }
             bodyContent
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

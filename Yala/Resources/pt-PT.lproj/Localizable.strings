@@ -270,3 +270,14 @@
 
 "stats.records.motivationalOne" = "1 registo · Bom começo";
 "stats.records.motivationalMany %d" = "%d registos · Continua assim";
+
+"stats.insights.motivationalOne" = "1 movimento · Bom começo";
+"stats.insights.motivationalMany %d" = "%d movimentos · Continua assim";
+"stats.insights.detailHeader" = "Os teus números";
+"stats.insights.aiCardTitle" = "Resumo inteligente";
+"stats.insights.aiCardSubtitle" = "Personalizado com IA";
+"stats.insights.dailyAvgIn %@" = "por dia em %@";
+
+"stats.insights.need.dailyFormat %@" = "≈ %@/dia";
+
+"stats.insights.modeDetail" = "Detalhe";

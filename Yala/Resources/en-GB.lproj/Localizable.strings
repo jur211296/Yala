@@ -341,3 +341,14 @@
 
 "stats.records.motivationalOne" = "1 record · Great start";
 "stats.records.motivationalMany %d" = "%d records · Keep it up";
+
+"stats.insights.motivationalOne" = "1 transaction · Great start";
+"stats.insights.motivationalMany %d" = "%d transactions · Keep it up";
+"stats.insights.detailHeader" = "Your numbers";
+"stats.insights.aiCardTitle" = "Smart summary";
+"stats.insights.aiCardSubtitle" = "Personalised with AI";
+"stats.insights.dailyAvgIn %@" = "per day in %@";
+
+"stats.insights.need.dailyFormat %@" = "≈ %@/day";
+
+"stats.insights.modeDetail" = "Detail";

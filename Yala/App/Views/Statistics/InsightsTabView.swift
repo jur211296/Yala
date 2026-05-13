@@ -41,6 +41,14 @@ struct InsightsTabView: View {
     @State private var showCustomPeriodPicker = false
     @State private var showInsightsConsentAlert = false
 
+    @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
+
+    // Content split: bento Detalle (stats + commitments + need) vs Observaciones
+    @State private var contentMode: InsightsContentMode = .detail
+    @State private var isCommitmentsExpanded: Bool = false
+    @State private var isNeedSectionExpanded: Bool = false
+    @Namespace private var contentModeNamespace
+
     // Coach mark: Pro tour (Phase 3)
     @State private var showProInsightsTour = false
     @State private var proInsightsTourIndex = 0
@@ -63,83 +71,52 @@ struct InsightsTabView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             if let data = viewModel.insightData {
-                // Control bar always visible (period selector + filter chips)
-                controlBar
-                    .padding(.top, DS.Spacing.sm)
+                VStack(spacing: DS.Spacing.md) {
+                    heroSummary(data.periodSummary)
+                    filterBarPanel
 
-                if data.periodSummary.transactionCount == 0 {
-                    // Edge case: 0 transactions
-                    YalaEmptyState(
-                        icon: "sparkles",
-                        title: L10n.Insights.emptyTitle,
-                        message: L10n.Insights.emptyBody
-                    )
-                    .padding(.top, DS.Spacing.xxxxl)
-                } else {
-                    LazyVStack(spacing: DS.Spacing.xl) {
-
-                        if let score = viewModel.financialScore {
-                            FinancialScoreView(
-                                score: score,
-                                sessionState: sessionState,
-                                subtitle: trendsViewModel.detailPeriod.displayName
-                            )
-                        }
-
-                        // Section 1: Period Summary (always visible)
-                        periodSummarySection(data.periodSummary)
-
-                        // Section 2: Hero Insight / AI Button (Pro) or Rule-based (Free)
-                        if isProUser {
-                            proHeroSection(data)
-                        } else {
-                            if let hero = data.ruleBasedInsights.first {
-                                InsightCard(insight: hero)
-                            }
-                            aiInsightsTeaser
-                        }
-
-                        // Section 3: Quick Stats Grid
-                        if appPreferences.insightsShowQuickStats {
-                            quickStatsSection(data.quickStats, summary: data.periodSummary)
-                        }
-
-                        // Section 4: Commitments
-                        if hasCommitmentsData(data.commitments) {
-                            commitmentsSection(data.commitments)
-                        }
-
-                        // Charts and texts only if >= 5 transactions
-                        if data.periodSummary.transactionCount >= 5 {
-                            // Section 5: Need Distribution
-                            if appPreferences.insightsShowNature, data.needDistribution.total > 0 {
-                                needSection(data.needDistribution)
+                    if data.periodSummary.transactionCount == 0 {
+                        YalaEmptyState(
+                            icon: "sparkles",
+                            title: L10n.Insights.emptyTitle,
+                            message: L10n.Insights.emptyBody
+                        )
+                        .padding(.top, DS.Spacing.xxxxl)
+                    } else {
+                        LazyVStack(spacing: DS.Spacing.xl) {
+                            if let score = viewModel.financialScore {
+                                financialScoreSection(score)
                             }
 
-                            // Section 7: Observations
-                            if appPreferences.insightsShowTexts {
-                                if isProUser {
-                                    proObservationsSection(data)
-                                } else {
-                                    freeObservationsSection(data)
+                            if isProUser {
+                                proHeroSection(data)
+                            } else {
+                                aiInsightsTeaser
+                            }
+
+                            if data.periodSummary.transactionCount >= 5 {
+                                contentModePill
+
+                                switch contentMode {
+                                case .detail:
+                                    detailModeContent(data)
+                                case .observations:
+                                    observationsModeContent(data)
                                 }
+                            } else {
+                                // < 5 tx: solo modo Detalle implícito (sin pill, sin observations)
+                                detailModeContent(data)
+                                Text(L10n.Insights.fewTransactions)
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, DS.Spacing.lg)
                             }
-
-                            // Locked fun fact for Free users
-                            if !isProUser {
-                                lockedFunFact
-                            }
-                        } else {
-                            // Few transactions hint
-                            Text(L10n.Insights.fewTransactions)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.vertical, DS.Spacing.lg)
                         }
+                        .yalaSafeBottomPadding()
                     }
-                    .yalaSafeBottomPadding()
                 }
+                .padding(.top, DS.Spacing.sm)
             } else {
                 ProgressView()
                     .frame(maxWidth: .infinity, minHeight: 200)
@@ -176,42 +153,29 @@ struct InsightsTabView: View {
                 proInsightsTourIndex = 0
             }
         }
+        .onChange(of: viewModel.insightData?.periodSummary.transactionCount) { _, newCount in
+            // Reset defensivo: con < 5 tx no se monta el pill ni la rama Observaciones;
+            // forzar Detalle para que al volver a >= 5 el bento sea visible de inmediato.
+            if let count = newCount, count < 5, contentMode != .detail {
+                contentMode = .detail
+            }
+        }
     }
 
-    // MARK: - Control Bar
+    // MARK: - Filter Bar (panel style)
 
-    private var controlBar: some View {
+    private var filterBarPanel: some View {
         FilterControlBar(
-            periodSelector: TrendsPeriodMenu(
-                selectedPeriod: trendsViewModel.detailPeriod,
-                customDateRange: sessionState.customDateRange,
-                onSelect: { period in
-                    sessionState.selectedPeriod = period
-                },
-                onCustomTapped: {
-                    showCustomPeriodPicker = true
-                }
-            )
-            .equatable(),
+            periodSelector: EmptyView(),
             viewModel: trendsViewModel,
             accounts: accounts,
             categories: categories,
             allSubcategories: allSubcategories,
             tags: tags,
-            animationValue: trendsViewModel.detailPeriod
-        ) {
-            if appPreferences.showVariations && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
-                VStack(spacing: DS.Spacing.xxs) {
-                    ComparisonModeSelector()
-
-                    if let data = viewModel.insightData {
-                        Text(data.periodSummary.previousPeriodLabel)
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-            }
-        }
+            animationValue: trendsViewModel.detailPeriod,
+            panelStyle: true,
+            inlinePeriodSelector: false
+        )
     }
 
     private var transactionDateRange: (start: Date, end: Date) {
@@ -221,91 +185,87 @@ struct InsightsTabView: View {
         return (start, end)
     }
 
-    // MARK: - Section 1: Period Summary
+    // MARK: - Hero Summary
 
     @ViewBuilder
-    private func periodSummarySection(_ summary: PeriodSummary) -> some View {
-        VStack(spacing: DS.Spacing.md) {
-            // Row 1: Expense + Income
-            HStack(spacing: DS.Spacing.md) {
-                metricCard(
-                    title: L10n.CashFlow.expense,
-                    value: summary.totalExpense,
-                    variation: summary.expenseVariation,
-                    isExpenseContext: true
-                )
-                metricCard(
-                    title: L10n.CashFlow.income,
-                    value: summary.totalIncome,
-                    variation: summary.incomeVariation,
-                    isExpenseContext: false
-                )
+    private func heroSummary(_ summary: PeriodSummary) -> some View {
+        let hasRecords = summary.transactionCount > 0
+        let period = trendsViewModel.detailPeriod
+
+        VStack(alignment: .center, spacing: DS.Spacing.xs) {
+            TrendsPeriodMenu(
+                selectedPeriod: period,
+                customDateRange: sessionState.customDateRange,
+                onSelect: { sessionState.selectedPeriod = $0 },
+                onCustomTapped: { showCustomPeriodPicker = true }
+            )
+            .equatable()
+
+            if !sessionState.isExpensesOnlyMode && hasRecords {
+                Text(appPreferences.currency(summary.netBalance, currencyCode: defaultCurrencyCode))
+                    .font(DS.Typography.largeTitle)
+                    .foregroundStyle(.primary)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
             }
 
-            // Row 2: Balance + Count
-            HStack(spacing: DS.Spacing.md) {
-                metricCard(
-                    title: L10n.TrendType.balance,
-                    value: summary.netBalance,
-                    variation: summary.balanceVariation,
-                    isExpenseContext: false
-                )
-                countCard(count: summary.transactionCount, dailyAverage: summary.dailyAverageCount)
+            incomeExpenseChips(summary)
+
+            if let sub = RecordsMotivationalLogic.subtitle(forCount: summary.transactionCount) {
+                Text(localizedMotivational(sub))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
             }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, summaryVerticalPadding)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private func localizedMotivational(_ sub: RecordsHeroSubtitle) -> String {
+        switch sub {
+        case .one: return L10n.Stats.Insights.motivationalOne
+        case .many(let n): return L10n.Stats.Insights.motivationalMany(n)
         }
     }
 
-    // MARK: - Metric Card
+    @ViewBuilder
+    private func incomeExpenseChips(_ summary: PeriodSummary) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            if !sessionState.isExpensesOnlyMode {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "arrow.up.right")
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(Color.incomeGraph)
+                        .accessibilityHidden(true)
+                    Text(appPreferences.currency(summary.totalIncome, currencyCode: defaultCurrencyCode))
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    if appPreferences.showVariations {
+                        VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
+                    }
+                }
+            }
 
-    private func metricCard(
-        title: String,
-        value: Double,
-        variation: Double?,
-        isExpenseContext: Bool
-    ) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            Text(title)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-
-            Text(appPreferences.currency(value, currencyCode: defaultCurrencyCode))
-                .font(DS.Typography.title2)
-                .fontWeight(.semibold)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-
-            if appPreferences.showVariations {
-                VariationChip(
-                    variation: variation,
-                    size: .small,
-                    isExpenseContext: isExpenseContext
-                )
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "arrow.down.right")
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(Color.expenseGraph)
+                    .accessibilityHidden(true)
+                Text(appPreferences.currency(summary.totalExpense, currencyCode: defaultCurrencyCode))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                if appPreferences.showVariations {
+                    VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
+                }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(DS.Spacing.lg)
-        .solidCard()
-    }
-
-    private func countCard(count: Int, dailyAverage: Double = 0) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            Text(L10n.Insights.records)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-
-            Text("\(count)")
-                .font(DS.Typography.title2)
-                .fontWeight(.semibold)
-                .foregroundStyle(.primary)
-
-            Text("~\(String(format: "%.1f", dailyAverage)) \(L10n.Insights.perDay)")
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(DS.Spacing.lg)
-        .solidCard()
     }
 
     // MARK: - Pro Hero Section (AI button / loading / hero card)
@@ -341,18 +301,30 @@ struct InsightsTabView: View {
                 showInsightsConsentAlert = true
             }
         } label: {
-            HStack(spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "sparkles")
-                Text(L10n.Insights.generateAI)
+                    .font(.system(size: 24))
+                    .foregroundStyle(theme.accent)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.Stats.Insights.aiCardTitle)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+                    Text(L10n.Stats.Insights.aiCardSubtitle)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: DS.Spacing.sm)
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
             }
-            .font(DS.Typography.label)
-            .fontWeight(.semibold)
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, DS.Spacing.md)
-            .background(theme.accent, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .panelCard()
         .coachMarkAnchor("proAiSummary")
     }
 
@@ -368,8 +340,7 @@ struct InsightsTabView: View {
                 .lineLimit(2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Spacing.lg)
-        .solidCard()
+        .panelCard()
     }
 
     // MARK: - Pro Observations Section
@@ -423,8 +394,7 @@ struct InsightsTabView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(DS.Spacing.lg)
-                .solidCard()
+                .panelCard()
             }
         }
     }
@@ -433,110 +403,207 @@ struct InsightsTabView: View {
 
     @ViewBuilder
     private func freeObservationsSection(_ data: InsightData) -> some View {
-        if data.ruleBasedInsights.count > 1 {
-            textInsightsSection(Array(data.ruleBasedInsights.dropFirst()))
+        if !data.ruleBasedInsights.isEmpty {
+            textInsightsSection(Array(data.ruleBasedInsights.prefix(2)))
         }
     }
 
-    // MARK: - Section 3: Quick Stats Grid
+    // MARK: - Section 3: Quick Stats Bento
+
+    // MARK: - Section: Salud financiera (header externo, view sin header interno)
 
     @ViewBuilder
-    private func quickStatsSection(_ stats: QuickStats, summary: PeriodSummary) -> some View {
-        VStack(spacing: DS.Spacing.sm) {
-            YalaSectionHeader(L10n.Insights.quickStats)
-
-            let columns = [
-                GridItem(.flexible(), spacing: DS.Spacing.md),
-                GridItem(.flexible(), spacing: DS.Spacing.md)
-            ]
-
-            LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
-                dailyAverageCell(stats: stats, summary: summary)
-
-                if let top = stats.topCategory {
-                    QuickStatCell(
-                        icon: "folder.fill",
-                        label: L10n.Insights.topCategory,
-                        value: top.category.name,
-                        secondary: "\(appPreferences.currency(top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage))%"
-                    )
-                }
-
-                if let topSub = stats.topSubcategory {
-                    QuickStatCell(
-                        icon: "tag.fill",
-                        label: L10n.Insights.topSubcategory,
-                        value: topSub.subcategoryName,
-                        secondary: appPreferences.currency(topSub.amount, currencyCode: defaultCurrencyCode)
-                    )
-                }
-
-                if let highest = stats.highestExpense {
-                    QuickStatCell(
-                        icon: "arrow.up.circle.fill",
-                        label: L10n.Insights.highestExpense,
-                        value: appPreferences.currency(highest.amount, currencyCode: defaultCurrencyCode),
-                        secondary: highest.note
-                    )
-                }
-
-                if let bestDay = stats.highestAvgWeekday {
-                    QuickStatCell(
-                        icon: "calendar.circle.fill",
-                        label: L10n.Insights.highestAvgWeekday,
-                        value: bestDay.weekdayName.capitalized,
-                        secondary: appPreferences.currency(bestDay.average, currencyCode: defaultCurrencyCode)
-                    )
-                }
-
-                if stats.subscriptionsTotal > 0 {
-                    QuickStatCell(
-                        icon: "repeat.circle.fill",
-                        label: L10n.Insights.subscriptions,
-                        value: appPreferences.currency(stats.subscriptionsTotal, currencyCode: defaultCurrencyCode),
-                        secondary: L10n.Insights.monthly
-                    )
-                }
-            }
+    private func financialScoreSection(_ score: FinancialScore) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            YalaSectionHeader(L10n.Panel.Health.cardTitle)
+            FinancialScoreView(
+                score: score,
+                sessionState: sessionState,
+                subtitle: trendsViewModel.detailPeriod.displayName,
+                hideHeader: true
+            )
         }
     }
 
-    // MARK: - Daily Average Cell
+    // MARK: - Detail mode (Tus cifras + M/A + bento + commitments + need)
 
-    private func dailyAverageCell(stats: QuickStats, summary: PeriodSummary) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: "chart.bar.fill")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(theme.accent)
-                    .accessibilityHidden(true)
+    @ViewBuilder
+    private func detailModeContent(_ data: InsightData) -> some View {
+        if appPreferences.insightsShowQuickStats {
+            VStack(spacing: DS.Spacing.sm) {
+                detailModeHeader(summary: data.periodSummary)
+                detailModeBody(stats: data.quickStats, summary: data.periodSummary)
+            }
+        }
 
-                Text(L10n.Insights.dailyAverage)
-                    .font(DS.Typography.captionSmall)
+        if hasCommitmentsData(data.commitments) {
+            commitmentsSection(data.commitments)
+        }
+
+        if data.periodSummary.transactionCount >= 5,
+           appPreferences.insightsShowNature,
+           data.needDistribution.total > 0 {
+            needSection(data.needDistribution)
+        }
+    }
+
+    @ViewBuilder
+    private func detailModeHeader(summary: PeriodSummary) -> some View {
+        let period = trendsViewModel.detailPeriod
+        let showComparison = appPreferences.showVariations
+            && PreviousPeriodHelper.isSelectorVisible(for: period)
+
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Stats.Insights.detailHeader)
+                    .font(DS.Typography.title)
+                    .foregroundStyle(.primary)
+                Text(period.displayName)
+                    .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }
 
-            Text(appPreferences.currency(stats.dailyAverage, currencyCode: defaultCurrencyCode))
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            Spacer(minLength: DS.Spacing.sm)
 
-            Group {
-                if appPreferences.showVariations, let variation = summary.dailyAverageVariation {
-                    VariationChip(variation: variation, size: .small, isExpenseContext: true)
-                } else {
-                    Text(" ")
-                        .font(.caption2.weight(.medium))
-                        .padding(.horizontal, DS.Spacing.xs)
-                        .padding(.vertical, DS.Spacing.xxs)
-                        .opacity(0)
+            if showComparison {
+                VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                    ComparisonModeSelector()
+                    Text(summary.previousPeriodLabel)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Spacing.md)
-        .solidCard(radius: DS.Radius.md)
+    }
+
+    @ViewBuilder
+    private func detailModeBody(stats: QuickStats, summary: PeriodSummary) -> some View {
+        dailyAverageCard(stats: stats, summary: summary)
+
+        let columns = [
+            GridItem(.flexible(), spacing: DS.Spacing.md),
+            GridItem(.flexible(), spacing: DS.Spacing.md)
+        ]
+
+        LazyVGrid(columns: columns, spacing: DS.Spacing.md) {
+            if let top = stats.topCategory {
+                QuickStatCell(
+                    icon: "folder.fill",
+                    label: L10n.Insights.topCategory,
+                    value: top.category.name,
+                    secondary: "\(appPreferences.currency(top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage))%"
+                )
+            }
+            if let topSub = stats.topSubcategory {
+                QuickStatCell(
+                    icon: "tag.fill",
+                    label: L10n.Insights.topSubcategory,
+                    value: topSub.subcategoryName,
+                    secondary: appPreferences.currency(topSub.amount, currencyCode: defaultCurrencyCode)
+                )
+            }
+            if let highest = stats.highestExpense {
+                QuickStatCell(
+                    icon: "arrow.up.circle.fill",
+                    label: L10n.Insights.highestExpense,
+                    value: appPreferences.currency(highest.amount, currencyCode: defaultCurrencyCode),
+                    secondary: highest.note
+                )
+            }
+            if let bestDay = stats.highestAvgWeekday {
+                QuickStatCell(
+                    icon: "calendar.circle.fill",
+                    label: L10n.Insights.highestAvgWeekday,
+                    value: bestDay.weekdayName.capitalized,
+                    secondary: appPreferences.currency(bestDay.average, currencyCode: defaultCurrencyCode)
+                )
+            }
+        }
+
+        if stats.subscriptionsTotal > 0 {
+            subscriptionsCard(stats)
+        }
+    }
+
+    // MARK: - Observations mode
+
+    @ViewBuilder
+    private func observationsModeContent(_ data: InsightData) -> some View {
+        if appPreferences.insightsShowTexts {
+            if isProUser {
+                proObservationsSection(data)
+            } else {
+                freeObservationsSection(data)
+            }
+        }
+        if !isProUser { lockedFunFact }
+    }
+
+    // MARK: - Daily Average Card (full-width hero del bento)
+
+    private func dailyAverageCard(stats: QuickStats, summary: PeriodSummary) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "chart.bar.fill")
+                .font(.system(size: 32))
+                .foregroundStyle(theme.accent)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Insights.dailyAverage)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Text(appPreferences.currency(stats.dailyAverage, currencyCode: defaultCurrencyCode))
+                    .font(DS.Typography.largeTitle)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                // Reserva altura constante: evita salto visual al alternar
+                // dailyAverageVariation nil ↔ valor (cambio de período).
+                Group {
+                    if appPreferences.showVariations, summary.dailyAverageVariation != nil {
+                        HStack(spacing: DS.Spacing.xs) {
+                            VariationChip(variation: summary.dailyAverageVariation, size: .small, isExpenseContext: true)
+                            Text("· " + L10n.Stats.Insights.dailyAvgIn(trendsViewModel.detailPeriod.displayName))
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Text(" ")
+                            .font(DS.Typography.caption)
+                            .padding(.vertical, DS.Spacing.xxs)
+                            .opacity(0)
+                    }
+                }
+            }
+            Spacer()
+        }
+        .panelCard()
+    }
+
+    // MARK: - Subscriptions Card (banner condicional)
+
+    private func subscriptionsCard(_ stats: QuickStats) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "repeat.circle.fill")
+                .font(.system(size: 24))
+                .foregroundStyle(theme.accent)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Insights.subscriptions)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                Text("\(appPreferences.currency(stats.subscriptionsTotal, currencyCode: defaultCurrencyCode)) · \(L10n.Insights.monthly)")
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .panelCard()
     }
 
     // MARK: - Section 4: Commitments
@@ -550,38 +617,43 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func commitmentsSection(_ c: Commitments) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            VStack(spacing: DS.Spacing.xxs) {
-                YalaSectionHeader(L10n.Insights.commitments)
-                Text(L10n.Insights.commitmentsNote)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            collapsibleHeader(
+                title: L10n.Insights.commitments,
+                subtitle: L10n.Insights.commitmentsNote,
+                isExpanded: isCommitmentsExpanded
+            ) {
+                dsWithAnimation(reduceMotion) {
+                    isCommitmentsExpanded.toggle()
+                }
             }
 
-            VStack(spacing: DS.Spacing.md) {
-                if appPreferences.insightsShowPendingPayments, c.pendingPaymentsCount > 0 {
-                    commitmentRow(
-                        icon: "clock",
-                        label: L10n.Insights.pendingPayments,
-                        value: "\(c.pendingPaymentsCount)",
-                        secondary: appPreferences.currency(c.pendingPaymentsAmount, currencyCode: defaultCurrencyCode)
-                    )
-                }
+            if isCommitmentsExpanded {
+                VStack(spacing: DS.Spacing.md) {
+                    if appPreferences.insightsShowPendingPayments, c.pendingPaymentsCount > 0 {
+                        commitmentRow(
+                            icon: "clock",
+                            label: L10n.Insights.pendingPayments,
+                            value: "\(c.pendingPaymentsCount)",
+                            secondary: appPreferences.currency(c.pendingPaymentsAmount, currencyCode: defaultCurrencyCode)
+                        )
+                    }
 
-                if appPreferences.insightsShowSubscriptions, c.activeSubscriptionsCount > 0 {
-                    commitmentRow(
-                        icon: "repeat",
-                        label: L10n.Insights.activeSubscriptions,
-                        value: "\(c.activeSubscriptionsCount)",
-                        secondary: "\(appPreferences.currency(c.activeSubscriptionsMonthly, currencyCode: defaultCurrencyCode)) \(L10n.Insights.monthly)"
-                    )
-                }
+                    if appPreferences.insightsShowSubscriptions, c.activeSubscriptionsCount > 0 {
+                        commitmentRow(
+                            icon: "repeat",
+                            label: L10n.Insights.activeSubscriptions,
+                            value: "\(c.activeSubscriptionsCount)",
+                            secondary: "\(appPreferences.currency(c.activeSubscriptionsMonthly, currencyCode: defaultCurrencyCode)) \(L10n.Insights.monthly)"
+                        )
+                    }
 
-                if appPreferences.insightsShowBudgetsAtRisk {
-                    ForEach(c.budgetsAtRisk) { budget in
-                        budgetRow(budget)
+                    if appPreferences.insightsShowBudgetsAtRisk {
+                        ForEach(c.budgetsAtRisk) { budget in
+                            budgetRow(budget)
+                        }
                     }
                 }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
     }
@@ -622,8 +694,7 @@ struct InsightsTabView: View {
             )
             .frame(height: 6)
         }
-        .padding(DS.Spacing.md)
-        .solidCard(radius: DS.Radius.md)
+        .panelCard(small: true)
     }
 
     private func commitmentRow(icon: String, label: String, value: String, secondary: String) -> some View {
@@ -649,8 +720,7 @@ struct InsightsTabView: View {
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
         }
-        .padding(DS.Spacing.md)
-        .solidCard(radius: DS.Radius.md)
+        .panelCard(small: true)
     }
 
     // MARK: - Section 6: Need Distribution
@@ -658,11 +728,143 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func needSection(_ distribution: NeedDistribution) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            YalaSectionHeader(L10n.Insights.needDistribution)
+            collapsibleHeader(
+                title: L10n.Insights.needDistribution,
+                subtitle: nil,
+                isExpanded: isNeedSectionExpanded
+            ) {
+                dsWithAnimation(reduceMotion) {
+                    isNeedSectionExpanded.toggle()
+                }
+            }
 
-            NeedBar(distribution: distribution)
-                .solidCard(padding: DS.Spacing.lg)
+            if isNeedSectionExpanded {
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    NeedBar(distribution: distribution)
+
+                    VStack(spacing: DS.Spacing.sm) {
+                        needBucketRow(
+                            label: L10n.Need.essential,
+                            amount: distribution.essential,
+                            percent: distribution.essentialPercent,
+                            color: Color.essentialNeed,
+                            icon: "house.fill"
+                        )
+                        needBucketRow(
+                            label: L10n.Need.priority,
+                            amount: distribution.priority,
+                            percent: distribution.priorityPercent,
+                            color: Color.priorityNeedNew,
+                            icon: "star.fill"
+                        )
+                        needBucketRow(
+                            label: L10n.Need.optional,
+                            amount: distribution.optional,
+                            percent: distribution.optionalPercent,
+                            color: Color.optionalNeed,
+                            icon: "sparkles"
+                        )
+                    }
+
+                    if let tip = needContextualTip(distribution) {
+                        Text(tip)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, DS.Spacing.xs)
+                    }
+                }
+                .panelCard()
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
+    }
+
+    private func needBucketRow(label: String, amount: Double, percent: Double, color: Color, icon: String) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 32, height: 32)
+                Image(systemName: icon)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(color)
+            }
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(label)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+                Text(L10n.Stats.Insights.needDailyFormat(appPreferences.currency(amount / Double(periodDays), currencyCode: defaultCurrencyCode)))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                Text(appPreferences.currency(amount, currencyCode: defaultCurrencyCode))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text("\(Int(percent))%")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// Periodo activo en días (mínimo 1) — para promedio diario por bucket.
+    private var periodDays: Int {
+        let interval = trendsViewModel.detailPeriod.dateInterval(customRange: trendsViewModel.customDateRange)
+        let days = Int((interval.duration / 86_400).rounded())
+        return max(1, days)
+    }
+
+    /// Tip motivacional contextual: reusa la regla `ruleOptionalHigh` ya
+    /// localizada (16 locales × 3 tonos). Solo se muestra si optional% > 40.
+    private func needContextualTip(_ distribution: NeedDistribution) -> String? {
+        guard distribution.total > 0, distribution.optionalPercent > 40 else { return nil }
+        return L10n.Insights.ruleOptionalHigh(Int(distribution.optionalPercent), tone: InsightTone.current)
+    }
+
+    /// Header colapsable estilo `PanelPanoramaSection` ("Tus finanzas"):
+    /// title + subtítulo opcional, accessory circle con `plus`/`minus` glass.
+    private func collapsibleHeader(title: String, subtitle: String?, isExpanded: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(title)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer()
+                Image(systemName: isExpanded ? "minus" : "plus")
+                    .font(DS.Typography.label)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.primary)
+                    .frame(width: DS.Panel.headerAccessorySize, height: DS.Panel.headerAccessorySize)
+                    .glassEffect(.regular.interactive(), in: Circle())
+                    .contentShape(Circle())
+                    .accessibilityHidden(true)
+            }
+            .padding(.vertical, DS.Spacing.xs)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(.isHeader)
+        .accessibilityAddTraits(isExpanded ? .isSelected : [])
     }
 
     // MARK: - Section 7: Text Insights (Free users)
@@ -690,8 +892,7 @@ struct InsightsTabView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(DS.Spacing.lg)
-        .solidCard()
+        .panelCard()
     }
 
     // MARK: - AI Insights Teaser (Free users)
@@ -736,8 +937,7 @@ struct InsightsTabView: View {
                 .clipShape(Capsule())
             }
         }
-        .padding(DS.Spacing.lg)
-        .solidCard()
+        .panelCard()
         .onAppear {
             TelemetryService.trackOnce(.proUpsellShown, key: "insightsTeaser", parameters: TelemetryService.upsellParameters(source: "insightsTeaser"))
         }
@@ -769,8 +969,7 @@ struct InsightsTabView: View {
 
                 ProBadge(size: .small)
             }
-            .padding(DS.Spacing.lg)
-            .solidCard()
+            .panelCard()
             .opacity(0.7)
         }
         .buttonStyle(.plain)
@@ -779,10 +978,59 @@ struct InsightsTabView: View {
         }
     }
 
+    // MARK: - Content Mode Pill (standalone, full-width iOS 26 Liquid Glass)
+
+    private var contentModePill: some View {
+        HStack(spacing: DS.Spacing.none) {
+            ForEach(InsightsContentMode.allCases, id: \.self) { mode in
+                Button {
+                    dsWithAnimation(reduceMotion) {
+                        contentMode = mode
+                    }
+                } label: {
+                    Text(mode.label)
+                        .font(DS.Typography.label.weight(contentMode == mode ? .semibold : .medium))
+                        .foregroundStyle(contentMode == mode ? Color.white : Color.primary)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Chip.paddingV)
+                        .frame(maxWidth: .infinity)
+                        .background {
+                            if contentMode == mode {
+                                Capsule()
+                                    .fill(theme.accent)
+                                    .matchedGeometryEffect(id: "selection", in: contentModeNamespace)
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(mode.label)
+                .accessibilityAddTraits(contentMode == mode ? .isSelected : [])
+            }
+        }
+        .padding(DS.Spacing.xs)
+        .background(Capsule().fill(.thCard))
+        .overlay(Capsule().stroke(Color.primary.opacity(0.06), lineWidth: 1))
+    }
+
     // MARK: - Helpers
 
     private func markdownAttributed(_ text: String) -> AttributedString {
         (try? AttributedString(markdown: text)) ?? AttributedString(text)
     }
 
+}
+
+// MARK: - InsightsContentMode
+
+private enum InsightsContentMode: String, CaseIterable {
+    case detail
+    case observations
+
+    var label: String {
+        switch self {
+        case .detail:       return L10n.Stats.Insights.modeDetail
+        case .observations: return L10n.Insights.intelligentInsights
+        }
+    }
 }

@@ -2973,6 +2973,10 @@
 "insights.tipExpenseUp" = "Vergelijk met je laagste maand om te zien wat er veranderde";
 "insights.tipBudgetRisk" = "Er zijn nog dagen over — probeer voor de rest %@ in te tomen";
 "insights.tipOptionalHigh" = "Bekijk je optionele uitgaven en zie welke je kunt uitstellen";
+
+"insights.ruleDailyAverage %@" = "Je geeft gemiddeld %@ per dag uit.";
+"insights.ruleSavingsPositive %d" = "Je bespaart %d%% van je inkomen.";
+"insights.ruleSavingsNegative" = "Je uitgaven overschreden je inkomen deze periode.";
 "insights.ruleSharedRatio.normal" = "%d%% van je uitgaven deze periode zijn gedeeld";
 "insights.ruleSharedRatio.considerate" = "%d%% van je uitgaven was gedeeld — delen is leuk";
 "insights.ruleSharedRatio.sarcastic" = "%d%% van je uitgaven is gedeeld. Wie betaalt de volgende?";
@@ -4264,3 +4268,14 @@
 
 "stats.records.motivationalOne" = "1 boeking · Goede start";
 "stats.records.motivationalMany %d" = "%d boekingen · Ga zo door";
+
+"stats.insights.motivationalOne" = "1 boeking · Goede start";
+"stats.insights.motivationalMany %d" = "%d boekingen · Ga zo door";
+"stats.insights.detailHeader" = "Jouw cijfers";
+"stats.insights.aiCardTitle" = "Slimme samenvatting";
+"stats.insights.aiCardSubtitle" = "Gepersonaliseerd met AI";
+"stats.insights.dailyAvgIn %@" = "per dag in %@";
+
+"stats.insights.need.dailyFormat %@" = "≈ %@/dag";
+
+"stats.insights.modeDetail" = "Details";

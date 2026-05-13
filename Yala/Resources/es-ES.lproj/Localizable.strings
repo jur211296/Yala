@@ -264,3 +264,14 @@
 
 "stats.records.motivationalOne" = "1 registro · Buen comienzo";
 "stats.records.motivationalMany %d" = "%d registros · Sigue así";
+
+"stats.insights.motivationalOne" = "1 movimiento · Buen comienzo";
+"stats.insights.motivationalMany %d" = "%d movimientos · Sigue así";
+"stats.insights.detailHeader" = "Tus cifras";
+"stats.insights.aiCardTitle" = "Resumen inteligente";
+"stats.insights.aiCardSubtitle" = "Personalizado con IA";
+"stats.insights.dailyAvgIn %@" = "por día en %@";
+
+"stats.insights.need.dailyFormat %@" = "≈ %@/día";
+
+"stats.insights.modeDetail" = "Detalle";

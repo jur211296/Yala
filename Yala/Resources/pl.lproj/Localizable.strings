@@ -2973,6 +2973,10 @@
 "insights.tipExpenseUp" = "Porównaj z miesiącem o najmniejszych wydatkach, by zobaczyć, co się zmieniło";
 "insights.tipBudgetRisk" = "Zostało jeszcze trochę dni — postaraj się ograniczyć %@ do końca";
 "insights.tipOptionalHigh" = "Przejrzyj wydatki opcjonalne i zobacz, które można odłożyć";
+
+"insights.ruleDailyAverage %@" = "Średnio wydajesz %@ dziennie.";
+"insights.ruleSavingsPositive %d" = "Oszczędzasz %d%% swoich dochodów.";
+"insights.ruleSavingsNegative" = "Twoje wydatki przekroczyły dochody w tym okresie.";
 "insights.ruleSharedRatio.normal" = "%d%% twoich wydatków w tym okresie jest współdzielonych";
 "insights.ruleSharedRatio.considerate" = "%d%% wydatków było współdzielonych — dzielenie się to dobra rzecz";
 "insights.ruleSharedRatio.sarcastic" = "%d%% wydatków jest współdzielonych. Kto płaci następnym razem?";
@@ -4264,3 +4268,14 @@
 
 "stats.records.motivationalOne" = "1 wpis · Dobry początek";
 "stats.records.motivationalMany %d" = "%d wpisów · Tak trzymaj";
+
+"stats.insights.motivationalOne" = "1 wpis · Dobry początek";
+"stats.insights.motivationalMany %d" = "%d wpisów · Tak trzymaj";
+"stats.insights.detailHeader" = "Twoje liczby";
+"stats.insights.aiCardTitle" = "Inteligentne podsumowanie";
+"stats.insights.aiCardSubtitle" = "Spersonalizowane z AI";
+"stats.insights.dailyAvgIn %@" = "dziennie w %@";
+
+"stats.insights.need.dailyFormat %@" = "≈ %@/dzień";
+
+"stats.insights.modeDetail" = "Szczegóły";

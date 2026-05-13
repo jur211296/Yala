@@ -3019,6 +3019,10 @@
 "insights.tipExpenseUp" = "Compare with your lowest-spending month to see what changed";
 "insights.tipBudgetRisk" = "There are still days left — try to hold back on %@ for the rest";
 "insights.tipOptionalHigh" = "Review your optional expenses and see which ones you could postpone";
+
+"insights.ruleDailyAverage %@" = "You average %@ per day.";
+"insights.ruleSavingsPositive %d" = "You're saving %d%% of your income.";
+"insights.ruleSavingsNegative" = "Your expenses exceeded your income this period.";
 "insights.ruleSharedRatio.normal" = "%d%% of your expenses this period are shared";
 "insights.ruleSharedRatio.considerate" = "%d%% of your spending was shared — sharing is caring";
 "insights.ruleSharedRatio.sarcastic" = "%d%% of your spending is shared. Who pays next?";
@@ -4266,3 +4270,14 @@
 
 "stats.records.motivationalOne" = "1 record · Great start";
 "stats.records.motivationalMany %d" = "%d records · Keep it up";
+
+"stats.insights.motivationalOne" = "1 transaction · Great start";
+"stats.insights.motivationalMany %d" = "%d transactions · Keep it up";
+"stats.insights.detailHeader" = "Your numbers";
+"stats.insights.aiCardTitle" = "Smart summary";
+"stats.insights.aiCardSubtitle" = "Personalized with AI";
+"stats.insights.dailyAvgIn %@" = "per day in %@";
+
+"stats.insights.need.dailyFormat %@" = "≈ %@/day";
+
+"stats.insights.modeDetail" = "Detail";

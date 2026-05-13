@@ -2973,6 +2973,10 @@
 "insights.tipExpenseUp" = "支出が最も少なかった月と比較して何が変わったか見てみましょう";
 "insights.tipBudgetRisk" = "まだ日数が残っています — 残りは%@を控えめに";
 "insights.tipOptionalHigh" = "任意の支出を見直して、後回しにできるものを探してみましょう";
+
+"insights.ruleDailyAverage %@" = "1日あたり平均%@を使っています。";
+"insights.ruleSavingsPositive %d" = "収入の%d%%を貯蓄しています。";
+"insights.ruleSavingsNegative" = "この期間、支出が収入を上回りました。";
 "insights.ruleSharedRatio.normal" = "今期間の支出のうち%d%%がシェア支出です";
 "insights.ruleSharedRatio.considerate" = "支出の%d%%はシェアされていました — シェアは思いやり";
 "insights.ruleSharedRatio.sarcastic" = "支出の%d%%がシェア支出。次は誰が払う？";
@@ -4264,3 +4268,14 @@
 
 "stats.records.motivationalOne" = "1件の記録 · 良いスタートです";
 "stats.records.motivationalMany %d" = "%d件の記録 · その調子です";
+
+"stats.insights.motivationalOne" = "1件の取引 · 良いスタートです";
+"stats.insights.motivationalMany %d" = "%d件の取引 · その調子です";
+"stats.insights.detailHeader" = "あなたの数字";
+"stats.insights.aiCardTitle" = "スマートサマリー";
+"stats.insights.aiCardSubtitle" = "AIでパーソナライズ";
+"stats.insights.dailyAvgIn %@" = "%@の1日あたり";
+
+"stats.insights.need.dailyFormat %@" = "≈ %@/日";
+
+"stats.insights.modeDetail" = "詳細";

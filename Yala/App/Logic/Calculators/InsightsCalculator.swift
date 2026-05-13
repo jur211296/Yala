@@ -784,6 +784,45 @@ struct InsightsCalculator {
             ))
         }
 
+        // Rule 5 (universal): Daily average snapshot — no depende de período comparativo,
+        // dispara siempre que haya gasto. Garantiza al menos una observación en .allTime/.custom.
+        if quickStats.dailyAverage > 0 {
+            let amount = YalaFormatterStatic.currency(value: quickStats.dailyAverage, currencyCode: currencyCode)
+            let text = AttributedString(L10n.Insights.ruleDailyAverage(amount))
+            insights.append(InsightResult(
+                id: "daily_average_snapshot",
+                icon: "chart.bar.fill",
+                text: text,
+                sentiment: .neutral,
+                isProOnly: false
+            ))
+        }
+
+        // Rule 6 (universal): Savings ratio — requiere ingresos > 0.
+        if periodSummary.totalIncome > 0 {
+            let netBalance = periodSummary.netBalance
+            if netBalance > 0 {
+                let savingsPct = Int((netBalance / periodSummary.totalIncome) * 100)
+                let text = AttributedString(L10n.Insights.ruleSavingsPositive(savingsPct))
+                insights.append(InsightResult(
+                    id: "savings_positive",
+                    icon: "checkmark.seal.fill",
+                    text: text,
+                    sentiment: .positive,
+                    isProOnly: false
+                ))
+            } else if netBalance < 0 {
+                let text = AttributedString(L10n.Insights.ruleSavingsNegative)
+                insights.append(InsightResult(
+                    id: "savings_negative",
+                    icon: "exclamationmark.triangle.fill",
+                    text: text,
+                    sentiment: .attention,
+                    isProOnly: false
+                ))
+            }
+        }
+
         return insights
     }
 

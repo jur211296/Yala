@@ -1252,6 +1252,17 @@ enum L10n {
         }
         static var tipOptionalHigh: String { ls("insights.tipOptionalHigh", comment: "") }
 
+        // Universal rules (sin tonos, válidas para todos los períodos)
+        static func ruleDailyAverage(_ amount: String) -> String {
+            String(format: ls("insights.ruleDailyAverage %@", comment: "Universal daily average snapshot"), amount)
+        }
+        static func ruleSavingsPositive(_ pct: Int) -> String {
+            String(format: ls("insights.ruleSavingsPositive %d", comment: "Savings ratio positive — income exceeds expenses by N%%"), pct)
+        }
+        static var ruleSavingsNegative: String {
+            ls("insights.ruleSavingsNegative", comment: "Savings ratio negative — expenses exceed income in period")
+        }
+
         // Group insight rules
         static func ruleSharedRatio(_ pct: Int, tone: InsightTone = .normal) -> String {
             String(format: ls("insights.ruleSharedRatio.\(tone.rawValue)", comment: ""), pct)
@@ -5797,6 +5808,32 @@ enum L10n {
             }
             static func motivationalMany(_ count: Int) -> String {
                 String(format: ls("stats.records.motivationalMany %d", comment: "Records hero motivational subtitle when filteredCount >= 2 (use %d placeholder)"), count)
+            }
+        }
+        enum Insights {
+            static var motivationalOne: String {
+                ls("stats.insights.motivationalOne", comment: "Insights hero motivational subtitle when transactionCount == 1")
+            }
+            static func motivationalMany(_ count: Int) -> String {
+                String(format: ls("stats.insights.motivationalMany %d", comment: "Insights hero motivational subtitle when transactionCount >= 2 (use %d placeholder)"), count)
+            }
+            static var detailHeader: String {
+                ls("stats.insights.detailHeader", comment: "Detail mode section header — generic 'Your numbers' (period shown as subtitle)")
+            }
+            static var aiCardTitle: String {
+                ls("stats.insights.aiCardTitle", comment: "Pro Insights AI tappable card title")
+            }
+            static var aiCardSubtitle: String {
+                ls("stats.insights.aiCardSubtitle", comment: "Pro Insights AI tappable card subtitle")
+            }
+            static func dailyAvgIn(_ period: String) -> String {
+                String(format: ls("stats.insights.dailyAvgIn %@", comment: "Daily average context label (e.g., 'per day in this month')"), period)
+            }
+            static func needDailyFormat(_ amount: String) -> String {
+                String(format: ls("stats.insights.need.dailyFormat %@", comment: "Need bucket daily average label (e.g., '≈ S/12/day')"), amount)
+            }
+            static var modeDetail: String {
+                ls("stats.insights.modeDetail", comment: "Content mode pill label: detailed monthly figures view")
             }
         }
     }
