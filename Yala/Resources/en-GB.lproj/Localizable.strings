@@ -337,6 +337,14 @@
 "setup.demo.scheduled.notifCaption" = "We notify you 3 days before";
 
 
+"setup.demo.gotIt" = "Crystal clear";
+"setup.demo.waitForCompletion" = "Wait until the demo completes";
+"setup.demo.restart" = "Restart";
+"setup.demo.firstExpense.descriptionExample" = "Lunch";
+"setup.demo.firstExpense.accountExample" = "Personal";
+"setup.demo.firstExpense.subcategoryExample" = "Food";
+"setup.demo.firstExpense.tagExample" = "lunch";
+"setup.demo.firstExpense.savedToast" = "Done!";
 // MARK: - Stats Records polish
 
 "stats.records.motivationalOne" = "1 record · Great start";

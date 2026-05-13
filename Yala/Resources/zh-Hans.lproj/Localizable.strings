@@ -3316,6 +3316,14 @@
 "setup.demo.scheduled.nameExample" = "Netflix";
 "setup.demo.scheduled.notifCaption" = "我们会在 3 天前提醒你";
 
+"setup.demo.gotIt" = "我明白了";
+"setup.demo.waitForCompletion" = "请等待演示完成";
+"setup.demo.restart" = "重新开始";
+"setup.demo.firstExpense.descriptionExample" = "午餐";
+"setup.demo.firstExpense.accountExample" = "个人";
+"setup.demo.firstExpense.subcategoryExample" = "食物";
+"setup.demo.firstExpense.tagExample" = "午餐";
+"setup.demo.firstExpense.savedToast" = "完成！";
 "setup.personalize.navTitle" = "个性化你的 Yala";
 "setup.personalize.title" = "让它属于你";
 "setup.personalize.subtitle" = "加点个人风格。更换主题、图标或小组件外观。";

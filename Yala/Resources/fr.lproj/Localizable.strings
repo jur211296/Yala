@@ -3313,6 +3313,14 @@
 "setup.demo.scheduled.nameExample" = "Netflix";
 "setup.demo.scheduled.notifCaption" = "Nous vous avertissons 3 jours avant";
 
+"setup.demo.gotIt" = "C'est clair";
+"setup.demo.waitForCompletion" = "Veuillez attendre la fin de la démo";
+"setup.demo.restart" = "Redémarrer";
+"setup.demo.firstExpense.descriptionExample" = "Déjeuner";
+"setup.demo.firstExpense.accountExample" = "Personnel";
+"setup.demo.firstExpense.subcategoryExample" = "Nourriture";
+"setup.demo.firstExpense.tagExample" = "déjeuner";
+"setup.demo.firstExpense.savedToast" = "Terminé !";
 "setup.personalize.navTitle" = "Personnalise ton Yala";
 "setup.personalize.title" = "Fais-en le tien";
 "setup.personalize.subtitle" = "Ajoute ta touche personnelle. Change le thème, l'icône ou l'apparence de tes widgets.";

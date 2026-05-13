@@ -3316,6 +3316,14 @@
 "setup.demo.scheduled.nameExample" = "Netflix";
 "setup.demo.scheduled.notifCaption" = "We waarschuwen je 3 dagen van tevoren";
 
+"setup.demo.gotIt" = "Helemaal duidelijk";
+"setup.demo.waitForCompletion" = "Wacht tot de demo klaar is";
+"setup.demo.restart" = "Opnieuw";
+"setup.demo.firstExpense.descriptionExample" = "Lunch";
+"setup.demo.firstExpense.accountExample" = "Persoonlijk";
+"setup.demo.firstExpense.subcategoryExample" = "Eten";
+"setup.demo.firstExpense.tagExample" = "lunch";
+"setup.demo.firstExpense.savedToast" = "Klaar!";
 "setup.personalize.navTitle" = "Personaliseer je Yala";
 "setup.personalize.title" = "Maak het van jou";
 "setup.personalize.subtitle" = "Geef het je persoonlijke touch. Wijzig het thema, icoon of hoe je widgets eruitzien.";

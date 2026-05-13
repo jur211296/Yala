@@ -29,9 +29,14 @@ struct SetupChecklistDemoSheet: View {
                 onStartReal: { handleStartReal(for: .scheduledPayment) }
             )
         case .firstExpense:
-            NewTransactionView(
-                mode: .demo,
-                onStartReal: { handleStartReal(for: .firstExpense) }
+            SetupDemoFirstExpenseView(
+                onClose: {
+                    sheets.setupDemoStep = nil
+                },
+                onComplete: {
+                    SetupChecklistManager.shared.markCompleted(.firstExpense)
+                    sheets.setupDemoStep = nil
+                }
             )
         case .firstBudget:
             BudgetEditorView(

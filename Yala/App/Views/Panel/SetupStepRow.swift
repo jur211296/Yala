@@ -280,6 +280,33 @@ extension L10n {
             static var scheduledNotifCaption: String {
                 NSLocalizedString("setup.demo.scheduled.notifCaption", comment: "Te avisamos 3 días antes")
             }
+
+            static var gotIt: String {
+                NSLocalizedString("setup.demo.gotIt", comment: "Lo tengo claro")
+            }
+            static var waitForCompletion: String {
+                NSLocalizedString("setup.demo.waitForCompletion", comment: "Espera a ver la demo completa")
+            }
+            static var restart: String {
+                NSLocalizedString("setup.demo.restart", comment: "Reiniciar")
+            }
+
+            // Step 2 — firstExpense (mock data)
+            static var firstExpenseDescriptionExample: String {
+                NSLocalizedString("setup.demo.firstExpense.descriptionExample", comment: "Almuerzo")
+            }
+            static var firstExpenseAccountExample: String {
+                NSLocalizedString("setup.demo.firstExpense.accountExample", comment: "Personal")
+            }
+            static var firstExpenseSubcategoryExample: String {
+                NSLocalizedString("setup.demo.firstExpense.subcategoryExample", comment: "Comida")
+            }
+            static var firstExpenseTagExample: String {
+                NSLocalizedString("setup.demo.firstExpense.tagExample", comment: "almuerzo")
+            }
+            static var firstExpenseSavedToast: String {
+                NSLocalizedString("setup.demo.firstExpense.savedToast", comment: "¡Listo!")
+            }
         }
     }
 }

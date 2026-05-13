@@ -260,6 +260,14 @@
 "setup.demo.scheduled.notifCaption" = "Te avisamos 3 días antes";
 
 
+"setup.demo.gotIt" = "Lo tengo claro";
+"setup.demo.waitForCompletion" = "Espera a ver la demo completa";
+"setup.demo.restart" = "Reiniciar";
+"setup.demo.firstExpense.descriptionExample" = "Almuerzo";
+"setup.demo.firstExpense.accountExample" = "Personal";
+"setup.demo.firstExpense.subcategoryExample" = "Comida";
+"setup.demo.firstExpense.tagExample" = "almuerzo";
+"setup.demo.firstExpense.savedToast" = "¡Listo!";
 // MARK: - Stats Records polish
 
 "stats.records.motivationalOne" = "1 registro · Buen comienzo";

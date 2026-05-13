@@ -3312,6 +3312,14 @@
 "setup.demo.scheduled.nameExample" = "Netflix";
 "setup.demo.scheduled.notifCaption" = "Wir benachrichtigen Sie 3 Tage vorher";
 
+"setup.demo.gotIt" = "Alles klar";
+"setup.demo.waitForCompletion" = "Warten Sie, bis die Demo abgeschlossen ist";
+"setup.demo.restart" = "Neu starten";
+"setup.demo.firstExpense.descriptionExample" = "Mittagessen";
+"setup.demo.firstExpense.accountExample" = "Persönlich";
+"setup.demo.firstExpense.subcategoryExample" = "Essen";
+"setup.demo.firstExpense.tagExample" = "mittagessen";
+"setup.demo.firstExpense.savedToast" = "Fertig!";
 "setup.personalize.navTitle" = "Personalisiere dein Yala";
 "setup.personalize.title" = "Mach es zu deinem";
 "setup.personalize.subtitle" = "Gib deiner App eine persönliche Note. Ändere das Design, das Symbol oder die Widgets.";

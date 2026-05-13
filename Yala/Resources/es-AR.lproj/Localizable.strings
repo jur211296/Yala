@@ -452,6 +452,14 @@
 "setup.demo.scheduled.nameExample" = "Netflix";
 "setup.demo.scheduled.notifCaption" = "Te avisamos 3 días antes";
 
+"setup.demo.gotIt" = "Lo tengo claro";
+"setup.demo.waitForCompletion" = "Esperá a ver la demo completa";
+"setup.demo.restart" = "Reiniciar";
+"setup.demo.firstExpense.descriptionExample" = "Almuerzo";
+"setup.demo.firstExpense.accountExample" = "Personal";
+"setup.demo.firstExpense.subcategoryExample" = "Comida";
+"setup.demo.firstExpense.tagExample" = "almuerzo";
+"setup.demo.firstExpense.savedToast" = "¡Listo!";
 // MARK: - Stats Records polish
 
 "stats.records.motivationalMany %d" = "%d registros · Seguí así";
