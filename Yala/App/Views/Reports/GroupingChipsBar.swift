@@ -13,8 +13,6 @@ struct GroupingChipsBar: View {
 
     @State private var showReorderSheet = false
 
-    @Environment(\.yalaTheme) private var theme
-
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             // Scrollable breadcrumb
@@ -83,7 +81,7 @@ struct GroupingChipsBar: View {
             .foregroundStyle(.white)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
-            .background(Capsule().fill(theme.accent))
+            .background(Capsule().fill(.indigo))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.Report.Grouping.drillDown)
