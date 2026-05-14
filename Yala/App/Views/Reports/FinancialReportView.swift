@@ -231,10 +231,20 @@ struct FinancialReportView: View {
                 }
             }
 
-            Text(subtitle)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+            HStack(spacing: DS.Spacing.sm) {
+                Text(subtitle)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+
+                Spacer(minLength: DS.Spacing.sm)
+
+                if tab == .comparativa
+                    && showVariations
+                    && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod) {
+                    ComparisonModeSelector()
+                }
+            }
         }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
@@ -307,7 +317,7 @@ struct FinancialReportView: View {
                 }
             }
         }
-        .solidCard()
+        .panelCard()
     }
 
     // MARK: - Cash Flow
@@ -397,28 +407,17 @@ struct FinancialReportView: View {
 
     private var filterBar: some View {
         FilterControlBar(
-            periodSelector: TrendsPeriodMenu(
-                selectedPeriod: viewModel.detailPeriod,
-                customDateRange: viewModel.customDateRange,
-                onSelect: { period in
-                    viewModel.detailPeriod = period
-                },
-                onCustomTapped: {
-                    showCustomDatePicker = true
-                }
-            ),
+            periodSelector: EmptyView(),
             viewModel: viewModel,
             accounts: accounts,
             categories: categories,
             allSubcategories: allSubcategories,
             tags: tags,
             animationValue: viewModel.detailPeriod,
-            onFilterChange: { scheduleRecalculate() }
-        ) {
-            if showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod) {
-                ComparisonModeSelector()
-            }
-        }
+            onFilterChange: { scheduleRecalculate() },
+            panelStyle: true,
+            inlinePeriodSelector: false
+        )
     }
 
     // MARK: - Empty State
