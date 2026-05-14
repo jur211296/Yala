@@ -528,16 +528,7 @@
 "planning.goals" = "Goals";
 "planning.comingSoon" = "Coming Soon";
 "planning.scheduledPayments" = "Scheduled Payments";
-"planning.budgets.currentPeriod" = "Period: %@";
-"planning.budgets.statusOverLimit" = "%d over limit";
-"planning.budgets.statusAtLimit" = "%d at limit";
-"planning.budgets.statusOnTrack" = "%d on track";
-"planning.budgets.title" = "Budgets";
-"planning.budgets.heroChip" = "Your budgets";
-"planning.scheduled.summaryNote" = "%d payments · %d recurring";
 "planning.scheduled.totalLabel" = "Total for month";
-"planning.scheduled.title" = "Scheduled payments";
-"planning.scheduled.heroChip" = "Your scheduled payments";
 "planning.budgetCharts.spentOf" = "Spent %@ of %@";
 "planning.budgetCharts.byCategoryHint" = "Tap a category to see subcategories.";
 "planning.budgetCharts.byCategoryTitle" = "By category";
@@ -2066,7 +2057,6 @@
 "inbox.subtitleOnePending" = "One transaction waiting, review when you can.";
 "inbox.subtitleAllDone" = "Inbox at zero, great job.";
 "inbox.pendingBadge" = "%d pending";
-"inbox.heroChip" = "Your inbox";
 "inbox.newTag" = "New";
 "inbox.noArchived" = "No archived drafts";
 "inbox.noArchivedDescription" = "Approved or rejected drafts will appear here.";

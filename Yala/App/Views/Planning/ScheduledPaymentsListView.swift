@@ -32,7 +32,6 @@ struct ScheduledPaymentsListView: View {
             heroSection
                 .padding(.bottom, DS.Spacing.xs)
 
-            // PeriodNavigationHeader shared (TX-P2)
             PeriodNavigationHeader(
                 currentLabel: viewModel.monthYearLabel,
                 onPrevious: {
@@ -79,7 +78,7 @@ struct ScheduledPaymentsListView: View {
         payments.filter { $0.isActive }
     }
 
-    // MARK: - Hero Section (polish panel-aligned, Bloque C)
+    // MARK: - Hero Section
 
     private var heroSection: some View {
         let monthlyTotal = viewModel.calculateMonthlyTotal(

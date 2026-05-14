@@ -526,16 +526,7 @@
 "planning.goals" = "Metas";
 "planning.comingSoon" = "Em breve";
 "planning.scheduledPayments" = "Pagamentos agendados";
-"planning.budgets.currentPeriod" = "Período: %@";
-"planning.budgets.statusOverLimit" = "%d superados";
-"planning.budgets.statusAtLimit" = "%d no limite";
-"planning.budgets.statusOnTrack" = "%d em dia";
-"planning.budgets.title" = "Orçamentos";
-"planning.budgets.heroChip" = "Os teus orçamentos";
-"planning.scheduled.summaryNote" = "%d pagamentos · %d recorrentes";
 "planning.scheduled.totalLabel" = "Total do mês";
-"planning.scheduled.title" = "Pagamentos agendados";
-"planning.scheduled.heroChip" = "Os teus pagamentos agendados";
 "planning.budgetCharts.spentOf" = "Gastos %@ de %@";
 "planning.budgetCharts.byCategoryHint" = "Toca numa categoria para ver subcategorias.";
 "planning.budgetCharts.byCategoryTitle" = "Por categoria";
@@ -2062,7 +2053,6 @@
 "inbox.subtitleOnePending" = "Uma transação à espera, revê quando puderes.";
 "inbox.subtitleAllDone" = "Caixa vazia, bom trabalho.";
 "inbox.pendingBadge" = "%d pendentes";
-"inbox.heroChip" = "A tua caixa";
 "inbox.newTag" = "Nova";
 "inbox.noArchived" = "Sem rascunhos arquivados";
 "inbox.noArchivedDescription" = "Rascunhos aprovados ou rejeitados aparecerão aqui.";

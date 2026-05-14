@@ -526,16 +526,7 @@
 "planning.goals" = "Objectifs";
 "planning.comingSoon" = "Bientot disponible";
 "planning.scheduledPayments" = "Paiements planifies";
-"planning.budgets.currentPeriod" = "Période : %@";
-"planning.budgets.statusOverLimit" = "%d dépassés";
-"planning.budgets.statusAtLimit" = "%d à la limite";
-"planning.budgets.statusOnTrack" = "%d sur la voie";
-"planning.budgets.title" = "Budgets";
-"planning.budgets.heroChip" = "Vos budgets";
-"planning.scheduled.summaryNote" = "%d paiements · %d récurrents";
 "planning.scheduled.totalLabel" = "Total du mois";
-"planning.scheduled.title" = "Paiements planifiés";
-"planning.scheduled.heroChip" = "Vos paiements planifiés";
 "planning.budgetCharts.spentOf" = "%@ dépensés sur %@";
 "planning.budgetCharts.byCategoryHint" = "Touchez une catégorie pour voir les sous-catégories.";
 "planning.budgetCharts.byCategoryTitle" = "Par catégorie";
@@ -2064,7 +2055,6 @@
 "inbox.subtitleOnePending" = "Une transaction en attente, vérifiez quand vous pouvez.";
 "inbox.subtitleAllDone" = "Boîte vide, beau travail.";
 "inbox.pendingBadge" = "%d en attente";
-"inbox.heroChip" = "Votre boîte";
 "inbox.newTag" = "Nouveau";
 "inbox.noArchived" = "Aucun brouillon archivé";
 "inbox.noArchivedDescription" = "Les brouillons approuvés ou rejetés apparaîtront ici.";

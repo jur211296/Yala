@@ -528,16 +528,7 @@
 "planning.goals" = "Doelen";
 "planning.comingSoon" = "Binnenkort";
 "planning.scheduledPayments" = "Geplande betalingen";
-"planning.budgets.currentPeriod" = "Periode: %@";
-"planning.budgets.statusOverLimit" = "%d overschreden";
-"planning.budgets.statusAtLimit" = "%d aan de limiet";
-"planning.budgets.statusOnTrack" = "%d op schema";
-"planning.budgets.title" = "Budgetten";
-"planning.budgets.heroChip" = "Jouw budgetten";
-"planning.scheduled.summaryNote" = "%d betalingen · %d terugkerend";
 "planning.scheduled.totalLabel" = "Totaal voor maand";
-"planning.scheduled.title" = "Geplande betalingen";
-"planning.scheduled.heroChip" = "Jouw geplande betalingen";
 "planning.budgetCharts.spentOf" = "%@ van %@ uitgegeven";
 "planning.budgetCharts.byCategoryHint" = "Tik op een categorie om subcategorieën te zien.";
 "planning.budgetCharts.byCategoryTitle" = "Per categorie";
@@ -2066,7 +2057,6 @@
 "inbox.subtitleOnePending" = "Eén transactie wacht, bekijk wanneer je kunt.";
 "inbox.subtitleAllDone" = "Inbox leeg, goed gedaan.";
 "inbox.pendingBadge" = "%d in afwachting";
-"inbox.heroChip" = "Jouw inbox";
 "inbox.newTag" = "Nieuw";
 "inbox.noArchived" = "Geen gearchiveerde concepten";
 "inbox.noArchivedDescription" = "Goedgekeurde of geweigerde concepten verschijnen hier.";

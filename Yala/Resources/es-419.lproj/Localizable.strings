@@ -528,16 +528,7 @@
 "planning.goals" = "Metas";
 "planning.comingSoon" = "Próximamente";
 "planning.scheduledPayments" = "Pagos planificados";
-"planning.budgets.currentPeriod" = "Período: %@";
-"planning.budgets.statusOverLimit" = "%d superados";
-"planning.budgets.statusAtLimit" = "%d al límite";
-"planning.budgets.statusOnTrack" = "%d al día";
-"planning.budgets.title" = "Presupuestos";
-"planning.budgets.heroChip" = "Tus presupuestos";
-"planning.scheduled.summaryNote" = "%d pagos · %d recurrentes";
 "planning.scheduled.totalLabel" = "Total del mes";
-"planning.scheduled.title" = "Pagos planificados";
-"planning.scheduled.heroChip" = "Tus pagos planificados";
 "planning.budgetCharts.spentOf" = "Gastado %@ de %@";
 "planning.budgetCharts.byCategoryHint" = "Toca una categoría para ver subcategorías.";
 "planning.budgetCharts.byCategoryTitle" = "Por categoría";
@@ -2064,7 +2055,6 @@
 "inbox.subtitleOnePending" = "Una transacción esperando, revisa cuando puedas.";
 "inbox.subtitleAllDone" = "Bandeja en cero, gran trabajo.";
 "inbox.pendingBadge" = "%d pendientes";
-"inbox.heroChip" = "Tu bandeja";
 "inbox.newTag" = "Nueva";
 "inbox.noArchived" = "Sin borradores archivados";
 "inbox.noArchivedDescription" = "Los borradores aprobados o rechazados aparecerán aquí.";

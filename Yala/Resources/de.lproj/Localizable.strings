@@ -526,16 +526,7 @@
 "planning.goals" = "Ziele";
 "planning.comingSoon" = "Demnächst";
 "planning.scheduledPayments" = "Geplante Zahlungen";
-"planning.budgets.currentPeriod" = "Zeitraum: %@";
-"planning.budgets.statusOverLimit" = "%d überschritten";
-"planning.budgets.statusAtLimit" = "%d an der Grenze";
-"planning.budgets.statusOnTrack" = "%d im Plan";
-"planning.budgets.title" = "Budgets";
-"planning.budgets.heroChip" = "Ihre Budgets";
-"planning.scheduled.summaryNote" = "%d Zahlungen · %d wiederkehrend";
 "planning.scheduled.totalLabel" = "Gesamt für Monat";
-"planning.scheduled.title" = "Geplante Zahlungen";
-"planning.scheduled.heroChip" = "Ihre geplanten Zahlungen";
 "planning.budgetCharts.spentOf" = "%@ von %@ ausgegeben";
 "planning.budgetCharts.byCategoryHint" = "Tippen Sie auf eine Kategorie, um Unterkategorien zu sehen.";
 "planning.budgetCharts.byCategoryTitle" = "Nach Kategorie";
@@ -2062,7 +2053,6 @@
 "inbox.subtitleOnePending" = "Eine Transaktion wartet, prüfen Sie sie, wenn Sie können.";
 "inbox.subtitleAllDone" = "Posteingang leer, super gemacht.";
 "inbox.pendingBadge" = "%d ausstehend";
-"inbox.heroChip" = "Ihr Posteingang";
 "inbox.newTag" = "Neu";
 "inbox.noArchived" = "Keine archivierten Entwürfe";
 "inbox.noArchivedDescription" = "Genehmigte oder abgelehnte Entwürfe werden hier angezeigt.";

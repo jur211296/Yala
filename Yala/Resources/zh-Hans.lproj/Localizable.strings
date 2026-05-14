@@ -528,16 +528,7 @@
 "planning.goals" = "目标";
 "planning.comingSoon" = "即将推出";
 "planning.scheduledPayments" = "计划付款";
-"planning.budgets.currentPeriod" = "周期:%@";
-"planning.budgets.statusOverLimit" = "%d 个超出";
-"planning.budgets.statusAtLimit" = "%d 个临近";
-"planning.budgets.statusOnTrack" = "%d 个正常";
-"planning.budgets.title" = "预算";
-"planning.budgets.heroChip" = "你的预算";
-"planning.scheduled.summaryNote" = "%d 笔付款 · %d 笔重复";
 "planning.scheduled.totalLabel" = "本月总计";
-"planning.scheduled.title" = "计划付款";
-"planning.scheduled.heroChip" = "你的计划付款";
 "planning.budgetCharts.spentOf" = "已花费 %@,共 %@";
 "planning.budgetCharts.byCategoryHint" = "点击分类查看子分类。";
 "planning.budgetCharts.byCategoryTitle" = "按分类";
@@ -2066,7 +2057,6 @@
 "inbox.subtitleOnePending" = "一笔交易等待中,有空时查看一下。";
 "inbox.subtitleAllDone" = "收件箱已清空,做得很棒。";
 "inbox.pendingBadge" = "%d 项待处理";
-"inbox.heroChip" = "你的收件箱";
 "inbox.newTag" = "新";
 "inbox.noArchived" = "没有已归档草稿";
 "inbox.noArchivedDescription" = "已审批或已拒绝的草稿将显示在这里。";

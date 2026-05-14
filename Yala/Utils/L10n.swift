@@ -3949,35 +3949,10 @@ enum L10n {
             ls("planning.scheduledPayments", comment: "")
         }
 
-        // MARK: Budgets sub-tab (polish panel-aligned, Bloque B)
-        enum Budgets {
-            static var heroChip: String { ls("planning.budgets.heroChip", comment: "") }
-            static var title: String { ls("planning.budgets.title", comment: "") }
-            static func statusOnTrack(_ n: Int) -> String {
-                String(format: ls("planning.budgets.statusOnTrack", comment: ""), n)
-            }
-            static func statusAtLimit(_ n: Int) -> String {
-                String(format: ls("planning.budgets.statusAtLimit", comment: ""), n)
-            }
-            static func statusOverLimit(_ n: Int) -> String {
-                String(format: ls("planning.budgets.statusOverLimit", comment: ""), n)
-            }
-            static func currentPeriod(_ label: String) -> String {
-                String(format: ls("planning.budgets.currentPeriod", comment: ""), label)
-            }
-        }
-
-        // MARK: Scheduled sub-tab (polish panel-aligned, Bloque C)
         enum Scheduled {
-            static var heroChip: String { ls("planning.scheduled.heroChip", comment: "") }
-            static var title: String { ls("planning.scheduled.title", comment: "") }
             static var totalLabel: String { ls("planning.scheduled.totalLabel", comment: "") }
-            static func summaryNote(_ total: Int, _ recurring: Int) -> String {
-                String(format: ls("planning.scheduled.summaryNote", comment: ""), total, recurring)
-            }
         }
 
-        // MARK: BudgetCharts (polish panel-aligned, Bloque E)
         enum BudgetCharts {
             static var historyTitle: String { ls("planning.budgetCharts.historyTitle", comment: "") }
             static var historyHint: String { ls("planning.budgetCharts.historyHint", comment: "") }
@@ -4760,10 +4735,6 @@ enum L10n {
             }
         }
 
-        // MARK: Mini-hero (polish panel-aligned)
-        static var heroChip: String {
-            ls("inbox.heroChip", comment: "")
-        }
         static func pendingBadge(_ count: Int) -> String {
             String(format: ls("inbox.pendingBadge", comment: ""), count)
         }

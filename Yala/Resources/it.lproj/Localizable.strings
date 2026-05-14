@@ -526,16 +526,7 @@
 "planning.goals" = "Obiettivi";
 "planning.comingSoon" = "Prossimamente";
 "planning.scheduledPayments" = "Pagamenti programmati";
-"planning.budgets.currentPeriod" = "Periodo: %@";
-"planning.budgets.statusOverLimit" = "%d superati";
-"planning.budgets.statusAtLimit" = "%d al limite";
-"planning.budgets.statusOnTrack" = "%d in linea";
-"planning.budgets.title" = "Budget";
-"planning.budgets.heroChip" = "I tuoi budget";
-"planning.scheduled.summaryNote" = "%d pagamenti · %d ricorrenti";
 "planning.scheduled.totalLabel" = "Totale del mese";
-"planning.scheduled.title" = "Pagamenti pianificati";
-"planning.scheduled.heroChip" = "I tuoi pagamenti pianificati";
 "planning.budgetCharts.spentOf" = "Spesi %@ di %@";
 "planning.budgetCharts.byCategoryHint" = "Tocca una categoria per vedere le sottocategorie.";
 "planning.budgetCharts.byCategoryTitle" = "Per categoria";
@@ -2064,7 +2055,6 @@
 "inbox.subtitleOnePending" = "Una transazione in attesa, controlla quando puoi.";
 "inbox.subtitleAllDone" = "Casella vuota, ottimo lavoro.";
 "inbox.pendingBadge" = "%d in attesa";
-"inbox.heroChip" = "La tua casella";
 "inbox.newTag" = "Nuova";
 "inbox.noArchived" = "Nessuna bozza archiviata";
 "inbox.noArchivedDescription" = "Le bozze approvate o rifiutate appariranno qui.";

@@ -528,16 +528,7 @@
 "planning.goals" = "Cele";
 "planning.comingSoon" = "Już wkrótce";
 "planning.scheduledPayments" = "Zaplanowane płatności";
-"planning.budgets.currentPeriod" = "Okres: %@";
-"planning.budgets.statusOverLimit" = "%d przekroczonych";
-"planning.budgets.statusAtLimit" = "%d na granicy";
-"planning.budgets.statusOnTrack" = "%d na bieżąco";
-"planning.budgets.title" = "Budżety";
-"planning.budgets.heroChip" = "Twoje budżety";
-"planning.scheduled.summaryNote" = "%d płatności · %d powtarzające";
 "planning.scheduled.totalLabel" = "Razem za miesiąc";
-"planning.scheduled.title" = "Zaplanowane płatności";
-"planning.scheduled.heroChip" = "Twoje zaplanowane płatności";
 "planning.budgetCharts.spentOf" = "Wydano %@ z %@";
 "planning.budgetCharts.byCategoryHint" = "Dotknij kategorii, aby zobaczyć podkategorie.";
 "planning.budgetCharts.byCategoryTitle" = "Według kategorii";
@@ -2066,7 +2057,6 @@
 "inbox.subtitleOnePending" = "Jedna transakcja czeka, sprawdź gdy będziesz mógł.";
 "inbox.subtitleAllDone" = "Skrzynka pusta, świetna robota.";
 "inbox.pendingBadge" = "%d oczekujących";
-"inbox.heroChip" = "Twoja skrzynka";
 "inbox.newTag" = "Nowy";
 "inbox.noArchived" = "Brak zarchiwizowanych szkiców";
 "inbox.noArchivedDescription" = "Zatwierdzone lub odrzucone szkice pojawią się tutaj.";

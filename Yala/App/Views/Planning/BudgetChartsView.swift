@@ -591,10 +591,9 @@ struct BudgetChartsView: View {
         }
     }
 
-    // MARK: - Section with Header (panel-aligned, Bloque E)
+    // MARK: - Section with Header
 
-    /// Helper que aplica el patrón consolidado del épico: title FUERA + InfoHintButton
-    /// al lado + content en `.panelCard()`. Reemplaza el helper `chartCard` previo.
+    /// Title FUERA + InfoHintButton al lado + content en `.panelCard()`.
     @ViewBuilder
     private func sectionWithHeader<Content: View>(
         title: String,
@@ -617,7 +616,7 @@ struct BudgetChartsView: View {
         }
     }
 
-    // MARK: - Mini Summary Card (panel-aligned, Bloque E)
+    // MARK: - Mini Summary Card
 
     private var miniSummaryCard: some View {
         let summary = viewModel.buildSummary(
