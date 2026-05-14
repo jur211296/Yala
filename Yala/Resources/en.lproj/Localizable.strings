@@ -3372,6 +3372,9 @@
 "setup.demo.scheduledPayment.subcategoryHeader" = "Subscriptions";
 "setup.demo.firstBudget.amountExample" = "500";
 "setup.demo.firstBudget.savedToast" = "Budget created!";
+"setup.demo.scheduledPayment.amountExample" = "45";
+"setup.demo.scheduledPayment.subcategoryExample" = "Streaming";
+"setup.demo.scheduledPayment.savedToast" = "Payment scheduled!";
 "setup.personalize.navTitle" = "Personalize your Yala";
 "setup.personalize.title" = "Make it yours";
 "setup.personalize.subtitle" = "Add your personal touch. Change the theme, icon, or how your widgets look.";

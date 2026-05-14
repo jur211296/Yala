@@ -89,7 +89,7 @@ enum SubcategoryContext {
         case .food:
             return ["Restaurante", targetValue, "Supermercado", "Café"]
         case .subscriptions:
-            return ["Internet", targetValue, "Gimnasio", "Streaming"]
+            return ["Internet", targetValue, "Gimnasio", "Apps"]
         }
     }
 
@@ -106,9 +106,9 @@ enum SubcategoryContext {
         case .subscriptions:
             switch index {
             case 0: return "wifi"
-            case 1: return "tv.fill"
+            case 1: return "play.rectangle.fill"
             case 2: return "dumbbell.fill"
-            case 3: return "play.rectangle.fill"
+            case 3: return "square.grid.2x2.fill"
             default: return "tag.fill"
             }
         }

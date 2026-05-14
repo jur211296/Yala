@@ -37,6 +37,7 @@ struct ScheduledPaymentEditorView: View {
     var onDelete: (() -> Void)?
     let prefill: ScheduledPaymentPrefill?
     let onSaved: ((UUID) -> Void)?
+    // DEPRECATED: removed in F7 cleanup (Setup Checklist demos standalone)
     let mode: ViewMode
     let onStartReal: (() -> Void)?
 

@@ -320,6 +320,17 @@ extension L10n {
             static var firstBudgetSavedToast: String {
                 NSLocalizedString("setup.demo.firstBudget.savedToast", comment: "¡Presupuesto creado!")
             }
+
+            // Step 4 — scheduledPayment (mock data)
+            static var scheduledPaymentAmountExample: String {
+                NSLocalizedString("setup.demo.scheduledPayment.amountExample", comment: "45")
+            }
+            static var scheduledPaymentSubcategoryExample: String {
+                NSLocalizedString("setup.demo.scheduledPayment.subcategoryExample", comment: "Streaming")
+            }
+            static var scheduledPaymentSavedToast: String {
+                NSLocalizedString("setup.demo.scheduledPayment.savedToast", comment: "¡Pago programado!")
+            }
         }
     }
 }

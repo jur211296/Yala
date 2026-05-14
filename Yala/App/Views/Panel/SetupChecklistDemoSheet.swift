@@ -23,10 +23,14 @@ struct SetupChecklistDemoSheet: View {
     var body: some View {
         switch step {
         case .scheduledPayment:
-            ScheduledPaymentEditorView(
-                payment: nil,
-                mode: .demo,
-                onStartReal: { handleStartReal(for: .scheduledPayment) }
+            SetupDemoScheduledPaymentView(
+                onClose: {
+                    sheets.setupDemoStep = nil
+                },
+                onComplete: {
+                    SetupChecklistManager.shared.markCompleted(.scheduledPayment)
+                    sheets.setupDemoStep = nil
+                }
             )
         case .firstExpense:
             SetupDemoFirstExpenseView(

@@ -3327,6 +3327,9 @@
 "setup.demo.scheduledPayment.subcategoryHeader" = "Abonnementen";
 "setup.demo.firstBudget.amountExample" = "500";
 "setup.demo.firstBudget.savedToast" = "Budget aangemaakt!";
+"setup.demo.scheduledPayment.amountExample" = "45";
+"setup.demo.scheduledPayment.subcategoryExample" = "Streaming";
+"setup.demo.scheduledPayment.savedToast" = "Betaling gepland!";
 "setup.personalize.navTitle" = "Personaliseer je Yala";
 "setup.personalize.title" = "Maak het van jou";
 "setup.personalize.subtitle" = "Geef het je persoonlijke touch. Wijzig het thema, icoon of hoe je widgets eruitzien.";

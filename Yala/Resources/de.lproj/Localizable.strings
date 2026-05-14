@@ -3323,6 +3323,9 @@
 "setup.demo.scheduledPayment.subcategoryHeader" = "Abonnements";
 "setup.demo.firstBudget.amountExample" = "500";
 "setup.demo.firstBudget.savedToast" = "Budget erstellt!";
+"setup.demo.scheduledPayment.amountExample" = "45";
+"setup.demo.scheduledPayment.subcategoryExample" = "Streaming";
+"setup.demo.scheduledPayment.savedToast" = "Zahlung geplant!";
 "setup.personalize.navTitle" = "Personalisiere dein Yala";
 "setup.personalize.title" = "Mach es zu deinem";
 "setup.personalize.subtitle" = "Gib deiner App eine persönliche Note. Ändere das Design, das Symbol oder die Widgets.";
