@@ -338,31 +338,21 @@ struct InboxView: View {
     @ViewBuilder
     private var miniHero: some View {
         if !isSelectionMode {
-            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                HStack(spacing: DS.Spacing.sm) {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "tray.fill")
-                        Text(L10n.Inbox.heroChip)
-                    }
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(theme.accent)
-
-                    Spacer()
-
-                    if pendingCount > 0 {
-                        Text(L10n.Inbox.pendingBadge(pendingCount))
-                            .font(DS.Typography.labelSmall)
-                            .foregroundStyle(theme.accent)
-                            .padding(.horizontal, DS.Chip.paddingH)
-                            .padding(.vertical, DS.Spacing.xxs)
-                            .background(Capsule().fill(theme.accent.opacity(0.15)))
-                    }
+            VStack(alignment: .center, spacing: DS.Spacing.sm) {
+                if pendingCount > 0 {
+                    Text(L10n.Inbox.pendingBadge(pendingCount))
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(theme.accent)
+                        .padding(.horizontal, DS.Chip.paddingH)
+                        .padding(.vertical, DS.Spacing.xxs)
+                        .background(Capsule().fill(theme.accent.opacity(0.15)))
                 }
                 Text(heroSubtitleText)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.md)
             .padding(.bottom, DS.Spacing.sm)
@@ -385,9 +375,9 @@ struct InboxView: View {
 
     private var heroAccessibilityLabel: String {
         if pendingCount > 0 {
-            return "\(L10n.Inbox.heroChip). \(L10n.Inbox.pendingBadge(pendingCount)). \(heroSubtitleText)"
+            return "\(L10n.Inbox.pendingBadge(pendingCount)). \(heroSubtitleText)"
         }
-        return "\(L10n.Inbox.heroChip). \(heroSubtitleText)"
+        return heroSubtitleText
     }
 
     // MARK: - Filter Chips

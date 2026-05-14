@@ -27,8 +27,8 @@ struct ScheduledPaymentsListView: View {
     @State private var selectedDay: Int? = nil
 
     var body: some View {
-        VStack(spacing: DS.Spacing.md) {
-            // Hero edge-to-edge (chip identidad + Menu tab + total + chips paid/pending + summary note)
+        VStack(spacing: DS.Spacing.sm) {
+            // Hero edge-to-edge centrado (total + chips paid/pending)
             heroSection
 
             // PeriodNavigationHeader shared (TX-P2)
@@ -86,24 +86,10 @@ struct ScheduledPaymentsListView: View {
         )
         let paidTotal = viewModel.monthlyTotalPaid(preferredCurrencyCode: currencyCode)
         let pendingTotal = viewModel.monthlyTotalPending(preferredCurrencyCode: currencyCode)
-        let totalCount = activePayments.count
-        let recurringCount = activePayments.filter { $0.recurrenceType != "once" }.count
 
-        return VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            // Top row: chip identidad
-            HStack(alignment: .center) {
-                HStack(spacing: DS.Spacing.xs) {
-                    Image(systemName: "calendar.badge.clock")
-                    Text(L10n.Planning.Scheduled.heroChip)
-                }
-                .font(DS.Typography.subheadlineEmphasized)
-                .foregroundStyle(theme.accent)
-
-                Spacer()
-            }
-
-            // Total label + monto
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+        return VStack(alignment: .center, spacing: DS.Spacing.sm) {
+            // Total label + monto (centrado)
+            VStack(alignment: .center, spacing: DS.Spacing.xxs) {
                 Text("\(L10n.Planning.Scheduled.totalLabel) · \(viewModel.monthYearLabel)")
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
@@ -130,22 +116,15 @@ struct ScheduledPaymentsListView: View {
                     value: pendingTotal
                 )
             }
-
-            // Summary note
-            Text(L10n.Planning.Scheduled.summaryNote(totalCount, recurringCount))
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.top, DS.Spacing.md)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(heroAccessibilityLabel(
             total: monthlyTotal,
             paid: paidTotal,
-            pending: pendingTotal,
-            totalCount: totalCount,
-            recurringCount: recurringCount
+            pending: pendingTotal
         ))
     }
 
@@ -183,15 +162,12 @@ struct ScheduledPaymentsListView: View {
     private func heroAccessibilityLabel(
         total: Double,
         paid: Double,
-        pending: Double,
-        totalCount: Int,
-        recurringCount: Int
+        pending: Double
     ) -> String {
         let totalLine = "\(L10n.Planning.Scheduled.totalLabel) \(viewModel.monthYearLabel): \(appPreferences.currency(total, currencyCode: currencyCode))"
         let paidLine = "\(NSLocalizedString("scheduled.summary.paid", comment: "")) \(appPreferences.currency(paid, currencyCode: currencyCode))"
         let pendingLine = "\(NSLocalizedString("scheduled.summary.pending", comment: "")) \(appPreferences.currency(pending, currencyCode: currencyCode))"
-        let summaryLine = L10n.Planning.Scheduled.summaryNote(totalCount, recurringCount)
-        return [L10n.Planning.Scheduled.heroChip, totalLine, paidLine, pendingLine, summaryLine].joined(separator: ". ")
+        return [totalLine, paidLine, pendingLine].joined(separator: ". ")
     }
 
     // MARK: - View Mode Header

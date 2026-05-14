@@ -134,38 +134,22 @@ struct BudgetsListView: View {
     // MARK: - Hero Section (polish panel-aligned, Bloque B)
 
     private var heroSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            // Top row: chip identidad + Menu período type
-            HStack(alignment: .center) {
-                HStack(spacing: DS.Spacing.xs) {
-                    Image(systemName: "piggybank.fill")
-                    Text(L10n.Planning.Budgets.heroChip)
-                }
-                .font(DS.Typography.subheadlineEmphasized)
-                .foregroundStyle(theme.accent)
-
-                Spacer()
-
-                Menu {
-                    Button(NSLocalizedString("budgets.period.weekly", comment: ""))  { setPeriodType(0) }
-                    Button(NSLocalizedString("budgets.period.monthly", comment: "")) { setPeriodType(1) }
-                    Button(NSLocalizedString("budgets.period.yearly", comment: ""))  { setPeriodType(2) }
-                    Button(NSLocalizedString("budgets.period.unique", comment: ""))  { setPeriodType(3) }
-                } label: {
-                    HStack(spacing: DS.Spacing.xxs) {
-                        Image(systemName: "calendar")
-                        Text(currentPeriodTypeLabel).font(DS.Typography.label)
-                        Image(systemName: "chevron.down").font(DS.Typography.captionSmall)
-                    }
-                    .foregroundStyle(.primary)
-                }
+        VStack(alignment: .center, spacing: DS.Spacing.sm) {
+            // Period type selector — mismo diseño que TrendsPeriodMenu de Stats
+            Menu {
+                Button(NSLocalizedString("budgets.period.weekly", comment: ""))  { setPeriodType(0) }
+                Button(NSLocalizedString("budgets.period.monthly", comment: "")) { setPeriodType(1) }
+                Button(NSLocalizedString("budgets.period.yearly", comment: ""))  { setPeriodType(2) }
+                Button(NSLocalizedString("budgets.period.unique", comment: ""))  { setPeriodType(3) }
+            } label: {
+                PeriodSelectorLabel(title: currentPeriodTypeLabel)
             }
 
             // Counters row (BRAND-VOICE §5.3: dot + texto)
             HStack(spacing: DS.Spacing.lg) {
-                counterChip(color: DS.Semantic.successForeground, label: L10n.Planning.Budgets.statusOnTrack(budgetCounters.onTrack))
-                counterChip(color: Color.essentialNeed,           label: L10n.Planning.Budgets.statusAtLimit(budgetCounters.atLimit))
-                counterChip(color: Color.hotPink,                 label: L10n.Planning.Budgets.statusOverLimit(budgetCounters.overLimit))
+                counterChip(color: Color.electricIndigo,    label: L10n.Planning.Budgets.statusOnTrack(budgetCounters.onTrack))
+                counterChip(color: Color.essentialNeed,     label: L10n.Planning.Budgets.statusAtLimit(budgetCounters.atLimit))
+                counterChip(color: Color.hotPink,           label: L10n.Planning.Budgets.statusOverLimit(budgetCounters.overLimit))
             }
 
             if selectedSegment != 3 {
@@ -174,7 +158,7 @@ struct BudgetsListView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, DS.Spacing.lg)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(heroAccessibilityLabel)
@@ -195,7 +179,7 @@ struct BudgetsListView: View {
 
     private var heroAccessibilityLabel: String {
         let parts = [
-            L10n.Planning.Budgets.heroChip,
+            currentPeriodTypeLabel,
             L10n.Planning.Budgets.statusOnTrack(budgetCounters.onTrack),
             L10n.Planning.Budgets.statusAtLimit(budgetCounters.atLimit),
             L10n.Planning.Budgets.statusOverLimit(budgetCounters.overLimit),
