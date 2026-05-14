@@ -53,7 +53,6 @@ struct VoiceRecordingView: View {
     /// Setup trial: called when user taps "Ahora no" to skip
     var onSetupTrialSkipped: (() -> Void)?
 
-
     /// Types of errors that need special handling
     private enum VoiceErrorType {
         case noApiKey

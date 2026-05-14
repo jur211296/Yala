@@ -37,13 +37,6 @@ struct PanelSheetsModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .sheet(item: $sheets.setupDemoStep) { stepID in
-                SetupChecklistDemoSheet(
-                    step: stepID,
-                    sheets: $sheets,
-                    viewModel: viewModel
-                )
-            }
             .sheet(item: $sheets.accountFormSheet) { sheet in
                 let names: [String] = {
                     guard let editing = sheet.account else {

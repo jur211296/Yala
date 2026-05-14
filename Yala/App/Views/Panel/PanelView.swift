@@ -73,13 +73,18 @@ struct PanelView: View {
 
     private func handleSetupStep(_ step: SetupStepID) {
         switch step {
-        case .firstExpense, .firstBudget, .scheduledPayment,
-             .tryVoiceInput, .tryImageInput, .exploreSettings:
-            // Steps 1-6 abren primero un demo sheet (vista previa interactiva).
-            // El callback `onStartReal` del demo enruta al flow real con micro-delay.
-            sheets.setupDemoStep = step
+        case .firstExpense:
+            sheets.showNewTransaction = true
+        case .firstBudget:
+            AppRouter.shared.enqueue(.navigate(.budgets))
+            AppRouter.shared.enqueue(.autoOpenBudgetEditor)
+        case .scheduledPayment:
+            AppRouter.shared.enqueue(.navigate(.scheduledPayments))
+            AppRouter.shared.enqueue(.autoOpenScheduledEditor)
+        case .exploreSettings:
+            sheets.isPresentingSettings = true
+            SetupChecklistManager.shared.markCompleted(.exploreSettings)
         case .discoverFeatures:
-            // Step 7 sin demo — paywall directo (decisión spec: demoizar paywall es metarecursivo).
             if FeatureGateService.shared.isProUser {
                 SetupChecklistManager.shared.markCompleted(.discoverFeatures)
             } else {
@@ -87,7 +92,38 @@ struct PanelView: View {
                 sheets.showSubscriptionFromBanner = true
                 SetupChecklistManager.shared.markCompleted(.discoverFeatures)
             }
+        case .tryVoiceInput:
+            FeatureGateService.shared.enableSetupTrial(for: .voiceInput)
+            sheets.isVoiceSetupTrial = true
+            if appPreferences.aiDataConsentAccepted {
+                sheets.showVoiceRecording = true
+            } else {
+                sheets.pendingAIInput = .voice
+                sheets.showAIConsentAlert = true
+            }
+        case .tryImageInput:
+            FeatureGateService.shared.enableSetupTrial(for: .imageInput)
+            sheets.isImageSetupTrial = true
+            sheets.setupTrialExampleImages = loadExampleImages()
+            if appPreferences.aiDataConsentAccepted {
+                sheets.showImageSelection = true
+            } else {
+                sheets.pendingAIInput = .image
+                sheets.showAIConsentAlert = true
+            }
         }
+    }
+
+    private func loadExampleImages() -> [UIImage]? {
+        let supportedLangs: Set<String> = ["de", "en", "es", "fr", "it", "pt"]
+        let lang = Bundle.main.preferredLocalizations.first ?? "en"
+        let suffix = supportedLangs.contains(lang) ? lang : "en"
+        let images = [
+            "ExampleImages/example-receipt-\(suffix)",
+            "ExampleImages/example-bank-alert-\(suffix)",
+            "ExampleImages/example-transaction-list-\(suffix)"
+        ].compactMap { UIImage(named: $0) }
+        return images.isEmpty ? nil : images
     }
 
     // MARK: - Nudge CTA Routing

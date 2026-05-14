@@ -22,12 +22,6 @@ struct BudgetEditorView: View {
 
     let budget: Budget?
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    init(budget: Budget?) {
-        self.budget = budget
-    }
-
     // Error state
     @State private var showSaveError = false
 

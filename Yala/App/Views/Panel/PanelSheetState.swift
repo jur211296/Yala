@@ -65,8 +65,4 @@ struct PanelSheetState {
     var isImageSetupTrial = false
     var setupTrialExampleImages: [UIImage]? = nil
     var practiceCleanupItem: PracticeCleanupItem? = nil
-
-    // Setup demo (vista previa interactiva)
-    /// Step actualmente presentado como demo. `nil` = ningún demo abierto.
-    var setupDemoStep: SetupStepID? = nil
 }

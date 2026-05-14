@@ -38,8 +38,6 @@ struct ScheduledPaymentEditorView: View {
     let prefill: ScheduledPaymentPrefill?
     let onSaved: ((UUID) -> Void)?
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     // Error state
     @State private var showSaveError = false
 
@@ -1169,7 +1167,4 @@ struct ScheduledPaymentEditorView: View {
             onDelete?()
         }
     }
-
-    // MARK: - Demo Script (mode: .demo)
-
 }

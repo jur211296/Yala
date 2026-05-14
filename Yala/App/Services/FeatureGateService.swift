@@ -107,12 +107,6 @@ final class FeatureGateService {
         setupTrialFeatures.remove(feature)
     }
 
-    /// True si la feature está actualmente desbloqueada por el setup trial.
-    /// Distinto de `canAccess(_:)` porque NO retorna true por isProUser u otras razones.
-    func isSetupTrialActive(for feature: ProFeature) -> Bool {
-        setupTrialFeatures.contains(feature)
-    }
-
     // MARK: - Access Checks
 
     /// Check if user can access a Pro-only feature
