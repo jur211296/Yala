@@ -106,6 +106,7 @@ struct SetupDemoFirstBudgetView: View {
                     periodMock
                     alertsMock
                     budgetFilterBannerMock
+                        .id("filters")
                     filtersMock
                     saveButtonMock
                         .padding(.horizontal, DS.Spacing.xl)
@@ -129,6 +130,15 @@ struct SetupDemoFirstBudgetView: View {
                 .padding(.top, DS.Spacing.md)
                 .padding(.bottom, DS.Spacing.xxl)
                 .padding(.horizontal, DS.Spacing.lg)
+            }
+            .onChange(of: selectedThresholds) { _, newValue in
+                // Cuando el script selecciona el threshold (80%), scroll al banner
+                // "¿Qué cubre este presupuesto?" para que el user vea el resto del flow.
+                if !newValue.isEmpty {
+                    withAnimation(reduceMotion ? nil : .smooth(duration: 0.5)) {
+                        proxy.scrollTo("filters", anchor: .top)
+                    }
+                }
             }
             .onChange(of: showSuccessToast) { _, newValue in
                 if newValue {
