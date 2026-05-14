@@ -528,24 +528,24 @@ struct SetupDemoFirstBudgetView: View {
         await advance(to: 0.05)
         try? await Task.sleep(for: .milliseconds(500))
 
-        // Stage 1: typing "Comida" (~180ms por letra)
+        // Stage 1: typing "Comida" (~230ms por letra)
         for index in 1...nameExample.count {
             guard !Task.isCancelled else { return }
             name = String(nameExample.prefix(index))
-            try? await Task.sleep(for: .milliseconds(180))
+            try? await Task.sleep(for: .milliseconds(230))
             await advance(to: 0.05 + (0.18 * Double(index) / Double(nameExample.count)))
         }
-        try? await Task.sleep(for: .milliseconds(300))
+        try? await Task.sleep(for: .milliseconds(400))
 
         // Stage 2: monto 0 → 500 (mock target)
         let amounts = [50, 200, 500]
         for (idx, value) in amounts.enumerated() {
             guard !Task.isCancelled else { return }
             amountValue = value
-            try? await Task.sleep(for: .milliseconds(400))
+            try? await Task.sleep(for: .milliseconds(500))
             await advance(to: 0.23 + 0.12 * Double(idx + 1) / Double(amounts.count))
         }
-        try? await Task.sleep(for: .milliseconds(400))
+        try? await Task.sleep(for: .milliseconds(500))
 
         // Stage 3: period cycling weekly → monthly → yearly → monthly (final)
         let periods: [BudgetPeriodType] = [.weekly, .monthly, .yearly, .monthly]
@@ -554,56 +554,56 @@ struct SetupDemoFirstBudgetView: View {
             withAnimation(reduceMotion ? nil : .smooth(duration: 0.3)) {
                 selectedPeriodType = period
             }
-            try? await Task.sleep(for: .milliseconds(500))
+            try? await Task.sleep(for: .milliseconds(650))
             await advance(to: 0.45 + 0.15 * Double(idx + 1) / Double(periods.count))
         }
-        try? await Task.sleep(for: .milliseconds(300))
+        try? await Task.sleep(for: .milliseconds(400))
 
         // Stage 4: alert + threshold 80
         guard !Task.isCancelled else { return }
         withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
             alertEnabled = true
         }
-        try? await Task.sleep(for: .milliseconds(500))
+        try? await Task.sleep(for: .milliseconds(650))
         guard !Task.isCancelled else { return }
         withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
             selectedThresholds = [80]
         }
         await advance(to: 0.7)
-        try? await Task.sleep(for: .milliseconds(500))
+        try? await Task.sleep(for: .milliseconds(650))
 
         // Stage 5a: filter cuenta "Personal" inline (chip toggle)
         guard !Task.isCancelled else { return }
         withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
             selectedFilterAccount = "Personal"
         }
-        try? await Task.sleep(for: .milliseconds(600))
+        try? await Task.sleep(for: .milliseconds(750))
 
         // Stage 5b: subcategoría — abre sheet (script interno highlight + select + dismiss)
         guard !Task.isCancelled else { return }
         activeMockSheet = .subcategory
-        try? await Task.sleep(for: .milliseconds(2000))
+        try? await Task.sleep(for: .milliseconds(2500))
         guard !Task.isCancelled else { return }
         if activeMockSheet == .subcategory {
             activeMockSheet = nil
-            try? await Task.sleep(for: .milliseconds(300))
+            try? await Task.sleep(for: .milliseconds(400))
         }
         await advance(to: 0.85)
-        try? await Task.sleep(for: .milliseconds(400))
+        try? await Task.sleep(for: .milliseconds(500))
 
         // Stage 6: SaveButton enabled
         guard !Task.isCancelled else { return }
         saveButtonEnabled = true
         await advance(to: 0.93)
-        try? await Task.sleep(for: .milliseconds(600))
+        try? await Task.sleep(for: .milliseconds(800))
 
-        // Stage 6: toast
+        // Stage 7: toast
         guard !Task.isCancelled else { return }
         withAnimation(reduceMotion ? nil : .smooth(duration: 0.4)) {
             showSuccessToast = true
         }
         await advance(to: 1.0)
-        try? await Task.sleep(for: .milliseconds(900))
+        try? await Task.sleep(for: .milliseconds(1200))
     }
 
     @MainActor

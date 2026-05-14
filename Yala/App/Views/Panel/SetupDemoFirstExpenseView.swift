@@ -395,22 +395,22 @@ struct SetupDemoFirstExpenseView: View {
         for index in 1...descriptionExample.count {
             guard !Task.isCancelled else { return }
             descriptionText = String(descriptionExample.prefix(index))
-            try? await Task.sleep(for: .milliseconds(180))
+            try? await Task.sleep(for: .milliseconds(230))
             await advance(to: 0.05 + (0.18 * Double(index) / Double(descriptionExample.count)))
         }
 
-        try? await Task.sleep(for: .milliseconds(300))
+        try? await Task.sleep(for: .milliseconds(400))
 
         // Monto 0 → 5 → 50 → 500
         let amounts = [5, 50, 500]
         for (idx, value) in amounts.enumerated() {
             guard !Task.isCancelled else { return }
             amountValue = value
-            try? await Task.sleep(for: .milliseconds(400))
+            try? await Task.sleep(for: .milliseconds(500))
             await advance(to: 0.23 + 0.12 * Double(idx + 1) / Double(amounts.count))
         }
 
-        try? await Task.sleep(for: .milliseconds(400))
+        try? await Task.sleep(for: .milliseconds(500))
 
         // Sheets en orden — sub-view auto-dismiss y callback actualiza `filled`
         await runSheetStage(.account, targetProgress: 0.5)
@@ -420,30 +420,30 @@ struct SetupDemoFirstExpenseView: View {
         guard !Task.isCancelled else { return }
         saveButtonEnabled = true
         await advance(to: 0.93)
-        try? await Task.sleep(for: .milliseconds(700))
+        try? await Task.sleep(for: .milliseconds(900))
 
         guard !Task.isCancelled else { return }
         withAnimation(reduceMotion ? nil : .smooth(duration: 0.4)) {
             showSuccessToast = true
         }
         await advance(to: 1.0)
-        try? await Task.sleep(for: .milliseconds(900))
+        try? await Task.sleep(for: .milliseconds(1200))
     }
 
     @MainActor
     private func runSheetStage(_ type: SetupDemoMockSheet, targetProgress: Double) async {
         guard !Task.isCancelled else { return }
         activeMockSheet = type
-        // Sub-view ejecuta su script interno (~1700ms) y dismisses solo.
-        try? await Task.sleep(for: .milliseconds(2000))
+        // Sub-view ejecuta su script interno (~2200ms) y dismisses solo.
+        try? await Task.sleep(for: .milliseconds(2500))
         guard !Task.isCancelled else { return }
         // Defensa: si por race el sub-view no se cerró, fuerza el dismiss.
         if activeMockSheet == type {
             activeMockSheet = nil
-            try? await Task.sleep(for: .milliseconds(300))
+            try? await Task.sleep(for: .milliseconds(400))
         }
         await advance(to: targetProgress)
-        try? await Task.sleep(for: .milliseconds(200))
+        try? await Task.sleep(for: .milliseconds(300))
     }
 
     @MainActor

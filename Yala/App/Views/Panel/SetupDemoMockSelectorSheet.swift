@@ -311,16 +311,16 @@ struct SetupDemoMockSelectorSheet: View {
     private func startInternalScript() {
         script?.cancel()
         script = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(700))
+            try? await Task.sleep(for: .milliseconds(900))
             guard !Task.isCancelled else { return }
 
             stage = .highlighting
-            try? await Task.sleep(for: .milliseconds(450))
+            try? await Task.sleep(for: .milliseconds(600))
             guard !Task.isCancelled else { return }
 
             stage = .selected
             onSelected()
-            try? await Task.sleep(for: .milliseconds(550))
+            try? await Task.sleep(for: .milliseconds(700))
             guard !Task.isCancelled else { return }
 
             dismiss()
