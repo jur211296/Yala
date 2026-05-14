@@ -62,13 +62,17 @@ struct InboxView: View {
                 PanelBackgroundView()
 
                 VStack(spacing: DS.Spacing.none) {
+                    // Mini-hero (panel-aligned). Pending-global; oculto en selection mode.
+                    miniHero
+
                     // Filter chips
                     filterChips
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.top, DS.Spacing.sm)
                         .padding(.bottom, DS.Spacing.md)
 
-                    // Bulk action hint (shown when 2+ pending drafts and not in selection mode)
+                    // Bulk action hint (shown when 2+ pending drafts and not in selection mode).
+                    // Sin contador: el badge del mini-hero ya transmite la cantidad.
                     if !isSelectionMode && selectedFilter == .pending && filteredDrafts.count >= 2 {
                         HStack(spacing: DS.Spacing.xs) {
                             Image(systemName: "hand.tap")
@@ -329,6 +333,63 @@ struct InboxView: View {
         selectedDraftIDs.removeAll()
     }
 
+    // MARK: - Mini-hero (panel-aligned)
+
+    @ViewBuilder
+    private var miniHero: some View {
+        if !isSelectionMode {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                HStack(spacing: DS.Spacing.sm) {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "tray.fill")
+                        Text(L10n.Inbox.heroChip)
+                    }
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(theme.accent)
+
+                    Spacer()
+
+                    if pendingCount > 0 {
+                        Text(L10n.Inbox.pendingBadge(pendingCount))
+                            .font(DS.Typography.labelSmall)
+                            .foregroundStyle(theme.accent)
+                            .padding(.horizontal, DS.Chip.paddingH)
+                            .padding(.vertical, DS.Spacing.xxs)
+                            .background(Capsule().fill(theme.accent.opacity(0.15)))
+                    }
+                }
+                Text(heroSubtitleText)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.md)
+            .padding(.bottom, DS.Spacing.sm)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(heroAccessibilityLabel)
+        }
+    }
+
+    private var pendingCount: Int {
+        viewModel.countForFilter(.pending)
+    }
+
+    private var heroSubtitleText: String {
+        switch InboxHeroSubtitleLogic.subtitle(pendingCount: pendingCount) {
+        case .allDone:                  return L10n.Inbox.subtitleAllDone
+        case .onePending:               return L10n.Inbox.subtitleOnePending
+        case .multiplePending(let n):   return L10n.Inbox.subtitleMultiplePending(n)
+        }
+    }
+
+    private var heroAccessibilityLabel: String {
+        if pendingCount > 0 {
+            return "\(L10n.Inbox.heroChip). \(L10n.Inbox.pendingBadge(pendingCount)). \(heroSubtitleText)"
+        }
+        return "\(L10n.Inbox.heroChip). \(heroSubtitleText)"
+    }
+
     // MARK: - Filter Chips
 
     private var filterChips: some View {
@@ -394,7 +455,7 @@ struct InboxView: View {
                     }
                 } header: {
                     Text(formattedDate(group.date))
-                        .font(DS.Typography.labelSmall)
+                        .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.secondary)
                         .textCase(nil)
                 }

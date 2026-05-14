@@ -489,3 +489,4 @@
 "insights.ruleDailyAverage %@" = "Promediás %@ por día.";
 "insights.ruleSavingsPositive %d" = "Ahorrás un %d%% de tus ingresos.";
 "stats.trends.heroVarUp %d %@" = "%d%% por encima vs %@ · Seguí así";
+"inbox.subtitleOnePending" = "Una transacción esperando, revisá cuando puedas.";

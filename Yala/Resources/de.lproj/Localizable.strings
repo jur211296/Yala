@@ -2039,6 +2039,11 @@
 "inbox.noPending" = "Keine ausstehenden Entwürfe";
 "inbox.noPendingDescription" = "Neue Sprach- und Bildentwürfe werden hier angezeigt.";
 "inbox.bulkHint" = "Tippen Sie auf Auswählen für Massenaktionen";
+"inbox.subtitleMultiplePending" = "%d Transaktionen warten, Schritt für Schritt.";
+"inbox.subtitleOnePending" = "Eine Transaktion wartet, prüfen Sie sie, wenn Sie können.";
+"inbox.subtitleAllDone" = "Posteingang leer, super gemacht.";
+"inbox.pendingBadge" = "%d ausstehend";
+"inbox.heroChip" = "Ihr Posteingang";
 "inbox.newTag" = "Neu";
 "inbox.noArchived" = "Keine archivierten Entwürfe";
 "inbox.noArchivedDescription" = "Genehmigte oder abgelehnte Entwürfe werden hier angezeigt.";

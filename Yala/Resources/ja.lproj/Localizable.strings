@@ -2043,6 +2043,11 @@
 "inbox.noPending" = "保留中のドラフトはありません";
 "inbox.noPendingDescription" = "新しい音声や画像のドラフトはここに表示されます。";
 "inbox.bulkHint" = "一括操作するには「選択」をタップ";
+"inbox.subtitleMultiplePending" = "%d件の取引が待機中、一歩ずつ進めましょう。";
+"inbox.subtitleOnePending" = "1件の取引が待機中、お時間のあるときに確認してください。";
+"inbox.subtitleAllDone" = "受信箱はゼロです、お疲れさまでした。";
+"inbox.pendingBadge" = "%d件保留中";
+"inbox.heroChip" = "あなたの受信箱";
 "inbox.newTag" = "新規";
 "inbox.noArchived" = "アーカイブ済みのドラフトはありません";
 "inbox.noArchivedDescription" = "承認・却下したドラフトはここに表示されます。";

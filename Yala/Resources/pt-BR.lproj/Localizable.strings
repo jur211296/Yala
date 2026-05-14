@@ -2039,6 +2039,11 @@
 "inbox.noPending" = "Sem rascunhos pendentes";
 "inbox.noPendingDescription" = "Novos rascunhos de voz e imagem aparecerão aqui.";
 "inbox.bulkHint" = "Toque em Selecionar para ações em massa";
+"inbox.subtitleMultiplePending" = "%d transações esperando, passo a passo.";
+"inbox.subtitleOnePending" = "Uma transação esperando, reveja quando puder.";
+"inbox.subtitleAllDone" = "Caixa vazia, ótimo trabalho.";
+"inbox.pendingBadge" = "%d pendentes";
+"inbox.heroChip" = "Sua caixa";
 "inbox.newTag" = "Nova";
 "inbox.noArchived" = "Sem rascunhos arquivados";
 "inbox.noArchivedDescription" = "Rascunhos aprovados ou rejeitados aparecerão aqui.";

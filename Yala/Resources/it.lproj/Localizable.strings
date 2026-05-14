@@ -2041,6 +2041,11 @@
 "inbox.noPending" = "Nessuna bozza in sospeso";
 "inbox.noPendingDescription" = "Le nuove bozze vocali e di immagini appariranno qui.";
 "inbox.bulkHint" = "Tocca Seleziona per azioni di massa";
+"inbox.subtitleMultiplePending" = "%d transazioni in attesa, passo dopo passo.";
+"inbox.subtitleOnePending" = "Una transazione in attesa, controlla quando puoi.";
+"inbox.subtitleAllDone" = "Casella vuota, ottimo lavoro.";
+"inbox.pendingBadge" = "%d in attesa";
+"inbox.heroChip" = "La tua casella";
 "inbox.newTag" = "Nuova";
 "inbox.noArchived" = "Nessuna bozza archiviata";
 "inbox.noArchivedDescription" = "Le bozze approvate o rifiutate appariranno qui.";

@@ -2043,6 +2043,11 @@
 "inbox.noPending" = "Geen openstaande concepten";
 "inbox.noPendingDescription" = "Nieuwe spraak- en afbeeldingsconcepten verschijnen hier.";
 "inbox.bulkHint" = "Tik op Selecteren voor bulk-acties";
+"inbox.subtitleMultiplePending" = "%d transacties wachten, stap voor stap.";
+"inbox.subtitleOnePending" = "Eén transactie wacht, bekijk wanneer je kunt.";
+"inbox.subtitleAllDone" = "Inbox leeg, goed gedaan.";
+"inbox.pendingBadge" = "%d in afwachting";
+"inbox.heroChip" = "Jouw inbox";
 "inbox.newTag" = "Nieuw";
 "inbox.noArchived" = "Geen gearchiveerde concepten";
 "inbox.noArchivedDescription" = "Goedgekeurde of geweigerde concepten verschijnen hier.";

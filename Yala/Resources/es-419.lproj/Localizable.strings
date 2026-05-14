@@ -2041,6 +2041,11 @@
 "inbox.noPending" = "Sin borradores pendientes";
 "inbox.noPendingDescription" = "Los nuevos borradores de voz e imagen aparecerán aquí.";
 "inbox.bulkHint" = "Toca Seleccionar para acciones masivas";
+"inbox.subtitleMultiplePending" = "%d transacciones esperando, paso a paso.";
+"inbox.subtitleOnePending" = "Una transacción esperando, revisa cuando puedas.";
+"inbox.subtitleAllDone" = "Bandeja en cero, gran trabajo.";
+"inbox.pendingBadge" = "%d pendientes";
+"inbox.heroChip" = "Tu bandeja";
 "inbox.newTag" = "Nueva";
 "inbox.noArchived" = "Sin borradores archivados";
 "inbox.noArchivedDescription" = "Los borradores aprobados o rechazados aparecerán aquí.";

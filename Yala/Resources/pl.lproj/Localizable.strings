@@ -2043,6 +2043,11 @@
 "inbox.noPending" = "Brak oczekujących szkiców";
 "inbox.noPendingDescription" = "Nowe szkice głosowe i z obrazów pojawią się tutaj.";
 "inbox.bulkHint" = "Stuknij Wybierz dla działań zbiorczych";
+"inbox.subtitleMultiplePending" = "%d transakcji czeka, krok po kroku.";
+"inbox.subtitleOnePending" = "Jedna transakcja czeka, sprawdź gdy będziesz mógł.";
+"inbox.subtitleAllDone" = "Skrzynka pusta, świetna robota.";
+"inbox.pendingBadge" = "%d oczekujących";
+"inbox.heroChip" = "Twoja skrzynka";
 "inbox.newTag" = "Nowy";
 "inbox.noArchived" = "Brak zarchiwizowanych szkiców";
 "inbox.noArchivedDescription" = "Zatwierdzone lub odrzucone szkice pojawią się tutaj.";

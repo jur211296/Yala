@@ -4716,6 +4716,23 @@ enum L10n {
                 }
             }
         }
+
+        // MARK: Mini-hero (polish panel-aligned)
+        static var heroChip: String {
+            ls("inbox.heroChip", comment: "")
+        }
+        static func pendingBadge(_ count: Int) -> String {
+            String(format: ls("inbox.pendingBadge", comment: ""), count)
+        }
+        static var subtitleAllDone: String {
+            ls("inbox.subtitleAllDone", comment: "")
+        }
+        static var subtitleOnePending: String {
+            ls("inbox.subtitleOnePending", comment: "")
+        }
+        static func subtitleMultiplePending(_ count: Int) -> String {
+            String(format: ls("inbox.subtitleMultiplePending", comment: ""), count)
+        }
     }
 
     // MARK: - Voice Input

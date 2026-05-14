@@ -2043,6 +2043,11 @@
 "inbox.noPending" = "No pending drafts";
 "inbox.noPendingDescription" = "New voice and image drafts will appear here.";
 "inbox.bulkHint" = "Tap Select for bulk actions";
+"inbox.subtitleMultiplePending" = "%d transactions waiting, step by step.";
+"inbox.subtitleOnePending" = "One transaction waiting, review when you can.";
+"inbox.subtitleAllDone" = "Inbox at zero, great job.";
+"inbox.pendingBadge" = "%d pending";
+"inbox.heroChip" = "Your inbox";
 "inbox.newTag" = "New";
 "inbox.noArchived" = "No archived drafts";
 "inbox.noArchivedDescription" = "Approved or rejected drafts will appear here.";

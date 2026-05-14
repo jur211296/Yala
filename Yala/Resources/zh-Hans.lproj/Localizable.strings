@@ -2043,6 +2043,11 @@
 "inbox.noPending" = "没有待处理草稿";
 "inbox.noPendingDescription" = "新的语音和图片草稿将显示在这里。";
 "inbox.bulkHint" = "点击「选择」进行批量操作";
+"inbox.subtitleMultiplePending" = "%d 笔交易等待中,一步一步来。";
+"inbox.subtitleOnePending" = "一笔交易等待中,有空时查看一下。";
+"inbox.subtitleAllDone" = "收件箱已清空,做得很棒。";
+"inbox.pendingBadge" = "%d 项待处理";
+"inbox.heroChip" = "你的收件箱";
 "inbox.newTag" = "新";
 "inbox.noArchived" = "没有已归档草稿";
 "inbox.noArchivedDescription" = "已审批或已拒绝的草稿将显示在这里。";
