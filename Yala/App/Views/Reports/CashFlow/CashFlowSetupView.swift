@@ -62,7 +62,7 @@ struct CashFlowSetupView: View {
     var body: some View {
         ScrollViewReader { scrollProxy in
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: DS.Spacing.xl) {
+                VStack(spacing: DS.Spacing.md) {
                     headerSection
                     if viewModel.suggestedLines.isEmpty {
                         emptyState
@@ -159,11 +159,7 @@ struct CashFlowSetupView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Spacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(DS.Semantic.infoBackground)
-        )
+        .panelCard()
     }
 
     // MARK: - Empty State
@@ -199,12 +195,11 @@ struct CashFlowSetupView: View {
     // MARK: - Line Section
 
     private func lineSection(title: String, lines: [SuggestedLine], isIncome: Bool) -> some View {
-        VStack(spacing: DS.Spacing.none) {
-            Text(title.uppercased())
-                .font(DS.Typography.label)
-                .foregroundStyle(.secondary)
+        VStack(spacing: DS.Spacing.sm) {
+            Text(title)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, DS.Spacing.sm)
 
             VStack(spacing: DS.Spacing.none) {
                 ForEach(lines) { line in
@@ -215,7 +210,7 @@ struct CashFlowSetupView: View {
                     }
                 }
             }
-            .solidCard()
+            .panelCard()
         }
     }
 
@@ -300,8 +295,7 @@ struct CashFlowSetupView: View {
                 isBold: true
             )
         }
-        .padding(DS.Spacing.lg)
-        .solidCard()
+        .panelCard()
     }
 
     private func summaryRow(label: String, amount: Double, color: Color, isBold: Bool = false) -> some View {
@@ -321,17 +315,13 @@ struct CashFlowSetupView: View {
     private var startingBalanceSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.CashFlowPlan.startingBalance)
-                .font(DS.Typography.label)
-                .foregroundStyle(.secondary)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.primary)
             TextField("0", text: $startingBalance)
                 .keyboardType(.decimalPad)
                 .font(DS.Typography.headline)
                 .monospacedDigit()
-                .padding(DS.Spacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                        .fill(.thCard)
-                )
+                .panelCard(small: true)
             Text(L10n.CashFlowPlan.startingBalanceHelper)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.tertiary)
