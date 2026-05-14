@@ -122,7 +122,7 @@ struct BudgetDetailView: View {
                     .foregroundStyle(.secondary)
 
                 Text(spentText)
-                    .font(.system(size: scaledAmountSize, weight: .bold))
+                    .font(DS.Typography.largeTitle)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
 
@@ -160,7 +160,7 @@ struct BudgetDetailView: View {
             .padding(.horizontal, DS.Spacing.sm)
         }
         .padding(DS.Spacing.xl)
-        .solidCard()
+        .solidCard(padding: 0, radius: DS.Panel.widgetRadius)
     }
 
     // MARK: - Info Section
@@ -172,7 +172,7 @@ struct BudgetDetailView: View {
                     .foregroundStyle(.thAccent)
                     .accessibilityHidden(true)
                 Text(L10n.BudgetDetail.infoTitle)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
             }
             .padding(.leading, DS.Spacing.xs)
@@ -232,7 +232,7 @@ struct BudgetDetailView: View {
                     )
                 }
             }
-            .solidCard()
+            .panelCard()
         }
     }
 
@@ -245,7 +245,7 @@ struct BudgetDetailView: View {
                     .foregroundStyle(.thAccent)
                     .accessibilityHidden(true)
                 Text(L10n.BudgetDetail.statusTitle)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
             }
             .padding(.leading, DS.Spacing.xs)
@@ -293,7 +293,7 @@ struct BudgetDetailView: View {
                     .padding(.vertical, DS.Spacing.md)
                 }
             }
-            .solidCard()
+            .panelCard()
         }
     }
 

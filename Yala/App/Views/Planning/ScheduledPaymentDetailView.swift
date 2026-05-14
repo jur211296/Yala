@@ -160,7 +160,7 @@ struct ScheduledPaymentDetailView: View {
                     .foregroundStyle(.secondary)
 
                 Text(formatAmount(payment.amount, isEstimate: payment.isVariableAmount))
-                    .font(.system(size: scaledAmountSize, weight: .bold))
+                    .font(DS.Typography.largeTitle)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     .foregroundStyle(payment.transactionType == "income" ? Color.electricIndigo : .primary)
 
@@ -238,14 +238,7 @@ struct ScheduledPaymentDetailView: View {
             }
         }
         .padding(DS.Spacing.xl)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(.thCard)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-        )
+        .solidCard(padding: 0, radius: DS.Panel.widgetRadius)
     }
 
     private func detailRow(icon: String, label: String, value: String) -> some View {
@@ -277,7 +270,7 @@ struct ScheduledPaymentDetailView: View {
                     .foregroundStyle(.thAccent)
                     .accessibilityHidden(true)
                 Text(L10n.Scheduled.Detail.upcoming)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
             }
             .padding(.leading, DS.Spacing.xs)
@@ -291,14 +284,7 @@ struct ScheduledPaymentDetailView: View {
                     }
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
+            .panelCard()
         }
     }
 
@@ -311,7 +297,7 @@ struct ScheduledPaymentDetailView: View {
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
                 Text(L10n.Scheduled.Detail.history)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
             }
             .padding(.leading, DS.Spacing.xs)
@@ -325,14 +311,7 @@ struct ScheduledPaymentDetailView: View {
                     }
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
+            .panelCard()
         }
     }
 
