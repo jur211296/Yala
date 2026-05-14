@@ -22,9 +22,6 @@ struct BudgetsListView: View {
     @State private var selectedSegment: Int = 1  // 0=Weekly, 1=Monthly, 2=Yearly, 3=Unique
     @State private var showPeriodSelector = false
     @State private var showUpgradeSheet = false
-    // Cache de contadores hero (evita reduce O(N) por render). Actualizado en
-    // refreshData() / recalculatePeriodFilters() cuando data o filtros cambian.
-    @State private var budgetCounters: BudgetCounters = .zero
 
     private var activeBudgetsCount: Int {
         viewModel.activeBudgetsCount
@@ -39,7 +36,7 @@ struct BudgetsListView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: DS.Spacing.md) {
+                VStack(spacing: DS.Spacing.sm) {
                     // Limit reached banner
                     if isAtLimit {
                         LimitReachedBanner(
@@ -50,7 +47,9 @@ struct BudgetsListView: View {
                         }
                     }
 
-                    heroSection
+                    // Segmented Picker período (Weekly/Monthly/Yearly/Unique)
+                    periodTypeSegmentedControl
+                        .padding(.horizontal, DS.Spacing.lg)
 
                     // PeriodNavigationHeader shared (oculto en .unique mode)
                     if selectedSegment != 3 {
@@ -71,11 +70,12 @@ struct BudgetsListView: View {
 
                     listContent
                 }
-                .padding(.top, DS.Spacing.md)
+                .padding(.top, DS.Spacing.sm)
             }
             .scrollViewGlassEdges()
-
-            // FAB button for new budget
+        }
+        // FAB anclado al safeArea bottom → baja automáticamente con tab bar minimize iOS 26
+        .safeAreaInset(edge: .bottom, alignment: .trailing, spacing: 0) {
             newBudgetFAB
         }
         .navigationDestination(for: BudgetNavigationID.self) { navID in
@@ -106,7 +106,6 @@ struct BudgetsListView: View {
                 hideInactive: appPreferences.budgetsHideInactive,
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
-            updateBudgetCounters()
 
             // Auto-open editor from setup checklist — routed via AppRouter now;
             // drain handler below sets showBudgetEditor on .autoOpenBudgetEditor.
@@ -131,82 +130,26 @@ struct BudgetsListView: View {
         }
     }
 
-    // MARK: - Hero Section (polish panel-aligned, Bloque B)
+    // MARK: - Period Type Segmented Control
 
-    private var heroSection: some View {
-        VStack(alignment: .center, spacing: DS.Spacing.sm) {
-            // Period type selector — mismo diseño que TrendsPeriodMenu de Stats
-            Menu {
-                Button(NSLocalizedString("budgets.period.weekly", comment: ""))  { setPeriodType(0) }
-                Button(NSLocalizedString("budgets.period.monthly", comment: "")) { setPeriodType(1) }
-                Button(NSLocalizedString("budgets.period.yearly", comment: ""))  { setPeriodType(2) }
-                Button(NSLocalizedString("budgets.period.unique", comment: ""))  { setPeriodType(3) }
-            } label: {
-                PeriodSelectorLabel(title: currentPeriodTypeLabel)
+    private var periodTypeSegmentedControl: some View {
+        Picker("Period Type", selection: $selectedSegment) {
+            Text(NSLocalizedString("budgets.period.weekly", comment: "")).tag(0)
+            Text(NSLocalizedString("budgets.period.monthly", comment: "")).tag(1)
+            Text(NSLocalizedString("budgets.period.yearly", comment: "")).tag(2)
+            Text(NSLocalizedString("budgets.period.unique", comment: "")).tag(3)
+        }
+        .pickerStyle(.segmented)
+        .onChange(of: selectedSegment) { _, newValue in
+            switch newValue {
+            case 0: viewModel.selectedPeriodType = .weekly
+            case 1: viewModel.selectedPeriodType = .monthly
+            case 2: viewModel.selectedPeriodType = .yearly
+            case 3: viewModel.selectedPeriodType = .unique
+            default: break
             }
-
-            // Counters row (BRAND-VOICE §5.3: dot + texto)
-            HStack(spacing: DS.Spacing.lg) {
-                counterChip(color: Color.electricIndigo,    label: L10n.Planning.Budgets.statusOnTrack(budgetCounters.onTrack))
-                counterChip(color: Color.essentialNeed,     label: L10n.Planning.Budgets.statusAtLimit(budgetCounters.atLimit))
-                counterChip(color: Color.hotPink,           label: L10n.Planning.Budgets.statusOverLimit(budgetCounters.overLimit))
-            }
-
-            if selectedSegment != 3 {
-                Text(L10n.Planning.Budgets.currentPeriod(viewModel.periodLabel))
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-            }
+            recalculatePeriodFilters()
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, DS.Spacing.lg)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(heroAccessibilityLabel)
-    }
-
-    private func counterChip(color: Color, label: String) -> some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Circle()
-                .fill(color)
-                .frame(width: 6, height: 6)
-            Text(label)
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.secondary)
-                .minimumScaleFactor(0.85)
-                .lineLimit(1)
-        }
-    }
-
-    private var heroAccessibilityLabel: String {
-        let parts = [
-            currentPeriodTypeLabel,
-            L10n.Planning.Budgets.statusOnTrack(budgetCounters.onTrack),
-            L10n.Planning.Budgets.statusAtLimit(budgetCounters.atLimit),
-            L10n.Planning.Budgets.statusOverLimit(budgetCounters.overLimit),
-        ]
-        return parts.joined(separator: ". ")
-    }
-
-    private var currentPeriodTypeLabel: String {
-        switch selectedSegment {
-        case 0: return NSLocalizedString("budgets.period.weekly", comment: "")
-        case 1: return NSLocalizedString("budgets.period.monthly", comment: "")
-        case 2: return NSLocalizedString("budgets.period.yearly", comment: "")
-        case 3: return NSLocalizedString("budgets.period.unique", comment: "")
-        default: return ""
-        }
-    }
-
-    private func setPeriodType(_ index: Int) {
-        selectedSegment = index
-        switch index {
-        case 0: viewModel.selectedPeriodType = .weekly
-        case 1: viewModel.selectedPeriodType = .monthly
-        case 2: viewModel.selectedPeriodType = .yearly
-        case 3: viewModel.selectedPeriodType = .unique
-        default: break
-        }
-        recalculatePeriodFilters()
     }
 
     // MARK: - List Content
@@ -249,41 +192,38 @@ struct BudgetsListView: View {
             }
         }
         .padding(.top, DS.Spacing.sm)
-        .padding(.bottom, DS.Spacing.safeBottom)  // Space for FAB
+        // Sin .padding(.bottom, .safeBottom) — el safeAreaInset del FAB ya reserva
+        // espacio dinámico que respeta tab bar minimize behavior iOS 26.
     }
 
     // MARK: - New Budget FAB
 
+    /// FAB anclado al `safeAreaInset(.bottom, .trailing)` del ZStack root.
+    /// Cuando el tab bar nativo se minimiza al hacer scroll down (iOS 26
+    /// `tabBarMinimizeBehavior(.onScrollDown)`), el `safeAreaInsets.bottom`
+    /// se reduce dinámicamente y el FAB baja automáticamente con él.
     private var newBudgetFAB: some View {
-        VStack {
-            Spacer()
-
-            HStack {
-                Spacer()
-
-                Button {
-                    if FeatureGateService.shared.canCreate(.budgets, currentCount: activeBudgetsCount) {
-                        viewModel.editingBudget = nil
-                        viewModel.showBudgetEditor = true
-                    } else {
-                        showUpgradeSheet = true
-                    }
-                } label: {
-                    Image(systemName: "plus")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.white)
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .background(theme.accent)
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Accessibility.newBudget)
-                .glassEffect(.regular.interactive())
-                .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+        Button {
+            if FeatureGateService.shared.canCreate(.budgets, currentCount: activeBudgetsCount) {
+                viewModel.editingBudget = nil
+                viewModel.showBudgetEditor = true
+            } else {
+                showUpgradeSheet = true
             }
-            .padding(.trailing, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxl)
+        } label: {
+            Image(systemName: "plus")
+                .font(DS.Typography.title)
+                .foregroundStyle(.white)
+                .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
+                .background(theme.accent)
+                .clipShape(Circle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.Accessibility.newBudget)
+        .glassEffect(.regular.interactive())
+        .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+        .padding(.trailing, DS.Spacing.xl)
+        .padding(.bottom, DS.Spacing.md)
     }
 
     // MARK: - Data Management
@@ -295,7 +235,6 @@ struct BudgetsListView: View {
             hideInactive: appPreferences.budgetsHideInactive,
             defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
-        updateBudgetCounters()
     }
 
     /// Recompute only (no re-fetch). Use when a filter or period changed
@@ -305,17 +244,6 @@ struct BudgetsListView: View {
             hideInactive: appPreferences.budgetsHideInactive,
             defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
-        updateBudgetCounters()
-    }
-
-    /// Recomputa los contadores hero a partir de `groupedBudgets` actual.
-    /// Llamado solo cuando data o filtros cambian — el hero lee `@State`
-    /// directo en cada render (O(1)).
-    private func updateBudgetCounters() {
-        let items = viewModel.groupedBudgets.flatMap(\.budgets).map {
-            (spent: $0.spent, limit: $0.budget.limitAmount)
-        }
-        budgetCounters = BudgetStatusCounter.counters(for: items)
     }
 
 }

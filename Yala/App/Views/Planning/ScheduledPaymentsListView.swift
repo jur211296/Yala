@@ -27,9 +27,10 @@ struct ScheduledPaymentsListView: View {
     @State private var selectedDay: Int? = nil
 
     var body: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            // Hero edge-to-edge centrado (total + chips paid/pending)
+        VStack(spacing: DS.Spacing.xs) {
+            // Hero centrado (total + chips paid/pending)
             heroSection
+                .padding(.bottom, DS.Spacing.xs)
 
             // PeriodNavigationHeader shared (TX-P2)
             PeriodNavigationHeader(
@@ -48,14 +49,16 @@ struct ScheduledPaymentsListView: View {
             )
             .padding(.horizontal, DS.Spacing.lg)
 
-            // View mode header with selector
+            // View mode header with selector (sin padding adicional — VStack .xs basta)
             viewModeHeader
 
             // Content based on view mode
             if viewModel.paymentsViewMode == .list {
                 listContent
+                    .padding(.top, DS.Spacing.xs)
             } else {
                 calendarContent
+                    .padding(.top, DS.Spacing.xs)
             }
         }
         .padding(.top, DS.Spacing.sm)

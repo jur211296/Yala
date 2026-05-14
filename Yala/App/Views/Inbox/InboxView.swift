@@ -338,7 +338,7 @@ struct InboxView: View {
     @ViewBuilder
     private var miniHero: some View {
         if !isSelectionMode {
-            VStack(alignment: .center, spacing: DS.Spacing.sm) {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 if pendingCount > 0 {
                     Text(L10n.Inbox.pendingBadge(pendingCount))
                         .font(DS.Typography.labelSmall)
@@ -350,9 +350,8 @@ struct InboxView: View {
                 Text(heroSubtitleText)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.md)
             .padding(.bottom, DS.Spacing.sm)
