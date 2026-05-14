@@ -81,7 +81,7 @@ struct AIPersonalizationSheet: View {
             Spacer()
 
             Image(systemName: "chevron.up.chevron.down")
-                .font(.caption2) // A11Y-DT: chevron icon size
+                .font(DS.Typography.captionSmall) // A11Y-DT: chevron icon size
                 .foregroundStyle(.thPrimaryText)
         }
         .contentShape(Rectangle())

@@ -318,7 +318,7 @@ struct ChatTransactionDraftCard: View {
                 .foregroundStyle(.thPrimaryText)
                 .lineLimit(1)
             Image(systemName: "chevron.up.chevron.down")
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(.thSecondaryText)
         }
         .padding(.vertical, DS.Spacing.sm)

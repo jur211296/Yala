@@ -48,7 +48,7 @@ struct PivotRowView: View {
 
                 if let previousAmount = node.previousAmount {
                     Text(appPreferences.currency(previousAmount, currencyCode: displayCurrency))
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                 }
             }

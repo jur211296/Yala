@@ -184,13 +184,13 @@ struct SankeyChartView: View {
 
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text(node.name)
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .fontWeight(.medium)
                 .foregroundStyle(Color.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
             Text(valueString)
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(Color.secondary)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)

@@ -21,7 +21,7 @@ struct NetFlowSummaryView: View {
         HStack(spacing: DS.Spacing.sm) {
             // Icon matching TrendsTabView balance
             Image(systemName: TrendType.balance.iconName)
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(.primary)
                 .frame(width: DS.Chip.dotSize)
 
@@ -46,7 +46,7 @@ struct NetFlowSummaryView: View {
 
                 if let previousAmount {
                     Text(appPreferences.currency(previousAmount, currencyCode: currencyCode))
-                        .font(.caption2)
+                        .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                 }
             }
