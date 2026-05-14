@@ -51,6 +51,7 @@ struct BudgetsListView: View {
                     // SIN padding horizontal externo — las cards de BudgetRowView usan
                     // `.padding(.lg)` INTERNO y `.solidCard` sin padding externo, así
                     // llegan al borde del ScrollView. El picker debe igualar ese ancho.
+                    periodTypeSegmentedControl
 
                     // PeriodNavigationHeader shared (oculto en .unique mode)
                     if selectedSegment != 3 {
