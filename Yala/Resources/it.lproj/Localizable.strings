@@ -526,6 +526,12 @@
 "planning.goals" = "Obiettivi";
 "planning.comingSoon" = "Prossimamente";
 "planning.scheduledPayments" = "Pagamenti programmati";
+"planning.budgets.currentPeriod" = "Periodo: %@";
+"planning.budgets.statusOverLimit" = "%d superati";
+"planning.budgets.statusAtLimit" = "%d al limite";
+"planning.budgets.statusOnTrack" = "%d in linea";
+"planning.budgets.title" = "Budget";
+"planning.budgets.heroChip" = "I tuoi budget";
 
 // MARK: - Budgets
 

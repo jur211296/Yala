@@ -528,6 +528,12 @@
 "planning.goals" = "目标";
 "planning.comingSoon" = "即将推出";
 "planning.scheduledPayments" = "计划付款";
+"planning.budgets.currentPeriod" = "周期:%@";
+"planning.budgets.statusOverLimit" = "%d 个超出";
+"planning.budgets.statusAtLimit" = "%d 个临近";
+"planning.budgets.statusOnTrack" = "%d 个正常";
+"planning.budgets.title" = "预算";
+"planning.budgets.heroChip" = "你的预算";
 
 // MARK: - Budgets
 

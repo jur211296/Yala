@@ -528,6 +528,12 @@
 "planning.goals" = "Doelen";
 "planning.comingSoon" = "Binnenkort";
 "planning.scheduledPayments" = "Geplande betalingen";
+"planning.budgets.currentPeriod" = "Periode: %@";
+"planning.budgets.statusOverLimit" = "%d overschreden";
+"planning.budgets.statusAtLimit" = "%d aan de limiet";
+"planning.budgets.statusOnTrack" = "%d op schema";
+"planning.budgets.title" = "Budgetten";
+"planning.budgets.heroChip" = "Jouw budgetten";
 
 // MARK: - Budgets
 

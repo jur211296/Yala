@@ -22,6 +22,9 @@ struct BudgetsListView: View {
     @State private var selectedSegment: Int = 1  // 0=Weekly, 1=Monthly, 2=Yearly, 3=Unique
     @State private var showPeriodSelector = false
     @State private var showUpgradeSheet = false
+    // Cache de contadores hero (evita reduce O(N) por render). Actualizado en
+    // refreshData() / recalculatePeriodFilters() cuando data o filtros cambian.
+    @State private var budgetCounters: BudgetCounters = .zero
 
     private var activeBudgetsCount: Int {
         viewModel.activeBudgetsCount
@@ -36,7 +39,7 @@ struct BudgetsListView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: DS.Spacing.none) {
+                VStack(spacing: DS.Spacing.md) {
                     // Limit reached banner
                     if isAtLimit {
                         LimitReachedBanner(
@@ -45,13 +48,30 @@ struct BudgetsListView: View {
                         ) {
                             showUpgradeSheet = true
                         }
-                        .padding(.top, DS.Spacing.md)
                     }
 
-                    controlsBar
+                    heroSection
+
+                    // PeriodNavigationHeader shared (oculto en .unique mode)
+                    if selectedSegment != 3 {
+                        PeriodNavigationHeader(
+                            currentLabel: viewModel.periodLabel,
+                            onPrevious: {
+                                viewModel.previousPeriod()
+                                recalculatePeriodFilters()
+                            },
+                            onNext: {
+                                viewModel.nextPeriod()
+                                recalculatePeriodFilters()
+                            },
+                            onTapLabel: { showPeriodSelector = true }
+                        )
+                        .padding(.horizontal, DS.Spacing.lg)
+                    }
 
                     listContent
                 }
+                .padding(.top, DS.Spacing.md)
             }
             .scrollViewGlassEdges()
 
@@ -86,6 +106,7 @@ struct BudgetsListView: View {
                 hideInactive: appPreferences.budgetsHideInactive,
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
+            updateBudgetCounters()
 
             // Auto-open editor from setup checklist — routed via AppRouter now;
             // drain handler below sets showBudgetEditor on .autoOpenBudgetEditor.
@@ -110,28 +131,98 @@ struct BudgetsListView: View {
         }
     }
 
-    // MARK: - Controls Bar
+    // MARK: - Hero Section (polish panel-aligned, Bloque B)
 
-    private var controlsBar: some View {
-        VStack(spacing: DS.Spacing.none) {
-            // Period type segmented control
-            periodTypeSegmentedControl
-                .padding(.top, DS.Spacing.md)
-                .padding(.bottom, DS.Spacing.sm)
+    private var heroSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            // Top row: chip identidad + Menu período type
+            HStack(alignment: .center) {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "piggybank.fill")
+                    Text(L10n.Planning.Budgets.heroChip)
+                }
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(theme.accent)
+
+                Spacer()
+
+                Menu {
+                    Button(NSLocalizedString("budgets.period.weekly", comment: ""))  { setPeriodType(0) }
+                    Button(NSLocalizedString("budgets.period.monthly", comment: "")) { setPeriodType(1) }
+                    Button(NSLocalizedString("budgets.period.yearly", comment: ""))  { setPeriodType(2) }
+                    Button(NSLocalizedString("budgets.period.unique", comment: ""))  { setPeriodType(3) }
+                } label: {
+                    HStack(spacing: DS.Spacing.xxs) {
+                        Image(systemName: "calendar")
+                        Text(currentPeriodTypeLabel).font(DS.Typography.label)
+                        Image(systemName: "chevron.down").font(DS.Typography.captionSmall)
+                    }
+                    .foregroundStyle(.primary)
+                }
+            }
+
+            // Counters row (BRAND-VOICE §5.3: dot + texto)
+            HStack(spacing: DS.Spacing.lg) {
+                counterChip(color: DS.Semantic.successForeground, label: L10n.Planning.Budgets.statusOnTrack(budgetCounters.onTrack))
+                counterChip(color: Color.essentialNeed,           label: L10n.Planning.Budgets.statusAtLimit(budgetCounters.atLimit))
+                counterChip(color: Color.hotPink,                 label: L10n.Planning.Budgets.statusOverLimit(budgetCounters.overLimit))
+            }
 
             if selectedSegment != 3 {
-                // Period navigation header with chevrons
-                periodNavigationHeader
-                    .padding(.bottom, DS.Spacing.md)
-            } else {
-                // For unique mode, only show the hide inactive button
-                HStack {
-                    Spacer()
-                    hideInactiveButton
-                }
-                .padding(.bottom, DS.Spacing.md)
+                Text(L10n.Planning.Budgets.currentPeriod(viewModel.periodLabel))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, DS.Spacing.lg)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(heroAccessibilityLabel)
+    }
+
+    private func counterChip(color: Color, label: String) -> some View {
+        HStack(spacing: DS.Spacing.xs) {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+            Text(label)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+                .minimumScaleFactor(0.85)
+                .lineLimit(1)
+        }
+    }
+
+    private var heroAccessibilityLabel: String {
+        let parts = [
+            L10n.Planning.Budgets.heroChip,
+            L10n.Planning.Budgets.statusOnTrack(budgetCounters.onTrack),
+            L10n.Planning.Budgets.statusAtLimit(budgetCounters.atLimit),
+            L10n.Planning.Budgets.statusOverLimit(budgetCounters.overLimit),
+        ]
+        return parts.joined(separator: ". ")
+    }
+
+    private var currentPeriodTypeLabel: String {
+        switch selectedSegment {
+        case 0: return NSLocalizedString("budgets.period.weekly", comment: "")
+        case 1: return NSLocalizedString("budgets.period.monthly", comment: "")
+        case 2: return NSLocalizedString("budgets.period.yearly", comment: "")
+        case 3: return NSLocalizedString("budgets.period.unique", comment: "")
+        default: return ""
+        }
+    }
+
+    private func setPeriodType(_ index: Int) {
+        selectedSegment = index
+        switch index {
+        case 0: viewModel.selectedPeriodType = .weekly
+        case 1: viewModel.selectedPeriodType = .monthly
+        case 2: viewModel.selectedPeriodType = .yearly
+        case 3: viewModel.selectedPeriodType = .unique
+        default: break
+        }
+        recalculatePeriodFilters()
     }
 
     // MARK: - List Content
@@ -145,109 +236,6 @@ struct BudgetsListView: View {
         }
     }
 
-    // MARK: - Period Type Segmented Control
-
-    private var periodTypeSegmentedControl: some View {
-        Picker("Period Type", selection: $selectedSegment) {
-            Text(NSLocalizedString("budgets.period.weekly", comment: "")).tag(0)
-            Text(NSLocalizedString("budgets.period.monthly", comment: "")).tag(1)
-            Text(NSLocalizedString("budgets.period.yearly", comment: "")).tag(2)
-            Text(NSLocalizedString("budgets.period.unique", comment: "")).tag(3)
-        }
-        .pickerStyle(.segmented)
-        .onChange(of: selectedSegment) { _, newValue in
-            switch newValue {
-            case 0:
-                viewModel.selectedPeriodType = .weekly
-            case 1:
-                viewModel.selectedPeriodType = .monthly
-            case 2:
-                viewModel.selectedPeriodType = .yearly
-            case 3:
-                viewModel.selectedPeriodType = .unique
-            default:
-                break
-            }
-            recalculatePeriodFilters()
-        }
-    }
-
-    // MARK: - Period Navigation Header
-
-    private var periodNavigationHeader: some View {
-        HStack {
-            Button {
-                dsWithAnimation(reduceMotion) {
-                    viewModel.previousPeriod()
-                    recalculatePeriodFilters()
-                }
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 36, height: 36)
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            Button {
-                showPeriodSelector = true
-            } label: {
-                HStack(spacing: DS.Spacing.xs) {
-                    Text(viewModel.periodLabel)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
-
-                    Image(systemName: "chevron.down")
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            hideInactiveButton
-
-            Button {
-                dsWithAnimation(reduceMotion) {
-                    viewModel.nextPeriod()
-                    recalculatePeriodFilters()
-                }
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 36, height: 36)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.vertical, DS.Spacing.sm)
-    }
-
-    // MARK: - Hide Inactive Button
-
-    private var hideInactiveButton: some View {
-        Button {
-            appPreferences.budgetsHideInactive.toggle()
-            recalculatePeriodFilters()
-        } label: {
-            Image(systemName: appPreferences.budgetsHideInactive ? "eye" : "eye.slash")
-                .font(DS.Typography.bodyBold)
-                .foregroundStyle(.secondary)
-                .frame(width: 32, height: 32)
-        }
-        .buttonStyle(.plain)
-        .opacity(hasInactiveBudgets ? 1 : 0)
-        .accessibilityHint(!hasInactiveBudgets ? L10n.Budget.noInactive : "")
-        .disabled(!hasInactiveBudgets)
-    }
-
-    private var hasInactiveBudgets: Bool {
-        viewModel.hasInactiveBudgets(forPeriodTypeIndex: selectedSegment)
-    }
-
     // MARK: - Empty State
 
     private var emptyState: some View {
@@ -258,12 +246,12 @@ struct BudgetsListView: View {
     // MARK: - Budgets List
 
     private var budgetsList: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             ForEach(viewModel.groupedBudgets, id: \.status) { section in
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     // Section header
                     Text(section.status.localizedName)
-                        .font(DS.Typography.headline)
+                        .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)
 
                     // Budget cards
@@ -323,6 +311,7 @@ struct BudgetsListView: View {
             hideInactive: appPreferences.budgetsHideInactive,
             defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
+        updateBudgetCounters()
     }
 
     /// Recompute only (no re-fetch). Use when a filter or period changed
@@ -332,6 +321,17 @@ struct BudgetsListView: View {
             hideInactive: appPreferences.budgetsHideInactive,
             defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
+        updateBudgetCounters()
+    }
+
+    /// Recomputa los contadores hero a partir de `groupedBudgets` actual.
+    /// Llamado solo cuando data o filtros cambian — el hero lee `@State`
+    /// directo en cada render (O(1)).
+    private func updateBudgetCounters() {
+        let items = viewModel.groupedBudgets.flatMap(\.budgets).map {
+            (spent: $0.spent, limit: $0.budget.limitAmount)
+        }
+        budgetCounters = BudgetStatusCounter.counters(for: items)
     }
 
 }

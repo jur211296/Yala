@@ -528,6 +528,12 @@
 "planning.goals" = "目標";
 "planning.comingSoon" = "近日公開";
 "planning.scheduledPayments" = "予定支払い";
+"planning.budgets.currentPeriod" = "期間:%@";
+"planning.budgets.statusOverLimit" = "%d件 超過";
+"planning.budgets.statusAtLimit" = "%d件 上限近く";
+"planning.budgets.statusOnTrack" = "%d件 順調";
+"planning.budgets.title" = "予算";
+"planning.budgets.heroChip" = "あなたの予算";
 
 // MARK: - Budgets
 

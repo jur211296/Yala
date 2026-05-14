@@ -3948,6 +3948,24 @@ enum L10n {
         static var scheduledPayments: String {
             ls("planning.scheduledPayments", comment: "")
         }
+
+        // MARK: Budgets sub-tab (polish panel-aligned, Bloque B)
+        enum Budgets {
+            static var heroChip: String { ls("planning.budgets.heroChip", comment: "") }
+            static var title: String { ls("planning.budgets.title", comment: "") }
+            static func statusOnTrack(_ n: Int) -> String {
+                String(format: ls("planning.budgets.statusOnTrack", comment: ""), n)
+            }
+            static func statusAtLimit(_ n: Int) -> String {
+                String(format: ls("planning.budgets.statusAtLimit", comment: ""), n)
+            }
+            static func statusOverLimit(_ n: Int) -> String {
+                String(format: ls("planning.budgets.statusOverLimit", comment: ""), n)
+            }
+            static func currentPeriod(_ label: String) -> String {
+                String(format: ls("planning.budgets.currentPeriod", comment: ""), label)
+            }
+        }
     }
 
     // MARK: - Profile
