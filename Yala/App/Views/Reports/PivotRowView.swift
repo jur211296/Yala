@@ -37,7 +37,7 @@ struct PivotRowView: View {
 
             // Thin divider between label and amounts
             Divider()
-                .frame(height: 28)
+                .frame(height: DS.Sizing.dividerHeightStandard)
 
             // Amounts
             VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
@@ -98,7 +98,7 @@ struct PivotRowView: View {
         } else if let iconName = node.iconName {
             // Non-entity dimension icon (tipo, divisa, naturaleza)
             Image(systemName: iconName)
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(node.isIncome ? Color.electricIndigo : Color.hotPink)
                 .frame(width: DS.Chip.dotSize)
         }

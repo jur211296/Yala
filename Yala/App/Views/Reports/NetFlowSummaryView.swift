@@ -35,7 +35,7 @@ struct NetFlowSummaryView: View {
 
             // Thin divider
             Divider()
-                .frame(height: 28)
+                .frame(height: DS.Sizing.dividerHeightStandard)
 
             // Amounts
             VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {

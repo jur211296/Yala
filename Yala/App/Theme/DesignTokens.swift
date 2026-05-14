@@ -528,6 +528,18 @@ enum DS {
         /// Small amounts
         static let amountSmall = Font.system(.subheadline, design: .rounded).weight(.medium)
     }
+
+    // MARK: - Sizing
+
+    /// Dimensiones reusables (heights, widths) que no encajan en `Spacing`/`Radius`.
+    enum Sizing {
+        /// Altura estándar de dividers verticales en rows con info numérica
+        /// (NetFlowSummaryView, PivotRowView).
+        static let dividerHeightStandard: CGFloat = 28
+
+        /// Altura de progress bars compactos (CashFlowDetailLineRow, badges).
+        static let progressBarHeight: CGFloat = 4
+    }
 }
 
 // MARK: - View Extensions

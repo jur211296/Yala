@@ -160,12 +160,12 @@ struct CashFlowDetailLineRow: View {
         return ZStack(alignment: .leading) {
             Capsule()
                 .fill(DS.Semantic.neutralBackground)
-                .frame(height: 4)
+                .frame(height: DS.Sizing.progressBarHeight)
             Capsule()
                 .fill(progress > 1.0 ? Color.hotPink : theme.accent)
-                .frame(maxWidth: .infinity, maxHeight: 4)
+                .frame(maxWidth: .infinity, maxHeight: DS.Sizing.progressBarHeight)
                 .scaleEffect(x: max(0.05, clamped), anchor: .leading)
         }
-        .frame(height: 4)
+        .frame(height: DS.Sizing.progressBarHeight)
     }
 }
