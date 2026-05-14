@@ -48,14 +48,7 @@ struct InboxDraftRowView: View {
             }
             .padding(.vertical, DS.ListRow.paddingV)
             .padding(.horizontal, DS.ListRow.paddingH)
-            .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
-            .shadow(
-                color: Color.black.opacity(theme.shadowOpacity),
-                radius: 6,
-                x: 0,
-                y: 3
-            )
+            .panelCard(small: true)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
@@ -182,13 +175,6 @@ struct InboxDraftRowView: View {
     }
 
 
-    // MARK: - Card Background
-
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
-            .fill(.thCard)
-    }
-
     // MARK: - Selection Circle
 
     private var selectionCircle: some View {
@@ -290,23 +276,21 @@ struct InboxDraftRowView: View {
     private var sourceColor: Color {
         switch draft.sourceType {
         case .voice:
-            return .hotPink
+            return Color.essentialNeed       // amber #F59E0B — input rápido
         case .receiptPhoto, .screenshotList, .screenshotSingle:
-            return .teal
+            return Color.priorityNeedNew     // purple #8B5CF6 — análisis OCR/foto
         case .emailAlert:
-            return .blue
-        case .scheduledPayment:
-            return .purple
-        case .subscription:
-            return .indigo
+            return theme.accent              // tema — datos externos parseados
+        case .scheduledPayment, .subscription:
+            return Color.electricIndigo      // indigo brand — recurring
         case .applePay:
-            return .pink
+            return theme.priorityNeed        // tema — Apple Pay
         case .automation:
-            return .gray
+            return theme.secondaryText       // neutro
         case .siri:
-            return .blue
+            return theme.accent              // tema — Siri AI parsed
         case .groupExpense, .groupSettlement:
-            return .purple
+            return Color.hotPink             // brand pink — grupos
         }
     }
 
@@ -321,12 +305,12 @@ struct InboxDraftRowView: View {
             ForEach(draft.needsUserInput.prefix(2), id: \.self) { field in
                 Text(localizedFieldName(field))
                     .font(DS.Typography.labelTiny)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thPrimaryText)
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xxs)
                     .background(
                         Capsule()
-                            .fill(Color.hotPink.opacity(0.8))
+                            .fill(Color.essentialNeed.opacity(0.25))
                     )
             }
 
