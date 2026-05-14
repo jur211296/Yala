@@ -351,6 +351,8 @@
 "setup.demo.scheduledPayment.amountExample" = "45";
 "setup.demo.scheduledPayment.subcategoryExample" = "Streaming";
 "setup.demo.scheduledPayment.savedToast" = "Payment scheduled!";
+"setup.demo.voice.transcriptionDetected" = "1 transaction detected";
+"setup.demo.voice.savedToast" = "Draft created!";
 // MARK: - Stats Records polish
 
 "stats.records.motivationalOne" = "1 record · Great start";

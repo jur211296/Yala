@@ -3328,6 +3328,8 @@
 "setup.demo.scheduledPayment.amountExample" = "45";
 "setup.demo.scheduledPayment.subcategoryExample" = "Streaming";
 "setup.demo.scheduledPayment.savedToast" = "Pagamento programmato!";
+"setup.demo.voice.transcriptionDetected" = "1 transazione rilevata";
+"setup.demo.voice.savedToast" = "Bozza creata!";
 "setup.personalize.navTitle" = "Personalizza il tuo Yala";
 "setup.personalize.title" = "Fallo tuo";
 "setup.personalize.subtitle" = "Aggiungi il tuo tocco personale. Cambia il tema, l'icona o l'aspetto dei widget.";

@@ -3330,6 +3330,8 @@
 "setup.demo.scheduledPayment.amountExample" = "45";
 "setup.demo.scheduledPayment.subcategoryExample" = "Streaming";
 "setup.demo.scheduledPayment.savedToast" = "Betaling gepland!";
+"setup.demo.voice.transcriptionDetected" = "1 transactie gedetecteerd";
+"setup.demo.voice.savedToast" = "Concept aangemaakt!";
 "setup.personalize.navTitle" = "Personaliseer je Yala";
 "setup.personalize.title" = "Maak het van jou";
 "setup.personalize.subtitle" = "Geef het je persoonlijke touch. Wijzig het thema, icoon of hoe je widgets eruitzien.";

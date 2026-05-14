@@ -331,6 +331,14 @@ extension L10n {
             static var scheduledPaymentSavedToast: String {
                 NSLocalizedString("setup.demo.scheduledPayment.savedToast", comment: "¡Pago programado!")
             }
+
+            // Step 5 — voice (mock data)
+            static var voiceTranscriptionDetected: String {
+                NSLocalizedString("setup.demo.voice.transcriptionDetected", comment: "1 transacción detectada")
+            }
+            static var voiceSavedToast: String {
+                NSLocalizedString("setup.demo.voice.savedToast", comment: "¡Borrador creado!")
+            }
         }
     }
 }

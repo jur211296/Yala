@@ -3374,6 +3374,8 @@
 "setup.demo.scheduledPayment.amountExample" = "45";
 "setup.demo.scheduledPayment.subcategoryExample" = "Streaming";
 "setup.demo.scheduledPayment.savedToast" = "¡Pago programado!";
+"setup.demo.voice.transcriptionDetected" = "1 transacción detectada";
+"setup.demo.voice.savedToast" = "¡Borrador creado!";
 // Setup Personalize
 "setup.personalize.navTitle" = "Personaliza tu Yala";
 "setup.personalize.title" = "Haz tuyo a Yala";

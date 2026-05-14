@@ -53,9 +53,14 @@ struct SetupChecklistDemoSheet: View {
                 }
             )
         case .tryVoiceInput:
-            VoiceRecordingView(
-                mode: .demo,
-                onStartReal: { handleStartReal(for: .tryVoiceInput) }
+            SetupDemoVoiceInputView(
+                onClose: {
+                    sheets.setupDemoStep = nil
+                },
+                onComplete: {
+                    SetupChecklistManager.shared.markCompleted(.tryVoiceInput)
+                    sheets.setupDemoStep = nil
+                }
             )
         case .tryImageInput:
             ImageSelectionView(
