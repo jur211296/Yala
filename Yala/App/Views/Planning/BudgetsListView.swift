@@ -48,7 +48,6 @@ struct BudgetsListView: View {
                     }
 
                     // Segmented Picker período (Weekly/Monthly/Yearly/Unique)
-                    // — full-width gracias a maxWidth infinity del VStack
                     periodTypeSegmentedControl
                         .padding(.horizontal, DS.Spacing.lg)
 
@@ -75,14 +74,9 @@ struct BudgetsListView: View {
                 .padding(.top, DS.Spacing.sm)
             }
             .scrollViewGlassEdges()
-            // FAB anclado al safeArea bottom del ScrollView → baja automáticamente
-            // con tab bar minimize iOS 26 (tabBarMinimizeBehavior(.onScrollDown)
-            // configurado en MainTabView root). Aplicado al ScrollView (no al
-            // ZStack) para que el cambio dinámico de safeArea del Tab → ScrollView
-            // se propague al inset.
-            .safeAreaInset(edge: .bottom, alignment: .trailing, spacing: 0) {
-                newBudgetFAB
-            }
+
+            // FAB button for new budget
+            newBudgetFAB
         }
         .navigationDestination(for: BudgetNavigationID.self) { navID in
             BudgetDetailDestination(budgetID: navID.id, viewModel: viewModel)
@@ -146,6 +140,7 @@ struct BudgetsListView: View {
             Text(NSLocalizedString("budgets.period.unique", comment: "")).tag(3)
         }
         .pickerStyle(.segmented)
+        .frame(maxWidth: .infinity)
         .onChange(of: selectedSegment) { _, newValue in
             switch newValue {
             case 0: viewModel.selectedPeriodType = .weekly
@@ -197,40 +192,41 @@ struct BudgetsListView: View {
                 }
             }
         }
-        // Sin .padding(.top) — el VStack root spacing `.xs` ya da respiración
-        // mínima al primer section header. Sin .padding(.bottom, .safeBottom)
-        // porque el safeAreaInset del FAB ya reserva espacio dinámico que
-        // respeta tab bar minimize behavior iOS 26.
+        .padding(.bottom, DS.Spacing.safeBottom)  // Space for FAB
     }
 
     // MARK: - New Budget FAB
 
-    /// FAB anclado al `safeAreaInset(.bottom, .trailing)` del ZStack root.
-    /// Cuando el tab bar nativo se minimiza al hacer scroll down (iOS 26
-    /// `tabBarMinimizeBehavior(.onScrollDown)`), el `safeAreaInsets.bottom`
-    /// se reduce dinámicamente y el FAB baja automáticamente con él.
     private var newBudgetFAB: some View {
-        Button {
-            if FeatureGateService.shared.canCreate(.budgets, currentCount: activeBudgetsCount) {
-                viewModel.editingBudget = nil
-                viewModel.showBudgetEditor = true
-            } else {
-                showUpgradeSheet = true
+        VStack {
+            Spacer()
+
+            HStack {
+                Spacer()
+
+                Button {
+                    if FeatureGateService.shared.canCreate(.budgets, currentCount: activeBudgetsCount) {
+                        viewModel.editingBudget = nil
+                        viewModel.showBudgetEditor = true
+                    } else {
+                        showUpgradeSheet = true
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(DS.Typography.title)
+                        .foregroundStyle(.white)
+                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
+                        .background(theme.accent)
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.Accessibility.newBudget)
+                .glassEffect(.regular.interactive())
+                .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
             }
-        } label: {
-            Image(systemName: "plus")
-                .font(DS.Typography.title)
-                .foregroundStyle(.white)
-                .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                .background(theme.accent)
-                .clipShape(Circle())
+            .padding(.trailing, DS.Spacing.xl)
+            .padding(.bottom, DS.Spacing.xxl)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L10n.Accessibility.newBudget)
-        .glassEffect(.regular.interactive())
-        .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
-        .padding(.trailing, DS.Spacing.xl)
-        .padding(.bottom, DS.Spacing.md)
     }
 
     // MARK: - Data Management
