@@ -44,8 +44,6 @@ struct InboxDraftEditSheet: View {
     @State private var showDatePicker = false
     @State private var showNeedSelector = false
 
-    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
-
     // Focus state
     @FocusState private var isNoteFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
@@ -408,7 +406,7 @@ struct InboxDraftEditSheet: View {
 
             // Note field
             TextField(L10n.Transaction.description, text: $note)
-                .font(DS.Typography.title)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .textContentType(.none)
@@ -459,12 +457,16 @@ struct InboxDraftEditSheet: View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
             if let code = currencyCode {
                 Text(code)
-                    .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
+                    .font(.system(
+                        size: UIFont.preferredFont(forTextStyle: .largeTitle).pointSize * 0.44,
+                        weight: .medium,
+                        design: .rounded
+                    ))
                     .foregroundStyle(amountColor.opacity(0.7))
             }
 
             TextField("0.00", text: $amountString)
-                .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
+                .font(DS.Typography.largeTitle)
                 .foregroundStyle(amountColor)
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
@@ -602,7 +604,7 @@ struct InboxDraftEditSheet: View {
                     }
                 }
             }
-            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.horizontal, DS.Spacing.lg)
         }
     }
 
@@ -705,19 +707,6 @@ struct InboxDraftEditSheet: View {
     }
 
     // MARK: - Helpers
-
-    private var amountFontSize: CGFloat {
-        let length = amountString.count
-        let ratio: CGFloat
-        switch length {
-        case 0...7: ratio = 1.0       // 64pt base
-        case 8...9: ratio = 54.0 / 64.0
-        case 10...11: ratio = 46.0 / 64.0
-        case 12...13: ratio = 38.0 / 64.0
-        default: ratio = 32.0 / 64.0
-        }
-        return baseAmountSize * ratio
-    }
 
     private static let mediumDateFormatter: DateFormatter = {
         let f = DateFormatter()
