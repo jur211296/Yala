@@ -36,8 +36,6 @@ struct NewTransactionView: View {
     @State private var isEditingFromSuccess = false
     @State private var isDuplicating = false
 
-    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
-
     // Split calculator state
     @State private var splitFieldState = SplitCalculatorFieldState()
 
@@ -664,71 +662,30 @@ struct NewTransactionView: View {
         }
     }
 
-    /// Dynamic font size for amount based on length (scales with Dynamic Type via baseAmountSize)
-    private var amountFontSize: CGFloat {
-        let length = viewModel.amountString.count
-        let ratio: CGFloat
-        switch length {
-        case 0...7: ratio = 1.0       // 64pt base
-        case 8...9: ratio = 54.0 / 64.0
-        case 10...11: ratio = 46.0 / 64.0
-        case 12...13: ratio = 38.0 / 64.0
-        default: ratio = 32.0 / 64.0
-        }
-        return baseAmountSize * ratio
-    }
-
     private var amountDisplay: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+        AmountInputField(
+            amountString: $viewModel.amountString,
+            color: viewModel.amountColor,
+            isFocused: $isAmountFieldFocused,
+            accessibilityID: "new_transaction_amount",
+            onAmountChange: { _ in
+                if isAmountFieldFocused && viewModel.hasSplitData {
+                    viewModel.isSplitStale = true
+                }
+            }
+        ) {
             if let symbol = currencySymbol {
                 Text(symbol)
-                    .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
+                    .font(.system(
+                        size: AmountInputField<Text>.leadingFontSize(compact: false),
+                        weight: .medium,
+                        design: .rounded
+                    ))
                     .foregroundStyle(viewModel.amountColor.opacity(0.7))
                     .contentTransition(.numericText())
             }
-
-            TextField("0.00", text: $viewModel.amountString)
-                .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
-                .foregroundStyle(viewModel.amountColor)
-                .multilineTextAlignment(.center)
-                .keyboardType(.decimalPad)
-                .focused($isAmountFieldFocused)
-                .accessibilityIdentifier("new_transaction_amount")
-                .fixedSize(horizontal: true, vertical: false)  // Dynamic width based on content
-                .onChange(of: isAmountFieldFocused) { _, isFocused in
-                    // When field gets focus and value is just "0" or "0.00", clear it
-                    if isFocused
-                        && (viewModel.amountString == "0" || viewModel.amountString == "0.00" || viewModel.amountString == "0,00")
-                    {
-                        viewModel.amountString = ""
-                    }
-                    // When field loses focus
-                    if !isFocused {
-                        if viewModel.amountString.isEmpty {
-                            viewModel.amountString = "0.00"
-                        } else {
-                            viewModel.amountString = AmountInputHelper.formatWithGrouping(viewModel.amount)
-                        }
-                    }
-                }
-                .onChange(of: viewModel.amountString) { _, newValue in
-                    // Filter to only allow digits and one decimal separator
-                    let filtered = filterAmountInput(newValue)
-                    if filtered != newValue {
-                        viewModel.amountString = filtered
-                    }
-                    // Mark split as stale only on manual edits
-                    if isAmountFieldFocused && viewModel.hasSplitData {
-                        viewModel.isSplitStale = true
-                    }
-                }
         }
-        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .animation(.easeInOut(duration: DS.Animation.fast), value: viewModel.transactionType)
-    }
-
-    private func filterAmountInput(_ input: String) -> String {
-        AmountInputHelper.filterAmountInput(input)
     }
 
     /// Currency display for amount field - respects user preference (code vs symbol)
@@ -1069,7 +1026,7 @@ struct NewTransactionView: View {
                     }
                 }
             }
-            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.horizontal, DS.Spacing.lg)
         }
     }
 
