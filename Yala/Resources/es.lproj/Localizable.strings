@@ -1662,6 +1662,8 @@
 "accessibility.favoriteTemplates" = "Plantillas favoritas";
 "accessibility.exceeded" = "Excedido";
 "accessibility.inbox" = "Bandeja de entrada";
+"accessibility.nextPeriod" = "Período siguiente";
+"accessibility.previousPeriod" = "Período anterior";
 "accessibility.widgetPreferences" = "Preferencias de widgets";
 "accessibility.sectionsConfig" = "Configurar Panel";
 "accessibility.toggleSection %@" = "Mostrar %@";

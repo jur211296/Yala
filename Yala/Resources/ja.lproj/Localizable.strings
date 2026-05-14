@@ -1662,6 +1662,8 @@
 "accessibility.favoriteTemplates" = "お気に入りのテンプレート";
 "accessibility.exceeded" = "超過";
 "accessibility.inbox" = "受信箱";
+"accessibility.nextPeriod" = "次の期間";
+"accessibility.previousPeriod" = "前の期間";
 "accessibility.widgetPreferences" = "ウィジェット設定";
 "accessibility.sectionsConfig" = "パネル設定";
 "accessibility.toggleSection %@" = "%@を表示";

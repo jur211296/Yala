@@ -1663,6 +1663,8 @@
 "accessibility.favoriteTemplates" = "Favoritenvorlagen";
 "accessibility.exceeded" = "Überschritten";
 "accessibility.inbox" = "Posteingang";
+"accessibility.nextPeriod" = "Nächster Zeitraum";
+"accessibility.previousPeriod" = "Vorheriger Zeitraum";
 "accessibility.widgetPreferences" = "Widget-Einstellungen";
 "accessibility.sectionsConfig" = "Panel einrichten";
 "accessibility.toggleSection %@" = "%@ anzeigen";

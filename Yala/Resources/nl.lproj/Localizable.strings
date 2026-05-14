@@ -1662,6 +1662,8 @@
 "accessibility.favoriteTemplates" = "Favoriete sjablonen";
 "accessibility.exceeded" = "Overschreden";
 "accessibility.inbox" = "Inbox";
+"accessibility.nextPeriod" = "Volgende periode";
+"accessibility.previousPeriod" = "Vorige periode";
 "accessibility.widgetPreferences" = "Widget-voorkeuren";
 "accessibility.sectionsConfig" = "Paneel instellen";
 "accessibility.toggleSection %@" = "%@ tonen";
