@@ -36,7 +36,7 @@ struct BudgetsListView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: DS.Spacing.sm) {
+                VStack(spacing: DS.Spacing.xs) {
                     // Limit reached banner
                     if isAtLimit {
                         LimitReachedBanner(
@@ -48,6 +48,7 @@ struct BudgetsListView: View {
                     }
 
                     // Segmented Picker período (Weekly/Monthly/Yearly/Unique)
+                    // — full-width gracias a maxWidth infinity del VStack
                     periodTypeSegmentedControl
                         .padding(.horizontal, DS.Spacing.lg)
 
@@ -70,13 +71,18 @@ struct BudgetsListView: View {
 
                     listContent
                 }
+                .frame(maxWidth: .infinity)
                 .padding(.top, DS.Spacing.sm)
             }
             .scrollViewGlassEdges()
-        }
-        // FAB anclado al safeArea bottom → baja automáticamente con tab bar minimize iOS 26
-        .safeAreaInset(edge: .bottom, alignment: .trailing, spacing: 0) {
-            newBudgetFAB
+            // FAB anclado al safeArea bottom del ScrollView → baja automáticamente
+            // con tab bar minimize iOS 26 (tabBarMinimizeBehavior(.onScrollDown)
+            // configurado en MainTabView root). Aplicado al ScrollView (no al
+            // ZStack) para que el cambio dinámico de safeArea del Tab → ScrollView
+            // se propague al inset.
+            .safeAreaInset(edge: .bottom, alignment: .trailing, spacing: 0) {
+                newBudgetFAB
+            }
         }
         .navigationDestination(for: BudgetNavigationID.self) { navID in
             BudgetDetailDestination(budgetID: navID.id, viewModel: viewModel)
@@ -191,9 +197,10 @@ struct BudgetsListView: View {
                 }
             }
         }
-        .padding(.top, DS.Spacing.sm)
-        // Sin .padding(.bottom, .safeBottom) — el safeAreaInset del FAB ya reserva
-        // espacio dinámico que respeta tab bar minimize behavior iOS 26.
+        // Sin .padding(.top) — el VStack root spacing `.xs` ya da respiración
+        // mínima al primer section header. Sin .padding(.bottom, .safeBottom)
+        // porque el safeAreaInset del FAB ya reserva espacio dinámico que
+        // respeta tab bar minimize behavior iOS 26.
     }
 
     // MARK: - New Budget FAB
