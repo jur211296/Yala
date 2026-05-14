@@ -241,3 +241,9 @@
 "onboarding.privacyNoTrackingShort" = "Sem rastreio nem anúncios";
 "onboarding.privacyIcloudShort" = "Só tu acedes";
 "onboarding.privacyNoSharingShort" = "IA segura";
+
+/* === report polish R1 mini-hero === */
+"report.comparative.heroChip" = "A tua comparação";
+"report.cashflow.heroChip" = "O teu fluxo de caixa";
+"report.comparative.subtitle" = "Comparação das tuas dimensões · %@";
+"report.cashflow.subtitle" = "O teu plano de fluxo · %@";

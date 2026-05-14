@@ -4282,3 +4282,9 @@
 "stats.trends.insight.stableExpense" = "Seus gastos se mantêm estáveis.";
 "stats.trends.insight.stableIncome" = "Sua renda se mantém estável.";
 "stats.trends.insight.stableBalance" = "Seu saldo se mantém estável.";
+
+/* === report polish R1 mini-hero === */
+"report.comparative.heroChip" = "Sua comparação";
+"report.cashflow.heroChip" = "Seu fluxo de caixa";
+"report.comparative.subtitle" = "Comparação das suas dimensões · %@";
+"report.cashflow.subtitle" = "Seu plano de fluxo · %@";

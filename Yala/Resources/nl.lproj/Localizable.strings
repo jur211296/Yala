@@ -4286,3 +4286,9 @@
 "stats.trends.insight.stableExpense" = "Je uitgaven blijven stabiel.";
 "stats.trends.insight.stableIncome" = "Je inkomen blijft stabiel.";
 "stats.trends.insight.stableBalance" = "Je saldo blijft stabiel.";
+
+/* === report polish R1 mini-hero === */
+"report.comparative.heroChip" = "Jouw vergelijking";
+"report.cashflow.heroChip" = "Jouw cashflow";
+"report.comparative.subtitle" = "Vergelijking van je dimensies · %@";
+"report.cashflow.subtitle" = "Jouw stroomplan · %@";

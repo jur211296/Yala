@@ -4288,3 +4288,9 @@
 "stats.trends.insight.stableExpense" = "Your expenses stay steady.";
 "stats.trends.insight.stableIncome" = "Your income stays steady.";
 "stats.trends.insight.stableBalance" = "Your balance stays steady.";
+
+/* === report polish R1 mini-hero === */
+"report.comparative.heroChip" = "Your comparison";
+"report.cashflow.heroChip" = "Your cash flow";
+"report.comparative.subtitle" = "Comparison across your dimensions · %@";
+"report.cashflow.subtitle" = "Your flow plan · %@";

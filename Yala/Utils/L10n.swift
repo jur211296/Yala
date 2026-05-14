@@ -1394,6 +1394,20 @@ enum L10n {
             static var cashFlow: String { ls("report.tab.cashFlow", comment: "") }
         }
 
+        enum Comparative {
+            static var heroChip: String { ls("report.comparative.heroChip", comment: "") }
+            static func subtitle(_ period: String) -> String {
+                String(format: ls("report.comparative.subtitle", comment: ""), period)
+            }
+        }
+
+        enum Cashflow {
+            static var heroChip: String { ls("report.cashflow.heroChip", comment: "") }
+            static func subtitle(_ period: String) -> String {
+                String(format: ls("report.cashflow.subtitle", comment: ""), period)
+            }
+        }
+
         static var income: String { ls("report.income", comment: "") }
         static var expense: String { ls("report.expense", comment: "") }
         static var netFlow: String { ls("report.netFlow", comment: "") }
