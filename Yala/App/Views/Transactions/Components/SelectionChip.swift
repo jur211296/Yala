@@ -30,7 +30,7 @@ struct SelectionChip: View {
                     .lineLimit(1)
             }
             .foregroundStyle(isSelected ? (color ?? theme.accent) : .secondary)
-            .padding(.horizontal, DS.FormRow.paddingV)
+            .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()

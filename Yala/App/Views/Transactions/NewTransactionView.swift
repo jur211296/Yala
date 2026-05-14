@@ -1056,7 +1056,7 @@ struct NewTransactionView: View {
                                 .accessibilityLabel(L10n.Accessibility.deleteTag)
                             }
                             .foregroundStyle(.thTagChip)
-                            .padding(.horizontal, DS.FormRow.paddingV)
+                            .padding(.horizontal, DS.FormRow.paddingH)
                             .padding(.vertical, DS.Spacing.sm)
                             .background(
                                 Capsule().fill(.thTagChip.opacity(0.12))

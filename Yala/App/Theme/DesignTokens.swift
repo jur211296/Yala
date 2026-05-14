@@ -527,6 +527,8 @@ enum DS {
         static let amount = Font.system(.body, design: .rounded).weight(.semibold)
         /// Small amounts
         static let amountSmall = Font.system(.subheadline, design: .rounded).weight(.medium)
+        /// Amount mediano (Settlement compact) — 36pt bold rounded.
+        static let amountMedium: Font = .system(size: 36, weight: .bold, design: .rounded)
     }
 
     // MARK: - Sizing
