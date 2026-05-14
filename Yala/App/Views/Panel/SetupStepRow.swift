@@ -339,6 +339,11 @@ extension L10n {
             static var voiceSavedToast: String {
                 NSLocalizedString("setup.demo.voice.savedToast", comment: "¡Borrador creado!")
             }
+
+            // Step 6 — image (mock data)
+            static var imageProcessedToast: String {
+                NSLocalizedString("setup.demo.image.processedToast", comment: "¡Imagen procesada!")
+            }
         }
     }
 }

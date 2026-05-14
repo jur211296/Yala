@@ -3332,6 +3332,7 @@
 "setup.demo.scheduledPayment.savedToast" = "支払いを予約しました！";
 "setup.demo.voice.transcriptionDetected" = "1件の取引を検出";
 "setup.demo.voice.savedToast" = "下書きを作成しました！";
+"setup.demo.image.processedToast" = "画像を処理しました！";
 "setup.personalize.navTitle" = "Yalaをパーソナライズ";
 "setup.personalize.title" = "自分仕様にする";
 "setup.personalize.subtitle" = "あなたの個性を加えましょう。テーマ、アイコン、ウィジェットの見た目を変更できます。";

@@ -3328,6 +3328,7 @@
 "setup.demo.scheduledPayment.savedToast" = "Zahlung geplant!";
 "setup.demo.voice.transcriptionDetected" = "1 Transaktion erkannt";
 "setup.demo.voice.savedToast" = "Entwurf erstellt!";
+"setup.demo.image.processedToast" = "Bild verarbeitet!";
 "setup.personalize.navTitle" = "Personalisiere dein Yala";
 "setup.personalize.title" = "Mach es zu deinem";
 "setup.personalize.subtitle" = "Gib deiner App eine persönliche Note. Ändere das Design, das Symbol oder die Widgets.";

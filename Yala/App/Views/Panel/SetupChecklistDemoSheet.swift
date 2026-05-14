@@ -63,9 +63,14 @@ struct SetupChecklistDemoSheet: View {
                 }
             )
         case .tryImageInput:
-            ImageSelectionView(
-                mode: .demo,
-                onStartReal: { handleStartReal(for: .tryImageInput) }
+            SetupDemoImageInputView(
+                onClose: {
+                    sheets.setupDemoStep = nil
+                },
+                onComplete: {
+                    SetupChecklistManager.shared.markCompleted(.tryImageInput)
+                    sheets.setupDemoStep = nil
+                }
             )
         case .exploreSettings:
             ProfileSectionsCarouselDemo(onOpenSettings: {

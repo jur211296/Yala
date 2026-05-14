@@ -3376,6 +3376,7 @@
 "setup.demo.scheduledPayment.savedToast" = "¡Pago programado!";
 "setup.demo.voice.transcriptionDetected" = "1 transacción detectada";
 "setup.demo.voice.savedToast" = "¡Borrador creado!";
+"setup.demo.image.processedToast" = "¡Imagen procesada!";
 // Setup Personalize
 "setup.personalize.navTitle" = "Personaliza tu Yala";
 "setup.personalize.title" = "Haz tuyo a Yala";

@@ -3332,6 +3332,7 @@
 "setup.demo.scheduledPayment.savedToast" = "付款已安排！";
 "setup.demo.voice.transcriptionDetected" = "检测到 1 笔交易";
 "setup.demo.voice.savedToast" = "草稿已创建！";
+"setup.demo.image.processedToast" = "图片已处理！";
 "setup.personalize.navTitle" = "个性化你的 Yala";
 "setup.personalize.title" = "让它属于你";
 "setup.personalize.subtitle" = "加点个人风格。更换主题、图标或小组件外观。";

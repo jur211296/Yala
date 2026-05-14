@@ -3329,6 +3329,7 @@
 "setup.demo.scheduledPayment.savedToast" = "Paiement programmé !";
 "setup.demo.voice.transcriptionDetected" = "1 transaction détectée";
 "setup.demo.voice.savedToast" = "Brouillon créé !";
+"setup.demo.image.processedToast" = "Image traitée !";
 "setup.personalize.navTitle" = "Personnalise ton Yala";
 "setup.personalize.title" = "Fais-en le tien";
 "setup.personalize.subtitle" = "Ajoute ta touche personnelle. Change le thème, l'icône ou l'apparence de tes widgets.";

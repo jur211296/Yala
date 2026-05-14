@@ -60,9 +60,8 @@ struct ImageSelectionView: View {
     /// Setup trial: called when user taps "Ahora no" to skip
     var onSetupTrialSkipped: (() -> Void)?
 
-    /// Modo de presentación (.interactive default — retrocompat 100%).
+    // DEPRECATED: removed in F7 cleanup (Setup Checklist demos standalone)
     var mode: ViewMode = .interactive
-    /// Callback "Toca para empezar" desde DemoBanner.
     var onStartReal: (() -> Void)?
 
     // Demo state

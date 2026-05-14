@@ -468,6 +468,7 @@
 "setup.demo.scheduledPayment.savedToast" = "¡Pago programado!";
 "setup.demo.voice.transcriptionDetected" = "1 transacción detectada";
 "setup.demo.voice.savedToast" = "¡Borrador creado!";
+"setup.demo.image.processedToast" = "¡Imagen procesada!";
 // MARK: - Stats Records polish
 
 "stats.records.motivationalMany %d" = "%d registros · Seguí así";

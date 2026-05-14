@@ -3332,6 +3332,7 @@
 "setup.demo.scheduledPayment.savedToast" = "Płatność zaplanowana!";
 "setup.demo.voice.transcriptionDetected" = "Wykryto 1 transakcję";
 "setup.demo.voice.savedToast" = "Utworzono wersję roboczą!";
+"setup.demo.image.processedToast" = "Obraz przetworzony!";
 "setup.personalize.navTitle" = "Spersonalizuj Yala";
 "setup.personalize.title" = "Niech będzie twoja";
 "setup.personalize.subtitle" = "Dodaj swój styl. Zmień motyw, ikonę lub wygląd widżetów.";
