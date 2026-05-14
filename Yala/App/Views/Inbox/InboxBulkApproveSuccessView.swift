@@ -5,53 +5,40 @@
 //  Success screen after bulk approving drafts from Inbox.
 //  Shows count with options: View in Records, Back to Inbox.
 //
+//  Cascade animation 0/150/300/500/700ms standardize con TransactionSuccessView
+//  e InboxApproveSuccessView (F4 — épico transactions-forms-polish-panel-alignment).
+//
 
 import SwiftUI
 
 struct InboxBulkApproveSuccessView: View {
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .largeTitle) private var checkmarkSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
 
     let approvedCount: Int
     let onViewRecords: () -> Void
     let onBackToInbox: () -> Void
 
+    @State private var showHero = false
+    @State private var showCount = false
+    @State private var showButtons = false
+
     var body: some View {
         VStack(spacing: DS.Spacing.xxl) {
             Spacer()
 
-            // Success circle (matching ImageSelectionView style)
-            ZStack {
-                // Main circle with gradient
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: DS.Gradients.success,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 100, height: 100)
-                    .shadow(color: DS.Semantic.successForeground.opacity(0.4), radius: 16, x: 0, y: 8)
-
-                // Glass overlay
-                Circle()
-                    .fill(DS.Colors.backgroundSubtle)
-                    .frame(width: 100, height: 100)
-                    .mask(
-                        LinearGradient(
-                            colors: [.white, .clear],
-                            startPoint: .top,
-                            endPoint: .center
-                        )
-                    )
-
-                // Checkmark icon
-                Image(systemName: "checkmark")
-                    .font(.system(size: checkmarkSize, weight: .medium))
-                    .foregroundStyle(.white)
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-            }
+            // Success hero (shared component with internal cascade hero → checkmark)
+            SuccessHeroView(
+                icon: "checkmark",
+                gradientColors: DS.Gradients.success,
+                glowColor: DS.Semantic.successForeground.opacity(0.25),
+                iconSize: checkmarkSize,
+                appeared: showHero,
+                reduceMotion: reduceMotion
+            )
+            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+            .accessibilityHidden(true)
 
             // Count and label
             VStack(spacing: DS.Spacing.sm) {
@@ -64,6 +51,8 @@ struct InboxBulkApproveSuccessView: View {
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
             }
+            .scaleEffect(showCount ? 1.0 : 0.8)
+            .opacity(showCount ? 1.0 : 0.0)
 
             Spacer()
 
@@ -81,9 +70,35 @@ struct InboxBulkApproveSuccessView: View {
             }
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
+            .opacity(showButtons ? 1.0 : 0.0)
+            .offset(y: showButtons ? 0 : 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.thBackground)
+        .onAppear {
+            if reduceMotion {
+                showHero = true
+                showCount = true
+                showButtons = true
+            } else {
+                Task {
+                    // 0ms — hero
+                    withAnimation(.spring(response: 0.5, dampingFraction: DS.Animation.springBouncy)) {
+                        showHero = true
+                    }
+                    // 300ms — count (hero+checkmark interno completa antes)
+                    try? await Task.sleep(for: .milliseconds(300))
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        showCount = true
+                    }
+                    // 700ms — buttons
+                    try? await Task.sleep(for: .milliseconds(400))
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showButtons = true
+                    }
+                }
+            }
+        }
     }
 }
 
