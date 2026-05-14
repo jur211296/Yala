@@ -4272,6 +4272,22 @@
 "stats.trends.heroStable" = "Ihr Saldo bleibt stabil";
 "stats.trends.heroVarUp %d %@" = "%d%% über vs %@ · Weiter so";
 "stats.trends.heroVarDown %d %@" = "%d%% unter vs %@ · Bleiben Sie dran, Schritt für Schritt";
+// MARK: Distribution
+"stats.distribution.heroSubtitle1 %d" = "%d Kategorien";
+"stats.distribution.heroSubtitle2 %d %d" = "%d Kategorien · %d Unterkategorien";
+"stats.distribution.heroSubtitle3 %d %d %d" = "%d Kategorien · %d Unterkategorien · %d Tags";
+"stats.distribution.insightTitleFree %@" = "Ihr %@ auf einen Blick";
+"stats.distribution.insightTitlePro" = "Verteilung des Zeitraums";
+"stats.distribution.aiFootnote" = "KI-Analyse";
+"stats.distribution.modeCharts" = "Grafiken";
+"stats.distribution.insight.onset %@" = "Ihr %@ nimmt Gestalt an. Bald werden Sie klarere Muster erkennen.";
+"stats.distribution.insight.newCategory %@ %@" = "Sie haben %@ in diesem %@ ausprobiert.";
+"stats.distribution.insight.concentrated %d %@" = "%d%% Ihrer Ausgaben entfallen auf %@. Passt das zu Ihren Prioritäten?";
+"stats.distribution.insight.balanced %d" = "Ihre Ausgaben verteilen sich: keine Kategorie überschreitet %d%%. Ausgewogene Verteilung.";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%@ stieg um %d%% vs %@. Schauen wir, was sich in diesem Zeitraum geändert hat.";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%@ sank um %d%% vs %@. Gute Anpassung.";
+"stats.distribution.insight.topSub %d %@ %@" = "%@ macht %d%% innerhalb von %@ aus. Ihr größter spezifischer Posten.";
+
 "stats.trends.insight.onset %@" = "Dies ist Ihr erster %@ mit Yala";
 "stats.trends.insight.varUpExpense %d %@" = "Ihre Ausgaben stiegen um %d%% vs %@. Lassen Sie uns gemeinsam anpassen.";
 "stats.trends.insight.varDownExpense %d %@" = "Ihre Ausgaben fielen um %d%% vs %@. Halten Sie das Tempo.";

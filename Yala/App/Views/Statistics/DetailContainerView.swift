@@ -185,7 +185,11 @@ struct DetailContainerView: View {
                 if sessionState.selectedDetailTab != newTab {
                     sessionState.selectedDetailTab = newTab
                 }
-                if newTab == .insights { scheduleRecalculation(reload: false) }
+                // .categories también consume insightData.periodSummary (gate >=5 tx
+                // del Distribution Insight Card) — disparar recalculation también ahí.
+                if newTab == .insights || newTab == .categories {
+                    scheduleRecalculation(reload: false)
+                }
             }
             .onChange(of: sessionState.selectedMainTab) { _, newTab in
                 // Sync filters when navigating to Statistics tab (view may already be mounted)
@@ -326,8 +330,8 @@ struct DetailContainerView: View {
                 tags: dataViewModel.tags,
                 allTransactions: dataViewModel.allTransactions,
                 viewModel: trendsViewModel,
-                defaultCurrencyCode: defaultCurrencyCode,
-                onNavigateToRecords: { selectedTab = .records }
+                insightsViewModel: insightsViewModel,
+                defaultCurrencyCode: defaultCurrencyCode
             )
         case .records:
             RecordsTabView(
@@ -569,11 +573,15 @@ struct DetailContainerView: View {
             transactions: dataViewModel.allTransactions,
             defaultCurrencyCode: defaultCurrencyCode
         )
-        if selectedTab == .insights { calculateInsightsData() }
+        // Distribution Insight Card también requiere insightData.periodSummary
+        // para el gate >=5 tx — calcular cuando estamos en cualquiera de las 2 tabs.
+        if selectedTab == .insights || selectedTab == .categories {
+            calculateInsightsData()
+        }
     }
 
     private func calculateInsightsData() {
-        guard selectedTab == .insights else { return }
+        guard selectedTab == .insights || selectedTab == .categories else { return }
         insightsViewModel.calculateInsightsData(
             transactions: dataViewModel.allTransactions,
             accounts: dataViewModel.accounts,

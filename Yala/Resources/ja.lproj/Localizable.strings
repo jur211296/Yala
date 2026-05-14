@@ -4276,6 +4276,22 @@
 "stats.trends.heroStable" = "残高は安定しています";
 "stats.trends.heroVarUp %d %@" = "%2$@より%1$d%%上 · この調子で";
 "stats.trends.heroVarDown %d %@" = "%2$@より%1$d%%下 · 頑張って、一歩ずつ";
+// MARK: Distribution
+"stats.distribution.heroSubtitle1 %d" = "%d件のカテゴリ";
+"stats.distribution.heroSubtitle2 %d %d" = "%d件のカテゴリ · %d件のサブカテゴリ";
+"stats.distribution.heroSubtitle3 %d %d %d" = "%d件のカテゴリ · %d件のサブカテゴリ · %d件のタグ";
+"stats.distribution.insightTitleFree %@" = "あなたの%@をひと目で";
+"stats.distribution.insightTitlePro" = "期間内の分布";
+"stats.distribution.aiFootnote" = "AI分析";
+"stats.distribution.modeCharts" = "グラフ";
+"stats.distribution.insight.onset %@" = "%@の傾向が見え始めています。もうすぐより明確なパターンが分かります。";
+"stats.distribution.insight.newCategory %@ %@" = "今%2$@、%1$@を試しましたね。";
+"stats.distribution.insight.concentrated %d %@" = "支出の%1$d%%が%2$@に集中しています。優先事項と合っていますか？";
+"stats.distribution.insight.balanced %d" = "支出は分散しています：どのカテゴリも%d%%を超えていません。バランスの取れた分布です。";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%2$@比で%1$@が%3$d%%上昇しました。この期間に何が変わったか見てみましょう。";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%2$@比で%1$@が%3$d%%下落しました。良い調整です。";
+"stats.distribution.insight.topSub %d %@ %@" = "%@は%@の中で%d%%を占めています。あなたの最大の具体的な項目です。";
+
 "stats.trends.insight.onset %@" = "Yalaを始めて最初の%@です";
 "stats.trends.insight.varUpExpense %d %@" = "支出が%2$@より%1$d%%増加。一緒に調整しましょう。";
 "stats.trends.insight.varDownExpense %d %@" = "支出が%2$@より%1$d%%減少。この調子で。";

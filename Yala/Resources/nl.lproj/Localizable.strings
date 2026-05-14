@@ -4276,6 +4276,22 @@
 "stats.trends.heroStable" = "Je saldo blijft stabiel";
 "stats.trends.heroVarUp %d %@" = "%d%% boven vs %@ · Ga zo door";
 "stats.trends.heroVarDown %d %@" = "%d%% onder vs %@ · Houd vol, stap voor stap";
+// MARK: Distribution
+"stats.distribution.heroSubtitle1 %d" = "%d categorieën";
+"stats.distribution.heroSubtitle2 %d %d" = "%d categorieën · %d subcategorieën";
+"stats.distribution.heroSubtitle3 %d %d %d" = "%d categorieën · %d subcategorieën · %d tags";
+"stats.distribution.insightTitleFree %@" = "Jouw %@ in één oogopslag";
+"stats.distribution.insightTitlePro" = "Verdeling van deze periode";
+"stats.distribution.aiFootnote" = "AI-analyse";
+"stats.distribution.modeCharts" = "Grafieken";
+"stats.distribution.insight.onset %@" = "Je %@ begint vorm te krijgen. Binnenkort zie je duidelijkere patronen.";
+"stats.distribution.insight.newCategory %@ %@" = "Je hebt %@ geprobeerd deze %@.";
+"stats.distribution.insight.concentrated %d %@" = "%d%% van je uitgaven zit in %@. Past dat bij je prioriteiten?";
+"stats.distribution.insight.balanced %d" = "Je uitgaven zijn verspreid: geen categorie overschrijdt %d%%. Evenwichtige verdeling.";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%@ steeg %d%% vs %@. Laten we kijken wat er veranderd is deze periode.";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%@ daalde %d%% vs %@. Mooie aanpassing.";
+"stats.distribution.insight.topSub %d %@ %@" = "%@ is %d%% binnen %@. Je grootste specifieke post.";
+
 "stats.trends.insight.onset %@" = "Dit is jouw eerste %@ met Yala";
 "stats.trends.insight.varUpExpense %d %@" = "Je uitgaven stegen met %d%% vs %@. Laten we samen aanpassen.";
 "stats.trends.insight.varDownExpense %d %@" = "Je uitgaven daalden met %d%% vs %@. Blijf zo doorgaan.";

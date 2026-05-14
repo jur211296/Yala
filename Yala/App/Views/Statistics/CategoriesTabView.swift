@@ -53,8 +53,8 @@ struct CategoriesTabView: View {
     // MARK: - External Dependencies
 
     @Bindable var viewModel: StatisticsViewModel
+    @Bindable var insightsViewModel: InsightsViewModel
     let defaultCurrencyCode: String
-    let onNavigateToRecords: () -> Void
 
     // MARK: - State
 
@@ -79,8 +79,19 @@ struct CategoriesTabView: View {
     @State private var previousNeedTotal: Double? = nil
     @State private var previousNeedAmounts: [SubcategoryNeed: Double] = [:]
 
-    // Need Carousel State
-    @State private var needCarouselIndex: Int? = 0
+    // Distribution Insight Card (F9b)
+    @State private var showUpgradeSheet: Bool = false
+    @State private var showInsightsConsentAlert: Bool = false
+
+    // Content mode pill — separa visualizaciones (Gráficas) de tablas (Detalle)
+    @State private var contentMode: DistributionContentMode = .charts
+    @Namespace private var contentModeNamespace
+
+    @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
+
+    /// Total agregado del período (cache de `categorySpending.reduce`).
+    /// Se actualiza en `calculateData()` para evitar O(N) por render del hero.
+    @State private var totalAmount: Double = 0
 
     /// Effective category ID for subcategory filtering (uses first selected category or derives parent from subcategory)
     private var effectiveCategoryID: PersistentIdentifier? {
@@ -137,21 +148,53 @@ struct CategoriesTabView: View {
     }
 
     var body: some View {
+        scrollBody
+            .sheet(isPresented: $showUpgradeSheet) {
+                UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
+            }
+            .insightsConsentAlert(isPresented: $showInsightsConsentAlert) {
+                Task { await insightsViewModel.triggerAIGeneration() }
+            }
+    }
+
+    @ViewBuilder
+    private var scrollBody: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: DS.Spacing.xl) {
-                controlBar
-                spendingAnalysisHeader
-                chartsCarousel
-                sankeyWidget
-                // Need carousel only shows for expenses (need classification doesn't apply to income)
-                if !isIncomeMode {
-                    needCarousel
+            VStack(spacing: DS.Spacing.md) {
+                heroSummary
+                filterBarPanel
+
+                if hasNoData {
+                    YalaEmptyState(
+                        icon: "chart.pie",
+                        title: L10n.Empty.noData
+                    )
+                    .padding(.top, DS.Spacing.xxxxl)
+                } else {
+                    LazyVStack(spacing: DS.Spacing.xl) {
+                        contentModePill
+
+                        switch contentMode {
+                        case .charts:
+                            chartsSection
+                            sankeyWidget
+                            // Need bars no aplican en income mode (need classification es expense-only)
+                            if !isIncomeMode {
+                                needsLargeSection
+                            }
+                        case .details:
+                            categoriesListSection
+                            if !isIncomeMode {
+                                needsCompactSection
+                            }
+                        }
+
+                        distributionInsightCard
+                    }
+                    .yalaSafeBottomPadding()
                 }
-                categoriesListSection
-                recentRecordsSection
             }
             .padding(.top, DS.Spacing.sm)
-            .yalaSafeBottomPadding()
         }
         .scrollViewGlassEdges()
         .onAppear {
@@ -161,47 +204,28 @@ struct CategoriesTabView: View {
         .onChange(of: viewModel.sankeyInputKey) { recomputeSankey() }
         .onChange(of: allTransactions.count) { recomputeSankey() }
         .onChange(of: scheduledPaymentsSignature) { recomputeSankey() }
-        .onChange(of: viewModel.detailPeriod) {
-            calculateData()
-        }
-        .onChange(of: viewModel.selectedAccounts) {
-            calculateData()
-        }
-        .onChange(of: viewModel.selectedCategories) {
-            calculateData()
-        }
-        .onChange(of: viewModel.selectedSubcategories) {
-            calculateData()
-        }
-        .onChange(of: viewModel.selectedTags) {
-            calculateData()
-        }
+        .onChange(of: viewModel.detailPeriod) { calculateData() }
+        .onChange(of: viewModel.selectedAccounts) { calculateData() }
+        .onChange(of: viewModel.selectedCategories) { calculateData() }
+        .onChange(of: viewModel.selectedSubcategories) { calculateData() }
+        .onChange(of: viewModel.selectedTags) { calculateData() }
         .onChange(of: viewModel.selectedNeeds) {
             calculateData()
             syncNeedFilterToSelection()
         }
-        .onChange(of: viewModel.selectedTransactionNatures) {
-            calculateData()
-        }
-        .onChange(of: allSubcategories) {
-            calculateData()
-        }
+        .onChange(of: viewModel.selectedTransactionNatures) { calculateData() }
+        .onChange(of: allSubcategories) { calculateData() }
         .onChange(of: selectedNeed) {
             syncSelectionToNeedFilter()
             calculateData()
         }
-        .onChange(of: sessionState.customDateRange) {
-            calculateData()
-        }
+        .onChange(of: sessionState.customDateRange) { calculateData() }
         .onChange(of: sessionState.comparisonMode) {
-            // Recalculate previous period data when comparison mode changes
             calculatePreviousPeriodTotals()
         }
         .onChange(of: sessionState.selectedTransactionNatures) {
-            // Sync transaction nature filter from SessionState and recalculate
             viewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
             enforceListViewLock()
-            // Reset carousel to first valid page when income mode changes
             chartsCarouselPosition = isIncomeMode ? "subcategory" : "category"
             calculateData()
         }
@@ -222,48 +246,103 @@ struct CategoriesTabView: View {
         return (start, end)
     }
 
-    // MARK: - Control Bar
+    // MARK: - Hero Summary (edge-to-edge, paralelo a InsightsTabView/TrendsTabView)
 
-    private var controlBar: some View {
+    @ViewBuilder
+    private var heroSummary: some View {
+        let hasRecords = totalAmount > 0
+
+        VStack(alignment: .center, spacing: DS.Spacing.xs) {
+            TrendsPeriodMenu(
+                selectedPeriod: viewModel.detailPeriod,
+                customDateRange: sessionState.customDateRange,
+                onSelect: { sessionState.selectedPeriod = $0 },
+                onCustomTapped: { showCustomPeriodPicker = true }
+            )
+            .equatable()
+
+            if hasRecords {
+                Text(appPreferences.currency(totalAmount, currencyCode: defaultCurrencyCode))
+                    .font(DS.Typography.largeTitle)
+                    .foregroundStyle(.primary)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
+                    .contentTransition(.numericText())
+            }
+
+            if hasRecords, let subtitle = heroDimensionalSubtitle() {
+                Text(subtitle)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, summaryVerticalPadding)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    /// Subtítulo dimensional dinámico. 3 variantes según qué dimensiones tienen data.
+    private func heroDimensionalSubtitle() -> String? {
+        let catCount = categorySpending.count
+        let subCount = subcategorySpending.count
+        let tagCount = tagSpending.count
+        let activeDims = [catCount > 0, subCount > 0, tagCount > 0].filter { $0 }.count
+        switch activeDims {
+        case 3: return L10n.Stats.Distribution.heroSubtitle3(catCount, subCount, tagCount)
+        case 2 where catCount > 0 && subCount > 0:
+            return L10n.Stats.Distribution.heroSubtitle2(catCount, subCount)
+        case 1 where catCount > 0:
+            return L10n.Stats.Distribution.heroSubtitle1(catCount)
+        default: return nil
+        }
+    }
+
+    // MARK: - Filter Bar (panel style)
+
+    private var filterBarPanel: some View {
         FilterControlBar(
-            periodSelector: periodSelector,
+            periodSelector: EmptyView(),
             viewModel: viewModel,
             accounts: accounts,
             categories: categories,
             allSubcategories: allSubcategories,
             tags: tags,
-            animationValue: viewModel.detailPeriod
+            animationValue: viewModel.detailPeriod,
+            panelStyle: true,
+            inlinePeriodSelector: false
         )
         .onChange(of: viewModel.hasActiveFilters) {
-            if !viewModel.hasActiveFilters {
-                selectedNeed = nil
-            }
+            if !viewModel.hasActiveFilters { selectedNeed = nil }
         }
     }
 
-    private var periodSelector: some View {
-        TrendsPeriodMenu(
-            selectedPeriod: viewModel.detailPeriod,
-            customDateRange: sessionState.customDateRange,
-            onSelect: { period in
-                sessionState.selectedPeriod = period
-            },
-            onCustomTapped: {
-                showCustomPeriodPicker = true
-            }
-        )
-        .equatable()
+    // MARK: - Empty Gating
+
+    /// Empty tab cuando no hay data en ninguna sub-sección.
+    private var hasNoData: Bool {
+        categorySpending.isEmpty
+            && subcategorySpending.isEmpty
+            && tagSpending.isEmpty
+            && !viewModel.sankeyData.hasFlow
+            && needTrendPoints.allSatisfy { $0.total == 0 }
     }
 
-    // MARK: - Spending Analysis Header
+    // MARK: - Analysis Header Section
 
-    /// Header with dynamic title based on income/expense mode
-    /// Placed outside carousel to avoid disappearing when no previous data
-    private var spendingAnalysisHeader: some View {
-        HStack {
+    /// Header con title dinámico (gasto/ingreso según FilterControlBar global) +
+    /// InfoHint + M/A selector. El nature lo controla la FilterControlBar arriba,
+    /// no hay toggle propio en esta vista — `isIncomeMode` refleja el filter activo
+    /// vía `viewModel.selectedTransactionNatures == [.income]`.
+    private var analysisHeaderSection: some View {
+        HStack(spacing: DS.Spacing.sm) {
             Text(isIncomeMode ? L10n.Statistics.incomeAnalysis : L10n.Statistics.spendingAnalysis)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
 
             InfoHintButton(
                 title: isIncomeMode ? L10n.Statistics.incomeAnalysis : L10n.Statistics.spendingAnalysis,
@@ -272,7 +351,6 @@ struct CategoriesTabView: View {
 
             Spacer()
 
-            // M/A Selector (always visible for applicable periods)
             if showComparisonSelector {
                 comparisonModeSelector
             }
@@ -320,16 +398,60 @@ struct CategoriesTabView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Charts Carousel
+    // MARK: - Content Mode Pill (Gráficas / Detalle)
 
-    /// Number of pages in carousel (varies by income mode and iPad layout)
+    private var contentModePill: some View {
+        HStack(spacing: DS.Spacing.none) {
+            ForEach(DistributionContentMode.allCases, id: \.self) { mode in
+                Button {
+                    dsWithAnimation(reduceMotion) {
+                        contentMode = mode
+                    }
+                } label: {
+                    Text(mode.label)
+                        .font(DS.Typography.label.weight(contentMode == mode ? .semibold : .medium))
+                        .foregroundStyle(contentMode == mode ? Color.white : Color.primary)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Chip.paddingV)
+                        .frame(maxWidth: .infinity)
+                        .background {
+                            if contentMode == mode {
+                                Capsule()
+                                    .fill(theme.accent)
+                                    .matchedGeometryEffect(id: "selection", in: contentModeNamespace)
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(mode.label)
+                .accessibilityAddTraits(contentMode == mode ? .isSelected : [])
+            }
+        }
+        .padding(DS.Spacing.xs)
+        .background(Capsule().fill(.thCard))
+        .overlay(Capsule().stroke(Color.primary.opacity(0.06), lineWidth: 1))
+    }
+
+    // MARK: - Charts Section (analysisHeader + chartsCarousel)
+
+    /// La sección Charts agrupa los 3 pies (carousel). El analysisHeaderSection
+    /// arriba sirve de título — "Análisis del gasto/ingreso" + InfoHint + M/A
+    /// selector que controla la comparativa de período mostrada en los pies.
+    @ViewBuilder
+    private var chartsSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            analysisHeaderSection
+            chartsCarousel
+        }
+    }
+
+    /// Number of pages in carousel (siempre 3 pages iPhone; iPad muestra cat+sub en 2-col)
     private var carouselPageCount: Int {
         let isWide = DS.Adaptive.isWideScreen(sizeClass)
-        if isWide {
-            // iPad: tags moved to need row, only category + subcategory (or just subcategory in income)
-            return isIncomeMode ? 1 : 2
-        }
-        return isIncomeMode ? 2 : 3
+        // En iPad: 2 pages (cat+sub side-by-side, luego tag con needs row).
+        // En iPhone: 3 pages (cat, sub, tag).
+        return isWide ? 2 : 3
     }
 
     @ViewBuilder
@@ -339,19 +461,15 @@ struct CategoriesTabView: View {
         VStack(spacing: DS.Spacing.sm) {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Spacing.md) {
-                    // Categories Chart - hidden in income mode
-                    if !isIncomeMode {
-                        categoryChartCard
-                            .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
-                            .id("category")
-                    }
+                    categoryChartCard
+                        .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
+                        .id("category")
 
-                    // Subcategories Chart
                     subcategoryChartCard
                         .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
                         .id("subcategory")
 
-                    // Tags Chart - on iPad, tags moves next to need
+                    // Tags Chart - on iPad, tags moves next to need (needsLargeSection HStack)
                     if !isWide {
                         tagChartCard
                             .containerRelativeFrame(.horizontal)
@@ -364,18 +482,21 @@ struct CategoriesTabView: View {
             .scrollPosition(id: $chartsCarouselPosition)
             .frame(height: 340)
 
-            // Page indicator - hide on iPad (multiple charts already visible)
+            // Page indicator capsule (TX-11) — hide on iPad (multiple charts already visible)
             if !isWide {
-                HStack(spacing: DS.Spacing.sm) {
+                HStack(spacing: DS.Spacing.xs) {
                     ForEach(0..<carouselPageCount, id: \.self) { page in
                         let pageId = carouselPageIds[page]
-                        Circle()
-                            .fill(
-                                chartsCarouselPosition == pageId
-                                    ? theme.primaryText.opacity(0.3)
-                                    : theme.secondaryText.opacity(0.2)
-                            )
-                            .frame(width: 6, height: 6)
+                        let isActive = chartsCarouselPosition == pageId
+                        Capsule()
+                            .fill(isActive ? theme.primaryText.opacity(0.6) : theme.secondaryText.opacity(0.25))
+                            .frame(width: isActive ? 18 : 6, height: 3)
+                            .contentShape(Rectangle().inset(by: -8))
+                            .onTapGesture {
+                                DS.Haptic.selection()
+                                dsWithAnimation(reduceMotion) { chartsCarouselPosition = pageId }
+                            }
+                            .accessibilityLabel(L10n.Accessibility.pageIndicator(page + 1, carouselPageCount))
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -383,13 +504,14 @@ struct CategoriesTabView: View {
         }
     }
 
-    /// IDs for carousel pages based on income mode and iPad layout
+    /// IDs for carousel pages. iPad muestra cat+sub side-by-side (page 1) y tag en
+    /// la HStack del needsLargeSection. iPhone tiene 3 pages independientes.
     private var carouselPageIds: [String] {
         let isWide = DS.Adaptive.isWideScreen(sizeClass)
         if isWide {
-            return isIncomeMode ? ["subcategory"] : ["category", "subcategory"]
+            return ["category", "subcategory"]
         }
-        return isIncomeMode ? ["subcategory", "tags"] : ["category", "subcategory", "tags"]
+        return ["category", "subcategory", "tags"]
     }
 
     // MARK: - Category Chart Card
@@ -503,88 +625,57 @@ struct CategoriesTabView: View {
         }
     }
 
-    // MARK: - Need Carousel
-
-    /// Count of needs with data (for dynamic height calculation)
-    private var visibleNeedCount: Int {
-        guard !needTrendPoints.isEmpty else { return 3 }
-        let essentialTotal = needTrendPoints.reduce(0) { $0 + $1.essential }
-        let priorityTotal = needTrendPoints.reduce(0) { $0 + $1.priority }
-        let optionalTotal = needTrendPoints.reduce(0) { $0 + $1.optional }
-        let unclassifiedTotal = needTrendPoints.reduce(0) { $0 + $1.unclassified }
-
-        var count = 0
-        if essentialTotal > 0 { count += 1 }
-        if priorityTotal > 0 { count += 1 }
-        if optionalTotal > 0 { count += 1 }
-        if unclassifiedTotal > 0 { count += 1 }
-        return max(count, 3)  // Always show at least 3 bars
-    }
-
-    /// Dynamic height based on current carousel page and visible needs
-    private var needCarouselHeight: CGFloat {
-        if (needCarouselIndex ?? 0) == 0 {
-            return 340  // Large chart view
-        } else {
-            // Compact view: dynamic height based on number of visible needs
-            // Each bar ~52 points (row + progress + spacing) + container padding (~56)
-            let barHeight: CGFloat = 52
-            let containerPadding: CGFloat = 56
-            return CGFloat(visibleNeedCount) * barHeight + containerPadding
-        }
-    }
+    // MARK: - Needs Sections (split en Gráficas/Detalle, sin carrusel)
 
     @ViewBuilder
     private var sankeyWidget: some View {
         if viewModel.sankeyData.hasFlow {
             @Bindable var prefs = appPreferences
-            VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                sankeyHeader(prefs: $prefs.sankeyLabelMode)
-                SankeyChartView(
-                    data: viewModel.sankeyData,
-                    currencyCode: defaultCurrencyCode,
-                    labelMode: $prefs.sankeyLabelMode,
-                    selectedCategoryIDs: viewModel.selectedCategories,
-                    selectedSubcategoryIDs: viewModel.selectedSubcategories,
-                    onTapCategory: { catID in
-                        dsWithAnimation(reduceMotion) {
-                            toggleSankeyCategory(catID)
-                        }
-                    },
-                    onTapSubcategory: { subID in
-                        dsWithAnimation(reduceMotion) {
-                            toggleSankeySubcategory(subID)
-                        }
-                    }
-                )
-                if viewModel.shouldShowPlannedHint && viewModel.sankeyData.hasPlannedBranch {
-                    Text(L10n.Statistics.Sankey.plannedHint)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                // Title fuera del card + label mode toggle a la derecha (patrón Trends cashFlowWidget)
+                HStack {
+                    Text(L10n.Statistics.Sankey.title)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    SankeyLabelModeToggle(mode: $prefs.sankeyLabelMode)
                 }
+                sankeyCardBody.panelCard()
             }
-            .solidCard(padding: DS.Card.paddingCompact, radius: DS.Radius.lg)
         }
     }
 
-    private func sankeyHeader(prefs: Binding<SankeyLabelMode>) -> some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.Statistics.Sankey.title)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Text(appPreferences.currency(viewModel.sankeyData.totalExpense,
-                    currencyCode: defaultCurrencyCode
-                ))
+    @ViewBuilder
+    private var sankeyCardBody: some View {
+        @Bindable var prefs = appPreferences
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            // KPI total estilo Panel-Small header interno
+            Text(appPreferences.currency(viewModel.sankeyData.totalExpense, currencyCode: defaultCurrencyCode))
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
                 .minimumScaleFactor(0.7)
+                .lineLimit(1)
+
+            SankeyChartView(
+                data: viewModel.sankeyData,
+                currencyCode: defaultCurrencyCode,
+                labelMode: $prefs.sankeyLabelMode,
+                selectedCategoryIDs: viewModel.selectedCategories,
+                selectedSubcategoryIDs: viewModel.selectedSubcategories,
+                onTapCategory: { catID in
+                    dsWithAnimation(reduceMotion) { toggleSankeyCategory(catID) }
+                },
+                onTapSubcategory: { subID in
+                    dsWithAnimation(reduceMotion) { toggleSankeySubcategory(subID) }
+                }
+            )
+
+            if viewModel.shouldShowPlannedHint && viewModel.sankeyData.hasPlannedBranch {
+                Text(L10n.Statistics.Sankey.plannedHint)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            Spacer(minLength: DS.Spacing.sm)
-            SankeyLabelModeToggle(mode: prefs)
         }
     }
 
@@ -615,51 +706,44 @@ struct CategoriesTabView: View {
         }
     }
 
+    /// Título "Necesidades" fuera del card (patrón consistente entre Large/Compact).
+    private var needsHeader: some View {
+        HStack {
+            Text(L10n.WidgetType.expensesByNeed)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+            Spacer()
+        }
+    }
+
+    /// Sección "Necesidades" en pestaña Gráficas — versión large con barras.
+    /// iPad: tags pie + needLarge side-by-side (tag no entra al carousel iPad).
+    /// iPhone: solo needLarge (tag vive en carousel iPhone).
     @ViewBuilder
-    private var needCarousel: some View {
+    private var needsLargeSection: some View {
         let isWide = DS.Adaptive.isWideScreen(sizeClass)
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            needsHeader
 
-        if isWide {
-            // iPad: tags pie + need large side by side, no compact need
-            HStack(alignment: .top, spacing: DS.Spacing.lg) {
-                tagChartCard
-                    .frame(maxWidth: .infinity)
+            if isWide {
+                HStack(alignment: .top, spacing: DS.Spacing.lg) {
+                    tagChartCard
+                        .frame(maxWidth: .infinity)
+                    needWidgetLarge
+                        .frame(maxWidth: .infinity)
+                }
+            } else {
                 needWidgetLarge
-                    .frame(maxWidth: .infinity)
             }
-        } else {
-            // iPhone: carousel with large/compact need slides
-            VStack(spacing: DS.Spacing.sm) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: DS.Spacing.md) {
-                        needWidgetLarge
-                            .containerRelativeFrame(.horizontal)
-                            .id(0)
+        }
+    }
 
-                        needWidgetCompact
-                            .containerRelativeFrame(.horizontal)
-                            .id(1)
-                    }
-                    .scrollTargetLayout()
-                }
-                .scrollTargetBehavior(.viewAligned)
-                .scrollPosition(id: $needCarouselIndex)
-                .frame(height: needCarouselHeight)
-                .dsAnimation(.easeInOut(duration: 0.3), value: needCarouselIndex, reduceMotion: reduceMotion)
-
-                HStack(spacing: DS.Spacing.sm) {
-                    ForEach(0..<2, id: \.self) { page in
-                        Circle()
-                            .fill(
-                                page == (needCarouselIndex ?? 0)
-                                    ? theme.primaryText.opacity(0.3)
-                                    : theme.secondaryText.opacity(0.2)
-                            )
-                            .frame(width: 6, height: 6)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
-            }
+    /// Sección "Necesidades" en pestaña Detalle — versión compact con barras
+    /// listadas. Complementa la lista de categorías arriba.
+    private var needsCompactSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            needsHeader
+            needWidgetCompact
         }
     }
 
@@ -733,8 +817,8 @@ struct CategoriesTabView: View {
     // MARK: - Categories List Section
 
     private var categoriesListSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.none) {
-            // Header with title and selector
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // Header fuera del card (patrón panel-aligned)
             HStack(alignment: .center) {
                 Text(
                     listViewType == .categories
@@ -747,72 +831,72 @@ struct CategoriesTabView: View {
 
                 listViewSelector
             }
-            .padding(.horizontal, DS.Spacing.xl)
-            .padding(.top, DS.Spacing.lg)
-            .padding(.bottom, DS.Spacing.md)
 
-            // Content based on selected view type
-            if listViewType == .categories {
-                if categorySpending.isEmpty {
-                    emptyState(
-                        icon: "chart.bar.xaxis",
-                        title: L10n.Empty.noCategories,
-                        subtitle: L10n.Statistics.noDataToShow
-                    )
-                    .frame(height: 200)
-                } else {
-                    AllCategoriesListContent(
-                        categories: categorySpending,
-                        currencyCode: defaultCurrencyCode,
-                        selectedCategoryIDs: effectiveCategoryIDsForDim,
-                        isExcludeMode: viewModel.isExcludeMode,
-                        isExpanded: isListExpanded,
-                        showVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
-                        onToggleExpanded: { isListExpanded.toggle() },
-                        onSelectCategory: { categoryID in
-                            if viewModel.selectedCategories.contains(categoryID) {
-                                viewModel.selectedCategories.remove(categoryID)
-                            } else {
-                                viewModel.selectedCategories = [categoryID]
-                            }
-                            viewModel.selectedSubcategories.removeAll()
-                        }
-                    )
-                }
+            listCardBody.panelCard()
+        }
+    }
+
+    @ViewBuilder
+    private var listCardBody: some View {
+        if listViewType == .categories {
+            if categorySpending.isEmpty {
+                emptyState(
+                    icon: "chart.bar.xaxis",
+                    title: L10n.Empty.noCategories,
+                    subtitle: L10n.Statistics.noDataToShow
+                )
+                .frame(maxWidth: .infinity, minHeight: 200)
             } else {
-                if subcategorySpending.isEmpty {
-                    emptyState(
-                        icon: "list.bullet.indent",
-                        title: L10n.Empty.noSubcategories,
-                        subtitle: L10n.Statistics.noDataToShow
-                    )
-                    .frame(height: 200)
-                } else {
-                    AllSubcategoriesListContent(
-                        subcategories: subcategorySpending,
-                        currencyCode: defaultCurrencyCode,
-                        selectedCategoryIDs: viewModel.isExcludeMode
-                            ? viewModel.selectedCategories
-                            : effectiveCategoryIDsForDim,
-                        selectedSubcategoryIDs: viewModel.selectedSubcategories,
-                        isExcludeMode: viewModel.isExcludeMode,
-                        isExpanded: isListExpanded,
-                        showVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
-                        onToggleExpanded: { isListExpanded.toggle() },
-                        onSelectSubcategory: { subcategoryID in
-                            if viewModel.selectedSubcategories.contains(subcategoryID) {
-                                viewModel.selectedSubcategories.remove(subcategoryID)
-                            } else {
-                                viewModel.selectedSubcategories = [subcategoryID]
-                            }
-                            // Clear category filter — subcategory selection is more specific
-                            viewModel.selectedCategories.removeAll()
+                AllCategoriesListContent(
+                    categories: categorySpending,
+                    currencyCode: defaultCurrencyCode,
+                    selectedCategoryIDs: effectiveCategoryIDsForDim,
+                    isExcludeMode: viewModel.isExcludeMode,
+                    isExpanded: isListExpanded,
+                    showVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
+                    onToggleExpanded: { isListExpanded.toggle() },
+                    onSelectCategory: { categoryID in
+                        if viewModel.selectedCategories.contains(categoryID) {
+                            viewModel.selectedCategories.remove(categoryID)
+                        } else {
+                            viewModel.selectedCategories = [categoryID]
                         }
-                    )
-                }
+                        viewModel.selectedSubcategories.removeAll()
+                    }
+                )
+            }
+        } else {
+            if subcategorySpending.isEmpty {
+                emptyState(
+                    icon: "list.bullet.indent",
+                    title: L10n.Empty.noSubcategories,
+                    subtitle: L10n.Statistics.noDataToShow
+                )
+                .frame(maxWidth: .infinity, minHeight: 200)
+            } else {
+                AllSubcategoriesListContent(
+                    subcategories: subcategorySpending,
+                    currencyCode: defaultCurrencyCode,
+                    selectedCategoryIDs: viewModel.isExcludeMode
+                        ? viewModel.selectedCategories
+                        : effectiveCategoryIDsForDim,
+                    selectedSubcategoryIDs: viewModel.selectedSubcategories,
+                    isExcludeMode: viewModel.isExcludeMode,
+                    isExpanded: isListExpanded,
+                    showVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
+                    onToggleExpanded: { isListExpanded.toggle() },
+                    onSelectSubcategory: { subcategoryID in
+                        if viewModel.selectedSubcategories.contains(subcategoryID) {
+                            viewModel.selectedSubcategories.remove(subcategoryID)
+                        } else {
+                            viewModel.selectedSubcategories = [subcategoryID]
+                        }
+                        // Clear category filter — subcategory selection is more specific
+                        viewModel.selectedCategories.removeAll()
+                    }
+                )
             }
         }
-        .solidCard()
     }
 
     private var listViewSelector: some View {
@@ -903,6 +987,276 @@ struct CategoriesTabView: View {
         )
     }
 
+    // MARK: - Distribution Insight Card (protagonista AL FINAL, paralelo Trends)
+    //
+    // V1 limitation documentada: aiInsights.heroText es shared con Trends + Insights
+    // (mismo InsightsViewModel.triggerAIGeneration agnóstico a tab). El usuario puede
+    // ver "el mismo análisis" cross-tab. V2 dedicará prompt específico de distribución.
+    // Deuda técnica: proInsightHeader/aiLoadingPlaceholder/aiErrorCardLocal/markdownAttributed
+    // duplicados con InsightsTab + TrendsTab — extracción a Shared/ deferida post-épico.
+
+    private var isProUser: Bool {
+        FeatureGateService.shared.canAccess(.smartInsightsAI)
+    }
+
+    @ViewBuilder
+    private var distributionInsightCard: some View {
+        let txCount = insightsViewModel.insightData?.periodSummary.transactionCount ?? 0
+        // Gate: aparece SOLO si tx en período actual >= 5
+        if txCount >= 5 {
+            if isProUser {
+                proDistributionInsightCard
+            } else {
+                freeDistributionInsightCard
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var freeDistributionInsightCard: some View {
+        let finding = computeDistributionFinding()
+
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "chart.pie")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(theme.accent)
+                    .accessibilityHidden(true)
+                Text(L10n.Stats.Distribution.insightTitleFree(periodDisplayName))
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+            }
+
+            Text(findingText(finding))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(3)
+
+            Button { showUpgradeSheet = true } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "sparkles").font(DS.Typography.caption)
+                    Text(L10n.Stats.Trends.refineWithAI).font(DS.Typography.caption)
+                }
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .background(theme.accent.opacity(0.12))
+                .foregroundStyle(theme.accent)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard()
+    }
+
+    @ViewBuilder
+    private var proDistributionInsightCard: some View {
+        if insightsViewModel.aiActivated {
+            if insightsViewModel.isLoadingAI {
+                aiLoadingPlaceholder
+            } else if let aiHero = insightsViewModel.aiInsights?.heroText {
+                proAIInsightCard(aiHero: aiHero)
+            } else if let error = insightsViewModel.aiError {
+                aiErrorCardLocal(error)
+            }
+        } else {
+            proPreAIInsightCard
+        }
+    }
+
+    /// Header consistente entre pre-AI y post-AI (sparkles + título Pro).
+    @ViewBuilder
+    private var proInsightHeader: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "sparkles")
+                .font(DS.Typography.body)
+                .foregroundStyle(theme.accent)
+                .accessibilityHidden(true)
+            Text(L10n.Stats.Distribution.insightTitlePro)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.primary)
+        }
+    }
+
+    @ViewBuilder
+    private func proAIInsightCard(aiHero: String) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            proInsightHeader
+
+            Text(markdownAttributed(aiHero))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Footer balanceado: tag identitario izq + chip Regenerar der.
+            HStack {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "sparkles")
+                        .font(DS.Typography.captionSmall)
+                    Text(L10n.Stats.Distribution.aiFootnote)
+                        .font(DS.Typography.captionSmall)
+                }
+                .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button {
+                    Task { await insightsViewModel.triggerAIGeneration() }
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(DS.Typography.caption)
+                        Text(L10n.Stats.Trends.regenerate)
+                            .font(DS.Typography.caption)
+                    }
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(theme.accent.opacity(0.12))
+                    .foregroundStyle(theme.accent)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard()
+    }
+
+    @ViewBuilder
+    private var proPreAIInsightCard: some View {
+        let finding = computeDistributionFinding()
+
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            proInsightHeader
+
+            Text(findingText(finding))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(3)
+
+            Button {
+                if appPreferences.aiInsightsConsentAccepted {
+                    Task { await insightsViewModel.triggerAIGeneration() }
+                } else {
+                    showInsightsConsentAlert = true
+                }
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "sparkles").font(DS.Typography.caption)
+                    Text(L10n.Stats.Trends.generateAI).font(DS.Typography.caption)
+                }
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .background(theme.accent.opacity(0.12))
+                .foregroundStyle(theme.accent)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard()
+    }
+
+    private var aiLoadingPlaceholder: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "sparkles")
+                .foregroundStyle(theme.accent)
+                .symbolEffect(.pulse)
+            Text(L10n.Insights.analyzingData)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .panelCard()
+    }
+
+    private func aiErrorCardLocal(_ error: String) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle")
+                .foregroundStyle(DS.Semantic.warningForeground)
+            Text(error)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard()
+    }
+
+    private func markdownAttributed(_ text: String) -> AttributedString {
+        (try? AttributedString(markdown: text)) ?? AttributedString(text)
+    }
+
+    private var periodDisplayName: String {
+        viewModel.detailPeriod.displayName
+    }
+
+    /// Strip "vs " hardcoded por PreviousPeriodHelper.formatComparisonText.
+    private func strippedComparisonLabel(_ label: String) -> String {
+        label.hasPrefix("vs ") ? String(label.dropFirst(3)) : label
+    }
+
+    private func previousPeriodLabelForInsight() -> String? {
+        guard viewModel.detailPeriod != .allTime else { return nil }
+        let interval = PreviousPeriodHelper.previousInterval(
+            for: viewModel.detailPeriod,
+            mode: sessionState.comparisonMode,
+            customRange: sessionState.customDateRange
+        )
+        let raw = PreviousPeriodHelper.formatComparisonText(
+            previousInterval: interval,
+            period: viewModel.detailPeriod,
+            mode: sessionState.comparisonMode
+        )
+        return strippedComparisonLabel(raw)
+    }
+
+    private func computeDistributionFinding() -> DistributionInsightFinding {
+        let prevLabel = previousPeriodLabelForInsight()
+        let cats: [DistributionCategoryInput] = categorySpending.map {
+            DistributionCategoryInput(
+                name: $0.category.name,
+                amount: $0.amount,
+                percentage: $0.percentage,
+                previousAmount: $0.previousAmount,
+                variation: $0.variation
+            )
+        }
+        let topSub: DistributionTopSubInput? = subcategorySpending.first.map {
+            DistributionTopSubInput(
+                name: $0.subcategoryName,
+                parent: $0.category?.name ?? "",
+                percentageOfCategory: $0.percentageOfCategory
+            )
+        }
+        return DistributionInsightLogic.finding(
+            categories: cats,
+            topSub: topSub,
+            previousLabel: prevLabel,
+            period: periodDisplayName
+        )
+    }
+
+    private func findingText(_ finding: DistributionInsightFinding) -> String {
+        switch finding {
+        case .onset:
+            return L10n.Stats.Distribution.Insight.onset(periodDisplayName)
+        case .newCategory(let name, let period):
+            return L10n.Stats.Distribution.Insight.newCategory(name, period)
+        case .concentrated(let percent, let topCat):
+            return L10n.Stats.Distribution.Insight.concentrated(percent, topCat)
+        case .balanced(let maxPercent):
+            return L10n.Stats.Distribution.Insight.balanced(maxPercent)
+        case .shifted(let percent, let cat, .up, let prev):
+            return L10n.Stats.Distribution.Insight.shiftedUp(percent, cat, prev)
+        case .shifted(let percent, let cat, .down, let prev):
+            return L10n.Stats.Distribution.Insight.shiftedDown(percent, cat, prev)
+        case .topSubFallback(let percent, let sub, let parent):
+            return L10n.Stats.Distribution.Insight.topSub(percent, sub, parent)
+        }
+    }
+
     // MARK: - Data Calculation
 
     private func calculateData() {
@@ -970,6 +1324,8 @@ struct CategoriesTabView: View {
 
         )
         if newCategorySpending != categorySpending { categorySpending = newCategorySpending }
+        let newTotal = newCategorySpending.reduce(0) { $0 + $1.amount }
+        if newTotal != totalAmount { totalAmount = newTotal }
 
         // Calculate subcategory spending - filter by category if one is selected
         let subcategoryTransactions: [TransactionItem]
@@ -1251,58 +1607,22 @@ struct CategoriesTabView: View {
         }
     }
 
-    // MARK: - Recent Records Section
+}
 
-    private var recentRecordsSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text(L10n.Statistics.latestRecords)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thPrimaryText)
+// MARK: - DistributionContentMode
 
-            if viewModel.recentRecords.isEmpty {
-                emptyRecordsState
-            } else {
-                ForEach(viewModel.recentRecords.prefix(5), id: \.persistentModelID) { record in
-                    CompactRecordRow(record: record, currencyCode: defaultCurrencyCode)
-                }
-            }
+/// Pill selector entre visualizaciones (Gráficas) y tablas (Detalle).
+/// Reusa `L10n.Stats.Insights.modeDetail` para "Detalle" (idéntico concepto cross-tab).
+private enum DistributionContentMode: String, CaseIterable {
+    case charts
+    case details
 
-            Button {
-                onNavigateToRecords()
-            } label: {
-                HStack {
-                    Spacer()
-                    Text(L10n.Action.viewAll)
-                        .font(DS.Typography.headline)
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.caption)
-                        .accessibilityHidden(true)
-                    Spacer()
-                }
-                .padding(.vertical, DS.Spacing.md)
-                .foregroundStyle(theme.accent)
-                .background(theme.accent.opacity(DS.Opacity.subtle))
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
-            }
-            .buttonStyle(.plain)
+    var label: String {
+        switch self {
+        case .charts:  return L10n.Stats.Distribution.modeCharts
+        case .details: return L10n.Stats.Insights.modeDetail
         }
-        .solidCard(padding: DS.Card.padding)
     }
-
-    private var emptyRecordsState: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(DS.Typography.title)
-                .foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
-            Text(L10n.Statistics.noRecords)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, DS.Spacing.xl)
-    }
-
 }
 
 // MARK: - All Categories List Content
@@ -1381,8 +1701,7 @@ private struct AllCategoriesListContent: View {
                 }
             }
         }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.bottom, DS.Spacing.xl)
+        .padding(.bottom, DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
@@ -1475,8 +1794,7 @@ private struct AllSubcategoriesListContent: View {
                 }
             }
         }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.bottom, DS.Spacing.xl)
+        .padding(.bottom, DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }

@@ -4276,6 +4276,22 @@
 "stats.trends.heroStable" = "Twoje saldo pozostaje stabilne";
 "stats.trends.heroVarUp %d %@" = "%d%% powyżej vs %@ · Tak trzymaj";
 "stats.trends.heroVarDown %d %@" = "%d%% poniżej vs %@ · Trzymaj się, krok po kroku";
+// MARK: Distribution
+"stats.distribution.heroSubtitle1 %d" = "%d kategorii";
+"stats.distribution.heroSubtitle2 %d %d" = "%d kategorii · %d podkategorii";
+"stats.distribution.heroSubtitle3 %d %d %d" = "%d kategorii · %d podkategorii · %d tagów";
+"stats.distribution.insightTitleFree %@" = "Twój %@ w skrócie";
+"stats.distribution.insightTitlePro" = "Rozkład w okresie";
+"stats.distribution.aiFootnote" = "Analiza AI";
+"stats.distribution.modeCharts" = "Wykresy";
+"stats.distribution.insight.onset %@" = "Twój okres %@ zaczyna się kształtować. Wkrótce zobaczysz wyraźniejsze wzorce.";
+"stats.distribution.insight.newCategory %@ %@" = "Spróbowałeś %@ w tym %@.";
+"stats.distribution.insight.concentrated %d %@" = "%d%% Twoich wydatków przypada na %@. Czy to pasuje do Twoich priorytetów?";
+"stats.distribution.insight.balanced %d" = "Twoje wydatki są rozłożone: żadna kategoria nie przekracza %d%%. Zrównoważony rozkład.";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%@ wzrosło o %d%% vs %@. Zobaczmy co się zmieniło w tym okresie.";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%@ spadło o %d%% vs %@. Dobra korekta.";
+"stats.distribution.insight.topSub %d %@ %@" = "%@ stanowi %d%% w %@. Twoja największa konkretna pozycja.";
+
 "stats.trends.insight.onset %@" = "To Twój pierwszy %@ z Yala";
 "stats.trends.insight.varUpExpense %d %@" = "Twoje wydatki wzrosły o %d%% w porównaniu z %@. Dostosujmy razem.";
 "stats.trends.insight.varDownExpense %d %@" = "Twoje wydatki spadły o %d%% w porównaniu z %@. Tak trzymaj.";

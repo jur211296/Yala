@@ -4272,6 +4272,22 @@
 "stats.trends.heroStable" = "O teu saldo mantém-se estável";
 "stats.trends.heroVarUp %d %@" = "%d%% acima vs %@ · Continua assim";
 "stats.trends.heroVarDown %d %@" = "%d%% abaixo vs %@ · Força, passo a passo";
+// MARK: Distribution
+"stats.distribution.heroSubtitle1 %d" = "%d categorias";
+"stats.distribution.heroSubtitle2 %d %d" = "%d categorias · %d subcategorias";
+"stats.distribution.heroSubtitle3 %d %d %d" = "%d categorias · %d subcategorias · %d etiquetas";
+"stats.distribution.insightTitleFree %@" = "O teu %@ num relance";
+"stats.distribution.insightTitlePro" = "Distribuição do período";
+"stats.distribution.aiFootnote" = "Análise com IA";
+"stats.distribution.modeCharts" = "Gráficos";
+"stats.distribution.insight.onset %@" = "O teu período %@ está a ganhar forma. Em breve verás padrões mais claros.";
+"stats.distribution.insight.newCategory %@ %@" = "Experimentaste %@ neste %@.";
+"stats.distribution.insight.concentrated %d %@" = "%d%% dos teus gastos concentram-se em %@. Alinha-se com as tuas prioridades?";
+"stats.distribution.insight.balanced %d" = "Os teus gastos repartem-se: nenhuma categoria ultrapassa %d%%. Distribuição equilibrada.";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%@ subiu %d%% vs %@. Vejamos o que mudou neste período.";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%@ baixou %d%% vs %@. Bom ajuste.";
+"stats.distribution.insight.topSub %d %@ %@" = "%@ representa %d%% dentro de %@. A tua maior rubrica específica.";
+
 "stats.trends.insight.onset %@" = "Este é o teu primeiro %@ com a Yala";
 "stats.trends.insight.varUpExpense %d %@" = "Aumentaste a tua despesa em %d%% vs %@. Vamos ajustar juntos.";
 "stats.trends.insight.varDownExpense %d %@" = "Reduziste a tua despesa em %d%% vs %@. Continua assim.";

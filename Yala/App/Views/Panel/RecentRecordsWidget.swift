@@ -123,7 +123,7 @@ struct RecentRecordsWidget: View {
 
             Spacer()
 
-            // Right Column: Amount + Nature (matches CompactRecordRow and RecordRowView)
+            // Right Column: Amount + Nature (matches RecordRowView)
             VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                 Text(formattedAmount(record.amount, currencyCode: record.currencyCode))
                     .font(DS.Typography.headline)

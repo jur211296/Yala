@@ -5903,6 +5903,52 @@ enum L10n {
                 }
             }
         }
+        enum Distribution {
+            static func heroSubtitle1(_ count: Int) -> String {
+                String(format: ls("stats.distribution.heroSubtitle1 %d", comment: "Hero subtitle 1 dimension active (only categories)"), count)
+            }
+            static func heroSubtitle2(_ cats: Int, _ subs: Int) -> String {
+                String(format: ls("stats.distribution.heroSubtitle2 %d %d", comment: "Hero subtitle 2 dimensions (categories + subcategories)"), cats, subs)
+            }
+            static func heroSubtitle3(_ cats: Int, _ subs: Int, _ tags: Int) -> String {
+                String(format: ls("stats.distribution.heroSubtitle3 %d %d %d", comment: "Hero subtitle 3 dimensions (categories + subcategories + tags)"), cats, subs, tags)
+            }
+            static func insightTitleFree(_ period: String) -> String {
+                String(format: ls("stats.distribution.insightTitleFree %@", comment: "Distribution Insight Card title for Free users (param: period name)"), period)
+            }
+            static var insightTitlePro: String {
+                ls("stats.distribution.insightTitlePro", comment: "Distribution Insight Card title for Pro users")
+            }
+            static var aiFootnote: String {
+                ls("stats.distribution.aiFootnote", comment: "Footer label in Pro post-AI distribution insight card")
+            }
+            static var modeCharts: String {
+                ls("stats.distribution.modeCharts", comment: "Content mode pill label: charts view (pies + sankey + need bars)")
+            }
+            enum Insight {
+                static func onset(_ period: String) -> String {
+                    String(format: ls("stats.distribution.insight.onset %@", comment: "Distribution Insight: empty or no comparable data"), period)
+                }
+                static func newCategory(_ name: String, _ period: String) -> String {
+                    String(format: ls("stats.distribution.insight.newCategory %@ %@", comment: "Distribution Insight: user tried a new category this period"), name, period)
+                }
+                static func concentrated(_ percent: Int, _ topCategory: String) -> String {
+                    String(format: ls("stats.distribution.insight.concentrated %d %@", comment: "Distribution Insight: spending concentrated in top category (>=40%)"), percent, topCategory)
+                }
+                static func balanced(_ maxPercent: Int) -> String {
+                    String(format: ls("stats.distribution.insight.balanced %d", comment: "Distribution Insight: spending balanced across categories"), maxPercent)
+                }
+                static func shiftedUp(_ percent: Int, _ category: String, _ previousLabel: String) -> String {
+                    String(format: ls("stats.distribution.insight.shiftedUp %d %@ %@", comment: "Distribution Insight: top category rose %d%% vs %@"), percent, category, previousLabel)
+                }
+                static func shiftedDown(_ percent: Int, _ category: String, _ previousLabel: String) -> String {
+                    String(format: ls("stats.distribution.insight.shiftedDown %d %@ %@", comment: "Distribution Insight: top category fell %d%% vs %@"), percent, category, previousLabel)
+                }
+                static func topSub(_ percent: Int, _ sub: String, _ parent: String) -> String {
+                    String(format: ls("stats.distribution.insight.topSub %d %@ %@", comment: "Distribution Insight: top subcategory dominates within parent"), percent, sub, parent)
+                }
+            }
+        }
     }
 
 }
