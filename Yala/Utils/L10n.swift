@@ -3966,6 +3966,16 @@ enum L10n {
                 String(format: ls("planning.budgets.currentPeriod", comment: ""), label)
             }
         }
+
+        // MARK: Scheduled sub-tab (polish panel-aligned, Bloque C)
+        enum Scheduled {
+            static var heroChip: String { ls("planning.scheduled.heroChip", comment: "") }
+            static var title: String { ls("planning.scheduled.title", comment: "") }
+            static var totalLabel: String { ls("planning.scheduled.totalLabel", comment: "") }
+            static func summaryNote(_ total: Int, _ recurring: Int) -> String {
+                String(format: ls("planning.scheduled.summaryNote", comment: ""), total, recurring)
+            }
+        }
     }
 
     // MARK: - Profile

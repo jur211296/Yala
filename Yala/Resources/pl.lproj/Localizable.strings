@@ -534,6 +534,10 @@
 "planning.budgets.statusOnTrack" = "%d na bieżąco";
 "planning.budgets.title" = "Budżety";
 "planning.budgets.heroChip" = "Twoje budżety";
+"planning.scheduled.summaryNote" = "%d płatności · %d powtarzające";
+"planning.scheduled.totalLabel" = "Razem za miesiąc";
+"planning.scheduled.title" = "Zaplanowane płatności";
+"planning.scheduled.heroChip" = "Twoje zaplanowane płatności";
 
 // MARK: - Budgets
 

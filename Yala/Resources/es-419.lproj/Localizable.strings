@@ -534,6 +534,10 @@
 "planning.budgets.statusOnTrack" = "%d al día";
 "planning.budgets.title" = "Presupuestos";
 "planning.budgets.heroChip" = "Tus presupuestos";
+"planning.scheduled.summaryNote" = "%d pagos · %d recurrentes";
+"planning.scheduled.totalLabel" = "Total del mes";
+"planning.scheduled.title" = "Pagos planificados";
+"planning.scheduled.heroChip" = "Tus pagos planificados";
 
 // MARK: - Budgets
 

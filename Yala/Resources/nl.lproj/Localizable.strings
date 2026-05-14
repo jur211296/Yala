@@ -534,6 +534,10 @@
 "planning.budgets.statusOnTrack" = "%d op schema";
 "planning.budgets.title" = "Budgetten";
 "planning.budgets.heroChip" = "Jouw budgetten";
+"planning.scheduled.summaryNote" = "%d betalingen · %d terugkerend";
+"planning.scheduled.totalLabel" = "Totaal voor maand";
+"planning.scheduled.title" = "Geplande betalingen";
+"planning.scheduled.heroChip" = "Jouw geplande betalingen";
 
 // MARK: - Budgets
 

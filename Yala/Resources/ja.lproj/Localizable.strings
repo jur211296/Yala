@@ -534,6 +534,10 @@
 "planning.budgets.statusOnTrack" = "%d件 順調";
 "planning.budgets.title" = "予算";
 "planning.budgets.heroChip" = "あなたの予算";
+"planning.scheduled.summaryNote" = "%d件の支払い · %d件繰り返し";
+"planning.scheduled.totalLabel" = "今月の合計";
+"planning.scheduled.title" = "予定支払い";
+"planning.scheduled.heroChip" = "あなたの予定支払い";
 
 // MARK: - Budgets
 
