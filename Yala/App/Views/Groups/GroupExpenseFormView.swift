@@ -42,9 +42,6 @@ struct GroupExpenseFormView: View {
     @State private var showSplitDetail = false
     @State private var showAccountSelector = false  // M6 Caso A
 
-    // Amount scaling
-    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
-
     // MARK: - Init
 
     init(
@@ -236,62 +233,29 @@ struct GroupExpenseFormView: View {
 
     // MARK: - Amount Display
 
-    private var amountFontSize: CGFloat {
-        let length = viewModel.amountString.count
-        let ratio: CGFloat
-        switch length {
-        case 0...7: ratio = 1.0
-        case 8...9: ratio = 54.0 / 64.0
-        case 10...11: ratio = 46.0 / 64.0
-        case 12...13: ratio = 38.0 / 64.0
-        default: ratio = 32.0 / 64.0
-        }
-        return baseAmountSize * ratio
-    }
-
     private var amountDisplay: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+        AmountInputFieldEnumFocus(
+            amountString: $viewModel.amountString,
+            color: theme.accent,
+            focusedField: $focusedField,
+            fieldValue: .amount,
+            accessibilityID: "group_expense_amount"
+        ) {
             Button {
                 dismissKeyboard()
                 showCurrencyPicker = true
             } label: {
                 Text(appPreferences.currencyIdentifier(for: viewModel.currencyCode))
-                    .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
+                    .font(.system(
+                        size: AmountInputField<Button<Text>>.leadingFontSize(compact: false),
+                        weight: .medium,
+                        design: .rounded
+                    ))
                     .foregroundStyle(theme.accent.opacity(0.7))
                     .contentTransition(.numericText())
             }
             .buttonStyle(.plain)
-
-            TextField("0.00", text: $viewModel.amountString)
-                .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
-                .foregroundStyle(theme.accent)
-                .multilineTextAlignment(.center)
-                .keyboardType(.decimalPad)
-                .focused($focusedField, equals: .amount)
-                .accessibilityIdentifier("group_expense_amount")
-                .fixedSize(horizontal: true, vertical: false)
-                .onChange(of: focusedField) { _, newFocus in
-                    if newFocus == .amount
-                        && (viewModel.amountString == "0" || viewModel.amountString == "0.00" || viewModel.amountString == "0,00")
-                    {
-                        viewModel.amountString = ""
-                    }
-                    if newFocus != .amount {
-                        if viewModel.amountString.isEmpty {
-                            viewModel.amountString = "0.00"
-                        } else {
-                            viewModel.amountString = AmountInputHelper.formatWithGrouping(viewModel.amount)
-                        }
-                    }
-                }
-                .onChange(of: viewModel.amountString) { _, newValue in
-                    let filtered = AmountInputHelper.filterAmountInput(newValue)
-                    if filtered != newValue {
-                        viewModel.amountString = filtered
-                    }
-                }
         }
-        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     // MARK: - Split Method Chip
@@ -409,7 +373,7 @@ struct GroupExpenseFormView: View {
                     }
                 }
             }
-            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.horizontal, DS.Spacing.lg)
         }
     }
 
