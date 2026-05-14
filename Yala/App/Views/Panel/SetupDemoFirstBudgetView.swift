@@ -33,6 +33,7 @@ struct SetupDemoFirstBudgetView: View {
     @State private var selectedThresholds: Set<Int> = []
     @State private var selectedFilterAccount: String? = nil
     @State private var selectedFilterSubcategory: String? = nil
+    @State private var activeMockSheet: SetupDemoMockSheet? = nil
     @State private var saveButtonEnabled: Bool = false
     @State private var showSuccessToast: Bool = false
 
@@ -66,6 +67,16 @@ struct SetupDemoFirstBudgetView: View {
                     }
                 }
             }
+        }
+        .sheet(item: $activeMockSheet) { sheet in
+            SetupDemoMockSelectorSheet(
+                type: sheet,
+                targetValue: "Almuerzo",
+                categoryContext: .food,
+                reduceMotion: reduceMotion,
+                onSelected: { selectedFilterSubcategory = "Almuerzo" }
+            )
+            .interactiveDismissDisabled(true)
         }
         .task {
             cacheL10n()
@@ -126,17 +137,29 @@ struct SetupDemoFirstBudgetView: View {
                                 )
                         )
                     }
+
+                    Color.clear
+                        .frame(height: 1)
+                        .id("bottom")
                 }
                 .padding(.top, DS.Spacing.md)
                 .padding(.bottom, DS.Spacing.xxl)
                 .padding(.horizontal, DS.Spacing.lg)
             }
             .onChange(of: selectedThresholds) { _, newValue in
-                // Cuando el script selecciona el threshold (80%), scroll al banner
-                // "¿Qué cubre este presupuesto?" para que el user vea el resto del flow.
+                // Stage 4: tras seleccionar threshold, scroll al banner "¿Qué cubre...?"
                 if !newValue.isEmpty {
                     withAnimation(reduceMotion ? nil : .smooth(duration: 0.5)) {
                         proxy.scrollTo("filters", anchor: .top)
+                    }
+                }
+            }
+            .onChange(of: selectedFilterSubcategory) { _, newValue in
+                // Stage 5: tras seleccionar subcategoría, scroll al final para anticipar
+                // "¡Presupuesto creado!" + Reiniciar.
+                if newValue != nil {
+                    withAnimation(reduceMotion ? nil : .smooth(duration: 0.5)) {
+                        proxy.scrollTo("bottom", anchor: .bottom)
                     }
                 }
             }
@@ -549,18 +572,24 @@ struct SetupDemoFirstBudgetView: View {
         await advance(to: 0.7)
         try? await Task.sleep(for: .milliseconds(500))
 
-        // Stage 5: filters — selección de cuenta "Personal" + subcategoría "Almuerzo"
+        // Stage 5a: filter cuenta "Personal" inline (chip toggle)
         guard !Task.isCancelled else { return }
         withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
             selectedFilterAccount = "Personal"
         }
-        try? await Task.sleep(for: .milliseconds(500))
+        try? await Task.sleep(for: .milliseconds(600))
+
+        // Stage 5b: subcategoría — abre sheet (script interno highlight + select + dismiss)
         guard !Task.isCancelled else { return }
-        withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
-            selectedFilterSubcategory = "Almuerzo"
+        activeMockSheet = .subcategory
+        try? await Task.sleep(for: .milliseconds(2000))
+        guard !Task.isCancelled else { return }
+        if activeMockSheet == .subcategory {
+            activeMockSheet = nil
+            try? await Task.sleep(for: .milliseconds(300))
         }
         await advance(to: 0.85)
-        try? await Task.sleep(for: .milliseconds(500))
+        try? await Task.sleep(for: .milliseconds(400))
 
         // Stage 6: SaveButton enabled
         guard !Task.isCancelled else { return }
@@ -610,6 +639,7 @@ struct SetupDemoFirstBudgetView: View {
             saveButtonEnabled = false
             showSuccessToast = false
         }
+        activeMockSheet = nil
         if !keepCompleted {
             demoCompleted = false
             progress = 0
