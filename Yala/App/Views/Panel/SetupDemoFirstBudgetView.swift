@@ -105,6 +105,7 @@ struct SetupDemoFirstBudgetView: View {
                     basicInfoMock
                     periodMock
                     alertsMock
+                    budgetFilterBannerMock
                     filtersMock
                     saveButtonMock
                         .padding(.horizontal, DS.Spacing.xl)
@@ -238,7 +239,27 @@ struct SetupDemoFirstBudgetView: View {
         }
     }
 
-    // MARK: - filters mock (replica de BudgetEditorView.filtersSection)
+    // MARK: - Budget filter banner (replica ContextualGuideBanner.budgetFilterInfo)
+
+    private var budgetFilterBannerMock: some View {
+        let message: String
+        if selectedFilterAccount == nil && selectedFilterSubcategory == nil {
+            message = L10n.ContextualGuide.BudgetFilter.allExpenses
+        } else {
+            // Compone summary tipo "1 cuenta, Comida"
+            var parts: [String] = []
+            if selectedFilterAccount != nil {
+                parts.append("1 \(NSLocalizedString("settings.accounts", comment: "").lowercased())")
+            }
+            if let sub = selectedFilterSubcategory {
+                parts.append(sub)
+            }
+            message = parts.joined(separator: ", ")
+        }
+        return ContextualGuideBanner.budgetFilterInfo(message: message)
+    }
+
+    // MARK: - filters mock (replica fiel de BudgetEditorView.filtersSection)
 
     private var filtersMock: some View {
         SectionBox(title: NSLocalizedString("budgets.editor.filters", comment: "")) {
@@ -247,8 +268,11 @@ struct SetupDemoFirstBudgetView: View {
                     icon: "creditcard",
                     title: NSLocalizedString("settings.accounts", comment: ""),
                     statusText: selectedFilterAccount == nil ? NSLocalizedString("filters.all", comment: "") : "1/3",
-                    chips: ["Personal", "Ahorros", "Tarjeta"],
-                    chipColors: [Color.electricIndigo, Color.priorityNeed, Color.hotPink],
+                    chips: [
+                        ("Personal", Color.electricIndigo),
+                        ("Ahorros", Color.priorityNeed),
+                        ("Tarjeta", Color.hotPink),
+                    ],
                     selected: selectedFilterAccount
                 )
 
@@ -258,8 +282,11 @@ struct SetupDemoFirstBudgetView: View {
                     icon: "tag",
                     title: NSLocalizedString("transaction.subcategory", comment: ""),
                     statusText: selectedFilterSubcategory == nil ? NSLocalizedString("filters.all", comment: "") : "1/3",
-                    chips: ["Almuerzo", "Restaurante", "Café"],
-                    chipColors: [Color.essentialNeed, Color.priorityNeed, Color.priorityNeedNew],
+                    chips: [
+                        ("Almuerzo", Color.essentialNeed),
+                        ("Restaurante", Color.priorityNeed),
+                        ("Café", Color.priorityNeedNew),
+                    ],
                     selected: selectedFilterSubcategory
                 )
             }
@@ -270,34 +297,28 @@ struct SetupDemoFirstBudgetView: View {
         icon: String,
         title: String,
         statusText: String,
-        chips: [String],
-        chipColors: [Color],
+        chips: [(String, Color)],
         selected: String?
     ) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: icon)
-                    .foregroundStyle(.secondary)
-                Text(title)
-                    .font(DS.Typography.body)
-                Spacer()
-                Text(statusText)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-            }
+            // Header replica FilterSectionHeader
+            FilterSectionHeader(icon: icon, title: title, status: statusText)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.md)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: DS.Spacing.sm) {
-                    ForEach(Array(chips.enumerated()), id: \.offset) { idx, chip in
-                        filterChip(chip, color: chipColors[idx], isSelected: chip == selected)
-                    }
+            // Chips en FlowLayout — igual al filtersSection real
+            FlowLayout(spacing: DS.Spacing.sm) {
+                ForEach(Array(chips.enumerated()), id: \.offset) { _, chip in
+                    filterChip(chip.0, color: chip.1, isSelected: chip.0 == selected)
                 }
             }
-            .scrollDisabled(true)
+            .padding(.leading, DS.Spacing.formIndent)
+            .padding(.trailing, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.md)
         }
-        .padding()
     }
 
+    /// Chip replica fiel de `BudgetEditorView.accountChip` (sin scaleEffect — no existe en el real).
     private func filterChip(_ label: String, color: Color, isSelected: Bool) -> some View {
         Text(label)
             .font(DS.Typography.subheadline)
@@ -309,7 +330,6 @@ struct SetupDemoFirstBudgetView: View {
                 Capsule()
                     .fill(isSelected ? color : Color(.tertiarySystemFill))
             )
-            .scaleEffect(isSelected ? 1.05 : 1.0)
             .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: isSelected)
     }
 
