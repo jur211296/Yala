@@ -312,6 +312,14 @@ extension L10n {
             static var scheduledPaymentSubcategoryHeader: String {
                 NSLocalizedString("setup.demo.scheduledPayment.subcategoryHeader", comment: "Suscripciones")
             }
+
+            // Step 3 — firstBudget (mock data)
+            static var firstBudgetAmountExample: String {
+                NSLocalizedString("setup.demo.firstBudget.amountExample", comment: "500")
+            }
+            static var firstBudgetSavedToast: String {
+                NSLocalizedString("setup.demo.firstBudget.savedToast", comment: "¡Presupuesto creado!")
+            }
         }
     }
 }

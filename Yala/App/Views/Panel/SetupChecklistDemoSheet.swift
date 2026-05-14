@@ -39,10 +39,14 @@ struct SetupChecklistDemoSheet: View {
                 }
             )
         case .firstBudget:
-            BudgetEditorView(
-                budget: nil,
-                mode: .demo,
-                onStartReal: { handleStartReal(for: .firstBudget) }
+            SetupDemoFirstBudgetView(
+                onClose: {
+                    sheets.setupDemoStep = nil
+                },
+                onComplete: {
+                    SetupChecklistManager.shared.markCompleted(.firstBudget)
+                    sheets.setupDemoStep = nil
+                }
             )
         case .tryVoiceInput:
             VoiceRecordingView(

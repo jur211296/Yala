@@ -3369,6 +3369,8 @@
 "setup.demo.firstExpense.tagExample" = "almuerzo";
 "setup.demo.firstExpense.savedToast" = "¡Listo!";
 "setup.demo.scheduledPayment.subcategoryHeader" = "Suscripciones";
+"setup.demo.firstBudget.amountExample" = "500";
+"setup.demo.firstBudget.savedToast" = "¡Presupuesto creado!";
 // Setup Personalize
 "setup.personalize.navTitle" = "Personaliza tu Yala";
 "setup.personalize.title" = "Haz tuyo a Yala";

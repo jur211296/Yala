@@ -21,6 +21,7 @@ struct BudgetEditorView: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     let budget: Budget?
+    // DEPRECATED: removed in F7 cleanup (Setup Checklist demos standalone)
     let mode: ViewMode
     let onStartReal: (() -> Void)?
 

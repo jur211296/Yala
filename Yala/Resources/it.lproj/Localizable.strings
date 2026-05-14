@@ -3323,6 +3323,8 @@
 "setup.demo.firstExpense.tagExample" = "pranzo";
 "setup.demo.firstExpense.savedToast" = "Fatto!";
 "setup.demo.scheduledPayment.subcategoryHeader" = "Abbonamenti";
+"setup.demo.firstBudget.amountExample" = "500";
+"setup.demo.firstBudget.savedToast" = "Budget creato!";
 "setup.personalize.navTitle" = "Personalizza il tuo Yala";
 "setup.personalize.title" = "Fallo tuo";
 "setup.personalize.subtitle" = "Aggiungi il tuo tocco personale. Cambia il tema, l'icona o l'aspetto dei widget.";
