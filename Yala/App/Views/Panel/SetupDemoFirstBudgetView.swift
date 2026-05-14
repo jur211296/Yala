@@ -31,6 +31,8 @@ struct SetupDemoFirstBudgetView: View {
     @State private var selectedPeriodType: BudgetPeriodType = .monthly
     @State private var alertEnabled: Bool = false
     @State private var selectedThresholds: Set<Int> = []
+    @State private var selectedFilterAccount: String? = nil
+    @State private var selectedFilterSubcategory: String? = nil
     @State private var saveButtonEnabled: Bool = false
     @State private var showSuccessToast: Bool = false
 
@@ -97,34 +99,44 @@ struct SetupDemoFirstBudgetView: View {
     // MARK: - Mock BudgetEditorView
 
     private var mockBudgetScroll: some View {
-        ScrollView {
-            VStack(spacing: DS.Spacing.xxl) {
-                basicInfoMock
-                periodMock
-                alertsMock
-                saveButtonMock
-                    .padding(.horizontal, DS.Spacing.xl)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    basicInfoMock
+                    periodMock
+                    alertsMock
+                    filtersMock
+                    saveButtonMock
+                        .padding(.horizontal, DS.Spacing.xl)
 
-                if showSuccessToast {
-                    VStack(spacing: DS.Spacing.md) {
-                        successToast
-                        restartButton
+                    if showSuccessToast {
+                        VStack(spacing: DS.Spacing.md) {
+                            successToast
+                            restartButton
+                        }
+                        .id("toast")
+                        .transition(
+                            reduceMotion
+                                ? .opacity
+                                : .asymmetric(
+                                    insertion: .move(edge: .top).combined(with: .opacity),
+                                    removal: .opacity
+                                )
+                        )
                     }
-                    .transition(
-                        reduceMotion
-                            ? .opacity
-                            : .asymmetric(
-                                insertion: .move(edge: .top).combined(with: .opacity),
-                                removal: .opacity
-                            )
-                    )
+                }
+                .padding(.top, DS.Spacing.md)
+                .padding(.bottom, DS.Spacing.xxl)
+                .padding(.horizontal, DS.Spacing.lg)
+            }
+            .onChange(of: showSuccessToast) { _, newValue in
+                if newValue {
+                    withAnimation(reduceMotion ? nil : .smooth(duration: 0.5)) {
+                        proxy.scrollTo("toast", anchor: .bottom)
+                    }
                 }
             }
-            .padding(.top, DS.Spacing.md)
-            .padding(.bottom, DS.Spacing.xxl)
-            .padding(.horizontal, DS.Spacing.lg)
         }
-        .scrollDisabled(true)
     }
 
     // MARK: - basicInfo mock (replica de BudgetEditorView.basicInfoSection)
@@ -224,6 +236,81 @@ struct SetupDemoFirstBudgetView: View {
                 }
             }
         }
+    }
+
+    // MARK: - filters mock (replica de BudgetEditorView.filtersSection)
+
+    private var filtersMock: some View {
+        SectionBox(title: NSLocalizedString("budgets.editor.filters", comment: "")) {
+            VStack(spacing: DS.Spacing.none) {
+                filterSubsection(
+                    icon: "creditcard",
+                    title: NSLocalizedString("settings.accounts", comment: ""),
+                    statusText: selectedFilterAccount == nil ? NSLocalizedString("filters.all", comment: "") : "1/3",
+                    chips: ["Personal", "Ahorros", "Tarjeta"],
+                    chipColors: [Color.electricIndigo, Color.priorityNeed, Color.hotPink],
+                    selected: selectedFilterAccount
+                )
+
+                Divider().padding(.leading, DS.Spacing.lg)
+
+                filterSubsection(
+                    icon: "tag",
+                    title: NSLocalizedString("transaction.subcategory", comment: ""),
+                    statusText: selectedFilterSubcategory == nil ? NSLocalizedString("filters.all", comment: "") : "1/3",
+                    chips: ["Almuerzo", "Restaurante", "Café"],
+                    chipColors: [Color.essentialNeed, Color.priorityNeed, Color.priorityNeedNew],
+                    selected: selectedFilterSubcategory
+                )
+            }
+        }
+    }
+
+    private func filterSubsection(
+        icon: String,
+        title: String,
+        statusText: String,
+        chips: [String],
+        chipColors: [Color],
+        selected: String?
+    ) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: icon)
+                    .foregroundStyle(.secondary)
+                Text(title)
+                    .font(DS.Typography.body)
+                Spacer()
+                Text(statusText)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Spacing.sm) {
+                    ForEach(Array(chips.enumerated()), id: \.offset) { idx, chip in
+                        filterChip(chip, color: chipColors[idx], isSelected: chip == selected)
+                    }
+                }
+            }
+            .scrollDisabled(true)
+        }
+        .padding()
+    }
+
+    private func filterChip(_ label: String, color: Color, isSelected: Bool) -> some View {
+        Text(label)
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(isSelected ? .white : .primary)
+            .lineLimit(1)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
+            .background(
+                Capsule()
+                    .fill(isSelected ? color : Color(.tertiarySystemFill))
+            )
+            .scaleEffect(isSelected ? 1.05 : 1.0)
+            .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: isSelected)
     }
 
     private func thresholdChip(_ threshold: Int) -> some View {
@@ -429,10 +516,23 @@ struct SetupDemoFirstBudgetView: View {
         withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
             selectedThresholds = [80]
         }
-        await advance(to: 0.82)
+        await advance(to: 0.7)
         try? await Task.sleep(for: .milliseconds(500))
 
-        // Stage 5: SaveButton enabled
+        // Stage 5: filters — selección de cuenta "Personal" + subcategoría "Almuerzo"
+        guard !Task.isCancelled else { return }
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
+            selectedFilterAccount = "Personal"
+        }
+        try? await Task.sleep(for: .milliseconds(500))
+        guard !Task.isCancelled else { return }
+        withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
+            selectedFilterSubcategory = "Almuerzo"
+        }
+        await advance(to: 0.85)
+        try? await Task.sleep(for: .milliseconds(500))
+
+        // Stage 6: SaveButton enabled
         guard !Task.isCancelled else { return }
         saveButtonEnabled = true
         await advance(to: 0.93)
@@ -461,6 +561,8 @@ struct SetupDemoFirstBudgetView: View {
         selectedPeriodType = .monthly
         alertEnabled = true
         selectedThresholds = [80]
+        selectedFilterAccount = "Personal"
+        selectedFilterSubcategory = "Almuerzo"
         saveButtonEnabled = true
         showSuccessToast = true
     }
@@ -473,6 +575,8 @@ struct SetupDemoFirstBudgetView: View {
             selectedPeriodType = .monthly
             alertEnabled = false
             selectedThresholds = []
+            selectedFilterAccount = nil
+            selectedFilterSubcategory = nil
             saveButtonEnabled = false
             showSuccessToast = false
         }
