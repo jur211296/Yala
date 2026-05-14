@@ -3294,9 +3294,6 @@
 "setup.imageTrial.exampleList" = "Transacties";
 "setup.imageTrial.useThisImage" = "Gebruik deze afbeelding";
 // Setup Demo (vista previa interactiva)
-"setup.demo.bannerLabel" = "Voorbeeld";
-"setup.demo.cta" = "Tik om te beginnen";
-"setup.demo.ctaA11yHint" = "Opent het echte scherm zodat je je eerste vermelding kunt maken";
 "setup.demo.proTrialBadge" = "Pro · Gratis tijdens setup";
 "setup.demo.proBadge" = "Pro";
 "setup.demo.settings.title" = "Verken je instellingen";

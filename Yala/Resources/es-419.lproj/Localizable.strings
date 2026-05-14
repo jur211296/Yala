@@ -3292,9 +3292,6 @@
 "setup.imageTrial.exampleList" = "Movimientos";
 "setup.imageTrial.useThisImage" = "Usar esta imagen";
 // Setup Demo (vista previa interactiva)
-"setup.demo.bannerLabel" = "Vista previa";
-"setup.demo.cta" = "Toca para empezar";
-"setup.demo.ctaA11yHint" = "Abre la pantalla real para que puedas crear tu primer registro";
 "setup.demo.proTrialBadge" = "Pro · Gratis durante setup";
 "setup.demo.proBadge" = "Pro";
 "setup.demo.settings.title" = "Explora tus ajustes";

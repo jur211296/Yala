@@ -3291,9 +3291,6 @@
 "setup.imageTrial.exampleList" = "Transactions";
 "setup.imageTrial.useThisImage" = "Utiliser cette image";
 // Setup Demo (vista previa interactiva)
-"setup.demo.bannerLabel" = "Aperçu";
-"setup.demo.cta" = "Touchez pour commencer";
-"setup.demo.ctaA11yHint" = "Ouvre l'écran réel pour que vous puissiez créer votre premier enregistrement";
 "setup.demo.proTrialBadge" = "Pro · Gratuit pendant la configuration";
 "setup.demo.proBadge" = "Pro";
 "setup.demo.settings.title" = "Explorez vos paramètres";

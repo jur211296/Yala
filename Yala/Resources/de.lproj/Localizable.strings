@@ -3290,9 +3290,6 @@
 "setup.imageTrial.exampleList" = "Transaktionen";
 "setup.imageTrial.useThisImage" = "Dieses Bild verwenden";
 // Setup Demo (vista previa interactiva)
-"setup.demo.bannerLabel" = "Vorschau";
-"setup.demo.cta" = "Tippen zum Starten";
-"setup.demo.ctaA11yHint" = "Öffnet den echten Bildschirm, damit Sie Ihren ersten Eintrag erstellen können";
 "setup.demo.proTrialBadge" = "Pro · Kostenlos beim Einrichten";
 "setup.demo.proBadge" = "Pro";
 "setup.demo.settings.title" = "Entdecken Sie Ihre Einstellungen";

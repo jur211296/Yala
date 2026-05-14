@@ -69,8 +69,4 @@ struct PanelSheetState {
     // Setup demo (vista previa interactiva)
     /// Step actualmente presentado como demo. `nil` = ningún demo abierto.
     var setupDemoStep: SetupStepID? = nil
-    /// Race guard: tras tap CTA "Toca para empezar" en demo de voice/image,
-    /// snapshot del step antes del dismiss + 350ms sleep. Si el user
-    /// dismissa manualmente en ese intervalo, el consent alert no aparece.
-    var pendingConsentForStep: SetupStepID? = nil
 }

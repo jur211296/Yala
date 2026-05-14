@@ -3294,9 +3294,6 @@
 "setup.imageTrial.exampleList" = "交易";
 "setup.imageTrial.useThisImage" = "使用这张图片";
 // Setup Demo (vista previa interactiva)
-"setup.demo.bannerLabel" = "预览";
-"setup.demo.cta" = "点击开始";
-"setup.demo.ctaA11yHint" = "打开真实屏幕,以便你创建第一条记录";
 "setup.demo.proTrialBadge" = "Pro · 设置期间免费";
 "setup.demo.proBadge" = "Pro";
 "setup.demo.settings.title" = "探索你的设置";

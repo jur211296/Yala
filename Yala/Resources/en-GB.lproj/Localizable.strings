@@ -314,9 +314,6 @@
 "onboarding.privacyNoSharingShort" = "Safe AI";
 
 // Setup Demo (vista previa interactiva)
-"setup.demo.bannerLabel" = "Preview";
-"setup.demo.cta" = "Tap to start";
-"setup.demo.ctaA11yHint" = "Opens the real screen so you can create your first record";
 "setup.demo.proTrialBadge" = "Pro · Free during setup";
 "setup.demo.proBadge" = "Pro";
 "setup.demo.settings.title" = "Explore your settings";

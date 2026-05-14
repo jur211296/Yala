@@ -430,9 +430,6 @@
 "onboarding.privacyNoSharingShort" = "IA segura";
 
 // Setup Demo (vista previa interactiva)
-"setup.demo.bannerLabel" = "Vista previa";
-"setup.demo.cta" = "Tocá para empezar";
-"setup.demo.ctaA11yHint" = "Abre la pantalla real para que puedas crear tu primer registro";
 "setup.demo.proTrialBadge" = "Pro · Gratis durante setup";
 "setup.demo.proBadge" = "Pro";
 "setup.demo.settings.title" = "Explorá tus ajustes";

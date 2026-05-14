@@ -3294,9 +3294,6 @@
 "setup.imageTrial.exampleList" = "取引一覧";
 "setup.imageTrial.useThisImage" = "この画像を使う";
 // Setup Demo (vista previa interactiva)
-"setup.demo.bannerLabel" = "プレビュー";
-"setup.demo.cta" = "タップして開始";
-"setup.demo.ctaA11yHint" = "実際の画面を開いて、最初の記録を作成できます";
 "setup.demo.proTrialBadge" = "Pro · セットアップ中は無料";
 "setup.demo.proBadge" = "Pro";
 "setup.demo.settings.title" = "設定を探索する";

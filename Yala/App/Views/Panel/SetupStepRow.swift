@@ -217,15 +217,6 @@ extension L10n {
 
         // Demo (vista previa interactiva)
         enum Demo {
-            static var bannerLabel: String {
-                NSLocalizedString("setup.demo.bannerLabel", comment: "Vista previa")
-            }
-            static var cta: String {
-                NSLocalizedString("setup.demo.cta", comment: "Toca para empezar")
-            }
-            static var ctaA11yHint: String {
-                NSLocalizedString("setup.demo.ctaA11yHint", comment: "Abre la pantalla real para crear")
-            }
             static var proTrialBadge: String {
                 NSLocalizedString("setup.demo.proTrialBadge", comment: "Pro · Gratis durante setup")
             }

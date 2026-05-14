@@ -21,23 +21,11 @@ struct BudgetEditorView: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     let budget: Budget?
-    // DEPRECATED: removed in F7 cleanup (Setup Checklist demos standalone)
-    let mode: ViewMode
-    let onStartReal: (() -> Void)?
 
-    // Demo state
-    @State private var demoTask: Task<Void, Never>?
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(
-        budget: Budget?,
-        mode: ViewMode = .interactive,
-        onStartReal: (() -> Void)? = nil
-    ) {
+    init(budget: Budget?) {
         self.budget = budget
-        self.mode = mode
-        self.onStartReal = onStartReal
     }
 
     // Error state
@@ -180,111 +168,6 @@ struct BudgetEditorView: View {
                     Text(L10n.Common.saveError)
                 }
             )
-            .disabled(mode.isDemo)
-            .overlay(alignment: .top) {
-                if mode.isDemo {
-                    DemoBanner(onStartReal: { onStartReal?() })
-                }
-            }
-            .task {
-                if mode.isDemo { startDemoScript() }
-            }
-            .onDisappear {
-                demoTask?.cancel()
-                demoTask = nil
-            }
-        }
-    }
-
-    // MARK: - Demo Script
-
-    @MainActor
-    private func startDemoScript() {
-        demoTask?.cancel()
-        if voiceOverEnabled {
-            applyFinalDemoState()
-            return
-        }
-        demoTask = Task { @MainActor in
-            let nameExample = L10n.SetupChecklist.Demo.budgetNameExample
-            let useAnimations = !reduceMotion
-
-            while !Task.isCancelled {
-                resetDemoState(animated: false)
-                try? await Task.sleep(for: .milliseconds(500))
-
-                // typing name
-                for idx in 1...nameExample.count {
-                    guard !Task.isCancelled else { return }
-                    name = String(nameExample.prefix(idx))
-                    try? await Task.sleep(for: .milliseconds(useAnimations ? 90 : 0))
-                }
-                try? await Task.sleep(for: .milliseconds(400))
-
-                // monto 500
-                if useAnimations {
-                    withAnimation(.smooth(duration: 0.3)) { limitAmount = "500" }
-                } else {
-                    limitAmount = "500"
-                }
-                try? await Task.sleep(for: .milliseconds(600))
-
-                // period cycling: weekly → monthly → yearly → monthly final
-                let periods: [BudgetPeriodType] = [.weekly, .monthly, .yearly, .monthly]
-                for period in periods {
-                    guard !Task.isCancelled else { return }
-                    if useAnimations {
-                        withAnimation(.smooth(duration: 0.3)) { selectedPeriodType = period }
-                    } else {
-                        selectedPeriodType = period
-                    }
-                    try? await Task.sleep(for: .milliseconds(500))
-                }
-
-                // alerts highlight
-                if useAnimations {
-                    withAnimation(.smooth(duration: 0.3)) {
-                        alertEnabled = true
-                        selectedThresholds = [80]
-                    }
-                } else {
-                    alertEnabled = true
-                    selectedThresholds = [80]
-                }
-                try? await Task.sleep(for: .milliseconds(1500))
-
-                // hold + fade
-                try? await Task.sleep(for: .milliseconds(1500))
-                guard !Task.isCancelled else { return }
-            }
-        }
-    }
-
-    @MainActor
-    private func applyFinalDemoState() {
-        name = L10n.SetupChecklist.Demo.budgetNameExample
-        limitAmount = "500"
-        selectedPeriodType = .monthly
-        alertEnabled = true
-        selectedThresholds = [80]
-    }
-
-    @MainActor
-    private func resetDemoState(animated: Bool) {
-        if animated {
-            withAnimation(.smooth(duration: 0.3)) {
-                name = ""
-                limitAmount = ""
-                selectedPeriodType = .monthly
-                alertEnabled = false
-                selectedThresholds = []
-            }
-        } else {
-            name = ""
-            limitAmount = ""
-            selectedPeriodType = .monthly
-            alertEnabled = false
-            selectedThresholds = []
         }
     }
 
@@ -913,7 +796,6 @@ struct BudgetEditorView: View {
     }
 
     private func saveBudget() {
-        guard mode == .interactive else { return }
         let amount = AmountInputHelper.parseDecimal(limitAmount)
         guard amount > 0 else { return }
 

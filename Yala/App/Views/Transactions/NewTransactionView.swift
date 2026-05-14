@@ -61,29 +61,18 @@ struct NewTransactionView: View {
     // Transaction being edited (if any)
     let transactionToEdit: TransactionItem?
 
-    let mode: ViewMode
-    let onStartReal: (() -> Void)?
-
-    // Demo state
-    @State private var demoTask: Task<Void, Never>?
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
-
     init(
         prefillAccountID: PersistentIdentifier? = nil,
         prefillCategoryID: PersistentIdentifier? = nil,
         prefillSubcategoryName: String? = nil,
         prefillFromChatDraft: ChatDraftPrefill? = nil,
-        transactionToEdit: TransactionItem? = nil,
-        mode: ViewMode = .interactive,
-        onStartReal: (() -> Void)? = nil
+        transactionToEdit: TransactionItem? = nil
     ) {
         self.prefillAccountID = prefillAccountID
         self.prefillCategoryID = prefillCategoryID
         self.prefillSubcategoryName = prefillSubcategoryName
         self.prefillFromChatDraft = prefillFromChatDraft
         self.transactionToEdit = transactionToEdit
-        self.mode = mode
-        self.onStartReal = onStartReal
     }
 
     // MARK: - A0-Bridge V2.0 Read-Only Mode (P1-3)
@@ -506,65 +495,6 @@ struct NewTransactionView: View {
                 await viewModel.loadExchangeRate(context: modelContext)
             }
         }
-        .disabled(mode.isDemo)
-        .overlay(alignment: .top) {
-            if mode.isDemo {
-                DemoBanner(onStartReal: { onStartReal?() })
-            }
-        }
-        .task {
-            if mode.isDemo { startDemoScript() }
-        }
-        .onDisappear {
-            demoTask?.cancel()
-            demoTask = nil
-        }
-    }
-
-    // MARK: - Demo Script
-
-    @MainActor
-    private func startDemoScript() {
-        demoTask?.cancel()
-        if voiceOverEnabled {
-            applyFinalDemoState()
-            return
-        }
-        demoTask = Task { @MainActor in
-            let useAnimations = !reduceMotion
-            while !Task.isCancelled {
-                resetDemoState()
-                try? await Task.sleep(for: .milliseconds(500))
-
-                // monto 0 → 5 → 50 → 500
-                let amounts = ["5", "50", "500"]
-                for amt in amounts {
-                    guard !Task.isCancelled else { return }
-                    if useAnimations {
-                        withAnimation(.smooth(duration: 0.3)) { viewModel.amountString = amt }
-                    } else {
-                        viewModel.amountString = amt
-                    }
-                    try? await Task.sleep(for: .milliseconds(useAnimations ? 400 : 0))
-                }
-
-                try? await Task.sleep(for: .milliseconds(1800))
-
-                // hold + fade
-                try? await Task.sleep(for: .milliseconds(1500))
-                guard !Task.isCancelled else { return }
-            }
-        }
-    }
-
-    @MainActor
-    private func applyFinalDemoState() {
-        viewModel.amountString = "500"
-    }
-
-    @MainActor
-    private func resetDemoState() {
-        viewModel.amountString = ""
     }
 
     // MARK: - Transaction Type Selector
@@ -1363,7 +1293,6 @@ struct NewTransactionView: View {
     }
 
     private func saveTransaction() {
-        guard mode == .interactive else { return }
         if let saved = viewModel.save(context: modelContext), let first = saved.first {
             // Mark setup checklist step 2 with practice cleanup option
             if SetupChecklistManager.shared.stepCompleted[.firstExpense] != true {

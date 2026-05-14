@@ -243,9 +243,6 @@
 "onboarding.privacyNoSharingShort" = "IA segura";
 
 // Setup Demo (vista previa interactiva)
-"setup.demo.bannerLabel" = "Pré-visualização";
-"setup.demo.cta" = "Toque para começar";
-"setup.demo.ctaA11yHint" = "Abre o ecrã real para poderes criar o teu primeiro registo";
 "setup.demo.proTrialBadge" = "Pro · Grátis durante a configuração";
 "setup.demo.proBadge" = "Pro";
 "setup.demo.settings.title" = "Explora as tuas definições";
