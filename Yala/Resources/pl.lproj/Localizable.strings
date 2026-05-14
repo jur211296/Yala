@@ -3324,6 +3324,7 @@
 "setup.demo.firstExpense.subcategoryExample" = "Jedzenie";
 "setup.demo.firstExpense.tagExample" = "obiad";
 "setup.demo.firstExpense.savedToast" = "Gotowe!";
+"setup.demo.scheduledPayment.subcategoryHeader" = "Subskrypcje";
 "setup.personalize.navTitle" = "Spersonalizuj Yala";
 "setup.personalize.title" = "Niech będzie twoja";
 "setup.personalize.subtitle" = "Dodaj swój styl. Zmień motyw, ikonę lub wygląd widżetów.";

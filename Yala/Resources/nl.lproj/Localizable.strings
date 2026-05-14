@@ -3324,6 +3324,7 @@
 "setup.demo.firstExpense.subcategoryExample" = "Eten";
 "setup.demo.firstExpense.tagExample" = "lunch";
 "setup.demo.firstExpense.savedToast" = "Klaar!";
+"setup.demo.scheduledPayment.subcategoryHeader" = "Abonnementen";
 "setup.personalize.navTitle" = "Personaliseer je Yala";
 "setup.personalize.title" = "Maak het van jou";
 "setup.personalize.subtitle" = "Geef het je persoonlijke touch. Wijzig het thema, icoon of hoe je widgets eruitzien.";

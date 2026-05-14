@@ -274,6 +274,7 @@
 "setup.demo.firstExpense.subcategoryExample" = "Comida";
 "setup.demo.firstExpense.tagExample" = "almoço";
 "setup.demo.firstExpense.savedToast" = "Pronto!";
+"setup.demo.scheduledPayment.subcategoryHeader" = "Subscrições";
 // MARK: - Stats Records polish
 
 "stats.records.motivationalOne" = "1 registo · Bom começo";

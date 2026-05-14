@@ -3320,6 +3320,7 @@
 "setup.demo.firstExpense.subcategoryExample" = "Essen";
 "setup.demo.firstExpense.tagExample" = "mittagessen";
 "setup.demo.firstExpense.savedToast" = "Fertig!";
+"setup.demo.scheduledPayment.subcategoryHeader" = "Abonnements";
 "setup.personalize.navTitle" = "Personalisiere dein Yala";
 "setup.personalize.title" = "Mach es zu deinem";
 "setup.personalize.subtitle" = "Gib deiner App eine persönliche Note. Ändere das Design, das Symbol oder die Widgets.";

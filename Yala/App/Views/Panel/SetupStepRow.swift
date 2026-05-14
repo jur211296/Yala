@@ -307,6 +307,11 @@ extension L10n {
             static var firstExpenseSavedToast: String {
                 NSLocalizedString("setup.demo.firstExpense.savedToast", comment: "¡Listo!")
             }
+
+            // Step 4 — scheduledPayment (subcategory header del grid mock context .subscriptions)
+            static var scheduledPaymentSubcategoryHeader: String {
+                NSLocalizedString("setup.demo.scheduledPayment.subcategoryHeader", comment: "Suscripciones")
+            }
         }
     }
 }

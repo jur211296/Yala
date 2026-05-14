@@ -345,6 +345,7 @@
 "setup.demo.firstExpense.subcategoryExample" = "Food";
 "setup.demo.firstExpense.tagExample" = "lunch";
 "setup.demo.firstExpense.savedToast" = "Done!";
+"setup.demo.scheduledPayment.subcategoryHeader" = "Subscriptions";
 // MARK: - Stats Records polish
 
 "stats.records.motivationalOne" = "1 record · Great start";

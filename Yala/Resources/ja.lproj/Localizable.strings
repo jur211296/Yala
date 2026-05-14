@@ -3324,6 +3324,7 @@
 "setup.demo.firstExpense.subcategoryExample" = "食べ物";
 "setup.demo.firstExpense.tagExample" = "昼食";
 "setup.demo.firstExpense.savedToast" = "完了！";
+"setup.demo.scheduledPayment.subcategoryHeader" = "サブスクリプション";
 "setup.personalize.navTitle" = "Yalaをパーソナライズ";
 "setup.personalize.title" = "自分仕様にする";
 "setup.personalize.subtitle" = "あなたの個性を加えましょう。テーマ、アイコン、ウィジェットの見た目を変更できます。";

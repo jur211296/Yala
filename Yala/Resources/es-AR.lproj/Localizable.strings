@@ -460,6 +460,7 @@
 "setup.demo.firstExpense.subcategoryExample" = "Comida";
 "setup.demo.firstExpense.tagExample" = "almuerzo";
 "setup.demo.firstExpense.savedToast" = "¡Listo!";
+"setup.demo.scheduledPayment.subcategoryHeader" = "Suscripciones";
 // MARK: - Stats Records polish
 
 "stats.records.motivationalMany %d" = "%d registros · Seguí así";
