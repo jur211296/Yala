@@ -166,7 +166,7 @@ struct GroupExpenseAccountFinalizationSheet: View {
             .padding(.vertical, DS.FormRow.paddingV)
         }
         .buttonStyle(.plain)
-        .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
+        .panelCard()
         .padding(.horizontal, DS.Spacing.lg)
     }
 

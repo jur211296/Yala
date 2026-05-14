@@ -75,7 +75,7 @@ struct GroupExpenseDraftFinalizationSheet: View {
                         .padding(.vertical, DS.FormRow.paddingV)
                     }
                     .buttonStyle(.plain)
-                    .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
+                    .panelCard()
                     .padding(.horizontal, DS.Spacing.lg)
 
                     YalaPrimaryButton(L10n.Inbox.GroupDraft.finalize, icon: "checkmark.circle.fill") {

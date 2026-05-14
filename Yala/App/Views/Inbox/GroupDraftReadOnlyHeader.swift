@@ -48,9 +48,8 @@ struct GroupDraftReadOnlyHeader: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(DS.Spacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
+        .panelCard()
         .padding(.horizontal, DS.Spacing.lg)
     }
 }

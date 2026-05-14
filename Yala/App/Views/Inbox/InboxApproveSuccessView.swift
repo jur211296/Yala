@@ -227,10 +227,7 @@ struct InboxApproveSuccessView: View {
             }
         }
         .padding(.vertical, DS.Spacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(.thCard)
-        )
+        .panelCard()
     }
 
     private static let dateFormatter: DateFormatter = {
