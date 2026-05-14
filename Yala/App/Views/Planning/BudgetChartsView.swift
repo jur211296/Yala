@@ -168,10 +168,18 @@ struct BudgetChartsView: View {
             PanelBackgroundView()
 
             ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+                VStack(spacing: DS.Spacing.lg) {
+                    // Mini-resumen del presupuesto arriba
+                    miniSummaryCard
+
                     // 1. Compliance history (hidden for .unique)
                     if periodType != .unique {
-                        complianceChart
+                        sectionWithHeader(
+                            title: L10n.Planning.BudgetCharts.historyTitle,
+                            hint: L10n.Planning.BudgetCharts.historyHint
+                        ) {
+                            complianceChartContent
+                        }
                     }
 
                     // 2. Local period navigation (hidden for .unique)
@@ -180,12 +188,23 @@ struct BudgetChartsView: View {
                     }
 
                     // 3. Daily cumulative spending
-                    dailySpendingChart
+                    sectionWithHeader(
+                        title: L10n.Planning.BudgetCharts.spendingTitle,
+                        hint: L10n.Planning.BudgetCharts.spendingHint
+                    ) {
+                        dailySpendingChartContent
+                    }
 
                     // 4. Category breakdown
-                    categoryBreakdownSection
+                    sectionWithHeader(
+                        title: L10n.Planning.BudgetCharts.byCategoryTitle,
+                        hint: L10n.Planning.BudgetCharts.byCategoryHint
+                    ) {
+                        categoryBreakdownContent
+                    }
                 }
-                .padding(.vertical, DS.Spacing.xxl)
+                .padding(.vertical, DS.Spacing.lg)
+                .padding(.horizontal, DS.Spacing.lg)
             }
             .scrollViewGlassEdges()
         }
@@ -262,16 +281,16 @@ struct BudgetChartsView: View {
         .padding(.vertical, DS.Spacing.sm)
     }
 
-    // MARK: - Compliance History Chart
+    // MARK: - Compliance History Chart Content
 
-    private var complianceChart: some View {
+    private var complianceChartContent: some View {
         let data = viewModel.getHistoricalSpending(
             budget: budget,
             periods: 6,
             defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
 
-        return chartCard(title: L10n.BudgetDetail.chartsCompliance) {
+        return Group {
             if data.isEmpty {
                 emptyChartPlaceholder
             } else {
@@ -332,9 +351,9 @@ struct BudgetChartsView: View {
         }
     }
 
-    // MARK: - Daily Cumulative Spending Chart
+    // MARK: - Daily Cumulative Spending Chart Content
 
-    private var dailySpendingChart: some View {
+    private var dailySpendingChartContent: some View {
         let data = viewModel.getDailyCumulativeSpending(
             budget: budget,
             in: localDateInterval
@@ -342,7 +361,7 @@ struct BudgetChartsView: View {
         let primaryColor = theme.accent
         let yTop = max(budget.limitAmount, data.last?.cumulative ?? 0) * 1.1
 
-        return chartCard(title: L10n.BudgetDetail.chartsDailySpending) {
+        return Group {
             if data.isEmpty {
                 emptyChartPlaceholder
             } else {
@@ -462,9 +481,9 @@ struct BudgetChartsView: View {
         }
     }
 
-    // MARK: - Category Breakdown (Interactive)
+    // MARK: - Category Breakdown Content (Interactive)
 
-    private var categoryBreakdownSection: some View {
+    private var categoryBreakdownContent: some View {
         let breakdown = viewModel.getCombinedBreakdown(budget: budget, in: localDateInterval)
         let parentData = breakdown.parentCategories
         let subData = breakdown.subcategories
@@ -478,7 +497,7 @@ struct BudgetChartsView: View {
         }
         let maxSubAmount = filteredSubs.max(by: { $0.amount < $1.amount })?.amount ?? 1
 
-        return chartCard(title: L10n.BudgetDetail.chartsCategoryBreakdown) {
+        return Group {
             if parentData.isEmpty {
                 emptyChartPlaceholder
             } else {
@@ -572,25 +591,73 @@ struct BudgetChartsView: View {
         }
     }
 
-    // MARK: - Chart Card Container
+    // MARK: - Section with Header (panel-aligned, Bloque E)
 
-    private func chartCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text(title)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
+    /// Helper que aplica el patrón consolidado del épico: title FUERA + InfoHintButton
+    /// al lado + content en `.panelCard()`. Reemplaza el helper `chartCard` previo.
+    @ViewBuilder
+    private func sectionWithHeader<Content: View>(
+        title: String,
+        hint: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(title)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                InfoHintButton(title: title, message: hint)
+                Spacer()
+            }
+            .padding(.horizontal, DS.Spacing.xs)
 
             content()
+                .padding(DS.Spacing.lg)
+                .solidCard(padding: 0, radius: DS.Panel.widgetRadius)
         }
-        .padding(DS.Spacing.xl)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(.thCard)
+    }
+
+    // MARK: - Mini Summary Card (panel-aligned, Bloque E)
+
+    private var miniSummaryCard: some View {
+        let summary = viewModel.buildSummary(
+            for: budget,
+            defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-        )
+        let spentText = appPreferences.currency(summary.spent, currencyCode: budget.currencyCode)
+        let limitText = appPreferences.currency(budget.limitAmount, currencyCode: budget.currencyCode)
+
+        return HStack(spacing: DS.Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(Color(hex: summary.color))
+                    .frame(width: 40, height: 40)
+                Image(systemName: summary.icon)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .accessibilityHidden(true)
+            }
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(budget.name)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                Text(L10n.Planning.BudgetCharts.spentOf(spentText, limitText))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            BudgetProgressBar(
+                percentage: summary.percentage,
+                color: summary.color,
+                isExceeded: summary.status == .exceeded
+            )
+            .frame(width: 80, height: 6)
+        }
+        .padding(DS.Spacing.lg)
+        .panelCard(small: true)
     }
 
     private var emptyChartPlaceholder: some View {

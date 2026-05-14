@@ -536,6 +536,13 @@
 "planning.scheduled.totalLabel" = "Total do mês";
 "planning.scheduled.title" = "Pagamentos agendados";
 "planning.scheduled.heroChip" = "Seus pagamentos agendados";
+"planning.budgetCharts.spentOf" = "Gastos %@ de %@";
+"planning.budgetCharts.byCategoryHint" = "Toque uma categoria para ver subcategorias.";
+"planning.budgetCharts.byCategoryTitle" = "Por categoria";
+"planning.budgetCharts.spendingHint" = "Seu gasto acumulado dia a dia.";
+"planning.budgetCharts.spendingTitle" = "Gasto do período";
+"planning.budgetCharts.historyHint" = "Seu desempenho nos últimos 6 períodos.";
+"planning.budgetCharts.historyTitle" = "Histórico";
 
 // MARK: - Budgets
 

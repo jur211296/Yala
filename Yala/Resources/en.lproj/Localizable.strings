@@ -538,6 +538,13 @@
 "planning.scheduled.totalLabel" = "Total for month";
 "planning.scheduled.title" = "Scheduled payments";
 "planning.scheduled.heroChip" = "Your scheduled payments";
+"planning.budgetCharts.spentOf" = "Spent %@ of %@";
+"planning.budgetCharts.byCategoryHint" = "Tap a category to see subcategories.";
+"planning.budgetCharts.byCategoryTitle" = "By category";
+"planning.budgetCharts.spendingHint" = "Your accumulated spending day by day.";
+"planning.budgetCharts.spendingTitle" = "Period spending";
+"planning.budgetCharts.historyHint" = "Your performance over the last 6 periods.";
+"planning.budgetCharts.historyTitle" = "History";
 
 // MARK: - Budgets
 

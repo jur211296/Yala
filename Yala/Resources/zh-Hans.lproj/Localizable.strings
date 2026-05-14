@@ -538,6 +538,13 @@
 "planning.scheduled.totalLabel" = "本月总计";
 "planning.scheduled.title" = "计划付款";
 "planning.scheduled.heroChip" = "你的计划付款";
+"planning.budgetCharts.spentOf" = "已花费 %@,共 %@";
+"planning.budgetCharts.byCategoryHint" = "点击分类查看子分类。";
+"planning.budgetCharts.byCategoryTitle" = "按分类";
+"planning.budgetCharts.spendingHint" = "你按天累计的支出。";
+"planning.budgetCharts.spendingTitle" = "周期支出";
+"planning.budgetCharts.historyHint" = "你过去 6 个周期的表现。";
+"planning.budgetCharts.historyTitle" = "历史";
 
 // MARK: - Budgets
 

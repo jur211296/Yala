@@ -3976,6 +3976,19 @@ enum L10n {
                 String(format: ls("planning.scheduled.summaryNote", comment: ""), total, recurring)
             }
         }
+
+        // MARK: BudgetCharts (polish panel-aligned, Bloque E)
+        enum BudgetCharts {
+            static var historyTitle: String { ls("planning.budgetCharts.historyTitle", comment: "") }
+            static var historyHint: String { ls("planning.budgetCharts.historyHint", comment: "") }
+            static var spendingTitle: String { ls("planning.budgetCharts.spendingTitle", comment: "") }
+            static var spendingHint: String { ls("planning.budgetCharts.spendingHint", comment: "") }
+            static var byCategoryTitle: String { ls("planning.budgetCharts.byCategoryTitle", comment: "") }
+            static var byCategoryHint: String { ls("planning.budgetCharts.byCategoryHint", comment: "") }
+            static func spentOf(_ spent: String, _ limit: String) -> String {
+                String(format: ls("planning.budgetCharts.spentOf", comment: ""), spent, limit)
+            }
+        }
     }
 
     // MARK: - Profile

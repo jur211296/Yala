@@ -538,6 +538,13 @@
 "planning.scheduled.totalLabel" = "Razem za miesiąc";
 "planning.scheduled.title" = "Zaplanowane płatności";
 "planning.scheduled.heroChip" = "Twoje zaplanowane płatności";
+"planning.budgetCharts.spentOf" = "Wydano %@ z %@";
+"planning.budgetCharts.byCategoryHint" = "Dotknij kategorii, aby zobaczyć podkategorie.";
+"planning.budgetCharts.byCategoryTitle" = "Według kategorii";
+"planning.budgetCharts.spendingHint" = "Twoje skumulowane wydatki dzień po dniu.";
+"planning.budgetCharts.spendingTitle" = "Wydatki okresu";
+"planning.budgetCharts.historyHint" = "Twoje wyniki w ostatnich 6 okresach.";
+"planning.budgetCharts.historyTitle" = "Historia";
 
 // MARK: - Budgets
 

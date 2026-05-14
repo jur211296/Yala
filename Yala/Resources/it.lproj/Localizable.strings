@@ -536,6 +536,13 @@
 "planning.scheduled.totalLabel" = "Totale del mese";
 "planning.scheduled.title" = "Pagamenti pianificati";
 "planning.scheduled.heroChip" = "I tuoi pagamenti pianificati";
+"planning.budgetCharts.spentOf" = "Spesi %@ di %@";
+"planning.budgetCharts.byCategoryHint" = "Tocca una categoria per vedere le sottocategorie.";
+"planning.budgetCharts.byCategoryTitle" = "Per categoria";
+"planning.budgetCharts.spendingHint" = "Le tue spese cumulative giorno per giorno.";
+"planning.budgetCharts.spendingTitle" = "Spesa del periodo";
+"planning.budgetCharts.historyHint" = "Le tue prestazioni negli ultimi 6 periodi.";
+"planning.budgetCharts.historyTitle" = "Cronologia";
 
 // MARK: - Budgets
 

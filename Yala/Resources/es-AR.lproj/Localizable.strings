@@ -490,3 +490,4 @@
 "insights.ruleSavingsPositive %d" = "Ahorrás un %d%% de tus ingresos.";
 "stats.trends.heroVarUp %d %@" = "%d%% por encima vs %@ · Seguí así";
 "inbox.subtitleOnePending" = "Una transacción esperando, revisá cuando puedas.";
+"planning.budgetCharts.byCategoryHint" = "Tocá una categoría para ver subcategorías.";

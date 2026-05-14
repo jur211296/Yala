@@ -538,6 +538,13 @@
 "planning.scheduled.totalLabel" = "Totaal voor maand";
 "planning.scheduled.title" = "Geplande betalingen";
 "planning.scheduled.heroChip" = "Jouw geplande betalingen";
+"planning.budgetCharts.spentOf" = "%@ van %@ uitgegeven";
+"planning.budgetCharts.byCategoryHint" = "Tik op een categorie om subcategorieën te zien.";
+"planning.budgetCharts.byCategoryTitle" = "Per categorie";
+"planning.budgetCharts.spendingHint" = "Jouw cumulatieve uitgaven dag voor dag.";
+"planning.budgetCharts.spendingTitle" = "Uitgaven van de periode";
+"planning.budgetCharts.historyHint" = "Jouw prestaties over de laatste 6 perioden.";
+"planning.budgetCharts.historyTitle" = "Geschiedenis";
 
 // MARK: - Budgets
 

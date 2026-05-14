@@ -538,6 +538,13 @@
 "planning.scheduled.totalLabel" = "今月の合計";
 "planning.scheduled.title" = "予定支払い";
 "planning.scheduled.heroChip" = "あなたの予定支払い";
+"planning.budgetCharts.spentOf" = "%@ / %@ 使用";
+"planning.budgetCharts.byCategoryHint" = "カテゴリをタップしてサブカテゴリを確認してください。";
+"planning.budgetCharts.byCategoryTitle" = "カテゴリ別";
+"planning.budgetCharts.spendingHint" = "日ごとの累積支出です。";
+"planning.budgetCharts.spendingTitle" = "期間の支出";
+"planning.budgetCharts.historyHint" = "過去6期間の実績を確認できます。";
+"planning.budgetCharts.historyTitle" = "履歴";
 
 // MARK: - Budgets
 
