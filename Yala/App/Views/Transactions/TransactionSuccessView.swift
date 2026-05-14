@@ -96,17 +96,55 @@ struct TransactionSuccessView: View {
                         .foregroundStyle(.secondary)
                         .opacity(showHero ? 1.0 : 0.0)
 
-                    // Layered circle (shared component with internal cascade hero → checkmark)
-                    SuccessHeroView(
-                        icon: "checkmark",
-                        gradientColors: [typeColor, typeColor.opacity(0.7)],
-                        glowColor: typeColor.opacity(0.25),
-                        iconSize: heroIconSize,
-                        appeared: showHero,
-                        reduceMotion: reduceMotion
-                    )
-                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                    .accessibilityHidden(true)
+                    // Layered circle
+                    ZStack {
+                        // Radiant glow
+                        RadialGradient(
+                            colors: [typeColor.opacity(0.25), .clear],
+                            center: .center,
+                            startRadius: 20,
+                            endRadius: 90
+                        )
+                        .frame(width: 180, height: 180)
+                        .blur(radius: 12)
+                        .opacity(showHero ? 1.0 : 0.0)
+
+                        // Main gradient circle
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [typeColor, typeColor.opacity(0.7)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 100, height: 100)
+                            .shadow(color: typeColor.opacity(0.4), radius: 20, y: 8)
+                            .scaleEffect(showHero ? 1.0 : 0.3)
+                            .opacity(showHero ? 1.0 : 0.0)
+
+                        // Glass overlay
+                        Circle()
+                            .fill(Color.white.opacity(0.1))
+                            .frame(width: 100, height: 100)
+                            .mask(
+                                LinearGradient(
+                                    colors: [.white, .clear],
+                                    startPoint: .top,
+                                    endPoint: .center
+                                )
+                            )
+                            .opacity(showHero ? 1.0 : 0.0)
+
+                        // White checkmark
+                        Image(systemName: "checkmark")
+                            .font(.system(size: heroIconSize, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .scaleEffect(showCheckmark ? 1.0 : 0.0)
+                            .opacity(showCheckmark ? 1.0 : 0.0)
+                            .accessibilityHidden(true)
+                    }
 
                     // Promoted amount
                     if data.isTransfer,

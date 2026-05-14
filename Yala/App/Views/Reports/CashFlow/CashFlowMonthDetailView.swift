@@ -29,15 +29,15 @@ struct CashFlowMonthDetailView: View {
 
             // Income section
             incomeSection
-                .panelCard()
+                .solidCard()
 
             // Expense section
             expenseSection
-                .panelCard()
+                .solidCard()
 
             // Summary card
             summaryCard
-                .panelCard()
+                .solidCard()
                 .coachMarkAnchor("cfTableAvailable")
         }
         .padding(.horizontal, DS.Spacing.lg)

@@ -62,6 +62,7 @@ struct NetFlowSummaryView: View {
                 .frame(minWidth: 52, alignment: .trailing)
             }
         }
-        .panelCard()
+        .padding(DS.Spacing.lg)
+        .solidCard()
     }
 }

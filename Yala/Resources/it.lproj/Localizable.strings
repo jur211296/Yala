@@ -4284,9 +4284,3 @@
 "stats.trends.insight.stableExpense" = "Le tue spese restano stabili.";
 "stats.trends.insight.stableIncome" = "Le tue entrate restano stabili.";
 "stats.trends.insight.stableBalance" = "Il tuo saldo resta stabile.";
-
-/* === report polish R1 mini-hero === */
-"report.comparative.heroChip" = "Il tuo confronto";
-"report.cashflow.heroChip" = "Il tuo flusso di cassa";
-"report.comparative.subtitle" = "Confronto delle tue dimensioni · %@";
-"report.cashflow.subtitle" = "Il tuo piano di flusso · %@";

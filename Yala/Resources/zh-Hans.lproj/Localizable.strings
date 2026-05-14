@@ -4286,9 +4286,3 @@
 "stats.trends.insight.stableExpense" = "你的支出保持稳定。";
 "stats.trends.insight.stableIncome" = "你的收入保持稳定。";
 "stats.trends.insight.stableBalance" = "你的余额保持稳定。";
-
-/* === report polish R1 mini-hero === */
-"report.comparative.heroChip" = "你的对比";
-"report.cashflow.heroChip" = "你的现金流";
-"report.comparative.subtitle" = "你的维度对比 · %@";
-"report.cashflow.subtitle" = "你的现金流计划 · %@";

@@ -55,9 +55,6 @@ struct FinancialReportView: View {
             ZStack {
                 PanelBackgroundView()
                 VStack(spacing: DS.Spacing.none) {
-                    miniHero(for: selectedTab)
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.top, DS.Spacing.sm)
                     reportGuide
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.top, DS.Spacing.xs)
@@ -186,70 +183,6 @@ struct FinancialReportView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Mini Hero
-
-    private func miniHero(for tab: ReportTab) -> some View {
-        let chipIcon: String
-        let chipText: String
-        let subtitle: String
-        switch tab {
-        case .comparativa:
-            chipIcon = "chart.bar.doc.horizontal"
-            chipText = L10n.Report.Comparative.heroChip
-            subtitle = L10n.Report.Comparative.subtitle(viewModel.detailPeriod.displayName)
-        case .flujoDeCaja:
-            chipIcon = "arrow.left.arrow.right.circle"
-            chipText = L10n.Report.Cashflow.heroChip
-            subtitle = L10n.Report.Cashflow.subtitle(viewModel.detailPeriod.displayName)
-        }
-
-        return VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            HStack(spacing: DS.Spacing.sm) {
-                HStack(spacing: DS.Spacing.xs) {
-                    Image(systemName: chipIcon)
-                        .font(DS.Typography.subheadlineEmphasized)
-                    Text(chipText)
-                        .font(DS.Typography.title)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-                .foregroundStyle(.primary)
-
-                Spacer(minLength: DS.Spacing.sm)
-
-                if tab == .comparativa {
-                    TrendsPeriodMenu(
-                        selectedPeriod: viewModel.detailPeriod,
-                        customDateRange: viewModel.customDateRange,
-                        onSelect: { period in
-                            viewModel.detailPeriod = period
-                        },
-                        onCustomTapped: {
-                            showCustomDatePicker = true
-                        }
-                    )
-                }
-            }
-
-            HStack(spacing: DS.Spacing.sm) {
-                Text(subtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-
-                Spacer(minLength: DS.Spacing.sm)
-
-                if tab == .comparativa
-                    && showVariations
-                    && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod) {
-                    ComparisonModeSelector()
-                }
-            }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(.isHeader)
-    }
-
     // MARK: - Report Guide
 
     @ViewBuilder
@@ -317,7 +250,7 @@ struct FinancialReportView: View {
                 }
             }
         }
-        .panelCard()
+        .solidCard()
     }
 
     // MARK: - Cash Flow
@@ -407,17 +340,28 @@ struct FinancialReportView: View {
 
     private var filterBar: some View {
         FilterControlBar(
-            periodSelector: EmptyView(),
+            periodSelector: TrendsPeriodMenu(
+                selectedPeriod: viewModel.detailPeriod,
+                customDateRange: viewModel.customDateRange,
+                onSelect: { period in
+                    viewModel.detailPeriod = period
+                },
+                onCustomTapped: {
+                    showCustomDatePicker = true
+                }
+            ),
             viewModel: viewModel,
             accounts: accounts,
             categories: categories,
             allSubcategories: allSubcategories,
             tags: tags,
             animationValue: viewModel.detailPeriod,
-            onFilterChange: { scheduleRecalculate() },
-            panelStyle: true,
-            inlinePeriodSelector: false
-        )
+            onFilterChange: { scheduleRecalculate() }
+        ) {
+            if showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod) {
+                ComparisonModeSelector()
+            }
+        }
     }
 
     // MARK: - Empty State

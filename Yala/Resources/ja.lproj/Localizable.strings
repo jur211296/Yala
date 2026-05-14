@@ -4286,9 +4286,3 @@
 "stats.trends.insight.stableExpense" = "支出は安定しています。";
 "stats.trends.insight.stableIncome" = "収入は安定しています。";
 "stats.trends.insight.stableBalance" = "残高は安定しています。";
-
-/* === report polish R1 mini-hero === */
-"report.comparative.heroChip" = "あなたの比較";
-"report.cashflow.heroChip" = "あなたのキャッシュフロー";
-"report.comparative.subtitle" = "ディメンションの比較 · %@";
-"report.cashflow.subtitle" = "あなたのフロープラン · %@";

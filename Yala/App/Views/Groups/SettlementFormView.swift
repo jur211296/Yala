@@ -37,8 +37,6 @@ struct SettlementFormView: View {
     @State private var selectedAccount: Account? = nil
     @State private var showAccountSelector: Bool = false
 
-    @FocusState private var isAmountFocused: Bool
-
     // MARK: - Init
 
     init(
@@ -115,11 +113,7 @@ struct SettlementFormView: View {
     @ViewBuilder
     private var accountSection: some View {
         if !sessionState.isGroupInviteMode {
-            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                Text(L10n.Groups.Settlement.fromAccount)
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(.primary)
-
+            SectionBox(title: L10n.Groups.Settlement.fromAccount) {
                 Button {
                     showAccountSelector = true
                 } label: {
@@ -140,9 +134,10 @@ struct SettlementFormView: View {
                             .foregroundStyle(.tertiary)
                     }
                     .contentShape(Rectangle())
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.vertical, DS.FormRow.paddingV)
                 }
                 .buttonStyle(.plain)
-                .panelCard()
             }
             .padding(.horizontal, DS.Spacing.lg)
         }
@@ -195,32 +190,33 @@ struct SettlementFormView: View {
     // MARK: - Amount Section
 
     private var amountSection: some View {
-        AmountInputField(
-            amountString: $amountString,
-            color: theme.accent,
-            isFocused: $isAmountFocused,
-            compact: true
-        ) {
-            Text(debt.currencyCode)
-                .font(.system(
-                    size: AmountInputField<Text>.leadingFontSize(compact: true),
-                    weight: .medium,
-                    design: .rounded
-                ))
-                .foregroundStyle(theme.accent.opacity(0.7))
+        VStack(spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.sm) {
+                Text(debt.currencyCode)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.thAccent)
+
+                TextField("0.00", text: $amountString)
+                    .font(.system(size: 36, weight: .bold, design: .rounded)) // A11Y-DT: amount display
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .keyboardType(.decimalPad)
+                    .onChange(of: amountString) { _, newValue in
+                        let filtered = AmountInputHelper.filterAmountInput(newValue)
+                        if filtered != newValue {
+                            amountString = filtered
+                        }
+                    }
+            }
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
         .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Details Section
 
     private var detailsSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.Groups.Expense.noteLabel)
-                .font(DS.Typography.subheadlineEmphasized)
-                .foregroundStyle(.primary)
-
+        SectionBox(title: L10n.Groups.Expense.noteLabel) {
             VStack(spacing: DS.Spacing.none) {
                 TextField(L10n.Groups.Expense.notePlaceholder, text: $note)
                     .font(DS.Typography.body)
@@ -234,7 +230,6 @@ struct SettlementFormView: View {
                     .padding(.horizontal, DS.FormRow.paddingH)
                     .padding(.vertical, DS.FormRow.paddingV)
             }
-            .panelCard()
         }
         .padding(.horizontal, DS.Spacing.lg)
     }

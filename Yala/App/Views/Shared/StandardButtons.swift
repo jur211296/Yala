@@ -8,11 +8,8 @@ struct BouncyButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.95 : 1.0)
+            .scaleEffect(configuration.isPressed ? 0.9 : 1.0)
             .dsAnimation(.spring(response: 0.3, dampingFraction: 0.6), value: configuration.isPressed, reduceMotion: reduceMotion)
-            .sensoryFeedback(.impact(flexibility: .soft), trigger: configuration.isPressed) { oldVal, newVal in
-                newVal && !oldVal
-            }
     }
 }
 

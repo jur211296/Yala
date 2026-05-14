@@ -59,8 +59,8 @@ struct GroupingChipsBar: View {
                     .font(DS.Typography.caption)
             }
             .foregroundStyle(.primary)
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.sm)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.xs)
             .glassEffect(.regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
