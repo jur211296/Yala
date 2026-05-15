@@ -76,11 +76,10 @@ struct TagsSettingsListView: View {
         }
         .onAppear {
             viewModel.setContext(modelContext)
-            // VM uses "|" separator; AppPreferences uses ",".
-            viewModel.tagsSortOrderNamesRaw = appPreferences.tagsSortOrderNames.joined(separator: "|")
+            viewModel.tagsSortOrderNames = appPreferences.tagsSortOrderNames
         }
         .onChange(of: appPreferences.tagsSortOrderNames) { _, newValue in
-            viewModel.tagsSortOrderNamesRaw = newValue.joined(separator: "|")
+            viewModel.tagsSortOrderNames = newValue
         }
     }
 
@@ -203,7 +202,7 @@ struct TagsSettingsListView: View {
     // MARK: - Reorder Logic
 
     private func moveTag(from source: IndexSet, to destination: Int) {
-        let newRaw = viewModel.moveTag(from: source, to: destination)
-        appPreferences.tagsSortOrderNames = newRaw.split(separator: "|").map(String.init)
+        let newOrder = viewModel.moveTag(from: source, to: destination)
+        appPreferences.tagsSortOrderNames = newOrder
     }
 }

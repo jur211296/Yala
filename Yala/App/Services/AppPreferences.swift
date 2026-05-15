@@ -147,11 +147,14 @@ final class AppPreferences {
         }
     }
 
-    /// Comma-separated list of tag names in sort order.
+    /// Pipe-separated list of tag names in sort order.
+    /// NOTE: pipe (`|`) chosen for the same reason as `accountsSortOrderNames` — tag names may
+    /// legitimately contain commas (e.g. "Comida, casa") but never pipes, so this separator is
+    /// collision-safe. Legacy comma-separated data is read transparently in the load path below.
     var tagsSortOrderNames: [String] = [] {
         didSet {
             guard oldValue != tagsSortOrderNames else { return }
-            persistString(tagsSortOrderNames.joined(separator: ","), forKey: Keys.tagsSortOrderNames, synced: false)
+            persistString(tagsSortOrderNames.joined(separator: "|"), forKey: Keys.tagsSortOrderNames, synced: false)
         }
     }
 
@@ -852,7 +855,14 @@ final class AppPreferences {
             accountsSortOrderNames = raw.isEmpty ? [] : raw.split(separator: "|").map { String($0) }
         }
         if let raw = defaults.string(forKey: Keys.tagsSortOrderNames) {
-            tagsSortOrderNames = raw.isEmpty ? [] : raw.split(separator: ",").map { String($0) }
+            if raw.contains("|") {
+                tagsSortOrderNames = raw.split(separator: "|").map(String.init)
+            } else if !raw.isEmpty {
+                // Legacy comma-separated data — preserves order; next didSet re-serializa con "|".
+                tagsSortOrderNames = raw.split(separator: ",").map(String.init)
+            } else {
+                tagsSortOrderNames = []
+            }
         }
         tabConfigJSON = defaults.string(forKey: Keys.tabConfigJSON) ?? ""
 

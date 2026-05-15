@@ -50,19 +50,19 @@ struct TagsSettingsListViewModelTests {
         #expect(vm.inactiveTags.isEmpty)
     }
 
-    // MARK: - Sort Order Raw
+    // MARK: - Sort Order
 
-    @MainActor @Test func sortOrderNamesRaw_emptyWorks() {
+    @MainActor @Test func sortOrderNames_emptyWorks() {
         let vm = TagsSettingsListViewModel()
-        vm.tagsSortOrderNamesRaw = ""
+        vm.tagsSortOrderNames = []
         #expect(vm.orderedActiveTags.isEmpty)
     }
 
-    @MainActor @Test func sortOrderNamesRaw_changeInvalidatesCache() {
+    @MainActor @Test func sortOrderNames_changeInvalidatesCache() {
         let vm = TagsSettingsListViewModel()
-        vm.tagsSortOrderNamesRaw = "A|B|C"
+        vm.tagsSortOrderNames = ["A", "B", "C"]
         _ = vm.orderedActiveTags // Build cache
-        vm.tagsSortOrderNamesRaw = "C|B|A"
+        vm.tagsSortOrderNames = ["C", "B", "A"]
         // No crash, works fine even with empty tags
         #expect(vm.orderedActiveTags.isEmpty)
     }
