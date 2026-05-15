@@ -33,12 +33,12 @@ struct FABStackView: View {
     // MARK: - Internal State
 
     @State private var showFABMenu = false
-    @AppStorage(AppPreferences.Keys.aiDataConsentAccepted) private var aiDataConsentAccepted: Bool = false
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
 
     // MARK: - Environment
 
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
@@ -170,7 +170,7 @@ struct FABStackView: View {
                 dismissMenu()
                 if isVoiceLocked {
                     onUpgradeVoice()
-                } else if !aiDataConsentAccepted {
+                } else if !appPreferences.aiDataConsentAccepted {
                     pendingAIInput = .voice
                     showAIConsentAlert = true
                 } else {
@@ -182,7 +182,7 @@ struct FABStackView: View {
                 dismissMenu()
                 if isImageLocked {
                     onUpgradeImage()
-                } else if !aiDataConsentAccepted {
+                } else if !appPreferences.aiDataConsentAccepted {
                     pendingAIInput = .image
                     showAIConsentAlert = true
                 } else {
