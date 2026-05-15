@@ -30,13 +30,11 @@ struct ProfileView: View {
 
     @State private var viewModel = ProfileViewModel()
 
-    @AppStorage("userName") private var userName: String = "Usuario"
-    @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
     private var effectiveColorfulIcons: Bool {
-        theme.forcesMonochromeIcons ? false : colorfulIcons
+        theme.forcesMonochromeIcons ? false : appPreferences.colorfulIcons
     }
     private var profileStorage: ProfileImageStorage { .shared }
-    @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
@@ -56,7 +54,6 @@ struct ProfileView: View {
     @State private var showSupportSheet = false
 
     // Coach mark: Settings tour
-    @AppStorage("hasSeenSettingsTour") private var hasSeenSettingsTour = false
     @State private var showSettingsTour = false
     @State private var settingsTourIndex = 0
     @State private var settingsScrollProxy: ScrollViewProxy?
@@ -241,7 +238,7 @@ struct ProfileView: View {
             isPresented: $showSettingsTour,
             currentIndex: $settingsTourIndex,
             scrollProxy: settingsScrollProxy,
-            onComplete: { hasSeenSettingsTour = true }
+            onComplete: { appPreferences.hasSeenSettingsTour = true }
         )
         .coachMarkOverlay(
             steps: ProTourSteps.profileSteps,
@@ -253,15 +250,15 @@ struct ProfileView: View {
             }
         )
         .task {
-            if !hasSeenSettingsTour {
+            if !appPreferences.hasSeenSettingsTour {
                 do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
-                if !hasSeenSettingsTour {
+                if !appPreferences.hasSeenSettingsTour {
                     showSettingsTour = true
                 }
             }
         }
-        .task(id: hasSeenSettingsTour) {
-            guard hasSeenSettingsTour else { return }
+        .task(id: appPreferences.hasSeenSettingsTour) {
+            guard appPreferences.hasSeenSettingsTour else { return }
             // Re-check eligibility (covers race: subscribed before tours completed)
             ProTourManager.shared.triggerIfEligible()
             guard ProTourManager.shared.currentPhase == .profile else { return }
@@ -310,7 +307,7 @@ struct ProfileView: View {
                             .fill(theme.accent.opacity(0.1))
                             .frame(width: 90, height: 90)
 
-                        Image(systemName: userProfileIcon.isEmpty ? "person.fill" : userProfileIcon)
+                        Image(systemName: appPreferences.userProfileIcon.isEmpty ? "person.fill" : appPreferences.userProfileIcon)
                             .font(.system(size: avatarIconSize))
                             .foregroundStyle(theme.accent)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
@@ -332,7 +329,7 @@ struct ProfileView: View {
             .buttonStyle(.plain)
 
             // Name
-            Text(userName)
+            Text(appPreferences.userName)
                 .font(DS.Typography.title)
                 .foregroundStyle(.primary)
 
@@ -805,4 +802,5 @@ struct ProfileView: View {
 
 #Preview {
     ProfileView()
+        .environment(AppPreferences())
 }
