@@ -955,8 +955,6 @@ struct CategoriesTabView: View {
     // V1 limitation documentada: aiInsights.heroText es shared con Trends + Insights
     // (mismo InsightsViewModel.triggerAIGeneration agnóstico a tab). El usuario puede
     // ver "el mismo análisis" cross-tab. V2 dedicará prompt específico de distribución.
-    // Deuda técnica: proInsightHeader/aiLoadingPlaceholder/aiErrorCardLocal/markdownAttributed
-    // duplicados con InsightsTab + TrendsTab — extracción a Shared/ deferida post-épico.
 
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.smartInsightsAI)
@@ -1016,11 +1014,11 @@ struct CategoriesTabView: View {
     private var proDistributionInsightCard: some View {
         if insightsViewModel.aiActivated {
             if insightsViewModel.isLoadingAI {
-                aiLoadingPlaceholder
+                AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
             } else if let aiHero = insightsViewModel.aiInsights?.heroText {
                 proAIInsightCard(aiHero: aiHero)
             } else if let error = insightsViewModel.aiError {
-                aiErrorCardLocal(error)
+                AIInsightCardComponents.errorCard(error)
             }
         } else {
             proPreAIInsightCard
@@ -1046,7 +1044,7 @@ struct CategoriesTabView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             proInsightHeader
 
-            Text(markdownAttributed(aiHero))
+            Text(AIInsightCardComponents.markdownAttributed(aiHero))
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.leading)
@@ -1119,36 +1117,6 @@ struct CategoriesTabView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .panelCard()
-    }
-
-    private var aiLoadingPlaceholder: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "sparkles")
-                .foregroundStyle(theme.accent)
-                .symbolEffect(.pulse)
-            Text(L10n.Insights.analyzingData)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .panelCard()
-    }
-
-    private func aiErrorCardLocal(_ error: String) -> some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "exclamationmark.triangle")
-                .foregroundStyle(DS.Semantic.warningForeground)
-            Text(error)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .panelCard()
-    }
-
-    private func markdownAttributed(_ text: String) -> AttributedString {
-        (try? AttributedString(markdown: text)) ?? AttributedString(text)
     }
 
     private var periodDisplayName: String {

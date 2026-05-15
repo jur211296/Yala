@@ -274,17 +274,17 @@ struct InsightsTabView: View {
     private func proHeroSection(_ data: InsightData) -> some View {
         if viewModel.aiActivated {
             if viewModel.isLoadingAI {
-                aiLoadingPlaceholder
+                AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
             } else if let aiHero = viewModel.aiInsights?.heroText {
                 InsightCard(insight: InsightResult(
                     id: "ai_hero",
                     icon: "sparkles",
-                    text: markdownAttributed(aiHero),
+                    text: AIInsightCardComponents.markdownAttributed(aiHero),
                     sentiment: .neutral,
                     isProOnly: true
                 ))
             } else if let error = viewModel.aiError {
-                aiErrorCard(error)
+                AIInsightCardComponents.errorCard(error)
             }
         } else {
             generateAIButton
@@ -328,21 +328,6 @@ struct InsightsTabView: View {
         .coachMarkAnchor("proAiSummary")
     }
 
-    // MARK: - AI Error Card
-
-    private func aiErrorCard(_ error: String) -> some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "exclamationmark.triangle")
-                .foregroundStyle(DS.Semantic.warningForeground)
-            Text(error)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .panelCard()
-    }
-
     // MARK: - Pro Observations Section
 
     @ViewBuilder
@@ -352,7 +337,7 @@ struct InsightsTabView: View {
 
             if viewModel.aiActivated {
                 if viewModel.isLoadingAI {
-                    aiLoadingPlaceholder
+                    AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
                 } else if let aiCards = viewModel.aiInsights?.cards, !aiCards.isEmpty {
                     ForEach(Array(aiCards.enumerated()), id: \.offset) { _, card in
                         let sentiment: Sentiment = switch card.sentiment {
@@ -363,10 +348,10 @@ struct InsightsTabView: View {
                         InsightCard(insight: InsightResult(
                             id: "ai_\(card.text.prefix(20))",
                             icon: card.icon,
-                            text: markdownAttributed(card.text),
+                            text: AIInsightCardComponents.markdownAttributed(card.text),
                             sentiment: sentiment,
                             isProOnly: true,
-                            tip: card.tip.map { markdownAttributed($0) }
+                            tip: card.tip.map { AIInsightCardComponents.markdownAttributed($0) }
                         ))
                     }
 
@@ -375,7 +360,7 @@ struct InsightsTabView: View {
                         InsightCard(insight: InsightResult(
                             id: "ai_fun_fact",
                             icon: "lightbulb",
-                            text: markdownAttributed(funFact),
+                            text: AIInsightCardComponents.markdownAttributed(funFact),
                             sentiment: .positive,
                             isProOnly: true
                         ))
@@ -880,21 +865,6 @@ struct InsightsTabView: View {
         }
     }
 
-    // MARK: - AI Loading Placeholder
-
-    private var aiLoadingPlaceholder: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "sparkles")
-                .foregroundStyle(theme.accent)
-                .symbolEffect(.pulse)
-            Text(L10n.Insights.analyzingData)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .panelCard()
-    }
-
     // MARK: - AI Insights Teaser (Free users)
 
     private var aiInsightsTeaser: some View {
@@ -1011,12 +981,6 @@ struct InsightsTabView: View {
         .padding(DS.Spacing.xs)
         .background(Capsule().fill(.thCard))
         .overlay(Capsule().stroke(Color.primary.opacity(0.06), lineWidth: 1))
-    }
-
-    // MARK: - Helpers
-
-    private func markdownAttributed(_ text: String) -> AttributedString {
-        (try? AttributedString(markdown: text)) ?? AttributedString(text)
     }
 
 }

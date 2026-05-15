@@ -733,11 +733,11 @@ struct TrendsTabView: View {
     private var proTrendInsightCard: some View {
         if insightsViewModel.aiActivated {
             if insightsViewModel.isLoadingAI {
-                aiLoadingPlaceholder
+                AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
             } else if let aiHero = insightsViewModel.aiInsights?.heroText {
                 proAIInsightCard(aiHero: aiHero)
             } else if let error = insightsViewModel.aiError {
-                aiErrorCardLocal(error)
+                AIInsightCardComponents.errorCard(error)
             }
         } else {
             proPreAIInsightCard
@@ -763,7 +763,7 @@ struct TrendsTabView: View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             proInsightHeader
 
-            Text(markdownAttributed(aiHero))
+            Text(AIInsightCardComponents.markdownAttributed(aiHero))
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.leading)
@@ -883,40 +883,6 @@ struct TrendsTabView: View {
     /// reordenan posicional). El strip evita "vs vs".
     private func strippedComparisonLabel(_ label: String) -> String {
         label.hasPrefix("vs ") ? String(label.dropFirst(3)) : label
-    }
-
-    // Cross-file duplication with InsightsTabView.aiLoadingPlaceholder + aiErrorCard
-    // + markdownAttributed. Extraction to Shared/ deferred to avoid breaking the
-    // atomic Trends polish commit; track as post-épico tech debt.
-
-    private var aiLoadingPlaceholder: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "sparkles")
-                .foregroundStyle(theme.accent)
-                .symbolEffect(.pulse)
-            Text(L10n.Insights.analyzingData)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .panelCard()
-    }
-
-    private func aiErrorCardLocal(_ error: String) -> some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "exclamationmark.triangle")
-                .foregroundStyle(DS.Semantic.warningForeground)
-            Text(error)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .panelCard()
-    }
-
-    private func markdownAttributed(_ text: String) -> AttributedString {
-        (try? AttributedString(markdown: text)) ?? AttributedString(text)
     }
 
     // MARK: - Cash Flow Widget (title + selector afuera, widget interno preserva su card)
