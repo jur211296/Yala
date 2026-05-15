@@ -70,7 +70,6 @@ struct CategoriesTabView: View {
     @State private var showCustomPeriodPicker: Bool = false  // Custom period picker sheet
     @State private var isSyncingFilters: Bool = false  // Anti-loop flag for Need sync functions only
     @Namespace private var listSelectorNamespace
-    @Namespace private var comparisonSelectorNamespace
 
     // Period Comparison State (comparisonMode is in SessionState for sync across tabs)
     @State private var previousCategoryTotal: Double? = nil
@@ -352,7 +351,7 @@ struct CategoriesTabView: View {
             Spacer()
 
             if showComparisonSelector {
-                comparisonModeSelector
+                ComparisonModeSelector()
             }
         }
     }
@@ -360,42 +359,6 @@ struct CategoriesTabView: View {
     /// Determines if comparison selector should be visible (only when appPreferences.showVariations is ON)
     private var showComparisonSelector: Bool {
         appPreferences.showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod)
-    }
-
-    /// Comparison mode selector (M/A toggle)
-    private var comparisonModeSelector: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            ForEach(ComparisonMode.allCases) { mode in
-                comparisonSelectorButton(for: mode)
-            }
-        }
-    }
-
-    private func comparisonSelectorButton(for mode: ComparisonMode) -> some View {
-        let isSelected = sessionState.comparisonMode == mode
-
-        return Button {
-            dsWithAnimation(reduceMotion) {
-                sessionState.comparisonMode = mode
-            }
-        } label: {
-            Text(mode.shortName)
-                .font(DS.Typography.labelSmall)
-                .fontWeight(.semibold)
-                .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
-                .frame(width: 32, height: 32)
-                .background {
-                    if isSelected {
-                        Circle()
-                            .fill(theme.accent)
-                            .matchedGeometryEffect(id: "comparisonSelector", in: comparisonSelectorNamespace)
-                    } else {
-                        Circle()
-                            .fill(.thSecondaryText.opacity(0.08))
-                    }
-                }
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Content Mode Pill (Gráficas / Detalle)
