@@ -13,7 +13,7 @@ import UIKit
 struct ProfileToolbarButton: View {
     // MARK: - Data Access
 
-    @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
 
     private var profileStorage: ProfileImageStorage { .shared }
@@ -24,7 +24,7 @@ struct ProfileToolbarButton: View {
 
     /// The icon to display (custom or default)
     private var displayIcon: String {
-        userProfileIcon.isEmpty ? "person.fill" : userProfileIcon
+        appPreferences.userProfileIcon.isEmpty ? "person.fill" : appPreferences.userProfileIcon
     }
 
     // MARK: - Properties
@@ -147,4 +147,5 @@ struct ProfileToolbarItem: ToolbarContent {
     }
     .padding()
     .background(.thBackground)
+    .environment(AppPreferences())
 }
