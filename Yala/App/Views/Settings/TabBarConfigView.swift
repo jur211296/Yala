@@ -12,7 +12,7 @@ struct TabBarConfigView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
-    @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var localConfig: TabBarConfiguration = .default
 
@@ -58,7 +58,7 @@ struct TabBarConfigView: View {
             }
         }
         .onAppear {
-            localConfig = TabBarConfiguration.fromJSON(tabConfigJSON)
+            localConfig = TabBarConfiguration.fromJSON(appPreferences.tabConfigJSON)
         }
     }
 
@@ -267,11 +267,12 @@ struct TabBarConfigView: View {
     }
 
     private func saveAndDismiss() {
-        tabConfigJSON = localConfig.toJSON()
+        appPreferences.tabConfigJSON = localConfig.toJSON()
         dismiss()
     }
 }
 
 #Preview {
     TabBarConfigView()
+        .environment(AppPreferences())
 }
