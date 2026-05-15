@@ -13,28 +13,19 @@ struct CurrencySettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(ExchangeRateService.self) private var exchangeRateService
+    @Environment(AppPreferences.self) private var appPreferences
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
-
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
-        .rawValue
-    @AppStorage("secondaryCurrencies") private var secondaryCurrenciesRaw: String = ""
 
     // MARK: - Computed Properties
 
     private var preferredCurrency: CurrencyCode {
-        CurrencyCode(rawValue: defaultCurrencyCode) ?? .pen
+        appPreferences.defaultCurrencyCode
     }
 
-    /// Parsed secondary currencies from storage
+    /// Parsed secondary currencies from AppPreferences
     private var secondaryCurrencies: Set<CurrencyCode> {
-        get {
-            Set(
-                secondaryCurrenciesRaw
-                    .split(separator: ",")
-                    .compactMap { CurrencyCode(rawValue: String($0)) }
-            )
-        }
+        Set(appPreferences.secondaryCurrencies.compactMap { CurrencyCode(rawValue: $0) })
     }
 
     // MARK: - State
@@ -366,7 +357,7 @@ struct CurrencySettingsView: View {
         let removed = oldValue.subtracting(newValue)
 
         // Save to storage
-        secondaryCurrenciesRaw = newValue.map { $0.rawValue }.joined(separator: ",")
+        appPreferences.secondaryCurrencies = newValue.map { $0.rawValue }
 
         // Signal widget refresh if anything changed
         if !added.isEmpty || !removed.isEmpty {
@@ -414,7 +405,7 @@ struct CurrencySettingsView: View {
         if secondaryCurrencies.contains(newCurrency) {
             var updated = secondaryCurrencies
             updated.remove(newCurrency)
-            secondaryCurrenciesRaw = updated.map { $0.rawValue }.joined(separator: ",")
+            appPreferences.secondaryCurrencies = updated.map { $0.rawValue }
         }
 
         isUpdating = true
@@ -431,8 +422,8 @@ struct CurrencySettingsView: View {
                     }
                 )
 
-                // Only update the AppStorage setting AFTER successful migration
-                defaultCurrencyCode = newCurrency.rawValue
+                // Only update AppPreferences AFTER successful migration
+                appPreferences.defaultCurrencyCode = newCurrency
 
                 // Force refresh exchange rates
                 await exchangeRateService.forceUpdateToday(context: modelContext)
@@ -469,4 +460,5 @@ struct CurrencySettingsView: View {
         CurrencySettingsView()
     }
     .modelContainer(for: [Account.self, ExchangeRate.self])
+    .environment(AppPreferences())
 }
