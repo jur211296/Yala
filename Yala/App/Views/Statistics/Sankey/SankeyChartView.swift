@@ -28,46 +28,45 @@ struct SankeyChartView: View {
 
     // MARK: - Layout constants
 
-    private let columnWidth: CGFloat = 140
-    /// Subcategory column gets extra width: names like "Belleza y estética" or
-    /// "Servicios del hogar" need the room to avoid mid-word truncation.
-    private let subcategoryColumnWidth: CGFloat = 220
-    private let columnGap: CGFloat = 56
+    /// Uniform width across columns so long names (categorías + subcategorías)
+    /// don't truncate mid-word.
+    private let columnWidth: CGFloat = 220
+    private let columnGap: CGFloat = 10
     private let nodeWidth: CGFloat = 8
     private let nodeGap: CGFloat = 6
     private let minNodeHeight: CGFloat = 4
+    /// Floor per node so even tiny amounts keep room for a readable caption.
+    /// `buildLayout` distributes leftover height proportionally on top of this.
+    private let minLabelHeight: CGFloat = 20
     private let verticalPadding: CGFloat = 8
     private let rowHeightEstimate: CGFloat = 24
     private let dimmedOpacity: Double = 0.25
 
-    private func width(for column: SankeyColumn) -> CGFloat {
-        column == .expenseSubcategory ? subcategoryColumnWidth : columnWidth
-    }
-
-    /// Cumulative origin X of the given column — sums prior column widths and gaps.
     private func originX(for column: SankeyColumn) -> CGFloat {
-        var x: CGFloat = 0
-        for c in SankeyColumn.allCases where c.rawValue < column.rawValue {
-            x += width(for: c) + columnGap
-        }
-        return x
+        CGFloat(column.rawValue) * (columnWidth + columnGap)
     }
 
     private var totalWidth: CGFloat {
-        let sumWidths = SankeyColumn.allCases.reduce(0.0) { $0 + width(for: $1) }
-        return sumWidths + CGFloat(SankeyColumn.allCases.count - 1) * columnGap
+        let count = CGFloat(SankeyColumn.allCases.count)
+        return count * columnWidth + (count - 1) * columnGap
     }
 
-    /// Adaptive height based on the tallest column's node count.
-    /// Hugs content so a sparse data set doesn't leave a huge gap and a
-    /// dense column still fits comfortably.
+    /// Adaptive height: reserves `minLabelHeight` on every node of the densest
+    /// column PLUS a `flexBudget` of leftover space that gets prorated by
+    /// amount in `buildLayout`. Without the budget, dense columns would
+    /// collapse every node to exactly `minLabelHeight` and lose hierarchy.
+    /// Cap sized for typical phones — past ~18 subcategorías the layout starts
+    /// to degrade to pure proportional (small ones lose their floor).
     private var cardHeight: CGFloat {
         let maxNodes = SankeyColumn.allCases
             .map { visibleData.nodes(in: $0).count }
             .max() ?? 0
         let estimate = CGFloat(max(maxNodes, 3)) * rowHeightEstimate + verticalPadding * 2
-        // Cap at 340pt to match NeedTrendWidget's large size for visual balance.
-        return min(max(estimate, 200), 340)
+        let flexBudget: CGFloat = 100
+        let requiredForFloor = CGFloat(maxNodes) * minLabelHeight
+            + CGFloat(max(maxNodes - 1, 0)) * nodeGap
+            + verticalPadding * 2
+        return min(max(estimate, requiredForFloor + flexBudget, 200), 480)
     }
 
     /// View-level filter: when a cat/subcat is selected, restrict col 3 to the
@@ -126,7 +125,7 @@ struct SankeyChartView: View {
                     if let layout {
                         ForEach(layout.nodes, id: \.node.id) { placed in
                             nodeLabel(for: placed)
-                                .frame(width: width(for: placed.node.column) - nodeWidth - DS.Spacing.sm)
+                                .frame(width: columnWidth - nodeWidth - DS.Spacing.sm)
                                 .position(x: placed.labelOrigin.x, y: placed.labelOrigin.y)
                         }
                     }
@@ -282,7 +281,8 @@ struct SankeyChartView: View {
     private func linkPath(_ placed: PlacedLink) -> Path {
         let s = placed.sourceOrigin
         let t = placed.targetOrigin
-        let h = placed.height
+        let hs = placed.sourceHeight
+        let ht = placed.targetHeight
         let midX = (s.x + t.x) / 2
 
         var path = Path()
@@ -292,11 +292,11 @@ struct SankeyChartView: View {
             control1: CGPoint(x: midX, y: s.y),
             control2: CGPoint(x: midX, y: t.y)
         )
-        path.addLine(to: CGPoint(x: t.x, y: t.y + h))
+        path.addLine(to: CGPoint(x: t.x, y: t.y + ht))
         path.addCurve(
-            to: CGPoint(x: s.x, y: s.y + h),
-            control1: CGPoint(x: midX, y: t.y + h),
-            control2: CGPoint(x: midX, y: s.y + h)
+            to: CGPoint(x: s.x, y: s.y + hs),
+            control1: CGPoint(x: midX, y: t.y + ht),
+            control2: CGPoint(x: midX, y: s.y + hs)
         )
         path.closeSubpath()
         return path
@@ -309,17 +309,31 @@ struct SankeyChartView: View {
         let columnBuckets: [(column: SankeyColumn, nodes: [SankeyNode])] =
             SankeyColumn.allCases.map { ($0, source.nodes(in: $0)) }
 
-        // Size the chart to fit the tallest column IN PIXELS — i.e. the column
-        // whose `scale × sum + gaps` is largest. Using gaps from the max-nodes
-        // column (when that column has less sum) wastes vertical space.
-        let columnSums = columnBuckets.map { $0.nodes.reduce(0.0) { $0 + $1.amount } }
-        let maxColumnSum = columnSums.max() ?? 0
-        let heaviestIndex = columnSums.firstIndex(of: maxColumnSum) ?? 0
-        let nodesInHeaviest = columnBuckets[heaviestIndex].nodes.count
+        // Each column fills its full available height. Reserve `minLabelHeight`
+        // per node first so even tiny amounts stay readable, then distribute
+        // the remaining height proportionally to amount. When the column is too
+        // dense to honor the floor, fall back to pure proportional sizing.
+        var nodeHeights: [String: CGFloat] = [:]
+        for (_, nodes) in columnBuckets {
+            let sum = nodes.reduce(0.0) { $0 + $1.amount }
+            let gaps = CGFloat(max(nodes.count - 1, 0)) * nodeGap
+            let avail = max(cardHeight - verticalPadding * 2 - gaps, 0)
+            let minTotal = CGFloat(nodes.count) * minLabelHeight
+            let useFloor = sum > 0 && avail >= minTotal
+            let flex = avail - minTotal
 
-        let availableHeight = cardHeight - verticalPadding * 2
-            - CGFloat(max(nodesInHeaviest - 1, 0)) * nodeGap
-        let scale = maxColumnSum > 0 ? availableHeight / maxColumnSum : 0
+            for node in nodes {
+                let h: CGFloat
+                if useFloor {
+                    h = minLabelHeight + flex * CGFloat(node.amount / sum)
+                } else if sum > 0 {
+                    h = max(CGFloat(node.amount / sum) * avail, minNodeHeight)
+                } else {
+                    h = minNodeHeight
+                }
+                nodeHeights[node.id] = h
+            }
+        }
 
         var placedNodes: [PlacedNode] = []
         var rectByID: [String: CGRect] = [:]
@@ -327,17 +341,13 @@ struct SankeyChartView: View {
 
         for (column, nodes) in columnBuckets {
             let colX = originX(for: column)
-            let colW = width(for: column)
-            // Top-align columns: each column starts at verticalPadding and grows
-            // downward. Avoids the empty space a centered layout creates when one
-            // column has many thin nodes (tallest) and another has few fat ones.
             var y = verticalPadding
 
             for node in nodes {
-                let height = max(scale * node.amount, minNodeHeight)
+                let height = nodeHeights[node.id] ?? minNodeHeight
                 let rect = CGRect(x: colX, y: y, width: nodeWidth, height: height)
                 let labelOrigin = CGPoint(
-                    x: colX + nodeWidth + DS.Spacing.sm + (colW - nodeWidth - DS.Spacing.sm) / 2,
+                    x: colX + nodeWidth + DS.Spacing.sm + (columnWidth - nodeWidth - DS.Spacing.sm) / 2,
                     y: y + height / 2
                 )
                 let dim = dimOpacity(for: node)
@@ -353,6 +363,16 @@ struct SankeyChartView: View {
             }
         }
 
+        // Link heights are a share of the source/target node heights, not of
+        // the raw column scale — keeps the band inside the node bounds even
+        // when nodes use the min-floor scheme above.
+        var outgoingSum: [String: Double] = [:]
+        var incomingSum: [String: Double] = [:]
+        for link in source.links {
+            outgoingSum[link.sourceID, default: 0] += link.amount
+            incomingSum[link.targetID, default: 0] += link.amount
+        }
+
         var sourceOffsets: [String: CGFloat] = [:]
         var targetOffsets: [String: CGFloat] = [:]
         var placedLinks: [PlacedLink] = []
@@ -361,7 +381,12 @@ struct SankeyChartView: View {
             guard let srcRect = rectByID[link.sourceID],
                   let tgtRect = rectByID[link.targetID] else { continue }
 
-            let linkHeight = max(scale * link.amount, 0.5)
+            let srcH = nodeHeights[link.sourceID] ?? 0
+            let tgtH = nodeHeights[link.targetID] ?? 0
+            let srcSum = outgoingSum[link.sourceID] ?? 0
+            let tgtSum = incomingSum[link.targetID] ?? 0
+            let srcHeight = srcSum > 0 ? max(srcH * CGFloat(link.amount / srcSum), 0.5) : 0.5
+            let tgtHeight = tgtSum > 0 ? max(tgtH * CGFloat(link.amount / tgtSum), 0.5) : 0.5
             let srcY = srcRect.minY + (sourceOffsets[link.sourceID] ?? 0)
             let tgtY = tgtRect.minY + (targetOffsets[link.targetID] ?? 0)
             let linkDim = min(dimByID[link.sourceID] ?? 1, dimByID[link.targetID] ?? 1)
@@ -370,13 +395,14 @@ struct SankeyChartView: View {
                 link: link,
                 sourceOrigin: CGPoint(x: srcRect.maxX, y: srcY),
                 targetOrigin: CGPoint(x: tgtRect.minX, y: tgtY),
-                height: linkHeight,
+                sourceHeight: srcHeight,
+                targetHeight: tgtHeight,
                 colorHex: link.sourceColorHex,
                 dim: linkDim
             ))
 
-            sourceOffsets[link.sourceID, default: 0] += linkHeight
-            targetOffsets[link.targetID, default: 0] += linkHeight
+            sourceOffsets[link.sourceID, default: 0] += srcHeight
+            targetOffsets[link.targetID, default: 0] += tgtHeight
         }
 
         return SankeyLayout(nodes: placedNodes, links: placedLinks)
@@ -401,7 +427,8 @@ private struct PlacedLink: Equatable {
     let link: SankeyLink
     let sourceOrigin: CGPoint
     let targetOrigin: CGPoint
-    let height: CGFloat
+    let sourceHeight: CGFloat
+    let targetHeight: CGFloat
     let colorHex: String
     let dim: Double
 }
