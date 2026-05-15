@@ -14,12 +14,10 @@ struct VoiceRecordingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(VoiceTranscriptionService.self) private var voiceTranscriptionService
     @Environment(TranscriptionParserService.self) private var transcriptionParserService
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var recorder = AudioRecorderService.shared
     @State private var networkMonitor = NetworkMonitor.shared
-
-    @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.usd.rawValue
 
     @State private var errorMessage: String?
     @State private var errorType: VoiceErrorType?
@@ -62,14 +60,11 @@ struct VoiceRecordingView: View {
     }
 
     private var voiceLanguage: VoiceLanguage {
-        VoiceLanguage(rawValue: voiceLanguageRaw) ?? .system
+        appPreferences.voiceLanguage
     }
 
     private var preferredCurrencyName: String {
-        if let code = CurrencyCode(rawValue: defaultCurrencyCode) {
-            return code.shortPluralName
-        }
-        return CurrencyCode.usd.shortPluralName
+        appPreferences.defaultCurrencyCode.shortPluralName
     }
 
     var body: some View {
@@ -1189,4 +1184,5 @@ struct VoiceRecordingView: View {
 
 #Preview {
     VoiceRecordingView()
+        .environment(AppPreferences())
 }
