@@ -112,12 +112,12 @@ struct ApplePayTransactionIntent: AppIntent {
     // MARK: - Perform
 
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
+    func perform() async throws -> some IntentResult & ProvidesDialog {
         TelemetryService.track(.intentInvoked, parameters: ["intent_type": "applePay"])
 
         guard let amountString = amount else {
             TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_amount"])
-            return .result(dialog: "shortcut.applePay.error.noAmount", view: EmptyView())
+            return .result(dialog: "shortcut.applePay.error.noAmount")
         }
 
         let container: ModelContainer
@@ -130,14 +130,14 @@ struct ApplePayTransactionIntent: AppIntent {
             #if DEBUG
             print("ApplePayTransactionIntent: Error creating ModelContainer: \(error)")
             #endif
-            return .result(dialog: "shortcut.error.database", view: EmptyView())
+            return .result(dialog: "shortcut.error.database")
         }
 
         let context = container.mainContext
 
         guard let parsedResult = parseAmountAndCurrency(from: amountString, context: context) else {
             TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_amount"])
-            return .result(dialog: "shortcut.applePay.error.noAmount", view: EmptyView())
+            return .result(dialog: "shortcut.applePay.error.noAmount")
         }
 
         let finalAmount = parsedResult.amount
@@ -156,7 +156,7 @@ struct ApplePayTransactionIntent: AppIntent {
             accountCount = 0
         }
         guard accountCount > 0 else {
-            return .result(dialog: "shortcut.error.noAccount", view: EmptyView())
+            return .result(dialog: "shortcut.error.noAccount")
         }
 
         // Try to find account by detected currency (if unique match)
@@ -213,36 +213,31 @@ struct ApplePayTransactionIntent: AppIntent {
         do {
             try context.save()
         } catch {
-            return .result(dialog: "shortcut.error.save", view: EmptyView())
+            return .result(dialog: "shortcut.error.save")
         }
 
-        // Send push notification for automatic record (Apple Pay is always expense).
-        let notifAmount = YalaFormatterStatic.currency(value: finalAmount, currencyCode: detectedCurrency ?? "USD", forceFullPrecision: true)
+        let fallbackCurrency = detectedCurrency ?? "USD"
+        let notifAmount = YalaFormatterStatic.currency(value: finalAmount, currencyCode: fallbackCurrency, forceFullPrecision: true)
         let noteText = finalNote.isEmpty ? "" : " — \(finalNote)"
         let notifBody = L10n.Shortcut.Notification.body(L10n.Shortcut.Notification.expense, notifAmount, noteText)
-        await NotificationService.shared.sendNotification(
-            title: L10n.Shortcut.Notification.title,
-            body: notifBody,
-            deepLink: "inbox"
-        )
+        let notifTitle = L10n.Shortcut.Notification.title
 
-        // Snippet con badge "Borrador" — el user revisa/aprueba en Inbox.
-        let formattedAmount = formatIntentCurrency(amount: finalAmount, currencyCode: detectedCurrency ?? "USD")
+        // Push notification fire-and-forget — automation Wallet tiene budget ~5-10s.
+        // Esperar a notificationCenter.add() puede pasar el límite y hacer que iOS
+        // reporte "no se pudo ejecutar el atajo" tras un save() exitoso.
+        Task.detached(priority: .utility) {
+            await NotificationService.shared.sendNotification(
+                title: notifTitle,
+                body: notifBody,
+                deepLink: "inbox"
+            )
+        }
+
+        let formattedAmount = formatIntentCurrency(amount: finalAmount, currencyCode: fallbackCurrency)
         let noteDisplay = finalNote.isEmpty ? "Apple Pay" : finalNote
-        let snippet = TransactionSnippetView(
-            amount: finalAmount,
-            currencyCode: detectedCurrency ?? "USD",
-            accountName: matchedAccount?.name ?? "—",
-            subcategoryName: matchedSubcategory?.name ?? noteDisplay,
-            subcategoryIcon: matchedSubcategory?.safeCategory.iconName ?? "creditcard",
-            date: effectiveDate,
-            isExpense: true,
-            isDraft: true
-        )
         TelemetryService.track(.intentSuccess, parameters: ["intent_type": "applePay", "outcome": "draft_created"])
         return .result(
-            dialog: "shortcut.applePay.success \(formattedAmount) \(noteDisplay)",
-            view: snippet
+            dialog: "shortcut.applePay.success \(formattedAmount) \(noteDisplay)"
         )
     }
 
