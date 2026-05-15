@@ -13,11 +13,9 @@ struct TagsSettingsListView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = TagsSettingsListViewModel()
-
-    // Persisted order for tags (synced bidirectionally with ViewModel)
-    @AppStorage("tagsSortOrderNames") private var tagsSortOrderNamesRaw: String = ""
 
     var body: some View {
         ZStack {
@@ -78,10 +76,11 @@ struct TagsSettingsListView: View {
         }
         .onAppear {
             viewModel.setContext(modelContext)
-            viewModel.tagsSortOrderNamesRaw = tagsSortOrderNamesRaw
+            // VM expects "|"-joined string (preexisting separator inconsistency vs AppPreferences "," — bug latente, out of scope D4)
+            viewModel.tagsSortOrderNamesRaw = appPreferences.tagsSortOrderNames.joined(separator: "|")
         }
-        .onChange(of: tagsSortOrderNamesRaw) { _, newValue in
-            viewModel.tagsSortOrderNamesRaw = newValue
+        .onChange(of: appPreferences.tagsSortOrderNames) { _, newValue in
+            viewModel.tagsSortOrderNamesRaw = newValue.joined(separator: "|")
         }
     }
 
@@ -205,6 +204,6 @@ struct TagsSettingsListView: View {
 
     private func moveTag(from source: IndexSet, to destination: Int) {
         let newRaw = viewModel.moveTag(from: source, to: destination)
-        tagsSortOrderNamesRaw = newRaw
+        appPreferences.tagsSortOrderNames = newRaw.split(separator: "|").map(String.init)
     }
 }
