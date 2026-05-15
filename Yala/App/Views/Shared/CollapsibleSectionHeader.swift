@@ -2,10 +2,9 @@
 //  CollapsibleSectionHeader.swift
 //  Yala
 //
-//  Header colapsable con accessory `+`/`-` glass. Reusa el patrón canónico
-//  del Panel (`PanelPanoramaSection.header`) y Stats Insights
-//  (Compromisos + Necesidad). Drift tipográfico gestionado vía params
-//  opcionales.
+//  Header colapsable estilo Liquid Glass con accessory `+`/`-`. Drift
+//  tipográfico (Panel `.title` vs Stats `.subheadlineEmphasized`) gestionado
+//  vía params opcionales.
 //
 
 import SwiftUI

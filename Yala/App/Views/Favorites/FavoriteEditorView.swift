@@ -16,9 +16,8 @@ struct FavoriteEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
-
-    @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"
 
     @State private var viewModel = FavoriteEditorViewModel()
 
@@ -295,8 +294,7 @@ struct FavoriteEditorView: View {
 
     private var currencySymbol: String {
         let code = selectedAccount?.currencyCode ?? CurrencyDefaults.defaultCode
-        guard let currency = CurrencyCode(rawValue: code) else { return code }
-        return currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
+        return appPreferences.currencyIdentifier(for: code)
     }
 
     private var amountColor: Color {

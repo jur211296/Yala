@@ -2,19 +2,9 @@
 //  SegmentedPills.swift
 //  Yala
 //
-//  Componente shared `GenericSegmentedPill` para cápsulas con texto sobre
-//  contenedor `.thCard` (TransactionType, contentMode de Stats
-//  Insights/Distribución). Usa closures providers para color/label/a11y,
-//  permitiendo callsites theme-dependent sin acoplar el enum a SwiftUI
-//  environment.
-//
-//  Family B (Circle + Icon) — metricSelector, cashFlowSelector,
-//  listViewSelector, Sankey — queda como deuda documentada: cada callsite
-//  tiene particularidades (drift de font Sankey 14pt vs 12pt; unselected
-//  foreground theme.secondaryText vs color enum; disabled/locked logic;
-//  setter side-effects; popover externo) que requerirían múltiples closures
-//  diluyendo la abstracción. La unificación no rinde sin acomodar todos
-//  estos casos.
+//  Cápsula segmentada con texto sobre contenedor `.thCard`. Closures providers
+//  para color/label/a11y permiten callsites theme-dependent (`theme.accent`) y
+//  enum-dependent (`type.color`) sin acoplar el enum a SwiftUI environment.
 //
 
 import SwiftUI
@@ -28,6 +18,7 @@ struct GenericSegmentedPill<S: Hashable>: View {
 
     @Namespace private var namespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.yalaTheme) private var theme
 
     var body: some View {
         HStack(spacing: DS.Spacing.none) {
@@ -59,6 +50,6 @@ struct GenericSegmentedPill<S: Hashable>: View {
         }
         .padding(DS.Spacing.xs)
         .background(Capsule().fill(.thCard))
-        .overlay(Capsule().stroke(Color.primary.opacity(0.06), lineWidth: 1))
+        .overlay(Capsule().stroke(theme.cardBorder, lineWidth: 1))
     }
 }

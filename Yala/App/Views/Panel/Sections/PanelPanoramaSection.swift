@@ -98,7 +98,12 @@ struct PanelPanoramaSection: View {
     /// "Tienes X en N cuentas. Buen mes…". Concatena saldo + frase motivacional
     /// para que ambos sean legibles en una sola unidad visual. Devuelve `nil`
     /// si no hay nada útil que mostrar (sin cuentas activas y sin data del hero).
+    ///
+    /// Short-circuit: cuando la sección está expandida no aplica — evita la
+    /// computación cara (accounts scan + 3 NumberFormatter + L10n interpolation)
+    /// que el ternary del callsite no puede saltar (strict-eval).
     private var collapsedSubtitle: String? {
+        guard appPreferences.panelAccountsCollapsed else { return nil }
         let parts = [accountsSummary, motivationalLine].compactMap { $0 }
         guard !parts.isEmpty else { return nil }
         return parts.joined(separator: ". ")

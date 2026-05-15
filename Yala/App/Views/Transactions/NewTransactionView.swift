@@ -731,8 +731,6 @@ struct NewTransactionView: View {
         AmountInputHelper.filterAmountInput(input)
     }
 
-    /// Resuelve el identificador de moneda (symbol o code) respetando la
-    /// preference `currencyDisplayFormat` del usuario.
     private func currencyDisplay(for code: String) -> String {
         guard let currency = CurrencyCode(rawValue: code) else { return code }
         return currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
