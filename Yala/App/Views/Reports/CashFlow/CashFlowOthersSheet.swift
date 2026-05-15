@@ -39,6 +39,7 @@ struct CashFlowOthersSheet: View {
                 .padding(.top, DS.Spacing.md)
                 .yalaSafeBottomPadding()
             }
+            .yalaScreenBackground()
             .navigationTitle(isIncome ? L10n.CashFlowPlan.othersIncomeTitle : L10n.CashFlowPlan.othersTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

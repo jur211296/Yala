@@ -74,7 +74,7 @@ struct CashFlowChartsSheet: View {
                 .padding(.top, DS.Spacing.md)
                 .yalaSafeBottomPadding()
             }
-            .background(Color(.systemGroupedBackground))
+            .yalaScreenBackground()
             .navigationTitle(L10n.CashFlowPlan.chartsTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

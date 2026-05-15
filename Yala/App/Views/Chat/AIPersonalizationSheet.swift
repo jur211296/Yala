@@ -32,6 +32,8 @@ struct AIPersonalizationSheet: View {
                     Text(L10n.AISettings.appliesHint)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .yalaScreenBackground(.compact)
             .tint(.primary)
             .navigationTitle(L10n.AISettings.title)
             .navigationBarTitleDisplayMode(.inline)

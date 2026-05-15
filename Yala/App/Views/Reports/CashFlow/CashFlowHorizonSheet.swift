@@ -59,6 +59,8 @@ struct CashFlowHorizonSheet: View {
                 }
             }
             .padding(DS.Spacing.xl)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .yalaScreenBackground(.compact)
             .navigationTitle(L10n.CashFlowPlan.configureHorizon)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

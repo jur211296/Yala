@@ -49,6 +49,7 @@ struct FinancialScoreDetailSheet: View {
     var body: some View {
         NavigationStack {
             content
+                .yalaScreenBackground(.compact)
                 .navigationTitle(title)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
