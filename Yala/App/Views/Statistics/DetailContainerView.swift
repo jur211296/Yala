@@ -661,7 +661,7 @@ struct DetailContainerView: View {
     NavigationStack {
         DetailContainerView()
     }
-    .environment(AppPreferences())
+    .previewAppPreferences()
 }
 
 // MARK: - View Helpers

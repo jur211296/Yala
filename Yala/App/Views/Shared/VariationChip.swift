@@ -171,5 +171,5 @@ extension VariationChip {
     }
     .padding()
     .background(.thBackground)
-    .environment(AppPreferences())
+    .previewAppPreferences()
 }

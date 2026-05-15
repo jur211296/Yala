@@ -1645,5 +1645,5 @@ struct NewTransactionView: View {
 
 #Preview {
     NewTransactionView()
-        .environment(AppPreferences())
+        .previewAppPreferences()
 }

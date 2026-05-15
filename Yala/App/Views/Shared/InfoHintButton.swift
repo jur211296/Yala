@@ -58,5 +58,5 @@ struct InfoHintButton: View {
         Spacer()
     }
     .padding()
-    .environment(AppPreferences())
+    .previewAppPreferences()
 }

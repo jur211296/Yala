@@ -1184,5 +1184,5 @@ struct VoiceRecordingView: View {
 
 #Preview {
     VoiceRecordingView()
-        .environment(AppPreferences())
+        .previewAppPreferences()
 }

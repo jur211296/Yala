@@ -699,5 +699,5 @@ struct InboxView: View {
 #Preview {
     InboxView()
         .modelContainer(for: InboxDraft.self, inMemory: true)
-        .environment(AppPreferences())
+        .previewAppPreferences()
 }

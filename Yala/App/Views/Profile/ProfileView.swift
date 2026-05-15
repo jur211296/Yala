@@ -802,5 +802,5 @@ struct ProfileView: View {
 
 #Preview {
     ProfileView()
-        .environment(AppPreferences())
+        .previewAppPreferences()
 }

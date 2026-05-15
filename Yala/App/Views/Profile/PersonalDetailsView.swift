@@ -408,7 +408,7 @@ struct IconPickerSheet: View {
 
 #Preview {
     PersonalDetailsView()
-        .environment(AppPreferences())
+        .previewAppPreferences()
 }
 
 #Preview("Icon Picker") {

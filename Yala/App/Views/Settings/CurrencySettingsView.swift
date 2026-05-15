@@ -460,5 +460,5 @@ struct CurrencySettingsView: View {
         CurrencySettingsView()
     }
     .modelContainer(for: [Account.self, ExchangeRate.self])
-    .environment(AppPreferences())
+    .previewAppPreferences()
 }

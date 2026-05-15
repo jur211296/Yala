@@ -147,5 +147,5 @@ struct ProfileToolbarItem: ToolbarContent {
     }
     .padding()
     .background(.thBackground)
-    .environment(AppPreferences())
+    .previewAppPreferences()
 }

@@ -1376,6 +1376,6 @@ private struct AutoFocusPickerSheet: View {
     NavigationStack {
         PersonalizationSettingsView()
             .environment(SessionState())
-            .environment(AppPreferences())
+            .previewAppPreferences()
     }
 }

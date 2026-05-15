@@ -428,5 +428,5 @@ struct SearchResultRow: View {
                 Subcategory.self,
                 Tag.self,
             ], inMemory: true)
-        .environment(AppPreferences())
+        .previewAppPreferences()
 }

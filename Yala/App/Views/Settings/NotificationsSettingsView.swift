@@ -337,5 +337,5 @@ struct NotificationCard: View {
     NavigationStack {
         NotificationsSettingsView()
     }
-    .environment(AppPreferences())
+    .previewAppPreferences()
 }

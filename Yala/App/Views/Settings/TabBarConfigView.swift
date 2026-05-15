@@ -274,5 +274,5 @@ struct TabBarConfigView: View {
 
 #Preview {
     TabBarConfigView()
-        .environment(AppPreferences())
+        .previewAppPreferences()
 }
