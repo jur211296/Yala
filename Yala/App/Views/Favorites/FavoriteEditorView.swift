@@ -18,6 +18,8 @@ struct FavoriteEditorView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
 
+    @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"
+
     @State private var viewModel = FavoriteEditorViewModel()
 
     // Editing mode
@@ -292,7 +294,9 @@ struct FavoriteEditorView: View {
     }
 
     private var currencySymbol: String {
-        selectedAccount?.currencyCode ?? CurrencyDefaults.defaultCode
+        let code = selectedAccount?.currencyCode ?? CurrencyDefaults.defaultCode
+        guard let currency = CurrencyCode(rawValue: code) else { return code }
+        return currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
     }
 
     private var amountColor: Color {

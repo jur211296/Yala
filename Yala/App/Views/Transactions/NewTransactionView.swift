@@ -731,14 +731,17 @@ struct NewTransactionView: View {
         AmountInputHelper.filterAmountInput(input)
     }
 
+    /// Resuelve el identificador de moneda (symbol o code) respetando la
+    /// preference `currencyDisplayFormat` del usuario.
+    private func currencyDisplay(for code: String) -> String {
+        guard let currency = CurrencyCode(rawValue: code) else { return code }
+        return currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
+    }
+
     /// Currency display for amount field - respects user preference (code vs symbol)
     private var currencySymbol: String? {
         guard viewModel.effectiveAccount != nil else { return nil }
-        let code = viewModel.effectiveCurrencyCode
-        if let currency = CurrencyCode(rawValue: code) {
-            return currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
-        }
-        return code
+        return currencyDisplay(for: viewModel.effectiveCurrencyCode)
     }
 
     /// Exchange rate chip showing the converted amount and rate
@@ -748,13 +751,7 @@ struct NewTransactionView: View {
         let amount = viewModel.amount
         let convertedAmount = amount * rate
 
-        // Get preferred currency display based on user setting
-        let currencyDisplay: String
-        if let currency = CurrencyCode(rawValue: preferredCurrencyCode) {
-            currencyDisplay = currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
-        } else {
-            currencyDisplay = preferredCurrencyCode
-        }
+        let currencyDisplay = currencyDisplay(for: preferredCurrencyCode)
 
         // Format converted amount (no decimals if whole number, otherwise 2 decimals)
         let formattedAmount: String
