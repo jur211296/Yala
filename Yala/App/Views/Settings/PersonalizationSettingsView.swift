@@ -16,18 +16,8 @@ struct PersonalizationSettingsView: View {
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
-    @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.allTime
-        .rawValue
-    @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
-
     private var forcesMonochromeIcons: Bool { theme.forcesMonochromeIcons }
-    @AppStorage("firstWeekday") private var firstWeekdayRaw: Int = 2  // Default to Monday
-    @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
-    @AppStorage("showVariations") private var showVariations: Bool = true
-    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
     private var decimalPlaces: Int { appPreferences.decimalPlaces }
-    private var currencyDisplayFormat: String { appPreferences.currencyDisplayFormat.rawValue }
-    @AppStorage("autoFocusField") private var autoFocusField: String = "none"
     @State private var showingPeriodPicker = false
     @State private var showingAutoFocusPicker = false
     @State private var showingDecimalsPicker = false
@@ -38,23 +28,13 @@ struct PersonalizationSettingsView: View {
     @State private var showingLanguagePicker = false
     @State private var showingExpensesOnlyConfirmation = false
     @State private var showingSmartInsightsSettings = false
-    @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
-    @AppStorage(AppPreferences.Keys.voiceLanguage) private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
-
-    private var selectedVoiceLanguage: VoiceLanguage {
-        VoiceLanguage(rawValue: voiceLanguageRaw) ?? .system
-    }
 
     private var isProUser: Bool {
         FeatureGateService.shared.canAccess(.chatAssistant)
     }
 
-    private var selectedPeriod: DetailPeriod {
-        DetailPeriod(rawValue: defaultPeriodRaw) ?? .thisMonth
-    }
-
     private var selectedWeekday: FirstWeekday {
-        FirstWeekday(rawValue: firstWeekdayRaw) ?? .monday
+        FirstWeekday(rawValue: appPreferences.firstWeekday) ?? .monday
     }
 
     private var decimalPlacesDisplayName: String {
@@ -66,7 +46,7 @@ struct PersonalizationSettingsView: View {
     }
 
     private var averageLineDisplayName: String {
-        switch averageLineMode {
+        switch appPreferences.averageLineMode {
         case 1: return L10n.Settings.averageLineTotal
         case 2: return L10n.Settings.averageLineSegmented
         default: return L10n.Settings.averageLineOff
@@ -74,11 +54,11 @@ struct PersonalizationSettingsView: View {
     }
 
     private var currencyFormatDisplayName: String {
-        currencyDisplayFormat == "symbol" ? L10n.Settings.currencySymbol : L10n.Settings.currencyCode
+        appPreferences.currencyDisplayFormat == .symbol ? L10n.Settings.currencySymbol : L10n.Settings.currencyCode
     }
 
     private var autoFocusDisplayName: String {
-        switch autoFocusField {
+        switch appPreferences.autoFocusField {
         case "amount": return L10n.Settings.autoFocusAmount
         case "description": return L10n.Settings.autoFocusNote
         default: return L10n.Settings.autoFocusNone
@@ -92,7 +72,8 @@ struct PersonalizationSettingsView: View {
 
 
     var body: some View {
-        ZStack {
+        @Bindable var prefs = appPreferences
+        return ZStack {
             PanelBackgroundView()
 
             ScrollView {
@@ -273,12 +254,11 @@ struct PersonalizationSettingsView: View {
                             Menu {
                                 ForEach(VoiceLanguage.allCases) { language in
                                     Button {
-                                        voiceLanguageRaw = language.rawValue
-                                        PreferenceSyncService.shared.set(string: language.rawValue, forKey: AppPreferences.Keys.voiceLanguage)
+                                        appPreferences.voiceLanguage = language
                                     } label: {
                                         HStack {
                                             Text(language.displayName)
-                                            if voiceLanguageRaw == language.rawValue {
+                                            if appPreferences.voiceLanguage == language {
                                                 Image(systemName: "checkmark")
                                             }
                                         }
@@ -292,7 +272,7 @@ struct PersonalizationSettingsView: View {
 
                                     Spacer()
 
-                                    Text(selectedVoiceLanguage.displayName)
+                                    Text(appPreferences.voiceLanguage.displayName)
                                         .font(DS.Typography.body)
                                         .foregroundStyle(.secondary)
 
@@ -357,7 +337,7 @@ struct PersonalizationSettingsView: View {
 
                                     Spacer()
 
-                                    Toggle(L10n.Widget.chatFabToggle, isOn: $chatFABVisible)
+                                    Toggle(L10n.Widget.chatFabToggle, isOn: $prefs.chatFABVisible)
                                         .labelsHidden()
                                 }
                                 .padding(.horizontal, DS.FormRow.paddingH)
@@ -385,13 +365,10 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle(L10n.Settings.colorfulIcons, isOn: $colorfulIcons)
+                                Toggle(L10n.Settings.colorfulIcons, isOn: $prefs.colorfulIcons)
                                     .labelsHidden()
                                     .disabled(forcesMonochromeIcons)
                                     .accessibilityHint(forcesMonochromeIcons ? L10n.Accessibility.systemMonochromeIcons : "")
-                                    .onChange(of: colorfulIcons) { _, newValue in
-                                        PreferenceSyncService.shared.set(bool: newValue, forKey: "colorfulIcons")
-                                    }
 
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
@@ -428,7 +405,7 @@ struct PersonalizationSettingsView: View {
 
                                     Spacer()
 
-                                    Text(selectedPeriod.displayName)
+                                    Text(appPreferences.defaultPeriod.displayName)
                                         .font(DS.Typography.body)
                                         .foregroundStyle(.secondary)
 
@@ -504,7 +481,7 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle(L10n.Settings.widgetHints, isOn: $showWidgetHints)
+                                Toggle(L10n.Settings.widgetHints, isOn: $prefs.showWidgetHints)
                                     .labelsHidden()
 
                             }
@@ -532,11 +509,8 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle(L10n.Settings.showVariations, isOn: $showVariations)
+                                Toggle(L10n.Settings.showVariations, isOn: $prefs.showVariations)
                                     .labelsHidden()
-                                    .onChange(of: showVariations) { _, newValue in
-                                        PreferenceSyncService.shared.set(bool: newValue, forKey: "showVariations")
-                                    }
 
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
@@ -725,9 +699,9 @@ struct PersonalizationSettingsView: View {
         }
         .sheet(isPresented: $showingPeriodPicker) {
             PeriodPickerSheet(
-                selectedPeriod: selectedPeriod,
+                selectedPeriod: appPreferences.defaultPeriod,
                 onSelect: { period in
-                    defaultPeriodRaw = period.rawValue
+                    appPreferences.defaultPeriod = period
                     sessionState.selectedPeriod = period
                     showingPeriodPicker = false
                 }
@@ -741,8 +715,7 @@ struct PersonalizationSettingsView: View {
             WeekdayPickerSheet(
                 selectedWeekday: selectedWeekday,
                 onSelect: { weekday in
-                    firstWeekdayRaw = weekday.rawValue
-                    PreferenceSyncService.shared.set(int: weekday.rawValue, forKey: "firstWeekday")
+                    appPreferences.firstWeekday = weekday.rawValue
                     // Force recalculation of dateInterval with new firstWeekday
                     let currentPeriod = sessionState.selectedPeriod
                     sessionState.selectedPeriod = currentPeriod
@@ -770,9 +743,11 @@ struct PersonalizationSettingsView: View {
         }
         .sheet(isPresented: $showingCurrencyFormatPicker) {
             CurrencyFormatPickerSheet(
-                selectedFormat: currencyDisplayFormat,
+                selectedFormat: appPreferences.currencyDisplayFormat.rawValue,
                 onSelect: { format in
-                    appPreferences.currencyDisplayFormat = CurrencyDisplayFormat(rawValue: format) ?? .code
+                    if let parsed = CurrencyDisplayFormat(rawValue: format) {
+                        appPreferences.currencyDisplayFormat = parsed
+                    }
                     showingCurrencyFormatPicker = false
                 }
             )
@@ -780,10 +755,9 @@ struct PersonalizationSettingsView: View {
         }
         .sheet(isPresented: $showingAutoFocusPicker) {
             AutoFocusPickerSheet(
-                selectedField: autoFocusField,
+                selectedField: appPreferences.autoFocusField,
                 onSelect: { field in
-                    autoFocusField = field
-                    PreferenceSyncService.shared.set(string: field, forKey: "autoFocusField")
+                    appPreferences.autoFocusField = field
                     showingAutoFocusPicker = false
                 }
             )
@@ -791,10 +765,9 @@ struct PersonalizationSettingsView: View {
         }
         .sheet(isPresented: $showingAverageLinePicker) {
             AverageLinePickerSheet(
-                selectedMode: averageLineMode,
+                selectedMode: appPreferences.averageLineMode,
                 onSelect: { mode in
-                    averageLineMode = mode
-                    PreferenceSyncService.shared.set(int: mode, forKey: "averageLineMode")
+                    appPreferences.averageLineMode = mode
                     showingAverageLinePicker = false
                 }
             )
@@ -1403,5 +1376,6 @@ private struct AutoFocusPickerSheet: View {
     NavigationStack {
         PersonalizationSettingsView()
             .environment(SessionState())
+            .environment(AppPreferences())
     }
 }
