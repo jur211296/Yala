@@ -36,7 +36,7 @@ struct WeekdayBarChart: View {
     /// Reorder weekdays respecting the user's `firstWeekday` preference.
     /// Missing weekdays are still shown as empty bars so the axis never collapses.
     private var orderedData: [WeekdaySpending] {
-        let order = Self.weekdayOrder(firstWeekday: appPreferences.firstWeekday)
+        let order = Self.weekdayOrder(firstWeekday: appPreferences.firstWeekday.rawValue)
         return order.map { day in
             data.first(where: { $0.weekday == day })
                 ?? WeekdaySpending(weekday: day, total: 0, count: 0, dayOccurrences: 0)

@@ -34,7 +34,7 @@ struct PersonalizationSettingsView: View {
     }
 
     private var selectedWeekday: FirstWeekday {
-        FirstWeekday(rawValue: appPreferences.firstWeekday) ?? .monday
+        appPreferences.firstWeekday
     }
 
     private var decimalPlacesDisplayName: String {
@@ -707,7 +707,7 @@ struct PersonalizationSettingsView: View {
             WeekdayPickerSheet(
                 selectedWeekday: selectedWeekday,
                 onSelect: { weekday in
-                    appPreferences.firstWeekday = weekday.rawValue
+                    appPreferences.firstWeekday = weekday
                     // Force recalculation of dateInterval with new firstWeekday
                     let currentPeriod = sessionState.selectedPeriod
                     sessionState.selectedPeriod = currentPeriod

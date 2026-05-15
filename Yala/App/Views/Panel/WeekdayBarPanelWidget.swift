@@ -124,7 +124,7 @@ struct WeekdayBarPanelWidget: View {
 
     private var voiceoverLabel: String {
         var parts: [String] = [L10n.WidgetType.weekdayBar]
-        for day in WeekdayBarChart.weekdayOrder(firstWeekday: appPreferences.firstWeekday) {
+        for day in WeekdayBarChart.weekdayOrder(firstWeekday: appPreferences.firstWeekday.rawValue) {
             guard let entry = data.first(where: { $0.weekday == day }), entry.average > 0 else { continue }
             let amount = appPreferences.currency(entry.average, currencyCode: currencyCode)
             parts.append("\(entry.shortName): \(amount)")

@@ -279,7 +279,7 @@ struct ScheduledPaymentsListView: View {
 
         let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: month)) ?? month
         let firstDayWeekday = calendar.component(.weekday, from: firstDayOfMonth)
-        let emptyCellsCount = (firstDayWeekday - appPreferences.firstWeekday + 7) % 7
+        let emptyCellsCount = (firstDayWeekday - appPreferences.firstWeekday.rawValue + 7) % 7
 
         // Build payment dates map
         var paymentsByDay: [Int: [ScheduledPayment]] = [:]
@@ -321,7 +321,7 @@ struct ScheduledPaymentsListView: View {
 
     private var weekdayHeaders: some View {
         let symbols = Calendar.current.veryShortWeekdaySymbols
-        let startIndex = appPreferences.firstWeekday - 1
+        let startIndex = appPreferences.firstWeekday.rawValue - 1
         let reorderedSymbols = Array(symbols[startIndex...]) + Array(symbols[..<startIndex])
 
         return HStack(spacing: DS.Spacing.xs) {

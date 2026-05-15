@@ -129,10 +129,10 @@ final class AppPreferences {
         }
     }
 
-    var firstWeekday: Int = 2 {
+    var firstWeekday: FirstWeekday = .monday {
         didSet {
             guard oldValue != firstWeekday else { return }
-            persistInt(firstWeekday, forKey: Keys.firstWeekday, synced: true)
+            persistInt(firstWeekday.rawValue, forKey: Keys.firstWeekday, synced: true)
         }
     }
 
@@ -848,8 +848,9 @@ final class AppPreferences {
         if let raw = defaults.string(forKey: Keys.defaultPeriod), let period = DetailPeriod(rawValue: raw) {
             defaultPeriod = period
         }
-        if defaults.object(forKey: Keys.firstWeekday) != nil {
-            firstWeekday = defaults.integer(forKey: Keys.firstWeekday)
+        if defaults.object(forKey: Keys.firstWeekday) != nil,
+           let value = FirstWeekday(rawValue: defaults.integer(forKey: Keys.firstWeekday)) {
+            firstWeekday = value
         }
         if let raw = defaults.string(forKey: Keys.accountsSortOrderNames) {
             accountsSortOrderNames = raw.isEmpty ? [] : raw.split(separator: "|").map { String($0) }

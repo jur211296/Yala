@@ -252,12 +252,12 @@ struct AppPreferencesTests {
         let prefs = AppPreferences(defaults: defaults)
 
         prefs.decimalPlaces = 4
-        prefs.firstWeekday = 1  // Sunday
+        prefs.firstWeekday = .sunday
         prefs.averageLineMode = 2
 
         let reloaded = AppPreferences(defaults: defaults)
         #expect(reloaded.decimalPlaces == 4)
-        #expect(reloaded.firstWeekday == 1)
+        #expect(reloaded.firstWeekday == .sunday)
         #expect(reloaded.averageLineMode == 2)
     }
 
