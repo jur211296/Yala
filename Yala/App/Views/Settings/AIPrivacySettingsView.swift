@@ -12,9 +12,7 @@ import SwiftUI
 struct AIPrivacySettingsView: View {
 
     @Environment(\.openURL) private var openURL
-    @AppStorage(AppPreferences.Keys.aiDataConsentAccepted) private var dataConsent: Bool = false
-    @AppStorage(AppPreferences.Keys.aiChatConsentAccepted) private var chatConsent: Bool = false
-    @AppStorage(AppPreferences.Keys.aiInsightsConsentAccepted) private var insightsConsent: Bool = false
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var dataToggle: Bool = false
     @State private var chatToggle: Bool = false
@@ -69,32 +67,32 @@ struct AIPrivacySettingsView: View {
         .navigationTitle(L10n.AIPrivacy.title)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            dataToggle = dataConsent
-            chatToggle = chatConsent
-            insightsToggle = insightsConsent
+            dataToggle = appPreferences.aiDataConsentAccepted
+            chatToggle = appPreferences.aiChatConsentAccepted
+            insightsToggle = appPreferences.aiInsightsConsentAccepted
         }
-        .onChange(of: dataConsent) { _, newValue in dataToggle = newValue }
-        .onChange(of: chatConsent) { _, newValue in chatToggle = newValue }
-        .onChange(of: insightsConsent) { _, newValue in insightsToggle = newValue }
+        .onChange(of: appPreferences.aiDataConsentAccepted) { _, newValue in dataToggle = newValue }
+        .onChange(of: appPreferences.aiChatConsentAccepted) { _, newValue in chatToggle = newValue }
+        .onChange(of: appPreferences.aiInsightsConsentAccepted) { _, newValue in insightsToggle = newValue }
         .onChange(of: dataToggle) { _, newValue in
-            if newValue && !dataConsent {
+            if newValue && !appPreferences.aiDataConsentAccepted {
                 pendingAIInput = .voice
                 showDataConsentAlert = true
-            } else if !newValue && dataConsent {
+            } else if !newValue && appPreferences.aiDataConsentAccepted {
                 showRevokeDataDialog = true
             }
         }
         .onChange(of: chatToggle) { _, newValue in
-            if newValue && !chatConsent {
+            if newValue && !appPreferences.aiChatConsentAccepted {
                 showChatConsentAlert = true
-            } else if !newValue && chatConsent {
+            } else if !newValue && appPreferences.aiChatConsentAccepted {
                 showRevokeChatDialog = true
             }
         }
         .onChange(of: insightsToggle) { _, newValue in
-            if newValue && !insightsConsent {
+            if newValue && !appPreferences.aiInsightsConsentAccepted {
                 showInsightsConsentAlert = true
-            } else if !newValue && insightsConsent {
+            } else if !newValue && appPreferences.aiInsightsConsentAccepted {
                 showRevokeInsightsDialog = true
             }
         }
@@ -107,7 +105,7 @@ struct AIPrivacySettingsView: View {
             titleVisibility: .visible
         ) {
             Button(L10n.AIPrivacy.revokeConfirmAction, role: .destructive) {
-                dataConsent = false
+                appPreferences.aiDataConsentAccepted = false
             }
             Button(L10n.Action.cancel, role: .cancel) {
                 dataToggle = true
@@ -121,7 +119,7 @@ struct AIPrivacySettingsView: View {
             titleVisibility: .visible
         ) {
             Button(L10n.AIPrivacy.revokeConfirmAction, role: .destructive) {
-                chatConsent = false
+                appPreferences.aiChatConsentAccepted = false
             }
             Button(L10n.Action.cancel, role: .cancel) {
                 chatToggle = true
@@ -135,7 +133,7 @@ struct AIPrivacySettingsView: View {
             titleVisibility: .visible
         ) {
             Button(L10n.AIPrivacy.revokeConfirmAction, role: .destructive) {
-                insightsConsent = false
+                appPreferences.aiInsightsConsentAccepted = false
             }
             Button(L10n.Action.cancel, role: .cancel) {
                 insightsToggle = true
