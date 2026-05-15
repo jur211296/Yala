@@ -46,11 +46,8 @@ struct DetailContainerView: View {
     @State private var lastScoreSignature: Int = 0
     private let isFromSearch: Bool  // Skip session sync when coming from global search
 
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
-        .rawValue
-    @AppStorage(AppPreferences.Keys.aiDataConsentAccepted) private var aiDataConsentAccepted: Bool = false
-    @AppStorage(InsightTone.storageKey) private var toneSetting: String = InsightTone.normal.rawValue
-    @AppStorage(InsightFocus.storageKey) private var focusSetting: String = InsightFocus.balanced.rawValue
+    @Environment(AppPreferences.self) private var appPreferences
+
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
 
@@ -70,9 +67,6 @@ struct DetailContainerView: View {
     @State private var showChatConsentAlert = false
     @State private var showYalaAIOnboarding = false
     @State private var pendingOpenChatAfterOnboarding = false
-    @AppStorage(AppPreferences.Keys.aiChatConsentAccepted) private var aiChatConsentAccepted: Bool = false
-    @AppStorage(AppPreferences.Keys.hasShownYalaAIOnboarding) private var hasShownYalaAIOnboarding: Bool = false
-    @AppStorage("chatFABVisible") private var chatFABVisible: Bool = true
 
     // MARK: - Pro Feature Gates
 
@@ -121,7 +115,8 @@ struct DetailContainerView: View {
     // MARK: - Body
 
     var body: some View {
-        mainContent
+        @Bindable var prefs = appPreferences
+        return mainContent
             .toolbar {
                 if recordsViewModel.isSelectionMode {
                     selectionModeToolbar
@@ -147,8 +142,8 @@ struct DetailContainerView: View {
                     showChatConsentAlert: $showChatConsentAlert,
                     showYalaAIOnboarding: $showYalaAIOnboarding,
                     pendingOpenChatAfterOnboarding: $pendingOpenChatAfterOnboarding,
-                    aiChatConsentAccepted: $aiChatConsentAccepted,
-                    hasShownYalaAIOnboarding: $hasShownYalaAIOnboarding,
+                    aiChatConsentAccepted: $prefs.aiChatConsentAccepted,
+                    hasShownYalaAIOnboarding: $prefs.hasShownYalaAIOnboarding,
                     modelContext: modelContext,
                     recalculateData: recalculateData,
                     reloadAndRecalculate: reloadAndRecalculate
@@ -204,8 +199,8 @@ struct DetailContainerView: View {
                 reloadAndRecalculate()
             }
             .onChange(of: sessionState.comparisonMode) { recalculateData() }
-            .onChange(of: toneSetting) { recalculateData() }
-            .onChange(of: focusSetting) { recalculateData() }
+            .onChange(of: appPreferences.insightsTone) { recalculateData() }
+            .onChange(of: appPreferences.insightsFocus) { recalculateData() }
             .modifier(
                 DetailContainerObservers(
                     sessionState: sessionState,
@@ -251,8 +246,8 @@ struct DetailContainerView: View {
                             isVoiceLocked: isVoiceLocked,
                             isImageLocked: isImageLocked,
                             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
-                            chatConsentAccepted: aiChatConsentAccepted,
-                            chatFABVisible: chatFABVisible,
+                            chatConsentAccepted: appPreferences.aiChatConsentAccepted,
+                            chatFABVisible: appPreferences.chatFABVisible,
                             onVoiceTap: { showVoiceRecording = true },
                             onImageTap: { showImageSelection = true },
                             onManualTap: { recordsViewModel.showNewTransaction = true },
@@ -260,8 +255,8 @@ struct DetailContainerView: View {
                             onUpgradeImage: { showUpgradeForImage = true },
                             onChatTap: {
                                 switch YalaAIOnboardingLogic.nextScreen(
-                                    consentAccepted: aiChatConsentAccepted,
-                                    onboardingShown: hasShownYalaAIOnboarding
+                                    consentAccepted: appPreferences.aiChatConsentAccepted,
+                                    onboardingShown: appPreferences.hasShownYalaAIOnboarding
                                 ) {
                                 case .onboarding: showYalaAIOnboarding = true
                                 case .chat:       showChatSheet = true
@@ -307,7 +302,7 @@ struct DetailContainerView: View {
                 allTransactions: dataViewModel.allTransactions,
                 budgets: dataViewModel.budgets,
                 scheduledPayments: dataViewModel.scheduledPayments,
-                defaultCurrencyCode: defaultCurrencyCode,
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 viewModel: insightsViewModel,
                 trendsViewModel: trendsViewModel
             )
@@ -320,7 +315,7 @@ struct DetailContainerView: View {
                 allTransactions: dataViewModel.allTransactions,
                 trendsViewModel: trendsViewModel,
                 insightsViewModel: insightsViewModel,
-                defaultCurrencyCode: defaultCurrencyCode
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
         case .categories:
             CategoriesTabView(
@@ -331,7 +326,7 @@ struct DetailContainerView: View {
                 allTransactions: dataViewModel.allTransactions,
                 viewModel: trendsViewModel,
                 insightsViewModel: insightsViewModel,
-                defaultCurrencyCode: defaultCurrencyCode
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
         case .records:
             RecordsTabView(
@@ -341,7 +336,7 @@ struct DetailContainerView: View {
                 tags: dataViewModel.tags,
                 subcategories: dataViewModel.allSubcategories,
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
-                defaultCurrencyCode: defaultCurrencyCode,
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() }
             )
         }
@@ -571,7 +566,7 @@ struct DetailContainerView: View {
         trendsViewModel.calculateTrendData(
             accounts: dataViewModel.accounts,
             transactions: dataViewModel.allTransactions,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
         // Distribution Insight Card también requiere insightData.periodSummary
         // para el gate >=5 tx — calcular cuando estamos en cualquiera de las 2 tabs.
@@ -590,7 +585,7 @@ struct DetailContainerView: View {
             scheduledPayments: dataViewModel.scheduledPayments,
             period: sessionState.selectedPeriod,
             criteria: trendsViewModel.filterCriteria,
-            currencyCode: defaultCurrencyCode,
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
             customRange: sessionState.customDateRange,
             comparisonMode: sessionState.comparisonMode
         )
@@ -624,7 +619,7 @@ struct DetailContainerView: View {
                 paidAmounts: paidAmounts,
                 period: trendsViewModel.detailPeriod,
                 customRange: trendsViewModel.customDateRange,
-                preferredCurrencyCode: defaultCurrencyCode
+                preferredCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
         }
 
@@ -637,7 +632,7 @@ struct DetailContainerView: View {
             period: sessionState.selectedPeriod,
             filterHash: criteria.hashValue,
             txnCount: dataViewModel.allTransactions.count,
-            currencyCode: defaultCurrencyCode,
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
             comparisonMode: sessionState.comparisonMode,
             criteria: criteria,
             accounts: dataViewModel.accounts,
@@ -669,6 +664,7 @@ struct DetailContainerView: View {
     NavigationStack {
         DetailContainerView()
     }
+    .environment(AppPreferences())
 }
 
 // MARK: - View Helpers
