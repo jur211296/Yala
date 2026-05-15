@@ -90,6 +90,24 @@ Detalles completos en `$VAULT/planning/TESTING-STRATEGY.md`. Reglas mínimas:
 - Componentes estándar: `YalaPrimaryButton`, `YalaEmptyState`, etc.
 - Tablas DS.Semantic / DS.Gradients en SWIFT-STYLE.md.
 
+### Backgrounds de vista
+- TODA View root, sheet, fullScreenCover NUEVA → `.yalaScreenBackground(_:ignoredEdges:)`.
+- NUNCA aplicar `.background(theme.background)`, `.background(.thBackground)` ni default iOS sin background.
+- Forms/Lists dentro de sheet → `.scrollContentBackground(.hidden)` MANUAL antes del modifier (el modifier no lo hace automático para preservar predictibilidad).
+- Variantes (`YalaBackgroundVariant`):
+  - `.panel` (default) — PanelBackgroundView gradient temático. Destinos ricos (forms, selectors, tab roots, vistas navegadas).
+  - `.subtle` — `theme.background` plano. Decisión consciente para success/celebración donde el contenido brilla sin distraer.
+  - `.compact` — PanelBackgroundView sin `ignoresSafeArea` por default. Detents `.medium` / `.height(<320)`.
+  - `.transparent` — sin fondo. Sheets con `.glassSheet()` material.
+- Param `ignoredEdges: Edge.Set?`: si `nil`, default `.all` (excepto `.compact` que usa `[]`). Para vistas con `safeAreaInset` pasar edges específicos (`[.top]`, `[.bottom]`).
+- OUT: WelcomeFlow (`DS.Gradients.heroIndigoBlack` especializado), InboxAlertModal (custom modal Color.black backdrop), popovers (iOS nativo).
+- `GlassSheetModifier.glassSheet()` se mantiene como helper específico de sheets con `.presentationBackground(.ultraThinMaterial)` + drag indicator — convive con `.transparent` variant.
+
+#### Patrones aceptados temporalmente (deuda incremental, migrar al tocar el archivo)
+
+- **Pattern B**: `ZStack { PanelBackgroundView(); content }` manual (~99 callsites). Funcionalmente equivalente al modifier (mismo ZStack interno). Sprint dedicado de cleanup post-épico cerrará el sanity grep "0 residuales".
+- **Pattern Subtle**: `ZStack { theme.background.ignoresSafeArea(); ...overlays; content }` en success screens (TransactionSuccessView, SubscriptionSuccessView, InboxApproveSuccessView, InboxBulkApproveSuccessView). Reescribir el ZStack rompería overlays propios (ConfettiView, RadialGradient glow). Semánticamente ES `.subtle`.
+
 ### Documentation & copy
 - Describir features desde la perspectiva del USUARIO, no técnica.
 - NUNCA fabricar features — solo lo confirmado en scope.
