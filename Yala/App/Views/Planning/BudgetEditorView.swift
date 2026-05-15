@@ -102,7 +102,7 @@ struct BudgetEditorView: View {
             }
             .scrollViewGlassEdges()
             .scrollDismissesKeyboard(.interactively)
-            .background(PanelBackgroundView())
+            .yalaScreenBackground()
             .alert(
                 NSLocalizedString("budgets.delete.confirm.title", comment: ""),
                 isPresented: $showDeleteConfirmation

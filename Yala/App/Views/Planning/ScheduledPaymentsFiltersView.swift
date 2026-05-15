@@ -38,7 +38,7 @@ struct ScheduledPaymentsFiltersView: View {
                 .padding(.vertical, DS.Spacing.lg)
                 .padding(.horizontal, DS.Spacing.lg)
             }
-            .background(PanelBackgroundView())
+            .yalaScreenBackground()
             .navigationTitle(NSLocalizedString("filters.title", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

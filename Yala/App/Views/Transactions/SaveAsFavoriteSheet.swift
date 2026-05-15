@@ -107,7 +107,7 @@ struct SaveAsFavoriteSheet: View {
                 .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(PanelBackgroundView())
+            .yalaScreenBackground()
             .navigationTitle(L10n.Action.saveAsFavorite)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

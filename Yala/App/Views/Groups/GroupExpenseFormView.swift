@@ -436,7 +436,7 @@ struct GroupExpenseFormView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
             }
-            .background(PanelBackgroundView())
+            .yalaScreenBackground()
             .navigationTitle(L10n.Groups.Expense.divideBetween)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
