@@ -84,7 +84,6 @@ struct CategoriesTabView: View {
 
     // Content mode pill — separa visualizaciones (Gráficas) de tablas (Detalle)
     @State private var contentMode: DistributionContentMode = .charts
-    @Namespace private var contentModeNamespace
 
     @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
 
@@ -364,36 +363,12 @@ struct CategoriesTabView: View {
     // MARK: - Content Mode Pill (Gráficas / Detalle)
 
     private var contentModePill: some View {
-        HStack(spacing: DS.Spacing.none) {
-            ForEach(DistributionContentMode.allCases, id: \.self) { mode in
-                Button {
-                    dsWithAnimation(reduceMotion) {
-                        contentMode = mode
-                    }
-                } label: {
-                    Text(mode.label)
-                        .font(DS.Typography.label.weight(contentMode == mode ? .semibold : .medium))
-                        .foregroundStyle(contentMode == mode ? Color.white : Color.primary)
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.vertical, DS.Chip.paddingV)
-                        .frame(maxWidth: .infinity)
-                        .background {
-                            if contentMode == mode {
-                                Capsule()
-                                    .fill(theme.accent)
-                                    .matchedGeometryEffect(id: "selection", in: contentModeNamespace)
-                            }
-                        }
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(mode.label)
-                .accessibilityAddTraits(contentMode == mode ? .isSelected : [])
-            }
-        }
-        .padding(DS.Spacing.xs)
-        .background(Capsule().fill(.thCard))
-        .overlay(Capsule().stroke(Color.primary.opacity(0.06), lineWidth: 1))
+        GenericSegmentedPill(
+            options: DistributionContentMode.allCases,
+            selection: $contentMode,
+            labelProvider: { $0.label },
+            selectedFillColorProvider: { _ in theme.accent }
+        )
     }
 
     // MARK: - Charts Section (analysisHeader + chartsCarousel)

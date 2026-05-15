@@ -47,7 +47,6 @@ struct InsightsTabView: View {
     @State private var contentMode: InsightsContentMode = .detail
     @State private var isCommitmentsExpanded: Bool = false
     @State private var isNeedSectionExpanded: Bool = false
-    @Namespace private var contentModeNamespace
 
     // Coach mark: Pro tour (Phase 3)
     @State private var showProInsightsTour = false
@@ -914,36 +913,12 @@ struct InsightsTabView: View {
     // MARK: - Content Mode Pill (standalone, full-width iOS 26 Liquid Glass)
 
     private var contentModePill: some View {
-        HStack(spacing: DS.Spacing.none) {
-            ForEach(InsightsContentMode.allCases, id: \.self) { mode in
-                Button {
-                    dsWithAnimation(reduceMotion) {
-                        contentMode = mode
-                    }
-                } label: {
-                    Text(mode.label)
-                        .font(DS.Typography.label.weight(contentMode == mode ? .semibold : .medium))
-                        .foregroundStyle(contentMode == mode ? Color.white : Color.primary)
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.vertical, DS.Chip.paddingV)
-                        .frame(maxWidth: .infinity)
-                        .background {
-                            if contentMode == mode {
-                                Capsule()
-                                    .fill(theme.accent)
-                                    .matchedGeometryEffect(id: "selection", in: contentModeNamespace)
-                            }
-                        }
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(mode.label)
-                .accessibilityAddTraits(contentMode == mode ? .isSelected : [])
-            }
-        }
-        .padding(DS.Spacing.xs)
-        .background(Capsule().fill(.thCard))
-        .overlay(Capsule().stroke(Color.primary.opacity(0.06), lineWidth: 1))
+        GenericSegmentedPill(
+            options: InsightsContentMode.allCases,
+            selection: $contentMode,
+            labelProvider: { $0.label },
+            selectedFillColorProvider: { _ in theme.accent }
+        )
     }
 
 }

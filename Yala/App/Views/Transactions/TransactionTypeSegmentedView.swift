@@ -11,64 +11,17 @@ import SwiftUI
 
 /// Selector tipo cápsula iOS para Gasto/Ingreso/Transferencia
 struct TransactionTypeSegmentedView: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Binding var selectedType: TransactionType
     var availableTypes: [TransactionType] = TransactionType.allCases
 
-    @Namespace private var animation
-
     var body: some View {
-        HStack(spacing: DS.Spacing.none) {
-            ForEach(availableTypes) { type in
-                TransactionTypeButton(
-                    type: type,
-                    isSelected: selectedType == type,
-                    animation: animation
-                ) {
-                    dsWithAnimation(reduceMotion) {
-                        selectedType = type
-                    }
-                }
-            }
-        }
-        .padding(DS.Spacing.xs)
-        .background(
-            Capsule()
-                .fill(.thCard)
-        )
-        .overlay(
-            Capsule()
-                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+        GenericSegmentedPill(
+            options: availableTypes,
+            selection: $selectedType,
+            labelProvider: { $0.displayName },
+            selectedFillColorProvider: { $0.color }
         )
         .shadow(color: DS.Shadow.subtle.color, radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
-    }
-}
-
-// MARK: - Transaction Type Button
-
-struct TransactionTypeButton: View {
-    let type: TransactionType
-    let isSelected: Bool
-    let animation: Namespace.ID
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(type.displayName)
-                .font(DS.Typography.label.weight(isSelected ? .semibold : .medium))
-                .foregroundStyle(isSelected ? .white : .primary)
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Chip.paddingV)
-                .frame(maxWidth: .infinity)
-                .background {
-                    if isSelected {
-                        Capsule()
-                            .fill(type.color)
-                            .matchedGeometryEffect(id: "selection", in: animation)
-                    }
-                }
-        }
-        .buttonStyle(.plain)
     }
 }
 
