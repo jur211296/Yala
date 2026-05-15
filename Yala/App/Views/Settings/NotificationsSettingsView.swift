@@ -12,9 +12,9 @@ struct NotificationsSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = NotificationsSettingsViewModel()
-    @AppStorage("budgetAlertsEnabled") private var budgetAlertsEnabled: Bool = false
 
     var body: some View {
         ZStack {
@@ -193,7 +193,8 @@ struct NotificationsSettingsView: View {
     // MARK: - Budget Alerts Section
 
     private var budgetAlertsSection: some View {
-        HStack(spacing: DS.Spacing.md) {
+        @Bindable var prefs = appPreferences
+        return HStack(spacing: DS.Spacing.md) {
             // Icon (estilo NotificationCard)
             ZStack {
                 Circle()
@@ -220,7 +221,7 @@ struct NotificationsSettingsView: View {
             Spacer()
 
             // Toggle
-            Toggle(L10n.Notifications.budgetAlertsTitle, isOn: $budgetAlertsEnabled)
+            Toggle(L10n.Notifications.budgetAlertsTitle, isOn: $prefs.budgetAlertsEnabled)
                 .labelsHidden()
 
         }
@@ -336,4 +337,5 @@ struct NotificationCard: View {
     NavigationStack {
         NotificationsSettingsView()
     }
+    .environment(AppPreferences())
 }
