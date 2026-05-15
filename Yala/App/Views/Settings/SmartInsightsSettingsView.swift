@@ -10,20 +10,11 @@ import SwiftUI
 struct SmartInsightsSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
-
-    // MARK: - Section Visibility
-
-    @AppStorage("insightsShowQuickStats") private var showQuickStats = true
-    @AppStorage("insightsShowCommitments") private var showCommitments = true
-    @AppStorage("insightsShowPendingPayments") private var showPendingPayments = true
-    @AppStorage("insightsShowSubscriptions") private var showSubscriptions = true
-    @AppStorage("insightsShowBudgetsAtRisk") private var showBudgetsAtRisk = true
-    @AppStorage("insightsShowWeekday") private var showWeekday = true
-    @AppStorage("insightsShowNature") private var showNeed = true
-    @AppStorage("insightsShowTexts") private var showTexts = true
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
-        NavigationStack {
+        @Bindable var prefs = appPreferences
+        return NavigationStack {
             ZStack {
                 PanelBackgroundView()
 
@@ -32,34 +23,34 @@ struct SmartInsightsSettingsView: View {
                         // Metrics Section
                         SectionBox(title: L10n.Insights.metricsSection) {
                             VStack(spacing: DS.Spacing.none) {
-                                settingsToggle(L10n.Insights.quickStats, isOn: $showQuickStats)
+                                settingsToggle(L10n.Insights.quickStats, isOn: $prefs.insightsShowQuickStats)
                             }
                         }
 
                         // Commitments Section
                         SectionBox(title: L10n.Insights.commitments) {
                             VStack(spacing: DS.Spacing.none) {
-                                settingsToggle(L10n.Insights.pendingPayments, isOn: $showPendingPayments)
+                                settingsToggle(L10n.Insights.pendingPayments, isOn: $prefs.insightsShowPendingPayments)
                                 SubsectionDivider()
-                                settingsToggle(L10n.Insights.activeSubscriptions, isOn: $showSubscriptions)
+                                settingsToggle(L10n.Insights.activeSubscriptions, isOn: $prefs.insightsShowSubscriptions)
                                 SubsectionDivider()
-                                settingsToggle(L10n.Insights.budgetsAtRisk, isOn: $showBudgetsAtRisk)
+                                settingsToggle(L10n.Insights.budgetsAtRisk, isOn: $prefs.insightsShowBudgetsAtRisk)
                             }
                         }
 
                         // Charts Section
                         SectionBox(title: L10n.Insights.chartsSection) {
                             VStack(spacing: DS.Spacing.none) {
-                                settingsToggle(L10n.Insights.weekdayAverage, isOn: $showWeekday)
+                                settingsToggle(L10n.Insights.weekdayAverage, isOn: $prefs.insightsShowWeekday)
                             }
                         }
 
                         // Analysis Section
                         SectionBox(title: L10n.Insights.analysisSection) {
                             VStack(spacing: DS.Spacing.none) {
-                                settingsToggle(L10n.Insights.needDistribution, isOn: $showNeed)
+                                settingsToggle(L10n.Insights.needDistribution, isOn: $prefs.insightsShowNature)
                                 SubsectionDivider()
-                                settingsToggle(L10n.Insights.intelligentInsights, isOn: $showTexts)
+                                settingsToggle(L10n.Insights.intelligentInsights, isOn: $prefs.insightsShowTexts)
                             }
                         }
 
@@ -105,13 +96,12 @@ struct SmartInsightsSettingsView: View {
     // MARK: - Restore Defaults
 
     private func restoreDefaults() {
-        showQuickStats = true
-        showCommitments = true
-        showPendingPayments = true
-        showSubscriptions = true
-        showBudgetsAtRisk = true
-        showWeekday = true
-        showNeed = true
-        showTexts = true
+        appPreferences.insightsShowQuickStats = true
+        appPreferences.insightsShowPendingPayments = true
+        appPreferences.insightsShowSubscriptions = true
+        appPreferences.insightsShowBudgetsAtRisk = true
+        appPreferences.insightsShowWeekday = true
+        appPreferences.insightsShowNature = true
+        appPreferences.insightsShowTexts = true
     }
 }
