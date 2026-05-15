@@ -12,7 +12,7 @@ struct VariationChip: View {
 
     // MARK: - Settings
 
-    @AppStorage("showVariations") private var showVariations: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Properties
 
@@ -86,7 +86,7 @@ struct VariationChip: View {
     @ViewBuilder
     var body: some View {
         // Hide entirely when showVariations is OFF
-        if !showVariations {
+        if !appPreferences.showVariations {
             EmptyView()
         } else if let variation = variation {
             // Show formatted variation percentage
@@ -171,4 +171,5 @@ extension VariationChip {
     }
     .padding()
     .background(.thBackground)
+    .environment(AppPreferences())
 }
