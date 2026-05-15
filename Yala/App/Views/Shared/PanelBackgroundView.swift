@@ -15,12 +15,12 @@ struct PanelBackgroundView: View {
 
     var body: some View {
         Group {
-            if theme.usesMaterial {
-                LinearGradient(
-                    colors: [theme.accent.mix(with: .black, by: 0.5), .black],
-                    startPoint: .top,
-                    endPoint: .bottom
+            if let meshConfig = MeshConfigResolver.config(for: theme) {
+                AnimatedMeshBackground(
+                    variant: meshConfig.variant,
+                    isLiquidGlass: meshConfig.isLiquidGlass
                 )
+                .accessibilityHidden(true)
             } else if theme.hasGradient {
                 LinearGradient(
                     colors: [
@@ -38,7 +38,7 @@ struct PanelBackgroundView: View {
     }
 }
 
-// MARK: - AnimatedMeshBackground (sin callers; preservado para reactivación futura opt-in)
+// MARK: - AnimatedMeshBackground (usado por PanelBackgroundView via MeshConfigResolver para themes translucent)
 
 struct AnimatedMeshBackground: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
