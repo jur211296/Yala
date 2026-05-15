@@ -72,13 +72,12 @@ struct SearchContentView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppPreferences.self) private var appPreferences
     @Binding var searchText: String
     let transactions: [TransactionItem]  // Passed from parent
 
     @State private var selectedFilter: SearchFilter = .all
     @State private var editingTransaction: TransactionItem?
-
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = "PEN"
 
     // MARK: - Filtered Results
 
@@ -240,7 +239,7 @@ struct SearchContentView: View {
                 ForEach(groupedResults, id: \.date) { group in
                     Section {
                         ForEach(group.records, id: \.persistentModelID) { record in
-                            SearchResultRow(record: record, currencyCode: defaultCurrencyCode) {
+                            SearchResultRow(record: record, currencyCode: appPreferences.defaultCurrencyCode.rawValue) {
                                 editingTransaction = record
                             }
                             .padding(.horizontal, DS.Spacing.lg)
@@ -429,4 +428,5 @@ struct SearchResultRow: View {
                 Subcategory.self,
                 Tag.self,
             ], inMemory: true)
+        .environment(AppPreferences())
 }
