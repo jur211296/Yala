@@ -471,13 +471,13 @@ struct NewTransactionView: View {
                 viewModel.transactionType = .expense
             }
             // Auto-focus field based on user preference (only for new transactions)
-            if transactionToEdit == nil && appPreferences.autoFocusField != "none" {
+            if transactionToEdit == nil, appPreferences.autoFocusField != .none {
                 Task {
                     try? await Task.sleep(for: .milliseconds(50))
-                    if appPreferences.autoFocusField == "amount" {
-                        isAmountFieldFocused = true
-                    } else {
-                        isNoteFieldFocused = true
+                    switch appPreferences.autoFocusField {
+                    case .none: break
+                    case .amount: isAmountFieldFocused = true
+                    case .description: isNoteFieldFocused = true
                     }
                 }
             }

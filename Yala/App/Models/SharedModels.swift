@@ -28,6 +28,23 @@ enum FirstWeekday: Int, CaseIterable, Identifiable {
     }
 }
 
+/// Auto-focus target when opening a new transaction form.
+enum AutoFocusField: String, CaseIterable, Identifiable {
+    case none
+    case amount
+    case description
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .none: return L10n.Settings.autoFocusNone
+        case .amount: return L10n.Settings.autoFocusAmount
+        case .description: return L10n.Settings.autoFocusNote
+        }
+    }
+}
+
 /// Naturaleza de subcategoría (esencial, prioritaria, opcional, sin clasificar)
 enum SubcategoryNeed: String, CaseIterable, Identifiable {
     case essential = "esencial"

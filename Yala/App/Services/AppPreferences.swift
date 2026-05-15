@@ -287,10 +287,10 @@ final class AppPreferences {
         }
     }
 
-    var autoFocusField: String = "none" {
+    var autoFocusField: AutoFocusField = .none {
         didSet {
             guard oldValue != autoFocusField else { return }
-            persistString(autoFocusField, forKey: Keys.autoFocusField, synced: true)
+            persistString(autoFocusField.rawValue, forKey: Keys.autoFocusField, synced: true)
         }
     }
 
@@ -898,8 +898,9 @@ final class AppPreferences {
         if let raw = defaults.string(forKey: Keys.insightsFocus), let focus = InsightFocus(rawValue: raw) {
             insightsFocus = focus
         }
-        if let raw = defaults.string(forKey: Keys.autoFocusField), !raw.isEmpty {
-            autoFocusField = raw
+        if let raw = defaults.string(forKey: Keys.autoFocusField),
+           let value = AutoFocusField(rawValue: raw) {
+            autoFocusField = value
         }
 
         // Budgets / Alerts

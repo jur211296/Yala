@@ -269,7 +269,7 @@ struct AppPreferencesTests {
         prefs.userAlias = "Ada"
         prefs.userProfileIcon = "star.fill"
         prefs.tabConfigJSON = "{\"version\":1}"
-        prefs.autoFocusField = "amount"
+        prefs.autoFocusField = .amount
         prefs.lastSeenAppVersion = "2.0.0"
 
         let reloaded = AppPreferences(defaults: defaults)
@@ -277,7 +277,7 @@ struct AppPreferencesTests {
         #expect(reloaded.userAlias == "Ada")
         #expect(reloaded.userProfileIcon == "star.fill")
         #expect(reloaded.tabConfigJSON == "{\"version\":1}")
-        #expect(reloaded.autoFocusField == "amount")
+        #expect(reloaded.autoFocusField == .amount)
         #expect(reloaded.lastSeenAppVersion == "2.0.0")
     }
 

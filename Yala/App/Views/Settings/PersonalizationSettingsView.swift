@@ -57,14 +57,6 @@ struct PersonalizationSettingsView: View {
         appPreferences.currencyDisplayFormat == .symbol ? L10n.Settings.currencySymbol : L10n.Settings.currencyCode
     }
 
-    private var autoFocusDisplayName: String {
-        switch appPreferences.autoFocusField {
-        case "amount": return L10n.Settings.autoFocusAmount
-        case "description": return L10n.Settings.autoFocusNote
-        default: return L10n.Settings.autoFocusNone
-        }
-    }
-
     private var currentLanguageDisplayName: String {
         guard let code = LanguageManager.overrideLanguage else { return "" }
         return LanguageManager.supportedLanguages.first { $0.code == code }?.nativeName ?? code
@@ -656,7 +648,7 @@ struct PersonalizationSettingsView: View {
 
                                     Spacer()
 
-                                    Text(autoFocusDisplayName)
+                                    Text(appPreferences.autoFocusField.displayName)
                                         .font(DS.Typography.body)
                                         .foregroundStyle(.secondary)
 
@@ -1296,16 +1288,12 @@ private struct AverageLinePickerSheet: View {
 // MARK: - Auto-Focus Picker Sheet
 
 private struct AutoFocusPickerSheet: View {
-    let selectedField: String
-    let onSelect: (String) -> Void
+    let selectedField: AutoFocusField
+    let onSelect: (AutoFocusField) -> Void
 
     @Environment(\.dismiss) private var dismiss
 
-    private let options: [(value: String, label: String)] = [
-        ("none", L10n.Settings.autoFocusNone),
-        ("amount", L10n.Settings.autoFocusAmount),
-        ("description", L10n.Settings.autoFocusNote),
-    ]
+    private let options: [AutoFocusField] = AutoFocusField.allCases
 
     var body: some View {
         NavigationStack {
@@ -1314,7 +1302,7 @@ private struct AutoFocusPickerSheet: View {
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.none) {
-                        ForEach(options, id: \.value) { option in
+                        ForEach(options) { option in
                             autoFocusRow(for: option)
                         }
                     }
@@ -1340,14 +1328,14 @@ private struct AutoFocusPickerSheet: View {
     }
 
     @ViewBuilder
-    private func autoFocusRow(for option: (value: String, label: String)) -> some View {
-        let isSelected = selectedField == option.value
+    private func autoFocusRow(for option: AutoFocusField) -> some View {
+        let isSelected = selectedField == option
 
         Button {
-            onSelect(option.value)
+            onSelect(option)
         } label: {
             HStack {
-                Text(option.label)
+                Text(option.displayName)
                     .font(DS.Typography.body)
                     .foregroundStyle(.thPrimaryText)
 
@@ -1365,7 +1353,7 @@ private struct AutoFocusPickerSheet: View {
         }
         .buttonStyle(.plain)
 
-        if option.value != "description" {
+        if option != .description {
             Divider()
                 .padding(.leading, DS.Spacing.lg)
         }
