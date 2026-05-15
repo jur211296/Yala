@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// A small info button that shows a tooltip overlay with contextual help.
-/// Visibility is controlled by the showWidgetHints AppStorage setting.
+/// Visibility is controlled by `appPreferences.showWidgetHints`.
 ///
 /// Cuando se renderiza dentro del recuadro de preview de `WidgetInfoSheet`
 /// (`Environment(\.isWidgetPreviewMode) == true`), el botón se oculta para
@@ -17,12 +17,12 @@ struct InfoHintButton: View {
     let title: String
     let message: String
 
-    @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.isWidgetPreviewMode) private var isPreviewMode
     @State private var showTooltip = false
 
     var body: some View {
-        if showWidgetHints && !isPreviewMode {
+        if appPreferences.showWidgetHints && !isPreviewMode {
             Button {
                 DS.Haptic.light()
                 showTooltip.toggle()
@@ -58,4 +58,5 @@ struct InfoHintButton: View {
         Spacer()
     }
     .padding()
+    .environment(AppPreferences())
 }
