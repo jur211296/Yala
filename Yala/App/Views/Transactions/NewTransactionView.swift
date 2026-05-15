@@ -17,10 +17,7 @@ struct NewTransactionView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
-
-    @AppStorage("defaultCurrencyCode") private var preferredCurrencyCode: String = CurrencyCode.pen.rawValue
-    @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"
-    @AppStorage("autoFocusField") private var autoFocusField: String = "none"
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = NewTransactionViewModel()
     @FocusState private var isNoteFieldFocused: Bool
@@ -474,10 +471,10 @@ struct NewTransactionView: View {
                 viewModel.transactionType = .expense
             }
             // Auto-focus field based on user preference (only for new transactions)
-            if transactionToEdit == nil && autoFocusField != "none" {
+            if transactionToEdit == nil && appPreferences.autoFocusField != "none" {
                 Task {
                     try? await Task.sleep(for: .milliseconds(50))
-                    if autoFocusField == "amount" {
+                    if appPreferences.autoFocusField == "amount" {
                         isAmountFieldFocused = true
                     } else {
                         isNoteFieldFocused = true
@@ -584,7 +581,7 @@ struct NewTransactionView: View {
             // Use viewModel.currencyCode (transaction's currency), NOT effectiveCurrencyCode (account's currency)
             // This handles cases where transaction is in USD but account is in PEN
             if !viewModel.isTransfer,
-               viewModel.currencyCode != preferredCurrencyCode,
+               viewModel.currencyCode != appPreferences.defaultCurrencyCode.rawValue,
                viewModel.exchangeRate != 1.0 {
                 exchangeRateChip
             }
@@ -731,15 +728,10 @@ struct NewTransactionView: View {
         AmountInputHelper.filterAmountInput(input)
     }
 
-    private func currencyDisplay(for code: String) -> String {
-        guard let currency = CurrencyCode(rawValue: code) else { return code }
-        return currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
-    }
-
     /// Currency display for amount field - respects user preference (code vs symbol)
     private var currencySymbol: String? {
         guard viewModel.effectiveAccount != nil else { return nil }
-        return currencyDisplay(for: viewModel.effectiveCurrencyCode)
+        return appPreferences.currencyIdentifier(for: viewModel.effectiveCurrencyCode)
     }
 
     /// Exchange rate chip showing the converted amount and rate
@@ -749,7 +741,7 @@ struct NewTransactionView: View {
         let amount = viewModel.amount
         let convertedAmount = amount * rate
 
-        let currencyDisplay = currencyDisplay(for: preferredCurrencyCode)
+        let currencyDisplay = appPreferences.currencyIdentifier(for: appPreferences.defaultCurrencyCode.rawValue)
 
         // Format converted amount (no decimals if whole number, otherwise 2 decimals)
         let formattedAmount: String
@@ -1442,7 +1434,7 @@ struct NewTransactionView: View {
 
             // Load exchange rate (for display chip when currency differs from preferred)
             // For non-transfers: shows rate from transaction currency to preferred currency
-            if tx.currencyCode != preferredCurrencyCode {
+            if tx.currencyCode != appPreferences.defaultCurrencyCode.rawValue {
                 if tx.exchangeRate != 1.0 {
                     // Use stored rate
                     viewModel.exchangeRate = tx.exchangeRate
@@ -1450,7 +1442,7 @@ struct NewTransactionView: View {
                     // Stored rate is 1.0 but currencies differ - load from CurrencyConverter
                     if let rate = CurrencyConverter.shared.getDisplayRate(
                         from: tx.currencyCode,
-                        to: preferredCurrencyCode,
+                        to: appPreferences.defaultCurrencyCode.rawValue,
                         date: tx.date,
                         context: modelContext
                     ) {
@@ -1458,7 +1450,7 @@ struct NewTransactionView: View {
                     } else {
                         // Fallback: use static rates from CurrencyCode enum
                         if let fromCurrency = CurrencyCode(rawValue: tx.currencyCode),
-                           let toCurrency = CurrencyCode(rawValue: preferredCurrencyCode) {
+                           let toCurrency = CurrencyCode(rawValue: appPreferences.defaultCurrencyCode.rawValue) {
                             let fromRate = fromCurrency.fallbackRateToUSD
                             let toRate = toCurrency.fallbackRateToUSD
                             if fromRate > 0 {
@@ -1653,4 +1645,5 @@ struct NewTransactionView: View {
 
 #Preview {
     NewTransactionView()
+        .environment(AppPreferences())
 }
