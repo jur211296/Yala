@@ -219,8 +219,7 @@ struct NewTransactionView: View {
     private var transactionFormView: some View {
         NavigationStack {
             ZStack {
-                theme.background
-                    .ignoresSafeArea()
+                PanelBackgroundView()
 
                 VStack(spacing: DS.Spacing.none) {
                     // P1-3: oculto en read-only (no se cambia el tipo de TX bridgeada).

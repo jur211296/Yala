@@ -243,8 +243,7 @@ struct InboxDraftEditSheet: View {
 
     private var mainContent: some View {
         ZStack {
-            theme.background
-                .ignoresSafeArea()
+            PanelBackgroundView()
 
             VStack(spacing: DS.Spacing.none) {
                 // Transaction type selector (full width, at top)

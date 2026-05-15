@@ -28,7 +28,7 @@ struct DatePickerSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                theme.background.ignoresSafeArea()
+                PanelBackgroundView(ignoredEdges: [])
 
                 VStack {
                     DatePicker(

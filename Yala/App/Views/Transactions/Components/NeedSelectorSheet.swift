@@ -17,7 +17,7 @@ struct NeedSelectorSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                theme.background.ignoresSafeArea()
+                PanelBackgroundView(ignoredEdges: [])
 
                 ScrollView {
                     VStack(spacing: DS.Spacing.md) {

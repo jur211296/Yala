@@ -183,7 +183,7 @@ struct BudgetChartsPeriodSelector: View {
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         }
-        .background(theme.background)
+        .yalaScreenBackground(.compact)
         .onAppear {
             generatePeriods()
         }

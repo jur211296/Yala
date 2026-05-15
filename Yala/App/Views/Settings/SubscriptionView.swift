@@ -129,8 +129,7 @@ struct SubscriptionView: View {
                 .padding(.top, DS.Spacing.xxl)
             }
         }
-        .background(.thBackground)
-        .ignoresSafeArea(edges: .top)
+        .yalaScreenBackground()
     }
 
     // MARK: - Hero Section

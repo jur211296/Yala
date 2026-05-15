@@ -20,8 +20,7 @@ struct GroupReconnectView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                theme.background
-                    .ignoresSafeArea()
+                PanelBackgroundView()
 
                 VStack(spacing: DS.Spacing.xxl) {
                     Spacer()

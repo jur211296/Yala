@@ -128,7 +128,7 @@ struct ProTrialOfferSheet: View {
             }
         }
         .scrollBounceBehavior(.basedOnSize)
-        .background(theme.background.ignoresSafeArea())
+        .yalaScreenBackground()
         .task {
             await loadProductsWithTimeout()
         }

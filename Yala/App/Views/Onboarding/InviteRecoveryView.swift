@@ -31,7 +31,7 @@ struct InviteRecoveryView: View {
 
     var body: some View {
         ZStack {
-            theme.background.ignoresSafeArea()
+            PanelBackgroundView()
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {

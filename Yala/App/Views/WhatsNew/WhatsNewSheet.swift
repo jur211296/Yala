@@ -75,7 +75,7 @@ struct WhatsNewSheet: View {
             .padding(.bottom, DS.Spacing.xl)
             .padding(.top, DS.Spacing.md)
         }
-        .background(theme.background.ignoresSafeArea())
+        .yalaScreenBackground()
         .presentationDetents([.large])
         .interactiveDismissDisabled()
         .onAppear {

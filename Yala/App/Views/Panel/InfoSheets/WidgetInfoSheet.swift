@@ -40,7 +40,7 @@ struct WidgetInfoSheet<Preview: View>: View {
                 }
             }
             .scrollBounceBehavior(.basedOnSize)
-            .background(.thBackground)
+            .yalaScreenBackground()
             .navigationTitle(kind.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

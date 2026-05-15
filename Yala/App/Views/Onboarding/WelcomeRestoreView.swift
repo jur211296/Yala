@@ -37,7 +37,7 @@ struct WelcomeRestoreView: View {
 
     var body: some View {
         ZStack {
-            theme.background.ignoresSafeArea()
+            PanelBackgroundView()
 
             switch state {
             case .searching:

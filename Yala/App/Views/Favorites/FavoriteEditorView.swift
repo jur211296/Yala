@@ -64,8 +64,7 @@ struct FavoriteEditorView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                theme.background
-                    .ignoresSafeArea()
+                PanelBackgroundView()
 
                 VStack(spacing: DS.Spacing.none) {
                     // Transaction type selector (without transfer)

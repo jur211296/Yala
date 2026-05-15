@@ -71,8 +71,7 @@ struct GroupExpenseFormView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                theme.background
-                    .ignoresSafeArea()
+                PanelBackgroundView()
 
                 VStack(spacing: DS.Spacing.none) {
                     Spacer()
