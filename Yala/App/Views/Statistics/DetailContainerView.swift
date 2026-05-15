@@ -115,8 +115,7 @@ struct DetailContainerView: View {
     // MARK: - Body
 
     var body: some View {
-        @Bindable var prefs = appPreferences
-        return mainContent
+        mainContent
             .toolbar {
                 if recordsViewModel.isSelectionMode {
                     selectionModeToolbar
@@ -142,8 +141,6 @@ struct DetailContainerView: View {
                     showChatConsentAlert: $showChatConsentAlert,
                     showYalaAIOnboarding: $showYalaAIOnboarding,
                     pendingOpenChatAfterOnboarding: $pendingOpenChatAfterOnboarding,
-                    aiChatConsentAccepted: $prefs.aiChatConsentAccepted,
-                    hasShownYalaAIOnboarding: $prefs.hasShownYalaAIOnboarding,
                     modelContext: modelContext,
                     recalculateData: recalculateData,
                     reloadAndRecalculate: reloadAndRecalculate
@@ -673,6 +670,7 @@ struct DetailContainerView: View {
 
 /// Encapsulates sheet presentations to reduce body complexity
 private struct DetailContainerSheets: ViewModifier {
+    @Environment(AppPreferences.self) private var appPreferences
     @Bindable var recordsViewModel: RecordsViewModel
     @Bindable var trendsViewModel: StatisticsViewModel
     @Binding var showDeleteConfirmation: Bool
@@ -687,8 +685,6 @@ private struct DetailContainerSheets: ViewModifier {
     @Binding var showChatConsentAlert: Bool
     @Binding var showYalaAIOnboarding: Bool
     @Binding var pendingOpenChatAfterOnboarding: Bool
-    @Binding var aiChatConsentAccepted: Bool
-    @Binding var hasShownYalaAIOnboarding: Bool
     let modelContext: ModelContext
     let recalculateData: () -> Void
     let reloadAndRecalculate: () -> Void
@@ -724,7 +720,7 @@ private struct DetailContainerSheets: ViewModifier {
                 pendingOpenChat: $pendingOpenChatAfterOnboarding,
                 showChatSheet: $showChatSheet,
                 launcher: .stats,
-                onPersistFlag: { hasShownYalaAIOnboarding = true }
+                onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
             )
             .sheet(isPresented: $showUpgradeForChat) {
                 UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
@@ -732,7 +728,7 @@ private struct DetailContainerSheets: ViewModifier {
             .chatConsentAlert(isPresented: $showChatConsentAlert) {
                 switch YalaAIOnboardingLogic.nextScreen(
                     consentAccepted: true,
-                    onboardingShown: hasShownYalaAIOnboarding
+                    onboardingShown: appPreferences.hasShownYalaAIOnboarding
                 ) {
                 case .onboarding: showYalaAIOnboarding = true
                 case .chat:       showChatSheet = true

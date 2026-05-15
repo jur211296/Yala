@@ -76,7 +76,7 @@ struct TagsSettingsListView: View {
         }
         .onAppear {
             viewModel.setContext(modelContext)
-            // VM expects "|"-joined string (preexisting separator inconsistency vs AppPreferences "," — bug latente, out of scope D4)
+            // VM uses "|" separator; AppPreferences uses ",".
             viewModel.tagsSortOrderNamesRaw = appPreferences.tagsSortOrderNames.joined(separator: "|")
         }
         .onChange(of: appPreferences.tagsSortOrderNames) { _, newValue in

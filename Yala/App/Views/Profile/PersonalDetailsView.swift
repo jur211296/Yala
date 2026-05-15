@@ -296,8 +296,6 @@ struct PersonalDetailsView: View {
     }
 
     private func saveAndDismiss() {
-        // Save name (trim whitespace and ensure not empty).
-        // PreferenceSyncService.set was called manually here pre-migration; now AppPreferences.didSet syncs.
         let trimmedName = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
         appPreferences.userName = trimmedName.isEmpty ? L10n.Profile.defaultName : trimmedName
 
