@@ -602,7 +602,7 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func commitmentsSection(_ c: Commitments) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            collapsibleHeader(
+            CollapsibleSectionHeader(
                 title: L10n.Insights.commitments,
                 subtitle: L10n.Insights.commitmentsNote,
                 isExpanded: isCommitmentsExpanded
@@ -713,9 +713,8 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func needSection(_ distribution: NeedDistribution) -> some View {
         VStack(spacing: DS.Spacing.sm) {
-            collapsibleHeader(
+            CollapsibleSectionHeader(
                 title: L10n.Insights.needDistribution,
-                subtitle: nil,
                 isExpanded: isNeedSectionExpanded
             ) {
                 dsWithAnimation(reduceMotion) {
@@ -815,42 +814,6 @@ struct InsightsTabView: View {
         return L10n.Insights.ruleOptionalHigh(Int(distribution.optionalPercent), tone: InsightTone.current)
     }
 
-    /// Header colapsable estilo `PanelPanoramaSection` ("Tus finanzas"):
-    /// title + subtítulo opcional, accessory circle con `plus`/`minus` glass.
-    private func collapsibleHeader(title: String, subtitle: String?, isExpanded: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(alignment: .top, spacing: DS.Spacing.sm) {
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(title)
-                        .font(DS.Typography.subheadlineEmphasized)
-                        .foregroundStyle(.primary)
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(3)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                Spacer()
-                Image(systemName: isExpanded ? "minus" : "plus")
-                    .font(DS.Typography.label)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.primary)
-                    .frame(width: DS.Panel.headerAccessorySize, height: DS.Panel.headerAccessorySize)
-                    .glassEffect(.regular.interactive(), in: Circle())
-                    .contentShape(Circle())
-                    .accessibilityHidden(true)
-            }
-            .padding(.vertical, DS.Spacing.xs)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(.isHeader)
-        .accessibilityAddTraits(isExpanded ? .isSelected : [])
-    }
 
     // MARK: - Section 7: Text Insights (Free users)
 

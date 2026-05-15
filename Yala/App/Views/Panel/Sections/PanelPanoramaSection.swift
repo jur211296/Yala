@@ -78,45 +78,20 @@ struct PanelPanoramaSection: View {
 
     private var header: some View {
         let expanded = !appPreferences.panelAccountsCollapsed
-        return Button {
+        return CollapsibleSectionHeader(
+            title: L10n.Panel.panoramaTitle,
+            subtitle: expanded ? nil : collapsedSubtitle,
+            isExpanded: expanded,
+            titleFont: DS.Typography.title,
+            subtitleFont: DS.Typography.subheadline,
+            accessibilityValue: accessibilityValue(expanded: expanded),
+            accessibilityHint: expanded ? L10n.Panel.panoramaCollapse : L10n.Panel.panoramaExpand
+        ) {
             DS.Haptic.selection()
             dsWithAnimation(reduceMotion) {
                 appPreferences.panelAccountsCollapsed.toggle()
             }
-        } label: {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.Panel.panoramaTitle)
-                        .font(DS.Typography.title)
-                        .foregroundStyle(Color.primary)
-                    if !expanded, let summary = collapsedSubtitle {
-                        Text(summary)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(3)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                Spacer()
-                Image(systemName: expanded ? "minus" : "plus")
-                    .font(DS.Typography.label)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.primary)
-                    .frame(width: DS.Panel.headerAccessorySize, height: DS.Panel.headerAccessorySize)
-                    .glassEffect(.regular.interactive(), in: Circle())
-                    .contentShape(Circle())
-                    .accessibilityHidden(true)
-            }
-            .padding(.vertical, DS.Spacing.xs)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L10n.Panel.panoramaTitle)
-        .accessibilityValue(accessibilityValue(expanded: expanded))
-        .accessibilityHint(
-            expanded ? L10n.Panel.panoramaCollapse : L10n.Panel.panoramaExpand
-        )
-        .accessibilityAddTraits(.isButton)
     }
 
     /// Subtítulo único mostrado solo cuando la sección está colapsada:
