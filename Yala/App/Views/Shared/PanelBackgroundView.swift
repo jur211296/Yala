@@ -11,6 +11,7 @@ import SwiftUI
 
 struct PanelBackgroundView: View {
     @Environment(\.yalaTheme) private var theme
+    var ignoredEdges: Edge.Set = .all
 
     var body: some View {
         Group {
@@ -33,7 +34,7 @@ struct PanelBackgroundView: View {
                 theme.background
             }
         }
-        .ignoresSafeArea()
+        .ignoresSafeArea(edges: ignoredEdges)
     }
 }
 

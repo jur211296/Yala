@@ -549,6 +549,82 @@ extension View {
     }
 }
 
+// MARK: - Screen Background Modifier
+
+/// Variantes de background para vistas root, sheets, fullScreenCovers.
+/// SSOT para evitar inconsistencias (PanelBackgroundView vs theme.background plano).
+enum YalaBackgroundVariant {
+    /// `PanelBackgroundView()` con gradient temático (4 themes translucent + finance).
+    /// Default para destinos ricos: tab roots, sheets de form/editor, selectors, vistas navegadas.
+    case panel
+
+    /// `theme.background` plano. Decisión consciente para success/celebración
+    /// donde el contenido (chip, monto, CTA) debe brillar sin distraer.
+    case subtle
+
+    /// `PanelBackgroundView()` sin `ignoresSafeArea` por default. Para sheets
+    /// con `.presentationDetents([.medium])` o `.height(<320)` donde el background
+    /// no debe desbordar el detent.
+    case compact
+
+    /// Sin fondo aplicado. Para sheets con `.glassSheet()` que usan material
+    /// como background del contenedor del sheet.
+    case transparent
+}
+
+/// Aplica background temático consistente a la vista.
+///
+/// Reemplaza patrones manuales:
+///   `ZStack { PanelBackgroundView(); content }` → `content.yalaScreenBackground()`
+///   `ZStack { theme.background.ignoresSafeArea(); content }` → `content.yalaScreenBackground(.subtle)`
+///
+/// NOTA: Form/List dentro de la vista deben aplicar `.scrollContentBackground(.hidden)`
+/// manualmente — el modifier NO lo hace automático para preservar predictibilidad.
+struct YalaScreenBackgroundModifier: ViewModifier {
+    @Environment(\.yalaTheme) private var theme
+    let variant: YalaBackgroundVariant
+    let ignoredEdges: Edge.Set?
+
+    private var effectiveEdges: Edge.Set {
+        ignoredEdges ?? (variant == .compact ? [] : .all)
+    }
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        switch variant {
+        case .panel, .compact:
+            ZStack {
+                PanelBackgroundView(ignoredEdges: effectiveEdges)
+                content
+            }
+        case .subtle:
+            ZStack {
+                theme.background
+                    .ignoresSafeArea(edges: effectiveEdges)
+                content
+            }
+        case .transparent:
+            content
+        }
+    }
+}
+
+extension View {
+    /// Aplica background temático según `variant`.
+    ///
+    /// - Parameter variant: `.panel` (default, gradient), `.subtle` (plano success),
+    ///   `.compact` (detent pequeño), `.transparent` (delega a `.glassSheet()`).
+    /// - Parameter ignoredEdges: Si `nil`, usa default por variant (`.all` excepto
+    ///   `.compact` que usa `[]`). Pasar valor explícito (`[.top]`, `[.bottom]`)
+    ///   para coexistir con `safeAreaInset`.
+    func yalaScreenBackground(
+        _ variant: YalaBackgroundVariant = .panel,
+        ignoredEdges: Edge.Set? = nil
+    ) -> some View {
+        modifier(YalaScreenBackgroundModifier(variant: variant, ignoredEdges: ignoredEdges))
+    }
+}
+
 // MARK: - Previews
 
 #Preview("Card Modifiers") {
