@@ -19,7 +19,7 @@ struct InboxView: View {
     @Environment(DraftService.self) private var draftService
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
-    @AppStorage("defaultCurrencyCode") private var preferredCurrency: String = "PEN"
+    @Environment(AppPreferences.self) private var appPreferences
 
     /// Callback for navigating to Records tab (bulk approve success)
     var onNavigateToRecords: (() -> Void)?
@@ -468,7 +468,7 @@ struct InboxView: View {
     private func draftRow(for draft: InboxDraft) -> some View {
         InboxDraftRowView(
             draft: draft,
-            currencyCode: draft.displayCurrencyCode ?? preferredCurrency,
+            currencyCode: draft.displayCurrencyCode ?? appPreferences.defaultCurrencyCode.rawValue,
             isSelectionMode: isSelectionMode,
             isSelected: selectedDraftIDs.contains(draft.persistentModelID),
             onTap: {
@@ -699,4 +699,5 @@ struct InboxView: View {
 #Preview {
     InboxView()
         .modelContainer(for: InboxDraft.self, inMemory: true)
+        .environment(AppPreferences())
 }
