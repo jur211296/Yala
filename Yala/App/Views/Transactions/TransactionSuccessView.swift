@@ -166,13 +166,13 @@ struct TransactionSuccessView: View {
                         .scaleEffect(showAmount ? 1.0 : 0.8)
                         .opacity(showAmount ? 1.0 : 0.0)
                     } else {
-                        Text(
-                            appPreferences.currency(Double(truncating: data.amount as NSDecimalNumber),
-                                currencyCode: data.currencyCode,
-                                forceFullPrecision: true)
+                        AmountText(
+                            value: Double(truncating: data.amount as NSDecimalNumber),
+                            currencyCode: data.currencyCode,
+                            size: .hero,
+                            tint: .color(typeColor),
+                            forceFullPrecision: true
                         )
-                        .font(DS.Typography.largeTitle)
-                        .foregroundStyle(typeColor)
                         .scaleEffect(showAmount ? 1.0 : 0.8)
                         .opacity(showAmount ? 1.0 : 0.0)
                     }

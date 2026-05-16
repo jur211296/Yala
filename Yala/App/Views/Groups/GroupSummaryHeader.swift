@@ -23,14 +23,20 @@ struct GroupSummaryHeader: View {
                     .foregroundStyle(.secondary)
 
                 if summary.totalOwedToMe.isEmpty {
-                    Text(appPreferences.currency(0, currencyCode: defaultCurrency))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(DS.Semantic.successForeground)
+                    AmountText(
+                        value: 0,
+                        currencyCode: defaultCurrency,
+                        size: .headline,
+                        tint: .color(DS.Semantic.successForeground)
+                    )
                 } else {
                     ForEach(sortedOwedToMe, id: \.key) { code, amount in
-                        Text(appPreferences.currency(amount, currencyCode: code))
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(DS.Semantic.successForeground)
+                        AmountText(
+                            value: amount,
+                            currencyCode: code,
+                            size: .headline,
+                            tint: .color(DS.Semantic.successForeground)
+                        )
                     }
                 }
             }
@@ -43,14 +49,20 @@ struct GroupSummaryHeader: View {
                     .foregroundStyle(.secondary)
 
                 if summary.totalIOwe.isEmpty {
-                    Text(appPreferences.currency(0, currencyCode: defaultCurrency))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(Color.hotPink)
+                    AmountText(
+                        value: 0,
+                        currencyCode: defaultCurrency,
+                        size: .headline,
+                        tint: .color(Color.hotPink)
+                    )
                 } else {
                     ForEach(sortedIOwe, id: \.key) { code, amount in
-                        Text(appPreferences.currency(amount, currencyCode: code))
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(Color.hotPink)
+                        AmountText(
+                            value: amount,
+                            currencyCode: code,
+                            size: .headline,
+                            tint: .color(Color.hotPink)
+                        )
                     }
                 }
             }

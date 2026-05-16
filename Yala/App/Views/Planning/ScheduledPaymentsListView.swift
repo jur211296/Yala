@@ -147,9 +147,12 @@ struct ScheduledPaymentsListView: View {
                 Text(label)
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
-                Text(appPreferences.currency(value, currencyCode: currencyCode))
-                    .font(DS.Typography.label)
-                    .foregroundStyle(dotColor)
+                AmountText(
+                    value: value,
+                    currencyCode: currencyCode,
+                    size: .body,
+                    tint: .color(dotColor)
+                )
             }
             .padding(.horizontal, DS.Spacing.sm)
             .padding(.vertical, DS.Spacing.xxs)

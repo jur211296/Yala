@@ -129,11 +129,15 @@ struct InboxApproveSuccessView: View {
                     }
 
                     // Promoted amount
-                    Text(appPreferences.currency(data.amount, currencyCode: data.currencyCode, forceFullPrecision: true))
-                        .font(DS.Typography.largeTitle)
-                        .foregroundStyle(typeColor)
-                        .scaleEffect(showAmount ? 1.0 : 0.8)
-                        .opacity(showAmount ? 1.0 : 0.0)
+                    AmountText(
+                        value: data.amount,
+                        currencyCode: data.currencyCode,
+                        size: .hero,
+                        tint: .color(typeColor),
+                        forceFullPrecision: true
+                    )
+                    .scaleEffect(showAmount ? 1.0 : 0.8)
+                    .opacity(showAmount ? 1.0 : 0.0)
                 }
                 .padding(.bottom, DS.Spacing.xxxl)
 

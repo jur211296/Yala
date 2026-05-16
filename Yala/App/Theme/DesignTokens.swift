@@ -475,7 +475,7 @@ enum DS {
     enum Typography {
         // MARK: Headings
         /// Screen titles, large headers
-        static let largeTitle = Font.largeTitle.weight(.bold)
+        static let largeTitle = Font.largeTitle.weight(.semibold)
         /// Section headers
         static let title = Font.title2.weight(.semibold)
         /// Subsection headers

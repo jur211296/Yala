@@ -141,10 +141,12 @@ struct GroupCardView: View {
                 .font(DS.Typography.captionSmall)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-            Text(appPreferences.currency(row.amount, currencyCode: row.currencyCode))
-                .font(DS.Typography.label)
-                .foregroundStyle(amountColor(for: row.perspective))
-                .lineLimit(1)
+            AmountText(
+                value: row.amount,
+                currencyCode: row.currencyCode,
+                size: .body,
+                tint: .color(amountColor(for: row.perspective))
+            )
         }
     }
 

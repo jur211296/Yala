@@ -86,9 +86,13 @@ struct RecordRowView: View {
                 // Right column: Amount + Nature
                 VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                     // Amount with currency
-                    Text(formattedAmount)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(amountColor)
+                    AmountText(
+                        value: record.amount,
+                        currencyCode: currencyCode,
+                        size: .headline,
+                        tint: .color(amountColor),
+                        forceFullPrecision: true
+                    )
 
                     // Nature indicator + split badge
                     HStack(spacing: DS.Spacing.xs) {

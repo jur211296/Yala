@@ -23,13 +23,19 @@ struct GroupExpenseAmountView: View {
 
             switch status {
             case .youAreOwed(let amount):
-                Text(appPreferences.currency(amount, currencyCode: currencyCode))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(DS.Semantic.successForeground)
+                AmountText(
+                    value: amount,
+                    currencyCode: currencyCode,
+                    size: .headline,
+                    tint: .color(DS.Semantic.successForeground)
+                )
             case .youOwe(let amount):
-                Text(appPreferences.currency(amount, currencyCode: currencyCode))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(DS.Semantic.errorForeground)
+                AmountText(
+                    value: amount,
+                    currencyCode: currencyCode,
+                    size: .headline,
+                    tint: .color(DS.Semantic.errorForeground)
+                )
             case .notIncluded:
                 EmptyView()
             }

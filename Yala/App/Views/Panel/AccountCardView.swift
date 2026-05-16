@@ -83,11 +83,12 @@ struct AccountCardView: View {
 
                 Spacer(minLength: 0)
 
-                Text(
-                    formattedAmount(currentBalance)
+                AmountText(
+                    value: currentBalance,
+                    currencyCode: normalizeCurrencyCode(account.currencyCode),
+                    size: .headline,
+                    tint: .color(foregroundColor)
                 )
-                .font(DS.Typography.headline)
-                .foregroundStyle(foregroundColor)
             }
             .padding(DS.Spacing.md)
             .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)

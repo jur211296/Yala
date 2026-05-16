@@ -123,9 +123,13 @@ struct InboxDraftRowView: View {
     private var amountColumn: some View {
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             if let amount = draft.amount {
-                Text(appPreferences.currency(amount, currencyCode: currencyCode, forceFullPrecision: true))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(amount >= 0 ? Color.electricIndigo : Color.hotPink)
+                AmountText(
+                    value: amount,
+                    currencyCode: currencyCode,
+                    size: .headline,
+                    tint: .color(amount >= 0 ? Color.electricIndigo : Color.hotPink),
+                    forceFullPrecision: true
+                )
             } else {
                 Text(L10n.Inbox.noAmount)
                     .font(DS.Typography.label)

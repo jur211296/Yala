@@ -21,6 +21,7 @@ struct AmountText: View {
     let value: Double
     let currencyCode: String
     var size: Size = .body
+    var tint: Tint = .primary
     var forceSign: Bool = false
     var isEstimate: Bool = false
     var forceFullPrecision: Bool = false
@@ -33,6 +34,20 @@ struct AmountText: View {
         case headline
         case body
         case caption
+    }
+
+    /// Color hierarchy del monto. La regla siempre se cumple: el símbolo y los
+    /// decimales viven "un tono menos" que el integer principal.
+    ///
+    /// - `.primary` (default): integer `.primary`, símbolo/decimales `.secondary`.
+    /// - `.secondary`: integer `.secondary`, símbolo/decimales `.tertiary`. Para
+    ///   amounts en rows neutros que no compiten con el contenido principal.
+    /// - `.color(Color)`: integer en color custom (income/expense/success/etc),
+    ///   símbolo/decimales en mismo color con opacity 0.6 para mantener jerarquía.
+    enum Tint: Sendable {
+        case primary
+        case secondary
+        case color(Color)
     }
 
     var body: some View {
@@ -55,23 +70,41 @@ struct AmountText: View {
             if !runs.symbol.isEmpty {
                 Text(runs.symbol)
                     .font(symbolFont)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(secondaryForegroundStyle)
             }
 
             Text(runs.sign + runs.integer)
                 .font(integerFont)
-                .foregroundStyle(.primary)
+                .foregroundStyle(integerForegroundStyle)
 
             if let decimal = runs.decimal {
                 Text("\(decimalSep)\(decimal)")
                     .font(decimalFont)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(secondaryForegroundStyle)
             }
         }
         .lineLimit(1)
         .minimumScaleFactor(0.7)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(formatted)
+    }
+
+    // MARK: - Tint mapping
+
+    private var integerForegroundStyle: AnyShapeStyle {
+        switch tint {
+        case .primary:        return AnyShapeStyle(HierarchicalShapeStyle.primary)
+        case .secondary:      return AnyShapeStyle(HierarchicalShapeStyle.secondary)
+        case .color(let c):   return AnyShapeStyle(c)
+        }
+    }
+
+    private var secondaryForegroundStyle: AnyShapeStyle {
+        switch tint {
+        case .primary:        return AnyShapeStyle(HierarchicalShapeStyle.secondary)
+        case .secondary:      return AnyShapeStyle(HierarchicalShapeStyle.tertiary)
+        case .color(let c):   return AnyShapeStyle(c.opacity(0.6))
+        }
     }
 
     // MARK: - Font mapping
