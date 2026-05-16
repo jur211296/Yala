@@ -830,11 +830,11 @@ struct CashFlowWidget: View {
                                     .font(DS.Typography.subheadline)
                                     .foregroundStyle(.thSecondaryText)
                                 Spacer()
-                                Text(
-                                    appPreferences.currency(summary.totalIncome, currencyCode: summary.currencyCode)
+                                AmountText(
+                                    value: summary.totalIncome,
+                                    currencyCode: summary.currencyCode,
+                                    size: .body
                                 )
-                                .font(DS.Typography.amountSmall)
-                                .foregroundStyle(.thPrimaryText)
                             }
                             // Bar
                             ZStack(alignment: .leading) {
@@ -861,10 +861,11 @@ struct CashFlowWidget: View {
                                 .font(DS.Typography.subheadline)
                                 .foregroundStyle(.thSecondaryText)
                             Spacer()
-                            Text(
-                                appPreferences.currency(summary.totalExpense, currencyCode: summary.currencyCode)
+                            AmountText(
+                                value: summary.totalExpense,
+                                currencyCode: summary.currencyCode,
+                                size: .body
                             )
-                            .font(DS.Typography.amountSmall)
                         }
                         // Bar
                         ZStack(alignment: .leading) {

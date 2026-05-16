@@ -138,11 +138,11 @@ struct TopSubcategoriesWidget: View {
 
                     if size != .small && showVariationHeader && !subcategories.isEmpty {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                            Text(appPreferences.currency(totalAmount, currencyCode: currencyCode))
-                                .font(DS.Typography.headline)
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
+                            AmountText(
+                                value: totalAmount,
+                                currencyCode: currencyCode,
+                                size: .headline
+                            )
 
                             if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
                                 Text("vs \(appPreferences.number(prevAmount))")

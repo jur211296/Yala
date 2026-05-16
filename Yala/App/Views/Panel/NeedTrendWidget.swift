@@ -185,11 +185,11 @@ struct NeedTrendWidget: View {
 
         return VStack(alignment: .leading, spacing: DS.Spacing.md) {
             HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
-                Text(appPreferences.currency(total, currencyCode: currencyCode))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thPrimaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                AmountText(
+                    value: total,
+                    currencyCode: currencyCode,
+                    size: .headline
+                )
 
                 if variationDisplay.showsSmallVariation, showVariationHeader, let variation {
                     VariationChip(

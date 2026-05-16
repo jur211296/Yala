@@ -23,6 +23,7 @@ struct AmountText: View {
     var size: Size = .body
     var forceSign: Bool = false
     var isEstimate: Bool = false
+    var forceFullPrecision: Bool = false
 
     @Environment(AppPreferences.self) private var prefs
 
@@ -39,6 +40,7 @@ struct AmountText: View {
             value,
             currencyCode: currencyCode,
             forceSign: forceSign,
+            forceFullPrecision: forceFullPrecision,
             isEstimate: isEstimate
         )
         let identifier = prefs.currencyIdentifier(for: currencyCode)
