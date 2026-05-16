@@ -110,7 +110,17 @@ struct FABStackView: View {
             ZStack {
                 Image(systemName: "sparkles")
                     .font(DS.Typography.body.weight(.semibold))
-                    .foregroundStyle(isChatLocked ? DS.Semantic.disabledForeground : .white)
+                    .foregroundStyle(
+                        isChatLocked
+                            ? AnyShapeStyle(DS.Semantic.disabledForeground)
+                            : AnyShapeStyle(
+                                LinearGradient(
+                                    colors: DS.Gradients.proBadge,
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    )
 
                 if isChatLocked {
                     Image(systemName: "lock.fill")
@@ -120,21 +130,15 @@ struct FABStackView: View {
                 }
             }
             .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-            .background {
-                if isChatLocked {
-                    DS.Semantic.neutralBackground
-                } else {
-                    LinearGradient(
-                        colors: DS.Gradients.proBadge,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                }
-            }
-            .clipShape(Circle())
-            .shadow(color: (isChatLocked ? Color.gray : Color.orange).opacity(0.3), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
         }
         .buttonStyle(.plain)
+        .glassEffect(
+            isChatLocked
+                ? .regular.tint(DS.Semantic.disabledForeground.opacity(0.4)).interactive()
+                : .regular.tint(Color.orange.opacity(0.5)).interactive(),
+            in: Circle()
+        )
+        .shadow(color: (isChatLocked ? Color.gray : Color.orange).opacity(0.2), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
         .coachMarkAnchor("proChatFab")
         .accessibilityLabel(L10n.Chat.title)
     }
@@ -148,14 +152,17 @@ struct FABStackView: View {
         } label: {
             Image(systemName: showFABMenu ? "xmark" : "plus")
                 .font(DS.Typography.title)
-                .foregroundStyle(Color.contrastingText(for: theme.accent))
+                .foregroundStyle(.white)
                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                .background(showFABMenu ? DS.Semantic.disabledForeground : background)
-                .clipShape(Circle())
                 .rotationEffect(.degrees(showFABMenu ? 90 : 0))
         }
         .buttonStyle(.plain)
-        .glassEffect(.regular.interactive())
+        .glassEffect(
+            .regular
+                .tint((showFABMenu ? DS.Semantic.disabledForeground : background).opacity(0.6))
+                .interactive(),
+            in: Circle()
+        )
         .dsFloatingShadow()
         .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
         .accessibilityIdentifier("fab_new_transaction")

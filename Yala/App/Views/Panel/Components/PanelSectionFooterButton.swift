@@ -32,7 +32,7 @@ struct PanelSectionFooterButton: View {
             }
             .font(DS.Typography.labelSmall)
             .foregroundStyle(foregroundStyle)
-            .frame(maxWidth: .infinity, alignment: .trailing)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .frame(minHeight: 36)
             .contentShape(Rectangle())
         }
