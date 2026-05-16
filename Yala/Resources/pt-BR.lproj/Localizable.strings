@@ -4268,9 +4268,9 @@
 "stats.distribution.insight.newCategory %@ %@" = "Você experimentou %@ neste %@.";
 "stats.distribution.insight.concentrated %d %@" = "%d%% dos seus gastos se concentram em %@. Combina com suas prioridades?";
 "stats.distribution.insight.balanced %d" = "Seus gastos se repartem: nenhuma categoria ultrapassa %d%%. Distribuição equilibrada.";
-"stats.distribution.insight.shiftedUp %d %@ %@" = "%@ subiu %d%% vs %@. Vamos ver o que mudou neste período.";
-"stats.distribution.insight.shiftedDown %d %@ %@" = "%@ baixou %d%% vs %@. Bom ajuste.";
-"stats.distribution.insight.topSub %d %@ %@" = "%@ representa %d%% dentro de %@. Sua maior rubrica específica.";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%2$@ subiu %1$d%% vs %3$@. Vamos ver o que mudou neste período.";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%2$@ baixou %1$d%% vs %3$@. Bom ajuste.";
+"stats.distribution.insight.topSub %d %@ %@" = "%2$@ representa %1$d%% dentro de %3$@. Sua maior rubrica específica.";
 
 "stats.trends.insight.onset %@" = "Este é seu primeiro %@ com Yala";
 "stats.trends.insight.varUpExpense %d %@" = "Você aumentou seus gastos em %d%% vs %@. Vamos ajustar juntos.";

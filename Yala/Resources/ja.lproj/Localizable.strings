@@ -4272,9 +4272,9 @@
 "stats.distribution.insight.newCategory %@ %@" = "今%2$@、%1$@を試しましたね。";
 "stats.distribution.insight.concentrated %d %@" = "支出の%1$d%%が%2$@に集中しています。優先事項と合っていますか？";
 "stats.distribution.insight.balanced %d" = "支出は分散しています：どのカテゴリも%d%%を超えていません。バランスの取れた分布です。";
-"stats.distribution.insight.shiftedUp %d %@ %@" = "%2$@比で%1$@が%3$d%%上昇しました。この期間に何が変わったか見てみましょう。";
-"stats.distribution.insight.shiftedDown %d %@ %@" = "%2$@比で%1$@が%3$d%%下落しました。良い調整です。";
-"stats.distribution.insight.topSub %d %@ %@" = "%@は%@の中で%d%%を占めています。あなたの最大の具体的な項目です。";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%3$@比で%2$@が%1$d%%上昇しました。この期間に何が変わったか見てみましょう。";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%3$@比で%2$@が%1$d%%下落しました。良い調整です。";
+"stats.distribution.insight.topSub %d %@ %@" = "%2$@は%3$@の中で%1$d%%を占めています。あなたの最大の具体的な項目です。";
 
 "stats.trends.insight.onset %@" = "Yalaを始めて最初の%@です";
 "stats.trends.insight.varUpExpense %d %@" = "支出が%2$@より%1$d%%増加。一緒に調整しましょう。";

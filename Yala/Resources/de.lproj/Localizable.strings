@@ -4268,9 +4268,9 @@
 "stats.distribution.insight.newCategory %@ %@" = "Sie haben %@ in diesem %@ ausprobiert.";
 "stats.distribution.insight.concentrated %d %@" = "%d%% Ihrer Ausgaben entfallen auf %@. Passt das zu Ihren Prioritäten?";
 "stats.distribution.insight.balanced %d" = "Ihre Ausgaben verteilen sich: keine Kategorie überschreitet %d%%. Ausgewogene Verteilung.";
-"stats.distribution.insight.shiftedUp %d %@ %@" = "%@ stieg um %d%% vs %@. Schauen wir, was sich in diesem Zeitraum geändert hat.";
-"stats.distribution.insight.shiftedDown %d %@ %@" = "%@ sank um %d%% vs %@. Gute Anpassung.";
-"stats.distribution.insight.topSub %d %@ %@" = "%@ macht %d%% innerhalb von %@ aus. Ihr größter spezifischer Posten.";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%2$@ stieg um %1$d%% vs %3$@. Schauen wir, was sich in diesem Zeitraum geändert hat.";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%2$@ sank um %1$d%% vs %3$@. Gute Anpassung.";
+"stats.distribution.insight.topSub %d %@ %@" = "%2$@ macht %1$d%% innerhalb von %3$@ aus. Ihr größter spezifischer Posten.";
 
 "stats.trends.insight.onset %@" = "Dies ist Ihr erster %@ mit Yala";
 "stats.trends.insight.varUpExpense %d %@" = "Ihre Ausgaben stiegen um %d%% vs %@. Lassen Sie uns gemeinsam anpassen.";

@@ -4272,9 +4272,9 @@
 "stats.distribution.insight.newCategory %@ %@" = "Je hebt %@ geprobeerd deze %@.";
 "stats.distribution.insight.concentrated %d %@" = "%d%% van je uitgaven zit in %@. Past dat bij je prioriteiten?";
 "stats.distribution.insight.balanced %d" = "Je uitgaven zijn verspreid: geen categorie overschrijdt %d%%. Evenwichtige verdeling.";
-"stats.distribution.insight.shiftedUp %d %@ %@" = "%@ steeg %d%% vs %@. Laten we kijken wat er veranderd is deze periode.";
-"stats.distribution.insight.shiftedDown %d %@ %@" = "%@ daalde %d%% vs %@. Mooie aanpassing.";
-"stats.distribution.insight.topSub %d %@ %@" = "%@ is %d%% binnen %@. Je grootste specifieke post.";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%2$@ steeg %1$d%% vs %3$@. Laten we kijken wat er veranderd is deze periode.";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%2$@ daalde %1$d%% vs %3$@. Mooie aanpassing.";
+"stats.distribution.insight.topSub %d %@ %@" = "%2$@ is %1$d%% binnen %3$@. Je grootste specifieke post.";
 
 "stats.trends.insight.onset %@" = "Dit is jouw eerste %@ met Yala";
 "stats.trends.insight.varUpExpense %d %@" = "Je uitgaven stegen met %d%% vs %@. Laten we samen aanpassen.";

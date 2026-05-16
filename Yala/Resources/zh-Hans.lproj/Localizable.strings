@@ -4272,9 +4272,9 @@
 "stats.distribution.insight.newCategory %@ %@" = "你这个 %2$@ 尝试了 %1$@。";
 "stats.distribution.insight.concentrated %d %@" = "你 %1$d%% 的支出集中在 %2$@。这符合你的优先事项吗？";
 "stats.distribution.insight.balanced %d" = "你的支出分散：没有任何分类超过 %d%%。分布均衡。";
-"stats.distribution.insight.shiftedUp %d %@ %@" = "%1$@ 较 %3$@ 上升 %2$d%%。让我们看看本期发生了什么变化。";
-"stats.distribution.insight.shiftedDown %d %@ %@" = "%1$@ 较 %3$@ 下降 %2$d%%。调整得不错。";
-"stats.distribution.insight.topSub %d %@ %@" = "%1$@ 在 %3$@ 中占 %2$d%%。这是你最大的具体项目。";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%2$@ 较 %3$@ 上升 %1$d%%。让我们看看本期发生了什么变化。";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%2$@ 较 %3$@ 下降 %1$d%%。调整得不错。";
+"stats.distribution.insight.topSub %d %@ %@" = "%2$@ 在 %3$@ 中占 %1$d%%。这是你最大的具体项目。";
 
 "stats.trends.insight.onset %@" = "这是你与 Yala 的第一个%@";
 "stats.trends.insight.varUpExpense %d %@" = "你的支出比%2$@增加了 %1$d%%。一起来调整吧。";
