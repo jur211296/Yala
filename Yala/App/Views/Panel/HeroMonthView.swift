@@ -61,11 +61,11 @@ struct HeroMonthView: View {
     private var chip: some View {
         HStack(spacing: DS.Spacing.xs) {
             Image(systemName: "sparkles")
-                .font(DS.Typography.subheadline)
+                .font(DS.Typography.headline)
                 .foregroundStyle(DS.Semantic.favoriteIcon)
             Text(chipText)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.thSecondaryText)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
         }
     }
