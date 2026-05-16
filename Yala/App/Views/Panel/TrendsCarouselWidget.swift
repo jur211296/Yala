@@ -83,16 +83,12 @@ struct TrendsCarouselWidget: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                Text(
-                    appPreferences.currency(trendTotalForCurrentMetric,
-                        currencyCode: currencyCode,
-                        forceSign: viewModel.trendType == .balance
-                    )
+                AmountText(
+                    value: trendTotalForCurrentMetric,
+                    currencyCode: currencyCode,
+                    size: .headline,
+                    forceSign: viewModel.trendType == .balance
                 )
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thPrimaryText)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
 
                 TrendChartView(
                     trendPoints: viewModel.processedTrendPoints,

@@ -76,11 +76,11 @@ struct ScheduledPaymentsWidget: View {
 
     private var smallKPIBlock: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(appPreferences.currency(smallToPayAmount, currencyCode: currencyCode))
-                .font(.system(.title3, design: .rounded).weight(.bold))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
+            AmountText(
+                value: smallToPayAmount,
+                currencyCode: currencyCode,
+                size: .kpi
+            )
 
             Text(L10n.Scheduled.Widget.smallToPay)
                 .font(DS.Typography.captionSmall)
@@ -324,11 +324,16 @@ struct ScheduledPaymentsWidget: View {
 
             // Amount + status badge
             HStack(spacing: DS.Spacing.xs) {
-                let prefix = item.isIncome ? "+" : "-"
-                Text(prefix + appPreferences.currency(item.amount, currencyCode: item.currencyCode, forceFullPrecision: true, isEstimate: item.isVariableAmount))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(item.isIncome ? Color.priorityNeed : Color.hotPink)
-                    .opacity(item.isPaid || item.isSkipped ? 0.6 : 1.0)
+                AmountText(
+                    value: item.isIncome ? item.amount : -item.amount,
+                    currencyCode: item.currencyCode,
+                    size: .headline,
+                    tint: .color(item.isIncome ? Color.priorityNeed : Color.hotPink),
+                    forceSign: true,
+                    isEstimate: item.isVariableAmount,
+                    forceFullPrecision: true
+                )
+                .opacity(item.isPaid || item.isSkipped ? 0.6 : 1.0)
 
                 if item.isSkipped {
                     Image(systemName: "arrow.uturn.forward.circle")

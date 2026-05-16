@@ -37,9 +37,12 @@ struct BudgetWidgetRow: View {
 
                     Spacer()
 
-                    Text(formattedSpent)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
+                    AmountText(
+                        value: summary.spent,
+                        currencyCode: currencyCode,
+                        size: .headline,
+                        tint: summary.status == .exceeded ? .color(Color.hotPink) : .primary
+                    )
                 }
 
                 // Status info

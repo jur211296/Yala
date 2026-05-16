@@ -88,11 +88,11 @@ struct WeekdayBarPanelWidget: View {
             )
             if hasData {
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-                    Text(appPreferences.currency(weeklyAverage, currencyCode: currencyCode))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.thPrimaryText)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                    AmountText(
+                        value: weeklyAverage,
+                        currencyCode: currencyCode,
+                        size: .headline
+                    )
                     Text(L10n.Panel.WeekdayBar.perWeekSuffix)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.thSecondaryText)

@@ -12,6 +12,11 @@ import SwiftUI
 struct CollapsibleSectionHeader: View {
     let title: String
     var subtitle: String? = nil
+    /// Versión atribuida del subtitle, con prioridad sobre `subtitle: String?`.
+    /// Útil para componer jerarquía visual (ej. monto con symbol/decimales
+    /// en secondary embebido en una frase). Si `subtitleAttributed != nil`,
+    /// `subtitle` se ignora.
+    var subtitleAttributed: AttributedString? = nil
     let isExpanded: Bool
     var titleFont: Font = DS.Typography.subheadlineEmphasized
     var subtitleFont: Font = DS.Typography.caption
@@ -27,7 +32,14 @@ struct CollapsibleSectionHeader: View {
                     Text(title)
                         .font(titleFont)
                         .foregroundStyle(.primary)
-                    if let subtitle {
+                    if let subtitleAttributed {
+                        Text(subtitleAttributed)
+                            .font(subtitleFont)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(subtitleLineLimit)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else if let subtitle {
                         Text(subtitle)
                             .font(subtitleFont)
                             .foregroundStyle(.secondary)

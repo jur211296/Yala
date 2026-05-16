@@ -260,13 +260,11 @@ struct NeedTrendWidget: View {
 
                     if !isIncomeMode && !trendPoints.isEmpty {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                            Text(
-                                appPreferences.currency(totalAmount, currencyCode: currencyCode)
+                            AmountText(
+                                value: totalAmount,
+                                currencyCode: currencyCode,
+                                size: .headline
                             )
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.thPrimaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
 
                             if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
                                 Text("vs \(appPreferences.number(prevAmount))")
@@ -1097,9 +1095,12 @@ struct NeedCompactBar: View {
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     Spacer()
-                    Text(appPreferences.currency(amount, currencyCode: currencyCode))
-                        .font(DS.Typography.amountSmall)
-                        .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+                    AmountText(
+                        value: amount,
+                        currencyCode: currencyCode,
+                        size: .subheadline,
+                        tint: isSelected ? .primary : .secondary
+                    )
 
                     // Variation chip (aligned right of amount)
                     VariationChip(variation: variation, size: .small, showNAWhenNil: showNAWhenNil)

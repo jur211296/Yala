@@ -88,7 +88,7 @@ struct PanelPanoramaSection: View {
         let expanded = !appPreferences.panelAccountsCollapsed
         return CollapsibleSectionHeader(
             title: L10n.Panel.panoramaTitle,
-            subtitle: accountsSummary,
+            subtitleAttributed: accountsSummaryAttributed,
             isExpanded: expanded,
             titleFont: DS.Typography.subheadlineEmphasized,
             subtitleFont: DS.Typography.subheadline,
@@ -110,6 +110,36 @@ struct PanelPanoramaSection: View {
             currencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
         return L10n.Panel.panoramaCollapsedSummary(formattedBalance, accounts: activeCount)
+    }
+
+    /// Versión atribuida de `accountsSummary`: monto con jerarquía (symbol y
+    /// decimales en secondary tamaño caption, integer en subheadline) embebido
+    /// dentro de "Tienes <amount> en N cuentas". Splittea el string L10n por
+    /// el formattedBalance para concatenar el AttributedString del amount
+    /// entre los fragmentos textuales — preserva la traducción cross-locale.
+    private var accountsSummaryAttributed: AttributedString? {
+        let activeCount = viewModel.accounts.count(where: { !$0.isArchived })
+        guard activeCount > 0 else { return nil }
+        let formattedBalance = appPreferences.currency(
+            viewModel.currentBalance,
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue
+        )
+        let full = L10n.Panel.panoramaCollapsedSummary(formattedBalance, accounts: activeCount)
+        let parts = full.components(separatedBy: formattedBalance)
+
+        var result = AttributedString()
+        if let first = parts.first {
+            result.append(AttributedString(first))
+        }
+        result.append(AmountText.attributedAmount(
+            value: viewModel.currentBalance,
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+            prefs: appPreferences
+        ))
+        if parts.count > 1 {
+            result.append(AttributedString(parts.dropFirst().joined(separator: formattedBalance)))
+        }
+        return result
     }
 
     /// Frase motivacional: aiSubtitle si lo hay, fallback rule-based si hay

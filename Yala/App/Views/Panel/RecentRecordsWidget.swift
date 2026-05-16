@@ -125,9 +125,13 @@ struct RecentRecordsWidget: View {
 
             // Right Column: Amount + Nature (matches RecordRowView)
             VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                Text(formattedAmount(record.amount, currencyCode: record.currencyCode))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(amountColor(for: record))
+                AmountText(
+                    value: record.amount,
+                    currencyCode: record.currencyCode,
+                    size: .headline,
+                    tint: .color(amountColor(for: record)),
+                    forceFullPrecision: true
+                )
 
                 // Nature indicator (if available)
                 if let subcategory = record.subcategory {

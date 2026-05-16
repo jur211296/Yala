@@ -137,6 +137,64 @@ struct AmountText: View {
         }
     }
 
+    // MARK: - Attributed string helper (for composed strings like "Tienes X en N cuentas")
+
+    /// Devuelve un `AttributedString` con la misma jerarquía visual del componente:
+    /// symbol/decimal con `secondaryFont` y `.secondary` foreground, integer con
+    /// `integerFont` y foreground primary (o color si `tintColor != nil`).
+    ///
+    /// Usado para componer subtitles donde el monto va embebido en otra cadena
+    /// (ej. `L10n.Panel.panoramaCollapsedSummary`). El callsite es responsable
+    /// de concatenar runs primary alrededor del retorno.
+    @MainActor
+    static func attributedAmount(
+        value: Double,
+        currencyCode: String,
+        prefs: AppPreferences,
+        integerFont: Font = DS.Typography.subheadline,
+        secondaryFont: Font = DS.Typography.caption,
+        tintColor: Color? = nil,
+        forceFullPrecision: Bool = false
+    ) -> AttributedString {
+        let formatted = prefs.currency(
+            value,
+            currencyCode: currencyCode,
+            forceFullPrecision: forceFullPrecision
+        )
+        let identifier = prefs.currencyIdentifier(for: currencyCode)
+        let decimalSep = Locale.current.decimalSeparator ?? "."
+        let runs = splitFormatted(formatted, identifier: identifier, decimalSeparator: decimalSep)
+
+        var result = AttributedString()
+
+        if !runs.symbol.isEmpty {
+            var symbolRun = AttributedString(runs.symbol + " ")
+            symbolRun.font = secondaryFont
+            if let tintColor {
+                symbolRun.foregroundColor = tintColor.opacity(0.6)
+            }
+            result.append(symbolRun)
+        }
+
+        var integerRun = AttributedString(runs.sign + runs.integer)
+        integerRun.font = integerFont
+        if let tintColor {
+            integerRun.foregroundColor = tintColor
+        }
+        result.append(integerRun)
+
+        if let decimal = runs.decimal {
+            var decimalRun = AttributedString("\(decimalSep)\(decimal)")
+            decimalRun.font = secondaryFont
+            if let tintColor {
+                decimalRun.foregroundColor = tintColor.opacity(0.6)
+            }
+            result.append(decimalRun)
+        }
+
+        return result
+    }
+
     // MARK: - Pure-logic helpers (testable)
 
     /// Style del symbol según size + displayFormat. Codes (PEN/USD) usan

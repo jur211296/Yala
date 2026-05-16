@@ -142,11 +142,11 @@ struct TopCategoriesWidget: View {
 
                 if showVariationHeader && size != .small && !categories.isEmpty {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                        Text(appPreferences.currency(totalAmount, currencyCode: currencyCode))
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                        AmountText(
+                            value: totalAmount,
+                            currencyCode: currencyCode,
+                            size: .headline
+                        )
 
                         if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
                             Text("vs \(appPreferences.number(prevAmount))")
@@ -398,9 +398,11 @@ private struct CategoryRow: View {
 
                     Spacer()
 
-                    Text(appPreferences.currency(summary.amount, currencyCode: currencyCode))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
+                    AmountText(
+                        value: summary.amount,
+                        currencyCode: currencyCode,
+                        size: .headline
+                    )
                 }
 
                 // Bar and Percentage

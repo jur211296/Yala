@@ -225,11 +225,12 @@ struct BudgetsWidget: View {
                 }
                 .frame(width: 28, height: 6)
 
-                Text(appPreferences.currency(summary.spent, currencyCode: currencyCode))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+                AmountText(
+                    value: summary.spent,
+                    currencyCode: currencyCode,
+                    size: .caption,
+                    tint: .secondary
+                )
 
                 Spacer(minLength: 0)
             }
