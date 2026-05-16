@@ -56,7 +56,7 @@ struct PanelSection<Content: View, Footer: View>: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 HStack(spacing: DS.Spacing.xs) {
                     Text(title)
-                        .font(compact ? DS.Typography.subheadlineEmphasized : DS.Typography.title)
+                        .font(DS.Typography.subheadlineEmphasized)
                     if let onSeeMore {
                         seeMoreButton(action: onSeeMore)
                     }
@@ -75,7 +75,6 @@ struct PanelSection<Content: View, Footer: View>: View {
             }
         }
         .padding(.trailing, DS.Spacing.xxs)
-        .padding(.vertical, DS.Spacing.xs)
     }
 
     private func seeMoreButton(action: @escaping () -> Void) -> some View {

@@ -238,7 +238,7 @@ extension YalaTheme {
     ) -> YalaTheme {
         YalaTheme(
             background: background,
-            card: Color.white.opacity(0.06),
+            card: Color.white.opacity(0.04),
             cardBorder: Color.white.opacity(0.1),
             primaryText: .white,
             secondaryText: Color.white.opacity(0.6),

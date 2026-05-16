@@ -32,8 +32,16 @@ struct YalaCardModifier: ViewModifier {
             .padding(padding)
             .background {
                 if theme.usesMaterial {
+                    // ultraThinMaterial preserva el blur/vibrancy (Liquid Glass del sistema).
+                    // El overlay neutralizador encima drena el tinte de color que el material
+                    // vibrante hereda del fondo (gradient violeta/rosa/teal del PanelBackground),
+                    // logrando que el widget se sienta "cristal real" sin teñirse del tema.
                     RoundedRectangle(cornerRadius: radius)
                         .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: radius)
+                                .fill(Color.white.opacity(0.02))
+                        )
                 } else {
                     RoundedRectangle(cornerRadius: radius)
                         .fill(theme.card)

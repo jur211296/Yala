@@ -82,7 +82,7 @@ struct PanelPanoramaSection: View {
             title: L10n.Panel.panoramaTitle,
             subtitle: expanded ? nil : collapsedSubtitle,
             isExpanded: expanded,
-            titleFont: DS.Typography.title,
+            titleFont: DS.Typography.subheadlineEmphasized,
             subtitleFont: DS.Typography.subheadline,
             accessibilityValue: accessibilityValue(expanded: expanded),
             accessibilityHint: expanded ? L10n.Panel.panoramaCollapse : L10n.Panel.panoramaExpand

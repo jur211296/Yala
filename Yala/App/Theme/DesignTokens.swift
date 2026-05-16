@@ -264,16 +264,12 @@ enum DS {
         /// Theme-aware accent→negro vertical — fondo principal de vistas en los 4
         /// themes translucent (Liquid Glass + Translucent Indigo/Rosa/Teal).
         ///
-        /// Liquid Glass (free) replica EXACTAMENTE el Welcome Hero
-        /// (`heroIndigoBlack` = electricIndigo → black). Translucent Indigo Pro
-        /// usa el mismo accent pero mezclado con blanco (~20%) para sentirse
-        /// más vibrante/premium y diferenciarse del free. Rosa/Teal mantienen
-        /// su accent puro (ya únicos por color).
+        /// Estética sobria tipo "estudio fotográfico": top oscurecido (accent
+        /// mezclado al 40% con negro) → bottom negro puro. El delta tonal
+        /// amplio da profundidad sin saturar el lienzo, permitiendo que la
+        /// marca viva en los acentos puntuales de widgets/CTAs (no en el fondo).
         static func themeHero(for theme: YalaTheme) -> [Color] {
-            if theme == .translucent {
-                return [theme.accent.mix(with: .white, by: 0.2), .black]
-            }
-            return [theme.accent, .black]
+            [theme.accent.mix(with: .black, by: 0.4), .black]
         }
 
         /// Picks the hero gradient for a given 0–100 financial score. `nil`
