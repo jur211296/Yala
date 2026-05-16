@@ -201,11 +201,11 @@ struct InsightsTabView: View {
             .equatable()
 
             if !sessionState.isExpensesOnlyMode && hasRecords {
-                Text(appPreferences.currency(summary.netBalance, currencyCode: defaultCurrencyCode))
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.primary)
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
+                AmountText(
+                    value: summary.netBalance,
+                    currencyCode: defaultCurrencyCode,
+                    size: .hero
+                )
             }
 
             incomeExpenseChips(summary)
@@ -539,11 +539,11 @@ struct InsightsTabView: View {
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
 
-                Text(appPreferences.currency(stats.dailyAverage, currencyCode: defaultCurrencyCode))
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                AmountText(
+                    value: stats.dailyAverage,
+                    currencyCode: defaultCurrencyCode,
+                    size: .hero
+                )
 
                 // Reserva altura constante: evita salto visual al alternar
                 // dailyAverageVariation nil ↔ valor (cambio de período).

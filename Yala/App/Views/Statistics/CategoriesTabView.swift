@@ -260,12 +260,12 @@ struct CategoriesTabView: View {
             .equatable()
 
             if hasRecords {
-                Text(appPreferences.currency(totalAmount, currencyCode: defaultCurrencyCode))
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.primary)
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
-                    .contentTransition(.numericText())
+                AmountText(
+                    value: totalAmount,
+                    currencyCode: defaultCurrencyCode,
+                    size: .hero
+                )
+                .contentTransition(.numericText())
             }
 
             if hasRecords, let subtitle = heroDimensionalSubtitle() {

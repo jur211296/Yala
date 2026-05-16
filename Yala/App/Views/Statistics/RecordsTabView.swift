@@ -107,13 +107,11 @@ struct RecordsTabView: View {
             periodSelector
 
             if !sessionState.isExpensesOnlyMode && hasRecords {
-                Text(
-                    appPreferences.currency(recordsSummary.balance, currencyCode: defaultCurrencyCode)
+                AmountText(
+                    value: recordsSummary.balance,
+                    currencyCode: defaultCurrencyCode,
+                    size: .hero
                 )
-                .font(DS.Typography.largeTitle)
-                .foregroundStyle(.primary)
-                .minimumScaleFactor(0.7)
-                .lineLimit(1)
             }
 
             incomeExpenseChips

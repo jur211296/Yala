@@ -218,12 +218,12 @@ struct TrendsTabView: View {
             if hasRecords, let summary {
                 // KPI period-specific (matches Insights hero). Card interno + chart
                 // preservan running balance — el hero refleja el agregado del período.
-                Text(appPreferences.currency(heroKPIValue(for: summary), currencyCode: defaultCurrencyCode))
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.primary)
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
-                    .contentTransition(.numericText())
+                AmountText(
+                    value: heroKPIValue(for: summary),
+                    currencyCode: defaultCurrencyCode,
+                    size: .hero
+                )
+                .contentTransition(.numericText())
             }
 
             if hasRecords, let summary {
