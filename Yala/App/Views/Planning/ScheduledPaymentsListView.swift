@@ -95,12 +95,12 @@ struct ScheduledPaymentsListView: View {
                 Text("\(L10n.Planning.Scheduled.totalLabel) · \(viewModel.monthYearLabel)")
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
-                Text(appPreferences.currency(monthlyTotal, currencyCode: currencyCode))
-                    .font(DS.Typography.largeTitle)
-                    .foregroundStyle(.primary)
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
-                    .contentTransition(.numericText())
+                AmountText(
+                    value: monthlyTotal,
+                    currencyCode: currencyCode,
+                    size: .hero
+                )
+                .contentTransition(.numericText())
             }
 
             // Paid / Pending chips (tap toggles filter)
