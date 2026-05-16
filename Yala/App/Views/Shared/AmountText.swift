@@ -33,6 +33,7 @@ struct AmountText: View {
         case kpi
         case headline
         case body
+        case subheadline
         case caption
     }
 
@@ -111,11 +112,12 @@ struct AmountText: View {
 
     private var integerFont: Font {
         switch size {
-        case .hero:     return .system(size: 44, weight: .semibold)
-        case .kpi:      return .system(size: 28, weight: .semibold)
-        case .headline: return DS.Typography.headline
-        case .body:     return DS.Typography.body
-        case .caption:  return DS.Typography.caption
+        case .hero:        return .system(size: 44, weight: .semibold)
+        case .kpi:         return .system(size: 28, weight: .semibold)
+        case .headline:    return DS.Typography.headline
+        case .body:        return DS.Typography.body
+        case .subheadline: return DS.Typography.subheadline
+        case .caption:     return DS.Typography.caption
         }
     }
 
@@ -126,11 +128,12 @@ struct AmountText: View {
 
     private var decimalFont: Font {
         switch size {
-        case .hero:     return .system(size: 20, weight: .regular)
-        case .kpi:      return .system(size: 14, weight: .regular)
-        case .headline: return DS.Typography.caption
-        case .body:     return DS.Typography.caption
-        case .caption:  return DS.Typography.captionSmall
+        case .hero:        return .system(size: 20, weight: .regular)
+        case .kpi:         return .system(size: 14, weight: .regular)
+        case .headline:    return DS.Typography.caption
+        case .body:        return DS.Typography.caption
+        case .subheadline: return DS.Typography.captionSmall
+        case .caption:     return DS.Typography.captionSmall
         }
     }
 
@@ -152,6 +155,8 @@ struct AmountText: View {
             return (13, .regular)
         case .body:
             return (12, .regular)
+        case .subheadline:
+            return (11, .regular)
         case .caption:
             return (11, .regular)
         }

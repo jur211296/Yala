@@ -160,11 +160,12 @@ struct RecordsTabView: View {
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(Color.incomeGraph)
                             .accessibilityHidden(true)
-                        Text(
-                            appPreferences.currency(recordsSummary.income, currencyCode: defaultCurrencyCode)
+                        AmountText(
+                            value: recordsSummary.income,
+                            currencyCode: defaultCurrencyCode,
+                            size: .subheadline,
+                            tint: .secondary
                         )
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
                     }
                     .opacity(hasNeedFilter && !isIncomeFiltered ? 0.3 : 1.0)
                 }
@@ -188,11 +189,12 @@ struct RecordsTabView: View {
                         .font(DS.Typography.labelSmall)
                         .foregroundStyle(Color.expenseGraph)
                         .accessibilityHidden(true)
-                    Text(
-                        appPreferences.currency(recordsSummary.expense, currencyCode: defaultCurrencyCode)
+                    AmountText(
+                        value: recordsSummary.expense,
+                        currencyCode: defaultCurrencyCode,
+                        size: .subheadline,
+                        tint: .secondary
                     )
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
                 }
                 .opacity(hasNeedFilter && !isExpenseFiltered ? 0.3 : 1.0)
             }

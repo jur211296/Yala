@@ -278,11 +278,12 @@ struct TrendsTabView: View {
                         .font(DS.Typography.labelSmall)
                         .foregroundStyle(Color.incomeGraph)
                         .accessibilityHidden(true)
-                    Text(appPreferences.currency(summary.totalIncome, currencyCode: defaultCurrencyCode))
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                    AmountText(
+                        value: summary.totalIncome,
+                        currencyCode: defaultCurrencyCode,
+                        size: .subheadline,
+                        tint: .secondary
+                    )
                     if appPreferences.showVariations {
                         VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
                     }
@@ -294,11 +295,12 @@ struct TrendsTabView: View {
                     .font(DS.Typography.labelSmall)
                     .foregroundStyle(Color.expenseGraph)
                     .accessibilityHidden(true)
-                Text(appPreferences.currency(summary.totalExpense, currencyCode: defaultCurrencyCode))
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                AmountText(
+                    value: summary.totalExpense,
+                    currencyCode: defaultCurrencyCode,
+                    size: .subheadline,
+                    tint: .secondary
+                )
                 if appPreferences.showVariations {
                     VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
                 }
@@ -1320,11 +1322,11 @@ struct TrendsTabView: View {
                         .foregroundStyle(.thPrimaryText)
 
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                        Text(appPreferences.currency(weeklyAverage, currencyCode: defaultCurrencyCode))
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.thPrimaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                        AmountText(
+                            value: weeklyAverage,
+                            currencyCode: defaultCurrencyCode,
+                            size: .headline
+                        )
                         Text(L10n.Panel.WeekdayBar.perWeekSuffix)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.thSecondaryText)
@@ -1341,11 +1343,12 @@ struct TrendsTabView: View {
                             .foregroundStyle(.thPrimaryText)
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
-                        Text(appPreferences.currency(top.average, currencyCode: defaultCurrencyCode))
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.thSecondaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                        AmountText(
+                            value: top.average,
+                            currencyCode: defaultCurrencyCode,
+                            size: .caption,
+                            tint: .secondary
+                        )
                     }
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("\(L10n.Panel.WeekdayBar.smallTitle): \(top.weekdayLongName.capitalized)")

@@ -88,7 +88,7 @@ struct PanelPanoramaSection: View {
         let expanded = !appPreferences.panelAccountsCollapsed
         return CollapsibleSectionHeader(
             title: L10n.Panel.panoramaTitle,
-            subtitle: expanded ? nil : collapsedSubtitle,
+            subtitle: accountsSummary,
             isExpanded: expanded,
             titleFont: DS.Typography.subheadlineEmphasized,
             subtitleFont: DS.Typography.subheadline,
@@ -100,18 +100,6 @@ struct PanelPanoramaSection: View {
                 appPreferences.panelAccountsCollapsed.toggle()
             }
         }
-    }
-
-    /// Subtítulo mostrado solo cuando la sección está colapsada: "Tienes X en
-    /// N cuentas". La frase motivacional/IA larga vive ahora como bloque
-    /// visible separado en el estado expandido (`motivationalLine` debajo del
-    /// header) — la card colapsada queda con señal/ruido alta.
-    ///
-    /// Short-circuit: cuando la sección está expandida no aplica — evita
-    /// computación cara (accounts scan + NumberFormatter + L10n).
-    private var collapsedSubtitle: String? {
-        guard appPreferences.panelAccountsCollapsed else { return nil }
-        return accountsSummary
     }
 
     private var accountsSummary: String? {
@@ -141,9 +129,10 @@ struct PanelPanoramaSection: View {
     private func accessibilityValue(expanded: Bool) -> String {
         var parts: [String] = []
         parts.append(expanded ? L10n.Panel.panoramaExpandedValue : L10n.Panel.panoramaCollapsedValue)
-        if !expanded, let collapsedSubtitle {
-            parts.append(collapsedSubtitle)
-        } else if expanded, let motivationalLine {
+        if let accountsSummary {
+            parts.append(accountsSummary)
+        }
+        if expanded, let motivationalLine {
             parts.append(motivationalLine)
         }
         return parts.joined(separator: ". ")

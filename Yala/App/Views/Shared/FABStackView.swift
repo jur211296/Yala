@@ -132,10 +132,11 @@ struct FABStackView: View {
             .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
             .glassEffect(
                 isChatLocked
-                    ? .regular.tint(DS.Semantic.disabledForeground.opacity(0.4)).interactive()
-                    : .regular.tint(Color.orange.opacity(0.5)).interactive(),
+                    ? .regular.tint(DS.Semantic.disabledForeground.opacity(0.4))
+                    : .regular.tint(Color.orange.opacity(0.5)),
                 in: Circle()
             )
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .shadow(color: (isChatLocked ? Color.gray : Color.orange).opacity(0.2), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
@@ -157,10 +158,10 @@ struct FABStackView: View {
                 .rotationEffect(.degrees(showFABMenu ? 90 : 0))
                 .glassEffect(
                     .regular
-                        .tint((showFABMenu ? DS.Semantic.disabledForeground : background).opacity(0.6))
-                        .interactive(),
+                        .tint((showFABMenu ? DS.Semantic.disabledForeground : background).opacity(0.6)),
                     in: Circle()
                 )
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .dsFloatingShadow()

@@ -83,7 +83,7 @@ struct PanelSection<Content: View, Footer: View>: View {
             action()
         } label: {
             Image(systemName: "chevron.right")
-                .font(DS.Typography.label)
+                .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
                 .foregroundStyle(Color.primary)
                 .frame(width: DS.Panel.headerChevronSize, height: DS.Panel.headerChevronSize)
@@ -99,7 +99,7 @@ struct PanelSection<Content: View, Footer: View>: View {
             action()
         } label: {
             Image(systemName: "square.grid.2x2")
-                .font(DS.Typography.label)
+                .font(DS.Typography.labelSmall)
                 .fontWeight(.medium)
                 .foregroundStyle(Color.primary)
                 .frame(width: DS.Panel.headerAccessorySize, height: DS.Panel.headerAccessorySize)

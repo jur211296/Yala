@@ -88,7 +88,7 @@ struct RecordRowView: View {
                     // Amount with currency
                     AmountText(
                         value: record.amount,
-                        currencyCode: currencyCode,
+                        currencyCode: record.currencyCode,
                         size: .headline,
                         tint: .color(amountColor),
                         forceFullPrecision: true

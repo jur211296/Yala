@@ -239,11 +239,12 @@ struct InsightsTabView: View {
                         .font(DS.Typography.labelSmall)
                         .foregroundStyle(Color.incomeGraph)
                         .accessibilityHidden(true)
-                    Text(appPreferences.currency(summary.totalIncome, currencyCode: defaultCurrencyCode))
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                    AmountText(
+                        value: summary.totalIncome,
+                        currencyCode: defaultCurrencyCode,
+                        size: .subheadline,
+                        tint: .secondary
+                    )
                     if appPreferences.showVariations {
                         VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
                     }
@@ -255,11 +256,12 @@ struct InsightsTabView: View {
                     .font(DS.Typography.labelSmall)
                     .foregroundStyle(Color.expenseGraph)
                     .accessibilityHidden(true)
-                Text(appPreferences.currency(summary.totalExpense, currencyCode: defaultCurrencyCode))
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                AmountText(
+                    value: summary.totalExpense,
+                    currencyCode: defaultCurrencyCode,
+                    size: .subheadline,
+                    tint: .secondary
+                )
                 if appPreferences.showVariations {
                     VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
                 }
@@ -787,11 +789,11 @@ struct InsightsTabView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                Text(appPreferences.currency(amount, currencyCode: defaultCurrencyCode))
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                AmountText(
+                    value: amount,
+                    currencyCode: defaultCurrencyCode,
+                    size: .subheadline
+                )
                 Text("\(Int(percent))%")
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)

@@ -588,11 +588,11 @@ struct CategoriesTabView: View {
         @Bindable var prefs = appPreferences
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             // KPI total estilo Panel-Small header interno
-            Text(appPreferences.currency(viewModel.sankeyData.totalExpense, currencyCode: defaultCurrencyCode))
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-                .minimumScaleFactor(0.7)
-                .lineLimit(1)
+            AmountText(
+                value: viewModel.sankeyData.totalExpense,
+                currencyCode: defaultCurrencyCode,
+                size: .headline
+            )
 
             SankeyChartView(
                 data: viewModel.sankeyData,
@@ -1745,9 +1745,11 @@ private struct CategoryRowView: View {
 
                     Spacer()
 
-                    Text(appPreferences.currency(summary.amount, currencyCode: currencyCode))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
+                    AmountText(
+                        value: summary.amount,
+                        currencyCode: currencyCode,
+                        size: .headline
+                    )
                 }
 
                 // Bar and Percentage
@@ -1839,9 +1841,11 @@ private struct SubcategoryRowView: View {
 
                     Spacer()
 
-                    Text(appPreferences.currency(summary.amount, currencyCode: currencyCode))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
+                    AmountText(
+                        value: summary.amount,
+                        currencyCode: currencyCode,
+                        size: .headline
+                    )
                 }
 
                 // Bar and Percentage

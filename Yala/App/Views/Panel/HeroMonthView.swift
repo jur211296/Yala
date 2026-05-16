@@ -112,9 +112,12 @@ struct HeroMonthView: View {
                                 .font(DS.Typography.labelSmall)
                                 .foregroundStyle(Color.incomeGraph)
                                 .accessibilityHidden(true)
-                            Text(appPreferences.currency(periodSummary.income, currencyCode: currencyCode))
-                                .font(DS.Typography.subheadline)
-                                .foregroundStyle(.secondary)
+                            AmountText(
+                                value: periodSummary.income,
+                                currencyCode: currencyCode,
+                                size: .subheadline,
+                                tint: .secondary
+                            )
                         }
                         .opacity(hasNatureFilter && !isIncomeFiltered ? 0.3 : 1.0)
                     }
@@ -140,9 +143,12 @@ struct HeroMonthView: View {
                             .font(DS.Typography.labelSmall)
                             .foregroundStyle(Color.expenseGraph)
                             .accessibilityHidden(true)
-                        Text(appPreferences.currency(periodSummary.expense, currencyCode: currencyCode))
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
+                        AmountText(
+                            value: periodSummary.expense,
+                            currencyCode: currencyCode,
+                            size: .subheadline,
+                            tint: .secondary
+                        )
                     }
                     .opacity(hasNatureFilter && !isExpenseFiltered ? 0.3 : 1.0)
                 }
