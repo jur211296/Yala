@@ -554,17 +554,20 @@ extension View {
 /// Variantes de background para vistas root, sheets, fullScreenCovers.
 /// SSOT para evitar inconsistencias (PanelBackgroundView vs theme.background plano).
 enum YalaBackgroundVariant {
-    /// `PanelBackgroundView()` con gradient temático (4 themes translucent + finance).
-    /// Default para destinos ricos: tab roots, sheets de form/editor, selectors, vistas navegadas.
+    /// `PanelBackgroundView()` con hero gradient theme-aware en los 4 themes
+    /// translucent (accent→negro, replicando WelcomeHero/Onboarding). Default
+    /// para destinos ricos: tab roots, sheets de form/editor, selectors, vistas
+    /// navegadas. En light/finance themes mantiene el LinearGradient existing.
     case panel
 
     /// `theme.background` plano. Decisión consciente para success/celebración
     /// donde el contenido (chip, monto, CTA) debe brillar sin distraer.
     case subtle
 
-    /// `PanelBackgroundView()` sin `ignoresSafeArea` por default. Para sheets
-    /// con `.presentationDetents([.medium])` o `.height(<320)` donde el background
-    /// no debe desbordar el detent.
+    /// `PanelBackgroundView(compact: true)` — en themes translucent usa
+    /// `AnimatedMeshBackground` (sutil, no roba atención) en lugar del hero
+    /// gradient. Sin `ignoresSafeArea` por default. Para sheets con
+    /// `.presentationDetents([.medium])` o `.height(<320)`.
     case compact
 
     /// Sin fondo aplicado. Para sheets con `.glassSheet()` que usan material
@@ -594,7 +597,10 @@ struct YalaScreenBackgroundModifier: ViewModifier {
         switch variant {
         case .panel, .compact:
             ZStack {
-                PanelBackgroundView(ignoredEdges: effectiveEdges)
+                PanelBackgroundView(
+                    ignoredEdges: effectiveEdges,
+                    compact: variant == .compact
+                )
                 content
             }
         case .subtle:

@@ -261,6 +261,21 @@ enum DS {
         /// Indigo→negro vertical — fondo unificado del flow Welcome (Hero + Chooser).
         static let heroIndigoBlack: [Color] = [.electricIndigo, .black]
 
+        /// Theme-aware accent→negro vertical — fondo principal de vistas en los 4
+        /// themes translucent (Liquid Glass + Translucent Indigo/Rosa/Teal).
+        ///
+        /// Liquid Glass (free) replica EXACTAMENTE el Welcome Hero
+        /// (`heroIndigoBlack` = electricIndigo → black). Translucent Indigo Pro
+        /// usa el mismo accent pero mezclado con blanco (~20%) para sentirse
+        /// más vibrante/premium y diferenciarse del free. Rosa/Teal mantienen
+        /// su accent puro (ya únicos por color).
+        static func themeHero(for theme: YalaTheme) -> [Color] {
+            if theme == .translucent {
+                return [theme.accent.mix(with: .white, by: 0.2), .black]
+            }
+            return [theme.accent, .black]
+        }
+
         /// Picks the hero gradient for a given 0–100 financial score. `nil`
         /// uses `heroCalm` as a neutral fallback for placeholder/empty states.
         /// Single source of truth for card + detail sheet so thresholds stay

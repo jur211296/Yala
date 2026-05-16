@@ -12,15 +12,26 @@ import SwiftUI
 struct PanelBackgroundView: View {
     @Environment(\.yalaTheme) private var theme
     var ignoredEdges: Edge.Set = .all
+    /// Sheets compactas (detents `.medium` / `.height(<320)`) usan MeshGradient
+    /// animado en lugar del hero gradient principal — sutil, no roba atención.
+    var compact: Bool = false
 
     var body: some View {
         Group {
-            if let meshConfig = MeshConfigResolver.config(for: theme) {
-                AnimatedMeshBackground(
-                    variant: meshConfig.variant,
-                    isLiquidGlass: meshConfig.isLiquidGlass
-                )
-                .accessibilityHidden(true)
+            if theme.usesMaterial {
+                if compact, let meshConfig = MeshConfigResolver.config(for: theme) {
+                    AnimatedMeshBackground(
+                        variant: meshConfig.variant,
+                        isLiquidGlass: meshConfig.isLiquidGlass
+                    )
+                    .accessibilityHidden(true)
+                } else {
+                    LinearGradient(
+                        colors: DS.Gradients.themeHero(for: theme),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
             } else if theme.hasGradient {
                 LinearGradient(
                     colors: [
