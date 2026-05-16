@@ -276,10 +276,12 @@ enum WidgetDataCache {
         let excludedAccountIDs = Set(
             accounts.filter { $0.excludeFromStatistics }.map { $0.persistentModelID }
         )
-        let eligibleTransactions = allTransactions.filter { tx in
+        let isEligible: (TransactionItem) -> Bool = { tx in
             guard let account = tx.account else { return true }
             return !excludedAccountIDs.contains(account.persistentModelID)
         }
+        let eligibleTransactions = allTransactions.filter(isEligible)
+        let eligibleRecentTransactions = recentTransactions.filter(isEligible)
 
         // Get preferred currency from user settings (single source of truth)
         let preferredCurrency = UserDefaults.standard.string(forKey: CurrencyDefaults.preferredCurrencyKey) ?? "USD"
@@ -293,8 +295,8 @@ enum WidgetDataCache {
             preferredCurrencyCode: preferredCurrency
         )
 
-        // Build widget transactions (last 10 for display, from recent 90 days)
-        let widgetTransactions = Array(recentTransactions.prefix(10)).map { tx in
+        // Build widget transactions (last 10 for display, from recent 90 days, excluyendo cuentas excluidas de stats)
+        let widgetTransactions = Array(eligibleRecentTransactions.prefix(10)).map { tx in
             WidgetTransaction(
                 id: tx.persistentModelID.hashValue.description,
                 date: tx.date,
@@ -306,7 +308,7 @@ enum WidgetDataCache {
                 categoryIcon: tx.category?.iconName,
                 subcategoryIcon: tx.subcategory?.iconName ?? tx.category?.iconName,
                 subcategoryName: tx.subcategory?.name,
-                isIncome: (tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount) > 0,
+                isIncome: isIncomeTx(tx),
                 amountInPreferredCurrency: tx.amountInPreferredCurrency
             )
         }
@@ -361,10 +363,10 @@ enum WidgetDataCache {
         // Build trend data with multiple granularities (uses eligible transactions)
         let trendData = buildTrendData(transactions: eligibleTransactions, totalBalance: totalBalance)
 
-        // Build account balances for widgets (only non-archived accounts shown as cards).
+        // Build account balances for widgets (only visible accounts shown as cards).
         // Cada card muestra el saldo en moneda NATIVA de la cuenta. Una sola
         // pasada O(N+M) sobre transactions vía batchCalculateBalances.
-        let visibleAccounts = accounts.filter { !$0.isArchived }
+        let visibleAccounts = filterVisibleAccountsForWidget(accounts)
         let nativeBalancesByAccount = AccountBalanceCalculator.batchCalculateBalances(
             accounts: visibleAccounts, transactions: allTransactions
         )
@@ -405,10 +407,6 @@ enum WidgetDataCache {
         }
 
         // Legacy fields for backwards compatibility
-        let eligibleRecentTransactions = recentTransactions.filter { tx in
-            guard let account = tx.account else { return true }
-            return !excludedAccountIDs.contains(account.persistentModelID)
-        }
         let thisMonthSummary = periodSummaries[DetailPeriod.thisMonth.rawValue] ?? buildPeriodSummary(
             transactions: eligibleRecentTransactions,
             periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date.now)) ?? Date.now,
@@ -439,84 +437,49 @@ enum WidgetDataCache {
         )
     }
 
-    private static func calculateBudgetSpent(budget: Budget, transactions: [TransactionItem]) -> Double {
-        // Get period date range
+    /// Spent del budget vía SSOT `BudgetsViewModel.calculateSpending`.
+    static func calculateBudgetSpent(budget: Budget, transactions: [TransactionItem]) -> Double {
         let calendar = Calendar.current
         let now = Date.now
+        let interval: DateInterval
 
-        var startDate: Date
-        var endDate: Date = now
-
-        switch budget.periodType {
-        case "weekly":
-            startDate = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
-        case "monthly":
-            startDate = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
-        case "yearly":
-            startDate = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? now
-        case "unique":
-            startDate = budget.startDate ?? now
-            endDate = budget.endDate ?? now
-        default:
-            startDate = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
+        let periodType = BudgetPeriodType(rawValue: budget.periodType) ?? .monthly
+        switch periodType {
+        case .weekly:
+            let start = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
+            interval = DateInterval(start: start, end: now)
+        case .monthly:
+            let start = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
+            interval = DateInterval(start: start, end: now)
+        case .yearly:
+            let start = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? now
+            interval = DateInterval(start: start, end: now)
+        case .unique:
+            interval = DateInterval(start: budget.startDate ?? now, end: budget.endDate ?? now)
         }
 
-        // Filter transactions in period
-        let periodTransactions = transactions.filter { tx in
-            tx.date >= startDate && tx.date <= endDate
-        }
+        return BudgetsViewModel.calculateSpending(
+            budget: budget,
+            transactions: transactions,
+            interval: interval
+        )
+    }
 
-        // Determine currency logic: single account → use tx.amount, else → preferred currency
-        let budgetAccounts = budget.accounts ?? []
-        let useSingleAccountCurrency = budgetAccounts.count == 1
+    /// Income/expense por `category.isIncome`. Tx sin categoría → no es income.
+    /// Centraliza la regla y descarta heurísticas de signo del monto.
+    static func isIncomeTx(_ tx: TransactionItem) -> Bool {
+        tx.category?.isIncome ?? false
+    }
 
-        // Sum expenses that match budget criteria
-        var spent: Double = 0
-        for tx in periodTransactions {
-            // Use same currency logic as UI: single account uses tx.amount
-            let txAmount: Double
-            if useSingleAccountCurrency {
-                txAmount = tx.amount
-            } else {
-                txAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
-            }
-            // Skip income (positive amounts are income)
-            if txAmount > 0 { continue }
+    /// Cuentas visibles para widgets: no archivadas y no excluidas de stats.
+    static func filterVisibleAccountsForWidget(_ accounts: [Account]) -> [Account] {
+        accounts.filter { !$0.isArchived && !$0.excludeFromStatistics }
+    }
 
-            // Subcategory filter (by ID, not name)
-            let matchesSubcategory = (budget.subcategories ?? []).isEmpty ||
-                (budget.subcategories ?? []).contains(where: { $0.persistentModelID == tx.subcategory?.persistentModelID })
-
-            // Account filter (by ID, not name)
-            let matchesAccount = (budget.accounts ?? []).isEmpty ||
-                (budget.accounts ?? []).contains(where: { $0.persistentModelID == tx.account?.persistentModelID })
-
-            // Nature filter
-            let matchesNeed: Bool
-            if let naturesString = budget.natures, !naturesString.isEmpty {
-                let natures = naturesString.split(separator: ",")
-                    .compactMap { SubcategoryNeed(rawValue: String($0).trimmingCharacters(in: .whitespaces)) }
-                matchesNeed = natures.contains(tx.effectiveNeed)
-            } else {
-                matchesNeed = true
-            }
-
-            // Tag filter
-            let matchesTags: Bool
-            if let budgetTags = budget.tags, !budgetTags.isEmpty {
-                let tagIDs = Set(budgetTags.map { $0.persistentModelID })
-                let txTagIDs = Set((tx.tags ?? []).map { $0.persistentModelID })
-                matchesTags = !txTagIDs.isDisjoint(with: tagIDs)
-            } else {
-                matchesTags = true
-            }
-
-            if matchesSubcategory && matchesAccount && matchesNeed && matchesTags {
-                spent += abs(txAmount)
-            }
-        }
-
-        return spent
+    /// Monto en moneda preferida con fallback al monto nativo si la conversión
+    /// aún no se ha calculado (`amountInPreferredCurrency == 0`).
+    static func preferredAmount(_ tx: TransactionItem) -> Double {
+        tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
     }
 
     /// Extracts display properties (icon, color) from a budget based on its subcategories
@@ -543,8 +506,7 @@ enum WidgetDataCache {
         var transactionsByDay: [Date: Double] = [:]
         for tx in transactions {
             let day = calendar.startOfDay(for: tx.date)
-            let amount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
-            transactionsByDay[day, default: 0] += amount
+            transactionsByDay[day, default: 0] += preferredAmount(tx)
         }
 
         // Find the earliest transaction date to avoid showing flat line before data exists
@@ -694,7 +656,7 @@ enum WidgetDataCache {
 
     // MARK: - Period Summary Calculations
 
-    private static func buildPeriodSummary(
+    static func buildPeriodSummary(
         transactions: [TransactionItem],
         periodStart: Date,
         periodEnd: Date,
@@ -711,10 +673,10 @@ enum WidgetDataCache {
         var totalExpense: Double = 0
 
         for tx in periodTransactions {
-            let amount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
-            // Use amount sign to determine income/expense (positive = income, negative = expense)
-            if amount > 0 {
-                totalIncome += amount
+            guard tx.category != nil else { continue }
+            let amount = preferredAmount(tx)
+            if isIncomeTx(tx) {
+                totalIncome += abs(amount)
             } else {
                 totalExpense += abs(amount)
             }
@@ -728,9 +690,7 @@ enum WidgetDataCache {
         var periodBalance: Double = 0
         if let allTx = allTransactionsForBalance {
             for tx in allTx where tx.date < periodEnd {
-                periodBalance += tx.amountInPreferredCurrency != 0
-                    ? tx.amountInPreferredCurrency
-                    : tx.amount
+                periodBalance += preferredAmount(tx)
             }
         }
 
@@ -766,7 +726,7 @@ enum WidgetDataCache {
         )
     }
 
-    private static func buildTopCategories(
+    static func buildTopCategories(
         transactions: [TransactionItem],
         totalExpense: Double,
         limit: Int
@@ -777,12 +737,11 @@ enum WidgetDataCache {
         for tx in transactions {
             // Skip balance adjustments
             guard tx.balanceAdjustmentType == nil else { continue }
-            // Skip income (positive amounts are income)
-            let rawAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
-            guard rawAmount < 0 else { continue }
+            // Skip income (clasificación por categoría, no por signo)
+            guard !isIncomeTx(tx) else { continue }
             guard let category = tx.category else { continue }
 
-            let amount = abs(rawAmount)
+            let amount = abs(preferredAmount(tx))
             let key = category.name
 
             if var existing = categoryTotals[key] {
@@ -810,7 +769,7 @@ enum WidgetDataCache {
         }
     }
 
-    private static func buildTopSubcategories(
+    static func buildTopSubcategories(
         transactions: [TransactionItem],
         totalExpense: Double,
         limit: Int
@@ -821,13 +780,12 @@ enum WidgetDataCache {
         for tx in transactions {
             // Skip balance adjustments
             guard tx.balanceAdjustmentType == nil else { continue }
-            // Skip income (positive amounts are income)
-            let rawAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
-            guard rawAmount < 0 else { continue }
+            // Skip income (clasificación por categoría, no por signo)
+            guard !isIncomeTx(tx) else { continue }
             guard let subcategory = tx.subcategory,
                   let category = tx.category else { continue }
 
-            let amount = abs(rawAmount)
+            let amount = abs(preferredAmount(tx))
             let key = "\(category.name)_\(subcategory.name)"
 
             if var existing = subcategoryTotals[key] {
@@ -856,7 +814,7 @@ enum WidgetDataCache {
         }
     }
 
-    private static func buildCashFlowByDay(
+    static func buildCashFlowByDay(
         transactions: [TransactionItem],
         periodStart: Date,
         periodEnd: Date
@@ -869,14 +827,14 @@ enum WidgetDataCache {
         for tx in transactions {
             // Skip balance adjustments
             guard tx.balanceAdjustmentType == nil else { continue }
+            guard tx.category != nil else { continue }
 
             let day = calendar.startOfDay(for: tx.date)
-            let rawAmount = tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
+            let rawAmount = preferredAmount(tx)
 
             var existing = dailyData[day] ?? (income: 0, expense: 0)
-            // Use amount sign to determine income/expense (positive = income, negative = expense)
-            if rawAmount > 0 {
-                existing.income += rawAmount
+            if isIncomeTx(tx) {
+                existing.income += abs(rawAmount)
             } else {
                 existing.expense += abs(rawAmount)
             }

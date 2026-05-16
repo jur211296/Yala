@@ -550,15 +550,17 @@ final class BudgetsViewModel {
     /// Shared spending calculation used by both BudgetsViewModel and BudgetAlertService.
     /// Filters transactions by budget criteria and sums expense amounts en la
     /// moneda del budget (multi-divisa: convierte con TC actual).
+    /// `converter` opcional → inyectable en tests.
     static func calculateSpending(
         budget: Budget,
         transactions: [TransactionItem],
-        interval: DateInterval
+        interval: DateInterval,
+        converter: CurrencyConverting? = nil
     ) -> Double {
         let filtered = filterTransactions(transactions, forBudget: budget, in: interval)
 
         return filtered.reduce(0.0) { sum, tx in
-            sum + abs(budgetAmount(of: tx, in: budget.currencyCode))
+            sum + abs(budgetAmount(of: tx, in: budget.currencyCode, converter: converter))
         }
     }
 
