@@ -42,6 +42,14 @@ struct PanelPanoramaSection: View {
             }
 
             if !appPreferences.panelAccountsCollapsed {
+                if let motivationalLine {
+                    Text(motivationalLine)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.thSecondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, DS.Spacing.sm)
+                        .transition(.opacity)
+                }
                 content
                     .padding(.top, DS.Spacing.sm)
                     .transition(.opacity.combined(with: .move(edge: .top)))
@@ -94,19 +102,16 @@ struct PanelPanoramaSection: View {
         }
     }
 
-    /// Subtítulo único mostrado solo cuando la sección está colapsada:
-    /// "Tienes X en N cuentas. Buen mes…". Concatena saldo + frase motivacional
-    /// para que ambos sean legibles en una sola unidad visual. Devuelve `nil`
-    /// si no hay nada útil que mostrar (sin cuentas activas y sin data del hero).
+    /// Subtítulo mostrado solo cuando la sección está colapsada: "Tienes X en
+    /// N cuentas". La frase motivacional/IA larga vive ahora como bloque
+    /// visible separado en el estado expandido (`motivationalLine` debajo del
+    /// header) — la card colapsada queda con señal/ruido alta.
     ///
-    /// Short-circuit: cuando la sección está expandida no aplica — evita la
-    /// computación cara (accounts scan + 3 NumberFormatter + L10n interpolation)
-    /// que el ternary del callsite no puede saltar (strict-eval).
+    /// Short-circuit: cuando la sección está expandida no aplica — evita
+    /// computación cara (accounts scan + NumberFormatter + L10n).
     private var collapsedSubtitle: String? {
         guard appPreferences.panelAccountsCollapsed else { return nil }
-        let parts = [accountsSummary, motivationalLine].compactMap { $0 }
-        guard !parts.isEmpty else { return nil }
-        return parts.joined(separator: ". ")
+        return accountsSummary
     }
 
     private var accountsSummary: String? {
@@ -138,6 +143,8 @@ struct PanelPanoramaSection: View {
         parts.append(expanded ? L10n.Panel.panoramaExpandedValue : L10n.Panel.panoramaCollapsedValue)
         if !expanded, let collapsedSubtitle {
             parts.append(collapsedSubtitle)
+        } else if expanded, let motivationalLine {
+            parts.append(motivationalLine)
         }
         return parts.joined(separator: ". ")
     }

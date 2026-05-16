@@ -61,11 +61,11 @@ struct HeroMonthView: View {
     private var chip: some View {
         HStack(spacing: DS.Spacing.xs) {
             Image(systemName: "sparkles")
-                .font(DS.Typography.title)
+                .font(DS.Typography.subheadline)
                 .foregroundStyle(DS.Semantic.favoriteIcon)
             Text(chipText)
-                .font(DS.Typography.title)
-                .foregroundStyle(.primary)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thSecondaryText)
                 .lineLimit(1)
         }
     }
@@ -84,13 +84,15 @@ struct HeroMonthView: View {
         let hasNatureFilter = isIncomeFiltered || isExpenseFiltered
 
         return VStack(alignment: .center, spacing: DS.Spacing.sm) {
-            Text("\(L10n.Panel.Hero.availableLabel) · \(selectedPeriod.displayName)")
+            Text(L10n.Panel.Hero.availableLabel)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
-            Text(appPreferences.currency(periodSummary.available, currencyCode: currencyCode))
-                .font(DS.Typography.largeTitle)
-                .foregroundStyle(.primary)
+            AmountText(
+                value: periodSummary.available,
+                currencyCode: currencyCode,
+                size: .hero
+            )
 
             HStack(spacing: DS.Spacing.md) {
                 // Income — oculto en expenses-only mode (mismo gating que RecordsTabView).
