@@ -357,7 +357,7 @@ struct TrendDataProcessorTests {
             grouping: .day,
             interval: interval,
             currencyCode: "PEN",
-            liveBalanceOverride: liveBalance
+            liveBalanceOverride: .init(value: liveBalance, nativeBalances: [:])
         )
 
         #expect(result.liveAnchor != nil)
@@ -416,7 +416,7 @@ struct TrendDataProcessorTests {
             grouping: .day,
             interval: interval,
             currencyCode: "PEN",
-            liveBalanceOverride: liveBalance
+            liveBalanceOverride: .init(value: liveBalance, nativeBalances: [:])
         )
         #expect(result.yDomain.upperBound >= liveBalance)
     }
@@ -440,7 +440,7 @@ struct TrendDataProcessorTests {
             grouping: .day,
             interval: interval,
             currencyCode: "PEN",
-            liveBalanceOverride: liveBalance
+            liveBalanceOverride: .init(value: liveBalance, nativeBalances: [:])
         )
         #expect(result.yDomain.lowerBound <= liveBalance)
     }
@@ -465,7 +465,7 @@ struct TrendDataProcessorTests {
             grouping: .day,
             interval: interval,
             currencyCode: "PEN",
-            liveBalanceOverride: 500
+            liveBalanceOverride: .init(value: 500, nativeBalances: [:])
         )
         let expectedDate = calendar.startOfDay(for: Date.now)
         #expect(result.liveAnchor?.date == expectedDate)
@@ -486,12 +486,12 @@ struct TrendDataProcessorTests {
         let r1 = TrendDataProcessor.processTrendData(
             transactions: [tx], accounts: [], metric: .balance,
             period: .thisMonth, grouping: .day, interval: interval,
-            currencyCode: "PEN", liveBalanceOverride: 500
+            currencyCode: "PEN", liveBalanceOverride: .init(value: 500, nativeBalances: [:])
         )
         let r2 = TrendDataProcessor.processTrendData(
             transactions: [tx], accounts: [], metric: .balance,
             period: .thisMonth, grouping: .day, interval: interval,
-            currencyCode: "PEN", liveBalanceOverride: 500
+            currencyCode: "PEN", liveBalanceOverride: .init(value: 500, nativeBalances: [:])
         )
         #expect(r1.liveAnchor == r2.liveAnchor)
     }
@@ -511,7 +511,7 @@ struct TrendDataProcessorTests {
             grouping: .day,
             interval: interval,
             currencyCode: "PEN",
-            liveBalanceOverride: 1000
+            liveBalanceOverride: .init(value: 1000, nativeBalances: [:])
         )
         #expect(result.liveAnchor == nil)
     }
@@ -534,7 +534,7 @@ struct TrendDataProcessorTests {
             grouping: .day,
             interval: interval,
             currencyCode: "PEN",
-            liveBalanceOverride: 9999
+            liveBalanceOverride: .init(value: 9999, nativeBalances: [:])
         )
         #expect(result.liveAnchor == nil)
     }
