@@ -31,7 +31,7 @@ struct InboxDraftRowView: View {
                 leadingIcon
 
                 // Text content - different layout based on completeness
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                VStack(alignment: .leading, spacing: 3) { // DS: intentional non-token value
                     if draft.hasAllRequiredFields {
                         // Complete draft: show like RecordRowView
                         completeContentView
@@ -48,7 +48,14 @@ struct InboxDraftRowView: View {
             }
             .padding(.vertical, DS.ListRow.paddingV)
             .padding(.horizontal, DS.ListRow.paddingH)
-            .panelCard(small: true)
+            .background(cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+            .shadow(
+                color: Color.black.opacity(theme.shadowOpacity),
+                radius: 6,
+                x: 0,
+                y: 3
+            )
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
@@ -178,6 +185,13 @@ struct InboxDraftRowView: View {
         }
     }
 
+
+    // MARK: - Card Background
+
+    private var cardBackground: some View {
+        RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous)
+            .fill(.thCard)
+    }
 
     // MARK: - Selection Circle
 
