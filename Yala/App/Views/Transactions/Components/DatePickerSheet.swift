@@ -25,7 +25,10 @@ struct DatePickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack {
+            // ScrollView mantiene el alto intrínseco del DatePicker.graphical
+            // al alternar detents .medium <-> .large (sin esto, el calendar
+            // queda expandido y aparece cortado tras volver a .medium).
+            ScrollView {
                 DatePicker(
                     title,
                     selection: $workingDate,
@@ -34,8 +37,6 @@ struct DatePickerSheet: View {
                 )
                 .datePickerStyle(.graphical)
                 .padding(DS.Spacing.md)
-
-                Spacer()
             }
             .yalaScreenBackground()
             .navigationTitle(title)
