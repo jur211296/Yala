@@ -222,11 +222,18 @@ struct BudgetRowView: View {
 
                 Spacer()
 
-                // Spent/Limit compact
-                Text(formattedAmounts)
-                    .font(WDS.Typography.tiny)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: true, vertical: false)
+                // Spent/Limit compact con jerarquía visual: símbolo subordinado.
+                // Caso especial — el formato compuesto "S/720/800" no encaja en
+                // WidgetAmountText (que asume un solo número). HStack manual de 2 runs.
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text(currencySymbol)
+                        .font(WDS.Typography.valueSecondary)
+                        .foregroundStyle(.tertiary)
+                    Text(amountRatio)
+                        .font(WDS.Typography.tiny)
+                        .foregroundStyle(.secondary)
+                }
+                .fixedSize(horizontal: true, vertical: false)
 
                 Text("\(Int(budget.percentUsed))%")
                     .font(WDS.Typography.labelSmall)
@@ -252,18 +259,19 @@ struct BudgetRowView: View {
         WidgetColors.forBudget(percentUsed: budget.percentUsed)
     }
 
-    private var formattedAmounts: String {
+    private var currencySymbol: String {
+        displayFormat == "symbol"
+            ? CurrencySymbols.symbol(for: budget.currencyCode)
+            : budget.currencyCode
+    }
+
+    private var amountRatio: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.maximumFractionDigits = 0
-
         let spent = formatter.string(from: NSNumber(value: budget.spentAmount)) ?? "0"
         let limit = formatter.string(from: NSNumber(value: budget.limitAmount)) ?? "0"
-        let currency = displayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: budget.currencyCode)
-            : budget.currencyCode
-
-        return "\(currency)\(spent)/\(limit)"
+        return "\(spent)/\(limit)"
     }
 }
 

@@ -145,26 +145,18 @@ struct SmallCashFlowView: View {
             // Small income/expense summary (vertical layout to avoid truncation)
             VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
                 if entry.totalIncome > 0 {
-                    Label {
-                        Text(formatAmount(entry.totalIncome))
-                            .font(WDS.Typography.tiny)
-                    } icon: {
-                        Image(systemName: "arrow.up")
-                            .font(WDS.Typography.barValue)
-                    }
-                    .foregroundStyle(WidgetColors.income)
-                    .widgetAccentable()
+                    summaryRow(
+                        icon: "arrow.up",
+                        amount: entry.totalIncome,
+                        color: WidgetColors.income
+                    )
                 }
 
-                Label {
-                    Text(formatAmount(entry.totalExpense))
-                        .font(WDS.Typography.tiny)
-                } icon: {
-                    Image(systemName: "arrow.down")
-                        .font(WDS.Typography.barValue)
-                }
-                .foregroundStyle(WidgetColors.expense)
-                .widgetAccentable()
+                summaryRow(
+                    icon: "arrow.down",
+                    amount: entry.totalExpense,
+                    color: WidgetColors.expense
+                )
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -173,14 +165,24 @@ struct SmallCashFlowView: View {
         .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 
-    private func formatAmount(_ value: Double) -> String {
-        let symbol = entry.currencyDisplayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: entry.currencyCode)
-            : entry.currencyCode
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return "\(symbol) \(formatter.string(from: NSNumber(value: value)) ?? "0")"
+    /// Compact income/expense summary row con icon + amount jerarquizado.
+    /// Reemplaza el Label nativo para tener control sobre los foregroundStyles
+    /// internos del WidgetAmountText (symbol/decimal subordinated).
+    private func summaryRow(icon: String, amount: Double, color: Color) -> some View {
+        HStack(spacing: WDS.Spacing.xs) {
+            Image(systemName: icon)
+                .font(WDS.Typography.barValue)
+                .foregroundStyle(color)
+            WidgetAmountText(
+                value: amount,
+                currencyCode: entry.currencyCode,
+                displayFormat: entry.currencyDisplayFormat,
+                font: WDS.Typography.tiny,
+                secondaryFont: WDS.Typography.tinySecondary,
+                tint: .color(color)
+            )
+        }
+        .widgetAccentable()
     }
 }
 
@@ -229,9 +231,14 @@ struct MediumCashFlowView: View {
                                 .font(WDS.Typography.label)
                                 .foregroundStyle(.secondary)
                             Spacer()
-                            Text(formatCurrency(entry.totalIncome))
-                                .font(WDS.Typography.value)
-                                .foregroundStyle(.primary)
+                            WidgetAmountText(
+                                value: entry.totalIncome,
+                                currencyCode: entry.currencyCode,
+                                displayFormat: entry.currencyDisplayFormat,
+                                font: WDS.Typography.value,
+                                secondaryFont: WDS.Typography.valueSecondary,
+                                tint: .primary
+                            )
                         }
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
@@ -257,9 +264,14 @@ struct MediumCashFlowView: View {
                             .font(WDS.Typography.label)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text(formatCurrency(entry.totalExpense))
-                            .font(WDS.Typography.value)
-                            .foregroundStyle(.primary)
+                        WidgetAmountText(
+                            value: entry.totalExpense,
+                            currencyCode: entry.currencyCode,
+                            displayFormat: entry.currencyDisplayFormat,
+                            font: WDS.Typography.value,
+                            secondaryFont: WDS.Typography.valueSecondary,
+                            tint: .primary
+                        )
                     }
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
@@ -281,16 +293,6 @@ struct MediumCashFlowView: View {
         .padding(WDS.Spacing.xs)
         .clipped()
         .widgetURL(WidgetURLHelper.url(for: "panel"))
-    }
-
-    private func formatCurrency(_ value: Double) -> String {
-        let symbol = entry.currencyDisplayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: entry.currencyCode)
-            : entry.currencyCode
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return "\(symbol) \(formatter.string(from: NSNumber(value: value)) ?? "0")"
     }
 }
 
