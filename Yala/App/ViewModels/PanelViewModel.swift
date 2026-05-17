@@ -22,6 +22,10 @@ struct PanelTrendData: Equatable {
     /// curva (PointMark con anillo) cuando la métrica es .balance y el
     /// período cubre hoy. Nil en otros casos.
     var trendLiveAnchor: BarPoint? = nil
+    /// Desglose por moneda nativa del `trendLiveAnchor`. Habilita la UX
+    /// educativa multi-currency en el sheet "Tu saldo hoy". Nil cuando no
+    /// hay liveAnchor.
+    var trendLiveAnchorBreakdown: [String: Decimal]? = nil
 }
 
 struct PanelCategoriesData: Equatable {
@@ -492,6 +496,7 @@ final class PanelViewModel {
     var rawTrendPoints: [BarPoint] { trendChart.rawTrendPoints }
     var processedYDomain: ClosedRange<Double> { trendChart.processedYDomain }
     var trendLiveAnchor: BarPoint? { trendChart.trendLiveAnchor }
+    var trendLiveAnchorBreakdown: [String: Decimal]? { trendChart.trendLiveAnchorBreakdown }
     var currentInterval: DateInterval { trendChart.currentInterval }
     var currentPeriod: DetailPeriod { trendChart.currentPeriod }
     var trendTotalIncome: Double { trendChart.trendTotalIncome }
@@ -1137,6 +1142,7 @@ final class PanelViewModel {
         var newTrendTotalExpense = trendTotalExpense
         var newTrendFinalBalance = trendFinalBalance
         var newTrendLiveAnchor: BarPoint? = nil
+        var newTrendLiveAnchorBreakdown: [String: Decimal]? = nil
         if trendVisible {
             // For balance, use all transactions (no date filter) to calculate running balance
             let transactionsForTrend = trendType == .balance
@@ -1164,6 +1170,7 @@ final class PanelViewModel {
             newTrendTotalExpense = result.totalExpense
             newTrendFinalBalance = result.finalBalance
             newTrendLiveAnchor = result.liveAnchor
+            newTrendLiveAnchorBreakdown = result.liveAnchorNativeBalances
         }
 
         // Categories — Distribución
@@ -1243,7 +1250,8 @@ final class PanelViewModel {
                 trendGrouping: calcContext.trendGrouping,
                 dataTrendType: self.trendType,
                 currentBalance: newBalance,
-                trendLiveAnchor: newTrendLiveAnchor
+                trendLiveAnchor: newTrendLiveAnchor,
+                trendLiveAnchorBreakdown: newTrendLiveAnchorBreakdown
             )
             if newTrend != trendChart { trendChart = newTrend }
         }

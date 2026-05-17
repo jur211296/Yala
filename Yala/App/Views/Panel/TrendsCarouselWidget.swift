@@ -184,7 +184,8 @@ struct TrendsCarouselWidget: View {
                 focusedDate: $viewModel.focusedDate,
                 period: viewModel.currentPeriod,
                 chartHeight: 170,
-                liveAnchor: viewModel.trendLiveAnchor
+                liveAnchor: viewModel.trendLiveAnchor,
+                liveAnchorBreakdown: viewModel.trendLiveAnchorBreakdown
             )
         }
     }

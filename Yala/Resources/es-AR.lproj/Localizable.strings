@@ -428,3 +428,9 @@
 "onboarding.privacyNoTrackingShort" = "Sin rastreo ni anuncios";
 "onboarding.privacyIcloudShort" = "Solo vos accedés";
 "onboarding.privacyNoSharingShort" = "IA segura";
+
+// Panel — Live Anchor Education (voseo overrides)
+"panel.liveAnchorEducation.heroFormat" = "Hoy tenés %@";
+"panel.liveAnchorEducation.bodyLineThree" = "¿Por qué la diferencia? Tenés dinero en otras monedas, y esas monedas valen distinto hoy.";
+"panel.liveAnchorEducation.coachMessage" = "Cuando tenés dinero en otras monedas, su valor cambia día a día. Tocame para entender qué pasa.";
+"panel.liveAnchorEducation.dotA11yLabel" = "Saldo de hoy al tipo de cambio actual. Tocá para ver el detalle.";

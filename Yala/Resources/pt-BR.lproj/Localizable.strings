@@ -737,6 +737,19 @@
 "panel.insightMenuHideHour" = "Esconder por uma hora";
 "panel.insightMenuHideToday" = "Esconder hoje";
 
+
+// Panel — Live Anchor Education (sheet "Tu saldo hoy")
+"panel.liveAnchorEducation.title" = "Seu saldo hoje";
+"panel.liveAnchorEducation.heroFormat" = "Hoje você tem %@";
+"panel.liveAnchorEducation.bodyLineOneFormat" = "Isso é o que seu dinheiro vale agora se você o convertesse tudo para %@.";
+"panel.liveAnchorEducation.bodyLineTwoFormat" = "Se em vez disso somássemos cada movimento ao valor que tinha no dia em que aconteceu, seria %@.";
+"panel.liveAnchorEducation.bodyLineThree" = "Por que a diferença? Você tem dinheiro em outras moedas, e essas moedas valem de forma diferente hoje.";
+"panel.liveAnchorEducation.breakdownToggle" = "Ver por moeda";
+"panel.liveAnchorEducation.breakdownTotalLabel" = "Total na taxa de hoje";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "≈ %@ hoje";
+"panel.liveAnchorEducation.coachTitle" = "Seu saldo se move sozinho";
+"panel.liveAnchorEducation.coachMessage" = "Quando você tem dinheiro em outras moedas, o valor dele muda dia a dia. Toque para entender o que está acontecendo.";
+"panel.liveAnchorEducation.dotA11yLabel" = "Saldo de hoje na taxa de câmbio atual. Toque para ver os detalhes.";
 "widget.today" = "Hoje";
 
 // Widget Preferences

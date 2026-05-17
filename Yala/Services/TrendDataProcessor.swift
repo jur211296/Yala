@@ -40,6 +40,9 @@ struct TrendDataProcessor {
         /// y el período cubre hoy. La curva conserva sus puntos históricos
         /// intactos; este anchor se renderiza separado en `TrendChartView`.
         let liveAnchor: PanelViewModel.BarPoint?
+        /// Desglose por moneda nativa del saldo vivo (`liveAnchor`). Habilita
+        /// UX educativa multi-currency. Nil cuando `liveAnchor` es nil.
+        let liveAnchorNativeBalances: [String: Decimal]?
     }
 
     // MARK: - Main Processing Entry Point
@@ -49,10 +52,11 @@ struct TrendDataProcessor {
     ///
     /// - Parameter liveBalanceOverride: Si se pasa y `metric == .balance`,
     ///   construye un `liveAnchor` separado (dot suelto en `Date.now`) con
-    ///   este valor. La curva mantiene sus puntos históricos intactos — el
+    ///   el valor. La curva mantiene sus puntos históricos intactos — el
     ///   dot lo renderiza `TrendChartView` aparte. `finalBalance` deriva de
     ///   este valor cuando aplica para que el KPI siga reflejando el saldo
-    ///   al TC actual.
+    ///   al TC actual. El breakdown por moneda nativa se propaga vía
+    ///   `liveAnchorNativeBalances` para UX educativa multi-currency.
     static func processTrendData(
         transactions: [TransactionItem],
         accounts: [Account],
@@ -61,7 +65,7 @@ struct TrendDataProcessor {
         grouping: TrendGrouping,
         interval: DateInterval,
         currencyCode: String,
-        liveBalanceOverride: Double? = nil
+        liveBalanceOverride: LiveBalanceCalculator.LiveAnchorInfo? = nil
     ) -> TrendProcessingResult {
         let calendar = Calendar.current
 
@@ -106,7 +110,8 @@ struct TrendDataProcessor {
                 totalIncome: 0,
                 totalExpense: 0,
                 finalBalance: 0,
-                liveAnchor: nil
+                liveAnchor: nil,
+                liveAnchorNativeBalances: nil
             )
         }
 
@@ -128,7 +133,8 @@ struct TrendDataProcessor {
                 totalIncome: totalIncome,
                 totalExpense: totalExpense,
                 finalBalance: 0,
-                liveAnchor: nil
+                liveAnchor: nil,
+                liveAnchorNativeBalances: nil
             )
         }
 
@@ -218,11 +224,14 @@ struct TrendDataProcessor {
         //      Equatable mantenga su cache (sin esto, cada render cambia la
         //      fecha por microsegundos e invalida toda la struct observable).
         let liveAnchor: PanelViewModel.BarPoint?
-        if let liveBalance = liveBalanceOverride, metric == .balance, !rawPoints.isEmpty {
+        let liveAnchorNativeBalances: [String: Decimal]?
+        if let info = liveBalanceOverride, metric == .balance, !rawPoints.isEmpty {
             let anchorDate = calendar.startOfDay(for: Date.now)
-            liveAnchor = PanelViewModel.BarPoint(date: anchorDate, value: liveBalance)
+            liveAnchor = PanelViewModel.BarPoint(date: anchorDate, value: info.value)
+            liveAnchorNativeBalances = info.nativeBalances
         } else {
             liveAnchor = nil
+            liveAnchorNativeBalances = nil
         }
 
         let finalBalance = liveAnchor?.value ?? rawPoints.last?.value ?? 0
@@ -244,7 +253,8 @@ struct TrendDataProcessor {
             totalIncome: totalIncome,
             totalExpense: totalExpense,
             finalBalance: finalBalance,
-            liveAnchor: liveAnchor
+            liveAnchor: liveAnchor,
+            liveAnchorNativeBalances: liveAnchorNativeBalances
         )
     }
 

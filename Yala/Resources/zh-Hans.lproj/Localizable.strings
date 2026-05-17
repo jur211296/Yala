@@ -739,6 +739,19 @@
 "panel.insightMenuHideHour" = "隐藏一小时";
 "panel.insightMenuHideToday" = "今天隐藏";
 
+
+// Panel — Live Anchor Education (sheet "Tu saldo hoy")
+"panel.liveAnchorEducation.title" = "你今天的余额";
+"panel.liveAnchorEducation.heroFormat" = "你今天有 %@";
+"panel.liveAnchorEducation.bodyLineOneFormat" = "这是如果你把所有钱都换成 %@ 后现在的价值。";
+"panel.liveAnchorEducation.bodyLineTwoFormat" = "如果换一种方式：把每笔交易按当天的汇率相加，会是 %@。";
+"panel.liveAnchorEducation.bodyLineThree" = "为什么会有差异？你有其他货币的钱,这些货币今天的价值不同。";
+"panel.liveAnchorEducation.breakdownToggle" = "按货币查看";
+"panel.liveAnchorEducation.breakdownTotalLabel" = "按今天的汇率合计";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "今天约 %@";
+"panel.liveAnchorEducation.coachTitle" = "你的余额会自己变动";
+"panel.liveAnchorEducation.coachMessage" = "当你有其他货币的钱时,它的价值每天都会变化。点一下我,看看是怎么回事。";
+"panel.liveAnchorEducation.dotA11yLabel" = "按当前汇率计算的今日余额。点击查看详情。";
 "widget.today" = "今天";
 
 // Widget Preferences

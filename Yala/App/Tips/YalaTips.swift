@@ -169,6 +169,18 @@ enum ProTourSteps {
             message: L10n.TipKit.proAiSummaryMessage
         ),
     ]
+
+    /// Standalone (not Pro Tour): TrendChartView — "Today FX" hint.
+    /// 1 step independiente, mostrado primera vez en multi-currency.
+    /// La persistencia vive en `AppPreferences.hasSeenTodayFXCoachMark`,
+    /// no en `ProTourManager`. El enum se reutiliza por convención visual.
+    static let todayFXSteps: [CoachMarkStep] = [
+        CoachMarkStep(
+            id: "todayFXHint",
+            title: L10n.Panel.LiveAnchorEducation.coachTitle,
+            message: L10n.Panel.LiveAnchorEducation.coachMessage
+        ),
+    ]
 }
 
 // MARK: - TipKit Tip (standalone)

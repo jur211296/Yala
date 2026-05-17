@@ -739,6 +739,19 @@
 "panel.insightMenuHideHour" = "Hide for one hour";
 "panel.insightMenuHideToday" = "Hide for today";
 
+
+// Panel — Live Anchor Education (sheet "Tu saldo hoy")
+"panel.liveAnchorEducation.title" = "Your balance today";
+"panel.liveAnchorEducation.heroFormat" = "You have %@ today";
+"panel.liveAnchorEducation.bodyLineOneFormat" = "That's what your money is worth right now if you converted it all to %@.";
+"panel.liveAnchorEducation.bodyLineTwoFormat" = "If we added each transaction at the rate it had on the day it happened, it would be %@.";
+"panel.liveAnchorEducation.bodyLineThree" = "Why the difference? You have money in other currencies, and those currencies are worth differently today.";
+"panel.liveAnchorEducation.breakdownToggle" = "See by currency";
+"panel.liveAnchorEducation.breakdownTotalLabel" = "Total at today's rate";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "≈ %@ today";
+"panel.liveAnchorEducation.coachTitle" = "Your balance moves on its own";
+"panel.liveAnchorEducation.coachMessage" = "When you have money in other currencies, its value changes day by day. Tap me to find out what's going on.";
+"panel.liveAnchorEducation.dotA11yLabel" = "Today's balance at the current exchange rate. Tap to see details.";
 "widget.today" = "Today";
 
 // Widget Preferences

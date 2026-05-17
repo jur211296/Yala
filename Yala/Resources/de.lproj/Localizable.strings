@@ -737,6 +737,19 @@
 "panel.insightMenuHideHour" = "Eine Stunde ausblenden";
 "panel.insightMenuHideToday" = "Heute ausblenden";
 
+
+// Panel — Live Anchor Education (sheet "Tu saldo hoy")
+"panel.liveAnchorEducation.title" = "Ihr Saldo heute";
+"panel.liveAnchorEducation.heroFormat" = "Sie haben heute %@";
+"panel.liveAnchorEducation.bodyLineOneFormat" = "Das ist, was Ihr Geld gerade wert ist, wenn Sie alles in %@ umtauschen würden.";
+"panel.liveAnchorEducation.bodyLineTwoFormat" = "Wenn wir stattdessen jede Bewegung zum Wert des Tages addieren würden, an dem sie geschah, wären es %@.";
+"panel.liveAnchorEducation.bodyLineThree" = "Warum der Unterschied? Sie haben Geld in anderen Währungen, und diese Währungen sind heute unterschiedlich viel wert.";
+"panel.liveAnchorEducation.breakdownToggle" = "Nach Währung anzeigen";
+"panel.liveAnchorEducation.breakdownTotalLabel" = "Gesamtwert beim heutigen Kurs";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "≈ %@ heute";
+"panel.liveAnchorEducation.coachTitle" = "Ihr Saldo bewegt sich von selbst";
+"panel.liveAnchorEducation.coachMessage" = "Wenn Sie Geld in anderen Währungen haben, ändert sich dessen Wert von Tag zu Tag. Tippen Sie, um zu verstehen, was passiert.";
+"panel.liveAnchorEducation.dotA11yLabel" = "Heutiger Saldo zum aktuellen Wechselkurs. Tippen, um Details zu sehen.";
 "widget.today" = "Heute";
 
 // Widget Preferences

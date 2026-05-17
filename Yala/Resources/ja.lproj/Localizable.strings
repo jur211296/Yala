@@ -739,6 +739,19 @@
 "panel.insightMenuHideHour" = "1時間非表示";
 "panel.insightMenuHideToday" = "今日は非表示";
 
+
+// Panel — Live Anchor Education (sheet "Tu saldo hoy")
+"panel.liveAnchorEducation.title" = "今日の残高";
+"panel.liveAnchorEducation.heroFormat" = "今日は%@お持ちです";
+"panel.liveAnchorEducation.bodyLineOneFormat" = "すべて%@に両替した場合の現在のお金の価値です。";
+"panel.liveAnchorEducation.bodyLineTwoFormat" = "代わりに各取引をその日のレートで合算すると、%@になります。";
+"panel.liveAnchorEducation.bodyLineThree" = "なぜ違いがあるのでしょう？他の通貨でお金をお持ちで、それらの通貨は今日異なる価値を持っています。";
+"panel.liveAnchorEducation.breakdownToggle" = "通貨別に表示";
+"panel.liveAnchorEducation.breakdownTotalLabel" = "本日のレートでの合計";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "本日 ≈ %@";
+"panel.liveAnchorEducation.coachTitle" = "残高は自然と動きます";
+"panel.liveAnchorEducation.coachMessage" = "他の通貨でお金をお持ちのとき、その価値は日々変わります。タップして詳しく見てみましょう。";
+"panel.liveAnchorEducation.dotA11yLabel" = "現在の為替レートでの本日の残高。タップして詳細を確認してください。";
 "widget.today" = "今日";
 
 // Widget Preferences

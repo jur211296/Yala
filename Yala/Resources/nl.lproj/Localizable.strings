@@ -739,6 +739,19 @@
 "panel.insightMenuHideHour" = "Verberg voor een uur";
 "panel.insightMenuHideToday" = "Verberg voor vandaag";
 
+
+// Panel — Live Anchor Education (sheet "Tu saldo hoy")
+"panel.liveAnchorEducation.title" = "Je saldo vandaag";
+"panel.liveAnchorEducation.heroFormat" = "Je hebt vandaag %@";
+"panel.liveAnchorEducation.bodyLineOneFormat" = "Dat is wat je geld op dit moment waard is als je het allemaal naar %@ zou wisselen.";
+"panel.liveAnchorEducation.bodyLineTwoFormat" = "Als we in plaats daarvan elke beweging optellen tegen de waarde van de dag waarop het gebeurde, zou het %@ zijn.";
+"panel.liveAnchorEducation.bodyLineThree" = "Waarom het verschil? Je hebt geld in andere valuta's, en die valuta's zijn vandaag anders waard.";
+"panel.liveAnchorEducation.breakdownToggle" = "Per valuta bekijken";
+"panel.liveAnchorEducation.breakdownTotalLabel" = "Totaal tegen de koers van vandaag";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "≈ %@ vandaag";
+"panel.liveAnchorEducation.coachTitle" = "Je saldo beweegt vanzelf";
+"panel.liveAnchorEducation.coachMessage" = "Wanneer je geld in andere valuta's hebt, verandert de waarde dag voor dag. Tik om te zien wat er gebeurt.";
+"panel.liveAnchorEducation.dotA11yLabel" = "Saldo van vandaag tegen de huidige wisselkoers. Tik voor details.";
 "widget.today" = "Vandaag";
 
 // Widget Preferences

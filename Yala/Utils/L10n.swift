@@ -834,6 +834,44 @@ enum L10n {
         static var insightMenuHideToday: String {
             ls("panel.insightMenuHideToday", comment: "Hide for today menu option")
         }
+
+        // MARK: - Live Anchor Education ("Tu saldo hoy" sheet)
+
+        enum LiveAnchorEducation {
+            static var title: String {
+                ls("panel.liveAnchorEducation.title", comment: "Sheet title: educative sheet about today's balance at current FX rate")
+            }
+            static func heroFormat(_ amount: String) -> String {
+                String(format: ls("panel.liveAnchorEducation.heroFormat", comment: "Hero of the sheet, e.g. 'Hoy tienes S/ 28,594'"), amount)
+            }
+            static func bodyLineOneFormat(_ currency: String) -> String {
+                String(format: ls("panel.liveAnchorEducation.bodyLineOneFormat", comment: "Explanation line 1, %@ is preferred currency code or symbol"), currency)
+            }
+            static func bodyLineTwoFormat(_ historical: String) -> String {
+                String(format: ls("panel.liveAnchorEducation.bodyLineTwoFormat", comment: "Explanation line 2, %@ is historical balance formatted"), historical)
+            }
+            static var bodyLineThree: String {
+                ls("panel.liveAnchorEducation.bodyLineThree", comment: "Explanation line 3: why the difference exists")
+            }
+            static var breakdownToggle: String {
+                ls("panel.liveAnchorEducation.breakdownToggle", comment: "DisclosureGroup label: 'See by currency'")
+            }
+            static var breakdownTotalLabel: String {
+                ls("panel.liveAnchorEducation.breakdownTotalLabel", comment: "Footer of breakdown accordion: 'Total when converted today'")
+            }
+            static func breakdownRowConvertedFormat(_ converted: String) -> String {
+                String(format: ls("panel.liveAnchorEducation.breakdownRowConvertedFormat", comment: "Per-row conversion suffix, e.g. '≈ S/ 1,140 hoy'"), converted)
+            }
+            static var coachTitle: String {
+                ls("panel.liveAnchorEducation.coachTitle", comment: "Coach mark title shown first time on multi-currency users")
+            }
+            static var coachMessage: String {
+                ls("panel.liveAnchorEducation.coachMessage", comment: "Coach mark body shown first time on multi-currency users")
+            }
+            static var dotA11yLabel: String {
+                ls("panel.liveAnchorEducation.dotA11yLabel", comment: "VoiceOver label for the today dot in the trend chart")
+            }
+        }
     }
 
     // MARK: - Balance Status

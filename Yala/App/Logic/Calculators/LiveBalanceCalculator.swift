@@ -25,6 +25,15 @@ struct LiveBalanceCalculator {
         let preferredCurrencyCode: String
     }
 
+    /// Output del helper `liveBalanceOverride`: valor total + breakdown por
+    /// moneda nativa. El breakdown habilita UX educativa sobre composición
+    /// multi-currency (sheet "Tu saldo hoy"). Stats consumers ignoran el
+    /// breakdown y usan solo `value`.
+    struct LiveAnchorInfo: Equatable, Sendable {
+        let value: Double
+        let nativeBalances: [String: Decimal]
+    }
+
     /// Saldo total "hoy" en moneda preferida. Si `selectedAccountID` apunta a
     /// una cuenta excluida, hace fallback al total agregado (replica behavior
     /// del antiguo `BalanceHelper.displayedBalance`).
@@ -104,13 +113,17 @@ struct LiveBalanceCalculator {
         transactions: [TransactionItem],
         preferredCurrencyCode: String,
         converter: CurrencyConverting = CurrencyConverter.shared
-    ) -> Double? {
+    ) -> LiveAnchorInfo? {
         guard metric == .balance, interval.end >= Date.now else { return nil }
-        return liveBalance(
+        let breakdown = liveBalanceBreakdown(
             accounts: accounts,
             transactions: transactions,
             preferredCurrencyCode: preferredCurrencyCode,
             converter: converter
+        )
+        return LiveAnchorInfo(
+            value: (breakdown.convertedTotal as NSDecimalNumber).doubleValue,
+            nativeBalances: breakdown.nativeBalances
         )
     }
 }

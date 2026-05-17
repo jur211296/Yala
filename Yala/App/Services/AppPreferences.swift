@@ -378,6 +378,17 @@ final class AppPreferences {
         }
     }
 
+    /// Coach mark del saldo al tipo de cambio actual ("Tu saldo se mueve solo").
+    /// Per-device — discovery local, no propaga via NSUbiquitousKeyValueStore.
+    /// Solo se setea una vez que el coach mark se mostró y fue descartado o
+    /// completado por el usuario.
+    var hasSeenTodayFXCoachMark: Bool = false {
+        didSet {
+            guard oldValue != hasSeenTodayFXCoachMark else { return }
+            persistBool(hasSeenTodayFXCoachMark, forKey: Keys.hasSeenTodayFXCoachMark, synced: false)
+        }
+    }
+
     var lastSeenAppVersion: String = "" {
         didSet {
             guard oldValue != lastSeenAppVersion else { return }
@@ -926,6 +937,7 @@ final class AppPreferences {
         hasCompletedOnboarding = defaults.bool(forKey: Keys.hasCompletedOnboarding)
         hasShownWelcomeChooser = defaults.bool(forKey: Keys.hasShownWelcomeChooser)
         hasShownYalaAIOnboarding = defaults.bool(forKey: Keys.hasShownYalaAIOnboarding)
+        hasSeenTodayFXCoachMark = defaults.bool(forKey: Keys.hasSeenTodayFXCoachMark)
         lastSeenAppVersion = defaults.string(forKey: Keys.lastSeenAppVersion) ?? ""
         expensesOnlyMode = defaults.bool(forKey: Keys.expensesOnlyMode)
 
@@ -1102,6 +1114,7 @@ final class AppPreferences {
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let hasShownWelcomeChooser = "hasShownWelcomeChooser"
         static let hasShownYalaAIOnboarding = "hasShownYalaAIOnboarding"
+        static let hasSeenTodayFXCoachMark = "hasSeenTodayFXCoachMark"
         static let lastSeenAppVersion = "lastSeenAppVersion"
         nonisolated static let expensesOnlyMode = "expensesOnlyMode"  // accedida cross-process desde intents
 

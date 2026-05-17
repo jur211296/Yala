@@ -24,11 +24,18 @@ struct TrendChartView: View {
     /// como un PointMark con anillo, sin annotation propia (el `todayMarker`
     /// ya marca el contexto temporal con texto "Hoy"). En compact se omite.
     var liveAnchor: PanelViewModel.BarPoint? = nil
+    /// Desglose por moneda nativa del `liveAnchor`. Habilita el sheet
+    /// educativo "Tu saldo hoy" en multi-currency. Nil → tap no abre sheet.
+    var liveAnchorBreakdown: [String: Decimal]? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Environment(AppPreferences.self) private var appPreferences
     @State private var draggingDate: Date?  // For transient drag state
+    @State private var pulseAnimate = false
+    @State private var showEducationSheet = false
+    @State private var todayFXCoachMarkVisible = false
+    @State private var todayFXCoachMarkIndex = 0
 
     var body: some View {
         // Disable animations completely to prevent interpolation between data states
@@ -134,9 +141,10 @@ struct TrendChartView: View {
             // Marker for "Today" (omitted entirely in compact mode)
             todayMarker(today: today)
 
-            // Dot del saldo vivo en `today` — añade el VALOR al contexto
-            // temporal del todayMarker (que añade el texto "Hoy").
-            liveAnchorMarker(liveAnchor)
+            // Dot del saldo vivo en `today` se renderiza FUERA del Chart{} en
+            // `.chartOverlay` más abajo — PointMark no soporta animación de
+            // scale/opacity para el pulse, ni `.onTapGesture` para abrir el
+            // sheet educativo.
 
             // Average line
             averageLineMarks
@@ -256,12 +264,112 @@ struct TrendChartView: View {
             }
         }
         .chartXSelection(value: $draggingDate)  // Native iOS 17+ selection - works with scroll
+        .chartOverlay { proxy in
+            liveAnchorOverlay(proxy: proxy)
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Accessibility.trendChart(trendType.displayName))
         .accessibilityValue(trendPoints.isEmpty ? L10n.Accessibility.noData :
             L10n.Accessibility.dataPoints(trendPoints.count))
         .compactChartAxes(compact: compact)
         .frame(height: chartHeight)
+        .onAppear {
+            if !reduceMotion { pulseAnimate = true }
+        }
+        .onDisappear {
+            pulseAnimate = false
+        }
+        .sheet(isPresented: $showEducationSheet) {
+            if let breakdown = liveAnchorBreakdown,
+               let anchor = liveAnchor {
+                BalanceLiveAnchorEducationSheet(
+                    liveAnchorValue: anchor.value,
+                    historicalValue: rawPoints.last?.value,
+                    nativeBalances: breakdown,
+                    preferredCurrencyCode: currencyCode
+                )
+            }
+        }
+        .coachMarkOverlay(
+            steps: ProTourSteps.todayFXSteps,
+            isPresented: $todayFXCoachMarkVisible,
+            currentIndex: $todayFXCoachMarkIndex,
+            onComplete: { appPreferences.hasSeenTodayFXCoachMark = true }
+        )
+        .task(id: shouldShowTodayFXCoachMark) {
+            guard shouldShowTodayFXCoachMark else { return }
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard !Task.isCancelled, shouldShowTodayFXCoachMark else { return }
+            withAnimation { todayFXCoachMarkVisible = true }
+        }
+    }
+
+    /// Gate del coach mark "Today FX": solo se muestra en la primera visita
+    /// con multi-currency activa, métrica balance y período que cubre hoy.
+    /// Bloqueado mientras el Pro Tour está activo para evitar dos overlays
+    /// simultáneos.
+    private var shouldShowTodayFXCoachMark: Bool {
+        guard !compact else { return false }
+        guard liveAnchor != nil else { return false }
+        guard (liveAnchorBreakdown?.count ?? 0) > 1 else { return false }
+        guard !appPreferences.hasSeenTodayFXCoachMark else { return false }
+        let proTourActive = ProTourManager.shared.triggered
+            && !ProTourManager.shared.hasCompleted
+        return !proTourActive
+    }
+
+    /// Overlay del dot "Hoy" — ring fino + halo pulsante + tap area amplia.
+    /// Vive fuera del `Chart{}` porque PointMark no soporta animaciones de
+    /// scale/opacity ni gestos de tap. La posición se calcula vía ChartProxy.
+    @ViewBuilder
+    private func liveAnchorOverlay(proxy: ChartProxy) -> some View {
+        GeometryReader { geo in
+            if let anchor = liveAnchor,
+               !compact,
+               paddedXDomain.contains(anchor.date),
+               let plotFrame = proxy.plotFrame,
+               let xPos = proxy.position(forX: anchor.date),
+               let yPos = proxy.position(forY: anchor.value)
+            {
+                let frame = geo[plotFrame]
+                let absoluteX = xPos + frame.origin.x
+                let absoluteY = yPos + frame.origin.y
+
+                ZStack {
+                    // Halo pulsante (escala 1.0→1.3, opacity 0.25→0)
+                    Circle()
+                        .fill(trendType.color)
+                        .frame(width: 36, height: 36)
+                        .scaleEffect(pulseAnimate ? 1.3 : 1.0)
+                        .opacity(pulseAnimate ? 0.0 : 0.25)
+                        .animation(
+                            reduceMotion ? nil :
+                                .easeInOut(duration: 1.4)
+                                .repeatForever(autoreverses: false),
+                            value: pulseAnimate
+                        )
+
+                    // Ring exterior fino
+                    Circle()
+                        .stroke(trendType.color, lineWidth: 2.5)
+                        .frame(width: 18, height: 18)
+
+                    // Centro hueco (color del card)
+                    Circle()
+                        .fill(.thCard)
+                        .frame(width: 12, height: 12)
+                }
+                .frame(width: 48, height: 48)
+                .contentShape(Circle())
+                .position(x: absoluteX, y: absoluteY)
+                .onTapGesture { showEducationSheet = true }
+                .accessibilityElement()
+                .accessibilityLabel(L10n.Panel.LiveAnchorEducation.dotA11yLabel)
+                .accessibilityAddTraits(.isButton)
+                .coachMarkAnchor("todayFXHint")
+                .allowsHitTesting(true)
+            }
+        }
     }
 
     // Padded X Domain Logic - Use actual data range when available
@@ -288,29 +396,6 @@ struct TrendChartView: View {
 
     // MARK: - Smart Axis Labels
 
-    /// Live anchor — anillo (PointMark exterior + interior color card) en la
-    /// fecha del anchor. Omitido en compact y cuando la fecha cae fuera del
-    /// dominio visible. Sin annotation propia: el `todayMarker` ya marca el
-    /// contexto temporal con texto "Hoy" en card flotante.
-    @ChartContentBuilder
-    private func liveAnchorMarker(_ anchor: PanelViewModel.BarPoint?) -> some ChartContent {
-        if let anchor = anchor, !compact, paddedXDomain.contains(anchor.date) {
-            PointMark(
-                x: .value(L10n.Common.date, anchor.date),
-                y: .value(L10n.Common.amount, anchor.value)
-            )
-            .symbolSize(160)
-            .foregroundStyle(trendType.color)
-
-            PointMark(
-                x: .value(L10n.Common.date, anchor.date),
-                y: .value(L10n.Common.amount, anchor.value)
-            )
-            .symbolSize(80)
-            .foregroundStyle(.thCard)
-        }
-    }
-
     /// Today marker — omitted when `compact` OR when `today` falls outside the
     /// chart's X-axis range (no point rendering a marker the user can't see).
     @ChartContentBuilder
@@ -331,13 +416,7 @@ struct TrendChartView: View {
             )
             .symbolSize(0)
             .annotation(position: .top, alignment: .center, spacing: DS.Spacing.xs) {
-                Text(L10n.Widget.today)
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(.thPrimaryText)
-                    .padding(.horizontal, DS.Spacing.xs)
-                    .padding(.vertical, DS.Spacing.xs)
-                    .background(.thCard, in: RoundedRectangle(cornerRadius: DS.Radius.xs))
-                    .shadow(radius: 1)
+                TodayHintGlassPill { showEducationSheet = true }
             }
         }
     }
