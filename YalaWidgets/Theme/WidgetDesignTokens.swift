@@ -111,6 +111,25 @@ enum WDS {
 
         /// Bar chart label icons (10pt bold)
         static let barLabel = Font.system(size: 10, weight: .bold)
+
+        // MARK: - Secondary pairs for WidgetAmountText
+        // Cada par primary→secondary baja un tier en tamaño + peso regular,
+        // espejando DS.Typography.heroAmount/heroAmountSecondary del app principal.
+
+        /// Secondary del kpiLarge (Small widget heroes). Para symbol+decimal.
+        static let kpiLargeSecondary = Font.system(.subheadline, design: .rounded, weight: .regular)
+
+        /// Secondary del kpiSmall / kpiMedium (Medium+Large widget heroes). Para symbol+decimal.
+        static let kpiSmallSecondary = Font.system(.caption, design: .rounded, weight: .regular)
+
+        /// Secondary del value (rows: transactions, categories, payments).
+        /// Default del componente WidgetAmountText.
+        static let valueSecondary = Font.system(.caption2, design: .rounded, weight: .regular)
+
+        /// Secondary del tiny (BudgetsWidget ratio, super-compacto).
+        // A11Y-DT: tamaño fijo 9pt intencional para mantener compactness del row;
+        // escala vía minimumScaleFactor del componente padre.
+        static let tinySecondary = Font.system(size: 9, weight: .regular)
     }
 
     // MARK: - Opacity
