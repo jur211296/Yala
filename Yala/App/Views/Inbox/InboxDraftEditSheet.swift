@@ -18,6 +18,7 @@ struct InboxDraftEditSheet: View {
     @Environment(DraftService.self) private var draftService
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @Bindable var draft: InboxDraft
 
@@ -25,6 +26,8 @@ struct InboxDraftEditSheet: View {
     @State private var viewModel = InboxDraftEditViewModel()
 
     // MARK: - State
+
+    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
     @State private var note: String = ""
     @State private var amountString: String = ""
@@ -105,8 +108,22 @@ struct InboxDraftEditSheet: View {
         return "\(L10n.Inbox.missingLabel) \(missing.joined(separator: ", "))"
     }
 
-    private var currencyCode: String? {
-        selectedAccount?.currencyCode
+    private var currencySymbol: String? {
+        guard let code = selectedAccount?.currencyCode else { return nil }
+        return appPreferences.currencyIdentifier(for: code)
+    }
+
+    private var amountFontSize: CGFloat {
+        let length = amountString.count
+        let ratio: CGFloat
+        switch length {
+        case 0...7: ratio = 1.0       // 64pt base
+        case 8...9: ratio = 54.0 / 64.0
+        case 10...11: ratio = 46.0 / 64.0
+        case 12...13: ratio = 38.0 / 64.0
+        default: ratio = 32.0 / 64.0
+        }
+        return baseAmountSize * ratio
     }
 
     private var amountColor: Color {
@@ -454,18 +471,15 @@ struct InboxDraftEditSheet: View {
 
     private var amountDisplay: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-            if let code = currencyCode {
-                Text(code)
-                    .font(.system(
-                        size: UIFont.preferredFont(forTextStyle: .largeTitle).pointSize * 0.44,
-                        weight: .medium,
-                        design: .rounded
-                    ))
+            if let symbol = currencySymbol {
+                Text(symbol)
+                    .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
                     .foregroundStyle(amountColor.opacity(0.7))
+                    .contentTransition(.numericText())
             }
 
             TextField("0.00", text: $amountString)
-                .font(DS.Typography.largeTitle)
+                .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
                 .foregroundStyle(amountColor)
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
