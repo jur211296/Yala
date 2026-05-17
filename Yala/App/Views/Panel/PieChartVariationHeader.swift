@@ -70,21 +70,27 @@ struct PieChartVariationHeader: View {
                 .padding(.bottom, DS.Spacing.xxs)
 
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                    Text(formattedCurrency(totalAmount))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                    AmountText(
+                        value: totalAmount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.headline
+                    )
 
                     // Show previous period value for comparison (only when showVariations is ON)
                     if variationDisplay.showsPreviousAmountLabel,
                        appPreferences.showVariations,
                        let prevAmount = previousAmount {
-                        Text("vs \(appPreferences.number(prevAmount))")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.thSecondaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+                            Text("vs")
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.thSecondaryText)
+                            AmountText(
+                                value: prevAmount,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.caption,
+                                tint: .secondary
+                            )
+                        }
                     }
                 }
             }

@@ -168,25 +168,36 @@ struct PeriodComparisonChartView: View {
                 ) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         // Current period value with date
-                        HStack(spacing: DS.Spacing.xs) {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                             Circle()
                                 .fill(trendType.color)
                                 .frame(width: 6, height: 6)
-                            Text("\(periodLabel(for: selectedCurrentPoint.date)): \(formattedAmount(selectedCurrentPoint.value))")
+                            Text("\(periodLabel(for: selectedCurrentPoint.date)):")
                                 .font(DS.Typography.labelSmall)
                                 .foregroundStyle(.thPrimaryText)
+                            AmountText(
+                                value: selectedCurrentPoint.value,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.labelSmall
+                            )
                         }
 
                         // Previous period value with original date (if exists)
                         if let previousPoint = selectedPreviousPoint {
                             let originalPrevDate = getOriginalPreviousDate(for: previousPoint.date)
-                            HStack(spacing: DS.Spacing.xs) {
+                            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                                 Circle()
                                     .fill(.thSecondaryText.opacity(0.5))
                                     .frame(width: 6, height: 6)
-                                Text("\(periodLabel(for: originalPrevDate)): \(formattedAmount(previousPoint.value))")
+                                Text("\(periodLabel(for: originalPrevDate)):")
                                     .font(DS.Typography.caption)
                                     .foregroundStyle(.thSecondaryText)
+                                AmountText(
+                                    value: previousPoint.value,
+                                    currencyCode: currencyCode,
+                                    font: DS.Typography.caption,
+                                    tint: .secondary
+                                )
                             }
                         }
                     }

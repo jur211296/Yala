@@ -404,20 +404,26 @@ struct TrendsTabView: View {
 
                     if hasTrendData {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                            Text(currentKPIValue)
-                                .font(DS.Typography.headline)
-                                .foregroundStyle(.thPrimaryText)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
+                            AmountText(
+                                value: currentKPIValue,
+                                currencyCode: defaultCurrencyCode,
+                                font: DS.Typography.headline
+                            )
 
                             if appPreferences.showVariations
                                 && trendsViewModel.detailPeriod != .allTime,
                                let prevTotal = previousPeriodTotal {
-                                Text("vs \(appPreferences.number(prevTotal))")
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(.thSecondaryText)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.7)
+                                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+                                    Text("vs")
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(.thSecondaryText)
+                                    AmountText(
+                                        value: prevTotal,
+                                        currencyCode: defaultCurrencyCode,
+                                        font: DS.Typography.caption,
+                                        tint: .secondary
+                                    )
+                                }
                             }
                         }
                     }
@@ -517,18 +523,24 @@ struct TrendsTabView: View {
                             .foregroundStyle(.thPrimaryText)
 
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                            Text(currentKPIValue)
-                                .font(DS.Typography.headline)
-                                .foregroundStyle(.thPrimaryText)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
+                            AmountText(
+                                value: currentKPIValue,
+                                currencyCode: defaultCurrencyCode,
+                                font: DS.Typography.headline
+                            )
 
                             if let prevTotal = previousPeriodTotal {
-                                Text("vs \(appPreferences.number(prevTotal))")
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(.thSecondaryText)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.7)
+                                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+                                    Text("vs")
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(.thSecondaryText)
+                                    AmountText(
+                                        value: prevTotal,
+                                        currencyCode: defaultCurrencyCode,
+                                        font: DS.Typography.caption,
+                                        tint: .secondary
+                                    )
+                                }
                             }
                         }
                     }
@@ -1188,30 +1200,28 @@ struct TrendsTabView: View {
         }
     }
 
-    private var currentKPIValue: String {
+    private var currentKPIValue: Double {
         // When scrubbing the chart, show the hovered point value (use RAW points)
         if let focusedDate = trendsViewModel.focusedDate,
             let point = trendsViewModel.rawTrendPoints.first(where: {
                 Calendar.current.isDate($0.date, inSameDayAs: focusedDate)
             })
         {
-            return appPreferences.currency(point.value, currencyCode: defaultCurrencyCode)
+            return point.value
         }
 
         // Otherwise, show metric-specific KPI
-        let value: Double
         switch trendsViewModel.selectedMetric {
         case .balance:
             // Balance: show the last RAW chart point value (actual end balance, not smoothed)
-            value = trendsViewModel.rawTrendPoints.last?.value ?? 0
+            return trendsViewModel.rawTrendPoints.last?.value ?? 0
         case .income:
             // Income: show TOTAL income for the period
-            value = trendsViewModel.totalIncome
+            return trendsViewModel.totalIncome
         case .expense:
             // Expense: show TOTAL expense for the period
-            value = trendsViewModel.totalExpense
+            return trendsViewModel.totalExpense
         }
-        return appPreferences.currency(value, currencyCode: defaultCurrencyCode)
     }
 
     private func mapMetricToTrendType(_ metric: TrendMetric) -> TrendType {

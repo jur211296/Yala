@@ -432,11 +432,19 @@ struct CategoriesPieWidget: View {
                         .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
 
                         // Percentage + Amount (on same line)
-                        Text(
-                            "\(formattedPercentage(selectedItem.percentage)) (\(formattedCurrency(selectedItem.amount)))"
-                        )
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+                            Text("\(formattedPercentage(selectedItem.percentage)) (")
+                                .font(DS.Typography.headline)
+                                .foregroundStyle(.primary)
+                            AmountText(
+                                value: selectedItem.amount,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.headline
+                            )
+                            Text(")")
+                                .font(DS.Typography.headline)
+                                .foregroundStyle(.primary)
+                        }
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -530,11 +538,11 @@ struct CategoriesPieWidget: View {
                         }
                         .padding(.bottom, DS.Spacing.xxs)
 
-                        Text(formattedCurrency(filteredTotalExpense))
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                        AmountText(
+                            value: filteredTotalExpense,
+                            currencyCode: currencyCode,
+                            font: DS.Typography.headline
+                        )
                     }
                     Spacer()
                 }
