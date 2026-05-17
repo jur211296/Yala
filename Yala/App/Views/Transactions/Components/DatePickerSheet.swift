@@ -2,8 +2,6 @@
 //  DatePickerSheet.swift
 //  Yala
 //
-//  Extracted from NewTransactionView - Date picker modal sheet
-//
 
 import SwiftUI
 
@@ -27,22 +25,19 @@ struct DatePickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView(ignoredEdges: [])
+            VStack {
+                DatePicker(
+                    title,
+                    selection: $workingDate,
+                    in: dateRange,
+                    displayedComponents: [.date]
+                )
+                .datePickerStyle(.graphical)
+                .padding(DS.Spacing.md)
 
-                VStack {
-                    DatePicker(
-                        title,
-                        selection: $workingDate,
-                        in: dateRange,
-                        displayedComponents: [.date]
-                    )
-                    .datePickerStyle(.graphical)
-                    .padding()
-
-                    Spacer()
-                }
+                Spacer()
             }
+            .yalaScreenBackground()
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
