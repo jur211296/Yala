@@ -746,8 +746,9 @@
 "panel.liveAnchorEducation.bodyLineOneFormat" = "To jest to, ile Twoje pieniądze są warte teraz, jeśli wymieniłbyś je wszystkie na %@.";
 "panel.liveAnchorEducation.bodyLineTwoFormat" = "Jeśli zamiast tego dodalibyśmy każdą transakcję według kursu z dnia, w którym miała miejsce, byłoby to %@.";
 "panel.liveAnchorEducation.bodyLineThree" = "Dlaczego różnica? Masz pieniądze w innych walutach, a te waluty mają dzisiaj inną wartość.";
+"panel.liveAnchorEducation.todayQuestion" = "Twoje saldo dzisiaj";
+"panel.liveAnchorEducation.whyQuestion" = "Dlaczego ta kwota?";
 "panel.liveAnchorEducation.breakdownToggle" = "Pokaż według waluty";
-"panel.liveAnchorEducation.breakdownTotalLabel" = "Łącznie po dzisiejszym kursie";
 "panel.liveAnchorEducation.breakdownRowConvertedFormat" = "≈ %@ dzisiaj";
 "panel.liveAnchorEducation.coachTitle" = "Twoje saldo zmienia się samo";
 "panel.liveAnchorEducation.coachMessage" = "Gdy masz pieniądze w innych walutach, ich wartość zmienia się z dnia na dzień. Dotknij, aby zrozumieć, co się dzieje.";

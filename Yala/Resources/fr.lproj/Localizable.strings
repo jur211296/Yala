@@ -744,8 +744,9 @@
 "panel.liveAnchorEducation.bodyLineOneFormat" = "C'est ce que votre argent vaut maintenant si vous le convertissiez entièrement en %@.";
 "panel.liveAnchorEducation.bodyLineTwoFormat" = "Si nous additionnions plutôt chaque mouvement à la valeur qu'il avait le jour où il s'est passé, ce serait %@.";
 "panel.liveAnchorEducation.bodyLineThree" = "Pourquoi la différence ? Vous avez de l'argent dans d'autres devises, et ces devises ont une valeur différente aujourd'hui.";
+"panel.liveAnchorEducation.todayQuestion" = "Votre solde aujourd'hui";
+"panel.liveAnchorEducation.whyQuestion" = "Pourquoi ce montant ?";
 "panel.liveAnchorEducation.breakdownToggle" = "Voir par devise";
-"panel.liveAnchorEducation.breakdownTotalLabel" = "Total au taux d'aujourd'hui";
 "panel.liveAnchorEducation.breakdownRowConvertedFormat" = "≈ %@ aujourd'hui";
 "panel.liveAnchorEducation.coachTitle" = "Votre solde bouge tout seul";
 "panel.liveAnchorEducation.coachMessage" = "Quand vous avez de l'argent dans d'autres devises, sa valeur change chaque jour. Touchez pour comprendre ce qui se passe.";

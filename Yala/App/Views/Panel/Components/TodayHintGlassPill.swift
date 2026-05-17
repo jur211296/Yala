@@ -5,27 +5,27 @@
 
 import SwiftUI
 
-/// Glass pill capsule con ícono info + texto "Hoy". Reemplaza el `Text("Hoy")`
-/// plano del `todayMarker` en `TrendChartView`. El ícono `info.circle` +
-/// `glassEffect.interactive` comunican affordance: hay información que ver
-/// al tap. Abre el sheet educativo "Tu saldo hoy" (multi-currency FX).
+/// Etiqueta "Hoy" + glass circle `info.circle` tappable. Abre el sheet
+/// educativo del saldo al tipo de cambio actual.
+///
+/// Usa `.onTapGesture` en lugar de `Button` porque los gestos de `Button`
+/// no propagan dentro de annotations de `Chart`.
 struct TodayHintGlassPill: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: DS.Spacing.xxs) {
-                Image(systemName: "info.circle")
-                    .font(DS.Typography.captionSmall)
-                Text(L10n.Widget.today)
-                    .font(DS.Typography.labelTiny)
-            }
-            .foregroundStyle(.thPrimaryText)
-            .padding(.horizontal, DS.Spacing.sm)
-            .padding(.vertical, DS.Spacing.xs)
-            .glassEffect(.regular.interactive(), in: Capsule())
-            .contentShape(Capsule())
+        HStack(spacing: DS.Spacing.xs) {
+            Text(L10n.Widget.today)
+                .font(DS.Typography.labelTiny)
+                .foregroundStyle(.thPrimaryText)
+
+            WidgetHelpCircleLabel(systemName: "info.circle")
+                .contentShape(Circle())
+                .onTapGesture(perform: action)
+                .accessibilityElement()
+                .accessibilityLabel(L10n.Widget.today)
+                .accessibilityHint(L10n.Panel.LiveAnchorEducation.dotA11yLabel)
+                .accessibilityAddTraits(.isButton)
         }
-        .buttonStyle(.plain)
     }
 }

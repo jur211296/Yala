@@ -853,11 +853,14 @@ enum L10n {
             static var bodyLineThree: String {
                 ls("panel.liveAnchorEducation.bodyLineThree", comment: "Explanation line 3: why the difference exists")
             }
-            static var breakdownToggle: String {
-                ls("panel.liveAnchorEducation.breakdownToggle", comment: "DisclosureGroup label: 'See by currency'")
+            static var todayQuestion: String {
+                ls("panel.liveAnchorEducation.todayQuestion", comment: "Section title above the hero amount: 'How much you have today'")
             }
-            static var breakdownTotalLabel: String {
-                ls("panel.liveAnchorEducation.breakdownTotalLabel", comment: "Footer of breakdown accordion: 'Total when converted today'")
+            static var whyQuestion: String {
+                ls("panel.liveAnchorEducation.whyQuestion", comment: "Section title above the explanation paragraph: 'Why this amount?'")
+            }
+            static var breakdownToggle: String {
+                ls("panel.liveAnchorEducation.breakdownToggle", comment: "Section header above the per-currency rows: 'By currency'")
             }
             static func breakdownRowConvertedFormat(_ converted: String) -> String {
                 String(format: ls("panel.liveAnchorEducation.breakdownRowConvertedFormat", comment: "Per-row conversion suffix, e.g. '≈ S/ 1,140 hoy'"), converted)

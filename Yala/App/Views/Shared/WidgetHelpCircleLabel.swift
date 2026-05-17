@@ -11,8 +11,10 @@
 import SwiftUI
 
 struct WidgetHelpCircleLabel: View {
+    var systemName: String = "questionmark"
+
     var body: some View {
-        Image(systemName: "questionmark")
+        Image(systemName: systemName)
             .font(DS.Typography.captionSmall)
             .fontWeight(.semibold)
             .foregroundStyle(Color.primary)

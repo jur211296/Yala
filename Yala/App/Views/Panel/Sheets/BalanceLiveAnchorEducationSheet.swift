@@ -7,8 +7,7 @@ import SwiftUI
 
 /// Sheet educativo que explica al usuario por qué su saldo "hoy" puede
 /// diferir del último punto de la curva histórica cuando tiene dinero en
-/// varias monedas. Se abre desde la `TodayHintGlassPill` y desde el overlay
-/// del dot en `TrendChartView`.
+/// varias monedas. Se abre desde la pill "Hoy" y desde el overlay del dot.
 struct BalanceLiveAnchorEducationSheet: View {
     let liveAnchorValue: Double
     let historicalValue: Double?
@@ -18,21 +17,26 @@ struct BalanceLiveAnchorEducationSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(CurrencyConverter.self) private var currencyConverter
-    @State private var showBreakdown = false
+
+    /// Umbral para considerar un balance multi-moneda "esencialmente cero"
+    /// tras la conversión al TC actual. Filtra rows del breakdown con saldo
+    /// residual (EUR -0.00, etc.) y omite la línea histórica del párrafo
+    /// cuando la diferencia con `liveAnchorValue` es despreciable.
+    private static let nearZeroEpsilon: Double = 0.01
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                    heroSection
+                    todayBalanceSection
                     explanationSection
-                    breakdownAccordion
+                    breakdownSection
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.md)
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.vertical, DS.Spacing.lg)
             }
             .scrollBounceBehavior(.basedOnSize)
-            .yalaScreenBackground(.compact)
+            .yalaScreenBackground()
             .navigationTitle(L10n.Panel.LiveAnchorEducation.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -47,94 +51,85 @@ struct BalanceLiveAnchorEducationSheet: View {
         .presentationDragIndicator(.visible)
     }
 
-    // MARK: - Hero
+    // MARK: - Today balance
 
-    private var heroSection: some View {
-        let formatted = appPreferences.currency(
-            liveAnchorValue,
-            currencyCode: preferredCurrencyCode,
-            forceFullPrecision: false
-        )
-        return VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            Text(L10n.Panel.LiveAnchorEducation.heroFormat(formatted))
-                .font(DS.Typography.heroAmount)
+    private var todayBalanceSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Text(L10n.Panel.LiveAnchorEducation.todayQuestion)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.thPrimaryText)
-                .minimumScaleFactor(0.7)
-                .lineLimit(2)
+            AmountText(
+                value: liveAnchorValue,
+                currencyCode: preferredCurrencyCode,
+                font: DS.Typography.heroAmount,
+                secondaryFont: DS.Typography.heroAmountSecondary
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Explanation (variante 1)
+    // MARK: - Explanation
 
     private var explanationSection: some View {
         let identifier = appPreferences.currencyIdentifier(for: preferredCurrencyCode)
-        return VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text(L10n.Panel.LiveAnchorEducation.bodyLineOneFormat(identifier))
-                .font(DS.Typography.body)
+        return VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Text(L10n.Panel.LiveAnchorEducation.whyQuestion)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.thPrimaryText)
-
-            if let historical = historicalValue {
-                let historicalFormatted = appPreferences.currency(
-                    historical,
-                    currencyCode: preferredCurrencyCode,
-                    forceFullPrecision: false
-                )
-                Text(L10n.Panel.LiveAnchorEducation.bodyLineTwoFormat(historicalFormatted))
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.thPrimaryText)
-            }
-
-            Text(L10n.Panel.LiveAnchorEducation.bodyLineThree)
-                .font(DS.Typography.body)
-                .foregroundStyle(.thPrimaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(explanationBody(preferredIdentifier: identifier))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thSecondaryText)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Breakdown accordion
+    private func explanationBody(preferredIdentifier: String) -> String {
+        var parts: [String] = [
+            L10n.Panel.LiveAnchorEducation.bodyLineOneFormat(preferredIdentifier)
+        ]
+        if let historical = historicalValue, abs(historical - liveAnchorValue) > Self.nearZeroEpsilon {
+            let formatted = appPreferences.currency(
+                historical,
+                currencyCode: preferredCurrencyCode,
+                forceFullPrecision: false
+            )
+            parts.append(L10n.Panel.LiveAnchorEducation.bodyLineTwoFormat(formatted))
+        }
+        parts.append(L10n.Panel.LiveAnchorEducation.bodyLineThree)
+        return parts.joined(separator: " ")
+    }
 
-    private var breakdownAccordion: some View {
-        DisclosureGroup(isExpanded: $showBreakdown) {
-            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                ForEach(orderedBreakdown, id: \.code) { row in
+    // MARK: - Breakdown
+
+    private var breakdownSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.Panel.LiveAnchorEducation.breakdownToggle)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.thPrimaryText)
+
+            VStack(spacing: 0) {
+                ForEach(Array(orderedBreakdown.enumerated()), id: \.element.code) { index, row in
+                    if index > 0 {
+                        Divider()
+                    }
                     breakdownRow(row)
-                }
-
-                Divider()
-                    .padding(.vertical, DS.Spacing.xxs)
-
-                HStack {
-                    Text(L10n.Panel.LiveAnchorEducation.breakdownTotalLabel)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.thSecondaryText)
-                    Spacer()
-                    AmountText(
-                        value: liveAnchorValue,
-                        currencyCode: preferredCurrencyCode,
-                        font: DS.Typography.subheadlineEmphasized,
-                        secondaryFont: DS.Typography.caption,
-                        forceFullPrecision: false
-                    )
+                        .padding(.vertical, DS.Spacing.sm)
                 }
             }
-            .padding(.top, DS.Spacing.sm)
-        } label: {
-            Text(L10n.Panel.LiveAnchorEducation.breakdownToggle)
-                .font(DS.Typography.label)
-                .foregroundStyle(.thPrimaryText)
+            .padding(.horizontal, DS.Spacing.md)
+            .background(.thCard, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
         }
-        .tint(.primary)
-        .padding(DS.Spacing.md)
-        .background(.thCard, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func breakdownRow(_ row: BreakdownRow) -> some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
             Text(row.code)
                 .font(DS.Typography.label)
                 .foregroundStyle(.thPrimaryText)
-                .frame(width: 48, alignment: .leading)
+                .frame(width: 44, alignment: .leading)
 
             AmountText(
                 value: row.nativeDouble,
@@ -168,8 +163,10 @@ struct BalanceLiveAnchorEducationSheet: View {
         var nativeDouble: Double { (native as NSDecimalNumber).doubleValue }
     }
 
+    /// Filtra balances ~cero (≤0.01 en la moneda preferida) y ordena con la
+    /// moneda preferida primero, resto descendente por valor convertido.
     private var orderedBreakdown: [BreakdownRow] {
-        nativeBalances.map { (code, native) -> BreakdownRow in
+        nativeBalances.compactMap { (code, native) -> BreakdownRow? in
             let converted: Double
             if code == preferredCurrencyCode {
                 converted = (native as NSDecimalNumber).doubleValue
@@ -179,12 +176,13 @@ struct BalanceLiveAnchorEducationSheet: View {
                 )
                 converted = (convertedDecimal as NSDecimalNumber).doubleValue
             }
+            guard abs(converted) > Self.nearZeroEpsilon else { return nil }
             return BreakdownRow(code: code, native: native, convertedToday: converted)
         }
         .sorted { lhs, rhs in
             if lhs.code == preferredCurrencyCode { return true }
             if rhs.code == preferredCurrencyCode { return false }
-            return lhs.convertedToday > rhs.convertedToday
+            return abs(lhs.convertedToday) > abs(rhs.convertedToday)
         }
     }
 }

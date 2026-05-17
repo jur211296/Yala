@@ -36,6 +36,8 @@ struct PanelView: View {
     /// Coach mark: Pro tour (Phase 2)
     @State private var showProFabTour = false
     @State private var proFabTourIndex = 0
+    @State private var showTodayFXCoachMark = false
+    @State private var todayFXCoachMarkIndex = 0
 
     /// Controla si el título del navigation bar es visible. Solo aparece tras
     /// hacer scroll lo suficiente para que el saludo del hero desaparezca,
@@ -57,6 +59,20 @@ struct PanelView: View {
     /// Check if image input is locked (Pro feature)
     private var isImageLocked: Bool {
         !FeatureGateService.shared.canAccess(.imageInput)
+    }
+
+    /// Gate del coach mark "Today FX": primera vez en multi-currency con la
+    /// métrica balance cubriendo hoy. Bloqueado mientras el Pro Tour esté
+    /// activo para evitar overlays simultáneos. Vive en PanelView para que
+    /// el spotlight no se clipe al frame del card de Tendencias.
+    private var shouldShowTodayFXCoachMark: Bool {
+        guard viewModel.dataTrendType == .balance else { return false }
+        guard viewModel.trendLiveAnchor != nil else { return false }
+        guard (viewModel.trendLiveAnchorBreakdown?.count ?? 0) > 1 else { return false }
+        guard !appPreferences.hasSeenTodayFXCoachMark else { return false }
+        let proTourActive = ProTourManager.shared.triggered
+            && !ProTourManager.shared.hasCompleted
+        return !proTourActive
     }
 
     // MARK: - Practice Cleanup
@@ -217,6 +233,18 @@ struct PanelView: View {
             guard ProTourManager.shared.currentPhase == .panel,
                   !showProFabTour else { return }
             showProFabTour = true
+        }
+        .coachMarkOverlay(
+            steps: ProTourSteps.todayFXSteps,
+            isPresented: $showTodayFXCoachMark,
+            currentIndex: $todayFXCoachMarkIndex,
+            onComplete: { appPreferences.hasSeenTodayFXCoachMark = true }
+        )
+        .task(id: shouldShowTodayFXCoachMark) {
+            guard shouldShowTodayFXCoachMark, !showTodayFXCoachMark else { return }
+            do { try await Task.sleep(for: .seconds(1.5)) } catch { return }
+            guard !Task.isCancelled, shouldShowTodayFXCoachMark else { return }
+            withAnimation { showTodayFXCoachMark = true }
         }
         .appliesPendingRemoteChanges(sessionState)
         .onAppear {

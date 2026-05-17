@@ -34,8 +34,6 @@ struct TrendChartView: View {
     @State private var draggingDate: Date?  // For transient drag state
     @State private var pulseAnimate = false
     @State private var showEducationSheet = false
-    @State private var todayFXCoachMarkVisible = false
-    @State private var todayFXCoachMarkIndex = 0
 
     var body: some View {
         // Disable animations completely to prevent interpolation between data states
@@ -290,32 +288,6 @@ struct TrendChartView: View {
                 )
             }
         }
-        .coachMarkOverlay(
-            steps: ProTourSteps.todayFXSteps,
-            isPresented: $todayFXCoachMarkVisible,
-            currentIndex: $todayFXCoachMarkIndex,
-            onComplete: { appPreferences.hasSeenTodayFXCoachMark = true }
-        )
-        .task(id: shouldShowTodayFXCoachMark) {
-            guard shouldShowTodayFXCoachMark else { return }
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            guard !Task.isCancelled, shouldShowTodayFXCoachMark else { return }
-            withAnimation { todayFXCoachMarkVisible = true }
-        }
-    }
-
-    /// Gate del coach mark "Today FX": solo se muestra en la primera visita
-    /// con multi-currency activa, métrica balance y período que cubre hoy.
-    /// Bloqueado mientras el Pro Tour está activo para evitar dos overlays
-    /// simultáneos.
-    private var shouldShowTodayFXCoachMark: Bool {
-        guard !compact else { return false }
-        guard liveAnchor != nil else { return false }
-        guard (liveAnchorBreakdown?.count ?? 0) > 1 else { return false }
-        guard !appPreferences.hasSeenTodayFXCoachMark else { return false }
-        let proTourActive = ProTourManager.shared.triggered
-            && !ProTourManager.shared.hasCompleted
-        return !proTourActive
     }
 
     /// Overlay del dot "Hoy" — ring fino + halo pulsante + tap area amplia.
@@ -339,7 +311,7 @@ struct TrendChartView: View {
                     // Halo pulsante (escala 1.0→1.3, opacity 0.25→0)
                     Circle()
                         .fill(trendType.color)
-                        .frame(width: 36, height: 36)
+                        .frame(width: 18, height: 18)
                         .scaleEffect(pulseAnimate ? 1.3 : 1.0)
                         .opacity(pulseAnimate ? 0.0 : 0.25)
                         .animation(
@@ -351,13 +323,13 @@ struct TrendChartView: View {
 
                     // Ring exterior fino
                     Circle()
-                        .stroke(trendType.color, lineWidth: 2.5)
-                        .frame(width: 18, height: 18)
+                        .stroke(trendType.color, lineWidth: 1.5)
+                        .frame(width: 10, height: 10)
 
                     // Centro hueco (color del card)
                     Circle()
                         .fill(.thCard)
-                        .frame(width: 12, height: 12)
+                        .frame(width: 7, height: 7)
                 }
                 .frame(width: 48, height: 48)
                 .contentShape(Circle())
