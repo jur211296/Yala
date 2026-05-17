@@ -3,13 +3,14 @@
 //  YalaWidgets
 //
 //  Key Performance Indicator display for widgets.
-//  Shows formatted amounts with currency, respecting user preferences.
+//  Delegates en `WidgetAmountText` para aplicar la jerarquía visual del
+//  app principal (entero domina; símbolo + decimales secondary).
 //
 
 import SwiftUI
 import WidgetKit
 
-/// Displays a formatted monetary amount
+/// Displays a formatted monetary amount.
 struct WidgetKPI: View {
     let amount: Double
     let currencyCode: String
@@ -19,14 +20,23 @@ struct WidgetKPI: View {
 
     enum Size {
         case large   // For Small widgets
-        case medium  // For Medium widgets
+        case medium  // For Medium widgets (currently unused — kept for API stability)
         case small   // For compact displays
 
         var font: Font {
             switch self {
-            case .large: return WDS.Typography.kpiLarge
+            case .large:  return WDS.Typography.kpiLarge
             case .medium: return WDS.Typography.kpiMedium
-            case .small: return WDS.Typography.kpiSmall
+            case .small:  return WDS.Typography.kpiSmall
+            }
+        }
+
+        /// Font para símbolo + decimales: un tier menos que el primary.
+        var secondaryFont: Font {
+            switch self {
+            case .large:  return WDS.Typography.kpiLargeSecondary
+            case .medium: return WDS.Typography.kpiSmallSecondary
+            case .small:  return WDS.Typography.kpiSmallSecondary
             }
         }
     }
@@ -46,29 +56,22 @@ struct WidgetKPI: View {
     }
 
     var body: some View {
-        Text(formattedAmount)
-            .font(size.font)
-            .foregroundStyle(color)
-            .minimumScaleFactor(0.5)
-            .lineLimit(1)
-            .widgetAccentable()
+        WidgetAmountText(
+            value: amount,
+            currencyCode: currencyCode,
+            displayFormat: displayFormat,
+            font: size.font,
+            secondaryFont: size.secondaryFont,
+            tint: tint,
+            fractionDigits: 0
+        )
+        .widgetAccentable()
     }
 
-    private var formattedAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        formatter.minimumFractionDigits = 0
-
-        let absAmount = abs(amount)
-        let formatted = formatter.string(from: NSNumber(value: absAmount)) ?? "0"
-
-        let prefix = amount < 0 ? "-" : ""
-        let currency = displayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: currencyCode)
-            : currencyCode
-
-        return "\(prefix)\(currency) \(formatted)"
+    /// Mapea `color` a `WidgetAmountText.Tint`. `.primary` se traduce a
+    /// jerarquía SwiftUI nativa; cualquier otro Color va como tint custom.
+    private var tint: WidgetAmountText.Tint {
+        color == .primary ? .primary : .color(color)
     }
 }
 
