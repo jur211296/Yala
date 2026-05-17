@@ -89,7 +89,7 @@ final class BudgetsViewModel {
 
     init() {
         // Initialize with current period
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         self.selectedWeek = calendar.startOfWeek(for: Date.now)
         self.selectedMonth = calendar.startOfMonth(for: Date.now)
         self.selectedYear = calendar.component(.year, from: Date.now)
@@ -99,7 +99,7 @@ final class BudgetsViewModel {
 
     /// Smart label for the current period (e.g. "Este mes", "Febrero 2026")
     var periodLabel: String {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
 
         switch selectedPeriodType {
         case .weekly:
@@ -155,7 +155,7 @@ final class BudgetsViewModel {
 
     /// Navigate to the previous period
     func previousPeriod() {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         switch selectedPeriodType {
         case .weekly:
             if let prev = calendar.date(byAdding: .weekOfYear, value: -1, to: selectedWeek) {
@@ -174,7 +174,7 @@ final class BudgetsViewModel {
 
     /// Navigate to the next period
     func nextPeriod() {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         switch selectedPeriodType {
         case .weekly:
             if let next = calendar.date(byAdding: .weekOfYear, value: 1, to: selectedWeek) {
@@ -361,7 +361,7 @@ final class BudgetsViewModel {
             return []
         }
 
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         var results: [(label: String, spent: Double, limit: Double)] = []
 
         for offset in (1 - periods)...0 {
@@ -406,7 +406,7 @@ final class BudgetsViewModel {
 
     /// Returns daily cumulative spending for an explicit date interval.
     func getDailyCumulativeSpending(budget: Budget, in interval: DateInterval) -> [(date: Date, cumulative: Double)] {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         let today = Date.now
         let endDate = min(today, interval.end)
 
@@ -618,7 +618,7 @@ final class BudgetsViewModel {
     /// Calculate days remaining in budget period
     func getDaysRemaining(budget: Budget) -> Int {
         let interval = getBudgetDateInterval(budget: budget)
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         let today = Date.now
 
         // If the period has ended (today is after the period), return -1 to indicate "Past"
@@ -638,7 +638,7 @@ final class BudgetsViewModel {
 
     /// Get date interval for a budget period
     func getBudgetDateInterval(budget: Budget) -> DateInterval {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
 
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
             // Fallback to selected month if invalid

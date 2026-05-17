@@ -4,11 +4,12 @@ import SwiftUI
 
 // MARK: - User Calendar Preferences
 
-/// Returns a Calendar configured with the user's preferred first day of week
-func userConfiguredCalendar() -> Calendar {
+/// Returns a Calendar configured with the user's preferred first day of week.
+/// `defaults` is injectable for tests; production callers use the default `.standard`.
+func userConfiguredCalendar(defaults: UserDefaults = .standard) -> Calendar {
     var calendar = Calendar.current
     // 1 = Sunday, 2 = Monday (default to Monday if not set)
-    let firstWeekday = UserDefaults.standard.integer(forKey: "firstWeekday")
+    let firstWeekday = defaults.integer(forKey: "firstWeekday")
     calendar.firstWeekday = firstWeekday > 0 ? firstWeekday : 2  // Default to Monday
     return calendar
 }
