@@ -312,3 +312,5 @@
 "onboarding.privacyNoTrackingShort" = "No tracking or ads";
 "onboarding.privacyIcloudShort" = "Only you have access";
 "onboarding.privacyNoSharingShort" = "Safe AI";
+
+"stats.sankey.subtitle" = "Flow distribution";

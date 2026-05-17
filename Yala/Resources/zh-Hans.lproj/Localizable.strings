@@ -3619,6 +3619,7 @@
 "statistics.sankey.plannedHint" = "仅包含本月的定期付款和订阅。";
 "statistics.sankey.toggleAmount" = "显示金额";
 "statistics.sankey.togglePercentage" = "显示百分比";
+"stats.sankey.subtitle" = "资金流分布";
 
 // MARK: - Shortcut Snippet (F5/F6/F7)
 "shortcut.snippet.account" = "账户";

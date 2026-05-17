@@ -3615,6 +3615,7 @@
 "statistics.sankey.plannedHint" = "Es werden nur wiederkehrende Zahlungen und Abonnements bis zum Ende des aktuellen Monats berücksichtigt."; // TODO l10n review
 "statistics.sankey.toggleAmount" = "Beträge anzeigen";
 "statistics.sankey.togglePercentage" = "Prozentsätze anzeigen";
+"stats.sankey.subtitle" = "Aufschlüsselung des Geldflusses";
 
 // MARK: - Shortcut Snippet (F5/F6/F7)
 "shortcut.snippet.account" = "Konto";

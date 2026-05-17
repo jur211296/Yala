@@ -3605,6 +3605,7 @@
 "statistics.sankey.plannedHint" = "Solo se incluyen pagos recurrentes y suscripciones del mes en curso.";
 "statistics.sankey.toggleAmount" = "Mostrar montos";
 "statistics.sankey.togglePercentage" = "Mostrar porcentajes";
+"stats.sankey.subtitle" = "Distribución del flujo";
 
 // MARK: - Shortcut Snippet (F5/F6/F7)
 "shortcut.snippet.account" = "Cuenta";

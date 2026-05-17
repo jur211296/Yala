@@ -6021,6 +6021,11 @@ enum L10n {
                 }
             }
         }
+        enum Sankey {
+            static var subtitle: String {
+                ls("stats.sankey.subtitle", comment: "Sankey widget internal subtitle (above the KPI total amount)")
+            }
+        }
     }
 
 }

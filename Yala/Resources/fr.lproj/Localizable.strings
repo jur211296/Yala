@@ -3616,6 +3616,7 @@
 "statistics.sankey.plannedHint" = "Seuls les paiements récurrents et les abonnements du mois en cours sont inclus.";
 "statistics.sankey.toggleAmount" = "Afficher les montants";
 "statistics.sankey.togglePercentage" = "Afficher les pourcentages";
+"stats.sankey.subtitle" = "Répartition du flux";
 
 // MARK: - Shortcut Snippet (F5/F6/F7)
 "shortcut.snippet.account" = "Compte";

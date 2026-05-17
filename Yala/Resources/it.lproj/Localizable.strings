@@ -3617,6 +3617,7 @@
 "statistics.sankey.plannedHint" = "Sono inclusi solo i pagamenti ricorrenti e gli abbonamenti del mese in corso.";
 "statistics.sankey.toggleAmount" = "Mostra importi";
 "statistics.sankey.togglePercentage" = "Mostra percentuali";
+"stats.sankey.subtitle" = "Distribuzione del flusso";
 
 // MARK: - Shortcut Snippet (F5/F6/F7)
 "shortcut.snippet.account" = "Conto";

@@ -21,8 +21,10 @@ struct SankeyChartView: View {
     @Binding var labelMode: SankeyLabelMode
     let selectedCategoryIDs: Set<PersistentIdentifier>
     let selectedSubcategoryIDs: Set<PersistentIdentifier>
+    let selectedPoolNodeIDs: Set<String>
     let onTapCategory: (PersistentIdentifier) -> Void
     let onTapSubcategory: (PersistentIdentifier) -> Void
+    let onTapPoolNode: (String) -> Void
 
     @Environment(AppPreferences.self) private var appPreferences
 
@@ -69,13 +71,69 @@ struct SankeyChartView: View {
         return min(max(estimate, requiredForFloor + flexBudget, 200), 480)
     }
 
-    /// View-level filter: when a cat/subcat is selected, restrict col 3 to the
-    /// matching subcats only (parentCategoryID in selection OR persistentID in selection).
+    /// View-level filter: combines pool, category, and subcategory selections.
+    /// - Pool selection restricts cols 2/3 to the categories/subcategories reached
+    ///   by links from the selected pool nodes (Hybrid: pool nodes stay visible with
+    ///   dimming, cols downstream get filtered).
+    /// - Cat/subcat selection restricts col 3 as before.
     private var visibleData: SankeyData {
-        guard !selectedCategoryIDs.isEmpty || !selectedSubcategoryIDs.isEmpty else {
-            return data
+        var kept = data
+
+        // Pool filter (applies first, narrows the universe of cats/subs)
+        if !selectedPoolNodeIDs.isEmpty {
+            let catNodes = kept.nodes(in: .expenseCategory)
+            let subcatNodes = kept.nodes(in: .expenseSubcategory)
+            let catNodeIDs = Set(catNodes.map(\.id))
+            let subcatNodeIDSet = Set(subcatNodes.map(\.id))
+            let keptCatIDs = Set(
+                kept.links
+                    .filter { catNodeIDs.contains($0.targetID) && selectedPoolNodeIDs.contains($0.sourceID) }
+                    .map(\.targetID)
+            )
+            let keptCatPersistentIDs = Set(
+                catNodes
+                    .filter { keptCatIDs.contains($0.id) }
+                    .compactMap(\.persistentID)
+            )
+            let keptSubNodeIDs = Set(
+                subcatNodes
+                    .filter { sub in
+                        guard let parent = sub.parentCategoryID else { return false }
+                        return keptCatPersistentIDs.contains(parent)
+                    }
+                    .map(\.id)
+            )
+
+            let filteredNodes = kept.nodes.filter { n in
+                switch n.column {
+                case .income, .pool: return true
+                case .expenseCategory: return keptCatIDs.contains(n.id)
+                case .expenseSubcategory: return keptSubNodeIDs.contains(n.id)
+                }
+            }
+            let filteredLinks = kept.links.filter { link in
+                if catNodeIDs.contains(link.targetID) {
+                    return selectedPoolNodeIDs.contains(link.sourceID) && keptCatIDs.contains(link.targetID)
+                }
+                if subcatNodeIDSet.contains(link.targetID) {
+                    return keptCatIDs.contains(link.sourceID) && keptSubNodeIDs.contains(link.targetID)
+                }
+                return true
+            }
+            kept = SankeyData(
+                nodes: filteredNodes,
+                links: filteredLinks,
+                totalIncome: kept.totalIncome,
+                totalExpense: kept.totalExpense,
+                pool: kept.pool
+            )
         }
-        let subcatNodes = data.nodes(in: .expenseSubcategory)
+
+        // Cat/subcat filter (existing behavior, applied over pool-filtered universe)
+        guard !selectedCategoryIDs.isEmpty || !selectedSubcategoryIDs.isEmpty else {
+            return kept
+        }
+        let subcatNodes = kept.nodes(in: .expenseSubcategory)
         let subcatNodeIDs = Set(subcatNodes.map(\.id))
         let keptSubcatIDs = Set(subcatNodes.filter { sub in
             if !selectedSubcategoryIDs.isEmpty {
@@ -87,18 +145,18 @@ struct SankeyChartView: View {
             }
             return false
         }.map(\.id))
-        let filteredLinks = data.links.filter { link in
+        let filteredLinks = kept.links.filter { link in
             subcatNodeIDs.contains(link.targetID) ? keptSubcatIDs.contains(link.targetID) : true
         }
-        let nodes = data.nodes.filter { n in
+        let nodes = kept.nodes.filter { n in
             n.column != .expenseSubcategory || keptSubcatIDs.contains(n.id)
         }
         return SankeyData(
             nodes: nodes,
             links: filteredLinks,
-            totalIncome: data.totalIncome,
-            totalExpense: data.totalExpense,
-            pool: data.pool
+            totalIncome: kept.totalIncome,
+            totalExpense: kept.totalExpense,
+            pool: kept.pool
         )
     }
 
@@ -188,12 +246,25 @@ struct SankeyChartView: View {
                 .foregroundStyle(Color.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-            Text(valueString)
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(Color.secondary)
-                .lineLimit(1)
+            switch labelMode {
+            case .amount:
+                AmountText(
+                    value: node.amount,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.captionSmall,
+                    secondaryFont: DS.Typography.captionSmall,
+                    tint: .secondary
+                )
                 .fixedSize(horizontal: true, vertical: false)
                 .layoutPriority(1)
+            case .percentage:
+                Text(valueString)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(Color.secondary)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .layoutPriority(1)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .opacity(placed.dim)
@@ -205,12 +276,18 @@ struct SankeyChartView: View {
     }
 
     private func dimOpacity(for node: SankeyNode) -> Double {
-        guard !selectedCategoryIDs.isEmpty || !selectedSubcategoryIDs.isEmpty else {
+        guard !selectedCategoryIDs.isEmpty
+                || !selectedSubcategoryIDs.isEmpty
+                || !selectedPoolNodeIDs.isEmpty else {
             return 1.0
         }
         switch node.column {
-        case .income, .pool:
+        case .income:
             return 1.0
+        case .pool:
+            return selectedPoolNodeIDs.isEmpty || selectedPoolNodeIDs.contains(node.id)
+                ? 1.0
+                : dimmedOpacity
         case .expenseCategory:
             if let id = node.persistentID, selectedCategoryIDs.contains(id) {
                 return 1.0
@@ -240,7 +317,9 @@ struct SankeyChartView: View {
             if let id = node.persistentID { onTapCategory(id) }
         case .expenseSubcategory:
             if let id = node.persistentID { onTapSubcategory(id) }
-        case .income, .pool:
+        case .pool:
+            onTapPoolNode(node.id)
+        case .income:
             break
         }
     }

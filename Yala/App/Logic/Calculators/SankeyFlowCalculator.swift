@@ -154,7 +154,7 @@ struct SankeyFlowCalculator {
                 persistentID: nil,
                 parentCategoryID: nil,
                 isOtros: false,
-                isTappable: false
+                isTappable: true
             ))
         }
         switch plannedSplit {
@@ -321,7 +321,7 @@ struct SankeyFlowCalculator {
             persistentID: nil,
             parentCategoryID: nil,
             isOtros: false,
-            isTappable: false
+            isTappable: true
         ))
     }
 

@@ -78,6 +78,10 @@ struct CategoriesTabView: View {
     @State private var previousNeedTotal: Double? = nil
     @State private var previousNeedAmounts: [SubcategoryNeed: Double] = [:]
 
+    /// Local pool-node selection for Sankey filtering. Single-select (tap toggles).
+    /// Not persisted in SessionState — lives only within the tab's render lifecycle.
+    @State private var selectedSankeyPoolNodeIDs: Set<String> = []
+
     // Distribution Insight Card (F9b)
     @State private var showUpgradeSheet: Bool = false
     @State private var showInsightsConsentAlert: Bool = false
@@ -587,12 +591,16 @@ struct CategoriesTabView: View {
     private var sankeyCardBody: some View {
         @Bindable var prefs = appPreferences
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            // KPI total estilo Panel-Small header interno
-            AmountText(
-                value: viewModel.sankeyData.totalExpense,
-                currencyCode: defaultCurrencyCode,
-                font: DS.Typography.headline, secondaryFont: DS.Typography.caption
-            )
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text(L10n.Stats.Sankey.subtitle)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.thPrimaryText)
+                AmountText(
+                    value: viewModel.sankeyData.totalExpense,
+                    currencyCode: defaultCurrencyCode,
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption
+                )
+            }
 
             SankeyChartView(
                 data: viewModel.sankeyData,
@@ -600,11 +608,15 @@ struct CategoriesTabView: View {
                 labelMode: $prefs.sankeyLabelMode,
                 selectedCategoryIDs: viewModel.selectedCategories,
                 selectedSubcategoryIDs: viewModel.selectedSubcategories,
+                selectedPoolNodeIDs: selectedSankeyPoolNodeIDs,
                 onTapCategory: { catID in
                     dsWithAnimation(reduceMotion) { toggleSankeyCategory(catID) }
                 },
                 onTapSubcategory: { subID in
                     dsWithAnimation(reduceMotion) { toggleSankeySubcategory(subID) }
+                },
+                onTapPoolNode: { nodeID in
+                    dsWithAnimation(reduceMotion) { toggleSankeyPoolNode(nodeID) }
                 }
             )
 
@@ -641,6 +653,14 @@ struct CategoriesTabView: View {
         } else {
             viewModel.selectedSubcategories = [subID]
             viewModel.selectedCategories.removeAll()
+        }
+    }
+
+    private func toggleSankeyPoolNode(_ nodeID: String) {
+        if selectedSankeyPoolNodeIDs.contains(nodeID) {
+            selectedSankeyPoolNodeIDs.remove(nodeID)
+        } else {
+            selectedSankeyPoolNodeIDs = [nodeID]
         }
     }
 

@@ -436,3 +436,5 @@
 "panel.liveAnchorEducation.whyQuestion" = "¿Por qué este monto?";
 "panel.liveAnchorEducation.coachMessage" = "Cuando tenés dinero en otras monedas, su valor cambia día a día. Tocame para entender qué pasa.";
 "panel.liveAnchorEducation.dotA11yLabel" = "Saldo de hoy al tipo de cambio actual. Tocá para ver el detalle.";
+
+"stats.sankey.subtitle" = "Distribución del flujo";

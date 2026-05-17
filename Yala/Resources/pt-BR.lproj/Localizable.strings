@@ -3615,6 +3615,7 @@
 "statistics.sankey.plannedHint" = "Somente pagamentos recorrentes e assinaturas do mês atual são incluídos."; // TODO l10n review
 "statistics.sankey.toggleAmount" = "Mostrar valores";
 "statistics.sankey.togglePercentage" = "Mostrar percentagens";
+"stats.sankey.subtitle" = "Distribuição do fluxo";
 
 // MARK: - Shortcut Snippet (F5/F6/F7)
 "shortcut.snippet.account" = "Conta";

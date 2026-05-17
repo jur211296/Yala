@@ -3619,6 +3619,7 @@
 "statistics.sankey.plannedHint" = "Uwzględniane są tylko płatności cykliczne i subskrypcje z bieżącego miesiąca.";
 "statistics.sankey.toggleAmount" = "Pokaż kwoty";
 "statistics.sankey.togglePercentage" = "Pokaż procenty";
+"stats.sankey.subtitle" = "Rozkład przepływu pieniędzy";
 
 // MARK: - Shortcut Snippet (F5/F6/F7)
 "shortcut.snippet.account" = "Konto";

@@ -235,3 +235,5 @@
 "onboarding.privacyNoTrackingShort" = "Sin rastreo ni anuncios";
 "onboarding.privacyIcloudShort" = "Solo tú accedes";
 "onboarding.privacyNoSharingShort" = "IA segura";
+
+"stats.sankey.subtitle" = "Distribución del flujo";
