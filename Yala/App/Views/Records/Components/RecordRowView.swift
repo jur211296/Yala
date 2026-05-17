@@ -89,7 +89,7 @@ struct RecordRowView: View {
                     AmountText(
                         value: record.amount,
                         currencyCode: record.currencyCode,
-                        size: .headline,
+                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                         tint: .color(amountColor),
                         forceFullPrecision: true
                     )

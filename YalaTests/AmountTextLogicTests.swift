@@ -2,9 +2,8 @@
 //  AmountTextLogicTests.swift
 //  YalaTests
 //
-//  Pure-logic tests para los 2 helpers static de `AmountText`:
-//  - `splitFormatted` — parsea el output del formatter en 4 runs visuales.
-//  - `symbolFontStyle` — decide (size, weight) del symbol según Size + displayFormat.
+//  Pure-logic tests para `AmountText.splitFormatted`:
+//  parsea el output del formatter en 4 runs visuales (symbol/sign/integer/decimal).
 //
 //  Sin SwiftUI, sin SwiftData, sin singletons. Cubre casos límite (estimate,
 //  locale con coma decimal, garbage input) y los 4 ejes del formato.
@@ -98,26 +97,5 @@ struct AmountTextLogicTests {
         #expect(result.sign == "-")
         #expect(result.integer == "2,266")
         #expect(result.decimal == "37")
-    }
-
-    // MARK: - symbolFontStyle
-
-    @Test func symbolFontStyle_heroSymbolMode_returns20Regular() {
-        let style = AmountText.symbolFontStyle(for: .hero, displayFormat: .symbol)
-        #expect(style.size == 20)
-        #expect(style.weight == .regular)
-    }
-
-    @Test func symbolFontStyle_heroCodeMode_returns24Medium() {
-        let style = AmountText.symbolFontStyle(for: .hero, displayFormat: .code)
-        #expect(style.size == 24)
-        #expect(style.weight == .medium)
-    }
-
-    @Test func symbolFontStyle_kpiCodeMode_isLargerThanSymbol() {
-        let symbolStyle = AmountText.symbolFontStyle(for: .kpi, displayFormat: .symbol)
-        let codeStyle = AmountText.symbolFontStyle(for: .kpi, displayFormat: .code)
-        #expect(codeStyle.size > symbolStyle.size)
-        #expect(codeStyle.weight == .medium)
     }
 }

@@ -40,7 +40,7 @@ struct BudgetWidgetRow: View {
                     AmountText(
                         value: summary.spent,
                         currencyCode: currencyCode,
-                        size: .headline,
+                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                         tint: summary.status == .exceeded ? .color(Color.hotPink) : .primary
                     )
                 }

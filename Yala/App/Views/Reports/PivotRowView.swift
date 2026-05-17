@@ -41,15 +41,23 @@ struct PivotRowView: View {
 
             // Amounts
             VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                Text(appPreferences.currency(node.amount, currencyCode: displayCurrency))
-                    .font(level == 0 ? DS.Typography.label : DS.Typography.labelSmall)
-                    .fontWeight(level == 0 ? .semibold : .medium)
-                    .foregroundStyle(node.isIncome ? Color.electricIndigo : .primary)
+                AmountText(
+                    value: node.amount,
+                    currencyCode: displayCurrency,
+                    font: level == 0
+                        ? DS.Typography.label.weight(.semibold)
+                        : DS.Typography.labelSmall.weight(.medium),
+                    tint: node.isIncome ? .color(Color.electricIndigo) : .primary
+                )
 
                 if let previousAmount = node.previousAmount {
-                    Text(appPreferences.currency(previousAmount, currencyCode: displayCurrency))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
+                    AmountText(
+                        value: previousAmount,
+                        currencyCode: displayCurrency,
+                        font: DS.Typography.captionSmall,
+                        secondaryFont: DS.Typography.captionSmall,
+                        tint: .secondary
+                    )
                 }
             }
             .frame(minWidth: 80, alignment: .trailing)

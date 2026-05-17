@@ -188,7 +188,7 @@ struct NeedTrendWidget: View {
                 AmountText(
                     value: total,
                     currencyCode: currencyCode,
-                    size: .headline
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption
                 )
 
                 if variationDisplay.showsSmallVariation, showVariationHeader, let variation {
@@ -263,7 +263,7 @@ struct NeedTrendWidget: View {
                             AmountText(
                                 value: totalAmount,
                                 currencyCode: currencyCode,
-                                size: .headline
+                                font: DS.Typography.headline, secondaryFont: DS.Typography.caption
                             )
 
                             if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
@@ -829,9 +829,11 @@ struct NeedTrendChartView: View {
                     .foregroundStyle(Color.primary)
                 Spacer()
                 // Simple formatting for tooltip
-                Text(appPreferences.currency(amount, currencyCode: currencyCode))
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(Color.primary)
+                AmountText(
+                    value: amount,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.labelTiny
+                )
             }
         }
     }
@@ -1098,7 +1100,7 @@ struct NeedCompactBar: View {
                     AmountText(
                         value: amount,
                         currencyCode: currencyCode,
-                        size: .subheadline,
+                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                         tint: isSelected ? .primary : .secondary
                     )
 

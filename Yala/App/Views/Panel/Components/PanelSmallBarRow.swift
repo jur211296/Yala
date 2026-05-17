@@ -34,11 +34,12 @@ struct PanelSmallBarRow: View {
                     .foregroundStyle(.thSecondaryText)
                     .lineLimit(1)
                 Spacer(minLength: DS.Spacing.xs)
-                Text(appPreferences.currency(amount, currencyCode: currencyCode))
-                    .font(DS.Typography.amount)
-                    .foregroundStyle(.thPrimaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                AmountText(
+                    value: amount,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.amount,
+                    tint: .primary
+                )
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {

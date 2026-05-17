@@ -117,9 +117,14 @@ struct TransactionAssociationSheet: View {
                 Text(payment.name)
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
-                Text(appPreferences.currency(payment.amount, currencyCode: payment.currencyCode, forceFullPrecision: true, isEstimate: payment.isVariableAmount))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
+                AmountText(
+                    value: payment.amount,
+                    currencyCode: payment.currencyCode,
+                    font: DS.Typography.caption,
+                    tint: .secondary,
+                    isEstimate: payment.isVariableAmount,
+                    forceFullPrecision: true
+                )
             }
 
             Spacer()
@@ -202,9 +207,12 @@ struct TransactionAssociationSheet: View {
                         )
                 }
 
-                Text(appPreferences.currency(transaction.amount, currencyCode: transaction.currencyCode, forceFullPrecision: true))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
+                AmountText(
+                    value: transaction.amount,
+                    currencyCode: transaction.currencyCode,
+                    font: DS.Typography.headline,
+                    forceFullPrecision: true
+                )
             }
             .padding(DS.Spacing.md)
             .background(.thCard)

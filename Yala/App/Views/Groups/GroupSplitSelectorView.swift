@@ -206,9 +206,12 @@ struct GroupSplitSelectorView: View {
 
             Spacer()
 
-            Text(appPreferences.currency(viewModel.sharesTotal, currencyCode: viewModel.currencyCode))
-                .font(DS.Typography.title2)
-                .foregroundStyle(resultAccentColor)
+            AmountText(
+                value: viewModel.sharesTotal,
+                currencyCode: viewModel.currencyCode,
+                font: DS.Typography.title2,
+                tint: .color(resultAccentColor)
+            )
         }
         .padding(DS.Spacing.md)
         .background(resultAccentColor.opacity(0.08))

@@ -309,9 +309,12 @@ struct BudgetChartsView: View {
                     )
                     .symbolSize(0)
                     .annotation(position: .top, spacing: DS.Spacing.xs) {
-                        Text(appPreferences.currency(item.spent, currencyCode: budget.currencyCode))
-                            .font(DS.Typography.labelTiny)
-                            .foregroundStyle(.thSecondaryText)
+                        AmountText(
+                            value: item.spent,
+                            currencyCode: budget.currencyCode,
+                            font: DS.Typography.labelTiny,
+                            tint: .secondary
+                        )
                             .accessibilityLabel("\(item.label): \(appPreferences.currency(item.spent, currencyCode: budget.currencyCode))")
                     }
 
@@ -437,9 +440,12 @@ struct BudgetChartsView: View {
                                 Text(dayMonthLabel(point.date))
                                     .font(DS.Typography.captionSmall)
                                     .foregroundStyle(.thSecondaryText)
-                                Text(appPreferences.currency(point.cumulative, currencyCode: budget.currencyCode))
-                                    .font(DS.Typography.labelSmall)
-                                    .foregroundStyle(.thPrimaryText)
+                                AmountText(
+                                    value: point.cumulative,
+                                    currencyCode: budget.currencyCode,
+                                    font: DS.Typography.labelSmall,
+                                    tint: .primary
+                                )
                             }
                             .padding(.horizontal, DS.Spacing.sm)
                             .padding(.vertical, DS.Spacing.xs)
@@ -580,9 +586,11 @@ struct BudgetChartsView: View {
 
                     Spacer()
 
-                    Text(appPreferences.currency(amount, currencyCode: budget.currencyCode))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
+                    AmountText(
+                        value: amount,
+                        currencyCode: budget.currencyCode,
+                        font: DS.Typography.headline
+                    )
                 }
 
                 // Bar

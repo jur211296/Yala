@@ -97,11 +97,12 @@ struct CashFlowDetailLineRow: View {
     private var amountColumn: some View {
         VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
             // Display amount
-            Text(appPreferences.currency(displayAmount, currencyCode: currencyCode))
-                .font(DS.Typography.amountSmall)
-                .fontWeight(.semibold)
-                .foregroundStyle(amountColor)
-                .monospacedDigit()
+            AmountText(
+                value: displayAmount,
+                currencyCode: currencyCode,
+                font: DS.Typography.amountSmall.weight(.semibold).monospacedDigit(),
+                tint: .color(amountColor)
+            )
 
             // Progress bar for current month
             if month.isCurrent, let progress = lineResult.progress {

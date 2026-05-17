@@ -175,11 +175,11 @@ struct CashFlowMonthDetailView: View {
                     )
                 }
                 Spacer()
-                Text(appPreferences.currency(month.netFlow, currencyCode: currencyCode))
-                    .font(DS.Typography.amount)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
-                    .monospacedDigit()
+                AmountText(
+                    value: month.netFlow,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.amount.weight(.bold).monospacedDigit()
+                )
             }
 
             if viewModel.plan?.showAccumulatedBalance ?? true {
@@ -207,11 +207,11 @@ struct CashFlowMonthDetailView: View {
                     }
                     Spacer()
                     if let balance = month.accumulatedBalance {
-                        Text(appPreferences.currency(balance, currencyCode: currencyCode))
-                            .font(DS.Typography.amount)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.primary)
-                            .monospacedDigit()
+                        AmountText(
+                            value: balance,
+                            currencyCode: currencyCode,
+                            font: DS.Typography.amount.weight(.bold).monospacedDigit()
+                        )
                     } else {
                         Text("—")
                             .font(DS.Typography.amount)
@@ -263,10 +263,12 @@ struct CashFlowMonthDetailView: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                     let displayAmount = result.realAmount ?? result.plannedAmount
-                    Text(appPreferences.currency(displayAmount, currencyCode: currencyCode))
-                        .font(DS.Typography.amountSmall)
-                        .foregroundStyle(.tertiary)
-                        .monospacedDigit()
+                    AmountText(
+                        value: displayAmount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.amountSmall.monospacedDigit(),
+                        tint: .secondary
+                    )
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.md)
@@ -301,11 +303,12 @@ struct CashFlowMonthDetailView: View {
 
                 Spacer()
 
-                Text(appPreferences.currency(total, currencyCode: currencyCode))
-                    .font(DS.Typography.amountSmall)
-                    .fontWeight(.bold)
-                    .foregroundStyle(isIncome ? Color.electricIndigo : Color.hotPink)
-                    .monospacedDigit()
+                AmountText(
+                    value: total,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.amountSmall.weight(.bold).monospacedDigit(),
+                    tint: .color(isIncome ? Color.electricIndigo : Color.hotPink)
+                )
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)

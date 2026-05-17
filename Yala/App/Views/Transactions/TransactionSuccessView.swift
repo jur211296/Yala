@@ -169,7 +169,7 @@ struct TransactionSuccessView: View {
                         AmountText(
                             value: Double(truncating: data.amount as NSDecimalNumber),
                             currencyCode: data.currencyCode,
-                            size: .hero,
+                            font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
                             tint: .color(typeColor),
                             forceFullPrecision: true
                         )

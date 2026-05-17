@@ -264,10 +264,12 @@ struct CashFlowSetupView: View {
 
             Spacer()
 
-            Text(appPreferences.currency(line.suggestedAmount, currencyCode: currencyCode))
-                .font(DS.Typography.body)
-                .foregroundStyle(line.isIncome ? Color.electricIndigo : .primary)
-                .monospacedDigit()
+            AmountText(
+                value: line.suggestedAmount,
+                currencyCode: currencyCode,
+                font: DS.Typography.body.monospacedDigit(),
+                tint: line.isIncome ? .color(Color.electricIndigo) : .primary
+            )
 
             Button {
                 editingLine = line
@@ -309,10 +311,12 @@ struct CashFlowSetupView: View {
             Text(label)
                 .font(isBold ? DS.Typography.headline : DS.Typography.body)
             Spacer()
-            Text(appPreferences.currency(amount, currencyCode: currencyCode))
-                .font(isBold ? DS.Typography.headline : DS.Typography.body)
-                .foregroundStyle(color)
-                .monospacedDigit()
+            AmountText(
+                value: amount,
+                currencyCode: currencyCode,
+                font: (isBold ? DS.Typography.headline : DS.Typography.body).monospacedDigit(),
+                tint: .color(color)
+            )
         }
     }
 
@@ -390,10 +394,11 @@ struct CashFlowMethodPickerSheet: View {
                             Text(line.name)
                                 .font(DS.Typography.subheadline)
                                 .foregroundStyle(.secondary)
-                            Text(appPreferences.currency(previewAmount, currencyCode: currencyCode))
-                                .font(DS.Typography.title)
-                                .fontWeight(.bold)
-                                .monospacedDigit()
+                            AmountText(
+                                value: previewAmount,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.title.weight(.bold).monospacedDigit()
+                            )
                                 .contentTransition(.numericText())
                                 .animation(.default, value: previewAmount)
                         }

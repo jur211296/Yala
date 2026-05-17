@@ -26,7 +26,7 @@ struct GroupSummaryHeader: View {
                     AmountText(
                         value: 0,
                         currencyCode: defaultCurrency,
-                        size: .headline,
+                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                         tint: .color(DS.Semantic.successForeground)
                     )
                 } else {
@@ -34,7 +34,7 @@ struct GroupSummaryHeader: View {
                         AmountText(
                             value: amount,
                             currencyCode: code,
-                            size: .headline,
+                            font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                             tint: .color(DS.Semantic.successForeground)
                         )
                     }
@@ -52,7 +52,7 @@ struct GroupSummaryHeader: View {
                     AmountText(
                         value: 0,
                         currencyCode: defaultCurrency,
-                        size: .headline,
+                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                         tint: .color(Color.hotPink)
                     )
                 } else {
@@ -60,7 +60,7 @@ struct GroupSummaryHeader: View {
                         AmountText(
                             value: amount,
                             currencyCode: code,
-                            size: .headline,
+                            font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                             tint: .color(Color.hotPink)
                         )
                     }

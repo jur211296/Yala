@@ -221,7 +221,7 @@ struct TrendsTabView: View {
                 AmountText(
                     value: heroKPIValue(for: summary),
                     currencyCode: defaultCurrencyCode,
-                    size: .hero
+                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
                 )
                 .contentTransition(.numericText())
             }
@@ -281,7 +281,7 @@ struct TrendsTabView: View {
                     AmountText(
                         value: summary.totalIncome,
                         currencyCode: defaultCurrencyCode,
-                        size: .subheadline,
+                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                         tint: .secondary
                     )
                     if appPreferences.showVariations {
@@ -298,7 +298,7 @@ struct TrendsTabView: View {
                 AmountText(
                     value: summary.totalExpense,
                     currencyCode: defaultCurrencyCode,
-                    size: .subheadline,
+                    font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                     tint: .secondary
                 )
                 if appPreferences.showVariations {
@@ -1325,7 +1325,7 @@ struct TrendsTabView: View {
                         AmountText(
                             value: weeklyAverage,
                             currencyCode: defaultCurrencyCode,
-                            size: .headline
+                            font: DS.Typography.headline, secondaryFont: DS.Typography.caption
                         )
                         Text(L10n.Panel.WeekdayBar.perWeekSuffix)
                             .font(DS.Typography.caption)
@@ -1346,7 +1346,7 @@ struct TrendsTabView: View {
                         AmountText(
                             value: top.average,
                             currencyCode: defaultCurrencyCode,
-                            size: .caption,
+                            font: DS.Typography.caption, secondaryFont: DS.Typography.captionSmall,
                             tint: .secondary
                         )
                     }

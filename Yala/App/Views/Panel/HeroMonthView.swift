@@ -61,10 +61,10 @@ struct HeroMonthView: View {
     private var chip: some View {
         HStack(spacing: DS.Spacing.xs) {
             Image(systemName: "sparkles")
-                .font(DS.Typography.headline)
+                .font(DS.Typography.title2)
                 .foregroundStyle(DS.Semantic.favoriteIcon)
             Text(chipText)
-                .font(DS.Typography.headline)
+                .font(DS.Typography.title2)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
@@ -91,7 +91,7 @@ struct HeroMonthView: View {
             AmountText(
                 value: periodSummary.available,
                 currencyCode: currencyCode,
-                size: .hero
+                font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
             )
 
             HStack(spacing: DS.Spacing.md) {
@@ -115,7 +115,7 @@ struct HeroMonthView: View {
                             AmountText(
                                 value: periodSummary.income,
                                 currencyCode: currencyCode,
-                                size: .subheadline,
+                                font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                                 tint: .secondary
                             )
                         }
@@ -146,7 +146,7 @@ struct HeroMonthView: View {
                         AmountText(
                             value: periodSummary.expense,
                             currencyCode: currencyCode,
-                            size: .subheadline,
+                            font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                             tint: .secondary
                         )
                     }

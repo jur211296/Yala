@@ -833,7 +833,7 @@ struct CashFlowWidget: View {
                                 AmountText(
                                     value: summary.totalIncome,
                                     currencyCode: summary.currencyCode,
-                                    size: .body
+                                    font: DS.Typography.body, secondaryFont: DS.Typography.caption
                                 )
                             }
                             // Bar
@@ -864,7 +864,7 @@ struct CashFlowWidget: View {
                             AmountText(
                                 value: summary.totalExpense,
                                 currencyCode: summary.currencyCode,
-                                size: .body
+                                font: DS.Typography.body, secondaryFont: DS.Typography.caption
                             )
                         }
                         // Bar

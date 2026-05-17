@@ -3,10 +3,15 @@
 //  Yala
 //
 //  SSOT compositivo para renderizar montos con jerarquía visual:
-//  el entero domina (primary, peso semibold, tamaño grande); el símbolo
-//  de divisa (`S/`, `$`, `PEN`) y los decimales viven en secondary
-//  (peso regular, tamaño menor). Resultado: la cifra entera se lee
-//  primero, los detalles complementan sin competir.
+//  el entero domina (font del callsite, color primary); el símbolo
+//  de divisa (`S/`, `$`, `PEN`) y los decimales viven con un font
+//  más chico (default `.caption`) y color un tono menos. Resultado:
+//  la cifra entera se lee primero, los detalles complementan sin competir.
+//
+//  El callsite controla los fonts — AmountText respeta el contexto
+//  visual (rows, headers, heroes) sin imponer tamaños propios. Para
+//  heroes destacados existen tokens `DS.Typography.heroAmount` +
+//  `heroAmountSecondary` reusables.
 //
 //  Reusa `appPreferences.currency(_:currencyCode:...)` para construir el
 //  string y mantener byte-parity con el resto de la app (formatter cacheado,
@@ -20,7 +25,8 @@ import SwiftUI
 struct AmountText: View {
     let value: Double
     let currencyCode: String
-    var size: Size = .body
+    var font: Font = DS.Typography.body
+    var secondaryFont: Font = DS.Typography.caption
     var tint: Tint = .primary
     var forceSign: Bool = false
     var isEstimate: Bool = false
@@ -28,17 +34,8 @@ struct AmountText: View {
 
     @Environment(AppPreferences.self) private var prefs
 
-    enum Size: Sendable, Hashable {
-        case hero
-        case kpi
-        case headline
-        case body
-        case subheadline
-        case caption
-    }
-
-    /// Color hierarchy del monto. La regla siempre se cumple: el símbolo y los
-    /// decimales viven "un tono menos" que el integer principal.
+    /// Color hierarchy del monto. El símbolo y los decimales viven
+    /// "un tono menos" que el integer principal.
     ///
     /// - `.primary` (default): integer `.primary`, símbolo/decimales `.secondary`.
     /// - `.secondary`: integer `.secondary`, símbolo/decimales `.tertiary`. Para
@@ -70,17 +67,17 @@ struct AmountText: View {
         HStack(alignment: .firstTextBaseline, spacing: 2) {
             if !runs.symbol.isEmpty {
                 Text(runs.symbol)
-                    .font(symbolFont)
+                    .font(secondaryFont)
                     .foregroundStyle(secondaryForegroundStyle)
             }
 
             Text(runs.sign + runs.integer)
-                .font(integerFont)
+                .font(font)
                 .foregroundStyle(integerForegroundStyle)
 
             if let decimal = runs.decimal {
                 Text("\(decimalSep)\(decimal)")
-                    .font(decimalFont)
+                    .font(secondaryFont)
                     .foregroundStyle(secondaryForegroundStyle)
             }
         }
@@ -108,35 +105,6 @@ struct AmountText: View {
         }
     }
 
-    // MARK: - Font mapping
-
-    private var integerFont: Font {
-        switch size {
-        case .hero:        return .system(size: 44, weight: .semibold)
-        case .kpi:         return .system(size: 28, weight: .semibold)
-        case .headline:    return DS.Typography.headline
-        case .body:        return DS.Typography.body
-        case .subheadline: return DS.Typography.subheadline
-        case .caption:     return DS.Typography.caption
-        }
-    }
-
-    private var symbolFont: Font {
-        let style = Self.symbolFontStyle(for: size, displayFormat: prefs.currencyDisplayFormat)
-        return .system(size: style.size, weight: style.weight)
-    }
-
-    private var decimalFont: Font {
-        switch size {
-        case .hero:        return .system(size: 20, weight: .regular)
-        case .kpi:         return .system(size: 14, weight: .regular)
-        case .headline:    return DS.Typography.caption
-        case .body:        return DS.Typography.caption
-        case .subheadline: return DS.Typography.captionSmall
-        case .caption:     return DS.Typography.captionSmall
-        }
-    }
-
     // MARK: - Attributed string helper (for composed strings like "Tienes X en N cuentas")
 
     /// Devuelve un `AttributedString` con la misma jerarquía visual del componente:
@@ -151,8 +119,8 @@ struct AmountText: View {
         value: Double,
         currencyCode: String,
         prefs: AppPreferences,
-        integerFont: Font = DS.Typography.subheadline,
-        secondaryFont: Font = DS.Typography.caption,
+        integerFont: Font = .subheadline,
+        secondaryFont: Font = .caption,
         tintColor: Color? = nil,
         forceFullPrecision: Bool = false
     ) -> AttributedString {
@@ -196,29 +164,6 @@ struct AmountText: View {
     }
 
     // MARK: - Pure-logic helpers (testable)
-
-    /// Style del symbol según size + displayFormat. Codes (PEN/USD) usan
-    /// peso medium y tamaño levemente mayor en `.hero` para balancear visualmente
-    /// el glyph de 3 letras vs un símbolo compacto (`$`, `S/`).
-    static func symbolFontStyle(
-        for size: Size,
-        displayFormat: CurrencyDisplayFormat
-    ) -> (size: CGFloat, weight: Font.Weight) {
-        switch size {
-        case .hero:
-            return displayFormat == .code ? (24, .medium) : (20, .regular)
-        case .kpi:
-            return displayFormat == .code ? (16, .medium) : (14, .regular)
-        case .headline:
-            return (13, .regular)
-        case .body:
-            return (12, .regular)
-        case .subheadline:
-            return (11, .regular)
-        case .caption:
-            return (11, .regular)
-        }
-    }
 
     /// Parsea el output de `appPreferences.currency(...)` en 4 runs visuales.
     ///
@@ -271,24 +216,41 @@ struct AmountText: View {
 }
 
 #Preview("Hero — positive") {
-    AmountText(value: 2266.37, currencyCode: "USD", size: .hero)
-        .padding()
-        .previewAppPreferences()
+    AmountText(
+        value: 2266.37,
+        currencyCode: "USD",
+        font: DS.Typography.heroAmount,
+        secondaryFont: DS.Typography.heroAmountSecondary
+    )
+    .padding()
+    .previewAppPreferences()
 }
 
 #Preview("Hero — negative + estimate") {
-    AmountText(value: -1234.56, currencyCode: "PEN", size: .hero, isEstimate: true)
-        .padding()
-        .previewAppPreferences()
+    AmountText(
+        value: -1234.56,
+        currencyCode: "PEN",
+        font: DS.Typography.heroAmount,
+        secondaryFont: DS.Typography.heroAmountSecondary,
+        isEstimate: true
+    )
+    .padding()
+    .previewAppPreferences()
 }
 
 #Preview("Sizes") {
     VStack(alignment: .leading, spacing: 16) {
-        AmountText(value: 1234.56, currencyCode: "USD", size: .hero)
-        AmountText(value: 1234.56, currencyCode: "USD", size: .kpi)
-        AmountText(value: 1234.56, currencyCode: "USD", size: .headline)
-        AmountText(value: 1234.56, currencyCode: "USD", size: .body)
-        AmountText(value: 1234.56, currencyCode: "USD", size: .caption)
+        AmountText(
+            value: 1234.56, currencyCode: "USD",
+            font: DS.Typography.heroAmount,
+            secondaryFont: DS.Typography.heroAmountSecondary
+        )
+        AmountText(value: 1234.56, currencyCode: "USD", font: DS.Typography.largeTitle)
+        AmountText(value: 1234.56, currencyCode: "USD", font: DS.Typography.title2)
+        AmountText(value: 1234.56, currencyCode: "USD", font: DS.Typography.headline)
+        AmountText(value: 1234.56, currencyCode: "USD")
+        AmountText(value: 1234.56, currencyCode: "USD", font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall)
+        AmountText(value: 1234.56, currencyCode: "USD", font: DS.Typography.caption, secondaryFont: DS.Typography.captionSmall)
     }
     .padding()
     .previewAppPreferences()

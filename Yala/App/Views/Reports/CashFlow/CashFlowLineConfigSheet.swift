@@ -300,9 +300,11 @@ struct CashFlowLineConfigSheet: View {
                             Text(formatMonthKey(override.monthKey))
                                 .font(DS.Typography.body)
                             Spacer()
-                            Text(appPreferences.currency(override.amount, currencyCode: currencyCode))
-                                .font(DS.Typography.amountSmall)
-                                .monospacedDigit()
+                            AmountText(
+                                value: override.amount,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.amountSmall.monospacedDigit()
+                            )
                             if !override.note.isEmpty {
                                 Text("(\(override.note))")
                                     .font(DS.Typography.caption)

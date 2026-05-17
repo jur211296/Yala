@@ -300,8 +300,12 @@ struct SaveAsFavoriteSheet: View {
             Spacer()
 
             if includeAmount && amount > 0 {
-                Text(appPreferences.currency(amount, currencyCode: currencyCode, forceFullPrecision: true))
-                    .foregroundStyle(.secondary)
+                AmountText(
+                    value: amount,
+                    currencyCode: currencyCode,
+                    tint: .secondary,
+                    forceFullPrecision: true
+                )
 
                 Button { includeAmount = false } label: {
                     Image(systemName: "xmark.circle.fill")

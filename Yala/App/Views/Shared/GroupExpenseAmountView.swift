@@ -26,14 +26,14 @@ struct GroupExpenseAmountView: View {
                 AmountText(
                     value: amount,
                     currencyCode: currencyCode,
-                    size: .headline,
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                     tint: .color(DS.Semantic.successForeground)
                 )
             case .youOwe(let amount):
                 AmountText(
                     value: amount,
                     currencyCode: currencyCode,
-                    size: .headline,
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                     tint: .color(DS.Semantic.errorForeground)
                 )
             case .notIncluded:

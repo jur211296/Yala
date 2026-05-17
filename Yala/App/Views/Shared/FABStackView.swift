@@ -52,18 +52,6 @@ struct FABStackView: View {
 
     private static let fabScaleTransition: AnyTransition = .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
 
-    /// Custom press feedback para FABs. Reemplaza la animación del
-    /// glassEffect(.interactive()) — que consume el tap antes de llegar al
-    /// Button action — con scale + opacity manual aplicado al label.
-    private struct FABPressStyle: ButtonStyle {
-        func makeBody(configuration: Configuration) -> some View {
-            configuration.label
-                .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
-                .opacity(configuration.isPressed ? 0.85 : 1.0)
-                .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
-        }
-    }
-
     private func toggleMenu() {
         dsWithAnimation(reduceMotion, Self.fabSpring) { showFABMenu.toggle() }
     }
@@ -144,13 +132,13 @@ struct FABStackView: View {
             .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
             .glassEffect(
                 isChatLocked
-                    ? .regular.tint(DS.Semantic.disabledForeground.opacity(0.4))
-                    : .regular.tint(Color.orange.opacity(0.5)),
+                    ? .regular.interactive().tint(DS.Semantic.disabledForeground.opacity(0.4))
+                    : .regular.interactive().tint(Color.orange.opacity(0.5)),
                 in: Circle()
             )
             .contentShape(Circle())
         }
-        .buttonStyle(Self.FABPressStyle())
+        .buttonStyle(.plain)
         .shadow(color: (isChatLocked ? Color.gray : Color.orange).opacity(0.2), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
         .coachMarkAnchor("proChatFab")
         .accessibilityLabel(L10n.Chat.title)
@@ -170,12 +158,13 @@ struct FABStackView: View {
                 .rotationEffect(.degrees(showFABMenu ? 90 : 0))
                 .glassEffect(
                     .regular
+                        .interactive()
                         .tint((showFABMenu ? DS.Semantic.disabledForeground : background).opacity(0.6)),
                     in: Circle()
                 )
                 .contentShape(Circle())
         }
-        .buttonStyle(Self.FABPressStyle())
+        .buttonStyle(.plain)
         .dsFloatingShadow()
         .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
         .accessibilityIdentifier("fab_new_transaction")

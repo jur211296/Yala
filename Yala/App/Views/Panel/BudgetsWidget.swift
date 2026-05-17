@@ -228,7 +228,7 @@ struct BudgetsWidget: View {
                 AmountText(
                     value: summary.spent,
                     currencyCode: currencyCode,
-                    size: .caption,
+                    font: DS.Typography.caption, secondaryFont: DS.Typography.captionSmall,
                     tint: .secondary
                 )
 

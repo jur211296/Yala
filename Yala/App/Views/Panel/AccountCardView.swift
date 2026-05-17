@@ -86,7 +86,7 @@ struct AccountCardView: View {
                 AmountText(
                     value: currentBalance,
                     currencyCode: normalizeCurrencyCode(account.currencyCode),
-                    size: .headline,
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                     tint: .color(foregroundColor)
                 )
             }

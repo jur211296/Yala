@@ -91,7 +91,7 @@ struct WeekdayBarPanelWidget: View {
                     AmountText(
                         value: weeklyAverage,
                         currencyCode: currencyCode,
-                        size: .headline
+                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption
                     )
                     Text(L10n.Panel.WeekdayBar.perWeekSuffix)
                         .font(DS.Typography.caption)

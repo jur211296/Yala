@@ -419,11 +419,12 @@ struct CashFlowAddFromExpensesView: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
             Spacer()
-            Text(appPreferences.currency(amount, currencyCode: currencyCode))
-                .font(DS.Typography.headline)
-                .fontWeight(.semibold)
-                .monospacedDigit()
-                .foregroundStyle(isIncome ? Color.electricIndigo : Color.hotPink)
+            AmountText(
+                value: amount,
+                currencyCode: currencyCode,
+                font: DS.Typography.headline.weight(.semibold).monospacedDigit(),
+                tint: .color(isIncome ? Color.electricIndigo : Color.hotPink)
+            )
         }
         .padding(DS.Spacing.lg)
         .solidCard()
@@ -557,10 +558,13 @@ struct CashFlowAddFromScheduledView: View {
 
                         Spacer()
 
-                        Text(appPreferences.currency(abs(payment.amount), currencyCode: currencyCode, isEstimate: payment.isVariableAmount))
-                            .font(DS.Typography.amountSmall)
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
+                        AmountText(
+                            value: abs(payment.amount),
+                            currencyCode: currencyCode,
+                            font: DS.Typography.amountSmall.monospacedDigit(),
+                            tint: .secondary,
+                            isEstimate: payment.isVariableAmount
+                        )
 
                         Image(systemName: selectedPayment?.persistentModelID == payment.persistentModelID ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(selectedPayment?.persistentModelID == payment.persistentModelID ? theme.accent : .secondary)
@@ -601,10 +605,11 @@ struct CashFlowAddFromScheduledView: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
             Spacer()
-            Text(appPreferences.currency(amount, currencyCode: currencyCode))
-                .font(DS.Typography.headline)
-                .fontWeight(.semibold)
-                .monospacedDigit()
+            AmountText(
+                value: amount,
+                currencyCode: currencyCode,
+                font: DS.Typography.headline.weight(.semibold).monospacedDigit()
+            )
         }
         .padding(DS.Spacing.lg)
         .solidCard()

@@ -110,7 +110,7 @@ struct RecordsTabView: View {
                 AmountText(
                     value: recordsSummary.balance,
                     currencyCode: defaultCurrencyCode,
-                    size: .hero
+                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
                 )
             }
 
@@ -163,7 +163,7 @@ struct RecordsTabView: View {
                         AmountText(
                             value: recordsSummary.income,
                             currencyCode: defaultCurrencyCode,
-                            size: .subheadline,
+                            font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                             tint: .secondary
                         )
                     }
@@ -192,7 +192,7 @@ struct RecordsTabView: View {
                     AmountText(
                         value: recordsSummary.expense,
                         currencyCode: defaultCurrencyCode,
-                        size: .subheadline,
+                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                         tint: .secondary
                     )
                 }

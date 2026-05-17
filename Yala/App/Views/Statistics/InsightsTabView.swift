@@ -204,7 +204,7 @@ struct InsightsTabView: View {
                 AmountText(
                     value: summary.netBalance,
                     currencyCode: defaultCurrencyCode,
-                    size: .hero
+                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
                 )
             }
 
@@ -242,7 +242,7 @@ struct InsightsTabView: View {
                     AmountText(
                         value: summary.totalIncome,
                         currencyCode: defaultCurrencyCode,
-                        size: .subheadline,
+                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                         tint: .secondary
                     )
                     if appPreferences.showVariations {
@@ -259,7 +259,7 @@ struct InsightsTabView: View {
                 AmountText(
                     value: summary.totalExpense,
                     currencyCode: defaultCurrencyCode,
-                    size: .subheadline,
+                    font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                     tint: .secondary
                 )
                 if appPreferences.showVariations {
@@ -544,7 +544,7 @@ struct InsightsTabView: View {
                 AmountText(
                     value: stats.dailyAverage,
                     currencyCode: defaultCurrencyCode,
-                    size: .hero
+                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
                 )
 
                 // Reserva altura constante: evita salto visual al alternar
@@ -792,7 +792,7 @@ struct InsightsTabView: View {
                 AmountText(
                     value: amount,
                     currencyCode: defaultCurrencyCode,
-                    size: .subheadline
+                    font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall
                 )
                 Text("\(Int(percent))%")
                     .font(DS.Typography.captionSmall)

@@ -539,6 +539,14 @@ enum DS {
         static let amount = Font.system(.body, design: .rounded).weight(.semibold)
         /// Small amounts
         static let amountSmall = Font.system(.subheadline, design: .rounded).weight(.medium)
+
+        // MARK: Hero Amount (AmountText)
+        // A11Y-DT: hero protagonista — tamaño fijo intencional, escala vía
+        // minimumScaleFactor(0.7) en AmountText (no Dynamic Type).
+        /// Hero amount integer — monto protagonista (Panel hero, Stats heroes, success screens).
+        static let heroAmount = Font.system(size: 44, weight: .semibold)
+        /// Hero amount secondary — symbol/decimal del hero (20pt regular).
+        static let heroAmountSecondary = Font.system(size: 20, weight: .regular)
     }
 
     // MARK: - Sizing

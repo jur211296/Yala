@@ -98,7 +98,7 @@ struct ScheduledPaymentsListView: View {
                 AmountText(
                     value: monthlyTotal,
                     currencyCode: currencyCode,
-                    size: .hero
+                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
                 )
                 .contentTransition(.numericText())
             }
@@ -150,7 +150,7 @@ struct ScheduledPaymentsListView: View {
                 AmountText(
                     value: value,
                     currencyCode: currencyCode,
-                    size: .body,
+                    font: DS.Typography.body, secondaryFont: DS.Typography.caption,
                     tint: .color(dotColor)
                 )
             }

@@ -39,15 +39,21 @@ struct NetFlowSummaryView: View {
 
             // Amounts
             VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                Text(appPreferences.currency(currentAmount, currencyCode: currencyCode))
-                    .font(DS.Typography.label)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(currentAmount >= 0 ? Color.electricIndigo : Color.hotPink)
+                AmountText(
+                    value: currentAmount,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.label.weight(.semibold),
+                    tint: .color(currentAmount >= 0 ? Color.electricIndigo : Color.hotPink)
+                )
 
                 if let previousAmount {
-                    Text(appPreferences.currency(previousAmount, currencyCode: currencyCode))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
+                    AmountText(
+                        value: previousAmount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.captionSmall,
+                        secondaryFont: DS.Typography.captionSmall,
+                        tint: .secondary
+                    )
                 }
             }
             .frame(minWidth: 80, alignment: .trailing)

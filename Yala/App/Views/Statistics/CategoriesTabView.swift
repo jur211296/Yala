@@ -263,7 +263,7 @@ struct CategoriesTabView: View {
                 AmountText(
                     value: totalAmount,
                     currencyCode: defaultCurrencyCode,
-                    size: .hero
+                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
                 )
                 .contentTransition(.numericText())
             }
@@ -591,7 +591,7 @@ struct CategoriesTabView: View {
             AmountText(
                 value: viewModel.sankeyData.totalExpense,
                 currencyCode: defaultCurrencyCode,
-                size: .headline
+                font: DS.Typography.headline, secondaryFont: DS.Typography.caption
             )
 
             SankeyChartView(
@@ -1748,7 +1748,7 @@ private struct CategoryRowView: View {
                     AmountText(
                         value: summary.amount,
                         currencyCode: currencyCode,
-                        size: .headline
+                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption
                     )
                 }
 
@@ -1844,7 +1844,7 @@ private struct SubcategoryRowView: View {
                     AmountText(
                         value: summary.amount,
                         currencyCode: currencyCode,
-                        size: .headline
+                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption
                     )
                 }
 

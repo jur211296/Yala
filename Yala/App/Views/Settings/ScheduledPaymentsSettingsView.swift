@@ -131,9 +131,13 @@ struct ScheduledPaymentsSettingsView: View {
 
                     HStack(spacing: DS.Spacing.sm) {
                         // Amount
-                        Text(appPreferences.currency(payment.amount, currencyCode: payment.currencyCode, isEstimate: payment.isVariableAmount))
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
+                        AmountText(
+                            value: payment.amount,
+                            currencyCode: payment.currencyCode,
+                            font: DS.Typography.caption,
+                            tint: .secondary,
+                            isEstimate: payment.isVariableAmount
+                        )
 
                         // Recurrence info
                         if payment.isRecurring {

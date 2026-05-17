@@ -132,7 +132,7 @@ struct InboxApproveSuccessView: View {
                     AmountText(
                         value: data.amount,
                         currencyCode: data.currencyCode,
-                        size: .hero,
+                        font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
                         tint: .color(typeColor),
                         forceFullPrecision: true
                     )

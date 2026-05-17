@@ -79,7 +79,9 @@ struct ScheduledPaymentsWidget: View {
             AmountText(
                 value: smallToPayAmount,
                 currencyCode: currencyCode,
-                size: .kpi
+                // A11Y-DT: KPI widget — escala vía minimumScaleFactor(0.7).
+                font: .system(size: 28, weight: .semibold),
+                secondaryFont: .system(size: 14)
             )
 
             Text(L10n.Scheduled.Widget.smallToPay)
@@ -327,7 +329,7 @@ struct ScheduledPaymentsWidget: View {
                 AmountText(
                     value: item.isIncome ? item.amount : -item.amount,
                     currencyCode: item.currencyCode,
-                    size: .headline,
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                     tint: .color(item.isIncome ? Color.priorityNeed : Color.hotPink),
                     forceSign: true,
                     isEstimate: item.isVariableAmount,

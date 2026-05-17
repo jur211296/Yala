@@ -141,7 +141,7 @@ struct TopSubcategoriesWidget: View {
                             AmountText(
                                 value: totalAmount,
                                 currencyCode: currencyCode,
-                                size: .headline
+                                font: DS.Typography.headline, secondaryFont: DS.Typography.caption
                             )
 
                             if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {

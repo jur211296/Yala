@@ -128,9 +128,13 @@ struct GroupStatsView: View {
                 .foregroundStyle(theme.accent.gradient)
                 .cornerRadius(DS.Radius.xs)
                 .annotation(position: .trailing) {
-                    Text(appPreferences.currency(member.totalPaid, currencyCode: currencyCode))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
+                    AmountText(
+                        value: member.totalPaid,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.captionSmall,
+                        secondaryFont: DS.Typography.captionSmall,
+                        tint: .secondary
+                    )
                 }
                 .accessibilityLabel("\(member.displayName): \(appPreferences.currency(member.totalPaid, currencyCode: currencyCode))")
             }

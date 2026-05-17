@@ -78,9 +78,11 @@ struct CashFlowOthersSheet: View {
 
                     Spacer()
 
-                    Text(appPreferences.currency(item.amount, currencyCode: currencyCode))
-                        .font(DS.Typography.amountSmall)
-                        .monospacedDigit()
+                    AmountText(
+                        value: item.amount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.amountSmall.monospacedDigit()
+                    )
 
                     Button {
                         promoteCategory(named: item.categoryName)

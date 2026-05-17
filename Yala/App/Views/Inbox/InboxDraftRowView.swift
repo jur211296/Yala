@@ -126,7 +126,7 @@ struct InboxDraftRowView: View {
                 AmountText(
                     value: amount,
                     currencyCode: currencyCode,
-                    size: .headline,
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                     tint: .color(amount >= 0 ? Color.electricIndigo : Color.hotPink),
                     forceFullPrecision: true
                 )

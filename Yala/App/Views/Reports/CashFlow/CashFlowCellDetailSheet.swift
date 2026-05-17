@@ -196,17 +196,20 @@ struct CashFlowCellDetailSheet: View {
             Divider()
 
             HStack(alignment: .firstTextBaseline) {
-                Text(appPreferences.currency(lr.realAmount ?? 0, currencyCode: currencyCode))
-                    .font(DS.Typography.title)
-                    .fontWeight(.bold)
-                    .monospacedDigit()
+                AmountText(
+                    value: lr.realAmount ?? 0,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.title.weight(.bold).monospacedDigit()
+                )
                 Text(L10n.CashFlowPlan.cellDetailOf)
                     .font(DS.Typography.body)
                     .foregroundStyle(.secondary)
-                Text(appPreferences.currency(lr.plannedAmount, currencyCode: currencyCode))
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
+                AmountText(
+                    value: lr.plannedAmount,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.body.monospacedDigit(),
+                    tint: .secondary
+                )
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -341,10 +344,11 @@ struct CashFlowCellDetailSheet: View {
                         .font(DS.Typography.label)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Text(appPreferences.currency(lr.plannedAmount, currencyCode: currencyCode))
-                        .font(DS.Typography.title)
-                        .fontWeight(.bold)
-                        .monospacedDigit()
+                    AmountText(
+                        value: lr.plannedAmount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.title.weight(.bold).monospacedDigit()
+                    )
                 }
 
                 Divider()
@@ -412,9 +416,12 @@ struct CashFlowCellDetailSheet: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                            Text(appPreferences.currency(abs(tx.amount), currencyCode: tx.currencyCode, forceFullPrecision: true))
-                                .font(DS.Typography.amountSmall)
-                                .monospacedDigit()
+                            AmountText(
+                                value: abs(tx.amount),
+                                currencyCode: tx.currencyCode,
+                                font: DS.Typography.amountSmall.monospacedDigit(),
+                                forceFullPrecision: true
+                            )
                             Text(tx.date.formatted(.dateTime.day().month(.abbreviated)))
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.tertiary)
@@ -603,11 +610,12 @@ struct CashFlowCellDetailSheet: View {
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
             Spacer()
-            Text(appPreferences.currency(value, currencyCode: currencyCode))
-                .font(DS.Typography.amountSmall)
-                .fontWeight(.semibold)
-                .foregroundStyle(color ?? .primary)
-                .monospacedDigit()
+            AmountText(
+                value: value,
+                currencyCode: currencyCode,
+                font: DS.Typography.amountSmall.weight(.semibold).monospacedDigit(),
+                tint: color.map { .color($0) } ?? .primary
+            )
         }
     }
 }

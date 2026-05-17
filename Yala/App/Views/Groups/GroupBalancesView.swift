@@ -83,9 +83,12 @@ struct GroupBalancesView: View {
 
             Spacer()
 
-            Text(appPreferences.currency(abs(balance.netBalance), currencyCode: balance.currencyCode))
-                .font(DS.Typography.headline)
-                .foregroundStyle(balanceColor(balance.netBalance))
+            AmountText(
+                value: abs(balance.netBalance),
+                currencyCode: balance.currencyCode,
+                font: DS.Typography.headline,
+                tint: .color(balanceColor(balance.netBalance))
+            )
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
@@ -133,9 +136,12 @@ struct GroupBalancesView: View {
 
             Spacer()
 
-            Text(appPreferences.currency(debt.amount, currencyCode: debt.currencyCode))
-                .font(DS.Typography.headline)
-                .foregroundStyle(Color.hotPink)
+            AmountText(
+                value: debt.amount,
+                currencyCode: debt.currencyCode,
+                font: DS.Typography.headline,
+                tint: .color(Color.hotPink)
+            )
 
             if onSettleDebt != nil {
                 Button {
@@ -201,9 +207,11 @@ struct GroupBalancesView: View {
 
             Spacer()
 
-            Text(appPreferences.currency(settlement.amount, currencyCode: settlement.currencyCode))
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
+            AmountText(
+                value: settlement.amount,
+                currencyCode: settlement.currencyCode,
+                font: DS.Typography.headline
+            )
 
             // Confirm/Reject buttons for pending settlements
             if !settlement.isConfirmed && onConfirmSettlement != nil {

@@ -86,7 +86,7 @@ struct TrendsCarouselWidget: View {
                 AmountText(
                     value: trendTotalForCurrentMetric,
                     currencyCode: currencyCode,
-                    size: .headline,
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
                     forceSign: viewModel.trendType == .balance
                 )
 
