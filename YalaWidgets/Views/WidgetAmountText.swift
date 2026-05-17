@@ -43,14 +43,12 @@ struct WidgetAmountText: View {
         let symbolRaw = (displayFormat == "symbol")
             ? CurrencySymbols.symbol(for: currencyCode)
             : currencyCode
-        let decimalSep = Locale.current.decimalSeparator ?? "."
         let runs = WidgetAmountSplitter.split(
             value: value,
             symbol: symbolRaw,
             fractionDigits: fractionDigits,
             forceSign: forceSign,
-            isEstimate: isEstimate,
-            decimalSeparator: decimalSep
+            isEstimate: isEstimate
         )
 
         HStack(alignment: .firstTextBaseline, spacing: 2) {
@@ -65,12 +63,14 @@ struct WidgetAmountText: View {
                 .foregroundStyle(integerForegroundStyle)
 
             if let decimal = runs.decimal {
-                Text("\(decimalSep)\(decimal)")
+                Text(decimal)
                     .font(secondaryFont)
                     .foregroundStyle(secondaryForegroundStyle)
             }
         }
         .lineLimit(1)
+        // 0.5 (vs 0.7 de AmountText): widgets tienen restricción de espacio dura;
+        // un balance largo S/ 99,999,999 debe poder caber en Small widget.
         .minimumScaleFactor(0.5)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(runs.accessibilityFormatted)

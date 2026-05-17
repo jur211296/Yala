@@ -13,11 +13,16 @@ import Testing
 
 struct WidgetAmountSplitterTests {
 
+    /// Locale US fijo para tests determinísticos. `en_US` (no POSIX) preserva
+    /// grouping separator "," para verificar "1,234" en lugar de "1234".
+    private static let usLocale = Locale(identifier: "en_US")
+
     @Test func positive_noDecimals_returnsIntegerAndNilDecimal() {
         let result = WidgetAmountSplitter.split(
             value: 1234,
             symbol: "$",
-            fractionDigits: 0
+            fractionDigits: 0,
+            locale: Self.usLocale
         )
         #expect(result.symbol == "$")
         #expect(result.sign == "")
@@ -29,23 +34,25 @@ struct WidgetAmountSplitterTests {
         let result = WidgetAmountSplitter.split(
             value: 1234.56,
             symbol: "$",
-            fractionDigits: 2
+            fractionDigits: 2,
+            locale: Self.usLocale
         )
         #expect(result.symbol == "$")
         #expect(result.sign == "")
         #expect(result.integer == "1,234")
-        #expect(result.decimal == "56")
+        #expect(result.decimal == ".56")
     }
 
     @Test func negative_producesMinusSign() {
         let result = WidgetAmountSplitter.split(
             value: -1234.56,
             symbol: "$",
-            fractionDigits: 2
+            fractionDigits: 2,
+            locale: Self.usLocale
         )
         #expect(result.sign == "-")
         #expect(result.integer == "1,234")
-        #expect(result.decimal == "56")
+        #expect(result.decimal == ".56")
     }
 
     @Test func forceSign_positive_producesPlus() {
@@ -53,11 +60,12 @@ struct WidgetAmountSplitterTests {
             value: 45.50,
             symbol: "S/",
             fractionDigits: 2,
-            forceSign: true
+            forceSign: true,
+            locale: Self.usLocale
         )
         #expect(result.sign == "+")
         #expect(result.integer == "45")
-        #expect(result.decimal == "50")
+        #expect(result.decimal == ".50")
     }
 
     @Test func forceSign_zero_noPlusSign() {
@@ -65,11 +73,12 @@ struct WidgetAmountSplitterTests {
             value: 0,
             symbol: "$",
             fractionDigits: 2,
-            forceSign: true
+            forceSign: true,
+            locale: Self.usLocale
         )
         #expect(result.sign == "")
         #expect(result.integer == "0")
-        #expect(result.decimal == "00")
+        #expect(result.decimal == ".00")
     }
 
     @Test func isEstimate_prefixesSymbolWithApprox() {
@@ -77,7 +86,8 @@ struct WidgetAmountSplitterTests {
             value: 1234,
             symbol: "$",
             fractionDigits: 0,
-            isEstimate: true
+            isEstimate: true,
+            locale: Self.usLocale
         )
         #expect(result.symbol == "≈ $")
         #expect(result.sign == "")
@@ -88,30 +98,48 @@ struct WidgetAmountSplitterTests {
         let result = WidgetAmountSplitter.split(
             value: 0,
             symbol: "$",
-            fractionDigits: 2
+            fractionDigits: 2,
+            locale: Self.usLocale
         )
         #expect(result.integer == "0")
-        #expect(result.decimal == "00")
+        #expect(result.decimal == ".00")
         #expect(result.sign == "")
     }
 
-    @Test func localeCommaDecimal_handlesEsAR() {
+    @Test func esARLocale_usesCommaDecimalAndDotGrouping() {
         let result = WidgetAmountSplitter.split(
             value: 2266.37,
             symbol: "$",
             fractionDigits: 2,
-            decimalSeparator: ","
+            locale: Locale(identifier: "es_AR")
         )
-        // Con sep="," el formatter usa "." como thousands.
         #expect(result.integer == "2.266")
-        #expect(result.decimal == "37")
+        #expect(result.decimal == ",37")
+    }
+
+    @Test func frenchLocale_usesSpaceGrouping() {
+        // Francia usa decimal "," + grouping " " (espacio no-breaking).
+        // Verifica que el splitter NO fuerza grouping a "." (bug regresión).
+        let result = WidgetAmountSplitter.split(
+            value: 1234.56,
+            symbol: "€",
+            fractionDigits: 2,
+            locale: Locale(identifier: "fr_FR")
+        )
+        #expect(result.decimal == ",56")
+        // El integer DEBE contener un grouping separator que NO sea ".".
+        // Apple usa NBSP (\u{00A0}) o NARROW NBSP (\u{202F}) según versión.
+        #expect(!result.integer.contains("."))
+        #expect(result.integer.hasPrefix("1"))
+        #expect(result.integer.hasSuffix("234"))
     }
 
     @Test func jpyNoDecimals_returnsNilDecimal() {
         let result = WidgetAmountSplitter.split(
             value: 1234,
             symbol: "¥",
-            fractionDigits: 0
+            fractionDigits: 0,
+            locale: Self.usLocale
         )
         #expect(result.symbol == "¥")
         #expect(result.integer == "1,234")
@@ -126,7 +154,8 @@ struct WidgetAmountSplitterTests {
             symbol: "$",
             fractionDigits: 2,
             forceSign: true,
-            isEstimate: true
+            isEstimate: true,
+            locale: Self.usLocale
         )
         #expect(result.accessibilityFormatted == "≈ -$ 1,234.56")
     }
@@ -135,10 +164,11 @@ struct WidgetAmountSplitterTests {
         let result = WidgetAmountSplitter.split(
             value: 1_234_567.89,
             symbol: "S/",
-            fractionDigits: 2
+            fractionDigits: 2,
+            locale: Self.usLocale
         )
         #expect(result.integer == "1,234,567")
-        #expect(result.decimal == "89")
+        #expect(result.decimal == ".89")
     }
 
     @Test func symbolPassesThroughVerbatim() {
@@ -146,7 +176,8 @@ struct WidgetAmountSplitterTests {
         let result = WidgetAmountSplitter.split(
             value: 100,
             symbol: "PEN",
-            fractionDigits: 0
+            fractionDigits: 0,
+            locale: Self.usLocale
         )
         #expect(result.symbol == "PEN")
         #expect(result.integer == "100")
