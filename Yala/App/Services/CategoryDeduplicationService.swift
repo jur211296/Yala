@@ -46,25 +46,23 @@ enum CategoryDeduplicationService {
             let sorted = group.sorted { ($0.transactions?.count ?? 0) > ($1.transactions?.count ?? 0) }
             let keeper = sorted[0]
             let duplicates = sorted.dropFirst()
+            let keeperSeedSubs = (keeper.subcategories ?? []).filter { $0.isDefaultSeed }
 
             for duplicate in duplicates {
-                // Re-parent subcategories
-                for sub in duplicate.subcategories ?? [] {
-                    // Try to find matching subcategory in keeper by iconName
-                    let matchInKeeper = (keeper.subcategories ?? []).first { $0.iconName == sub.iconName }
-
-                    if let match = matchInKeeper {
-                        // Re-parent transactions from duplicate sub to keeper's matching sub
-                        for tx in sub.transactions ?? [] {
-                            tx.subcategory = match
-                        }
-                        // Clean up and delete duplicate subcategory
+                for sub in (duplicate.subcategories ?? []) where sub.isDefaultSeed {
+                    if let match = keeperSeedSubs.first(where: { $0.iconName == sub.iconName }) {
+                        reparentInverseRelationships(from: sub, to: match)
                         sub.category = nil
                         context.delete(sub)
                     } else {
-                        // No match in keeper — re-parent subcategory to keeper
                         sub.category = keeper
                     }
+                }
+
+                // Custom subs nunca se mergean con seed: el match por iconName es coincidencia
+                // visual, no equivalencia semántica. Se re-parentean al keeper preservando identidad.
+                for sub in (duplicate.subcategories ?? []) where !sub.isDefaultSeed {
+                    sub.category = keeper
                 }
 
                 // Re-parent category-level transactions
@@ -96,5 +94,24 @@ enum CategoryDeduplicationService {
         }
 
         return removedCount
+    }
+
+    /// Re-parent TODAS las relaciones inversas de `sub` a `match` antes de borrar `sub`.
+    /// Sin esto el deleteRule .nullify vacía silenciosamente Budget.subcategories y deja
+    /// huérfanos a payments/drafts/memories/cashFlowLines.
+    private static func reparentInverseRelationships(from sub: Subcategory, to match: Subcategory) {
+        for tx in sub.transactions ?? [] { tx.subcategory = match }
+        for fav in sub.favoritePayments ?? [] { fav.subcategory = match }
+        for sched in sub.scheduledPayments ?? [] { sched.subcategory = match }
+        for draft in sub.inboxDrafts ?? [] { draft.subcategory = match }
+        for memory in sub.merchantMemories ?? [] { memory.subcategory = match }
+        for line in sub.cashFlowLines ?? [] { line.subcategory = match }
+        // M2M Budget.subcategories: idempotency check evita doble append cuando dos subs
+        // duplicadas comparten match en el mismo budget.
+        for budget in sub.budgets ?? [] {
+            guard (budget.subcategories ?? []).allSatisfy({ $0.persistentModelID != match.persistentModelID }) else { continue }
+            if budget.subcategories == nil { budget.subcategories = [] }
+            budget.subcategories?.append(match)
+        }
     }
 }
