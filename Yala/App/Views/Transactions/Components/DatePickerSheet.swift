@@ -9,7 +9,6 @@ import SwiftUI
 
 struct DatePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.yalaTheme) private var theme
     @Binding var selectedDate: Date
     var minDate: Date = .distantPast
     var maxDate: Date? = nil         // nil = Date.now at runtime (avoids stale capture)
@@ -17,6 +16,8 @@ struct DatePickerSheet: View {
 
     @State private var workingDate: Date = .now
     @State private var selectedDetent: PresentationDetent = .medium
+
+    private let detents = DS.Adaptive.sheetDetents([.medium, .large])
 
     /// Computed range: nil maxDate means "up to today" at render time
     private var dateRange: ClosedRange<Date> {
@@ -65,10 +66,7 @@ struct DatePickerSheet: View {
                 workingDate = selectedDate
             }
         }
-        .presentationDetents(
-            DS.Adaptive.sheetDetents([.medium, .large]),
-            selection: $selectedDetent
-        )
+        .presentationDetents(detents, selection: $selectedDetent)
         .presentationDragIndicator(.visible)
     }
 }
