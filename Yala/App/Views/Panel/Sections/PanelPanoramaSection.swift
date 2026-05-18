@@ -32,24 +32,29 @@ struct PanelPanoramaSection: View {
     @State private var upsellDestination: UpsellDestination?
 
     var body: some View {
+        let isExpanded = !appPreferences.panelAccountsCollapsed
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            header
+            // Spacing 0 ancla el motivational al subtítulo del header; el root .sm
+            // preserva la separación con upsellCTA / content debajo.
+            VStack(alignment: .leading, spacing: 0) {
+                header
 
-            if appPreferences.panelAccountsCollapsed, showsUpsellCTA {
+                if isExpanded, let motivationalLine {
+                    Text(motivationalLine)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.thSecondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .transition(.opacity)
+                }
+            }
+
+            if !isExpanded, showsUpsellCTA {
                 upsellCTA
                     .padding(.vertical, DS.Spacing.xxs)
                     .transition(.opacity)
             }
 
-            if !appPreferences.panelAccountsCollapsed {
-                if let motivationalLine {
-                    Text(motivationalLine)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.thSecondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, DS.Spacing.sm)
-                        .transition(.opacity)
-                }
+            if isExpanded {
                 content
                     .padding(.top, DS.Spacing.sm)
                     .transition(.opacity.combined(with: .move(edge: .top)))

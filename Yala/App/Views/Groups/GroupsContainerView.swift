@@ -327,13 +327,15 @@ struct GroupsContainerView: View {
                         .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .background(theme.accent)
-                        .clipShape(Circle())
+                        .glassEffect(
+                            .regular.interactive().tint(theme.accent.opacity(0.6)),
+                            in: Circle()
+                        )
+                        .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Groups.newGroup)
-                .glassEffect(.regular.interactive())
                 .dsFloatingShadow()
+                .accessibilityLabel(L10n.Groups.newGroup)
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)

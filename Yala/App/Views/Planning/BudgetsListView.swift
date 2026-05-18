@@ -218,13 +218,15 @@ struct BudgetsListView: View {
                         .font(DS.Typography.title)
                         .foregroundStyle(.white)
                         .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .background(theme.accent)
-                        .clipShape(Circle())
+                        .glassEffect(
+                            .regular.interactive().tint(theme.accent.opacity(0.6)),
+                            in: Circle()
+                        )
+                        .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .dsFloatingShadow()
                 .accessibilityLabel(L10n.Accessibility.newBudget)
-                .glassEffect(.regular.interactive())
-                .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
