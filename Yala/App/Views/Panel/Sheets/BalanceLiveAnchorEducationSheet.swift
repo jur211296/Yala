@@ -18,25 +18,33 @@ struct BalanceLiveAnchorEducationSheet: View {
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(CurrencyConverter.self) private var currencyConverter
 
+    @State private var selectedDetent: PresentationDetent = .medium
+
     /// Umbral para considerar un balance multi-moneda "esencialmente cero"
     /// tras la conversión al TC actual. Filtra rows del breakdown con saldo
     /// residual (EUR -0.00, etc.) y omite la línea histórica del párrafo
     /// cuando la diferencia con `liveAnchorValue` es despreciable.
     private static let nearZeroEpsilon: Double = 0.01
 
+    private var isLargeDetent: Bool { selectedDetent == .large }
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                    todayBalanceSection
-                    explanationSection
-                    breakdownSection
+            ZStack {
+                if isLargeDetent {
+                    PanelBackgroundView()
                 }
-                .padding(.horizontal, DS.Spacing.xl)
-                .padding(.vertical, DS.Spacing.lg)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                        todayBalanceSection
+                        explanationSection
+                        breakdownSection
+                    }
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .padding(.vertical, DS.Spacing.lg)
+                }
+                .scrollBounceBehavior(.basedOnSize)
             }
-            .scrollBounceBehavior(.basedOnSize)
-            .yalaScreenBackground()
             .navigationTitle(L10n.Panel.LiveAnchorEducation.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -47,7 +55,7 @@ struct BalanceLiveAnchorEducationSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.visible)
     }
 
