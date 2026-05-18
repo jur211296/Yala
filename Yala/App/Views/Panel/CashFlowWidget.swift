@@ -347,16 +347,12 @@ struct CashFlowWidget: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
-                    Text(
-                        appPreferences.currency(summary.netFlow,
-                            currencyCode: summary.currencyCode,
-                            forceSign: true
-                        )
+                    AmountText(
+                        value: summary.netFlow,
+                        currencyCode: summary.currencyCode,
+                        font: DS.Typography.headline,
+                        forceSign: true
                     )
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thPrimaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
 
                     if variationDisplay.showsSmallVariation && previousAmount != nil {
                         VariationChip(
@@ -429,21 +425,25 @@ struct CashFlowWidget: View {
 
                     if !hasNoData {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                            Text(
-                                appPreferences.currency(kpiValue, currencyCode: summary.currencyCode,
-                                    forceSign: displayMode == .balance || displayMode == .none)
+                            AmountText(
+                                value: kpiValue,
+                                currencyCode: summary.currencyCode,
+                                font: DS.Typography.headline,
+                                forceSign: displayMode == .balance || displayMode == .none
                             )
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
 
                             if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousAmount {
-                                Text("vs \(appPreferences.number(prevAmount))")
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(.thSecondaryText)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.7)
+                                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+                                    Text("vs")
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(.thSecondaryText)
+                                    AmountText(
+                                        value: prevAmount,
+                                        currencyCode: summary.currencyCode,
+                                        font: DS.Typography.caption,
+                                        tint: .secondary
+                                    )
+                                }
                             }
                         }
                     }
@@ -727,46 +727,45 @@ struct CashFlowWidget: View {
 
                                 if isWaterfallMode {
                                     // Waterfall: show net with color matching bar sign
-                                    HStack(spacing: DS.Spacing.xs) {
+                                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                                         Circle()
                                             .fill(selectedData.net >= 0 ? Color.incomeGraph : Color.expenseGraph)
                                             .frame(width: 6, height: 6)
-                                        Text(
-                                            appPreferences.currency(selectedData.net,
-                                                currencyCode: summary.currencyCode, forceSign: true)
+                                        AmountText(
+                                            value: selectedData.net,
+                                            currencyCode: summary.currencyCode,
+                                            font: DS.Typography.labelTiny,
+                                            forceSign: true
                                         )
-                                        .font(DS.Typography.labelTiny)
-                                        .foregroundStyle(.primary)
                                     }
                                 } else {
                                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                                        HStack(spacing: DS.Spacing.xs) {
+                                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                                             Circle().fill(Color.incomeGraph).frame(width: 6, height: 6)
-                                            Text(
-                                                appPreferences.currency(selectedData.income,
-                                                    currencyCode: summary.currencyCode, forceSign: true)
+                                            AmountText(
+                                                value: selectedData.income,
+                                                currencyCode: summary.currencyCode,
+                                                font: DS.Typography.labelTiny,
+                                                forceSign: true
                                             )
-                                            .font(DS.Typography.labelTiny)
-                                            .foregroundStyle(.primary)
                                         }
-                                        HStack(spacing: DS.Spacing.xs) {
+                                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                                             Circle().fill(Color.expenseGraph).frame(width: 6, height: 6)
-                                            Text(
-                                                appPreferences.currency(-selectedData.expense,
-                                                    currencyCode: summary.currencyCode)
+                                            AmountText(
+                                                value: -selectedData.expense,
+                                                currencyCode: summary.currencyCode,
+                                                font: DS.Typography.labelTiny
                                             )
-                                            .font(DS.Typography.labelTiny)
-                                            .foregroundStyle(.primary)
                                         }
                                         Divider()
-                                        HStack(spacing: DS.Spacing.xs) {
+                                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                                             Circle().fill(Color.electricIndigo).frame(width: 6, height: 6)
-                                            Text(
-                                                appPreferences.currency(selectedData.net,
-                                                    currencyCode: summary.currencyCode, forceSign: true)
+                                            AmountText(
+                                                value: selectedData.net,
+                                                currencyCode: summary.currencyCode,
+                                                font: DS.Typography.labelTiny,
+                                                forceSign: true
                                             )
-                                            .font(DS.Typography.labelTiny)
-                                            .foregroundStyle(.primary)
                                         }
                                     }
                                 }
@@ -774,17 +773,16 @@ struct CashFlowWidget: View {
                                 // Average line in tooltip
                                 if let avg = tooltipAverage(for: selectedData.date) {
                                     Divider()
-                                    HStack(spacing: DS.Spacing.xs) {
+                                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                                         Text("x̄")
                                             .font(DS.Typography.labelTiny)
                                             .foregroundStyle(.thSecondaryText)
                                             .frame(width: 6)
-                                        Text(
-                                            appPreferences.currency(avg,
-                                                currencyCode: summary.currencyCode)
+                                        AmountText(
+                                            value: avg,
+                                            currencyCode: summary.currencyCode,
+                                            font: DS.Typography.labelTiny
                                         )
-                                        .font(DS.Typography.labelTiny)
-                                        .foregroundStyle(.primary)
                                     }
                                 }
                             }

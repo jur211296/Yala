@@ -25,6 +25,25 @@ struct WeekdayBarPanelWidget: View {
         data.filter { $0.average > 0 }.max(by: { $0.average < $1.average })
     }
 
+    /// Sum of each weekday's average — shared by both layouts.
+    private var weeklyAverage: Double {
+        data.reduce(0) { $0 + $1.average }
+    }
+
+    @ViewBuilder
+    private var weeklyAverageSubtitle: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+            AmountText(
+                value: weeklyAverage,
+                currencyCode: currencyCode,
+                font: DS.Typography.headline, secondaryFont: DS.Typography.caption
+            )
+            Text(L10n.Panel.WeekdayBar.perWeekSuffix)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.thSecondaryText)
+        }
+    }
+
     var body: some View {
         Group {
             if size == .small {
@@ -43,6 +62,7 @@ struct WeekdayBarPanelWidget: View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             largeHeader
             if hasData {
+                weeklyAverageSubtitle
                 WeekdayBarChart(
                     data: data,
                     currencyCode: currencyCode,
@@ -76,10 +96,7 @@ struct WeekdayBarPanelWidget: View {
     // MARK: - Small (PP2-06c)
 
     private var smallBody: some View {
-        // Weekly average — sum of each weekday's average. Held as a local so the
-        // body doesn't re-reduce on every incidental re-render.
-        let weeklyAverage = data.reduce(0) { $0 + $1.average }
-        return VStack(alignment: .leading, spacing: DS.Spacing.md) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
             PanelSmallWidgetHeader(
                 title: L10n.Panel.WeekdayBar.smallTitle,
                 accessibilityLabel: L10n.Panel.WeekdayBar.smallTitle,
@@ -87,16 +104,7 @@ struct WeekdayBarPanelWidget: View {
                 headerInfoButton: headerInfoButton
             )
             if hasData {
-                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-                    AmountText(
-                        value: weeklyAverage,
-                        currencyCode: currencyCode,
-                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption
-                    )
-                    Text(L10n.Panel.WeekdayBar.perWeekSuffix)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.thSecondaryText)
-                }
+                weeklyAverageSubtitle
 
                 WeekdayBarChart(
                     data: data,

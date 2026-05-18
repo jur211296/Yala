@@ -127,11 +127,12 @@ struct TrendsCarouselWidget: View {
 
                 if !hasNoTrendData {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                        Text(currentKPIValue)
-                            .font(DS.Typography.title)
-                            .foregroundStyle(.thPrimaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                        AmountText(
+                            value: currentKPIValue,
+                            currencyCode: currencyCode,
+                            font: DS.Typography.title,
+                            forceSign: viewModel.trendType == .balance
+                        )
 
                         // Variation chip right of the "vs" label.
                         variationChip
@@ -248,14 +249,14 @@ struct TrendsCarouselWidget: View {
 
     // MARK: - KPI
 
-    private var currentKPIValue: String {
+    private var currentKPIValue: Double {
         if let focusedDate = viewModel.focusedDate,
            let point = viewModel.rawTrendPoints.first(where: {
                Calendar.current.isDate($0.date, inSameDayAs: focusedDate)
            }) {
-            return appPreferences.currency(point.value, currencyCode: currencyCode)
+            return point.value
         }
-        return appPreferences.currency(trendTotalForCurrentMetric, currencyCode: currencyCode)
+        return trendTotalForCurrentMetric
     }
 
     private var trendTotalForCurrentMetric: Double {
