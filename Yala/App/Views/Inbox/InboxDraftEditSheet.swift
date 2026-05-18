@@ -381,7 +381,6 @@ struct InboxDraftEditSheet: View {
 
     private var dateSheet: some View {
         DatePickerSheet(selectedDate: $transactionDate)
-            .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
     }
 
     private var needSheet: some View {

@@ -341,7 +341,6 @@ struct NewTransactionView: View {
             }
             .sheet(isPresented: $viewModel.showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.transactionDate)
-                    .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
                     .onChange(of: viewModel.transactionDate) { _, _ in
                         Task {
                             await viewModel.loadExchangeRate(context: modelContext)

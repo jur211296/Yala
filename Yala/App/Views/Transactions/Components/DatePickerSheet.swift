@@ -16,6 +16,7 @@ struct DatePickerSheet: View {
     var title: String = L10n.Common.date
 
     @State private var workingDate: Date = .now
+    @State private var selectedDetent: PresentationDetent = .medium
 
     /// Computed range: nil maxDate means "up to today" at render time
     private var dateRange: ClosedRange<Date> {
@@ -23,21 +24,27 @@ struct DatePickerSheet: View {
         return minDate...upper
     }
 
+    private var isLargeDetent: Bool { selectedDetent == .large }
+
     var body: some View {
         NavigationStack {
-            VStack {
-                DatePicker(
-                    title,
-                    selection: $workingDate,
-                    in: dateRange,
-                    displayedComponents: [.date]
-                )
-                .datePickerStyle(.graphical)
-                .padding(DS.Spacing.md)
+            ZStack {
+                if isLargeDetent {
+                    PanelBackgroundView()
+                }
+                VStack {
+                    DatePicker(
+                        title,
+                        selection: $workingDate,
+                        in: dateRange,
+                        displayedComponents: [.date]
+                    )
+                    .datePickerStyle(.graphical)
+                    .padding(DS.Spacing.md)
 
-                Spacer()
+                    Spacer()
+                }
             }
-            .yalaScreenBackground()
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -58,6 +65,10 @@ struct DatePickerSheet: View {
                 workingDate = selectedDate
             }
         }
-
+        .presentationDetents(
+            DS.Adaptive.sheetDetents([.medium, .large]),
+            selection: $selectedDetent
+        )
+        .presentationDragIndicator(.visible)
     }
 }

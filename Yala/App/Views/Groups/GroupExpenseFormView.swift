@@ -120,7 +120,6 @@ struct GroupExpenseFormView: View {
             }
             .sheet(isPresented: $showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.date)
-                    .presentationDetents([.medium, .large])
                 }
             .sheet(isPresented: $showPaidByPicker) {
                 MemberPickerView(
