@@ -23,6 +23,12 @@ enum WidgetInfoKind: String, CaseIterable {
     case exchangeRate
     case expensesByNeed
     case weekdayBar
+    /// Comparativa de período (vista Estadísticas → Tendencias). NO es un
+    /// widget del Panel — solo expone contenido pedagógico.
+    case periodComparison
+    /// Flujo del dinero (vista Estadísticas → Categorías → Sankey). NO es
+    /// un widget del Panel — solo expone contenido pedagógico.
+    case sankey
 }
 
 extension WidgetType {
@@ -47,7 +53,9 @@ extension WidgetType {
 
 extension WidgetInfoKind {
     /// Mapping inverso a `WidgetType` para resolver size + visibility prefs.
-    var widgetType: WidgetType {
+    /// `nil` para kinds que NO son widgets del Panel (`.periodComparison`,
+    /// `.sankey`) — la sheet los presenta sin segmented de tamaño ni save.
+    var widgetType: WidgetType? {
         switch self {
         case .trend:             return .trend
         case .cashFlow:          return .cashFlow
@@ -62,6 +70,8 @@ extension WidgetInfoKind {
         case .exchangeRate:      return .exchangeRate
         case .expensesByNeed:    return .expensesByNeed
         case .weekdayBar:        return .weekdayBar
+        case .periodComparison:  return nil
+        case .sankey:            return nil
         }
     }
 
@@ -83,6 +93,8 @@ extension WidgetInfoKind {
         case .exchangeRate:      return L10n.Panel.WidgetInfo.ExchangeRate.title
         case .expensesByNeed:    return L10n.Panel.WidgetInfo.ExpensesByNeed.title
         case .weekdayBar:        return L10n.Panel.WidgetInfo.WeekdayBar.title
+        case .periodComparison:  return L10n.Panel.WidgetInfo.PeriodComparison.title
+        case .sankey:            return L10n.Panel.WidgetInfo.Sankey.title
         }
     }
 
@@ -94,9 +106,9 @@ extension WidgetInfoKind {
         case .categoriesPie, .subcategoriesPie, .tagsPie,
              .topCategories, .topSubcategories:
             return 380
-        case .expensesByNeed, .scheduledPayments, .exchangeRate:
+        case .expensesByNeed, .scheduledPayments, .exchangeRate, .sankey:
             return 320
-        case .trend, .cashFlow, .budgets, .recentRecords, .weekdayBar:
+        case .trend, .cashFlow, .budgets, .recentRecords, .weekdayBar, .periodComparison:
             return 280
         }
     }
@@ -586,6 +598,57 @@ struct WidgetInfoContent {
                     case .medium, .large:
                         return [InfoSection(question: whatQ, answer: L10n.Panel.WidgetInfo.WeekdayBar.largeWhatA)]
                     }
+                }
+            )
+
+        case .periodComparison:
+            let compareChip = InfoChip(label: L10n.Panel.WidgetInfo.PeriodComparison.chip1,
+                                       tintKey: .neutral,
+                                       systemImage: "arrow.left.arrow.right")
+            let periodChip = InfoChip(label: L10n.Panel.WidgetInfo.PeriodComparison.chip2,
+                                      tintKey: .neutral,
+                                      systemImage: "calendar")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.PeriodComparison.title,
+                chips: { _ in [compareChip, periodChip] },
+                sections: { _ in
+                    [
+                        InfoSection(
+                            question: L10n.Panel.WidgetInfo.PeriodComparison.whatQ,
+                            answer: L10n.Panel.WidgetInfo.PeriodComparison.whatA
+                        ),
+                        InfoSection(
+                            question: L10n.Panel.WidgetInfo.PeriodComparison.howQ,
+                            answer: L10n.Panel.WidgetInfo.PeriodComparison.howA
+                        ),
+                    ]
+                }
+            )
+
+        case .sankey:
+            let flowChip = InfoChip(label: L10n.Panel.WidgetInfo.Sankey.chip1,
+                                    tintKey: .neutral,
+                                    systemImage: "arrow.left.arrow.right")
+            let needChip = InfoChip(label: L10n.Panel.WidgetInfo.Sankey.chip2,
+                                    tintKey: .neutral,
+                                    systemImage: "chart.bar.xaxis")
+            let interactiveChip = InfoChip(label: L10n.Panel.WidgetInfo.Sankey.chip3,
+                                           tintKey: .accent,
+                                           systemImage: "hand.tap")
+            return WidgetInfoContent(
+                title: L10n.Panel.WidgetInfo.Sankey.title,
+                chips: { _ in [flowChip, needChip, interactiveChip] },
+                sections: { _ in
+                    [
+                        InfoSection(
+                            question: L10n.Panel.WidgetInfo.Sankey.whatQ,
+                            answer: L10n.Panel.WidgetInfo.Sankey.whatA
+                        ),
+                        InfoSection(
+                            question: L10n.Panel.WidgetInfo.Sankey.howQ,
+                            answer: L10n.Panel.WidgetInfo.Sankey.howA
+                        ),
+                    ]
                 }
             )
         }

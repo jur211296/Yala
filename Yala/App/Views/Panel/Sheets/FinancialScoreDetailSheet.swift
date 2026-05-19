@@ -42,28 +42,38 @@ struct FinancialScoreDetailSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    @State private var selectedDetent: PresentationDetent = .medium
+
     // A11Y-DT: hero ring and central number scale with Dynamic Type.
     @ScaledMetric(relativeTo: .largeTitle) private var ringSize: CGFloat = 120
     @ScaledMetric(relativeTo: .largeTitle) private var centerFontSize: CGFloat = 36
 
+    private var isLargeDetent: Bool { selectedDetent == .large }
+
     var body: some View {
         NavigationStack {
-            content
-                .yalaScreenBackground(.compact)
-                .navigationTitle(title)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        YalaToolbarButton(
-                            systemName: "xmark",
-                            label: L10n.Accessibility.close
-                        ) {
-                            dismiss()
-                        }
+            // Medium usa el glass nativo del sheet iOS; large monta el gradient
+            // temático para llenar la pantalla (paridad con BalanceLiveAnchorEducationSheet).
+            ZStack {
+                if isLargeDetent {
+                    PanelBackgroundView()
+                }
+                content
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(
+                        systemName: "xmark",
+                        label: L10n.Accessibility.close
+                    ) {
+                        dismiss()
                     }
                 }
+            }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.visible)
     }
 

@@ -370,15 +370,10 @@ struct TrendsTabView: View {
     @ViewBuilder
     private var trendChartSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            // Title "Tendencias" + InfoHint + metric selector FUERA del card (consistencia con M/A de Comparativa)
             HStack(spacing: DS.Spacing.xs) {
                 Text(L10n.Trend.title)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
-                InfoHintButton(
-                    title: L10n.Trend.title,
-                    message: L10n.Widget.Hint.trend
-                )
                 Spacer()
                 if !sessionState.isExpensesOnlyMode {
                     metricSelector
@@ -398,9 +393,13 @@ struct TrendsTabView: View {
             //   right: VariationChip(.medium) + "vs Abr 26" caption
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text(trendsViewModel.selectedMetric.displayName)
-                        .font(DS.Typography.subheadlineEmphasized)
-                        .foregroundStyle(.thPrimaryText)
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(trendsViewModel.selectedMetric.displayName)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.thPrimaryText)
+
+                        WidgetInfoButton(kind: .trend)
+                    }
 
                     if hasTrendData {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
@@ -465,7 +464,8 @@ struct TrendsTabView: View {
                     focusedDate: $trendsViewModel.focusedDate,
                     period: trendsViewModel.detailPeriod,
                     chartHeight: 170,
-                    liveAnchor: trendsViewModel.trendLiveAnchor
+                    liveAnchor: trendsViewModel.trendLiveAnchor,
+                    liveAnchorBreakdown: trendsViewModel.trendLiveAnchorBreakdown
                 )
             } else {
                 chartEmptyState
@@ -518,9 +518,13 @@ struct TrendsTabView: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         // Subtítulo principal (simetría con trendChartBody "Saldo/Ingresos/Gastos")
-                        Text(periodComparisonTitle)
-                            .font(DS.Typography.subheadlineEmphasized)
-                            .foregroundStyle(.thPrimaryText)
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text(periodComparisonTitle)
+                                .font(DS.Typography.subheadlineEmphasized)
+                                .foregroundStyle(.thPrimaryText)
+
+                            WidgetInfoButton(kind: .periodComparison)
+                        }
 
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                             AmountText(
@@ -904,16 +908,10 @@ struct TrendsTabView: View {
     @ViewBuilder
     private var cashFlowWidget: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            // Header FUERA del widget (root VStack global da padding)
             HStack {
                 Text(L10n.CashFlow.title)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
-
-                InfoHintButton(
-                    title: L10n.WidgetType.cashFlow,
-                    message: L10n.Widget.Hint.cashFlow
-                )
 
                 Spacer()
 
@@ -1169,7 +1167,7 @@ struct TrendsTabView: View {
             displayMode: mapMetricToTrendType(trendsViewModel.selectedMetric),
             previousAmount: previousTotal,
             comparisonPeriodText: appPreferences.showVariations && trendsViewModel.detailPeriod != .allTime ? comparisonPeriodText : nil,
-            showInfoHint: false
+            headerInfoButton: AnyView(WidgetInfoButton(kind: .cashFlow))
         )
     }
 
@@ -1327,9 +1325,13 @@ struct TrendsTabView: View {
             // Header interno simétrico a Trend + Comparativa
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text(L10n.Panel.WeekdayBar.smallTitle)
-                        .font(DS.Typography.subheadlineEmphasized)
-                        .foregroundStyle(.thPrimaryText)
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(L10n.Panel.WeekdayBar.smallTitle)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.thPrimaryText)
+
+                        WidgetInfoButton(kind: .weekdayBar)
+                    }
 
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                         AmountText(

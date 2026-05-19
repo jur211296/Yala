@@ -438,3 +438,7 @@
 "panel.liveAnchorEducation.dotA11yLabel" = "Saldo de hoy al tipo de cambio actual. Tocá para ver el detalle.";
 
 "stats.sankey.subtitle" = "Distribución del flujo";
+
+// MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
+"panel.widgetInfo.periodComparison.howA" = "Tocá M para comparar contra el mes anterior o A contra el año anterior. La elección se aplica también a las variaciones del resto del Panel.";
+"panel.widgetInfo.sankey.howA" = "Tocá una categoría, subcategoría o rama del flujo para filtrar el resto del Panel por ese trayecto. Volvé a tocar para quitar el filtro.";

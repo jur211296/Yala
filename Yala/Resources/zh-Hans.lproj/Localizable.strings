@@ -4301,3 +4301,20 @@
 "stats.trends.insight.stableExpense" = "你的支出保持稳定。";
 "stats.trends.insight.stableIncome" = "你的收入保持稳定。";
 "stats.trends.insight.stableBalance" = "你的余额保持稳定。";
+
+// MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
+"panel.widgetInfo.periodComparison.title" = "期间对比";
+"panel.widgetInfo.periodComparison.chip1" = "对比";
+"panel.widgetInfo.periodComparison.chip2" = "按期间";
+"panel.widgetInfo.periodComparison.whatQ" = "你看到的是什么？";
+"panel.widgetInfo.periodComparison.whatA" = "把你当前期间的余额、收入或支出与上一期间并排显示，让你一眼看出趋势是否在改善。";
+"panel.widgetInfo.periodComparison.howQ" = "在与什么对比？";
+"panel.widgetInfo.periodComparison.howA" = "点 M 与上月对比，点 A 与上年对比。这个选择也会应用到面板其他部分的变化数据。";
+"panel.widgetInfo.sankey.title" = "资金流向";
+"panel.widgetInfo.sankey.chip1" = "流向";
+"panel.widgetInfo.sankey.chip2" = "按需求";
+"panel.widgetInfo.sankey.chip3" = "可互动";
+"panel.widgetInfo.sankey.whatQ" = "你看到的是什么？";
+"panel.widgetInfo.sankey.whatA" = "你这段时间的资金路径：从哪里进来（收入），又流向哪里，按需求类型分组。色带越宽，金额越大。";
+"panel.widgetInfo.sankey.howQ" = "如何互动？";
+"panel.widgetInfo.sankey.howA" = "点一个分类、子分类或流向分支，就能按这个路径筛选面板。再点一次取消筛选。";

@@ -14,7 +14,11 @@ import SwiftUI
 
 struct WidgetInfoButton<Preview: View>: View {
     let kind: WidgetInfoKind
-    let viewModel: PanelViewModel
+    /// `nil` cuando se monta fuera del Panel (TrendsTabView / CategoriesTabView):
+    /// el sheet oculta el segmento de tamaño, la preview y el botón Save —
+    /// muestra solo chips + Q&A. En el Panel se pasa el VM para habilitar el
+    /// flujo completo de cambiar tamaño del widget.
+    var viewModel: PanelViewModel? = nil
     @ViewBuilder let previewContent: (WidgetSize) -> Preview
 
     @Environment(AppPreferences.self) private var appPreferences
@@ -40,5 +44,13 @@ struct WidgetInfoButton<Preview: View>: View {
                 )
             }
         }
+    }
+}
+
+extension WidgetInfoButton where Preview == EmptyView {
+    /// Atajo para callsites fuera del Panel (sin VM, sin preview): el sheet
+    /// renderiza solo chips + Q&A. Evita repetir `{ _ in EmptyView() }`.
+    init(kind: WidgetInfoKind) {
+        self.init(kind: kind, viewModel: nil, previewContent: { _ in EmptyView() })
     }
 }

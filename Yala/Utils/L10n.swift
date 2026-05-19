@@ -512,6 +512,27 @@ enum L10n {
                 static var largeHowQ: String { ls("panel.widgetInfo.expensesByNeed.largeHowQ", comment: "Panel Polish #2 — ExpensesByNeed L: pregunta '¿Cómo interactúo con la gráfica?'") }
                 static var largeHowA: String { ls("panel.widgetInfo.expensesByNeed.largeHowA", comment: "Panel Polish #2 — ExpensesByNeed L: respuesta") }
             }
+
+            enum PeriodComparison {
+                static var title: String { ls("panel.widgetInfo.periodComparison.title", comment: "Stats Trends — Title sheet pedagógico Comparativa de período") }
+                static var chip1: String { ls("panel.widgetInfo.periodComparison.chip1", comment: "Stats Trends — Chip 1 Comparativa (Comparación)") }
+                static var chip2: String { ls("panel.widgetInfo.periodComparison.chip2", comment: "Stats Trends — Chip 2 Comparativa (Por período)") }
+                static var whatQ: String { ls("panel.widgetInfo.periodComparison.whatQ", comment: "Stats Trends — Comparativa: pregunta '¿Qué estás viendo?'") }
+                static var whatA: String { ls("panel.widgetInfo.periodComparison.whatA", comment: "Stats Trends — Comparativa: respuesta") }
+                static var howQ: String { ls("panel.widgetInfo.periodComparison.howQ", comment: "Stats Trends — Comparativa: pregunta '¿Con qué comparo?'") }
+                static var howA: String { ls("panel.widgetInfo.periodComparison.howA", comment: "Stats Trends — Comparativa: respuesta") }
+            }
+
+            enum Sankey {
+                static var title: String { ls("panel.widgetInfo.sankey.title", comment: "Stats Categories — Title sheet pedagógico Sankey (Flujo del dinero)") }
+                static var chip1: String { ls("panel.widgetInfo.sankey.chip1", comment: "Stats Categories — Chip 1 Sankey (Flujo)") }
+                static var chip2: String { ls("panel.widgetInfo.sankey.chip2", comment: "Stats Categories — Chip 2 Sankey (Por necesidad)") }
+                static var chip3: String { ls("panel.widgetInfo.sankey.chip3", comment: "Stats Categories — Chip 3 Sankey (Interactiva)") }
+                static var whatQ: String { ls("panel.widgetInfo.sankey.whatQ", comment: "Stats Categories — Sankey: pregunta '¿Qué estás viendo?'") }
+                static var whatA: String { ls("panel.widgetInfo.sankey.whatA", comment: "Stats Categories — Sankey: respuesta") }
+                static var howQ: String { ls("panel.widgetInfo.sankey.howQ", comment: "Stats Categories — Sankey: pregunta '¿Cómo interactúo?'") }
+                static var howA: String { ls("panel.widgetInfo.sankey.howA", comment: "Stats Categories — Sankey: respuesta") }
+            }
         }
 
         // MARK: - Panorama group (Cuentas + Salud financiera)

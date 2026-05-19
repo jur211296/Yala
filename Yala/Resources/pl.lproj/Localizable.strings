@@ -4301,3 +4301,20 @@
 "stats.trends.insight.stableExpense" = "Twoje wydatki pozostają stabilne.";
 "stats.trends.insight.stableIncome" = "Twoje przychody pozostają stabilne.";
 "stats.trends.insight.stableBalance" = "Twoje saldo pozostaje stabilne.";
+
+// MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
+"panel.widgetInfo.periodComparison.title" = "Porównanie okresu";
+"panel.widgetInfo.periodComparison.chip1" = "Porównanie";
+"panel.widgetInfo.periodComparison.chip2" = "Według okresu";
+"panel.widgetInfo.periodComparison.whatQ" = "Co tu widzisz?";
+"panel.widgetInfo.periodComparison.whatA" = "Saldo, przychody lub wydatki Twojego bieżącego okresu obok poprzedniego okresu. Od razu widać, czy trend się poprawia.";
+"panel.widgetInfo.periodComparison.howQ" = "Z czym jest porównanie?";
+"panel.widgetInfo.periodComparison.howA" = "Stuknij M, by porównać z poprzednim miesiącem, lub R z poprzednim rokiem. Wybór dotyczy też zmian w pozostałej części Panelu.";
+"panel.widgetInfo.sankey.title" = "Przepływ pieniędzy";
+"panel.widgetInfo.sankey.chip1" = "Przepływ";
+"panel.widgetInfo.sankey.chip2" = "Według potrzeb";
+"panel.widgetInfo.sankey.chip3" = "Interaktywne";
+"panel.widgetInfo.sankey.whatQ" = "Co tu widzisz?";
+"panel.widgetInfo.sankey.whatA" = "Trasa Twoich pieniędzy w okresie: skąd wpływają (przychody) i dokąd trafiają, w podziale na typy potrzeb. Im szersza wstęga, tym większa kwota.";
+"panel.widgetInfo.sankey.howQ" = "Jak korzystać?";
+"panel.widgetInfo.sankey.howA" = "Stuknij kategorię, podkategorię lub gałąź, aby przefiltrować resztę Panelu po tej trasie. Stuknij ponownie, aby wyłączyć filtr.";

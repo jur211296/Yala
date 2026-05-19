@@ -4301,3 +4301,20 @@
 "stats.trends.insight.stableExpense" = "Je uitgaven blijven stabiel.";
 "stats.trends.insight.stableIncome" = "Je inkomen blijft stabiel.";
 "stats.trends.insight.stableBalance" = "Je saldo blijft stabiel.";
+
+// MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
+"panel.widgetInfo.periodComparison.title" = "Periode-vergelijking";
+"panel.widgetInfo.periodComparison.chip1" = "Vergelijking";
+"panel.widgetInfo.periodComparison.chip2" = "Per periode";
+"panel.widgetInfo.periodComparison.whatQ" = "Wat zie je hier?";
+"panel.widgetInfo.periodComparison.whatA" = "Het saldo, de inkomsten of uitgaven van je huidige periode naast de vorige periode. Zo zie je in één oogopslag of de trend verbetert.";
+"panel.widgetInfo.periodComparison.howQ" = "Waarmee wordt vergeleken?";
+"panel.widgetInfo.periodComparison.howA" = "Tik op M om met de vorige maand te vergelijken of op J voor het vorige jaar. Je keuze geldt ook voor de afwijkingen in de rest van het Paneel.";
+"panel.widgetInfo.sankey.title" = "Geldstroom";
+"panel.widgetInfo.sankey.chip1" = "Stroom";
+"panel.widgetInfo.sankey.chip2" = "Per behoefte";
+"panel.widgetInfo.sankey.chip3" = "Interactief";
+"panel.widgetInfo.sankey.whatQ" = "Wat zie je hier?";
+"panel.widgetInfo.sankey.whatA" = "De route van je geld in deze periode: waar het binnenkomt (inkomsten) en waar het naartoe gaat, gegroepeerd per type behoefte. Hoe breder het lint, hoe groter het bedrag.";
+"panel.widgetInfo.sankey.howQ" = "Hoe gebruik ik dit?";
+"panel.widgetInfo.sankey.howA" = "Tik op een categorie, subcategorie of tak om de rest van het Paneel op dat traject te filteren. Tik nogmaals om het filter te verwijderen.";

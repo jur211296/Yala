@@ -4301,3 +4301,20 @@
 "stats.trends.insight.stableExpense" = "支出は安定しています。";
 "stats.trends.insight.stableIncome" = "収入は安定しています。";
 "stats.trends.insight.stableBalance" = "残高は安定しています。";
+
+// MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
+"panel.widgetInfo.periodComparison.title" = "期間の比較";
+"panel.widgetInfo.periodComparison.chip1" = "比較";
+"panel.widgetInfo.periodComparison.chip2" = "期間別";
+"panel.widgetInfo.periodComparison.whatQ" = "ここに表示されているのは何ですか？";
+"panel.widgetInfo.periodComparison.whatA" = "現在の期間の残高・収入・支出を、前の期間と並べて表示しています。傾向が改善しているかどうかが一目で分かります。";
+"panel.widgetInfo.periodComparison.howQ" = "何と比較していますか？";
+"panel.widgetInfo.periodComparison.howA" = "Mをタップすると前月、Aをタップすると前年と比較できます。この選択はパネル全体の差分にも適用されます。";
+"panel.widgetInfo.sankey.title" = "お金の流れ";
+"panel.widgetInfo.sankey.chip1" = "流れ";
+"panel.widgetInfo.sankey.chip2" = "必要度別";
+"panel.widgetInfo.sankey.chip3" = "インタラクティブ";
+"panel.widgetInfo.sankey.whatQ" = "ここに表示されているのは何ですか？";
+"panel.widgetInfo.sankey.whatA" = "期間中のお金の経路です。どこから入って（収入）、どこへ向かうかを必要度別にまとめています。帯が太いほど大きな金額です。";
+"panel.widgetInfo.sankey.howQ" = "どう操作しますか？";
+"panel.widgetInfo.sankey.howA" = "カテゴリ・サブカテゴリ・流れの枝をタップすると、パネル全体をその経路で絞り込めます。もう一度タップで解除できます。";

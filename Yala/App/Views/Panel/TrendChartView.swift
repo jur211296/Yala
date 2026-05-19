@@ -263,7 +263,10 @@ struct TrendChartView: View {
         }
         .chartXSelection(value: $draggingDate)  // Native iOS 17+ selection - works with scroll
         .chartOverlay { proxy in
-            liveAnchorOverlay(proxy: proxy)
+            ZStack {
+                todayHintPillOverlay(proxy: proxy)
+                liveAnchorOverlay(proxy: proxy)
+            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Accessibility.trendChart(trendType.displayName))
@@ -286,6 +289,28 @@ struct TrendChartView: View {
                     nativeBalances: breakdown,
                     preferredCurrencyCode: currencyCode
                 )
+            }
+        }
+    }
+
+    /// Overlay de la pill "Hoy ⓘ" — vive fuera del `Chart{}` para que el tap
+    /// no sea capturado por `.chartXSelection`. Posicionada cerca del top del
+    /// plot area, alineada con la línea vertical del `todayMarker`.
+    @ViewBuilder
+    private func todayHintPillOverlay(proxy: ChartProxy) -> some View {
+        let today = Calendar.current.startOfDay(for: Date.now)
+        GeometryReader { geo in
+            if !compact,
+               paddedXDomain.contains(today),
+               let plotFrame = proxy.plotFrame,
+               let xPos = proxy.position(forX: today)
+            {
+                let frame = geo[plotFrame]
+                let absoluteX = xPos + frame.origin.x
+                let absoluteY = frame.origin.y + DS.Spacing.md
+
+                TodayHintGlassPill { showEducationSheet = true }
+                    .position(x: absoluteX, y: absoluteY)
             }
         }
     }
@@ -370,26 +395,16 @@ struct TrendChartView: View {
 
     /// Today marker — omitted when `compact` OR when `today` falls outside the
     /// chart's X-axis range (no point rendering a marker the user can't see).
+    /// La pill "Hoy ⓘ" vive en `chartOverlay` (no en annotation interna del
+    /// `Chart{}`) porque `.chartXSelection` captura los taps del área del
+    /// plot antes de que lleguen a las annotations — el overlay se procesa
+    /// en una capa por encima del selection gesture.
     @ChartContentBuilder
     private func todayMarker(today: Date) -> some ChartContent {
         if !compact && paddedXDomain.contains(today) {
-            // Línea vertical (sin annotation — el label vive en un anchor separado).
             RuleMark(x: .value(L10n.Widget.today, today))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
                 .foregroundStyle(.thSecondaryText.opacity(0.5))
-
-            // Anchor invisible para el label "Hoy" ~12% bajo el top — evita choque
-            // con el chip de variación del header del card.
-            let todayLabelY = yDomain.upperBound
-                - (yDomain.upperBound - yDomain.lowerBound) * 0.12
-            PointMark(
-                x: .value(L10n.Widget.today, today),
-                y: .value("TodayLabelAnchor", todayLabelY)
-            )
-            .symbolSize(0)
-            .annotation(position: .top, alignment: .center, spacing: DS.Spacing.xs) {
-                TodayHintGlassPill { showEducationSheet = true }
-            }
         }
     }
 

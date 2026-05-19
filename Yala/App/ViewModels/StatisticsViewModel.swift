@@ -170,6 +170,10 @@ final class StatisticsViewModel: Filterable {
     /// período cubre hoy. Nil en otros casos.
     var trendLiveAnchor: PanelViewModel.BarPoint? = nil
 
+    /// Desglose por moneda nativa del `trendLiveAnchor`. Habilita el sheet
+    /// educativo "Tu saldo hoy" desde la pill "Hoy ⓘ" del chart.
+    var trendLiveAnchorBreakdown: [String: Decimal]? = nil
+
     /// Trend grouping based on period
     var trendGrouping: TrendGrouping = .month
 
@@ -387,6 +391,7 @@ final class StatisticsViewModel: Filterable {
             if result.totalIncome != totalIncome { totalIncome = result.totalIncome }
             if result.totalExpense != totalExpense { totalExpense = result.totalExpense }
             if result.liveAnchor != trendLiveAnchor { trendLiveAnchor = result.liveAnchor }
+            if result.liveAnchorNativeBalances != trendLiveAnchorBreakdown { trendLiveAnchorBreakdown = result.liveAnchorNativeBalances }
             dataMetric = selectedMetric
         } else {
             calculatePerAccountTrend(

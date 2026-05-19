@@ -11,7 +11,10 @@ import SwiftUI
 
 struct WidgetInfoSheet<Preview: View>: View {
     let kind: WidgetInfoKind
-    let viewModel: PanelViewModel
+    /// `nil` cuando se invoca fuera del Panel — el sheet omite el segmented
+    /// de tamaño, la preview interactiva y el botón Save; muestra solo
+    /// chips + Q&A. En el Panel el VM se usa para leer/persistir el tamaño.
+    var viewModel: PanelViewModel? = nil
     @ViewBuilder let previewContent: (WidgetSize) -> Preview
 
     @Environment(\.dismiss) private var dismiss
@@ -22,14 +25,19 @@ struct WidgetInfoSheet<Preview: View>: View {
     @State private var contentWidth: CGFloat = 0
 
     private var content: WidgetInfoContent { .content(for: kind) }
-    private var widgetType: WidgetType { kind.widgetType }
+    private var widgetType: WidgetType? { kind.widgetType }
+    /// El flujo completo (segmented + preview + save) solo aplica cuando el
+    /// kind mapea a un WidgetType del Panel y se pasó un viewModel.
+    private var isInPanel: Bool { viewModel != nil && widgetType != nil }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    sizeSegmented
-                    previewBox
+                    if isInPanel {
+                        sizeSegmented
+                        previewBox
+                    }
                     chipsRow
                     sectionsBlock
                 }
@@ -40,7 +48,9 @@ struct WidgetInfoSheet<Preview: View>: View {
                 }
             }
             .scrollBounceBehavior(.basedOnSize)
-            .yalaScreenBackground()
+            // Fuera del Panel iOS pinta su glass nativo del sheet (sin gradient
+            // propio); en el Panel se mantiene el `PanelBackgroundView`.
+            .yalaScreenBackground(isInPanel ? .panel : .transparent)
             .navigationTitle(kind.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -52,23 +62,29 @@ struct WidgetInfoSheet<Preview: View>: View {
                         dismiss()
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    YalaSaveButton(
-                        action: {
-                            persistDraftToViewModel()
-                            dismiss()
-                        },
-                        isDisabled: draftSize == initialSize
-                    )
+                if isInPanel {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        YalaSaveButton(
+                            action: {
+                                persistDraftToViewModel()
+                                dismiss()
+                            },
+                            isDisabled: draftSize == initialSize
+                        )
+                    }
                 }
             }
         }
-        .presentationDetents([.large])
+        // Panel necesita `.large` (segmented + preview). Fuera (chips + Q&A) entra en `.medium`.
+        .presentationDetents(isInPanel ? [.large] : [.medium])
         .presentationDragIndicator(.visible)
         .task(id: kind) {
             // Capturar el tamaño actual del VM al montar (o si el sheet se reusa
             // con otro kind). Los cambios del segmented mutan `draftSize`
             // localmente y solo se persisten si el usuario confirma con el check.
+            // Fuera del Panel (viewModel == nil o kind sin widgetType), no hay
+            // tamaño que cargar.
+            guard let viewModel, let widgetType else { return }
             let current = viewModel.widgetSize(widgetType)
             draftSize = current
             initialSize = current
@@ -78,16 +94,18 @@ struct WidgetInfoSheet<Preview: View>: View {
 
     @ViewBuilder
     private var sizeSegmented: some View {
-        let supported = widgetType.supportedSizes
-        if supported.count > 1 {
-            Picker(selection: $draftSize) {
-                ForEach(supported, id: \.self) { size in
-                    Text(sizeLabel(size)).tag(size)
+        if let widgetType {
+            let supported = widgetType.supportedSizes
+            if supported.count > 1 {
+                Picker(selection: $draftSize) {
+                    ForEach(supported, id: \.self) { size in
+                        Text(sizeLabel(size)).tag(size)
+                    }
+                } label: {
+                    EmptyView()
                 }
-            } label: {
-                EmptyView()
+                .pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
         }
     }
 
@@ -147,7 +165,7 @@ struct WidgetInfoSheet<Preview: View>: View {
     }
 
     private func persistDraftToViewModel() {
-        guard didLoadInitialSize else { return }
+        guard didLoadInitialSize, let viewModel, let widgetType else { return }
         viewModel.setWidgetSize(widgetType, size: draftSize)
     }
 }

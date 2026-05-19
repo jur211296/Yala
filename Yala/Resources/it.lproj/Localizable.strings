@@ -4299,3 +4299,20 @@
 "stats.trends.insight.stableExpense" = "Le tue spese restano stabili.";
 "stats.trends.insight.stableIncome" = "Le tue entrate restano stabili.";
 "stats.trends.insight.stableBalance" = "Il tuo saldo resta stabile.";
+
+// MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
+"panel.widgetInfo.periodComparison.title" = "Confronto periodo";
+"panel.widgetInfo.periodComparison.chip1" = "Confronto";
+"panel.widgetInfo.periodComparison.chip2" = "Per periodo";
+"panel.widgetInfo.periodComparison.whatQ" = "Cosa stai vedendo?";
+"panel.widgetInfo.periodComparison.whatA" = "Il saldo, le entrate o le spese del tuo periodo attuale a fianco del periodo precedente. Vedi al volo se la tendenza sta migliorando.";
+"panel.widgetInfo.periodComparison.howQ" = "Con cosa si confronta?";
+"panel.widgetInfo.periodComparison.howA" = "Tocca M per confrontare con il mese precedente o A con l'anno precedente. La scelta vale anche per le variazioni nel resto del Pannello.";
+"panel.widgetInfo.sankey.title" = "Flusso del denaro";
+"panel.widgetInfo.sankey.chip1" = "Flusso";
+"panel.widgetInfo.sankey.chip2" = "Per necessità";
+"panel.widgetInfo.sankey.chip3" = "Interattiva";
+"panel.widgetInfo.sankey.whatQ" = "Cosa stai vedendo?";
+"panel.widgetInfo.sankey.whatA" = "Il percorso del tuo denaro nel periodo: da dove entra (entrate) e dove va, raggruppato per tipo di necessità. I nastri più larghi sono i movimenti più grandi.";
+"panel.widgetInfo.sankey.howQ" = "Come interagisco?";
+"panel.widgetInfo.sankey.howA" = "Tocca una categoria, sottocategoria o ramo del flusso per filtrare il resto del Pannello su quel percorso. Tocca di nuovo per rimuovere il filtro.";

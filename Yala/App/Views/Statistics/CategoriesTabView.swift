@@ -335,9 +335,7 @@ struct CategoriesTabView: View {
     // MARK: - Analysis Header Section
 
     /// Header con title dinámico (gasto/ingreso según FilterControlBar global) +
-    /// InfoHint + M/A selector. El nature lo controla la FilterControlBar arriba,
-    /// no hay toggle propio en esta vista — `isIncomeMode` refleja el filter activo
-    /// vía `viewModel.selectedTransactionNatures == [.income]`.
+    /// M/A selector. El (?) educativo vive dentro de cada pie via `headerInfoButton`.
     private var analysisHeaderSection: some View {
         HStack(spacing: DS.Spacing.sm) {
             Text(isIncomeMode ? L10n.Statistics.incomeAnalysis : L10n.Statistics.spendingAnalysis)
@@ -345,11 +343,6 @@ struct CategoriesTabView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-
-            InfoHintButton(
-                title: isIncomeMode ? L10n.Statistics.incomeAnalysis : L10n.Statistics.spendingAnalysis,
-                message: isIncomeMode ? L10n.Widget.Hint.incomeAnalysis : L10n.Widget.Hint.spendingAnalysis
-            )
 
             Spacer()
 
@@ -484,6 +477,7 @@ struct CategoriesTabView: View {
                     },
                     isExcludeMode: viewModel.isExcludeMode,
                     size: .large,
+                    headerInfoButton: AnyView(WidgetInfoButton(kind: .categoriesPie)),
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousCategoryTotal,
@@ -522,6 +516,7 @@ struct CategoriesTabView: View {
                     },
                     isExcludeMode: viewModel.isExcludeMode,
                     size: .large,
+                    headerInfoButton: AnyView(WidgetInfoButton(kind: .subcategoriesPie)),
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousSubcategoryTotal,
@@ -557,6 +552,7 @@ struct CategoriesTabView: View {
                     },
                     isExcludeMode: viewModel.isExcludeMode,
                     size: .large,
+                    headerInfoButton: AnyView(WidgetInfoButton(kind: .tagsPie)),
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousTagTotal,
@@ -592,9 +588,13 @@ struct CategoriesTabView: View {
         @Bindable var prefs = appPreferences
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                Text(L10n.Stats.Sankey.subtitle)
-                    .font(DS.Typography.subheadlineEmphasized)
-                    .foregroundStyle(.thPrimaryText)
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(L10n.Stats.Sankey.subtitle)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.thPrimaryText)
+
+                    WidgetInfoButton(kind: .sankey)
+                }
                 AmountText(
                     value: viewModel.sankeyData.totalExpense,
                     currencyCode: defaultCurrencyCode,
@@ -728,7 +728,8 @@ struct CategoriesTabView: View {
             previousAmountByNeed: previousNeedAmounts,
             showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
             comparisonMode: sessionState.comparisonMode,
-            isIncomeMode: viewModel.selectedTransactionNatures == [.income]
+            isIncomeMode: viewModel.selectedTransactionNatures == [.income],
+            headerInfoButton: AnyView(WidgetInfoButton(kind: .expensesByNeed))
         )
     }
 
@@ -755,7 +756,8 @@ struct CategoriesTabView: View {
             previousAmountByNeed: previousNeedAmounts,
             showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
             comparisonMode: sessionState.comparisonMode,
-            isIncomeMode: viewModel.selectedTransactionNatures == [.income]
+            isIncomeMode: viewModel.selectedTransactionNatures == [.income],
+            headerInfoButton: AnyView(WidgetInfoButton(kind: .expensesByNeed))
         )
     }
 

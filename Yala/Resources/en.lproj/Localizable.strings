@@ -4303,3 +4303,20 @@
 "stats.trends.insight.stableExpense" = "Your expenses stay steady.";
 "stats.trends.insight.stableIncome" = "Your income stays steady.";
 "stats.trends.insight.stableBalance" = "Your balance stays steady.";
+
+// MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
+"panel.widgetInfo.periodComparison.title" = "Period comparison";
+"panel.widgetInfo.periodComparison.chip1" = "Comparison";
+"panel.widgetInfo.periodComparison.chip2" = "By period";
+"panel.widgetInfo.periodComparison.whatQ" = "What are you seeing?";
+"panel.widgetInfo.periodComparison.whatA" = "Your current period's balance, income or expenses side by side with the previous period. Helps you see at a glance if the trend is improving.";
+"panel.widgetInfo.periodComparison.howQ" = "What does it compare against?";
+"panel.widgetInfo.periodComparison.howA" = "Tap M to compare against the previous month or Y for the previous year. Your choice also applies to variations across the rest of the Panel.";
+"panel.widgetInfo.sankey.title" = "Money flow";
+"panel.widgetInfo.sankey.chip1" = "Flow";
+"panel.widgetInfo.sankey.chip2" = "By need";
+"panel.widgetInfo.sankey.chip3" = "Interactive";
+"panel.widgetInfo.sankey.whatQ" = "What are you seeing?";
+"panel.widgetInfo.sankey.whatA" = "The path of your money for the period: where it comes in (income) and where it goes, grouped by need type. The wider the ribbon, the larger the movement.";
+"panel.widgetInfo.sankey.howQ" = "How do I interact?";
+"panel.widgetInfo.sankey.howA" = "Tap a category, subcategory or flow branch to filter the rest of the Panel by that path. Tap again to clear the filter.";
