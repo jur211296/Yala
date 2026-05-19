@@ -1,11 +1,15 @@
 # Xcode
 DerivedData/
+.deriveddata/
 build/
+build_output_*.txt
 *.xcworkspace/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
 # SwiftPM
 .swiftpm/
+.spm/
+.spm-cache/
 # User-specific
 .DS_Store
 # Fastlane (si lo usas luego)
