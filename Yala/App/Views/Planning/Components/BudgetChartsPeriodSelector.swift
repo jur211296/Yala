@@ -273,7 +273,7 @@ struct BudgetChartsPeriodSelector: View {
     }()
 
     private func generatePeriods() {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         var generatedPeriods: [PeriodOption] = []
 
         let today = Date.now

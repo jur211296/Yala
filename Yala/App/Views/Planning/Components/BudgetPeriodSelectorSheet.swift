@@ -294,7 +294,7 @@ struct BudgetPeriodSelectorSheet: View {
     }()
 
     private func generatePeriods() {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         var generatedPeriods: [PeriodOption] = []
 
         // Calculate date range based on transactions

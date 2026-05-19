@@ -36,7 +36,7 @@ struct BudgetChartsView: View {
     // MARK: - Local Period Computed Properties
 
     private var localDateInterval: DateInterval {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
 
         guard let pType = periodType else {
             let start = localSelectedMonth
@@ -71,7 +71,7 @@ struct BudgetChartsView: View {
     }
 
     private var localPeriodLabel: String {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
 
         guard let pType = periodType else { return "" }
 
@@ -124,7 +124,7 @@ struct BudgetChartsView: View {
     }
 
     private func localPreviousPeriod() {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         draggingDate = nil
         switch periodType {
         case .weekly:
@@ -143,7 +143,7 @@ struct BudgetChartsView: View {
     }
 
     private func localNextPeriod() {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         draggingDate = nil
         switch periodType {
         case .weekly:

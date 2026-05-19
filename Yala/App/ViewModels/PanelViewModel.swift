@@ -2187,7 +2187,7 @@ final class PanelViewModel {
 
     /// Get date interval for a budget period
     private func getBudgetDateInterval(budget: Budget) -> DateInterval {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
 
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
             let start = calendar.startOfMonth(for: Date.now)
@@ -2224,7 +2224,7 @@ final class PanelViewModel {
 
     /// Calculate days remaining in budget period
     private func getBudgetDaysRemaining(budget: Budget, interval: DateInterval) -> Int {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         let today = Date.now
 
         if today > interval.end {

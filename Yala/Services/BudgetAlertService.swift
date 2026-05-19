@@ -140,7 +140,7 @@ final class BudgetAlertService {
     /// Calcula el intervalo del período actual. `now` se inyecta opcionalmente
     /// en tests para hacer el resultado determinístico (sin depender de `Date.now`).
     func getCurrentPeriodInterval(for budget: Budget, now: Date = .now) -> DateInterval {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
 
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
             let monthStart = calendar.startOfMonth(for: now)

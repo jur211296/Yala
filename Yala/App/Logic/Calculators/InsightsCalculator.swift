@@ -499,7 +499,7 @@ struct InsightsCalculator {
 
     /// Returns the current budget period interval based on the budget's periodType and Date.now.
     static func currentBudgetInterval(for budget: Budget) -> DateInterval {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         let now = Date.now
 
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
