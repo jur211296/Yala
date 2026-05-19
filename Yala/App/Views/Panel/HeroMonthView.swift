@@ -84,7 +84,7 @@ struct HeroMonthView: View {
         let hasNatureFilter = isIncomeFiltered || isExpenseFiltered
 
         return VStack(alignment: .center, spacing: DS.Spacing.sm) {
-            Text(L10n.Panel.Hero.availableLabel)
+            Text("\(L10n.Panel.Hero.availableLabel) · \(selectedPeriod.displayName)")
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
