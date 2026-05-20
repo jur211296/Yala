@@ -39,6 +39,7 @@ struct ContentView: View {
     @State private var remoteWipeTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
     @State private var showICloudRestartAlert: Bool = false
+    @State private var showFreshStartWipeAlert: Bool = false
     @State private var showSyncSettingsSheet: Bool = false
     @State private var showProTrialOffer: Bool = false
     @State private var showWhatsNew: Bool = false
@@ -191,6 +192,28 @@ struct ContentView: View {
         } message: {
             Text(L10n.iCloud.mismatchMessage)
         }
+        .alert(L10n.Welcome.FreshStart.alertTitle, isPresented: $showFreshStartWipeAlert) {
+            Button(L10n.Welcome.FreshStart.alertConfirm, role: .destructive) {
+                do {
+                    try DataWipeService.wipeAllUserData(
+                        in: modelContext,
+                        broadcastSignal: false
+                    )
+                    hasExistingData = false
+                } catch {
+                    #if DEBUG
+                    print("ContentView: fresh-start wipe failed: \(error)")
+                    #endif
+                }
+                showWelcomeFlow = false
+                showOnboarding = true
+            }
+            // Cancel: user queda en el Chooser (showWelcomeFlow sigue true) —
+            // puede elegir Restore/Invite o re-tap "Soy nuevo".
+            Button(L10n.Action.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Welcome.FreshStart.alertMessage)
+        }
         .fullScreenCover(isPresented: $showLanguageSelection) {
             LanguageSelectionView {
                 showLanguageSelection = false
@@ -275,6 +298,8 @@ struct ContentView: View {
             prefilledOnboardingData: $prefilledOnboardingData,
             hasShownWelcomeChooser: $hasShownWelcomeChooser,
             hasCompletedOnboarding: $hasCompletedOnboarding,
+            showFreshStartWipeAlert: $showFreshStartWipeAlert,
+            hasExistingData: hasExistingData,
             showGroupInviteOnboarding: showGroupInviteOnboarding
         ))
         .modifier(GroupInviteModifier(
@@ -714,6 +739,8 @@ private struct WelcomeFlowModifier: ViewModifier {
     @Binding var prefilledOnboardingData: ICloudAccountSummary?
     @Binding var hasShownWelcomeChooser: Bool
     @Binding var hasCompletedOnboarding: Bool
+    @Binding var showFreshStartWipeAlert: Bool
+    let hasExistingData: Bool
     let showGroupInviteOnboarding: Bool
 
     func body(content: Content) -> some View {
@@ -727,15 +754,29 @@ private struct WelcomeFlowModifier: ViewModifier {
                     initialStep: welcomeFlowInitialStep,
                     onSelectBranch: { branch in
                         hasShownWelcomeChooser = true
-                        showWelcomeFlow = false
                         switch branch {
                         case .new:
                             // Limpia prefs residuales del KV-Store del Apple ID
                             // (userName, currency) que sobreviven al uninstall.
                             OnboardingResetHelper.clearResidualPreferencesForFreshStart()
-                            showOnboarding = true
-                        case .restore: showWelcomeRestore = true
-                        case .invite: showInviteRecovery = true
+                            // Segunda barrera vs data residual: el alert "Detectamos tu
+                            // cuenta" del Hero cubre el caso iCloud-con-data, pero falla
+                            // en (1) sim sin iCloud, (2) timeout del fetch, (3) CloudKit
+                            // mirror sync que llega post-Hero. Si hay data al momento del
+                            // tap, pedir confirmation explícito antes de wipe.
+                            if hasExistingData {
+                                showFreshStartWipeAlert = true
+                                // welcomeFlow sigue visible hasta resolver el alert
+                            } else {
+                                showWelcomeFlow = false
+                                showOnboarding = true
+                            }
+                        case .restore:
+                            showWelcomeFlow = false
+                            showWelcomeRestore = true
+                        case .invite:
+                            showWelcomeFlow = false
+                            showInviteRecovery = true
                         }
                     },
                     onLoadMyData: { summary in
