@@ -336,12 +336,17 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
         return
     }
 
-    // 1. Comprobar si ya existen categorías (secondary defense)
+    // 1. Comprobar si ya existen categorías de usuario (secondary defense).
+    //    Excluye categorías system (A0-Bridge `seedSystemGroupCategoriesIfNeeded` corre en
+    //    bootstrap y crea "Grupos"/"Cobros de grupos" antes del onboarding). Contarlas aquí
+    //    abortaría el seed default y rompería el flow de saldo inicial (no se crearía
+    //    "Ajuste de saldo" → setInitialBalance falla silenciosamente en onboarding).
     let existingCategoriesCount: Int
     do {
-        let descriptor = FetchDescriptor<Category>()
-        let categories = try modelContext.fetch(descriptor)
-        existingCategoriesCount = categories.count
+        let descriptor = FetchDescriptor<Category>(
+            predicate: #Predicate<Category> { !$0.isSystem }
+        )
+        existingCategoriesCount = try modelContext.fetchCount(descriptor)
     } catch {
         // Si hay error al leer, preferimos no tocar nada para no
         // corromper datos ni crear semilla en un estado incierto.
@@ -352,9 +357,9 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
     }
 
     guard existingCategoriesCount == 0 else {
-        // Ya hay categorías, no ejecutamos semilla otra vez.
+        // Ya hay categorías de usuario, no ejecutamos semilla otra vez.
         #if DEBUG
-        print("CategorySeed: Semilla NO ejecutada (ya existen categorías).")
+        print("CategorySeed: Semilla NO ejecutada (ya existen categorías de usuario).")
         #endif
         // Set flag so we don't check the DB again next launch
         defaults.set(true, forKey: "seedCategoriesExecuted")

@@ -488,9 +488,18 @@ struct ContentView: View {
     }
 
     /// Lightweight check — fetchCount doesn't materialize objects or trigger observation.
+    /// Excluye entidades system (A0-Bridge crea cuenta virtual `Grupos [moneda]` y categorías
+    /// `Grupos`/`Cobros de grupos` en bootstrap antes del onboarding). Contarlas reportaría
+    /// "has data" en fresh installs sin data real del usuario.
     private func checkHasExistingData() -> Bool {
-        let accountCount = (try? modelContext.fetchCount(FetchDescriptor<Account>())) ?? 0
-        let categoryCount = (try? modelContext.fetchCount(FetchDescriptor<Category>())) ?? 0
+        let accountDescriptor = FetchDescriptor<Account>(
+            predicate: #Predicate<Account> { !$0.isSystemAccount }
+        )
+        let categoryDescriptor = FetchDescriptor<Category>(
+            predicate: #Predicate<Category> { !$0.isSystem }
+        )
+        let accountCount = (try? modelContext.fetchCount(accountDescriptor)) ?? 0
+        let categoryCount = (try? modelContext.fetchCount(categoryDescriptor)) ?? 0
         return accountCount > 0 || categoryCount > 0
     }
 
