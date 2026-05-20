@@ -232,8 +232,13 @@ final class PreferenceSyncService {
             SessionState.shared.selectedPeriod = period
         }
 
-        // expensesOnlyMode didSet propagates to app group + WidgetCenter
-        SessionState.shared.isExpensesOnlyMode = local.bool(forKey: SyncKey.expensesOnlyMode.rawValue)
+        // expensesOnlyMode didSet propagates to app group + WidgetCenter.
+        // Guard against assigning when the key is absent: Swift's didSet fires even
+        // when the value doesn't change, which would write the default `false` to
+        // UserDefaults and contaminate fresh-install detection in OnboardingView.
+        if local.object(forKey: SyncKey.expensesOnlyMode.rawValue) != nil {
+            SessionState.shared.isExpensesOnlyMode = local.bool(forKey: SyncKey.expensesOnlyMode.rawValue)
+        }
 
         // financialMindset (educational UI only)
         if let mindset = local.string(forKey: SyncKey.financialMindset.rawValue), !mindset.isEmpty {

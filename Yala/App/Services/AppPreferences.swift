@@ -1117,6 +1117,7 @@ final class AppPreferences {
         static let hasSeenTodayFXCoachMark = "hasSeenTodayFXCoachMark"
         static let lastSeenAppVersion = "lastSeenAppVersion"
         nonisolated static let expensesOnlyMode = "expensesOnlyMode"  // accedida cross-process desde intents
+        static let financialMindset = "financialMindset"
 
         // One-Off Tours
         static let hasSeenSettingsTour = "hasSeenSettingsTour"

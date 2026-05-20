@@ -125,9 +125,10 @@ class SessionState {
 
     /// User's financial mindset chosen during onboarding: "cashFlow" (Día a día) or "patrimonial" (Control total).
     /// Affects educational UI (balance calculator variants, tips) but NOT features or calculations.
-    var financialMindset: String = UserDefaults.standard.string(forKey: "financialMindset") ?? "cashFlow" {
+    var financialMindset: String = UserDefaults.standard.string(forKey: AppPreferences.Keys.financialMindset) ?? "cashFlow" {
         didSet {
-            UserDefaults.standard.set(financialMindset, forKey: "financialMindset")
+            guard oldValue != financialMindset else { return }
+            UserDefaults.standard.set(financialMindset, forKey: AppPreferences.Keys.financialMindset)
         }
     }
 
@@ -135,11 +136,14 @@ class SessionState {
 
     /// When true, hides income/transfer UI throughout the app. Data is NOT deleted, only hidden.
     /// Uses stored property (NOT computed) so @Observable tracks changes.
-    var isExpensesOnlyMode: Bool = UserDefaults.standard.bool(forKey: "expensesOnlyMode") {
+    var isExpensesOnlyMode: Bool = UserDefaults.standard.bool(forKey: AppPreferences.Keys.expensesOnlyMode) {
         didSet {
-            UserDefaults.standard.set(isExpensesOnlyMode, forKey: "expensesOnlyMode")
+            // No-op guard avoids spurious UserDefaults writes (which materialize the key
+            // on fresh installs) and WidgetCenter reloads when callers reassign the same value.
+            guard oldValue != isExpensesOnlyMode else { return }
+            UserDefaults.standard.set(isExpensesOnlyMode, forKey: AppPreferences.Keys.expensesOnlyMode)
             if let appGroup = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) {
-                appGroup.set(isExpensesOnlyMode, forKey: "expensesOnlyMode")
+                appGroup.set(isExpensesOnlyMode, forKey: AppPreferences.Keys.expensesOnlyMode)
             }
             WidgetCenter.shared.reloadAllTimelines()
             // Clean incompatible state when toggling

@@ -314,16 +314,18 @@ struct OnboardingView: View {
                 selectedCurrency = currency
                 accountCurrency = currency
             }
-            if defaults.object(forKey: "expensesOnlyMode") != nil {
-                if defaults.bool(forKey: "expensesOnlyMode") {
+            // Legacy migration: only apply when BOTH keys exist together (consistent
+            // post-onboarding state). A standalone `expensesOnlyMode` key is contamination
+            // from didSet side-effects and must not override the `.fullControl` default.
+            if defaults.object(forKey: AppPreferences.Keys.expensesOnlyMode) != nil,
+               defaults.object(forKey: AppPreferences.Keys.financialMindset) != nil {
+                if defaults.bool(forKey: AppPreferences.Keys.expensesOnlyMode) {
                     selectedUsageMode = .expensesOnly
                     selectedMindset = "cashFlow"
-                } else if defaults.string(forKey: "financialMindset") == "cashFlow" {
-                    // cashFlow = separate accounts
+                } else if defaults.string(forKey: AppPreferences.Keys.financialMindset) == "cashFlow" {
                     selectedUsageMode = .fullControl
                     selectedMindset = "cashFlow"
                 } else {
-                    // patrimonial or default = single account
                     selectedUsageMode = .dayToDay
                     selectedMindset = "patrimonial"
                 }
