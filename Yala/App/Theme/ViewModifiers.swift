@@ -515,6 +515,46 @@ extension View {
     }
 }
 
+// MARK: - Groups Onboarding Sheet
+
+/// Modifier simplificado para el onboarding informativo del tab Grupos.
+/// A diferencia de YalaAI, NO encadena sheets — el CTA Step 3 ("Ir a Grupos")
+/// solo cierra el sheet; el user queda en `GroupsContainerView` con empty state.
+///
+/// `onPersistFlag` se invoca en `.complete` (CTA Step 3 "Ir a Grupos") — persiste
+/// flag y dispara seed lazy de categorías sistema. En `.close` (X topLeft) no se
+/// invoca, lo que hace que el onboarding reaparezca al próximo tap del tab.
+struct GroupsOnboardingSheetModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    let onPersistFlag: () -> Void
+
+    func body(content: Content) -> some View {
+        content.sheet(isPresented: $isPresented) {
+            GroupsOnboardingView { result in
+                switch result {
+                case .complete:
+                    onPersistFlag()
+                case .close:
+                    break
+                }
+                isPresented = false
+            }
+        }
+    }
+}
+
+extension View {
+    func groupsOnboardingSheet(
+        isPresented: Binding<Bool>,
+        onPersistFlag: @escaping () -> Void
+    ) -> some View {
+        modifier(GroupsOnboardingSheetModifier(
+            isPresented: isPresented,
+            onPersistFlag: onPersistFlag
+        ))
+    }
+}
+
 // MARK: - Dismiss Keyboard on Tap
 
 /// Global function to dismiss keyboard from anywhere

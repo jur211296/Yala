@@ -4193,7 +4193,12 @@
 "welcome.detectedData.message" = "We hebben %d accounts, %d uitgaven en %d categorieën in je iCloud gevonden. Wat doen we?";
 "welcome.detectedData.loadMyData" = "Mijn gegevens laden";
 "welcome.detectedData.startFresh" = "Opnieuw beginnen";
-"groups.member.activeCount" = "%d actieve personen";
+
+
+// MARK: FreshStart (segunda barrera)
+"welcome.freshStart.alertTitle" = "Opnieuw beginnen";
+"welcome.freshStart.alertMessage" = "We hebben bestaande gegevens op dit apparaat gevonden. Alles wissen om opnieuw te beginnen?";
+"welcome.freshStart.alertConfirm" = "Alles wissen en doorgaan";"groups.member.activeCount" = "%d actieve personen";
 "groups.member.pendingCount" = "%d openstaande verzoeken";
 "groups.card.pendingApprovalChip" = "Wacht op goedkeuring";
 "groups.card.rejectedChip" = "Verzoek geweigerd";
@@ -4318,3 +4323,27 @@
 "panel.widgetInfo.sankey.whatA" = "De route van je geld in deze periode: waar het binnenkomt (inkomsten) en waar het naartoe gaat, gegroepeerd per type behoefte. Hoe breder het lint, hoe groter het bedrag.";
 "panel.widgetInfo.sankey.howQ" = "Hoe gebruik ik dit?";
 "panel.widgetInfo.sankey.howA" = "Tik op een categorie, subcategorie of tak om de rest van het Paneel op dat traject te filteren. Tik nogmaals om het filter te verwijderen.";
+
+// MARK: GroupsOnboarding-keys
+"groups.onboarding.progressLabel" = "Stap %1$d van %2$d";
+"groups.onboarding.step1.title" = "Deel uitgaven zonder het overzicht te verliezen";
+"groups.onboarding.step1.subtitle" = "Yala laat het je direct weten wanneer iemand een uitgave aan de groep toevoegt.";
+"groups.onboarding.step1.demoMemberName" = "Sophie";
+"groups.onboarding.step1.demoGroupName" = "Vrienden";
+"groups.onboarding.step1.demoNotifTemplate" = "%1$@ heeft %2$@ toegevoegd aan de groep %3$@";
+"groups.onboarding.step1.demoBalanceLabelInitial" = "Saldo: %@";
+"groups.onboarding.step1.demoBalanceLabelDebt" = "Je bent %@ verschuldigd";
+"groups.onboarding.step1.a11yLabelTemplate" = "%1$@ heeft %2$@ toegevoegd aan de groep %3$@. Je bent nu %4$@ verschuldigd.";
+"groups.onboarding.step2.title" = "Drie stappen, geen spreadsheets";
+"groups.onboarding.step2.subtitle" = "Yala verdeelt, registreert en verrekent voor je.";
+"groups.onboarding.step2.card1.title" = "Maak groepen met je kring";
+"groups.onboarding.step2.card1.body" = "Familie, vrienden, reizen of werk. Zoveel groepen als je nodig hebt.";
+"groups.onboarding.step2.card2.title" = "Registreer uitgaven, Yala verdeelt ze";
+"groups.onboarding.step2.card2.body" = "Kies hoe elke uitgave wordt verdeeld. Yala berekent wie wat moet betalen.";
+"groups.onboarding.step2.card3.title" = "Vereffen schulden met een paar taps";
+"groups.onboarding.step2.card3.body" = "Sluit betalingen af en begin weer bij nul. Geen ruzies, geen Excel.";
+"groups.onboarding.step3.title" = "Jouw privacy staat voorop";
+"groups.onboarding.step3.subtitle" = "Alleen het noodzakelijke wordt gedeeld, niets meer.";
+"groups.onboarding.step3.point1" = "Elk lid heeft een actief iCloud-account nodig.";
+"groups.onboarding.step3.point2" = "Je persoonlijke gegevens worden niet met de groep gesynchroniseerd, alleen gedeelde uitgaven.";
+"groups.onboarding.step3.cta" = "Naar groepen";

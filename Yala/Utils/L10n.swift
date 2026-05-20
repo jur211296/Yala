@@ -2015,6 +2015,44 @@ enum L10n {
                 return formatter.string(from: NSNumber(value: amount)) ?? "\(Int(amount))"
             }
         }
+
+        // MARK: - Groups Onboarding (3 steps informativo, primer tap del tab)
+
+        enum Onboarding {
+            // Common
+            static var progressLabel: String { ls("groups.onboarding.progressLabel", comment: "") }
+
+            // Step 1 — Hero animado
+            static var step1Title: String { ls("groups.onboarding.step1.title", comment: "") }
+            static var step1Subtitle: String { ls("groups.onboarding.step1.subtitle", comment: "") }
+            static var step1DemoMemberName: String { ls("groups.onboarding.step1.demoMemberName", comment: "") }
+            static var step1DemoGroupName: String { ls("groups.onboarding.step1.demoGroupName", comment: "") }
+            /// "%1$@ agregó %2$@ al grupo %3$@" — positional para reorder por locale.
+            static var step1DemoNotifTemplate: String { ls("groups.onboarding.step1.demoNotifTemplate", comment: "") }
+            /// "Saldo: %@" — label inicial del balance demo.
+            static var step1DemoBalanceLabelInitial: String { ls("groups.onboarding.step1.demoBalanceLabelInitial", comment: "") }
+            /// "Debes %@" — label tras transición (monto positivo abs(value)).
+            static var step1DemoBalanceLabelDebt: String { ls("groups.onboarding.step1.demoBalanceLabelDebt", comment: "") }
+            /// "%1$@ agregó %2$@ al grupo %3$@. Ahora debes %4$@." — 4 placeholders positional.
+            static var step1A11yLabelTemplate: String { ls("groups.onboarding.step1.a11yLabelTemplate", comment: "") }
+
+            // Step 2 — Capabilities
+            static var step2Title: String { ls("groups.onboarding.step2.title", comment: "") }
+            static var step2Subtitle: String { ls("groups.onboarding.step2.subtitle", comment: "") }
+            static var step2Card1Title: String { ls("groups.onboarding.step2.card1.title", comment: "") }
+            static var step2Card1Body: String { ls("groups.onboarding.step2.card1.body", comment: "") }
+            static var step2Card2Title: String { ls("groups.onboarding.step2.card2.title", comment: "") }
+            static var step2Card2Body: String { ls("groups.onboarding.step2.card2.body", comment: "") }
+            static var step2Card3Title: String { ls("groups.onboarding.step2.card3.title", comment: "") }
+            static var step2Card3Body: String { ls("groups.onboarding.step2.card3.body", comment: "") }
+
+            // Step 3 — Privacy + CTA
+            static var step3Title: String { ls("groups.onboarding.step3.title", comment: "") }
+            static var step3Subtitle: String { ls("groups.onboarding.step3.subtitle", comment: "") }
+            static var step3Point1: String { ls("groups.onboarding.step3.point1", comment: "") }
+            static var step3Point2: String { ls("groups.onboarding.step3.point2", comment: "") }
+            static var step3CTA: String { ls("groups.onboarding.step3.cta", comment: "") }
+        }
     }
 
     // MARK: - AI Consent
@@ -4248,6 +4286,14 @@ enum L10n {
             }
             static var loadMyData: String { ls("welcome.detectedData.loadMyData", comment: "") }
             static var startFresh: String { ls("welcome.detectedData.startFresh", comment: "") }
+        }
+
+        // MARK: - FreshStart (segunda barrera: alert al tap "Soy nuevo" si hay data residual)
+
+        enum FreshStart {
+            static var alertTitle: String { ls("welcome.freshStart.alertTitle", comment: "") }
+            static var alertMessage: String { ls("welcome.freshStart.alertMessage", comment: "") }
+            static var alertConfirm: String { ls("welcome.freshStart.alertConfirm", comment: "") }
         }
     }
 

@@ -63,6 +63,10 @@ enum AnalyticsEvent: String {
     case yalaAIOnboardingSkipped        // tap "Saltar" topRight (steps 1-3)
     case yalaAIOnboardingDismissed      // tap "X" topLeft — flag NO se setea
     case yalaAIOnboardingTonePicked     // params: tone (normal|considerate|sarcastic), focus (balanced|saver|cautious)
+    // Groups Onboarding (3-step informativo, primer tap del tab Grupos)
+    case groupsOnboardingShown          // params: launcher (groupsTab)
+    case groupsOnboardingStepViewed     // params: step (1|2|3)
+    case groupsOnboardingCompleted      // tap CTA Step 3 "Ir a Grupos"
     // Chat → Registrar transacciones
     case chatIntentClassified           // params: intent, used_force_intent
     case chatDraftProposed              // params: count

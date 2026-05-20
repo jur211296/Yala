@@ -4189,7 +4189,12 @@
 "welcome.detectedData.message" = "Encontramos %d contas, %d gastos e %d categorias no seu iCloud. O que fazemos?";
 "welcome.detectedData.loadMyData" = "Carregar meus dados";
 "welcome.detectedData.startFresh" = "Começar do zero";
-"groups.member.activeCount" = "%d pessoas ativas";
+
+
+// MARK: FreshStart (segunda barrera)
+"welcome.freshStart.alertTitle" = "Recomeçar do zero";
+"welcome.freshStart.alertMessage" = "Detetámos dados existentes neste dispositivo. Apagar tudo para recomeçar?";
+"welcome.freshStart.alertConfirm" = "Apagar tudo e continuar";"groups.member.activeCount" = "%d pessoas ativas";
 "groups.member.pendingCount" = "%d solicitações pendentes";
 "groups.card.pendingApprovalChip" = "A aguardar aprovação";
 "groups.card.rejectedChip" = "Pedido recusado";
@@ -4314,3 +4319,27 @@
 "panel.widgetInfo.sankey.whatA" = "O percurso do teu dinheiro no período: de onde entra (receitas) e para onde vai, agrupado por tipo de necessidade. As fitas mais largas são os movimentos maiores.";
 "panel.widgetInfo.sankey.howQ" = "Como interajo?";
 "panel.widgetInfo.sankey.howA" = "Toca numa categoria, subcategoria ou ramo do fluxo para filtrar o resto do Painel por esse percurso. Toca de novo para limpar o filtro.";
+
+// MARK: GroupsOnboarding-keys
+"groups.onboarding.progressLabel" = "Passo %1$d de %2$d";
+"groups.onboarding.step1.title" = "Partilha despesas sem perder o fio à meada";
+"groups.onboarding.step1.subtitle" = "O Yala avisa-te no momento em que alguém adiciona uma despesa ao grupo.";
+"groups.onboarding.step1.demoMemberName" = "Sofia";
+"groups.onboarding.step1.demoGroupName" = "Amigos";
+"groups.onboarding.step1.demoNotifTemplate" = "%1$@ adicionou %2$@ ao grupo %3$@";
+"groups.onboarding.step1.demoBalanceLabelInitial" = "Saldo: %@";
+"groups.onboarding.step1.demoBalanceLabelDebt" = "Deves %@";
+"groups.onboarding.step1.a11yLabelTemplate" = "%1$@ adicionou %2$@ ao grupo %3$@. Agora deves %4$@.";
+"groups.onboarding.step2.title" = "Três passos, zero folhas de cálculo";
+"groups.onboarding.step2.subtitle" = "O Yala divide, regista e liquida por ti.";
+"groups.onboarding.step2.card1.title" = "Cria grupos com o teu círculo";
+"groups.onboarding.step2.card1.body" = "Família, amigos, viagens ou trabalho. Tantos grupos quantos precisares.";
+"groups.onboarding.step2.card2.title" = "Regista despesas e o Yala divide-as";
+"groups.onboarding.step2.card2.body" = "Escolhe como cada despesa se divide. O Yala calcula quem deve o quê.";
+"groups.onboarding.step2.card3.title" = "Liquida dívidas com alguns toques";
+"groups.onboarding.step2.card3.body" = "Fecha pagamentos e volta a zero. Sem discussões, sem Excel.";
+"groups.onboarding.step3.title" = "A tua privacidade em primeiro lugar";
+"groups.onboarding.step3.subtitle" = "Apenas o necessário é partilhado, mais nada.";
+"groups.onboarding.step3.point1" = "Cada membro precisa de uma conta iCloud ativa.";
+"groups.onboarding.step3.point2" = "Os teus dados pessoais não são sincronizados com o grupo, apenas as despesas partilhadas.";
+"groups.onboarding.step3.cta" = "Ir para Grupos";

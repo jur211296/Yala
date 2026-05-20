@@ -378,6 +378,17 @@ final class AppPreferences {
         }
     }
 
+    /// Onboarding informativo de la sección Grupos (3 steps). Per-device (no synced) —
+    /// cada device muestra una vez al user. Se setea con tap consciente en CTA Step 3
+    /// ("Ir a Grupos") o "Saltar" topRight. NO se setea con "X" topLeft (interrupción
+    /// accidental → reaparece al próximo tap del tab Grupos).
+    var hasShownGroupsOnboarding: Bool = false {
+        didSet {
+            guard oldValue != hasShownGroupsOnboarding else { return }
+            persistBool(hasShownGroupsOnboarding, forKey: Keys.hasShownGroupsOnboarding, synced: false)
+        }
+    }
+
     /// Coach mark del saldo al tipo de cambio actual ("Tu saldo se mueve solo").
     /// Per-device — discovery local, no propaga via NSUbiquitousKeyValueStore.
     /// Solo se setea una vez que el coach mark se mostró y fue descartado o
@@ -937,6 +948,7 @@ final class AppPreferences {
         hasCompletedOnboarding = defaults.bool(forKey: Keys.hasCompletedOnboarding)
         hasShownWelcomeChooser = defaults.bool(forKey: Keys.hasShownWelcomeChooser)
         hasShownYalaAIOnboarding = defaults.bool(forKey: Keys.hasShownYalaAIOnboarding)
+        hasShownGroupsOnboarding = defaults.bool(forKey: Keys.hasShownGroupsOnboarding)
         hasSeenTodayFXCoachMark = defaults.bool(forKey: Keys.hasSeenTodayFXCoachMark)
         lastSeenAppVersion = defaults.string(forKey: Keys.lastSeenAppVersion) ?? ""
         expensesOnlyMode = defaults.bool(forKey: Keys.expensesOnlyMode)
@@ -1114,6 +1126,7 @@ final class AppPreferences {
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
         static let hasShownWelcomeChooser = "hasShownWelcomeChooser"
         static let hasShownYalaAIOnboarding = "hasShownYalaAIOnboarding"
+        static let hasShownGroupsOnboarding = "hasShownGroupsOnboarding"
         static let hasSeenTodayFXCoachMark = "hasSeenTodayFXCoachMark"
         static let lastSeenAppVersion = "lastSeenAppVersion"
         nonisolated static let expensesOnlyMode = "expensesOnlyMode"  // accedida cross-process desde intents

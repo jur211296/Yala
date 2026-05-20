@@ -348,7 +348,12 @@
 "welcome.detectedData.message" = "Encontramos %d cuentas, %d gastos y %d categorías guardados en tu iCloud. ¿Qué hacemos?";
 "welcome.detectedData.loadMyData" = "Cargá mis datos";
 "welcome.detectedData.startFresh" = "Empezar desde cero";
-"groups.member.activeCount" = "%d personas activas";
+
+
+// MARK: FreshStart (segunda barrera)
+"welcome.freshStart.alertTitle" = "Empezar desde cero";
+"welcome.freshStart.alertMessage" = "Detectamos datos previos en tu dispositivo. ¿Borrar todo para empezar como nuevo?";
+"welcome.freshStart.alertConfirm" = "Borrar todo y continuar";"groups.member.activeCount" = "%d personas activas";
 "groups.member.pendingCount" = "%d solicitudes pendientes";
 "groups.stats.assignCategoriesHint" = "Asigná categorías a tus gastos para ver el desglose por tipo.";
 
@@ -442,3 +447,11 @@
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.howA" = "Tocá M para comparar contra el mes anterior o A contra el año anterior. La elección se aplica también a las variaciones del resto del Panel.";
 "panel.widgetInfo.sankey.howA" = "Tocá una categoría, subcategoría o rama del flujo para filtrar el resto del Panel por ese trayecto. Volvé a tocar para quitar el filtro.";
+
+// MARK: GroupsOnboarding-keys
+"groups.onboarding.step1.subtitle" = "Yala te avisa al instante cuando alguien suma un gasto al grupo.";
+"groups.onboarding.step1.demoBalanceLabelDebt" = "Debés %@";
+"groups.onboarding.step1.a11yLabelTemplate" = "%1$@ agregó %2$@ al grupo %3$@. Ahora debés %4$@.";
+"groups.onboarding.step2.card1.body" = "Familia, amigos, viajes o trabajo. Tantos grupos como necesités.";
+"groups.onboarding.step2.card2.body" = "Elegí cómo se divide cada gasto. Yala calcula quién debe qué.";
+"groups.onboarding.step2.card3.body" = "Saldá pagos y dejá todo en cero. Sin discusiones, sin Excel.";

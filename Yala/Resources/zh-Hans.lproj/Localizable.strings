@@ -4193,7 +4193,12 @@
 "welcome.detectedData.message" = "我们在你的 iCloud 中找到了 %d 个账户、%d 笔支出和 %d 个分类。你想怎么做?";
 "welcome.detectedData.loadMyData" = "加载我的数据";
 "welcome.detectedData.startFresh" = "从零开始";
-"groups.member.activeCount" = "%d 位活跃成员";
+
+
+// MARK: FreshStart (segunda barrera)
+"welcome.freshStart.alertTitle" = "重新开始";
+"welcome.freshStart.alertMessage" = "我们在此设备上检测到已有数据。要全部清除并重新开始吗？";
+"welcome.freshStart.alertConfirm" = "全部清除并继续";"groups.member.activeCount" = "%d 位活跃成员";
 "groups.member.pendingCount" = "%d 个待处理请求";
 "groups.card.pendingApprovalChip" = "等待批准";
 "groups.card.rejectedChip" = "申请被拒绝";
@@ -4318,3 +4323,27 @@
 "panel.widgetInfo.sankey.whatA" = "你这段时间的资金路径：从哪里进来（收入），又流向哪里，按需求类型分组。色带越宽，金额越大。";
 "panel.widgetInfo.sankey.howQ" = "如何互动？";
 "panel.widgetInfo.sankey.howA" = "点一个分类、子分类或流向分支，就能按这个路径筛选面板。再点一次取消筛选。";
+
+// MARK: GroupsOnboarding-keys
+"groups.onboarding.progressLabel" = "第 %1$d 步,共 %2$d 步";
+"groups.onboarding.step1.title" = "轻松共享开支,清清楚楚";
+"groups.onboarding.step1.subtitle" = "群组中有人新增开支时,Yala 会立即通知你。";
+"groups.onboarding.step1.demoMemberName" = "苏菲";
+"groups.onboarding.step1.demoGroupName" = "朋友";
+"groups.onboarding.step1.demoNotifTemplate" = "%1$@ 在群组 %3$@ 中添加了 %2$@";
+"groups.onboarding.step1.demoBalanceLabelInitial" = "余额: %@";
+"groups.onboarding.step1.demoBalanceLabelDebt" = "你欠 %@";
+"groups.onboarding.step1.a11yLabelTemplate" = "%1$@ 在群组 %3$@ 中添加了 %2$@。你现在欠 %4$@。";
+"groups.onboarding.step2.title" = "三步搞定,告别表格";
+"groups.onboarding.step2.subtitle" = "Yala 帮你分摊、记录并结算。";
+"groups.onboarding.step2.card1.title" = "与你的圈子创建群组";
+"groups.onboarding.step2.card1.body" = "家人、朋友、旅行或工作。想建多少群组就建多少。";
+"groups.onboarding.step2.card2.title" = "记录开支,Yala 自动分摊";
+"groups.onboarding.step2.card2.body" = "选择每笔开支的分摊方式。Yala 算出谁该付多少。";
+"groups.onboarding.step2.card3.title" = "几下点击即可结清债务";
+"groups.onboarding.step2.card3.body" = "完成付款,清零开始。不用争论,不用 Excel。";
+"groups.onboarding.step3.title" = "隐私优先";
+"groups.onboarding.step3.subtitle" = "只共享必要内容,不多不少。";
+"groups.onboarding.step3.point1" = "每位成员都需要一个有效的 iCloud 账户。";
+"groups.onboarding.step3.point2" = "你的个人数据不会与群组同步,只有共享开支会同步。";
+"groups.onboarding.step3.cta" = "前往群组";

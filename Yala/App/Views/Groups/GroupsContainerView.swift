@@ -25,6 +25,7 @@ struct GroupsContainerView: View {
     @State private var showNotificationPrompt = false
     @State private var showPermissionDeniedAlert = false
     @State private var showNudgeBanner = false
+    @State private var showGroupsOnboarding = false
     /// Drives el alert "¿Salir del grupo?" cuando un current user `.rejected`
     /// toca su card. Single-modal global vs N alerts montados por card.
     @State private var rejectedGroupPendingLeave: SplitGroup?
@@ -131,7 +132,15 @@ struct GroupsContainerView: View {
             .onAppear {
                 viewModel.setContext(modelContext)
                 evaluateNudge()
+                evaluateGroupsOnboarding()
             }
+            .groupsOnboardingSheet(
+                isPresented: $showGroupsOnboarding,
+                onPersistFlag: {
+                    seedSystemGroupCategoriesIfNeeded(in: modelContext)
+                    appPreferences.hasShownGroupsOnboarding = true
+                }
+            )
             .onDisappear {
                 showNudgeBanner = false
             }
@@ -224,6 +233,17 @@ struct GroupsContainerView: View {
             withAnimation(.easeOut(duration: 0.3)) {
                 showNudgeBanner = true
             }
+        }
+    }
+
+    private func evaluateGroupsOnboarding() {
+        let shouldShow = GroupsOnboardingLogic.shouldShow(
+            hasShownOnboarding: appPreferences.hasShownGroupsOnboarding,
+            onboardingMode: sessionState.onboardingMode,
+            hasPendingGroupDeeplink: sessionState.pendingGroupID != nil
+        )
+        if shouldShow {
+            showGroupsOnboarding = true
         }
     }
 

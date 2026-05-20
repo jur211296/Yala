@@ -4193,7 +4193,12 @@
 "welcome.detectedData.message" = "iCloudに%d件のアカウント、%d件の支出、%d件のカテゴリが保存されています。どうしますか?";
 "welcome.detectedData.loadMyData" = "データを読み込む";
 "welcome.detectedData.startFresh" = "ゼロから始める";
-"groups.member.activeCount" = "%d人のアクティブメンバー";
+
+
+// MARK: FreshStart (segunda barrera)
+"welcome.freshStart.alertTitle" = "最初から始める";
+"welcome.freshStart.alertMessage" = "このデバイスに既存のデータがあります。すべて削除して最初から始めますか？";
+"welcome.freshStart.alertConfirm" = "すべて削除して続ける";"groups.member.activeCount" = "%d人のアクティブメンバー";
 "groups.member.pendingCount" = "%d件の保留中のリクエスト";
 "groups.card.pendingApprovalChip" = "承認待ち";
 "groups.card.rejectedChip" = "リクエスト却下";
@@ -4318,3 +4323,27 @@
 "panel.widgetInfo.sankey.whatA" = "期間中のお金の経路です。どこから入って（収入）、どこへ向かうかを必要度別にまとめています。帯が太いほど大きな金額です。";
 "panel.widgetInfo.sankey.howQ" = "どう操作しますか？";
 "panel.widgetInfo.sankey.howA" = "カテゴリ・サブカテゴリ・流れの枝をタップすると、パネル全体をその経路で絞り込めます。もう一度タップで解除できます。";
+
+// MARK: GroupsOnboarding-keys
+"groups.onboarding.progressLabel" = "%1$d / %2$d ステップ";
+"groups.onboarding.step1.title" = "支払いをすっきり共有";
+"groups.onboarding.step1.subtitle" = "誰かがグループに支払いを追加すると、Yalaがすぐにお知らせします。";
+"groups.onboarding.step1.demoMemberName" = "さくら";
+"groups.onboarding.step1.demoGroupName" = "友達";
+"groups.onboarding.step1.demoNotifTemplate" = "%1$@さんがグループ「%3$@」に%2$@を追加しました";
+"groups.onboarding.step1.demoBalanceLabelInitial" = "残高: %@";
+"groups.onboarding.step1.demoBalanceLabelDebt" = "あなたの借り: %@";
+"groups.onboarding.step1.a11yLabelTemplate" = "%1$@さんがグループ「%3$@」に%2$@を追加しました。あなたの借りは%4$@になりました。";
+"groups.onboarding.step2.title" = "3ステップで完了。表計算は不要";
+"groups.onboarding.step2.subtitle" = "Yalaが分割、記録、精算をすべて行います。";
+"groups.onboarding.step2.card1.title" = "仲間とグループを作成";
+"groups.onboarding.step2.card1.body" = "家族、友達、旅行、仕事。必要なだけグループを作れます。";
+"groups.onboarding.step2.card2.title" = "支払いを記録すればYalaが分割";
+"groups.onboarding.step2.card2.body" = "分け方を選ぶだけ。Yalaが誰がいくら払うかを計算します。";
+"groups.onboarding.step2.card3.title" = "数タップで精算";
+"groups.onboarding.step2.card3.body" = "支払いを完了してゼロに戻します。議論もExcelも不要です。";
+"groups.onboarding.step3.title" = "プライバシーを第一に";
+"groups.onboarding.step3.subtitle" = "必要な情報だけを共有します。";
+"groups.onboarding.step3.point1" = "メンバー全員にアクティブなiCloudアカウントが必要です。";
+"groups.onboarding.step3.point2" = "個人データはグループと同期されません。共有された支払いのみが同期されます。";
+"groups.onboarding.step3.cta" = "グループへ";
