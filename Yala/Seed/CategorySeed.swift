@@ -483,7 +483,7 @@ private func systemGroupCategoryDefinitions() -> [SystemCategoryDefinition] {
             name: L10n.Category.System.groupCollections,
             colorHex: "#10B981",
             isIncome: true,
-            iconName: "person.2.crop.circle.fill.badge.plus",
+            iconName: "tray.and.arrow.down.fill",
             role: GroupBridgeSystemRole.categoryGroupCollections,
             subcategories: [
                 SystemSubcategoryDefinition(
@@ -549,6 +549,11 @@ func seedSystemGroupCategoriesIfNeeded(
                 // Asegurar flag isSystem aunque ya exista (recuperación de inconsistencias)
                 if !category.isSystem {
                     category.isSystem = true
+                }
+                // Backfill defensive: re-aplica el iconName canónico si difiere del seed
+                // (necesario para users con la cat creada con un SF Symbol obsoleto).
+                if category.iconName != definition.iconName {
+                    category.iconName = definition.iconName
                 }
             } else {
                 category = Category(

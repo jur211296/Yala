@@ -101,7 +101,7 @@ struct GroupsContainerView: View {
                 }
 
                 // FAB — new group
-                if !viewModel.activeGroups.isEmpty {
+                if !viewModel.activeGroups.isEmpty || !viewModel.archivedGroups.isEmpty {
                     newGroupFAB
                 }
             }
