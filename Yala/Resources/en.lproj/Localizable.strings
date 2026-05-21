@@ -3189,6 +3189,9 @@
 "groups.settings.deleteGroupFinalConfirm" = "The group and all its data will be permanently deleted for all members. This action cannot be undone.";
 "groups.settings.deleteGroupDisabledHint" = "To delete the group, first remove all expenses or all other members.";
 "groups.settings.archive" = "Archive group";
+"groups.settings.archiveWithDebtWarning" = "There are outstanding balances between members. If you archive, the debts remain. Continue?";
+"groups.settings.archiveConfirm" = "Archive this group? Expenses and balances are preserved.";
+"groups.settings.generatingInvite" = "Generating link…";
 "groups.settings.unarchive" = "Unarchive group";
 "groups.settings.archiveHint" = "Expenses and balances are preserved. You can unarchive anytime.";
 "groups.settings.showArchived" = "Show archived";

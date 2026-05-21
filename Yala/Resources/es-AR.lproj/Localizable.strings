@@ -147,6 +147,7 @@
 "groups.settings.leaveGroupWithDebtWarning" = "Vas a salir del grupo con un saldo pendiente. La otra parte va a seguir viendo esa deuda como pendiente. ¿Continuás?";
 "groups.member.removeWithDebtWarning" = "Esta persona tiene un saldo pendiente en el grupo. Si la eliminás, la deuda va a quedar abierta. ¿Continuás?";
 "groups.settings.archiveHint" = "Los gastos y balances se conservan. Podés desarchivar cuando quieras.";
+"groups.settings.archiveWithDebtWarning" = "Hay deudas pendientes entre miembros. Si archivás, las deudas siguen vivas. ¿Continuás?";
 "milestone.message10" = "Estás creando un gran hábito. Con Yala Pro podés dictar tus gastos con la voz.";
 "milestone.message50" = "¡Impresionante! Con Insights AI podés descubrir patrones ocultos en tus gastos.";
 "milestone.message100" = "Sos un experto en finanzas. Desbloquea la experiencia completa con Yala Pro.";

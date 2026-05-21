@@ -3143,6 +3143,9 @@
 "groups.settings.deleteGroupFinalConfirm" = "グループとそのすべてのデータが、すべてのメンバーから完全に削除されます。この操作は取り消せません。";
 "groups.settings.deleteGroupDisabledHint" = "グループを削除するには、まず支出をすべて削除するか、他のメンバーをすべて削除してください。";
 "groups.settings.archive" = "グループをアーカイブ";
+"groups.settings.archiveWithDebtWarning" = "メンバー間に未払いの残高があります。アーカイブしても債務は残ります。続行しますか？";
+"groups.settings.archiveConfirm" = "このグループをアーカイブしますか？支出と残高は保持されます。";
+"groups.settings.generatingInvite" = "リンクを生成中…";
 "groups.settings.unarchive" = "アーカイブ解除";
 "groups.settings.archiveHint" = "支出と残高は保持されます。いつでもアーカイブ解除できます。";
 "groups.settings.showArchived" = "アーカイブ済みを表示";

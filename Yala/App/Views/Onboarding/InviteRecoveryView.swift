@@ -30,99 +30,102 @@ struct InviteRecoveryView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
 
-            ScrollView {
-                VStack(spacing: DS.Spacing.xl) {
-                    Spacer(minLength: DS.Spacing.xl)
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xl) {
+                        Spacer(minLength: DS.Spacing.xl)
 
-                    Image(systemName: "link.circle.fill")
-                        .font(.system(size: 56))
-                        .foregroundStyle(.green)
+                        Image(systemName: "link.circle.fill")
+                            .font(.system(size: 56))
+                            .foregroundStyle(.green)
 
-                    VStack(spacing: DS.Spacing.sm) {
-                        Text(L10n.Welcome.Invite.title)
-                            .font(DS.Typography.title2)
-                            .foregroundStyle(.primary)
-                            .multilineTextAlignment(.center)
-                        Text(L10n.Welcome.Invite.body)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, DS.Spacing.lg)
-                    }
-
-                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                        TextField(L10n.Welcome.Invite.placeholder, text: $linkText, axis: .vertical)
-                            .textFieldStyle(.plain)
-                            .lineLimit(2...4)
-                            .focused($inputFocused)
-                            .keyboardType(.URL)
-                            .textContentType(.URL)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                            .padding(DS.Spacing.md)
-                            .background(
-                                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                                    .fill(.thCard)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                                    .stroke(
-                                        validationError != nil
-                                            ? DS.Semantic.errorForeground.opacity(0.6)
-                                            : Color.black.opacity(0.06),
-                                        lineWidth: 1
-                                    )
-                            )
-                            .onChange(of: linkText) { _, newValue in
-                                updateValidation(for: newValue)
-                            }
-
-                        if let error = validationError {
-                            Text(error)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(DS.Semantic.errorForeground)
-                                .transition(.opacity)
+                        VStack(spacing: DS.Spacing.sm) {
+                            Text(L10n.Welcome.Invite.title)
+                                .font(DS.Typography.title2)
+                                .foregroundStyle(.primary)
+                                .multilineTextAlignment(.center)
+                            Text(L10n.Welcome.Invite.body)
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, DS.Spacing.lg)
                         }
+
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            TextField(L10n.Welcome.Invite.placeholder, text: $linkText, axis: .vertical)
+                                .textFieldStyle(.plain)
+                                .lineLimit(2...5)
+                                .focused($inputFocused)
+                                .keyboardType(.URL)
+                                .textContentType(.URL)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                                .padding(DS.Spacing.md)
+                                .background(
+                                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                                        .fill(.thCard)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                                        .stroke(
+                                            validationError != nil
+                                                ? DS.Semantic.errorForeground.opacity(0.6)
+                                                : Color.black.opacity(0.06),
+                                            lineWidth: 1
+                                        )
+                                )
+                                .onChange(of: linkText) { _, newValue in
+                                    updateValidation(for: newValue)
+                                }
+
+                            if let error = validationError {
+                                Text(error)
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(DS.Semantic.errorForeground)
+                                    .transition(.opacity)
+                            }
+                        }
+                        .padding(.horizontal, DS.Spacing.lg)
+
+                        Spacer(minLength: DS.Spacing.lg)
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
+                }
+                .dismissKeyboardOnTap()
 
-                    Spacer(minLength: DS.Spacing.lg)
+                VStack(spacing: DS.Spacing.sm) {
+                    Spacer()
+                    Button {
+                        guard let url = validatedURL else { return }
+                        DS.Haptic.success()
+                        onSuccess(url)
+                    } label: {
+                        Text(L10n.Welcome.Invite.join)
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.md)
+                            .background(validatedURL != nil ? theme.accent : theme.accent.opacity(0.4))
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                    }
+                    .disabled(validatedURL == nil)
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.lg)
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                        onBack()
+                    }
                 }
             }
-            .dismissKeyboardOnTap()
-
-            VStack(spacing: DS.Spacing.sm) {
-                Spacer()
-                Button {
-                    guard let url = validatedURL else { return }
-                    DS.Haptic.success()
-                    onSuccess(url)
-                } label: {
-                    Text(L10n.Welcome.Invite.join)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.md)
-                        .background(validatedURL != nil ? theme.accent : theme.accent.opacity(0.4))
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                }
-                .disabled(validatedURL == nil)
-
-                Button(action: onBack) {
-                    Text(L10n.Welcome.Invite.back)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.secondary)
-                }
+            .task {
+                autoFillFromClipboardIfNeeded()
+                inputFocused = true
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.bottom, DS.Spacing.lg)
-        }
-        .task {
-            autoFillFromClipboardIfNeeded()
-            inputFocused = true
         }
     }
 

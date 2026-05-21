@@ -3143,6 +3143,9 @@
 "groups.settings.deleteGroupFinalConfirm" = "De groep en alle gegevens worden voor alle leden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.";
 "groups.settings.deleteGroupDisabledHint" = "Om de groep te verwijderen, verwijder eerst alle uitgaven of alle andere leden.";
 "groups.settings.archive" = "Groep archiveren";
+"groups.settings.archiveWithDebtWarning" = "Er zijn openstaande saldo's tussen leden. Als je archiveert, blijven de schulden bestaan. Doorgaan?";
+"groups.settings.archiveConfirm" = "Deze groep archiveren? Uitgaven en saldo's blijven behouden.";
+"groups.settings.generatingInvite" = "Link wordt aangemaakt…";
 "groups.settings.unarchive" = "Groep dearchiveren";
 "groups.settings.archiveHint" = "Uitgaven en saldi blijven behouden. Je kunt altijd weer dearchiveren.";
 "groups.settings.showArchived" = "Gearchiveerde tonen";

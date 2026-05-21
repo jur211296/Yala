@@ -3139,6 +3139,9 @@
 "groups.settings.deleteGroupFinalConfirm" = "O grupo e todos os seus dados serão excluídos permanentemente para todos os membros. Esta ação não pode ser desfeita.";
 "groups.settings.deleteGroupDisabledHint" = "Para excluir o grupo, primeiro remova todas as despesas ou todos os outros membros.";
 "groups.settings.archive" = "Arquivar grupo";
+"groups.settings.archiveWithDebtWarning" = "Há saldos pendentes entre membros. Se arquivares, as dívidas permanecem. Continuar?";
+"groups.settings.archiveConfirm" = "Arquivar este grupo? Despesas e saldos serão mantidos.";
+"groups.settings.generatingInvite" = "Gerando link…";
 "groups.settings.unarchive" = "Desarquivar grupo";
 "groups.settings.archiveHint" = "As despesas e saldos são preservados. Você pode desarquivar quando quiser.";
 "groups.settings.showArchived" = "Ver arquivados";

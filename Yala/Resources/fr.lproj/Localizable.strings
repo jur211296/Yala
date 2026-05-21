@@ -3140,6 +3140,9 @@
 "groups.settings.deleteGroupFinalConfirm" = "Le groupe et toutes ses données seront définitivement supprimés pour tous les membres. Cette action est irréversible.";
 "groups.settings.deleteGroupDisabledHint" = "Pour supprimer le groupe, supprimez d'abord toutes les dépenses ou tous les autres membres.";
 "groups.settings.archive" = "Archiver le groupe";
+"groups.settings.archiveWithDebtWarning" = "Il y a des soldes en attente entre membres. Si vous archivez, les dettes restent. Continuer ?";
+"groups.settings.archiveConfirm" = "Archiver ce groupe ? Les dépenses et soldes sont conservés.";
+"groups.settings.generatingInvite" = "Génération du lien…";
 "groups.settings.unarchive" = "Désarchiver le groupe";
 "groups.settings.archiveHint" = "Les dépenses et soldes sont conservés. Vous pouvez désarchiver à tout moment.";
 "groups.settings.showArchived" = "Voir archivés";

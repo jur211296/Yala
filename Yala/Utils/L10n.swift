@@ -1769,6 +1769,9 @@ enum L10n {
             static var archive: String { ls("groups.settings.archive", comment: "") }
             static var unarchive: String { ls("groups.settings.unarchive", comment: "") }
             static var archiveHint: String { ls("groups.settings.archiveHint", comment: "") }
+            static var archiveConfirm: String { ls("groups.settings.archiveConfirm", comment: "") }
+            static var archiveWithDebtWarning: String { ls("groups.settings.archiveWithDebtWarning", comment: "") }
+            static var generatingInvite: String { ls("groups.settings.generatingInvite", comment: "") }
             static var options: String { ls("groups.settings.options", comment: "") }
             static var info: String { ls("groups.settings.info", comment: "") }
             static var showArchived: String { ls("groups.settings.showArchived", comment: "") }

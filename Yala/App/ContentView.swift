@@ -231,9 +231,7 @@ struct ContentView: View {
                 },
                 onBack: {
                     // Sprint 2.1: vuelve al WelcomeFlow en step .chooser (donde estaba).
-                    showInviteRecovery = false
-                    welcomeFlowInitialStep = .chooser
-                    showWelcomeFlow = true
+                    returnToWelcomeChooser(dismissing: $showInviteRecovery)
                 }
             )
             .environment(SessionState.shared)
@@ -262,6 +260,9 @@ struct ContentView: View {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
                     }
+                },
+                onBack: {
+                    returnToWelcomeChooser(dismissing: $showWelcomeRestore)
                 }
             )
             .environment(SessionState.shared)
@@ -421,6 +422,14 @@ struct ContentView: View {
             guard hasCompletedOnboarding else { return }
             AppRouter.shared.enqueue(.iCloudMismatch)
         }
+    }
+
+    /// Cierra el sub-flow del Welcome (Rama B o C) y devuelve al user al Chooser.
+    /// Usado por callbacks `onBack` de `InviteRecoveryView` y `WelcomeRestoreView`.
+    private func returnToWelcomeChooser(dismissing flag: Binding<Bool>) {
+        flag.wrappedValue = false
+        welcomeFlowInitialStep = .chooser
+        showWelcomeFlow = true
     }
 
     private func dismissSplash() {

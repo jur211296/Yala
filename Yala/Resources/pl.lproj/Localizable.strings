@@ -3143,6 +3143,9 @@
 "groups.settings.deleteGroupFinalConfirm" = "Grupa i wszystkie jej dane zostaną trwale usunięte u wszystkich członków. Tej operacji nie można cofnąć.";
 "groups.settings.deleteGroupDisabledHint" = "Aby usunąć grupę, najpierw usuń wszystkie wydatki lub wszystkich pozostałych członków.";
 "groups.settings.archive" = "Zarchiwizuj grupę";
+"groups.settings.archiveWithDebtWarning" = "Istnieją zaległe salda między członkami. Po zarchiwizowaniu długi pozostają. Kontynuować?";
+"groups.settings.archiveConfirm" = "Zarchiwizować tę grupę? Wydatki i salda zostaną zachowane.";
+"groups.settings.generatingInvite" = "Generowanie linku…";
 "groups.settings.unarchive" = "Przywróć z archiwum";
 "groups.settings.archiveHint" = "Wydatki i salda są zachowane. Możesz przywrócić w każdej chwili.";
 "groups.settings.showArchived" = "Pokaż zarchiwizowane";

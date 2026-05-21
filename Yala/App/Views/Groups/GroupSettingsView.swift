@@ -39,6 +39,8 @@ struct GroupSettingsView: View {
     @State private var showCurrencyPicker: Bool = false
     @State private var defaultSplitType: SplitType = .equal
 
+    @State private var showArchiveConfirm = false
+
     // Leave group
     @State private var showLeaveGroupConfirm = false
     @State private var isLeavingGroup = false
@@ -137,6 +139,21 @@ struct GroupSettingsView: View {
                     Text(L10n.Groups.Settings.leaveGroupWithDebtWarning)
                 } else {
                     Text(L10n.Groups.Settings.leaveGroupConfirm)
+                }
+            }
+            .confirmationDialog(
+                L10n.Groups.Settings.archive,
+                isPresented: $showArchiveConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Groups.Settings.archive, role: .destructive) {
+                    performArchiveToggle(isArchiving: true)
+                }
+            } message: {
+                if anyMemberHasOutstandingBalance {
+                    Text(L10n.Groups.Settings.archiveWithDebtWarning)
+                } else {
+                    Text(L10n.Groups.Settings.archiveConfirm)
                 }
             }
             .alert(L10n.Common.error, isPresented: $showLeaveError) {
@@ -282,6 +299,7 @@ struct GroupSettingsView: View {
                 if group.isOwner && viewModel.isCurrentUserAdmin {
                     Divider()
                     Button {
+                        DS.Haptic.light()
                         Task { await createShareLink() }
                     } label: {
                         HStack(spacing: DS.Spacing.md) {
@@ -289,7 +307,7 @@ struct GroupSettingsView: View {
                                 .font(DS.Typography.title2)
                                 .foregroundStyle(.thAccent)
 
-                            Text(L10n.Groups.Settings.invite)
+                            Text(isCreatingShare ? L10n.Groups.Settings.generatingInvite : L10n.Groups.Settings.invite)
                                 .font(DS.Typography.body)
                                 .foregroundStyle(.thAccent)
 
@@ -532,6 +550,12 @@ struct GroupSettingsView: View {
         return hasNonZeroBalance(for: current.id.uuidString)
     }
 
+    /// Alcance global: cualquier miembro con balance pendiente. Cubre cross-currency
+    /// automáticamente porque `MemberBalance` tiene una entry por memberID×currencyCode.
+    private var anyMemberHasOutstandingBalance: Bool {
+        viewModel.balances.contains { abs($0.netBalance) > 0.01 }
+    }
+
     private func leaveGroup() async {
         guard !isLeavingGroup else { return }
         isLeavingGroup = true
@@ -641,10 +665,18 @@ struct GroupSettingsView: View {
     }
 
     private func toggleArchive() {
+        let willArchive = !group.isArchived
+        if willArchive && anyMemberHasOutstandingBalance {
+            showArchiveConfirm = true
+            return
+        }
+        performArchiveToggle(isArchiving: willArchive)
+    }
+
+    private func performArchiveToggle(isArchiving: Bool) {
         do {
-            let willArchive = !group.isArchived
-            try GroupService.shared.setArchived(group, isArchived: willArchive)
-            if willArchive { TelemetryService.track(.groupArchived) }
+            try GroupService.shared.setArchived(group, isArchived: isArchiving)
+            if isArchiving { TelemetryService.track(.groupArchived) }
             DS.Haptic.success()
             viewModel.loadData()
             if group.isArchived {

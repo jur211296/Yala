@@ -25,49 +25,84 @@ struct WelcomeRestoreView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var state: ViewState = .searching
     @State private var searchTask: Task<Void, Never>?
     @State private var showStartFreshConfirm: Bool = false
+    @State private var refreshRotation: Double = 0
 
     var onContinueWithSummary: (ICloudAccountSummary) -> Void
     var onCompleteSkipAll: () -> Void
     var onStartFresh: () -> Void
     var onOpenSettings: () -> Void
+    var onBack: () -> Void
+
+    /// Computed: `if case` no es válido dentro de `ToolbarItem` content closure.
+    private var showRefreshToolbar: Bool {
+        switch state {
+        case .notFound, .error: return true
+        default: return false
+        }
+    }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
+        NavigationStack {
+            ZStack {
+                PanelBackgroundView()
 
-            switch state {
-            case .searching:
-                searchingView
-            case .found(let summary):
-                foundView(summary: summary)
-            case .notFound:
-                notFoundView
-            case .iCloudDisabled:
-                iCloudDisabledView
-            case .error:
-                errorView
+                switch state {
+                case .searching:
+                    searchingView
+                case .found(let summary):
+                    foundView(summary: summary)
+                case .notFound:
+                    notFoundView
+                case .iCloudDisabled:
+                    iCloudDisabledView
+                case .error:
+                    errorView
+                }
             }
-        }
-        .task { startSearch() }
-        .onDisappear {
-            searchTask?.cancel()
-            searchTask = nil
-        }
-        .confirmationDialog(
-            L10n.Welcome.Restore.startFreshConfirmTitle,
-            isPresented: $showStartFreshConfirm,
-            titleVisibility: .visible
-        ) {
-            Button(L10n.Welcome.Restore.startFreshConfirmConfirm, role: .destructive) {
-                onStartFresh()
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                        onBack()
+                    }
+                }
+                if showRefreshToolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            dsWithAnimation(reduceMotion, .easeInOut(duration: 0.6)) {
+                                refreshRotation += 360
+                            }
+                            state = .searching
+                            startSearch()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .rotationEffect(.degrees(refreshRotation))
+                        }
+                        .accessibilityLabel(L10n.Welcome.Restore.retry)
+                    }
+                }
             }
-            Button(L10n.Welcome.Restore.startFreshConfirmCancel, role: .cancel) {}
-        } message: {
-            Text(L10n.Welcome.Restore.startFreshConfirmBody)
+            .task { startSearch() }
+            .onDisappear {
+                searchTask?.cancel()
+                searchTask = nil
+            }
+            .confirmationDialog(
+                L10n.Welcome.Restore.startFreshConfirmTitle,
+                isPresented: $showStartFreshConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Welcome.Restore.startFreshConfirmConfirm, role: .destructive) {
+                    onStartFresh()
+                }
+                Button(L10n.Welcome.Restore.startFreshConfirmCancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Welcome.Restore.startFreshConfirmBody)
+            }
         }
     }
 
@@ -285,9 +320,7 @@ struct WelcomeRestoreView: View {
             title: L10n.Welcome.Restore.notFoundTitle,
             body: L10n.Welcome.Restore.notFoundBody,
             primaryTitle: L10n.Welcome.Restore.startFresh,
-            primaryAction: onStartFresh,
-            secondaryTitle: L10n.Welcome.Restore.retry,
-            secondaryAction: { state = .searching; startSearch() }
+            primaryAction: onStartFresh
         )
     }
 
@@ -311,9 +344,7 @@ struct WelcomeRestoreView: View {
             title: L10n.Welcome.Restore.errorTitle,
             body: L10n.Welcome.Restore.errorBody,
             primaryTitle: L10n.Welcome.Restore.retry,
-            primaryAction: { state = .searching; startSearch() },
-            secondaryTitle: L10n.Welcome.Restore.startFresh,
-            secondaryAction: onStartFresh
+            primaryAction: { state = .searching; startSearch() }
         )
     }
 
@@ -326,8 +357,8 @@ struct WelcomeRestoreView: View {
         body bodyText: String,
         primaryTitle: String,
         primaryAction: @escaping () -> Void,
-        secondaryTitle: String,
-        secondaryAction: @escaping () -> Void
+        secondaryTitle: String? = nil,
+        secondaryAction: (() -> Void)? = nil
     ) -> some View {
         VStack(spacing: DS.Spacing.xl) {
             Spacer()
@@ -356,10 +387,12 @@ struct WelcomeRestoreView: View {
                         .background(theme.accent)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
                 }
-                Button(action: secondaryAction) {
-                    Text(secondaryTitle)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.secondary)
+                if let secondaryTitle, let secondaryAction {
+                    Button(action: secondaryAction) {
+                        Text(secondaryTitle)
+                            .font(DS.Typography.label)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)

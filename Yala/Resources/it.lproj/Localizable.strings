@@ -3141,6 +3141,9 @@
 "groups.settings.deleteGroupFinalConfirm" = "Il gruppo e tutti i suoi dati verranno eliminati permanentemente per tutti i membri. Questa azione non può essere annullata.";
 "groups.settings.deleteGroupDisabledHint" = "Per eliminare il gruppo, rimuovi prima tutte le spese o tutti gli altri membri.";
 "groups.settings.archive" = "Archivia gruppo";
+"groups.settings.archiveWithDebtWarning" = "Ci sono saldi in sospeso tra i membri. Se archivi, i debiti restano attivi. Continuare?";
+"groups.settings.archiveConfirm" = "Archiviare questo gruppo? Le spese e i saldi vengono conservati.";
+"groups.settings.generatingInvite" = "Generazione del link…";
 "groups.settings.unarchive" = "Ripristina gruppo";
 "groups.settings.archiveHint" = "Le spese e i saldi vengono conservati. Puoi ripristinare in qualsiasi momento.";
 "groups.settings.showArchived" = "Mostra archiviati";

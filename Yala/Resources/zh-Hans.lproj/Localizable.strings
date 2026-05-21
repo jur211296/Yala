@@ -3143,6 +3143,9 @@
 "groups.settings.deleteGroupFinalConfirm" = "群组及其所有数据将对所有成员永久删除。此操作无法撤销。";
 "groups.settings.deleteGroupDisabledHint" = "要删除群组,请先移除所有支出或所有其他成员。";
 "groups.settings.archive" = "归档群组";
+"groups.settings.archiveWithDebtWarning" = "成员之间存在未结余额。归档后债务仍然存在。继续吗？";
+"groups.settings.archiveConfirm" = "归档此群组吗？支出和余额将保留。";
+"groups.settings.generatingInvite" = "正在生成链接…";
 "groups.settings.unarchive" = "取消归档";
 "groups.settings.archiveHint" = "支出和余额会保留。你随时可以取消归档。";
 "groups.settings.showArchived" = "显示已归档";
