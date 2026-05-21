@@ -3125,7 +3125,7 @@
 "groups.form.simplifyDebts" = "简化债务";
 "groups.form.simplifyDebtsHint" = "减少成员间所需的付款次数";
 "groups.form.showDebtsInSingleCurrency" = "债务用单一货币";
-"groups.form.showDebtsInSingleCurrencyHint" = "把所有余额转换为首选货币";
+"groups.form.showDebtsInSingleCurrencyHint" = "按当前汇率把其他货币的支出转换。";
 "groups.form.defaultSplitType" = "默认分摊";
 "groups.form.membersCanInvite" = "成员可邀请";
 "groups.form.membersCanInviteHint" = "允许任意成员把人加入群组";

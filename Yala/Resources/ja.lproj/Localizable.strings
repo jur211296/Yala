@@ -3125,7 +3125,7 @@
 "groups.form.simplifyDebts" = "貸し借りを簡素化";
 "groups.form.simplifyDebtsHint" = "メンバー間で必要な支払い回数を減らします";
 "groups.form.showDebtsInSingleCurrency" = "貸し借りを単一通貨で表示";
-"groups.form.showDebtsInSingleCurrencyHint" = "すべての残高を優先通貨に変換します";
+"groups.form.showDebtsInSingleCurrencyHint" = "他通貨の支出を現在の為替レートで変換します。";
 "groups.form.defaultSplitType" = "既定の分け方";
 "groups.form.membersCanInvite" = "メンバーが招待可能";
 "groups.form.membersCanInviteHint" = "どのメンバーもグループに人を追加できるようにします";

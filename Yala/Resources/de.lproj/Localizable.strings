@@ -3121,7 +3121,7 @@
 "groups.form.simplifyDebts" = "Schulden vereinfachen";
 "groups.form.simplifyDebtsHint" = "Reduziert die Anzahl der Zahlungen zwischen Mitgliedern";
 "groups.form.showDebtsInSingleCurrency" = "Einheitliche Währung für Schulden";
-"groups.form.showDebtsInSingleCurrencyHint" = "Alle Salden in eine bevorzugte Währung umrechnen";
+"groups.form.showDebtsInSingleCurrencyHint" = "Rechnet Ausgaben in anderen Währungen zum aktuellen Wechselkurs um.";
 "groups.form.defaultSplitType" = "Standard-Aufteilung";
 "groups.form.membersCanInvite" = "Mitglieder können einladen";
 "groups.form.membersCanInviteHint" = "Erlaubt jedem Mitglied, Personen zur Gruppe hinzuzufügen";

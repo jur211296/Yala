@@ -3171,7 +3171,7 @@
 "groups.form.simplifyDebts" = "Simplify debts";
 "groups.form.simplifyDebtsHint" = "Reduces the number of payments needed between members";
 "groups.form.showDebtsInSingleCurrency" = "Single currency for debts";
-"groups.form.showDebtsInSingleCurrencyHint" = "Convert all balances to a preferred currency";
+"groups.form.showDebtsInSingleCurrencyHint" = "Converts expenses in other currencies at the current exchange rate.";
 "groups.form.defaultSplitType" = "Default split";
 "groups.form.membersCanInvite" = "Members can invite";
 "groups.form.membersCanInviteHint" = "Allow any member to add people to the group";

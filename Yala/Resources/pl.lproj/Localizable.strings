@@ -3125,7 +3125,7 @@
 "groups.form.simplifyDebts" = "Uprość długi";
 "groups.form.simplifyDebtsHint" = "Zmniejsza liczbę wymaganych płatności między członkami";
 "groups.form.showDebtsInSingleCurrency" = "Jedna waluta dla długów";
-"groups.form.showDebtsInSingleCurrencyHint" = "Konwertuj wszystkie salda na preferowaną walutę";
+"groups.form.showDebtsInSingleCurrencyHint" = "Przelicza wydatki w innych walutach po aktualnym kursie.";
 "groups.form.defaultSplitType" = "Domyślny podział";
 "groups.form.membersCanInvite" = "Członkowie mogą zapraszać";
 "groups.form.membersCanInviteHint" = "Pozwól dowolnemu członkowi dodawać osoby do grupy";

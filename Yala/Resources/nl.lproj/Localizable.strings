@@ -3125,7 +3125,7 @@
 "groups.form.simplifyDebts" = "Schulden vereenvoudigen";
 "groups.form.simplifyDebtsHint" = "Vermindert het aantal benodigde betalingen tussen leden";
 "groups.form.showDebtsInSingleCurrency" = "Eén valuta voor schulden";
-"groups.form.showDebtsInSingleCurrencyHint" = "Zet alle saldi om naar een voorkeursvaluta";
+"groups.form.showDebtsInSingleCurrencyHint" = "Zet uitgaven in andere valuta's om tegen de huidige wisselkoers.";
 "groups.form.defaultSplitType" = "Standaardverdeling";
 "groups.form.membersCanInvite" = "Leden mogen uitnodigen";
 "groups.form.membersCanInviteHint" = "Sta toe dat ieder lid mensen aan de groep toevoegt";

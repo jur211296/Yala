@@ -15,6 +15,7 @@ struct GroupSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Input
 
@@ -433,7 +434,15 @@ struct GroupSettingsView: View {
                     .padding(.vertical, DS.FormRow.paddingV)
                     .onChange(of: showDebtsInSingleCurrency) { _, newValue in
                         withAnimation(.easeInOut(duration: 0.2)) {
-                            updateGroupOption { $0.showDebtsInSingleCurrency = newValue }
+                            updateGroupOption { group in
+                                group.showDebtsInSingleCurrency = newValue
+                                if !newValue {
+                                    group.currencyCode = appPreferences.defaultCurrencyCode.rawValue
+                                }
+                            }
+                            if !newValue {
+                                selectedCurrency = appPreferences.defaultCurrencyCode
+                            }
                         }
                     }
                     .onChange(of: selectedCurrency) { _, newValue in

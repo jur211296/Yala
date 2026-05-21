@@ -3121,7 +3121,7 @@
 "groups.form.simplifyDebts" = "Simplificar dívidas";
 "groups.form.simplifyDebtsHint" = "Reduz o número de pagamentos necessários entre membros";
 "groups.form.showDebtsInSingleCurrency" = "Moeda única para dívidas";
-"groups.form.showDebtsInSingleCurrencyHint" = "Converter todos os saldos para uma moeda preferida";
+"groups.form.showDebtsInSingleCurrencyHint" = "Converte os gastos em outras moedas pela taxa de câmbio atual.";
 "groups.form.defaultSplitType" = "Divisão padrão";
 "groups.form.membersCanInvite" = "Membros podem convidar";
 "groups.form.membersCanInviteHint" = "Permite que qualquer membro adicione pessoas ao grupo";

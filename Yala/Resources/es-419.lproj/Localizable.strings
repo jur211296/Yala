@@ -3123,7 +3123,7 @@
 "groups.form.simplifyDebts" = "Simplificar deudas";
 "groups.form.simplifyDebtsHint" = "Reduce el número de pagos necesarios entre miembros";
 "groups.form.showDebtsInSingleCurrency" = "Moneda única para deudas";
-"groups.form.showDebtsInSingleCurrencyHint" = "Convierte todos los balances a una moneda preferida";
+"groups.form.showDebtsInSingleCurrencyHint" = "Convierte los gastos en otras monedas al tipo de cambio actual.";
 "groups.form.defaultSplitType" = "División predeterminada";
 "groups.form.membersCanInvite" = "Miembros pueden invitar";
 "groups.form.membersCanInviteHint" = "Permite que cualquier miembro agregue personas al grupo";

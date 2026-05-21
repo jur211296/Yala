@@ -3122,7 +3122,7 @@
 "groups.form.simplifyDebts" = "Simplifier les dettes";
 "groups.form.simplifyDebtsHint" = "Réduit le nombre de paiements nécessaires entre les membres";
 "groups.form.showDebtsInSingleCurrency" = "Devise unique pour les dettes";
-"groups.form.showDebtsInSingleCurrencyHint" = "Convertir tous les soldes dans une devise préférée";
+"groups.form.showDebtsInSingleCurrencyHint" = "Convertit les dépenses en autres devises au taux de change actuel.";
 "groups.form.defaultSplitType" = "Répartition par défaut";
 "groups.form.membersCanInvite" = "Les membres peuvent inviter";
 "groups.form.membersCanInviteHint" = "Permet à tout membre d'ajouter des personnes au groupe";
