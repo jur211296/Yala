@@ -248,17 +248,8 @@ struct GroupExpenseFormView: View {
     }
 
     private var amountDisplay: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-            Button {
-                dismissKeyboard()
-                showCurrencyPicker = true
-            } label: {
-                Text(appPreferences.currencyIdentifier(for: viewModel.currencyCode))
-                    .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
-                    .foregroundStyle(theme.accent.opacity(0.7))
-                    .contentTransition(.numericText())
-            }
-            .buttonStyle(.plain)
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.md) {
+            currencyChip
 
             TextField("0.00", text: $viewModel.amountString)
                 .font(.system(size: amountFontSize, weight: .bold, design: .rounded))
@@ -290,6 +281,28 @@ struct GroupExpenseFormView: View {
                 }
         }
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+    }
+
+    // MARK: - Currency Chip
+
+    private var currencyChip: some View {
+        Button {
+            dismissKeyboard()
+            showCurrencyPicker = true
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(viewModel.currencyCode)
+                    .font(DS.Typography.headline)
+                Image(systemName: "chevron.down")
+                    .font(DS.Typography.labelSmall)
+            }
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, DS.FormRow.paddingV)
+            .padding(.vertical, DS.Spacing.sm)
+            .background(Capsule().fill(.thCard))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.Groups.Expense.currency)
     }
 
     // MARK: - Split Method Chip

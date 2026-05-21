@@ -65,12 +65,13 @@ struct CurrencySelectorView: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.lg)
         }
+            .refreshable {}
         }
         .navigationTitle(L10n.Settings.preferredCurrency)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                     dismiss()
                 }
             }
