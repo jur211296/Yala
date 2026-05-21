@@ -26,9 +26,8 @@ final class GroupDetailViewModel {
     private(set) var balances: [MemberBalance] = []
     private(set) var debts: [Debt] = []
 
-    /// True si los `balances`/`debts` actuales resultan de consolidar multiples monedas
-    /// originales a `group.currencyCode` (F3 multi-currency display). Drives `isEstimate`
-    /// del `AmountText` para prefijar "≈" solo cuando hubo conversión real.
+    /// Drives `isEstimate` del `AmountText` para prefijar "≈" solo cuando hubo conversión
+    /// real (al menos un balance/debt original tenía currency ≠ `group.currencyCode`).
     private(set) var balancesWereConverted: Bool = false
     private(set) var debtsWereConverted: Bool = false
 
@@ -134,8 +133,8 @@ final class GroupDetailViewModel {
             } else {
                 balances = rawBalances
                 debts = rawDebts
-                balancesWereConverted = false
-                debtsWereConverted = false
+                if balancesWereConverted { balancesWereConverted = false }
+                if debtsWereConverted { debtsWereConverted = false }
             }
 
             rebuildBridgeMaps(context: context)

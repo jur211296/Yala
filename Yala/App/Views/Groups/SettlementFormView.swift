@@ -37,9 +37,8 @@ struct SettlementFormView: View {
     @State private var selectedAccount: Account? = nil
     @State private var showAccountSelector: Bool = false
 
-    // F3: alternar entre el monto original (debt.currencyCode) y el sugerido en moneda
-    // del grupo (≈ group.currencyCode al TC actual). Solo activa si showDebtsInSingleCurrency
-    // está ON y el debt es cross-currency.
+    // Toggle del segmented control superior: alterna entre el monto original
+    // (`debt.currencyCode`) y el sugerido convertido a `group.currencyCode`.
     @State private var useSuggestedAmount: Bool = false
 
     // MARK: - Init
@@ -59,7 +58,7 @@ struct SettlementFormView: View {
 
     // MARK: - Body
 
-    // MARK: - F3 computeds (suggested amount cross-currency)
+    // MARK: - Suggested Amount Computeds (cross-currency)
 
     /// Monto sugerido en `group.currencyCode` si el toggle del grupo está ON, el debt
     /// es cross-currency y existe un tipo de cambio que produzca un delta significativo.
@@ -99,7 +98,7 @@ struct SettlementFormView: View {
                     // Header: who pays whom
                     paymentHeader
 
-                    // F3: segmented currency picker (solo si hay suggested amount real)
+                    // Segmented currency picker (solo si hay suggested amount real)
                     currencySegmentedControl
 
                     // Amount
@@ -146,10 +145,13 @@ struct SettlementFormView: View {
                 )
             }
             // M6: NO defaults — selectedAccount inicial nil, user siempre elige.
-            // F3: cambio de currency → reset amount al canónico + nullify selectedAccount
-            // si su currency deja de ser compatible (selectivo: preserva la cuenta si sigue OK).
+            // Cambio de currency → reset amount al canónico + nullify selectedAccount si
+            // deja de ser compatible (selectivo: preserva la cuenta si sigue OK).
             .onChange(of: useSuggestedAmount) { _, _ in
-                amountString = AmountInputHelper.formatWithGrouping(effectiveCanonicalAmount)
+                let newAmount = AmountInputHelper.formatWithGrouping(effectiveCanonicalAmount)
+                if amountString != newAmount {
+                    amountString = newAmount
+                }
                 if let account = selectedAccount, account.currencyCode != effectiveCurrency {
                     selectedAccount = nil
                 }
@@ -157,7 +159,7 @@ struct SettlementFormView: View {
         }
     }
 
-    // MARK: - Currency Segmented Control (F3 — cross-currency settlement)
+    // MARK: - Currency Segmented Control (cross-currency settlement)
 
     @ViewBuilder
     private var currencySegmentedControl: some View {
