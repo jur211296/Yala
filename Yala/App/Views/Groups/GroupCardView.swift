@@ -145,7 +145,8 @@ struct GroupCardView: View {
                 value: row.amount,
                 currencyCode: row.currencyCode,
                 font: DS.Typography.body, secondaryFont: DS.Typography.caption,
-                tint: .color(amountColor(for: row.perspective))
+                tint: .color(amountColor(for: row.perspective)),
+                isEstimate: row.wasConverted
             )
         }
     }

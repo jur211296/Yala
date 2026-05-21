@@ -14,6 +14,11 @@ struct GroupBalancesView: View {
     let settlements: [SplitSettlement]
     let memberNameLookup: [String: String]
 
+    /// True si los balances/debts vienen de consolidar multiples monedas a una sola.
+    /// Drives `isEstimate` del AmountText (prefix "≈") cuando hubo conversión real.
+    var balancesWereConverted: Bool = false
+    var debtsWereConverted: Bool = false
+
     // Callbacks (optional for backwards compatibility)
     var onSettleDebt: ((Debt) -> Void)?
     var onConfirmSettlement: ((SplitSettlement) -> Void)?
@@ -87,7 +92,8 @@ struct GroupBalancesView: View {
                 value: abs(balance.netBalance),
                 currencyCode: balance.currencyCode,
                 font: DS.Typography.headline,
-                tint: .color(balanceColor(balance.netBalance))
+                tint: .color(balanceColor(balance.netBalance)),
+                isEstimate: balancesWereConverted
             )
         }
         .padding(.horizontal, DS.FormRow.paddingH)
@@ -140,7 +146,8 @@ struct GroupBalancesView: View {
                 value: debt.amount,
                 currencyCode: debt.currencyCode,
                 font: DS.Typography.headline,
-                tint: .color(Color.hotPink)
+                tint: .color(Color.hotPink),
+                isEstimate: debtsWereConverted
             )
 
             if onSettleDebt != nil {

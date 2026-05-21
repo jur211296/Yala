@@ -320,6 +320,8 @@ struct GroupDetailView: View {
                 debts: viewModel.debts,
                 settlements: viewModel.settlements,
                 memberNameLookup: viewModel.memberNameLookup,
+                balancesWereConverted: viewModel.balancesWereConverted,
+                debtsWereConverted: viewModel.debtsWereConverted,
                 onSettleDebt: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .settlement($0) } : nil,
                 onConfirmSettlement: viewModel.canCurrentUserParticipate ? { viewModel.confirmSettlement($0) } : nil,
                 onRejectSettlement: viewModel.canCurrentUserParticipate ? { viewModel.rejectSettlement($0) } : nil

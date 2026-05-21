@@ -26,6 +26,12 @@ final class GroupDetailViewModel {
     private(set) var balances: [MemberBalance] = []
     private(set) var debts: [Debt] = []
 
+    /// True si los `balances`/`debts` actuales resultan de consolidar multiples monedas
+    /// originales a `group.currencyCode` (F3 multi-currency display). Drives `isEstimate`
+    /// del `AmountText` para prefijar "≈" solo cuando hubo conversión real.
+    private(set) var balancesWereConverted: Bool = false
+    private(set) var debtsWereConverted: Bool = false
+
     // MARK: - Computed
 
     /// memberID.uuidString → displayName (rebuilt in loadData)
@@ -101,19 +107,36 @@ final class GroupDetailViewModel {
             shares = try GroupExpenseService.shared.fetchAllShares(for: group)
             settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
 
-            balances = GroupBalanceService.calculateBalances(
+            let rawBalances = GroupBalanceService.calculateBalances(
                 expenses: expenses,
                 shares: shares,
                 members: members,
                 settlements: settlements
             )
 
-            debts = GroupBalanceService.calculateDebts(
+            let rawDebts = GroupBalanceService.calculateDebts(
                 expenses: expenses,
                 shares: shares,
                 settlements: settlements,
                 simplifyDebts: group.simplifyDebts
             )
+
+            if group.showDebtsInSingleCurrency {
+                let target = group.currencyCode
+                balancesWereConverted = rawBalances.contains { $0.currencyCode != target }
+                debtsWereConverted = rawDebts.contains { $0.currencyCode != target }
+                balances = balancesWereConverted
+                    ? GroupBalanceService.consolidatedBalances(from: rawBalances, targetCurrency: target)
+                    : rawBalances
+                debts = debtsWereConverted
+                    ? GroupBalanceService.consolidatedDebts(from: rawDebts, targetCurrency: target)
+                    : rawDebts
+            } else {
+                balances = rawBalances
+                debts = rawDebts
+                balancesWereConverted = false
+                debtsWereConverted = false
+            }
 
             rebuildBridgeMaps(context: context)
         } catch {

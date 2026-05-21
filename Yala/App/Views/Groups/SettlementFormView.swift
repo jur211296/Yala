@@ -37,6 +37,11 @@ struct SettlementFormView: View {
     @State private var selectedAccount: Account? = nil
     @State private var showAccountSelector: Bool = false
 
+    // F3: alternar entre el monto original (debt.currencyCode) y el sugerido en moneda
+    // del grupo (≈ group.currencyCode al TC actual). Solo activa si showDebtsInSingleCurrency
+    // está ON y el debt es cross-currency.
+    @State private var useSuggestedAmount: Bool = false
+
     // MARK: - Init
 
     init(
@@ -54,12 +59,48 @@ struct SettlementFormView: View {
 
     // MARK: - Body
 
+    // MARK: - F3 computeds (suggested amount cross-currency)
+
+    /// Monto sugerido en `group.currencyCode` si el toggle del grupo está ON, el debt
+    /// es cross-currency y existe un tipo de cambio que produzca un delta significativo.
+    /// Si la conversión devuelve el mismo monto (sin rate disponible) → nil para ocultar
+    /// el segmented silenciosamente.
+    private var suggestedAmount: Double? {
+        guard group.showDebtsInSingleCurrency,
+              debt.currencyCode != group.currencyCode
+        else { return nil }
+
+        let converted = CurrencyConverter.shared.convertWithLatestRate(
+            Decimal(debt.amount),
+            from: debt.currencyCode,
+            to: group.currencyCode
+        )
+        let result = NSDecimalNumber(decimal: converted).doubleValue
+        guard abs(result - debt.amount) > 0.01 else { return nil }
+        return result
+    }
+
+    /// Currency efectivo según selección del segmented (Original / Sugerido).
+    private var effectiveCurrency: String {
+        useSuggestedAmount ? group.currencyCode : debt.currencyCode
+    }
+
+    /// Monto canónico para la moneda efectivo (sin contar edits manuales del user).
+    private var effectiveCanonicalAmount: Double {
+        useSuggestedAmount ? (suggestedAmount ?? debt.amount) : debt.amount
+    }
+
+    // MARK: - Body
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
                     // Header: who pays whom
                     paymentHeader
+
+                    // F3: segmented currency picker (solo si hay suggested amount real)
+                    currencySegmentedControl
 
                     // Amount
                     amountSection
@@ -101,10 +142,34 @@ struct SettlementFormView: View {
                 AccountSelectorSheet(
                     selectedAccount: $selectedAccount,
                     title: L10n.Groups.Settlement.fromAccount,
-                    currencyFilter: debt.currencyCode
+                    currencyFilter: effectiveCurrency
                 )
             }
             // M6: NO defaults — selectedAccount inicial nil, user siempre elige.
+            // F3: cambio de currency → reset amount al canónico + nullify selectedAccount
+            // si su currency deja de ser compatible (selectivo: preserva la cuenta si sigue OK).
+            .onChange(of: useSuggestedAmount) { _, _ in
+                amountString = AmountInputHelper.formatWithGrouping(effectiveCanonicalAmount)
+                if let account = selectedAccount, account.currencyCode != effectiveCurrency {
+                    selectedAccount = nil
+                }
+            }
+        }
+    }
+
+    // MARK: - Currency Segmented Control (F3 — cross-currency settlement)
+
+    @ViewBuilder
+    private var currencySegmentedControl: some View {
+        if let suggested = suggestedAmount {
+            Picker("", selection: $useSuggestedAmount) {
+                Text("\(debt.currencyCode) \(AmountInputHelper.formatWithGrouping(debt.amount))")
+                    .tag(false)
+                Text("≈ \(group.currencyCode) \(AmountInputHelper.formatWithGrouping(suggested))")
+                    .tag(true)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, DS.Spacing.lg)
         }
     }
 
@@ -192,7 +257,7 @@ struct SettlementFormView: View {
     private var amountSection: some View {
         VStack(spacing: DS.Spacing.xs) {
             HStack(spacing: DS.Spacing.sm) {
-                Text(debt.currencyCode)
+                Text(effectiveCurrency)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thAccent)
 
@@ -254,7 +319,7 @@ struct SettlementFormView: View {
                 fromMemberID: debt.fromMemberID,
                 toMemberID: debt.toMemberID,
                 amount: parsedAmount,
-                currencyCode: debt.currencyCode,
+                currencyCode: effectiveCurrency,
                 note: note.isEmpty ? nil : note,
                 date: date,
                 accountForCurrentUser: accountToPass

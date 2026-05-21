@@ -39,6 +39,7 @@ final class GroupsViewModel {
         let amount: Double
         let currencyCode: String
         let perspective: Perspective
+        let wasConverted: Bool
     }
 
     enum Perspective: Equatable {
@@ -173,17 +174,23 @@ final class GroupsViewModel {
             members: members,
             expenses: expenses,
             shares: shares,
-            settlements: settlements
+            settlements: settlements,
+            convertTo: group.showDebtsInSingleCurrency ? group.currencyCode : nil
         )
     }
 
     /// Pure-logic helper para tests sin contexto. Calcula debts simplificadas filtradas
     /// al current user, con perspectiva resuelta + nameLookup, sort by amount desc.
+    /// - Parameter convertTo: si no es nil y al menos un debt original está en otra
+    ///   moneda, las debts se consolidan a esta moneda y los rows resultantes quedan
+    ///   marcados con `wasConverted=true`.
     static func computeCurrentUserDebts(
         members: [SplitMember],
         expenses: [SplitExpense],
         shares: [SplitShare],
-        settlements: [SplitSettlement]
+        settlements: [SplitSettlement],
+        convertTo: String? = nil,
+        converter: CurrencyConverting? = nil
     ) -> [DebtRow] {
         guard let currentMember = members.first(where: { $0.isCurrentUser }) else {
             return []
@@ -201,14 +208,28 @@ final class GroupsViewModel {
             simplifyDebts: true
         )
 
-        return allDebts.compactMap { debt -> DebtRow? in
+        let wasConverted: Bool
+        let effectiveDebts: [Debt]
+        if let target = convertTo {
+            wasConverted = allDebts.contains { $0.currencyCode != target }
+            let actualConverter = converter ?? CurrencyConverter.shared
+            effectiveDebts = wasConverted
+                ? GroupBalanceService.consolidatedDebts(from: allDebts, targetCurrency: target, converter: actualConverter)
+                : allDebts
+        } else {
+            wasConverted = false
+            effectiveDebts = allDebts
+        }
+
+        return effectiveDebts.compactMap { debt -> DebtRow? in
             if debt.fromMemberID == currentMemberID {
                 return DebtRow(
                     id: "\(debt.fromMemberID)-\(debt.toMemberID)-\(debt.currencyCode)",
                     counterpartyName: nameLookup[debt.toMemberID] ?? "?",
                     amount: debt.amount,
                     currencyCode: debt.currencyCode,
-                    perspective: .iOwe
+                    perspective: .iOwe,
+                    wasConverted: wasConverted
                 )
             } else if debt.toMemberID == currentMemberID {
                 return DebtRow(
@@ -216,7 +237,8 @@ final class GroupsViewModel {
                     counterpartyName: nameLookup[debt.fromMemberID] ?? "?",
                     amount: debt.amount,
                     currencyCode: debt.currencyCode,
-                    perspective: .theyOweMe
+                    perspective: .theyOweMe,
+                    wasConverted: wasConverted
                 )
             }
             return nil

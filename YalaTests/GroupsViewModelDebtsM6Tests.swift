@@ -186,4 +186,113 @@ struct GroupsViewModelDebtsM6Tests {
         #expect(result[0].amount == 100)
         #expect(result[1].amount == 40)
     }
+
+    // MARK: - F3: convertTo / wasConverted (multi-currency display)
+
+    @Test func computeCurrentUserDebts_withConvertTo_consolidatesCrossCurrency() {
+        // Maria pagó S/100 (yo debo S/50), Juan pagó USD 50 (yo debo USD 25).
+        // convertTo = "PEN", mock 1 USD = 3.8 PEN → debts USD consolidan a PEN.
+        let me = makeMember(name: "Me", isCurrentUser: true)
+        let maria = makeMember(name: "Maria")
+        let juan = makeMember(name: "Juan")
+
+        let exp1 = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: maria.id.uuidString)
+        let shares1 = [
+            makeShare(expenseID: exp1.id, memberID: me.id.uuidString, amount: 50),
+            makeShare(expenseID: exp1.id, memberID: maria.id.uuidString, amount: 50)
+        ]
+
+        let exp2 = makeExpense(amount: 50, currencyCode: "USD", paidByMemberID: juan.id.uuidString)
+        let shares2 = [
+            makeShare(expenseID: exp2.id, memberID: me.id.uuidString, amount: 25),
+            makeShare(expenseID: exp2.id, memberID: juan.id.uuidString, amount: 25)
+        ]
+
+        let result = GroupsViewModel.computeCurrentUserDebts(
+            members: [me, maria, juan],
+            expenses: [exp1, exp2], shares: shares1 + shares2, settlements: [],
+            convertTo: "PEN",
+            converter: MockCurrencyConverter(fixedRate: 3.8)
+        )
+        // Todos los rows quedan en PEN tras consolidatedDebts.
+        let currencies = Set(result.map(\.currencyCode))
+        #expect(currencies == ["PEN"])
+        // Todos los rows marcados como wasConverted (había debts USD ≠ target).
+        #expect(result.allSatisfy { $0.wasConverted })
+    }
+
+    @Test func computeCurrentUserDebts_withNilConvertTo_preservesMultiCurrency() {
+        // Sin convertTo: rows separados por currency, wasConverted=false.
+        let me = makeMember(name: "Me", isCurrentUser: true)
+        let maria = makeMember(name: "Maria")
+        let juan = makeMember(name: "Juan")
+
+        let exp1 = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: maria.id.uuidString)
+        let shares1 = [
+            makeShare(expenseID: exp1.id, memberID: me.id.uuidString, amount: 50),
+            makeShare(expenseID: exp1.id, memberID: maria.id.uuidString, amount: 50)
+        ]
+
+        let exp2 = makeExpense(amount: 50, currencyCode: "USD", paidByMemberID: juan.id.uuidString)
+        let shares2 = [
+            makeShare(expenseID: exp2.id, memberID: me.id.uuidString, amount: 25),
+            makeShare(expenseID: exp2.id, memberID: juan.id.uuidString, amount: 25)
+        ]
+
+        let result = GroupsViewModel.computeCurrentUserDebts(
+            members: [me, maria, juan],
+            expenses: [exp1, exp2], shares: shares1 + shares2, settlements: [],
+            convertTo: nil
+        )
+        let currencies = Set(result.map(\.currencyCode))
+        #expect(currencies == ["PEN", "USD"])
+        #expect(result.allSatisfy { !$0.wasConverted })
+    }
+
+    @Test func computeCurrentUserDebts_withConvertTo_sameCurrencyOnly_setsWasConvertedFalse() {
+        // Todos los debts están ya en PEN, convertTo="PEN" → no hay conversión real.
+        let me = makeMember(name: "Me", isCurrentUser: true)
+        let maria = makeMember(name: "Maria")
+
+        let exp = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: maria.id.uuidString)
+        let shares = [
+            makeShare(expenseID: exp.id, memberID: me.id.uuidString, amount: 50),
+            makeShare(expenseID: exp.id, memberID: maria.id.uuidString, amount: 50)
+        ]
+
+        let result = GroupsViewModel.computeCurrentUserDebts(
+            members: [me, maria],
+            expenses: [exp], shares: shares, settlements: [],
+            convertTo: "PEN",
+            converter: MockCurrencyConverter(fixedRate: 3.8)
+        )
+        #expect(result.count == 1)
+        #expect(result.first?.currencyCode == "PEN")
+        #expect(result.first?.wasConverted == false)
+    }
+
+    @Test func computeCurrentUserDebts_handlesMissingExchangeRateGracefully() {
+        // Mock con rate=1 simula "sin TC disponible" — la conversión USD→PEN devuelve el
+        // mismo amount. Aún así, hay intención de convertir (debts USD existen) → wasConverted=true.
+        let me = makeMember(name: "Me", isCurrentUser: true)
+        let juan = makeMember(name: "Juan")
+
+        let exp = makeExpense(amount: 50, currencyCode: "USD", paidByMemberID: juan.id.uuidString)
+        let shares = [
+            makeShare(expenseID: exp.id, memberID: me.id.uuidString, amount: 25),
+            makeShare(expenseID: exp.id, memberID: juan.id.uuidString, amount: 25)
+        ]
+
+        let result = GroupsViewModel.computeCurrentUserDebts(
+            members: [me, juan],
+            expenses: [exp], shares: shares, settlements: [],
+            convertTo: "PEN",
+            converter: MockCurrencyConverter(fixedRate: 1.0)
+        )
+        #expect(result.count == 1)
+        #expect(result.first?.currencyCode == "PEN")
+        #expect(result.first?.wasConverted == true)
+        // Amount = 25 (USD original) * 1 (mock rate) = 25 — sin crash.
+        #expect(result.first?.amount == 25)
+    }
 }
