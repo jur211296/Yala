@@ -55,6 +55,10 @@ struct GroupSettingsView: View {
     @State private var pendingActionMember: SplitMember?
     @State private var showApproveConfirm: Bool = false
     @State private var showRejectConfirm: Bool = false
+
+    // FU-02: soft-delete owner-only.
+    @State private var showDeleteConfirm: Bool = false
+    @State private var isDeleting: Bool = false
     @State private var pendingErrorMessage: String?
     @State private var showPendingError: Bool = false
 
@@ -81,6 +85,11 @@ struct GroupSettingsView: View {
                     // Danger zone (archive)
                     if viewModel.isCurrentUserAdmin {
                         dangerZoneSection
+                    }
+
+                    // FU-02: soft-delete (owner-only).
+                    if group.isOwner {
+                        deleteGroupSection
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
@@ -192,6 +201,18 @@ struct GroupSettingsView: View {
                 Button(L10n.Common.ok) {}
             } message: {
                 Text(pendingErrorMessage ?? "")
+            }
+            .confirmationDialog(
+                L10n.Groups.Settings.deleteGroupConfirm,
+                isPresented: $showDeleteConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Action.delete, role: .destructive) {
+                    Task { await performSoftDelete() }
+                }
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Groups.Settings.deleteGroupFinalConfirm)
             }
         }
     }
@@ -535,6 +556,59 @@ struct GroupSettingsView: View {
         }
         .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
         .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(.thCardBorder, lineWidth: 1))
+    }
+
+    // MARK: - FU-02 Soft-delete (owner-only)
+
+    private var deleteGroupSection: some View {
+        VStack(spacing: DS.Spacing.xs) {
+            Button {
+                showDeleteConfirm = true
+            } label: {
+                HStack {
+                    Image(systemName: "trash.fill")
+                        .foregroundStyle(DS.Semantic.errorForeground)
+                    Text(L10n.Groups.Settings.deleteGroup)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(DS.Semantic.errorForeground)
+                    Spacer()
+                    if isDeleting {
+                        ProgressView()
+                    }
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(anyMemberHasOutstandingBalance || isDeleting)
+
+            if anyMemberHasOutstandingBalance {
+                Text(L10n.Groups.Settings.deleteGroupDisabledHint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Semantic.errorForeground)
+                    .padding(.horizontal, DS.FormRow.paddingH)
+                    .padding(.bottom, DS.FormRow.paddingV)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(.thCardBorder, lineWidth: 1))
+    }
+
+    private func performSoftDelete() async {
+        guard !isDeleting else { return }
+        isDeleting = true
+        defer { isDeleting = false }
+
+        do {
+            try GroupService.shared.softDelete(group)
+            DS.Haptic.warning()
+            dismiss()
+        } catch {
+            actionErrorMessage = error.localizedDescription
+            showActionError = true
+        }
     }
 
     private func hasNonZeroBalance(for memberID: String) -> Bool {

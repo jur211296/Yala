@@ -3139,9 +3139,9 @@
 "groups.settings.leaveGroupConfirm" = "本当に退出しますか？個人の支出は残ります。";
 "groups.settings.leaveGroupWithDebtWarning" = "未精算の残高があるまま、グループから退出します。相手側にはこの債務が引き続き未精算として表示されます。続けますか？";
 "groups.settings.deleteGroup" = "グループを削除";
-"groups.settings.deleteGroupConfirm" = "この操作は永久的で、グループのすべてのデータが削除されます。";
-"groups.settings.deleteGroupFinalConfirm" = "グループとそのすべてのデータが、すべてのメンバーから完全に削除されます。この操作は取り消せません。";
-"groups.settings.deleteGroupDisabledHint" = "グループを削除するには、まず支出をすべて削除するか、他のメンバーをすべて削除してください。";
+"groups.settings.deleteGroupConfirm" = "このグループを削除しますか？";
+"groups.settings.deleteGroupFinalConfirm" = "グループはすべてのメンバーから消えます。この操作は取り消せません。";
+"groups.settings.deleteGroupDisabledHint" = "削除する前に未決済の残高を清算してください";
 "groups.settings.archive" = "グループをアーカイブ";
 "groups.settings.archiveWithDebtWarning" = "メンバー間に未払いの残高があります。アーカイブしても債務は残ります。続行しますか？";
 "groups.settings.archiveConfirm" = "このグループをアーカイブしますか？支出と残高は保持されます。";

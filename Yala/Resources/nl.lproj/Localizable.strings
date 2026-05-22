@@ -3139,9 +3139,9 @@
 "groups.settings.leaveGroupConfirm" = "Weet je het zeker? Je persoonlijke uitgaven blijven behouden.";
 "groups.settings.leaveGroupWithDebtWarning" = "Je verlaat de groep met een openstaand saldo. De andere partij blijft die schuld als openstaand zien. Doorgaan?";
 "groups.settings.deleteGroup" = "Groep verwijderen";
-"groups.settings.deleteGroupConfirm" = "Deze actie is permanent en verwijdert alle gegevens van de groep.";
-"groups.settings.deleteGroupFinalConfirm" = "De groep en alle gegevens worden voor alle leden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.";
-"groups.settings.deleteGroupDisabledHint" = "Om de groep te verwijderen, verwijder eerst alle uitgaven of alle andere leden.";
+"groups.settings.deleteGroupConfirm" = "Deze groep verwijderen?";
+"groups.settings.deleteGroupFinalConfirm" = "De groep verdwijnt voor alle leden. Deze actie is onomkeerbaar.";
+"groups.settings.deleteGroupDisabledHint" = "Vereffen openstaande saldi voor verwijderen";
 "groups.settings.archive" = "Groep archiveren";
 "groups.settings.archiveWithDebtWarning" = "Er zijn openstaande saldo's tussen leden. Als je archiveert, blijven de schulden bestaan. Doorgaan?";
 "groups.settings.archiveConfirm" = "Deze groep archiveren? Uitgaven en saldo's blijven behouden.";

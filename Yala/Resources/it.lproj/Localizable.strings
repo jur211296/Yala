@@ -3137,9 +3137,9 @@
 "groups.settings.leaveGroupConfirm" = "Sei sicuro? Le tue spese personali verranno mantenute.";
 "groups.settings.leaveGroupWithDebtWarning" = "Stai lasciando il gruppo con un saldo aperto. L'altra parte continuerà a vedere quel debito come in sospeso. Continuare?";
 "groups.settings.deleteGroup" = "Elimina gruppo";
-"groups.settings.deleteGroupConfirm" = "Questa azione è permanente e cancellerà tutti i dati del gruppo.";
-"groups.settings.deleteGroupFinalConfirm" = "Il gruppo e tutti i suoi dati verranno eliminati permanentemente per tutti i membri. Questa azione non può essere annullata.";
-"groups.settings.deleteGroupDisabledHint" = "Per eliminare il gruppo, rimuovi prima tutte le spese o tutti gli altri membri.";
+"groups.settings.deleteGroupConfirm" = "Eliminare questo gruppo?";
+"groups.settings.deleteGroupFinalConfirm" = "Il gruppo scomparirà per tutti i membri. Questa azione è irreversibile.";
+"groups.settings.deleteGroupDisabledHint" = "Salda i debiti pendenti prima di eliminare";
 "groups.settings.archive" = "Archivia gruppo";
 "groups.settings.archiveWithDebtWarning" = "Ci sono saldi in sospeso tra i membri. Se archivi, i debiti restano attivi. Continuare?";
 "groups.settings.archiveConfirm" = "Archiviare questo gruppo? Le spese e i saldi vengono conservati.";

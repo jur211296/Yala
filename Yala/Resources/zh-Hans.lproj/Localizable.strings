@@ -3139,9 +3139,9 @@
 "groups.settings.leaveGroupConfirm" = "你确定吗?你的个人支出将被保留。";
 "groups.settings.leaveGroupWithDebtWarning" = "你将带着未结清的余额离开群组。对方仍会看到这笔欠款处于未结清状态。要继续吗？";
 "groups.settings.deleteGroup" = "删除群组";
-"groups.settings.deleteGroupConfirm" = "此操作是永久的,会删除全部群组数据。";
-"groups.settings.deleteGroupFinalConfirm" = "群组及其所有数据将对所有成员永久删除。此操作无法撤销。";
-"groups.settings.deleteGroupDisabledHint" = "要删除群组,请先移除所有支出或所有其他成员。";
+"groups.settings.deleteGroupConfirm" = "确定删除该群组？";
+"groups.settings.deleteGroupFinalConfirm" = "该群组将对所有成员消失。此操作无法撤销。";
+"groups.settings.deleteGroupDisabledHint" = "请先结清未结余额再删除";
 "groups.settings.archive" = "归档群组";
 "groups.settings.archiveWithDebtWarning" = "成员之间存在未结余额。归档后债务仍然存在。继续吗？";
 "groups.settings.archiveConfirm" = "归档此群组吗？支出和余额将保留。";

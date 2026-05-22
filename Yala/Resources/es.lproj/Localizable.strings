@@ -3183,9 +3183,9 @@
 "groups.settings.leaveGroupConfirm" = "¿Seguro que quieres salir? Tus gastos personales se mantendrán.";
 "groups.settings.leaveGroupWithDebtWarning" = "Saldrás del grupo con un saldo pendiente. La otra parte seguirá viendo esa deuda como pendiente. ¿Continuar?";
 "groups.settings.deleteGroup" = "Eliminar grupo";
-"groups.settings.deleteGroupConfirm" = "Esta acción es permanente y eliminará todos los datos del grupo.";
-"groups.settings.deleteGroupFinalConfirm" = "El grupo y todos sus datos se eliminarán permanentemente para todos los miembros. Esta acción no se puede deshacer.";
-"groups.settings.deleteGroupDisabledHint" = "Para eliminar el grupo, primero elimina todos los gastos o a los demás miembros.";
+"groups.settings.deleteGroupConfirm" = "¿Eliminar este grupo?";
+"groups.settings.deleteGroupFinalConfirm" = "El grupo desaparecerá para todos los miembros. Esta acción es irreversible.";
+"groups.settings.deleteGroupDisabledHint" = "Liquida las deudas pendientes antes de eliminar";
 "groups.settings.archive" = "Archivar grupo";
 "groups.settings.archiveWithDebtWarning" = "Hay deudas pendientes entre miembros. Si archivas, las deudas siguen vivas. ¿Continuar?";
 "groups.settings.archiveConfirm" = "¿Archivar este grupo? Los gastos y balances se conservan.";

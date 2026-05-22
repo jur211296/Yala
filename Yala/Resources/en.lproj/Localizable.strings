@@ -3185,9 +3185,9 @@
 "groups.settings.leaveGroupConfirm" = "Are you sure? Your personal expenses will be kept.";
 "groups.settings.leaveGroupWithDebtWarning" = "You're leaving the group with an open balance. The other party will keep seeing that debt as pending. Continue?";
 "groups.settings.deleteGroup" = "Delete group";
-"groups.settings.deleteGroupConfirm" = "This action is permanent and will delete all group data.";
-"groups.settings.deleteGroupFinalConfirm" = "The group and all its data will be permanently deleted for all members. This action cannot be undone.";
-"groups.settings.deleteGroupDisabledHint" = "To delete the group, first remove all expenses or all other members.";
+"groups.settings.deleteGroupConfirm" = "Delete this group?";
+"groups.settings.deleteGroupFinalConfirm" = "The group will disappear for all members. This action is irreversible.";
+"groups.settings.deleteGroupDisabledHint" = "Settle outstanding balances before deleting";
 "groups.settings.archive" = "Archive group";
 "groups.settings.archiveWithDebtWarning" = "There are outstanding balances between members. If you archive, the debts remain. Continue?";
 "groups.settings.archiveConfirm" = "Archive this group? Expenses and balances are preserved.";

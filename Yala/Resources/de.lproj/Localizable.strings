@@ -3135,9 +3135,9 @@
 "groups.settings.leaveGroupConfirm" = "Bist du sicher? Deine persönlichen Ausgaben bleiben erhalten.";
 "groups.settings.leaveGroupWithDebtWarning" = "Du verlässt die Gruppe mit einem offenen Saldo. Die andere Partei sieht diese Schuld weiterhin als ausstehend. Fortfahren?";
 "groups.settings.deleteGroup" = "Gruppe löschen";
-"groups.settings.deleteGroupConfirm" = "Diese Aktion ist dauerhaft und löscht alle Gruppendaten.";
-"groups.settings.deleteGroupFinalConfirm" = "Die Gruppe und alle Daten werden für alle Mitglieder dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
-"groups.settings.deleteGroupDisabledHint" = "Um die Gruppe zu löschen, entferne zuerst alle Ausgaben oder alle anderen Mitglieder.";
+"groups.settings.deleteGroupConfirm" = "Diese Gruppe löschen?";
+"groups.settings.deleteGroupFinalConfirm" = "Die Gruppe verschwindet für alle Mitglieder. Diese Aktion ist unwiderruflich.";
+"groups.settings.deleteGroupDisabledHint" = "Bitte gleichen Sie ausstehende Salden vor dem Löschen aus";
 "groups.settings.archive" = "Gruppe archivieren";
 "groups.settings.archiveWithDebtWarning" = "Es gibt offene Salden zwischen Mitgliedern. Wenn Sie archivieren, bleiben die Schulden bestehen. Fortfahren?";
 "groups.settings.archiveConfirm" = "Diese Gruppe archivieren? Ausgaben und Salden bleiben erhalten.";

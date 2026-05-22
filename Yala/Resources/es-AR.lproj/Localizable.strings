@@ -456,3 +456,6 @@
 "groups.onboarding.step2.card1.body" = "Familia, amigos, viajes o trabajo. Tantos grupos como necesités.";
 "groups.onboarding.step2.card2.body" = "Elegí cómo se divide cada gasto. Yala calcula quién debe qué.";
 "groups.onboarding.step2.card3.body" = "Saldá pagos y dejá todo en cero. Sin discusiones, sin Excel.";
+
+// MARK: FU-02-voseo
+"groups.settings.deleteGroupDisabledHint" = "Liquidá las deudas pendientes antes de eliminar";

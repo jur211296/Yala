@@ -3139,9 +3139,9 @@
 "groups.settings.leaveGroupConfirm" = "Na pewno? Twoje osobiste wydatki zostaną zachowane.";
 "groups.settings.leaveGroupWithDebtWarning" = "Opuszczasz grupę z otwartym saldem. Druga strona nadal będzie widzieć ten dług jako oczekujący. Kontynuować?";
 "groups.settings.deleteGroup" = "Usuń grupę";
-"groups.settings.deleteGroupConfirm" = "Tej operacji nie można cofnąć — wszystkie dane grupy zostaną usunięte.";
-"groups.settings.deleteGroupFinalConfirm" = "Grupa i wszystkie jej dane zostaną trwale usunięte u wszystkich członków. Tej operacji nie można cofnąć.";
-"groups.settings.deleteGroupDisabledHint" = "Aby usunąć grupę, najpierw usuń wszystkie wydatki lub wszystkich pozostałych członków.";
+"groups.settings.deleteGroupConfirm" = "Usunąć tę grupę?";
+"groups.settings.deleteGroupFinalConfirm" = "Grupa zniknie dla wszystkich członków. Tej akcji nie można cofnąć.";
+"groups.settings.deleteGroupDisabledHint" = "Wyrównaj nierozliczone salda przed usunięciem";
 "groups.settings.archive" = "Zarchiwizuj grupę";
 "groups.settings.archiveWithDebtWarning" = "Istnieją zaległe salda między członkami. Po zarchiwizowaniu długi pozostają. Kontynuować?";
 "groups.settings.archiveConfirm" = "Zarchiwizować tę grupę? Wydatki i salda zostaną zachowane.";

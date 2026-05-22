@@ -3136,9 +3136,9 @@
 "groups.settings.leaveGroupConfirm" = "Êtes-vous sûr ? Vos dépenses personnelles seront conservées.";
 "groups.settings.leaveGroupWithDebtWarning" = "Vous quittez le groupe avec un solde ouvert. L'autre partie continuera à voir cette dette comme en attente. Continuer ?";
 "groups.settings.deleteGroup" = "Supprimer le groupe";
-"groups.settings.deleteGroupConfirm" = "Cette action est permanente et supprimera toutes les données du groupe.";
-"groups.settings.deleteGroupFinalConfirm" = "Le groupe et toutes ses données seront définitivement supprimés pour tous les membres. Cette action est irréversible.";
-"groups.settings.deleteGroupDisabledHint" = "Pour supprimer le groupe, supprimez d'abord toutes les dépenses ou tous les autres membres.";
+"groups.settings.deleteGroupConfirm" = "Supprimer ce groupe ?";
+"groups.settings.deleteGroupFinalConfirm" = "Le groupe disparaîtra pour tous les membres. Cette action est irréversible.";
+"groups.settings.deleteGroupDisabledHint" = "Réglez les soldes en attente avant de supprimer";
 "groups.settings.archive" = "Archiver le groupe";
 "groups.settings.archiveWithDebtWarning" = "Il y a des soldes en attente entre membres. Si vous archivez, les dettes restent. Continuer ?";
 "groups.settings.archiveConfirm" = "Archiver ce groupe ? Les dépenses et soldes sont conservés.";
