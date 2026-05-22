@@ -24,6 +24,7 @@ enum DraftSourceType: String, Codable {
     case siri           // Siri natural language entry
     case groupExpense   // A0-Bridge: caso A/B sin match — apunta a TX existente via targetTransactionID
     case groupSettlement // A0-Bridge: caso C/D — TX cuenta real diferida hasta asignar cuenta
+    case manual         // FU-02 cleanup: draft convertido tras soft-delete/leave/remove. Editable como personal.
 
     /// True para sources de grupos que NO permiten eliminar/rechazar (solo asignar+finalizar).
     var isFromGroup: Bool {
@@ -282,6 +283,7 @@ final class InboxDraft: Identifiable {
         case .siri: return "mic.badge.plus"
         case .groupExpense: return "person.2.fill"
         case .groupSettlement: return "arrow.left.arrow.right.circle.fill"
+        case .manual: return "square.and.pencil"
         }
     }
 

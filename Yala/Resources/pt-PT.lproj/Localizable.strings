@@ -79,6 +79,7 @@
 "subcategory.system.settlementReceived" = "Liquidação recebida";
 "inbox.sourceGroupExpense" = "Gasto compartilhado";
 "inbox.sourceGroupSettlement" = "Liquidação";
+"inbox.sourceManual" = "Manual";
 "inbox.groupDraftCannotDelete" = "Esta transação só pode ser removida no grupo de origem.";
 
 /* A0-Bridge V2.0 — P0+P1 sheets + banner read-only */

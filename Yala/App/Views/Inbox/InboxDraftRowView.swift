@@ -309,6 +309,8 @@ struct InboxDraftRowView: View {
             return theme.accent              // tema — Siri AI parsed
         case .groupExpense, .groupSettlement:
             return Color.hotPink             // brand pink — grupos
+        case .manual:
+            return theme.secondaryText       // neutro — draft convertido (FU-02 cleanup)
         }
     }
 

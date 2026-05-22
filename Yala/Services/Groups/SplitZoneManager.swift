@@ -193,25 +193,37 @@ final class SplitZoneManager {
     /// Leaves a shared group by deleting the share record from the shared database.
     /// This removes the current user as a participant and stops future updates for the zone.
     func leaveShare(for group: SplitGroup) async throws {
-        let container = CKContainer(identifier: CKConstants.containerID)
+        try await leaveShareByZone(
+            zoneName: group.cloudKitZoneID,
+            ownerName: ownerName(for: group)
+        )
+    }
 
-        let zoneID = sharedZoneID(for: group)
+    /// FU-02 cleanup F5c: variante standalone que recibe directamente (zoneName, ownerName).
+    /// No requiere SplitGroup vivo — usable desde retry boot-time (PendingLeaveShareTracker)
+    /// y desde el observer `performRemovedSelfCleanup` después del `delete(group)` local.
+    func leaveShareByZone(zoneName: String, ownerName: String) async throws {
+        let container = CKContainer(identifier: CKConstants.containerID)
+        let resolvedOwner = ownerName.isEmpty ? CKCurrentUserDefaultName : ownerName
+        let zoneID = CKRecordZone.ID(zoneName: zoneName, ownerName: resolvedOwner)
         let shareRecordID = CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneID)
 
         do {
             try await container.sharedCloudDatabase.deleteRecord(withID: shareRecordID)
             #if DEBUG
-            logger.info("Left shared zone by deleting zone-wide share: \(zoneID.zoneName)")
+            logger.info("Left shared zone by deleting zone-wide share: \(zoneName)")
             #endif
             return
         } catch let ckError as CKError where ckError.code == .unknownItem {
-            // Backward compatibility: hierarchical share — fetch GroupMeta and delete its share record
-            let groupMetaID = CKConstants.recordID(for: group.id, in: zoneID)
+            // Backward compatibility: hierarchical share — best-effort sin SplitGroup local.
+            // Si modelID puede derivarse del zoneName, intentar el path hierarchical.
+            guard let modelID = CKConstants.groupID(from: zoneName) else { throw ckError }
+            let groupMetaID = CKConstants.recordID(for: modelID, in: zoneID)
             let groupMeta = try await container.sharedCloudDatabase.record(for: groupMetaID)
             if let shareRef = groupMeta.share {
                 try await container.sharedCloudDatabase.deleteRecord(withID: shareRef.recordID)
                 #if DEBUG
-                logger.info("Left shared zone by deleting hierarchical share: \(zoneID.zoneName)")
+                logger.info("Left shared zone by deleting hierarchical share: \(zoneName)")
                 #endif
                 return
             }
@@ -219,16 +231,22 @@ final class SplitZoneManager {
         }
     }
 
-    private func sharedZoneID(for group: SplitGroup) -> CKRecordZone.ID {
+    /// FU-02 cleanup F5c: helper público para capturar el ownerName del SplitGroup
+    /// ANTES del `delete(group)` local (usado por `leaveGroup` y `performRemovedSelfCleanup`).
+    func ownerName(for group: SplitGroup) -> String {
         if !group.cloudKitZoneOwnerName.isEmpty {
-            return CKRecordZone.ID(zoneName: group.cloudKitZoneID, ownerName: group.cloudKitZoneOwnerName)
+            return group.cloudKitZoneOwnerName
         }
         if let data = group.ckSystemFieldsData,
            let record = CKRecordTranslator.recordFromSystemFields(data)
         {
-            return record.recordID.zoneID
+            return record.recordID.zoneID.ownerName
         }
-        return CKRecordZone.ID(zoneName: group.cloudKitZoneID, ownerName: CKCurrentUserDefaultName)
+        return CKCurrentUserDefaultName
+    }
+
+    private func sharedZoneID(for group: SplitGroup) -> CKRecordZone.ID {
+        CKRecordZone.ID(zoneName: group.cloudKitZoneID, ownerName: ownerName(for: group))
     }
 }
 

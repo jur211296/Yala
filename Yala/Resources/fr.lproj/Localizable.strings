@@ -4091,6 +4091,7 @@
 "subcategory.system.settlementReceived" = "Règlement reçu";
 "inbox.sourceGroupExpense" = "Dépense partagée";
 "inbox.sourceGroupSettlement" = "Règlement";
+"inbox.sourceManual" = "Manuel";
 "inbox.groupDraftCannotDelete" = "Cette transaction ne peut être supprimée que depuis le groupe d'origine.";
 
 /* A0-Bridge V2.0 — P0+P1 sheets + bannière read-only (vouvoiement) */

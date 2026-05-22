@@ -192,6 +192,12 @@ final class AppBootstrapper {
         // Runs sync (not Task) so consumers downstream see canonical groups only.
         SplitGroupDeduplicationService.deduplicateSplitGroups(in: context)
 
+        // 16.4.5. Safety net: hidden groups + removed-self cleanup que el observer pudo perder.
+        // Corre ANTES de retryPendingBridges para que el bridge guard `isHiddenForAll` aplique.
+        Task { @MainActor in
+            await freezeOrphanedGroupsAndRemovedSelves(context: context)
+        }
+
         // 16.5. Retry bridge operations that failed in a previous launch
         Task { @MainActor in
             await retryPendingBridges(context: context)
@@ -202,6 +208,11 @@ final class AppBootstrapper {
         // would otherwise stay with the "Usuario" default forever). Idempotent.
         Task { @MainActor in
             await reconcileCurrentUserDisplayNameIfNeeded()
+        }
+
+        // 16.7. Retry persistente de `leaveShare` que falló por network en sesión previa.
+        Task { @MainActor in
+            await retryPendingLeaveShares()
         }
 
         // Seed current iCloud user identity for groups and refresh local membership flags.
@@ -422,6 +433,74 @@ final class AppBootstrapper {
             try context.save()
         } catch {
             logger.error("retryPendingBridges fetch failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// Boot-time safety net para grupos hidden + removed-self que perdieron el observer
+    /// del sync engine (app cerrada al momento del fetch remoto). Idempotente:
+    /// `freezeForSoftDelete` y `performRemovedSelfCleanup` son no-op si ya están limpios.
+    @MainActor
+    func freezeOrphanedGroupsAndRemovedSelves(context: ModelContext) async {
+        // 1) Hidden groups: dispara freezeForSoftDelete para preservar rastro financiero.
+        do {
+            let hiddenGroups = try context.fetch(FetchDescriptor<SplitGroup>(
+                predicate: #Predicate { $0.isHiddenForAll == true }
+            ))
+            for group in hiddenGroups {
+                if GroupTransactionBridge.shared.isReady {
+                    do {
+                        try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
+                    } catch {
+                        #if DEBUG
+                        logger.error("freezeOrphanedGroups: freezeForSoftDelete failed for \(group.cloudKitZoneID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        #endif
+                    }
+                }
+            }
+        } catch {
+            #if DEBUG
+            logger.error("freezeOrphanedGroups: hidden fetch failed: \(error.localizedDescription, privacy: .public)")
+            #endif
+        }
+
+        // 2) Removed-self: current user con status=.removed → flow simétrico a leaveGroup.
+        do {
+            let removedRaw = SplitMemberStatus.removed.rawValue
+            let removedSelfMembers = try context.fetch(FetchDescriptor<SplitMember>(
+                predicate: #Predicate { $0.isCurrentUser == true && $0.status == removedRaw }
+            ))
+            for member in removedSelfMembers {
+                await GroupService.shared.performRemovedSelfCleanup(zoneName: member.groupZoneID)
+            }
+        } catch {
+            #if DEBUG
+            logger.error("freezeOrphanedGroups: removed-self fetch failed: \(error.localizedDescription, privacy: .public)")
+            #endif
+        }
+    }
+
+    /// Retry de `leaveShare` que falló en sesiones previas (network/offline). Itera
+    /// `PendingLeaveShareTracker.all()`; entries que succeden se quitan, las que vuelven a
+    /// fallar permanecen para el siguiente boot.
+    @MainActor
+    func retryPendingLeaveShares() async {
+        let entries = PendingLeaveShareTracker.all()
+        guard !entries.isEmpty else { return }
+        for entry in entries {
+            do {
+                try await SplitZoneManager(syncManager: .shared).leaveShareByZone(
+                    zoneName: entry.zoneName,
+                    ownerName: entry.zoneOwnerName
+                )
+                PendingLeaveShareTracker.remove(entry)
+                #if DEBUG
+                logger.info("retryPendingLeaveShares: succeeded for \(entry.zoneName, privacy: .public)")
+                #endif
+            } catch {
+                #if DEBUG
+                logger.error("retryPendingLeaveShares: failed for \(entry.zoneName, privacy: .public): \(error.localizedDescription, privacy: .public). Mantengo en tracker.")
+                #endif
+            }
         }
     }
 
@@ -746,7 +825,9 @@ final class AppBootstrapper {
 
             let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
             // CKShare custom keys (escritas por owner en setArchived / softDelete). Race-tolerant:
-            // si key ausente → false → standardReconnect; sync posterior trae estado al SplitGroup local.
+            // si key ausente (sync remoto aún no propagó al CKShare custom key) → false →
+            // standardReconnect; CKSyncEngine posterior actualiza el SplitGroup record local con
+            // el flag autoritativo vía F2 propagation (GroupMetaField.isArchived/isHiddenForAll).
             let isHiddenForAll = (metadata.share[CKShareCustomKey.isHiddenForAll] as? Int) == 1
             let isArchived = (metadata.share[CKShareCustomKey.isArchived] as? Int) == 1
             // Member status local (si ya hubo accept previo en este device).

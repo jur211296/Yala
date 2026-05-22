@@ -4094,6 +4094,7 @@
 "subcategory.system.settlementReceived" = "精算受領";
 "inbox.sourceGroupExpense" = "共有支出";
 "inbox.sourceGroupSettlement" = "精算";
+"inbox.sourceManual" = "手動";
 "inbox.groupDraftCannotDelete" = "この取引はソースグループからのみ削除できます。";
 
 /* A0-Bridge V2.0 — P0+P1 シート + 読み取り専用バナー */

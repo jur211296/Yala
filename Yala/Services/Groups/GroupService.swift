@@ -162,10 +162,11 @@ final class GroupService {
 
         SessionState.shared.incrementDataVersion()
 
-        // Propaga la flag al CKShare custom key para que invitados pre-accept
-        // (otros devices, retap del link) la vean ANTES de aceptar y reciban
-        // mode `.archived`. Falla silenciosa: red de seguridad es el sync normal
-        // del SplitGroup que también lleva isArchived al device del invitado.
+        // Propaga la flag por dos canales convergentes: (a) SplitGroup record vía enqueueSave
+        // + sync (path normal para invitados con app abierta — F2 propagation), (b) CKShare
+        // custom key zone-wide (race-tolerant fallback para invitados pre-accept retap link).
+        // Ambos llegan eventualmente al device del invitado y resetean su SplitGroup.isArchived local.
+        SplitSyncManager.shared.enqueueSave(modelID: group.id, group: group)
         let zoneID = group.cloudKitZoneID
         Task {
             await Self.propagateBoolCustomKey(zoneID: zoneID, key: CKShareCustomKey.isArchived, value: isArchived)
@@ -174,8 +175,9 @@ final class GroupService {
 
     /// Escribe una bool custom key (codificada como Int 0/1) en el CKShare zone-wide.
     /// Solo el owner del CKShare puede modificarlo (admin = owner por construcción).
-    /// Failure mode: silent fail en DEBUG log; red de seguridad es el sync normal del SplitGroup.
-    private static func propagateBoolCustomKey(zoneID: String, key: String, value: Bool) async {
+    /// Failure mode: silent fail en DEBUG log; red de seguridad es el sync del SplitGroup record.
+    /// `static` (no private) para que `SplitSyncManager.handleConflict` re-propague tras race.
+    static func propagateBoolCustomKey(zoneID: String, key: String, value: Bool) async {
         let zoneIDObj = CKRecordZone.ID(zoneName: zoneID, ownerName: CKCurrentUserDefaultName)
         let shareRecordID = CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneIDObj)
         let database = CKContainer(identifier: CKConstants.containerID).privateCloudDatabase
@@ -191,10 +193,12 @@ final class GroupService {
         }
     }
 
-    /// FU-02: soft-delete del grupo. Owner-only. Bloquea si cualquier miembro tiene balance pendiente.
-    /// NO toca la CKZone — solo marca el flag local + propaga al CKShare custom key. Invisible para
-    /// todos los miembros al próximo sync; CKShare custom key gateá retap link al modo `.deletedForAll`.
-    /// Irreversible desde la app. Recovery requiere CloudKit Dashboard (ver apuntes-grupos.md FU-02).
+    /// Soft-delete del grupo. Owner-only. Bloquea si cualquier miembro tiene balance pendiente.
+    /// Propaga `isHiddenForAll` por dos canales (idem setArchived): SplitGroup record sync +
+    /// CKShare custom key. Invisible para todos los miembros al próximo sync; el CKShare custom
+    /// key gateá retap link al modo `.deletedForAll` para devices sin SplitGroup local.
+    /// Irreversible desde la app — recovery solo vía CloudKit Dashboard (ver apuntes-grupos.md).
+    /// Adicional: dispara `freezeForSoftDelete` para limpiar TX/drafts personales bridgeadas.
     func softDelete(_ group: SplitGroup) throws {
         let context = try requireContext()
         guard group.isOwner else { throw GroupServiceError.notOwner }
@@ -225,6 +229,24 @@ final class GroupService {
 
         SessionState.shared.incrementDataVersion()
 
+        // Sube el SplitGroup record con isHiddenForAll=true para que el sync lo propague
+        // a los devices de los invitados (el CKShare custom key abajo es solo race-tolerant
+        // fallback para el flow de retap link).
+        SplitSyncManager.shared.enqueueSave(modelID: group.id, group: group)
+
+        // Libera TX cuenta real (preserva rastro financiero) + convierte drafts a manual.
+        // No-bloqueante: el observer del sync y la red de seguridad boot-time cubren
+        // con idempotency si esta llamada falla.
+        if GroupTransactionBridge.shared.isReady {
+            do {
+                try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
+            } catch {
+                #if DEBUG
+                logger.error("softDelete: freezeForSoftDelete failed: \(error.localizedDescription, privacy: .public)")
+                #endif
+            }
+        }
+
         let zoneID = group.cloudKitZoneID
         Task {
             await Self.propagateBoolCustomKey(zoneID: zoneID, key: CKShareCustomKey.isHiddenForAll, value: true)
@@ -249,13 +271,13 @@ final class GroupService {
         // Delete CK zone (cascade deletes all remote records)
         SplitZoneManager(syncManager: .shared).deleteZone(for: group)
 
-        // Unbridge personal TX/Drafts before deleting expenses
+        // Libera TX cuenta real (preserva rastro) + convierte drafts a manual.
         if GroupTransactionBridge.shared.isReady {
             do {
-                try GroupTransactionBridge.shared.unbridgeExpenses(for: group)
+                try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
             } catch {
                 #if DEBUG
-                logger.error("Failed to unbridge expenses: \(error)")
+                logger.error("Failed to freeze for soft-delete: \(error)")
                 #endif
             }
         }
@@ -326,7 +348,9 @@ final class GroupService {
         }
 
         member.memberStatus = .removed
-        member.isCurrentUser = false
+        // NOTE: `isCurrentUser` no se setea aquí — es device-local, no se sincroniza vía
+        // CKRecord. `refreshCurrentUserFlags` lo reescribe en cada device basándose en el
+        // matching de `cloudKitUserRecordID` con el current iCloud user.
 
         do {
             try context.save()
@@ -426,22 +450,20 @@ final class GroupService {
             try await SplitSyncManager.shared.sendPendingChanges(for: group)
         }
 
-        // Stop receiving future updates by leaving the CloudKit share (shared DB).
-        try await SplitZoneManager(syncManager: .shared).leaveShare(for: group)
-
-        if GroupTransactionBridge.shared.isReady {
-            do {
-                try GroupTransactionBridge.shared.unbridgeExpenses(for: group)
-            } catch {
-                #if DEBUG
-                logger.error("Failed to unbridge expenses: \(error)")
-                #endif
-            }
+        // Captura (zoneName, ownerName) ANTES de borrar el SplitGroup local para que el
+        // retry persistente funcione si la red falla durante `leaveShare`.
+        let leaveShareZoneName = group.cloudKitZoneID
+        let leaveShareOwnerName = SplitZoneManager(syncManager: .shared).ownerName(for: group)
+        do {
+            try await SplitZoneManager(syncManager: .shared).leaveShare(for: group)
+        } catch {
+            #if DEBUG
+            logger.error("leaveShare failed for \(leaveShareZoneName, privacy: .public): \(error.localizedDescription, privacy: .public). Persistiendo retry en tracker.")
+            #endif
+            PendingLeaveShareTracker.add(PendingLeaveShareEntry(zoneName: leaveShareZoneName, zoneOwnerName: leaveShareOwnerName))
         }
 
-        try cascadeDeleteGroupData(zoneName: group.cloudKitZoneID, context: context)
-        GroupPersonalPreferences.removeAll(for: group.cloudKitZoneID)
-        context.delete(group)
+        try performLocalCleanupAndDelete(group: group, context: context)
 
         do {
             try context.save()
@@ -450,6 +472,62 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
+    }
+
+    /// Flow simétrico a `leaveGroup` disparado por observer (`SplitSyncManager.applyMember`
+    /// cuando el current user pasa a `.removed` vía admin remoto). Idempotente: si el
+    /// SplitGroup local ya fue borrado (e.g. leaveGroup previo en otro device del mismo
+    /// user), no-op.
+    func performRemovedSelfCleanup(zoneName: String) async {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneName })
+        guard let group = try? context.fetch(descriptor).first else { return }
+
+        let leaveShareZoneName = group.cloudKitZoneID
+        let leaveShareOwnerName = SplitZoneManager(syncManager: .shared).ownerName(for: group)
+
+        do {
+            try performLocalCleanupAndDelete(group: group, context: context)
+            try context.save()
+        } catch {
+            #if DEBUG
+            logger.error("performRemovedSelfCleanup: local cleanup failed: \(error.localizedDescription, privacy: .public)")
+            #endif
+        }
+        SessionState.shared.incrementDataVersion()
+
+        do {
+            try await SplitZoneManager(syncManager: .shared).leaveShareByZone(
+                zoneName: leaveShareZoneName,
+                ownerName: leaveShareOwnerName
+            )
+        } catch {
+            #if DEBUG
+            logger.error("performRemovedSelfCleanup: leaveShareByZone failed for \(leaveShareZoneName, privacy: .public): \(error.localizedDescription, privacy: .public). Persistiendo retry en tracker.")
+            #endif
+            PendingLeaveShareTracker.add(
+                PendingLeaveShareEntry(zoneName: leaveShareZoneName, zoneOwnerName: leaveShareOwnerName)
+            )
+        }
+    }
+
+    /// Bloque común de cleanup local al salir o ser removido de un grupo: libera TX cuenta
+    /// real (preserva rastro financiero), convierte drafts a manual, borra expenses/shares/
+    /// settlements/members de la zone, limpia prefs personales del grupo y elimina el
+    /// SplitGroup local. NO hace save() — caller controla cuándo flushear.
+    private func performLocalCleanupAndDelete(group: SplitGroup, context: ModelContext) throws {
+        if GroupTransactionBridge.shared.isReady {
+            do {
+                try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
+            } catch {
+                #if DEBUG
+                logger.error("freezeForSoftDelete failed: \(error.localizedDescription, privacy: .public)")
+                #endif
+            }
+        }
+        try cascadeDeleteGroupData(zoneName: group.cloudKitZoneID, context: context)
+        GroupPersonalPreferences.removeAll(for: group.cloudKitZoneID)
+        context.delete(group)
     }
 
     // MARK: - Current User Identity / Membership

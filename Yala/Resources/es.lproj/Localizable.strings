@@ -2913,6 +2913,7 @@
 "subcategory.system.settlementReceived" = "Liquidación recibida";
 "inbox.sourceGroupExpense" = "Gasto compartido";
 "inbox.sourceGroupSettlement" = "Liquidación";
+"inbox.sourceManual" = "Manual";
 "inbox.groupDraftCannotDelete" = "Esta transacción se elimina solo desde el grupo origen.";
 
 // MARK: - Scheduled Payments UX (M1-M7)

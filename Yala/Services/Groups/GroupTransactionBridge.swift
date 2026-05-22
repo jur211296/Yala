@@ -100,6 +100,16 @@ final class GroupTransactionBridge {
     ) throws {
         let context = try requireContext()
 
+        // Defensa-en-profundidad: si el grupo está hidden (soft-deleted), no bridgear
+        // expenses — el cleanup observer ya corrió o correrá. Previene bridging en el
+        // device del invitado fresh-install que recibe el SplitGroup ya hidden vía sync.
+        guard Self.shouldBridgeExpense(groupIsHidden: group.isHiddenForAll) else {
+            #if DEBUG
+            Self.logger.info("bridgeExpense: skip hidden group \(group.cloudKitZoneID, privacy: .public)")
+            #endif
+            return
+        }
+
         // Find current user's member in this group.
         // pending/rejected members no triguean bridge.
         let zoneID = group.cloudKitZoneID
@@ -701,8 +711,52 @@ final class GroupTransactionBridge {
         WidgetDataCache.updateCache(context: context)
     }
 
-    /// Remove all bridged records for a group (used when deleting/leaving a group).
-    func unbridgeExpenses(for group: SplitGroup) throws {
+    // MARK: - Freeze on Soft-delete / Leave / Remove
+
+    /// Clasificación pure-logic por tipo de TX bridgeada al limpiar tras soft-delete/leave/remove.
+    /// TX cuenta real → libera 3 IDs (preserva monto/fecha/cuenta/subcat/note/tags).
+    /// TX virtual sistema → preserva intacta (rastro "presté X" / "me liquidaron").
+    enum SoftDeleteCleanupAction {
+        case releaseRealAccountTx
+        case preserveVirtualSystemTx
+    }
+
+    /// Pure-logic classifier: decide qué hacer con una TX bridgeada en el cleanup.
+    nonisolated static func classifyForSoftDelete(transactionAccountIsSystem: Bool) -> SoftDeleteCleanupAction {
+        transactionAccountIsSystem ? .preserveVirtualSystemTx : .releaseRealAccountTx
+    }
+
+    /// Pure-logic helper: si el grupo está hidden, no bridgear sus expenses.
+    /// Defensa-en-profundidad contra invitados fresh-install que reciben SplitGroup ya hidden.
+    nonisolated static func shouldBridgeExpense(groupIsHidden: Bool) -> Bool { !groupIsHidden }
+
+    /// Pure-logic plan computado a partir de fetches del context. Testeable sin context.
+    struct FreezePlan {
+        let txsToRelease: [TransactionItem]
+        let draftsToConvert: [InboxDraft]
+    }
+
+    /// Pure-logic: dado un array de TX/drafts ya fetcheados, devuelve qué hacer con cada uno.
+    /// Idempotente: si TX/draft ya está limpio, lo excluye del plan (no se modifica).
+    nonisolated static func computeFreezePlan(transactions: [TransactionItem], drafts: [InboxDraft]) -> FreezePlan {
+        let txsToRelease = transactions.filter { tx in
+            // Solo TX cuenta real (no system). TX ya liberadas (IDs nil) excluidas.
+            guard tx.account?.isSystemAccount == false else { return false }
+            return tx.splitExpenseID != nil || tx.splitSettlementID != nil || tx.splitGroupZoneID != nil
+        }
+        let groupExpenseRaw = DraftSourceType.groupExpense.rawValue
+        let groupSettlementRaw = DraftSourceType.groupSettlement.rawValue
+        let draftsToConvert = drafts.filter { draft in
+            draft.sourceTypeRaw == groupExpenseRaw || draft.sourceTypeRaw == groupSettlementRaw
+        }
+        return FreezePlan(txsToRelease: txsToRelease, draftsToConvert: draftsToConvert)
+    }
+
+    /// Libera TX cuenta real (nilea splitExpenseID/splitSettlementID/splitGroupZoneID) +
+    /// convierte drafts `groupExpense`/`groupSettlement` a `.manual` preservando cached fields.
+    /// Reemplaza el destructive `unbridgeExpenses` eliminado — preserva el rastro financiero.
+    /// Idempotente: TX/drafts ya limpios se excluyen del plan.
+    func freezeForSoftDelete(group: SplitGroup) throws {
         let context = try requireContext()
         let zoneID = group.cloudKitZoneID
 
@@ -710,17 +764,40 @@ final class GroupTransactionBridge {
             predicate: #Predicate { $0.splitGroupZoneID == zoneID }
         )
         let transactions = try context.fetch(txDescriptor)
-        for tx in transactions { context.delete(tx) }
 
         let draftDescriptor = FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitGroupZoneID == zoneID }
         )
         let drafts = try context.fetch(draftDescriptor)
-        for draft in drafts { context.delete(draft) }
+
+        let plan = Self.computeFreezePlan(transactions: transactions, drafts: drafts)
+
+        // TX cuenta real: libera 3 IDs. Preserva monto/fecha/cuenta/subcat/note/tags.
+        for tx in plan.txsToRelease {
+            tx.splitExpenseID = nil
+            tx.splitSettlementID = nil
+            tx.splitGroupZoneID = nil
+        }
+
+        // Drafts groupExpense/groupSettlement: convert a manual. Preserva cached fields.
+        let manualRaw = DraftSourceType.manual.rawValue
+        for draft in plan.draftsToConvert {
+            draft.sourceTypeRaw = manualRaw
+            draft.splitExpenseID = nil
+            draft.splitSettlementID = nil
+            draft.splitGroupZoneID = nil
+            draft.needsUserInput = []
+        }
+
+        guard !plan.txsToRelease.isEmpty || !plan.draftsToConvert.isEmpty else { return }
 
         try context.save()
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
+
+        #if DEBUG
+        Self.logger.info("freezeForSoftDelete zone=\(zoneID, privacy: .public) released=\(plan.txsToRelease.count, privacy: .public) converted=\(plan.draftsToConvert.count, privacy: .public)")
+        #endif
     }
 
     // MARK: - Category Matching

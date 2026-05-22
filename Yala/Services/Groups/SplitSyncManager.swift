@@ -56,6 +56,13 @@ final class SplitSyncManager {
     private var pendingBridgeExpenseIDs: Set<UUID> = []
     private var pendingBridgeChangeSet = RemoteChangeSet()
 
+    // Cleanup observers: acumulan zoneIDs durante el batch de remote records,
+    // procesados post-save junto al deferredBridgeTask.
+    /// Zones donde el SplitGroup remoto flipped a `isHiddenForAll=true` → dispara `freezeForSoftDelete`.
+    private var pendingFreezeZoneIDs: Set<String> = []
+    /// Zones donde el current user pasó de `.active → .removed` vía admin remoto → dispara full cleanup.
+    private var pendingRemovedSelfZoneNames: Set<String> = []
+
     // Records that failed due to quota exceeded — retried on foreground
     private var quotaFailedRecordIDs: Set<CKRecord.ID> = []
 
@@ -668,6 +675,30 @@ final class SplitSyncManager {
             #endif
         }
 
+        // Procesar pending freeze (soft-delete flip) + removed-self cleanup post-save.
+        // Idempotente — freezeForSoftDelete + performRemovedSelfCleanup no-op si ya está limpio.
+        let freezeZones = pendingFreezeZoneIDs
+        let removedSelfZones = pendingRemovedSelfZoneNames
+        pendingFreezeZoneIDs.removeAll()
+        pendingRemovedSelfZoneNames.removeAll()
+
+        for zoneID in freezeZones {
+            guard let group = self.group(for: zoneID) else { continue }
+            do {
+                try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
+            } catch {
+                #if DEBUG
+                logger.error("[\(engineName)] freezeForSoftDelete failed for \(zoneID): \(error.localizedDescription, privacy: .public)")
+                #endif
+            }
+        }
+
+        for zoneName in removedSelfZones {
+            Task { @MainActor in
+                await GroupService.shared.performRemovedSelfCleanup(zoneName: zoneName)
+            }
+        }
+
         // Accumulate IDs and changeSets, then coalesce into a single deferred Task.
         // Avoids spawning N independent Tasks if N fetch events arrive in rapid succession.
         pendingBridgeExpenseIDs.formUnion(changeSet.newExpenses.map(\.id) + changeSet.modifiedExpenses.map(\.id))
@@ -818,6 +849,23 @@ final class SplitSyncManager {
             return
         }
 
+        // Race fix para serverRecordChanged en SplitGroup. Si el local tenía
+        // isHiddenForAll/isArchived=true y server retorna stale false (otro device editó
+        // metadata simultáneo), el server-wins default revertiría el flag. Mitigación:
+        // capturar pre-state, dejar que apply pise, y re-aplicar la transición true.
+        var preIsHiddenForAll: Bool = false
+        var preIsArchived: Bool = false
+        var splitGroupZoneID: String? = nil
+        if serverRecord.recordType == CKConstants.RecordType.groupMeta,
+           let modelID = CKConstants.modelID(from: serverRecord.recordID) {
+            let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == modelID })
+            if let existing = try? modelContext.fetch(descriptor).first {
+                preIsHiddenForAll = existing.isHiddenForAll
+                preIsArchived = existing.isArchived
+                splitGroupZoneID = existing.cloudKitZoneID
+            }
+        }
+
         // Accept server version: update local model from server record
         applyRemoteRecord(serverRecord, context: modelContext, engineName: engineName)
         do {
@@ -826,6 +874,36 @@ final class SplitSyncManager {
             #if DEBUG
             logger.error("[\(engineName)] Failed to save after conflict resolution: \(error)")
             #endif
+        }
+
+        // Re-aplicar transición si server stale revirtió flag local.
+        if let zoneID = splitGroupZoneID,
+           let group = self.group(for: zoneID) {
+            var needsReSave = false
+            if preIsHiddenForAll && !group.isHiddenForAll {
+                group.isHiddenForAll = true
+                needsReSave = true
+                enqueueSave(modelID: group.id, group: group)
+                Task { await GroupService.propagateBoolCustomKey(zoneID: zoneID, key: CKShareCustomKey.isHiddenForAll, value: true) }
+            }
+            if preIsArchived && !group.isArchived {
+                group.isArchived = true
+                needsReSave = true
+                enqueueSave(modelID: group.id, group: group)
+                Task { await GroupService.propagateBoolCustomKey(zoneID: zoneID, key: CKShareCustomKey.isArchived, value: true) }
+            }
+            if needsReSave {
+                do {
+                    try modelContext.save()
+                    #if DEBUG
+                    logger.info("[\(engineName)] Conflict race fix: re-applied transition for zone \(zoneID, privacy: .public)")
+                    #endif
+                } catch {
+                    #if DEBUG
+                    logger.error("[\(engineName)] Failed to save after race fix re-apply: \(error)")
+                    #endif
+                }
+            }
         }
 
         // Remove from pending — server version is now authoritative
@@ -994,11 +1072,21 @@ final class SplitSyncManager {
         do {
             let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == modelID })
             if let existing = try context.fetch(descriptor).first {
+                // Capturar previo antes del update para detectar flip a hidden.
+                let wasHidden = existing.isHiddenForAll
                 CKRecordTranslator.update(existing, from: record)
                 existing.isOwner = (engineName == "private")
+                if !wasHidden && existing.isHiddenForAll {
+                    pendingFreezeZoneIDs.insert(existing.cloudKitZoneID)
+                }
             } else if let newGroup = CKRecordTranslator.group(from: record) {
                 newGroup.isOwner = (engineName == "private")
                 context.insert(newGroup)
+                // Initial-fetch del invitado fresh-install POST soft-delete: el SplitGroup llega
+                // ya con isHiddenForAll=true → encolar (idempotente, no-op si no hay TX).
+                if newGroup.isHiddenForAll {
+                    pendingFreezeZoneIDs.insert(newGroup.cloudKitZoneID)
+                }
             }
         } catch {
             #if DEBUG
@@ -1026,9 +1114,22 @@ final class SplitSyncManager {
         do {
             let descriptor = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.id == modelID })
             if let existing = try context.fetch(descriptor).first {
+                // Snapshot (active && currentUser) ANTES del update — necesario para detectar
+                // que el admin remoto pasó a este device de active a removed.
+                let wasActiveAndCurrent = existing.isActive && existing.isCurrentUser
                 CKRecordTranslator.update(existing, from: record)
+                if SoftDeleteObserverLogic.shouldTriggerRemovedSelfCleanup(
+                    wasActiveAndCurrentUser: wasActiveAndCurrent,
+                    newStatus: existing.memberStatus
+                ) {
+                    pendingRemovedSelfZoneNames.insert(existing.groupZoneID)
+                }
             } else if let newMember = CKRecordTranslator.member(from: record) {
                 context.insert(newMember)
+                // Edge case conocido: invitado fresh-install + admin ya lo removió previamente
+                // → newMember entra con isCurrentUser=false (default init) y el observer no
+                // dispara. `refreshCurrentUserFlags` setea isCurrentUser=true después pero el
+                // grupo queda visible hasta retap link. Bug latente documentado (no fix aquí).
             }
         } catch {
             #if DEBUG

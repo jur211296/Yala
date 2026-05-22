@@ -72,6 +72,10 @@ enum CKRecordTranslator {
         record[F.showDebtsInSingleCurrency] = ckBool(group.showDebtsInSingleCurrency)
         record[F.defaultSplitType] = group.defaultSplitType as CKRecordValue
         record[F.membersCanInvite] = ckBool(group.membersCanInvite)
+        // Lifecycle flags vía record (no solo CKShare custom key) para que invitados con
+        // app abierta reciban el flip vía sync normal.
+        record[F.isArchived] = ckBool(group.isArchived)
+        record[F.isHiddenForAll] = ckBool(group.isHiddenForAll)
     }
 
     static func group(from record: CKRecord) -> SplitGroup? {
@@ -90,6 +94,9 @@ enum CKRecordTranslator {
         group.showDebtsInSingleCurrency = readBool(record, key: F.showDebtsInSingleCurrency)
         group.defaultSplitType = record[F.defaultSplitType] as? String ?? "equal"
         group.membersCanInvite = readBool(record, key: F.membersCanInvite, default: false)
+        // Default false si el record viejo en CloudKit no tenía el field (race-tolerant).
+        group.isArchived = readBool(record, key: F.isArchived, default: false)
+        group.isHiddenForAll = readBool(record, key: F.isHiddenForAll, default: false)
         group.ckSystemFieldsData = encodeSystemFields(of: record)
         return group
     }
@@ -107,6 +114,9 @@ enum CKRecordTranslator {
         group.showDebtsInSingleCurrency = readBool(record, key: F.showDebtsInSingleCurrency)
         group.defaultSplitType = record[F.defaultSplitType] as? String ?? group.defaultSplitType
         group.membersCanInvite = readBool(record, key: F.membersCanInvite, default: group.membersCanInvite)
+        // Default a local si el record viejo no tenía el field (race-tolerant).
+        group.isArchived = readBool(record, key: F.isArchived, default: group.isArchived)
+        group.isHiddenForAll = readBool(record, key: F.isHiddenForAll, default: group.isHiddenForAll)
         group.ckSystemFieldsData = encodeSystemFields(of: record)
     }
 

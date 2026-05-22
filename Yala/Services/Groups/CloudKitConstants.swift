@@ -39,6 +39,8 @@ enum CKConstants {
         static let showDebtsInSingleCurrency = "showDebtsInSingleCurrency"
         static let defaultSplitType = "defaultSplitType"
         static let membersCanInvite = "membersCanInvite"
+        static let isArchived = "isArchived"
+        static let isHiddenForAll = "isHiddenForAll"
     }
 
     // MARK: - SplitExpense Fields
@@ -69,7 +71,9 @@ enum CKConstants {
         static let status = "status"
         static let isGroupOwner = "isGroupOwner"
         static let joinedAt = "joinedAt"
-        static let isCurrentUser = "isCurrentUser"
+        // NOTE: `isCurrentUser` no se persiste en CKRecord — es device-local,
+        // reseteado por `GroupService.refreshCurrentUserFlags` basándose en
+        // `cloudKitUserRecordID` matching del current iCloud user.
     }
 
     // MARK: - SplitShare Fields

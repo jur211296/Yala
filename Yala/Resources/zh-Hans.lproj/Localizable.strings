@@ -4094,6 +4094,7 @@
 "subcategory.system.settlementReceived" = "结算已收到";
 "inbox.sourceGroupExpense" = "共享支出";
 "inbox.sourceGroupSettlement" = "结算";
+"inbox.sourceManual" = "手动";
 "inbox.groupDraftCannotDelete" = "此交易只能从源群组中删除。";
 
 /* A0-Bridge V2.0 — P0+P1 表单 + 只读横幅 */

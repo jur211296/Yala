@@ -4090,6 +4090,7 @@
 "subcategory.system.settlementReceived" = "Abrechnung erhalten";
 "inbox.sourceGroupExpense" = "Geteilte Ausgabe";
 "inbox.sourceGroupSettlement" = "Abrechnung";
+"inbox.sourceManual" = "Manuell";
 "inbox.groupDraftCannotDelete" = "Diese Transaktion kann nur aus der Quellgruppe entfernt werden.";
 
 /* A0-Bridge V2.0 — P0+P1 Sheets + Read-only-Banner (Sie) */

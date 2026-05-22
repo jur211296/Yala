@@ -2727,6 +2727,7 @@
 "subcategory.system.settlementReceived" = "Settlement received";
 "inbox.sourceGroupExpense" = "Shared expense";
 "inbox.sourceGroupSettlement" = "Settlement";
+"inbox.sourceManual" = "Manual";
 "inbox.groupDraftCannotDelete" = "This transaction can only be removed from the source group.";
 
 // MARK: - Tips & Tricks
