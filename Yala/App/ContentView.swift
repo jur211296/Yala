@@ -856,7 +856,8 @@ private struct GroupInviteModifier: ViewModifier {
         let zoneName = metadata.share.recordID.zoneID.zoneName
 
         switch invite.mode {
-        case .archived:
+        case .archived, .deletedForAll:
+            // .deletedForAll (FU-02): el CTA solo dismissa, nunca llega aquí. Defensa-en-profundidad.
             return
 
         case .alreadyMember:

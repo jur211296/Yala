@@ -1957,6 +1957,11 @@ enum L10n {
 
             /// CTA compartido por rejectedRetry / leftRetry / removedRetry: "Volver a pedir".
             static var retryCta: String { ls("groups.reconnect.retryCta", comment: "") }
+
+            // FU-02 — deletedForAll (grupo eliminado por owner, irreversible)
+            static func deletedForAllTitle(_ name: String) -> String { String(format: ls("groups.reconnect.deletedForAll.title", comment: ""), name) }
+            static var deletedForAllBody: String { ls("groups.reconnect.deletedForAll.body", comment: "") }
+            static var deletedForAllCta: String { ls("groups.reconnect.deletedForAll.cta", comment: "") }
         }
 
         enum Activate {

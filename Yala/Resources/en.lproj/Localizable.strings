@@ -4352,3 +4352,8 @@
 "groups.onboarding.step3.point1" = "Every member needs an active iCloud account.";
 "groups.onboarding.step3.point2" = "Your personal data isn't synced with the group, only shared expenses.";
 "groups.onboarding.step3.cta" = "Go to Groups";
+
+// MARK: FU-02-reconnect
+"groups.reconnect.deletedForAll.title" = "%@ was deleted";
+"groups.reconnect.deletedForAll.body" = "This group was deleted by its creator.";
+"groups.reconnect.deletedForAll.cta" = "Got it";

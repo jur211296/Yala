@@ -41,8 +41,8 @@ struct GroupReconnectView: View {
                     Spacer()
 
                     YalaPrimaryButton(ctaLabel) {
-                        if invite.mode == .archived {
-                            // .archived: el CTA solo dismissa.
+                        if invite.mode == .archived || invite.mode == .deletedForAll {
+                            // .archived / .deletedForAll (FU-02): el CTA solo dismissa.
                             onDismiss()
                         } else {
                             onJoin()
@@ -75,6 +75,7 @@ struct GroupReconnectView: View {
         case .rejectedRetry: return L10n.Groups.Reconnect.rejectedRetryTitle
         case .leftRetry: return L10n.Groups.Reconnect.leftRetryTitle(groupName)
         case .removedRetry: return L10n.Groups.Reconnect.removedRetryTitle(groupName)
+        case .deletedForAll: return L10n.Groups.Reconnect.deletedForAllTitle(groupName)
         }
     }
 
@@ -87,6 +88,7 @@ struct GroupReconnectView: View {
         case .rejectedRetry: return L10n.Groups.Reconnect.rejectedRetryBody
         case .leftRetry: return L10n.Groups.Reconnect.leftRetryBody
         case .removedRetry: return L10n.Groups.Reconnect.removedRetryBody
+        case .deletedForAll: return L10n.Groups.Reconnect.deletedForAllBody
         }
     }
 
@@ -97,6 +99,7 @@ struct GroupReconnectView: View {
         case .alreadyMember: return L10n.Groups.Reconnect.alreadyMemberCta
         case .pendingDuplicate: return L10n.Groups.Reconnect.pendingDuplicateCta
         case .rejectedRetry, .leftRetry, .removedRetry: return L10n.Groups.Reconnect.retryCta
+        case .deletedForAll: return L10n.Groups.Reconnect.deletedForAllCta
         }
     }
 

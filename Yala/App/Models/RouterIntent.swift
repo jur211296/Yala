@@ -41,6 +41,8 @@ enum ReconnectMode: String, Equatable, Sendable {
     case leftRetry
     /// Admin me removió — ofrecer volver a pedir.
     case removedRetry
+    /// FU-02: grupo eliminado por owner — invisible para todos, CTA "Entendido" sin acceptShare.
+    case deletedForAll
 }
 
 /// Invite metadata carried by group invite intents. CKShare.Metadata is NOT

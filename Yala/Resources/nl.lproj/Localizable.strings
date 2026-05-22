@@ -4350,3 +4350,8 @@
 "groups.onboarding.step3.point1" = "Elk lid heeft een actief iCloud-account nodig.";
 "groups.onboarding.step3.point2" = "Je persoonlijke gegevens worden niet met de groep gesynchroniseerd, alleen gedeelde uitgaven.";
 "groups.onboarding.step3.cta" = "Naar groepen";
+
+// MARK: FU-02-reconnect
+"groups.reconnect.deletedForAll.title" = "%@ is verwijderd";
+"groups.reconnect.deletedForAll.body" = "Deze groep is verwijderd door de maker.";
+"groups.reconnect.deletedForAll.cta" = "Begrepen";

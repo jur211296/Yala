@@ -4350,3 +4350,8 @@
 "groups.onboarding.step3.point1" = "每位成员都需要一个有效的 iCloud 账户。";
 "groups.onboarding.step3.point2" = "你的个人数据不会与群组同步,只有共享开支会同步。";
 "groups.onboarding.step3.cta" = "前往群组";
+
+// MARK: FU-02-reconnect
+"groups.reconnect.deletedForAll.title" = "%@ 已被删除";
+"groups.reconnect.deletedForAll.body" = "该群组已被创建者删除。";
+"groups.reconnect.deletedForAll.cta" = "了解";

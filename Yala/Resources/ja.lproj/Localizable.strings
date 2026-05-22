@@ -4350,3 +4350,8 @@
 "groups.onboarding.step3.point1" = "メンバー全員にアクティブなiCloudアカウントが必要です。";
 "groups.onboarding.step3.point2" = "個人データはグループと同期されません。共有された支払いのみが同期されます。";
 "groups.onboarding.step3.cta" = "グループへ";
+
+// MARK: FU-02-reconnect
+"groups.reconnect.deletedForAll.title" = "%@は削除されました";
+"groups.reconnect.deletedForAll.body" = "このグループは作成者によって削除されました。";
+"groups.reconnect.deletedForAll.cta" = "了解";

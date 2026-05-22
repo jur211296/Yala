@@ -4346,3 +4346,8 @@
 "groups.onboarding.step3.point1" = "Cada membro precisa de uma conta iCloud ativa.";
 "groups.onboarding.step3.point2" = "Seus dados pessoais não são sincronizados com o grupo, apenas as despesas compartilhadas.";
 "groups.onboarding.step3.cta" = "Ir para Grupos";
+
+// MARK: FU-02-reconnect
+"groups.reconnect.deletedForAll.title" = "%@ foi excluído";
+"groups.reconnect.deletedForAll.body" = "Este grupo foi excluído pelo seu criador.";
+"groups.reconnect.deletedForAll.cta" = "Entendi";

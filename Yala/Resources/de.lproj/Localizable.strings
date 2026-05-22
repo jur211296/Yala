@@ -4346,3 +4346,8 @@
 "groups.onboarding.step3.point1" = "Jedes Mitglied benötigt ein aktives iCloud-Konto.";
 "groups.onboarding.step3.point2" = "Ihre persönlichen Daten werden nicht mit der Gruppe synchronisiert, nur geteilte Ausgaben.";
 "groups.onboarding.step3.cta" = "Zu Gruppen";
+
+// MARK: FU-02-reconnect
+"groups.reconnect.deletedForAll.title" = "%@ wurde gelöscht";
+"groups.reconnect.deletedForAll.body" = "Diese Gruppe wurde vom Ersteller gelöscht.";
+"groups.reconnect.deletedForAll.cta" = "Verstanden";

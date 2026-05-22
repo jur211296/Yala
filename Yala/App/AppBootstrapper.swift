@@ -708,13 +708,15 @@ final class AppBootstrapper {
     }
 
     /// Decide el routing tras leer metadata del share + estado local del grupo.
-    /// Orden de evaluación: archived (CKShare custom key) > member status local > onboarding.
+    /// Orden de evaluación: isHiddenForAll (CKShare custom key) > isArchived (CKShare custom key) > member status local > onboarding.
     static func inviteRouteDecision(
         hasCompletedOnboarding: Bool,
         onboardingMode: OnboardingMode,
+        isHiddenForAll: Bool = false,
         isArchived: Bool = false,
         currentMemberStatus: SplitMemberStatus? = nil
     ) -> InviteRouteDecision {
+        if isHiddenForAll { return .showReconnect(mode: .deletedForAll) }
         if isArchived { return .showReconnect(mode: .archived) }
         if let status = currentMemberStatus {
             switch status {
@@ -743,8 +745,9 @@ final class AppBootstrapper {
             let metadata = try await InviteLinkService.fetchShareMetadata(for: shareURL)
 
             let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
-            // CKShare custom key `isArchived` (escrita por owner en setArchived). Race-tolerant:
+            // CKShare custom keys (escritas por owner en setArchived / softDelete). Race-tolerant:
             // si key ausente → false → standardReconnect; sync posterior trae estado al SplitGroup local.
+            let isHiddenForAll = (metadata.share[CKShareCustomKey.isHiddenForAll] as? Int) == 1
             let isArchived = (metadata.share[CKShareCustomKey.isArchived] as? Int) == 1
             // Member status local (si ya hubo accept previo en este device).
             let zoneName = metadata.share.recordID.zoneID.zoneName
@@ -753,6 +756,7 @@ final class AppBootstrapper {
             let decision = Self.inviteRouteDecision(
                 hasCompletedOnboarding: hasCompletedOnboarding,
                 onboardingMode: sessionState.onboardingMode,
+                isHiddenForAll: isHiddenForAll,
                 isArchived: isArchived,
                 currentMemberStatus: currentMemberStatus
             )

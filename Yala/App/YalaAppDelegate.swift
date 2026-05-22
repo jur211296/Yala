@@ -49,6 +49,7 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         Task { @MainActor in
             let sessionState = SessionState.shared
             let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            let isHiddenForAll = (cloudKitShareMetadata.share[CKShareCustomKey.isHiddenForAll] as? Int) == 1
             let isArchived = (cloudKitShareMetadata.share[CKShareCustomKey.isArchived] as? Int) == 1
             let zoneName = cloudKitShareMetadata.share.recordID.zoneID.zoneName
             let currentMemberStatus = SplitSyncManager.shared.currentMemberStatus(zoneName: zoneName)
@@ -56,6 +57,7 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
             let decision = AppBootstrapper.inviteRouteDecision(
                 hasCompletedOnboarding: hasCompletedOnboarding,
                 onboardingMode: sessionState.onboardingMode,
+                isHiddenForAll: isHiddenForAll,
                 isArchived: isArchived,
                 currentMemberStatus: currentMemberStatus
             )
