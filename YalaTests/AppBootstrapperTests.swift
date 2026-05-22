@@ -165,4 +165,50 @@ struct AppBootstrapperTests {
         )
         #expect(decision == .showReconnect(mode: .archived))
     }
+
+    // MARK: - FU-02: hiddenForAll overrides everything (soft-delete owner)
+
+    @Test func inviteRouteDecision_hiddenForAllOverridesArchived() {
+        // FU-02: isHiddenForAll gana incluso sobre isArchived (orden de evaluación).
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full,
+            isHiddenForAll: true,
+            isArchived: true
+        )
+        #expect(decision == .showReconnect(mode: .deletedForAll))
+    }
+
+    @Test func inviteRouteDecision_hiddenForAllOverridesActiveMember() {
+        // FU-02: isHiddenForAll gana sobre member status `.active`.
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full,
+            isHiddenForAll: true,
+            currentMemberStatus: .active
+        )
+        #expect(decision == .showReconnect(mode: .deletedForAll))
+    }
+
+    @Test func inviteRouteDecision_hiddenForAllOverridesPendingApproval() {
+        // FU-02: isHiddenForAll gana sobre member status `.pendingApproval`.
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full,
+            isHiddenForAll: true,
+            currentMemberStatus: .pendingApproval
+        )
+        #expect(decision == .showReconnect(mode: .deletedForAll))
+    }
+
+    @Test func inviteRouteDecision_hiddenForAllOverridesFreshUser() {
+        // FU-02: isHiddenForAll gana incluso sobre el path acceptAndShowInviteOnboarding
+        // (fresh-install retap link de grupo soft-deleted → NO entra al onboarding).
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: false,
+            onboardingMode: .full,
+            isHiddenForAll: true
+        )
+        #expect(decision == .showReconnect(mode: .deletedForAll))
+    }
 }
