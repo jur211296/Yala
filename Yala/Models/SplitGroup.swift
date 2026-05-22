@@ -23,6 +23,7 @@ final class SplitGroup {
     var createdAt: Date = Date.now
     var isOwner: Bool = false
     var isArchived: Bool = false
+    var isHiddenForAll: Bool = false      // FU-02: soft-delete invisible para todos (irreversible in-app)
     var defaultAccountID: UUID?           // ID ref, NO @Relationship (zonas distintas)
     var showDebtsInSingleCurrency: Bool = false
     var defaultSplitType: String = "equal" // "equal" | "percentage" | "exact" | "shares"

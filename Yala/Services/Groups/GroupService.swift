@@ -190,6 +190,67 @@ final class GroupService {
         }
     }
 
+    /// FU-02: soft-delete del grupo. Owner-only. Bloquea si cualquier miembro tiene balance pendiente.
+    /// NO toca la CKZone — solo marca el flag local + propaga al CKShare custom key. Invisible para
+    /// todos los miembros al próximo sync; CKShare custom key gateá retap link al modo `.deletedForAll`.
+    /// Irreversible desde la app. Recovery requiere CloudKit Dashboard (ver apuntes-grupos.md FU-02).
+    func softDelete(_ group: SplitGroup) throws {
+        let context = try requireContext()
+        guard group.isOwner else { throw GroupServiceError.notOwner }
+
+        // Recalcular balances internamente (defensa en profundidad — no confía en UI).
+        let expenses = try GroupExpenseService.shared.fetchExpenses(for: group)
+        let shares = try GroupExpenseService.shared.fetchAllShares(for: group)
+        let members = try fetchMembers(for: group)
+        let settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
+
+        let balances = GroupBalanceService.calculateBalances(
+            expenses: expenses,
+            shares: shares,
+            members: members,
+            settlements: settlements
+        )
+        guard balances.allSatisfy({ abs($0.netBalance) <= 0.01 }) else {
+            throw GroupServiceError.outstandingBalance
+        }
+
+        group.isHiddenForAll = true
+
+        do {
+            try context.save()
+        } catch {
+            throw GroupServiceError.saveFailed(error)
+        }
+
+        SessionState.shared.incrementDataVersion()
+
+        let zoneID = group.cloudKitZoneID
+        Task {
+            await Self.propagateHiddenForAllToShare(zoneID: zoneID, isHidden: true)
+        }
+
+        TelemetryService.track(.groupSoftDeleted)
+    }
+
+    /// Escribe `isHiddenForAll` como custom key del CKShare zone-wide del grupo.
+    /// Solo el owner del CKShare puede modificarlo. Failure mode: silent fail en DEBUG; red
+    /// de seguridad es el sync normal del SplitGroup que también lleva la flag al device del invitado.
+    private static func propagateHiddenForAllToShare(zoneID: String, isHidden: Bool) async {
+        let zoneIDObj = CKRecordZone.ID(zoneName: zoneID, ownerName: CKCurrentUserDefaultName)
+        let shareRecordID = CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneIDObj)
+        let database = CKContainer(identifier: CKConstants.containerID).privateCloudDatabase
+        do {
+            let record = try await database.record(for: shareRecordID)
+            guard let share = record as? CKShare else { return }
+            share[CKShareCustomKey.isHiddenForAll] = isHidden ? 1 : 0
+            _ = try await database.modifyRecords(saving: [share], deleting: [])
+        } catch {
+            #if DEBUG
+            print("GroupService.propagateHiddenForAllToShare: failed for zone \(zoneID): \(error)")
+            #endif
+        }
+    }
+
     /// Delete a group permanently (owner only).
     /// Cascades: deletes zone, all local models, and unbridges personal records.
     func deleteGroup(_ group: SplitGroup, allowDestructiveDelete: Bool = false) throws {
@@ -773,6 +834,7 @@ enum GroupServiceError: LocalizedError {
     case deleteDisabled
     case notPendingApproval
     case currentUserPendingApproval
+    case outstandingBalance
     case saveFailed(Error)
 
     var errorDescription: String? {
@@ -809,6 +871,8 @@ enum GroupServiceError: LocalizedError {
             return "GroupService: Member is not awaiting approval"
         case .currentUserPendingApproval:
             return "GroupService: Your membership is pending admin approval"
+        case .outstandingBalance:
+            return "GroupService: Cannot proceed while members have outstanding balances"
         case .saveFailed(let error):
             return "GroupService: Save failed - \(error.localizedDescription)"
         }

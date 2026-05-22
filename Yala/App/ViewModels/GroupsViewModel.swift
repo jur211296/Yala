@@ -57,11 +57,11 @@ final class GroupsViewModel {
     // MARK: - Computed
 
     var activeGroups: [SplitGroup] {
-        groups.filter { !$0.isArchived }
+        groups.filter { !$0.isArchived && !$0.isHiddenForAll }
     }
 
     var archivedGroups: [SplitGroup] {
-        groups.filter { $0.isArchived }
+        groups.filter { $0.isArchived && !$0.isHiddenForAll }
     }
 
     var filteredGroups: [SplitGroup] {

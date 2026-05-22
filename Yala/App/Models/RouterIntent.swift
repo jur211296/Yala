@@ -21,6 +21,7 @@ enum UpgradeFeature: String {
 /// leídas por invitados pre-accept via `metadata.share[key]`).
 enum CKShareCustomKey {
     static let isArchived = "isArchived"
+    static let isHiddenForAll = "isHiddenForAll"
 }
 
 /// Mode del banner de reconnect según el estado del invite + membresía actual.

@@ -85,6 +85,7 @@ enum AnalyticsEvent: String {
     case groupJoined
     case groupArchived
     case groupDeleted
+    case groupSoftDeleted
     case groupMemberAdded
     case groupExpenseAdded
     case groupSettlementCreated
