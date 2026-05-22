@@ -168,24 +168,25 @@ final class GroupService {
         // del SplitGroup que también lleva isArchived al device del invitado.
         let zoneID = group.cloudKitZoneID
         Task {
-            await Self.propagateArchivedToShare(zoneID: zoneID, isArchived: isArchived)
+            await Self.propagateBoolCustomKey(zoneID: zoneID, key: CKShareCustomKey.isArchived, value: isArchived)
         }
     }
 
-    /// Escribe `isArchived` como custom key del CKShare zone-wide del grupo.
+    /// Escribe una bool custom key (codificada como Int 0/1) en el CKShare zone-wide.
     /// Solo el owner del CKShare puede modificarlo (admin = owner por construcción).
-    private static func propagateArchivedToShare(zoneID: String, isArchived: Bool) async {
+    /// Failure mode: silent fail en DEBUG log; red de seguridad es el sync normal del SplitGroup.
+    private static func propagateBoolCustomKey(zoneID: String, key: String, value: Bool) async {
         let zoneIDObj = CKRecordZone.ID(zoneName: zoneID, ownerName: CKCurrentUserDefaultName)
         let shareRecordID = CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneIDObj)
         let database = CKContainer(identifier: CKConstants.containerID).privateCloudDatabase
         do {
             let record = try await database.record(for: shareRecordID)
             guard let share = record as? CKShare else { return }
-            share[CKShareCustomKey.isArchived] = isArchived ? 1 : 0
+            share[key] = value ? 1 : 0
             _ = try await database.modifyRecords(saving: [share], deleting: [])
         } catch {
             #if DEBUG
-            print("GroupService.propagateArchivedToShare: failed for zone \(zoneID): \(error)")
+            print("GroupService.propagateBoolCustomKey(\(key)): failed for zone \(zoneID): \(error)")
             #endif
         }
     }
@@ -226,29 +227,10 @@ final class GroupService {
 
         let zoneID = group.cloudKitZoneID
         Task {
-            await Self.propagateHiddenForAllToShare(zoneID: zoneID, isHidden: true)
+            await Self.propagateBoolCustomKey(zoneID: zoneID, key: CKShareCustomKey.isHiddenForAll, value: true)
         }
 
         TelemetryService.track(.groupSoftDeleted)
-    }
-
-    /// Escribe `isHiddenForAll` como custom key del CKShare zone-wide del grupo.
-    /// Solo el owner del CKShare puede modificarlo. Failure mode: silent fail en DEBUG; red
-    /// de seguridad es el sync normal del SplitGroup que también lleva la flag al device del invitado.
-    private static func propagateHiddenForAllToShare(zoneID: String, isHidden: Bool) async {
-        let zoneIDObj = CKRecordZone.ID(zoneName: zoneID, ownerName: CKCurrentUserDefaultName)
-        let shareRecordID = CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneIDObj)
-        let database = CKContainer(identifier: CKConstants.containerID).privateCloudDatabase
-        do {
-            let record = try await database.record(for: shareRecordID)
-            guard let share = record as? CKShare else { return }
-            share[CKShareCustomKey.isHiddenForAll] = isHidden ? 1 : 0
-            _ = try await database.modifyRecords(saving: [share], deleting: [])
-        } catch {
-            #if DEBUG
-            print("GroupService.propagateHiddenForAllToShare: failed for zone \(zoneID): \(error)")
-            #endif
-        }
     }
 
     /// Delete a group permanently (owner only).
