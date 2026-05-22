@@ -176,9 +176,10 @@ struct GroupExpenseAccountFinalizationSheet: View {
     /// a draft.originGroupName si SplitGroup no se encuentra — caso edge race).
     private func loadMetadata() {
         // Currency desde SplitExpense origen (fuente de verdad).
-        if let splitID = draft.splitExpenseID {
+        // SwiftData no soporta `$0.id.uuidString == String` con tipos valor — convertir antes.
+        if let splitID = draft.splitExpenseID, let splitUUID = UUID(uuidString: splitID) {
             let descriptor = FetchDescriptor<SplitExpense>(
-                predicate: #Predicate { $0.id.uuidString == splitID }
+                predicate: #Predicate { $0.id == splitUUID }
             )
             resolvedCurrency = (try? modelContext.fetch(descriptor).first?.currencyCode) ?? ""
         }

@@ -432,9 +432,12 @@ final class GroupTransactionBridge {
 
     /// Resolver displayName del miembro pagador (snapshot al crear draft).
     private func resolveMemberDisplayName(memberID: String, in group: SplitGroup, context: ModelContext) -> String? {
+        // SwiftData no soporta `$0.id.uuidString == String` con tipos valor — convertir antes.
+        // Si `memberID` no es UUID válido, retorna nil (degrade graceful para snapshot opcional).
+        guard let memberUUID = UUID(uuidString: memberID) else { return nil }
         let zoneID = group.cloudKitZoneID
         let descriptor = FetchDescriptor<SplitMember>(
-            predicate: #Predicate { $0.groupZoneID == zoneID && $0.id.uuidString == memberID }
+            predicate: #Predicate { $0.groupZoneID == zoneID && $0.id == memberUUID }
         )
         return try? context.fetch(descriptor).first?.displayName
     }

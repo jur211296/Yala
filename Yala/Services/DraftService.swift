@@ -523,10 +523,15 @@ final class DraftService {
             // Inválido: draft groupExpense sin splitExpenseID/zoneID — no pertenece al M6 path.
             throw DraftServiceError.missingAccount  // reuse error code; UX displays generic message.
         }
+        // SwiftData no soporta `$0.id.uuidString == String` con tipos valor — convertir antes.
+        guard let splitUUID = UUID(uuidString: splitID) else {
+            // splitExpenseID malformado: no se puede resolver SplitExpense origen.
+            throw DraftServiceError.missingAccount
+        }
 
         // 2. Fetch SplitExpense + SplitGroup.
         let expenseDescriptor = FetchDescriptor<SplitExpense>(
-            predicate: #Predicate { $0.id.uuidString == splitID }
+            predicate: #Predicate { $0.id == splitUUID }
         )
         guard let expense = try context.fetch(expenseDescriptor).first else {
             // Expense origen ya no existe (sync race con remote delete) — limpia draft y aborta.
