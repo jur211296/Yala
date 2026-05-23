@@ -55,6 +55,14 @@ struct AccountsSettingsListView: View {
                             listBasedSection
                         }
 
+                        if !viewModel.systemAccounts.isEmpty {
+                            accountsSection(
+                                title: L10n.Account.System.badge,
+                                accounts: viewModel.systemAccounts,
+                                readOnly: true
+                            )
+                        }
+
                         if !viewModel.archivedAccounts.isEmpty {
                             accountsSection(title: L10n.Common.archived, accounts: viewModel.archivedAccounts)
                         }
@@ -136,9 +144,10 @@ struct AccountsSettingsListView: View {
         .padding(.top, DS.Spacing.sheetTop)
     }
 
-    // Caja blanca de sección para cuentas archivadas
+    // Caja blanca de sección reutilizable para cuentas archivadas y sistema.
+    // `readOnly: true` renderiza el row sin Button wrapper (no tap, sin chevron).
     @ViewBuilder
-    private func accountsSection(title: String, accounts: [Account]) -> some View {
+    private func accountsSection(title: String, accounts: [Account], readOnly: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(title)
                 .font(DS.Typography.headline)
@@ -147,12 +156,16 @@ struct AccountsSettingsListView: View {
 
             VStack(spacing: DS.Spacing.none) {
                 ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
-                    Button {
-                        viewModel.accountToEdit = account
-                    } label: {
-                        accountRow(account)
+                    if readOnly {
+                        accountRow(account, showsChevron: false)
+                    } else {
+                        Button {
+                            viewModel.accountToEdit = account
+                        } label: {
+                            accountRow(account)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
 
                     if index < accounts.count - 1 {
                         SubsectionDivider()
@@ -265,6 +278,7 @@ struct AccountsSettingsListView: View {
     // MARK: - Presentación de filas
 
     private func accountTypeText(for account: Account) -> String {
+        if account.isSystemAccount { return L10n.Account.System.badge }
         if let accountType = AccountType(rawValue: account.type) {
             return accountType.localizedName
         }
@@ -272,7 +286,7 @@ struct AccountsSettingsListView: View {
     }
 
     @ViewBuilder
-    private func accountRow(_ account: Account) -> some View {
+    private func accountRow(_ account: Account, showsChevron: Bool = true) -> some View {
         let normalizedCode = normalizeCurrencyCode(account.currencyCode)
         let currency = CurrencyCode(rawValue: normalizedCode) ?? .pen
         let currencyInfoTuple = currencyInfo(for: currency)
@@ -282,7 +296,7 @@ struct AccountsSettingsListView: View {
             return account.name
         }()
 
-        HStack(spacing: DS.Spacing.md) {
+        let baseRow = HStack(spacing: DS.Spacing.md) {
             RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                 .fill(colorForHex(account.colorHex))
                 .frame(width: 44, height: 44)
@@ -296,9 +310,13 @@ struct AccountsSettingsListView: View {
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
-                Text(accountTypeText(for: account))
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
+                // Cuentas sistema viven bajo el header de sección "Sistema" — repetir el
+                // tipo aquí sería redundante. Mostramos solo nombre + moneda.
+                if !account.isSystemAccount {
+                    Text(accountTypeText(for: account))
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                }
 
                 Text(currencyInfoTuple.name.capitalized)
                     .font(DS.Typography.subheadline)
@@ -314,13 +332,25 @@ struct AccountsSettingsListView: View {
                         .foregroundStyle(.primary)
                 }
 
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.tertiary)
+                if showsChevron {
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.tertiary)
+                }
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.sm)
         .contentShape(Rectangle())
+
+        // Rows con Button externo (showsChevron=true) heredan accessibility unified del
+        // Button por default — NO añadir modifier propio (lo rompería al sobreescribir
+        // con `.contain` que hace VoiceOver navegar Text por Text). Rows read-only
+        // (sin Button wrapper) necesitan `.combine` explícito para unificar los Text.
+        if showsChevron {
+            baseRow
+        } else {
+            baseRow.accessibilityElement(children: .combine)
+        }
     }
 }
