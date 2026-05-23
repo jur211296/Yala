@@ -70,6 +70,14 @@ struct WelcomeFlowContainer: View {
             Button(L10n.Welcome.DetectedData.startFresh) {
                 goTo(.chooser)
             }
+            // B-11: Cancel explícito captura el dismiss implícito de iOS (swipe-down,
+            // gesture, Escape) que antes dejaba el Hero en estado consumido (`hasTappedEmpezar=true`)
+            // sin posibilidad de re-tap. Si el user ignora el aviso, lo llevamos al Chooser
+            // donde decidirá entre "Soy nuevo" / "Tengo cuenta".
+            Button(L10n.Action.cancel, role: .cancel) {
+                detectedSummary = nil
+                goTo(.chooser)
+            }
         } message: { summary in
             Text(L10n.Welcome.DetectedData.message(
                 summary.accountsCount,
