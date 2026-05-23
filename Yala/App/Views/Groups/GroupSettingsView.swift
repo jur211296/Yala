@@ -16,6 +16,7 @@ struct GroupSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(SessionState.self) private var sessionState
 
     // MARK: - Input
 
@@ -41,6 +42,11 @@ struct GroupSettingsView: View {
     @State private var defaultSplitType: SplitType = .equal
 
     @State private var showArchiveConfirm = false
+
+    /// Cache del check `anyMemberHasOutstandingBalance` para evitar 4 fetches SwiftData
+    /// por cada re-evaluación del body de SwiftUI. Se recalcula en `.onAppear` +
+    /// `.onChange(of: sessionState.dataVersion)`.
+    @State private var hasOutstandingDebt: Bool = false
 
     // Leave group
     @State private var showLeaveGroupConfirm = false
@@ -102,6 +108,10 @@ struct GroupSettingsView: View {
             .task {
                 hasExistingShare = await SplitZoneManager(syncManager: .shared).hasShare(for: group)
             }
+            .onAppear { recomputeOutstandingDebt() }
+            .onChange(of: sessionState.dataVersion) { _, _ in
+                recomputeOutstandingDebt()
+            }
             .navigationTitle(L10n.Groups.Settings.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -160,7 +170,7 @@ struct GroupSettingsView: View {
                     performArchiveToggle(isArchiving: true)
                 }
             } message: {
-                if anyMemberHasOutstandingBalance {
+                if hasOutstandingDebt {
                     Text(L10n.Groups.Settings.archiveWithDebtWarning)
                 } else {
                     Text(L10n.Groups.Settings.archiveConfirm)
@@ -563,6 +573,11 @@ struct GroupSettingsView: View {
     private var deleteGroupSection: some View {
         VStack(spacing: DS.Spacing.xs) {
             Button {
+                // Refresh cache antes de mostrar el dialog — simétrico con toggleArchive,
+                // evita falsos negativos si el sync trajo deuda después del último
+                // onAppear/dataVersion change.
+                recomputeOutstandingDebt()
+                guard !hasOutstandingDebt else { return }
                 showDeleteConfirm = true
             } label: {
                 HStack {
@@ -581,9 +596,9 @@ struct GroupSettingsView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(anyMemberHasOutstandingBalance || isDeleting)
+            .disabled(hasOutstandingDebt || isDeleting)
 
-            if anyMemberHasOutstandingBalance {
+            if hasOutstandingDebt {
                 Text(L10n.Groups.Settings.deleteGroupDisabledHint)
                     .font(DS.Typography.caption)
                     .foregroundStyle(DS.Semantic.errorForeground)
@@ -635,8 +650,52 @@ struct GroupSettingsView: View {
 
     /// Alcance global: cualquier miembro con balance pendiente. Cubre cross-currency
     /// automáticamente porque `MemberBalance` tiene una entry por memberID×currencyCode.
-    private var anyMemberHasOutstandingBalance: Bool {
-        viewModel.balances.contains { abs($0.netBalance) > 0.01 }
+    ///
+    /// Bypass del cache `viewModel.balances` con fetches directos del context — defense
+    /// in depth para casos donde `loadData` no haya corrido al momento del tap archive
+    /// (race con sync, cold launch del settings, etc). Fallback graceful al cache del VM
+    /// si los fetches throw. El resultado se cachea en `hasOutstandingDebt`
+    /// (recalculado en `.onAppear` + `onChange(dataVersion)` + pre-tap de archive/delete)
+    /// para evitar fetches por cada re-evaluación del body de SwiftUI.
+    private func recomputeOutstandingDebt() {
+        let zoneID = group.cloudKitZoneID
+        do {
+            // Early exit: si el grupo no tiene expenses, no hay deuda posible — skip los
+            // otros 3 fetches + `calculateBalances`. `fetchCount` es O(1) en SwiftData
+            // (delega a SQL COUNT). Ahorra ~50ms en grupos vacíos/recién creados.
+            let expensesCount = try modelContext.fetchCount(FetchDescriptor<SplitExpense>(
+                predicate: #Predicate { $0.groupZoneID == zoneID }
+            ))
+            guard expensesCount > 0 else {
+                hasOutstandingDebt = false
+                return
+            }
+
+            let expenses = try modelContext.fetch(FetchDescriptor<SplitExpense>(
+                predicate: #Predicate { $0.groupZoneID == zoneID }
+            ))
+            let shares = try modelContext.fetch(FetchDescriptor<SplitShare>(
+                predicate: #Predicate { $0.groupZoneID == zoneID }
+            ))
+            let settlements = try modelContext.fetch(FetchDescriptor<SplitSettlement>(
+                predicate: #Predicate { $0.groupZoneID == zoneID }
+            ))
+            let members = try modelContext.fetch(FetchDescriptor<SplitMember>(
+                predicate: #Predicate { $0.groupZoneID == zoneID }
+            ))
+            let balances = GroupBalanceService.calculateBalances(
+                expenses: expenses,
+                shares: shares,
+                members: members,
+                settlements: settlements
+            )
+            hasOutstandingDebt = balances.contains { abs($0.netBalance) > 0.01 }
+        } catch {
+            #if DEBUG
+            print("GroupSettingsView: recomputeOutstandingDebt fetch error \(error), fallback to cache")
+            #endif
+            hasOutstandingDebt = viewModel.balances.contains { abs($0.netBalance) > 0.01 }
+        }
     }
 
     private func leaveGroup() async {
@@ -749,7 +808,10 @@ struct GroupSettingsView: View {
 
     private func toggleArchive() {
         let willArchive = !group.isArchived
-        if willArchive && anyMemberHasOutstandingBalance {
+        // Refresca el cache antes del check para evitar valor stale si el sync trajo
+        // data después del último onAppear/dataVersion change.
+        if willArchive { recomputeOutstandingDebt() }
+        if willArchive && hasOutstandingDebt {
             showArchiveConfirm = true
             return
         }

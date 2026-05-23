@@ -125,22 +125,6 @@ struct GroupDetailView: View {
                     }
                 }
 
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: DS.Spacing.sm) {
-                        GroupIconBadge(
-                            colorHex: group.colorHex,
-                            iconName: group.iconName,
-                            size: 28,
-                            iconFont: DS.Typography.captionSmall
-                        )
-                        Text(group.name)
-                            .font(.headline)
-                            .lineLimit(1)
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel(group.name)
-                }
-
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -176,7 +160,6 @@ struct GroupDetailView: View {
                     ActivityView(activityItems: [url])
                     }
             }
-            .refreshable { viewModel.loadData() }
             .appliesPendingRemoteChanges(sessionState)
             .onAppear {
                 wasArchivedOnAppear = group.isArchived

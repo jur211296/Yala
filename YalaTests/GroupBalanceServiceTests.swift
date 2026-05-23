@@ -715,4 +715,41 @@ struct GroupBalanceServiceTests {
         #expect(balA?.totalPaid == 200)
         #expect(balA?.netBalance == 100)
     }
+
+    // MARK: - Archive guard: outstanding debt detection
+    //
+    // Invariante crítico para `GroupSettingsView.anyMemberHasOutstandingBalance`:
+    // si hay deuda neta entre miembros, archive debe disparar el warning.
+
+    @Test func balances_detectsOutstandingDebt_forArchiveBlock() {
+        let aID = UUID()
+        let bID = UUID()
+        let members = [
+            makeMember(id: aID, displayName: "Físico-A"),
+            makeMember(id: bID, displayName: "Físico-B"),
+        ]
+        let eID = UUID()
+        // Físico-B paga 100, split equal entre A y B → A debe 50 a B
+        let expense = makeExpense(id: eID, amount: 100, paidByMemberID: bID.uuidString)
+        let shares = [
+            makeShare(expenseID: eID, memberID: aID.uuidString, amount: 50),
+            makeShare(expenseID: eID, memberID: bID.uuidString, amount: 50),
+        ]
+
+        let balances = GroupBalanceService.calculateBalances(
+            expenses: [expense],
+            shares: shares,
+            members: members,
+            settlements: []
+        )
+
+        #expect(balances.contains { abs($0.netBalance) > 0.01 })
+    }
+
+    @Test func balances_clean_allowsArchive() {
+        let balances = GroupBalanceService.calculateBalances(
+            expenses: [], shares: [], members: [], settlements: []
+        )
+        #expect(!balances.contains { abs($0.netBalance) > 0.01 })
+    }
 }

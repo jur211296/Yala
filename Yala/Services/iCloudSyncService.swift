@@ -512,9 +512,17 @@ extension ModelContext {
     /// Construye un resumen de la data del user excluyendo infraestructura A0-Bridge.
     /// - Parameter appPreferences: Fuente del `userName` y `defaultCurrencyCode` (synced via iCloud KV).
     func iCloudAccountSummary(appPreferences: AppPreferences) throws -> ICloudAccountSummary {
+        // B-10 defense-in-depth: doble check `isSystemAccount` + `type != "system"` (siempre
+        // setean juntos en GroupBridgeSystemEntities). Infra de grupos NUNCA dispara el
+        // alert "Detectamos tu cuenta".
         let accounts = try fetchCount(FetchDescriptor<Account>(
-            predicate: #Predicate { !$0.isArchived && !$0.isSystemAccount }
+            predicate: #Predicate { !$0.isArchived && !$0.isSystemAccount && $0.type != "system" }
         ))
+        // Excluye TX bridgeadas (M5 Caso A/B + M6 Caso A/B + settlements). El bridge setea
+        // `splitExpenseID`, `splitSettlementID` y `splitGroupZoneID` siempre juntos
+        // (GroupTransactionBridge.swift:229,271,302,353,393,560,578,617), por lo que filtrar
+        // los 2 IDs es suficiente — añadir un 3er check sobre `splitGroupZoneID` no aporta
+        // defensa real (no hay path donde solo el zone ID quede poblado).
         let txs = try fetchCount(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitExpenseID == nil && $0.splitSettlementID == nil }
         ))

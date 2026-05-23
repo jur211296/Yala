@@ -89,11 +89,6 @@ struct GroupExpenseFormView: View {
                 }
                 .dismissKeyboardOnTap()
             }
-            // #35: GroupDetailView padre tiene `.refreshable { viewModel.loadData() }`
-            // que en iOS 26 se propaga al sheet del form, generando "gelatina"
-            // visual en bottomChips y permitiendo pull-to-refresh sin sentido.
-            // No-op refreshable absorbe el gesto sin acción.
-            .refreshable {}
             .navigationTitle(viewModel.isEditMode ? L10n.Groups.Expense.editTitle : L10n.Groups.Expense.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -248,7 +243,7 @@ struct GroupExpenseFormView: View {
     }
 
     private var amountDisplay: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.md) {
+        HStack(alignment: .center, spacing: DS.Spacing.md) {
             currencyChip
 
             TextField("0.00", text: $viewModel.amountString)
@@ -285,13 +280,22 @@ struct GroupExpenseFormView: View {
 
     // MARK: - Currency Chip
 
+    /// Respeta `appPreferences.currencyDisplayFormat`: `.symbol` muestra "S/"/"£"/"$",
+    /// `.code` muestra "PEN"/"GBP"/"USD".
+    private var displayedCurrency: String {
+        switch appPreferences.currencyDisplayFormat {
+        case .symbol: return CurrencyCode.symbol(for: viewModel.currencyCode)
+        case .code: return viewModel.currencyCode
+        }
+    }
+
     private var currencyChip: some View {
         Button {
             dismissKeyboard()
             showCurrencyPicker = true
         } label: {
             HStack(spacing: DS.Spacing.xs) {
-                Text(viewModel.currencyCode)
+                Text(displayedCurrency)
                     .font(DS.Typography.headline)
                 Image(systemName: "chevron.down")
                     .font(DS.Typography.labelSmall)
