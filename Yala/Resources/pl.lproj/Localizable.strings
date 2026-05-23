@@ -4348,7 +4348,7 @@
 "groups.onboarding.step2.card3.body" = "Zamknij płatności i wróć do zera. Bez kłótni, bez Excela.";
 "groups.onboarding.step3.title" = "Twoja prywatność na pierwszym miejscu";
 "groups.onboarding.step3.subtitle" = "Udostępniamy tylko to, co konieczne, nic więcej.";
-"groups.onboarding.step3.point1" = "Każdy członek potrzebuje aktywnego konta iCloud.";
+"groups.onboarding.step3.point1" = "Każdy członek potrzebuje konta iCloud.";
 "groups.onboarding.step3.point2" = "Twoje dane osobowe nie są synchronizowane z grupą, tylko wspólne wydatki.";
 "groups.onboarding.step3.cta" = "Przejdź do grup";
 

@@ -4347,8 +4347,8 @@
 "groups.onboarding.step2.card3.title" = "Vereffen schulden met een paar taps";
 "groups.onboarding.step2.card3.body" = "Sluit betalingen af en begin weer bij nul. Geen ruzies, geen Excel.";
 "groups.onboarding.step3.title" = "Jouw privacy staat voorop";
-"groups.onboarding.step3.subtitle" = "Alleen het noodzakelijke wordt gedeeld, niets meer.";
-"groups.onboarding.step3.point1" = "Elk lid heeft een actief iCloud-account nodig.";
+"groups.onboarding.step3.subtitle" = "Je deelt alleen het noodzakelijke, niets meer.";
+"groups.onboarding.step3.point1" = "Elk lid heeft een iCloud-account nodig.";
 "groups.onboarding.step3.point2" = "Je persoonlijke gegevens worden niet met de groep gesynchroniseerd, alleen gedeelde uitgaven.";
 "groups.onboarding.step3.cta" = "Naar groepen";
 

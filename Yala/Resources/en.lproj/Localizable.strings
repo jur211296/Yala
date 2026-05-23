@@ -4349,8 +4349,8 @@
 "groups.onboarding.step2.card3.title" = "Settle debts in a couple of taps";
 "groups.onboarding.step2.card3.body" = "Clear payments and reset to zero. No arguments, no Excel.";
 "groups.onboarding.step3.title" = "Your privacy comes first";
-"groups.onboarding.step3.subtitle" = "Only what's necessary is shared, nothing more.";
-"groups.onboarding.step3.point1" = "Every member needs an active iCloud account.";
+"groups.onboarding.step3.subtitle" = "You only share what's necessary, nothing more.";
+"groups.onboarding.step3.point1" = "Every member needs an iCloud account.";
 "groups.onboarding.step3.point2" = "Your personal data isn't synced with the group, only shared expenses.";
 "groups.onboarding.step3.cta" = "Go to Groups";
 

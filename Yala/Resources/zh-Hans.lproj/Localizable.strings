@@ -4348,7 +4348,7 @@
 "groups.onboarding.step2.card3.body" = "完成付款,清零开始。不用争论,不用 Excel。";
 "groups.onboarding.step3.title" = "隐私优先";
 "groups.onboarding.step3.subtitle" = "只共享必要内容,不多不少。";
-"groups.onboarding.step3.point1" = "每位成员都需要一个有效的 iCloud 账户。";
+"groups.onboarding.step3.point1" = "每位成员都需要一个 iCloud 账户。";
 "groups.onboarding.step3.point2" = "你的个人数据不会与群组同步,只有共享开支会同步。";
 "groups.onboarding.step3.cta" = "前往群组";
 

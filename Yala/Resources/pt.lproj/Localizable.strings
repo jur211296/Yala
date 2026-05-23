@@ -4343,8 +4343,8 @@
 "groups.onboarding.step2.card3.title" = "Liquida dívidas com alguns toques";
 "groups.onboarding.step2.card3.body" = "Fecha pagamentos e volta a zero. Sem discussões, sem Excel.";
 "groups.onboarding.step3.title" = "A tua privacidade em primeiro lugar";
-"groups.onboarding.step3.subtitle" = "Apenas o necessário é partilhado, mais nada.";
-"groups.onboarding.step3.point1" = "Cada membro precisa de uma conta iCloud ativa.";
+"groups.onboarding.step3.subtitle" = "Só partilhas o necessário, mais nada.";
+"groups.onboarding.step3.point1" = "Cada membro precisa de uma conta iCloud.";
 "groups.onboarding.step3.point2" = "Os teus dados pessoais não são sincronizados com o grupo, apenas as despesas partilhadas.";
 "groups.onboarding.step3.cta" = "Ir para Grupos";
 
