@@ -599,6 +599,8 @@ struct InsightsCalculator {
 
             let usage = (spent / budget.limitAmount) * 100
             if usage >= 50 {
+                // Icon genérico en cold launch si M2M lazy nil — se auto-cura via hot
+                // path upstream. Refactor con iconLookup precomputado: ver Backlog.
                 budgetsAtRisk.append(BudgetAtRisk(
                     id: budget.persistentModelID,
                     name: budget.name,

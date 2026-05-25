@@ -602,8 +602,13 @@ class SessionState {
         selectMainTab(.groups)
     }
 
-    /// Toggle budget filters - if same budget is tapped again, clear filters
-    func applyBudgetFilters(_ budget: Budget) {
+    /// Toggle budget filters - if same budget is tapped again, clear filters.
+    ///
+    /// Reads filters from the CSV mirror (SSOT) and resolves UUIDs to
+    /// `PersistentIdentifier` (consumed by the FilterControlBar chips) via
+    /// targeted fetches by `shortcutID`/`id`. `context` is required to do these
+    /// fetches; pass `modelContext` from the calling View/Environment.
+    func applyBudgetFilters(_ budget: Budget, context: ModelContext) {
         let budgetID = budget.persistentModelID
 
         // Toggle: if same budget selected, clear all
@@ -617,19 +622,43 @@ class SessionState {
         clearFilters()
         selectedBudgetID = budgetID
 
-        // Apply account filters
-        if let accounts = budget.accounts, !accounts.isEmpty {
-            selectedAccountIDs = Set(accounts.map { $0.persistentModelID })
+        // Apply account filters (resolve via shortcutID UUID)
+        if let accountUUIDs = budget.resolvedAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
+            let descriptor = FetchDescriptor<Account>(predicate: #Predicate { accountUUIDs.contains($0.shortcutID) })
+            do {
+                let resolved = try context.fetch(descriptor)
+                selectedAccountIDs = Set(resolved.map(\.persistentModelID))
+            } catch {
+                #if DEBUG
+                print("SessionState: applyBudgetFilters account fetch error: \(error)")
+                #endif
+            }
         }
 
-        // Apply subcategory filters (use IDs to handle duplicate names across categories)
-        if let subcategories = budget.subcategories, !subcategories.isEmpty {
-            selectedSubcategoryIDs = Set(subcategories.map { $0.persistentModelID })
+        // Apply subcategory filters (resolve via shortcutID UUID)
+        if let subUUIDs = budget.resolvedSubcategoryIDs(scheduleBackfill: true), !subUUIDs.isEmpty {
+            let descriptor = FetchDescriptor<Subcategory>(predicate: #Predicate { subUUIDs.contains($0.shortcutID) })
+            do {
+                let resolved = try context.fetch(descriptor)
+                selectedSubcategoryIDs = Set(resolved.map(\.persistentModelID))
+            } catch {
+                #if DEBUG
+                print("SessionState: applyBudgetFilters subcategory fetch error: \(error)")
+                #endif
+            }
         }
 
-        // Apply tag filters
-        if let tags = budget.tags, !tags.isEmpty {
-            selectedTags = Set(tags.map { $0.persistentModelID })
+        // Apply tag filters (resolve via id UUID)
+        if let tagUUIDs = budget.resolvedTagIDs(scheduleBackfill: true), !tagUUIDs.isEmpty {
+            let descriptor = FetchDescriptor<Tag>(predicate: #Predicate { tagUUIDs.contains($0.id) })
+            do {
+                let resolved = try context.fetch(descriptor)
+                selectedTags = Set(resolved.map(\.persistentModelID))
+            } catch {
+                #if DEBUG
+                print("SessionState: applyBudgetFilters tag fetch error: \(error)")
+                #endif
+            }
         }
 
         // Apply need filters (parse comma-separated string)

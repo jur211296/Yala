@@ -459,32 +459,31 @@ final class RecordsViewModel: Filterable {
     /// Add tags to all selected transactions.
     /// Propaga al partner para transferencias — MERGE con tags propios del partner (no clobber).
     /// Usa `partnerSkipIfAmbiguous` para no propagar en collisions 3+ (evita widening desync).
+    /// CSV-first read (resolvedTagIDs) — fixes lazy nil → tag loss bug.
     func bulkAddTags(_ tags: [Tag], context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        let toAddIDs = Set(tags.map(\.id))
         var processedPairIDs: Set<String> = []
-        for transaction in transactions {
-            var currentTags = transaction.tags ?? []
-            for tag in tags {
-                if !currentTags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
-                    currentTags.append(tag)
-                }
-            }
-            transaction.tags = currentTags
 
-            if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
-               let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
-                processedPairIDs.insert(pairID)
-                // MERGE: respeta los tags propios del partner; solo añade los nuevos.
-                var partnerTags = partner.tags ?? []
-                for tag in tags {
-                    if !partnerTags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
-                        partnerTags.append(tag)
-                    }
-                }
-                partner.tags = partnerTags
-            }
+        // Si el fetch lanza, abortamos toda la operación (no clobber con `setTags(from: [])`).
+        // El old code asignaba un currentTags-derived array sin fetch — no perdía tags ante errors.
+        func applyAdd(to tx: TransactionItem) throws {
+            let currentIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+            let newIDs = currentIDs.union(toAddIDs)
+            guard newIDs != currentIDs else { return }   // idempotent
+            let resolved = try TagResolver.fetch(ids: newIDs, in: context)
+            tx.setTags(from: resolved)
         }
+
         do {
+            for transaction in transactions {
+                try applyAdd(to: transaction)
+                if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+                   let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                    processedPairIDs.insert(pairID)
+                    try applyAdd(to: partner)
+                }
+            }
             try context.save()
             SessionState.shared.incrementDataVersion()
         } catch {
@@ -496,22 +495,34 @@ final class RecordsViewModel: Filterable {
 
     /// Remove tags from all selected transactions.
     /// Propaga al partner para transferencias. Skip si collision (3+).
+    /// CSV-first read (resolvedTagIDs).
     func bulkRemoveTags(_ tags: [Tag], context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
-        let tagIDsToRemove = Set(tags.map { $0.persistentModelID })
+        let toRemoveIDs = Set(tags.map(\.id))
         var processedPairIDs: Set<String> = []
-        for transaction in transactions {
-            var currentTags = transaction.tags ?? []
-            currentTags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
-            transaction.tags = currentTags
 
-            if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
-               let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
-                processedPairIDs.insert(pairID)
-                var partnerTags = partner.tags ?? []
-                partnerTags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
-                partner.tags = partnerTags
+        func applyRemove(from tx: TransactionItem) throws {
+            let currentIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+            let newIDs = currentIDs.subtracting(toRemoveIDs)
+            guard newIDs != currentIDs else { return }   // idempotent
+            let resolved = try TagResolver.fetch(ids: newIDs, in: context)
+            tx.setTags(from: resolved)
+        }
+
+        do {
+            for transaction in transactions {
+                try applyRemove(from: transaction)
+                if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+                   let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                    processedPairIDs.insert(pairID)
+                    try applyRemove(from: partner)
+                }
             }
+        } catch {
+            #if DEBUG
+            print("RecordsViewModel: Error applying bulk remove: \(error)")
+            #endif
+            return  // abort early — no save (preserva tags previos)
         }
         do {
             try context.save()

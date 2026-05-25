@@ -79,9 +79,16 @@ final class InboxDraft: Identifiable {
     @Relationship(deleteRule: .nullify, inverse: \Subcategory.inboxDrafts)
     var subcategory: Subcategory?
 
-    /// Etiquetas asociadas (relación N:N) - CloudKit: must be optional
+    /// Etiquetas asociadas (relación N:N) - CloudKit: must be optional.
+    /// LEGACY: kept only for cascade .nullify. Read via resolvedTagIDs() helper.
+    /// Writers MUST use setTags(from:) to keep both sides (M2M + CSV) in sync.
     @Relationship(deleteRule: .nullify, inverse: \Tag.inboxDrafts)
     var tags: [Tag]?
+
+    /// CSV mirror of `tags` M2M — SSOT for read (eager, travels in the draft record).
+    /// Sobrevive el race CloudKit lazy hydration: M2M puede aparecer nil mientras
+    /// llegan los Tag records. Approve lee desde CSV para no perder tags.
+    var tagIDs: String?
 
     /// Transacción creada al aprobar (para sincronización)
     /// Se establece deleteRule: .nullify para que si se elimina la transacción,
@@ -316,7 +323,8 @@ final class InboxDraft: Identifiable {
         targetTransactionID: String? = nil,
         originReasonKey: String? = nil,
         originActorName: String? = nil,
-        originGroupName: String? = nil
+        originGroupName: String? = nil,
+        tagIDs: String? = nil
     ) {
         self.note = note
         self.amount = amount
@@ -324,6 +332,8 @@ final class InboxDraft: Identifiable {
         self.account = account
         self.subcategory = subcategory
         self.tags = tags
+        // Auto-mirror: si caller no pasó tagIDs explícito, derivar desde `tags`.
+        self.tagIDs = tagIDs ?? CSVMirrorCodec.encode(tags.map(\.id))
         self.sourceTypeRaw = sourceType.rawValue
         self.rawText = rawText
         self.evidence = evidence

@@ -28,8 +28,15 @@ final class TransactionItem {
     var account: Account?
 
     /// CloudKit: must be optional
+    /// LEGACY: kept only for cascade .nullify when a Tag is deleted.
+    /// DO NOT read from this for filtering logic. Read via resolvedTagIDs() helper.
+    /// Writers MUST use setTags(from:) to keep both sides (M2M + CSV) in sync.
     @Relationship(deleteRule: .nullify)
     var tags: [Tag]?
+
+    /// CSV mirror of `tags` M2M — SSOT for read (eager, travels in the TX record).
+    /// Solves CloudKit lazy hydration race where M2M can appear nil post cold start.
+    var tagIDs: String?
 
     /// Inverse relationship: draft that created this transaction (CloudKit requirement)
     @Relationship(deleteRule: .nullify)
@@ -131,7 +138,8 @@ final class TransactionItem {
         exchangeRate: Double = 1.0,
         amountInPreferredCurrency: Double = 0.0,
         preferredCurrencyCode: String = "PEN",
-        isExchangeRateProvisional: Bool = false
+        isExchangeRateProvisional: Bool = false,
+        tagIDs: String? = nil
     ) {
         self.date = date
         self.amount = amount
@@ -145,5 +153,7 @@ final class TransactionItem {
         self.amountInPreferredCurrency = amountInPreferredCurrency
         self.preferredCurrencyCode = preferredCurrencyCode
         self.isExchangeRateProvisional = isExchangeRateProvisional
+        // Auto-mirror: derivar tagIDs desde `tags` si el caller no lo pasó explícito.
+        self.tagIDs = tagIDs ?? CSVMirrorCodec.encode(tags.map(\.id))
     }
 }

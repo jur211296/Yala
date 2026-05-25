@@ -151,6 +151,10 @@ final class AppBootstrapper {
         // segundos del launch. Sentinel garantiza idempotencia.
         Task { @MainActor in
             persistAppEntityShortcutIDsIfNeeded(context: context)
+            // 8.6. Backfill Budget CSV mirror (subcategoryIDs/accountIDs/tagIDs) from M2M.
+            // Debe correr DESPUÉS de persistAppEntityShortcutIDsIfNeeded para garantizar
+            // que los UUIDs estables ya están persistidos antes de leerlos al CSV.
+            backfillBudgetFilterCSVsIfNeeded(context: context)
         }
 
         // 9. Update widget cache
@@ -652,9 +656,10 @@ final class AppBootstrapper {
     // MARK: - AppEntity shortcutID Migration
 
     /// One-shot pass to persist `shortcutID` UUIDs on legacy `Account` and `Subcategory`
-    /// entities. Without this, SwiftData genera el UUID default al cargar pero no persiste
-    /// hasta el siguiente save de la entity — cada cold launch regeneraría UUIDs distintos
-    /// y los atajos guardados con UUID viejo caerían al legacy fallback (lookup por name).
+    /// entities AND `id` UUID on legacy `Tag` entities. Without this, SwiftData genera el
+    /// UUID default al cargar pero no persiste hasta el siguiente save de la entity —
+    /// cada cold launch regeneraría UUIDs distintos. Para Tag, esto rompería el CSV
+    /// mirror (`Budget.tagIDs`, `TransactionItem.tagIDs`) que referencia `tag.id`.
     /// Sentinel `appEntityShortcutIDsMigratedV1` evita re-ejecución.
     private func persistAppEntityShortcutIDsIfNeeded(context: ModelContext) {
         let key = AppPreferences.Keys.appEntityShortcutIDsMigratedV1
@@ -663,22 +668,87 @@ final class AppBootstrapper {
         do {
             let accounts = try context.fetch(FetchDescriptor<Account>())
             let subcategories = try context.fetch(FetchDescriptor<Subcategory>())
+            let tags = try context.fetch(FetchDescriptor<Tag>())
 
             // Touch each entity to force SwiftData to mark it dirty and persist the default UUID.
             // Reading shortcutID is enough to materialize it; assigning to itself ensures the change
             // is tracked even if SwiftData would optimize away a pure read.
             for account in accounts { account.shortcutID = account.shortcutID }
             for subcategory in subcategories { subcategory.shortcutID = subcategory.shortcutID }
+            for tag in tags { tag.id = tag.id }
 
             try context.save()
             UserDefaults.standard.set(true, forKey: key)
 
             #if DEBUG
-            print("AppBootstrapper: F4 persistAppEntityShortcutIDs — \(accounts.count) accounts + \(subcategories.count) subcategories migrated")
+            print("AppBootstrapper: F4 persistAppEntityShortcutIDs — \(accounts.count) accounts + \(subcategories.count) subcategories + \(tags.count) tags migrated")
             #endif
         } catch {
             #if DEBUG
             print("AppBootstrapper: F4 persistAppEntityShortcutIDs error: \(error)")
+            #endif
+            // Do NOT mark sentinel — retry next launch.
+        }
+    }
+
+    // MARK: - Budget Filter CSV Mirror Backfill
+
+    /// One-shot backfill of `Budget.subcategoryIDs/accountIDs/tagIDs` from their
+    /// M2M counterparts. Closes the CloudKit lazy hydration race where M2M can
+    /// appear `nil` post cold start.
+    ///
+    /// Race-tolerant: if any Budget has M2M relations still `nil` (no `[]`), this
+    /// is a signal of CloudKit sync still in progress — we skip that budget and
+    /// retry next launch. After `maxAttempts` we mark the sentinel anyway and
+    /// rely on the lazy fallback in `resolvedXIDs(scheduleBackfill: true)` to
+    /// auto-heal the residual.
+    ///
+    /// Sentinel: `Yala_BudgetFilterCSV_v1` (Bool). Attempts counter:
+    /// `Yala_BudgetFilterCSV_attempts` (Int).
+    private func backfillBudgetFilterCSVsIfNeeded(context: ModelContext) {
+        let sentinelKey = AppPreferences.Keys.budgetFilterCSVMirrorV1
+        let attemptsKey = AppPreferences.Keys.budgetFilterCSVMirrorAttempts
+        let maxAttempts = 5
+        guard !UserDefaults.standard.bool(forKey: sentinelKey) else { return }
+
+        do {
+            let budgets = try context.fetch(FetchDescriptor<Budget>())
+            var sawRace = false
+            for budget in budgets {
+                // M2M nil (no []) is a CloudKit lazy hydration signal.
+                // [] means "intentionally empty" — process normally.
+                if budget.subcategories == nil || budget.accounts == nil || budget.tags == nil {
+                    sawRace = true
+                    continue   // skip this budget; retry next launch
+                }
+                if budget.subcategoryIDs == nil, let subs = budget.subcategories, !subs.isEmpty {
+                    budget.setSubcategoryIDs(from: subs)
+                }
+                if budget.accountIDs == nil, let accs = budget.accounts, !accs.isEmpty {
+                    budget.setAccountIDs(from: accs)
+                }
+                if budget.tagIDs == nil, let tags = budget.tags, !tags.isEmpty {
+                    budget.setTagIDs(from: tags)
+                }
+            }
+            try context.save()
+
+            let attempts = UserDefaults.standard.integer(forKey: attemptsKey)
+            if !sawRace || attempts + 1 >= maxAttempts {
+                UserDefaults.standard.set(true, forKey: sentinelKey)
+                UserDefaults.standard.removeObject(forKey: attemptsKey)
+                #if DEBUG
+                print("AppBootstrapper: backfillBudgetFilterCSVs — \(budgets.count) budgets processed (attempts=\(attempts + 1), sawRace=\(sawRace), sentinel=set)")
+                #endif
+            } else {
+                UserDefaults.standard.set(attempts + 1, forKey: attemptsKey)
+                #if DEBUG
+                print("AppBootstrapper: backfillBudgetFilterCSVs — race detected, retry (attempt=\(attempts + 1)/\(maxAttempts))")
+                #endif
+            }
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: backfillBudgetFilterCSVs error: \(error)")
             #endif
             // Do NOT mark sentinel — retry next launch.
         }

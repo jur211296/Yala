@@ -325,7 +325,8 @@ enum WidgetDataCache {
             }
             let spent = calculateBudgetSpent(budget: budget, transactions: transactionsForBudget)
             let percentUsed = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100 : 0
-            let (icon, color) = budget.displayProperties
+            // CSV mirror SSOT con fallback M2M para legacy budgets pre-deploy.
+            let (icon, color) = Budget.computeDisplayProperties(for: budget, in: context)
 
             return WidgetBudget(
                 id: budget.id.uuidString,

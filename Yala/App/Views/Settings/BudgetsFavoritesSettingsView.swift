@@ -153,7 +153,8 @@ struct BudgetsFavoritesSettingsView: View {
     }
 
     private func previewBudgetRow(_ budget: Budget) -> some View {
-        let (icon, colorHex) = budget.displayProperties
+        // CSV mirror SSOT con fallback M2M para legacy budgets pre-deploy.
+        let (icon, colorHex) = Budget.computeDisplayProperties(for: budget, in: modelContext)
 
         return HStack(spacing: DS.Spacing.md) {
             // Icon badge (matches BudgetWidgetRow)
@@ -249,7 +250,8 @@ struct BudgetsFavoritesSettingsView: View {
     // MARK: - Budget Row
 
     private func budgetRow(_ budget: Budget) -> some View {
-        let (icon, colorHex) = budget.displayProperties
+        // CSV mirror SSOT con fallback M2M para legacy budgets pre-deploy.
+        let (icon, colorHex) = Budget.computeDisplayProperties(for: budget, in: modelContext)
 
         return HStack(spacing: DS.Spacing.none) {
             // Tappable area: opens editor

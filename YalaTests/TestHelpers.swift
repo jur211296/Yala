@@ -136,7 +136,10 @@ func makeTestBudget(
     subcategories: [Subcategory] = [],
     tags: [Tag] = [],
     startDate: Date? = nil,
-    endDate: Date? = nil
+    endDate: Date? = nil,
+    subcategoryIDs: String? = nil,
+    accountIDs: String? = nil,
+    tagIDs: String? = nil
 ) -> Budget {
     let budget = Budget(
         currencyCode: "PEN",
@@ -148,7 +151,10 @@ func makeTestBudget(
         accounts: accounts,
         subcategories: subcategories,
         tags: tags,
-        isActive: isActive
+        isActive: isActive,
+        subcategoryIDs: subcategoryIDs,
+        accountIDs: accountIDs,
+        tagIDs: tagIDs
     )
     context.insert(budget)
     return budget

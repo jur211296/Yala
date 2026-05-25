@@ -299,7 +299,12 @@ final class BudgetsViewModel {
             let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
             let daysRemaining = getDaysRemaining(budget: budget)
             let status = getBudgetStatus(budget: budget, spending: spent)
-            let (icon, color) = budget.displayProperties
+            let (icon, color): (String, String) = {
+                if let ctx = modelContext {
+                    return Budget.computeDisplayProperties(for: budget, in: ctx)
+                }
+                return budget.displayProperties
+            }()
 
             return BudgetSummary(
                 budget: budget,
@@ -338,7 +343,12 @@ final class BudgetsViewModel {
         let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
         let daysRemaining = getDaysRemaining(budget: budget)
         let status = getBudgetStatus(budget: budget, spending: spent)
-        let (icon, color) = budget.displayProperties
+        let (icon, color): (String, String) = {
+            if let ctx = modelContext {
+                return Budget.computeDisplayProperties(for: budget, in: ctx)
+            }
+            return budget.displayProperties
+        }()
 
         return BudgetSummary(
             budget: budget,
@@ -505,6 +515,9 @@ final class BudgetsViewModel {
 
     /// Filters transactions by budget criteria (accounts, subcategories, tags, natures, expenses only).
     /// Shared by calculateSpending, getDailyCumulativeSpending, and getCategoryBreakdown.
+    ///
+    /// Reads filters from the CSV mirror (SSOT, eager from CloudKit record) with
+    /// M2M lazy fallback + auto-heal. Lazy `nil` NO se interpreta como "sin filtros".
     static func filterTransactions(
         _ transactions: [TransactionItem],
         forBudget budget: Budget,
@@ -512,24 +525,46 @@ final class BudgetsViewModel {
     ) -> [TransactionItem] {
         var filtered = transactions.filter { interval.contains($0.date) }
 
-        if let accounts = budget.accounts, !accounts.isEmpty {
-            let accountIDs = Set(accounts.map { $0.persistentModelID })
+        // Telemetry: si el budget "luce sin filtros" pero NO es default (tiene name + limitAmount),
+        // dispara una vez por sesión para detectar budgets con filtros aparentemente vacíos.
+        let hasAnyResolvedFilter =
+            (budget.resolvedSubcategoryIDs() != nil)
+            || (budget.resolvedAccountIDs() != nil)
+            || (budget.resolvedTagIDs() != nil)
+            || (budget.natures?.isEmpty == false)
+        if !hasAnyResolvedFilter, !budget.name.isEmpty, budget.limitAmount > 0 {
+            let hadM2MNotEmpty =
+                !(budget.subcategories ?? []).isEmpty
+                || !(budget.accounts ?? []).isEmpty
+                || !(budget.tags ?? []).isEmpty
+            TelemetryService.trackOnce(
+                .budgetFiltersAppearEmpty,
+                key: budget.id.uuidString,
+                parameters: [
+                    "budgetID": budget.id.uuidString,
+                    "periodType": budget.periodType,
+                    "hadM2MNotEmpty": String(hadM2MNotEmpty),
+                ]
+            )
+        }
+
+        if let accountUUIDs = budget.resolvedAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
             filtered = filtered.filter { tx in
-                tx.account.map { accountIDs.contains($0.persistentModelID) } ?? false
+                tx.account.map { accountUUIDs.contains($0.shortcutID) } ?? false
             }
         }
 
-        if let subcategories = budget.subcategories, !subcategories.isEmpty {
-            let subIDs = Set(subcategories.map { $0.persistentModelID })
+        if let subcategoryUUIDs = budget.resolvedSubcategoryIDs(scheduleBackfill: true), !subcategoryUUIDs.isEmpty {
             filtered = filtered.filter { tx in
-                tx.subcategory.map { subIDs.contains($0.persistentModelID) } ?? false
+                tx.subcategory.map { subcategoryUUIDs.contains($0.shortcutID) } ?? false
             }
         }
 
-        if let budgetTags = budget.tags, !budgetTags.isEmpty {
-            let tagIDs = Set(budgetTags.map { $0.persistentModelID })
+        // Tag filter — ambos lados (budget + tx) usan CSV mirror SSOT.
+        if let budgetTagUUIDs = budget.resolvedTagIDs(scheduleBackfill: true), !budgetTagUUIDs.isEmpty {
             filtered = filtered.filter { tx in
-                !Set((tx.tags ?? []).map { $0.persistentModelID }).isDisjoint(with: tagIDs)
+                let txTagUUIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+                return !txTagUUIDs.isDisjoint(with: budgetTagUUIDs)
             }
         }
 

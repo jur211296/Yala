@@ -2118,34 +2118,31 @@ final class PanelViewModel {
 
         // Apply budget filters
 
-        // Account filter
-        if let accounts = budget.accounts, !accounts.isEmpty {
-            let accountIDs = Set(accounts.map { $0.persistentModelID })
+        // Account filter (CSV mirror SSOT con M2M fallback + auto-cura)
+        if let accountUUIDs = budget.resolvedAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
             filtered = filtered.filter { transaction in
-                if let accountID = transaction.account?.persistentModelID {
-                    return accountIDs.contains(accountID)
+                if let account = transaction.account {
+                    return accountUUIDs.contains(account.shortcutID)
                 }
                 return false
             }
         }
 
-        // Subcategory filter
-        if let subcategories = budget.subcategories, !subcategories.isEmpty {
-            let subIDs = Set(subcategories.map { $0.persistentModelID })
+        // Subcategory filter (CSV mirror SSOT con M2M fallback + auto-cura)
+        if let subcategoryUUIDs = budget.resolvedSubcategoryIDs(scheduleBackfill: true), !subcategoryUUIDs.isEmpty {
             filtered = filtered.filter { transaction in
-                if let subID = transaction.subcategory?.persistentModelID {
-                    return subIDs.contains(subID)
+                if let subcategory = transaction.subcategory {
+                    return subcategoryUUIDs.contains(subcategory.shortcutID)
                 }
                 return false
             }
         }
 
-        // Tag filter
-        if let budgetTags = budget.tags, !budgetTags.isEmpty {
-            let tagIDs = Set(budgetTags.map { $0.persistentModelID })
+        // Tag filter — ambos lados (budget + tx) usan CSV mirror SSOT.
+        if let budgetTagUUIDs = budget.resolvedTagIDs(scheduleBackfill: true), !budgetTagUUIDs.isEmpty {
             filtered = filtered.filter { transaction in
-                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                return !transactionTagIDs.isDisjoint(with: tagIDs)
+                let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+                return !txTagUUIDs.isDisjoint(with: budgetTagUUIDs)
             }
         }
 
@@ -2172,7 +2169,12 @@ final class PanelViewModel {
         let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
         let daysRemaining = getBudgetDaysRemaining(budget: budget, interval: interval)
         let status = getBudgetStatus(budget: budget, spending: spent)
-        let (icon, color) = budget.displayProperties
+        let (icon, color): (String, String) = {
+            if let ctx = modelContext {
+                return Budget.computeDisplayProperties(for: budget, in: ctx)
+            }
+            return budget.displayProperties
+        }()
 
         return BudgetSummary(
             budget: budget,
@@ -2428,10 +2430,14 @@ final class PanelViewModel {
     /// so the pie shows per-tag variation — otherwise the second calculation
     /// would be pure waste.
     private func calculateTagsWidget(context: PanelCalculationContext) {
+        // Tags catalog needed to resolve UUIDs from CSV mirror → Tag objects.
+        let allTags: [Tag] = (try? modelContext?.fetch(FetchDescriptor<Tag>())) ?? []
+
         var currentData = TagSpendingCalculator.calculateTopSpending(
             transactions: context.filteredTransactions,
             interval: context.effectiveInterval,
-            currencyCode: context.defaultCurrencyCode
+            currencyCode: context.defaultCurrencyCode,
+            allTags: allTags
         )
 
         guard context.period != .allTime else {
@@ -2451,7 +2457,8 @@ final class PanelViewModel {
         let previousData = TagSpendingCalculator.calculateTopSpending(
             transactions: previousTransactions,
             interval: previousInterval,
-            currencyCode: context.defaultCurrencyCode
+            currencyCode: context.defaultCurrencyCode,
+            allTags: allTags
         )
 
         let previousTotal = previousData.reduce(0) { $0 + $1.amount }

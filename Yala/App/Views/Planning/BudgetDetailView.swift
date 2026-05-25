@@ -18,6 +18,12 @@ struct BudgetDetailView: View {
     let budget: Budget
     @Bindable var viewModel: BudgetsViewModel
 
+    // Cached collections para resolver UUIDs del CSV mirror → name display.
+    // @Query reactivo: re-render automático tras cambios en SwiftData/CloudKit.
+    @Query(sort: \Subcategory.sortOrder) private var allSubcategories: [Subcategory]
+    @Query(sort: \Account.name) private var allAccounts: [Account]
+    @Query(sort: \Tag.name) private var allTags: [Tag]
+
     @State private var showEditor = false
     @State private var showCharts = false
     @State private var summary: BudgetSummary?
@@ -212,14 +218,17 @@ struct BudgetDetailView: View {
                     value: subcategoriesDescription
                 )
 
-                if let tags = budget.tags, !tags.isEmpty {
-                    SubsectionDivider()
+                if let tagIDs = budget.resolvedTagIDs(), !tagIDs.isEmpty {
+                    let resolved = allTags.filter { tagIDs.contains($0.id) }
+                    if !resolved.isEmpty {
+                        SubsectionDivider()
 
-                    detailRow(
-                        icon: "number",
-                        label: L10n.BudgetDetail.tags,
-                        value: tags.map(\.name).joined(separator: ", ")
-                    )
+                        detailRow(
+                            icon: "number",
+                            label: L10n.BudgetDetail.tags,
+                            value: resolved.map(\.name).joined(separator: ", ")
+                        )
+                    }
                 }
 
                 if let naturesString = budget.natures, !naturesString.isEmpty {
@@ -360,25 +369,29 @@ struct BudgetDetailView: View {
     }
 
     private var accountsDescription: String {
-        guard let accounts = budget.accounts, !accounts.isEmpty else {
+        // Display reader (scheduleBackfill: false) — hot path will auto-heal.
+        guard let ids = budget.resolvedAccountIDs(), !ids.isEmpty else {
             return L10n.BudgetDetail.allAccounts
         }
-        return accounts.map(\.name).joined(separator: ", ")
+        let resolved = allAccounts.filter { ids.contains($0.shortcutID) }
+        return resolved.map(\.name).joined(separator: ", ")
     }
 
     private var categoriesDescription: String {
-        guard let subcategories = budget.subcategories, !subcategories.isEmpty else {
+        guard let ids = budget.resolvedSubcategoryIDs(), !ids.isEmpty else {
             return L10n.BudgetDetail.allCategories
         }
-        let uniqueNames = Array(Set(subcategories.map { $0.safeCategory.name })).sorted()
+        let resolved = allSubcategories.filter { ids.contains($0.shortcutID) }
+        let uniqueNames = Array(Set(resolved.map { $0.safeCategory.name })).sorted()
         return uniqueNames.joined(separator: ", ")
     }
 
     private var subcategoriesDescription: String {
-        guard let subcategories = budget.subcategories, !subcategories.isEmpty else {
+        guard let ids = budget.resolvedSubcategoryIDs(), !ids.isEmpty else {
             return L10n.BudgetDetail.allSubcategories
         }
-        return subcategories.map(\.name).joined(separator: ", ")
+        let resolved = allSubcategories.filter { ids.contains($0.shortcutID) }
+        return resolved.map(\.name).joined(separator: ", ")
     }
 
     private var needsDescription: String {

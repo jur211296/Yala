@@ -74,7 +74,11 @@ final class EntityDeletionService {
     /// Deletes an account
     /// - Parameter account: The account to delete
     func deleteAccount(_ account: Account) throws {
+        // Cascade `.nullify` limpia M2M Budget.accounts pero NO el CSV mirror.
+        // Capturar inverse pre-delete, re-encode CSV post-delete.
+        let affectedBudgets = account.budgets ?? []
         try delete(account)
+        reencodeBudgetCSVMirrors(in: affectedBudgets)
     }
 
     // MARK: - Category Deletion
@@ -103,7 +107,9 @@ final class EntityDeletionService {
     /// Deletes a subcategory
     /// - Parameter subcategory: The subcategory to delete
     func deleteSubcategory(_ subcategory: Subcategory) throws {
+        let affectedBudgets = subcategory.budgets ?? []
         try delete(subcategory)
+        reencodeBudgetCSVMirrors(in: affectedBudgets)
     }
 
     // MARK: - Tag Deletion
@@ -111,7 +117,31 @@ final class EntityDeletionService {
     /// Deletes a tag
     /// - Parameter tag: The tag to delete
     func deleteTag(_ tag: Tag) throws {
+        let affectedBudgets = tag.budgets ?? []
         try delete(tag)
+        reencodeBudgetCSVMirrors(in: affectedBudgets)
+    }
+
+    // MARK: - Budget CSV Mirror Cleanup
+
+    /// Re-encode los 3 CSV mirrors de cada Budget desde su M2M actual.
+    /// Usado tras delete de Account/Subcategory/Tag: SwiftData cascade `.nullify`
+    /// limpia M2M pero deja el CSV con UUIDs huérfanos. Re-encodear los 3 es
+    /// más barato y resiliente que rastrear cuál relación cambió.
+    private func reencodeBudgetCSVMirrors(in budgets: [Budget]) {
+        guard !budgets.isEmpty else { return }
+        for budget in budgets {
+            budget.setAccountIDs(from: budget.accounts ?? [])
+            budget.setSubcategoryIDs(from: budget.subcategories ?? [])
+            budget.setTagIDs(from: budget.tags ?? [])
+        }
+        do {
+            try modelContext?.save()
+        } catch {
+            #if DEBUG
+            print("EntityDeletion: reencodeBudgetCSVMirrors save error: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Budget Deletion

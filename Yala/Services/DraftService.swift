@@ -215,7 +215,18 @@ final class DraftService {
         transaction.account = account
         transaction.subcategory = subcategory
         transaction.category = subcategory.safeCategory
-        transaction.tags = draft.tags
+        // Read draft tags via CSV mirror — evita perder tags si la M2M del draft
+        // está lazy nil tras CloudKit sync (mismo bug que motivó el CSV mirror).
+        if let draftTagIDs = draft.resolvedTagIDs(scheduleBackfill: true), !draftTagIDs.isEmpty {
+            do {
+                let resolved = try TagResolver.fetch(ids: draftTagIDs, in: context)
+                transaction.setTags(from: resolved)
+            } catch {
+                #if DEBUG
+                print("DraftService: approveDraft tag fetch error: \(error)")
+                #endif
+            }
+        }
         transaction.exchangeRate = abs(exchangeRate)
         transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
         transaction.preferredCurrencyCode = preferredCode
@@ -317,7 +328,18 @@ final class DraftService {
             transaction.account = account
             transaction.subcategory = subcategory
             transaction.category = subcategory.safeCategory
-            transaction.tags = draft.tags
+            // Read draft tags via CSV mirror — evita perder tags si la M2M del draft
+            // está lazy nil tras CloudKit sync.
+            if let draftTagIDs = draft.resolvedTagIDs(scheduleBackfill: true), !draftTagIDs.isEmpty {
+                do {
+                    let resolved = try TagResolver.fetch(ids: draftTagIDs, in: context)
+                    transaction.setTags(from: resolved)
+                } catch {
+                    #if DEBUG
+                    print("DraftService: approveDraft tag fetch error: \(error)")
+                    #endif
+                }
+            }
             transaction.exchangeRate = abs(exchangeRate)
             transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
             transaction.preferredCurrencyCode = preferredCode

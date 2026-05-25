@@ -137,28 +137,28 @@ final class TransactionService {
 
     /// Adds tags to multiple transactions.
     /// Propaga al partner — MERGE con tags propios del partner (no clobber). Skip collision.
+    /// CSV-first read (resolvedTagIDs) con auto-heal: evita clobber cuando M2M lazy nil.
     func bulkAddTags(_ transactions: [TransactionItem], tags: [Tag]) throws {
         let context = try requireContext()
+        let toAddIDs = Set(tags.map(\.id))
         var processedPairIDs: Set<String> = []
-        for transaction in transactions {
-            var currentTags = transaction.tags ?? []
-            for tag in tags {
-                if !currentTags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
-                    currentTags.append(tag)
-                }
-            }
-            transaction.tags = currentTags
 
+        // Si el fetch lanza, propaga el error (no clobber silent — el old code
+        // tampoco perdía tags ante fetch failure porque no fetcheaba).
+        func applyAdd(to tx: TransactionItem) throws {
+            let currentIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+            let newIDs = currentIDs.union(toAddIDs)
+            guard newIDs != currentIDs else { return }   // idempotent
+            let resolved = try TagResolver.fetch(ids: newIDs, in: context)
+            tx.setTags(from: resolved)
+        }
+
+        for transaction in transactions {
+            try applyAdd(to: transaction)
             if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
                let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
                 processedPairIDs.insert(pairID)
-                var partnerTags = partner.tags ?? []
-                for tag in tags {
-                    if !partnerTags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
-                        partnerTags.append(tag)
-                    }
-                }
-                partner.tags = partnerTags
+                try applyAdd(to: partner)
             }
         }
         try context.save()
@@ -168,21 +168,26 @@ final class TransactionService {
 
     /// Removes tags from multiple transactions.
     /// Propaga al partner. Skip collision.
+    /// CSV-first read with auto-heal (idem bulkAddTags).
     func bulkRemoveTags(_ transactions: [TransactionItem], tags: [Tag]) throws {
         let context = try requireContext()
-        let tagIDsToRemove = Set(tags.map { $0.persistentModelID })
+        let toRemoveIDs = Set(tags.map(\.id))
         var processedPairIDs: Set<String> = []
-        for transaction in transactions {
-            var currentTags = transaction.tags ?? []
-            currentTags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
-            transaction.tags = currentTags
 
+        func applyRemove(from tx: TransactionItem) throws {
+            let currentIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+            let newIDs = currentIDs.subtracting(toRemoveIDs)
+            guard newIDs != currentIDs else { return }   // idempotent
+            let resolved = try TagResolver.fetch(ids: newIDs, in: context)
+            tx.setTags(from: resolved)
+        }
+
+        for transaction in transactions {
+            try applyRemove(from: transaction)
             if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
                let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
                 processedPairIDs.insert(pairID)
-                var partnerTags = partner.tags ?? []
-                partnerTags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
-                partner.tags = partnerTags
+                try applyRemove(from: partner)
             }
         }
         try context.save()

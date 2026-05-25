@@ -38,6 +38,13 @@ struct FilterCriteria: Hashable, Sendable {
     /// Selected tags for filtering (empty = all tags)
     var selectedTags: Set<PersistentIdentifier> = []
 
+    /// CSV mirror equivalent of `selectedTags` — `Set<UUID>` of Tag.id values.
+    /// Cuando está poblado, matchesCriteria lo compara contra `transaction.resolvedTagIDs()`
+    /// (CSV-first), evitando el race CloudKit lazy nil donde la M2M `transaction.tags`
+    /// está vacía pero el CSV está hidratado.
+    /// Caller debe poblar SÓLO si tiene acceso al catálogo `[Tag]` para mapear.
+    var selectedTagUUIDs: Set<UUID> = []
+
     /// Selected natures for filtering (empty = all natures)
     var selectedNeeds: Set<SubcategoryNeed> = []
 
@@ -219,10 +226,20 @@ struct FilterService {
         // Transactions without subcategory are treated as .unclassified (consistent with PanelVM behavior)
         if !matchesEntityFilter(transaction.subcategory?.need ?? .unclassified, selected: criteria.selectedNeeds, isExclude: isExclude) { return false }
 
-        // Tags filter (ANY match semantics)
-        if !criteria.selectedTags.isEmpty {
-            let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-            let hasOverlap = !transactionTagIDs.isDisjoint(with: criteria.selectedTags)
+        // Tags filter (ANY match semantics).
+        // CSV-first: si `selectedTagUUIDs` está poblado, compara contra `resolvedTagIDs()`
+        // (eager, no lazy race). Si NO está poblado (callers legacy), fallback a M2M.
+        if !criteria.selectedTags.isEmpty || !criteria.selectedTagUUIDs.isEmpty {
+            let hasOverlap: Bool
+            if !criteria.selectedTagUUIDs.isEmpty {
+                let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+                hasOverlap = !txTagUUIDs.isDisjoint(with: criteria.selectedTagUUIDs)
+            } else {
+                // Legacy path — schedule CSV write como side-effect para autocura futura.
+                _ = transaction.resolvedTagIDs(scheduleBackfill: true)
+                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
+                hasOverlap = !transactionTagIDs.isDisjoint(with: criteria.selectedTags)
+            }
             if isExclude {
                 if hasOverlap { return false }
             } else {

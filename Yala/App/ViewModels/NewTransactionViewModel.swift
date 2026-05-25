@@ -631,7 +631,7 @@ final class NewTransactionViewModel {
             transaction.category = subcategory.safeCategory
             transaction.subcategory = subcategory
             transaction.account = account
-            transaction.tags = selectedTags
+            transaction.setTags(from: selectedTags)
             transaction.exchangeRate = abs(effectiveRate)
             transaction.amountInPreferredCurrency =
                 (amountInPreferred as NSDecimalNumber).doubleValue
@@ -716,7 +716,7 @@ final class NewTransactionViewModel {
             outTransaction.category = outflowSubcategory.safeCategory
             outTransaction.subcategory = outflowSubcategory
             outTransaction.account = source
-            outTransaction.tags = selectedTags
+            outTransaction.setTags(from: selectedTags)
             outTransaction.exchangeRate = abs(outRate)
             outTransaction.amountInPreferredCurrency =
                 (outAmountInPreferred as NSDecimalNumber).doubleValue
@@ -731,7 +731,7 @@ final class NewTransactionViewModel {
             inTransaction.category = inflowSubcategory.safeCategory
             inTransaction.subcategory = inflowSubcategory
             inTransaction.account = dest
-            inTransaction.tags = selectedTags
+            inTransaction.setTags(from: selectedTags)
             inTransaction.exchangeRate = abs(inRate)
             inTransaction.amountInPreferredCurrency =
                 (inAmountInPreferred as NSDecimalNumber).doubleValue

@@ -766,10 +766,52 @@ struct BudgetEditorView: View {
             endDate = end
         }
 
-        // Convert arrays to sets of PersistentIdentifiers
-        selectedAccounts = Set((budget.accounts ?? []).map { $0.persistentModelID })
-        selectedSubcategories = Set((budget.subcategories ?? []).map { $0.persistentModelID })
-        selectedTags = Set((budget.tags ?? []).map { $0.persistentModelID })
+        // Read filters from CSV mirror (SSOT) and map UUIDs → PersistentIdentifier
+        // using the already-loaded `viewModel.allXXX` collections.
+        if let accountUUIDs = budget.resolvedAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
+            selectedAccounts = Set(
+                viewModel.allAccounts
+                    .filter { accountUUIDs.contains($0.shortcutID) }
+                    .map(\.persistentModelID)
+            )
+            #if DEBUG
+            if selectedAccounts.isEmpty {
+                print("BudgetEditor: account CSV has \(accountUUIDs.count) UUIDs but 0 resolved — orphans?")
+            }
+            #endif
+        } else {
+            selectedAccounts = []
+        }
+
+        if let subUUIDs = budget.resolvedSubcategoryIDs(scheduleBackfill: true), !subUUIDs.isEmpty {
+            selectedSubcategories = Set(
+                viewModel.allSubcategories
+                    .filter { subUUIDs.contains($0.shortcutID) }
+                    .map(\.persistentModelID)
+            )
+            #if DEBUG
+            if selectedSubcategories.isEmpty {
+                print("BudgetEditor: subcategory CSV has \(subUUIDs.count) UUIDs but 0 resolved — orphans?")
+            }
+            #endif
+        } else {
+            selectedSubcategories = []
+        }
+
+        if let tagUUIDs = budget.resolvedTagIDs(scheduleBackfill: true), !tagUUIDs.isEmpty {
+            selectedTags = Set(
+                viewModel.allTags
+                    .filter { tagUUIDs.contains($0.id) }
+                    .map(\.persistentModelID)
+            )
+            #if DEBUG
+            if selectedTags.isEmpty {
+                print("BudgetEditor: tag CSV has \(tagUUIDs.count) UUIDs but 0 resolved — orphans?")
+            }
+            #endif
+        } else {
+            selectedTags = []
+        }
 
         // Parse natures string
         if let naturesString = budget.natures {

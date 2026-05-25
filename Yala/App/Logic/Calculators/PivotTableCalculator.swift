@@ -23,15 +23,16 @@ struct PivotTableCalculator {
         currentTransactions: [TransactionItem],
         previousTransactions: [TransactionItem],
         hierarchy: [ReportGroupingDimension],
-        preferredCurrency: String
+        preferredCurrency: String,
+        allTags: [Tag] = []
     ) -> [PivotNode] {
         guard !hierarchy.isEmpty else { return [] }
 
         let dimension = hierarchy[0]
         let remaining = Array(hierarchy.dropFirst())
 
-        let currentGroups = group(transactions: currentTransactions, by: dimension)
-        let previousGroups = group(transactions: previousTransactions, by: dimension)
+        let currentGroups = group(transactions: currentTransactions, by: dimension, allTags: allTags)
+        let previousGroups = group(transactions: previousTransactions, by: dimension, allTags: allTags)
 
         // Collect all keys from both periods
         let allKeys = Set(currentGroups.keys).union(previousGroups.keys)
@@ -72,7 +73,8 @@ struct PivotTableCalculator {
                     currentTransactions: currentTxns,
                     previousTransactions: previousTxns,
                     hierarchy: remaining,
-                    preferredCurrency: preferredCurrency
+                    preferredCurrency: preferredCurrency,
+                    allTags: allTags
                 )
             }
 
@@ -140,15 +142,19 @@ struct PivotTableCalculator {
         let isIncome: Bool
     }
 
-    /// Group transactions by a given dimension
+    /// Group transactions by a given dimension.
+    /// `allTags`: caller-provided Tag catalog for CSV mirror resolution (case `.etiqueta`).
+    /// When empty, falls back to M2M-direct (legacy/preview path).
     static func group(
         transactions: [TransactionItem],
-        by dimension: ReportGroupingDimension
+        by dimension: ReportGroupingDimension,
+        allTags: [Tag] = []
     ) -> [GroupKey: [TransactionItem]] {
         var groups: [GroupKey: [TransactionItem]] = [:]
+        let tagsByID = Tag.byIDLookup(allTags)
 
         for tx in transactions {
-            let keys = groupKeys(for: tx, dimension: dimension)
+            let keys = groupKeys(for: tx, dimension: dimension, tagsByID: tagsByID)
             for key in keys {
                 groups[key, default: []].append(tx)
             }
@@ -160,7 +166,8 @@ struct PivotTableCalculator {
     /// Get group key(s) for a transaction. Tags return multiple keys (fan-out).
     private static func groupKeys(
         for tx: TransactionItem,
-        dimension: ReportGroupingDimension
+        dimension: ReportGroupingDimension,
+        tagsByID: [UUID: Tag] = [:]
     ) -> [GroupKey] {
         switch dimension {
         case .tipo:
@@ -185,11 +192,28 @@ struct PivotTableCalculator {
             return [GroupKey(label: label, iconName: icon, colorHex: color, isIncome: isIncome)]
 
         case .etiqueta:
+            // CSV-first read: resuelve UUIDs via `tagsByID` (catalog del caller).
+            // Si tagsByID está vacío (callers legacy sin migrar), fallback a M2M directo.
+            let txTagUUIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+            if !tagsByID.isEmpty {
+                let resolvedTags = txTagUUIDs.compactMap { tagsByID[$0] }
+                if resolvedTags.isEmpty {
+                    return [GroupKey(label: L10n.Report.noTag, iconName: "tag.slash", colorHex: nil, isIncome: false)]
+                }
+                return resolvedTags.map { tag in
+                    GroupKey(
+                        label: tag.name,
+                        iconName: tag.iconName,
+                        colorHex: tag.colorHex,
+                        isIncome: false
+                    )
+                }
+            }
+            // Fallback legacy (M2M direct) — usado por callers sin allTags.
             let tags = tx.tags ?? []
             if tags.isEmpty {
                 return [GroupKey(label: L10n.Report.noTag, iconName: "tag.slash", colorHex: nil, isIncome: false)]
             }
-            // Fan-out: transaction appears in each tag group
             return tags.map { tag in
                 GroupKey(
                     label: tag.name,

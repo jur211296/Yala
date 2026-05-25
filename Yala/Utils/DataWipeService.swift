@@ -45,7 +45,7 @@ final class DataWipeService {
         let transactionDescriptor = FetchDescriptor<TransactionItem>()
         let allTransactions = try context.fetch(transactionDescriptor)
         for transaction in allTransactions {
-            transaction.tags = []
+            transaction.setTags(from: [])
         }
 
         let tagDescriptor = FetchDescriptor<Tag>()
@@ -61,7 +61,7 @@ final class DataWipeService {
         let inboxDraftDescriptor = FetchDescriptor<InboxDraft>()
         let allDrafts = try context.fetch(inboxDraftDescriptor)
         for draft in allDrafts {
-            draft.tags = []
+            draft.setTags(from: [])
             draft.account = nil
             draft.subcategory = nil
             draft.approvedTransaction = nil
@@ -97,9 +97,8 @@ final class DataWipeService {
         let budgetDescriptor = FetchDescriptor<Budget>()
         let allBudgets = try context.fetch(budgetDescriptor)
         for budget in allBudgets {
-            budget.accounts = []
-            budget.subcategories = []
-            budget.tags = []
+            // SSOT: usa el helper único que mantiene M2M + CSV sincronizados.
+            budget.setFilters(accounts: [], subcategories: [], tags: [])
         }
         try context.save()
         for budget in allBudgets {

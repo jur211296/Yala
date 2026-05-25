@@ -398,7 +398,8 @@ struct FinancialReportView: View {
         viewModel.calculateReport(
             transactions: transactions,
             accounts: accounts,
-            preferredCurrency: preferredCurrencyCode
+            preferredCurrency: preferredCurrencyCode,
+            allTags: tags
         )
     }
 }

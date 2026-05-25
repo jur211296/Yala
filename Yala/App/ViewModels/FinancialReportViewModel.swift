@@ -120,7 +120,8 @@ final class FinancialReportViewModel: Filterable {
     func calculateReport(
         transactions: [TransactionItem],
         accounts: [Account],
-        preferredCurrency: String
+        preferredCurrency: String,
+        allTags: [Tag] = []
     ) {
         let interval = panelDateInterval
         let comparisonMode = SessionState.shared.comparisonMode
@@ -170,7 +171,8 @@ final class FinancialReportViewModel: Filterable {
             currentTransactions: currentTxns,
             previousTransactions: previousTxns,
             hierarchy: hierarchy,
-            preferredCurrency: preferredCurrency
+            preferredCurrency: preferredCurrency,
+            allTags: allTags
         )
 
         // Flatten for rendering

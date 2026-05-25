@@ -221,15 +221,18 @@ final class BudgetEditorViewModel {
             existingBudget.isActive = isActive
             existingBudget.startDate = periodType == .unique ? startDate : nil
             existingBudget.endDate = periodType == .unique ? endDate : nil
-            existingBudget.accounts = accountsArray
-            existingBudget.subcategories = subcategoriesArray
-            existingBudget.tags = tagsArray
+            // Dual-write: setFilters keeps M2M + CSV mirror in sync.
+            existingBudget.setFilters(
+                accounts: accountsArray,
+                subcategories: subcategoriesArray,
+                tags: tagsArray
+            )
             existingBudget.natures = naturesString
             existingBudget.alertEnabled = alertEnabled
             existingBudget.alertThresholds = thresholdsString
             existingBudget.includeSharedExpenses = includeSharedExpenses
         } else {
-            // Create new budget
+            // Create new budget (init populates M2M; setFilters then mirrors to CSV).
             let newBudget = Budget(
                 currencyCode: currencyCode,
                 limitAmount: limitAmount,
@@ -245,6 +248,11 @@ final class BudgetEditorViewModel {
                 alertEnabled: alertEnabled,
                 alertThresholds: thresholdsString,
                 includeSharedExpenses: includeSharedExpenses
+            )
+            newBudget.setFilters(
+                accounts: accountsArray,
+                subcategories: subcategoriesArray,
+                tags: tagsArray
             )
             context.insert(newBudget)
             newBudgetUUID = newBudget.id

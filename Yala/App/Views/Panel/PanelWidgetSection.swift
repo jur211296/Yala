@@ -581,6 +581,7 @@ private struct PanelBudgetsSection: View {
     let currencyCode: String
     let size: WidgetSize
     @Binding var showBudgetFavoritesSettings: Bool
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         let selectedBudget = sessionState.selectedBudgetID.flatMap { selectedID in
@@ -595,7 +596,7 @@ private struct PanelBudgetsSection: View {
             selectedBudgetID: sessionState.selectedBudgetID,
             isExcludeMode: viewModel.isExcludeMode,
             onSelectBudget: { budget in
-                sessionState.applyBudgetFilters(budget)
+                sessionState.applyBudgetFilters(budget, context: modelContext)
             },
             onShowMore: { sessionState.navigateToBudgets() },
             onEditFavorites: { showBudgetFavoritesSettings = true },

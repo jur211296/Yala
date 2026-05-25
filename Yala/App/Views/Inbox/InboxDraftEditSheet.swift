@@ -819,7 +819,7 @@ struct InboxDraftEditSheet: View {
         draft.date = transactionDate
         draft.account = selectedAccount
         draft.subcategory = selectedSubcategory
-        draft.tags = selectedTags
+        draft.setTags(from: selectedTags)
 
         draftService.setContext(modelContext)
         do {
@@ -903,7 +903,7 @@ struct InboxDraftEditSheet: View {
         transaction.account = account
         transaction.subcategory = subcategory
         transaction.category = subcategory.safeCategory
-        transaction.tags = selectedTags
+        transaction.setTags(from: selectedTags)
         transaction.exchangeRate = abs(exchangeRate)
         transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
         transaction.preferredCurrencyCode = preferredCode
@@ -921,7 +921,7 @@ struct InboxDraftEditSheet: View {
         draft.date = transactionDate
         draft.account = account
         draft.subcategory = subcategory
-        draft.tags = selectedTags
+        draft.setTags(from: selectedTags)
         draft.status = .approved
         draft.approvedTransaction = transaction
         draft.updatedAt = Date.now
@@ -1012,7 +1012,7 @@ struct InboxDraftEditSheet: View {
         // (so they persist if draft is returned to pending later)
         draft.account = selectedAccount
         draft.subcategory = selectedSubcategory
-        draft.tags = selectedTags
+        draft.setTags(from: selectedTags)
         draft.note = note
         if let amt = amount {
             draft.amount = isExpense ? -abs(amt) : abs(amt)

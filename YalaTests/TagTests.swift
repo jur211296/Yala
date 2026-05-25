@@ -87,4 +87,23 @@ struct TagTests {
         let result = Tag.nextAvailableColor(excluding: used)
         #expect(result == Tag.defaultColors[10])
     }
+
+    // MARK: - id (UUID stable identifier for CSV mirror)
+
+    @Test func id_initWithoutParam_generatesUUID() {
+        let tag = Tag(name: "test")
+        #expect(tag.id != UUID(uuidString: "00000000-0000-0000-0000-000000000000"))
+    }
+
+    @Test func id_twoTagsHaveDifferentIDs() {
+        let a = Tag(name: "a")
+        let b = Tag(name: "b")
+        #expect(a.id != b.id)
+    }
+
+    @Test func id_explicitIDIsPreserved() {
+        let explicitID = UUID()
+        let tag = Tag(id: explicitID, name: "test")
+        #expect(tag.id == explicitID)
+    }
 }

@@ -34,6 +34,8 @@ struct CategoriesTabView: View {
 
     /// Loaded internally — the parent view doesn't pass these.
     @Query private var scheduledPayments: [ScheduledPayment]
+    /// Tags catalog for `TagSpendingCalculator` to resolve UUIDs from CSV mirror.
+    @Query private var allTags: [Tag]
 
     /// Compound signature that triggers Sankey recompute when any active SP changes
     /// (create / delete / amount edit / nextDueDate edit / kind change / activation toggle / skip toggle).
@@ -1299,7 +1301,8 @@ struct CategoriesTabView: View {
             transactions: tagFiltered,
             interval: interval,
             currencyCode: defaultCurrencyCode,
-            transactionNatures: naturesFilter
+            transactionNatures: naturesFilter,
+            allTags: allTags
         )
         if newTagSpending != tagSpending { tagSpending = newTagSpending }
 
@@ -1445,7 +1448,8 @@ struct CategoriesTabView: View {
             transactions: prevTagFiltered,
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
-            transactionNatures: naturesFilter
+            transactionNatures: naturesFilter,
+            allTags: allTags
         )
         previousTagTotal = previousTagSpending.reduce(0) { $0 + $1.amount }
 
