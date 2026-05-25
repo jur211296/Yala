@@ -100,7 +100,14 @@ struct NewTransactionView: View {
         let descriptor = FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitExpenseID == splitID && $0.subcategory == nil }
         )
-        cachedPendingGroupDraft = try? modelContext.fetch(descriptor).first
+        do {
+            cachedPendingGroupDraft = try modelContext.fetch(descriptor).first
+        } catch {
+            #if DEBUG
+            print("NewTransactionView: pending group draft fetch failed: \(error)")
+            #endif
+            cachedPendingGroupDraft = nil
+        }
     }
 
     @ViewBuilder
@@ -1404,30 +1411,40 @@ struct NewTransactionView: View {
             viewModel.note = tx.note ?? ""
 
             // If this is a transfer, load the paired transaction
-            if tx.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, let pairID = tx.transferPairID {
-                let fetchPairID = pairID
-                let descriptor = FetchDescriptor<TransactionItem>(
-                    predicate: #Predicate { $0.transferPairID == fetchPairID }
-                )
-                do {
-                    let pairs = try modelContext.fetch(descriptor)
-                    let pair = pairs.first { $0.persistentModelID != tx.persistentModelID }
-                    if let pair {
-                        viewModel.transactionType = .transfer
-                        // Determine which is out (negative) and which is in (positive)
-                        let outTx = tx.amount < 0 ? tx : pair
-                        let inTx = tx.amount < 0 ? pair : tx
-                        viewModel.sourceAccount = outTx.account
-                        viewModel.destinationAccount = inTx.account
-                        viewModel.editingTransferPair = (out: outTx, in: inTx)
-                        // Use absolute amount from the outflow side
-                        viewModel.amountString = AmountInputHelper.formatWithGrouping(abs(outTx.amount))
-                    }
-                } catch {
+            if let pair = TransferPartnerLookup.partner(of: tx, in: modelContext) {
+                viewModel.transactionType = .transfer
+                // Defensive sign assignment — si ambos amounts >= 0 (corrupción), outTx default
+                // a tx; el invariante out<0/in>0 puede estar violado pero el form sigue funcional.
+                let outTx: TransactionItem
+                let inTx: TransactionItem
+                if tx.amount < 0 {
+                    outTx = tx
+                    inTx = pair
+                } else if pair.amount < 0 {
+                    outTx = pair
+                    inTx = tx
+                } else {
+                    // Caso degenerado: ningún amount negativo.
+                    outTx = tx
+                    inTx = pair
                     #if DEBUG
-                    print("NewTransactionView: Error fetching transfer pairs: \(error)")
+                    print("prefillFromContext: sign invariant violated for pairID \(tx.transferPairID ?? "?") — both amounts >= 0")
                     #endif
                 }
+                viewModel.sourceAccount = outTx.account
+                viewModel.destinationAccount = inTx.account
+                viewModel.editingTransferPair = (out: outTx, in: inTx)
+                // Use absolute amount from the outflow side
+                viewModel.amountString = AmountInputHelper.formatWithGrouping(abs(outTx.amount))
+            } else if tx.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, tx.transferPairID != nil {
+                // Partner no local. Puede ser CloudKit sync pendiente (partner llegará pronto) o
+                // genuinely orphan. NO mutar/save destructivamente aquí: clear durante sync race
+                // haría que CKSyncEngine resuelva conflicto contra el partner remoto recién subido,
+                // destruyendo un pair legítimo. El reconciler boot-time decide post-sync con todos
+                // los datos. Dejamos el form como TX normal (transactionType asignado por sign).
+                #if DEBUG
+                print("prefillFromContext: transfer partner not found locally for \(tx.persistentModelID) — deferring to boot reconciler")
+                #endif
             }
 
             // Load exchange rate (for display chip when currency differs from preferred)
