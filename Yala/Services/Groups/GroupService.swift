@@ -258,14 +258,12 @@ final class GroupService {
     /// Delete a group permanently (owner only).
     /// Cascades: deletes zone, all local models, and unbridges personal records.
     func deleteGroup(_ group: SplitGroup, allowDestructiveDelete: Bool = false) throws {
+        #if !DEBUG
+        throw GroupServiceError.deleteDisabled
+        #else
         let context = try requireContext()
 
-        #if DEBUG
         guard allowDestructiveDelete else { throw GroupServiceError.deleteDisabled }
-        #else
-        throw GroupServiceError.deleteDisabled
-        #endif
-
         guard group.isOwner else { throw GroupServiceError.notOwner }
 
         // Delete CK zone (cascade deletes all remote records)
@@ -276,9 +274,7 @@ final class GroupService {
             do {
                 try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
             } catch {
-                #if DEBUG
                 logger.error("Failed to freeze for soft-delete: \(error)")
-                #endif
             }
         }
 
@@ -294,6 +290,7 @@ final class GroupService {
 
         SessionState.shared.incrementDataVersion()
         TelemetryService.track(.groupDeleted)
+        #endif
     }
 
     // MARK: - Member Management

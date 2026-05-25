@@ -78,16 +78,20 @@ extension Budget {
         let ids = Set(m2m.map(\.shortcutID))
         if scheduleBackfill {
             let snapshotIDs = ids
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                guard self.subcategoryIDsSet == nil else { return }
+            let modelID = persistentModelID
+            let container = modelContext?.container
+            Task { @MainActor in
+                guard let container else { return }
+                let context = container.mainContext
+                guard let model = context.model(for: modelID) as? Budget else { return }
+                guard model.subcategoryIDsSet == nil else { return }
                 // Verify M2M actual aún matchea snapshot — si un writer concurrente
                 // modificó la relación, NO restauramos (evita resurrección).
-                let currentM2M = Set((self.subcategories ?? []).map(\.shortcutID))
+                let currentM2M = Set((model.subcategories ?? []).map(\.shortcutID))
                 guard currentM2M == snapshotIDs else { return }
-                self.setSubcategoryIDs(from: self.subcategories ?? [])
+                model.setSubcategoryIDs(from: model.subcategories ?? [])
                 do {
-                    try self.modelContext?.save()
+                    try context.save()
                 } catch {
                     #if DEBUG
                     print("Budget+CSVMirror: scheduleBackfill subcategoryIDs save error: \(error)")
@@ -105,14 +109,18 @@ extension Budget {
         let ids = Set(m2m.map(\.shortcutID))
         if scheduleBackfill {
             let snapshotIDs = ids
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                guard self.accountIDsSet == nil else { return }
-                let currentM2M = Set((self.accounts ?? []).map(\.shortcutID))
+            let modelID = persistentModelID
+            let container = modelContext?.container
+            Task { @MainActor in
+                guard let container else { return }
+                let context = container.mainContext
+                guard let model = context.model(for: modelID) as? Budget else { return }
+                guard model.accountIDsSet == nil else { return }
+                let currentM2M = Set((model.accounts ?? []).map(\.shortcutID))
                 guard currentM2M == snapshotIDs else { return }
-                self.setAccountIDs(from: self.accounts ?? [])
+                model.setAccountIDs(from: model.accounts ?? [])
                 do {
-                    try self.modelContext?.save()
+                    try context.save()
                 } catch {
                     #if DEBUG
                     print("Budget+CSVMirror: scheduleBackfill accountIDs save error: \(error)")
@@ -130,14 +138,18 @@ extension Budget {
         let ids = Set(m2m.map(\.id))
         if scheduleBackfill {
             let snapshotIDs = ids
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                guard self.tagIDsSet == nil else { return }
-                let currentM2M = Set((self.tags ?? []).map(\.id))
+            let modelID = persistentModelID
+            let container = modelContext?.container
+            Task { @MainActor in
+                guard let container else { return }
+                let context = container.mainContext
+                guard let model = context.model(for: modelID) as? Budget else { return }
+                guard model.tagIDsSet == nil else { return }
+                let currentM2M = Set((model.tags ?? []).map(\.id))
                 guard currentM2M == snapshotIDs else { return }
-                self.setTagIDs(from: self.tags ?? [])
+                model.setTagIDs(from: model.tags ?? [])
                 do {
-                    try self.modelContext?.save()
+                    try context.save()
                 } catch {
                     #if DEBUG
                     print("Budget+CSVMirror: scheduleBackfill tagIDs save error: \(error)")

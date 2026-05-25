@@ -44,16 +44,20 @@ extension TransactionItem {
         let ids = Set(m2m.map(\.id))
         if scheduleBackfill {
             let snapshotIDs = ids
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                guard self.tagIDsSet == nil else { return }
+            let modelID = persistentModelID
+            let container = modelContext?.container
+            Task { @MainActor in
+                guard let container else { return }
+                let context = container.mainContext
+                guard let model = context.model(for: modelID) as? TransactionItem else { return }
+                guard model.tagIDsSet == nil else { return }
                 // Verify M2M actual aún matchea snapshot — si un writer concurrente
                 // modificó la relación, NO restauramos (evita resurrección).
-                let currentM2M = Set((self.tags ?? []).map(\.id))
+                let currentM2M = Set((model.tags ?? []).map(\.id))
                 guard currentM2M == snapshotIDs else { return }
-                self.setTags(from: self.tags ?? [])
+                model.setTags(from: model.tags ?? [])
                 do {
-                    try self.modelContext?.save()
+                    try context.save()
                 } catch {
                     #if DEBUG
                     print("TransactionItem+TagsCSVMirror: scheduleBackfill save error: \(error)")
