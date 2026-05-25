@@ -34,7 +34,7 @@ Si hay items con status `backlog` sin spec:
 > Hay N features sin spec. Usa `/spec [nombre]` para desarrollar uno.
 
 Si hay items con status `spec-ready`:
-> Hay N features listos para implementar. Usa Plan Mode o `/yolo` con el spec.
+> Hay N features listos para implementar. Usa Plan Mode con el spec.
 
 Si hay items con status `in-progress`:
 > Hay N features en progreso. Continua con `/next`.

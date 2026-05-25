@@ -28,7 +28,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 
 `$VAULT` = `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/` (Obsidian, sync vía iCloud).
 
-Carpetas del vault: `Backlog/` · `Ideas/` · `Bugs/` · `Attachments/` · `planning/`. Skills: `/backlog`, `/spec`, `/promote`.
+Carpetas del vault: `Backlog/` · `Ideas/` · `Bugs/` · `Attachments/` · `planning/`. Skills: `/backlog`, `/spec`, `/idea`.
 
 ## General Rules
 
@@ -121,8 +121,7 @@ Skills disponibles vienen en el system-reminder de cada sesión. Flujos canónic
 Feature:    /clear → /next → Plan Mode → /review-plan → implementar →
             /verify-ios → /test-smart → /device-qa → /swift-audit → /commit-one → /clear
 Bug fix:    /next → implementar → /verify-ios → /device-qa → /commit-one
-Autónomo:   /clear → /next → Plan Mode → /review-plan → /yolo
-Complejo:   añade /analyze-impact antes de Plan Mode + /simplify antes de commit
+Complejo:   añade /simplify antes de commit
 ```
 
 **Regla QA-SCENARIOS:** cada feature nueva requiere escenarios en `$VAULT/planning/QA-SCENARIOS.md` ANTES del commit.
