@@ -118,11 +118,13 @@ Detalles completos en `$VAULT/planning/TESTING-STRATEGY.md`. Reglas mínimas:
 Skills disponibles vienen en el system-reminder de cada sesión. Flujos canónicos:
 
 ```
-Feature:    /clear → /next → Plan Mode → /review-plan → implementar →
-            /verify-ios → /test-smart → /device-qa → /swift-audit → /commit-one → /clear
-Bug fix:    /next → implementar → /verify-ios → /device-qa → /commit-one
+Feature:    /clear → Plan Mode → /review-plan → implementar →
+            /verify-ios → /test-smart → /device-qa → /commit-one → /clear
+Bug fix:    implementar → /verify-ios → /device-qa → /commit-one
 Complejo:   añade /simplify antes de commit
 ```
+
+`/commit-one` ya incluye `/swift-audit` + tests antes del commit. No es necesario ejecutarlos por separado salvo que quieras arreglar issues mid-implementación.
 
 **Regla QA-SCENARIOS:** cada feature nueva requiere escenarios en `$VAULT/planning/QA-SCENARIOS.md` ANTES del commit.
 
