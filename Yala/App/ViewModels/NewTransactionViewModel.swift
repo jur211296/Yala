@@ -32,8 +32,19 @@ final class NewTransactionViewModel {
 
     // MARK: - Form State
 
-    /// Tipo de transacción seleccionado
-    var transactionType: TransactionType = .expense
+    /// Tipo de transacción seleccionado.
+    /// didSet limpia state propio de transfer SOLO al SALIR de `.transfer` (not en toggles
+    /// .expense ↔ .income). Esto preserva `exchangeRate` para TXs foreign-currency no-transfer.
+    var transactionType: TransactionType = .expense {
+        didSet {
+            guard oldValue == .transfer, transactionType != .transfer else { return }
+            editingTransferPair = nil
+            destinationAccount = nil
+            exchangeRate = 1.0
+            destinationAmount = 0.0
+            isExchangeRateManual = false
+        }
+    }
 
     /// Monto como string para el teclado numérico
     var amountString: String = "0.00" {
@@ -764,12 +775,37 @@ final class NewTransactionViewModel {
             context.insert(inTransaction)
         }
 
-        // Link both sides with a shared transfer pair ID
-        let pairID = UUID().uuidString
+        // Preserve existing pairID when editing — regenerating breaks the link
+        // and can produce orphan TXs if a later fetch by pairID fails.
+        // Symmetric fallback: try out then in; uses `candidates` para no perder un pairID
+        // válido en `in` cuando `out` es empty-string (corrupción asimétrica).
+        let pairID = Self.resolveTransferPairID(candidates: [
+            editingTransferPair?.out.transferPairID,
+            editingTransferPair?.in.transferPairID
+        ])
         outTransaction.transferPairID = pairID
         inTransaction.transferPairID = pairID
 
         return (outTransaction, inTransaction)
+    }
+
+    /// Returns the first candidate that's a valid UUID after trimming, canonicalized to
+    /// uppercase. Otherwise generates a fresh UUID. Canonicalization previene case-mismatch
+    /// que rompería groupings case-sensitive (Dictionary, fetch predicate) en downstream code.
+    nonisolated static func resolveTransferPairID(candidates: [String?]) -> String {
+        for candidate in candidates {
+            guard let raw = candidate else { continue }
+            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty, let uuid = UUID(uuidString: trimmed) {
+                return uuid.uuidString  // canonical uppercase
+            }
+        }
+        return UUID().uuidString
+    }
+
+    /// Backward-compat overload — usado por tests existentes.
+    nonisolated static func resolveTransferPairID(existingPairID: String?) -> String {
+        resolveTransferPairID(candidates: [existingPairID])
     }
 
     private func ensureTransferCategory(context: ModelContext) throws -> Subcategory {
