@@ -1,5 +1,5 @@
 ---
-description: Simplifica y refina código recién modificado — duplicación, abstracciones, comments narrando tarea
+description: Refina código recién modificado — duplicación, abstracciones, comments narrando tarea
 allowed-tools: Bash(git:*), Grep, Glob, Read, Edit, Agent
 ---
 
@@ -117,7 +117,7 @@ Para hallazgos de **decisión** (extraer helper, refactor, split de función), s
 ## CASOS DE USO
 
 ```
-/simplify           # Revisar todos los archivos modificados
+/refine             # Revisar todos los archivos modificados
 ```
 
 Útil después de implementar un feature, antes de `/commit-one`. Patrón canónico del flujo Complejo en CLAUDE.md.

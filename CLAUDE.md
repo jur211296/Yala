@@ -121,7 +121,7 @@ Skills disponibles vienen en el system-reminder de cada sesión. Flujos canónic
 Feature:    /clear → Plan Mode → /review-plan → implementar →
             /verify-ios → /test-smart → /device-qa → /commit-one → /clear
 Bug fix:    implementar → /verify-ios → /device-qa → /commit-one
-Complejo:   añade /code-review high + /simplify antes de commit
+Complejo:   añade /code-review high + /refine antes de commit
 ```
 
 `/commit-one` ya incluye `/swift-audit` + tests antes del commit. No es necesario ejecutarlos por separado salvo que quieras arreglar issues mid-implementación.
