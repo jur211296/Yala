@@ -118,6 +118,8 @@ enum AnalyticsEvent: String {
     case cloudkitStalledDetected
     case cloudkitIndicatorTapped
     case cloudkitDuplicateDetected
+    case cloudkitTransferOrphanRepaired
+    case cloudkitTransferCollisionDetected
 }
 
 enum DuplicateDetectionContext: String {
@@ -125,6 +127,11 @@ enum DuplicateDetectionContext: String {
     case runtimeFetch = "runtime-fetch"
     case syncApply = "sync-apply"
     case uniquingFallback = "uniquing-fallback"
+}
+
+enum TransferReconcileContext: String {
+    case bootReconcile = "boot.transferReconcile"
+    case bootCollision = "boot.transferCollision"
 }
 
 // MARK: - Telemetry Service
@@ -203,5 +210,25 @@ enum TelemetryService {
                 "context": context.rawValue
             ]
         )
+    }
+
+    /// Reports orphan / malformed / pairing repair from `TransferPairReconcileService`.
+    /// Privacy-first: no pairIDs ni TX identifiers, solo counts.
+    static func cloudkitTransferOrphanRepaired(orphansCleared: Int, pairedCount: Int) {
+        track(.cloudkitTransferOrphanRepaired, parameters: [
+            "orphansCleared": String(orphansCleared),
+            "pairedCount": String(pairedCount),
+            "context": TransferReconcileContext.bootReconcile.rawValue
+        ])
+    }
+
+    /// Reports a `transferPairID` shared by 3+ TXs (collision). NO auto-repair se aplica
+    /// porque la heurística podría borrar data válida. Solo telemetry.
+    static func cloudkitTransferCollisionDetected(count: Int) {
+        track(.cloudkitTransferCollisionDetected, parameters: [
+            "model": "TransactionItem",
+            "count": String(count),
+            "context": TransferReconcileContext.bootCollision.rawValue
+        ])
     }
 }

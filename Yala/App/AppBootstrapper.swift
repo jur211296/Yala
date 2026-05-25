@@ -198,6 +198,14 @@ final class AppBootstrapper {
             await freezeOrphanedGroupsAndRemovedSelves(context: context)
         }
 
+        // 16.4.8. Reconciliar transfer pairs huérfanos (F1 legacy CSV imports + F3 collisions + F5 partner missing).
+        // Pure-logic + telemetría. Idempotente — re-launches sin orphans son no-op.
+        // Task-wrapped (no sync) para no bloquear cold launch en DBs grandes; downstream steps
+        // (16.5 retryPendingBridges, etc.) no dependen del resultado.
+        Task { @MainActor in
+            TransferPairReconcileService.reconcileTransferPairs(in: context)
+        }
+
         // 16.5. Retry bridge operations that failed in a previous launch
         Task { @MainActor in
             await retryPendingBridges(context: context)
@@ -279,7 +287,6 @@ final class AppBootstrapper {
     /// Subscribe a `.transactionsImportedFromSync` (cada import successful de CKSync personal).
     /// Dispara `GroupBridgeRaceCleaner` para borrar drafts pendientes Caso A obsoletos —
     /// su TX cuenta real ya llegó vía sync personal, el draft ya no aplica.
-    /// TODO post-M6: añadir debounce 1s coalesce si cold launch dispara muchas veces.
     private func observeTransactionsImportedFromSync(context: ModelContext) {
         raceCleanerModelContext = context
         NotificationCenter.default.addObserver(
