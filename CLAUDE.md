@@ -121,10 +121,12 @@ Skills disponibles vienen en el system-reminder de cada sesión. Flujos canónic
 Feature:    /clear → Plan Mode → /review-plan → implementar →
             /verify-ios → /test-smart → /device-qa → /commit-one → /clear
 Bug fix:    implementar → /verify-ios → /device-qa → /commit-one
-Complejo:   añade /simplify antes de commit
+Complejo:   añade /code-review high + /simplify antes de commit
 ```
 
 `/commit-one` ya incluye `/swift-audit` + tests antes del commit. No es necesario ejecutarlos por separado salvo que quieras arreglar issues mid-implementación.
+
+Aplica el flujo **Complejo** cuando el cambio involucre lógica densa donde un bug sería costoso: sync/race (CKShare, bridges, NotificationService), cálculos financieros (FinancialScoreCalculator, GroupBalanceService, BudgetAlertService), migraciones SwiftData, bridge SplitExpense ↔ TransactionItem. Para rebranding visual, l10n o polish UI no aporta.
 
 **Regla QA-SCENARIOS:** cada feature nueva requiere escenarios en `$VAULT/planning/QA-SCENARIOS.md` ANTES del commit.
 
