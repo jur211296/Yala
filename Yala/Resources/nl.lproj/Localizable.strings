@@ -2015,6 +2015,8 @@
 "bulkEdit.currencyWarning" = "Wijziging van rekening past de valuta van geselecteerde transacties aan.";
 "bulkEdit.editCount" = "%d transacties bewerken";
 "bulkEdit.successMessage" = "Transacties succesvol bijgewerkt";
+"bulkEdit.cannotEditTransferSubcategory" = "Kan de subcategorie van overboekingen niet wijzigen. Bewerk ze afzonderlijk.";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "Bedragen van overboekingen tussen verschillende valuta's kunnen niet in bulk worden bewerkt. Bewerk ze afzonderlijk om de wisselkoers te behouden.";
 "bulkEdit.commonTags" = "In alle geselecteerde";
 "bulkEdit.partialTags" = "In sommige geselecteerde";
 "bulkEdit.availableTags" = "Beschikbaar om toe te voegen";

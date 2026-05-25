@@ -461,3 +461,6 @@
 
 // MARK: FU-02-voseo
 "groups.settings.deleteGroupDisabledHint" = "Liquidá las deudas pendientes antes de eliminar";
+
+"bulkEdit.cannotEditTransferSubcategory" = "No se puede cambiar la subcategoría de transferencias. Editalas individualmente.";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "No se puede cambiar el monto de transferencias entre monedas distintas. Editalas individualmente para preservar el tipo de cambio.";

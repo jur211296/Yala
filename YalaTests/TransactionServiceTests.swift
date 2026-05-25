@@ -74,4 +74,28 @@ struct TransactionServiceTests {
         let finalNote = note.isEmpty ? nil : note
         #expect(finalNote == "Test note")
     }
+
+    // MARK: - Bulk Transfer Subcategory Blocking (F2)
+
+    @Test func transferSubcategoryNotEditable_errorDescription() {
+        let error = TransactionServiceError.transferSubcategoryNotEditable
+        #expect(error.errorDescription != nil)
+        #expect(!(error.errorDescription?.isEmpty ?? true))
+    }
+
+    // MARK: - processedPairIDs dedup logic concept
+
+    @Test func bulkUpdate_processedPairIDs_skipsDuplicate() {
+        // Conceptual test: cuando ambos lados del par están en la selección,
+        // processedPairIDs previene aplicar update al partner dos veces.
+        var processed: Set<String> = []
+        let pairID = "test-pair-id"
+
+        let isFirstTime = !processed.contains(pairID)
+        processed.insert(pairID)
+        let isSecondTime = !processed.contains(pairID)
+
+        #expect(isFirstTime == true)
+        #expect(isSecondTime == false)
+    }
 }

@@ -192,6 +192,21 @@ struct BulkEditSheet: View {
         .onAppear {
             bulkEditViewModel.setContext(modelContext)
         }
+        // Surface bulkUpdateError (e.g., subcat lock on transfers).
+        .alert(
+            L10n.Common.error,
+            isPresented: Binding(
+                get: { viewModel.bulkUpdateError != nil },
+                set: { if !$0 { viewModel.bulkUpdateError = nil } }
+            ),
+            presenting: viewModel.bulkUpdateError
+        ) { _ in
+            Button(L10n.Common.ok, role: .cancel) {
+                viewModel.bulkUpdateError = nil
+            }
+        } message: { errorMessage in
+            Text(errorMessage)
+        }
     }
 
     // MARK: - Currency Warning
@@ -254,12 +269,14 @@ struct BulkEditSheet: View {
 
     private func applyAccountChange(_ account: Account) {
         viewModel.bulkUpdateAccount(account, context: modelContext)
+        guard viewModel.bulkUpdateError == nil else { return }
         appliedChanges.insert(.account)
         onComplete()
     }
 
     private func applySubcategoryChange(_ subcategory: Subcategory) {
         viewModel.bulkUpdateSubcategory(subcategory, context: modelContext)
+        guard viewModel.bulkUpdateError == nil else { return }
         appliedChanges.insert(.subcategory)
         onComplete()
     }
@@ -271,6 +288,7 @@ struct BulkEditSheet: View {
         if !tagsToRemove.isEmpty {
             viewModel.bulkRemoveTags(tagsToRemove, context: modelContext)
         }
+        guard viewModel.bulkUpdateError == nil else { return }
         if !tagsToAdd.isEmpty || !tagsToRemove.isEmpty {
             appliedChanges.insert(.tag)
             onComplete()
@@ -279,12 +297,14 @@ struct BulkEditSheet: View {
 
     private func applyNoteChange(_ note: String) {
         viewModel.bulkUpdateNote(note, context: modelContext)
+        guard viewModel.bulkUpdateError == nil else { return }
         appliedChanges.insert(.note)
         onComplete()
     }
 
     private func applyAmountChange(_ amount: Double) {
         viewModel.bulkUpdateAmount(amount, context: modelContext)
+        guard viewModel.bulkUpdateError == nil else { return }
         appliedChanges.insert(.amount)
         onComplete()
     }

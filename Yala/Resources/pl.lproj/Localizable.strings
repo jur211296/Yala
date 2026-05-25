@@ -2015,6 +2015,8 @@
 "bulkEdit.currencyWarning" = "Zmiana konta zaktualizuje walutę zaznaczonych transakcji.";
 "bulkEdit.editCount" = "Edytuj %d transakcji";
 "bulkEdit.successMessage" = "Transakcje zaktualizowane pomyślnie";
+"bulkEdit.cannotEditTransferSubcategory" = "Nie można zmienić podkategorii przelewów. Edytuj je osobno.";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "Nie można zbiorczo edytować kwot przelewów między różnymi walutami. Edytuj każdy osobno, aby zachować kurs wymiany.";
 "bulkEdit.commonTags" = "We wszystkich zaznaczonych";
 "bulkEdit.partialTags" = "W niektórych zaznaczonych";
 "bulkEdit.availableTags" = "Dostępne do dodania";

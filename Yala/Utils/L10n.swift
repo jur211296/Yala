@@ -4586,6 +4586,12 @@ enum L10n {
         static var availableTags: String {
             ls("bulkEdit.availableTags", comment: "")
         }
+        static var cannotEditTransferSubcategory: String {
+            ls("bulkEdit.cannotEditTransferSubcategory", comment: "")
+        }
+        static var cannotEditTransferAmountCrossCurrency: String {
+            ls("bulkEdit.cannotEditTransferAmountCrossCurrency", comment: "")
+        }
     }
 
     // MARK: - Voice Language

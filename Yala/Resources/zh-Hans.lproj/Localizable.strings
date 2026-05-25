@@ -2015,6 +2015,8 @@
 "bulkEdit.currencyWarning" = "更改账户会更新所选交易的货币。";
 "bulkEdit.editCount" = "编辑 %d 笔交易";
 "bulkEdit.successMessage" = "交易已成功更新";
+"bulkEdit.cannotEditTransferSubcategory" = "无法更改转账的子分类。请单独编辑每一笔。";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "无法批量编辑跨币种转账的金额。请单独编辑以保留汇率。";
 "bulkEdit.commonTags" = "在所有所选中";
 "bulkEdit.partialTags" = "在部分所选中";
 "bulkEdit.availableTags" = "可添加";

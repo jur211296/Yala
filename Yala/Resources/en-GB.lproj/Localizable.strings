@@ -317,3 +317,6 @@
 "stats.sankey.subtitle" = "Flow distribution";
 
 // MARK: GroupsOnboarding-keys
+
+"bulkEdit.cannotEditTransferSubcategory" = "Can't change the subcategory of transfers. Edit each one individually.";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "Can't bulk-edit amounts of cross-currency transfers. Edit each individually to preserve the exchange rate.";

@@ -2015,6 +2015,8 @@
 "bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";
 "bulkEdit.editCount" = "Edit %d transactions";
 "bulkEdit.successMessage" = "Transactions updated successfully";
+"bulkEdit.cannotEditTransferSubcategory" = "Can't change the subcategory of transfers. Edit each one individually.";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "Can't bulk-edit amounts of cross-currency transfers. Edit each individually to preserve the exchange rate.";
 "bulkEdit.commonTags" = "In all selected";
 "bulkEdit.partialTags" = "In some selected";
 "bulkEdit.availableTags" = "Available to add";

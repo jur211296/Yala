@@ -114,6 +114,10 @@ final class RecordsViewModel: Filterable {
     var showEditTransaction: Bool = false
     var editingTransaction: TransactionItem?
 
+    /// Mensaje de error surfaceado por `BulkEditSheet` cuando una operación bulk rechaza
+    /// la mutación (e.g., subcategoría sobre transferencias).
+    var bulkUpdateError: String?
+
     // MARK: - Computed Data
 
     /// Grouped records by date (pre-computed for performance)
@@ -430,9 +434,14 @@ final class RecordsViewModel: Filterable {
         }
     }
 
-    /// Update subcategory for all selected transactions
+    /// Update subcategory for all selected transactions.
+    /// Bloqueado si la selección contiene transferencias — usan subcat sistema obligatoria.
     func bulkUpdateSubcategory(_ subcategory: Subcategory, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
+            bulkUpdateError = L10n.BulkEdit.cannotEditTransferSubcategory
+            return
+        }
         for transaction in transactions {
             transaction.subcategory = subcategory
             transaction.category = subcategory.safeCategory
@@ -447,9 +456,12 @@ final class RecordsViewModel: Filterable {
         }
     }
 
-    /// Add tags to all selected transactions
+    /// Add tags to all selected transactions.
+    /// Propaga al partner para transferencias — MERGE con tags propios del partner (no clobber).
+    /// Usa `partnerSkipIfAmbiguous` para no propagar en collisions 3+ (evita widening desync).
     func bulkAddTags(_ tags: [Tag], context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        var processedPairIDs: Set<String> = []
         for transaction in transactions {
             var currentTags = transaction.tags ?? []
             for tag in tags {
@@ -458,6 +470,19 @@ final class RecordsViewModel: Filterable {
                 }
             }
             transaction.tags = currentTags
+
+            if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+               let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                processedPairIDs.insert(pairID)
+                // MERGE: respeta los tags propios del partner; solo añade los nuevos.
+                var partnerTags = partner.tags ?? []
+                for tag in tags {
+                    if !partnerTags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
+                        partnerTags.append(tag)
+                    }
+                }
+                partner.tags = partnerTags
+            }
         }
         do {
             try context.save()
@@ -469,14 +494,24 @@ final class RecordsViewModel: Filterable {
         }
     }
 
-    /// Remove tags from all selected transactions
+    /// Remove tags from all selected transactions.
+    /// Propaga al partner para transferencias. Skip si collision (3+).
     func bulkRemoveTags(_ tags: [Tag], context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
         let tagIDsToRemove = Set(tags.map { $0.persistentModelID })
+        var processedPairIDs: Set<String> = []
         for transaction in transactions {
             var currentTags = transaction.tags ?? []
             currentTags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
             transaction.tags = currentTags
+
+            if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+               let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                processedPairIDs.insert(pairID)
+                var partnerTags = partner.tags ?? []
+                partnerTags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
+                partner.tags = partnerTags
+            }
         }
         do {
             try context.save()
@@ -488,11 +523,26 @@ final class RecordsViewModel: Filterable {
         }
     }
 
-    /// Update note for all selected transactions
+    /// Update note for all selected transactions.
+    /// Propaga al partner SOLO si su nota actual ya coincide con la de tx (sincronizadas).
+    /// Si las notas divergían intencionalmente, preserva la divergencia. Empty→nil para evitar
+    /// schema noise en CloudKit.
     func bulkUpdateNote(_ note: String, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        let finalNote = note.isEmpty ? nil : note
+        var processedPairIDs: Set<String> = []
         for transaction in transactions {
-            transaction.note = note
+            let originalNote = transaction.note
+            transaction.note = finalNote
+
+            if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+               let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                processedPairIDs.insert(pairID)
+                // Solo propagar si las notas estaban sincronizadas — preserva divergencia legacy.
+                if (originalNote ?? "") == (partner.note ?? "") {
+                    partner.note = finalNote
+                }
+            }
         }
         do {
             try context.save()
@@ -504,13 +554,32 @@ final class RecordsViewModel: Filterable {
         }
     }
 
-    /// Update amount for all selected transactions
+    /// Update amount for all selected transactions.
+    /// Propaga al partner con signo opuesto preservado para mantener balance del transfer.
+    /// Bloquea si la selección contiene transferencias cross-currency (cambiar el amount destruiría
+    /// el exchange rate). Skip si collision (3+).
     func bulkUpdateAmount(_ amount: Double, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        // Preserve exchange rate: bloquear bulk-edit en transfers cross-currency.
+        for tx in transactions {
+            if let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: tx, in: context),
+               tx.currencyCode != partner.currencyCode {
+                bulkUpdateError = L10n.BulkEdit.cannotEditTransferAmountCrossCurrency
+                return
+            }
+        }
+        var processedPairIDs: Set<String> = []
         for transaction in transactions {
             // Preserve sign: expenses are negative, income positive
             transaction.amount = transaction.amount < 0 ? -abs(amount) : abs(amount)
             transaction.recalculatePreferredCurrency(context: context)
+
+            if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+               let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                processedPairIDs.insert(pairID)
+                partner.amount = partner.amount < 0 ? -abs(amount) : abs(amount)
+                partner.recalculatePreferredCurrency(context: context)
+            }
         }
         do {
             try context.save()

@@ -246,3 +246,6 @@
 "stats.sankey.subtitle" = "Distribuição do fluxo";
 
 // MARK: GroupsOnboarding-keys
+
+"bulkEdit.cannotEditTransferSubcategory" = "Não é possível alterar a subcategoria das transferências. Edita-as individualmente.";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "Não é possível editar em bloco o valor de transferências entre moedas diferentes. Edita-as individualmente para preservar a taxa de câmbio.";

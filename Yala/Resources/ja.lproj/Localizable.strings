@@ -2015,6 +2015,8 @@
 "bulkEdit.currencyWarning" = "口座を変更すると、選択中の取引の通貨も更新されます。";
 "bulkEdit.editCount" = "%d件の取引を編集";
 "bulkEdit.successMessage" = "取引を更新しました";
+"bulkEdit.cannotEditTransferSubcategory" = "送金のサブカテゴリは変更できません。個別に編集してください。";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "異なる通貨間の送金額は一括編集できません。為替レートを保つため個別に編集してください。";
 "bulkEdit.commonTags" = "選択中すべてに含まれる";
 "bulkEdit.partialTags" = "一部に含まれる";
 "bulkEdit.availableTags" = "追加可能";

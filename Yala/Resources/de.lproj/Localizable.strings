@@ -2011,6 +2011,8 @@
 "bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Transaktionen aktualisiert.";
 "bulkEdit.editCount" = "%d Transaktionen bearbeiten";
 "bulkEdit.successMessage" = "Transaktionen erfolgreich aktualisiert";
+"bulkEdit.cannotEditTransferSubcategory" = "Die Unterkategorie von Überweisungen kann nicht geändert werden. Bearbeite jede einzeln.";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "Beträge von Überweisungen zwischen verschiedenen Währungen können nicht gemeinsam bearbeitet werden. Bearbeite sie einzeln, um den Wechselkurs zu erhalten.";
 "bulkEdit.commonTags" = "In allen ausgewählten";
 "bulkEdit.partialTags" = "In einigen ausgewählten";
 "bulkEdit.availableTags" = "Verfügbar zum Hinzufügen";

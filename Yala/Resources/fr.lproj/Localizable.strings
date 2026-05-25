@@ -2013,6 +2013,8 @@
 "bulkEdit.currencyWarning" = "Le changement de compte mettra à jour la devise des transactions sélectionnées.";
 "bulkEdit.editCount" = "Modifier %d transactions";
 "bulkEdit.successMessage" = "Transactions mises à jour avec succès";
+"bulkEdit.cannotEditTransferSubcategory" = "Impossible de modifier la sous-catégorie des virements. Modifiez-les individuellement.";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "Impossible de modifier en masse le montant des virements multi-devises. Modifiez-les individuellement pour préserver le taux de change.";
 "bulkEdit.commonTags" = "Dans toutes les sélectionnées";
 "bulkEdit.partialTags" = "Dans certaines sélectionnées";
 "bulkEdit.availableTags" = "Disponibles à ajouter";
