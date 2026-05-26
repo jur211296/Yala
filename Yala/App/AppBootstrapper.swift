@@ -655,14 +655,31 @@ final class AppBootstrapper {
 
     // MARK: - AppEntity shortcutID Migration
 
-    /// One-shot pass to persist `shortcutID` UUIDs on legacy `Account` and `Subcategory`
-    /// entities AND `id` UUID on legacy `Tag` entities. Without this, SwiftData genera el
-    /// UUID default al cargar pero no persiste hasta el siguiente save de la entity —
-    /// cada cold launch regeneraría UUIDs distintos. Para Tag, esto rompería el CSV
-    /// mirror (`Budget.tagIDs`, `TransactionItem.tagIDs`) que referencia `tag.id`.
-    /// Sentinel `appEntityShortcutIDsMigratedV1` evita re-ejecución.
+    /// Regenera UUIDs en `Account.shortcutID`, `Subcategory.shortcutID` y `Tag.id`,
+    /// y nulea TODOS los CSV mirrors (Budget + TX + Draft) para que el backfill
+    /// posterior los rehidrate desde M2M con UUIDs estables.
+    ///
+    /// SwiftData no marca un record dirty cuando se le asigna su mismo valor
+    /// (`entity.id = entity.id`), así que el default `UUID()` evaluado al
+    /// deserializar no llega al store. Records sin field persistido colapsan
+    /// al mismo UUID por launch — filter `.contains(\.shortcutID)` matchea todas
+    /// las subcats, `ForEach(id: \.id)` colapsa rows, presupuestos suman todas
+    /// las TXs.
+    ///
+    /// Estrategia por field:
+    /// - `Tag.id` sin historia de persistencia confiable → regeneramos TODOS.
+    ///   La heurística por duplicados falla con count==1 (UUID volátil pero único).
+    /// - `Account.shortcutID` / `Subcategory.shortcutID` pueden tener UUIDs
+    ///   estables sincronizados cross-device → heurística por duplicados preserva
+    ///   los únicos (mantiene Atajos guardados).
+    ///
+    /// CSV mirrors nuleados aquí; backfill los rehidrata desde M2M. Mientras CSV
+    /// es nil, `resolvedXIDs` cae al M2M fallback.
+    ///
+    /// Atomicidad: si `save()` throwea, ni el sentinel principal ni los del
+    /// backfill se tocan → próximo launch reintenta limpio.
     private func persistAppEntityShortcutIDsIfNeeded(context: ModelContext) {
-        let key = AppPreferences.Keys.appEntityShortcutIDsMigratedV1
+        let key = AppPreferences.Keys.appEntityShortcutIDsMigratedV2
         guard !UserDefaults.standard.bool(forKey: key) else { return }
 
         do {
@@ -670,22 +687,50 @@ final class AppBootstrapper {
             let subcategories = try context.fetch(FetchDescriptor<Subcategory>())
             let tags = try context.fetch(FetchDescriptor<Tag>())
 
-            // Touch each entity to force SwiftData to mark it dirty and persist the default UUID.
-            // Reading shortcutID is enough to materialize it; assigning to itself ensures the change
-            // is tracked even if SwiftData would optimize away a pure read.
-            for account in accounts { account.shortcutID = account.shortcutID }
-            for subcategory in subcategories { subcategory.shortcutID = subcategory.shortcutID }
-            for tag in tags { tag.id = tag.id }
+            let accountsRegen = regenerateDuplicateUUIDs(accounts, keyPath: \.shortcutID)
+            let subsRegen = regenerateDuplicateUUIDs(subcategories, keyPath: \.shortcutID)
+            let tagsRegen = regenerateAllUUIDs(tags, keyPath: \.id)
+
+            // Nuke CSV mirrors corruptos (apuntan a UUIDs viejos colapsados).
+            // El backfill posterior los rehidrata desde M2M con los UUIDs estables.
+            let budgets = try context.fetch(FetchDescriptor<Budget>())
+            for budget in budgets {
+                budget.subcategoryIDs = nil
+                budget.accountIDs = nil
+                budget.tagIDs = nil
+            }
+            let txs = try context.fetch(FetchDescriptor<TransactionItem>())
+            for tx in txs { tx.tagIDs = nil }
+            let drafts = try context.fetch(FetchDescriptor<InboxDraft>())
+            for draft in drafts { draft.tagIDs = nil }
 
             try context.save()
+            // Sentinel + sentinel cleanup SOLO en el success path. Si save throwea
+            // arriba, no caemos aquí y el próximo launch reintenta con estado limpio.
             UserDefaults.standard.set(true, forKey: key)
+            UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.budgetFilterCSVMirrorV2)
+            UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.budgetFilterCSVMirrorAttemptsV2)
+
+            // Telemetría siempre que la migración corra (visibility en 1-entity-case
+            // donde regen=0 pero CSVs sí fueron nuleados).
+            TelemetryService.track(
+                .appEntityShortcutIDsRegenerated,
+                parameters: [
+                    "accounts": "\(accountsRegen)",
+                    "subcategories": "\(subsRegen)",
+                    "tags": "\(tagsRegen)",
+                    "budgetsNuked": "\(budgets.count)",
+                    "txsNuked": "\(txs.count)",
+                    "draftsNuked": "\(drafts.count)",
+                ]
+            )
 
             #if DEBUG
-            print("AppBootstrapper: F4 persistAppEntityShortcutIDs — \(accounts.count) accounts + \(subcategories.count) subcategories + \(tags.count) tags migrated")
+            print("AppBootstrapper: persistAppEntityShortcutIDs — regen accounts=\(accountsRegen)/\(accounts.count), subs=\(subsRegen)/\(subcategories.count), tags=\(tagsRegen)/\(tags.count); CSV nuked \(budgets.count) budgets + \(txs.count) txs + \(drafts.count) drafts")
             #endif
         } catch {
             #if DEBUG
-            print("AppBootstrapper: F4 persistAppEntityShortcutIDs error: \(error)")
+            print("AppBootstrapper: persistAppEntityShortcutIDs error: \(error)")
             #endif
             // Do NOT mark sentinel — retry next launch.
         }
@@ -693,21 +738,22 @@ final class AppBootstrapper {
 
     // MARK: - Budget Filter CSV Mirror Backfill
 
-    /// One-shot backfill of `Budget.subcategoryIDs/accountIDs/tagIDs` from their
-    /// M2M counterparts. Closes the CloudKit lazy hydration race where M2M can
-    /// appear `nil` post cold start.
+    /// Rehidrata `Budget.subcategoryIDs/accountIDs/tagIDs`, `TransactionItem.tagIDs`
+    /// e `InboxDraft.tagIDs` desde M2M con UUIDs estables.
     ///
-    /// Race-tolerant: if any Budget has M2M relations still `nil` (no `[]`), this
-    /// is a signal of CloudKit sync still in progress — we skip that budget and
-    /// retry next launch. After `maxAttempts` we mark the sentinel anyway and
-    /// rely on the lazy fallback in `resolvedXIDs(scheduleBackfill: true)` to
-    /// auto-heal the residual.
+    /// Per-relation skip (no AND-gate completo): si solo 1 de 3 M2M de un Budget
+    /// está `nil` (lazy hydration), se procesan los otros 2 igual.
     ///
-    /// Sentinel: `Yala_BudgetFilterCSV_v1` (Bool). Attempts counter:
-    /// `Yala_BudgetFilterCSV_attempts` (Int).
+    /// TX/Draft sin reasignar M2M: escribimos `tagIDs` directamente con
+    /// `CSVMirrorCodec.encode(...)`. Reasignar `tx.tags = tags` marcaría dirty
+    /// cada TX → sync storm en cuentas con miles de TXs.
+    ///
+    /// Race-tolerant: skip records con M2M `nil` (lazy hydration en curso) marca
+    /// `sawRace=true` (incluye los 3 loops). Tras `maxAttempts=5` marca sentinel
+    /// y deja el resto al auto-heal lazy de `resolvedXIDs(scheduleBackfill: true)`.
     private func backfillBudgetFilterCSVsIfNeeded(context: ModelContext) {
-        let sentinelKey = AppPreferences.Keys.budgetFilterCSVMirrorV1
-        let attemptsKey = AppPreferences.Keys.budgetFilterCSVMirrorAttempts
+        let sentinelKey = AppPreferences.Keys.budgetFilterCSVMirrorV2
+        let attemptsKey = AppPreferences.Keys.budgetFilterCSVMirrorAttemptsV2
         let maxAttempts = 5
         guard !UserDefaults.standard.bool(forKey: sentinelKey) else { return }
 
@@ -715,22 +761,48 @@ final class AppBootstrapper {
             let budgets = try context.fetch(FetchDescriptor<Budget>())
             var sawRace = false
             for budget in budgets {
-                // M2M nil (no []) is a CloudKit lazy hydration signal.
-                // [] means "intentionally empty" — process normally.
-                if budget.subcategories == nil || budget.accounts == nil || budget.tags == nil {
-                    sawRace = true
-                    continue   // skip this budget; retry next launch
-                }
-                if budget.subcategoryIDs == nil, let subs = budget.subcategories, !subs.isEmpty {
+                // Per-relation skip: M2M nil = CloudKit lazy hydration en curso para
+                // esa relación específica. M2M [] = "sin filtro" (procesar normal,
+                // setXIDs encodea nil). Las otras 2 relaciones del mismo Budget
+                // pueden estar hidratadas y se procesan igual.
+                if let subs = budget.subcategories {
                     budget.setSubcategoryIDs(from: subs)
+                } else {
+                    sawRace = true
                 }
-                if budget.accountIDs == nil, let accs = budget.accounts, !accs.isEmpty {
+                if let accs = budget.accounts {
                     budget.setAccountIDs(from: accs)
+                } else {
+                    sawRace = true
                 }
-                if budget.tagIDs == nil, let tags = budget.tags, !tags.isEmpty {
+                if let tags = budget.tags {
                     budget.setTagIDs(from: tags)
+                } else {
+                    sawRace = true
                 }
             }
+
+            let txs = try context.fetch(FetchDescriptor<TransactionItem>())
+            var txProcessed = 0
+            for tx in txs {
+                if let m2mTags = tx.tags {
+                    tx.tagIDs = CSVMirrorCodec.encode(m2mTags.map(\.id))
+                    txProcessed += 1
+                } else {
+                    sawRace = true
+                }
+            }
+            let drafts = try context.fetch(FetchDescriptor<InboxDraft>())
+            var draftProcessed = 0
+            for draft in drafts {
+                if let m2mTags = draft.tags {
+                    draft.tagIDs = CSVMirrorCodec.encode(m2mTags.map(\.id))
+                    draftProcessed += 1
+                } else {
+                    sawRace = true
+                }
+            }
+
             try context.save()
 
             let attempts = UserDefaults.standard.integer(forKey: attemptsKey)
@@ -738,7 +810,7 @@ final class AppBootstrapper {
                 UserDefaults.standard.set(true, forKey: sentinelKey)
                 UserDefaults.standard.removeObject(forKey: attemptsKey)
                 #if DEBUG
-                print("AppBootstrapper: backfillBudgetFilterCSVs — \(budgets.count) budgets processed (attempts=\(attempts + 1), sawRace=\(sawRace), sentinel=set)")
+                print("AppBootstrapper: backfillBudgetFilterCSVs — \(budgets.count) budgets + \(txProcessed)/\(txs.count) txs + \(draftProcessed)/\(drafts.count) drafts processed (attempts=\(attempts + 1), sawRace=\(sawRace), sentinel=set)")
                 #endif
             } else {
                 UserDefaults.standard.set(attempts + 1, forKey: attemptsKey)

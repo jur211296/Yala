@@ -316,6 +316,12 @@ final class DataWipeService {
         defaults.removeObject(forKey: "seedCategoriesExecuted") // Allow re-seed after wipe
         defaults.removeObject(forKey: "notificationsSeeded")    // Allow re-seed after wipe
 
+        // --- AppEntity shortcutID / CSV mirror migration sentinels ---
+        // Re-correr migración + backfill contra entidades recién sembradas.
+        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsMigratedV2)
+        defaults.removeObject(forKey: AppPreferences.Keys.budgetFilterCSVMirrorV2)
+        defaults.removeObject(forKey: AppPreferences.Keys.budgetFilterCSVMirrorAttemptsV2)
+
         // --- Legacy (compatibilidad) ---
         defaults.removeObject(forKey: "preferredCurrency")      // Reemplazado por defaultCurrencyCode
 

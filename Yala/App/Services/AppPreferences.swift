@@ -1157,9 +1157,9 @@ final class AppPreferences {
         static let panelSectionsHidden = "panelSectionsHidden"
         static let panelSectionsOrder = "panelSectionsOrder"
         static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
-        static let appEntityShortcutIDsMigratedV1 = "appEntityShortcutIDsMigratedV1"
-        static let budgetFilterCSVMirrorV1 = "Yala_BudgetFilterCSV_v1"
-        static let budgetFilterCSVMirrorAttempts = "Yala_BudgetFilterCSV_attempts"
+        static let appEntityShortcutIDsMigratedV2 = "appEntityShortcutIDsMigratedV2"
+        static let budgetFilterCSVMirrorV2 = "Yala_BudgetFilterCSV_v2"
+        static let budgetFilterCSVMirrorAttemptsV2 = "Yala_BudgetFilterCSV_attempts_v2"
         static let panelAccountsCollapsed = "panelAccountsCollapsed"
         static let sankeyLabelMode = "sankeyLabelMode"
 
