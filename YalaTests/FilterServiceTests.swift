@@ -216,6 +216,7 @@ struct FilterServiceTests {
         var criteria = FilterCriteria.empty
         criteria.isExcludeMode = true
         criteria.selectedTags.insert(tagA.persistentModelID)
+        criteria.populateTagUUIDs(from: [tagA])  // CSV-mirror SSOT
 
         #expect(!FilterService.matchesCriteria(txAB, criteria: criteria))
         #expect(FilterService.matchesCriteria(txB, criteria: criteria))

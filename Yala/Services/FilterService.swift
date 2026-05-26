@@ -124,6 +124,14 @@ struct FilterCriteria: Hashable, Sendable {
 
     // MARK: - Mutation
 
+    /// Populate `selectedTagUUIDs` from the resolved Tag objects.
+    /// SSOT for tag matching — readers prefer this CSV-aware set over the M2M-bound
+    /// `selectedTags` (PersistentIdentifier) which can race with CloudKit lazy hydration.
+    /// Callers que construyan FilterCriteria con tags MUST llamar esto.
+    mutating func populateTagUUIDs(from tags: [Tag]) {
+        selectedTagUUIDs = Set(tags.map(\.id))
+    }
+
     /// Clear all filters
     mutating func clearAll() {
         selectedAccounts.removeAll()
@@ -132,6 +140,7 @@ struct FilterCriteria: Hashable, Sendable {
         selectedNeeds.removeAll()
         selectedTransactionNatures.removeAll()
         selectedTags.removeAll()
+        selectedTagUUIDs.removeAll()
         selectedCurrencies.removeAll()
         transactionTypeFilter = .all
         isExcludeMode = false
@@ -226,20 +235,11 @@ struct FilterService {
         // Transactions without subcategory are treated as .unclassified (consistent with PanelVM behavior)
         if !matchesEntityFilter(transaction.subcategory?.need ?? .unclassified, selected: criteria.selectedNeeds, isExclude: isExclude) { return false }
 
-        // Tags filter (ANY match semantics).
-        // CSV-first: si `selectedTagUUIDs` está poblado, compara contra `resolvedTagIDs()`
-        // (eager, no lazy race). Si NO está poblado (callers legacy), fallback a M2M.
-        if !criteria.selectedTags.isEmpty || !criteria.selectedTagUUIDs.isEmpty {
-            let hasOverlap: Bool
-            if !criteria.selectedTagUUIDs.isEmpty {
-                let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
-                hasOverlap = !txTagUUIDs.isDisjoint(with: criteria.selectedTagUUIDs)
-            } else {
-                // Legacy path — schedule CSV write como side-effect para autocura futura.
-                _ = transaction.resolvedTagIDs(scheduleBackfill: true)
-                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                hasOverlap = !transactionTagIDs.isDisjoint(with: criteria.selectedTags)
-            }
+        // Tags filter (ANY match semantics). CSV-mirror SSOT vía `selectedTagUUIDs`
+        // (poblado por `FilterCriteria.populateTagUUIDs(from:)` en cada builder).
+        if !criteria.selectedTagUUIDs.isEmpty {
+            let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+            let hasOverlap = !txTagUUIDs.isDisjoint(with: criteria.selectedTagUUIDs)
             if isExclude {
                 if hasOverlap { return false }
             } else {

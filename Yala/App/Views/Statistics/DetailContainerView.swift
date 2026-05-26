@@ -563,6 +563,7 @@ struct DetailContainerView: View {
         trendsViewModel.calculateTrendData(
             accounts: dataViewModel.accounts,
             transactions: dataViewModel.allTransactions,
+            allTags: dataViewModel.tags,
             defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
         // Distribution Insight Card también requiere insightData.periodSummary
@@ -581,7 +582,7 @@ struct DetailContainerView: View {
             budgets: dataViewModel.budgets,
             scheduledPayments: dataViewModel.scheduledPayments,
             period: sessionState.selectedPeriod,
-            criteria: trendsViewModel.filterCriteria,
+            criteria: trendsViewModel.filterCriteria(withTagCatalog: dataViewModel.tags),
             currencyCode: appPreferences.defaultCurrencyCode.rawValue,
             customRange: sessionState.customDateRange,
             comparisonMode: sessionState.comparisonMode
@@ -624,7 +625,7 @@ struct DetailContainerView: View {
         insightsViewModel.resetAIState()
 
         // Store context for on-demand AI generation via button
-        let criteria = trendsViewModel.filterCriteria
+        let criteria = trendsViewModel.filterCriteria(withTagCatalog: dataViewModel.tags)
         insightsViewModel.storeGenerationContext(
             period: sessionState.selectedPeriod,
             filterHash: criteria.hashValue,

@@ -344,9 +344,25 @@ final class ScheduledPaymentsViewModel {
             }
         }
         if !selectedTags.isEmpty {
-            filtered = filtered.filter { payment in
-                let paymentTagIDs = Set((payment.tags ?? []).map { $0.persistentModelID })
-                return !paymentTagIDs.isDisjoint(with: selectedTags)
+            // CSV-mirror SSOT: map selectedTags (PersistentIdentifier) → Set<UUID> via local Tag fetch,
+            // then compare against payment.resolvedTagIDs (CSV-first with M2M fallback).
+            let selectedTagUUIDs: Set<UUID>
+            do {
+                let allTags = try (modelContext?.fetch(FetchDescriptor<Tag>())) ?? []
+                selectedTagUUIDs = Set(
+                    allTags.filter { selectedTags.contains($0.persistentModelID) }.map(\.id)
+                )
+            } catch {
+                #if DEBUG
+                print("ScheduledPaymentsViewModel: applyPaymentFilters tag fetch error: \(error)")
+                #endif
+                selectedTagUUIDs = []
+            }
+            if !selectedTagUUIDs.isEmpty {
+                filtered = filtered.filter { payment in
+                    let paymentTagIDs = payment.resolvedTagIDs(scheduleBackfill: true) ?? []
+                    return !paymentTagIDs.isDisjoint(with: selectedTagUUIDs)
+                }
             }
         }
 

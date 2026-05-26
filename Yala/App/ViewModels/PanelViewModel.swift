@@ -1374,10 +1374,13 @@ final class PanelViewModel {
                 }
             }
 
-            // Tag Filter
+            // Tag Filter — CSV-mirror SSOT (sobrevive CloudKit lazy hydration).
             if !selectedTags.isEmpty {
-                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+                let selectedUUIDs = Set(
+                    tags.filter { selectedTags.contains($0.persistentModelID) }.map(\.id)
+                )
+                let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+                if txTagUUIDs.isDisjoint(with: selectedUUIDs) { return false }
             }
 
             // Currency Filter
@@ -1454,6 +1457,10 @@ final class PanelViewModel {
     ) -> FilterCriteria {
         var criteria = FilterCriteria()
         criteria.selectedTags = selectedTags
+        // CSV-mirror SSOT: poblar tagUUIDs desde el catálogo local. Sobrevive
+        // CloudKit lazy hydration de la M2M `transaction.tags`.
+        let selectedTagObjects = tags.filter { selectedTags.contains($0.persistentModelID) }
+        criteria.populateTagUUIDs(from: selectedTagObjects)
         criteria.selectedCurrencies = selectedCurrencies
         criteria.isExcludeMode = isExcludeMode
         criteria.amountCondition = amountCondition

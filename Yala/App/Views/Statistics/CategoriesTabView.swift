@@ -636,6 +636,7 @@ struct CategoriesTabView: View {
             allTransactions: allTransactions,
             accounts: accounts,
             scheduledPayments: scheduledPayments,
+            allTags: allTags,
             defaultCurrencyCode: defaultCurrencyCode
         )
     }
@@ -1195,7 +1196,7 @@ struct CategoriesTabView: View {
         // Build filter criteria for pie charts
         // Include mode: show all categories/subcategories with dim (no filter)
         // Exclude mode: actually exclude selected categories/subcategories from data
-        let pieChartCriteria = FilterCriteria(
+        var pieChartCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: viewModel.isExcludeMode ? viewModel.selectedCategories : [],
             selectedSubcategories: viewModel.isExcludeMode ? viewModel.selectedSubcategories : [],
@@ -1209,6 +1210,9 @@ struct CategoriesTabView: View {
             searchText: viewModel.searchText,
             dateInterval: interval
         )
+        pieChartCriteria.populateTagUUIDs(
+            from: allTags.filter { pieChartCriteria.selectedTags.contains($0.persistentModelID) }
+        )
 
         // Filter transactions for pie charts (show all categories/subcategories)
         let pieFiltered = FilterService.filterForTrends(
@@ -1218,7 +1222,7 @@ struct CategoriesTabView: View {
         )
 
         // Create criteria for need widget (respects cat/subcat filters, but NOT need filter - show all with dim)
-        let needCriteria = FilterCriteria(
+        var needCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: viewModel.selectedCategories,
             selectedSubcategories: viewModel.selectedSubcategories,
@@ -1231,6 +1235,9 @@ struct CategoriesTabView: View {
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
             dateInterval: interval
+        )
+        needCriteria.populateTagUUIDs(
+            from: allTags.filter { needCriteria.selectedTags.contains($0.persistentModelID) }
         )
 
         // Filter transactions for need widget
@@ -1280,6 +1287,7 @@ struct CategoriesTabView: View {
         if newSubcategorySpending != subcategorySpending { subcategorySpending = newSubcategorySpending }
 
         // Calculate tag spending — respects category/subcategory filters but shows ALL tags
+        // selectedTags=[] intentional → tagCriteria.selectedTagUUIDs stays empty (no tag filter applied).
         let tagCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: viewModel.selectedCategories,
@@ -1348,7 +1356,7 @@ struct CategoriesTabView: View {
         // Build filter criteria for previous period
         // Include mode: show all (no filter) for comparison
         // Exclude mode: exclude selected categories/subcategories for consistent comparison
-        let criteria = FilterCriteria(
+        var criteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: viewModel.isExcludeMode ? viewModel.selectedCategories : [],
             selectedSubcategories: viewModel.isExcludeMode ? viewModel.selectedSubcategories : [],
@@ -1361,6 +1369,9 @@ struct CategoriesTabView: View {
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
             dateInterval: previousInterval
+        )
+        criteria.populateTagUUIDs(
+            from: allTags.filter { criteria.selectedTags.contains($0.persistentModelID) }
         )
 
         // Filter transactions for previous period
@@ -1463,7 +1474,7 @@ struct CategoriesTabView: View {
 
         // Calculate previous period need trend data
         // Use separate criteria WITHOUT nature filter for consistent comparison
-        let prevNeedCriteria = FilterCriteria(
+        var prevNeedCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: [],
             selectedSubcategories: [],
@@ -1476,6 +1487,9 @@ struct CategoriesTabView: View {
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
             dateInterval: previousInterval
+        )
+        prevNeedCriteria.populateTagUUIDs(
+            from: allTags.filter { prevNeedCriteria.selectedTags.contains($0.persistentModelID) }
         )
         let prevNeedFiltered = FilterService.filterForTrends(
             transactions: allTransactions,

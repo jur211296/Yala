@@ -334,6 +334,7 @@ final class StatisticsViewModel: Filterable {
     func calculateTrendData(
         accounts: [Account],
         transactions: [TransactionItem],
+        allTags: [Tag],
         defaultCurrencyCode: String
     ) {
         // Enforce metric lock based on filters
@@ -347,7 +348,7 @@ final class StatisticsViewModel: Filterable {
         currentInterval = interval
 
         // Build filter criteria and apply
-        let criteria = buildTrendFilterCriteria(interval: interval)
+        let criteria = buildTrendFilterCriteria(interval: interval, allTags: allTags)
 
         let filtered = FilterService.filterForTrends(
             transactions: transactions,
@@ -422,10 +423,11 @@ final class StatisticsViewModel: Filterable {
         allTransactions: [TransactionItem],
         accounts: [Account],
         scheduledPayments: [ScheduledPayment],
+        allTags: [Tag],
         defaultCurrencyCode: String
     ) {
         let interval = panelDateInterval
-        let criteria = buildSankeyFilterCriteria(interval: interval)
+        let criteria = buildSankeyFilterCriteria(interval: interval, allTags: allTags)
         let filtered = FilterService.filterForTrends(
             transactions: allTransactions,
             accounts: accounts,
@@ -461,8 +463,8 @@ final class StatisticsViewModel: Filterable {
     /// Build a FilterCriteria dedicated to the Sankey widget:
     /// - Excludes `selectedCategories`/`selectedSubcategories` (tap filters don't shrink the flow).
     /// - Always sets `dateInterval: interval` (unlike `buildTrendFilterCriteria`, which sets nil for `.balance`).
-    private func buildSankeyFilterCriteria(interval: DateInterval) -> FilterCriteria {
-        FilterCriteria(
+    private func buildSankeyFilterCriteria(interval: DateInterval, allTags: [Tag]) -> FilterCriteria {
+        var criteria = FilterCriteria(
             selectedAccounts: selectedAccounts,
             selectedCategories: [],
             selectedSubcategories: [],
@@ -475,14 +477,18 @@ final class StatisticsViewModel: Filterable {
             searchText: searchText,
             dateInterval: interval
         )
+        criteria.populateTagUUIDs(
+            from: allTags.filter { selectedTags.contains($0.persistentModelID) }
+        )
+        return criteria
     }
 
     // MARK: - Calculation Helpers
 
     /// Build FilterCriteria for trend calculations
-    private func buildTrendFilterCriteria(interval: DateInterval) -> FilterCriteria {
+    private func buildTrendFilterCriteria(interval: DateInterval, allTags: [Tag]) -> FilterCriteria {
         let isBalanceMetric = selectedMetric == .balance
-        return FilterCriteria(
+        var criteria = FilterCriteria(
             selectedAccounts: selectedAccounts,
             selectedCategories: selectedCategories,
             selectedSubcategories: selectedSubcategories,
@@ -495,6 +501,10 @@ final class StatisticsViewModel: Filterable {
             searchText: searchText,
             dateInterval: isBalanceMetric ? nil : interval
         )
+        criteria.populateTagUUIDs(
+            from: allTags.filter { selectedTags.contains($0.persistentModelID) }
+        )
+        return criteria
     }
 
     /// Compute eligible accounts for trend calculations (archived accounts still count)

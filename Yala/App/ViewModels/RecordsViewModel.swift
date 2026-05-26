@@ -190,7 +190,7 @@ final class RecordsViewModel: Filterable {
             SessionState.shared.isExpensesOnlyMode ? [.expense] : selectedTransactionNatures
 
         // Build FilterCriteria from current state
-        let criteria = FilterCriteria(
+        var criteria = FilterCriteria(
             selectedAccounts: selectedAccounts,
             selectedCategories: selectedCategories,
             selectedSubcategories: selectedSubcategories,
@@ -203,6 +203,9 @@ final class RecordsViewModel: Filterable {
             amountCondition: amountCondition,
             searchText: searchText,
             dateInterval: effectiveDateInterval()
+        )
+        criteria.populateTagUUIDs(
+            from: tags.filter { selectedTags.contains($0.persistentModelID) }
         )
 
         // A0-Bridge: respeta toggle global "incluir transacciones de grupos en feed".
@@ -602,11 +605,25 @@ final class RecordsViewModel: Filterable {
         }
     }
 
-    /// Get tags for all selected transactions (for bulk tag editing UI)
-    func getSelectedTransactionTags() -> [[Tag]] {
+    /// Get tags for all selected transactions (for bulk tag editing UI).
+    /// CSV-mirror SSOT: lee UUIDs vía `resolvedTagIDs(scheduleBackfill: true)` y los
+    /// resuelve a Tag objects via `TagResolver.fetch(ids:in:)`. Sobrevive lazy
+    /// hydration de la M2M `tx.tags`.
+    func getSelectedTransactionTags(context: ModelContext) -> [[Tag]] {
         let flatTransactions = groupedRecords.flatMap { $0.records }
-        return selectedRecordIDs.compactMap { id in
-            flatTransactions.first { $0.persistentModelID == id }?.tags
+        return selectedRecordIDs.compactMap { id -> [Tag]? in
+            guard let tx = flatTransactions.first(where: { $0.persistentModelID == id }) else {
+                return nil
+            }
+            let ids = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+            do {
+                return try TagResolver.fetch(ids: ids, in: context)
+            } catch {
+                #if DEBUG
+                print("RecordsViewModel: getSelectedTransactionTags fetch error: \(error)")
+                #endif
+                return []
+            }
         }
     }
 

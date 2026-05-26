@@ -133,7 +133,7 @@ final class FinancialReportViewModel: Filterable {
 
         // Build filter criteria (shared base, only dateInterval differs)
         func makeCriteria(dateInterval: DateInterval) -> FilterCriteria {
-            FilterCriteria(
+            var criteria = FilterCriteria(
                 selectedAccounts: selectedAccounts,
                 selectedCategories: selectedCategories,
                 selectedSubcategories: selectedSubcategories,
@@ -147,6 +147,10 @@ final class FinancialReportViewModel: Filterable {
                 searchText: searchText,
                 dateInterval: dateInterval
             )
+            criteria.populateTagUUIDs(
+                from: allTags.filter { selectedTags.contains($0.persistentModelID) }
+            )
+            return criteria
         }
 
         let currentFiltered = FilterService.filterForTrends(

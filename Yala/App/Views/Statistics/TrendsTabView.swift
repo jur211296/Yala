@@ -1267,7 +1267,7 @@ struct TrendsTabView: View {
             return DateInterval(start: start, end: end)
         }()
 
-        let criteria = FilterCriteria(
+        var criteria = FilterCriteria(
             selectedAccounts: trendsViewModel.selectedAccounts,
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
@@ -1279,6 +1279,9 @@ struct TrendsTabView: View {
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: effectiveInterval
+        )
+        criteria.populateTagUUIDs(
+            from: tags.filter { criteria.selectedTags.contains($0.persistentModelID) }
         )
 
         let filtered = FilterService.filterForTrends(
@@ -1407,7 +1410,7 @@ struct TrendsTabView: View {
         let interval = effectiveInterval
 
         // Build filter criteria
-        let criteria = FilterCriteria(
+        var criteria = FilterCriteria(
             selectedAccounts: trendsViewModel.selectedAccounts,
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
@@ -1419,6 +1422,9 @@ struct TrendsTabView: View {
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: interval
+        )
+        criteria.populateTagUUIDs(
+            from: tags.filter { criteria.selectedTags.contains($0.persistentModelID) }
         )
 
         // Filter transactions (reuse fetchedTransactions from above)
@@ -1490,7 +1496,7 @@ struct TrendsTabView: View {
         )
 
         // Build filter criteria for previous period (same filters as current period)
-        let previousCriteria = FilterCriteria(
+        var previousCriteria = FilterCriteria(
             selectedAccounts: trendsViewModel.selectedAccounts,
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
@@ -1502,6 +1508,9 @@ struct TrendsTabView: View {
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: previousInterval
+        )
+        previousCriteria.populateTagUUIDs(
+            from: tags.filter { previousCriteria.selectedTags.contains($0.persistentModelID) }
         )
 
         // Filter transactions for previous period
@@ -1584,7 +1593,7 @@ struct TrendsTabView: View {
         let isBalanceMetric = trendsViewModel.selectedMetric == .balance
 
         // Base criteria WITHOUT date interval (for balance) or WITH date interval (for income/expense)
-        let baseCriteria = FilterCriteria(
+        var baseCriteria = FilterCriteria(
             selectedAccounts: trendsViewModel.selectedAccounts,
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
@@ -1596,6 +1605,9 @@ struct TrendsTabView: View {
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: isBalanceMetric ? nil : currentInterval
+        )
+        baseCriteria.populateTagUUIDs(
+            from: tags.filter { baseCriteria.selectedTags.contains($0.persistentModelID) }
         )
 
         // For balance: filter by account/category but NOT by date, pass ALL transactions
@@ -1635,7 +1647,7 @@ struct TrendsTabView: View {
             previousFiltered = filteredTransactions
         } else {
             // Filter for previous period date range
-            let previousCriteria = FilterCriteria(
+            var previousCriteria = FilterCriteria(
                 selectedAccounts: trendsViewModel.selectedAccounts,
                 selectedCategories: trendsViewModel.selectedCategories,
                 selectedSubcategories: trendsViewModel.selectedSubcategories,
@@ -1647,6 +1659,9 @@ struct TrendsTabView: View {
                 amountCondition: trendsViewModel.amountCondition,
                 searchText: trendsViewModel.searchText,
                 dateInterval: previousInterval
+            )
+            previousCriteria.populateTagUUIDs(
+                from: tags.filter { previousCriteria.selectedTags.contains($0.persistentModelID) }
             )
             previousFiltered = FilterService.filterForTrends(
                 transactions: allTransactions,

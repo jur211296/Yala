@@ -73,6 +73,7 @@ struct SearchContentView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.tagCatalog) private var tagCatalog
     @Binding var searchText: String
     let transactions: [TransactionItem]  // Passed from parent
 
@@ -88,7 +89,7 @@ struct SearchContentView: View {
             let categoryMatch = transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
             let subcategoryMatch = transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
             let accountMatch = transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-            let tagMatch = (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
+            let tagMatch = matchesTagName(transaction: transaction, lowercasedSearch: lowercasedSearch)
             return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
         case .note:
             return transaction.note?.lowercased().contains(lowercasedSearch) ?? false
@@ -101,7 +102,16 @@ struct SearchContentView: View {
         case .need:
             return transaction.subcategory?.need.displayName.lowercased().contains(lowercasedSearch) ?? false
         case .tag:
-            return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
+            return matchesTagName(transaction: transaction, lowercasedSearch: lowercasedSearch)
+        }
+    }
+
+    /// CSV-mirror SSOT: resuelve UUIDs vía catalog → Tag.name lowercased contains query.
+    /// Sobrevive lazy hydration de la M2M `tx.tags` durante cold launch.
+    private func matchesTagName(transaction: TransactionItem, lowercasedSearch: String) -> Bool {
+        let txTagIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+        return txTagIDs.contains { uuid in
+            tagCatalog[uuid]?.name.lowercased().contains(lowercasedSearch) ?? false
         }
     }
 
