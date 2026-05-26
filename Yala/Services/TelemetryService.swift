@@ -124,6 +124,11 @@ enum AnalyticsEvent: String {
     case cloudkitDuplicateDetected
     case cloudkitTransferOrphanRepaired
     case cloudkitTransferCollisionDetected
+
+    // Routing observability (F9 — privacy-first: only intent IDs, no payloads)
+    case routingIntentSuperseded     // a queued intent was dropped by an incoming one
+    case routingIntentDeferred       // an incoming intent was persisted to DeferredIntentBuffer
+    case routingReadinessBlocked     // a drain was blocked because a modal was visible
 }
 
 enum DuplicateDetectionContext: String {
@@ -214,6 +219,35 @@ enum TelemetryService {
                 "context": context.rawValue
             ]
         )
+    }
+
+    // MARK: - Routing observability (F9)
+
+    /// Fires when `RouterEntryGate` drops queued intents because an incoming one
+    /// supersedes them (e.g. `.navigate(.inbox)` supersedes `.showInboxAlert`).
+    /// Privacy-first: only intent IDs, no payloads.
+    static func routingIntentSuperseded(droppedID: String, by incomingID: String) {
+        track(.routingIntentSuperseded, parameters: [
+            "dropped": droppedID,
+            "by": incomingID
+        ])
+    }
+
+    /// Fires when an intent is deferred to the DeferredIntentBuffer because
+    /// the app cannot present right now (pre-bootstrap, locked, mid-onboarding).
+    static func routingIntentDeferred(intentID: String, reason: String) {
+        track(.routingIntentDeferred, parameters: [
+            "intent": intentID,
+            "reason": reason
+        ])
+    }
+
+    /// Fires when the .contentView consumer is unable to drain because a
+    /// modal is blocking. Surfaces unexpected gates in production.
+    static func routingReadinessBlocked(blocker: String) {
+        track(.routingReadinessBlocked, parameters: [
+            "blocker": blocker
+        ])
     }
 
     /// Reports orphan / malformed / pairing repair from `TransferPairReconcileService`.
