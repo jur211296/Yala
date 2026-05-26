@@ -756,7 +756,12 @@ struct InboxDraftEditSheet: View {
         transactionDate = draft.effectiveDate
         selectedAccount = draft.account
         selectedSubcategory = draft.subcategory
-        selectedTags = draft.tags ?? []
+        // CSV-mirror SSOT via resolver + TagResolver.
+        selectedTags = TagResolver.fetchOrEmpty(
+            ids: draft.resolvedTagIDs(scheduleBackfill: true) ?? [],
+            in: modelContext,
+            errorContext: "InboxDraftEditSheet/prefill"
+        )
 
         if let amt = draft.amount {
             amountString = AmountInputHelper.formatWithGrouping(abs(amt))

@@ -392,7 +392,12 @@ struct FavoriteEditorView: View {
         note = favorite.note ?? ""
         selectedAccount = favorite.account
         selectedSubcategory = favorite.subcategory
-        selectedTags = favorite.tags ?? []
+        // CSV-mirror SSOT via resolver + TagResolver.
+        selectedTags = TagResolver.fetchOrEmpty(
+            ids: favorite.resolvedTagIDs(scheduleBackfill: true) ?? [],
+            in: modelContext,
+            errorContext: "FavoriteEditorView/load"
+        )
         if let needRaw = favorite.needOverride {
             selectedNeed = SubcategoryNeed(rawValue: needRaw)
         }

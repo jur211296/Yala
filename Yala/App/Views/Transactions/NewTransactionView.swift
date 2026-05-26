@@ -1404,8 +1404,12 @@ struct NewTransactionView: View {
             // Load date
             viewModel.transactionDate = tx.date
 
-            // Load tags
-            viewModel.selectedTags = tx.tags ?? []
+            // Load tags — CSV-mirror SSOT via resolver + TagResolver.
+            viewModel.selectedTags = TagResolver.fetchOrEmpty(
+                ids: tx.resolvedTagIDs(scheduleBackfill: true) ?? [],
+                in: modelContext,
+                errorContext: "NewTransactionView/edit"
+            )
 
             // Load note
             viewModel.note = tx.note ?? ""
@@ -1648,8 +1652,12 @@ struct NewTransactionView: View {
             viewModel.selectedNeed = favorite.subcategory?.need
         }
 
-        // Set tags
-        viewModel.selectedTags = favorite.tags ?? []
+        // Set tags — CSV-mirror SSOT via resolver + TagResolver.
+        viewModel.selectedTags = TagResolver.fetchOrEmpty(
+            ids: favorite.resolvedTagIDs(scheduleBackfill: true) ?? [],
+            in: modelContext,
+            errorContext: "NewTransactionView/clone-favorite"
+        )
 
         // Set note if available
         if let note = favorite.note, !note.isEmpty {

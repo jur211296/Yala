@@ -1058,7 +1058,13 @@ struct ScheduledPaymentEditorView: View {
         isSubscription = paymentCategory == .subscription
         selectedAccount = payment.account
         selectedSubcategory = payment.subcategory
-        selectedTags = Set((payment.tags ?? []).map { $0.persistentModelID })
+        // CSV-mirror SSOT via resolver + TagResolver → set of persistentModelIDs.
+        let resolved = TagResolver.fetchOrEmpty(
+            ids: payment.resolvedTagIDs(scheduleBackfill: true) ?? [],
+            in: modelContext,
+            errorContext: "ScheduledPaymentEditorView/load"
+        )
+        selectedTags = Set(resolved.map(\.persistentModelID))
 
         // Recurrence
         isRecurring = payment.isRecurring

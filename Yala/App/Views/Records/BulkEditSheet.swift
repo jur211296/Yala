@@ -366,6 +366,7 @@ private struct BulkEditOptionRow: View {
 
 struct BulkTagEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     let viewModel: RecordsViewModel
     let allTags: [Tag]
@@ -474,7 +475,7 @@ struct BulkTagEditorSheet: View {
     // MARK: - Tag Analysis
 
     private var selectedTransactionTags: [[Tag]] {
-        viewModel.getSelectedTransactionTags()
+        viewModel.getSelectedTransactionTags(context: modelContext)
     }
 
     private var commonTags: [Tag] {
