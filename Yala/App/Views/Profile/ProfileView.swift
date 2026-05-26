@@ -179,9 +179,10 @@ struct ProfileView: View {
                     navigationPath.append(dest)
                 }
             }
-            .routerConsumer(.profile) {
-                _ = AppRouter.shared.drainNext(for: .profile)
-            }
+            // .routerConsumer(.profile) removed in F7 — was dead code (drained
+            // .profileNavigate intent but never produced one, and consumed without
+            // acting). Profile navigation flows through ContentView.handleMainTabIntent
+            // for tab routing instead.
             .navigationDestination(for: ProfileDestination.self) { destination in
                 switch destination {
                 case .accounts:

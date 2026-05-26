@@ -111,14 +111,14 @@ enum RouterIntent: Identifiable, Equatable {
     // D) Tab navigation
     case navigate(DeepLinkDestination)
 
-    // E) Profile / auto-editors
-    case profileNavigate(ProfileDestination)
+    // E) Auto-editors
     case autoOpenBudgetEditor
     case autoOpenScheduledEditor
 
     // F) System alerts
     case iCloudMismatch
     case remoteWipe(skipOnboarding: Bool)
+    case remoteOnboardingCompleted
 
     // What's new (version bump)
     case presentWhatsNew(features: [WhatsNewFeature], version: String)
@@ -137,7 +137,8 @@ extension RouterIntent {
         case .showInboxAlert, .presentTrialOffer, .presentWhatsNew,
              .presentGroupInviteOnboarding, .presentGroupReconnect, .showInviteError,
              .showGroupSyncError,
-             .iCloudMismatch, .remoteWipe, .presentFullModeActivation:
+             .iCloudMismatch, .remoteWipe, .remoteOnboardingCompleted,
+             .presentFullModeActivation:
             return .contentView
 
         case .presentInboxSheet, .presentSharedImage, .presentNewTransaction,
@@ -149,9 +150,6 @@ extension RouterIntent {
         case .presentDowngradeResolution, .presentTrialExpired,
              .presentMilestoneUpgrade, .requestAppStoreReview, .navigate:
             return .mainTab
-
-        case .profileNavigate:
-            return .profile
 
         case .autoOpenBudgetEditor, .autoOpenScheduledEditor:
             return .planning
@@ -166,15 +164,15 @@ extension RouterIntent {
         case .iCloudMismatch, .remoteWipe, .showInviteError:
             return .critical
         case .showInboxAlert, .presentSharedImage, .presentDowngradeResolution,
-             .presentTrialExpired, .requestAIConsent, .showGroupSyncError:
+             .presentTrialExpired, .requestAIConsent, .showGroupSyncError,
+             .remoteOnboardingCompleted:
             return .high
         case .presentInboxSheet, .presentNewTransaction, .presentNewTransactionFromChatDraft,
              .presentVoiceEntry, .presentImageEntry, .presentUpgradeSheet,
              .presentMilestoneUpgrade,
              .presentFullModeActivation, .navigate,
              .presentGroupInviteOnboarding, .presentGroupReconnect,
-             .presentTrialOffer, .autoOpenBudgetEditor, .autoOpenScheduledEditor,
-             .profileNavigate:
+             .presentTrialOffer, .autoOpenBudgetEditor, .autoOpenScheduledEditor:
             return .normal
         case .requestAppStoreReview, .presentWhatsNew:
             return .low
@@ -225,8 +223,6 @@ extension RouterIntent {
             return "fullMode"
         case .navigate(let dest):
             return "navigate:\(dest.routerKey)"
-        case .profileNavigate(let dest):
-            return "profile:\(dest.hashValue)"
         case .autoOpenBudgetEditor:
             return "budgetEditor"
         case .autoOpenScheduledEditor:
@@ -235,6 +231,8 @@ extension RouterIntent {
             return "iCloudMismatch"
         case .remoteWipe:
             return "remoteWipe"
+        case .remoteOnboardingCompleted:
+            return "remoteOnboardingCompleted"
         case .presentWhatsNew(_, let version):
             return "whatsNew:\(version)"
         }
@@ -245,7 +243,7 @@ extension RouterIntent {
     /// services. Critical alerts survive backgrounding.
     var isTransient: Bool {
         switch self {
-        case .remoteWipe, .iCloudMismatch:
+        case .remoteWipe, .iCloudMismatch, .remoteOnboardingCompleted:
             return false
         default:
             return true

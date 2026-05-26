@@ -24,8 +24,7 @@ final class AppRouter {
         case panel        // PanelShell — sheets (inbox, voice, image, newTx, upgrade)
         case mainTab      // MainTabView — tab nav, monetization modals, full-mode
         case contentView  // ContentView — inbox alert, group invite, system alerts
-        case profile      // ProfileView — deep navigation
-        case planning     // Budgets/ScheduledPayments — auto-open editor
+        case planning     // Budgets/ScheduledPayments — auto-open editor (peek-first)
     }
 
     // MARK: - Observable state
@@ -109,11 +108,49 @@ final class AppRouter {
         if queue.count != before { bumpRevision() }
     }
 
-    /// Nukes everything: queue, readiness, revision. Called on remote wipe.
+    /// Drops queued intents matching `predicate`. Returns the dropped IDs (in
+    /// queue order). Bumps revision iff at least one intent was dropped.
+    ///
+    /// Used by `RouterEntryGate` to apply supersession rules: when a new
+    /// intent supersedes pending ones (e.g. `.navigate(.inbox)` supersedes
+    /// `.showInboxAlert`), the gate drops the superseded entries before
+    /// enqueueing the incoming one. Safe to call from any consumer.
+    @discardableResult
+    func drop(where predicate: (RouterIntent) -> Bool) -> [String] {
+        var dropped: [String] = []
+        queue.removeAll { intent in
+            if predicate(intent) {
+                dropped.append(intent.id)
+                return true
+            }
+            return false
+        }
+        if !dropped.isEmpty { bumpRevision() }
+        return dropped
+    }
+
+    /// Read-only query: does any queued intent match `predicate`?
+    /// Does NOT bump revision and does NOT remove anything.
+    func contains(where predicate: (RouterIntent) -> Bool) -> Bool {
+        queue.contains(where: predicate)
+    }
+
+    /// Read-only snapshot of the current queue. Used by `RouterEntryGate` to
+    /// run supersession decisions against the queued state. NOT exposed for
+    /// direct mutation — callers use `drop`/`enqueue`/`drainNext`.
+    var queueSnapshot: [RouterIntent] {
+        queue
+    }
+
+    /// Nukes everything: queue, readiness, revision, AND the persistent
+    /// DeferredIntentBuffer. Called from `DataWipeService` on user-initiated
+    /// and remote wipes — without clearing the buffer, stale intents
+    /// persisted to UserDefaults would re-emerge after reseed.
     func resetAll() {
         queue.removeAll()
         readyConsumers.removeAll()
         revision = 0
+        DeferredIntentBuffer.shared.clear()
     }
 
     // MARK: - Internals

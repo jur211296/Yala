@@ -243,6 +243,60 @@ struct AppRouterTests {
         #expect(router._testQueue.count == 2)
     }
 
+    // MARK: - drop(where:) and contains(where:) — F2 extensions
+
+    @MainActor @Test func drop_byPredicate_removesMatchingIntents_bumpsRevision() {
+        let router = freshRouter()
+        router.enqueue(.presentInboxSheet)
+        router.enqueue(.presentTrialOffer)
+        router.enqueue(.presentNewTransaction)
+        let beforeRev = router.revision
+
+        let dropped = router.drop { intent in
+            if case .presentInboxSheet = intent { return true }
+            return false
+        }
+
+        #expect(dropped == ["inboxSheet"])
+        #expect(router._testQueue.count == 2)
+        #expect(router.revision == beforeRev + 1)
+    }
+
+    @MainActor @Test func drop_emptyMatch_doesNotBumpRevision() {
+        let router = freshRouter()
+        router.enqueue(.presentInboxSheet)
+        let beforeRev = router.revision
+
+        let dropped = router.drop { intent in
+            if case .presentTrialOffer = intent { return true }
+            return false
+        }
+
+        #expect(dropped.isEmpty)
+        #expect(router._testQueue.count == 1)
+        #expect(router.revision == beforeRev)
+    }
+
+    @MainActor @Test func contains_matchingPredicate_returnsTrue() {
+        let router = freshRouter()
+        router.enqueue(.presentInboxSheet)
+
+        #expect(router.contains { if case .presentInboxSheet = $0 { return true }; return false })
+        #expect(!router.contains { if case .presentTrialOffer = $0 { return true }; return false })
+    }
+
+    @MainActor @Test func contains_doesNotMutateOrBumpRevision() {
+        let router = freshRouter()
+        router.enqueue(.presentInboxSheet)
+        let beforeRev = router.revision
+        let beforeCount = router._testQueue.count
+
+        _ = router.contains { _ in true }
+
+        #expect(router._testQueue.count == beforeCount)
+        #expect(router.revision == beforeRev)
+    }
+
     @MainActor @Test func _testReset_clearsStateBetweenTests() {
         let router = AppRouter.shared
         router.enqueue(.presentInboxSheet)

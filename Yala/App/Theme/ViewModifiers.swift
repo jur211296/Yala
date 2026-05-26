@@ -322,7 +322,7 @@ extension View {
 // MARK: - AI Consent Alert
 
 /// Which AI input feature the user was trying to activate when consent was requested
-enum PendingAIInput: Equatable, Hashable {
+enum PendingAIInput: String, Codable, Equatable, Hashable {
     case voice
     case image
 }
