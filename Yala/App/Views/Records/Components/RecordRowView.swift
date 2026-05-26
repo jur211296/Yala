@@ -22,6 +22,7 @@ struct RecordRowView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.tagCatalog) private var tagCatalog
 
     var body: some View {
         Button {
@@ -75,9 +76,10 @@ struct RecordRowView: View {
                         }
                     }
 
-                    // Line 4: Tags (if any)
-                    if !(record.tags ?? []).isEmpty {
-                        tagsRow
+                    // Line 4: Tags (if any) — resolved via CSV-mirror SSOT + catalog.
+                    let resolvedTags = TagDisplayResolver.tags(for: record, catalog: tagCatalog)
+                    if !resolvedTags.isEmpty {
+                        tagsRow(resolvedTags)
                     }
                 }
 
@@ -194,9 +196,9 @@ struct RecordRowView: View {
 
     // MARK: - Tags Row
 
-    private var tagsRow: some View {
+    private func tagsRow(_ tags: [Tag]) -> some View {
         HStack(spacing: DS.Spacing.xs) {
-            ForEach(Array((record.tags ?? []).prefix(3)), id: \.persistentModelID) { tag in
+            ForEach(Array(tags.prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
                     .font(DS.Typography.labelTiny)
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
@@ -209,8 +211,8 @@ struct RecordRowView: View {
                     .accessibilityHint(String(localized: "Tag"))
             }
 
-            if (record.tags ?? []).count > 3 {
-                Text("+\((record.tags ?? []).count - 3)")
+            if tags.count > 3 {
+                Text("+\(tags.count - 3)")
                     .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
             }

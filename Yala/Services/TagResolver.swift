@@ -21,4 +21,24 @@ enum TagResolver {
         let descriptor = FetchDescriptor<Tag>(predicate: #Predicate { ids.contains($0.id) })
         return try context.fetch(descriptor)
     }
+
+    /// Convenience para form-pre-population: lee CSV-mirror SSOT del record,
+    /// resuelve a `[Tag]` via fetch, retorna `[]` con log DEBUG si la fetch falla.
+    /// Reemplaza el bloque `do { try fetch } catch { print; [] }` repetido en 5+ callsites
+    /// (NewTransactionView edit/clone-favorite, InboxDraftEditSheet, FavoriteEditorView,
+    /// ScheduledPaymentEditorView). `errorContext` aparece en el log DEBUG.
+    static func fetchOrEmpty(
+        ids: Set<UUID>,
+        in context: ModelContext,
+        errorContext: String
+    ) -> [Tag] {
+        do {
+            return try fetch(ids: ids, in: context)
+        } catch {
+            #if DEBUG
+            print("TagResolver.fetchOrEmpty [\(errorContext)] error: \(error)")
+            #endif
+            return []
+        }
+    }
 }

@@ -18,6 +18,7 @@ struct InboxDraftRowView: View {
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.tagCatalog) private var tagCatalog
 
     var body: some View {
         Button(action: onTap) {
@@ -99,8 +100,11 @@ struct InboxDraftRowView: View {
         }
 
         // Line 3: Tags (if any) - only for pending drafts (archived may have invalid tag references)
-        if draft.status == .pending && !(draft.tags ?? []).isEmpty {
-            tagsRow
+        if draft.status == .pending {
+            let resolvedTags = TagDisplayResolver.tags(for: draft, catalog: tagCatalog)
+            if !resolvedTags.isEmpty {
+                tagsRow(resolvedTags)
+            }
         }
     }
 
@@ -163,9 +167,9 @@ struct InboxDraftRowView: View {
 
     // MARK: - Tags Row
 
-    private var tagsRow: some View {
+    private func tagsRow(_ tags: [Tag]) -> some View {
         HStack(spacing: DS.Spacing.xs) {
-            ForEach(Array((draft.tags ?? []).prefix(3)), id: \.persistentModelID) { tag in
+            ForEach(Array(tags.prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
                     .font(DS.Typography.labelTiny)
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
@@ -177,8 +181,8 @@ struct InboxDraftRowView: View {
                     )
             }
 
-            if (draft.tags ?? []).count > 3 {
-                Text("+\((draft.tags ?? []).count - 3)")
+            if tags.count > 3 {
+                Text("+\(tags.count - 3)")
                     .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
             }

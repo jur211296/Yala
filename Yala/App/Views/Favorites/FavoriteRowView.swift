@@ -17,6 +17,7 @@ struct FavoriteRowView: View {
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.tagCatalog) private var tagCatalog
 
     var body: some View {
         Button(action: onTap) {
@@ -35,9 +36,10 @@ struct FavoriteRowView: View {
                     // Line 2: Subcategory • Account (or placeholders)
                     secondaryLine
 
-                    // Line 3: Tags (if any)
-                    if !(favorite.tags ?? []).isEmpty {
-                        tagsRow
+                    // Line 3: Tags (if any) — resolved via CSV-mirror SSOT + catalog.
+                    let resolvedTags = TagDisplayResolver.tags(for: favorite, catalog: tagCatalog)
+                    if !resolvedTags.isEmpty {
+                        tagsRow(resolvedTags)
                     }
                 }
 
@@ -114,9 +116,9 @@ struct FavoriteRowView: View {
             .lineLimit(1)
     }
 
-    private var tagsRow: some View {
+    private func tagsRow(_ tags: [Tag]) -> some View {
         HStack(spacing: DS.Spacing.xs) {
-            ForEach(Array((favorite.tags ?? []).prefix(3)), id: \.persistentModelID) { tag in
+            ForEach(Array(tags.prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
                     .font(DS.Typography.labelTiny)
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
@@ -128,8 +130,8 @@ struct FavoriteRowView: View {
                     )
             }
 
-            if (favorite.tags ?? []).count > 3 {
-                Text("+\((favorite.tags ?? []).count - 3)")
+            if tags.count > 3 {
+                Text("+\(tags.count - 3)")
                     .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
             }

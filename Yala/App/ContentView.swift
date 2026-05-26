@@ -25,9 +25,9 @@ struct ContentView: View {
     @State private var prefilledOnboardingData: ICloudAccountSummary?
     @State private var showSplash: Bool = true
     @State private var splashOpacity: Double = 1
-    /// Sprint 2.1: Hero + Chooser unificados en un solo cover. El step interno
-    /// (hero/chooser) lo maneja `WelcomeFlowContainer` — el ContentView solo
-    /// decide cuándo presentar el flow y con qué `initialStep`.
+    /// Hero + Chooser unificados en un solo cover. El step interno (hero/chooser)
+    /// lo maneja `WelcomeFlowContainer` — el ContentView solo decide cuándo
+    /// presentar el flow y con qué `initialStep`.
     @State private var showWelcomeFlow: Bool = false
     @State private var welcomeFlowInitialStep: WelcomeFlowStep = .hero
     /// Positive confirmation toast for reactive events (remote onboarding / restore).
@@ -91,6 +91,7 @@ struct ContentView: View {
             if hasCompletedOnboarding && isInitialCheckDone {
                 MainTabView()
                     .environment(SessionState.shared)
+                    .modifier(TagCatalogProvider())
                     .id(languageVersion) // re-render on .languageDidChange
             } else {
                 theme.background
@@ -230,7 +231,7 @@ struct ContentView: View {
                     AppBootstrapper.shared.handleInviteLink(url)
                 },
                 onBack: {
-                    // Sprint 2.1: vuelve al WelcomeFlow en step .chooser (donde estaba).
+                    // Vuelve al WelcomeFlow en step .chooser (donde estaba).
                     returnToWelcomeChooser(dismissing: $showInviteRecovery)
                 }
             )
@@ -734,7 +735,7 @@ struct ContentView: View {
     // invisible dentro de `WelcomeHeroView` mientras el user lee las cards animadas.
 }
 
-// MARK: - Welcome Flow Modifier (Sprint 2.1)
+// MARK: - Welcome Flow Modifier
 
 /// Encapsula el flow Welcome con Hero + Chooser unificados en un solo
 /// `fullScreenCover` (sin frame "azul vacío" entre ambos). El alert
