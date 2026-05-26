@@ -110,7 +110,7 @@ final class DataWipeService {
         let favoriteDescriptor = FetchDescriptor<FavoritePayment>()
         let allFavorites = try context.fetch(favoriteDescriptor)
         for favorite in allFavorites {
-            favorite.tags = []
+            favorite.setTags(from: [])
         }
         try context.save()
         for favorite in allFavorites {
@@ -317,10 +317,13 @@ final class DataWipeService {
         defaults.removeObject(forKey: "notificationsSeeded")    // Allow re-seed after wipe
 
         // --- AppEntity shortcutID / CSV mirror migration sentinels ---
-        // Re-correr migración + backfill contra entidades recién sembradas.
-        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsMigratedV2)
-        defaults.removeObject(forKey: AppPreferences.Keys.budgetFilterCSVMirrorV2)
-        defaults.removeObject(forKey: AppPreferences.Keys.budgetFilterCSVMirrorAttemptsV2)
+        // Re-correr migración contra entidades recién sembradas.
+        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsMigratedV3)
+        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsRegeneratedV3)
+        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsBackfillAttemptsV3)
+        AppPreferences.Keys.LegacyKeys.v2MigrationSentinels.forEach {
+            defaults.removeObject(forKey: $0)
+        }
 
         // --- Legacy (compatibilidad) ---
         defaults.removeObject(forKey: "preferredCurrency")      // Reemplazado por defaultCurrencyCode

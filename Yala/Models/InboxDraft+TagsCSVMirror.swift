@@ -52,7 +52,8 @@ extension InboxDraft {
                 guard model.tagIDsSet == nil else { return }
                 let currentM2M = Set((model.tags ?? []).map(\.id))
                 guard currentM2M == snapshotIDs else { return }
-                model.setTags(from: model.tags ?? [])
+                // SOLO escribir CSV — NO reasignar M2M (regla CLAUDE.md sync storm).
+                model.tagIDs = CSVMirrorCodec.encode(currentM2M)
                 do {
                     try context.save()
                 } catch {

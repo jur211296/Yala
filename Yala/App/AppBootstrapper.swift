@@ -145,16 +145,29 @@ final class AppBootstrapper {
         currencyConverter.setContext(context)
         budgetAlertService.setContext(context)
 
-        // 8.5. Persist shortcutIDs de legacy entities (one-shot por device).
-        // Diferido a Task no-blocking para no añadir latencia al cold launch — el
-        // único consumidor (AppEntities en Atajos) no se invoca en los primeros
-        // segundos del launch. Sentinel garantiza idempotencia.
+        // 8.5. Migración V3: regen UUIDs + re-encode CSV mirrors en una sola save atómica.
+        // Gated al hook `iCloudFirstImportCompleted` para garantizar que M2M está
+        // hidratada antes de re-encodear (cierra el "flash vacío" causado por la
+        // ventana lazy de CloudKit en cold launch). Task no-blocking — UI renderiza
+        // antes de que la migración complete; mientras corre los readers usan el
+        // resolver con fallback M2M.
         Task { @MainActor in
-            persistAppEntityShortcutIDsIfNeeded(context: context)
-            // 8.6. Backfill Budget CSV mirror (subcategoryIDs/accountIDs/tagIDs) from M2M.
-            // Debe correr DESPUÉS de persistAppEntityShortcutIDsIfNeeded para garantizar
-            // que los UUIDs estables ya están persistidos antes de leerlos al CSV.
-            backfillBudgetFilterCSVsIfNeeded(context: context)
+            let started = Date.now
+            let decision = MigrationGateLogic.shouldWaitForCloudKit(
+                isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
+                hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
+            )
+            var waitedForSync = false
+            if decision == .waitForHook {
+                waitedForSync = true
+                _ = await iCloudSyncService.shared.forceFetchAndWait(timeout: 15)
+            }
+            let waitDuration = Date.now.timeIntervalSince(started)
+            migrateShortcutIDsAndRebuildCSVMirrors(
+                context: context,
+                waitedForSync: waitedForSync,
+                waitDuration: waitDuration
+            )
         }
 
         // 9. Update widget cache
@@ -653,18 +666,11 @@ final class AppBootstrapper {
         sessionState.needsExchangeRateReload = false
     }
 
-    // MARK: - AppEntity shortcutID Migration
+    // MARK: - Unified shortcutID + CSV Mirror Migration (V3)
 
     /// Regenera UUIDs en `Account.shortcutID`, `Subcategory.shortcutID` y `Tag.id`,
-    /// y nulea TODOS los CSV mirrors (Budget + TX + Draft) para que el backfill
-    /// posterior los rehidrate desde M2M con UUIDs estables.
-    ///
-    /// SwiftData no marca un record dirty cuando se le asigna su mismo valor
-    /// (`entity.id = entity.id`), así que el default `UUID()` evaluado al
-    /// deserializar no llega al store. Records sin field persistido colapsan
-    /// al mismo UUID por launch — filter `.contains(\.shortcutID)` matchea todas
-    /// las subcats, `ForEach(id: \.id)` colapsa rows, presupuestos suman todas
-    /// las TXs.
+    /// y rehidrata los CSV mirrors de Budget/TransactionItem/InboxDraft/FavoritePayment/
+    /// ScheduledPayment desde M2M — todo en una sola save atómica.
     ///
     /// Estrategia por field:
     /// - `Tag.id` sin historia de persistencia confiable → regeneramos TODOS.
@@ -673,156 +679,164 @@ final class AppBootstrapper {
     ///   estables sincronizados cross-device → heurística por duplicados preserva
     ///   los únicos (mantiene Atajos guardados).
     ///
-    /// CSV mirrors nuleados aquí; backfill los rehidrata desde M2M. Mientras CSV
-    /// es nil, `resolvedXIDs` cae al M2M fallback.
+    /// CSV mirrors:
+    /// - M2M no-nil → encode UUIDs y escribir CSV (fresh state).
+    /// - M2M nil (lazy hydration en curso) → nuke CSV stale + `sawRace=true`
+    ///   para que el sentinel NO se marque y el próximo launch reintente.
     ///
-    /// Atomicidad: si `save()` throwea, ni el sentinel principal ni los del
-    /// backfill se tocan → próximo launch reintenta limpio.
-    private func persistAppEntityShortcutIDsIfNeeded(context: ModelContext) {
-        let key = AppPreferences.Keys.appEntityShortcutIDsMigratedV2
-        guard !UserDefaults.standard.bool(forKey: key) else { return }
+    /// Atomicidad: si `save()` throwea, sentinel no se toca → próximo launch
+    /// reintenta limpio. Si `sawRace=true`, sentinel tampoco se toca.
+    ///
+    /// Retry: el backfill CSV tiene cap `maxAttempts=5`; tras 5 launches con race
+    /// persistente, el sentinel principal se marca igual y el resto queda al
+    /// auto-heal lazy de `resolvedXIDs(scheduleBackfill: true)`. Esto evita el
+    /// caso patológico donde una M2M `nil` permanente forzaría a `regenerateAllUUIDs`
+    /// a reasignar Tag.id en cada cold launch indefinidamente (rompiendo Atajos
+    /// cross-device). La regen tiene su propio sentinel `appEntityShortcutIDsRegeneratedV3`
+    /// que se marca tras el primer save exitoso, independiente del race del backfill.
+    private func migrateShortcutIDsAndRebuildCSVMirrors(
+        context: ModelContext,
+        waitedForSync: Bool,
+        waitDuration: TimeInterval
+    ) {
+        let sentinelKey = AppPreferences.Keys.appEntityShortcutIDsMigratedV3
+        let regenKey = AppPreferences.Keys.appEntityShortcutIDsRegeneratedV3
+        let attemptsKey = AppPreferences.Keys.appEntityShortcutIDsBackfillAttemptsV3
+        let maxAttempts = 5
+        guard !UserDefaults.standard.bool(forKey: sentinelKey) else { return }
 
         do {
             let accounts = try context.fetch(FetchDescriptor<Account>())
             let subcategories = try context.fetch(FetchDescriptor<Subcategory>())
             let tags = try context.fetch(FetchDescriptor<Tag>())
 
-            let accountsRegen = regenerateDuplicateUUIDs(accounts, keyPath: \.shortcutID)
-            let subsRegen = regenerateDuplicateUUIDs(subcategories, keyPath: \.shortcutID)
-            let tagsRegen = regenerateAllUUIDs(tags, keyPath: \.id)
+            // Regen sentinel: si ya corrió en un launch previo, NO re-regenerar
+            // (preserva Tag.id cross-device estable aunque el backfill aún no converge).
+            let regenAlreadyRan = UserDefaults.standard.bool(forKey: regenKey)
+            let accountsRegen: Int
+            let subsRegen: Int
+            let tagsRegen: Int
+            if regenAlreadyRan {
+                accountsRegen = 0
+                subsRegen = 0
+                tagsRegen = 0
+            } else {
+                accountsRegen = regenerateDuplicateUUIDs(accounts, keyPath: \.shortcutID)
+                subsRegen = regenerateDuplicateUUIDs(subcategories, keyPath: \.shortcutID)
+                tagsRegen = regenerateAllUUIDs(tags, keyPath: \.id)
+            }
 
-            // Nuke CSV mirrors corruptos (apuntan a UUIDs viejos colapsados).
-            // El backfill posterior los rehidrata desde M2M con los UUIDs estables.
+            var sawRace = false
+
+            // Budget: per-relation decision (M2M nil → nuke stale, M2M non-nil → encode).
             let budgets = try context.fetch(FetchDescriptor<Budget>())
             for budget in budgets {
-                budget.subcategoryIDs = nil
-                budget.accountIDs = nil
-                budget.tagIDs = nil
+                let plan = MigrationBackfillLogic.planForBudget(
+                    accounts: budget.accounts,
+                    subcategories: budget.subcategories,
+                    tags: budget.tags
+                )
+                switch plan.accountIDsAction {
+                case .writeFromM2M: budget.setAccountIDs(from: budget.accounts ?? [])
+                case .nukeStale: budget.accountIDs = nil
+                }
+                switch plan.subcategoryIDsAction {
+                case .writeFromM2M: budget.setSubcategoryIDs(from: budget.subcategories ?? [])
+                case .nukeStale: budget.subcategoryIDs = nil
+                }
+                switch plan.tagIDsAction {
+                case .writeFromM2M: budget.setTagIDs(from: budget.tags ?? [])
+                case .nukeStale: budget.tagIDs = nil
+                }
+                if plan.sawRace { sawRace = true }
             }
+
+            // TX/Draft/Favorite/Scheduled: escribir CSV directo SIN reasignar M2M
+            // (reasignar marcaría dirty cada record → sync storm en cuentas grandes).
             let txs = try context.fetch(FetchDescriptor<TransactionItem>())
-            for tx in txs { tx.tagIDs = nil }
+            for tx in txs {
+                switch MigrationBackfillLogic.decideAction(m2m: tx.tags) {
+                case .writeFromM2M: tx.tagIDs = CSVMirrorCodec.encode((tx.tags ?? []).map(\.id))
+                case .nukeStale: tx.tagIDs = nil; sawRace = true
+                }
+            }
             let drafts = try context.fetch(FetchDescriptor<InboxDraft>())
-            for draft in drafts { draft.tagIDs = nil }
+            for draft in drafts {
+                switch MigrationBackfillLogic.decideAction(m2m: draft.tags) {
+                case .writeFromM2M: draft.tagIDs = CSVMirrorCodec.encode((draft.tags ?? []).map(\.id))
+                case .nukeStale: draft.tagIDs = nil; sawRace = true
+                }
+            }
+            let favorites = try context.fetch(FetchDescriptor<FavoritePayment>())
+            for favorite in favorites {
+                switch MigrationBackfillLogic.decideAction(m2m: favorite.tags) {
+                case .writeFromM2M: favorite.tagIDs = CSVMirrorCodec.encode((favorite.tags ?? []).map(\.id))
+                case .nukeStale: favorite.tagIDs = nil; sawRace = true
+                }
+            }
+            let scheduled = try context.fetch(FetchDescriptor<ScheduledPayment>())
+            for payment in scheduled {
+                switch MigrationBackfillLogic.decideAction(m2m: payment.tags) {
+                case .writeFromM2M: payment.tagIDs = CSVMirrorCodec.encode((payment.tags ?? []).map(\.id))
+                case .nukeStale: payment.tagIDs = nil; sawRace = true
+                }
+            }
 
             try context.save()
-            // Sentinel + sentinel cleanup SOLO en el success path. Si save throwea
-            // arriba, no caemos aquí y el próximo launch reintenta con estado limpio.
-            UserDefaults.standard.set(true, forKey: key)
-            UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.budgetFilterCSVMirrorV2)
-            UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.budgetFilterCSVMirrorAttemptsV2)
 
-            // Telemetría siempre que la migración corra (visibility en 1-entity-case
-            // donde regen=0 pero CSVs sí fueron nuleados).
+            // Regen sentinel se marca SIEMPRE tras save exitoso (idempotente desde
+            // segundo launch). Evita re-regenerar Tag.id si el backfill aún no converge.
+            UserDefaults.standard.set(true, forKey: regenKey)
+
+            // Sentinel principal: marca convergencia o cap de retries (whichever first).
+            // Tras maxAttempts, se acepta el estado actual y se cede al auto-heal lazy.
+            let attempts = UserDefaults.standard.integer(forKey: attemptsKey)
+            if !sawRace || attempts + 1 >= maxAttempts {
+                UserDefaults.standard.set(true, forKey: sentinelKey)
+                UserDefaults.standard.removeObject(forKey: attemptsKey)
+                AppPreferences.Keys.LegacyKeys.v2MigrationSentinels.forEach {
+                    UserDefaults.standard.removeObject(forKey: $0)
+                }
+            } else {
+                UserDefaults.standard.set(attempts + 1, forKey: attemptsKey)
+            }
+
             TelemetryService.track(
                 .appEntityShortcutIDsRegenerated,
                 parameters: [
                     "accounts": "\(accountsRegen)",
                     "subcategories": "\(subsRegen)",
                     "tags": "\(tagsRegen)",
-                    "budgetsNuked": "\(budgets.count)",
-                    "txsNuked": "\(txs.count)",
-                    "draftsNuked": "\(drafts.count)",
+                    "budgets": "\(budgets.count)",
+                    "txs": "\(txs.count)",
+                    "drafts": "\(drafts.count)",
+                    "favorites": "\(favorites.count)",
+                    "scheduled": "\(scheduled.count)",
+                    "waitedForSync": "\(waitedForSync)",
+                    "waitDuration_bucket": migrationWaitBucket(waitDuration),
+                    "sawRace": "\(sawRace)",
                 ]
             )
 
             #if DEBUG
-            print("AppBootstrapper: persistAppEntityShortcutIDs — regen accounts=\(accountsRegen)/\(accounts.count), subs=\(subsRegen)/\(subcategories.count), tags=\(tagsRegen)/\(tags.count); CSV nuked \(budgets.count) budgets + \(txs.count) txs + \(drafts.count) drafts")
+            print("AppBootstrapper: migrateShortcutIDsAndRebuildCSVMirrors — regen accounts=\(accountsRegen)/\(accounts.count), subs=\(subsRegen)/\(subcategories.count), tags=\(tagsRegen)/\(tags.count); CSV \(budgets.count) budgets + \(txs.count) txs + \(drafts.count) drafts + \(favorites.count) favorites + \(scheduled.count) scheduled (sawRace=\(sawRace), sentinel=\(sawRace ? "deferred" : "set"))")
             #endif
         } catch {
             #if DEBUG
-            print("AppBootstrapper: persistAppEntityShortcutIDs error: \(error)")
+            print("AppBootstrapper: migrateShortcutIDsAndRebuildCSVMirrors error: \(error)")
             #endif
             // Do NOT mark sentinel — retry next launch.
         }
     }
 
-    // MARK: - Budget Filter CSV Mirror Backfill
-
-    /// Rehidrata `Budget.subcategoryIDs/accountIDs/tagIDs`, `TransactionItem.tagIDs`
-    /// e `InboxDraft.tagIDs` desde M2M con UUIDs estables.
-    ///
-    /// Per-relation skip (no AND-gate completo): si solo 1 de 3 M2M de un Budget
-    /// está `nil` (lazy hydration), se procesan los otros 2 igual.
-    ///
-    /// TX/Draft sin reasignar M2M: escribimos `tagIDs` directamente con
-    /// `CSVMirrorCodec.encode(...)`. Reasignar `tx.tags = tags` marcaría dirty
-    /// cada TX → sync storm en cuentas con miles de TXs.
-    ///
-    /// Race-tolerant: skip records con M2M `nil` (lazy hydration en curso) marca
-    /// `sawRace=true` (incluye los 3 loops). Tras `maxAttempts=5` marca sentinel
-    /// y deja el resto al auto-heal lazy de `resolvedXIDs(scheduleBackfill: true)`.
-    private func backfillBudgetFilterCSVsIfNeeded(context: ModelContext) {
-        let sentinelKey = AppPreferences.Keys.budgetFilterCSVMirrorV2
-        let attemptsKey = AppPreferences.Keys.budgetFilterCSVMirrorAttemptsV2
-        let maxAttempts = 5
-        guard !UserDefaults.standard.bool(forKey: sentinelKey) else { return }
-
-        do {
-            let budgets = try context.fetch(FetchDescriptor<Budget>())
-            var sawRace = false
-            for budget in budgets {
-                // Per-relation skip: M2M nil = CloudKit lazy hydration en curso para
-                // esa relación específica. M2M [] = "sin filtro" (procesar normal,
-                // setXIDs encodea nil). Las otras 2 relaciones del mismo Budget
-                // pueden estar hidratadas y se procesan igual.
-                if let subs = budget.subcategories {
-                    budget.setSubcategoryIDs(from: subs)
-                } else {
-                    sawRace = true
-                }
-                if let accs = budget.accounts {
-                    budget.setAccountIDs(from: accs)
-                } else {
-                    sawRace = true
-                }
-                if let tags = budget.tags {
-                    budget.setTagIDs(from: tags)
-                } else {
-                    sawRace = true
-                }
-            }
-
-            let txs = try context.fetch(FetchDescriptor<TransactionItem>())
-            var txProcessed = 0
-            for tx in txs {
-                if let m2mTags = tx.tags {
-                    tx.tagIDs = CSVMirrorCodec.encode(m2mTags.map(\.id))
-                    txProcessed += 1
-                } else {
-                    sawRace = true
-                }
-            }
-            let drafts = try context.fetch(FetchDescriptor<InboxDraft>())
-            var draftProcessed = 0
-            for draft in drafts {
-                if let m2mTags = draft.tags {
-                    draft.tagIDs = CSVMirrorCodec.encode(m2mTags.map(\.id))
-                    draftProcessed += 1
-                } else {
-                    sawRace = true
-                }
-            }
-
-            try context.save()
-
-            let attempts = UserDefaults.standard.integer(forKey: attemptsKey)
-            if !sawRace || attempts + 1 >= maxAttempts {
-                UserDefaults.standard.set(true, forKey: sentinelKey)
-                UserDefaults.standard.removeObject(forKey: attemptsKey)
-                #if DEBUG
-                print("AppBootstrapper: backfillBudgetFilterCSVs — \(budgets.count) budgets + \(txProcessed)/\(txs.count) txs + \(draftProcessed)/\(drafts.count) drafts processed (attempts=\(attempts + 1), sawRace=\(sawRace), sentinel=set)")
-                #endif
-            } else {
-                UserDefaults.standard.set(attempts + 1, forKey: attemptsKey)
-                #if DEBUG
-                print("AppBootstrapper: backfillBudgetFilterCSVs — race detected, retry (attempt=\(attempts + 1)/\(maxAttempts))")
-                #endif
-            }
-        } catch {
-            #if DEBUG
-            print("AppBootstrapper: backfillBudgetFilterCSVs error: \(error)")
-            #endif
-            // Do NOT mark sentinel — retry next launch.
+    /// Privacy-friendly wait-duration buckets — no exact timings.
+    private func migrationWaitBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<0.1: return "lt_100ms"  // .runNow path
+        case ..<1: return "lt_1s"
+        case ..<3: return "1_3s"
+        case ..<10: return "3_10s"
+        default: return "gt_10s"
         }
     }
 

@@ -1,18 +1,19 @@
 //
-//  TransactionItem+TagsCSVMirror.swift
+//  FavoritePayment+TagsCSVMirror.swift
 //  Yala
 //
-//  CSV mirror helpers for TransactionItem.tags. Same pattern as Budget+CSVMirror:
-//  - `tagIDs` is the SSOT for reads.
+//  CSV mirror helpers for FavoritePayment.tags:
+//  - `tagIDs` is the SSOT for reads (sobrevive CloudKit lazy hydration de M2M).
 //  - `setTags(from:)` is the single dual-write helper.
-//  - `resolvedTagIDs(scheduleBackfill:)` falls back to M2M when CSV is nil and
-//    schedules an async write to populate the CSV (auto-cura).
+//  - `resolvedTagIDs(scheduleBackfill:)` falls back to M2M when CSV is nil y
+//    schedules an async write con snapshot check (anti-resurrección de tags
+//    borrados por writer concurrente).
 //
 
 import Foundation
 import SwiftData
 
-extension TransactionItem {
+extension FavoritePayment {
 
     // MARK: - Decoder
 
@@ -20,8 +21,8 @@ extension TransactionItem {
 
     // MARK: - Dual-Write Helper
 
-    /// Single writer for transaction tags. Keeps M2M + CSV in sync.
-    /// All `transaction.tags = ...` mutations MUST go through this helper.
+    /// Single writer for favorite tags. Keeps M2M + CSV in sync.
+    /// All `favorite.tags = ...` mutations MUST go through this helper.
     func setTags(from tags: [Tag]) {
         self.tags = tags
         self.tagIDs = CSVMirrorCodec.encode(tags.map(\.id))
@@ -29,14 +30,10 @@ extension TransactionItem {
 
     // MARK: - Resolved Read with Auto-Heal Lazy Fallback
 
-    /// Returns the resolved Set<UUID> of tags for this transaction.
+    /// Returns the resolved Set<UUID> of tags for this favorite.
     /// Preference order: CSV mirror > M2M relation.
     /// If `scheduleBackfill=true` and the value comes from M2M, schedules an
     /// async write to populate the CSV (auto-cura).
-    ///
-    /// Race-safety: el Task verifica que el M2M actual aún coincida con el
-    /// snapshot antes de escribir — protege contra resurrección de tags borrados
-    /// por un writer concurrente entre el snapshot y la ejecución del Task.
     func resolvedTagIDs(scheduleBackfill: Bool = false) -> Set<UUID>? {
         if let set = tagIDsSet { return set }
         let m2m = tags ?? []
@@ -49,21 +46,17 @@ extension TransactionItem {
             Task { @MainActor in
                 guard let container else { return }
                 let context = container.mainContext
-                guard let model = context.model(for: modelID) as? TransactionItem else { return }
+                guard let model = context.model(for: modelID) as? FavoritePayment else { return }
                 guard model.tagIDsSet == nil else { return }
-                // Verify M2M actual aún matchea snapshot — si un writer concurrente
-                // modificó la relación, NO restauramos (evita resurrección).
                 let currentM2M = Set((model.tags ?? []).map(\.id))
                 guard currentM2M == snapshotIDs else { return }
-                // SOLO escribir CSV — NO reasignar M2M (regla CLAUDE.md sync storm:
-                // miles de records en cold launch llamarían setTags reasignando
-                // tags = tags y marcando dirty cada record → flood CKSyncEngine).
+                // SOLO escribir CSV — NO reasignar M2M (regla CLAUDE.md sync storm).
                 model.tagIDs = CSVMirrorCodec.encode(currentM2M)
                 do {
                     try context.save()
                 } catch {
                     #if DEBUG
-                    print("TransactionItem+TagsCSVMirror: scheduleBackfill save error: \(error)")
+                    print("FavoritePayment+TagsCSVMirror: scheduleBackfill save error: \(error)")
                     #endif
                 }
             }

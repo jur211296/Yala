@@ -122,7 +122,7 @@ final class ScheduledPaymentEditorViewModel {
             existingPayment.paymentCategory = paymentCategory.rawValue
             existingPayment.account = account
             existingPayment.subcategory = subcategory
-            existingPayment.tags = tagsArray
+            existingPayment.setTags(from: tagsArray)
             existingPayment.needOverride = needOverride
 
             // Recurrence

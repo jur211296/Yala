@@ -89,7 +89,8 @@ extension Budget {
                 // modificó la relación, NO restauramos (evita resurrección).
                 let currentM2M = Set((model.subcategories ?? []).map(\.shortcutID))
                 guard currentM2M == snapshotIDs else { return }
-                model.setSubcategoryIDs(from: model.subcategories ?? [])
+                // SOLO escribir CSV — NO reasignar M2M (regla CLAUDE.md sync storm).
+                model.subcategoryIDs = CSVMirrorCodec.encode(currentM2M)
                 do {
                     try context.save()
                 } catch {
@@ -118,7 +119,8 @@ extension Budget {
                 guard model.accountIDsSet == nil else { return }
                 let currentM2M = Set((model.accounts ?? []).map(\.shortcutID))
                 guard currentM2M == snapshotIDs else { return }
-                model.setAccountIDs(from: model.accounts ?? [])
+                // SOLO escribir CSV — NO reasignar M2M (regla CLAUDE.md sync storm).
+                model.accountIDs = CSVMirrorCodec.encode(currentM2M)
                 do {
                     try context.save()
                 } catch {
@@ -147,7 +149,8 @@ extension Budget {
                 guard model.tagIDsSet == nil else { return }
                 let currentM2M = Set((model.tags ?? []).map(\.id))
                 guard currentM2M == snapshotIDs else { return }
-                model.setTagIDs(from: model.tags ?? [])
+                // SOLO escribir CSV — NO reasignar M2M (regla CLAUDE.md sync storm).
+                model.tagIDs = CSVMirrorCodec.encode(currentM2M)
                 do {
                     try context.save()
                 } catch {

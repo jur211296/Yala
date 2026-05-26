@@ -18,7 +18,9 @@ enum AnalyticsEvent: String {
     case draftRejected
     case budgetSaved
     case budgetFiltersAppearEmpty        // params: budgetID, periodType, hadM2MNotEmpty
-    case appEntityShortcutIDsRegenerated // params: accounts, subcategories, tags, budgetsNuked, txsNuked, draftsNuked
+    case appEntityShortcutIDsRegenerated // params: accounts, subcategories, tags, budgets, txs, drafts, favorites, scheduled, waitedForSync, waitDuration_bucket, sawRace
+    case tagDeleted                       // params: duration_bucket, txCount, draftCount, favoriteCount, scheduledCount, budgetCount
+    case tagCatalogRebuilt                // params: tagCount
     case scheduledPaymentSaved
     case accountCreated
     case exportCompleted

@@ -114,20 +114,72 @@ final class EntityDeletionService {
 
     // MARK: - Tag Deletion
 
-    /// Deletes a tag
-    /// - Parameter tag: The tag to delete
+    /// Deletes a tag and re-encodes CSV mirrors on all affected models.
+    ///
+    /// SwiftData cascade `.nullify` removes the Tag from each M2M relation, but the
+    /// CSV mirror on the OTHER side (Budget/TX/Draft/Favorite/Scheduled) keeps the
+    /// stale UUID. We snapshot the inverses pre-delete, then re-encode CSV from
+    /// the now-nulified M2M post-delete on a single save.
+    ///
+    /// Performance: in accounts with thousands of TXs tagged with this Tag the
+    /// re-encode loop can be slow. Telemetría `tagDeleted.duration_bucket`
+    /// detects cohorts above 1s for follow-up (Task background + progress UI).
     func deleteTag(_ tag: Tag) throws {
+        let started = Date.now
+        let context = try requireContext()
         let affectedBudgets = tag.budgets ?? []
-        try delete(tag)
-        reencodeBudgetCSVMirrors(in: affectedBudgets)
+        let affectedTXs = tag.transactions ?? []
+        let affectedDrafts = tag.inboxDrafts ?? []
+        let affectedFavorites = tag.favoritePayments ?? []
+        let affectedScheduled = tag.scheduledPayments ?? []
+
+        // Atomic: delete + cascade nullify + re-encode CSV en UNA sola save.
+        // Evita ventana intermedia donde observers ven Tag deletado pero CSV mirrors
+        // aún contienen el UUID huérfano (Budget calcula contra UUID muerto).
+        context.delete(tag)
+        // Cascade `.nullify` ya limpió cada M2M; re-encodear leyendo los M2M
+        // actuales captura el set sin el UUID del Tag borrado.
+        for budget in affectedBudgets {
+            budget.setAccountIDs(from: budget.accounts ?? [])
+            budget.setSubcategoryIDs(from: budget.subcategories ?? [])
+            budget.setTagIDs(from: budget.tags ?? [])
+        }
+        for tx in affectedTXs {
+            tx.tagIDs = CSVMirrorCodec.encode((tx.tags ?? []).map(\.id))
+        }
+        for draft in affectedDrafts {
+            draft.tagIDs = CSVMirrorCodec.encode((draft.tags ?? []).map(\.id))
+        }
+        for favorite in affectedFavorites {
+            favorite.tagIDs = CSVMirrorCodec.encode((favorite.tags ?? []).map(\.id))
+        }
+        for payment in affectedScheduled {
+            payment.tagIDs = CSVMirrorCodec.encode((payment.tags ?? []).map(\.id))
+        }
+        try context.save()
+        context.processPendingChanges()
+        SessionState.shared.incrementDataVersion()
+
+        let duration = Date.now.timeIntervalSince(started)
+        TelemetryService.track(
+            .tagDeleted,
+            parameters: [
+                "duration_bucket": durationBucket(duration),
+                "txCount": "\(affectedTXs.count)",
+                "draftCount": "\(affectedDrafts.count)",
+                "favoriteCount": "\(affectedFavorites.count)",
+                "scheduledCount": "\(affectedScheduled.count)",
+                "budgetCount": "\(affectedBudgets.count)",
+            ]
+        )
     }
 
-    // MARK: - Budget CSV Mirror Cleanup
+    // MARK: - CSV Mirror Cleanup
 
-    /// Re-encode los 3 CSV mirrors de cada Budget desde su M2M actual.
-    /// Usado tras delete de Account/Subcategory/Tag: SwiftData cascade `.nullify`
-    /// limpia M2M pero deja el CSV con UUIDs huérfanos. Re-encodear los 3 es
-    /// más barato y resiliente que rastrear cuál relación cambió.
+    /// Re-encode the 3 Budget CSV mirrors from current M2M.
+    /// Used after Account/Subcategory delete: cascade `.nullify` cleans the M2M
+    /// but leaves the CSV with orphan UUIDs. Re-encoding all 3 is cheaper and
+    /// more resilient than tracking which relation changed.
     private func reencodeBudgetCSVMirrors(in budgets: [Budget]) {
         guard !budgets.isEmpty else { return }
         for budget in budgets {
@@ -141,6 +193,17 @@ final class EntityDeletionService {
             #if DEBUG
             print("EntityDeletion: reencodeBudgetCSVMirrors save error: \(error)")
             #endif
+        }
+    }
+
+    /// Privacy-friendly duration buckets — no exact timings exposed.
+    private func durationBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<0.5: return "lt_500ms"
+        case ..<1: return "500ms_1s"
+        case ..<3: return "1_3s"
+        case ..<10: return "3_10s"
+        default: return "gt_10s"
         }
     }
 

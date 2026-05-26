@@ -37,6 +37,10 @@ final class FavoritePayment {
     @Relationship(deleteRule: .nullify, inverse: \Tag.favoritePayments)
     var tags: [Tag]?
 
+    /// CSV mirror of `tags` (UUIDs). SSOT for reads — survives CloudKit lazy hydration.
+    /// Dual-written via `setTags(from:)`. See `FavoritePayment+TagsCSVMirror.swift`.
+    var tagIDs: String?
+
     /// Optional nature override (nil = use subcategory's nature)
     var needOverride: String?
 
@@ -68,6 +72,7 @@ final class FavoritePayment {
         self.account = account
         self.subcategory = subcategory
         self.tags = tags
+        self.tagIDs = CSVMirrorCodec.encode(tags.map(\.id))
         self.needOverride = needOverride
         self.currencyCode = currencyCode
         self.createdAt = Date.now

@@ -1157,9 +1157,29 @@ final class AppPreferences {
         static let panelSectionsHidden = "panelSectionsHidden"
         static let panelSectionsOrder = "panelSectionsOrder"
         static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
-        static let appEntityShortcutIDsMigratedV2 = "appEntityShortcutIDsMigratedV2"
-        static let budgetFilterCSVMirrorV2 = "Yala_BudgetFilterCSV_v2"
-        static let budgetFilterCSVMirrorAttemptsV2 = "Yala_BudgetFilterCSV_attempts_v2"
+        /// Marca que la regen de UUIDs (Tag.id + Account/Subcategory.shortcutID) corrió.
+        /// Se setea en el primer save exitoso independiente del race del backfill CSV.
+        /// Evita que `regenerateAllUUIDs` blow away Tag.id cada launch si el CSV
+        /// backfill no converge (mantendría Atajos cross-device inválidos).
+        static let appEntityShortcutIDsRegeneratedV3 = "appEntityShortcutIDsRegeneratedV3"
+        /// Marca que el CSV mirror backfill (per-relation) convergió sin race.
+        /// Con maxAttempts=5 cap, se setea aunque sawRace persista tras 5 launches —
+        /// el resto queda al auto-heal lazy de `resolvedXIDs(scheduleBackfill: true)`.
+        static let appEntityShortcutIDsMigratedV3 = "appEntityShortcutIDsMigratedV3"
+        /// Counter de intentos del backfill V3 (cap maxAttempts=5).
+        static let appEntityShortcutIDsBackfillAttemptsV3 = "appEntityShortcutIDsBackfillAttemptsV3"
+
+        /// Keys obsoletas que ya no existen como propiedades activas. Existen
+        /// como string literals para que la migración V3 + DataWipeService puedan
+        /// limpiarlas idempotente en devices que las tienen seteadas desde versiones
+        /// pre-V3. Single source of truth evita drift entre los 2 callsites.
+        enum LegacyKeys {
+            static let v2MigrationSentinels: [String] = [
+                "appEntityShortcutIDsMigratedV2",
+                "Yala_BudgetFilterCSV_v2",
+                "Yala_BudgetFilterCSV_attempts_v2",
+            ]
+        }
         static let panelAccountsCollapsed = "panelAccountsCollapsed"
         static let sankeyLabelMode = "sankeyLabelMode"
 
