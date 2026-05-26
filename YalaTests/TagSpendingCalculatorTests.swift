@@ -55,7 +55,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: []
         )
         #expect(result.isEmpty)
     }
@@ -68,7 +69,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: [tag]
         )
         #expect(result.count == 1)
         #expect(result[0].tag.name == "Food")
@@ -84,7 +86,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx1, tx2],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: [tag]
         )
         #expect(result.count == 1)
         #expect(result[0].amount == 300)
@@ -100,7 +103,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx1, tx2],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: [tagA, tagB]
         )
         #expect(result.count == 2)
         #expect(result[0].tag.name == "Big")
@@ -117,7 +121,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx1, tx2],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: [tagA, tagB]
         )
         #expect(result[0].percentage == 60)
         #expect(result[1].percentage == 40)
@@ -132,7 +137,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: [tagA, tagB]
         )
         #expect(result.count == 2)
         #expect(result[0].amount == 100)
@@ -148,7 +154,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: [tag]
         )
         #expect(result.isEmpty)
     }
@@ -160,7 +167,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: [tag]
         )
         #expect(result.isEmpty)
     }
@@ -172,7 +180,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: []
         )
         #expect(result.isEmpty)
     }
@@ -185,7 +194,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: [tag]
         )
         #expect(result.isEmpty)
     }
@@ -198,7 +208,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: [tag]
         )
         #expect(result.isEmpty)
     }
@@ -212,7 +223,8 @@ struct TagSpendingCalculatorTests {
             transactions: [tx],
             interval: defaultInterval,
             currencyCode: "USD",
-            transactionNatures: [.income]
+            transactionNatures: [.income],
+            allTags: [tag]
         )
         #expect(result.count == 1)
     }
@@ -228,7 +240,8 @@ struct TagSpendingCalculatorTests {
             transactions: [tx1, tx2],
             interval: defaultInterval,
             currencyCode: "USD",
-            transactionNatures: [.income, .expense]
+            transactionNatures: [.income, .expense],
+            allTags: [tag]
         )
         #expect(result.count == 1)
         #expect(result[0].amount == 300)
@@ -242,7 +255,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: [tag]
         )
         #expect(result[0].amount == 250)
     }
@@ -254,7 +268,8 @@ struct TagSpendingCalculatorTests {
         let result = TagSpendingCalculator.calculateTopSpending(
             transactions: [tx],
             interval: defaultInterval,
-            currencyCode: "USD"
+            currencyCode: "USD",
+            allTags: []
         )
         #expect(result.isEmpty)
     }

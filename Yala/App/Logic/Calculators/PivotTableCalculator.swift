@@ -24,7 +24,7 @@ struct PivotTableCalculator {
         previousTransactions: [TransactionItem],
         hierarchy: [ReportGroupingDimension],
         preferredCurrency: String,
-        allTags: [Tag] = []
+        allTags: [Tag]
     ) -> [PivotNode] {
         guard !hierarchy.isEmpty else { return [] }
 
@@ -143,12 +143,11 @@ struct PivotTableCalculator {
     }
 
     /// Group transactions by a given dimension.
-    /// `allTags`: caller-provided Tag catalog for CSV mirror resolution (case `.etiqueta`).
-    /// When empty, falls back to M2M-direct (legacy/preview path).
+    /// `allTags`: required Tag catalog for CSV mirror resolution (case `.etiqueta`).
     static func group(
         transactions: [TransactionItem],
         by dimension: ReportGroupingDimension,
-        allTags: [Tag] = []
+        allTags: [Tag]
     ) -> [GroupKey: [TransactionItem]] {
         var groups: [GroupKey: [TransactionItem]] = [:]
         let tagsByID = Tag.byIDLookup(allTags)
@@ -167,7 +166,7 @@ struct PivotTableCalculator {
     private static func groupKeys(
         for tx: TransactionItem,
         dimension: ReportGroupingDimension,
-        tagsByID: [UUID: Tag] = [:]
+        tagsByID: [UUID: Tag]
     ) -> [GroupKey] {
         switch dimension {
         case .tipo:
@@ -192,29 +191,13 @@ struct PivotTableCalculator {
             return [GroupKey(label: label, iconName: icon, colorHex: color, isIncome: isIncome)]
 
         case .etiqueta:
-            // CSV-first read: resuelve UUIDs via `tagsByID` (catalog del caller).
-            // Si tagsByID está vacío (callers legacy sin migrar), fallback a M2M directo.
+            // CSV-mirror SSOT: resuelve UUIDs via `tagsByID` (catalog del caller).
             let txTagUUIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
-            if !tagsByID.isEmpty {
-                let resolvedTags = txTagUUIDs.compactMap { tagsByID[$0] }
-                if resolvedTags.isEmpty {
-                    return [GroupKey(label: L10n.Report.noTag, iconName: "tag.slash", colorHex: nil, isIncome: false)]
-                }
-                return resolvedTags.map { tag in
-                    GroupKey(
-                        label: tag.name,
-                        iconName: tag.iconName,
-                        colorHex: tag.colorHex,
-                        isIncome: false
-                    )
-                }
-            }
-            // Fallback legacy (M2M direct) — usado por callers sin allTags.
-            let tags = tx.tags ?? []
-            if tags.isEmpty {
+            let resolvedTags = txTagUUIDs.compactMap { tagsByID[$0] }
+            if resolvedTags.isEmpty {
                 return [GroupKey(label: L10n.Report.noTag, iconName: "tag.slash", colorHex: nil, isIncome: false)]
             }
-            return tags.map { tag in
+            return resolvedTags.map { tag in
                 GroupKey(
                     label: tag.name,
                     iconName: tag.iconName,
