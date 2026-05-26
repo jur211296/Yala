@@ -800,10 +800,14 @@ final class FullFinancialContextBuilder {
         converter: CurrencyConverting,
         currentMonthInterval: DateInterval
     ) -> [FullFinancialContext.TagEntry] {
+        // CSV-mirror SSOT via resolver + catalog construido del allTags inyectado.
+        let tagCatalog = Tag.byIDLookup(allTags)
         var tagTotals: [String: (total: Double, count: Int)] = [:]
         for tx in tx {
             let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter)
-            for tag in tx.tags ?? [] {
+            let txTagIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+            for uuid in txTagIDs {
+                guard let tag = tagCatalog[uuid] else { continue }
                 let entry = tagTotals[tag.name] ?? (total: 0, count: 0)
                 tagTotals[tag.name] = (total: entry.total + amount, count: entry.count + 1)
             }

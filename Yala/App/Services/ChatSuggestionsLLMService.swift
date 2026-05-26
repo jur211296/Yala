@@ -241,10 +241,14 @@ final class ChatSuggestionsLLMService {
             }
             merchantNames = merchantTotals.sorted { $0.value > $1.value }.prefix(10).map(\.key)
 
-            // Top 5 tags.
+            // Top 5 tags — CSV-mirror SSOT via resolver + catalog construido del fetch local.
+            let allTagsFetched = (try? modelContext.fetch(FetchDescriptor<Tag>())) ?? []
+            let tagCatalog = Tag.byIDLookup(allTagsFetched)
             var tagTotals: [String: Double] = [:]
             for tx in expenseTxs {
-                for tag in tx.tags ?? [] {
+                let txTagIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+                for uuid in txTagIDs {
+                    guard let tag = tagCatalog[uuid] else { continue }
                     tagTotals[tag.name, default: 0] += abs(tx.amountInPreferredCurrency)
                 }
             }

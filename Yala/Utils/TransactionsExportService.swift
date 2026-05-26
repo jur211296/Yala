@@ -110,10 +110,15 @@ struct TransactionsExportService {
         // 1) Traemos las transacciones desde SwiftData (filtradas por fecha si aplica).
         let fetchedTransactions = try modelContext.fetch(fetchDescriptor)
 
+        // Tag catalog para resolver UUIDs del CSV mirror → nombres en filtros y rows.
+        let allTags = (try? modelContext.fetch(FetchDescriptor<Tag>())) ?? []
+        let tagCatalog = Tag.byIDLookup(allTags)
+
         // 2) Aplicamos el resto de filtros en memoria (cuentas, categorías, montos, etc.).
         let filteredTransactions = applyInMemoryFilters(
             fetchedTransactions,
-            filters: filters
+            filters: filters,
+            tagCatalog: tagCatalog
         )
 
         // Si después de todos los filtros no queda nada, devolvemos error.
@@ -124,7 +129,8 @@ struct TransactionsExportService {
         // 3) Construimos el contenido CSV como Data.
         let csvData = makeCSVData(
             transactions: filteredTransactions,
-            columns: columns
+            columns: columns,
+            tagCatalog: tagCatalog
         )
 
         // 4) Escribimos el archivo en el directorio temporal.
@@ -173,10 +179,15 @@ struct TransactionsExportService {
         // 1) Traemos las transacciones desde SwiftData.
         let fetchedTransactions = try modelContext.fetch(fetchDescriptor)
 
+        // Tag catalog para resolver UUIDs del CSV mirror → nombres en filtros y rows.
+        let allTags = (try? modelContext.fetch(FetchDescriptor<Tag>())) ?? []
+        let tagCatalog = Tag.byIDLookup(allTags)
+
         // 2) Aplicamos el resto de filtros en memoria.
         let filteredTransactions = applyInMemoryFilters(
             fetchedTransactions,
-            filters: filters
+            filters: filters,
+            tagCatalog: tagCatalog
         )
 
         // Si después de todos los filtros no queda nada, devolvemos error.
@@ -189,11 +200,11 @@ struct TransactionsExportService {
         do {
             switch format {
             case .csv:
-                let csvData = makeCSVData(transactions: filteredTransactions, columns: columns)
+                let csvData = makeCSVData(transactions: filteredTransactions, columns: columns, tagCatalog: tagCatalog)
                 fileURL = try writeToTemporaryFile(data: csvData, extension: "csv")
 
             case .xlsx:
-                let (headers, rows) = makeExportData(transactions: filteredTransactions, columns: columns)
+                let (headers, rows) = makeExportData(transactions: filteredTransactions, columns: columns, tagCatalog: tagCatalog)
                 fileURL = try writeXLSXToTemporaryFile(headers: headers, rows: rows)
             }
         } catch {
@@ -242,7 +253,8 @@ struct TransactionsExportService {
     /// - Etiquetas
     static func applyInMemoryFilters(
         _ transactions: [TransactionItem],
-        filters: ExportFilters
+        filters: ExportFilters,
+        tagCatalog: [UUID: Tag] = [:]
     ) -> [TransactionItem] {
 
         // Preprocesamos algunas colecciones en sets para acelerar búsquedas.
@@ -335,9 +347,10 @@ struct TransactionsExportService {
                 }
             }
 
-            // 7) Filtro por etiquetas (nombres).
+            // 7) Filtro por etiquetas (nombres). CSV-mirror SSOT via resolver + catalog.
             if !tagFilterSet.isEmpty {
-                let transactionTagNames = (transaction.tags ?? []).map { $0.name.lowercased() }
+                let txTagIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+                let transactionTagNames = txTagIDs.compactMap { tagCatalog[$0]?.name.lowercased() }
                 let transactionTagSet = Set(transactionTagNames)
 
                 if isExclude {
@@ -359,7 +372,8 @@ struct TransactionsExportService {
     /// Construye el contenido CSV (Data) a partir de las transacciones y columnas activas.
     static func makeCSVData(
         transactions: [TransactionItem],
-        columns: ExportColumns
+        columns: ExportColumns,
+        tagCatalog: [UUID: Tag] = [:]
     ) -> Data {
 
         // 1) Encabezado.
@@ -414,8 +428,9 @@ struct TransactionsExportService {
                     value = transaction.subcategory?.name ?? ""
 
                 case .tags:
-                    // Etiquetas separadas por ';'.
-                    let names = (transaction.tags ?? []).map { $0.name }
+                    // Etiquetas separadas por ';' — CSV-mirror SSOT via resolver + catalog.
+                    let txTagIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+                    let names = txTagIDs.compactMap { tagCatalog[$0]?.name }
                     value = names.joined(separator: ";")
 
                 case .note:
@@ -499,7 +514,8 @@ struct TransactionsExportService {
     /// Genera headers y filas de datos para exportación (usado por XLSX).
     static func makeExportData(
         transactions: [TransactionItem],
-        columns: ExportColumns
+        columns: ExportColumns,
+        tagCatalog: [UUID: Tag] = [:]
     ) -> (headers: [String], rows: [[String]]) {
 
         let orderedColumns = columns.orderedActiveColumns
@@ -541,7 +557,9 @@ struct TransactionsExportService {
                 case .subcategory:
                     value = transaction.subcategory?.name ?? ""
                 case .tags:
-                    let names = (transaction.tags ?? []).map { $0.name }
+                    // CSV-mirror SSOT via resolver + catalog.
+                    let txTagIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+                    let names = txTagIDs.compactMap { tagCatalog[$0]?.name }
                     value = names.joined(separator: ";")
                 case .note:
                     value = transaction.note ?? ""
