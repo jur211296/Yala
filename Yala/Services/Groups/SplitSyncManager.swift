@@ -236,7 +236,7 @@ final class SplitSyncManager {
                     _ = try await GroupService.shared.ensureCurrentUserMemberExists(in: group)
                 } catch {
                     logger.error("Failed to ensure current user member after share acceptance: \(error.localizedDescription, privacy: .public)")
-                    AppRouter.shared.enqueue(.showGroupSyncError(
+                    RouterEntryGate.shared.submit(.showGroupSyncError(
                         String(localized: "groups.sync.errorMemberSetup")
                     ))
                 }
@@ -247,11 +247,11 @@ final class SplitSyncManager {
 
             // Navigate to Groups tab (unless routing is handled by invite/reconnect flow)
             if !skipNavigation {
-                await MainActor.run { AppRouter.shared.enqueue(.navigate(.groups)) }
+                await MainActor.run { RouterEntryGate.shared.submit(.navigate(.groups)) }
             }
         } catch {
             logger.error("Share acceptance failed: \(error.localizedDescription, privacy: .public)")
-            AppRouter.shared.enqueue(.showGroupSyncError(
+            RouterEntryGate.shared.submit(.showGroupSyncError(
                 String(localized: "groups.sync.errorAcceptShare")
             ))
         }

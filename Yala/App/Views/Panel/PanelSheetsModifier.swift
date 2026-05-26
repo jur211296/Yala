@@ -149,11 +149,13 @@ struct PanelSheetsModifier: ViewModifier {
                 }
             }
             .sheet(isPresented: $sheets.showInbox, onDismiss: {
+                SessionState.shared.isInboxSheetVisible = false
                 viewModel.reloadAndRecalculate()
             }) {
                 InboxView(onNavigateToRecords: {
                     viewModel.navigateToStatistics(.records)
                 })
+                .onAppear { SessionState.shared.isInboxSheetVisible = true }
             }
             .sheet(isPresented: $sheets.showUpgradeForVoice) {
                 UpgradePromptSheet(feature: .voiceInput, context: .proFeature)

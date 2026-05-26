@@ -268,6 +268,10 @@ final class AppBootstrapper {
             deferredInviteBrandedMetadata = .empty
             Task { await acceptShareFromURL(pendingShareURL, brandedMetadata: pendingBranded) }
         }
+
+        // 20. Drain DeferredIntentBuffer: re-submit any RouterIntent that
+        // arrived during pre-bootstrap, biometric lock, or mid-onboarding.
+        RouterEntryGate.shared.drainDeferredBuffer()
     }
 
     // MARK: - Exchange Rate Cache Invalidation
@@ -331,7 +335,12 @@ final class AppBootstrapper {
             #if DEBUG
             print("AppBootstrapper: iCloud mismatch — container was local, iCloud now available")
             #endif
-            NotificationCenter.default.post(name: .iCloudMismatchDetected, object: nil)
+            // Original guard preserved: don't surface the restart alert while
+            // the user is still mid-onboarding (the alert was originally gated
+            // by `hasCompletedOnboarding` in the ContentView observer).
+            if UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) {
+                RouterEntryGate.shared.submit(.iCloudMismatch)
+            }
         }
     }
 
@@ -571,6 +580,10 @@ final class AppBootstrapper {
 
         checkForPendingControlAction()
 
+        // Drain buffered intents (notif taps that arrived during lock /
+        // mid-onboarding while app was foregrounded but blocked).
+        RouterEntryGate.shared.drainDeferredBuffer()
+
         // Skip notification checks if bootstrap just ran (< 5 seconds ago)
         let shouldCheckNotifications = Date.now.timeIntervalSince(lastNotificationCheckDate) > 5.0
 
@@ -635,26 +648,26 @@ final class AppBootstrapper {
     private func executeAction(_ action: PanelAction) {
         switch action {
         case .newTransaction:
-            AppRouter.shared.enqueue(.presentNewTransaction)
+            RouterEntryGate.shared.submit(.presentNewTransaction)
         case .voiceEntry:
             guard FeatureGateService.shared.canAccess(.voiceInput) else {
-                AppRouter.shared.enqueue(.presentUpgradeSheet(.voice))
+                RouterEntryGate.shared.submit(.presentUpgradeSheet(.voice))
                 return
             }
             if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
-                AppRouter.shared.enqueue(.presentVoiceEntry)
+                RouterEntryGate.shared.submit(.presentVoiceEntry)
             } else {
-                AppRouter.shared.enqueue(.requestAIConsent(.voice))
+                RouterEntryGate.shared.submit(.requestAIConsent(.voice))
             }
         case .imageEntry:
             guard FeatureGateService.shared.canAccess(.imageInput) else {
-                AppRouter.shared.enqueue(.presentUpgradeSheet(.image))
+                RouterEntryGate.shared.submit(.presentUpgradeSheet(.image))
                 return
             }
             if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
-                AppRouter.shared.enqueue(.presentImageEntry)
+                RouterEntryGate.shared.submit(.presentImageEntry)
             } else {
-                AppRouter.shared.enqueue(.requestAIConsent(.image))
+                RouterEntryGate.shared.submit(.requestAIConsent(.image))
             }
         }
     }
@@ -916,7 +929,7 @@ final class AppBootstrapper {
     func handleInviteLink(_ url: URL) {
         guard let shareURL = InviteLinkService.extractShareURL(from: url) else {
             logger.error("Invalid invite link: \(url.absoluteString, privacy: .public)")
-            AppRouter.shared.enqueue(.showInviteError(
+            RouterEntryGate.shared.submit(.showInviteError(
                 String(localized: "groups.invite.linkInvalidDetail")
             ))
             return
@@ -986,52 +999,15 @@ final class AppBootstrapper {
         do {
             let metadata = try await InviteLinkService.fetchShareMetadata(for: shareURL)
 
-            let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
-            // CKShare custom keys (escritas por owner en setArchived / softDelete). Race-tolerant:
-            // si key ausente (sync remoto aún no propagó al CKShare custom key) → false →
-            // standardReconnect; CKSyncEngine posterior actualiza el SplitGroup record local con
-            // el flag autoritativo vía F2 propagation (GroupMetaField.isArchived/isHiddenForAll).
-            let isHiddenForAll = (metadata.share[CKShareCustomKey.isHiddenForAll] as? Int) == 1
-            let isArchived = (metadata.share[CKShareCustomKey.isArchived] as? Int) == 1
-            // Member status local (si ya hubo accept previo en este device).
-            let zoneName = metadata.share.recordID.zoneID.zoneName
-            let currentMemberStatus = SplitSyncManager.shared.currentMemberStatus(zoneName: zoneName)
-
-            let decision = Self.inviteRouteDecision(
-                hasCompletedOnboarding: hasCompletedOnboarding,
-                onboardingMode: sessionState.onboardingMode,
-                isHiddenForAll: isHiddenForAll,
-                isArchived: isArchived,
-                currentMemberStatus: currentMemberStatus
+            // CKShare acceptance + routing centralised in CKShareEntryHandler.
+            await CKShareEntryHandler.handle(
+                metadata: metadata,
+                branded: brandedMetadata,
+                source: .universalLink
             )
-
-            switch decision {
-            case .acceptAndShowInviteOnboarding:
-                let invite = InviteMetadata(
-                    groupName: brandedMetadata.name,
-                    groupIcon: brandedMetadata.icon,
-                    groupColor: brandedMetadata.color,
-                    groupMembers: brandedMetadata.members,
-                    shareMetadata: metadata,
-                    mode: .standardReconnect
-                )
-                await SplitSyncManager.shared.acceptShare(metadata: metadata, skipNavigation: true)
-                AppRouter.shared.enqueue(.presentGroupInviteOnboarding(invite))
-            case .showReconnect(let mode):
-                // NO acceptShare eagerly — `GroupReconnectView.onJoin` lo invoca al confirmar (según mode).
-                let invite = InviteMetadata(
-                    groupName: brandedMetadata.name,
-                    groupIcon: brandedMetadata.icon,
-                    groupColor: brandedMetadata.color,
-                    groupMembers: brandedMetadata.members,
-                    shareMetadata: metadata,
-                    mode: mode
-                )
-                AppRouter.shared.enqueue(.presentGroupReconnect(invite))
-            }
         } catch {
             logger.error("Failed to accept share from URL: \(error.localizedDescription, privacy: .public)")
-            AppRouter.shared.enqueue(.showInviteError(
+            RouterEntryGate.shared.submit(.showInviteError(
                 String(localized: "groups.invite.linkInvalidDetail")
             ))
         }
@@ -1040,7 +1016,7 @@ final class AppBootstrapper {
     // MARK: - Deep Link Deferral
 
     private func setOrDeferDeepLink(_ destination: DeepLinkDestination) {
-        AppRouter.shared.enqueue(.navigate(destination))
+        RouterEntryGate.shared.submit(.navigate(destination))
     }
 
     // MARK: - Private Bootstrap Tasks
@@ -1116,7 +1092,7 @@ final class AppBootstrapper {
 
         // Check for trial expired (shows sheet once)
         if ProUpsellService.shared.shouldShowTrialExpiredSheet() {
-            AppRouter.shared.enqueue(.presentTrialExpired)
+            RouterEntryGate.shared.submit(.presentTrialExpired)
         }
     }
 
@@ -1136,7 +1112,7 @@ final class AppBootstrapper {
 
         // Mark that we need to show downgrade resolution
         // The actual resolution sheet is shown from ContentView which has access to data
-        AppRouter.shared.enqueue(.presentDowngradeResolution)
+        RouterEntryGate.shared.submit(.presentDowngradeResolution)
     }
 
     /// Reset Pro theme to System if user downgraded from Pro
@@ -1248,7 +1224,7 @@ final class AppBootstrapper {
 
         if !notification.isEmpty {
             // Enqueue — readiness gating handles splash/biometric timing.
-            AppRouter.shared.enqueue(.showInboxAlert(notification))
+            RouterEntryGate.shared.submit(.showInboxAlert(notification))
         }
     }
 
@@ -1273,11 +1249,11 @@ final class AppBootstrapper {
     /// `aiConsentAlert` (whose callback opens the same image sheet).
     private func enqueueSharedImage(_ url: URL) {
         sessionState.pendingSharedImageURL = url
-        AppRouter.shared.enqueue(.navigate(.panel))
+        RouterEntryGate.shared.submit(.navigate(.panel))
         if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
-            AppRouter.shared.enqueue(.presentSharedImage(url))
+            RouterEntryGate.shared.submit(.presentSharedImage(url))
         } else {
-            AppRouter.shared.enqueue(.requestAIConsent(.image))
+            RouterEntryGate.shared.submit(.requestAIConsent(.image))
         }
     }
 

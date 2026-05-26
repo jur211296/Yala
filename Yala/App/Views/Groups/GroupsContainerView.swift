@@ -260,7 +260,7 @@ struct GroupsContainerView: View {
     private func handleNudgeAction(_ nudge: NudgeType) {
         switch nudge.actionType {
         case .activateFullMode:
-            AppRouter.shared.enqueue(.presentFullModeActivation)
+            RouterEntryGate.shared.submit(.presentFullModeActivation)
         case .openPanel:
             sessionState.selectMainTab(.panel)
         case .openGroupDetail:

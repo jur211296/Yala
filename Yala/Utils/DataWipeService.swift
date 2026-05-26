@@ -218,6 +218,12 @@ final class DataWipeService {
     private static func resetAllUserPreferences() {
         let defaults = UserDefaults.standard
 
+        // --- Routing state ---
+        // Clear both the in-memory AppRouter queue AND the persistent
+        // DeferredIntentBuffer. Without this, queued / deferred intents
+        // survive the wipe and replay against the reseeded data.
+        AppRouter.shared.resetAll()
+
         // --- Personalización ---
         defaults.removeObject(forKey: "defaultPeriod")          // Default: DetailPeriod.allTime.rawValue
         defaults.removeObject(forKey: "userTheme")              // Default: resolved by ThemeManager (liquidGlass for new users)

@@ -132,7 +132,7 @@ struct GroupInviteOnboardingView: View {
                 onComplete()
                 Task {
                     try? await Task.sleep(for: .milliseconds(300))
-                    AppRouter.shared.enqueue(.navigate(.groups))
+                    RouterEntryGate.shared.submit(.navigate(.groups))
                 }
             }
             .padding(.bottom, DS.Spacing.xxl)
@@ -191,7 +191,7 @@ struct GroupInviteOnboardingView: View {
                 // Navigate to groups after dismiss (UX delay for animation, not sync)
                 Task {
                     try? await Task.sleep(for: .milliseconds(300))
-                    AppRouter.shared.enqueue(.navigate(.groups))
+                    RouterEntryGate.shared.submit(.navigate(.groups))
                 }
             }
             .padding(.bottom, DS.Spacing.xxl)

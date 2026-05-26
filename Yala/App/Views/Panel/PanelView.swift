@@ -92,11 +92,11 @@ struct PanelView: View {
         case .firstExpense:
             sheets.showNewTransaction = true
         case .firstBudget:
-            AppRouter.shared.enqueue(.navigate(.budgets))
-            AppRouter.shared.enqueue(.autoOpenBudgetEditor)
+            RouterEntryGate.shared.submit(.navigate(.budgets))
+            RouterEntryGate.shared.submit(.autoOpenBudgetEditor)
         case .scheduledPayment:
-            AppRouter.shared.enqueue(.navigate(.scheduledPayments))
-            AppRouter.shared.enqueue(.autoOpenScheduledEditor)
+            RouterEntryGate.shared.submit(.navigate(.scheduledPayments))
+            RouterEntryGate.shared.submit(.autoOpenScheduledEditor)
         case .exploreSettings:
             sheets.isPresentingSettings = true
             SetupChecklistManager.shared.markCompleted(.exploreSettings)
@@ -147,7 +147,7 @@ struct PanelView: View {
     private func handleNudgeAction(_ nudge: NudgeType) {
         switch nudge.actionType {
         case .activateFullMode:
-            AppRouter.shared.enqueue(.presentFullModeActivation)
+            RouterEntryGate.shared.submit(.presentFullModeActivation)
         case .openGroupDetail:
             SessionState.shared.navigateToGroups()
         case .openPanel, .dismiss:

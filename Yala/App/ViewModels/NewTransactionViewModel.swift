@@ -566,14 +566,14 @@ final class NewTransactionViewModel {
 
                 // Check if we should prompt for App Store review
                 if ReviewPromptService.shouldPrompt(transactionCount: count) {
-                    AppRouter.shared.enqueue(.requestAppStoreReview)
+                    RouterEntryGate.shared.submit(.requestAppStoreReview)
                 }
 
                 // Check milestone upgrade for Free users
                 if !FeatureGateService.shared.isProUser,
                    ProUpsellService.shared.shouldShowMilestone(transactionCount: count),
                    let milestone = ProUpsellService.shared.nextMilestone(for: count) {
-                    AppRouter.shared.enqueue(.presentMilestoneUpgrade(milestone))
+                    RouterEntryGate.shared.submit(.presentMilestoneUpgrade(milestone))
                     ProUpsellService.shared.markMilestoneShown(milestone)
                 }
             }

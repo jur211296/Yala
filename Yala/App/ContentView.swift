@@ -323,7 +323,7 @@ struct ContentView: View {
                     // Wait for fullScreenCover dismiss animation (~0.35s, UX)
                     try? await Task.sleep(for: .seconds(0.8))
                     await waitForBootstrap()
-                    AppRouter.shared.enqueue(.presentTrialOffer)
+                    RouterEntryGate.shared.submit(.presentTrialOffer)
                 }
             }
         }
@@ -372,7 +372,7 @@ struct ContentView: View {
             InboxAlertModal(
                 notification: activeInboxNotification,
                 onViewInbox: {
-                    AppRouter.shared.enqueue(.presentInboxSheet)
+                    RouterEntryGate.shared.submit(.presentInboxSheet)
                 },
                 onDismiss: {
                     activeInboxNotification = .init()
@@ -400,28 +400,44 @@ struct ContentView: View {
                 break
             }
         }
-        .onChange(of: authService.isLocked) { _, _ in
+        .onChange(of: authService.isLocked) { _, newLocked in
             updateContentViewReadiness()
+            // When biometric unlocks, drain the DeferredIntentBuffer so any
+            // notification taps that arrived while locked land now — without
+            // waiting for the next background→foreground cycle.
+            if !newLocked {
+                RouterEntryGate.shared.drainDeferredBuffer()
+            }
         }
-        .onChange(of: SessionState.shared.isWipingData) { _, _ in
-            updateContentViewReadiness()
-        }
+        .onChange(of: SessionState.shared.isWipingData) { _, _ in updateContentViewReadiness() }
+        // Shell-level modal flags gate readiness via pure-logic
+        // ContentViewReadinessLogic. Encapsulated in a ViewModifier to keep
+        // ContentView's body within the type-checker's budget.
+        .readinessGateObservers(
+            showOnboarding: showOnboarding,
+            showWelcomeFlow: showWelcomeFlow,
+            showLanguageSelection: showLanguageSelection,
+            showWelcomeRestore: showWelcomeRestore,
+            showInviteRecovery: showInviteRecovery,
+            showFreshStartWipeAlert: showFreshStartWipeAlert,
+            showRemoteWipeAlert: showRemoteWipeAlert,
+            showICloudRestartAlert: showICloudRestartAlert,
+            activeInboxNotification: activeInboxNotification,
+            showGroupInviteOnboarding: showGroupInviteOnboarding,
+            showGroupReconnect: showGroupReconnect,
+            showFullModeActivation: showFullModeActivation,
+            recompute: updateContentViewReadiness
+        )
         .onChange(of: AppRouter.shared.revision) { _, _ in
             drainContentViewIntents()
         }
-        .onReceive(NotificationCenter.default.publisher(for: .remoteWipeDetected)) { notification in
-            // NotificationCenter delivers off the main actor — hop before enqueue.
-            let onboardingAlreadyDone = notification.userInfo?[PreferenceSyncService.onboardingAlreadyDoneKey] as? Bool ?? false
-            Task { @MainActor in
-                AppRouter.shared.enqueue(.remoteWipe(skipOnboarding: onboardingAlreadyDone))
-            }
-        }
+        // .remoteOnboardingCompleted: dual-path. The intent goes through
+        // RouterEntryGate too, but the readiness gate blocks .contentView
+        // drain while showOnboarding=true — which is precisely when we need
+        // the signal to fire (to dismiss that onboarding view from the
+        // remote-completion event). Keep this observer to bypass the gate.
         .onReceive(NotificationCenter.default.publisher(for: .remoteOnboardingCompleted)) { _ in
             handleRemoteOnboardingCompleted()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .iCloudMismatchDetected)) { _ in
-            guard hasCompletedOnboarding else { return }
-            AppRouter.shared.enqueue(.iCloudMismatch)
         }
     }
 
@@ -449,18 +465,49 @@ struct ContentView: View {
 
     // MARK: - Router Consumer
 
-    /// Single source of truth for `.contentView` readiness. Called from
-    /// `dismissSplash`, `onChange(authService.isLocked)`, and
-    /// `onChange(SessionState.shared.isWipingData)`. Idempotent.
+    /// Single source of truth for `.contentView` readiness. Called from every
+    /// flag that can block shell presentation. Delegates to pure-logic
+    /// `ContentViewReadinessLogic.isReady(state:)` so the gating matrix is
+    /// testable independently of SwiftUI state.
     @MainActor
     private func updateContentViewReadiness() {
-        let ready = SessionState.shared.isSplashDismissed
-                 && !authService.isLocked
-                 && !SessionState.shared.isWipingData
+        let state = ShellReadinessState(
+            isSplashDismissed: SessionState.shared.isSplashDismissed,
+            isLocked: authService.isLocked,
+            isWipingData: SessionState.shared.isWipingData,
+            showOnboarding: showOnboarding,
+            showWelcomeFlow: showWelcomeFlow,
+            showLanguageSelection: showLanguageSelection,
+            showWelcomeRestore: showWelcomeRestore,
+            showInviteRecovery: showInviteRecovery,
+            showFreshStartWipeAlert: showFreshStartWipeAlert,
+            showRemoteWipeAlert: showRemoteWipeAlert,
+            showICloudRestartAlert: showICloudRestartAlert,
+            hasActiveInboxAlert: !activeInboxNotification.isEmpty,
+            showGroupInviteOnboarding: showGroupInviteOnboarding,
+            showGroupReconnect: showGroupReconnect,
+            showFullModeActivation: showFullModeActivation
+        )
+        let ready = ContentViewReadinessLogic.isReady(state: state)
         if ready {
             AppRouter.shared.markReady(.contentView)
         } else {
             AppRouter.shared.markUnready(.contentView)
+            if let blocker = ContentViewReadinessLogic.blocker(state: state) {
+                #if DEBUG
+                print("ContentView readiness blocked by: \(blocker)")
+                #endif
+                // Throttle telemetry: only fire for non-trivial blockers (skip splash/lock
+                // which are common boot states; surface user-visible modals only).
+                let surfacedBlockers: Set<String> = [
+                    "activeInboxAlert", "groupInviteOnboarding", "groupReconnect",
+                    "fullModeActivation", "remoteWipeAlert", "iCloudRestartAlert",
+                    "freshStartWipeAlert"
+                ]
+                if surfacedBlockers.contains(blocker) {
+                    TelemetryService.routingReadinessBlocked(blocker: blocker)
+                }
+            }
         }
     }
 
@@ -491,6 +538,8 @@ struct ContentView: View {
             showICloudRestartAlert = true
         case .remoteWipe(let skipOnboarding):
             handleRemoteWipeSignal(onboardingAlreadyDone: skipOnboarding)
+        case .remoteOnboardingCompleted:
+            handleRemoteOnboardingCompleted()
         case .presentFullModeActivation:
             showFullModeActivation = true
         default:
@@ -697,10 +746,10 @@ struct ContentView: View {
                 SessionState.shared.needsPostOnboardingTrial = false
                 Task {
                     await waitForBootstrap()
-                    AppRouter.shared.enqueue(.presentTrialOffer)
+                    RouterEntryGate.shared.submit(.presentTrialOffer)
                 }
             } else if let data = whatsNewDataIfPending() {
-                AppRouter.shared.enqueue(.presentWhatsNew(features: data.features, version: data.version))
+                RouterEntryGate.shared.submit(.presentWhatsNew(features: data.features, version: data.version))
             }
         }
         Task { await AppUpdateService.shared.checkForUpdate() }
@@ -863,13 +912,13 @@ private struct GroupInviteModifier: ViewModifier {
 
         case .alreadyMember:
             if let group = SplitSyncManager.shared.group(for: zoneName) {
-                AppRouter.shared.enqueue(.navigate(.groupDetail(groupID: group.id.uuidString)))
+                RouterEntryGate.shared.submit(.navigate(.groupDetail(groupID: group.id.uuidString)))
             } else {
-                AppRouter.shared.enqueue(.navigate(.groups))
+                RouterEntryGate.shared.submit(.navigate(.groups))
             }
 
         case .pendingDuplicate:
-            AppRouter.shared.enqueue(.navigate(.groups))
+            RouterEntryGate.shared.submit(.navigate(.groups))
 
         case .rejectedRetry, .leftRetry, .removedRetry:
             await acceptAndSettle(metadata: metadata)
@@ -882,11 +931,11 @@ private struct GroupInviteModifier: ViewModifier {
                     #endif
                 }
             }
-            AppRouter.shared.enqueue(.navigate(.groups))
+            RouterEntryGate.shared.submit(.navigate(.groups))
 
         case .standardReconnect:
             await acceptAndSettle(metadata: metadata)
-            AppRouter.shared.enqueue(.navigate(.groups))
+            RouterEntryGate.shared.submit(.navigate(.groups))
         }
     }
 
@@ -1073,7 +1122,7 @@ struct MainTabView: View {
                 sessionState.selectMainTab(.planning)
             case .inbox:
                 sessionState.selectMainTab(.panel)
-                AppRouter.shared.enqueue(.presentInboxSheet)
+                RouterEntryGate.shared.submit(.presentInboxSheet)
             case .scheduledPayments:
                 sessionState.selectedPlanningTab = .scheduledPayments
                 sessionState.selectMainTab(.planning)
@@ -1265,9 +1314,9 @@ struct MorePlaceholderView: View {
             // through selectMainTab.
             switch tab.appTab {
             case .records:
-                AppRouter.shared.enqueue(.navigate(.recordsStandalone))
+                RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
             case .groups:
-                AppRouter.shared.enqueue(.navigate(.groups))
+                RouterEntryGate.shared.submit(.navigate(.groups))
             default:
                 SessionState.shared.selectMainTab(tab.appTab)
             }
@@ -1304,7 +1353,7 @@ struct MorePlaceholderView: View {
     private var activateFullYalaButton: some View {
         VStack(spacing: DS.Spacing.none) {
             Button {
-                AppRouter.shared.enqueue(.presentFullModeActivation)
+                RouterEntryGate.shared.submit(.presentFullModeActivation)
             } label: {
                 HStack(spacing: DS.FormRow.iconSpacing) {
                     Image(systemName: "sparkles")

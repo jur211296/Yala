@@ -598,7 +598,7 @@ final class ChatAssistantViewModel {
             isExpense: draft.isExpense,
             tagIDs: draft.tagIDs
         )
-        AppRouter.shared.enqueue(.presentNewTransactionFromChatDraft(prefill))
+        RouterEntryGate.shared.submit(.presentNewTransactionFromChatDraft(prefill))
 
         TelemetryService.track(.chatDraftEditedExternally)
     }

@@ -47,38 +47,7 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata
     ) {
         Task { @MainActor in
-            let sessionState = SessionState.shared
-            let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
-            let isHiddenForAll = (cloudKitShareMetadata.share[CKShareCustomKey.isHiddenForAll] as? Int) == 1
-            let isArchived = (cloudKitShareMetadata.share[CKShareCustomKey.isArchived] as? Int) == 1
-            let zoneName = cloudKitShareMetadata.share.recordID.zoneID.zoneName
-            let currentMemberStatus = SplitSyncManager.shared.currentMemberStatus(zoneName: zoneName)
-
-            let decision = AppBootstrapper.inviteRouteDecision(
-                hasCompletedOnboarding: hasCompletedOnboarding,
-                onboardingMode: sessionState.onboardingMode,
-                isHiddenForAll: isHiddenForAll,
-                isArchived: isArchived,
-                currentMemberStatus: currentMemberStatus
-            )
-
-            switch decision {
-            case .acceptAndShowInviteOnboarding:
-                let invite = InviteMetadata(
-                    groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
-                    shareMetadata: cloudKitShareMetadata,
-                    mode: .standardReconnect
-                )
-                await SplitSyncManager.shared.acceptShare(metadata: cloudKitShareMetadata, skipNavigation: true)
-                AppRouter.shared.enqueue(.presentGroupInviteOnboarding(invite))
-            case .showReconnect(let mode):
-                let invite = InviteMetadata(
-                    groupName: nil, groupIcon: nil, groupColor: nil, groupMembers: nil,
-                    shareMetadata: cloudKitShareMetadata,
-                    mode: mode
-                )
-                AppRouter.shared.enqueue(.presentGroupReconnect(invite))
-            }
+            await CKShareEntryHandler.handle(metadata: cloudKitShareMetadata, source: .shareAccepted)
         }
     }
 }

@@ -307,15 +307,33 @@ final class PreferenceSyncService {
 
             let onboardingAlreadyDone = remoteOnboarding > remoteWipe
 
+            // Bug #6 P0 mitigation: evaluate the decider at SIGNAL TIME (not drain
+            // time). If hasCompletedOnboarding=false right now (fresh-install with
+            // contaminated KV-Store), don't submit the intent — otherwise the
+            // readiness gate would park it across the onboarding session and
+            // process it post-onboarding, wiping the user's fresh data.
+            let hasCompletedOnboarding = local.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            let decision = RemoteWipeSignalDecider.decide(
+                hasCompletedOnboarding: hasCompletedOnboarding,
+                isWipingData: SessionState.shared.isWipingData,
+                hasRemoteWipeTimestamp: remoteWipe > 0
+            )
+
             #if DEBUG
-            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone))")
+            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone), shouldProcess=\(decision.shouldProcess))")
             #endif
 
-            NotificationCenter.default.post(
-                name: .remoteWipeDetected,
-                object: nil,
-                userInfo: [Self.onboardingAlreadyDoneKey: onboardingAlreadyDone]
-            )
+            // Mid-onboarding silencing: mark BOTH timestamps so neither Caso A nor B
+            // re-fires post-onboarding. Mirrors ContentView.markRemoteSignalsAsProcessed.
+            if decision.shouldMarkSignalsAsProcessed {
+                if remoteOnboarding > 0 {
+                    local.set(remoteOnboarding, forKey: WipeKey.localOnboarding)
+                }
+            }
+
+            guard decision.shouldProcess else { return }
+
+            RouterEntryGate.shared.submit(.remoteWipe(skipOnboarding: onboardingAlreadyDone))
             return
         }
 
@@ -331,10 +349,12 @@ final class PreferenceSyncService {
             print("PreferenceSyncService: Remote onboarding completed after wipe")
             #endif
 
-            NotificationCenter.default.post(
-                name: .remoteOnboardingCompleted,
-                object: nil
-            )
+            // Dual-path: also post to NotificationCenter so the ContentView
+            // observer can dismiss a visible onboarding screen INSTANTLY,
+            // bypassing the readiness gate (which blocks .contentView drain
+            // while showOnboarding=true — defeating the purpose of this signal).
+            NotificationCenter.default.post(name: .remoteOnboardingCompleted, object: nil)
+            RouterEntryGate.shared.submit(.remoteOnboardingCompleted)
         }
     }
 

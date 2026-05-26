@@ -415,6 +415,13 @@ class SessionState {
     /// True when user entered via a group notification deep link (reset on next evaluate cycle)
     var enteredViaGroupNotification: Bool = false
 
+    /// Mirrors PanelShell `sheets.showInbox` so the RouterEntryGate can drop
+    /// incoming `.showInboxAlert` while the Inbox sheet is already presenting.
+    /// Without this, the original bug (notif arrives → fullScreenCover queued
+    /// behind the open sheet → surfaces "tardío") could resurrect via a fresh
+    /// `.showInboxAlert` raised AFTER the sheet opened.
+    var isInboxSheetVisible: Bool = false
+
     /// Version counter for formatting settings (rounded amounts, etc.)
     /// Increment this to force views to re-render with new formatting
     var formattingVersion: Int = 0
@@ -594,7 +601,7 @@ class SessionState {
     /// set `temporaryTab = .records` so it renders, then switch to it on the
     /// next runloop so SwiftUI picks up the change in the right order.
     func navigateToRecordsStandalone() {
-        AppRouter.shared.enqueue(.navigate(.recordsStandalone))
+        RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
     }
 
     /// Navigate to Groups tab

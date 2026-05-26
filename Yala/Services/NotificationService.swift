@@ -45,7 +45,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         if let destination = userInfo["deepLink"] as? String,
            let dest = Self.parseDestination(destination) {
             Task { @MainActor in
-                AppRouter.shared.enqueue(.navigate(dest))
+                RouterEntryGate.shared.submit(.navigate(dest))
             }
         }
 

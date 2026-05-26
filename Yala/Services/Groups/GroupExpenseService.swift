@@ -490,7 +490,7 @@ final class GroupExpenseService {
                 logger.error("Persisting bridgePending failed: \(error.localizedDescription, privacy: .public)")
             }
         }
-        AppRouter.shared.enqueue(.showGroupSyncError(String(localized: messageKey)))
+        RouterEntryGate.shared.submit(.showGroupSyncError(String(localized: messageKey)))
     }
 }
 

@@ -161,13 +161,13 @@ struct NewTransactionView: View {
     private func handleBridgedCTA(hasPendingDraft: Bool) {
         dismiss()
         if hasPendingDraft {
-            AppRouter.shared.enqueue(.navigate(.inbox))
+            RouterEntryGate.shared.submit(.navigate(.inbox))
         } else if let zoneID = transactionToEdit?.splitGroupZoneID {
             // Si tenemos zoneID, intentar deeplink directo al grupo.
-            AppRouter.shared.enqueue(.navigate(.groupDetail(groupID: zoneID)))
+            RouterEntryGate.shared.submit(.navigate(.groupDetail(groupID: zoneID)))
         } else {
             // Fallback: lista genérica de grupos.
-            AppRouter.shared.enqueue(.navigate(.groups))
+            RouterEntryGate.shared.submit(.navigate(.groups))
         }
     }
 
