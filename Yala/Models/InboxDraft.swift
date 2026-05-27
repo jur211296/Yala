@@ -161,6 +161,12 @@ final class InboxDraft: Identifiable {
     /// Para drafts source=.groupSettlement: nil (la TX se crea al finalizar con cuenta asignada).
     var targetTransactionID: String?
 
+    /// Opt-out flag: cuando `true`, este draft fue creado por el alert opt-in del form
+    /// con bridge effective OFF. La TX virtual YA EXISTE (creada por el bridge en el save
+    /// original). Al aprobar, el flow debe SOLO crear la TX real con `splitExpenseID`/
+    /// `splitSettlementID` ligado — NO invocar el bridge (recrearía el par duplicando).
+    var optInPersonalOnly: Bool = false
+
     // MARK: - Origin Hint (M6: drafts creados por bridge ante modificaciones remotas)
 
     /// Key L10n del hint contextual cuando draft viene de modificación remota.
@@ -324,6 +330,7 @@ final class InboxDraft: Identifiable {
         originReasonKey: String? = nil,
         originActorName: String? = nil,
         originGroupName: String? = nil,
+        optInPersonalOnly: Bool = false,
         tagIDs: String? = nil
     ) {
         self.note = note
@@ -351,6 +358,7 @@ final class InboxDraft: Identifiable {
         self.originReasonKey = originReasonKey
         self.originActorName = originActorName
         self.originGroupName = originGroupName
+        self.optInPersonalOnly = optInPersonalOnly
         self.createdAt = Date.now
         self.updatedAt = Date.now
     }

@@ -42,6 +42,10 @@ struct GroupExpenseFormView: View {
     @State private var showSplitDetail = false
     @State private var showAccountSelector = false  // M6 Caso A
 
+    // Opt-out: alert post-save cuando bridge effective OFF + Caso A.
+    @State private var pendingOptInExpenseID: String?
+    @State private var showOptInAlert: Bool = false
+
     // Amount scaling
     @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
@@ -97,6 +101,12 @@ struct GroupExpenseFormView: View {
                         dismiss()
                     }
                 }
+            }
+            .alert(L10n.Groups.Bridge.optoutAlertTitle, isPresented: $showOptInAlert) {
+                Button(L10n.Groups.Bridge.optoutAlertYes) { confirmOptIn() }
+                Button(L10n.Groups.Bridge.optoutAlertNo, role: .cancel) { declineOptIn() }
+            } message: {
+                Text(L10n.Groups.Bridge.optoutAlertBody)
             }
             .onAppear {
                 viewModel.setContext(modelContext)
@@ -495,11 +505,47 @@ struct GroupExpenseFormView: View {
     // MARK: - Actions
 
     private func handleSave() {
-        if viewModel.save() {
-            DS.Haptic.success()
-            onSave()
-            dismiss()
+        guard viewModel.save() else { return }
+        DS.Haptic.success()
+
+        // Opt-out: si Caso A + bridge effective OFF + creación (no edit), preguntar al
+        // user si quiere crear movimiento personal opt-in. Caso C tiene su propio alert
+        // en SettlementFormView. Casos B/D no aplican.
+        if !viewModel.effectiveBridgeEnabled,
+           viewModel.isCaseA,
+           let createdID = viewModel.lastCreatedExpenseID {
+            pendingOptInExpenseID = createdID
+            showOptInAlert = true
+            return  // diferir dismiss hasta resolver alert
         }
+
+        onSave()
+        dismiss()
+    }
+
+    /// Crea el draft opt-in y dismiss. Llamado desde el alert "Sí".
+    private func confirmOptIn() {
+        guard let expenseID = pendingOptInExpenseID else { return }
+        do {
+            try DraftService.shared.createGroupExpenseOptInDraft(
+                splitExpenseID: expenseID,
+                groupZoneID: group.cloudKitZoneID
+            )
+        } catch {
+            #if DEBUG
+            print("GroupExpenseFormView: createGroupExpenseOptInDraft failed: \(error)")
+            #endif
+        }
+        pendingOptInExpenseID = nil
+        onSave()
+        dismiss()
+    }
+
+    /// User dice "No" al alert opt-in: dismiss sin crear draft.
+    private func declineOptIn() {
+        pendingOptInExpenseID = nil
+        onSave()
+        dismiss()
     }
 
     private func dismissKeyboard() {

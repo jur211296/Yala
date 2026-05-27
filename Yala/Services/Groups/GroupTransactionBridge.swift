@@ -96,6 +96,7 @@ final class GroupTransactionBridge {
         in group: SplitGroup,
         accountForCurrentUser: Account? = nil,
         isRemoteSync: Bool = false,
+        isBulkImport: Bool = false,
         shouldSave: Bool = true
     ) throws {
         let context = try requireContext()
@@ -135,6 +136,13 @@ final class GroupTransactionBridge {
         let mySharedAmount = myShare.amount
         let lentAmount = totalAmount - mySharedAmount
 
+        // Resolver decide si crear TX real para Caso A `.full/.completed`. Cuando OFF,
+        // redirige al path "virtual-only" idéntico al Caso B. Caso B y `.groupInvite`
+        // siempre virtual (no afectados por el modo del bridge).
+        let effectiveBridgeEnabled = BridgeModeResolver.shared.isBridgeEnabled(
+            for: group, context: context
+        )
+
         // Fetch existing entities.
         let allExistingTxs = try context.fetch(FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.splitExpenseID == expenseIDStr }
@@ -149,8 +157,12 @@ final class GroupTransactionBridge {
         // Cleanup: TX virtuales son derivadas, siempre delete+recreate.
         for tx in existingVirtualTxs { context.delete(tx) }
         // Drafts pendientes: cleanup salvo si DraftService los está procesando (race).
+        // Opt-in drafts (`optInPersonalOnly==true`) NUNCA se borran aquí — representan
+        // intent del user pendiente de aprobación que sobrevive cualquier re-bridge.
         if !skipDraftCleanup {
-            for draft in existingPendingDrafts { context.delete(draft) }
+            for draft in existingPendingDrafts where !draft.optInPersonalOnly {
+                context.delete(draft)
+            }
         }
 
         // Resolve cuenta virtual + subcat.
@@ -163,8 +175,13 @@ final class GroupTransactionBridge {
         let realSubcat: Subcategory? = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
 
         // Path Caso B (otro pagó): cleanup TX cuenta real residual + TX virtual -myShare como M5.
+        // PRESERVA TX real existing si bridge está OFF — pudo ser opt-in user-driven
+        // cuando aún era payer (Caso A); cambio de payer remoto no debería destruir el intent.
+        // Con bridge ON, mantener semántica legacy (TX real solo tiene sentido en Caso A).
         if !isCaseA {
-            if let stale = existingRealTx { context.delete(stale) }
+            if let stale = existingRealTx, effectiveBridgeEnabled {
+                context.delete(stale)
+            }
             createCaseBVirtualMyShare(
                 expense: expense,
                 myShareAmount: mySharedAmount,
@@ -184,6 +201,34 @@ final class GroupTransactionBridge {
                 myShareAmount: mySharedAmount,
                 lentAmount: lentAmount,
                 totalAmount: totalAmount,
+                realSubcat: realSubcat,
+                virtualAccount: virtualAccount,
+                context: context
+            )
+            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            return
+        }
+
+        // Path Caso A bridge effective OFF: solo TX virtual -myShare como Caso B.
+        // El opt-in alert + draft Inbox manejan creación TX real bajo demanda.
+        // Skipea TX virtual lent (sin cuenta real, sin préstamo a representar).
+        // PRESERVA la TX real si existe: pudo ser creada por opt-in user-driven (draft
+        // aprobado) o ser legacy de cuando el bridge estaba ON. El cleanup destructivo
+        // de TX real es responsabilidad de `BridgeDeactivationSheet` (freeze vs delete),
+        // no del bridge automático.
+        // Pero SÍ aplica preserve+update para mantener monto/fecha consistentes con el
+        // expense canónico cuando éste cambia — evita drift permanente.
+        if !effectiveBridgeEnabled {
+            if let realTx = existingRealTx, realTx.currencyCode == expense.currencyCode {
+                realTx.amount = -totalAmount
+                realTx.date = expense.date
+                realTx.splitTotalAmount = totalAmount
+                realTx.splitType = expense.splitType
+                // account/subcategory/category/note/tags INTACTOS (preserve user edits).
+            }
+            createCaseBVirtualMyShare(
+                expense: expense,
+                myShareAmount: mySharedAmount,
                 realSubcat: realSubcat,
                 virtualAccount: virtualAccount,
                 context: context
@@ -242,13 +287,18 @@ final class GroupTransactionBridge {
                 context: context
             )
         } else {
-            // Path local sin cuenta: F4.canSave debió bloquear el form. Defensa profundidad.
+            // Path local sin cuenta: F4.canSave debió bloquear el form salvo bulk import.
+            // `isBulkImport=true` viene del `BridgeActivationSheet` "Importar todo el
+            // historial" donde el user intencionalmente itera expenses históricos sin
+            // cuenta — el resultado es draft pendiente esperando finalización por user.
             #if DEBUG
-            assertionFailure("Caso A local sin cuenta — F4 canSave debió bloquear el form")
+            if !isBulkImport {
+                assertionFailure("Caso A local sin cuenta — F4 canSave debió bloquear el form")
+            }
             #endif
             createDraftCaseA(
                 expense: expense,
-                reason: .remoteCreate,  // copy más cercano disponible
+                reason: .remoteCreate,
                 actorName: nil,
                 groupName: group.name,
                 context: context
@@ -531,11 +581,22 @@ final class GroupTransactionBridge {
         let existingDrafts = try context.fetch(FetchDescriptor<InboxDraft>(
             predicate: #Predicate { $0.splitSettlementID == settlementIDStr }
         ))
-        for draft in existingDrafts { context.delete(draft) }
+        // Opt-in drafts preservados (mismo razonamiento que bridgeExpense).
+        for draft in existingDrafts where !draft.optInPersonalOnly {
+            context.delete(draft)
+        }
 
         let amount = settlement.amount
         let currencyCode = settlement.currencyCode
         let userType = SessionState.shared.onboardingMode
+
+        // Caso C: si bridge OFF se omiten TX2 cuenta real + draft auto. La creación
+        // queda diferida al alert opt-in del form que crea draft Inbox bajo demanda.
+        // Caso D mantiene draft auto (entrante via sync — el draft en Inbox actúa como
+        // opt-in natural; user aprueba o ignora).
+        let effectiveBridgeEnabled = BridgeModeResolver.shared.isBridgeEnabled(
+            for: group, context: context
+        )
 
         // Cuenta virtual SIEMPRE se crea (representa saldo del grupo).
         let virtualAccount = try GroupBridgeSystemEntities.ensureSystemAccount(
@@ -561,8 +622,8 @@ final class GroupTransactionBridge {
             context.insert(tx1)
             tx1.recalculatePreferredCurrency(context: context)
 
-            // TX2 cuenta real solo para .full/.completed.
-            if userType != .groupInvite {
+            // TX2 cuenta real solo para .full/.completed Y bridge effective ON.
+            if userType != .groupInvite && effectiveBridgeEnabled {
                 if let account = accountForCurrentUser {
                     let sentSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .settlementSent, context: context)
                     let tx2 = TransactionItem(

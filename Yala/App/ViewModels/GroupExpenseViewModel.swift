@@ -54,6 +54,11 @@ final class GroupExpenseViewModel {
     var isSaving: Bool = false
     var saveError: String?
 
+    /// Opt-out: ID del SplitExpense recién creado (no edit). Consumido por el form
+    /// para presentar el alert in-line "¿También registrar?" cuando bridge OFF + Caso A.
+    /// Reset en cada `save()`.
+    var lastCreatedExpenseID: String?
+
     // MARK: - Computed
 
     var amount: Double {
@@ -118,9 +123,22 @@ final class GroupExpenseViewModel {
     /// Override solo para tests (pure-logic sin singletons). Producción: nil → lee SessionState.
     var isGroupInviteOverride: Bool?
 
-    /// Caso A `.full/.completed` requiere cuenta personal real seleccionada para guardar.
+    /// Override para tests. Producción: nil → lee resolver con context+prefs reales.
+    var effectiveBridgeEnabledOverride: Bool?
+
+    /// Modo efectivo del bridge para este grupo. `true` por default cuando el resolver
+    /// no está disponible (e.g. tests sin context). Producción: delega al singleton.
+    var effectiveBridgeEnabled: Bool {
+        if let override = effectiveBridgeEnabledOverride { return override }
+        guard let context = modelContext else { return true }
+        return BridgeModeResolver.shared.isBridgeEnabled(for: group, context: context)
+    }
+
+    /// Caso A `.full/.completed` requiere cuenta personal real seleccionada solo cuando
+    /// el bridge effective está ON. Si OFF, el form NO pide cuenta (alert post-save F2c
+    /// ofrece opt-in para crear draft Inbox).
     var isAccountRequired: Bool {
-        isCaseA && !isGroupInviteMode
+        isCaseA && !isGroupInviteMode && effectiveBridgeEnabled
     }
 
     /// Cuenta seleccionada compatible con la moneda actual del gasto.
@@ -172,6 +190,7 @@ final class GroupExpenseViewModel {
 
         isSaving = true
         saveError = nil
+        lastCreatedExpenseID = nil
 
         do {
             // M6: pasar selectedAccount solo si Caso A (en Caso B, la cuenta del user no aplica).
@@ -192,7 +211,7 @@ final class GroupExpenseViewModel {
                     accountForCurrentUser: accountToPass
                 )
             } else {
-                try GroupExpenseService.shared.createExpense(
+                let created = try GroupExpenseService.shared.createExpense(
                     in: group,
                     amount: amount,
                     currencyCode: currencyCode,
@@ -205,6 +224,7 @@ final class GroupExpenseViewModel {
                     shares: shares,
                     accountForCurrentUser: accountToPass
                 )
+                lastCreatedExpenseID = created.id.uuidString
             }
             isSaving = false
             return true

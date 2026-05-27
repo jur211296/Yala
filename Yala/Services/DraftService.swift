@@ -92,6 +92,18 @@ final class DraftService {
     ) throws -> TransactionItem {
         let context = try requireContext()
 
+        // Draft con flag opt-in personal: la TX virtual ya fue creada por el bridge en
+        // el save original. Aquí solo materializa la TX real ligada al splitID sin
+        // re-invocar `bridgeExpense` (evitaría delete+recreate del lado virtual).
+        if draft.optInPersonalOnly {
+            if draft.sourceType == .groupExpense {
+                return try approveGroupExpenseOptInPersonalDraft(draft, currencyConverter: currencyConverter, context: context)
+            }
+            if draft.sourceType == .groupSettlement {
+                return try approveGroupSettlementOptInPersonalDraft(draft, currencyConverter: currencyConverter, context: context)
+            }
+        }
+
         // M6: drafts groupExpense Caso A pendiente cuenta. Crea TX cuenta real con
         // splitExpenseID + invoca bridge para regenerar TX virtual lent.
         // Detección: groupExpense + targetTransactionID==nil + needsUserInput contains "account".
@@ -631,6 +643,185 @@ final class DraftService {
         WidgetDataCache.updateCache(context: context)
         TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
         return realTx
+    }
+
+    // MARK: - Opt-In Personal Draft (bridge effective OFF flow)
+
+    /// Crea un draft `groupExpense` con `optInPersonalOnly=true` para que el user pueda
+    /// aprobar más tarde la creación de TX real en cuenta personal. La TX virtual del
+    /// expense ya fue creada por el bridge en el save original (branch `optoutVirtualOnly`).
+    func createGroupExpenseOptInDraft(
+        splitExpenseID: String,
+        groupZoneID: String
+    ) throws {
+        let context = try requireContext()
+        guard let splitUUID = UUID(uuidString: splitExpenseID) else {
+            throw DraftServiceError.missingAccount
+        }
+        let descriptor = FetchDescriptor<SplitExpense>(
+            predicate: #Predicate { $0.id == splitUUID }
+        )
+        guard let expense = try context.fetch(descriptor).first else {
+            throw DraftServiceError.missingAccount
+        }
+        let draft = InboxDraft(
+            note: expense.expenseDescription,
+            amount: -expense.amount,
+            date: expense.date,
+            sourceType: .groupExpense,
+            confidenceAmount: 1.0,
+            confidenceDate: 1.0,
+            confidenceMerchant: 1.0,
+            confidenceSubcategory: 1.0,
+            needsUserInput: [DraftInputRequirement.account],
+            splitExpenseID: splitExpenseID,
+            splitGroupZoneID: groupZoneID,
+            targetTransactionID: nil,
+            optInPersonalOnly: true
+        )
+        context.insert(draft)
+        try context.save()
+    }
+
+    /// Crea un draft `groupSettlement` con `optInPersonalOnly=true` para opt-in Caso C.
+    func createGroupSettlementOptInDraft(
+        splitSettlementID: String,
+        groupZoneID: String
+    ) throws {
+        let context = try requireContext()
+        guard let settlementUUID = UUID(uuidString: splitSettlementID) else {
+            throw DraftServiceError.missingAccount
+        }
+        let descriptor = FetchDescriptor<SplitSettlement>(
+            predicate: #Predicate { $0.id == settlementUUID }
+        )
+        guard let settlement = try context.fetch(descriptor).first else {
+            throw DraftServiceError.missingAccount
+        }
+        let draft = InboxDraft(
+            note: settlement.note ?? "",
+            amount: -settlement.amount,
+            date: settlement.date,
+            sourceType: .groupSettlement,
+            confidenceAmount: 1.0,
+            confidenceDate: 1.0,
+            confidenceMerchant: 1.0,
+            confidenceSubcategory: 1.0,
+            needsUserInput: [DraftInputRequirement.account],
+            splitExpenseID: nil,
+            splitGroupZoneID: groupZoneID,
+            splitSettlementID: splitSettlementID,
+            targetTransactionID: nil,
+            optInPersonalOnly: true
+        )
+        context.insert(draft)
+        try context.save()
+    }
+
+    /// Aprueba un draft `groupExpense` opt-in: crea la TX real con `splitExpenseID` ligado
+    /// SIN invocar el bridge (la TX virtual ya existe — recrear duplicaría el par).
+    private func approveGroupExpenseOptInPersonalDraft(
+        _ draft: InboxDraft,
+        currencyConverter: CurrencyConverter,
+        context: ModelContext
+    ) throws -> TransactionItem {
+        guard let account = draft.account else { throw DraftServiceError.missingAccount }
+        guard let amount = draft.amount else { throw DraftServiceError.missingAmount }
+        guard let splitID = draft.splitExpenseID,
+              let zoneID = draft.splitGroupZoneID,
+              let splitUUID = UUID(uuidString: splitID) else {
+            throw DraftServiceError.missingAccount
+        }
+
+        let expenseDescriptor = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == splitUUID })
+        guard let expense = try context.fetch(expenseDescriptor).first else {
+            context.delete(draft)
+            try context.save()
+            throw DraftServiceError.missingAccount
+        }
+
+        let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
+        let realSubcat = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
+        let preferredCode = CurrencyDefaults.currentPreferred
+        let amountInPreferred = currencyConverter.convert(
+            Decimal(amount), from: expense.currencyCode, to: preferredCode,
+            on: draft.effectiveDate, context: context
+        )
+        let exchangeRate: Double = abs(amount) > 0.0001
+            ? (amountInPreferred as NSDecimalNumber).doubleValue / amount
+            : 1.0
+
+        let realTx = TransactionItem(
+            date: expense.date,
+            amount: amount,
+            currencyCode: expense.currencyCode,
+            note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
+            category: realSubcat?.safeCategory,
+            subcategory: realSubcat,
+            account: account
+        )
+        realTx.splitExpenseID = splitID
+        realTx.splitGroupZoneID = zoneID
+        realTx.splitTotalAmount = expense.amount
+        realTx.splitType = expense.splitType
+        realTx.exchangeRate = abs(exchangeRate)
+        realTx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
+        realTx.preferredCurrencyCode = preferredCode
+        context.insert(realTx)
+
+        cacheDisplayValues(draft)
+        context.delete(draft)
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
+        return realTx
+    }
+
+    /// Aprueba un draft `groupSettlement` opt-in: crea TX manual ligada al settlement
+    /// SIN invocar el bridge (TX virtual ya existe). NO setea `splitSettlementID` en la
+    /// TX (mismo patrón M6/D7 — preserva edición independiente).
+    private func approveGroupSettlementOptInPersonalDraft(
+        _ draft: InboxDraft,
+        currencyConverter: CurrencyConverter,
+        context: ModelContext
+    ) throws -> TransactionItem {
+        guard let account = draft.account else { throw DraftServiceError.missingAccount }
+        guard let amount = draft.amount else { throw DraftServiceError.missingAmount }
+
+        let preferredCode = CurrencyDefaults.currentPreferred
+        let amountInPreferred = currencyConverter.convert(
+            Decimal(amount), from: account.currencyCode, to: preferredCode,
+            on: draft.effectiveDate, context: context
+        )
+        let exchangeRate: Double = abs(amount) > 0.0001
+            ? (amountInPreferred as NSDecimalNumber).doubleValue / amount
+            : 1.0
+
+        let tx = TransactionItem(
+            date: draft.effectiveDate,
+            amount: amount,
+            currencyCode: account.currencyCode
+        )
+        tx.note = draft.note.isEmpty ? nil : draft.note
+        tx.account = account
+        if let subcategory = draft.subcategory {
+            tx.subcategory = subcategory
+            tx.category = subcategory.safeCategory
+        }
+        tx.exchangeRate = abs(exchangeRate)
+        tx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
+        tx.preferredCurrencyCode = preferredCode
+        // NO setear splitSettlementID / splitGroupZoneID — preserva edición independiente.
+
+        context.insert(tx)
+        cacheDisplayValues(draft)
+        context.delete(draft)
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
+        return tx
     }
 }
 

@@ -37,6 +37,10 @@ struct SettlementFormView: View {
     @State private var selectedAccount: Account? = nil
     @State private var showAccountSelector: Bool = false
 
+    // Opt-out: alert post-save cuando bridge effective OFF en Caso C.
+    @State private var pendingOptInSettlementID: String?
+    @State private var showOptInAlert: Bool = false
+
     // Toggle del segmented control superior: alterna entre el monto original
     // (`debt.currencyCode`) y el sugerido convertido a `group.currencyCode`.
     @State private var useSuggestedAmount: Bool = false
@@ -137,6 +141,12 @@ struct SettlementFormView: View {
             } message: {
                 Text(saveErrorMessage)
             }
+            .alert(L10n.Groups.Bridge.optoutAlertTitle, isPresented: $showOptInAlert) {
+                Button(L10n.Groups.Bridge.optoutAlertYes) { confirmOptIn() }
+                Button(L10n.Groups.Bridge.optoutAlertNo, role: .cancel) { declineOptIn() }
+            } message: {
+                Text(L10n.Groups.Bridge.optoutAlertBody)
+            }
             .sheet(isPresented: $showAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $selectedAccount,
@@ -175,11 +185,19 @@ struct SettlementFormView: View {
         }
     }
 
+    // MARK: - Bridge Effective Mode
+
+    /// Opt-out: si bridge effective OFF, el form NO pide cuenta (alert post-save F2c
+    /// ofrece opt-in para crear draft Inbox bajo demanda).
+    private var bridgeEnabled: Bool {
+        BridgeModeResolver.shared.isBridgeEnabled(for: group, context: modelContext)
+    }
+
     // MARK: - Account Section (A0-Bridge Caso C proactivo)
 
     @ViewBuilder
     private var accountSection: some View {
-        if !sessionState.isGroupInviteMode {
+        if !sessionState.isGroupInviteMode && bridgeEnabled {
             SectionBox(title: L10n.Groups.Settlement.fromAccount) {
                 Button {
                     showAccountSelector = true
@@ -312,9 +330,9 @@ struct SettlementFormView: View {
         isSaving = true
 
         do {
-            // A0-Bridge: Caso C proactivo — para .full/.completed pasamos cuenta seleccionada;
-            // para .groupInvite no aplica (solo TX virtual).
-            let accountToPass = sessionState.isGroupInviteMode ? nil : selectedAccount
+            // A0-Bridge: Caso C proactivo — para .full/.completed + bridge ON pasamos cuenta
+            // seleccionada; para .groupInvite o bridge OFF no aplica (solo TX virtual).
+            let accountToPass = (sessionState.isGroupInviteMode || !bridgeEnabled) ? nil : selectedAccount
 
             let settlement = try GroupExpenseService.shared.createSettlement(
                 in: group,
@@ -337,6 +355,15 @@ struct SettlementFormView: View {
             DS.Haptic.success()
             TelemetryService.track(.groupSettlementCreated)
             isSaving = false
+
+            // Opt-out: si bridge effective OFF y Caso C (.full/.completed), preguntar al user
+            // si quiere crear TX real opt-in. groupInvite no aplica (no hay cuentas reales).
+            if !bridgeEnabled && !sessionState.isGroupInviteMode {
+                pendingOptInSettlementID = settlement.id.uuidString
+                showOptInAlert = true
+                return  // diferir dismiss hasta resolver alert
+            }
+
             onSave()
             dismiss()
         } catch {
@@ -347,5 +374,28 @@ struct SettlementFormView: View {
             showSaveError = true
             isSaving = false
         }
+    }
+
+    private func confirmOptIn() {
+        guard let settlementID = pendingOptInSettlementID else { return }
+        do {
+            try DraftService.shared.createGroupSettlementOptInDraft(
+                splitSettlementID: settlementID,
+                groupZoneID: group.cloudKitZoneID
+            )
+        } catch {
+            #if DEBUG
+            print("SettlementFormView: createGroupSettlementOptInDraft failed: \(error)")
+            #endif
+        }
+        pendingOptInSettlementID = nil
+        onSave()
+        dismiss()
+    }
+
+    private func declineOptIn() {
+        pendingOptInSettlementID = nil
+        onSave()
+        dismiss()
     }
 }
