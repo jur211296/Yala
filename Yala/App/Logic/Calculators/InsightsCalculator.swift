@@ -192,13 +192,15 @@ struct InsightsCalculator {
         focus: InsightFocus = .balanced,
         converter: CurrencyConverting = CurrencyConverter.shared,
         splitGroups: [SplitGroup] = [],
-        currentUserMemberIDs: Set<String> = []
+        currentUserMemberIDs: Set<String> = [],
+        includeBridgedGroupTx: Bool = true
     ) -> InsightData {
         // Filter transactions using FilterService
         let filtered = FilterService.filterForTrends(
             transactions: transactions,
             accounts: accounts,
-            criteria: criteria
+            criteria: criteria,
+            includeBridgedGroupTx: includeBridgedGroupTx
         )
 
         let interval = period.dateInterval(customRange: customRange)

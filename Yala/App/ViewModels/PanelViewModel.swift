@@ -2584,6 +2584,7 @@ final class PanelViewModel {
     /// Called from `performCalculation()` only when `.health` section is visible.
     /// El score reacciona a `selectedPeriod` — cada cambio de período recalcula.
     private func calculateHealthWidget(paidAmounts: [String: [PaidOccurrenceInfo]]) {
+        let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         let newScore = FinancialScoreCalculator.calculate(
             transactions: transactions,
             budgets: budgets,
@@ -2592,7 +2593,8 @@ final class PanelViewModel {
             paidAmounts: paidAmounts,
             period: selectedPeriod,
             customRange: customDateRange,
-            preferredCurrencyCode: defaultCurrencyCode
+            preferredCurrencyCode: defaultCurrencyCode,
+            includeBridgedGroupTx: includeBridgedGroupTx
         )
         let newData = PanelHealthData(score: newScore)
         if newData != healthWidget { healthWidget = newData }

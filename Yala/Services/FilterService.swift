@@ -326,8 +326,15 @@ struct FilterService {
     static func filterForTrends(
         transactions: [TransactionItem],
         accounts: [Account],
-        criteria: FilterCriteria
+        criteria: FilterCriteria,
+        includeBridgedGroupTx: Bool? = nil
     ) -> [TransactionItem] {
+        // Si caller no pasa flag explícito, lee toggle global desde UserDefaults
+        // (default true cuando key ausente). Esto evita cablear 15 callsites stats
+        // manualmente; cada VM recibe la decisión correcta sin cambios.
+        let includeFlag = includeBridgedGroupTx
+            ?? (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool)
+            ?? true
         // Determine eligible accounts (not excluded from statistics; archived accounts still count)
         let eligibleAccounts = accounts.filter { account in
             guard !account.excludeFromStatistics else { return false }
@@ -345,6 +352,13 @@ struct FilterService {
             guard let account = transaction.account,
                 eligibleAccountIDs.contains(account.persistentModelID)
             else { return false }
+
+            // Opt-out: cuando bridged group TX excluidas, filtrar antes de criteria.
+            guard BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: transaction.splitExpenseID,
+                splitSettlementID: transaction.splitSettlementID,
+                includeGroupsToggle: includeFlag
+            ) else { return false }
 
             // Then apply remaining filters
             return matchesCriteria(transaction, criteria: criteria)

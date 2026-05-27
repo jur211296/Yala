@@ -85,6 +85,7 @@ final class InsightsViewModel {
         guard signature != lastInputsSignature else { return }
         lastInputsSignature = signature
 
+        let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         insightData = InsightsCalculator.calculate(
             transactions: transactions,
             accounts: accounts,
@@ -97,7 +98,8 @@ final class InsightsViewModel {
             customRange: customRange,
             comparisonMode: comparisonMode,
             tone: currentTone,
-            focus: currentFocus
+            focus: currentFocus,
+            includeBridgedGroupTx: includeBridgedGroupTx
         )
     }
 
@@ -115,6 +117,7 @@ final class InsightsViewModel {
         customRange: DateInterval?,
         preferredCurrencyCode: String
     ) {
+        let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         let newScore = FinancialScoreCalculator.calculate(
             transactions: transactions,
             budgets: budgets,
@@ -123,7 +126,8 @@ final class InsightsViewModel {
             paidAmounts: paidAmounts,
             period: period,
             customRange: customRange,
-            preferredCurrencyCode: preferredCurrencyCode
+            preferredCurrencyCode: preferredCurrencyCode,
+            includeBridgedGroupTx: includeBridgedGroupTx
         )
         if newScore != financialScore { financialScore = newScore }
     }

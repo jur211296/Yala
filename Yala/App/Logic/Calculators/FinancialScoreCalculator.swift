@@ -82,10 +82,17 @@ enum FinancialScoreCalculator {
         preferredCurrencyCode: String,
         converter: CurrencyConverting = CurrencyConverter.shared,
         now: Date = .now,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        includeBridgedGroupTx: Bool = true
     ) -> FinancialScore {
         let interval = period.dateInterval(customRange: customRange, now: now)
-        let intervalTransactions = transactions.filter { interval.contains($0.date) }
+        let intervalTransactions = transactions.filter {
+            interval.contains($0.date) && BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: $0.splitExpenseID,
+                splitSettlementID: $0.splitSettlementID,
+                includeGroupsToggle: includeBridgedGroupTx
+            )
+        }
 
         let budget = calculateBudget(
             budgets: budgets,
