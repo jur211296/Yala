@@ -4360,3 +4360,27 @@
 "groups.reconnect.deletedForAll.title" = "%@ was deleted";
 "groups.reconnect.deletedForAll.body" = "This group was deleted by its creator.";
 "groups.reconnect.deletedForAll.cta" = "Got it";
+
+// MARK: Bridge opt-out (F7 consolidation)
+"groups.bridge.optoutAlertTitle" = "Also log in your personal Yala?";
+"groups.bridge.optoutAlertBody" = "You can create a personal movement in your account to reflect this expense, or keep it only inside the group.";
+"groups.bridge.optoutAlertYes" = "Yes, log it";
+"groups.bridge.optoutAlertNo" = "Group only";
+"groups.bridge.deactivationSheetTitle" = "Disable personal integration";
+"groups.bridge.deactivationSheetBody" = "You already have transactions created by the bridge in your accounts. Choose what to do with them.";
+"groups.bridge.deactivationOptionFreeze" = "Keep as historical";
+"groups.bridge.deactivationOptionDelete" = "Delete from my accounts";
+"groups.globalSettings.title" = "Groups Settings";
+"groups.globalSettings.bridgeSectionTitle" = "Personal Yala integration";
+"groups.globalSettings.bridgeToggleLabel" = "Log group expenses in my personal accounts";
+"groups.globalSettings.bridgeCaption" = "When on, every expense you pay or settle is also logged in the personal account you choose. Your balance reflects reality.";
+"groups.globalSettings.visibilitySectionTitle" = "Visibility";
+"groups.globalSettings.visibilityCaption" = "Control whether group transactions appear in your Panel, statistics and Records feed.";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Include group transactions in Records feed";
+"groups.settings.personalIntegrationSectionTitle" = "Personal integration";
+"groups.settings.personalIntegrationToggleLabel" = "Log this group's expenses in my personal accounts";
+"groups.settings.personalIntegrationHintInheritOn" = "Inheriting your general setting (Enabled).";
+"groups.settings.personalIntegrationHintLocalOff" = "Only in this group: disabled.";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "To enable this here, first enable it in Groups Settings.";
+"groups.onboarding.step2.bridgeAwareness" = "When you pay an expense we also log it in your personal account automatically — so your balance always reflects reality.";
+"groups.onboarding.step3.bridgeAwareness" = "You can change this behavior in Groups Settings.";

@@ -4355,3 +4355,27 @@
 "groups.reconnect.deletedForAll.title" = "%@ a été supprimé";
 "groups.reconnect.deletedForAll.body" = "Ce groupe a été supprimé par son créateur.";
 "groups.reconnect.deletedForAll.cta" = "J'ai compris";
+
+// MARK: Bridge opt-out (F7 consolidation)
+"groups.bridge.optoutAlertTitle" = "Enregistrer aussi dans votre Yala personnel ?";
+"groups.bridge.optoutAlertBody" = "Vous pouvez créer un mouvement personnel dans votre compte pour refléter cette dépense, ou la laisser uniquement dans le groupe.";
+"groups.bridge.optoutAlertYes" = "Oui, enregistrer";
+"groups.bridge.optoutAlertNo" = "Uniquement dans le groupe";
+"groups.bridge.deactivationSheetTitle" = "Désactiver l'intégration personnelle";
+"groups.bridge.deactivationSheetBody" = "Vous avez déjà des mouvements créés par le pont dans vos comptes. Choisissez ce que vous voulez en faire.";
+"groups.bridge.deactivationOptionFreeze" = "Conserver comme historique";
+"groups.bridge.deactivationOptionDelete" = "Supprimer de mes comptes";
+"groups.globalSettings.title" = "Réglages des groupes";
+"groups.globalSettings.bridgeSectionTitle" = "Intégration avec votre Yala personnel";
+"groups.globalSettings.bridgeToggleLabel" = "Enregistrer les dépenses de groupe dans mes comptes personnels";
+"groups.globalSettings.bridgeCaption" = "Quand cette option est active, chaque dépense que vous payez ou réglez est aussi enregistrée dans le compte personnel que vous choisissez. Votre solde reflète la réalité.";
+"groups.globalSettings.visibilitySectionTitle" = "Visibilité";
+"groups.globalSettings.visibilityCaption" = "Contrôlez si les mouvements des groupes apparaissent dans votre Tableau de bord, vos statistiques et le flux des Enregistrements.";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Inclure les mouvements des groupes dans le flux des Enregistrements";
+"groups.settings.personalIntegrationSectionTitle" = "Intégration personnelle";
+"groups.settings.personalIntegrationToggleLabel" = "Enregistrer les dépenses de ce groupe dans mes comptes personnels";
+"groups.settings.personalIntegrationHintInheritOn" = "Hérite de votre réglage général (Activé).";
+"groups.settings.personalIntegrationHintLocalOff" = "Uniquement dans ce groupe : désactivé.";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "Pour activer cette option ici, activez-la d'abord dans les Réglages des groupes.";
+"groups.onboarding.step2.bridgeAwareness" = "Quand vous payez une dépense, nous l'enregistrons aussi automatiquement dans votre compte personnel — pour que votre solde reflète toujours la réalité.";
+"groups.onboarding.step3.bridgeAwareness" = "Vous pouvez modifier ce comportement dans les Réglages des groupes.";

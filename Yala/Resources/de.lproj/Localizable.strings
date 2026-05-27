@@ -4354,3 +4354,27 @@
 "groups.reconnect.deletedForAll.title" = "%@ wurde gelöscht";
 "groups.reconnect.deletedForAll.body" = "Diese Gruppe wurde vom Ersteller gelöscht.";
 "groups.reconnect.deletedForAll.cta" = "Verstanden";
+
+// MARK: Bridge opt-out (F7 consolidation)
+"groups.bridge.optoutAlertTitle" = "Auch in dein persönliches Yala eintragen?";
+"groups.bridge.optoutAlertBody" = "Sie können eine persönliche Buchung in Ihrem Konto erstellen, um diese Ausgabe widerzuspiegeln, oder sie nur in der Gruppe behalten.";
+"groups.bridge.optoutAlertYes" = "Ja, eintragen";
+"groups.bridge.optoutAlertNo" = "Nur in der Gruppe";
+"groups.bridge.deactivationSheetTitle" = "Persönliche Integration deaktivieren";
+"groups.bridge.deactivationSheetBody" = "Es gibt bereits vom Bridge erstellte Buchungen in Ihren Konten. Entscheiden Sie, was damit geschehen soll.";
+"groups.bridge.deactivationOptionFreeze" = "Als Historie behalten";
+"groups.bridge.deactivationOptionDelete" = "Aus meinen Konten löschen";
+"groups.globalSettings.title" = "Gruppeneinstellungen";
+"groups.globalSettings.bridgeSectionTitle" = "Persönliche Yala-Integration";
+"groups.globalSettings.bridgeToggleLabel" = "Gruppenausgaben in meinen persönlichen Konten erfassen";
+"groups.globalSettings.bridgeCaption" = "Wenn aktiviert, wird jede Ausgabe, die Sie bezahlen oder begleichen, auch im gewählten persönlichen Konto erfasst. Ihr Saldo spiegelt die Realität wider.";
+"groups.globalSettings.visibilitySectionTitle" = "Sichtbarkeit";
+"groups.globalSettings.visibilityCaption" = "Steuern Sie, ob Gruppenbuchungen in Ihrem Panel, in Statistiken und im Bewegungsfeed angezeigt werden.";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Gruppenbuchungen im Bewegungsfeed anzeigen";
+"groups.settings.personalIntegrationSectionTitle" = "Persönliche Integration";
+"groups.settings.personalIntegrationToggleLabel" = "Ausgaben dieser Gruppe in meinen persönlichen Konten erfassen";
+"groups.settings.personalIntegrationHintInheritOn" = "Übernimmt Ihre allgemeine Einstellung (Aktiviert).";
+"groups.settings.personalIntegrationHintLocalOff" = "Nur in dieser Gruppe: deaktiviert.";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "Um es hier zu aktivieren, aktivieren Sie es zuerst in den Gruppeneinstellungen.";
+"groups.onboarding.step2.bridgeAwareness" = "Wenn Sie eine Ausgabe bezahlen, wird sie auch automatisch in Ihrem persönlichen Konto erfasst — damit Ihr Saldo immer die Realität widerspiegelt.";
+"groups.onboarding.step3.bridgeAwareness" = "Sie können dieses Verhalten in den Gruppeneinstellungen ändern.";

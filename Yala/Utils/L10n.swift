@@ -1732,10 +1732,30 @@ enum L10n {
             static var deactivateBody: String { ls("groups.bridge.deactivateBody", comment: "") }
             static var deactivateOptionDelete: String { ls("groups.bridge.deactivateOptionDelete", comment: "") }
             static var deactivateOptionKeep: String { ls("groups.bridge.deactivateOptionKeep", comment: "") }
+            // Deactivation sheet (F5)
+            static var deactivationSheetTitle: String { ls("groups.bridge.deactivationSheetTitle", comment: "") }
+            static var deactivationSheetBody: String { ls("groups.bridge.deactivationSheetBody", comment: "") }
+            static var deactivationOptionFreeze: String { ls("groups.bridge.deactivationOptionFreeze", comment: "") }
+            static var deactivationOptionDelete: String { ls("groups.bridge.deactivationOptionDelete", comment: "") }
             static var importing: String { ls("groups.bridge.importing", comment: "") }
             static var importError: String { ls("groups.bridge.importError", comment: "") }
             // Upsell para .groupInvite users
             static var upsellGroupInviteSettlement: String { ls("groups.bridge.upsellGroupInviteSettlement", comment: "") }
+            // Opt-out alert (F2c)
+            static var optoutAlertTitle: String { ls("groups.bridge.optoutAlertTitle", comment: "") }
+            static var optoutAlertBody: String { ls("groups.bridge.optoutAlertBody", comment: "") }
+            static var optoutAlertYes: String { ls("groups.bridge.optoutAlertYes", comment: "") }
+            static var optoutAlertNo: String { ls("groups.bridge.optoutAlertNo", comment: "") }
+        }
+
+        enum GlobalSettings {
+            static var title: String { ls("groups.globalSettings.title", comment: "") }
+            static var bridgeSectionTitle: String { ls("groups.globalSettings.bridgeSectionTitle", comment: "") }
+            static var bridgeToggleLabel: String { ls("groups.globalSettings.bridgeToggleLabel", comment: "") }
+            static var bridgeCaption: String { ls("groups.globalSettings.bridgeCaption", comment: "") }
+            static var visibilitySectionTitle: String { ls("groups.globalSettings.visibilitySectionTitle", comment: "") }
+            static var visibilityCaption: String { ls("groups.globalSettings.visibilityCaption", comment: "") }
+            static var includeGroupTransactionsInFeedLabel: String { ls("groups.globalSettings.includeGroupTransactionsInFeedLabel", comment: "") }
         }
 
         enum Form {
@@ -1777,6 +1797,12 @@ enum L10n {
             static var showArchived: String { ls("groups.settings.showArchived", comment: "") }
             static func showArchivedCount(_ count: Int) -> String { String(format: ls("groups.settings.showArchivedCount", comment: ""), count) }
             static var hideArchived: String { ls("groups.settings.hideArchived", comment: "") }
+            // Personal integration (Bridge override per-grupo, F4)
+            static var personalIntegrationSectionTitle: String { ls("groups.settings.personalIntegrationSectionTitle", comment: "") }
+            static var personalIntegrationToggleLabel: String { ls("groups.settings.personalIntegrationToggleLabel", comment: "") }
+            static var personalIntegrationHintInheritOn: String { ls("groups.settings.personalIntegrationHintInheritOn", comment: "") }
+            static var personalIntegrationHintLocalOff: String { ls("groups.settings.personalIntegrationHintLocalOff", comment: "") }
+            static var personalIntegrationHintBlockedByGlobal: String { ls("groups.settings.personalIntegrationHintBlockedByGlobal", comment: "") }
         }
 
         enum Errors {
@@ -2053,6 +2079,8 @@ enum L10n {
             static var step2Card2Body: String { ls("groups.onboarding.step2.card2.body", comment: "") }
             static var step2Card3Title: String { ls("groups.onboarding.step2.card3.title", comment: "") }
             static var step2Card3Body: String { ls("groups.onboarding.step2.card3.body", comment: "") }
+            /// F6 awareness Perfil A: bridge crea TX real automáticamente.
+            static var step2BridgeAwareness: String { ls("groups.onboarding.step2.bridgeAwareness", comment: "") }
 
             // Step 3 — Privacy + CTA
             static var step3Title: String { ls("groups.onboarding.step3.title", comment: "") }
@@ -2060,6 +2088,8 @@ enum L10n {
             static var step3Point1: String { ls("groups.onboarding.step3.point1", comment: "") }
             static var step3Point2: String { ls("groups.onboarding.step3.point2", comment: "") }
             static var step3CTA: String { ls("groups.onboarding.step3.cta", comment: "") }
+            /// F6 awareness: hint que el bridge es configurable en Ajustes de Grupos.
+            static var step3BridgeAwareness: String { ls("groups.onboarding.step3.bridgeAwareness", comment: "") }
         }
     }
 

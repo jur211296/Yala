@@ -4354,3 +4354,27 @@
 "groups.reconnect.deletedForAll.title" = "%@ foi excluído";
 "groups.reconnect.deletedForAll.body" = "Este grupo foi excluído pelo seu criador.";
 "groups.reconnect.deletedForAll.cta" = "Entendi";
+
+// MARK: Bridge opt-out (F7 consolidation)
+"groups.bridge.optoutAlertTitle" = "Registrar também no seu Yala pessoal?";
+"groups.bridge.optoutAlertBody" = "Você pode criar um movimento pessoal na sua conta para refletir essa despesa, ou deixar somente dentro do grupo.";
+"groups.bridge.optoutAlertYes" = "Sim, registrar";
+"groups.bridge.optoutAlertNo" = "Só no grupo";
+"groups.bridge.deactivationSheetTitle" = "Desativar integração pessoal";
+"groups.bridge.deactivationSheetBody" = "Você já tem movimentos criados pela ponte nas suas contas. Escolha o que fazer com eles.";
+"groups.bridge.deactivationOptionFreeze" = "Manter como histórico";
+"groups.bridge.deactivationOptionDelete" = "Excluir das minhas contas";
+"groups.globalSettings.title" = "Ajustes de Grupos";
+"groups.globalSettings.bridgeSectionTitle" = "Integração com seu Yala pessoal";
+"groups.globalSettings.bridgeToggleLabel" = "Registrar despesas de grupos nas minhas contas pessoais";
+"groups.globalSettings.bridgeCaption" = "Quando ativado, cada despesa que você paga ou liquida também é registrada na conta pessoal que você escolher. Seu saldo reflete a realidade.";
+"groups.globalSettings.visibilitySectionTitle" = "Visibilidade";
+"groups.globalSettings.visibilityCaption" = "Controle se os movimentos de grupos aparecem no seu Painel, estatísticas e feed de Registros.";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Incluir movimentos de grupos no feed de Registros";
+"groups.settings.personalIntegrationSectionTitle" = "Integração pessoal";
+"groups.settings.personalIntegrationToggleLabel" = "Registrar despesas deste grupo nas minhas contas pessoais";
+"groups.settings.personalIntegrationHintInheritOn" = "Herda do seu ajuste geral (Ativado).";
+"groups.settings.personalIntegrationHintLocalOff" = "Só neste grupo: desativado.";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "Para ativar esta opção aqui, ative primeiro em Ajustes de Grupos.";
+"groups.onboarding.step2.bridgeAwareness" = "Quando você paga uma despesa, também a registramos na sua conta pessoal automaticamente — para que seu saldo sempre reflita a realidade.";
+"groups.onboarding.step3.bridgeAwareness" = "Você pode mudar este comportamento em Ajustes de Grupos.";

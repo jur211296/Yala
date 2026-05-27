@@ -166,6 +166,14 @@ struct GroupsOnboardingView: View {
                     title: L10n.Groups.Onboarding.step2Card2Title,
                     body: L10n.Groups.Onboarding.step2Card2Body
                 )
+
+                // F6 awareness Perfil A: contar al user que el bridge crea TX real
+                // automáticamente para que su saldo personal refleje los pagos de grupo.
+                Text(L10n.Groups.Onboarding.step2BridgeAwareness)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.thSecondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.lg)
                 capabilityCard(
                     icon: "arrow.left.arrow.right.circle.fill",
                     iconColor: .essentialNeed,
@@ -248,6 +256,15 @@ struct GroupsOnboardingView: View {
                 privacyPoint(icon: "lock.shield.fill", text: L10n.Groups.Onboarding.step3Point2)
             }
             .padding(.top, DS.Spacing.md)
+
+            // F6 awareness: cierre Step 3 mencionando que el comportamiento del bridge
+            // es configurable desde "Ajustes de Grupos".
+            Text(L10n.Groups.Onboarding.step3BridgeAwareness)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.thSecondaryText)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.md)
 
             Spacer(minLength: 0)
         }

@@ -99,6 +99,12 @@ enum AnalyticsEvent: String {
     case groupInviteSent
     case groupInviteAccepted
 
+    // Bridge opt-out (F8) — disparados solo desde UI handlers (no didSet de AppPreferences)
+    case bridgeGlobalToggled
+    case bridgeOverrideSet
+    case bridgeActivationCompleted
+    case bridgeDeactivationCompleted
+
     // Nudges
     case nudgeShown
     case nudgeTapped
