@@ -341,6 +341,24 @@ final class AppPreferences {
         }
     }
 
+    /// Toggle global per-user del bridge `SplitExpense ↔ TransactionItem`.
+    /// Si ON (default): cuando el current user paga un gasto de grupo (Caso A) o
+    /// liquida (Caso C), el bridge crea TX real en cuenta personal + TX virtual
+    /// sistema. Si OFF: solo TX virtual, con alert post-save opcional para crear
+    /// draft Inbox que aprueba creación TX real bajo demanda.
+    /// Override per-grupo en `GroupBridgePreference` solo restringe (nunca habilita
+    /// contra global=OFF). Resolver SSOT: `BridgeResolverLogic.computeEffective(...)`.
+    var bridgeGroupExpensesToPersonalAccounts: Bool = true {
+        didSet {
+            guard oldValue != bridgeGroupExpensesToPersonalAccounts else { return }
+            persistBool(
+                bridgeGroupExpensesToPersonalAccounts,
+                forKey: Keys.bridgeGroupExpensesToPersonalAccounts,
+                synced: true
+            )
+        }
+    }
+
     // MARK: - UI Feature Flags
 
     var showSiriTip: Bool = true {
@@ -940,6 +958,9 @@ final class AppPreferences {
         if defaults.object(forKey: Keys.includeGroupTransactionsInStats) != nil {
             includeGroupTransactionsInStats = defaults.bool(forKey: Keys.includeGroupTransactionsInStats)
         }
+        if defaults.object(forKey: Keys.bridgeGroupExpensesToPersonalAccounts) != nil {
+            bridgeGroupExpensesToPersonalAccounts = defaults.bool(forKey: Keys.bridgeGroupExpensesToPersonalAccounts)
+        }
 
         // UI Feature Flags
         if defaults.object(forKey: Keys.showSiriTip) != nil {
@@ -1120,6 +1141,9 @@ final class AppPreferences {
         nonisolated static let includeGroupTransactionsInFeed = "includeGroupTransactionsInFeed"
         nonisolated static let includeGroupsInPanelTotal = "includeGroupsInPanelTotal"
         nonisolated static let includeGroupTransactionsInStats = "includeGroupTransactionsInStats"
+
+        // Bridge opt-out global per-user (synced cross-device).
+        static let bridgeGroupExpensesToPersonalAccounts = "bridgeGroupExpensesToPersonalAccounts"
 
         // UI Feature Flags
         static let showSiriTip = "showSiriTip"

@@ -68,6 +68,12 @@ final class PreferenceSyncService {
         case panelAccountsCollapsed
         // M2 (localización) — override de idioma elegido por el usuario, sincronizado cross-device
         case appLanguageOverride
+        // A0-Bridge: 3 toggles existing (synced=true desde inicio pero faltaba el enum case)
+        case includeGroupTransactionsInFeed
+        case includeGroupsInPanelTotal
+        case includeGroupTransactionsInStats
+        // Bridge opt-out global per-user (synced=true). Cross-device sync de la decisión.
+        case bridgeGroupExpensesToPersonalAccounts
     }
 
     /// Keys for cross-device wipe coordination (iKV = remote, local = UserDefaults)
@@ -209,7 +215,9 @@ final class PreferenceSyncService {
                 }
 
             case .budgetAlertsEnabled, .expensesOnlyMode, .colorfulIcons, .showVariations,
-                 .panelAccountsCollapsed:
+                 .panelAccountsCollapsed,
+                 .includeGroupTransactionsInFeed, .includeGroupsInPanelTotal,
+                 .includeGroupTransactionsInStats, .bridgeGroupExpensesToPersonalAccounts:
                 if iKV.object(forKey: k) != nil {
                     local.set(iKV.bool(forKey: k), forKey: k)
                 }

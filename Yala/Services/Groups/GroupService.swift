@@ -252,6 +252,17 @@ final class GroupService {
             await Self.propagateBoolCustomKey(zoneID: zoneID, key: CKShareCustomKey.isHiddenForAll, value: true)
         }
 
+        // Cleanup override del bridge para este zone — el SplitGroup queda visible
+        // pero `isHiddenForAll==true` lo trata como zona inactiva; el override ya no
+        // tiene callsite vivo.
+        do {
+            try BridgeModeResolver.shared.clearOverride(forZoneID: zoneID, in: context)
+        } catch {
+            #if DEBUG
+            logger.error("softDelete: clearOverride failed: \(error.localizedDescription, privacy: .public)")
+            #endif
+        }
+
         TelemetryService.track(.groupSoftDeleted)
     }
 
@@ -524,6 +535,13 @@ final class GroupService {
         }
         try cascadeDeleteGroupData(zoneName: group.cloudKitZoneID, context: context)
         GroupPersonalPreferences.removeAll(for: group.cloudKitZoneID)
+        do {
+            try BridgeModeResolver.shared.clearOverride(forZoneID: group.cloudKitZoneID, in: context)
+        } catch {
+            #if DEBUG
+            logger.error("clearOverride failed: \(error.localizedDescription, privacy: .public)")
+            #endif
+        }
         context.delete(group)
     }
 

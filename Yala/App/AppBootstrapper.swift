@@ -204,10 +204,36 @@ final class AppBootstrapper {
         GroupService.shared.setContext(context)
         GroupExpenseService.shared.setContext(context)
         GroupTransactionBridge.shared.setContext(context)
+        BridgeModeResolver.shared.setAppPreferences(appPreferences)
 
         // 16.4. Cleanup duplicate SplitGroups from CloudKit sync race.
         // Runs sync (not Task) so consumers downstream see canonical groups only.
         SplitGroupDeduplicationService.deduplicateSplitGroups(in: context)
+
+        // 16.4.1. Cleanup duplicate GroupBridgePreference records (CloudKit sync race
+        // entre devices que crean override simultáneamente). Sync — el resolver consulta
+        // el override desde el primer bridge call post-boot, mejor que no haya dups.
+        GroupBridgePreferenceDeduplicationService.deduplicate(in: context)
+
+        // 16.4.2. Cleanup overrides huérfanos (grupos abandonados o `isHiddenForAll==true`
+        // que el observer/leaveGroup pudo perder por crash). Defensivo idempotente.
+        Task { @MainActor in
+            do {
+                let descriptor = FetchDescriptor<SplitGroup>(
+                    predicate: #Predicate<SplitGroup> { $0.isHiddenForAll == false }
+                )
+                let activeGroups = try context.fetch(descriptor)
+                let activeZoneIDs = Set(activeGroups.map(\.cloudKitZoneID))
+                try BridgeModeResolver.shared.clearOrphanOverrides(
+                    activeZoneIDs: activeZoneIDs,
+                    in: context
+                )
+            } catch {
+                #if DEBUG
+                print("AppBootstrapper: clearOrphanOverrides failed: \(error)")
+                #endif
+            }
+        }
 
         // 16.4.5. Safety net: hidden groups + removed-self cleanup que el observer pudo perder.
         // Corre ANTES de retryPendingBridges para que el bridge guard `isHiddenForAll` aplique.

@@ -110,4 +110,29 @@ struct AppPreferencesGroupTogglesTests {
         #expect(reloaded.includeGroupsInPanelTotal == true)
         #expect(reloaded.includeGroupTransactionsInStats == false)
     }
+
+    // MARK: - Bridge opt-out global toggle (new in opt-out feature)
+
+    @MainActor @Test
+    func bridgeGroupExpensesToPersonalAccounts_defaultsTrue_whenKeyAbsent() {
+        let defaults = makeIsolatedDefaults(prefix: "bridge.optout.default")
+        let prefs = AppPreferences(defaults: defaults)
+        #expect(prefs.bridgeGroupExpensesToPersonalAccounts == true)
+    }
+
+    @MainActor @Test
+    func bridgeGroupExpensesToPersonalAccounts_persistsToggleOff() {
+        let defaults = makeIsolatedDefaults(prefix: "bridge.optout.off")
+        let prefs = AppPreferences(defaults: defaults)
+        prefs.bridgeGroupExpensesToPersonalAccounts = false
+        #expect(defaults.bool(forKey: AppPreferences.Keys.bridgeGroupExpensesToPersonalAccounts) == false)
+    }
+
+    @MainActor @Test
+    func bridgeGroupExpensesToPersonalAccounts_loadsFromExistingDefaults() {
+        let defaults = makeIsolatedDefaults(prefix: "bridge.optout.load")
+        defaults.set(false, forKey: AppPreferences.Keys.bridgeGroupExpensesToPersonalAccounts)
+        let prefs = AppPreferences(defaults: defaults)
+        #expect(prefs.bridgeGroupExpensesToPersonalAccounts == false)
+    }
 }

@@ -51,7 +51,7 @@ enum SwiftDataConfiguration {
 
     // MARK: - Schemas
 
-    /// Schema completo (20 modelos) — usado por ModelContainer.
+    /// Schema completo (21 modelos) — usado por ModelContainer.
     static var schema: Schema {
         Schema([
             Category.self,
@@ -69,6 +69,7 @@ enum SwiftDataConfiguration {
             CashFlowPlan.self,
             CashFlowLine.self,
             CashFlowOverride.self,
+            GroupBridgePreference.self,
             SplitGroup.self,
             SplitMember.self,
             SplitExpense.self,
@@ -77,7 +78,10 @@ enum SwiftDataConfiguration {
         ])
     }
 
-    /// Sub-schema: 15 modelos personales (CloudKit synced).
+    /// Sub-schema: 16 modelos personales (CloudKit synced via private DB).
+    /// `GroupBridgePreference` vive aquí porque es preferencia personal por-user
+    /// (synced cross-device del mismo Apple ID, NO compartida con otros miembros
+    /// del grupo). Distinto de los Split* que viven en `groupsSchema` (CKSyncEngine).
     static var personalSchema: Schema {
         Schema([
             Category.self,
@@ -95,6 +99,7 @@ enum SwiftDataConfiguration {
             CashFlowPlan.self,
             CashFlowLine.self,
             CashFlowOverride.self,
+            GroupBridgePreference.self,
         ])
     }
 
