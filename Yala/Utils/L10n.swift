@@ -1984,6 +1984,11 @@ enum L10n {
             /// CTA compartido por rejectedRetry / leftRetry / removedRetry: "Volver a pedir".
             static var retryCta: String { ls("groups.reconnect.retryCta", comment: "") }
 
+            // B-16 — override CTA cuando user pre-onboarded llega a modes que normalmente
+            // navegan (alreadyMember/pendingDuplicate). MainTabView no está montado en
+            // pre-onboarding → CTA dismissea + vuelve al Chooser.
+            static var backToStart: String { ls("groups.reconnect.backToStart", comment: "") }
+
             // FU-02 — deletedForAll (grupo eliminado por owner, irreversible)
             static func deletedForAllTitle(_ name: String) -> String { String(format: ls("groups.reconnect.deletedForAll.title", comment: ""), name) }
             static var deletedForAllBody: String { ls("groups.reconnect.deletedForAll.body", comment: "") }

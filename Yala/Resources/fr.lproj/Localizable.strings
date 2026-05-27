@@ -4379,3 +4379,6 @@
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "Pour activer cette option ici, activez-la d'abord dans les Réglages des groupes.";
 "groups.onboarding.step2.bridgeAwareness" = "Quand vous payez une dépense, nous l'enregistrons aussi automatiquement dans votre compte personnel — pour que votre solde reflète toujours la réalité.";
 "groups.onboarding.step3.bridgeAwareness" = "Vous pouvez modifier ce comportement dans les Réglages des groupes.";
+
+// MARK: B-16 — groups.reconnect.backToStart
+"groups.reconnect.backToStart" = "Retour au début";

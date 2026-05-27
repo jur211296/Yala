@@ -4358,3 +4358,6 @@
 "groups.reconnect.deletedForAll.title" = "%@ 已被删除";
 "groups.reconnect.deletedForAll.body" = "该群组已被创建者删除。";
 "groups.reconnect.deletedForAll.cta" = "了解";
+
+// MARK: B-16 — groups.reconnect.backToStart
+"groups.reconnect.backToStart" = "返回首页";

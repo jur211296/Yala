@@ -4378,3 +4378,6 @@
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "Um es hier zu aktivieren, aktivieren Sie es zuerst in den Gruppeneinstellungen.";
 "groups.onboarding.step2.bridgeAwareness" = "Wenn Sie eine Ausgabe bezahlen, wird sie auch automatisch in Ihrem persönlichen Konto erfasst — damit Ihr Saldo immer die Realität widerspiegelt.";
 "groups.onboarding.step3.bridgeAwareness" = "Sie können dieses Verhalten in den Gruppeneinstellungen ändern.";
+
+// MARK: B-16 — groups.reconnect.backToStart
+"groups.reconnect.backToStart" = "Zum Anfang";

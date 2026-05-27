@@ -117,7 +117,7 @@ struct GroupDetailView: View {
                     .padding(.vertical, DS.Spacing.sm)
             }
             .navigationTitle(group.name)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {

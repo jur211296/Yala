@@ -4384,3 +4384,6 @@
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "To enable this here, first enable it in Groups Settings.";
 "groups.onboarding.step2.bridgeAwareness" = "When you pay an expense we also log it in your personal account automatically — so your balance always reflects reality.";
 "groups.onboarding.step3.bridgeAwareness" = "You can change this behavior in Groups Settings.";
+
+// MARK: B-16 — groups.reconnect.backToStart
+"groups.reconnect.backToStart" = "Back to start";

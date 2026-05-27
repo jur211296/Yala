@@ -4358,3 +4358,6 @@
 "groups.reconnect.deletedForAll.title" = "%@は削除されました";
 "groups.reconnect.deletedForAll.body" = "このグループは作成者によって削除されました。";
 "groups.reconnect.deletedForAll.cta" = "了解";
+
+// MARK: B-16 — groups.reconnect.backToStart
+"groups.reconnect.backToStart" = "最初に戻る";

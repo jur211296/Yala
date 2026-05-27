@@ -311,7 +311,9 @@ struct ContentView: View {
             hasCompletedOnboarding: $hasCompletedOnboarding,
             pendingReconnectInvite: $pendingReconnectInvite,
             activeInviteError: $activeInviteError,
-            activeGroupSyncError: $activeGroupSyncError
+            activeGroupSyncError: $activeGroupSyncError,
+            showWelcomeFlow: $showWelcomeFlow,
+            welcomeFlowInitialStep: $welcomeFlowInitialStep
         ))
         .onChange(of: showOnboarding) { oldValue, newValue in
             // Replaces unreliable fullScreenCover onDismiss for post-onboarding flow.
@@ -952,6 +954,8 @@ private struct GroupInviteModifier: ViewModifier {
     @Binding var pendingReconnectInvite: InviteMetadata?
     @Binding var activeInviteError: String?
     @Binding var activeGroupSyncError: String?
+    @Binding var showWelcomeFlow: Bool
+    @Binding var welcomeFlowInitialStep: WelcomeFlowStep
 
     func body(content: Content) -> some View {
         content
@@ -989,6 +993,13 @@ private struct GroupInviteModifier: ViewModifier {
             }
             .sheet(isPresented: $showGroupReconnect, onDismiss: {
                 pendingReconnectInvite = nil
+                // Pre-onboarding: user llegó al sheet vía Chooser → InviteRecoveryView →
+                // handleInviteLink. Cualquier dismiss (X, swipe down, CTA) sin reabrir
+                // Chooser deja pantalla vacía.
+                if !hasCompletedOnboarding && !showWelcomeFlow {
+                    welcomeFlowInitialStep = .chooser
+                    showWelcomeFlow = true
+                }
             }) {
                 if let invite = pendingReconnectInvite {
                     GroupReconnectView(

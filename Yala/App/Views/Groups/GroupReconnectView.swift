@@ -12,6 +12,7 @@ import SwiftUI
 struct GroupReconnectView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
 
     let invite: InviteMetadata
     var onJoin: () -> Void
@@ -19,39 +20,38 @@ struct GroupReconnectView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
+            VStack(spacing: DS.Spacing.xxl) {
+                Spacer()
 
-                VStack(spacing: DS.Spacing.xxl) {
-                    Spacer()
+                groupIcon
 
-                    groupIcon
+                VStack(spacing: DS.Spacing.sm) {
+                    Text(title)
+                        .font(DS.Typography.title2)
+                        .multilineTextAlignment(.center)
 
-                    VStack(spacing: DS.Spacing.sm) {
-                        Text(title)
-                            .font(DS.Typography.title2)
-                            .multilineTextAlignment(.center)
-
-                        Text(subtitle)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-
-                    Spacer()
-
-                    YalaPrimaryButton(ctaLabel) {
-                        if invite.mode == .archived || invite.mode == .deletedForAll {
-                            // .archived / .deletedForAll (FU-02): el CTA solo dismissa.
-                            onDismiss()
-                        } else {
-                            onJoin()
-                        }
-                    }
-                    .padding(.bottom, DS.Spacing.xxl)
+                    Text(subtitle)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
-                .padding(.horizontal, DS.Spacing.xxl)
+
+                Spacer()
+
+                YalaPrimaryButton(ctaLabel) {
+                    if invite.mode == .archived || invite.mode == .deletedForAll || shouldDismissOnlyCTA {
+                        // .archived / .deletedForAll: el CTA solo dismissa.
+                        // shouldDismissOnlyCTA: pre-onboarding tampoco navega (no hay
+                        // MainTabView donde "ver grupos").
+                        onDismiss()
+                    } else {
+                        onJoin()
+                    }
+                }
+                .padding(.bottom, DS.Spacing.xxl)
             }
+            .padding(.horizontal, DS.Spacing.xxl)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -61,6 +61,16 @@ struct GroupReconnectView: View {
             }
         }
         .presentationDetents([.medium])
+    }
+
+    /// Pre-onboarding: los modes que normalmente navegan (`alreadyMember`, `pendingDuplicate`)
+    /// no tienen destino válido — MainTabView no está montado. El CTA solo cierra el sheet.
+    private var shouldDismissOnlyCTA: Bool {
+        guard !hasCompletedOnboarding else { return false }
+        switch invite.mode {
+        case .alreadyMember, .pendingDuplicate: return true
+        default: return false
+        }
     }
 
     // MARK: - Mode-driven copy
@@ -93,6 +103,9 @@ struct GroupReconnectView: View {
     }
 
     private var ctaLabel: String {
+        // Pre-onboarded en alreadyMember/pendingDuplicate: CTA solo cierra el sheet
+        // (no hay MainTabView donde navegar). Copy refleja el destino real.
+        if shouldDismissOnlyCTA { return L10n.Groups.Reconnect.backToStart }
         switch invite.mode {
         case .standardReconnect: return L10n.Groups.Invite.joinButton
         case .archived: return L10n.Groups.Reconnect.archivedCta

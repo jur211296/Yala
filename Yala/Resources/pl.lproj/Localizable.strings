@@ -4358,3 +4358,6 @@
 "groups.reconnect.deletedForAll.title" = "%@ został usunięty";
 "groups.reconnect.deletedForAll.body" = "Ta grupa została usunięta przez twórcę.";
 "groups.reconnect.deletedForAll.cta" = "Rozumiem";
+
+// MARK: B-16 — groups.reconnect.backToStart
+"groups.reconnect.backToStart" = "Powrót do początku";
