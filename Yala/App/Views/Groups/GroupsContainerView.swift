@@ -21,6 +21,7 @@ struct GroupsContainerView: View {
 
     @State private var viewModel = GroupsViewModel()
     @State private var isPresentingSettings = false
+    @State private var isPresentingGroupsSettings = false
     @Environment(AppPreferences.self) private var appPreferences
     @State private var showNotificationPrompt = false
     @State private var showPermissionDeniedAlert = false
@@ -108,12 +109,24 @@ struct GroupsContainerView: View {
             .navigationTitle(L10n.Groups.title)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isPresentingGroupsSettings = true
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .accessibilityLabel(L10n.Groups.GlobalSettings.title)
+                    }
+                }
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 ProfileToolbarItem {
                     isPresentingSettings = true
                 }
             }
             .sheet(isPresented: $isPresentingSettings) {
                 ProfileView()
+            }
+            .sheet(isPresented: $isPresentingGroupsSettings) {
+                GroupsGlobalSettingsView()
             }
             .sheet(isPresented: $viewModel.showCreateGroup, onDismiss: {
                 viewModel.loadData()

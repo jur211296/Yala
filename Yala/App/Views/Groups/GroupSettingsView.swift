@@ -83,6 +83,11 @@ struct GroupSettingsView: View {
                     // Group options section
                     optionsSection
 
+                    // Integración personal (F4): visible solo para members .isActive.
+                    if viewModel.canCurrentUserParticipate {
+                        personalIntegrationSection
+                    }
+
                     // Leave group (non-owner)
                     if !group.isOwner {
                         leaveGroupSection
@@ -511,6 +516,124 @@ struct GroupSettingsView: View {
             showDebtsInSingleCurrency = group.showDebtsInSingleCurrency
             selectedCurrency = CurrencyCode(rawValue: group.currencyCode) ?? .pen
             defaultSplitType = SplitType(rawValue: group.defaultSplitType) ?? .equal
+        }
+    }
+
+    // MARK: - Personal Integration (Bridge Override per-grupo, F4)
+
+    @State private var showPerGroupDeactivationSheet: Bool = false
+
+    private var personalIntegrationState: OverrideStateLogic.UIState {
+        OverrideStateLogic.compute(
+            global: appPreferences.bridgeGroupExpensesToPersonalAccounts,
+            override: BridgeModeResolver.shared.override(forZoneID: group.cloudKitZoneID, context: modelContext),
+            memberIsActive: viewModel.canCurrentUserParticipate
+        )
+    }
+
+    /// Binding al estado visual del toggle. Lectura: deriva del state computed.
+    /// Escritura: invoca el resolver para persistir override.
+    private var personalIntegrationToggle: Binding<Bool> {
+        Binding(
+            get: {
+                switch personalIntegrationState {
+                case .enabledOnInheriting, .enabledOnLocal: return true
+                case .enabledOffLocal, .disabledOff, .hiddenSection: return false
+                }
+            },
+            set: { newValue in
+                let global = appPreferences.bridgeGroupExpensesToPersonalAccounts
+                guard global else { return }  // disabled cuando global OFF
+                do {
+                    // ON estando OFF → setOverride(nil) (volver a heredar).
+                    // OFF estando ON → setOverride(false) (override OFF explícito).
+                    let override: Bool? = newValue ? nil : false
+                    try BridgeModeResolver.shared.setOverride(for: group, override: override, in: modelContext)
+                    TelemetryService.track(.bridgeOverrideSet, parameters: [
+                        "override": override == nil ? "inherit" : String(override == true)
+                    ])
+                    // Si user desactivó (newValue==false) Y hay TX bridgeadas para este
+                    // grupo, presenta BridgeDeactivationSheet scoped (plan F4) para que
+                    // el user decida freeze vs delete.
+                    if !newValue && hasBridgedTransactionsForGroup() {
+                        showPerGroupDeactivationSheet = true
+                    }
+                } catch {
+                    #if DEBUG
+                    print("personalIntegrationToggle: setOverride failed: \(error)")
+                    #endif
+                }
+            }
+        )
+    }
+
+    @ViewBuilder
+    private var personalIntegrationSection: some View {
+        let state = personalIntegrationState
+        if state != .hiddenSection {
+            SectionBox(title: L10n.Groups.Settings.personalIntegrationSectionTitle) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Toggle(
+                        L10n.Groups.Settings.personalIntegrationToggleLabel,
+                        isOn: personalIntegrationToggle
+                    )
+                    .font(DS.Typography.body)
+                    .disabled(state == .disabledOff)
+
+                    Text(personalIntegrationHint(for: state))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, DS.FormRow.paddingH)
+                .padding(.vertical, DS.FormRow.paddingV)
+            }
+            .sheet(isPresented: $showPerGroupDeactivationSheet) {
+                BridgeDeactivationSheet(
+                    scope: .perGroup(zoneID: group.cloudKitZoneID, groupName: group.name),
+                    onConfirm: { /* cleanup hecho dentro del sheet */ },
+                    onCancel: revertPerGroupOverride
+                )
+            }
+        }
+    }
+
+    /// Revierte el override per-grupo cuando user cancela el sheet de deactivation
+    /// (restauración del intent: si user cancela, no quiere desactivar).
+    private func revertPerGroupOverride() {
+        do {
+            try BridgeModeResolver.shared.setOverride(for: group, override: nil, in: modelContext)
+        } catch {
+            #if DEBUG
+            print("revertPerGroupOverride failed: \(error)")
+            #endif
+        }
+    }
+
+    /// Conteo de TX bridgeadas para este grupo (`splitGroupZoneID == cloudKitZoneID`).
+    private func hasBridgedTransactionsForGroup() -> Bool {
+        let zoneID = group.cloudKitZoneID
+        let descriptor = FetchDescriptor<TransactionItem>(
+            predicate: #Predicate<TransactionItem> {
+                $0.splitGroupZoneID == zoneID &&
+                ($0.splitExpenseID != nil || $0.splitSettlementID != nil)
+            }
+        )
+        do {
+            return try modelContext.fetchCount(descriptor) > 0
+        } catch {
+            #if DEBUG
+            print("hasBridgedTransactionsForGroup: fetchCount failed: \(error)")
+            #endif
+            return false
+        }
+    }
+
+    private func personalIntegrationHint(for state: OverrideStateLogic.UIState) -> String {
+        switch state {
+        case .hiddenSection: return ""
+        case .disabledOff: return L10n.Groups.Settings.personalIntegrationHintBlockedByGlobal
+        case .enabledOnInheriting, .enabledOnLocal: return L10n.Groups.Settings.personalIntegrationHintInheritOn
+        case .enabledOffLocal: return L10n.Groups.Settings.personalIntegrationHintLocalOff
         }
     }
 
