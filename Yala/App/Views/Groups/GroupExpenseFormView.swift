@@ -42,6 +42,11 @@ struct GroupExpenseFormView: View {
     @State private var showSplitDetail = false
     @State private var showAccountSelector = false  // M6 Caso A
 
+    /// Guard para evitar que `onTypeChange` del segmented dispare `showSplitDetail` al
+    /// hidratar prefill / mount inicial (cuando default del grupo es `.percentage`).
+    /// Se setea a `true` al final de `onAppear`.
+    @State private var didCompleteInitialPrefill = false
+
     // Opt-out: alert post-save cuando bridge effective OFF + Caso A.
     @State private var pendingOptInExpenseID: String?
     @State private var showOptInAlert: Bool = false
@@ -78,18 +83,27 @@ struct GroupExpenseFormView: View {
                 PanelBackgroundView()
 
                 VStack(spacing: DS.Spacing.none) {
-                    Spacer()
+                    // Segmented control TOP-anchored: estabiliza el layout y evita
+                    // el efecto "no estable" del sheet (sin nada anclado al top el
+                    // contenido rebotaba al cambiar keyboard / contenido).
+                    splitTypeSegmentedSelector
+                        .padding(.top, DS.Spacing.sm)
+                        .padding(.horizontal, DS.Spacing.lg)
 
-                    centralContent
+                    Group {
+                        Spacer()
 
-                    Spacer()
+                        centralContent
 
-                    bottomChips
-                        .padding(.bottom, DS.Spacing.lg)
+                        Spacer()
 
-                    registerButton
-                        .padding(.horizontal, DS.Spacing.xl)
-                        .padding(.bottom, DS.Spacing.xxl)
+                        bottomChips
+                            .padding(.bottom, DS.Spacing.lg)
+
+                        registerButton
+                            .padding(.horizontal, DS.Spacing.xl)
+                            .padding(.bottom, DS.Spacing.xxl)
+                    }
                 }
                 .dismissKeyboardOnTap()
             }
@@ -122,6 +136,10 @@ struct GroupExpenseFormView: View {
                     print("GroupExpenseFormView: VM not ready (currentUserMemberID nil) — canSave will block save")
                 }
                 #endif
+                // El guard se setea AL FINAL para que cualquier hidratación
+                // programática del splitType desde prefill / init NO dispare el
+                // auto-open del sheet via `onTypeChange`.
+                didCompleteInitialPrefill = true
             }
             .sheet(isPresented: $showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.date)
@@ -154,7 +172,8 @@ struct GroupExpenseFormView: View {
             }
             .sheet(isPresented: $showCurrencyPicker) {
                 CurrencySelectorView(selectedCurrency: currencyCodeBinding)
-                }
+                    .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+            }
             .sheet(isPresented: $showAccountSelector) {
                 // M6: filtrado por moneda para que la cuenta seleccionada siempre sea compatible.
                 AccountSelectorSheet(
@@ -162,12 +181,14 @@ struct GroupExpenseFormView: View {
                     title: L10n.Transaction.account,
                     currencyFilter: viewModel.currencyCode
                 )
+                .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
             }
             .sheet(isPresented: $showSubcategorySelector) {
                 SubcategorySelectorSheet(
                     selectedSubcategory: $viewModel.selectedSubcategory,
                     transactionType: .expense
                 )
+                .presentationDetents(DS.Adaptive.sheetDetents([.large]))
             }
             .sheet(isPresented: $showSplitDetail) {
                 splitDetailSheet
@@ -187,8 +208,7 @@ struct GroupExpenseFormView: View {
             dateChip
             descriptionField
             amountDisplay
-            splitMethodChip
-            noteField
+            splitChipDetail
             categoryChip
         }
     }
@@ -319,50 +339,145 @@ struct GroupExpenseFormView: View {
         .accessibilityLabel(L10n.Groups.Expense.currency)
     }
 
-    // MARK: - Split Method Chip
+    // MARK: - Split Type Segmented Selector (TOP anchor)
 
-    private var splitMethodChip: some View {
-        Menu {
-            ForEach(SplitType.allCases) { type in
-                Button {
-                    viewModel.splitType = type
-                    if type != .equal {
-                        showSplitDetail = true
-                    }
-                } label: {
-                    Label(type.displayName, systemImage: type.iconName)
-                }
-            }
+    private var splitTypeSegmentedSelector: some View {
+        SplitTypeSegmentedSelector(selectedType: $viewModel.splitType) { newType in
+            // Guard: solo abre el sheet cuando el cambio fue por tap del user
+            // (post-prefill / mount) Y requiere input (≠ .equal).
+            guard didCompleteInitialPrefill, newType != .equal else { return }
+            dismissKeyboard()
+            showSplitDetail = true
+        }
+    }
+
+    // MARK: - Split Chip Detail (debajo del monto)
+
+    /// Reemplaza el antiguo `splitMethodChip`. Muestra el desglose dinámico de la
+    /// división actual ("Tu: S/ 50 · Resto: S/ 50", etc.) según el output del
+    /// `GroupSplitChipFormatter`. Chevron indica que es tappeable: abre el sheet.
+    private var splitChipDetail: some View {
+        Button {
+            dismissKeyboard()
+            showSplitDetail = true
         } label: {
             HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: viewModel.splitType.iconName)
-                    .font(DS.Typography.label)
-                Text(viewModel.splitType.displayName)
-                    .font(DS.Typography.label)
+                splitChipDetailContent
                 if viewModel.splitType != .equal && !viewModel.isSharesBalanced {
                     Image(systemName: "exclamationmark.circle.fill")
                         .font(DS.Typography.labelTiny)
                         .foregroundStyle(Color.hotPink)
                 }
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.labelTiny)
+                    .foregroundStyle(DS.Semantic.splitMethodForeground.opacity(0.6))
             }
             .foregroundStyle(DS.Semantic.splitMethodForeground)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.xs)
             .background(Capsule().fill(DS.Semantic.splitMethodBackground))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("group_expense_split_chip")
+        .accessibilityLabel(splitChipAccessibilityLabel)
+    }
+
+    @ViewBuilder
+    private var splitChipDetailContent: some View {
+        let output = GroupSplitChipFormatter.format(input: chipFormatterInput)
+        switch output.mode {
+        case .fallbackTypeName, .warningUnbalanced:
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: viewModel.splitType.iconName)
+                    .font(DS.Typography.label)
+                Text(viewModel.splitType.displayName)
+                    .font(DS.Typography.label)
+            }
+        case .youOnly(let yourAmount):
+            HStack(spacing: 2) {
+                Text(L10n.Split.youLabel + ":")
+                    .font(DS.Typography.label)
+                Text(yourAmount)
+                    .font(DS.Typography.label)
+            }
+        case .youPaidAll(let total):
+            HStack(spacing: 4) {
+                Text(L10n.Split.youPaidAll)
+                    .font(DS.Typography.label)
+                Text("·")
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.secondary)
+                Text(L10n.Split.totalLabel + ": " + total)
+                    .font(DS.Typography.label)
+            }
+        case .notIncluded(let total):
+            HStack(spacing: 4) {
+                Text(L10n.Groups.Expense.notIncluded)
+                    .font(DS.Typography.label)
+                Text("·")
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.secondary)
+                Text(L10n.Split.totalLabel + ": " + total)
+                    .font(DS.Typography.label)
+            }
+        case .youAndRest(let you, let rest):
+            HStack(spacing: 4) {
+                segmentText(label: L10n.Split.youLabel, segment: you)
+                Text("·")
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.secondary)
+                segmentText(label: L10n.Split.restLabel, segment: rest)
+            }
         }
     }
 
-    // MARK: - Note Field
+    @ViewBuilder
+    private func segmentText(label: String, segment: GroupSplitChipFormatter.Output.Segment) -> some View {
+        HStack(spacing: 2) {
+            Text(label + ": " + segment.amountString)
+                .font(DS.Typography.label)
+            if let suffix = segment.suffix {
+                Text(suffix)
+                    .font(DS.Typography.labelTiny)
+                    .foregroundStyle(DS.Semantic.splitMethodForeground.opacity(0.7))
+            }
+        }
+    }
 
-    private var noteField: some View {
-        // A11Y-DM: tertiaryLabel system-managed dark mode (placeholder más claro que .secondary).
-        TextField(L10n.Groups.Expense.notePlaceholder, text: $viewModel.note)
-            .font(DS.Typography.caption)
-            .foregroundStyle(Color(.tertiaryLabel))
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: 200)
-            .focused($focusedField, equals: .note)
-            .accessibilityLabel(L10n.Groups.Expense.notePlaceholder)
+    /// Construye el `Input` del formatter mapeando el state actual del VM.
+    private var chipFormatterInput: GroupSplitChipFormatter.Input {
+        GroupSplitChipFormatter.Input(
+            total: viewModel.amount,
+            splitType: viewModel.splitType,
+            calculatedShares: viewModel.calculatedShares,
+            participantValues: viewModel.participantValuesByID,
+            currentUserMemberID: viewModel.currentUserMemberID,
+            paidByMemberID: viewModel.paidByMemberID,
+            selectedMemberIDs: viewModel.selectedMemberIDs,
+            formatAmount: { value in
+                appPreferences.currency(value, currencyCode: viewModel.currencyCode)
+            },
+            localizedSharesWord: L10n.Split.sharesParts
+        )
+    }
+
+    /// VoiceOver label que describe el contenido del chip en lenguaje natural.
+    private var splitChipAccessibilityLabel: String {
+        let output = GroupSplitChipFormatter.format(input: chipFormatterInput)
+        switch output.mode {
+        case .fallbackTypeName, .warningUnbalanced:
+            return viewModel.splitType.displayName
+        case .youOnly(let amount):
+            return "\(L10n.Split.youLabel) \(amount)"
+        case .youPaidAll(let total):
+            return "\(L10n.Split.youPaidAll). \(L10n.Split.totalLabel) \(total)"
+        case .notIncluded(let total):
+            return "\(L10n.Groups.Expense.notIncluded). \(L10n.Split.totalLabel) \(total)"
+        case .youAndRest(let you, let rest):
+            return "\(L10n.Split.youLabel) \(you.amountString). \(L10n.Split.restLabel) \(rest.amountString)"
+        }
     }
 
     // MARK: - Category Chip
@@ -391,6 +506,20 @@ struct GroupExpenseFormView: View {
     private var bottomChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Spacing.sm) {
+                // M6: chip cuenta personal real PRIMERO cuando aplica (Caso A `.full/.completed`).
+                // Si no aplica (Caso B / .groupInvite), los demás chips corren a la izquierda.
+                if viewModel.isAccountRequired {
+                    SelectionChip(
+                        icon: "creditcard",
+                        text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
+                        isSelected: viewModel.selectedAccount != nil,
+                        color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) }
+                    ) {
+                        dismissKeyboard()
+                        showAccountSelector = true
+                    }
+                }
+
                 SelectionChip(
                     icon: "tag",
                     text: viewModel.selectedSubcategory?.name ?? L10n.Transaction.subcategory,
@@ -419,19 +548,6 @@ struct GroupExpenseFormView: View {
                 ) {
                     dismissKeyboard()
                     showMemberSelector = true
-                }
-
-                // M6: chip cuenta personal real solo si Caso A `.full/.completed`.
-                if viewModel.isAccountRequired {
-                    SelectionChip(
-                        icon: "creditcard",
-                        text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
-                        isSelected: viewModel.selectedAccount != nil,
-                        color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) }
-                    ) {
-                        dismissKeyboard()
-                        showAccountSelector = true
-                    }
                 }
             }
             .padding(.horizontal, DS.Spacing.xl)
@@ -567,5 +683,4 @@ struct GroupExpenseFormView: View {
 private enum ExpenseField: Hashable {
     case amount
     case description
-    case note
 }

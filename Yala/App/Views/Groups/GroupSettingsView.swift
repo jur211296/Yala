@@ -80,8 +80,11 @@ struct GroupSettingsView: View {
                     // Members section
                     membersSection
 
-                    // Group options section
-                    optionsSection
+                    // Group options section — admin-only
+                    // (toggles disparan updateGroup que requiere admin; ver B-19)
+                    if viewModel.isCurrentUserAdmin {
+                        optionsSection
+                    }
 
                     // Integración personal (F4): visible solo para members .isActive.
                     if viewModel.canCurrentUserParticipate {

@@ -20,9 +20,9 @@ struct GroupSplitSelectorView: View {
     }
 
     var body: some View {
+        // El segmented control del SplitType vive ahora en el form (top-anchored).
+        // Aquí solo mostramos los inputs por miembro + resultado + tip.
         VStack(spacing: DS.Spacing.xxl) {
-            splitTypePicker
-
             if !viewModel.selectedMemberIDs.isEmpty && viewModel.amount > 0 {
                 memberSharesCard
                 resultRow
@@ -30,17 +30,6 @@ struct GroupSplitSelectorView: View {
 
             tipView
         }
-    }
-
-    // MARK: - Split Type Picker
-
-    private var splitTypePicker: some View {
-        Picker(L10n.Groups.Expense.splitType, selection: $viewModel.splitType) {
-            ForEach(SplitType.allCases) { type in
-                Text(type.displayName).tag(type)
-            }
-        }
-        .pickerStyle(.segmented)
     }
 
     // MARK: - Member Shares Card
@@ -107,7 +96,6 @@ struct GroupSplitSelectorView: View {
 
             splitField(
                 id: id,
-                placeholder: "0",
                 keyPath: \.exactAmounts,
                 keyboard: .decimalPad,
                 filter: { AmountInputHelper.filterAmountInput($0) }
@@ -121,7 +109,6 @@ struct GroupSplitSelectorView: View {
 
             splitField(
                 id: id,
-                placeholder: "0",
                 keyPath: \.percentages,
                 keyboard: .decimalPad,
                 filter: { AmountInputHelper.filterAmountInput($0) }
@@ -139,7 +126,6 @@ struct GroupSplitSelectorView: View {
 
             splitField(
                 id: id,
-                placeholder: "1",
                 keyPath: \.sharesCounts,
                 keyboard: .numberPad,
                 filter: { AmountInputHelper.filterIntegerInput($0) }
@@ -151,20 +137,29 @@ struct GroupSplitSelectorView: View {
         }
     }
 
-    // MARK: - Split Field (shared ZStack + placeholder + filtering)
+    // MARK: - Split Field (shared ZStack + dynamic placeholder + filtering)
 
+    /// El placeholder se calcula via `GroupSplitPlaceholderLogic` según el tipo activo
+    /// y los valores ya llenos. Para el primer miembro vacío con otros llenos sugiere
+    /// el "resto" calculado (e.g. 70.00 si total=100 y ya está lleno 30).
     @ViewBuilder
     private func splitField(
         id: String,
-        placeholder: String,
         keyPath: ReferenceWritableKeyPath<GroupExpenseViewModel, [String: String]>,
         keyboard: UIKeyboardType,
         filter: @escaping (String) -> String
     ) -> some View {
         let memberName = viewModel.memberNameLookup[id] ?? id
+        let dynamicPlaceholder = GroupSplitPlaceholderLogic.placeholder(
+            forMemberID: id,
+            orderedMemberIDs: viewModel.selectedMembers.map { $0.id.uuidString },
+            currentInputs: viewModel[keyPath: keyPath],
+            splitType: viewModel.splitType,
+            total: viewModel.amount
+        )
         ZStack(alignment: .trailing) {
             if (viewModel[keyPath: keyPath][id] ?? "").isEmpty {
-                Text(placeholder)
+                Text(dynamicPlaceholder)
                     .font(DS.Typography.title2)
                     .foregroundStyle(DS.Semantic.disabledForeground.opacity(DS.Opacity.overlay))
             }

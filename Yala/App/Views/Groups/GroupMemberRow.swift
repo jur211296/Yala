@@ -50,26 +50,28 @@ struct GroupMemberRow: View {
             // Admin actions
             if isCurrentUserAdmin && !member.isCurrentUser && !member.isGroupOwner {
                 if member.memberStatus == .pendingApproval, let onApprove, let onReject {
-                    HStack(spacing: DS.Spacing.sm) {
+                    // Iconos circulares (vs botones text): caben junto al badge
+                    // "Pendiente de aprobación" sin truncar nombre/label.
+                    HStack(spacing: DS.Spacing.xs) {
                         Button(action: onApprove) {
-                            Text(L10n.Groups.Member.approve)
-                                .font(DS.Typography.labelSmall)
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, DS.Spacing.md)
-                                .padding(.vertical, DS.Spacing.sm)
-                                .background(.thAccent, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(DS.Typography.title2)
+                                .foregroundStyle(.thAccent)
+                                .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.Groups.Member.approve)
 
                         Button(action: onReject) {
-                            Text(L10n.Groups.Member.reject)
-                                .font(DS.Typography.labelSmall)
+                            Image(systemName: "xmark.circle.fill")
+                                .font(DS.Typography.title2)
                                 .foregroundStyle(DS.Semantic.errorForeground)
-                                .padding(.horizontal, DS.Spacing.md)
-                                .padding(.vertical, DS.Spacing.sm)
-                                .background(DS.Semantic.errorBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+                                .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.Groups.Member.reject)
                     }
                 } else if member.isActive {
                     Menu {

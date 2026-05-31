@@ -198,12 +198,16 @@ struct GroupDetailView: View {
             GroupSettingsView(group: group, viewModel: viewModel)
 
         case .addExpense:
+            // Detents `.large` + drag indicator: estabilizan el sheet y evitan
+            // que el contenido "respire" con cambios de keyboard / state.
             GroupExpenseFormView(
                 group: group,
                 members: viewModel.activeMembers,
                 memberNameLookup: viewModel.memberNameLookup,
                 onSave: {}
             )
+            .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+            .presentationDragIndicator(.visible)
 
         case .editExpense(let expense):
             GroupExpenseFormView(
@@ -214,6 +218,8 @@ struct GroupDetailView: View {
                 existingShares: viewModel.sharesForExpense(expense),
                 onSave: {}
             )
+            .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+            .presentationDragIndicator(.visible)
 
         case .settlement(let debt):
             SettlementFormView(
@@ -222,6 +228,8 @@ struct GroupDetailView: View {
                 memberNameLookup: viewModel.memberNameLookup,
                 onSave: {}
             )
+            .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+            .presentationDragIndicator(.visible)
         }
     }
 

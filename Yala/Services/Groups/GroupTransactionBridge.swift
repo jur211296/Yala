@@ -225,6 +225,8 @@ final class GroupTransactionBridge {
                 realTx.splitTotalAmount = totalAmount
                 realTx.splitType = expense.splitType
                 // account/subcategory/category/note/tags INTACTOS (preserve user edits).
+                // Recalcular conversión a moneda preferida: amount/date cambiaron.
+                realTx.recalculatePreferredCurrency(context: context)
             }
             createCaseBVirtualMyShare(
                 expense: expense,
@@ -246,6 +248,8 @@ final class GroupTransactionBridge {
                 realTx.splitTotalAmount = totalAmount
                 realTx.splitType = expense.splitType
                 // NUNCA tocar: account, subcategory, category, note, tags, currencyCode.
+                // Recalcular conversión a moneda preferida: amount/date cambiaron.
+                realTx.recalculatePreferredCurrency(context: context)
             } else {
                 // INCOMPATIBLE currency: delete TX real + draft hint impersonal.
                 context.delete(realTx)

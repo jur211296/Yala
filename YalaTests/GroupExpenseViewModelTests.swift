@@ -251,4 +251,39 @@ struct GroupExpenseViewModelTests {
         let result = vm.save()
         #expect(result == false)
     }
+
+    // MARK: - Note preservation regression (refactor mayo 2026)
+
+    /// El form ya no expone `note` field pero el VM debe preservar la nota
+    /// histórica al editar una TX antigua que ya la tenía. Este test bloquea
+    /// regresiones futuras (alguien eliminando `var note` o cambiando `prefill`).
+    @Test func prefillPreservesHistoricalNote() {
+        let (vm, _) = makeViewModel()
+        let expense = SplitExpense()
+        expense.expenseDescription = "Cena Hyatt"
+        expense.amount = 100
+        expense.currencyCode = "USD"
+        expense.splitType = "equal"
+        expense.note = "Cumpleaños Mati"
+        expense.paidByMemberID = vm.paidByMemberID
+
+        vm.prefill(from: expense, shares: [])
+
+        #expect(vm.note == "Cumpleaños Mati")
+    }
+
+    @Test func prefillWithNilNoteResultsInEmptyString() {
+        let (vm, _) = makeViewModel()
+        let expense = SplitExpense()
+        expense.expenseDescription = "X"
+        expense.amount = 50
+        expense.currencyCode = "USD"
+        expense.splitType = "equal"
+        expense.note = nil
+        expense.paidByMemberID = vm.paidByMemberID
+
+        vm.prefill(from: expense, shares: [])
+
+        #expect(vm.note == "")
+    }
 }

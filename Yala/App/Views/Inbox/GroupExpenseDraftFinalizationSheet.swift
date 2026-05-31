@@ -124,11 +124,10 @@ struct GroupExpenseDraftFinalizationSheet: View {
             groupName = (try? modelContext.fetch(groupDesc).first?.name) ?? ""
         }
         // Currency desde el SplitExpense origen (cachedCurrencyCode no se popula al crear el draft).
-        if let splitID = draft.splitExpenseID {
+        // SwiftData no soporta `$0.id.uuidString == String` con tipos valor — convertir antes.
+        if let splitID = draft.splitExpenseID, let splitUUID = UUID(uuidString: splitID) {
             let expenseDesc = FetchDescriptor<SplitExpense>(
-                predicate: #Predicate { expense in
-                    expense.id.uuidString == splitID
-                }
+                predicate: #Predicate { $0.id == splitUUID }
             )
             resolvedCurrency = (try? modelContext.fetch(expenseDesc).first?.currencyCode) ?? ""
         }

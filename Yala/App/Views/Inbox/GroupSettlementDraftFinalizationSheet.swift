@@ -131,11 +131,10 @@ struct GroupSettlementDraftFinalizationSheet: View {
             groupName = (try? modelContext.fetch(groupDesc).first?.name) ?? ""
         }
         // Currency desde SplitSettlement origen.
-        if let settlementID = draft.splitSettlementID {
+        // SwiftData no soporta `$0.id.uuidString == String` con tipos valor — convertir antes.
+        if let settlementID = draft.splitSettlementID, let settlementUUID = UUID(uuidString: settlementID) {
             let settDesc = FetchDescriptor<SplitSettlement>(
-                predicate: #Predicate { settlement in
-                    settlement.id.uuidString == settlementID
-                }
+                predicate: #Predicate { $0.id == settlementUUID }
             )
             resolvedCurrency = (try? modelContext.fetch(settDesc).first?.currencyCode) ?? ""
         }
