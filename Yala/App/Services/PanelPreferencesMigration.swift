@@ -22,13 +22,48 @@ enum PanelPreferencesMigration {
     @MainActor
     static func runIfNeeded(
         appPreferences: AppPreferences,
-        defaults: UserDefaults = .standard
+        defaults: UserDefaults = .standard,
+        deferFreshSeed: Bool = false
     ) {
         guard !appPreferences.panelPrefsMigratedV2 else { return }
 
         guard let legacyBlob = defaults.data(forKey: legacyKey) else {
-            // Install fresh — seed opinionated P20-11 defaults so the first
-            // Panel open lands on "rich but not saturated".
+            // No legacy blob locally. This runs from `AppPreferences.init`, BEFORE
+            // `PreferenceSyncService.bootstrap()` has pulled remote values into local
+            // UserDefaults — so the absence of a local blob does NOT guarantee a truly
+            // fresh install. A new device (or reinstall) of an existing user who already
+            // configured Panel 2.0 elsewhere also reaches this point with empty locals.
+            //
+            // Distinguish the two by inspecting iCloud KV directly: if the synced
+            // per-section keys already exist there, the user has a real configuration
+            // that `applyRemoteValues()` will merge in shortly. Seeding here would
+            // overwrite it (each synced `didSet` writes the defaults back to iKV,
+            // last-write-wins) and propagate the reset to all the user's devices.
+            if hasRemotePanelPreferences() {
+                // Existing user, new device — preserve the synced config. Mark the
+                // per-device sentinel so we don't re-evaluate, without seeding.
+                appPreferences.panelPrefsMigratedV2 = true
+                #if DEBUG
+                print("PanelPreferencesMigration: remote panel prefs detected → skip seeding (existing user)")
+                #endif
+                return
+            }
+
+            // No remote config detected — pero puede ser (a) install fresh real, o (b) un device
+            // nuevo cuyo iKV aún no bajó (`NSUbiquitousKeyValueStore.synchronize` no bloquea por
+            // red). Sembrar ahora clobbearía la config que está por llegar (last-write-wins).
+            // Cuando se invoca desde `AppPreferences.init` (deferFreshSeed=true) DIFERIMOS el seed
+            // SIN marcar el sentinel: AppBootstrapper re-invoca esto tras `iCloudFirstImportCompleted`
+            // (gateado por MigrationGateLogic), cuando iKV ya está asentado y la decisión es segura.
+            if deferFreshSeed {
+                #if DEBUG
+                print("PanelPreferencesMigration: fresh path → defer seed hasta post-sync hook")
+                #endif
+                return
+            }
+
+            // Punto seguro (post-sync vía hook, o sin cuenta iCloud) — seed opinionated P20-11
+            // defaults para que la primera apertura del Panel sea "rica pero no saturada".
             appPreferences.setupDefaultsForNewUser()
             appPreferences.panelPrefsMigratedV2 = true
             #if DEBUG
@@ -70,5 +105,30 @@ enum PanelPreferencesMigration {
         #if DEBUG
         print("PanelPreferencesMigration: upgrade path → \(orders.mapValues(\.count))")
         #endif
+    }
+
+    /// Synced per-section keys that carry the user's Panel 2.0 configuration.
+    /// (`panelPrefsMigratedV2` is intentionally excluded — it is per-device.)
+    private static let syncedPanelKeys: [String] = [
+        AppPreferences.Keys.panelTendenciasOrder,
+        AppPreferences.Keys.panelTendenciasHidden,
+        AppPreferences.Keys.panelDistribucionOrder,
+        AppPreferences.Keys.panelDistribucionHidden,
+        AppPreferences.Keys.panelPlanificacionOrder,
+        AppPreferences.Keys.panelPlanificacionHidden,
+        AppPreferences.Keys.panelSectionsHidden,
+        AppPreferences.Keys.panelSectionsOrder,
+    ]
+
+    /// Whether iCloud KV already holds a Panel configuration written by another
+    /// device of the same user. Checks `object(forKey:) != nil` (not "non-empty")
+    /// because an empty string is a valid state — the user may have hidden every
+    /// widget in a section — and still means a real config exists to preserve.
+    private static func hasRemotePanelPreferences() -> Bool {
+        let iKV = NSUbiquitousKeyValueStore.default
+        // Prime the local cache from the last successful sync (idempotent; the
+        // sync service also calls this during its own bootstrap).
+        iKV.synchronize()
+        return syncedPanelKeys.contains { iKV.object(forKey: $0) != nil }
     }
 }

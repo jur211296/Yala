@@ -811,7 +811,9 @@ final class AppPreferences {
 
         // Must run after loadFromDefaults (so the sentinel flag is read) and before
         // registerObservers (so seeded writes don't bounce through the external observer).
-        PanelPreferencesMigration.runIfNeeded(appPreferences: self, defaults: defaults)
+        // deferFreshSeed: en init no podemos confirmar si es install fresh real o un device nuevo
+        // cuyo iKV aún no bajó. El seed-fresco se difiere a AppBootstrapper post-sync (ver runIfNeeded).
+        PanelPreferencesMigration.runIfNeeded(appPreferences: self, defaults: defaults, deferFreshSeed: true)
 
         registerObservers()
     }

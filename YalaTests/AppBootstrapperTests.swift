@@ -211,4 +211,53 @@ struct AppBootstrapperTests {
         )
         #expect(decision == .showReconnect(mode: .deletedForAll))
     }
+
+    // MARK: - B-18: fresh user prioriza invite onboarding sobre memberStatus
+
+    @Test func inviteRouteDecision_freshUserWithPendingApproval_showsInviteOnboarding() {
+        // B-18: fresh-install que aceptó share y quedó pending NO debe ir al Reconnect
+        // (CTA "Volver al inicio" → Chooser dejaría al user fuera de la app esperando).
+        // Debe entrar al invite onboarding silencioso → detectFinalStep → step 3.
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: false,
+            onboardingMode: .full,
+            currentMemberStatus: .pendingApproval
+        )
+        #expect(decision == .acceptAndShowInviteOnboarding)
+    }
+
+    @Test func inviteRouteDecision_freshUserWithActiveMember_showsInviteOnboarding() {
+        // B-18 race feliz: admin aprobó en <10s antes que el routing decida.
+        // Igual entra al invite onboarding (step 2 "¡Listo!" via detectFinalStep).
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: false,
+            onboardingMode: .full,
+            currentMemberStatus: .active
+        )
+        #expect(decision == .acceptAndShowInviteOnboarding)
+    }
+
+    @Test func inviteRouteDecision_freshUserWithRejected_showsInviteOnboarding() {
+        // B-18 edge: user abandonó mid-flow, admin rechazó, user retapea.
+        // performSilentSetup invoca ensureCurrentUserMemberExists(reactivateInactive: true)
+        // → re-pone pending. Comportamiento defensivo consistente con el flow retry.
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: false,
+            onboardingMode: .full,
+            currentMemberStatus: .rejected
+        )
+        #expect(decision == .acceptAndShowInviteOnboarding)
+    }
+
+    @Test func inviteRouteDecision_freshUserMidGroupInvite_keepsReconnectStandard() {
+        // B-18 regression guard: si user YA está mid-invite-onboarding (mode=.groupInvite)
+        // y tapea otro link, NO re-entra al invite onboarding (evita loop / reset state).
+        // Cae al default standardReconnect (que el ContentView resuelve).
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: false,
+            onboardingMode: .groupInvite,
+            currentMemberStatus: .pendingApproval
+        )
+        #expect(decision == .showReconnect(mode: .pendingDuplicate))
+    }
 }

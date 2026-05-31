@@ -406,7 +406,11 @@ final class iCloudSyncService {
             if let ckError = error as? CKError {
                 apply(eventType: .exportEvent, error: ckError, endDate: nil)
             } else {
-                // Non-CKError (e.g. context save) — keep prior state, just log.
+                // Non-CKError (e.g. context save / merge conflict): the
+                // NSPersistentCloudKitContainer observer will never fire to
+                // clear the `.syncing(.exporting)` we set above, so reset to
+                // `.idle` here to avoid a stuck spinner and re-enable retries.
+                setStatus(.idle)
             }
         }
     }

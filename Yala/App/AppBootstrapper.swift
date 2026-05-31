@@ -168,6 +168,10 @@ final class AppBootstrapper {
                 waitedForSync: waitedForSync,
                 waitDuration: waitDuration
             )
+            // Seed diferido de defaults de Panel: en `AppPreferences.init` se difirió para no
+            // clobbear la config que el sync aún no había bajado. Aquí (post-hook, o sin cuenta
+            // iCloud vía el gate de arriba) la decisión sobre fresh-vs-existente ya es segura.
+            PanelPreferencesMigration.runIfNeeded(appPreferences: appPreferences)
         }
 
         // 9. Update widget cache
@@ -420,7 +424,10 @@ final class AppBootstrapper {
                 return
             }
             let expenses = try context.fetch(FetchDescriptor<SplitExpense>())
-            let lookup = Dictionary(uniqueKeysWithValues: expenses.map { ($0.id, $0.groupZoneID) })
+            // `uniquingKeysWith` evita un trap fatal si CloudKit sync trae dos
+            // SplitExpense con el mismo `id` (UUID sin @Attribute(.unique) por compat).
+            let lookup = Dictionary(expenses.map { ($0.id, $0.groupZoneID) },
+                                    uniquingKeysWith: { first, _ in first })
             for share in orphans {
                 if let zone = lookup[share.expenseID], !zone.isEmpty {
                     share.groupZoneID = zone
@@ -989,7 +996,13 @@ final class AppBootstrapper {
     }
 
     /// Decide el routing tras leer metadata del share + estado local del grupo.
-    /// Orden de evaluación: isHiddenForAll (CKShare custom key) > isArchived (CKShare custom key) > member status local > onboarding.
+    /// Orden de evaluación: isHiddenForAll > isArchived > !hasCompletedOnboarding > member status > default.
+    ///
+    /// Fresh users (no completaron onboarding) priorizan el invite onboarding silencioso
+    /// — `detectFinalStep` cubre todos los memberStatus (pending → step 3, active → step 2,
+    /// rejected → reactivate via `ensureCurrentUserMemberExists`). Si memberStatus ganara,
+    /// el user quedaría en `GroupReconnectView` con CTA "Volver al inicio" → Chooser, sin
+    /// llegar nunca al tab Grupos.
     static func inviteRouteDecision(
         hasCompletedOnboarding: Bool,
         onboardingMode: OnboardingMode,
@@ -999,6 +1012,9 @@ final class AppBootstrapper {
     ) -> InviteRouteDecision {
         if isHiddenForAll { return .showReconnect(mode: .deletedForAll) }
         if isArchived { return .showReconnect(mode: .archived) }
+        if !hasCompletedOnboarding && onboardingMode != .groupInvite {
+            return .acceptAndShowInviteOnboarding
+        }
         if let status = currentMemberStatus {
             switch status {
             case .active: return .showReconnect(mode: .alreadyMember)
@@ -1007,9 +1023,6 @@ final class AppBootstrapper {
             case .left: return .showReconnect(mode: .leftRetry)
             case .removed: return .showReconnect(mode: .removedRetry)
             }
-        }
-        if !hasCompletedOnboarding && onboardingMode != .groupInvite {
-            return .acceptAndShowInviteOnboarding
         }
         return .showReconnect(mode: .standardReconnect)
     }
