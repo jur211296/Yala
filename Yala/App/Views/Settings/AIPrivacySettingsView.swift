@@ -96,6 +96,22 @@ struct AIPrivacySettingsView: View {
                 showRevokeInsightsDialog = true
             }
         }
+        // If a grant alert is dismissed without accepting (Cancel / Privacy Policy /
+        // swipe), consent was never persisted — revert the toggle so the switch
+        // reflects the real consent state instead of staying falsely ON.
+        // Al cerrar el alert leemos el consentimiento desde UserDefaults SÍNCRONO: la propiedad
+        // de `appPreferences` se refresca async vía el observer de didChangeNotification, así que
+        // aquí estaría stale y revertiría el toggle aunque el usuario haya aceptado. La key es la
+        // misma SSOT que persiste el alert.
+        .onChange(of: showDataConsentAlert) { _, shown in
+            if !shown && !UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) { dataToggle = false }
+        }
+        .onChange(of: showChatConsentAlert) { _, shown in
+            if !shown && !UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiChatConsentAccepted) { chatToggle = false }
+        }
+        .onChange(of: showInsightsConsentAlert) { _, shown in
+            if !shown && !UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted) { insightsToggle = false }
+        }
         .aiConsentAlert(isPresented: $showDataConsentAlert, pendingInput: $pendingAIInput) { _ in }
         .chatConsentAlert(isPresented: $showChatConsentAlert)
         .insightsConsentAlert(isPresented: $showInsightsConsentAlert)
