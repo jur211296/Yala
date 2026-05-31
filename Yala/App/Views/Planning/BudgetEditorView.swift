@@ -59,6 +59,10 @@ struct BudgetEditorView: View {
     @FocusState private var isNameFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
 
+    // Guards the account→currency derivation so it only runs on real user
+    // interaction, never while loadBudgetData() populates selectedAccounts.
+    @State private var didLoadInitialData = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -140,6 +144,11 @@ struct BudgetEditorView: View {
             .onAppear {
                 viewModel.setContext(modelContext, deletionService: deletionService)
                 loadBudgetData()
+                // Enable the account→currency derivation only after the load-induced
+                // selectedAccounts change has been delivered, so it never runs during load.
+                Task { @MainActor in
+                    didLoadInitialData = true
+                }
                 // Auto-focus name field for new budgets
                 if budget == nil {
                     Task {
@@ -149,6 +158,9 @@ struct BudgetEditorView: View {
                 }
             }
             .onChange(of: selectedAccounts) { _, newAccounts in
+                // Skip the initial population from loadBudgetData() so an
+                // existing budget's persisted currency is never overwritten.
+                guard didLoadInitialData else { return }
                 updateCurrencyFromAccounts(newAccounts)
             }
             .onChange(of: viewModel.showSaveError) { _, new in if new { showSaveError = true } }

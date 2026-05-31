@@ -419,9 +419,17 @@ final class RecordsViewModel: Filterable {
 
     // MARK: - Bulk Edit Operations
 
-    /// Update account for all selected transactions
+    /// Update account for all selected transactions.
+    /// Bloqueado si la selección contiene transferencias — una transferencia tiene dos cuentas
+    /// inherentes (origen y destino) ligadas por `transferPairID`; colapsarlas a una sola cuenta
+    /// partiría el par entre cuentas no relacionadas y descuadraría ambos balances (y el exchange
+    /// rate en cross-currency). Editar la cuenta de un transfer debe hacerse desde su editor dedicado.
     func bulkUpdateAccount(_ account: Account, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
+            bulkUpdateError = L10n.BulkEdit.cannotEditTransferAccount
+            return
+        }
         for transaction in transactions {
             transaction.account = account
             transaction.currencyCode = account.currencyCode

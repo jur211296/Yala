@@ -579,6 +579,12 @@ final class BudgetsViewModel {
             filtered = filtered.filter { $0.splitExpenseID == nil }
         }
 
+        // Excluir saldo inicial / ajustes / transferencias (consistente con
+        // FinancialReportViewModel y CashFlowPlanViewModel). La subcategoría
+        // "Ajuste de saldo" vive bajo "Otros" con isIncome=false, así que sin
+        // este filtro pasaría el corte y se sumaría como gasto vía abs(amount).
+        filtered = filtered.filter { $0.balanceAdjustmentType == nil }
+
         return filtered.filter { $0.category?.isIncome == false }
     }
 

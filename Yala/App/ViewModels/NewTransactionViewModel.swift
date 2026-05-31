@@ -623,6 +623,19 @@ final class NewTransactionViewModel {
 
         let transaction: TransactionItem
         if let existing = editingTransaction {
+            // Si esta TX venía de una transferencia y el usuario cambió el tipo a gasto/ingreso,
+            // el partner (inflow) quedaría huérfano con balanceAdjustmentType == transfer y el mismo
+            // transferPairID, inflando el saldo de la cuenta destino sin posibilidad de auto-cura
+            // (el reconciler solo empareja N=2 con signos opuestos). Borramos el partner y limpiamos
+            // los campos de transfer en la TX editada para convertirla en un movimiento normal.
+            if existing.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer {
+                if let partner = TransferPartnerLookup.partner(of: existing, in: context) {
+                    context.delete(partner)
+                }
+                existing.transferPairID = nil
+                existing.balanceAdjustmentType = nil
+            }
+
             transaction = existing
             transaction.date = transactionDate
             transaction.amount = finalAmount
