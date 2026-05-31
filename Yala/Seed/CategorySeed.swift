@@ -536,17 +536,29 @@ func seedSystemGroupCategoriesIfNeeded(
     let definitions = systemGroupCategoryDefinitions()
 
     do {
-        // Primary defense: chequear si ya hay alguna categoría sistema (cualquiera de las 2)
-        // por nombre (idempotencia por nombre).
+        // Primary defense: chequear si ya existe la categoría sistema correspondiente.
+        // Idempotencia por nombre PERO restringida a categorías ya `isSystem == true` y con
+        // el mismo `isIncome` que la definición. Sin este guard, una categoría PERSONAL del
+        // usuario que coincida en nombre (ej. "Grupos"/"Cobros de grupos", muy plausibles)
+        // sería secuestrada: forzaríamos isSystem=true, sobreescribiríamos su icono y le
+        // colgaríamos subcategorías del bridge. SwiftData permite nombres duplicados (sin
+        // `@Attribute(.unique)`), así que crear la categoría sistema aparte es seguro.
         let allCategories = try modelContext.fetch(FetchDescriptor<Category>())
-        let existingNames = Set(allCategories.map(\.name))
 
         for definition in definitions {
-            let categoryExists = existingNames.contains(definition.name)
+            // Adopta una categoría ya sembrada (isSystem true, o isDefaultSeed true si el flag
+            // isSystem aún no hidrató vía CloudKit en este device) con mismo nombre/tipo. NO
+            // matchea categorías PERSONALES del usuario (isDefaultSeed false) aunque coincidan en
+            // nombre — esas no se secuestran; la sistema se crea aparte (SwiftData permite duplicados).
+            let existingSystemCategory = allCategories.first {
+                $0.name == definition.name && $0.isIncome == definition.isIncome
+                    && ($0.isSystem || $0.isDefaultSeed)
+            }
             let category: Category
-            if categoryExists, let existing = allCategories.first(where: { $0.name == definition.name }) {
+            if let existing = existingSystemCategory {
                 category = existing
-                // Asegurar flag isSystem aunque ya exista (recuperación de inconsistencias)
+                // Self-heal: si la categoría sembrada llegó con isSystem aún en false (hidratación
+                // lazy de CloudKit), fuérzalo a true para que los pickers la sigan excluyendo.
                 if !category.isSystem {
                     category.isSystem = true
                 }

@@ -463,6 +463,7 @@
 "groups.settings.deleteGroupDisabledHint" = "Liquidá las deudas pendientes antes de eliminar";
 
 "bulkEdit.cannotEditTransferSubcategory" = "No se puede cambiar la subcategoría de transferencias. Editalas individualmente.";
+"bulkEdit.cannotEditTransferAccount" = "No se puede cambiar la cuenta de transferencias. Editalas individualmente.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "No se puede cambiar el monto de transferencias entre monedas distintas. Editalas individualmente para preservar el tipo de cambio.";
 
 // MARK: B-16 — groups.reconnect.backToStart
@@ -676,3 +677,8 @@
 "groups.summary.owedToMe" = "Te deben";
 "groups.summary.pendingSettlements" = "%d liquidaciones pendientes";
 "groups.title" = "Grupos";
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+/* (inherits from base locale via iOS fallback) */
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "Pagaste todo";

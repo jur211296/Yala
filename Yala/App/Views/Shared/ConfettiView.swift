@@ -14,6 +14,7 @@ struct ConfettiView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var particles: [ConfettiParticle] = []
     @State private var isAnimating = false
+    @State private var timer: Timer?
 
     // MARK: - Configuration
 
@@ -61,6 +62,11 @@ struct ConfettiView: View {
             generateParticles()
             startAnimation()
         }
+        .onDisappear {
+            timer?.invalidate()
+            timer = nil
+            isAnimating = false
+        }
         .allowsHitTesting(false)
     }
 
@@ -83,10 +89,12 @@ struct ConfettiView: View {
     }
 
     private func startAnimation() {
+        // Invalidate any timer from a previous onAppear to avoid duplicate drivers
+        timer?.invalidate()
         isAnimating = true
 
         // Update particle positions every frame
-        Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { timer in
+        timer = Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { tickTimer in
             var allOffScreen = true
 
             for i in particles.indices {
@@ -113,7 +121,8 @@ struct ConfettiView: View {
 
             // Stop animation when all particles are off screen
             if allOffScreen {
-                timer.invalidate()
+                tickTimer.invalidate()
+                self.timer = nil
                 isAnimating = false
             }
         }

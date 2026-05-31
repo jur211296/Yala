@@ -2014,6 +2014,7 @@
 "bulkEdit.editCount" = "Editar %d transacciones";
 "bulkEdit.successMessage" = "Transacciones actualizadas correctamente";
 "bulkEdit.cannotEditTransferSubcategory" = "No se puede cambiar la subcategoría de transferencias. Edítalas individualmente.";
+"bulkEdit.cannotEditTransferAccount" = "No se puede cambiar la cuenta de transferencias. Edítalas individualmente.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "No se puede cambiar el monto de transferencias entre monedas distintas. Edítalas individualmente para preservar el tipo de cambio.";
 "bulkEdit.commonTags" = "En todas las seleccionadas";
 "bulkEdit.partialTags" = "En algunas seleccionadas";
@@ -3063,7 +3064,7 @@
 "insights.ruleMostExpensiveGroup.considerate" = "%@ lleva el %d%% del gasto compartido — es tu grupo principal";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ se lleva el %d%% de tu gasto compartido. Dominante.";
 "insights.ruleDominantSharedCategory.normal" = "%@ domina tus gastos compartidos (%d%%)";
-"insights.ruleDominantSharedCategory.considerate" = "La mayoría de tus gastos compartidos (%d%%) son de %@";
+"insights.ruleDominantSharedCategory.considerate" = "La mayoría de tus gastos compartidos (%2$d%%) son de %1$@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ es el %d%% de tu gasto compartido. ¿Solo comen juntos?";
 "insights.ruleSharedMoM.normal" = "Tu gasto compartido subió %@ vs el periodo anterior";
 "insights.ruleSharedMoM.considerate" = "El gasto compartido subió %@ — revisa si hubo gastos extra";
@@ -4407,3 +4408,13 @@
 
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "Volver al inicio";
+
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+"split.totalLabel" = "Total";
+"split.you" = "Tu";
+"split.rest" = "Resto";
+"split.percentSuffix %@" = "(%@%%)";
+"split.sharesSuffix %d %d" = "(%d/%d partes)";
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "Pagaste todo";

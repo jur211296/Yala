@@ -2012,6 +2012,7 @@
 "bulkEdit.editCount" = "%d Transaktionen bearbeiten";
 "bulkEdit.successMessage" = "Transaktionen erfolgreich aktualisiert";
 "bulkEdit.cannotEditTransferSubcategory" = "Die Unterkategorie von Überweisungen kann nicht geändert werden. Bearbeite jede einzeln.";
+"bulkEdit.cannotEditTransferAccount" = "Das Konto von Überweisungen kann nicht geändert werden. Bearbeite jede einzeln.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "Beträge von Überweisungen zwischen verschiedenen Währungen können nicht gemeinsam bearbeitet werden. Bearbeite sie einzeln, um den Wechselkurs zu erhalten.";
 "bulkEdit.commonTags" = "In allen ausgewählten";
 "bulkEdit.partialTags" = "In einigen ausgewählten";
@@ -2993,7 +2994,7 @@
 "insights.ruleMostExpensiveGroup.considerate" = "%@ macht %d%% der geteilten Ausgaben aus — deine Hauptgruppe";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ nimmt %d%% der geteilten Ausgaben. Dominant.";
 "insights.ruleDominantSharedCategory.normal" = "%@ dominiert deine geteilten Ausgaben (%d%%)";
-"insights.ruleDominantSharedCategory.considerate" = "Die meisten geteilten Ausgaben (%d%%) sind in %@";
+"insights.ruleDominantSharedCategory.considerate" = "Die meisten geteilten Ausgaben (%2$d%%) sind in %1$@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ ist %d%% der geteilten Ausgaben. Esst ihr nur zusammen?";
 "insights.ruleSharedMoM.normal" = "Deine geteilten Ausgaben stiegen um %@ gegenuber dem vorherigen Zeitraum";
 "insights.ruleSharedMoM.considerate" = "Geteilte Ausgaben um %@ gestiegen — pruf ob es Extras gab";
@@ -4381,3 +4382,13 @@
 
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "Zum Anfang";
+
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+"split.totalLabel" = "Gesamt";
+"split.you" = "Du";
+"split.rest" = "Rest";
+"split.percentSuffix %@" = "(%@%%)";
+"split.sharesSuffix %d %d" = "(%d/%d Anteile)";
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "Du hast alles bezahlt";

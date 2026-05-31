@@ -2016,6 +2016,7 @@
 "bulkEdit.editCount" = "%d transacties bewerken";
 "bulkEdit.successMessage" = "Transacties succesvol bijgewerkt";
 "bulkEdit.cannotEditTransferSubcategory" = "Kan de subcategorie van overboekingen niet wijzigen. Bewerk ze afzonderlijk.";
+"bulkEdit.cannotEditTransferAccount" = "Kan de rekening van overboekingen niet wijzigen. Bewerk ze afzonderlijk.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "Bedragen van overboekingen tussen verschillende valuta's kunnen niet in bulk worden bewerkt. Bewerk ze afzonderlijk om de wisselkoers te behouden.";
 "bulkEdit.commonTags" = "In alle geselecteerde";
 "bulkEdit.partialTags" = "In sommige geselecteerde";
@@ -2997,7 +2998,7 @@
 "insights.ruleMostExpensiveGroup.considerate" = "%@ is goed voor %d%% van je gedeelde uitgaven — je belangrijkste groep";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ pakt %d%% van je gedeelde uitgaven. Dominant.";
 "insights.ruleDominantSharedCategory.normal" = "%@ domineert je gedeelde uitgaven (%d%%)";
-"insights.ruleDominantSharedCategory.considerate" = "Het meeste van je gedeelde uitgaven (%d%%) zit in %@";
+"insights.ruleDominantSharedCategory.considerate" = "Het meeste van je gedeelde uitgaven (%2$d%%) zit in %1$@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ is %d%% van je gedeelde uitgaven. Alleen samen eten?";
 "insights.ruleSharedMoM.normal" = "Je gedeelde uitgaven gingen %@ omhoog vs de vorige periode";
 "insights.ruleSharedMoM.considerate" = "Gedeelde uitgaven %@ omhoog — kijk of er extra uitgaven waren";
@@ -4361,3 +4362,13 @@
 
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "Terug naar het begin";
+
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+"split.totalLabel" = "Totaal";
+"split.you" = "Jij";
+"split.rest" = "Rest";
+"split.percentSuffix %@" = "(%@%%)";
+"split.sharesSuffix %d %d" = "(%d/%d delen)";
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "Jij hebt alles betaald";

@@ -1658,6 +1658,20 @@ enum L10n {
         static var sharesYouPay: String { ls("split.sharesYouPay", comment: "") }
         static var sharesOf: String { ls("split.sharesOf", comment: "") }
         static var sharesParts: String { ls("split.sharesParts", comment: "") }
+        // Chip detail labels (renderiza "Tu: X · Resto: Y" debajo del monto en GroupExpenseFormView)
+        static var totalLabel: String { ls("split.totalLabel", comment: "") }
+        static var youLabel: String { ls("split.you", comment: "") }
+        static var restLabel: String { ls("split.rest", comment: "") }
+        /// "Pagaste todo" — chip cuando current user paga pero NO participa en la división.
+        static var youPaidAll: String { ls("split.youPaidAll", comment: "") }
+        /// "(50%)" — suffix percentual del chip-detalle. `pct` ya viene como string trimmed (ej. "50" o "33.3").
+        static func percentSuffix(_ pct: String) -> String {
+            String(format: ls("split.percentSuffix %@", comment: ""), pct)
+        }
+        /// "(1/3 partes)" — suffix de proporciones del chip-detalle.
+        static func sharesSuffix(_ n: Int, _ total: Int) -> String {
+            String(format: ls("split.sharesSuffix %d %d", comment: ""), n, total)
+        }
     }
 
     // MARK: - Groups
@@ -4626,6 +4640,9 @@ enum L10n {
         }
         static var cannotEditTransferAmountCrossCurrency: String {
             ls("bulkEdit.cannotEditTransferAmountCrossCurrency", comment: "")
+        }
+        static var cannotEditTransferAccount: String {
+            ls("bulkEdit.cannotEditTransferAccount", comment: "")
         }
     }
 

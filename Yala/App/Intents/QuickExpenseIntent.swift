@@ -145,10 +145,12 @@ struct ApplePayTransactionIntent: AppIntent {
         let finalNote = merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let effectiveDate = Date.now
 
-        // Guard: no accounts configured yet
+        // Guard: no accounts configured yet (system accounts excluded — only the bridge assigns them)
         let accountCount: Int
         do {
-            accountCount = try context.fetchCount(FetchDescriptor<Account>())
+            accountCount = try context.fetchCount(
+                FetchDescriptor<Account>(predicate: #Predicate<Account> { $0.isSystemAccount == false })
+            )
         } catch {
             #if DEBUG
             print("QuickExpenseIntent: Error fetching account count: \(error)")
@@ -383,10 +385,12 @@ struct SiriNaturalEntryIntent: AppIntent {
 
         let context = container.mainContext
 
-        // Step 4: Guard — at least 1 account configured
+        // Step 4: Guard — at least 1 real account configured (system accounts excluded — only the bridge assigns them)
         let accountCount: Int
         do {
-            accountCount = try context.fetchCount(FetchDescriptor<Account>())
+            accountCount = try context.fetchCount(
+                FetchDescriptor<Account>(predicate: #Predicate<Account> { $0.isSystemAccount == false })
+            )
         } catch {
             #if DEBUG
             print("SiriNaturalEntryIntent: Error fetching account count: \(error)")
@@ -664,7 +668,7 @@ private func findIntentAccount(byCurrency currencyCode: String, context: ModelCo
 
     let descriptor = FetchDescriptor<Account>(
         predicate: #Predicate<Account> { account in
-            account.isArchived == false
+            account.isArchived == false && account.isSystemAccount == false
         }
     )
 

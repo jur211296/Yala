@@ -319,6 +319,7 @@
 // MARK: GroupsOnboarding-keys
 
 "bulkEdit.cannotEditTransferSubcategory" = "Can't change the subcategory of transfers. Edit each one individually.";
+"bulkEdit.cannotEditTransferAccount" = "Can't change the account of transfers. Edit each one individually.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "Can't bulk-edit amounts of cross-currency transfers. Edit each individually to preserve the exchange rate.";
 
 // MARK: B-13 — groups.reconnect.* (added to fallback locale)
@@ -578,3 +579,7 @@
 "groups.sync.errorAcceptShare" = "We couldn't complete joining the group. Try again.";
 "groups.sync.errorMemberSetup" = "You joined, but there was an issue with your identity in the group. Reopen the app.";
 "groups.title" = "Groups";
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+/* (inherits from base locale via iOS fallback) */
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+/* (inherits from base locale via iOS fallback) */

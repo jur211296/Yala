@@ -2016,6 +2016,7 @@
 "bulkEdit.editCount" = "编辑 %d 笔交易";
 "bulkEdit.successMessage" = "交易已成功更新";
 "bulkEdit.cannotEditTransferSubcategory" = "无法更改转账的子分类。请单独编辑每一笔。";
+"bulkEdit.cannotEditTransferAccount" = "无法更改转账的账户。请单独编辑每一笔。";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "无法批量编辑跨币种转账的金额。请单独编辑以保留汇率。";
 "bulkEdit.commonTags" = "在所有所选中";
 "bulkEdit.partialTags" = "在部分所选中";
@@ -2997,7 +2998,7 @@
 "insights.ruleMostExpensiveGroup.considerate" = "%@ 占你共享支出的 %d%% — 是你的主要群组";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ 占了你 %d%% 的共享支出。压倒性。";
 "insights.ruleDominantSharedCategory.normal" = "%@ 主导你的共享支出 (%d%%)";
-"insights.ruleDominantSharedCategory.considerate" = "你的共享支出大部分 (%d%%) 在 %@";
+"insights.ruleDominantSharedCategory.considerate" = "你的共享支出大部分 (%2$d%%) 在 %1$@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ 占你共享支出的 %d%%。只一起吃饭吗?";
 "insights.ruleSharedMoM.normal" = "你的共享支出比上一时段多 %@";
 "insights.ruleSharedMoM.considerate" = "共享支出多 %@ — 看看是否有额外支出";
@@ -4361,3 +4362,13 @@
 
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "返回首页";
+
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+"split.totalLabel" = "总计";
+"split.you" = "你";
+"split.rest" = "其余";
+"split.percentSuffix %@" = "(%@%%)";
+"split.sharesSuffix %d %d" = "(%d/%d 份)";
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "你支付了全部";

@@ -2014,6 +2014,7 @@
 "bulkEdit.editCount" = "Modifier %d transactions";
 "bulkEdit.successMessage" = "Transactions mises à jour avec succès";
 "bulkEdit.cannotEditTransferSubcategory" = "Impossible de modifier la sous-catégorie des virements. Modifiez-les individuellement.";
+"bulkEdit.cannotEditTransferAccount" = "Impossible de modifier le compte des virements. Modifiez-les individuellement.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "Impossible de modifier en masse le montant des virements multi-devises. Modifiez-les individuellement pour préserver le taux de change.";
 "bulkEdit.commonTags" = "Dans toutes les sélectionnées";
 "bulkEdit.partialTags" = "Dans certaines sélectionnées";
@@ -2994,7 +2995,7 @@
 "insights.ruleMostExpensiveGroup.considerate" = "%@ represente %d%% des depenses partagees — votre groupe principal";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ prend %d%% des depenses partagees. Dominant.";
 "insights.ruleDominantSharedCategory.normal" = "%@ domine vos depenses partagees (%d%%)";
-"insights.ruleDominantSharedCategory.considerate" = "La plupart des depenses partagees (%d%%) sont en %@";
+"insights.ruleDominantSharedCategory.considerate" = "La plupart des depenses partagees (%2$d%%) sont en %1$@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ c'est %d%% des depenses partagees. Vous ne mangez qu'ensemble?";
 "insights.ruleSharedMoM.normal" = "Vos depenses partagees ont augmente de %@ vs la periode precedente";
 "insights.ruleSharedMoM.considerate" = "Depenses partagees en hausse de %@ — verifiez s'il y a eu des extras";
@@ -4382,3 +4383,13 @@
 
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "Retour au début";
+
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+"split.totalLabel" = "Total";
+"split.you" = "Toi";
+"split.rest" = "Reste";
+"split.percentSuffix %@" = "(%@%%)";
+"split.sharesSuffix %d %d" = "(%d/%d parts)";
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "Tu as tout payé";

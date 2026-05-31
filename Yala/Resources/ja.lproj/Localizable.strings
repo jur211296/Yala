@@ -2016,6 +2016,7 @@
 "bulkEdit.editCount" = "%d件の取引を編集";
 "bulkEdit.successMessage" = "取引を更新しました";
 "bulkEdit.cannotEditTransferSubcategory" = "送金のサブカテゴリは変更できません。個別に編集してください。";
+"bulkEdit.cannotEditTransferAccount" = "送金の口座は変更できません。個別に編集してください。";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "異なる通貨間の送金額は一括編集できません。為替レートを保つため個別に編集してください。";
 "bulkEdit.commonTags" = "選択中すべてに含まれる";
 "bulkEdit.partialTags" = "一部に含まれる";
@@ -2997,7 +2998,7 @@
 "insights.ruleMostExpensiveGroup.considerate" = "%@はシェア支出の%d%% — メインのグループです";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@がシェア支出の%d%%。圧倒的ですね。";
 "insights.ruleDominantSharedCategory.normal" = "%@がシェア支出の大部分を占めています(%d%%)";
-"insights.ruleDominantSharedCategory.considerate" = "シェア支出の大部分(%d%%)は%@です";
+"insights.ruleDominantSharedCategory.considerate" = "シェア支出の大部分(%2$d%%)は%1$@です";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@がシェア支出の%d%%。一緒に食べてばかり？";
 "insights.ruleSharedMoM.normal" = "前期間と比べてシェア支出が%@増えました";
 "insights.ruleSharedMoM.considerate" = "シェア支出が%@アップ — 臨時の支出がなかったか確認しましょう";
@@ -4361,3 +4362,13 @@
 
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "最初に戻る";
+
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+"split.totalLabel" = "合計";
+"split.you" = "あなた";
+"split.rest" = "残り";
+"split.percentSuffix %@" = "(%@%%)";
+"split.sharesSuffix %d %d" = "(%d/%d 株)";
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "あなたが全額支払いました";

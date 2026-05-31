@@ -2014,6 +2014,7 @@
 "bulkEdit.editCount" = "Modifica %d transazioni";
 "bulkEdit.successMessage" = "Transazioni aggiornate con successo";
 "bulkEdit.cannotEditTransferSubcategory" = "Impossibile modificare la sottocategoria dei trasferimenti. Modificali individualmente.";
+"bulkEdit.cannotEditTransferAccount" = "Impossibile modificare il conto dei trasferimenti. Modificali individualmente.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "Impossibile modificare in blocco l'importo dei trasferimenti multi-valuta. Modificali individualmente per preservare il tasso di cambio.";
 "bulkEdit.commonTags" = "In tutte le selezionate";
 "bulkEdit.partialTags" = "In alcune selezionate";
@@ -2995,7 +2996,7 @@
 "insights.ruleMostExpensiveGroup.considerate" = "%@ rappresenta il %d%% delle spese condivise — il tuo gruppo principale";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ prende il %d%% delle spese condivise. Dominante.";
 "insights.ruleDominantSharedCategory.normal" = "%@ domina le tue spese condivise (%d%%)";
-"insights.ruleDominantSharedCategory.considerate" = "La maggior parte delle spese condivise (%d%%) sono in %@";
+"insights.ruleDominantSharedCategory.considerate" = "La maggior parte delle spese condivise (%2$d%%) sono in %1$@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ e il %d%% delle spese condivise. Mangiate solo insieme?";
 "insights.ruleSharedMoM.normal" = "Le tue spese condivise sono aumentate del %@ rispetto al periodo precedente";
 "insights.ruleSharedMoM.considerate" = "Spese condivise in aumento del %@ — controlla se ci sono stati extra";
@@ -4359,3 +4360,13 @@
 
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "Torna all'inizio";
+
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+"split.totalLabel" = "Totale";
+"split.you" = "Tu";
+"split.rest" = "Resto";
+"split.percentSuffix %@" = "(%@%%)";
+"split.sharesSuffix %d %d" = "(%d/%d quote)";
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "Hai pagato tutto";

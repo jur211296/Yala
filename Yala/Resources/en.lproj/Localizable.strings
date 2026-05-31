@@ -2016,6 +2016,7 @@
 "bulkEdit.editCount" = "Edit %d transactions";
 "bulkEdit.successMessage" = "Transactions updated successfully";
 "bulkEdit.cannotEditTransferSubcategory" = "Can't change the subcategory of transfers. Edit each one individually.";
+"bulkEdit.cannotEditTransferAccount" = "Can't change the account of transfers. Edit each one individually.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "Can't bulk-edit amounts of cross-currency transfers. Edit each individually to preserve the exchange rate.";
 "bulkEdit.commonTags" = "In all selected";
 "bulkEdit.partialTags" = "In some selected";
@@ -3044,7 +3045,7 @@
 "insights.ruleMostExpensiveGroup.considerate" = "%@ accounts for %d%% of your shared spending — your main group";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ takes %d%% of your shared spending. Dominant.";
 "insights.ruleDominantSharedCategory.normal" = "%@ dominates your shared expenses (%d%%)";
-"insights.ruleDominantSharedCategory.considerate" = "Most of your shared expenses (%d%%) are in %@";
+"insights.ruleDominantSharedCategory.considerate" = "Most of your shared expenses (%2$d%%) are in %1$@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ is %d%% of your shared spending. Only eat together?";
 "insights.ruleSharedMoM.normal" = "Your shared spending went up %@ vs the previous period";
 "insights.ruleSharedMoM.considerate" = "Shared spending up %@ — check if there were extra expenses";
@@ -4387,3 +4388,13 @@
 
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "Back to start";
+
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+"split.totalLabel" = "Total";
+"split.you" = "You";
+"split.rest" = "Rest";
+"split.percentSuffix %@" = "(%@%%)";
+"split.sharesSuffix %d %d" = "(%d/%d shares)";
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "You paid all";

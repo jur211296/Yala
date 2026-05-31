@@ -2016,6 +2016,7 @@
 "bulkEdit.editCount" = "Edytuj %d transakcji";
 "bulkEdit.successMessage" = "Transakcje zaktualizowane pomyślnie";
 "bulkEdit.cannotEditTransferSubcategory" = "Nie można zmienić podkategorii przelewów. Edytuj je osobno.";
+"bulkEdit.cannotEditTransferAccount" = "Nie można zmienić konta przelewów. Edytuj je osobno.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "Nie można zbiorczo edytować kwot przelewów między różnymi walutami. Edytuj każdy osobno, aby zachować kurs wymiany.";
 "bulkEdit.commonTags" = "We wszystkich zaznaczonych";
 "bulkEdit.partialTags" = "W niektórych zaznaczonych";
@@ -2997,7 +2998,7 @@
 "insights.ruleMostExpensiveGroup.considerate" = "%@ stanowi %d%% twoich wydatków współdzielonych — twoja główna grupa";
 "insights.ruleMostExpensiveGroup.sarcastic" = "%@ pochłania %d%% wydatków współdzielonych. Dominujące.";
 "insights.ruleDominantSharedCategory.normal" = "%@ dominuje twoje wydatki współdzielone (%d%%)";
-"insights.ruleDominantSharedCategory.considerate" = "Większość twoich wydatków współdzielonych (%d%%) jest w %@";
+"insights.ruleDominantSharedCategory.considerate" = "Większość twoich wydatków współdzielonych (%2$d%%) jest w %1$@";
 "insights.ruleDominantSharedCategory.sarcastic" = "%@ to %d%% wydatków współdzielonych. Tylko jecie razem?";
 "insights.ruleSharedMoM.normal" = "Wydatki współdzielone wzrosły o %@ vs poprzedni okres";
 "insights.ruleSharedMoM.considerate" = "Wydatki współdzielone wyższe o %@ — sprawdź, czy nie było dodatkowych wydatków";
@@ -4361,3 +4362,13 @@
 
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "Powrót do początku";
+
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+"split.totalLabel" = "Razem";
+"split.you" = "Ty";
+"split.rest" = "Reszta";
+"split.percentSuffix %@" = "(%@%%)";
+"split.sharesSuffix %d %d" = "(%d/%d części)";
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "Zapłaciłeś wszystko";
