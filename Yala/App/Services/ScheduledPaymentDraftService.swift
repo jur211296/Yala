@@ -108,6 +108,11 @@ struct ScheduledPaymentDraftService {
 
         do {
             let drafts = try context.fetch(descriptor)
+            // Un draft PENDING (cualquier fecha) ya cubre la próxima ocurrencia — no crear otro.
+            // Cubre el draft adelantado (fechado hoy, no en nextDueDate) que de otro modo dejaría
+            // que processDuePayments creara un segundo draft al llegar la fecha → doble cobro.
+            if drafts.contains(where: { $0.statusRaw == "pending" }) { return true }
+            // Los APPROVED se filtran por fecha: uno viejo no debe bloquear una ocurrencia nueva.
             return drafts.contains { draft in
                 guard let draftDate = draft.date else { return false }
                 return calendar.isDate(draftDate, inSameDayAs: date)
@@ -329,10 +334,10 @@ struct ScheduledPaymentDraftService {
         draft.date = Calendar.current.startOfDay(for: Date.now)
         context.insert(draft)
 
-        // Update payment state (caller is responsible for saving)
-        payment.lastPaidDate = Date.now
-        advanceToNextDueDate(payment: payment)
-
+        // Do NOT advance nextDueDate / set lastPaidDate here: same contract as
+        // processDuePayments. The advance happens exactly once when the draft is
+        // approved (handleDraftApproved). Advancing here too would double-advance
+        // and skip an occurrence for an early-paid payment.
         return draft
     }
 

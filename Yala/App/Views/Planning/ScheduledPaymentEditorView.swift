@@ -1093,6 +1093,7 @@ struct ScheduledPaymentEditorView: View {
         notifyDaysBefore = payment.notifyDaysBefore
         isActive = payment.isActive
         isVariableAmount = payment.isVariableAmount
+        selectedNeed = payment.needOverride.flatMap { SubcategoryNeed(rawValue: $0) }
     }
 
     private func savePayment() {
