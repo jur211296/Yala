@@ -565,28 +565,20 @@ final class FullFinancialContextBuilder {
         calendar: Calendar
     ) -> [FullFinancialContext.BudgetEntry] {
         let active = allBudgets.filter { $0.isActive }
-        // Pre-index expense tx by category ID — single O(n) pass, then O(1) lookup per budget.
-        var byCategory: [PersistentIdentifier: [TransactionItem]] = [:]
-        for tx in allTx where tx.category?.isIncome == false {
-            guard let id = tx.category?.persistentModelID else { continue }
-            byCategory[id, default: []].append(tx)
-        }
         return active.map { budget in
             let interval = InsightsCalculator.currentBudgetInterval(for: budget)
-            let categoryTx: [TransactionItem] = {
-                guard let id = budget.category?.persistentModelID else { return [] }
-                return byCategory[id] ?? []
-            }()
-            let budgetTx = categoryTx.filter { interval.contains($0.date) }
-            let spent = budgetTx.reduce(0.0) { sum, tx in
-                let converted = converter.convert(
-                    Decimal(abs(tx.amount)),
-                    from: tx.currencyCode,
-                    to: budget.currencyCode,
-                    on: tx.date
+            // Canonical spending path: filtra por resolvedSubcategoryIDs/AccountIDs/
+            // TagIDs/natures + includeSharedExpenses y convierte con TC actual
+            // (convertWithLatestRate). El sistema moderno NO setea `budget.category`
+            // (relación legacy), así que filtrar por ella daría spent=0 catastrófico.
+            let spent = safeDouble(
+                BudgetsViewModel.calculateSpending(
+                    budget: budget,
+                    transactions: allTx,
+                    interval: interval,
+                    converter: converter
                 )
-                return sum + safeDouble(NSDecimalNumber(decimal: converted).doubleValue)
-            }
+            )
             let limit = budget.limitAmount
             let usagePct: Double? = limit > 0 ? (spent / limit) * 100 : nil
             let daysLeft = max(0, calendar.dateComponents([.day], from: now, to: interval.end).day ?? 0)

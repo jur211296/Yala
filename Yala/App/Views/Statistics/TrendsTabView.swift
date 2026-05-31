@@ -169,6 +169,10 @@ struct TrendsTabView: View {
         .onChange(of: trendsViewModel.selectedSubcategories)   { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.selectedTags)            { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.selectedNeeds)           { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedCurrencies)      { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.amountCondition)         { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.searchText)              { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.isExcludeMode)           { scheduleTrendsRecalc() }
         .onChange(of: trendsViewModel.selectedMetric)          { scheduleTrendsRecalc() }
         .onChange(of: sessionState.comparisonMode)             { scheduleTrendsRecalc() }
         .onChange(of: sessionState.selectedTransactionNatures) { scheduleTrendsRecalc() }

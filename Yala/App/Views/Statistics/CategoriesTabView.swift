@@ -208,16 +208,13 @@ struct CategoriesTabView: View {
         .onChange(of: viewModel.sankeyInputKey) { recomputeSankey() }
         .onChange(of: allTransactions.count) { recomputeSankey() }
         .onChange(of: scheduledPaymentsSignature) { recomputeSankey() }
-        .onChange(of: viewModel.detailPeriod) { calculateData() }
-        .onChange(of: viewModel.selectedAccounts) { calculateData() }
-        .onChange(of: viewModel.selectedCategories) { calculateData() }
-        .onChange(of: viewModel.selectedSubcategories) { calculateData() }
-        .onChange(of: viewModel.selectedTags) { calculateData() }
+        // Filtros del VM que disparan recálculo, extraídos a un ViewModifier para no exceder el
+        // presupuesto del type-checker de Swift (cadena larga de .onChange en este body).
+        .modifier(CategoriesFilterRecalcObservers(viewModel: viewModel, onRecalc: { calculateData() }))
         .onChange(of: viewModel.selectedNeeds) {
             calculateData()
             syncNeedFilterToSelection()
         }
-        .onChange(of: viewModel.selectedTransactionNatures) { calculateData() }
         .onChange(of: allSubcategories) { calculateData() }
         .onChange(of: selectedNeed) {
             syncSelectionToNeedFilter()
@@ -1927,5 +1924,26 @@ private struct SubcategoryRowView: View {
 
     private func formattedPercentage(_ value: Double) -> String {
         Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+    }
+}
+
+/// Encapsula los onChange de filtros del VM que disparan recálculo, para mantener el body de
+/// CategoriesTabView dentro del presupuesto del type-checker de Swift (cadena larga de modifiers).
+private struct CategoriesFilterRecalcObservers: ViewModifier {
+    @Bindable var viewModel: StatisticsViewModel
+    let onRecalc: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: viewModel.detailPeriod) { onRecalc() }
+            .onChange(of: viewModel.selectedAccounts) { onRecalc() }
+            .onChange(of: viewModel.selectedCategories) { onRecalc() }
+            .onChange(of: viewModel.selectedSubcategories) { onRecalc() }
+            .onChange(of: viewModel.selectedTags) { onRecalc() }
+            .onChange(of: viewModel.selectedCurrencies) { onRecalc() }
+            .onChange(of: viewModel.amountCondition) { onRecalc() }
+            .onChange(of: viewModel.searchText) { onRecalc() }
+            .onChange(of: viewModel.isExcludeMode) { onRecalc() }
+            .onChange(of: viewModel.selectedTransactionNatures) { onRecalc() }
     }
 }
