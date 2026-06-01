@@ -509,6 +509,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 .frame(width: DS.FormRow.iconWidth)
 
             TextField(L10n.Filters.noteContains, text: $localSearchText)
+                .accessibilityIdentifier("filters_note_field")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
