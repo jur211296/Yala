@@ -11,14 +11,19 @@ import SwiftData
 
 /// Perfil de datos a sembrar (controla volumen / contenido).
 enum DevSeedProfile: String {
+    case minimal
     case realista
     case pesado
 
-    /// Años de historial de transacciones a generar (escala el volumen).
-    var yearsBack: Int {
+    /// Días de historial de transacciones a generar (escala el volumen).
+    /// `minimal` (~1 semana) es el default para XCUITests: seed rápido que no
+    /// bloquea el bootstrap ni dispara el watchdog. `realista`/`pesado` para
+    /// escenarios ricos / performance (aceptan un arranque más lento).
+    var daysBack: Int {
         switch self {
-        case .realista: return 2
-        case .pesado: return 10
+        case .minimal: return 7
+        case .realista: return 730
+        case .pesado: return 3650
         }
     }
 }
@@ -41,7 +46,7 @@ final class DevSeedService {
 
         let calendar = Calendar.current
         let endDate = Date.now
-        guard let startDate = calendar.date(byAdding: .year, value: -profile.yearsBack, to: endDate) else {
+        guard let startDate = calendar.date(byAdding: .day, value: -profile.daysBack, to: endDate) else {
             isSeeding = false
             return
         }
