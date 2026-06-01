@@ -14,11 +14,11 @@ jobs:
       - name: Validar coverage-index (ratchet anti-drift)
         run: python3 qa/validate-coverage.py
 
-  # Tests unitarios / pure-logic (YalaTests). Red dura de "nada se rompe" en lógica.
-  # NOTA: el runner macOS + Xcode 26.4 debe confirmarse en el PRIMER push (no
-  # se puede validar localmente). Si el label de runner o la versión de Xcode no
-  # coinciden con las imágenes disponibles de GitHub, ajustar aquí.
-  unit-tests:
+  # Red dura de "nada se rompe": YalaTests (pure-logic) + YalaUITests (regresión UI).
+  # NOTA: el runner macOS + Xcode 26.4 debe confirmarse en el PRIMER push (no se
+  # puede validar localmente). Si el label de runner o Xcode no coinciden con las
+  # imágenes de GitHub, ajustar aquí. Parallel=NO + retry para reducir flake/clones.
+  tests:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -26,12 +26,14 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '26.4'
-      - name: Ejecutar YalaTests (pure-logic)
+      - name: Ejecutar tests (YalaTests + YalaUITests)
         run: |
           xcodebuild test \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
             -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
             -only-testing:YalaTests \
-            -parallel-testing-enabled YES \
+            -only-testing:YalaUITests \
+            -parallel-testing-enabled NO \
+            -retry-tests-on-failure \
             -quiet

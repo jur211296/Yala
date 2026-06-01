@@ -81,6 +81,14 @@ Detalles completos en `$VAULT/planning/TESTING-STRATEGY.md`. Reglas mínimas:
 - NUNCA declarar fix completo si un test falla. "Preexistente" no es excusa: arreglar o registrar en Lista Negra con plan.
 - Ejecutar con `-parallel-testing-enabled YES` (recomendado, -30% tiempo). `NO` solo como fallback si aparece race en singleton no cubierto.
 
+### XCUITest (regresión UI determinista) — `YalaUITests`
+- Scheme **Yala Dev**. Lanzar con `XCUIApplication().launchForUITest(...)` (helper en `YalaUITests/Support/`).
+- Launch args (`#if DEBUG`, `UITestHooks`): `-uitest` (modo + store local sin CloudKit), `-uitest-reset`, `-uitest-skip-onboarding`, `-uitest-pro`, `-uitest-seed <minimal|realista|pesado>`.
+- **Seed `minimal` por default** (rápido); `realista`/`pesado` solo si el test necesita volumen (arranque más lento, riesgo watchdog).
+- Esperar **`waitForUITestReady()`** (señal `uitest_ready`) antes de interactuar — NUNCA `sleep`.
+- Targetear por `accessibilityIdentifier` (`feature_element` / `feature_row_<claveEstable>`), NUNCA texto localizado ni coordenadas.
+- Al cubrir un área `deterministic`: poner `coverage: "xcuitest:<File#test>"` en `qa/coverage-index.json` y bajar `_meta.backlogBaseline`.
+
 ### Audit markers
 - `// A11Y-DT:` justifica font size hardcodeado (Dynamic Type).
 - `// A11Y-DM:` justifica color hardcodeado (Dark Mode).
