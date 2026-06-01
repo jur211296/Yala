@@ -100,6 +100,7 @@ struct SaveAsFavoriteSheet: View {
                     ) {
                         saveFavorite()
                     }
+                    .accessibilityIdentifier("save_favorite_save_button")
                     .padding(.top, DS.Spacing.md)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
@@ -151,6 +152,7 @@ struct SaveAsFavoriteSheet: View {
 
                 TextField(L10n.Favorites.namePlaceholder, text: $name)
                     .focused($isNameFocused)
+                    .accessibilityIdentifier("save_favorite_name_field")
             }
             .padding()
         }

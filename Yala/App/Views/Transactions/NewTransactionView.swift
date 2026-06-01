@@ -814,6 +814,7 @@ struct NewTransactionView: View {
             ) {
                 viewModel.showSaveAsFavoriteSheet = true
             }
+            .accessibilityIdentifier("new_transaction_favorite_action")
 
             // Save as recurring
             quickActionButton(

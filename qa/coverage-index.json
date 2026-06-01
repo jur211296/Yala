@@ -12,7 +12,7 @@
   "_meta": {
     "version": 1,
     "generatedBy": "F0 fan-out merge (5 zonas) — 2026-06-01",
-    "backlogBaseline": 41,
+    "backlogBaseline": 40,
     "ratchetNote": "backlogBaseline = nº de areas 'deterministic' SIN cobertura xcuitest. El validador FALLA si el backlog crece (anti-drift). Baja este numero al cubrir un area con XCUITest.",
     "classifications": [
       "deterministic",
@@ -30,7 +30,7 @@
       "deterministic": 47,
       "agentic": 20,
       "manual": 26,
-      "deterministicSinXCUITest": 41
+      "deterministicSinXCUITest": 40
     }
   },
   "areas": [
@@ -1192,7 +1192,7 @@
         "5.30"
       ],
       "classification": "deterministic",
-      "coverage": "none",
+      "coverage": "xcuitest:YalaUITests/QuickActionsFavoritesUITests",
       "owner": "",
       "lastVerified": "2026-06-01"
     },
