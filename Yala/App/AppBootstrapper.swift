@@ -78,13 +78,18 @@ final class AppBootstrapper {
 
         let context = container.mainContext
 
+        let uiTestActive = UITestHooks.isActive
+        #if DEBUG
+        if uiTestActive { applyUITestHooksEarly(context: context) }
+        #endif
+
         // 0.0. CRITICAL: One-shot wipe de Cash Flow (bug sync 1.2.6 — ver CashFlowWipeService)
         //      Debe ir PRIMERO para minimizar ventana con outbox CloudKit corrupta en juego.
         //      Pérdida acotada a config local de Cash Flow (feature Pro nueva que nunca sincronizó).
         CashFlowWipeService.wipeCashFlowDataIfNeeded(in: context)
 
         // 0. Sync preferences from iCloud (must be FIRST — other services read these)
-        PreferenceSyncService.shared.bootstrap()
+        if !uiTestActive { PreferenceSyncService.shared.bootstrap() }
 
         // 0.1. Migración one-shot del override de idioma (UserDefaults.standard → App Group)
         //      Idempotente vía sentinel; sólo corre la primera vez post-update.
@@ -117,10 +122,10 @@ final class AppBootstrapper {
         await loadSubscriptionStatus()
 
         // 4. Process due scheduled payments (create inbox drafts)
-        processDueScheduledPayments(context: context)
+        if !uiTestActive { processDueScheduledPayments(context: context) }
 
         // 5. Check for pending inbox drafts and notify user
-        checkForPendingInboxDrafts(context: context)
+        if !uiTestActive { checkForPendingInboxDrafts(context: context) }
 
         // 6. Seed default notifications for existing users
         seedDefaultNotifications(context: context)
@@ -202,7 +207,7 @@ final class AppBootstrapper {
 
         // 15. Initialize CKSyncEngine for shared group data (separate groups store)
         SplitSyncManager.shared.setContext(context)
-        SplitSyncManager.shared.initialize()
+        if !uiTestActive { SplitSyncManager.shared.initialize() }
 
         // 16. Initialize Group Services (GC-03)
         GroupService.shared.setContext(context)
@@ -291,6 +296,10 @@ final class AppBootstrapper {
 
         isInitialized = true
 
+        #if DEBUG
+        if uiTestActive { await applyUITestSeed(context: context) }
+        #endif
+
         // 19. Process deferred invite link (cold launch via universal link)
         if let pendingShareURL = deferredInviteShareURL {
             deferredInviteShareURL = nil
@@ -303,6 +312,37 @@ final class AppBootstrapper {
         // arrived during pre-bootstrap, biometric lock, or mid-onboarding.
         RouterEntryGate.shared.drainDeferredBuffer()
     }
+
+    #if DEBUG
+    // MARK: - UI Test Hooks
+
+    /// Aplicado al inicio del bootstrap cuando `-uitest`: reset / Pro / skip-onboarding.
+    /// Orden: reset (wipe) primero; skip-onboarding re-setea sus flags tras el wipe.
+    private func applyUITestHooksEarly(context: ModelContext) {
+        if UITestHooks.shouldReset {
+            do {
+                try DataWipeService.wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: false)
+            } catch {
+                print("UITestHooks: reset error: \(error)")
+            }
+        }
+        if UITestHooks.forcePro, !StoreKitManager.shared.devForceProTier {
+            StoreKitManager.shared.toggleDevProTier()
+        }
+        if UITestHooks.skipOnboarding {
+            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+            UserDefaults.standard.set(true, forKey: "hasShownWelcomeChooser")
+        }
+    }
+
+    /// Seed de datos UI-test al final del bootstrap + señal `uitest_ready`.
+    private func applyUITestSeed(context: ModelContext) async {
+        defer { UITestHooks.shared.markReady() }
+        guard let raw = UITestHooks.seedProfile else { return }
+        let profile = DevSeedProfile(rawValue: raw) ?? .realista
+        await DevSeedService().seed(in: context, profile: profile)
+    }
+    #endif
 
     // MARK: - Exchange Rate Cache Invalidation
 

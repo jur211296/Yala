@@ -9,6 +9,20 @@
 import Foundation
 import SwiftData
 
+/// Perfil de datos a sembrar (controla volumen / contenido).
+enum DevSeedProfile: String {
+    case realista
+    case pesado
+
+    /// Años de historial de transacciones a generar (escala el volumen).
+    var yearsBack: Int {
+        switch self {
+        case .realista: return 2
+        case .pesado: return 10
+        }
+    }
+}
+
 @MainActor @Observable
 final class DevSeedService {
 
@@ -20,14 +34,14 @@ final class DevSeedService {
 
     // MARK: - Seed
 
-    func seed(in context: ModelContext) async {
+    func seed(in context: ModelContext, profile: DevSeedProfile = .realista) async {
         guard !isSeeding else { return }
         isSeeding = true
         progress = 0
 
         let calendar = Calendar.current
         let endDate = Date.now
-        guard let startDate = calendar.date(byAdding: .year, value: -2, to: endDate) else {
+        guard let startDate = calendar.date(byAdding: .year, value: -profile.yearsBack, to: endDate) else {
             isSeeding = false
             return
         }

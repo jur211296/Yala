@@ -145,6 +145,17 @@ enum SwiftDataConfiguration {
         return false
     }()
 
+    /// UI-testing seam (mirror de `isRunningTests`). En release siempre false.
+    /// Fuerza store local dedicado sin CloudKit para aislar los XCUITests del
+    /// CloudKit del Apple ID (espejo del bypass de tests unitarios).
+    static let isUITesting: Bool = {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-uitest")
+        #else
+        return false
+        #endif
+    }()
+
     // MARK: - Container CloudKit State
 
     private static let containerCloudKitKey = "containerCreatedWithCloudKit"
@@ -164,6 +175,9 @@ enum SwiftDataConfiguration {
         if isRunningTests {
             return ModelConfiguration("YalaPersonal", schema: personalSchema, isStoredInMemoryOnly: true)
         }
+        if isUITesting {
+            return ModelConfiguration("YalaModel-UITest", schema: personalSchema, isStoredInMemoryOnly: false)
+        }
         if isICloudAvailable() {
             return ModelConfiguration(
                 databaseName,
@@ -178,6 +192,9 @@ enum SwiftDataConfiguration {
     static var groupsConfiguration: ModelConfiguration {
         if isRunningTests {
             return ModelConfiguration("YalaGroups", schema: groupsSchema, isStoredInMemoryOnly: true)
+        }
+        if isUITesting {
+            return ModelConfiguration("YalaGroups-UITest", schema: groupsSchema, isStoredInMemoryOnly: false)
         }
         return ModelConfiguration(groupsDatabaseName, schema: groupsSchema)
     }

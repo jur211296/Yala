@@ -93,6 +93,7 @@ struct ContentView: View {
                     .environment(SessionState.shared)
                     .modifier(TagCatalogProvider())
                     .id(languageVersion) // re-render on .languageDidChange
+                    .accessibilityIdentifier(UITestHooks.shared.rootIdentifier)
             } else {
                 theme.background
                     .ignoresSafeArea()
