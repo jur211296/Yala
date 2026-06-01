@@ -420,6 +420,7 @@ struct DetailContainerView: View {
                         .foregroundStyle(.thToolbarIcon)
                 }
                 .accessibilityLabel(L10n.Accessibility.filters)
+                .accessibilityIdentifier("filters_toolbar_button")
                 .overlay(alignment: .topTrailing) {
                     let showIndicator = (selectedTab == .records && recordsViewModel.activeFilterCount > 0) ||
                                        (selectedTab == .trends && trendsViewModel.activeFilterCount > 0) ||

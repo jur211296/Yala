@@ -75,6 +75,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                             Text(L10n.Filters.excludeMode).tag(true)
                         }
                         .pickerStyle(.segmented)
+                        .accessibilityIdentifier("filters_include_exclude_picker")
 
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: DS.Spacing.none) {
@@ -160,6 +161,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                         dismiss()
                     }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("filters_apply_button")
                 }
             }
         }
