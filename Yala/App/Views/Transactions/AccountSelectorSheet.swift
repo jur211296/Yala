@@ -145,6 +145,7 @@ struct AccountSelectorRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("account_selector_row_\(account.name)")
         .accessibilityLabel(L10n.Accessibility.accountRow(account.name, account.currencyCode))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

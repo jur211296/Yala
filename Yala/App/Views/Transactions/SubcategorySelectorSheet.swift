@@ -204,6 +204,7 @@ struct SubcategoryGridItem: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("subcategory_selector_row_\(subcategory.name)")
         .accessibilityLabel(subcategory.name)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

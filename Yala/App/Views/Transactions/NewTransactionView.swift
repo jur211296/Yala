@@ -987,6 +987,7 @@ struct NewTransactionView: View {
                         dismissKeyboard()
                         viewModel.showAccountSelector = true
                     }
+                    .accessibilityIdentifier("new_transaction_account_chip")
                 }
 
                 // Subcategory chip (not for transfers) - uses category color when selected
@@ -1000,6 +1001,7 @@ struct NewTransactionView: View {
                         dismissKeyboard()
                         viewModel.showSubcategorySelector = true
                     }
+                    .accessibilityIdentifier("new_transaction_subcategory_chip")
                 }
 
                 // Tags - individual chip per tag or default chip (not for transfers)

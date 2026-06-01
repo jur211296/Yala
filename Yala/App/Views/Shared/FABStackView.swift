@@ -203,6 +203,7 @@ struct FABStackView: View {
                 dismissMenu()
                 onManualTap()
             }
+            .accessibilityIdentifier("fab_manual")
         }
         .transition(Self.fabScaleTransition)
     }
