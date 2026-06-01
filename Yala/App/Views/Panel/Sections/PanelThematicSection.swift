@@ -38,6 +38,7 @@ struct PanelThematicSection: View {
                 content: { contentView(widgets: widgets) },
                 footer: { footerView() }
             )
+            .accessibilityIdentifier("panel_section_\(kind.rawValue)")
         }
     }
 

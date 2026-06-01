@@ -179,6 +179,7 @@ struct PanelSectionsConfigView: View {
             }
         }
         .accessibilityLabel(L10n.Accessibility.toggleSection(kind.localizedTitle))
+        .accessibilityIdentifier("panel_section_toggle_\(kind.rawValue)")
     }
 
     // MARK: - Reorder Sub-Sheet (List + .onMove, medium detent)
