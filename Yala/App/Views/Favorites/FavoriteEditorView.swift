@@ -230,6 +230,7 @@ struct FavoriteEditorView: View {
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
+                .accessibilityIdentifier("favorite_name_field")
                 .focused($isNameFieldFocused)
                 .padding(.horizontal, DS.Spacing.xxxxl)
                 .tint(Color.primary)

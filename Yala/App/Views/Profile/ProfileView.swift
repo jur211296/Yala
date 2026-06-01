@@ -443,6 +443,7 @@ struct ProfileView: View {
                 profileRow(
                     icon: "star.fill", title: L10n.Settings.favorites, iconColor: .yellow,
                     destination: .favorites)
+                    .accessibilityIdentifier("profile_favorites")
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
