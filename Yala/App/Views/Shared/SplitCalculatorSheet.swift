@@ -162,6 +162,7 @@ struct SplitCalculatorSheet: View {
                     }
                     .disabled(calculatedResult == nil)
                     .accessibilityHint(calculatedResult == nil ? L10n.Accessibility.completeCalculation : "")
+                    .accessibilityIdentifier("split_calc_use_button")
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.lg)
@@ -311,6 +312,7 @@ struct SplitCalculatorSheet: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("split_calc_preset_\(value)")
             }
         }
     }
@@ -389,6 +391,7 @@ struct SplitCalculatorSheet: View {
             Text("\(currencySymbol.map { "\($0) " } ?? "")\(appPreferences.number(amount, forceFullPrecision: true))")
                 .font(DS.Typography.title2)
                 .foregroundStyle(Color.hotPink)
+                .accessibilityIdentifier("split_calc_result")
         }
         .padding(DS.Spacing.md)
         .background(Color.hotPink.opacity(0.08))

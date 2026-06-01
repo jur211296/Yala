@@ -608,6 +608,7 @@ struct NewTransactionView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.top, DS.Spacing.sm)
+                .accessibilityIdentifier("new_transaction_split_chip")
             }
 
             // Category chip + Nature chip (visible when subcategory is selected, not for transfers)
@@ -805,6 +806,7 @@ struct NewTransactionView: View {
                 ) {
                     viewModel.showSplitCalculator = true
                 }
+                .accessibilityIdentifier("new_transaction_split_action")
             }
 
             // Save as favorite
