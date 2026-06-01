@@ -1,0 +1,37 @@
+name: QA
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # Barato y rápido: valida el SSOT de cobertura + el ratchet anti-drift.
+  # Corre en Linux (solo necesita python3). Bloquea merge si el index regresa.
+  coverage-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar coverage-index (ratchet anti-drift)
+        run: python3 qa/validate-coverage.py
+
+  # Tests unitarios / pure-logic (YalaTests). Red dura de "nada se rompe" en lógica.
+  # NOTA: el runner macOS + Xcode 26.4 debe confirmarse en el PRIMER push (no
+  # se puede validar localmente). Si el label de runner o la versión de Xcode no
+  # coinciden con las imágenes disponibles de GitHub, ajustar aquí.
+  unit-tests:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Seleccionar Xcode 26.4
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.4'
+      - name: Ejecutar YalaTests (pure-logic)
+        run: |
+          xcodebuild test \
+            -scheme "Yala Dev" \
+            -project Yala.xcodeproj \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -only-testing:YalaTests \
+            -parallel-testing-enabled YES \
+            -quiet

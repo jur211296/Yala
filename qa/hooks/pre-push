@@ -1,0 +1,16 @@
+#!/bin/bash
+# git pre-push hook — bloquea el push si el coverage-index no valida (ratchet anti-drift).
+# Cubre TODOS los push (incluido el auto-push del Stop hook de Claude), no solo los del agente.
+# Instalar: bash qa/hooks/install.sh
+#
+# F4 extenderá este hook para correr también los XCUITests del slice.
+ROOT="$(git rev-parse --show-toplevel)"
+echo "[pre-push] Validando coverage-index (ratchet anti-drift)..."
+if ! python3 "$ROOT/qa/validate-coverage.py"; then
+  echo ""
+  echo "[pre-push] BLOQUEADO: coverage-index inválido o el ratchet detectó regresión."
+  echo "[pre-push] Corrige el índice (qa/coverage-index.json) antes de pushear."
+  exit 1
+fi
+echo "[pre-push] OK"
+exit 0
