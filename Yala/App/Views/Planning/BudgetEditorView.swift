@@ -193,6 +193,7 @@ struct BudgetEditorView: View {
                     )
                     .textContentType(.name)
                     .focused($isNameFieldFocused)
+                    .accessibilityIdentifier("budget_name_field")
                 }
                 .padding()
 
@@ -206,6 +207,7 @@ struct BudgetEditorView: View {
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                         TextField("0.00", text: $limitAmount)
+                            .accessibilityIdentifier("budget_amount_field")
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .font(.system(size: scaledAmountSize, weight: .bold))

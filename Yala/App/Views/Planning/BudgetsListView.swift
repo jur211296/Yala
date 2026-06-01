@@ -227,6 +227,7 @@ struct BudgetsListView: View {
                 .buttonStyle(.plain)
                 .dsFloatingShadow()
                 .accessibilityLabel(L10n.Accessibility.newBudget)
+                .accessibilityIdentifier("budgets_create_fab")
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
