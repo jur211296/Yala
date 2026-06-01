@@ -253,6 +253,7 @@ struct SubcategoryDetailView: View {
                         TextField(L10n.Subcategory.namePlaceholder, text: $name)
                             .textContentType(.name)
                             .focused($isNameFieldFocused)
+                            .accessibilityIdentifier("subcategory_name_field")
                     }
                     .padding()
 

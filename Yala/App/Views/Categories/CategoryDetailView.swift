@@ -237,6 +237,7 @@ struct CategoryDetailView: View {
                         TextField(L10n.Category.namePlaceholder, text: $viewModel.name)
                             .textContentType(.name)
                             .focused($isNameFieldFocused)
+                            .accessibilityIdentifier("category_name_field")
                     }
                     .padding()
 
@@ -373,6 +374,7 @@ struct CategoryDetailView: View {
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.FormRow.paddingV)
                     }
+                    .accessibilityIdentifier("category_add_subcategory")
                 }
                 .background(
                     RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)

@@ -54,6 +54,7 @@ struct CategoriesSettingsListView: View {
                 YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                     viewModel.createAndOpenNewCategory()
                 }
+                .accessibilityIdentifier("categories_add_button")
             }
         }
         .navigationDestination(isPresented: $viewModel.isNavigatingToNewCategory) {
@@ -144,6 +145,7 @@ struct CategoriesSettingsListView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("categories_row_\(category.name)")
                         .padding(.horizontal, viewModel.isEditing ? DS.Spacing.sm : DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
                     }
@@ -195,6 +197,7 @@ struct CategoriesSettingsListView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("categories_row_\(category.name)")
                         .padding(.horizontal, viewModel.isEditing ? DS.Spacing.sm : DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
                     }
