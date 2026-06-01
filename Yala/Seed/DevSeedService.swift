@@ -14,18 +14,21 @@ enum DevSeedProfile: String {
     case minimal
     case realista
     case pesado
+    case grupos
 
     /// Días de historial de transacciones a generar (escala el volumen).
-    /// `minimal` (~1 semana) es el default para XCUITests: seed rápido que no
-    /// bloquea el bootstrap ni dispara el watchdog. `realista`/`pesado` para
-    /// escenarios ricos / performance (aceptan un arranque más lento).
+    /// `minimal`/`grupos` (~1 semana) son rápidos para XCUITests. `realista`/`pesado`
+    /// para escenarios ricos / performance (arranque más lento, riesgo watchdog).
     var daysBack: Int {
         switch self {
-        case .minimal: return 7
+        case .minimal, .grupos: return 7
         case .realista: return 730
         case .pesado: return 3650
         }
     }
+
+    /// Si además siembra un grupo de gastos compartidos (DevSeedGroups).
+    var seedsGroups: Bool { self == .grupos }
 }
 
 @MainActor @Observable
@@ -127,6 +130,12 @@ final class DevSeedService {
             subcategoryLookup: subcategoryLookup,
             in: context
         )
+
+        // Step 10: Grupos (perfil .grupos) — grupo local para QA del tab Grupos
+        if profile.seedsGroups {
+            updateStep("Grupos de prueba", progress: 0.97)
+            DevSeedGroups.create(in: context)
+        }
 
         // Final save
         updateStep(L10n.DevSeed.stepSaving, progress: 0.98)

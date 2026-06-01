@@ -30,4 +30,13 @@ final class LaunchSliceUITests: XCTestCase {
             "No se montó MainTabView (¿el skip-onboarding no aplicó?)."
         )
     }
+
+    /// Perfil `grupos`: el seed de grupo compartido (DevSeedGroups) completa sin crash
+    /// y la app queda lista. El display del tab Grupos se valida en device QA.
+    func test_launchesWithGroupsSeed() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "grupos")
+        XCTAssertTrue(app.waitForUITestReady(), "El seed 'grupos' no completó (uitest_ready ausente).")
+        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 10), "MainTabView no se montó con seed grupos.")
+    }
 }
