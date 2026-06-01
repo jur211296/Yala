@@ -153,6 +153,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
+                    .accessibilityIdentifier("filters_close_button")
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
