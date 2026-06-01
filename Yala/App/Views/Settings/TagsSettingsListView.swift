@@ -61,6 +61,7 @@ struct TagsSettingsListView: View {
                     YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                         viewModel.isPresentingCreateTag = true
                     }
+                    .accessibilityIdentifier("tags_add_button")
                 }
             }
         }
@@ -121,6 +122,7 @@ struct TagsSettingsListView: View {
                         tagRow(tag)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("tags_row_\(tag.name)")
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(

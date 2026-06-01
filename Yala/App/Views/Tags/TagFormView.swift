@@ -141,6 +141,7 @@ struct TagFormView: View {
                         .foregroundStyle(.secondary)
                     TextField(L10n.Tag.namePlaceholder, text: $viewModel.name)
                         .focused($isNameFieldFocused)
+                        .accessibilityIdentifier("tag_name_field")
                         .onChange(of: viewModel.name) { oldValue, newValue in
                             if newValue.count > 20 {
                                 viewModel.name = String(newValue.prefix(20))
