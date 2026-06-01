@@ -196,6 +196,9 @@
 "records.title" = "记录";
 "records.latest" = "最新记录";
 "records.noRecords" = "本时间段无记录";
+"records.viewModeListA11y" = "列表视图";
+"records.viewModeCalendarA11y" = "日历视图";
+"records.noRecordsThisDay" = "当天无记录";
 
 // MARK: - Filters
 

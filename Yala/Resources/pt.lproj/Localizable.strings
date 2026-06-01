@@ -194,6 +194,9 @@
 "records.title" = "Registros";
 "records.latest" = "Ultimos registros";
 "records.noRecords" = "Sem registros";
+"records.viewModeListA11y" = "Vista de lista";
+"records.viewModeCalendarA11y" = "Vista de calendário";
+"records.noRecordsThisDay" = "Sem registros neste dia";
 
 // MARK: - Filters
 

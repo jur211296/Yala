@@ -32,6 +32,10 @@ struct RecordsTabView: View {
     var onFilterChange: () -> Void
 
     @State private var showCustomPeriodPicker: Bool = false
+    @State private var recordsViewMode: RecordsViewMode = .list
+    @State private var selectedCalendarDay: Date?
+    @State private var calendarMonth: Date = .now
+    @Namespace private var viewModeNamespace
 
     var body: some View {
         ScrollView {
@@ -42,6 +46,20 @@ struct RecordsTabView: View {
                 if viewModel.groupedRecords.isEmpty {
                     emptyStateContent
                 } else {
+                    viewModeHeader
+
+                    if recordsViewMode == .calendar {
+                        RecordsCalendarView(
+                            groups: viewModel.groupedRecords,
+                            period: viewModel.period,
+                            customDateRange: sessionState.customDateRange,
+                            currencyCode: defaultCurrencyCode,
+                            selectedDay: $selectedCalendarDay,
+                            calendarMonth: $calendarMonth
+                        )
+                        .padding(.horizontal, DS.Spacing.lg)
+                    }
+
                     recordsListContent
                 }
             }
@@ -57,6 +75,15 @@ struct RecordsTabView: View {
         }
         .onChange(of: sessionState.customDateRange) {
             onFilterChange()
+        }
+        .onChange(of: viewModel.period) {
+            resetCalendarState()
+        }
+        .onChange(of: viewModel.filteredCount) {
+            clampCalendarMonthIfNeeded()
+        }
+        .onAppear {
+            syncCalendarMonth()
         }
     }
 
@@ -208,32 +235,144 @@ struct RecordsTabView: View {
 
     // MARK: - Records List Content
 
+    /// Grupos a mostrar: todos, o solo el día seleccionado en modo calendario.
+    private var displayedGroups: [(date: Date, records: [TransactionItem])] {
+        guard recordsViewMode == .calendar, let day = selectedCalendarDay else {
+            return viewModel.groupedRecords
+        }
+        return viewModel.groupedRecords.filter {
+            Calendar.current.isDate($0.date, inSameDayAs: day)
+        }
+    }
+
+    @ViewBuilder
     private var recordsListContent: some View {
-        LazyVStack(spacing: DS.Spacing.sm, pinnedViews: [.sectionHeaders]) {
-            ForEach(viewModel.groupedRecords, id: \.date) { group in
-                Section {
-                    ForEach(group.records, id: \.persistentModelID) { record in
-                        RecordRowView(
-                            record: record,
-                            currencyCode: defaultCurrencyCode,
-                            isSelectionMode: viewModel.isSelectionMode,
-                            isSelected: viewModel.selectedRecordIDs.contains(
-                                record.persistentModelID),
-                            onTap: {
-                                viewModel.editRecord(record)
-                            },
-                            onToggleSelection: {
-                                viewModel.toggleSelection(record.persistentModelID)
-                            }
-                        )
+        let groups = displayedGroups
+        if groups.isEmpty {
+            dayEmptyState
+        } else {
+            LazyVStack(spacing: DS.Spacing.sm, pinnedViews: [.sectionHeaders]) {
+                ForEach(groups, id: \.date) { group in
+                    Section {
+                        ForEach(group.records, id: \.persistentModelID) { record in
+                            RecordRowView(
+                                record: record,
+                                currencyCode: defaultCurrencyCode,
+                                isSelectionMode: viewModel.isSelectionMode,
+                                isSelected: viewModel.selectedRecordIDs.contains(
+                                    record.persistentModelID),
+                                onTap: {
+                                    viewModel.editRecord(record)
+                                },
+                                onToggleSelection: {
+                                    viewModel.toggleSelection(record.persistentModelID)
+                                }
+                            )
+                        }
+                    } header: {
+                        RecordDateSectionView(date: group.date)
                     }
-                } header: {
-                    RecordDateSectionView(date: group.date)
                 }
             }
+            .padding(.top, DS.Spacing.sm)
+            .yalaSafeBottomPadding()
         }
-        .padding(.top, DS.Spacing.sm)
+    }
+
+    /// Mini empty-state cuando el día seleccionado en el calendario no tiene registros.
+    private var dayEmptyState: some View {
+        VStack(spacing: DS.Spacing.md) {
+            Image(systemName: "calendar.badge.exclamationmark")
+                .font(DS.Typography.largeTitle)
+                .foregroundStyle(.secondary.opacity(0.5))
+                .accessibilityHidden(true)
+            Text(L10n.Records.noRecordsThisDay)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, DS.Spacing.xxxl)
         .yalaSafeBottomPadding()
+    }
+
+    // MARK: - View Mode Header (toggle Lista / Calendario)
+
+    private var viewModeHeader: some View {
+        HStack {
+            Text(L10n.Records.title)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+            Spacer()
+            viewModeSelector
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private var viewModeSelector: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            ForEach(RecordsViewMode.allCases) { mode in
+                viewModeButton(for: mode)
+            }
+        }
+    }
+
+    private func viewModeButton(for mode: RecordsViewMode) -> some View {
+        let isSelected = recordsViewMode == mode
+        return Button {
+            dsWithAnimation(reduceMotion) {
+                recordsViewMode = mode
+                if mode == .list {
+                    selectedCalendarDay = nil
+                } else {
+                    clampCalendarMonthIfNeeded()
+                }
+            }
+        } label: {
+            Image(systemName: mode.iconName)
+                .font(DS.Typography.labelSmall)
+                .fontWeight(.semibold)
+                .foregroundStyle(isSelected ? .white : theme.secondaryText)
+                .frame(width: 32, height: 32)
+                .background {
+                    if isSelected {
+                        Circle()
+                            .fill(theme.accent)
+                            .matchedGeometryEffect(id: "recordsViewMode", in: viewModeNamespace)
+                    } else {
+                        Circle()
+                            .fill(.thSecondaryText.opacity(0.08))
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(mode.accessibilityLabel)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    // MARK: - Calendar State
+
+    /// Pone el mes visible (modo paginado) en el mes más reciente con datos.
+    private func syncCalendarMonth() {
+        guard let maxDate = viewModel.groupedRecords.map(\.date).max() else { return }
+        calendarMonth = Calendar.current.startOfDay(for: maxDate)
+    }
+
+    /// Si tras cambiar filtros el mes visible quedó fuera del rango de datos, lo reencuadra.
+    private func clampCalendarMonthIfNeeded() {
+        let dates = viewModel.groupedRecords.map(\.date)
+        guard let minDate = dates.min(), let maxDate = dates.max() else { return }
+        let cal = Calendar.current
+        if calendarMonth < cal.startOfDay(for: minDate) || calendarMonth > maxDate {
+            calendarMonth = cal.startOfDay(for: maxDate)
+        }
+    }
+
+    /// Al cambiar de periodo: limpia el día seleccionado y reencuadra el mes.
+    private func resetCalendarState() {
+        selectedCalendarDay = nil
+        syncCalendarMonth()
     }
 
     // MARK: - Empty State Content

@@ -1521,6 +1521,9 @@ enum L10n {
         static var title: String { ls("records.title", comment: "") }
         static var latest: String { ls("records.latest", comment: "") }
         static var noRecords: String { ls("records.noRecords", comment: "") }
+        static var noRecordsThisDay: String { ls("records.noRecordsThisDay", comment: "Calendario: día seleccionado sin registros") }
+        static var viewModeListA11y: String { ls("records.viewModeListA11y", comment: "A11y: botón vista lista") }
+        static var viewModeCalendarA11y: String { ls("records.viewModeCalendarA11y", comment: "A11y: botón vista calendario") }
         static func deleteConfirmTitle(_ count: Int) -> String {
             String(format: ls("records.deleteConfirmTitle", comment: ""), count)
         }

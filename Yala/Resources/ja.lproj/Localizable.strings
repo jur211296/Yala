@@ -196,6 +196,9 @@
 "records.title" = "記録";
 "records.latest" = "最新の記録";
 "records.noRecords" = "この期間に記録はありません";
+"records.viewModeListA11y" = "リスト表示";
+"records.viewModeCalendarA11y" = "カレンダー表示";
+"records.noRecordsThisDay" = "この日に記録はありません";
 
 // MARK: - Filters
 

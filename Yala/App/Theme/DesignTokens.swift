@@ -261,6 +261,10 @@ enum DS {
         /// Indigo→negro vertical — fondo unificado del flow Welcome (Hero + Chooser).
         static let heroIndigoBlack: [Color] = [.electricIndigo, .black]
 
+        /// Índigo→rosa para barras de intensidad de gasto (calendario de Registros):
+        /// índigo = gasto bajo, rosa = día de mayor gasto del periodo.
+        static let spendingHeat: [Color] = [.electricIndigo, .hotPink]
+
         /// Theme-aware accent→negro vertical — fondo principal de vistas en los 4
         /// themes translucent (Liquid Glass + Translucent Indigo/Rosa/Teal).
         ///

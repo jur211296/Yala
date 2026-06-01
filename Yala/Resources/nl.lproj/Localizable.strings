@@ -196,6 +196,9 @@
 "records.title" = "Boekingen";
 "records.latest" = "Laatste boekingen";
 "records.noRecords" = "Geen boekingen in deze periode";
+"records.viewModeListA11y" = "Lijstweergave";
+"records.viewModeCalendarA11y" = "Kalenderweergave";
+"records.noRecordsThisDay" = "Geen boekingen op deze dag";
 
 // MARK: - Filters
 

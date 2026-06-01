@@ -194,6 +194,9 @@
 "records.title" = "Einträge";
 "records.latest" = "Neueste Einträge";
 "records.noRecords" = "Keine Einträge";
+"records.viewModeListA11y" = "Listenansicht";
+"records.viewModeCalendarA11y" = "Kalenderansicht";
+"records.noRecordsThisDay" = "Keine Einträge an diesem Tag";
 
 // MARK: - Filters
 

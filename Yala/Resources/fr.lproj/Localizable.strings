@@ -194,6 +194,9 @@
 "records.title" = "Enregistrements";
 "records.latest" = "Derniers enregistrements";
 "records.noRecords" = "Aucun enregistrement";
+"records.viewModeListA11y" = "Vue en liste";
+"records.viewModeCalendarA11y" = "Vue calendrier";
+"records.noRecordsThisDay" = "Aucun enregistrement ce jour";
 
 // MARK: - Filters
 
