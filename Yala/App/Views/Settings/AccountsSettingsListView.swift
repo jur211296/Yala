@@ -97,6 +97,7 @@ struct AccountsSettingsListView: View {
                             showUpgradeSheet = true
                         }
                     }
+                    .accessibilityIdentifier("accounts_add_button")
                 }
             }
         }

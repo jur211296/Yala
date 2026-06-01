@@ -39,7 +39,7 @@ struct ContextualGuideBanner: View {
     // MARK: - Body
 
     var body: some View {
-        if !isDismissible || !dismissed {
+        if !UITestHooks.isActive, !isDismissible || !dismissed {
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 HStack(alignment: .top, spacing: DS.Spacing.sm) {
                     Image(systemName: icon)

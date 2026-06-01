@@ -66,6 +66,7 @@ struct PanelView: View {
     /// activo para evitar overlays simultáneos. Vive en PanelView para que
     /// el spotlight no se clipe al frame del card de Tendencias.
     private var shouldShowTodayFXCoachMark: Bool {
+        guard !UITestHooks.isActive else { return false }
         guard viewModel.dataTrendType == .balance else { return false }
         guard viewModel.trendLiveAnchor != nil else { return false }
         guard (viewModel.trendLiveAnchorBreakdown?.count ?? 0) > 1 else { return false }
@@ -344,7 +345,7 @@ struct PanelView: View {
                             showCustomPeriodPicker: $sheets.showCustomPeriodPicker
                         )
 
-                        if appPreferences.showSiriTip, viewModel.transactions.count >= 5 {
+                        if !UITestHooks.isActive, appPreferences.showSiriTip, viewModel.transactions.count >= 5 {
                             SiriTipCard(isVisible: Binding(
                                 get: { appPreferences.showSiriTip },
                                 set: { appPreferences.showSiriTip = $0 }
@@ -398,7 +399,7 @@ struct PanelView: View {
                         }
 
                         // Nudge banner (dormant/sporadic users — only if no Pro upsell showing)
-                        if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
+                        if !UITestHooks.isActive, let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
                             GroupNudgeBanner(
                                 nudge: nudge,
                                 message: NudgeService.shared.currentNudgeMessage ?? "",
@@ -419,10 +420,12 @@ struct PanelView: View {
                         }
 
                         // Setup Checklist (persistent for new users)
-                        SetupChecklistCard(
-                            manager: SetupChecklistManager.shared,
-                            onStepTapped: { step in handleSetupStep(step) }
-                        )
+                        if !UITestHooks.isActive {
+                            SetupChecklistCard(
+                                manager: SetupChecklistManager.shared,
+                                onStepTapped: { step in handleSetupStep(step) }
+                            )
+                        }
 
                         // Contextual guide for panel (first visit)
                         ContextualGuideBanner.panel()

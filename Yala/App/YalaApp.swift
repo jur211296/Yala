@@ -69,9 +69,11 @@ struct YalaApp: App {
                 .environment(bootstrapper.transactionService)
                 .environment(bootstrapper.appPreferences)
                 .task {
-                    try? Tips.configure([
-                        .displayFrequency(.immediate)
-                    ])
+                    if !UITestHooks.isActive {
+                        try? Tips.configure([
+                            .displayFrequency(.immediate)
+                        ])
+                    }
                     await bootstrapper.bootstrap(container: sharedModelContainer)
                 }
                 .onChange(of: bootstrapper.sessionState.needsExchangeRateReload) { _, needsReload in
