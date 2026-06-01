@@ -213,6 +213,7 @@ struct CurrencySettingsView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("currency_secondary_button")
             }
 
             // Hint text

@@ -467,6 +467,7 @@ struct ProfileView: View {
                     icon: "dollarsign.circle.fill", title: L10n.Settings.currencyAndExchange,
                     iconColor: DS.Semantic.successForeground, destination: .currency
                 )
+                .accessibilityIdentifier("profile_currency")
                 SubsectionDivider()
                 profileRow(
                     icon: "app.fill", title: L10n.Settings.appIcon,

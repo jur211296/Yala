@@ -95,6 +95,7 @@ struct SecondaryCurrencyPickerSheet: View {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
+                    .accessibilityIdentifier("secondary_currency_done")
                 }
             }
         }
@@ -180,6 +181,7 @@ struct SecondaryCurrencyPickerSheet: View {
         .opacity(canSelect ? 1.0 : 0.5)
         .disabled(!canSelect)
         .accessibilityHint(!canSelect ? L10n.Accessibility.maxCurrenciesSelected : "")
+        .accessibilityIdentifier("secondary_currency_row_\(currency.rawValue)")
     }
 
     private func toggleCurrency(_ currency: CurrencyCode) {
