@@ -303,6 +303,7 @@ struct DetailContainerView: View {
                 viewModel: insightsViewModel,
                 trendsViewModel: trendsViewModel
             )
+            .accessibilityIdentifier("stats_tab_insights")
         case .trends:
             TrendsTabView(
                 accounts: dataViewModel.accounts,
@@ -314,6 +315,7 @@ struct DetailContainerView: View {
                 insightsViewModel: insightsViewModel,
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
+            .accessibilityIdentifier("stats_tab_trends")
         case .categories:
             CategoriesTabView(
                 accounts: dataViewModel.accounts,
@@ -325,6 +327,7 @@ struct DetailContainerView: View {
                 insightsViewModel: insightsViewModel,
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
+            .accessibilityIdentifier("stats_tab_categories")
         case .records:
             RecordsTabView(
                 viewModel: recordsViewModel,
@@ -336,6 +339,7 @@ struct DetailContainerView: View {
                 defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() }
             )
+            .accessibilityIdentifier("stats_tab_records")
         }
     }
 
