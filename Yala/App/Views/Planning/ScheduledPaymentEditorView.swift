@@ -261,6 +261,7 @@ struct ScheduledPaymentEditorView: View {
                     )
                     .textContentType(.name)
                     .focused($isNameFieldFocused)
+                    .accessibilityIdentifier("scheduled_name_field")
                 }
                 .padding()
 
@@ -280,6 +281,7 @@ struct ScheduledPaymentEditorView: View {
                             .multilineTextAlignment(.trailing)
                             .font(.system(size: scaledAmountSize, weight: .bold))
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+                            .accessibilityIdentifier("scheduled_amount_field")
                             .foregroundStyle(transactionType == "income" ? Color.electricIndigo : .primary)
                             .focused($isAmountFieldFocused)
                             .onChange(of: isAmountFieldFocused) { _, isFocused in
@@ -410,6 +412,7 @@ struct ScheduledPaymentEditorView: View {
                         }
                     }
                 }
+                .accessibilityIdentifier("scheduled_account_option_\(account.name)")
             }
         } label: {
             HStack(spacing: DS.Spacing.md) {
@@ -446,6 +449,7 @@ struct ScheduledPaymentEditorView: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint(viewModel.activeAccounts.isEmpty ? L10n.Accessibility.createAccountFirst : "")
+        .accessibilityIdentifier("scheduled_account_menu")
         .disabled(viewModel.activeAccounts.isEmpty)
     }
 
@@ -484,6 +488,7 @@ struct ScheduledPaymentEditorView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("scheduled_subcategory_row")
     }
 
     private var tagsContent: some View {

@@ -438,6 +438,7 @@ struct ProfileView: View {
                     iconColor: .cyan,
                     destination: .planned
                 )
+                .accessibilityIdentifier("profile_planned")
                 .coachMarkAnchor("settingsPlanned")
                 SubsectionDivider()
                 profileRow(

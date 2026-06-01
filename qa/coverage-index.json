@@ -12,7 +12,7 @@
   "_meta": {
     "version": 1,
     "generatedBy": "F0 fan-out merge (5 zonas) — 2026-06-01",
-    "backlogBaseline": 42,
+    "backlogBaseline": 41,
     "ratchetNote": "backlogBaseline = nº de areas 'deterministic' SIN cobertura xcuitest. El validador FALLA si el backlog crece (anti-drift). Baja este numero al cubrir un area con XCUITest.",
     "classifications": [
       "deterministic",
@@ -30,7 +30,7 @@
       "deterministic": 47,
       "agentic": 20,
       "manual": 26,
-      "deterministicSinXCUITest": 42
+      "deterministicSinXCUITest": 41
     }
   },
   "areas": [
@@ -909,7 +909,8 @@
         "Yala/App/Views/Planning/ScheduledPaymentsListView.swift",
         "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
         "Yala/App/Views/Planning/ScheduledPaymentsView.swift",
-        "Yala/App/Views/Planning/ScheduledPaymentRowView.swift"
+        "Yala/App/Views/Planning/ScheduledPaymentRowView.swift",
+        "Yala/App/Views/Settings/ScheduledPaymentsSettingsView.swift"
       ],
       "scenarioIDs": [
         "7.1",
@@ -922,7 +923,7 @@
         "7.8"
       ],
       "classification": "deterministic",
-      "coverage": "none",
+      "coverage": "xcuitest:YalaUITests/ScheduledPaymentsCrudUITests",
       "owner": "",
       "lastVerified": "2026-06-01"
     },

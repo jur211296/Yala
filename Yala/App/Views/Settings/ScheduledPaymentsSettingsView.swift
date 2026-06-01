@@ -53,6 +53,7 @@ struct ScheduledPaymentsSettingsView: View {
                 YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                     viewModel.openEditor(for: nil)
                 }
+                .accessibilityIdentifier("scheduled_add_button")
             }
         }
         .sheet(isPresented: $viewModel.showEditor, onDismiss: { viewModel.closeEditor() }) {
@@ -173,6 +174,7 @@ struct ScheduledPaymentsSettingsView: View {
             .solidCard()
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("scheduled_row_\(payment.name)")
     }
 
     // MARK: - Helpers
