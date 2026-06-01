@@ -113,6 +113,7 @@ struct BulkEditSheet: View {
                                     }
                                     .opacity(isDisabled ? 0.4 : 1.0)
                                     .allowsHitTesting(!isDisabled)
+                                    .accessibilityIdentifier("bulk_edit_option_\(option.id)")
                                 }
                             }
                         }
@@ -146,6 +147,7 @@ struct BulkEditSheet: View {
                             finishEditing()
                         }
                         .fontWeight(.semibold)
+                        .accessibilityIdentifier("bulk_edit_done")
                     }
                 }
             }
@@ -633,6 +635,7 @@ struct BulkNoteEditorSheet: View {
                             .padding(.horizontal, DS.Spacing.lg)
                             .padding(.vertical, DS.FormRow.paddingV)
                             .focused($isFocused)
+                            .accessibilityIdentifier("bulk_note_field")
                     }
 
                     Spacer()

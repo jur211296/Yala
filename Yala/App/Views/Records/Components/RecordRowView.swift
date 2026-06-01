@@ -124,6 +124,7 @@ struct RecordRowView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityDescription)
+        .accessibilityIdentifier("record_row")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 

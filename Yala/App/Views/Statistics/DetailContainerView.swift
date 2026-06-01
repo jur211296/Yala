@@ -381,6 +381,7 @@ struct DetailContainerView: View {
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("detail_chip_\(tab.rawValue.lowercased())")
     }
 
     // MARK: - Normal Mode Toolbar
@@ -399,6 +400,7 @@ struct DetailContainerView: View {
                             .foregroundStyle(.thToolbarIcon)
                     }
                     .accessibilityLabel(L10n.Action.select)
+                    .accessibilityIdentifier("records_select_button")
                 }
 
                 // Filters button
@@ -504,6 +506,7 @@ struct DetailContainerView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(L10n.Action.edit)
+                .accessibilityIdentifier("bulk_edit_button")
             }
             .padding(.vertical, DS.Spacing.sm)
             .padding(.horizontal, DS.Spacing.lg)
