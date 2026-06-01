@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "description": "QA automation manifest — classifies scenarios by automatability",
+  "description": "DEPRECATED — superseded by qa/coverage-index.json (SSOT). Stale: only covers sections 1-15. Kept for reference.",
   "suites": {
     "01-onboarding": { "total": 10, "automated": 10, "manual": 0, "notes": "Full coverage" },
     "02-accounts": { "total": 11, "automated": 11, "manual": 0, "notes": "Full coverage" },

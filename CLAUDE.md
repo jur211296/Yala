@@ -8,7 +8,7 @@ Yala es una app iOS de finanzas personales. Objetivo: entender gastos, cuentas, 
 - **Target iOS 26+** — APIs nativas (Liquid Glass, ToolbarSpacer, etc.)
 - Schemes: **Yala** (producción) | **Yala Dev** (con toggle Pro y `DEV_BUILD`) | Tests: YalaTests
 - Simulador: **iPhone 17 Pro**
-- 20 SwiftData models. ModelContainer via `SwiftDataConfiguration`. Divisas SSOT en `Yala/Utils/CurrencyUtils.swift` (`CurrencyCode`, 48 divisas).
+- 21 SwiftData models. ModelContainer via `SwiftDataConfiguration`. Divisas SSOT en `Yala/Utils/CurrencyUtils.swift` (`CurrencyCode`, 48 divisas).
 
 ## Docs (leer cuando sea relevante)
 
@@ -129,7 +129,7 @@ Complejo:   añade /code-review high + /refine antes de commit
 
 Aplica el flujo **Complejo** cuando el cambio involucre lógica densa donde un bug sería costoso: sync/race (CKShare, bridges, NotificationService), cálculos financieros (FinancialScoreCalculator, GroupBalanceService, BudgetAlertService), migraciones SwiftData, bridge SplitExpense ↔ TransactionItem. Para rebranding visual, l10n o polish UI no aporta.
 
-**Regla QA-SCENARIOS:** cada feature nueva requiere escenarios en `$VAULT/planning/QA-SCENARIOS.md` ANTES del commit.
+**Regla QA (contrato anti-drift):** la SSOT de cobertura es `qa/coverage-index.json` (validar: `bash qa/validate-coverage.sh`). Al tocar código bajo `Yala/`, en el MISMO commit actualizar el área correspondiente del index + sus tests/escenarios asociados (`coverage`, `lastVerified`). Cobertura por clasificación: `deterministic` → XCUITest en `YalaUITests`; `agentic` → `/device-qa`; `manual` → documentada. El **ratchet** del validador BLOQUEA si el backlog determinista (áreas `deterministic` sin XCUITest) crece respecto a `_meta.backlogBaseline` — escribe el test o baja el baseline conscientemente. `QA-SCENARIOS.md` queda como narrativa humana; la verdad ejecutable es el index + los tests + CI.
 
 ## Testing
 
