@@ -8,7 +8,10 @@
 //  configurabilidad: ocultar una sección desde PanelSectionsConfigView la quita del
 //  dashboard y la preferencia persiste al reabrir el sheet. El toggle escribe
 //  directo a `panelSectionsHidden`; el YalaSaveButton solo cierra el sheet.
-//  Seed `minimal` (la sección Tendencias se renderiza con sus datos por default).
+//  Se usa la sección Planificación (presupuestos + pagos) para el toggle: renderiza
+//  rápido y de forma estable. La sección Tendencias (3 charts de Swift Charts) tiene
+//  un árbol de accesibilidad pesado que tarda en capturarse → no apta para asserts
+//  de timing. Seed `minimal`.
 //  Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
 //
 
@@ -54,51 +57,51 @@ final class PanelDashboardUITests: XCTestCase {
         configButton.tap()
 
         XCTAssertTrue(
-            app.switches["panel_section_toggle_tendencias"].waitForExistence(timeout: 5),
-            "No se montó PanelSectionsConfigView (toggle de la sección Tendencias)."
+            app.switches["panel_section_toggle_planificacion"].waitForExistence(timeout: 5),
+            "No se montó PanelSectionsConfigView (toggle de la sección Planificación)."
         )
     }
 
-    /// Config logic + persistencia: ocultar la sección Tendencias la quita del Panel
-    /// y la preferencia sobrevive al reabrir el sheet de configuración.
+    /// Config logic + persistencia: ocultar la sección Planificación la quita del
+    /// Panel y la preferencia sobrevive al reabrir el sheet de configuración.
     func test_hidingSectionRemovesItFromPanelAndPersists() {
         let app = XCUIApplication()
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        // La sección Tendencias se renderiza por default (seed minimal tiene datos).
+        // La sección Planificación se renderiza por default (seed minimal tiene datos).
         XCTAssertTrue(
-            element(app, "panel_section_tendencias").waitForExistence(timeout: 10),
-            "La sección Tendencias no apareció en el Panel."
+            element(app, "panel_section_planificacion").waitForExistence(timeout: 15),
+            "La sección Planificación no apareció en el Panel."
         )
 
-        // Abrir el config y ocultar Tendencias (el toggle persiste al instante).
+        // Abrir el config y ocultar Planificación (el toggle persiste al instante).
         app.buttons["panel_sections_config"].tap()
-        let trendsToggle = app.switches["panel_section_toggle_tendencias"]
-        XCTAssertTrue(trendsToggle.waitForExistence(timeout: 5), "No apareció el toggle de Tendencias.")
-        XCTAssertTrue(waitForSwitchValue(trendsToggle, equals: "1"), "Tendencias debería estar visible (ON) por default.")
+        let planToggle = app.switches["panel_section_toggle_planificacion"]
+        XCTAssertTrue(planToggle.waitForExistence(timeout: 5), "No apareció el toggle de Planificación.")
+        XCTAssertTrue(waitForSwitchValue(planToggle, equals: "1"), "Planificación debería estar visible (ON) por default.")
 
         // El identifier vive en el `Toggle` contenedor (row ancho); su control físico
         // es un sub-switch al extremo derecho. Tocar el centro del contenedor cae en
         // el label y NO togglea — hay que tocar el sub-switch real.
-        trendsToggle.switches.firstMatch.tap()
-        XCTAssertTrue(waitForSwitchValue(trendsToggle, equals: "0"), "El toggle de Tendencias no pasó a OFF tras el tap.")
+        planToggle.switches.firstMatch.tap()
+        XCTAssertTrue(waitForSwitchValue(planToggle, equals: "0"), "El toggle de Planificación no pasó a OFF tras el tap.")
 
         // Cerrar el sheet (YalaSaveButton solo hace dismiss).
         app.buttons["toolbar_save_button"].tap()
 
         // La sección desaparece del Panel (espera al cierre del sheet + re-render).
         XCTAssertTrue(
-            element(app, "panel_section_tendencias").waitForNonExistence(timeout: 5),
-            "La sección Tendencias sigue en el Panel tras ocultarla."
+            element(app, "panel_section_planificacion").waitForNonExistence(timeout: 5),
+            "La sección Planificación sigue en el Panel tras ocultarla."
         )
 
         // Persistencia: al reabrir el config, el toggle sigue OFF.
         let configButton = app.buttons["panel_sections_config"]
         XCTAssertTrue(configButton.waitForExistence(timeout: 5), "No reapareció el botón de configuración.")
         configButton.tap()
-        let toggleAgain = app.switches["panel_section_toggle_tendencias"]
-        XCTAssertTrue(toggleAgain.waitForExistence(timeout: 5), "No reapareció el toggle de Tendencias al reabrir.")
-        XCTAssertTrue(waitForSwitchValue(toggleAgain, equals: "0"), "La preferencia de ocultar Tendencias no persistió.")
+        let toggleAgain = app.switches["panel_section_toggle_planificacion"]
+        XCTAssertTrue(toggleAgain.waitForExistence(timeout: 5), "No reapareció el toggle de Planificación al reabrir.")
+        XCTAssertTrue(waitForSwitchValue(toggleAgain, equals: "0"), "La preferencia de ocultar Planificación no persistió.")
     }
 }
