@@ -79,9 +79,11 @@ final class AppBootstrapper {
         let context = container.mainContext
 
         let uiTestActive = UITestHooks.isActive
-        #if DEBUG
-        if uiTestActive { applyUITestHooksEarly(context: context) }
-        #endif
+        // Nota: applyUITestHooksEarly (reset/pro/skip-onboarding) se aplica en
+        // YalaApp.init(), ANTES del primer render — no aquí. En el .task de bootstrap
+        // competía con el .task de ContentView.checkInitialSyncState, que leía
+        // hasCompletedOnboarding=false y presentaba el Welcome Hero (cover sticky)
+        // antes de que el flag se seteara → la app quedaba atascada en Welcome.
 
         // 0.0. CRITICAL: One-shot wipe de Cash Flow (bug sync 1.2.6 — ver CashFlowWipeService)
         //      Debe ir PRIMERO para minimizar ventana con outbox CloudKit corrupta en juego.
@@ -316,9 +318,11 @@ final class AppBootstrapper {
     #if DEBUG
     // MARK: - UI Test Hooks
 
-    /// Aplicado al inicio del bootstrap cuando `-uitest`: reset / Pro / skip-onboarding.
+    /// Aplicado desde `YalaApp.init()` cuando `-uitest`: reset / Pro / skip-onboarding.
     /// Orden: reset (wipe) primero; skip-onboarding re-setea sus flags tras el wipe.
-    private func applyUITestHooksEarly(context: ModelContext) {
+    /// Se invoca antes del primer render para que `hasCompletedOnboarding` ya esté
+    /// resuelto cuando ContentView decide qué pantalla mostrar.
+    func applyUITestHooksEarly(context: ModelContext) {
         if UITestHooks.shouldReset {
             do {
                 try DataWipeService.wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: false)

@@ -251,6 +251,10 @@ struct ProfileView: View {
             }
         )
         .task {
+            // El coach mark monta un overlay-spotlight que intercepta taps; en uitest
+            // bloquearía la navegación de Settings. Suprimido como el resto de overlays
+            // de primer uso (F1c).
+            guard !UITestHooks.isActive else { return }
             if !appPreferences.hasSeenSettingsTour {
                 do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
                 if !appPreferences.hasSeenSettingsTour {
@@ -259,6 +263,7 @@ struct ProfileView: View {
             }
         }
         .task(id: appPreferences.hasSeenSettingsTour) {
+            guard !UITestHooks.isActive else { return }
             guard appPreferences.hasSeenSettingsTour else { return }
             // Re-check eligibility (covers race: subscribed before tours completed)
             ProTourManager.shared.triggerIfEligible()

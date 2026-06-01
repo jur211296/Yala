@@ -228,6 +228,7 @@ struct PanelView: View {
             }
         )
         .task(id: ProTourManager.shared.currentPhase) {
+            guard !UITestHooks.isActive else { return }
             guard !ProTourManager.shared.hasCompleted,
                   ProTourManager.shared.currentPhase == .panel else { return }
             do { try await Task.sleep(for: .seconds(0.8)) } catch { return }

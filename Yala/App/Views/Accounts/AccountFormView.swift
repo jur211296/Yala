@@ -398,6 +398,7 @@ struct AccountFormView: View {
                                 .multilineTextAlignment(.trailing)
                                 .font(DS.Typography.largeTitle)
                                 .focused($focusedField, equals: .balance)
+                                .accessibilityIdentifier("account_balance_field")
                         }
                         .onChange(of: focusedField) { _, newField in
                             let isFocused = newField == .balance

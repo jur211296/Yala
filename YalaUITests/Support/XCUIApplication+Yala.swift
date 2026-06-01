@@ -41,4 +41,25 @@ extension XCUIApplication {
             .firstMatch
             .waitForExistence(timeout: timeout)
     }
+
+    // MARK: - Navegación reutilizable
+
+    /// Abre el sheet de Perfil desde el avatar del toolbar del Panel.
+    /// Falla el test si el avatar no aparece (la app no llegó al Panel).
+    @discardableResult
+    func openProfile(timeout: TimeInterval = 10) -> XCUIApplication {
+        let avatar = buttons["profile_avatar"]
+        XCTAssertTrue(avatar.waitForExistence(timeout: timeout), "No apareció el avatar de Perfil (profile_avatar) en el Panel.")
+        avatar.tap()
+        return self
+    }
+
+    /// Desde el Perfil abierto, navega a una sección de ajustes (push del NavigationStack).
+    /// `rowID` es el accessibilityIdentifier de la fila — ej. "profile_accounts",
+    /// "profile_categories", "profile_tags". Reutilizable por todas las áreas de Settings.
+    func openSettingsSection(_ rowID: String, timeout: TimeInterval = 10) {
+        let row = buttons[rowID]
+        XCTAssertTrue(row.waitForExistence(timeout: timeout), "No apareció la fila de ajustes '\(rowID)'.")
+        row.tap()
+    }
 }

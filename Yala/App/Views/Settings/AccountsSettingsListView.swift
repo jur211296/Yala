@@ -197,6 +197,7 @@ struct AccountsSettingsListView: View {
                         listAccountRow(account)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("accounts_row_\(account.name)")
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(

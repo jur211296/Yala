@@ -26,6 +26,16 @@ struct YalaApp: App {
         // fires its first .setup event. Idempotent — safe even if called again.
         MainActor.assumeIsolated {
             iCloudSyncService.shared.startObserving()
+
+            // UI-test: aplicar reset/pro/skip-onboarding ANTES del primer render para
+            // que hasCompletedOnboarding ya esté resuelto cuando ContentView evalúa
+            // checkInitialSyncState. Hacerlo en el .task de bootstrap competía con ese
+            // .task y dejaba la app en Welcome Hero. No-op en release (isActive == false).
+            #if DEBUG
+            if UITestHooks.isActive {
+                bootstrapper.applyUITestHooksEarly(context: sharedModelContainer.mainContext)
+            }
+            #endif
         }
     }
 
