@@ -339,6 +339,7 @@ struct InboxApproveSuccessView: View {
             .buttonStyle(.borderedProminent)
 
             .controlSize(.large)
+            .accessibilityIdentifier("inbox_success_accept")
 
             // Secondary: Approve next (if available)
             if hasNextDraft {

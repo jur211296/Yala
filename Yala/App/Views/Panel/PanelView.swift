@@ -196,6 +196,7 @@ struct PanelView: View {
             }
         }
         .accessibilityLabel(L10n.Accessibility.inbox)
+        .accessibilityIdentifier("panel_inbox_button")
     }
 
 

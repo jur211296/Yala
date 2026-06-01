@@ -131,6 +131,13 @@ final class DevSeedService {
             in: context
         )
 
+        // Step 9.5: Inbox drafts (2 pending completos) — Inbox nunca vacío en dev/uitest.
+        DevSeedDrafts.create(
+            account: accounts.cuentaPrincipal,
+            subcategoryLookup: subcategoryLookup,
+            in: context
+        )
+
         // Step 10: Grupos (perfil .grupos) — grupo local para QA del tab Grupos
         if profile.seedsGroups {
             updateStep("Grupos de prueba", progress: 0.97)

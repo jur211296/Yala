@@ -61,6 +61,7 @@ struct InboxDraftRowView: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, draft.status.rawValue))
+        .accessibilityIdentifier("inbox_draft_row_\(draft.note)")
     }
 
     // MARK: - Complete Content View (like RecordRowView)

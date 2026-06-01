@@ -715,6 +715,7 @@ struct InboxDraftEditSheet: View {
                     approveDraft()
                 }
                 .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
+                .accessibilityIdentifier("inbox_approve_button")
             }
         }
     }
