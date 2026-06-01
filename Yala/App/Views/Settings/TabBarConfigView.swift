@@ -54,6 +54,7 @@ struct TabBarConfigView: View {
                         saveAndDismiss()
                     }
                     .fontWeight(.semibold)
+                    .accessibilityIdentifier("tabconfig_save")
                 }
             }
         }
@@ -159,6 +160,7 @@ struct TabBarConfigView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(String(localized: "Quitar \(tab.displayName)"))
+                .accessibilityIdentifier("tabconfig_remove_\(tab.id)")
             }
         }
         .padding(.horizontal, DS.Spacing.lg)

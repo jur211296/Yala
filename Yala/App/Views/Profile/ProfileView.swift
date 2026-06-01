@@ -456,6 +456,7 @@ struct ProfileView: View {
                 profileRow(
                     icon: "slider.horizontal.3", title: L10n.Settings.personalization,
                     iconColor: .indigo, destination: .personalization)
+                .accessibilityIdentifier("profile_personalization")
                 .coachMarkAnchor("settingsPersonalization")
                 SubsectionDivider()
                 profileRow(

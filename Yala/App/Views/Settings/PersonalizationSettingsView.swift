@@ -193,6 +193,7 @@ struct PersonalizationSettingsView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("personalization_tabbar_button")
 
                             Text(L10n.Settings.tabBarConfigInfo)
                                 .font(DS.Typography.caption)
