@@ -215,6 +215,8 @@ struct PersonalizationSettingsView: View {
                                             }
                                         }
                                     }
+                                    .accessibilityIdentifier("voice_language_option_\(language.rawValue)")
+                                    .accessibilityAddTraits(appPreferences.voiceLanguage == language ? [.isSelected] : [])
                                 }
                             } label: {
                                 HStack {
@@ -242,6 +244,7 @@ struct PersonalizationSettingsView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("voice_language_menu")
                         }
 
                         // Customize AI Summary

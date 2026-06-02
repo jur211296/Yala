@@ -200,6 +200,7 @@ struct FABStackView: View {
                     onImageTap()
                 }
             }
+            .accessibilityIdentifier("fab_image")
 
             fabMenuButton(icon: "square.and.pencil", text: L10n.Panel.fabManual, color: .electricIndigo) {
                 dismissMenu()
