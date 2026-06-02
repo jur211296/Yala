@@ -20,7 +20,9 @@ extension XCUIApplication {
         seed: String? = "minimal",
         deeplink: String? = nil,
         onboarding: Bool = false,
-        inboxAlert: Bool = false
+        inboxAlert: Bool = false,
+        forceUpdate: Bool = false,
+        aiConsent: Bool = false
     ) -> XCUIApplication {
         var args = ["-uitest"]
         if reset { args.append("-uitest-reset") }
@@ -36,6 +38,8 @@ extension XCUIApplication {
         }
         if onboarding { args.append("-uitest-onboarding") }
         if inboxAlert { args.append("-uitest-inbox-alert") }
+        if forceUpdate { args.append("-uitest-force-update") }
+        if aiConsent { args.append("-uitest-ai-consent") }
         launchArguments = args
         launch()
         return self

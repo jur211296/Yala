@@ -14,7 +14,7 @@
     "generatedBy": "F0 fan-out merge (5 zonas) — 2026-06-01",
     "backlogBaseline": 0,
     "ratchetNote": "backlogBaseline = nº de areas 'deterministic' SIN cobertura xcuitest. El validador FALLA si el backlog crece (anti-drift). Baja este numero al cubrir un area con XCUITest.",
-    "agenticBacklogBaseline": 7,
+    "agenticBacklogBaseline": 5,
     "agenticRatchetNote": "agenticBacklogBaseline = nº de areas 'agentic' SIN cobertura device-qa. Métrica de tracking (NO la enforcea el gate, porque device-qa es manual/diferido). qa-sync reporta el backlog agentic y sus targets. Baja este número al cubrir un area con /device-qa.",
     "classifications": [
       "deterministic",
@@ -29,8 +29,8 @@
     ],
     "counts": {
       "total": 93,
-      "deterministic": 37,
-      "agentic": 30,
+      "deterministic": 39,
+      "agentic": 28,
       "manual": 26,
       "deterministicSinXCUITest": 0
     }
@@ -1213,10 +1213,10 @@
         "50.5 Data wipe",
         "50.6 Localización"
       ],
-      "classification": "agentic",
-      "coverage": "none",
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/UpdateAvailableBannerUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "voice-input-currency-examples",
@@ -1232,10 +1232,10 @@
         "25.4.4",
         "25.4.5"
       ],
-      "classification": "agentic",
-      "coverage": "none",
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/VoiceInputCurrencyExamplesUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "voice-settings-fab",

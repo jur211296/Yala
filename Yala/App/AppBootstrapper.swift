@@ -367,6 +367,15 @@ final class AppBootstrapper {
                 PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
             ))
         }
+        // UpdateAvailableBanner simulado en uitest: fuerza el estado sin red.
+        if UITestHooks.forceUpdateBanner {
+            AppUpdateService.shared.forceUpdateAvailableForUITest()
+        }
+        // Consentimiento IA en uitest: destraba la navegación a voz/imagen Pro sin el
+        // alert de consentimiento (no graba/transcribe; solo abre la vista).
+        if UITestHooks.aiConsent {
+            appPreferences.aiDataConsentAccepted = true
+        }
     }
 
     /// Mapea `-uitest-deeplink <target>` a un DeepLinkDestination (solo uitest/DEBUG).

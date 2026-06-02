@@ -46,6 +46,15 @@ final class UITestHooks {
     /// muestra para presentar el InboxAlertModal sin depender del sync de CloudKit.
     nonisolated static var showInboxAlert: Bool { hasArg("-uitest-inbox-alert") }
 
+    /// `-uitest-force-update`: fuerza el estado "hay update disponible" en AppUpdateService
+    /// (sin red) para testear el UpdateAvailableBanner del Panel.
+    nonisolated static var forceUpdateBanner: Bool { hasArg("-uitest-force-update") }
+
+    /// `-uitest-ai-consent`: marca el consentimiento de datos IA aceptado, para poder
+    /// abrir entradas IA Pro (voz/imagen) sin el alert de consentimiento. No graba ni
+    /// transcribe — solo destraba la navegación a la vista.
+    nonisolated static var aiConsent: Bool { hasArg("-uitest-ai-consent") }
+
     /// Valor de `-uitest-seed <perfil>` (ej. "realista", "pesado"). Nil si ausente.
     nonisolated static var seedProfile: String? {
         #if DEBUG

@@ -410,6 +410,7 @@ struct VoiceRecordingView: View {
         .padding(DS.Spacing.md)
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .accessibilityIdentifier("voice_examples")
     }
 
     private func exampleRow(text: String) -> some View {
