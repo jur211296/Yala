@@ -329,6 +329,10 @@ final class AppBootstrapper {
             } catch {
                 print("UITestHooks: reset error: \(error)")
             }
+            // Estado limpio entre tests: el wipe de SwiftData no toca UserDefaults, así que
+            // un test que reordena/oculta tabs (TabBarConfigView) contaminaría a los demás.
+            // Restaurar el tab bar al default (`[.panel, .statistics, .planning]`).
+            UserDefaults.standard.removeObject(forKey: TabBarConfiguration.storageKey)
         }
         if UITestHooks.forcePro, !StoreKitManager.shared.devForceProTier {
             StoreKitManager.shared.toggleDevProTier()
