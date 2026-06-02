@@ -38,6 +38,10 @@ final class UITestHooks {
     /// `-uitest-skip-onboarding`: marca onboarding/chooser completados.
     nonisolated static var skipOnboarding: Bool { hasArg("-uitest-skip-onboarding") }
 
+    /// `-uitest-onboarding`: presenta el OnboardingView directo (salta Welcome Hero/Chooser),
+    /// SIN marcar onboarding completado. Para testear el flujo de onboarding aislado.
+    nonisolated static var startAtOnboarding: Bool { hasArg("-uitest-onboarding") }
+
     /// Valor de `-uitest-seed <perfil>` (ej. "realista", "pesado"). Nil si ausente.
     nonisolated static var seedProfile: String? {
         #if DEBUG

@@ -764,6 +764,14 @@ struct ContentView: View {
     /// Routing único para presentar la siguiente pantalla del flow inicial.
     /// Si Chooser no se ha visto, presenta el flow Welcome (Hero+Chooser unificado).
     private func presentNextOnboardingScreen() {
+        #if DEBUG
+        // uitest: ir directo al OnboardingView (salta Welcome Hero/Chooser) para
+        // testear el flujo de onboarding aislado.
+        if UITestHooks.startAtOnboarding {
+            showOnboarding = true
+            return
+        }
+        #endif
         if needsLanguageSelection {
             showLanguageSelection = true
         } else if !hasShownWelcomeChooser {

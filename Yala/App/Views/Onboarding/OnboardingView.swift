@@ -1685,6 +1685,7 @@ struct OnboardingView: View {
             ) {
                 advance()
             }
+            .accessibilityIdentifier("onboarding_next_button")
         }
     }
 
