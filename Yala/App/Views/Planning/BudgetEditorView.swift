@@ -341,7 +341,7 @@ struct BudgetEditorView: View {
                         Text(L10n.Budgets.alertsEnable)
                     }
                 }
-
+                .accessibilityIdentifier("budget_alert_toggle")
                 .padding()
 
                 // Hint when global notifications are disabled
@@ -469,6 +469,8 @@ struct BudgetEditorView: View {
                 .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("budget_alert_threshold_\(threshold)")
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     // MARK: - Filters Section
