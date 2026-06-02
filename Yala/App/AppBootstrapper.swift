@@ -359,6 +359,14 @@ final class AppBootstrapper {
         if let dest = uitestDeeplinkDestination() {
             RouterEntryGate.shared.submit(.navigate(dest))
         }
+        // InboxAlertModal simulado en uitest: encola `.showInboxAlert` con un payload de
+        // muestra (mismo path que el sync real, ver checkInboxDraftsAndNotify) para poder
+        // testear el modal sin depender de un evento de CloudKit.
+        if UITestHooks.showInboxAlert {
+            RouterEntryGate.shared.submit(.showInboxAlert(
+                PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
+            ))
+        }
     }
 
     /// Mapea `-uitest-deeplink <target>` a un DeepLinkDestination (solo uitest/DEBUG).

@@ -42,6 +42,10 @@ final class UITestHooks {
     /// SIN marcar onboarding completado. Para testear el flujo de onboarding aislado.
     nonisolated static var startAtOnboarding: Bool { hasArg("-uitest-onboarding") }
 
+    /// `-uitest-inbox-alert`: tras el seed, encola `.showInboxAlert` con un payload de
+    /// muestra para presentar el InboxAlertModal sin depender del sync de CloudKit.
+    nonisolated static var showInboxAlert: Bool { hasArg("-uitest-inbox-alert") }
+
     /// Valor de `-uitest-seed <perfil>` (ej. "realista", "pesado"). Nil si ausente.
     nonisolated static var seedProfile: String? {
         #if DEBUG
