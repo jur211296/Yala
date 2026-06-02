@@ -12,7 +12,7 @@
   "_meta": {
     "version": 1,
     "generatedBy": "F0 fan-out merge (5 zonas) — 2026-06-01",
-    "backlogBaseline": 23,
+    "backlogBaseline": 16,
     "ratchetNote": "backlogBaseline = nº de areas 'deterministic' SIN cobertura xcuitest. El validador FALLA si el backlog crece (anti-drift). Baja este numero al cubrir un area con XCUITest.",
     "classifications": [
       "deterministic",
@@ -27,10 +27,10 @@
     ],
     "counts": {
       "total": 93,
-      "deterministic": 47,
-      "agentic": 20,
+      "deterministic": 40,
+      "agentic": 27,
       "manual": 26,
-      "deterministicSinXCUITest": 23
+      "deterministicSinXCUITest": 16
     }
   },
   "areas": [
@@ -213,7 +213,7 @@
         "25.8 Subscription Views",
         "25.9 Privacidad"
       ],
-      "classification": "deterministic",
+      "classification": "agentic",
       "coverage": "none",
       "owner": "",
       "lastVerified": "2026-06-01"
@@ -238,7 +238,7 @@
         "44.6 Personalización: Enfoque",
         "44.7 Tips en InsightCards"
       ],
-      "classification": "deterministic",
+      "classification": "agentic",
       "coverage": "none",
       "owner": "",
       "lastVerified": "2026-06-01"
@@ -356,7 +356,7 @@
         "12.5",
         "12.6"
       ],
-      "classification": "deterministic",
+      "classification": "agentic",
       "coverage": "none",
       "owner": "",
       "lastVerified": "2026-06-01"
@@ -786,7 +786,7 @@
         "24.13",
         "24.15"
       ],
-      "classification": "deterministic",
+      "classification": "agentic",
       "coverage": "none",
       "owner": "",
       "lastVerified": "2026-06-01"
@@ -999,7 +999,7 @@
         "AutoDetect + secuencial",
         "Accesibilidad (SetupChecklist)"
       ],
-      "classification": "deterministic",
+      "classification": "agentic",
       "coverage": "none",
       "owner": "",
       "lastVerified": "2026-06-01"
@@ -1030,7 +1030,7 @@
         "43.13 Settings (Smart Insights)",
         "43.14 Locked fun fact (Free)"
       ],
-      "classification": "deterministic",
+      "classification": "agentic",
       "coverage": "none",
       "owner": "",
       "lastVerified": "2026-06-01"
@@ -1230,7 +1230,7 @@
         "25.4.4",
         "25.4.5"
       ],
-      "classification": "deterministic",
+      "classification": "agentic",
       "coverage": "none",
       "owner": "",
       "lastVerified": "2026-06-01"
