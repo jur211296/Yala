@@ -12,7 +12,7 @@
   "_meta": {
     "version": 1,
     "generatedBy": "F0 fan-out merge (5 zonas) — 2026-06-01",
-    "backlogBaseline": 7,
+    "backlogBaseline": 4,
     "ratchetNote": "backlogBaseline = nº de areas 'deterministic' SIN cobertura xcuitest. El validador FALLA si el backlog crece (anti-drift). Baja este numero al cubrir un area con XCUITest.",
     "classifications": [
       "deterministic",
@@ -27,10 +27,10 @@
     ],
     "counts": {
       "total": 93,
-      "deterministic": 38,
-      "agentic": 29,
+      "deterministic": 35,
+      "agentic": 32,
       "manual": 26,
-      "deterministicSinXCUITest": 7
+      "deterministicSinXCUITest": 4
     }
   },
   "areas": [
@@ -414,7 +414,7 @@
         "55.4",
         "55.5"
       ],
-      "classification": "deterministic",
+      "classification": "agentic",
       "coverage": "none",
       "owner": "",
       "lastVerified": "2026-06-01"
@@ -757,7 +757,7 @@
         "26.6.3",
         "26.7.1"
       ],
-      "classification": "deterministic",
+      "classification": "agentic",
       "coverage": "none",
       "owner": "",
       "lastVerified": "2026-06-01"
@@ -1211,7 +1211,7 @@
         "50.5 Data wipe",
         "50.6 Localización"
       ],
-      "classification": "deterministic",
+      "classification": "agentic",
       "coverage": "none",
       "owner": "",
       "lastVerified": "2026-06-01"
