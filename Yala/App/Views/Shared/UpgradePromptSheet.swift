@@ -106,6 +106,7 @@ struct UpgradePromptSheet: View {
                         TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: source))
                         showSubscription = true
                     }
+                    .accessibilityIdentifier("upgrade_prompt_cta")
 
                     Button(L10n.Common.cancel) {
                         TelemetryService.track(.proUpsellDismissed, parameters: TelemetryService.upsellParameters(source: source))

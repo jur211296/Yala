@@ -187,6 +187,7 @@ struct FABStackView: View {
                     onVoiceTap()
                 }
             }
+            .accessibilityIdentifier("fab_voice")
 
             fabMenuButton(icon: "photo", text: L10n.Panel.fabImage, color: .teal, isLocked: isImageLocked) {
                 dismissMenu()
