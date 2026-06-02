@@ -124,8 +124,22 @@ enum SwiftDataConfiguration {
     /// Cacheado en `let` para que sea estable durante el ciclo del proceso (evita
     /// que la decisión cambie entre boot temprano y boot tardío del host).
     static let isRunningTests: Bool = {
-        // XCTest legacy — variable de entorno que setea el runner
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+        let env = ProcessInfo.processInfo.environment
+        // SEÑAL CANÓNICA: el TestAction de los schemes (Yala / Yala Dev) inyecta
+        // `YALA_TEST_MODE=1` en el host. Es la ÚNICA señal disponible de forma
+        // determinista en `@main` (cuando YalaApp crea sharedModelContainer), porque
+        // ahí XCTest/Testing.framework aún NO están cargados ni `XCTestConfigurationFilePath`
+        // está seteado para suites Swift Testing puras. Sin esto el host arrancaba con
+        // CloudKit en sims sin cuenta iCloud (CI) → crash loop de NSCloudKitMirroringDelegate
+        // (CKAccountStatusNoAccount) aunque las aserciones pasaran. Ver TESTING-STRATEGY.md.
+        if env["YALA_TEST_MODE"] == "1" {
+            return true
+        }
+        // XCTest legacy — variables de entorno que setea el runner (fallback si se
+        // corre fuera del scheme, p.ej. un `xcodebuild test` con scheme custom).
+        if env["XCTestConfigurationFilePath"] != nil
+            || env["XCTestBundlePath"] != nil
+            || env["XCTestSessionIdentifier"] != nil {
             return true
         }
         // Swift Testing y XCTest cargan el framework XCTest.framework en el process.
@@ -173,10 +187,17 @@ enum SwiftDataConfiguration {
     /// Personal data — CloudKit synced (same databaseName = same SQLite file).
     static var personalConfiguration: ModelConfiguration {
         if isRunningTests {
-            return ModelConfiguration("YalaPersonal", schema: personalSchema, isStoredInMemoryOnly: true)
+            // `cloudKitDatabase: .none` es CRÍTICO: por default ModelConfiguration usa
+            // `.automatic`, que hace que SwiftData adjunte NSPersistentCloudKitContainer
+            // incluso a stores in-memory (la app tiene entitlement CloudKit + schema con
+            // relaciones). En sims SIN cuenta iCloud (CI) ese mirror entra en loop de
+            // recoverFromError (CKAccountStatusNoAccount / "store removed from coordinator")
+            // que desestabiliza el proceso de test → 0 tests + restart loop, aunque las
+            // aserciones pasen. `.none` lo desactiva de raíz. Ver TESTING-STRATEGY.md.
+            return ModelConfiguration("YalaPersonal", schema: personalSchema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         }
         if isUITesting {
-            return ModelConfiguration("YalaModel-UITest", schema: personalSchema, isStoredInMemoryOnly: false)
+            return ModelConfiguration("YalaModel-UITest", schema: personalSchema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
         }
         if isICloudAvailable() {
             return ModelConfiguration(
@@ -191,10 +212,12 @@ enum SwiftDataConfiguration {
     /// Group data — local only (CKSyncEngine syncs via groups container).
     static var groupsConfiguration: ModelConfiguration {
         if isRunningTests {
-            return ModelConfiguration("YalaGroups", schema: groupsSchema, isStoredInMemoryOnly: true)
+            // Ver nota en personalConfiguration: `.none` evita el mirror CloudKit en
+            // el store in-memory (crash loop en sims sin cuenta iCloud / CI).
+            return ModelConfiguration("YalaGroups", schema: groupsSchema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         }
         if isUITesting {
-            return ModelConfiguration("YalaGroups-UITest", schema: groupsSchema, isStoredInMemoryOnly: false)
+            return ModelConfiguration("YalaGroups-UITest", schema: groupsSchema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
         }
         return ModelConfiguration(groupsDatabaseName, schema: groupsSchema)
     }

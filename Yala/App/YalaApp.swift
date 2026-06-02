@@ -25,7 +25,12 @@ struct YalaApp: App {
         // Start observing CloudKit container events before the ModelContainer
         // fires its first .setup event. Idempotent — safe even if called again.
         MainActor.assumeIsolated {
-            iCloudSyncService.shared.startObserving()
+            // Unit tests (isRunningTests): el host NO arranca el observer de CloudKit.
+            // Los tests usan ModelContext aislados (makeTestContext) o pure-logic.
+            // UI tests (isUITesting) SÍ necesitan el ciclo normal → no se gatean.
+            if !SwiftDataConfiguration.isRunningTests {
+                iCloudSyncService.shared.startObserving()
+            }
 
             // UI-test: aplicar reset/pro/skip-onboarding ANTES del primer render para
             // que hasCompletedOnboarding ya esté resuelto cuando ContentView evalúa
@@ -41,6 +46,9 @@ struct YalaApp: App {
 
     /// ModelContainer compartido para toda la app.
     /// Dos configs: personal (CloudKit) + groups (local, synced por CKSyncEngine).
+    /// Bajo unit tests `personalConfiguration`/`groupsConfiguration` devuelven stores
+    /// in-memory con `cloudKitDatabase: .none` (sin mirror CloudKit), así que crear este
+    /// container en el host de tests es barato y NO toca CloudKit.
     var sharedModelContainer: ModelContainer = {
         do {
             let iCloudWasAvailable = SwiftDataConfiguration.isICloudAvailable()
@@ -79,6 +87,12 @@ struct YalaApp: App {
                 .environment(bootstrapper.transactionService)
                 .environment(bootstrapper.appPreferences)
                 .task {
+                    // Unit tests: saltar el bootstrap del host por completo (seeding,
+                    // CKSyncEngine de grupos, exchange rates, etc.). En sims sin cuenta
+                    // iCloud (CI) el CKSyncEngine de grupos genera errores ruidosos. Los
+                    // tests usan contextos aislados. UI tests (isUITesting) NO entran al
+                    // guard: corren el ciclo normal con su seed.
+                    guard !SwiftDataConfiguration.isRunningTests else { return }
                     if !UITestHooks.isActive {
                         try? Tips.configure([
                             .displayFrequency(.immediate)
@@ -99,6 +113,8 @@ struct YalaApp: App {
         }
         .modelContainer(sharedModelContainer)
         .onChange(of: scenePhase) { _, newPhase in
+            // Unit tests: el host no corre el ciclo became-active (sin bootstrap/sync).
+            guard !SwiftDataConfiguration.isRunningTests else { return }
             if newPhase == .active {
                 bootstrapper.handleBecameActive(context: sharedModelContainer.mainContext)
             } else if newPhase == .background {

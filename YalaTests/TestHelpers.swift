@@ -46,15 +46,21 @@ func makeIsolatedDefaults(prefix: String = "test") -> UserDefaults {
 @MainActor
 func makeTestContext() throws -> ModelContext {
     let suffix = UUID().uuidString.prefix(8)
+    // `cloudKitDatabase: .none` evita que SwiftData adjunte NSPersistentCloudKitContainer
+    // (el default `.automatic` lo adjunta por entitlement + schema con relaciones, aun
+    // in-memory) → sin loops de CloudKit recovery en sims sin cuenta iCloud (CI).
+    // Mantiene el split personal/groups de producción (paridad de comportamiento).
     let personalConfig = ModelConfiguration(
         "YalaPersonal_test_\(suffix)",
         schema: SwiftDataConfiguration.personalSchema,
-        isStoredInMemoryOnly: true
+        isStoredInMemoryOnly: true,
+        cloudKitDatabase: .none
     )
     let groupsConfig = ModelConfiguration(
         "YalaGroups_test_\(suffix)",
         schema: SwiftDataConfiguration.groupsSchema,
-        isStoredInMemoryOnly: true
+        isStoredInMemoryOnly: true,
+        cloudKitDatabase: .none
     )
     let container = try ModelContainer(
         for: SwiftDataConfiguration.schema,
