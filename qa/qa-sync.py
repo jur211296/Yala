@@ -52,7 +52,7 @@ def main():
     data = json.load(open(INDEX, encoding="utf-8"))
     areas = data.get("areas", [])
 
-    backlog, stale, orphans, drift = [], [], [], []
+    backlog, stale, orphans, drift, agentic_backlog = [], [], [], [], []
     for a in areas:
         name = a.get("area", "?")
         cls = a.get("classification")
@@ -62,6 +62,8 @@ def main():
                 orphans.append((name, g))
         if cls == "deterministic" and not cov.startswith("xcuitest:"):
             backlog.append((name, len(a.get("scenarioIDs", []))))
+        if cls == "agentic" and not cov.startswith("device-qa"):
+            agentic_backlog.append((name, len(a.get("scenarioIDs", []))))
         lv = a.get("lastVerified")
         age = age_days(lv) if lv else None
         if age is not None and age > STALE_DAYS:
@@ -76,8 +78,11 @@ def main():
 
     det = sum(1 for a in areas if a.get("classification") == "deterministic")
     covered = det - len([b for b in backlog])
+    ag = sum(1 for a in areas if a.get("classification") == "agentic")
+    ag_covered = ag - len(agentic_backlog)
     print("== qa-sync: completeness critic ==")
     print(f"Áreas: {len(areas)} | deterministic: {det} cubiertas(XCUITest): {covered} backlog: {len(backlog)}")
+    print(f"agentic: {ag} cubiertas(device-qa): {ag_covered} backlog: {len(agentic_backlog)}")
     print(f"Stale (>{STALE_DAYS}d): {len(stale)} | Drift (código>lastVerified): {len(drift)} | Orphan globs: {len(orphans)}")
 
     if drift:
@@ -96,6 +101,11 @@ def main():
     if backlog:
         print("\n-- Próximos targets de migración (deterministic sin XCUITest, por nº escenarios) --")
         for name, n in sorted(backlog, key=lambda x: -x[1])[:8]:
+            print(f"  → {name} ({n} escenarios)")
+
+    if agentic_backlog:
+        print("\n-- Backlog agentic (sin device-qa — cubrir con /device-qa, por nº escenarios) --")
+        for name, n in sorted(agentic_backlog, key=lambda x: -x[1]):
             print(f"  → {name} ({n} escenarios)")
 
     print("\n(Reporte advisory. El gate es validate-coverage.py / git pre-push / CI.)")
