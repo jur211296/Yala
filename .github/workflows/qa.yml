@@ -15,17 +15,18 @@ jobs:
         run: python3 qa/validate-coverage.py
 
   # Red dura de "nada se rompe": YalaTests (pure-logic) + YalaUITests (regresión UI).
-  # NOTA: el runner macOS + Xcode 26.4 debe confirmarse en el PRIMER push (no se
-  # puede validar localmente). Si el label de runner o Xcode no coinciden con las
-  # imágenes de GitHub, ajustar aquí. Parallel=NO + retry para reducir flake/clones.
+  # Runner macos-26 (Tahoe): trae Xcode 26.x (26.0.1–26.5) + sims iOS 26.2/26.4/26.5.
+  # `latest-stable` toma el Xcode 26.x más nuevo del image (alineado con el dev local,
+  # que va siempre con el último). macos-15 NO tiene Xcode 26.x (por eso fallaba antes).
+  # Parallel=NO + retry para reducir flake/clones.
   tests:
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - name: Seleccionar Xcode 26.4
+      - name: Seleccionar Xcode (latest-stable 26.x)
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '26.4'
+          xcode-version: latest-stable
       - name: Ejecutar tests (YalaTests + YalaUITests)
         run: |
           xcodebuild test \
