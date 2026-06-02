@@ -350,9 +350,32 @@ final class AppBootstrapper {
     /// Seed de datos UI-test al final del bootstrap + señal `uitest_ready`.
     private func applyUITestSeed(context: ModelContext) async {
         defer { UITestHooks.shared.markReady() }
-        guard let raw = UITestHooks.seedProfile else { return }
-        let profile = DevSeedProfile(rawValue: raw) ?? .realista
-        await DevSeedService().seed(in: context, profile: profile)
+        if let raw = UITestHooks.seedProfile {
+            let profile = DevSeedProfile(rawValue: raw) ?? .realista
+            await DevSeedService().seed(in: context, profile: profile)
+        }
+        // Deeplink simulado en uitest: encola la navegación al tab destino (el gate la
+        // drena cuando el routing esté listo). Ejercita el wiring de tabs ocultos.
+        if let dest = uitestDeeplinkDestination() {
+            RouterEntryGate.shared.submit(.navigate(dest))
+        }
+    }
+
+    /// Mapea `-uitest-deeplink <target>` a un DeepLinkDestination (solo uitest/DEBUG).
+    private func uitestDeeplinkDestination() -> DeepLinkDestination? {
+        guard let target = UITestHooks.deeplinkTarget else { return nil }
+        switch target {
+        case "panel": return .panel
+        case "statistics": return .statistics
+        case "records": return .recordsStandalone
+        case "categories": return .categories
+        case "planning": return .planning
+        case "budgets": return .budgets
+        case "groups": return .groups
+        case "inbox": return .inbox
+        case "scheduledPayments": return .scheduledPayments
+        default: return nil
+        }
     }
     #endif
 

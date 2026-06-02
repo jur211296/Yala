@@ -51,7 +51,25 @@ final class UITestHooks {
     /// Pure-logic: extrae el valor que sigue a `-uitest-seed`. Nil si ausente, si es el
     /// último token, o si el siguiente token es otro flag (`-...`). Separado para test.
     nonisolated static func parseSeedProfile(from args: [String]) -> String? {
-        guard let i = args.firstIndex(of: "-uitest-seed"), i + 1 < args.count else { return nil }
+        parseValue(after: "-uitest-seed", from: args)
+    }
+
+    /// `-uitest-deeplink <target>`: simula un deeplink externo a un tab al arranque
+    /// (panel/statistics/records/planning/budgets/groups/inbox/scheduledPayments/categories).
+    /// Ejercita el wiring de routing a tabs ocultos (bug review-deeplinks).
+    nonisolated static var deeplinkTarget: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-deeplink", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Pure-logic: extrae el valor que sigue a `flag`. Nil si ausente, si es el último
+    /// token, o si el siguiente token es otro flag (`-...`). Separado para test.
+    nonisolated static func parseValue(after flag: String, from args: [String]) -> String? {
+        guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
         let value = args[i + 1]
         return value.hasPrefix("-") ? nil : value
     }

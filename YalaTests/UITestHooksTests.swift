@@ -28,4 +28,22 @@ import Testing
     @Test func parseSeedProfile_followedByAnotherFlag_returnsNil() {
         #expect(UITestHooks.parseSeedProfile(from: ["app", "-uitest-seed", "-uitest-pro"]) == nil)
     }
+
+    // MARK: - parseValue (genérico — usado por -uitest-deeplink)
+
+    @Test func parseValue_deeplinkPresent_returnsValue() {
+        #expect(UITestHooks.parseValue(after: "-uitest-deeplink", from: ["app", "-uitest", "-uitest-deeplink", "groups"]) == "groups")
+    }
+
+    @Test func parseValue_deeplinkAbsent_returnsNil() {
+        #expect(UITestHooks.parseValue(after: "-uitest-deeplink", from: ["app", "-uitest"]) == nil)
+    }
+
+    @Test func parseValue_deeplinkFlagAtEnd_returnsNil() {
+        #expect(UITestHooks.parseValue(after: "-uitest-deeplink", from: ["app", "-uitest-deeplink"]) == nil)
+    }
+
+    @Test func parseValue_deeplinkFollowedByFlag_returnsNil() {
+        #expect(UITestHooks.parseValue(after: "-uitest-deeplink", from: ["app", "-uitest-deeplink", "-uitest-pro"]) == nil)
+    }
 }

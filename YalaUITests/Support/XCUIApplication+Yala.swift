@@ -17,7 +17,8 @@ extension XCUIApplication {
         reset: Bool = true,
         skipOnboarding: Bool = true,
         pro: Bool = false,
-        seed: String? = "minimal"
+        seed: String? = "minimal",
+        deeplink: String? = nil
     ) -> XCUIApplication {
         var args = ["-uitest"]
         if reset { args.append("-uitest-reset") }
@@ -26,6 +27,10 @@ extension XCUIApplication {
         if let seed {
             args.append("-uitest-seed")
             args.append(seed)
+        }
+        if let deeplink {
+            args.append("-uitest-deeplink")
+            args.append(deeplink)
         }
         launchArguments = args
         launch()
