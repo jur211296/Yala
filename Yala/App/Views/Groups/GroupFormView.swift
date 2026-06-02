@@ -145,6 +145,7 @@ struct GroupFormView: View {
             TextField(L10n.Groups.Form.namePlaceholder, text: $name)
                 .font(DS.Typography.body)
                 .focused($isNameFocused)
+                .accessibilityIdentifier("group_form_name_input")
                 .padding(.horizontal, DS.FormRow.paddingH)
                 .padding(.vertical, DS.FormRow.paddingV)
         }

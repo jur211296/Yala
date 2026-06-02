@@ -116,6 +116,7 @@ struct GroupsContainerView: View {
                         Image(systemName: "gearshape.fill")
                             .accessibilityLabel(L10n.Groups.GlobalSettings.title)
                     }
+                    .accessibilityIdentifier("groups_global_settings_button")
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 ProfileToolbarItem {
@@ -238,6 +239,7 @@ struct GroupsContainerView: View {
             action: { viewModel.openDetail(for: group) },
             onRejectedTap: { rejectedGroupPendingLeave = group }
         )
+        .accessibilityIdentifier("group_card")
     }
 
     private func evaluateNudge() {
@@ -250,6 +252,10 @@ struct GroupsContainerView: View {
     }
 
     private func evaluateGroupsOnboarding() {
+        #if DEBUG
+        // F1c: en uitest no montar el onboarding informativo del tab (interceptaría taps).
+        if UITestHooks.isActive { return }
+        #endif
         let shouldShow = GroupsOnboardingLogic.shouldShow(
             hasShownOnboarding: appPreferences.hasShownGroupsOnboarding,
             onboardingMode: sessionState.onboardingMode,
@@ -369,6 +375,7 @@ struct GroupsContainerView: View {
                 .buttonStyle(.plain)
                 .dsFloatingShadow()
                 .accessibilityLabel(L10n.Groups.newGroup)
+                .accessibilityIdentifier("groups_fab_new")
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)

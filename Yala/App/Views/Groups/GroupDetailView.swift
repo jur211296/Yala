@@ -366,6 +366,7 @@ struct GroupDetailView: View {
                 .buttonStyle(.plain)
                 .dsFloatingShadow()
                 .accessibilityLabel(L10n.Groups.Expense.newExpense)
+                .accessibilityIdentifier("group_detail_fab_new_expense")
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)

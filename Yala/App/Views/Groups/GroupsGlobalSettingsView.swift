@@ -44,6 +44,7 @@ struct GroupsGlobalSettingsView: View {
                                     .font(DS.Typography.body)
                                     .foregroundStyle(.thPrimaryText)
                             }
+                            .accessibilityIdentifier("groups_bridge_toggle")
                             .padding(.horizontal, DS.FormRow.paddingH)
                             .padding(.vertical, DS.Spacing.sm)
                             .background(.thCard)

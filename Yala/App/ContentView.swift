@@ -1358,6 +1358,7 @@ struct MorePlaceholderView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("more_tab_row_\(tab.rawValue)")
     }
 
     // MARK: - Activate Full Yala (GC-08)

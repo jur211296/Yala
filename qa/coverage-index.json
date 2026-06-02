@@ -12,7 +12,7 @@
   "_meta": {
     "version": 1,
     "generatedBy": "F0 fan-out merge (5 zonas) — 2026-06-01",
-    "backlogBaseline": 14,
+    "backlogBaseline": 8,
     "ratchetNote": "backlogBaseline = nº de areas 'deterministic' SIN cobertura xcuitest. El validador FALLA si el backlog crece (anti-drift). Baja este numero al cubrir un area con XCUITest.",
     "classifications": [
       "deterministic",
@@ -27,10 +27,10 @@
     ],
     "counts": {
       "total": 93,
-      "deterministic": 40,
-      "agentic": 27,
+      "deterministic": 38,
+      "agentic": 29,
       "manual": 26,
-      "deterministicSinXCUITest": 14
+      "deterministicSinXCUITest": 8
     }
   },
   "areas": [
@@ -470,7 +470,7 @@
         "SP3-05",
         "SP3-06"
       ],
-      "classification": "deterministic",
+      "classification": "agentic",
       "coverage": "none",
       "owner": "",
       "lastVerified": "2026-06-01"
@@ -518,7 +518,7 @@
         "B-BRIDGE-29"
       ],
       "classification": "deterministic",
-      "coverage": "none",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
       "owner": "",
       "lastVerified": "2026-06-01"
     },
@@ -558,7 +558,7 @@
         "28.12 Empty State y Sync (GC-12)"
       ],
       "classification": "deterministic",
-      "coverage": "none",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
       "owner": "",
       "lastVerified": "2026-06-01"
     },
@@ -600,7 +600,7 @@
         "GR-EXP-NEW-LANDSCAPE"
       ],
       "classification": "deterministic",
-      "coverage": "none",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
       "owner": "",
       "lastVerified": "2026-06-01"
     },
@@ -618,7 +618,7 @@
         "15-groups-form-split-type-picker"
       ],
       "classification": "deterministic",
-      "coverage": "none",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
       "owner": "",
       "lastVerified": "2026-06-01"
     },
@@ -657,7 +657,7 @@
         "SP3-14",
         "SP3-15"
       ],
-      "classification": "deterministic",
+      "classification": "agentic",
       "coverage": "none",
       "owner": "",
       "lastVerified": "2026-06-01"
