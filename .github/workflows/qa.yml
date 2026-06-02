@@ -27,6 +27,12 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
+      # Secrets.xcconfig está gitignored (API keys). El proyecto lo referencia como
+      # baseConfiguration → sin él el build falla ("Unable to open base configuration
+      # reference file"). En CI basta el template (placeholders): los tests no llaman
+      # APIs reales (las features LLM/exchange-rate son agentic, fuera de CI).
+      - name: Crear Secrets.xcconfig (placeholder para CI)
+        run: cp Secrets.xcconfig.template Secrets.xcconfig
       - name: Ejecutar tests (YalaTests + YalaUITests)
         run: |
           xcodebuild test \
