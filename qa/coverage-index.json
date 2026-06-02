@@ -110,7 +110,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/BudgetAlertsConfigUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "budgets",
@@ -168,7 +168,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/CashFlowPlanUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "categories-subcategories-crud",
@@ -283,7 +283,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/CurrencyPickerUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "deeplinks-tab-routing",
@@ -343,7 +343,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/EdgeCasesUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "export-wizard",
@@ -760,7 +760,7 @@
       "classification": "agentic",
       "coverage": "none",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "notifications-settings-crud",
@@ -814,7 +814,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/OnboardingFlowUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "panel-dashboard-logic",
@@ -1457,7 +1457,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "onboarding-redesign-flow",
@@ -1497,7 +1497,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "onboarding-restyle-visual",
@@ -1530,7 +1530,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "polish-budget-bar-and-credit-card-account",
@@ -1968,7 +1968,7 @@
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "free-trial-ui-paywall",
@@ -2305,7 +2305,7 @@
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "scheduled-payment-notifications-robustness",
