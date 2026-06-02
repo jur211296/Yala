@@ -181,6 +181,7 @@ struct FinancialReportView: View {
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("report_chip_\(tab.rawValue)")
     }
 
     // MARK: - Report Guide

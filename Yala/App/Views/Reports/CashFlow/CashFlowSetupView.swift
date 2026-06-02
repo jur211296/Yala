@@ -139,6 +139,7 @@ struct CashFlowSetupView: View {
             .font(DS.Typography.title2)
             .fontWeight(.bold)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityIdentifier("cashflow_setup_view")
     }
 
     // MARK: - Banner
