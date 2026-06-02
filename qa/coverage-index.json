@@ -14,7 +14,7 @@
     "generatedBy": "F0 fan-out merge (5 zonas) — 2026-06-01",
     "backlogBaseline": 0,
     "ratchetNote": "backlogBaseline = nº de areas 'deterministic' SIN cobertura xcuitest. El validador FALLA si el backlog crece (anti-drift). Baja este numero al cubrir un area con XCUITest.",
-    "agenticBacklogBaseline": 9,
+    "agenticBacklogBaseline": 8,
     "agenticRatchetNote": "agenticBacklogBaseline = nº de areas 'agentic' SIN cobertura device-qa. Métrica de tracking (NO la enforcea el gate, porque device-qa es manual/diferido). qa-sync reporta el backlog agentic y sus targets. Baja este número al cubrir un area con /device-qa.",
     "classifications": [
       "deterministic",
@@ -29,8 +29,8 @@
     ],
     "counts": {
       "total": 93,
-      "deterministic": 35,
-      "agentic": 32,
+      "deterministic": 36,
+      "agentic": 31,
       "manual": 26,
       "deterministicSinXCUITest": 0
     }
@@ -788,10 +788,10 @@
         "24.13",
         "24.15"
       ],
-      "classification": "agentic",
-      "coverage": "none",
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/NotificationsSettingsUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "onboarding-flow",

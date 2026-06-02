@@ -462,6 +462,7 @@ struct ProfileView: View {
                 profileRow(
                     icon: "bell.fill", title: L10n.Settings.notifications, iconColor: .red,
                     destination: .notifications)
+                .accessibilityIdentifier("profile_notifications")
                 SubsectionDivider()
                 profileRow(
                     icon: "dollarsign.circle.fill", title: L10n.Settings.currencyAndExchange,

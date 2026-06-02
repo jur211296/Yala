@@ -49,6 +49,7 @@ struct NotificationsSettingsView: View {
                 YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                     viewModel.isCreatingNew = true
                 }
+                .accessibilityIdentifier("notifications_add")
             }
         }
         .sheet(isPresented: $viewModel.isCreatingNew, onDismiss: { viewModel.closeEditor() }) {
@@ -84,6 +85,10 @@ struct NotificationsSettingsView: View {
             viewModel.setContext(modelContext)
         }
         .task {
+            // En UI tests no se solicita el permiso de notificaciones del sistema:
+            // el prompt nativo no es determinista y bloquearía la automatización (estilo F1c).
+            guard !UITestHooks.isActive else { return }
+
             viewModel.permissionStatus = await NotificationService.shared.checkPermissionStatus()
 
             // Request permission on first visit if not determined

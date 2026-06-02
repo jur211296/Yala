@@ -475,6 +475,7 @@ struct NotificationEditorSheet: View {
 
                             TextField(L10n.Notifications.namePlaceholder, text: $name)
                                 .focused($focusedField, equals: .name)
+                                .accessibilityIdentifier("notification_name_field")
                                 .onChange(of: name) { _, newValue in
                                     if newValue.count > NotificationItem.maxNameLength {
                                         name = String(newValue.prefix(NotificationItem.maxNameLength))
@@ -504,6 +505,7 @@ struct NotificationEditorSheet: View {
                         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                             TextField(L10n.Notifications.textPlaceholder, text: $text, axis: .vertical)
                                 .focused($focusedField, equals: .text)
+                                .accessibilityIdentifier("notification_text_field")
                                 .lineLimit(3...5)
                                 .onChange(of: text) { _, newValue in
                                     if newValue.count > NotificationItem.maxTextLength {
