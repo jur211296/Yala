@@ -406,6 +406,7 @@ struct ScheduledPaymentDetailView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("scheduled_occurrence")
         .opacity(isSkipped ? 0.6 : 1.0)
         .confirmationDialog(
             formatFullDate(date),
@@ -429,6 +430,7 @@ struct ScheduledPaymentDetailView: View {
                 Button(L10n.Scheduled.Detail.skipUndo) {
                     viewModel.unskipOccurrence(payment: payment, date: date)
                 }
+                .accessibilityIdentifier("scheduled_unskip_button")
             } else {
                 // "Adelantar gasto" for upcoming (not past) occurrences
                 if !isPast {
@@ -451,6 +453,7 @@ struct ScheduledPaymentDetailView: View {
                 Button(L10n.Scheduled.Detail.skip, role: .destructive) {
                     viewModel.skipOccurrence(payment: payment, date: date)
                 }
+                .accessibilityIdentifier("scheduled_skip_button")
             }
         }
     }

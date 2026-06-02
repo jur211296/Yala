@@ -49,6 +49,7 @@ struct ScheduledPaymentRowView: View {
             .opacity(summary.isPaidForMonth || summary.isSkippedForMonth ? 0.6 : 1.0)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("scheduled_payment_row")
     }
 
     // MARK: - Components

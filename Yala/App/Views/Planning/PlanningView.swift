@@ -163,6 +163,7 @@ struct PlanningView: View {
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("planning_chip_\(tab.rawValue)")
     }
 
     // MARK: - Contextual Guide
