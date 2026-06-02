@@ -419,7 +419,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "groups-bridge-personal",
@@ -685,7 +685,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/VoiceImageSettingsFabUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "inbox-crud",
@@ -986,7 +986,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/ProfileSettingsUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "setup-checklist",
@@ -1270,7 +1270,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/VoiceImageSettingsFabUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "average-line-bar-charts",
@@ -1359,7 +1359,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "expenses-only-mode",
@@ -2066,7 +2066,7 @@
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "icloud-sync-onboarding-multidevice",
@@ -2087,7 +2087,7 @@
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "image-capture-ocr-vision",
@@ -2195,7 +2195,7 @@
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "merchant-memory",
@@ -2258,7 +2258,7 @@
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "notifications-permissions-delivery",
@@ -2276,7 +2276,7 @@
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "panel-icloud-sync",
@@ -2431,7 +2431,7 @@
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "widgets-widgetkit",
