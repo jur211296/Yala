@@ -142,6 +142,7 @@ struct FABStackView: View {
         .shadow(color: (isChatLocked ? Color.gray : Color.orange).opacity(0.2), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
         .coachMarkAnchor("proChatFab")
         .accessibilityLabel(L10n.Chat.title)
+        .accessibilityIdentifier("fab_chat")
     }
 
     // MARK: - Transaction FAB
