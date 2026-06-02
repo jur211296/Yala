@@ -479,6 +479,8 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("filters_currency_chip_\(currency.rawValue)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var selectedCurrenciesText: String {
