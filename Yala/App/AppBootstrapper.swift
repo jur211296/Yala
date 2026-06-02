@@ -334,7 +334,11 @@ final class AppBootstrapper {
             // Restaurar el tab bar al default (`[.panel, .statistics, .planning]`).
             UserDefaults.standard.removeObject(forKey: TabBarConfiguration.storageKey)
         }
-        if UITestHooks.forcePro, !StoreKitManager.shared.devForceProTier {
+        // Estado Pro determinista según el launch arg, idempotente entre tests.
+        // `devForceProTier` se persiste en UserDefaults (`dev.forceProTier`) y el wipe
+        // de SwiftData no lo toca → sin esto, un test con `-uitest-pro` dejaría Pro
+        // "pegajoso" para los siguientes, rompiendo las verificaciones de gating free.
+        if StoreKitManager.shared.devForceProTier != UITestHooks.forcePro {
             StoreKitManager.shared.toggleDevProTier()
         }
         if UITestHooks.skipOnboarding {
