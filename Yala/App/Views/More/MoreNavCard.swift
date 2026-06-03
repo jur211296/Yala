@@ -21,14 +21,7 @@ struct MoreNavCard: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 HStack(alignment: .top) {
-                    Image(systemName: icon)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(theme.accent)
-                        .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
-                        .background(
-                            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                                .fill(theme.accent.opacity(0.12))
-                        )
+                    AccentIconBadge(systemName: icon)
 
                     Spacer()
 
@@ -58,5 +51,24 @@ struct MoreNavCard: View {
         .contentShape(Rectangle())
         .accessibilityIdentifier(identifier)
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Icono con glow sutil sobre fondo accent — badge compartido por las cards del
+/// dashboard "Más" (card vertical y card hero de Panel).
+struct AccentIconBadge: View {
+    @Environment(\.yalaTheme) private var theme
+    let systemName: String
+    var font: Font = DS.Typography.subheadline
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(font)
+            .foregroundStyle(theme.accent)
+            .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                    .fill(theme.accent.opacity(0.12))
+            )
     }
 }

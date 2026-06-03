@@ -1066,9 +1066,14 @@ struct MainTabView: View {
     /// iPhone's tab bar shows at most 5 items; anything beyond collapses into
     /// iOS's native "More" controller (stray back chevron + ugly system list).
     /// configurables + More + Search reaches 6 once a temporary tab pushes the
-    /// configurable count to 4, so we drop Search there. Safe to unmount:
-    /// selecting `.search` clears `temporaryTab` (see SessionState.selectedMainTab
-    /// `didSet`), so the selection binding never targets an absent Search tab.
+    /// configurable count to 4, so we drop Search there.
+    ///
+    /// Edge case: navigating *from* Search to a hidden tab sets `temporaryTab`
+    /// synchronously while `selectMainTab` defers `selectedMainTab` ~50ms, so the
+    /// selection can briefly point at an unmounted Search tab; it self-heals once
+    /// `selectedMainTab` lands on the destination. Keeping Search mounted during
+    /// that window would push the bar back to 6 items, so the transient is
+    /// accepted over re-triggering iOS's native More.
     private var showsSearchTab: Bool {
         visibleTabs.count <= 3
     }

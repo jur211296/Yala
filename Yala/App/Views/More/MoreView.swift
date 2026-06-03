@@ -123,14 +123,7 @@ struct MoreView: View {
             RouterEntryGate.shared.submit(.navigate(.panel))
         } label: {
             HStack(spacing: DS.Spacing.md) {
-                Image(systemName: ConfigurableTab.panel.iconName)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(theme.accent)
-                    .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
-                    .background(
-                        RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                            .fill(theme.accent.opacity(0.12))
-                    )
+                AccentIconBadge(systemName: ConfigurableTab.panel.iconName, font: DS.Typography.headline)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Tab.panel)
@@ -236,51 +229,41 @@ struct MoreView: View {
     // MARK: - Activate Full Yala (GC-08)
 
     private var activateFullYalaButton: some View {
-        VStack(spacing: DS.Spacing.none) {
-            Button {
-                RouterEntryGate.shared.submit(.presentFullModeActivation)
-            } label: {
-                HStack(spacing: DS.FormRow.iconSpacing) {
-                    Image(systemName: "sparkles")
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.white)
-                        .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(theme.accent)
-                        )
+        Button {
+            RouterEntryGate.shared.submit(.presentFullModeActivation)
+        } label: {
+            HStack(spacing: DS.FormRow.iconSpacing) {
+                Image(systemName: "sparkles")
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.white)
+                    .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(theme.accent)
+                    )
 
-                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        Text(L10n.Groups.Activate.title)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.Groups.Activate.title)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
 
-                        Text(L10n.Groups.Activate.subtitle)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.chevron)
-                        .foregroundStyle(.tertiary)
+                    Text(L10n.Groups.Activate.subtitle)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, DS.FormRow.paddingH)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .contentShape(Rectangle())
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.chevron)
+                    .foregroundStyle(.tertiary)
             }
-            .buttonStyle(.plain)
+            .padding(.horizontal, DS.FormRow.paddingH)
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
         }
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(.thCard)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.black.opacity(0.05), lineWidth: 0.8)
-        )
+        .buttonStyle(.plain)
+        .solidCard(radius: DS.Radius.xl)
         .dsSubtleShadow()
     }
 }
