@@ -22,7 +22,7 @@ extension View {
                     Image(systemName: "chevron.backward")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(tint)
-                        .frame(width: 44, height: 44)
+                        .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 }
                 .padding(.leading, DS.Spacing.sm)
                 .padding(.top, DS.Spacing.sm)

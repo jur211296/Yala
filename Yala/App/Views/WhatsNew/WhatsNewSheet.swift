@@ -109,7 +109,7 @@ struct WhatsNewSheet: View {
             Image(systemName: feature.icon)
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
+                .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 .background(Circle().fill(feature.iconColor))
 
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {

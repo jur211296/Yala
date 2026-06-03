@@ -296,7 +296,7 @@ struct RecordsCalendarView: View {
 
                 if hasExpense {
                     DailySpendingBar(value: expense, maxValue: maxSpending)
-                        .padding(.horizontal, 2)
+                        .padding(.horizontal, DS.Spacing.xxs)
                     Text(CompactAmountFormatter.string(expense))
                         // A11Y-DT: micro-monto en celda de 7 columnas; el a11yLabel da el monto completo.
                         .font(.system(size: 9, weight: .medium))

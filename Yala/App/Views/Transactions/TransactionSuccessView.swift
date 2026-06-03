@@ -316,7 +316,7 @@ struct TransactionSuccessView: View {
             Image(systemName: data.transactionType.iconName)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(data.transactionType.color)
-                .frame(width: 20)
+                .frame(width: DS.Icon.sizeLarge)
                 .accessibilityHidden(true)
 
             Text(L10n.Transaction.type)

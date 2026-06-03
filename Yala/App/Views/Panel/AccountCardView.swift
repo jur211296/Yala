@@ -131,7 +131,7 @@ struct AccountCardView: View {
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(theme.secondaryText)
                     .padding(.horizontal, DS.Spacing.xs)
-                    .padding(.vertical, 2)
+                    .padding(.vertical, DS.Spacing.xxs)
                     .glassEffect(.regular, in: Capsule())
                     .padding(DS.Spacing.sm)
                     .accessibilityLabel(L10n.Account.System.badge)

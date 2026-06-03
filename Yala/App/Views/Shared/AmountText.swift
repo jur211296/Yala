@@ -64,7 +64,7 @@ struct AmountText: View {
             decimalSeparator: decimalSep
         )
 
-        HStack(alignment: .firstTextBaseline, spacing: 2) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
             if !runs.symbol.isEmpty {
                 Text(runs.symbol)
                     .font(secondaryFont)

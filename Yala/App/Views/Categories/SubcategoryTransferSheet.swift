@@ -154,7 +154,7 @@ struct SubcategoryTransferSheet: View {
                     ZStack {
                         Circle()
                             .fill(color.opacity(0.15))
-                            .frame(width: 44, height: 44)
+                            .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
 
                         Image(systemName: icon)
                             .font(DS.Typography.title)
@@ -210,7 +210,7 @@ struct SubcategoryTransferSheet: View {
                                                             hex: subcategory.colorHex
                                                                 ?? group.category.colorHex)
                                                     )
-                                                    .frame(width: 32, height: 32)
+                                                    .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                                                     .overlay(
                                                         Image(
                                                             systemName: subcategory.iconName

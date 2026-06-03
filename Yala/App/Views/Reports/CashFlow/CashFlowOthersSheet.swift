@@ -71,7 +71,7 @@ struct CashFlowOthersSheet: View {
                     Image(systemName: item.iconName)
                         .font(DS.Typography.body)
                         .foregroundStyle(Color(hex: item.colorHex))
-                        .frame(width: 24)
+                        .frame(width: DS.Icon.badgeSmall)
 
                     Text(item.categoryName)
                         .font(DS.Typography.body)

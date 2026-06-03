@@ -56,7 +56,7 @@ struct OnboardingDemoGroupCard: View {
             ZStack {
                 Circle()
                     .fill(Color.electricIndigo.opacity(0.18))
-                    .frame(width: 44, height: 44)
+                    .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 Image(systemName: "person.2.fill")
                     .font(.system(size: 22, weight: .semibold)) // A11Y-DT: mock icon
                     .foregroundStyle(Color.hotPink)

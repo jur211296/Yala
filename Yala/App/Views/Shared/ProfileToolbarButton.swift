@@ -33,7 +33,7 @@ struct ProfileToolbarButton: View {
 
     // MARK: - Constants
 
-    private let size: CGFloat = 40
+    private let size: CGFloat = DS.Icon.badgeLarge
     private let ringWidth: CGFloat = 2
     private let sparkBadgeSize: CGFloat = 14
 

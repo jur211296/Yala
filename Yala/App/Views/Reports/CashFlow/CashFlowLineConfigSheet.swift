@@ -218,7 +218,7 @@ struct CashFlowLineConfigSheet: View {
             HStack {
                 Image(systemName: selectedMethod == method ? "circle.inset.filled" : "circle")
                     .foregroundStyle(selectedMethod == method ? theme.accent : .secondary)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(label)
                         .font(DS.Typography.body)
                         .foregroundStyle(enabled ? .primary : .secondary)

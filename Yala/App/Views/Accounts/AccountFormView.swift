@@ -471,7 +471,7 @@ struct AccountFormView: View {
                         ForEach(viewModel.colorOptions, id: \.self) { hex in
                             Circle()
                                 .fill(colorForHex(hex))
-                                .frame(width: 32, height: 32)
+                                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                                 .overlay(
                                     Circle()
                                         .stroke(
@@ -489,7 +489,7 @@ struct AccountFormView: View {
                         } label: {
                             Circle()
                                 .fill(DS.Colors.borderDark)
-                                .frame(width: 32, height: 32)
+                                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                                 .overlay(
                                     Image(systemName: "plus")
                                         .font(DS.Typography.labelSmall)

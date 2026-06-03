@@ -239,7 +239,7 @@ struct SankeyChartView: View {
         let node = placed.node
         let valueString = formattedValue(for: node)
 
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
             Text(node.name)
                 .font(DS.Typography.captionSmall)
                 .fontWeight(.medium)

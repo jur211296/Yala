@@ -81,9 +81,9 @@ struct YalaSpark: View {
 
         var dimension: CGFloat {
             switch self {
-            case .small: return 12
-            case .medium: return 16
-            case .large: return 24
+            case .small: return DS.Icon.sizeSmall
+            case .medium: return DS.Icon.sizeMedium
+            case .large: return DS.Icon.badgeSmall
             }
         }
     }

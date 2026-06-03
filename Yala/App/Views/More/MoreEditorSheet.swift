@@ -68,7 +68,7 @@ struct MoreEditorSheet: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(localOrder.count) * 52)
+            .frame(height: CGFloat(localOrder.count) * DS.FormRow.minHeight)
             .solidCard()
             .environment(\.editMode, .constant(.active))
         }
@@ -79,7 +79,7 @@ struct MoreEditorSheet: View {
             Image(systemName: kind.icon)
                 .font(DS.Typography.body)
                 .foregroundStyle(.thAccent)
-                .frame(width: 28, height: 28)
+                .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
 
             Text(kind.title)
                 .font(DS.Typography.body)
@@ -103,7 +103,7 @@ struct MoreEditorSheet: View {
                 Image(systemName: "rectangle.bottomthird.inset.filled")
                     .font(DS.Typography.body)
                     .foregroundStyle(.thAccent)
-                    .frame(width: 28, height: 28)
+                    .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Settings.tabBarConfig)

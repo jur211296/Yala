@@ -263,7 +263,7 @@ struct BudgetsFavoritesSettingsView: View {
                     ZStack {
                         Circle()
                             .fill(Color(hex: colorHex).opacity(0.15))
-                            .frame(width: 40, height: 40)
+                            .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
                         Image(systemName: icon)
                             .font(DS.Typography.body)
@@ -297,7 +297,7 @@ struct BudgetsFavoritesSettingsView: View {
                 Image(systemName: budget.isFavorite ? "star.fill" : "star")
                     .font(DS.Typography.body)
                     .foregroundStyle(budget.isFavorite ? DS.Semantic.favoriteIcon : Color.secondary)
-                    .frame(width: 44, height: 44)
+                    .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -309,7 +309,7 @@ struct BudgetsFavoritesSettingsView: View {
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.indicator)
                     .foregroundStyle(.tertiary)
-                    .frame(width: 44, height: 44)
+                    .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

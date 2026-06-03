@@ -191,7 +191,7 @@ struct GroupsOnboardingView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                     .fill(iconColor.opacity(0.18))
-                    .frame(width: 44, height: 44)
+                    .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 Image(systemName: icon)
                     .font(.system(size: 20, weight: .semibold)) // A11Y-DT: card icon
                     .foregroundStyle(iconColor)

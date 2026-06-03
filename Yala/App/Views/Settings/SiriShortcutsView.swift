@@ -239,7 +239,7 @@ struct SiriShortcutsView: View {
                         .fill(iconColor)
                 )
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(name)
                     .font(DS.Typography.bodyBold)
                     .foregroundStyle(.thPrimaryText)

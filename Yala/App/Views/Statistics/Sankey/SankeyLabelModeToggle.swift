@@ -37,7 +37,7 @@ struct SankeyLabelModeToggle: View {
             Image(systemName: systemImage)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
-                .frame(width: 32, height: 32)
+                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                 .background {
                     if isSelected {
                         Circle()

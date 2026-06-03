@@ -87,7 +87,7 @@ struct ImportAccountPickerSheet: View {
         HStack(spacing: DS.Spacing.md) {
             RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                 .fill(colorForHex(account.colorHex))
-                .frame(width: 40, height: 40)
+                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
                 .overlay(
                     Image(systemName: displayIconName(for: account))
                         .foregroundStyle(.white)

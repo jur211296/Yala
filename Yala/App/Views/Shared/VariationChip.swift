@@ -90,7 +90,7 @@ struct VariationChip: View {
             EmptyView()
         } else if let variation = variation {
             // Show formatted variation percentage
-            HStack(spacing: 2) {
+            HStack(spacing: DS.Spacing.xxs) {
                 if abs(variation) < 0.05 {
                     Image(systemName: "equal")
                         .font(size.font)

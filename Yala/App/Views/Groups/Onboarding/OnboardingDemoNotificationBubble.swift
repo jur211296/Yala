@@ -30,7 +30,7 @@ struct OnboardingDemoNotificationBubble: View {
                 .frame(width: 40, height: 40)
                 .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text("Yala")
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.thPrimaryText)

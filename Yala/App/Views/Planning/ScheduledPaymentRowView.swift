@@ -58,7 +58,7 @@ struct ScheduledPaymentRowView: View {
         ZStack {
             Circle()
                 .fill(Color(hex: summary.color))
-                .frame(width: 40, height: 40)
+                .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
             Image(systemName: summary.icon)
                 .font(DS.Typography.label)

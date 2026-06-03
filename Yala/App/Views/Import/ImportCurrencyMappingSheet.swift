@@ -132,7 +132,7 @@ struct ImportCurrencyMappingSheet: View {
                         HStack(spacing: DS.Spacing.sm) {
                             RoundedRectangle(cornerRadius: DS.Radius.xs)
                                 .fill(colorForHex(account.colorHex))
-                                .frame(width: 24, height: 24)
+                                .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
                                 .overlay(
                                     Image(systemName: displayIconName(for: account))
                                         .font(DS.Typography.caption)
@@ -194,7 +194,7 @@ struct ImportCurrencyMappingSheet: View {
             HStack(spacing: DS.Spacing.md) {
                 RoundedRectangle(cornerRadius: DS.Radius.sm)
                     .fill(colorForHex(account.colorHex))
-                    .frame(width: 32, height: 32)
+                    .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                     .overlay(
                         Image(systemName: displayIconName(for: account))
                             .font(DS.Typography.caption)

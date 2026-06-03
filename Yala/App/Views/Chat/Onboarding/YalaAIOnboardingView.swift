@@ -190,7 +190,7 @@ struct YalaAIOnboardingView: View {
                         Text(badge)
                             .font(DS.Typography.captionSmall.weight(.semibold))
                             .padding(.horizontal, DS.Spacing.sm)
-                            .padding(.vertical, 2)
+                            .padding(.vertical, DS.Spacing.xxs)
                             .background(Color.essentialNeed.opacity(0.22))
                             .foregroundStyle(Color.essentialNeed)
                             .clipShape(Capsule())

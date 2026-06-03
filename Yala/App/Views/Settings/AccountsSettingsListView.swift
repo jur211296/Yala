@@ -227,7 +227,7 @@ struct AccountsSettingsListView: View {
         return HStack(spacing: DS.Spacing.md) {
             Circle()
                 .fill(colorForHex(account.colorHex))
-                .frame(width: 32, height: 32)
+                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                 .overlay(
                     Image(systemName: displayIconName(for: account))
                         .font(DS.Typography.subheadline)

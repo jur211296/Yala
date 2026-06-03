@@ -178,7 +178,7 @@ struct ProcessingProgressView: View {
                             // Current step: pulsing dot
                             Circle()
                                 .fill(.white)
-                                .frame(width: 8, height: 8)
+                                .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
                         } else {
                             // Future step: number
                             Text("\(index + 1)")

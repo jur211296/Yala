@@ -161,7 +161,7 @@ struct TagFormView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Circle()
                         .fill(colorForHex(viewModel.selectedColorHex))
-                        .frame(width: 40, height: 40)
+                        .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
                         .overlay(
                             Image(systemName: viewModel.selectedIconName)
                                 .font(DS.Typography.body).fontWeight(.medium)
@@ -195,7 +195,7 @@ struct TagFormView: View {
                         ForEach(Tag.defaultColors, id: \.self) { hex in
                             Circle()
                                 .fill(colorForHex(hex))
-                                .frame(width: 32, height: 32)
+                                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                                 .overlay(
                                     Circle()
                                         .stroke(
@@ -218,7 +218,7 @@ struct TagFormView: View {
                         } label: {
                             Circle()
                                 .fill(DS.Colors.borderDark)
-                                .frame(width: 32, height: 32)
+                                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                                 .overlay(
                                     Image(systemName: "plus")
                                         .font(DS.Typography.labelSmall)

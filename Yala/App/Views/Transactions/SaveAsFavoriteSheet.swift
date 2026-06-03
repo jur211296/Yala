@@ -147,7 +147,7 @@ struct SaveAsFavoriteSheet: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "star")
                     .foregroundStyle(.secondary)
-                    .frame(width: 24)
+                    .frame(width: DS.Icon.badgeSmall)
                     .accessibilityHidden(true)
 
                 TextField(L10n.Favorites.namePlaceholder, text: $name)

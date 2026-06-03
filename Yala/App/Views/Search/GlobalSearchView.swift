@@ -400,7 +400,7 @@ struct SearchResultRow: View {
         return ZStack {
             Circle()
                 .fill(Color(hex: colorHex))
-                .frame(width: 40, height: 40)
+                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
             Image(systemName: iconName)
                 .font(DS.Typography.label)

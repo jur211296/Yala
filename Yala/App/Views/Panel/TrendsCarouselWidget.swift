@@ -232,7 +232,7 @@ struct TrendsCarouselWidget: View {
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
                 .foregroundStyle(isSelected ? .white : (isBlocked ? type.color.opacity(0.4) : type.color))
-                .frame(width: 32, height: 32)
+                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                 .background {
                     if isSelected {
                         Circle()

@@ -226,7 +226,7 @@ struct RecordsStandaloneView: View {
                     if recordsViewModel.activeFilterCount > 0 {
                         Circle()
                             .fill(Color.hotPink)
-                            .frame(width: 8, height: 8)
+                            .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
                             .offset(x: 2, y: -2)
                     }
                 }

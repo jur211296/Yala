@@ -248,7 +248,7 @@ struct CashFlowSetupView: View {
                     .foregroundStyle(.white)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(line.name)
                     .font(DS.Typography.body)
                     .foregroundStyle(.primary)
@@ -477,7 +477,7 @@ struct CashFlowMethodPickerSheet: View {
                     .foregroundStyle(selectedMethod == method ? theme.accent : .secondary)
                     .font(DS.Typography.headline)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(methodDisplayName(method))
                         .font(DS.Typography.body)
                         .foregroundStyle(.primary)

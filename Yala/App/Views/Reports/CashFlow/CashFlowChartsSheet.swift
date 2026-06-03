@@ -221,7 +221,7 @@ struct CashFlowChartsSheet: View {
             .fontWeight(.medium)
             .foregroundStyle(.thPrimaryText)
             .padding(.horizontal, DS.Spacing.xs)
-            .padding(.vertical, 2)
+            .padding(.vertical, DS.Spacing.xxs)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.xs, style: .continuous)
                     .fill(.thCard.opacity(0.9))

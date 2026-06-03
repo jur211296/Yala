@@ -108,7 +108,7 @@ struct TabBarConfigView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(localConfig.activeTabs.count) * 52)
+            .frame(height: CGFloat(localConfig.activeTabs.count) * DS.FormRow.minHeight)
             .solidCard()
             .environment(\.editMode, .constant(.active))
 

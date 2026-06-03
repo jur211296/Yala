@@ -396,14 +396,14 @@ struct GroupExpenseFormView: View {
                     .font(DS.Typography.label)
             }
         case .youOnly(let yourAmount):
-            HStack(spacing: 2) {
+            HStack(spacing: DS.Spacing.xxs) {
                 Text(L10n.Split.youLabel + ":")
                     .font(DS.Typography.label)
                 Text(yourAmount)
                     .font(DS.Typography.label)
             }
         case .youPaidAll(let total):
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Text(L10n.Split.youPaidAll)
                     .font(DS.Typography.label)
                 Text("·")
@@ -413,7 +413,7 @@ struct GroupExpenseFormView: View {
                     .font(DS.Typography.label)
             }
         case .notIncluded(let total):
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 Text(L10n.Groups.Expense.notIncluded)
                     .font(DS.Typography.label)
                 Text("·")
@@ -423,7 +423,7 @@ struct GroupExpenseFormView: View {
                     .font(DS.Typography.label)
             }
         case .youAndRest(let you, let rest):
-            HStack(spacing: 4) {
+            HStack(spacing: DS.Spacing.xs) {
                 segmentText(label: L10n.Split.youLabel, segment: you)
                 Text("·")
                     .font(DS.Typography.label)
@@ -435,7 +435,7 @@ struct GroupExpenseFormView: View {
 
     @ViewBuilder
     private func segmentText(label: String, segment: GroupSplitChipFormatter.Output.Segment) -> some View {
-        HStack(spacing: 2) {
+        HStack(spacing: DS.Spacing.xxs) {
             Text(label + ": " + segment.amountString)
                 .font(DS.Typography.label)
             if let suffix = segment.suffix {

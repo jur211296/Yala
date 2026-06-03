@@ -195,7 +195,7 @@ struct CategoryDetailView: View {
                     // Pencil edit indicator
                     Circle()
                         .fill(.thCard)
-                        .frame(width: 24, height: 24)
+                        .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
                         .overlay(
                             Image(systemName: "pencil")
                                 .font(DS.Typography.labelSmall)

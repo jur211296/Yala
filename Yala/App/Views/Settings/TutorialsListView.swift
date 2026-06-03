@@ -105,7 +105,7 @@ struct TutorialsListView: View {
                         .fill(tutorial.color)
                 )
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(tutorial.title)
                     .font(DS.Typography.bodyBold)
                     .foregroundStyle(.thPrimaryText)

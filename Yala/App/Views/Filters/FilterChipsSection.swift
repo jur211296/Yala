@@ -57,7 +57,7 @@ struct FilterChipsSection<Item: Identifiable, ChipContent: View>: View {
                 .padding(.bottom, DS.Spacing.md)
             } else {
                 // Minimal spacer to maintain layout consistency when empty
-                Color.clear.frame(height: 12)
+                Color.clear.frame(height: DS.Spacing.md)
             }
         }
     }
@@ -106,7 +106,7 @@ struct FilterChipWithIndicator: View {
             HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(isSelected ? Color.white : indicatorColor)
-                    .frame(width: 8, height: 8)
+                    .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
 
                 Text(title)
                     .font(DS.Typography.subheadline)
