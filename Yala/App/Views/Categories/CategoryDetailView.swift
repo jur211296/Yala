@@ -209,6 +209,7 @@ struct CategoryDetailView: View {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Action.edit)
 
             Text(viewModel.displayName)
                 .font(DS.Typography.headline)

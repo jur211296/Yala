@@ -319,6 +319,7 @@ struct NotificationCard: View {
                             .foregroundStyle(.red.opacity(0.7))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Action.delete)
                 }
             }
             .padding(DS.Spacing.lg)

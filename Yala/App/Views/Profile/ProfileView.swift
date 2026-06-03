@@ -333,6 +333,7 @@ struct ProfileView: View {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Accessibility.profile)
 
             // Name
             Text(appPreferences.userName)

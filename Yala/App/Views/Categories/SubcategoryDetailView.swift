@@ -224,6 +224,7 @@ struct SubcategoryDetailView: View {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Action.edit)
 
             Text(parentCategory.name)
                 .font(DS.Typography.subheadline)

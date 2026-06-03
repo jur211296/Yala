@@ -245,6 +245,7 @@ struct TrendsCarouselWidget: View {
                 }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(type.displayName)
     }
 
     // MARK: - KPI

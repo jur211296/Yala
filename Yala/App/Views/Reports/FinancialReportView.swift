@@ -296,6 +296,7 @@ struct FinancialReportView: View {
                                 .font(DS.Typography.bodyBold)
                                 .foregroundStyle(.thToolbarIcon)
                         }
+                        .accessibilityLabel(L10n.Accessibility.cashFlowChart)
 
                         Menu {
                             Button {

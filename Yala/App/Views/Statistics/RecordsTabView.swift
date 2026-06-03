@@ -197,6 +197,7 @@ struct RecordsTabView: View {
                     .opacity(hasNeedFilter && !isIncomeFiltered ? 0.3 : 1.0)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(L10n.Accessibility.metricIncome)
             }
 
             Button {
@@ -226,6 +227,7 @@ struct RecordsTabView: View {
                 .opacity(hasNeedFilter && !isExpenseFiltered ? 0.3 : 1.0)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Accessibility.metricExpense)
         }
     }
 

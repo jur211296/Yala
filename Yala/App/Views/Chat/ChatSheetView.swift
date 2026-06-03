@@ -390,6 +390,7 @@ struct ChatSheetView: View {
                     .background(Circle().fill(DS.Semantic.errorForeground))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Accessibility.stopRecording)
         }
         .padding(DS.Spacing.md)
         .background(.thCard)
@@ -441,6 +442,7 @@ struct ChatSheetView: View {
                 .symbolEffect(.pulse, isActive: viewModel.isRecording)
         }
         .disabled(viewModel.isTranscribing || viewModel.isLoading || !viewModel.isAIAvailable)
+        .accessibilityLabel(viewModel.isRecording ? L10n.Accessibility.stopRecording : L10n.Accessibility.startRecording)
     }
 
     private var sendButton: some View {
@@ -453,6 +455,7 @@ struct ChatSheetView: View {
                 .frame(width: 32, height: 32) // A11Y-DT: tap target circular
                 .background(Circle().fill(theme.accent))
         }
+        .accessibilityLabel(L10n.Chat.send)
         .disabled(
             viewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || viewModel.isLoading

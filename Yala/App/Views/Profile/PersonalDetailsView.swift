@@ -126,6 +126,7 @@ struct PersonalDetailsView: View {
             } label: {
                 avatarDisplay
             }
+            .accessibilityLabel(L10n.Accessibility.profile)
 
         }
         .padding(.vertical, DS.Spacing.sm)
