@@ -65,6 +65,9 @@ Carpetas del vault: `Backlog/` · `Ideas/` · `Bugs/` · `Attachments/` · `plan
 - **`YalaFormatter` no auto-refresca prefs** — lee `UserDefaults` directo. Vista que lo use con `decimalPlaces` o `currencyDisplayFormat` debe inyectar `@Environment(AppPreferences.self)` y leer `let _ = appPreferences.X` en body para registrar dependencia.
 - **Forms con `TextField`/`TextEditor`/`SecureField`** (sin `Form`): obligatorio `dismissKeyboardOnTap()` desde el primer commit. Detalles en SWIFT-STYLE.md.
 
+### Localización (l10n)
+- **iOS NO hace fallback per-key con idioma de SISTEMA.** El patrón "marker-only hereda vía fallback iOS" es FALSO: si la variante (`es-ES`/`es-AR`/`en-GB`/`pt-PT`) es el idioma del sistema, iOS resuelve `Bundle.main` contra esa `.lproj` y devuelve la **key cruda** si falta (afecta `ls()` Y los ~290 `NSLocalizedString` directos). El fallback manual de `ls()` solo corre con **override in-app** (`parentBundle != nil`). → **Toda key nueva DEBE quedar en las 4 variantes completas, no sparse.** Usa `qa/scripts/add-l10n-key.sh` (ya las materializa) y `LocalizationParityTests.variants_haveAllKeys_fromParent` lo enforcea. `es-419`/`en`/`pt-BR` son las referencias completas. Detalle en L10N.md.
+
 ### iOS 26 Liquid Glass (OBLIGATORIO)
 - `ToolbarSpacer(.fixed, placement: .topBarTrailing)` — placement es OBLIGATORIO.
 - `.glassEffect()` para chips, barras flotantes, elementos translúcidos.

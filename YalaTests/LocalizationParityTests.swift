@@ -55,8 +55,7 @@ struct LocalizationParityTests {
     }
 
     @Test func variants_areSubsetOfParent() {
-        // Variantes regionales (parent != nil) deben ser subset de las keys del padre.
-        // Por definición las variantes solo contienen overrides — nada nuevo.
+        // Variantes regionales (parent != nil) no deben tener keys ajenas al padre.
         for variant in SupportedLocale.allCases where variant.parent != nil {
             guard let parent = variant.parent else { continue }
             let variantKeys = Set(StringsFileParser.parseStrings(forLocale: variant.code).keys)
@@ -64,6 +63,23 @@ struct LocalizationParityTests {
 
             let orphans = variantKeys.subtracting(parentKeys)
             #expect(orphans.isEmpty, "Variant '\(variant.code)' has \(orphans.count) keys not in parent '\(parent.code)': \(orphans.sorted())")
+        }
+    }
+
+    /// Las variantes DEBEN materializar todas las keys del padre, no solo los overrides.
+    /// iOS NO hace fallback per-key cuando la variante es el idioma de SISTEMA: resuelve
+    /// `Bundle.main` contra el `.lproj` de la variante y devuelve la key cruda si falta.
+    /// El fallback manual de `ls()` (variante→padre→main) solo aplica con override in-app,
+    /// y los ~290 `NSLocalizedString` directos ni siquiera pasan por `ls()`. Combinado con
+    /// `variants_areSubsetOfParent`, esto fuerza paridad exacta variante == padre.
+    @Test func variants_haveAllKeys_fromParent() {
+        for variant in SupportedLocale.allCases where variant.parent != nil {
+            guard let parent = variant.parent else { continue }
+            let variantKeys = Set(StringsFileParser.parseStrings(forLocale: variant.code).keys)
+            let parentKeys = Set(StringsFileParser.parseStrings(forLocale: parent.code).keys)
+
+            let missing = parentKeys.subtracting(variantKeys)
+            #expect(missing.isEmpty, "Variant '\(variant.code)' is missing \(missing.count) keys from parent '\(parent.code)' — con idioma de sistema se verían CRUDAS. Materializa los valores del padre: \(missing.sorted().prefix(5))")
         }
     }
 

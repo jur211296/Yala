@@ -10,12 +10,17 @@
 # tests de paridad) y se propaga como [NEEDS_TRANSLATION] al resto. El dev luego
 # traduce manualmente cada locale antes del commit.
 #
-# Variantes regionales (es-ES, es-AR, pt-PT, en-GB) NO se tocan — heredan del
-# padre vía fallback chain. Si la key requiere override regional, añadirlo
-# manualmente después.
+# Variantes regionales (es-ES, es-AR, pt-PT, en-GB) TAMBIÉN se materializan: iOS NO
+# hace fallback per-key cuando la variante es el idioma de SISTEMA (resuelve el .lproj
+# de la variante y devuelve la key cruda si falta). es-ES/es-AR copian el valor real de
+# es-419; en-GB/pt-PT reciben [NEEDS_TRANSLATION] (igual que en/pt-BR). Si la key requiere
+# override regional (peninsular/voseo/británico), edítalo manualmente después. Detalle en
+# planning/L10N.md.
 #
-# Tests CI fallarán si quedan strings con [NEEDS_TRANSLATION] al commitear:
+# Tests CI fallarán si quedan strings con [NEEDS_TRANSLATION] o si una variante queda
+# incompleta respecto a su padre:
 #   - LocalizationParityTests.noNeedsTranslationMarker_anywhere
+#   - LocalizationParityTests.variants_haveAllKeys_fromParent
 set -euo pipefail
 
 if [ "$#" -lt 2 ]; then
@@ -91,6 +96,42 @@ for locale in "${BASE_LOCALES[@]}"; do
   added=$((added + 1))
 done
 
+# Variantes regionales — DEBEN materializar la key (sin esto, un usuario con la
+# variante como idioma de sistema vería la key cruda: iOS no hace fallback per-key).
+# es-ES/es-AR heredan el valor real de es-419; en-GB/pt-PT reciben el placeholder
+# (igual que en/pt-BR) para forzar su traducción. Override regional → editar a mano.
+for variant in "es-ES" "es-AR" "en-GB" "pt-PT"; do
+  file="$RESOURCES/$variant.lproj/Localizable.strings"
+  if [ ! -f "$file" ]; then
+    echo "  ⚠️  $variant: $file no existe — saltando"
+    continue
+  fi
+
+  if grep -qE "^\"${KEY//./\\.}\" = " "$file"; then
+    echo "  ✓  $variant: key '$KEY' ya existe — saltando"
+    skipped=$((skipped + 1))
+    continue
+  fi
+
+  case "$variant" in
+    es-ES|es-AR) value="$VALUE_ES_419" ;;               # padre es-419 → valor real
+    *)           value="$PLACEHOLDER $VALUE_ES_419" ;;  # en-GB←en, pt-PT←pt-BR → pendiente
+  esac
+
+  if [ -n "$COMMENT" ]; then
+    {
+      echo ""
+      echo "/* $COMMENT */"
+      echo "\"$KEY\" = \"$value\";"
+    } >> "$file"
+  else
+    echo "\"$KEY\" = \"$value\";" >> "$file"
+  fi
+
+  echo "  +  $variant: añadida con valor: $value"
+  added=$((added + 1))
+done
+
 echo ""
 echo "✓ Resumen: $added añadidas, $skipped existentes."
 echo ""
@@ -98,5 +139,5 @@ echo "Siguiente paso: traducir las keys [NEEDS_TRANSLATION] antes de commit."
 echo "Tests CI fallarán mientras existan placeholders sin traducir:"
 echo "  xcodebuild test -scheme Yala -only-testing:YalaTests/LocalizationParityTests"
 echo ""
-echo "Si la key requiere override en variantes regionales (es-ES, es-AR, pt-PT, en-GB),"
-echo "añadirlo manualmente — el script no toca variantes (heredan del padre)."
+echo "Las variantes (es-ES/es-AR/en-GB/pt-PT) ya se materializaron. Si la key requiere"
+echo "un override regional (peninsular/voseo/británico), edítalo manualmente en su .lproj."
