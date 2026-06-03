@@ -40,7 +40,6 @@ struct UserDataResetView: View {
                             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                                 Text(L10n.Settings.resetAllData)
                                     .font(DS.Typography.title)
-                                    .fontWeight(.semibold)
 
                                 Text(
                                     L10n.Settings.resetDataDescription

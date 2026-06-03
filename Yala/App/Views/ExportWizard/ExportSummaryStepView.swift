@@ -97,7 +97,7 @@ struct ExportSummaryStepView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Export.confirmExport)
-                .font(.title3.weight(.semibold))
+                .font(DS.Typography.title3)
                 .foregroundStyle(.primary)
 
             Text(L10n.Export.summaryDescription)

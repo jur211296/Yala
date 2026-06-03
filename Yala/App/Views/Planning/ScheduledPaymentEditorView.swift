@@ -917,7 +917,7 @@ struct ScheduledPaymentEditorView: View {
         HStack(spacing: DS.Spacing.md) {
             VStack(spacing: DS.Spacing.xxs) {
                 Text(date, format: .dateTime.day())
-                    .font(.title3.weight(.bold))
+                    .font(DS.Typography.title3.weight(.bold))
                     .foregroundStyle(.primary)
                 Text(date, format: .dateTime.month(.abbreviated))
                     .font(DS.Typography.captionSmall)

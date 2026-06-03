@@ -485,6 +485,8 @@ enum DS {
         static let title = Font.title2.weight(.semibold)
         /// Subsection headers
         static let title2 = Font.title2.weight(.semibold)
+        /// Tertiary headers — pasos de wizard, empty states, badges de fecha
+        static let title3 = Font.title3.weight(.semibold)
         /// Card titles, subsections
         static let headline = Font.headline.weight(.semibold)
 

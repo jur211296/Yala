@@ -385,7 +385,7 @@ struct RecordsTabView: View {
                 .accessibilityHidden(true)
 
             Text(L10n.Records.noRecords)
-                .font(.title3.weight(.semibold))
+                .font(DS.Typography.title3)
                 .foregroundStyle(.primary)
 
             Text(

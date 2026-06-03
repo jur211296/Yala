@@ -340,7 +340,7 @@ struct ScheduledPaymentDetailView: View {
                 // Date indicator
                 VStack(spacing: DS.Spacing.xxs) {
                     Text(dayOfMonth(date))
-                        .font(.title3.weight(.bold))
+                        .font(DS.Typography.title3.weight(.bold))
                         .foregroundStyle(isSkipped || isPast ? .secondary : .primary)
                     Text(monthAbbrev(date))
                         .font(DS.Typography.captionSmall)
