@@ -22,7 +22,6 @@ struct PersonalizationSettingsView: View {
     @State private var showingAutoFocusPicker = false
     @State private var showingDecimalsPicker = false
     @State private var showingCurrencyFormatPicker = false
-    @State private var showingTabBarConfig = false
     @State private var showingAverageLinePicker = false
     @State private var showingWeekdayPicker = false
     @State private var showingLanguagePicker = false
@@ -165,40 +164,6 @@ struct PersonalizationSettingsView: View {
                                     .foregroundStyle(.secondary)
                                     .padding(.horizontal, DS.Spacing.xxs)
                             }
-                        }
-
-                        // Tab Bar Configuration
-                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Button {
-                                showingTabBarConfig = true
-                            } label: {
-                                HStack {
-                                    Text(L10n.Settings.tabBarConfig)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.thPrimaryText)
-
-                                    Spacer()
-
-                                    Image(systemName: "chevron.right")
-                                        .font(DS.Typography.labelSmall.weight(.medium))
-                                        .foregroundStyle(.tertiary)
-                                }
-                                .padding(.horizontal, DS.FormRow.paddingH)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                                .background(.thCard)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("personalization_tabbar_button")
-
-                            Text(L10n.Settings.tabBarConfigInfo)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
                         }
 
                         // Voice Language
@@ -662,9 +627,6 @@ struct PersonalizationSettingsView: View {
                 }
             )
             .presentationDetents([.large])
-        }
-        .sheet(isPresented: $showingTabBarConfig) {
-            TabBarConfigView()
         }
         .sheet(isPresented: $showingWeekdayPicker) {
             WeekdayPickerSheet(

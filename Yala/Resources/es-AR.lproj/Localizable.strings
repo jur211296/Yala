@@ -690,3 +690,7 @@
 "more.subtitle.budgets" = "Poné límites y mirá cómo vas";
 "more.subtitle.comparative" = "Compará tus periodos lado a lado";
 "more.subtitle.groups" = "Compartí gastos sin enredos";
+
+
+/* MARK: MoreEditor-keys (more redesign Fase 2) */
+"more.editor.tabBarHint" = "Elegí y ordená las pestañas del menú inferior";

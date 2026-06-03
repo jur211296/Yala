@@ -4407,3 +4407,7 @@
 
 /* MARK: MoreDashboard-keys (more redesign) */
 /* (inherits from base locale via iOS fallback) */
+
+
+/* MARK: MoreEditor-keys (more redesign Fase 2) */
+/* (inherits from base locale via iOS fallback) */

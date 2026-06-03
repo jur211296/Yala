@@ -4409,3 +4409,9 @@
 "more.subtitle.groups" = "Teile Ausgaben ganz unkompliziert";
 "more.subtitle.profile" = "Dein Konto und deine Einstellungen";
 "more.toolsSection" = "Weitere Funktionen";
+
+
+/* MARK: MoreEditor-keys (more redesign Fase 2) */
+"more.editor.title" = "Anpassen";
+"more.editor.sectionsHeader" = "Reihenfolge der Bereiche";
+"more.editor.tabBarHint" = "Wähle und ordne die Tableiste unten";

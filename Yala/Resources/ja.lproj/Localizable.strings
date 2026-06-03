@@ -4389,3 +4389,9 @@
 "more.subtitle.groups" = "割り勘を手軽に共有";
 "more.subtitle.profile" = "アカウントと設定";
 "more.toolsSection" = "その他の機能";
+
+
+/* MARK: MoreEditor-keys (more redesign Fase 2) */
+"more.editor.title" = "カスタマイズ";
+"more.editor.sectionsHeader" = "セクションの順序";
+"more.editor.tabBarHint" = "下部タブバーの選択と並び替え";

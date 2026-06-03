@@ -4261,6 +4261,13 @@ enum L10n {
             static var groups: String { ls("more.subtitle.groups", comment: "") }
             static var profile: String { ls("more.subtitle.profile", comment: "") }
         }
+
+        /// Editor del dashboard "Más" (toolbar): reordenar secciones + tab bar.
+        enum Editor {
+            static var title: String { ls("more.editor.title", comment: "") }
+            static var sectionsHeader: String { ls("more.editor.sectionsHeader", comment: "") }
+            static var tabBarHint: String { ls("more.editor.tabBarHint", comment: "") }
+        }
     }
 
     // MARK: - Welcome (Chooser pre-onboarding A4)

@@ -4,15 +4,53 @@
 //
 //  Dashboard de navegación de la tab "Más": muestra TODAS las páginas de la app
 //  (las del tab bar + las ocultas) y sus sub-tabs como mini-cards agrupadas en
-//  secciones temáticas (lenguaje visual tipo Oura). En modo `groupInvite` solo
-//  muestra el CTA "Activar Yala completo".
+//  secciones temáticas (lenguaje visual tipo Oura). El orden de las secciones es
+//  configurable desde el editor del toolbar. En modo `groupInvite` solo muestra
+//  el CTA "Activar Yala completo".
 //
 
 import SwiftUI
 
+/// Secciones reordenables del dashboard "Más" (Panel es la card hero fija aparte).
+enum MoreSectionKind: String, CaseIterable, Identifiable {
+    case statistics
+    case planning
+    case reports
+    case tools
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .statistics: return L10n.Tab.statistics
+        case .planning: return L10n.Tab.planning
+        case .reports: return L10n.Tab.reports
+        case .tools: return L10n.More.toolsSection
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .statistics: return ConfigurableTab.statistics.iconName
+        case .planning: return ConfigurableTab.planning.iconName
+        case .reports: return ConfigurableTab.reports.iconName
+        case .tools: return "wrench.and.screwdriver"
+        }
+    }
+
+    /// Resuelve el orden custom guardado, añadiendo al final las secciones que falten.
+    static func ordered(from stored: [String]) -> [MoreSectionKind] {
+        let resolved = stored.compactMap { MoreSectionKind(rawValue: $0) }
+        let missing = allCases.filter { !resolved.contains($0) }
+        return resolved + missing
+    }
+}
+
 struct MoreView: View {
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var showProfile = false
+    @State private var showEditor = false
 
     /// GC-08: en modo groupInvite solo Grupos es accesible; el dashboard se oculta.
     private var isGroupInviteMode: Bool { SessionState.shared.isGroupInviteMode }
@@ -21,6 +59,10 @@ struct MoreView: View {
         GridItem(.flexible(), spacing: DS.Spacing.md),
         GridItem(.flexible(), spacing: DS.Spacing.md),
     ]
+
+    private var orderedSectionKinds: [MoreSectionKind] {
+        MoreSectionKind.ordered(from: appPreferences.moreSectionOrder)
+    }
 
     var body: some View {
         NavigationStack {
@@ -41,10 +83,26 @@ struct MoreView: View {
             }
             .navigationTitle(L10n.Tab.more)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if !isGroupInviteMode {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showEditor = true
+                        } label: {
+                            Image(systemName: "slider.horizontal.3")
+                        }
+                        .accessibilityLabel(L10n.More.Editor.title)
+                        .accessibilityIdentifier("more_editor_button")
+                    }
+                }
+            }
         }
         .sheet(isPresented: $showProfile) {
             ProfileView()
                 .transaction { $0.animation = nil }
+        }
+        .sheet(isPresented: $showEditor) {
+            MoreEditorSheet()
         }
     }
 
@@ -54,8 +112,8 @@ struct MoreView: View {
     private var dashboardContent: some View {
         heroPanelCard
 
-        ForEach(dashboardSections) { section in
-            sectionView(section)
+        ForEach(orderedSectionKinds) { kind in
+            sectionView(kind)
         }
     }
 
@@ -100,13 +158,13 @@ struct MoreView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func sectionView(_ section: NavSection) -> some View {
+    private func sectionView(_ kind: MoreSectionKind) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             HStack(spacing: DS.Spacing.sm) {
-                Image(systemName: section.icon)
+                Image(systemName: kind.icon)
                     .font(DS.Typography.headline)
                     .foregroundStyle(theme.accent)
-                Text(section.title)
+                Text(kind.title)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
                 Spacer()
@@ -115,7 +173,7 @@ struct MoreView: View {
             .accessibilityAddTraits(.isHeader)
 
             LazyVGrid(columns: gridColumns, spacing: DS.Spacing.md) {
-                ForEach(section.items) { item in
+                ForEach(items(for: kind)) { item in
                     MoreNavCard(
                         icon: item.icon,
                         title: item.title,
@@ -128,11 +186,10 @@ struct MoreView: View {
         }
     }
 
-    // MARK: - Section data (orden fijo en Fase 1; reordenable en Fase 2)
-
-    private var dashboardSections: [NavSection] {
-        [
-            NavSection(id: "statistics", title: L10n.Tab.statistics, icon: ConfigurableTab.statistics.iconName, items: [
+    private func items(for kind: MoreSectionKind) -> [NavItem] {
+        switch kind {
+        case .statistics:
+            return [
                 NavItem(id: "insights", icon: DetailViewTab.insights.icon, title: DetailViewTab.insights.title, subtitle: L10n.More.Subtitle.insights) {
                     SessionState.shared.navigateToDetail(.insights)
                 },
@@ -142,24 +199,27 @@ struct MoreView: View {
                 NavItem(id: "categories", icon: DetailViewTab.categories.icon, title: DetailViewTab.categories.title, subtitle: L10n.More.Subtitle.distribution) {
                     SessionState.shared.navigateToDetail(.categories)
                 },
-            ]),
-            NavSection(id: "planning", title: L10n.Tab.planning, icon: ConfigurableTab.planning.iconName, items: [
+            ]
+        case .planning:
+            return [
                 NavItem(id: "budgets", icon: PlanningTab.budgets.icon, title: PlanningTab.budgets.displayName, subtitle: L10n.More.Subtitle.budgets) {
                     SessionState.shared.navigateToBudgets()
                 },
                 NavItem(id: "scheduledPayments", icon: PlanningTab.scheduledPayments.icon, title: PlanningTab.scheduledPayments.displayName, subtitle: L10n.More.Subtitle.scheduledPayments) {
                     SessionState.shared.navigateToScheduledPayments()
                 },
-            ]),
-            NavSection(id: "reports", title: L10n.Tab.reports, icon: ConfigurableTab.reports.iconName, items: [
+            ]
+        case .reports:
+            return [
                 NavItem(id: "comparativa", icon: ReportTab.comparativa.icon, title: ReportTab.comparativa.title, subtitle: L10n.More.Subtitle.comparative) {
                     SessionState.shared.navigateToReport(.comparativa)
                 },
                 NavItem(id: "flujoDeCaja", icon: ReportTab.flujoDeCaja.icon, title: ReportTab.flujoDeCaja.title, subtitle: L10n.More.Subtitle.cashFlow) {
                     SessionState.shared.navigateToReport(.flujoDeCaja)
                 },
-            ]),
-            NavSection(id: "tools", title: L10n.More.toolsSection, icon: "wrench.and.screwdriver", items: [
+            ]
+        case .tools:
+            return [
                 NavItem(id: "records", icon: ConfigurableTab.records.iconName, title: ConfigurableTab.records.displayName, subtitle: L10n.More.Subtitle.records) {
                     RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
                 },
@@ -169,8 +229,8 @@ struct MoreView: View {
                 NavItem(id: "profile", icon: "person.crop.circle.fill", title: L10n.Profile.title, subtitle: L10n.More.Subtitle.profile) {
                     showProfile = true
                 },
-            ]),
-        ]
+            ]
+        }
     }
 
     // MARK: - Activate Full Yala (GC-08)
@@ -234,12 +294,4 @@ private struct NavItem: Identifiable {
     let title: String
     let subtitle: String
     let action: () -> Void
-}
-
-/// Una sección del dashboard "Más" (header + grid de cards).
-private struct NavSection: Identifiable {
-    let id: String
-    let title: String
-    let icon: String
-    let items: [NavItem]
 }

@@ -4389,3 +4389,9 @@
 "more.subtitle.groups" = "轻松分摊共同支出";
 "more.subtitle.profile" = "你的账户与偏好";
 "more.toolsSection" = "更多功能";
+
+
+/* MARK: MoreEditor-keys (more redesign Fase 2) */
+"more.editor.title" = "自定义";
+"more.editor.sectionsHeader" = "板块顺序";
+"more.editor.tabBarHint" = "选择并排序底部标签栏";

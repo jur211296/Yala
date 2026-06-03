@@ -4410,3 +4410,9 @@
 "more.subtitle.groups" = "Partagez les dépenses sans prise de tête";
 "more.subtitle.profile" = "Votre compte et vos préférences";
 "more.toolsSection" = "Plus d'outils";
+
+
+/* MARK: MoreEditor-keys (more redesign Fase 2) */
+"more.editor.title" = "Personnaliser";
+"more.editor.sectionsHeader" = "Ordre des sections";
+"more.editor.tabBarHint" = "Choisissez et ordonnez la barre d'onglets";

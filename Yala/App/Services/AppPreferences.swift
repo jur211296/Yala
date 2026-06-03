@@ -580,6 +580,16 @@ final class AppPreferences {
         }
     }
 
+    /// Orden custom de las secciones del dashboard "Más" (rawValues de
+    /// `MoreSectionKind`: statistics, planning, reports, tools). Panel es la card
+    /// hero fija y no se reordena. Vacío → orden por defecto (`allCases`).
+    var moreSectionOrder: [String] = [] {
+        didSet {
+            guard oldValue != moreSectionOrder else { return }
+            persistString(moreSectionOrder.joined(separator: ","), forKey: Keys.moreSectionOrder, synced: true)
+        }
+    }
+
     /// One-shot migration sentinel. Per-device (NOT synced via iCloud KV).
     var panelPrefsMigratedV2: Bool = false {
         didSet {
@@ -1030,6 +1040,9 @@ final class AppPreferences {
         if let value = parseList(defaults.string(forKey: Keys.panelSectionsOrder)) {
             panelSectionsOrder = value
         }
+        if let value = parseList(defaults.string(forKey: Keys.moreSectionOrder)) {
+            moreSectionOrder = value
+        }
         panelPrefsMigratedV2 = defaults.bool(forKey: Keys.panelPrefsMigratedV2)
         panelAccountsCollapsed = loadBool(Keys.panelAccountsCollapsed, defaultIfMissing: true)
 
@@ -1182,6 +1195,7 @@ final class AppPreferences {
         static let panelPlanificacionHidden = "panelPlanificacionHidden"
         static let panelSectionsHidden = "panelSectionsHidden"
         static let panelSectionsOrder = "panelSectionsOrder"
+        static let moreSectionOrder = "moreSectionOrder"
         static let panelPrefsMigratedV2 = "panelPrefsMigratedV2"
         /// Marca que la regen de UUIDs (Tag.id + Account/Subcategory.shortcutID) corrió.
         /// Se setea en el primer save exitoso independiente del race del backfill CSV.

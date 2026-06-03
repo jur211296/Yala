@@ -4389,3 +4389,9 @@
 "more.subtitle.groups" = "Deel uitgaven zonder gedoe";
 "more.subtitle.profile" = "Je account en voorkeuren";
 "more.toolsSection" = "Meer functies";
+
+
+/* MARK: MoreEditor-keys (more redesign Fase 2) */
+"more.editor.title" = "Aanpassen";
+"more.editor.sectionsHeader" = "Volgorde van secties";
+"more.editor.tabBarHint" = "Kies en orden de tabbalk onderaan";

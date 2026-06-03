@@ -4389,3 +4389,9 @@
 "more.subtitle.groups" = "Dziel wydatki bez kłopotu";
 "more.subtitle.profile" = "Twoje konto i preferencje";
 "more.toolsSection" = "Więcej narzędzi";
+
+
+/* MARK: MoreEditor-keys (more redesign Fase 2) */
+"more.editor.title" = "Dostosuj";
+"more.editor.sectionsHeader" = "Kolejność sekcji";
+"more.editor.tabBarHint" = "Wybierz i uporządkuj dolny pasek kart";

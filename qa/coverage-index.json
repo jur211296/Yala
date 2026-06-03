@@ -685,7 +685,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/VoiceImageSettingsFabUITests",
       "owner": "",
-      "lastVerified": "2026-06-02"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "inbox-crud",
@@ -986,7 +986,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/ProfileSettingsUITests",
       "owner": "",
-      "lastVerified": "2026-06-02"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "setup-checklist",
@@ -1270,7 +1270,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/VoiceImageSettingsFabUITests",
       "owner": "",
-      "lastVerified": "2026-06-02"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "average-line-bar-charts",
@@ -1295,7 +1295,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "cash-flow-charts-comments",
@@ -1392,7 +1392,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "groups-onboarding-tutorial-visual",
@@ -1819,7 +1819,7 @@
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "app-intents-shortcuts-siri",
@@ -2353,7 +2353,7 @@
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-02"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "transactions-import-transfers",
