@@ -514,3 +514,21 @@
 
 /* MARK: MoreEditor-keys (more redesign Fase 2) */
 /* (inherits from base locale via iOS fallback) */
+
+
+/* MARK: More keys explicit for variant locales (iOS no hace fallback es-419->es) */
+"more.subtitle.panel" = "Tu resumen del día a día";
+"more.subtitle.insights" = "Lo más importante de tu periodo";
+"more.subtitle.trends" = "Mira cómo evoluciona tu dinero";
+"more.subtitle.distribution" = "Descubre en qué se va tu dinero";
+"more.subtitle.budgets" = "Pon límites y mira cómo vas";
+"more.subtitle.scheduledPayments" = "Lo que se viene: pagos y suscripciones";
+"more.subtitle.comparative" = "Compara tus periodos lado a lado";
+"more.subtitle.cashFlow" = "Lo que entra y lo que sale";
+"more.subtitle.records" = "Todos tus movimientos en un lugar";
+"more.subtitle.groups" = "Comparte gastos sin enredos";
+"more.subtitle.profile" = "Tu cuenta y preferencias";
+"more.toolsSection" = "Más herramientas";
+"more.editor.title" = "Personalizar";
+"more.editor.sectionsHeader" = "Orden de las secciones";
+"more.editor.tabBarHint" = "Elige y ordena las pestañas del menú inferior";
