@@ -58,12 +58,7 @@ struct BiometricSecurityView: View {
                         }
                         .padding(.horizontal, DS.FormRow.paddingH)
                         .padding(.vertical, DS.Spacing.sm)
-                        .background(.thCard)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                        )
+                        .solidCard(radius: DS.Radius.lg)
 
                         Text(L10n.Biometric.enableLockHint)
                             .font(DS.Typography.caption)
@@ -84,12 +79,7 @@ struct BiometricSecurityView: View {
                                     }
                                 }
                             }
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                            )
+                            .solidCard(radius: DS.Radius.lg)
 
                             Text(L10n.Biometric.lockAfterHint)
                                 .font(DS.Typography.caption)

@@ -292,12 +292,7 @@ struct ImportIntroSheet: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.FormRow.paddingV)
-                .background(.thCard)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                )
+                .solidCard(radius: DS.Radius.lg)
             }
 
             Text(L10n.Import.templateDescription)
@@ -324,12 +319,7 @@ struct ImportIntroSheet: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-            )
+            .solidCard(radius: DS.Radius.lg)
 
             Text(L10n.Import.categoriesDescription)
             .font(Typography.label)

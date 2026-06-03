@@ -47,12 +47,7 @@ struct GroupsGlobalSettingsView: View {
                             .accessibilityIdentifier("groups_bridge_toggle")
                             .padding(.horizontal, DS.FormRow.paddingH)
                             .padding(.vertical, DS.Spacing.sm)
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                            )
+                            .solidCard(padding: 0, radius: DS.Radius.lg)
 
                             Text(L10n.Groups.GlobalSettings.bridgeCaption)
                                 .font(DS.Typography.caption)
@@ -74,12 +69,7 @@ struct GroupsGlobalSettingsView: View {
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
                             .padding(.vertical, DS.Spacing.sm)
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                            )
+                            .solidCard(padding: 0, radius: DS.Radius.lg)
 
                             Toggle(isOn: $prefs.includeGroupTransactionsInStats) {
                                 Text(L10n.Settings.includeGroupTransactionsInStats)
@@ -88,12 +78,7 @@ struct GroupsGlobalSettingsView: View {
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
                             .padding(.vertical, DS.Spacing.sm)
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                            )
+                            .solidCard(padding: 0, radius: DS.Radius.lg)
 
                             Toggle(isOn: $prefs.includeGroupTransactionsInFeed) {
                                 Text(L10n.Groups.GlobalSettings.includeGroupTransactionsInFeedLabel)
@@ -102,12 +87,7 @@ struct GroupsGlobalSettingsView: View {
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
                             .padding(.vertical, DS.Spacing.sm)
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                            )
+                            .solidCard(padding: 0, radius: DS.Radius.lg)
 
                             Text(L10n.Groups.GlobalSettings.visibilityCaption)
                                 .font(DS.Typography.caption)

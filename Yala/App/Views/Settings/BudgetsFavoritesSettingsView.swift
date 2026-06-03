@@ -139,16 +139,7 @@ struct BudgetsFavoritesSettingsView: View {
                 }
             }
             .padding(DS.Spacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(theme.accent.opacity(0.2), lineWidth: 1)
-            )
-            .dsSubtleShadow()
+            .solidCard(radius: DS.Radius.xl)
         }
     }
 

@@ -215,13 +215,11 @@ struct AppIconSettingsView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.lg)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(
-                        isSelected ? Color.brandPrimary.opacity(0.3) : Color.primary.opacity(0.05),
-                        lineWidth: 1)
+            .selectableCard(
+                isSelected: isSelected,
+                radius: DS.Radius.lg,
+                activeColor: Color.brandPrimary.opacity(0.3),
+                inactiveColor: Color.primary.opacity(0.05)
             )
         }
         .buttonStyle(.plain)

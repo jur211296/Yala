@@ -558,12 +558,7 @@ private struct ExportPeriodPickerSheet: View {
                         // Custom period section
                         customPeriodRow
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
+                    .solidCard(radius: DS.Radius.lg)
                     .padding()
                 }
             }

@@ -345,7 +345,6 @@ struct SearchResultRow: View {
     let currencyCode: String
     let onTap: () -> Void
 
-    @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
@@ -387,8 +386,7 @@ struct SearchResultRow: View {
             .padding(.vertical, DS.Spacing.md)
             .padding(.horizontal, DS.Spacing.md)
             .contentShape(Rectangle())
-            .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
+            .solidCard(radius: DS.Radius.card)
         }
         .buttonStyle(.plain)
     }
@@ -406,17 +404,6 @@ struct SearchResultRow: View {
                 .font(DS.Typography.label)
                 .foregroundStyle(.white)
         }
-    }
-
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: DS.Radius.card)
-            .fill(.thCard)
-            .shadow(
-                color: Color.black.opacity(theme.shadowOpacity),
-                radius: 6,
-                x: 0,
-                y: 3
-            )
     }
 
     private var formattedAmount: String {

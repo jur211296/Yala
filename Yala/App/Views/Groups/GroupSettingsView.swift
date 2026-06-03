@@ -661,8 +661,7 @@ struct GroupSettingsView: View {
             }
             .buttonStyle(.plain)
         }
-        .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
-        .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(.thCardBorder, lineWidth: 1))
+        .solidCard(radius: DS.Radius.card)
     }
 
     // MARK: - Leave Group
@@ -690,8 +689,7 @@ struct GroupSettingsView: View {
             .buttonStyle(.plain)
             .disabled(isLeavingGroup)
         }
-        .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
-        .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(.thCardBorder, lineWidth: 1))
+        .solidCard(radius: DS.Radius.card)
     }
 
     // MARK: - FU-02 Soft-delete (owner-only)
@@ -733,8 +731,7 @@ struct GroupSettingsView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .background(RoundedRectangle(cornerRadius: DS.Radius.card).fill(.thCard))
-        .overlay(RoundedRectangle(cornerRadius: DS.Radius.card).stroke(.thCardBorder, lineWidth: 1))
+        .solidCard(radius: DS.Radius.card)
     }
 
     private func performSoftDelete() async {
