@@ -44,7 +44,10 @@ struct MoreNavCard: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            // maxHeight: .infinity → todas las cards de una fila igualan la altura
+            // de la más alta (enunciados de 1 vs 2 líneas). topLeading mantiene el
+            // contenido arriba; el espacio extra queda abajo.
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .panelCard(small: true)
         }
         .buttonStyle(.plain)

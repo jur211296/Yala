@@ -35,11 +35,7 @@ struct MoreEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.done) {
-                        dismiss()
-                    }
-                    .fontWeight(.semibold)
-                    .accessibilityIdentifier("more_editor_done")
+                    YalaSaveButton(action: { dismiss() })
                 }
             }
         }
