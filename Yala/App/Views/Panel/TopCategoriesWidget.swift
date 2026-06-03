@@ -200,15 +200,7 @@ struct TopCategoriesWidget: View {
                     // In exclude mode, excluded items are hidden — no dimming needed
                     let shouldDim = !isExcludeMode && isAnySelected && !isSelected
 
-                    CategoryRow(
-                        summary: summary,
-                        maxAmount: maxAmount,
-                        currencyCode: currencyCode,
-                        showNAWhenNil: showVariationHeader
-                    )
-                    .opacity(shouldDim ? 0.3 : 1.0)  // Dimming effect
-                    .contentShape(Rectangle())  // Make entire row tappable
-                    .onTapGesture {
+                    Button {
                         if isSelected {
                             // Deselect if already selected?
                             // Requirements "filter that category". Maybe tap again to deselect is good UX.
@@ -219,7 +211,17 @@ struct TopCategoriesWidget: View {
                         } else {
                             onSelectCategory?(summary.category.persistentModelID)
                         }
+                    } label: {
+                        CategoryRow(
+                            summary: summary,
+                            maxAmount: maxAmount,
+                            currencyCode: currencyCode,
+                            showNAWhenNil: showVariationHeader
+                        )
                     }
+                    .buttonStyle(.plain)
+                    .opacity(shouldDim ? 0.3 : 1.0)  // Dimming effect
+                    .contentShape(Rectangle())  // Make entire row tappable
                 }
             }
         }
@@ -267,56 +269,58 @@ struct TopCategoriesWidget: View {
         let isSelected = selectedCategoryID == summary.category.persistentModelID
         let shouldDim = !isExcludeMode && selectedCategoryID != nil && !isSelected
 
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            // Línea 1: ícono + nombre (ocupa casi todo el ancho para nombres largos)
-            HStack(spacing: DS.Spacing.sm) {
-                ZStack {
-                    Circle()
-                        .fill(color)
-                        .frame(width: 28, height: 28)
-
-                    Image(systemName: summary.category.iconName ?? "tag.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .accessibilityHidden(true)
-                }
-
-                Text(summary.category.name)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                Spacer(minLength: 0)
-            }
-
-            // Línea 2: barra de progreso + monto + % (datos compactos juntos)
-            HStack(spacing: DS.Spacing.sm) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(color.opacity(0.15))
-
-                        Capsule()
+        Button {
+            onSelectCategory?(summary.category.persistentModelID)
+        } label: {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                // Línea 1: ícono + nombre (ocupa casi todo el ancho para nombres largos)
+                HStack(spacing: DS.Spacing.sm) {
+                    ZStack {
+                        Circle()
                             .fill(color)
-                            .frame(width: max(0, geo.size.width * CGFloat(clampedPercentage / 100.0)))
+                            .frame(width: 28, height: 28)
+
+                        Image(systemName: summary.category.iconName ?? "tag.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .accessibilityHidden(true)
                     }
+
+                    Text(summary.category.name)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
+                    Spacer(minLength: 0)
                 }
-                .frame(height: 6)
 
-                Text(formattedAmount(summary.amount))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                // Línea 2: barra de progreso + monto + % (datos compactos juntos)
+                HStack(spacing: DS.Spacing.sm) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(color.opacity(0.15))
 
-                Spacer(minLength: 0)
+                            Capsule()
+                                .fill(color)
+                                .frame(width: max(0, geo.size.width * CGFloat(clampedPercentage / 100.0)))
+                        }
+                    }
+                    .frame(height: 6)
+
+                    Text(formattedAmount(summary.amount))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 0)
+                }
             }
         }
+        .buttonStyle(.plain)
         .opacity(shouldDim ? 0.3 : 1.0)
         .contentShape(Rectangle())
-        .onTapGesture {
-            onSelectCategory?(summary.category.persistentModelID)
-        }
     }
 
     /// Empty state compacto para el layout `.small` — evita `YalaEmptyState(style: .widget)`

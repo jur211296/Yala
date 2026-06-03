@@ -193,24 +193,27 @@ struct TagFormView: View {
                         spacing: DS.Spacing.md
                     ) {
                         ForEach(Tag.defaultColors, id: \.self) { hex in
-                            Circle()
-                                .fill(colorForHex(hex))
-                                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
-                                .overlay(
-                                    Circle()
-                                        .stroke(
-                                            Color.white,
-                                            lineWidth: viewModel.selectedColorHex.uppercased()
-                                                == hex.uppercased() ? 3 : 1)
-                                )
-                                .shadow(
-                                    radius: viewModel.selectedColorHex.uppercased() == hex.uppercased() ? 4 : 0
-                                )
-                                .accessibilityLabel(L10n.Accessibility.colorOption(hex))
-                                .accessibilityAddTraits(viewModel.selectedColorHex.uppercased() == hex.uppercased() ? .isSelected : [])
-                                .onTapGesture {
-                                    viewModel.selectedColorHex = hex
-                                }
+                            Button {
+                                viewModel.selectedColorHex = hex
+                            } label: {
+                                Circle()
+                                    .fill(colorForHex(hex))
+                                    .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(
+                                                Color.white,
+                                                lineWidth: viewModel.selectedColorHex.uppercased()
+                                                    == hex.uppercased() ? 3 : 1)
+                                    )
+                                    .shadow(
+                                        radius: viewModel.selectedColorHex.uppercased() == hex.uppercased() ? 4 : 0
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .contentShape(Circle())
+                            .accessibilityLabel(L10n.Accessibility.colorOption(hex))
+                            .accessibilityAddTraits(viewModel.selectedColorHex.uppercased() == hex.uppercased() ? .isSelected : [])
                         }
 
                         Button {

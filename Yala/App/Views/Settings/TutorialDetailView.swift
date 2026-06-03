@@ -187,19 +187,21 @@ struct TutorialDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .overlay {
                     if !isVideoPlaying {
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .fill(.black.opacity(0.15))
-                            .overlay {
-                                Image(systemName: "play.circle.fill")
-                                    .font(.system(size: 60))
-                                    .foregroundStyle(.white)
-                                    .shadow(color: .black.opacity(0.3), radius: 8, y: 2)
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                isVideoPlaying = true
-                            }
-                            .transition(.opacity)
+                        Button {
+                            isVideoPlaying = true
+                        } label: {
+                            RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                .fill(.black.opacity(0.15))
+                                .overlay {
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.system(size: 60))
+                                        .foregroundStyle(.white)
+                                        .shadow(color: .black.opacity(0.3), radius: 8, y: 2)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .contentShape(Rectangle())
+                        .transition(.opacity)
                     }
                 }
                 .dsAnimation(.easeInOut(duration: 0.2), value: isVideoPlaying, reduceMotion: reduceMotion)

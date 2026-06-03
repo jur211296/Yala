@@ -311,19 +311,21 @@ struct TopSubcategoriesWidget: View {
                     // In exclude mode, excluded items are hidden — no dimming needed
                     let isDimmed = !isExcludeMode && !selectedSubcategoryIDs.isEmpty && !isSelected
 
-                    SubcategoryRow(
-                        summary: summary,
-                        maxAmount: maxAmount,
-                        currencyCode: currencyCode,
-                        showNAWhenNil: showVariationHeader
-                    )
-                    .opacity(isDimmed ? 0.3 : 1.0)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    Button {
                         if let persistentID = summary.persistentID {
                             onSelectSubcategory?(persistentID)
                         }
+                    } label: {
+                        SubcategoryRow(
+                            summary: summary,
+                            maxAmount: maxAmount,
+                            currencyCode: currencyCode,
+                            showNAWhenNil: showVariationHeader
+                        )
                     }
+                    .buttonStyle(.plain)
+                    .opacity(isDimmed ? 0.3 : 1.0)
+                    .contentShape(Rectangle())
                 }
             }
         }
@@ -382,58 +384,60 @@ struct TopSubcategoriesWidget: View {
         let isSelected = summary.persistentID.map { selectedSubcategoryIDs.contains($0) } ?? false
         let shouldDim = !isExcludeMode && !selectedSubcategoryIDs.isEmpty && !isSelected
 
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            // Línea 1: ícono + nombre
-            HStack(spacing: DS.Spacing.sm) {
-                ZStack {
-                    Circle()
-                        .fill(color)
-                        .frame(width: 28, height: 28)
-
-                    Image(systemName: summary.subcategory?.iconName ?? summary.category?.iconName ?? "tag.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .accessibilityHidden(true)
-                }
-
-                Text(summary.subcategoryName)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                Spacer(minLength: 0)
-            }
-
-            // Línea 2: barra de progreso + monto + %
-            HStack(spacing: DS.Spacing.sm) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(color.opacity(0.15))
-
-                        Capsule()
-                            .fill(color)
-                            .frame(width: max(0, geo.size.width * CGFloat(clampedPercentage / 100.0)))
-                    }
-                }
-                .frame(height: 6)
-
-                Text(formattedAmount(summary.amount))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-
-                Spacer(minLength: 0)
-            }
-        }
-        .opacity(shouldDim ? 0.3 : 1.0)
-        .contentShape(Rectangle())
-        .onTapGesture {
+        Button {
             if let persistentID = summary.persistentID {
                 onSelectSubcategory?(persistentID)
             }
+        } label: {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                // Línea 1: ícono + nombre
+                HStack(spacing: DS.Spacing.sm) {
+                    ZStack {
+                        Circle()
+                            .fill(color)
+                            .frame(width: 28, height: 28)
+
+                        Image(systemName: summary.subcategory?.iconName ?? summary.category?.iconName ?? "tag.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .accessibilityHidden(true)
+                    }
+
+                    Text(summary.subcategoryName)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
+                    Spacer(minLength: 0)
+                }
+
+                // Línea 2: barra de progreso + monto + %
+                HStack(spacing: DS.Spacing.sm) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(color.opacity(0.15))
+
+                            Capsule()
+                                .fill(color)
+                                .frame(width: max(0, geo.size.width * CGFloat(clampedPercentage / 100.0)))
+                        }
+                    }
+                    .frame(height: 6)
+
+                    Text(formattedAmount(summary.amount))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 0)
+                }
+            }
         }
+        .buttonStyle(.plain)
+        .opacity(shouldDim ? 0.3 : 1.0)
+        .contentShape(Rectangle())
     }
 
     /// PP2-06: empty state compacto para `.small` — evita `YalaEmptyState(style:.widget)`

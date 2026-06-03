@@ -190,57 +190,59 @@ struct BudgetsWidget: View {
         let isAnySelected = selectedBudgetID != nil
         let shouldDim = isAnySelected && (isExcludeMode ? isSelected : !isSelected)
 
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            // Línea 1: ícono + nombre
-            HStack(spacing: DS.Spacing.sm) {
-                ZStack {
-                    Circle()
-                        .fill(color)
-                        .frame(width: 28, height: 28)
-
-                    Image(systemName: summary.icon)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .accessibilityHidden(true)
-                }
-
-                Text(summary.budget.name)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                Spacer(minLength: 0)
-            }
-
-            // Línea 2: barra (28pt fijo, alineada con el ícono) + monto + %
-            HStack(spacing: DS.Spacing.sm) {
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(color.opacity(0.15))
-
-                    Capsule()
-                        .fill(color)
-                        .frame(width: max(0, 28 * CGFloat(clampedPercentage / 100.0)))
-                }
-                .frame(width: 28, height: 6)
-
-                AmountText(
-                    value: summary.spent,
-                    currencyCode: currencyCode,
-                    font: DS.Typography.caption, secondaryFont: DS.Typography.captionSmall,
-                    tint: .secondary
-                )
-
-                Spacer(minLength: 0)
-            }
-        }
-        .opacity(shouldDim ? 0.3 : 1.0)
-        .contentShape(Rectangle())
-        .onTapGesture {
+        Button {
             DS.Haptic.selection()
             onSelectBudget?(summary.budget)
+        } label: {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                // Línea 1: ícono + nombre
+                HStack(spacing: DS.Spacing.sm) {
+                    ZStack {
+                        Circle()
+                            .fill(color)
+                            .frame(width: 28, height: 28)
+
+                        Image(systemName: summary.icon)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .accessibilityHidden(true)
+                    }
+
+                    Text(summary.budget.name)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
+                    Spacer(minLength: 0)
+                }
+
+                // Línea 2: barra (28pt fijo, alineada con el ícono) + monto + %
+                HStack(spacing: DS.Spacing.sm) {
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(color.opacity(0.15))
+
+                        Capsule()
+                            .fill(color)
+                            .frame(width: max(0, 28 * CGFloat(clampedPercentage / 100.0)))
+                    }
+                    .frame(width: 28, height: 6)
+
+                    AmountText(
+                        value: summary.spent,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.caption, secondaryFont: DS.Typography.captionSmall,
+                        tint: .secondary
+                    )
+
+                    Spacer(minLength: 0)
+                }
+            }
         }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .opacity(shouldDim ? 0.3 : 1.0)
     }
 
     @ViewBuilder

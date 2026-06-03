@@ -58,13 +58,19 @@ struct PanelSmallBarRow: View {
     }
 }
 
-/// Adds `.onTapGesture` only when a handler is provided — avoids grabbing taps
-/// in passive contexts (e.g. CashFlow `.small` where the bars are read-only).
+/// Wraps the row in a `Button` only when a handler is provided — avoids grabbing
+/// taps in passive contexts (e.g. CashFlow `.small` where the bars are read-only).
 private struct TapIfPresent: ViewModifier {
     let onTap: (() -> Void)?
     func body(content: Content) -> some View {
         if let onTap {
-            content.onTapGesture { onTap() }
+            Button {
+                onTap()
+            } label: {
+                content
+            }
+            .buttonStyle(.plain)
+            .contentShape(Rectangle())
         } else {
             content
         }

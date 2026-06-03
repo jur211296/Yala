@@ -376,65 +376,69 @@ struct TagsPieWidget: View {
                     let selectedItem = chartData.first(where: { guard let id = $0.id else { return false }; return selectedTagIDs.contains(id) })
                 {
                     Spacer()
-                    VStack(alignment: .center, spacing: DS.Spacing.xs) {
-                        Text(selectedItem.name)
-                            .font(DS.Typography.labelTiny)
-                            .foregroundStyle(Color(hex: selectedItem.colorHex))
-                            .lineLimit(1)
-
-                        ZStack {
-                            Circle()
-                                .fill(Color(hex: selectedItem.colorHex).opacity(0.15))
-                            Image(systemName: selectedItem.iconName)
-                                .font(DS.Typography.labelTiny).fontWeight(.bold)
-                                .foregroundStyle(Color(hex: selectedItem.colorHex))
-                                .accessibilityHidden(true)
-                        }
-                        .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
-
-                        Text(
-                            "\(formattedPercentage(selectedItem.percentage)) (\(formattedCurrency(selectedItem.amount)))"
-                        )
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    Button {
                         if let id = selectedItem.id {
                             onSelectTag?(id)
                         }
-                    }
-                    Spacer()
-                } else {
-                    ForEach(Array(chartData.prefix(3).enumerated()), id: \.element.identity) {
-                        _, item in
+                    } label: {
                         VStack(alignment: .center, spacing: DS.Spacing.xs) {
-                            Text(item.name)
+                            Text(selectedItem.name)
                                 .font(DS.Typography.labelTiny)
-                                .foregroundStyle(Color(hex: item.colorHex))
+                                .foregroundStyle(Color(hex: selectedItem.colorHex))
                                 .lineLimit(1)
 
                             ZStack {
                                 Circle()
-                                    .fill(Color(hex: item.colorHex).opacity(0.15))
-                                Image(systemName: item.iconName)
-                                    .font(DS.Typography.captionSmall).fontWeight(.bold)
-                                    .foregroundStyle(Color(hex: item.colorHex))
+                                    .fill(Color(hex: selectedItem.colorHex).opacity(0.15))
+                                Image(systemName: selectedItem.iconName)
+                                    .font(DS.Typography.labelTiny).fontWeight(.bold)
+                                    .foregroundStyle(Color(hex: selectedItem.colorHex))
                                     .accessibilityHidden(true)
                             }
-                            .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+                            .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
 
-                            Text(formattedPercentage(item.percentage))
-                                .font(DS.Typography.label)
-                                .foregroundStyle(.primary)
+                            Text(
+                                "\(formattedPercentage(selectedItem.percentage)) (\(formattedCurrency(selectedItem.amount)))"
+                            )
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(.primary)
                         }
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    Spacer()
+                } else {
+                    ForEach(Array(chartData.prefix(3).enumerated()), id: \.element.identity) {
+                        _, item in
+                        Button {
                             if let id = item.id {
                                 onSelectTag?(id)
                             }
+                        } label: {
+                            VStack(alignment: .center, spacing: DS.Spacing.xs) {
+                                Text(item.name)
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(Color(hex: item.colorHex))
+                                    .lineLimit(1)
+
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(hex: item.colorHex).opacity(0.15))
+                                    Image(systemName: item.iconName)
+                                        .font(DS.Typography.captionSmall).fontWeight(.bold)
+                                        .foregroundStyle(Color(hex: item.colorHex))
+                                        .accessibilityHidden(true)
+                                }
+                                .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+
+                                Text(formattedPercentage(item.percentage))
+                                    .font(DS.Typography.label)
+                                    .foregroundStyle(.primary)
+                            }
                         }
+                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
                     }
                 }
             }

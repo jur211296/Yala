@@ -413,80 +413,84 @@ struct CategoriesPieWidget: View {
                 {
                     // Filtered: Show highlighted category (centered)
                     Spacer()
-                    VStack(alignment: .center, spacing: DS.Spacing.xs) {
-                        // Name (top, colored)
-                        Text(selectedItem.name)
-                            .font(DS.Typography.labelTiny)
-                            .foregroundStyle(Color(hex: selectedItem.colorHex))
-                            .lineLimit(1)
-
-                        // Icon
-                        ZStack {
-                            Circle()
-                                .fill(Color(hex: selectedItem.colorHex).opacity(0.15))
-                            Image(systemName: selectedItem.iconName)
-                                .font(DS.Typography.labelTiny).fontWeight(.bold)
-                                .foregroundStyle(Color(hex: selectedItem.colorHex))
-                                .accessibilityHidden(true)
-                        }
-                        .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
-
-                        // Percentage + Amount (on same line)
-                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-                            Text("\(formattedPercentage(selectedItem.percentage)) (")
-                                .font(DS.Typography.headline)
-                                .foregroundStyle(.primary)
-                            AmountText(
-                                value: selectedItem.amount,
-                                currencyCode: currencyCode,
-                                font: DS.Typography.headline
-                            )
-                            Text(")")
-                                .font(DS.Typography.headline)
-                                .foregroundStyle(.primary)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    Button {
                         if let id = selectedItem.id {
                             onSelectCategory?(id)
                         }
-                    }
-                    Spacer()
-                } else {
-                    // Default: Show top 3 categories
-                    ForEach(Array(chartData.prefix(3).enumerated()), id: \.element.identity) {
-                        _, item in
+                    } label: {
                         VStack(alignment: .center, spacing: DS.Spacing.xs) {
                             // Name (top, colored)
-                            Text(item.name)
+                            Text(selectedItem.name)
                                 .font(DS.Typography.labelTiny)
-                                .foregroundStyle(Color(hex: item.colorHex))
+                                .foregroundStyle(Color(hex: selectedItem.colorHex))
                                 .lineLimit(1)
 
                             // Icon
                             ZStack {
                                 Circle()
-                                    .fill(Color(hex: item.colorHex).opacity(0.15))
-                                Image(systemName: item.iconName)
-                                    .font(DS.Typography.captionSmall).fontWeight(.bold)
-                                    .foregroundStyle(Color(hex: item.colorHex))
+                                    .fill(Color(hex: selectedItem.colorHex).opacity(0.15))
+                                Image(systemName: selectedItem.iconName)
+                                    .font(DS.Typography.labelTiny).fontWeight(.bold)
+                                    .foregroundStyle(Color(hex: selectedItem.colorHex))
                                     .accessibilityHidden(true)
                             }
-                            .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+                            .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
 
-                            // Percentage
-                            Text(formattedPercentage(item.percentage))
-                                .font(DS.Typography.label)
-                                .foregroundStyle(.primary)
+                            // Percentage + Amount (on same line)
+                            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+                                Text("\(formattedPercentage(selectedItem.percentage)) (")
+                                    .font(DS.Typography.headline)
+                                    .foregroundStyle(.primary)
+                                AmountText(
+                                    value: selectedItem.amount,
+                                    currencyCode: currencyCode,
+                                    font: DS.Typography.headline
+                                )
+                                Text(")")
+                                    .font(DS.Typography.headline)
+                                    .foregroundStyle(.primary)
+                            }
                         }
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    Spacer()
+                } else {
+                    // Default: Show top 3 categories
+                    ForEach(Array(chartData.prefix(3).enumerated()), id: \.element.identity) {
+                        _, item in
+                        Button {
                             if let id = item.id {
                                 onSelectCategory?(id)
                             }
+                        } label: {
+                            VStack(alignment: .center, spacing: DS.Spacing.xs) {
+                                // Name (top, colored)
+                                Text(item.name)
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(Color(hex: item.colorHex))
+                                    .lineLimit(1)
+
+                                // Icon
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(hex: item.colorHex).opacity(0.15))
+                                    Image(systemName: item.iconName)
+                                        .font(DS.Typography.captionSmall).fontWeight(.bold)
+                                        .foregroundStyle(Color(hex: item.colorHex))
+                                        .accessibilityHidden(true)
+                                }
+                                .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+
+                                // Percentage
+                                Text(formattedPercentage(item.percentage))
+                                    .font(DS.Typography.label)
+                                    .foregroundStyle(.primary)
+                            }
                         }
+                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
                     }
                 }
             }

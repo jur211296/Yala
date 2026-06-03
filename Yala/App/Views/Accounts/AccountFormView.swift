@@ -469,19 +469,22 @@ struct AccountFormView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     HStack(spacing: DS.Spacing.lg) {
                         ForEach(viewModel.colorOptions, id: \.self) { hex in
-                            Circle()
-                                .fill(colorForHex(hex))
-                                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
-                                .overlay(
-                                    Circle()
-                                        .stroke(
-                                            Color.white,
-                                            lineWidth: viewModel.selectedColorHex == hex ? 3 : 1)
-                                )
-                                .shadow(radius: viewModel.selectedColorHex == hex ? 4 : 0)
-                                .onTapGesture {
-                                    viewModel.selectedColorHex = hex
-                                }
+                            Button {
+                                viewModel.selectedColorHex = hex
+                            } label: {
+                                Circle()
+                                    .fill(colorForHex(hex))
+                                    .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(
+                                                Color.white,
+                                                lineWidth: viewModel.selectedColorHex == hex ? 3 : 1)
+                                    )
+                                    .shadow(radius: viewModel.selectedColorHex == hex ? 4 : 0)
+                            }
+                            .buttonStyle(.plain)
+                            .contentShape(Circle())
                         }
 
                         Button {

@@ -19,18 +19,21 @@ struct CashFlowMonthStrip: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: DS.Spacing.sm) {
                     ForEach(months, id: \.monthKey) { month in
-                        CashFlowMonthCapsule(
-                            month: month,
-                            isSelected: month.monthKey == selectedMonthKey,
-                            currencyCode: currencyCode,
-                            showAccumulatedBalance: showAccumulatedBalance
-                        )
-                        .id(month.monthKey)
-                        .onTapGesture {
+                        Button {
                             withAnimation(.easeInOut(duration: DS.Animation.fast)) {
                                 selectedMonthKey = month.monthKey
                             }
+                        } label: {
+                            CashFlowMonthCapsule(
+                                month: month,
+                                isSelected: month.monthKey == selectedMonthKey,
+                                currencyCode: currencyCode,
+                                showAccumulatedBalance: showAccumulatedBalance
+                            )
                         }
+                        .buttonStyle(.plain)
+                        .contentShape(Rectangle())
+                        .id(month.monthKey)
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
