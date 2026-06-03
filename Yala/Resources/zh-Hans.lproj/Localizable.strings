@@ -3159,6 +3159,13 @@
 "groups.settings.options" = "选项";
 "groups.settings.info" = "信息";
 "groups.settings.dangerZone" = "危险区";
+
+// Bridge personal integration (per-group override)
+"groups.settings.personalIntegrationSectionTitle" = "个人集成";
+"groups.settings.personalIntegrationToggleLabel" = "将此群组的支出记录到我的个人账户";
+"groups.settings.personalIntegrationHintInheritOn" = "继承你的通用设置（已开启）。";
+"groups.settings.personalIntegrationHintLocalOff" = "仅在此群组:已关闭。";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "要在此处启用此选项,请先在群组设置中启用它。";
 "groups.member.admin" = "管理员";
 "groups.member.member" = "成员";
 "groups.member.you" = "(你)";
@@ -4087,6 +4094,27 @@
 "groups.bridge.importError" = "导入时出现问题。请重试。";
 "groups.bridge.upsellGroupInviteSettlement" = "激活 Yala 完整版以将此付款与你的真实账户对账。";
 
+// Bridge opt-out — alert post-save (F2c)
+"groups.bridge.optoutAlertTitle" = "也记录到你的个人 Yala 吗?";
+"groups.bridge.optoutAlertBody" = "你可以在你的账户中创建一笔个人记录来反映这笔支出,或仅保留在群组内。";
+"groups.bridge.optoutAlertYes" = "是,记录";
+"groups.bridge.optoutAlertNo" = "仅群组";
+
+// Bridge deactivation sheet (F5)
+"groups.bridge.deactivationSheetTitle" = "禁用个人集成";
+"groups.bridge.deactivationSheetBody" = "你的账户中已有自动创建的交易。请选择如何处理它们。";
+"groups.bridge.deactivationOptionFreeze" = "保留为历史记录";
+"groups.bridge.deactivationOptionDelete" = "从我的账户中删除";
+
+// Groups Global Settings sheet (F3a)
+"groups.globalSettings.title" = "群组设置";
+"groups.globalSettings.bridgeSectionTitle" = "与你的个人 Yala 集成";
+"groups.globalSettings.bridgeToggleLabel" = "将群组支出记录到我的个人账户";
+"groups.globalSettings.bridgeCaption" = "开启后,你支付或结算的每笔支出也会记录到你选择的个人账户中。你的余额将反映真实情况。";
+"groups.globalSettings.visibilitySectionTitle" = "可见性";
+"groups.globalSettings.visibilityCaption" = "控制群组交易是否出现在你的面板、统计和记录动态中。";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "在记录动态中包含群组交易";
+
 // MARK: - A0-Bridge System Categories & Subcategories (群组)
 "account.system.groups" = "群组 %@";
 "account.system.badge" = "系统";
@@ -4350,11 +4378,15 @@
 "groups.onboarding.step2.card2.body" = "选择每笔开支的分摊方式。Yala 算出谁该付多少。";
 "groups.onboarding.step2.card3.title" = "几下点击即可结清债务";
 "groups.onboarding.step2.card3.body" = "完成付款,清零开始。不用争论,不用 Excel。";
+
+"groups.onboarding.step2.bridgeAwareness" = "当你支付一笔支出时,我们也会自动将其记录到你的个人账户,让你的余额始终反映真实情况。";
 "groups.onboarding.step3.title" = "隐私优先";
 "groups.onboarding.step3.subtitle" = "只共享必要内容,不多不少。";
 "groups.onboarding.step3.point1" = "每位成员都需要一个 iCloud 账户。";
 "groups.onboarding.step3.point2" = "你的个人数据不会与群组同步,只有共享开支会同步。";
 "groups.onboarding.step3.cta" = "前往群组";
+
+"groups.onboarding.step3.bridgeAwareness" = "你可以在群组设置中更改此行为。";
 
 // MARK: FU-02-reconnect
 "groups.reconnect.deletedForAll.title" = "%@ 已被删除";

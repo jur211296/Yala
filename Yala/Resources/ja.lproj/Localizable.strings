@@ -3159,6 +3159,13 @@
 "groups.settings.options" = "オプション";
 "groups.settings.info" = "情報";
 "groups.settings.dangerZone" = "危険ゾーン";
+
+// Bridge personal integration (per-group override)
+"groups.settings.personalIntegrationSectionTitle" = "個人連携";
+"groups.settings.personalIntegrationToggleLabel" = "このグループの支出を個人の口座に記録する";
+"groups.settings.personalIntegrationHintInheritOn" = "全体設定を継承しています（オン）。";
+"groups.settings.personalIntegrationHintLocalOff" = "このグループのみ：オフ。";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "ここでこのオプションを有効にするには、先にグループ設定で有効にしてください。";
 "groups.member.admin" = "管理者";
 "groups.member.member" = "メンバー";
 "groups.member.you" = "(あなた)";
@@ -4087,6 +4094,27 @@
 "groups.bridge.importError" = "インポート中に問題が発生しました。もう一度お試しください。";
 "groups.bridge.upsellGroupInviteSettlement" = "Yalaを完全にアクティベートして、この支払いを実際の口座と照合しましょう。";
 
+// Bridge opt-out — alert post-save (F2c)
+"groups.bridge.optoutAlertTitle" = "個人のYalaにも記録しますか?";
+"groups.bridge.optoutAlertBody" = "この支出を反映する個人の取引を口座に作成することも、グループ内だけにとどめておくこともできます。";
+"groups.bridge.optoutAlertYes" = "はい、記録する";
+"groups.bridge.optoutAlertNo" = "グループのみ";
+
+// Bridge deactivation sheet (F5)
+"groups.bridge.deactivationSheetTitle" = "個人連携を無効にする";
+"groups.bridge.deactivationSheetBody" = "自動的に作成された取引がすでに口座にあります。それらをどうするか選択してください。";
+"groups.bridge.deactivationOptionFreeze" = "履歴として保持";
+"groups.bridge.deactivationOptionDelete" = "口座から削除する";
+
+// Groups Global Settings sheet (F3a)
+"groups.globalSettings.title" = "グループ設定";
+"groups.globalSettings.bridgeSectionTitle" = "個人のYalaとの連携";
+"groups.globalSettings.bridgeToggleLabel" = "グループの支出を個人の口座に記録する";
+"groups.globalSettings.bridgeCaption" = "オンにすると、あなたが支払うまたは精算する各支出が、選んだ個人の口座にも記録されます。残高が実態を反映します。";
+"groups.globalSettings.visibilitySectionTitle" = "表示";
+"groups.globalSettings.visibilityCaption" = "グループの取引をパネル、統計、記録フィードに表示するかどうかを管理します。";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "グループの取引を記録フィードに含める";
+
 // MARK: - A0-Bridge System Categories & Subcategories (グループ)
 "account.system.groups" = "グループ %@";
 "account.system.badge" = "システム";
@@ -4350,11 +4378,15 @@
 "groups.onboarding.step2.card2.body" = "分け方を選ぶだけ。Yalaが誰がいくら払うかを計算します。";
 "groups.onboarding.step2.card3.title" = "数タップで精算";
 "groups.onboarding.step2.card3.body" = "支払いを完了してゼロに戻します。議論もExcelも不要です。";
+
+"groups.onboarding.step2.bridgeAwareness" = "支出を支払うと、個人の口座にも自動的に記録します。残高が常に実態を反映するようにするためです。";
 "groups.onboarding.step3.title" = "プライバシーを第一に";
 "groups.onboarding.step3.subtitle" = "必要な情報だけを共有します。";
 "groups.onboarding.step3.point1" = "メンバー全員にiCloudアカウントが必要です。";
 "groups.onboarding.step3.point2" = "個人データはグループと同期されません。共有された支払いのみが同期されます。";
 "groups.onboarding.step3.cta" = "グループへ";
+
+"groups.onboarding.step3.bridgeAwareness" = "この動作はグループ設定で変更できます。";
 
 // MARK: FU-02-reconnect
 "groups.reconnect.deletedForAll.title" = "%@は削除されました";

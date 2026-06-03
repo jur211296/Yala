@@ -3159,6 +3159,13 @@
 "groups.settings.options" = "Opties";
 "groups.settings.info" = "Info";
 "groups.settings.dangerZone" = "Gevarenzone";
+
+// Bridge personal integration (per-group override)
+"groups.settings.personalIntegrationSectionTitle" = "Persoonlijke integratie";
+"groups.settings.personalIntegrationToggleLabel" = "Uitgaven van deze groep vastleggen op mijn persoonlijke rekeningen";
+"groups.settings.personalIntegrationHintInheritOn" = "Je neemt je algemene instelling over (Aan).";
+"groups.settings.personalIntegrationHintLocalOff" = "Alleen in deze groep: uit.";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "Om dit hier in te schakelen, schakel het eerst in bij Groepsinstellingen.";
 "groups.member.admin" = "Beheerder";
 "groups.member.member" = "Lid";
 "groups.member.you" = "(Jij)";
@@ -4087,6 +4094,27 @@
 "groups.bridge.importError" = "Er is een probleem opgetreden bij het importeren. Probeer opnieuw.";
 "groups.bridge.upsellGroupInviteSettlement" = "Activeer Yala volledig om deze betaling met je echte rekening af te stemmen.";
 
+// Bridge opt-out — alert post-save (F2c)
+"groups.bridge.optoutAlertTitle" = "Ook in je persoonlijke Yala vastleggen?";
+"groups.bridge.optoutAlertBody" = "Je kunt een persoonlijke transactie op je rekening aanmaken om deze uitgave weer te geven, of deze alleen binnen de groep houden.";
+"groups.bridge.optoutAlertYes" = "Ja, vastleggen";
+"groups.bridge.optoutAlertNo" = "Alleen in de groep";
+
+// Bridge deactivation sheet (F5)
+"groups.bridge.deactivationSheetTitle" = "Persoonlijke integratie uitschakelen";
+"groups.bridge.deactivationSheetBody" = "Je hebt al transacties die automatisch op je rekeningen zijn aangemaakt. Kies wat je ermee wilt doen.";
+"groups.bridge.deactivationOptionFreeze" = "Bewaren als geschiedenis";
+"groups.bridge.deactivationOptionDelete" = "Verwijderen uit mijn rekeningen";
+
+// Groups Global Settings sheet (F3a)
+"groups.globalSettings.title" = "Groepsinstellingen";
+"groups.globalSettings.bridgeSectionTitle" = "Integratie met je persoonlijke Yala";
+"groups.globalSettings.bridgeToggleLabel" = "Groepsuitgaven vastleggen op mijn persoonlijke rekeningen";
+"groups.globalSettings.bridgeCaption" = "Als dit aanstaat, wordt elke uitgave die je betaalt of afrekent ook vastgelegd op de persoonlijke rekening die je kiest. Je saldo weerspiegelt de werkelijkheid.";
+"groups.globalSettings.visibilitySectionTitle" = "Zichtbaarheid";
+"groups.globalSettings.visibilityCaption" = "Bepaal of groepstransacties verschijnen in je Paneel, statistieken en Registraties-feed.";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Groepstransacties opnemen in de Registraties-feed";
+
 // MARK: - A0-Bridge System Categories & Subcategories (Groepen)
 "account.system.groups" = "Groepen %@";
 "account.system.badge" = "Systeem";
@@ -4350,11 +4378,15 @@
 "groups.onboarding.step2.card2.body" = "Kies hoe elke uitgave wordt verdeeld. Yala berekent wie wat moet betalen.";
 "groups.onboarding.step2.card3.title" = "Vereffen schulden met een paar taps";
 "groups.onboarding.step2.card3.body" = "Sluit betalingen af en begin weer bij nul. Geen ruzies, geen Excel.";
+
+"groups.onboarding.step2.bridgeAwareness" = "Wanneer je een uitgave betaalt, leggen we die automatisch ook vast op je persoonlijke rekening — zodat je saldo altijd de werkelijkheid weerspiegelt.";
 "groups.onboarding.step3.title" = "Jouw privacy staat voorop";
 "groups.onboarding.step3.subtitle" = "Je deelt alleen het noodzakelijke, niets meer.";
 "groups.onboarding.step3.point1" = "Elk lid heeft een iCloud-account nodig.";
 "groups.onboarding.step3.point2" = "Je persoonlijke gegevens worden niet met de groep gesynchroniseerd, alleen gedeelde uitgaven.";
 "groups.onboarding.step3.cta" = "Naar groepen";
+
+"groups.onboarding.step3.bridgeAwareness" = "Je kunt dit gedrag wijzigen in Groepsinstellingen.";
 
 // MARK: FU-02-reconnect
 "groups.reconnect.deletedForAll.title" = "%@ is verwijderd";

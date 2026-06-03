@@ -3159,6 +3159,13 @@
 "groups.settings.options" = "Opcje";
 "groups.settings.info" = "Informacje";
 "groups.settings.dangerZone" = "Strefa ryzyka";
+
+// Bridge personal integration (per-group override)
+"groups.settings.personalIntegrationSectionTitle" = "Integracja osobista";
+"groups.settings.personalIntegrationToggleLabel" = "Zapisuj wydatki tej grupy na moich osobistych kontach";
+"groups.settings.personalIntegrationHintInheritOn" = "Dziedziczysz ustawienie ogólne (Włączone).";
+"groups.settings.personalIntegrationHintLocalOff" = "Tylko w tej grupie: wyłączone.";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "Aby włączyć tę opcję tutaj, najpierw włącz ją w Ustawieniach grup.";
 "groups.member.admin" = "Admin";
 "groups.member.member" = "Członek";
 "groups.member.you" = "(Ty)";
@@ -4087,6 +4094,27 @@
 "groups.bridge.importError" = "Wystąpił problem podczas importu. Spróbuj ponownie.";
 "groups.bridge.upsellGroupInviteSettlement" = "Aktywuj pełnego Yala, aby uzgodnić tę płatność ze swoim prawdziwym kontem.";
 
+// Bridge opt-out — alert post-save (F2c)
+"groups.bridge.optoutAlertTitle" = "Zapisać także w Twoim osobistym Yala?";
+"groups.bridge.optoutAlertBody" = "Możesz utworzyć osobisty wpis na swoim koncie, aby odzwierciedlić ten wydatek, albo zostawić go tylko w grupie.";
+"groups.bridge.optoutAlertYes" = "Tak, zapisz";
+"groups.bridge.optoutAlertNo" = "Tylko w grupie";
+
+// Bridge deactivation sheet (F5)
+"groups.bridge.deactivationSheetTitle" = "Wyłącz integrację osobistą";
+"groups.bridge.deactivationSheetBody" = "Masz już transakcje utworzone automatycznie na Twoich kontach. Wybierz, co z nimi zrobić.";
+"groups.bridge.deactivationOptionFreeze" = "Zachowaj jako historię";
+"groups.bridge.deactivationOptionDelete" = "Usuń z moich kont";
+
+// Groups Global Settings sheet (F3a)
+"groups.globalSettings.title" = "Ustawienia grup";
+"groups.globalSettings.bridgeSectionTitle" = "Integracja z Twoim osobistym Yala";
+"groups.globalSettings.bridgeToggleLabel" = "Zapisuj wydatki grupowe na moich osobistych kontach";
+"groups.globalSettings.bridgeCaption" = "Gdy włączone, każdy wydatek, który płacisz lub rozliczasz, jest też zapisywany na wybranym koncie osobistym. Twoje saldo odzwierciedla rzeczywistość.";
+"groups.globalSettings.visibilitySectionTitle" = "Widoczność";
+"groups.globalSettings.visibilityCaption" = "Decyduj, czy transakcje grupowe pojawiają się w Twoim panelu, statystykach i kanale Zapisów.";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Uwzględnij transakcje grupowe w kanale Zapisów";
+
 // MARK: - A0-Bridge System Categories & Subcategories (Grupy)
 "account.system.groups" = "Grupy %@";
 "account.system.badge" = "System";
@@ -4350,11 +4378,15 @@
 "groups.onboarding.step2.card2.body" = "Wybierz sposób podziału każdego wydatku. Yala obliczy, kto komu jest winien.";
 "groups.onboarding.step2.card3.title" = "Rozlicz długi w kilku stuknięciach";
 "groups.onboarding.step2.card3.body" = "Zamknij płatności i wróć do zera. Bez kłótni, bez Excela.";
+
+"groups.onboarding.step2.bridgeAwareness" = "Gdy płacisz wydatek, automatycznie zapisujemy go też na Twoim koncie osobistym — aby Twoje saldo zawsze odzwierciedlało rzeczywistość.";
 "groups.onboarding.step3.title" = "Twoja prywatność na pierwszym miejscu";
 "groups.onboarding.step3.subtitle" = "Udostępniamy tylko to, co konieczne, nic więcej.";
 "groups.onboarding.step3.point1" = "Każdy członek potrzebuje konta iCloud.";
 "groups.onboarding.step3.point2" = "Twoje dane osobowe nie są synchronizowane z grupą, tylko wspólne wydatki.";
 "groups.onboarding.step3.cta" = "Przejdź do grup";
+
+"groups.onboarding.step3.bridgeAwareness" = "Możesz zmienić to zachowanie w Ustawieniach grup.";
 
 // MARK: FU-02-reconnect
 "groups.reconnect.deletedForAll.title" = "%@ został usunięty";
