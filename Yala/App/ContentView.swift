@@ -1063,6 +1063,16 @@ struct MainTabView: View {
         return tabs
     }
 
+    /// iPhone's tab bar shows at most 5 items; anything beyond collapses into
+    /// iOS's native "More" controller (stray back chevron + ugly system list).
+    /// configurables + More + Search reaches 6 once a temporary tab pushes the
+    /// configurable count to 4, so we drop Search there. Safe to unmount:
+    /// selecting `.search` clears `temporaryTab` (see SessionState.selectedMainTab
+    /// `didSet`), so the selection binding never targets an absent Search tab.
+    private var showsSearchTab: Bool {
+        visibleTabs.count <= 3
+    }
+
     init() {
         // Get SessionState from the environment wrapper
         // This is initialized here to work with @Bindable
@@ -1087,9 +1097,12 @@ struct MainTabView: View {
                     MorePlaceholderView()
                 }
 
-                // Search tab with .search role - pinned to trailing edge
-                Tab(value: .search, role: .search) {
-                    GlobalSearchView()
+                // Search tab with .search role - pinned to trailing edge.
+                // Hidden past the 5-item limit while a temporary tab is active.
+                if showsSearchTab {
+                    Tab(value: .search, role: .search) {
+                        GlobalSearchView()
+                    }
                 }
             }
             .tint(theme.accent)
