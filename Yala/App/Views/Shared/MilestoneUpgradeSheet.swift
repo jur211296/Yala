@@ -102,7 +102,7 @@ struct MilestoneUpgradeSheet: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.xxl)
             }
-            .background(.thBackground)
+            .yalaScreenBackground(.panel)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

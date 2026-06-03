@@ -62,7 +62,8 @@ struct GroupFormView: View {
                 .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(.thBackground)
+            .scrollContentBackground(.hidden)
+            .yalaScreenBackground(.panel)
             .navigationTitle(group == nil ? L10n.Groups.newGroup : L10n.Groups.editGroup)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

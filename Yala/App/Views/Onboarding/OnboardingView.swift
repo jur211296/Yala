@@ -1459,6 +1459,7 @@ struct OnboardingView: View {
                 }
                 .padding(.vertical, DS.Spacing.md)
             }
+            .scrollContentBackground(.hidden)
             .navigationTitle(L10n.Onboarding.categoriesTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1468,7 +1469,7 @@ struct OnboardingView: View {
                     }
                 }
             }
-            .background(.thBackground)
+            .yalaScreenBackground(.panel)
         }
     }
 
@@ -1605,6 +1606,7 @@ struct OnboardingView: View {
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.top, DS.Spacing.md)
             }
+            .scrollContentBackground(.hidden)
             .navigationTitle(L10n.Onboarding.currencyTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1614,7 +1616,7 @@ struct OnboardingView: View {
                     }
                 }
             }
-            .background(.thBackground)
+            .yalaScreenBackground(.panel)
         }
     }
 

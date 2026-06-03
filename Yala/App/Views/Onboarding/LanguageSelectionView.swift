@@ -59,7 +59,7 @@ struct LanguageSelectionView: View {
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxxl)
         }
-        .background(.thBackground)
+        .yalaScreenBackground(.panel)
     }
 
     private func languageRow(code: String, name: String, flag: String) -> some View {

@@ -111,7 +111,8 @@ struct GroupSettingsView: View {
                 .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(.thBackground)
+            .scrollContentBackground(.hidden)
+            .yalaScreenBackground(.panel)
             .onDisappear { saveIdentity() }
             .task {
                 hasExistingShare = await SplitZoneManager(syncManager: .shared).hasShare(for: group)

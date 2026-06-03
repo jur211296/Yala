@@ -168,7 +168,8 @@ struct SplitCalculatorSheet: View {
                 .padding(.vertical, DS.Spacing.lg)
                 .dismissKeyboardOnTap()
             }
-            .background(.thBackground)
+            .scrollContentBackground(.hidden)
+            .yalaScreenBackground(.panel)
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle(L10n.Split.title)
             .navigationBarTitleDisplayMode(.inline)

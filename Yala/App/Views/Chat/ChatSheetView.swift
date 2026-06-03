@@ -43,7 +43,7 @@ struct ChatSheetView: View {
                 disclaimerFooter
             }
             .dismissKeyboardOnTap()
-            .background(.thBackground)
+            .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Chat.assistantName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

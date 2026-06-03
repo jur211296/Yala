@@ -85,7 +85,7 @@ struct ImageSelectionView: View {
             .dsAnimation(.easeInOut(duration: 0.3), value: isCountingDown, reduceMotion: reduceMotion)
             .dsAnimation(.easeInOut(duration: 0.3), value: isProcessing, reduceMotion: reduceMotion)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.thBackground)
+            .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Image.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -188,7 +188,7 @@ struct ImageSelectionView: View {
                         .padding(.horizontal, DS.Spacing.xl)
                         .padding(.bottom, DS.Spacing.xxl)
                     }
-                    .background(.thBackground)
+                    .yalaScreenBackground(.panel)
                     .navigationTitle(preview.label)
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {

@@ -96,7 +96,8 @@ struct DowngradeResolutionSheet: View {
                 }
                 .padding(.vertical, DS.Spacing.xxl)
             }
-            .background(.thBackground)
+            .scrollContentBackground(.hidden)
+            .yalaScreenBackground(.panel)
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled()  // Cannot dismiss without resolving
         }

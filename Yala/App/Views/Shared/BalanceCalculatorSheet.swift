@@ -140,7 +140,8 @@ struct BalanceCalculatorSheet: View {
                 .padding(.vertical, DS.Spacing.lg)
                 .dismissKeyboardOnTap()
             }
-            .background(.thBackground)
+            .scrollContentBackground(.hidden)
+            .yalaScreenBackground(.panel)
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle(sheetTitle)
             .navigationBarTitleDisplayMode(.inline)

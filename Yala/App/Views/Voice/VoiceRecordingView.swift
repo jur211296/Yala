@@ -114,7 +114,7 @@ struct VoiceRecordingView: View {
             .dsAnimation(.easeInOut(duration: 0.3), value: isPreviewMode, reduceMotion: reduceMotion)
             .dsAnimation(.easeInOut(duration: 0.3), value: isProcessing, reduceMotion: reduceMotion)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.thBackground)
+            .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Voice.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
