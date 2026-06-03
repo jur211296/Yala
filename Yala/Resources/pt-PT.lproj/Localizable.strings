@@ -3625,3 +3625,28 @@
 "widgetType.topSubcategories" = "Top subcategorias";
 "widgetType.trend" = "Tendencias";
 "widgetType.weekdayBar" = "Média diária";
+
+// MARK: Plurales — degradación flat (forma "other" del .stringsdict del padre; las variantes no pueden tener .stringsdict propio)
+"export.subcategoriesSelected" = "%d subcategorias selecionadas";
+"filters.subcategoriesSelectedCount" = "%d subcategorias selecionadas";
+"groups.activate.importPrompt" = "Você tem %d despesas compartilhadas. Adicionar aos seus registros?";
+"groups.nudge.dormantNewExpenses.message" = "Seu grupo tem %d novas despesas desde sua última visita.";
+"icloud.detail.stalledTitle" = "Faz %d dias que não sincronizamos";
+"icloud.syncIndicator.stalled" = "Faz %d dias que não salvamos no iCloud";
+"import.recordsImported" = "%d registros importados com sucesso.";
+"inbox.alert.message.automations" = "%d registros automáticos foram adicionados à sua caixa.";
+"insights.ruleSharedFrequency.considerate" = "%d gastos compartilhados — você compartilha bastante";
+"insights.ruleSharedFrequency.normal" = "Você tem %d gastos compartilhados neste período";
+"insights.ruleSharedFrequency.sarcastic" = "%d gastos compartilhados. Fazem TUDO juntos?";
+"milestone.title" = "%d despesas registradas!";
+"panel.panorama.collapsedSummary" = "Você tem %1$@ em %2$d contas";
+"records.deleteConfirmTitle" = "Eliminar %d registros?";
+"scheduled.due.days.ago" = "Há %d dias";
+"scheduled.due.in.days" = "Em %d dias";
+"scheduled.widget.count" = "%d pagamentos ativos";
+"scheduled.widget.daysAgo" = "Há %d dias";
+"scheduled.widget.inDays" = "Em %d dias";
+"subscription.downgrade.selectAccounts" = "Selecione %d contas para manter";
+"subscription.downgrade.selectBudgets" = "Selecione %d orçamentos para manter";
+"subscription.trial.daysRemaining" = "%d dias restantes";
+"tutorials.stepsCount" = "%d passos";

@@ -80,14 +80,21 @@ struct LocalizationParityTests {
     /// El fallback manual de `ls()` (variante→padre→main) solo aplica con override in-app,
     /// y los ~290 `NSLocalizedString` directos ni siquiera pasan por `ls()`. Combinado con
     /// `variants_areSubsetOfParent`, esto fuerza paridad exacta variante == padre.
+    ///
+    /// El universo del padre es `.strings ∪ .stringsdict`: las keys plurales (que el
+    /// padre define en `.stringsdict`) también deben existir en la variante, pero como
+    /// entrada flat en `.strings` — la variante no puede tener `.stringsdict` propio
+    /// (`variants_doNotCreateOwnStringsdict`), así que materializa la forma "other".
+    /// Sin esto, un plural saldría crudo con la variante como idioma de sistema.
     @Test func variants_haveAllKeys_fromParent() {
         for variant in SupportedLocale.allCases where variant.parent != nil {
             guard let parent = variant.parent else { continue }
             let variantKeys = Set(StringsFileParser.parseStrings(forLocale: variant.code).keys)
             let parentKeys = Set(StringsFileParser.parseStrings(forLocale: parent.code).keys)
+                .union(StringsFileParser.parseStringsdictKeys(forLocale: parent.code))
 
             let missing = parentKeys.subtracting(variantKeys)
-            #expect(missing.isEmpty, "Variant '\(variant.code)' is missing \(missing.count) keys from parent '\(parent.code)' — con idioma de sistema se verían CRUDAS. Materializa los valores del padre: \(missing.sorted().prefix(5))")
+            #expect(missing.isEmpty, "Variant '\(variant.code)' is missing \(missing.count) keys from parent '\(parent.code)' (.strings ∪ .stringsdict) — con idioma de sistema se verían CRUDAS. Materializa los valores del padre (plurales como flat 'other'): \(missing.sorted().prefix(5))")
         }
     }
 
