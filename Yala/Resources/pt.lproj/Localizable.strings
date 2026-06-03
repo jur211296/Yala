@@ -4203,8 +4203,7 @@
 // MARK: FreshStart (segunda barrera)
 "welcome.freshStart.alertTitle" = "Recomeçar do zero";
 "welcome.freshStart.alertMessage" = "Detetámos dados existentes neste dispositivo. Apagar tudo para recomeçar?";
-"welcome.freshStart.alertConfirm" = "Apagar tudo e continuar";"groups.member.activeCount" = "%d pessoas ativas";
-"groups.member.pendingCount" = "%d solicitações pendentes";
+"welcome.freshStart.alertConfirm" = "Apagar tudo e continuar";
 "groups.card.pendingApprovalChip" = "A aguardar aprovação";
 "groups.card.rejectedChip" = "Pedido recusado";
 "groups.card.leaveGroupAlertTitle" = "Sair do grupo?";

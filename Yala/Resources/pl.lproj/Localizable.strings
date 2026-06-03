@@ -4207,8 +4207,7 @@
 // MARK: FreshStart (segunda barrera)
 "welcome.freshStart.alertTitle" = "Zacząć od nowa";
 "welcome.freshStart.alertMessage" = "Wykryliśmy istniejące dane na tym urządzeniu. Usunąć wszystko i zacząć od nowa?";
-"welcome.freshStart.alertConfirm" = "Usuń wszystko i kontynuuj";"groups.member.activeCount" = "%d aktywne osoby";
-"groups.member.pendingCount" = "%d oczekujące wnioski";
+"welcome.freshStart.alertConfirm" = "Usuń wszystko i kontynuuj";
 "groups.card.pendingApprovalChip" = "Oczekuje na zatwierdzenie";
 "groups.card.rejectedChip" = "Prośba odrzucona";
 "groups.card.leaveGroupAlertTitle" = "Opuścić grupę?";

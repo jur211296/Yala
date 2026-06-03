@@ -4207,8 +4207,7 @@
 // MARK: FreshStart (segunda barrera)
 "welcome.freshStart.alertTitle" = "Opnieuw beginnen";
 "welcome.freshStart.alertMessage" = "We hebben bestaande gegevens op dit apparaat gevonden. Alles wissen om opnieuw te beginnen?";
-"welcome.freshStart.alertConfirm" = "Alles wissen en doorgaan";"groups.member.activeCount" = "%d actieve personen";
-"groups.member.pendingCount" = "%d openstaande verzoeken";
+"welcome.freshStart.alertConfirm" = "Alles wissen en doorgaan";
 "groups.card.pendingApprovalChip" = "Wacht op goedkeuring";
 "groups.card.rejectedChip" = "Verzoek geweigerd";
 "groups.card.leaveGroupAlertTitle" = "Groep verlaten?";

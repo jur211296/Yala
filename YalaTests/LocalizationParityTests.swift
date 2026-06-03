@@ -56,13 +56,21 @@ struct LocalizationParityTests {
 
     @Test func variants_areSubsetOfParent() {
         // Variantes regionales (parent != nil) no deben tener keys ajenas al padre.
+        // El "universo" del padre es `.strings ∪ .stringsdict`: una variante puede
+        // materializar como entrada flat en `.strings` un plural que el padre define
+        // en `.stringsdict` (la variante no puede tener `.stringsdict` propio, ver
+        // `variants_doNotCreateOwnStringsdict`). Esa flat es la degradación graciosa
+        // que evita la key cruda cuando la variante es el idioma de sistema — válida,
+        // no un orphan. (p.ej. `groups.member.activeCount` vive en el stringsdict del
+        // padre y como flat en la variante.)
         for variant in SupportedLocale.allCases where variant.parent != nil {
             guard let parent = variant.parent else { continue }
             let variantKeys = Set(StringsFileParser.parseStrings(forLocale: variant.code).keys)
             let parentKeys = Set(StringsFileParser.parseStrings(forLocale: parent.code).keys)
+                .union(StringsFileParser.parseStringsdictKeys(forLocale: parent.code))
 
             let orphans = variantKeys.subtracting(parentKeys)
-            #expect(orphans.isEmpty, "Variant '\(variant.code)' has \(orphans.count) keys not in parent '\(parent.code)': \(orphans.sorted())")
+            #expect(orphans.isEmpty, "Variant '\(variant.code)' has \(orphans.count) keys not in parent '\(parent.code)' (.strings ∪ .stringsdict): \(orphans.sorted())")
         }
     }
 

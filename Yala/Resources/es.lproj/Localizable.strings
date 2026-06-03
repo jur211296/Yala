@@ -4238,8 +4238,7 @@
 // MARK: FreshStart (segunda barrera)
 "welcome.freshStart.alertTitle" = "Empezar desde cero";
 "welcome.freshStart.alertMessage" = "Detectamos datos previos en tu dispositivo. ¿Borrar todo para empezar como nuevo?";
-"welcome.freshStart.alertConfirm" = "Borrar todo y continuar";"groups.member.activeCount" = "%d personas activas";
-"groups.member.pendingCount" = "%d solicitudes pendientes";
+"welcome.freshStart.alertConfirm" = "Borrar todo y continuar";
 "groups.card.pendingApprovalChip" = "Esperando aprobación";
 "groups.card.moreDebts" = "+%d más";
 "groups.card.rejectedChip" = "Solicitud rechazada";

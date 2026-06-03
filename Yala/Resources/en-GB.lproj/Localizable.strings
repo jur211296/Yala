@@ -255,6 +255,7 @@
 "welcome.detectedData.startFresh" = "Start fresh";
 "groups.member.activeCount" = "%d active people";
 "groups.member.pendingCount" = "%d pending requests";
+"groups.member.pendingRequestsCount" = "%d requests";
 
 // MARK: - Yala AI Onboarding (4-step tutorial first-use post-consent)
 "yalaAI.onboarding.continue" = "Continue";

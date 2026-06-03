@@ -355,8 +355,10 @@
 // MARK: FreshStart (segunda barrera)
 "welcome.freshStart.alertTitle" = "Empezar desde cero";
 "welcome.freshStart.alertMessage" = "Detectamos datos previos en tu dispositivo. ¿Borrar todo para empezar como nuevo?";
-"welcome.freshStart.alertConfirm" = "Borrar todo y continuar";"groups.member.activeCount" = "%d personas activas";
+"welcome.freshStart.alertConfirm" = "Borrar todo y continuar";
+"groups.member.activeCount" = "%d personas activas";
 "groups.member.pendingCount" = "%d solicitudes pendientes";
+"groups.member.pendingRequestsCount" = "%d solicitudes";
 "groups.stats.assignCategoriesHint" = "Asigná categorías a tus gastos para ver el desglose por tipo.";
 
 "settings.wipeGroupsExclusionNote" = "Esto no incluye tus grupos. Para salir, andá a Grupos, saldá lo pendiente y abandonalos.";

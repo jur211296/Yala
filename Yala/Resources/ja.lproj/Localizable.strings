@@ -4207,8 +4207,7 @@
 // MARK: FreshStart (segunda barrera)
 "welcome.freshStart.alertTitle" = "最初から始める";
 "welcome.freshStart.alertMessage" = "このデバイスに既存のデータがあります。すべて削除して最初から始めますか？";
-"welcome.freshStart.alertConfirm" = "すべて削除して続ける";"groups.member.activeCount" = "%d人のアクティブメンバー";
-"groups.member.pendingCount" = "%d件の保留中のリクエスト";
+"welcome.freshStart.alertConfirm" = "すべて削除して続ける";
 "groups.card.pendingApprovalChip" = "承認待ち";
 "groups.card.rejectedChip" = "リクエスト却下";
 "groups.card.leaveGroupAlertTitle" = "グループから退出しますか？";

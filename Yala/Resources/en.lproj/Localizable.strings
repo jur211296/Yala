@@ -4208,8 +4208,7 @@
 // MARK: FreshStart (segunda barrera)
 "welcome.freshStart.alertTitle" = "Start fresh";
 "welcome.freshStart.alertMessage" = "We detected existing data on this device. Erase everything to start fresh?";
-"welcome.freshStart.alertConfirm" = "Erase and continue";"groups.member.activeCount" = "%d active people";
-"groups.member.pendingCount" = "%d pending requests";
+"welcome.freshStart.alertConfirm" = "Erase and continue";
 "groups.card.pendingApprovalChip" = "Pending approval";
 "groups.card.moreDebts" = "+%d more";
 "groups.card.rejectedChip" = "Request rejected";
