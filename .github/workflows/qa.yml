@@ -14,21 +14,25 @@ jobs:
       - name: Validar coverage-index (ratchet anti-drift)
         run: python3 qa/validate-coverage.py
 
-  # Suite de tests. Runner macos-26 (Tahoe): Xcode 26.x (26.0.1–26.5) + sims iOS
-  # 26.2/26.4/26.5; `latest-stable` = el 26.x más nuevo (alineado con el dev local).
-  # macos-15 NO tiene Xcode 26.x. Build UNA vez + test-without-building.
+  # Suite de tests. Runner macos-26 (Tahoe): Xcode `latest-stable` (26.x) + sim
+  # iPhone 17 Pro. Build UNA vez + test-without-building.
   #
-  # ⚠️ INTERIM (advisory): el primer run completo en CI (run 26843044290, tras
-  # arreglar Xcode+Secrets) destapó instabilidad SISTÉMICA del runner frío:
-  #   · ~19 clases context-based (`makeTestContext`/SwiftData) flakean/fallan
-  #     consistentemente (patrón R8) — p.ej. BudgetFilterRegressionTests,
-  #     CategoryDeduplicationServiceTests.
-  #   · varios XCUITests flakean por timing en el runner lento.
-  # Hasta una estabilización dedicada (root-cause makeTestContext-en-CI o convertir
-  # a pure-logic; tunear timing UI), AMBOS pasos son ADVISORY (continue-on-error):
-  # corren para visibilidad pero NO bloquean. El gate duro es el job `coverage-index`
-  # (validador anti-drift). Ver Lista Negra + plan en TESTING-STRATEGY.md.
-  # TODO(@jur, 2026-07-15): estabilizar y volver YalaTests pure-logic a bloqueante.
+  # ESTRATEGIA (2026-06-03 — YalaTests pure-logic BLOQUEANTE):
+  # Root-cause de la instabilidad sistémica que se vio en los primeros runs:
+  #  (1) HOST CLOUDKIT CRASH (ARREGLADO, commit b25fc8c2): el host Yala.app arrancaba
+  #      con CloudKit en sims SIN cuenta iCloud (CI) → NSCloudKitMirroringDelegate loop
+  #      → proceso de test inestable (0 tests + restart loop) aunque las aserciones
+  #      pasaran. Fix: env var YALA_TEST_MODE (isRunningTests determinista en @main) +
+  #      cloudKitDatabase .none en configs de test + gate de bootstrap/sync.
+  #  (2) SwiftData IN-MEMORY INSERT-TRAP: las clases que crean un ModelContainer/Context
+  #      in-memory hacen EXC_BREAKPOINT flaky de SwiftData en CI (víctima ALEATORIA por
+  #      run; -retry-tests-on-failure no converge → saltar clases puntuales = whack-a-mole).
+  # Por eso el paso BLOQUEANTE corre YalaTests SALTANDO las 7 clases que crean un
+  # ModelContext (= pure-logic + object-only, deterministas) y las 7 corren en un paso
+  # ADVISORY aparte (visibilidad). Lista Negra + plan (migrar context-based a pure-logic
+  # o target separado) en TESTING-STRATEGY.md. El gate duro adicional es `coverage-index`.
+  # YalaUITests sigue ADVISORY hasta tunear timing en runner frío.
+  # TODO(@jur, 2026-07-15): migrar las 7 clases context-based a pure-logic → blocking total.
   tests:
     runs-on: macos-26
     steps:
@@ -50,8 +54,11 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
             -derivedDataPath .ddp \
             -quiet
-      - name: Unit tests (YalaTests) — advisory (context-based R8 inestables en CI; ver Lista Negra)
-        continue-on-error: true
+      # BLOQUEANTE: YalaTests SALVO las 7 clases que crean un ModelContext in-memory
+      # (insert-trap flaky de SwiftData en CI — Lista Negra). El resto es pure-logic +
+      # object-only (determinista). -retry como red ante flakes puntuales de singletons.
+      # NUEVOS tests que creen un ModelContext deben sumarse a este skip + al paso advisory.
+      - name: Unit tests (YalaTests pure-logic) — BLOQUEANTE
         run: |
           xcodebuild test-without-building \
             -scheme "Yala Dev" \
@@ -60,6 +67,32 @@ jobs:
             -only-testing:YalaTests \
             -skip-testing:YalaTests/BudgetFilterRegressionTests \
             -skip-testing:YalaTests/CategoryDeduplicationServiceTests \
+            -skip-testing:YalaTests/ChatAssistantViewModelTests \
+            -skip-testing:YalaTests/CurrencyConverterCacheTests \
+            -skip-testing:YalaTests/ICloudAccountSummaryTests \
+            -skip-testing:YalaTests/InitialBalanceServiceTests \
+            -skip-testing:YalaTests/UserSegmentServiceTests \
+            -derivedDataPath .ddp \
+            -parallel-testing-enabled NO \
+            -retry-tests-on-failure \
+            -quiet
+      # ADVISORY: las 7 clases context-based (crean ModelContext in-memory). Corren para
+      # visibilidad (cuando pasan confirman no-regresión); no bloquean por el insert-trap
+      # flaky de SwiftData en el runner de CI. Plan de migración en TESTING-STRATEGY.md.
+      - name: Unit tests (YalaTests context-based) — advisory (SwiftData insert-trap flaky; ver Lista Negra)
+        continue-on-error: true
+        run: |
+          xcodebuild test-without-building \
+            -scheme "Yala Dev" \
+            -project Yala.xcodeproj \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+            -only-testing:YalaTests/BudgetFilterRegressionTests \
+            -only-testing:YalaTests/CategoryDeduplicationServiceTests \
+            -only-testing:YalaTests/ChatAssistantViewModelTests \
+            -only-testing:YalaTests/CurrencyConverterCacheTests \
+            -only-testing:YalaTests/ICloudAccountSummaryTests \
+            -only-testing:YalaTests/InitialBalanceServiceTests \
+            -only-testing:YalaTests/UserSegmentServiceTests \
             -derivedDataPath .ddp \
             -parallel-testing-enabled NO \
             -retry-tests-on-failure \
