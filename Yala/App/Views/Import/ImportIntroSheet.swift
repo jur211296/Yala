@@ -162,29 +162,15 @@ struct ImportIntroSheet: View {
 
                     // Bottom Action Button
                     VStack {
-                        Button {
+                        YalaPrimaryButton(
+                            L10n.Import.selectFile,
+                            icon: "square.and.arrow.down",
+                            isDisabled: isImporting,
+                            isLoading: isImporting,
+                            disabledHint: isImporting ? "Importación en proceso" : nil
+                        ) {
                             startImportFlow()
-                        } label: {
-                            HStack(spacing: DS.Spacing.sm) {
-                                if isImporting {
-                                    ProgressView()
-                                        .progressViewStyle(.circular)
-                                        .tint(.white)
-                                    Text(L10n.Import.importing)
-                                } else {
-                                    Image(systemName: "square.and.arrow.down")
-                                    Text(L10n.Import.selectFile)
-                                }
-                            }
-                            .font(Typography.bodyLarge)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 52)
                         }
-                        .buttonStyle(.borderedProminent)
-
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                        .disabled(isImporting)
-                        .accessibilityHint(isImporting ? "Importación en proceso" : "")
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.lg)

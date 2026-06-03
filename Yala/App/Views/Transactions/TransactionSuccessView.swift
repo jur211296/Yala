@@ -190,13 +190,7 @@ struct TransactionSuccessView: View {
                 // Action buttons - native iOS style
                 VStack(spacing: DS.Spacing.md) {
                     // Primary: Accept
-                    Button(action: onAccept) {
-                        Text(L10n.Common.accept)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-
-                    .controlSize(.large)
+                    YalaPrimaryButton(L10n.Common.accept, action: onAccept)
 
                     // Secondary: Create another
                     Button(action: onCreateAnother) {

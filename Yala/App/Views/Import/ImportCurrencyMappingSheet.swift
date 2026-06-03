@@ -11,7 +11,6 @@ import SwiftUI
 struct ImportCurrencyMappingSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.yalaTheme) private var theme
 
     let detectedCurrencies: Set<String>
     let accounts: [Account]
@@ -226,22 +225,14 @@ struct ImportCurrencyMappingSheet: View {
 
     private var importButton: some View {
         VStack {
-            Button {
+            YalaPrimaryButton(
+                L10n.Import.importAction,
+                icon: "square.and.arrow.down",
+                isDisabled: !allCurrenciesAssigned,
+                disabledHint: !allCurrenciesAssigned ? "Asigna todas las divisas" : nil
+            ) {
                 onImport(currencyAccountMap)
-            } label: {
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: "square.and.arrow.down")
-                    Text(L10n.Import.importAction)
-                }
-                .font(Typography.bodyLarge)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(allCurrenciesAssigned ? theme.accent : DS.Semantic.disabledForeground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-            .disabled(!allCurrenciesAssigned)
-            .accessibilityHint(!allCurrenciesAssigned ? "Asigna todas las divisas" : "")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.bottom, DS.Spacing.lg)

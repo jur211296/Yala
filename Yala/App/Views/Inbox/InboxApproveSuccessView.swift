@@ -332,14 +332,8 @@ struct InboxApproveSuccessView: View {
     private var actionButtons: some View {
         VStack(spacing: DS.Spacing.md) {
             // Primary: Accept (go back to inbox)
-            Button(action: onAccept) {
-                Text(L10n.Common.accept)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-
-            .controlSize(.large)
-            .accessibilityIdentifier("inbox_success_accept")
+            YalaPrimaryButton(L10n.Common.accept, action: onAccept)
+                .accessibilityIdentifier("inbox_success_accept")
 
             // Secondary: Approve next (if available)
             if hasNextDraft {

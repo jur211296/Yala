@@ -184,21 +184,13 @@ struct WelcomeRestoreView: View {
             Spacer()
 
             VStack(spacing: DS.Spacing.sm) {
-                Button {
+                YalaPrimaryButton(L10n.Welcome.Restore.continueAction) {
                     DS.Haptic.success()
                     if isAllPrefilled(summary) {
                         onCompleteSkipAll()
                     } else {
                         onContinueWithSummary(summary)
                     }
-                } label: {
-                    Text(L10n.Welcome.Restore.continueAction)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.md)
-                        .background(theme.accent)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
                 }
 
                 Button {
@@ -378,15 +370,7 @@ struct WelcomeRestoreView: View {
             .padding(.horizontal, DS.Spacing.lg)
             Spacer()
             VStack(spacing: DS.Spacing.sm) {
-                Button(action: primaryAction) {
-                    Text(primaryTitle)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.md)
-                        .background(theme.accent)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                }
+                YalaPrimaryButton(primaryTitle, action: primaryAction)
                 if let secondaryTitle, let secondaryAction {
                     Button(action: secondaryAction) {
                         Text(secondaryTitle)

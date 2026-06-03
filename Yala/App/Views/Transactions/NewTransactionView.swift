@@ -16,7 +16,6 @@ struct NewTransactionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
-    @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = NewTransactionViewModel()
@@ -1256,27 +1255,15 @@ struct NewTransactionView: View {
     // MARK: - Register Button
 
     private var registerButton: some View {
-        Button {
+        YalaPrimaryButton(
+            L10n.Action.save,
+            icon: "checkmark.circle.fill",
+            isDisabled: !viewModel.canSave || viewModel.isSaving,
+            isLoading: viewModel.isSaving,
+            disabledHint: !viewModel.canSave ? L10n.Accessibility.completeFormHint : nil
+        ) {
             saveTransaction()
-        } label: {
-            HStack {
-                if viewModel.isSaving {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                } else {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(DS.Typography.headline)
-                    Text(L10n.Action.save)
-                        .font(DS.Typography.headline)
-                }
-            }
-            .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(viewModel.canSave ? theme.accent : DS.Semantic.disabledForeground.opacity(0.4))
-        .controlSize(.large)
-        .disabled(!viewModel.canSave || viewModel.isSaving)
-        .accessibilityHint(!viewModel.canSave ? L10n.Accessibility.completeFormHint : "")
         .accessibilityIdentifier("new_transaction_save")
         .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
     }

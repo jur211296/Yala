@@ -97,20 +97,11 @@ struct InviteRecoveryView: View {
 
                 VStack(spacing: DS.Spacing.sm) {
                     Spacer()
-                    Button {
+                    YalaPrimaryButton(L10n.Welcome.Invite.join, isDisabled: validatedURL == nil) {
                         guard let url = validatedURL else { return }
                         DS.Haptic.success()
                         onSuccess(url)
-                    } label: {
-                        Text(L10n.Welcome.Invite.join)
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, DS.Spacing.md)
-                            .background(validatedURL != nil ? theme.accent : theme.accent.opacity(0.4))
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
                     }
-                    .disabled(validatedURL == nil)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.lg)
