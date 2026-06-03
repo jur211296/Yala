@@ -39,6 +39,9 @@ struct YalaSaveButton: View {
     let action: () -> Void
     var isDisabled: Bool = false
     var disabledHint: String?
+    /// Override del identifier de accesibilidad. Útil cuando dos save buttons
+    /// coexisten en sheets anidados (evita queries ambiguas en XCUITest).
+    var accessibilityID: String = "toolbar_save_button"
 
     var body: some View {
         Button(action: action) {
@@ -52,7 +55,7 @@ struct YalaSaveButton: View {
 
         .buttonBorderShape(.circle)
         .accessibilityLabel(L10n.Action.save)
-        .accessibilityIdentifier("toolbar_save_button")
+        .accessibilityIdentifier(accessibilityID)
         .accessibilityHint(isDisabled ? (disabledHint ?? "") : "")
     }
 }

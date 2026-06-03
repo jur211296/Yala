@@ -45,16 +45,12 @@ struct TabBarConfigView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.Action.cancel) {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.save) {
-                        saveAndDismiss()
-                    }
-                    .fontWeight(.semibold)
-                    .accessibilityIdentifier("tabconfig_save")
+                    YalaSaveButton(action: { saveAndDismiss() }, accessibilityID: "tabconfig_save")
                 }
             }
         }
