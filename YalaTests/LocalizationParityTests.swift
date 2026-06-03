@@ -117,6 +117,28 @@ struct LocalizationParityTests {
         }
     }
 
+    /// Las flats de degradación de plurales en variantes (la forma `other` del padre
+    /// materializada en `.strings` — ver `variants_haveAllKeys_fromParent`) deben conservar
+    /// los placeholders del plural del padre. `placeholders_matchAcrossLocales` NO las cubre:
+    /// itera el reference `es`, donde estas keys son stringsdict-only. Comparte con
+    /// `extractPlaceholders` la limitación de no capturar `%@` aislado — suficiente para los
+    /// plurales actuales, todos con un `%d` de conteo que ancla la comparación.
+    @Test func variantPluralFlats_matchParentPlaceholders() {
+        for variant in SupportedLocale.allCases where variant.parent != nil {
+            guard let parent = variant.parent else { continue }
+            let parentPlurals = StringsFileParser.parseStringsdictOtherPlaceholders(forLocale: parent.code)
+            let variantStrings = StringsFileParser.parseStrings(forLocale: variant.code)
+
+            for (key, parentPlaceholders) in parentPlurals {
+                // Presencia ya enforzada por variants_haveAllKeys_fromParent.
+                guard let flat = variantStrings[key] else { continue }
+                let flatPlaceholders = StringsFileParser.extractPlaceholders(from: flat)
+                #expect(flatPlaceholders.sorted() == parentPlaceholders.sorted(),
+                        "Variant '\(variant.code)' key '\(key)': flat placeholders \(flatPlaceholders.sorted()) ≠ parent .stringsdict 'other' \(parentPlaceholders.sorted())")
+            }
+        }
+    }
+
     // MARK: - empty values
 
     @Test func noEmptyValues_anywhere() {

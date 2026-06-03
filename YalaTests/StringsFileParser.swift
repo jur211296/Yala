@@ -38,6 +38,35 @@ enum StringsFileParser {
         return Set(dict.keys)
     }
 
+    /// Para cada key del `.stringsdict` del locale, devuelve los placeholders de su
+    /// forma plural `other` — la cadena que las variantes materializan como entrada
+    /// flat de degradación (ver `variants_haveAllKeys_fromParent`). En este proyecto la
+    /// forma `other` de la variable plural contiene la frase completa con todos los
+    /// placeholders; el `NSStringLocalizedFormatKey` es solo la referencia `%#@var@`.
+    static func parseStringsdictOtherPlaceholders(forLocale code: String) -> [String: [String]] {
+        guard let path = Bundle.main.path(forResource: code, ofType: "lproj"),
+              let bundle = Bundle(path: path),
+              let stringsdictURL = bundle.url(forResource: "Localizable", withExtension: "stringsdict"),
+              let dict = NSDictionary(contentsOf: stringsdictURL) as? [String: Any]
+        else {
+            return [:]
+        }
+        var result: [String: [String]] = [:]
+        for (key, value) in dict {
+            guard let entry = value as? [String: Any] else { continue }
+            // La variable plural es la sub-dict con NSStringFormatSpecTypeKey == NSStringPluralRuleType.
+            for (subKey, subValue) in entry where subKey != "NSStringLocalizedFormatKey" {
+                guard let variable = subValue as? [String: Any],
+                      variable["NSStringFormatSpecTypeKey"] as? String == "NSStringPluralRuleType",
+                      let other = variable["other"] as? String
+                else { continue }
+                result[key] = extractPlaceholders(from: other)
+                break
+            }
+        }
+        return result
+    }
+
     /// Extrae los placeholders de format en orden (e.g. ["%@", "%d"] o ["%1$@", "%2$d"]).
     /// Útil para detectar drift entre traducciones.
     static func extractPlaceholders(from value: String) -> [String] {
