@@ -583,3 +583,7 @@
 /* (inherits from base locale via iOS fallback) */
 /* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
 /* (inherits from base locale via iOS fallback) */
+
+
+/* MARK: MoreDashboard-keys (more redesign) */
+/* (inherits from base locale via iOS fallback) */

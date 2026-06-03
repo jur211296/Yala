@@ -170,7 +170,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/CashFlowPlanUITests",
       "owner": "",
-      "lastVerified": "2026-06-02"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "categories-subcategories-crud",
@@ -307,7 +307,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/DeeplinkRoutingUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "deferred-filters-apply-discard",
@@ -522,7 +522,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "groups-crud-balances-settlements",
@@ -562,7 +562,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "groups-expense-form",
@@ -604,7 +604,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "groups-form",
@@ -622,7 +622,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "groups-pending-approval-reconnect",
@@ -762,7 +762,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/InboxNewItemsModalUITests",
       "owner": "",
-      "lastVerified": "2026-06-02"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "notifications-settings-crud",

@@ -1529,7 +1529,6 @@
 "transfer.categoryName" = "账户间转账";
 
 // MARK: - More
-"more.sections" = "版块";
 
 // MARK: - Scheduled Payments
 
@@ -4375,3 +4374,18 @@
 
 /* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
 "split.youPaidAll" = "你支付了全部";
+
+
+/* MARK: MoreDashboard-keys (more redesign) */
+"more.subtitle.panel" = "你的每日概览";
+"more.subtitle.insights" = "本期最重要的内容";
+"more.subtitle.trends" = "看看你的钱如何变化";
+"more.subtitle.distribution" = "了解你的钱花在哪里";
+"more.subtitle.budgets" = "设定限额，掌握节奏";
+"more.subtitle.scheduledPayments" = "即将到来：账单和订阅";
+"more.subtitle.comparative" = "并排比较各个周期";
+"more.subtitle.cashFlow" = "进账与出账一目了然";
+"more.subtitle.records" = "所有记录尽在一处";
+"more.subtitle.groups" = "轻松分摊共同支出";
+"more.subtitle.profile" = "你的账户与偏好";
+"more.toolsSection" = "更多功能";

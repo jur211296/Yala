@@ -27,14 +27,14 @@ final class GroupsSmokeUITests: XCTestCase {
     }
 
     /// Navega al tab Grupos (oculto en "Más"): tab "Más" (4º del tab bar, tras
-    /// panel/statistics/planning) → fila Grupos del MorePlaceholderView.
+    /// panel/statistics/planning) → card Grupos del dashboard de "Más".
     private func openGroups(_ app: XCUIApplication) {
         let moreTab = app.tabBars.buttons.element(boundBy: 3)
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
         moreTab.tap()
 
-        let groupsRow = app.buttons["more_tab_row_groups"]
-        XCTAssertTrue(groupsRow.waitForExistence(timeout: 5), "No apareció la fila Grupos en Más.")
+        let groupsRow = app.buttons["more_card_groups"]
+        XCTAssertTrue(groupsRow.waitForExistence(timeout: 5), "No apareció la card Grupos en Más.")
         groupsRow.tap()
     }
 

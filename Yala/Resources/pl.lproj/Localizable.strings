@@ -1529,7 +1529,6 @@
 "transfer.categoryName" = "Transfer między kontami";
 
 // MARK: - More
-"more.sections" = "Sekcje";
 
 // MARK: - Scheduled Payments
 
@@ -4375,3 +4374,18 @@
 
 /* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
 "split.youPaidAll" = "Zapłaciłeś wszystko";
+
+
+/* MARK: MoreDashboard-keys (more redesign) */
+"more.subtitle.panel" = "Twój codzienny przegląd";
+"more.subtitle.insights" = "Najważniejsze z Twojego okresu";
+"more.subtitle.trends" = "Zobacz, jak zmieniają się Twoje pieniądze";
+"more.subtitle.distribution" = "Odkryj, na co idą Twoje pieniądze";
+"more.subtitle.budgets" = "Ustaw limity i trzymaj tempo";
+"more.subtitle.scheduledPayments" = "Co przed Tobą: rachunki i subskrypcje";
+"more.subtitle.comparative" = "Porównaj swoje okresy obok siebie";
+"more.subtitle.cashFlow" = "Co wchodzi i co wychodzi";
+"more.subtitle.records" = "Wszystkie ruchy w jednym miejscu";
+"more.subtitle.groups" = "Dziel wydatki bez kłopotu";
+"more.subtitle.profile" = "Twoje konto i preferencje";
+"more.toolsSection" = "Więcej narzędzi";

@@ -538,6 +538,10 @@ class SessionState {
     /// Currently selected tab within Planning (Budgets, Scheduled Payments)
     var selectedPlanningTab: PlanningTab = .budgets
 
+    /// Currently selected tab within Reports (Comparativa, Flujo de caja).
+    /// Global SSOT so the dashboard "Más" can deep-link into a report sub-tab.
+    var selectedReportTab: ReportTab = .comparativa
+
     /// Pending Task that finalizes a deferred main tab selection (when the
     /// destination tab is hidden in "More" and we need to mount it via
     /// `temporaryTab` first). Cancelled if a new selection comes in while a
@@ -593,6 +597,12 @@ class SessionState {
     func navigateToBudgets() {
         selectedPlanningTab = .budgets
         selectMainTab(.planning)
+    }
+
+    /// Navigate to a specific Reports sub-tab (Comparativa / Flujo de caja).
+    func navigateToReport(_ tab: ReportTab) {
+        selectedReportTab = tab
+        selectMainTab(.reports)
     }
 
     /// Navigate to the standalone Records tab (`RecordsStandaloneView`). When

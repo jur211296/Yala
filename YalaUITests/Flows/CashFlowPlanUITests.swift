@@ -25,18 +25,15 @@ final class CashFlowPlanUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         // Reports está oculto en "Más" (config default [panel, statistics, planning]).
+        // El dashboard de "Más" tiene una card directa a Flujo de Caja que navega
+        // a Reportes con ese sub-tab ya seleccionado (sin pasar por el chip).
         let moreTab = app.tabBars.buttons.element(boundBy: 3)
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
         moreTab.tap()
 
-        let reportsRow = app.buttons["more_tab_row_reports"]
-        XCTAssertTrue(reportsRow.waitForExistence(timeout: 5), "No apareció la fila Reportes en Más.")
-        reportsRow.tap()
-
-        // El sub-tab por defecto es Comparativa → cambiar a Flujo de Caja.
-        let cashflowChip = app.buttons["report_chip_flujoDeCaja"]
-        XCTAssertTrue(cashflowChip.waitForExistence(timeout: 10), "No apareció el chip de Flujo de Caja en Reportes.")
-        cashflowChip.tap()
+        let cashflowCard = app.buttons["more_card_flujoDeCaja"]
+        XCTAssertTrue(cashflowCard.waitForExistence(timeout: 5), "No apareció la card Flujo de Caja en Más.")
+        cashflowCard.tap()
 
         // CashFlowSetupView monta (header presente con o sin sugerencias).
         XCTAssertTrue(

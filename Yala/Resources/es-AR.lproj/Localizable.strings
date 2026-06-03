@@ -682,3 +682,11 @@
 
 /* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
 "split.youPaidAll" = "Pagaste todo";
+
+
+/* MARK: MoreDashboard-keys (more redesign) */
+"more.subtitle.trends" = "Mirá cómo evoluciona tu dinero";
+"more.subtitle.distribution" = "Descubrí en qué se va tu dinero";
+"more.subtitle.budgets" = "Poné límites y mirá cómo vas";
+"more.subtitle.comparative" = "Compará tus periodos lado a lado";
+"more.subtitle.groups" = "Compartí gastos sin enredos";

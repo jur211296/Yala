@@ -1529,7 +1529,6 @@
 "transfer.categoryName" = "Overschrijving tussen rekeningen";
 
 // MARK: - More
-"more.sections" = "Secties";
 
 // MARK: - Scheduled Payments
 
@@ -4375,3 +4374,18 @@
 
 /* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
 "split.youPaidAll" = "Jij hebt alles betaald";
+
+
+/* MARK: MoreDashboard-keys (more redesign) */
+"more.subtitle.panel" = "Je overzicht van elke dag";
+"more.subtitle.insights" = "Het belangrijkste van je periode";
+"more.subtitle.trends" = "Zie hoe je geld zich ontwikkelt";
+"more.subtitle.distribution" = "Ontdek waar je geld heen gaat";
+"more.subtitle.budgets" = "Stel limieten in en houd je tempo bij";
+"more.subtitle.scheduledPayments" = "Wat eraan komt: rekeningen en abonnementen";
+"more.subtitle.comparative" = "Vergelijk je periodes naast elkaar";
+"more.subtitle.cashFlow" = "Wat binnenkomt en wat eruitgaat";
+"more.subtitle.records" = "Al je transacties op één plek";
+"more.subtitle.groups" = "Deel uitgaven zonder gedoe";
+"more.subtitle.profile" = "Je account en voorkeuren";
+"more.toolsSection" = "Meer functies";

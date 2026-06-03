@@ -4245,8 +4245,21 @@ enum L10n {
     }
 
     enum More {
-        static var sections: String {
-            ls("more.sections", comment: "")
+        static var toolsSection: String { ls("more.toolsSection", comment: "") }
+
+        /// Enunciados cortos de las cards del dashboard "Más" (brand-voice).
+        enum Subtitle {
+            static var panel: String { ls("more.subtitle.panel", comment: "") }
+            static var insights: String { ls("more.subtitle.insights", comment: "") }
+            static var trends: String { ls("more.subtitle.trends", comment: "") }
+            static var distribution: String { ls("more.subtitle.distribution", comment: "") }
+            static var budgets: String { ls("more.subtitle.budgets", comment: "") }
+            static var scheduledPayments: String { ls("more.subtitle.scheduledPayments", comment: "") }
+            static var comparative: String { ls("more.subtitle.comparative", comment: "") }
+            static var cashFlow: String { ls("more.subtitle.cashFlow", comment: "") }
+            static var records: String { ls("more.subtitle.records", comment: "") }
+            static var groups: String { ls("more.subtitle.groups", comment: "") }
+            static var profile: String { ls("more.subtitle.profile", comment: "") }
         }
     }
 

@@ -1529,7 +1529,6 @@
 "transfer.categoryName" = "口座間振替";
 
 // MARK: - More
-"more.sections" = "セクション";
 
 // MARK: - Scheduled Payments
 
@@ -4375,3 +4374,18 @@
 
 /* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
 "split.youPaidAll" = "あなたが全額支払いました";
+
+
+/* MARK: MoreDashboard-keys (more redesign) */
+"more.subtitle.panel" = "毎日の概要をひと目で";
+"more.subtitle.insights" = "今期の大事なポイント";
+"more.subtitle.trends" = "お金の推移を確認";
+"more.subtitle.distribution" = "お金の使いみちを発見";
+"more.subtitle.budgets" = "上限を決めて進み具合を確認";
+"more.subtitle.scheduledPayments" = "これからの支払いとサブスク";
+"more.subtitle.comparative" = "期間を並べて比較";
+"more.subtitle.cashFlow" = "入ってくるお金と出ていくお金";
+"more.subtitle.records" = "すべての記録をひとつに";
+"more.subtitle.groups" = "割り勘を手軽に共有";
+"more.subtitle.profile" = "アカウントと設定";
+"more.toolsSection" = "その他の機能";

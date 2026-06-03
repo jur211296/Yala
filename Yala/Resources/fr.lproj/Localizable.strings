@@ -1530,7 +1530,6 @@
 "transfer.categoryName" = "Virement entre comptes";
 
 // MARK: - More
-"more.sections" = "Sections";
 
 // MARK: - Scheduled Payments
 
@@ -4396,3 +4395,18 @@
 
 /* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
 "split.youPaidAll" = "Tu as tout payé";
+
+
+/* MARK: MoreDashboard-keys (more redesign) */
+"more.subtitle.panel" = "Votre aperçu au quotidien";
+"more.subtitle.insights" = "L'essentiel de votre période";
+"more.subtitle.trends" = "Voyez comment votre argent évolue";
+"more.subtitle.distribution" = "Découvrez où part votre argent";
+"more.subtitle.budgets" = "Fixez des limites et suivez votre rythme";
+"more.subtitle.scheduledPayments" = "Ce qui arrive : factures et abonnements";
+"more.subtitle.comparative" = "Comparez vos périodes côte à côte";
+"more.subtitle.cashFlow" = "Ce qui entre et ce qui sort";
+"more.subtitle.records" = "Tous vos mouvements au même endroit";
+"more.subtitle.groups" = "Partagez les dépenses sans prise de tête";
+"more.subtitle.profile" = "Votre compte et vos préférences";
+"more.toolsSection" = "Plus d'outils";

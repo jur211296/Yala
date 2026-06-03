@@ -15,7 +15,6 @@ struct FinancialReportView: View {
 
     @State private var viewModel = FinancialReportViewModel()
     @State private var cashFlowViewModel = CashFlowPlanViewModel()
-    @State private var selectedTab: ReportTab = .comparativa
     @State private var showCustomDatePicker = false
     @State private var isPresentingSettings = false
     @State private var showResetConfirmation = false
@@ -156,13 +155,13 @@ struct FinancialReportView: View {
 
     @ViewBuilder
     private func navigationChipButton(for tab: ReportTab) -> some View {
-        let isSelected = selectedTab == tab
+        let isSelected = sessionState.selectedReportTab == tab
 
         Button {
             var transaction = Transaction()
             transaction.disablesAnimations = true
             withTransaction(transaction) {
-                selectedTab = tab
+                sessionState.selectedReportTab = tab
             }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
@@ -188,7 +187,7 @@ struct FinancialReportView: View {
 
     @ViewBuilder
     private var reportGuide: some View {
-        switch selectedTab {
+        switch sessionState.selectedReportTab {
         case .comparativa:
             ContextualGuideBanner.comparative()
         case .flujoDeCaja:
@@ -200,7 +199,7 @@ struct FinancialReportView: View {
 
     @ViewBuilder
     private var tabContent: some View {
-        switch selectedTab {
+        switch sessionState.selectedReportTab {
         case .comparativa:
             comparativaContent
         case .flujoDeCaja:
@@ -288,7 +287,7 @@ struct FinancialReportView: View {
     private var reportToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Group {
-                if selectedTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
+                if sessionState.selectedReportTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
                     HStack(spacing: DS.Spacing.md) {
                         Button {
                             cashFlowViewModel.showChartsSheet = true
@@ -316,7 +315,7 @@ struct FinancialReportView: View {
                                 .foregroundStyle(.thToolbarIcon)
                         }
                     }
-                } else if selectedTab == .comparativa {
+                } else if sessionState.selectedReportTab == .comparativa {
                     Button {
                         viewModel.showFiltersSheet = true
                     } label: {
