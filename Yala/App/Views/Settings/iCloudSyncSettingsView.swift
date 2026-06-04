@@ -151,7 +151,7 @@ struct iCloudSyncSettingsView: View {
 
     private var noAccountCard: some View {
         HStack(spacing: DS.Spacing.lg) {
-            iconBadge("person.icloud.fill", color: .orange)
+            iconBadge("person.icloud.fill", color: DS.Semantic.warningForeground)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.iCloud.statusNoAccount)

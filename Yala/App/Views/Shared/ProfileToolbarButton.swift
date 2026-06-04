@@ -91,7 +91,7 @@ struct ProfileToolbarButton: View {
     private var ringGradient: LinearGradient {
         isProUser
             ? LinearGradient(
-                colors: [.yellow, .orange],
+                colors: DS.Gradients.proBadge,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
               )

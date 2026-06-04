@@ -19,6 +19,7 @@ struct InfoHintButton: View {
 
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.isWidgetPreviewMode) private var isPreviewMode
+    @Environment(\.yalaTheme) private var theme
     @State private var showTooltip = false
 
     var body: some View {
@@ -35,7 +36,7 @@ struct InfoHintButton: View {
             .popover(isPresented: $showTooltip, arrowEdge: .top) {
                 HintPopoverContent(
                     iconName: "info.circle.fill",
-                    iconColor: Color.accentColor,
+                    iconColor: theme.accent,
                     title: title,
                     message: message
                 )

@@ -133,8 +133,8 @@ struct YalaSecondaryButton: View {
     }
 
     private var foregroundColor: Color {
-        if isDisabled { return .gray }
-        if destructive { return .red }
+        if isDisabled { return DS.Semantic.disabledForeground }
+        if destructive { return DS.Semantic.errorForeground }
         return .primary
     }
 

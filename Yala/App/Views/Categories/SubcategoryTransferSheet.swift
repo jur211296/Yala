@@ -134,7 +134,7 @@ struct SubcategoryTransferSheet: View {
                 icon: "trash.fill",
                 title: L10n.Subcategory.deleteTransactions,
                 description: L10n.Subcategory.deleteTransactionsDesc,
-                color: .red
+                color: DS.Semantic.errorForeground
             ) {
                 showingDeleteConfirmation = true
             }

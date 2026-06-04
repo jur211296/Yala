@@ -138,7 +138,7 @@ struct GroupDetailView: View {
 
                             if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
                                 Circle()
-                                    .fill(Color.red)
+                                    .fill(DS.Semantic.errorForeground)
                                     .frame(width: 8, height: 8)
                                     .offset(x: DS.Spacing.xxs, y: -DS.Spacing.xxs)
                             }

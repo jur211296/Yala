@@ -29,7 +29,7 @@ struct TrialBanner: View {
     }
 
     private var iconColor: Color {
-        isUrgent ? .orange : .blue
+        isUrgent ? DS.Semantic.warningForeground : DS.Semantic.infoForeground
     }
 
     private var daysText: String {

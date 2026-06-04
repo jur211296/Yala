@@ -1067,7 +1067,7 @@ extension SubcategoryNeed {
         case .essential: return .essentialNeed    // Amber
         case .priority: return .priorityNeedNew   // Violet
         case .optional: return .optionalNeed      // Rose
-        case .unclassified: return .gray
+        case .unclassified: return DS.Semantic.disabledForeground
         }
     }
 }
