@@ -1160,6 +1160,11 @@ final class AppPreferences {
         // Bridge opt-out global per-user (synced cross-device).
         static let bridgeGroupExpensesToPersonalAccounts = "bridgeGroupExpensesToPersonalAccounts"
 
+        // Per-device (no synced). Apaga SOLO el hook de dedup-en-oleadas de sync
+        // (observeRemoteStoreChanges). El pase de arranque y el force-sync manual
+        // siguen activos. Default OFF = hook activo.
+        static let subcatDedupRemoteHookDisabled = "subcatDedupRemoteHookDisabled"
+
         // UI Feature Flags
         static let showSiriTip = "showSiriTip"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"

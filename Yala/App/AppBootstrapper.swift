@@ -62,6 +62,9 @@ final class AppBootstrapper {
     /// can resolve it without capturing a non-Sendable `ModelContext` in its
     /// `@Sendable` callback closure.
     private var raceCleanerModelContext: ModelContext?
+    /// Cached on the main actor so the `.NSPersistentStoreRemoteChange` observer
+    /// can run the subcategory dedup without capturing a non-Sendable `ModelContext`.
+    private var remoteChangeModelContext: ModelContext?
 
     // MARK: - Initialization
 
@@ -175,6 +178,10 @@ final class AppBootstrapper {
                 waitedForSync: waitedForSync,
                 waitDuration: waitDuration
             )
+            // Cleanup de subcategorías duplicadas (post-migración: el re-sync masivo que
+            // dispara la regen de shortcutID ya convergió aquí). Gateado por quiescencia.
+            // También reporta posibles duplicados de Account/Tag (telemetría detectora).
+            CategoryDeduplicationService.runDedupIfQuiescent(in: context)
             // Seed diferido de defaults de Panel: en `AppPreferences.init` se difirió para no
             // clobbear la config que el sync aún no había bajado. Aquí (post-hook, o sin cuenta
             // iCloud vía el gate de arriba) la decisión sobre fresh-vs-existente ya es segura.
@@ -198,7 +205,7 @@ final class AppBootstrapper {
         observeExchangeRateUpdates()
 
         // 13. Observe CloudKit remote changes to auto-refresh UI
-        observeRemoteStoreChanges()
+        observeRemoteStoreChanges(context: context)
 
         // 14. Observe iCloud account changes — detect mismatch if container was created without CloudKit
         observeICloudAccountChanges()
@@ -468,7 +475,8 @@ final class AppBootstrapper {
 
     // MARK: - Remote Change Observation
 
-    private func observeRemoteStoreChanges() {
+    private func observeRemoteStoreChanges(context: ModelContext) {
+        remoteChangeModelContext = context
         NotificationCenter.default.addObserver(
             forName: .NSPersistentStoreRemoteChange,
             object: nil,
@@ -493,6 +501,12 @@ final class AppBootstrapper {
                     guard !Task.isCancelled else { return }
                     bootstrapper.remoteChangeLeadingFired = false
                     bootstrapper.sessionState.markRemoteChangePending()
+                    // Dedup en oleadas: el burst de sync acabó. Gateado por feature flag +
+                    // quiescencia (runDedupIfQuiescent decide si la actividad cesó de verdad).
+                    if !UserDefaults.standard.bool(forKey: AppPreferences.Keys.subcatDedupRemoteHookDisabled),
+                       let ctx = bootstrapper.remoteChangeModelContext {
+                        CategoryDeduplicationService.runDedupIfQuiescent(in: ctx)
+                    }
                     #if DEBUG
                     print("AppBootstrapper: Remote CloudKit change — trailing edge")
                     #endif

@@ -16,6 +16,9 @@ struct iCloudSyncSettingsView: View {
     @State private var syncService = iCloudSyncService.shared
     @State private var isForceSyncDisabled = false
     @State private var showTechnical = false
+    #if DEBUG
+    @State private var dedupHookDisabled = UserDefaults.standard.bool(forKey: AppPreferences.Keys.subcatDedupRemoteHookDisabled)
+    #endif
 
     /// Auto-recovery CTAs (Retry / Diagnose) are gated on a future feature.
     /// Flip to true when `cloudkit-auto-recovery-stuck-queue` ships.
@@ -41,6 +44,9 @@ struct iCloudSyncSettingsView: View {
 
                     #if DEV_BUILD
                     qaPanel
+                    #endif
+                    #if DEBUG
+                    dedupHookPanel
                     #endif
                 }
                 .padding(.vertical, DS.Spacing.xxl)
@@ -305,6 +311,29 @@ struct iCloudSyncSettingsView: View {
             }
 
             Text("Solo visible en Yala Dev. Tras el tap: nube aparece inmediata, persiste 10s, vuelve a idle.")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.lg)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+    #endif
+
+    #if DEBUG
+    /// Toggle del feature flag del dedup-en-oleadas. Visible al correr el scheme Yala
+    /// en config Debug (contenedor de producción), que es como se valida el fix.
+    private var dedupHookPanel: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Toggle("Apagar dedup en oleadas de sync", isOn: $dedupHookDisabled)
+                .font(DS.Typography.caption.weight(.semibold))
+                .onChange(of: dedupHookDisabled) { _, newValue in
+                    UserDefaults.standard.set(newValue, forKey: AppPreferences.Keys.subcatDedupRemoteHookDisabled)
+                }
+
+            Text("Debug: desactiva SOLO el hook que deduplica en cada oleada de CloudKit. El pase de arranque y “Forzar sincronización” siguen activos.")
                 .font(DS.Typography.caption)
                 .foregroundStyle(.tertiary)
         }

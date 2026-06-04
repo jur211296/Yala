@@ -176,7 +176,10 @@
       "area": "categories-subcategories-crud",
       "codeGlobs": [
         "Yala/App/Views/Categories/**",
-        "Yala/App/Views/Settings/CategoriesSettingsListView.swift"
+        "Yala/App/Views/Settings/CategoriesSettingsListView.swift",
+        "Yala/App/Services/CategoryDeduplicationService.swift",
+        "Yala/App/Logic/SubcategoryDedupLogic.swift",
+        "Yala/App/Logic/SubcategoryDedupGate.swift"
       ],
       "scenarioIDs": [
         "3.1",
@@ -195,7 +198,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/CategoriesCrudUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-04"
     },
     {
       "area": "chat-assistant",

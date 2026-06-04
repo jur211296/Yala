@@ -34,7 +34,6 @@ struct ContentView: View {
     /// Replaces the noisy "Syncing…" banner. Nil when hidden.
     @State private var positiveToast: String?
     @State private var toastDismissTask: Task<Void, Never>?
-    @State private var deduplicationTask: Task<Void, Never>?
     @State private var wipeGraceTask: Task<Void, Never>?
     @State private var remoteWipeTask: Task<Void, Never>?
     @State private var showRemoteWipeAlert: Bool = false
@@ -547,19 +546,6 @@ struct ContentView: View {
             showFullModeActivation = true
         default:
             break
-        }
-    }
-
-    /// Schedule one-shot dedup after a delay (at most once per launch)
-    private func scheduleDeduplication() {
-        guard deduplicationTask == nil else { return }
-        deduplicationTask = Task {
-            do {
-                try await Task.sleep(for: .seconds(10))
-                CategoryDeduplicationService.deduplicateSeedCategories(in: modelContext)
-            } catch {
-                // Task cancelled
-            }
         }
     }
 

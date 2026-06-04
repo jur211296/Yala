@@ -396,7 +396,7 @@ final class iCloudSyncService {
             let container = CKContainer(identifier: SwiftDataConfiguration.cloudKitContainerIdentifier)
             _ = try await container.privateCloudDatabase.allRecordZones()
             try modelContext.save()
-            CategoryDeduplicationService.deduplicateSeedCategories(in: modelContext)
+            CategoryDeduplicationService.runAllDeduplication(in: modelContext)
             SessionState.shared.incrementDataVersion()
             // Don't set status here — the observer will surface the real result.
         } catch {
