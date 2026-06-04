@@ -85,22 +85,7 @@ struct TagsSettingsListView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            Image(systemName: "tag")
-                .font(DS.Typography.amountLarge)
-                .foregroundStyle(.tertiary)
-
-            Text(L10n.Empty.noTags)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.secondary)
-
-            Text(L10n.Empty.tagsDescription)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.xxxl)
-        }
-        .padding(.top, DS.Spacing.sheetTop)
+        YalaEmptyState.noTags()
     }
 
     // MARK: - Active Tags Section (List with Drag and Drop)

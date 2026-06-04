@@ -380,39 +380,17 @@ struct RecordsTabView: View {
     // MARK: - Empty State Content
 
     private var emptyStateContent: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            Image(systemName: "list.bullet.rectangle")
-                .font(DS.Typography.largeTitle)
-                .foregroundStyle(.secondary.opacity(0.5))
-                .accessibilityHidden(true)
-
-            Text(L10n.Records.noRecords)
-                .font(DS.Typography.title3)
-                .foregroundStyle(.primary)
-
-            Text(
-                viewModel.hasActiveFilters
-                    ? L10n.Statistics.noRecordsFiltered
-                    : L10n.Statistics.noRecordsDescription
-            )
-            .font(DS.Typography.subheadline)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, DS.Spacing.xxxl + DS.Spacing.sm)
-
-            if viewModel.hasActiveFilters {
-                Button {
-                    viewModel.clearFilters()
-                    onFilterChange()
-                } label: {
-                    Text(L10n.Filters.clearFilters)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.thAccent)
-                }
-                .padding(.top, DS.Spacing.sm)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, DS.Spacing.xxxl * 2)
+        YalaEmptyState(
+            icon: "list.bullet.rectangle",
+            title: L10n.Records.noRecords,
+            message: viewModel.hasActiveFilters
+                ? L10n.Statistics.noRecordsFiltered
+                : L10n.Statistics.noRecordsDescription,
+            actionTitle: viewModel.hasActiveFilters ? L10n.Filters.clearFilters : nil,
+            action: viewModel.hasActiveFilters ? {
+                viewModel.clearFilters()
+                onFilterChange()
+            } : nil
+        )
     }
 }
