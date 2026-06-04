@@ -476,7 +476,7 @@ struct SankeyFlowCalculatorTests {
         #expect(result.nodes(in: .expenseSubcategory).first?.isTappable == true)
     }
 
-    @Test func compute_poolNodes_notTappable() {
+    @Test func compute_poolNodes_expensesTappable_availableNot() {
         let salary = makeCategory(name: "Salary", isIncome: true)
         let food = makeCategory(name: "Food")
         let txs = [
@@ -487,9 +487,11 @@ struct SankeyFlowCalculatorTests {
             transactions: txs,
             interval: defaultInterval
         )
-        for p in result.nodes(in: .pool) {
-            #expect(p.isTappable == false)
-        }
+        let pool = result.nodes(in: .pool)
+        // "Gastos" es tappable: filtra los gastos del período (tap filter por pool,
+        // añadido en 59a84be4). "Disponible" NO es tappable (no es un gasto filtrable).
+        #expect(pool.first { $0.id == "pool_expenses" }?.isTappable == true)
+        #expect(pool.first { $0.id == "pool_available" }?.isTappable == false)
     }
 
     @Test func compute_otrosNode_notTappable() {

@@ -22,6 +22,10 @@ struct iCloudSyncServiceTests {
     private func freshService() -> iCloudSyncService {
         let service = iCloudSyncService.shared
         service._testReset()
+        // Sims (y CI) no tienen cuenta iCloud → `isAccountAvailable` sería false y
+        // cortocircuitaría `forceFetchAndWait` antes de su lógica post-cuenta. Estos
+        // tests ejercitan esa lógica, así que asumimos cuenta disponible.
+        service._testForceAccountAvailable = true
         return service
     }
 

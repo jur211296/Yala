@@ -100,19 +100,9 @@ struct InsightsRuleBasedGroupTests {
         #expect(!results.contains { $0.id == "shared_frequency" })
     }
 
-    // MARK: - R4: High Pending Debt
-
-    @Test func highPendingDebt_triggersAboveDailyAvgMultiple() {
-        let ctx = makeContext(pendingDebt: 800)
-        let results = generate(context: ctx, dailyAverage: 100)
-        #expect(results.contains { $0.id == "high_pending_debt" })
-    }
-
-    @Test func highPendingDebt_cautiousFocus_lowerThreshold() {
-        let ctx = makeContext(pendingDebt: 400)
-        let results = generate(context: ctx, dailyAverage: 100, focus: .cautious)
-        #expect(results.contains { $0.id == "high_pending_debt" })
-    }
+    // R4 (High Pending Debt) eliminada del producto en `7c7153dd` (insights #12 —
+    // remove ruleHighDebt insight). Los tests del id "high_pending_debt" se borraron
+    // con la regla; no hay cobertura que reabrir (feature removida intencionalmente).
 
     // MARK: - R5: Dominant Shared Category
 

@@ -116,15 +116,18 @@ struct PanelPreferencesMigrationTests {
         #expect(prefs.panelPrefsMigratedV2 == true)
     }
 
-    // MARK: - noLegacyData — fresh install (PP2-07: seeds opinionated defaults)
+    // MARK: - fresh install seeds opinionated PP2-07 defaults
 
-    @Test func migration_noLegacyData_seedsPP2_07Defaults() {
+    @Test func freshInstall_seedsPP2_07Defaults() {
         let defaults = Self.makeSuite()
-        // No `panel_widget_configs_v1` key — simulate fresh install
-
         let prefs = AppPreferences(defaults: defaults)
-
-        #expect(prefs.panelPrefsMigratedV2 == true)
+        // `init` invoca `runIfNeeded(deferFreshSeed: true)`, que DIFIERE el seed fresco para
+        // no clobbear config remota que llega por sync (commit 03400411). El seed real corre
+        // en el "safe point" (post-sync o sin iCloud) vía `setupDefaultsForNewUser`. Lo
+        // ejercitamos directo: verifica los valores PP2-07 sin depender del read del iKV
+        // global (`hasRemotePanelPreferences`) que el path de migración consulta primero.
+        // (El sentinel `panelPrefsMigratedV2` lo cubren migration_runsOnce / guardedBySentinel.)
+        prefs.setupDefaultsForNewUser()
 
         // Tendencias: [trend | weekdayBar] paired small + cashFlow medium.
         // Todos visibles.

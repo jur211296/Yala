@@ -73,7 +73,10 @@ final class iCloudSyncService {
 
     /// Whether iCloud account is available (sync is automatic when true).
     var isAccountAvailable: Bool {
-        SwiftDataConfiguration.isICloudAvailable()
+        #if DEBUG
+        if let forced = _testForceAccountAvailable { return forced }
+        #endif
+        return SwiftDataConfiguration.isICloudAvailable()
     }
 
     /// Split group sync status (from CKSyncEngine) — preserved from 2.0.
@@ -424,6 +427,11 @@ final class iCloudSyncService {
     /// paralelas que inicializan CloudKit. Producción nunca toca este flag.
     var _testIgnoreExternalEvents: Bool = false
 
+    /// Forces `isAccountAvailable` to a fixed value in tests. Sims have no iCloud
+    /// account → `isAccountAvailable` is false, which short-circuits
+    /// `forceFetchAndWait` before its post-account logic. `nil` = use the real check.
+    var _testForceAccountAvailable: Bool?
+
     /// Reset state between tests. Not exposed in release.
     func _testReset() {
         pendingFailedTransition?.cancel()
@@ -436,6 +444,7 @@ final class iCloudSyncService {
         consecutiveExportFailures = 0
         hasCompletedFirstImport = false
         _testIgnoreExternalEvents = true
+        _testForceAccountAvailable = nil
     }
 
     /// Await the pending failed-transition Task so tests can assert post-debounce

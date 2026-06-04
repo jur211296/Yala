@@ -99,7 +99,7 @@ struct InsightsRuleBasedTests {
 
     // MARK: - Tests
 
-    @Test func noRulesTriggered_emptyInsights() {
+    @Test func benignInputs_noSpecificRulesTriggered() {
         let cat = makeCategory(name: "Food")
         let catSummary = CategorySpendingSummary(category: cat, amount: 200, percentage: 20)
 
@@ -113,7 +113,12 @@ struct InsightsRuleBasedTests {
             prevCashFlow: makeCashFlow(),
             currencyCode: "USD"
         )
-        #expect(result.isEmpty)
+        // Las reglas universales (daily_average_snapshot, savings_*) siempre aparecen
+        // cuando hay gasto/ingreso > 0 (Reglas 5/6 del stats polish). Con inputs benignos
+        // (categoría 20% < umbral, variación de gasto 5% < umbral, sin presupuestos en
+        // riesgo, opcional 20% < 40%) NINGUNA regla específica debe dispararse.
+        let specificIDs: Set<String> = ["top_category_dominant", "expense_up", "expense_down", "optional_high"]
+        #expect(result.allSatisfy { !specificIDs.contains($0.id) && !$0.id.hasPrefix("budget_risk_") })
     }
 
     @Test func topCategoryDominant_balanced() {
