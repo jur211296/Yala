@@ -8,7 +8,7 @@ Barrido de las **303 vistas** SwiftUI de Yala (~40 áreas de `Yala/App/Views/`) 
 
 ## Estado de remediación (2026-06-03)
 
-Resueltos en **11 commits** (~140 hallazgos de mayor impacto + dimensiones color y a11y completas, todos build-verde; cambios visuales validados con device-QA):
+Resueltos en **12 commits** (~140 hallazgos de mayor impacto + dimensiones color, a11y y componentes completas, todos build-verde; cambios visuales validados con device-QA):
 
 | Commit | Lote | Resuelto |
 |--------|------|----------|
@@ -23,6 +23,7 @@ Resueltos en **11 commits** (~140 hallazgos de mayor impacto + dimensiones color
 | `3509355f` | color | 16 markers `// A11Y-DM` (paletas decorativas intencionales) + grises de chart → `theme.secondaryText` |
 | `2e4d93c7` | a11y | labels VoiceOver en 6 controles + keys `accessibility.expand/collapse` (16 locales) |
 | `2709e391` | a11y | áreas táctiles ≥44pt en 9 controles (HIG; filas de día con expansión vertical) |
+| `64cb28c0` | componentes | 2 empty states a mano → `YalaEmptyState` (Tags + Records, −37 LOC) |
 
 Causa raíz también cerrada: `UI-PATTERNS.md` actualizado a la nomenclatura real (`theme.*`/`.thCard`, `YalaPrimaryButton`, sin `Color.yalaCard`/`YalaTextButton`).
 
@@ -30,10 +31,13 @@ Causa raíz también cerrada: `UI-PATTERNS.md` actualizado a la nomenclatura rea
 
 **Dimensión a11y — CERRADA**: verificación reveló que `16e90f1d` ya había resuelto 16 hallazgos (el reporte predataba ese commit). Restante cerrado en 2 commits: 8 labels VoiceOver (`2e4d93c7`, + keys nuevas `expand`/`collapse`) y 9 áreas táctiles ≥44pt (`2709e391`). Las filas de día (7 chips) usan expansión **vertical** 36→44h para no desbordar; M/A selector device-QA OK en iPhone 17 Pro.
 
-**Pendiente (no abordado):**
-- **componentes** (~10, media) — icon badges/empty states a mano vs `.yalaIconBadge*`/`YalaEmptyState`. No abordado en este ciclo.
-- **backgrounds Pattern B** (~70, severidad baja) — deuda incremental aceptada, migrar al tocar el archivo.
+**Dimensión componentes — CERRADA**: 2 empty states a mano migrados a `YalaEmptyState` (`64cb28c0`, Tags + Records, preservando el mensaje filter-aware + botón "Limpiar filtros"). Los **8 icon-badges NO se migran** (el reporte erró): `.yalaIconBadge*` tiene **0 usos** en la app (dead code) y renderiza `RoundedRectangle`, mientras la convención real (`RecordRowView` y resto) usa `Circle`. Migrar sería regresión visual + inconsistencia → se quedan como `Circle` hand-rolled (correcto). Nota: `.yalaIconBadge*` queda como dead code candidato a borrado en sprint de limpieza.
+
+**Pendiente (deuda aceptada, no abordado):**
+- **backgrounds Pattern B** (~70, severidad baja) — `ZStack { PanelBackgroundView(); content }` manual, deuda incremental aceptada, migrar al tocar el archivo.
 - Casos puntuales saltados con criterio: `BiometricLockOverlay` (fondo opaco de seguridad), `RecordsStandaloneView` barra flotante (debe ser `glassEffect`), `PeriodSelectorComponents` (usa `.thCard` deliberado).
+
+**Las 8 dimensiones del audit quedan resueltas o conscientemente diferidas.** Solo resta deuda de baja severidad documentada arriba.
 
 ---
 
