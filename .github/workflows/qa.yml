@@ -17,25 +17,25 @@ jobs:
   # Suite de tests. Runner macos-26 (Tahoe): Xcode `latest-stable` (26.x) + sim
   # iPhone 17 Pro. Build UNA vez + test-without-building.
   #
-  # ESTRATEGIA (2026-06-03 — INTERIM advisory; gate duro = coverage-index):
-  # 3 root-causes de la instabilidad sistémica (NO una sola):
-  #  (1) HOST CLOUDKIT CRASH (ARREGLADO, commit b25fc8c2): el host Yala.app arrancaba
-  #      con CloudKit en sims SIN cuenta iCloud (CI) → NSCloudKitMirroringDelegate loop
-  #      → proceso de test inestable (0 tests + restart loop) aunque las aserciones
-  #      pasaran. Fix: env var YALA_TEST_MODE (isRunningTests determinista en @main) +
-  #      cloudKitDatabase .none en configs de test + gate de bootstrap/sync. GANANCIA
-  #      NETA: ya no hay cascada del host (la suite completa solo falla ~1 clase).
+  # ESTRATEGIA (2026-06-04 — pure-logic BLOQUEANTE; context-based + UI advisory):
+  #  (1) HOST CLOUDKIT CRASH (ARREGLADO, b25fc8c2): el host Yala.app arrancaba con CloudKit
+  #      en sims SIN cuenta iCloud (CI) → NSCloudKitMirroringDelegate loop → proceso de test
+  #      inestable (0 tests + restart loop) aunque las aserciones pasaran. Fix: YALA_TEST_MODE
+  #      (isRunningTests determinista en @main) + cloudKitDatabase .none en configs de test +
+  #      gate de bootstrap/sync. Eliminó la cascada del host.
   #  (2) SwiftData IN-MEMORY INSERT-TRAP: las 7 clases que crean un ModelContext in-memory
-  #      hacen EXC_BREAKPOINT flaky de SwiftData en CI (víctima ALEATORIA por run; -retry
-  #      no converge). Separadas en su propio paso advisory.
-  #  (3) AISLAMIENTO DE SINGLETONS: ~10 tests pure-logic (LocalizationParity, iCloudSync,
-  #      PanelPreferencesMigration...) pasan en la suite COMPLETA pero fallan al cambiar
-  #      el set de ejecución (dependen de singletons/UserDefaults/orden). Esto impide un
-  #      gate bloqueante limpio del subset pure-logic — requiere remediación per-test.
-  # Por (2)+(3), los 3 pasos siguen ADVISORY (interim). El split (pure-logic / context-based)
-  # se mantiene para visibilidad de cada clase de fallo. Plan en TESTING-STRATEGY.md.
-  # TODO(@jur, 2026-07-15): remediar aislamiento (serializar + teardown) + migrar las 7
-  # context-based a pure-logic / target separado → volver pure-logic a BLOQUEANTE.
+  #      hacen EXC_BREAKPOINT flaky de SwiftData en CI (víctima ALEATORIA por run; -retry no
+  #      converge). Aisladas en su propio paso ADVISORY hasta migrarlas a pure-logic.
+  #  (3) "Aislamiento de singletons" (hipótesis previa) DESCARTADA: el run per-suite-a-solas
+  #      probó que los ~10 fallos del subset eran DETERMINISTAS (cada suite falla idéntico
+  #      corriendo sola, sin contaminación cross-suite). Eran tests STALE vs cambios
+  #      INTENCIONALES de producto (regla Insights eliminada, Sankey tap-filter por pool,
+  #      seed Panel diferido, iCloud env sin cuenta). Arreglados en f1575df7.
+  # El paso pure-logic (skip-7) es BLOQUEANTE: subset estable y determinista (verificado
+  # local + CI). Las 7 context-based + YalaUITests siguen ADVISORY. Gate duro = coverage-index
+  # + pure-logic. Detalle en TESTING-STRATEGY.md.
+  # TODO(@jur, 2026-07-15): migrar las 7 context-based a pure-logic / target separado +
+  # investigar el insert-trap SwiftData in-memory → volverlas bloqueantes también.
   tests:
     runs-on: macos-26
     steps:
@@ -57,16 +57,13 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
             -derivedDataPath .ddp \
             -quiet
-      # YalaTests SALVO las 7 clases que crean un ModelContext in-memory (insert-trap
-      # flaky de SwiftData en CI — Lista Negra). ADVISORY (interim): además del insert-trap,
-      # el runner destapó que ~10 tests pure-logic dependen de singletons/UserDefaults y
-      # fallan al cambiar el set de ejecución (aislamiento deficiente: LocalizationParity,
-      # iCloudSyncService, PanelPreferencesMigration, etc. — pasan en la suite completa,
-      # fallan en el subset). Volver a BLOQUEANTE requiere remediar ese aislamiento
-      # (serializar Swift Testing in-process o @Suite(.serialized) en las suites de
-      # singletons) — ver TESTING-STRATEGY.md. TODO(@jur, 2026-07-15): aislamiento → blocking.
-      - name: Unit tests (YalaTests pure-logic) — advisory (interim; aislamiento de singletons; ver Lista Negra)
-        continue-on-error: true
+      # YalaTests SALVO las 7 clases que crean un ModelContext in-memory (insert-trap flaky
+      # de SwiftData en CI — paso advisory aparte). BLOQUEANTE: el subset pure-logic es
+      # determinista y estable (verificado local + CI; los fallos previos eran tests stale
+      # vs cambios intencionales de producto, arreglados en f1575df7 — NO aislamiento).
+      # `-retry-tests-on-failure` se mantiene como red para flakes transitorios puntuales
+      # (p.ej. tests async con timeout). Ver TESTING-STRATEGY.md.
+      - name: Unit tests (YalaTests pure-logic) — BLOQUEANTE
         run: |
           xcodebuild test-without-building \
             -scheme "Yala Dev" \
