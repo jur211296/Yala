@@ -51,6 +51,8 @@ struct ComparisonModeSelector: View {
                             .fill(.thSecondaryText.opacity(0.08))
                     }
                 }
+                .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(mode.displayName)

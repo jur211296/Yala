@@ -312,7 +312,7 @@ struct IconColorPickerSheet: View {
         } label: {
             Circle()
                 .fill(Color(hex: hex))
-                .frame(width: 40, height: 40)
+                .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 .overlay(
                     Circle()
                         .stroke(Color.white, lineWidth: tempColorHex == hex ? 3 : 0)

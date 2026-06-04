@@ -229,7 +229,7 @@ struct RecordsCalendarView: View {
             Image(systemName: systemName)
                 .font(DS.Typography.headline)
                 .foregroundStyle(enabled ? .secondary : .tertiary)
-                .frame(width: 36, height: 36)
+                .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
         }
         .buttonStyle(.plain)
         .disabled(!enabled)

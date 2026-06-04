@@ -727,6 +727,8 @@ struct ScheduledPaymentEditorView: View {
                         .fill(isSelected ? theme.accent : Color.clear)
                 )
                 .glassEffect(isSelected ? .clear : .regular.interactive(), in: .circle)
+                .frame(height: DS.Button.actionSize)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(weekday.short)

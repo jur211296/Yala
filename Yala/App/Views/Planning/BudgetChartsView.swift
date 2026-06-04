@@ -243,9 +243,10 @@ struct BudgetChartsView: View {
                 Image(systemName: "chevron.left")
                     .font(DS.Typography.headline)
                     .foregroundStyle(.secondary)
-                    .frame(width: 36, height: 36)
+                    .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Accessibility.previousPeriod)
 
             Spacer()
 
@@ -274,9 +275,10 @@ struct BudgetChartsView: View {
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.headline)
                     .foregroundStyle(.secondary)
-                    .frame(width: 36, height: 36)
+                    .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Accessibility.nextPeriod)
         }
         .padding(.vertical, DS.Spacing.sm)
     }

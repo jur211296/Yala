@@ -312,8 +312,12 @@ struct NotificationEditorSheet: View {
                     Circle()
                         .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
                 )
+                .frame(height: DS.Button.actionSize)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(weekday.short)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func toggleWeekday(_ weekday: Int) {

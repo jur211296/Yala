@@ -176,7 +176,7 @@ struct SetupChecklistCard: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.thSecondaryText)
-                    .frame(width: 28, height: 28)
+                    .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
