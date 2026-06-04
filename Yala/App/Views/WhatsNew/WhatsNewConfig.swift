@@ -27,6 +27,7 @@ enum WhatsNewConfig {
 
     // MARK: - Version 1.1
 
+    // A11Y-DM: paleta decorativa por feature del carrusel (colores de sistema, adaptan a Dark Mode)
     private static let version1_1: [WhatsNewFeature] = [
         WhatsNewFeature(
             icon: "chart.bar.doc.horizontal.fill",
@@ -50,6 +51,7 @@ enum WhatsNewConfig {
 
     // MARK: - Version 1.2
 
+    // A11Y-DM: paleta decorativa por feature del carrusel (colores de sistema, adaptan a Dark Mode)
     private static let version1_2: [WhatsNewFeature] = [
         WhatsNewFeature(
             icon: "chart.line.uptrend.xyaxis",

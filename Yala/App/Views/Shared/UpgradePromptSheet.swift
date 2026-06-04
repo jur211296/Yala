@@ -35,6 +35,7 @@ enum UpgradeContext {
     }
 
     var iconColor: Color {
+        // A11Y-DM: colores decorativos por caso del prompt (sistema, adaptan a Dark Mode)
         switch self {
         case .limitReached: return .orange
         case .proFeature: return .purple

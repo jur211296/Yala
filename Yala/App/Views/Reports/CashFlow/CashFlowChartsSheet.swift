@@ -671,7 +671,7 @@ struct CashFlowChartsSheet: View {
                                 x: .value("Month", point.date, unit: .month),
                                 y: .value("Net", point.planned)
                             )
-                            .foregroundStyle(Color.gray.opacity(0.3).gradient)
+                            .foregroundStyle(theme.secondaryText.opacity(0.3).gradient)
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
                         }
 
@@ -827,6 +827,7 @@ struct CashFlowChartsSheet: View {
                     plannedAmount: entry.totalPlanned / count,
                     deviation: entry.totalDeviation / count,
                     iconName: icons?.iconName ?? "creditcard.fill",
+                    // A11Y-DM: gris neutro fallback cuando la línea aún no tiene color propio
                     colorHex: icons?.colorHex ?? "#9CA3AF"
                 )
             }

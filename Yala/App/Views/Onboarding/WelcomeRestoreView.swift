@@ -308,6 +308,7 @@ struct WelcomeRestoreView: View {
     private var notFoundView: some View {
         emptyStateView(
             icon: "icloud.slash",
+            // A11Y-DM: gris neutro de estado vacío "no encontrado" (sistema, adapta a Dark Mode)
             tint: .gray,
             title: L10n.Welcome.Restore.notFoundTitle,
             body: L10n.Welcome.Restore.notFoundBody,

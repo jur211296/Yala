@@ -40,6 +40,7 @@ struct InviteRecoveryView: View {
 
                         Image(systemName: "link.circle.fill")
                             .font(.system(size: 56))
+                            // A11Y-DM: verde decorativo de acento positivo en el hero (sistema, adapta a Dark Mode)
                             .foregroundStyle(.green)
 
                         VStack(spacing: DS.Spacing.sm) {

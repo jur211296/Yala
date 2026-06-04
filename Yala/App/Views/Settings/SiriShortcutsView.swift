@@ -27,6 +27,7 @@ struct SiriShortcutsView: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "mic.badge.plus")
                             .font(DS.Typography.amountLarge)
+                            // A11Y-DM: azul de identidad de Siri (color de sistema, adapta a Dark Mode)
                             .foregroundStyle(.blue)
                             .padding(.bottom, DS.Spacing.sm)
                             .accessibilityHidden(true)
@@ -89,6 +90,7 @@ struct SiriShortcutsView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "mic.circle.fill")
                         .font(.system(size: siriIconSize))
+                        // A11Y-DM: azul de identidad de Siri (color de sistema, adapta a Dark Mode)
                         .foregroundStyle(.blue)
                         .accessibilityHidden(true)
 
@@ -211,6 +213,7 @@ struct SiriShortcutsView: View {
 
                 shortcutRow(
                     icon: "gearshape.fill",
+                    // A11Y-DM: gris neutro decorativo de la fila de automatización (sistema, adapta a Dark Mode)
                     iconColor: .gray,
                     name: String(localized: "siriShortcuts.shortcut.automation"),
                     description: String(localized: "siriShortcuts.desc.automation"),

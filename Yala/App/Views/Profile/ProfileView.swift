@@ -358,6 +358,7 @@ struct ProfileView: View {
             Group {
                 if isProUser {
                     LinearGradient(
+                        // A11Y-DM: tinte dorado Pro sutil decorativo (casi invisible, adapta a Dark Mode)
                         colors: [Color.yellow.opacity(0.03), Color.clear],
                         startPoint: .top,
                         endPoint: .bottom

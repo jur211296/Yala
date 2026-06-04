@@ -403,7 +403,7 @@ struct CashFlowAddFromExpensesView: View {
                             .foregroundStyle(selectedMethod == method ? theme.accent : .secondary)
                             .clipShape(Capsule())
                             .overlay(
-                                Capsule().stroke(selectedMethod == method ? theme.accent.opacity(0.3) : Color.gray.opacity(DS.Opacity.subtle), lineWidth: 1)
+                                Capsule().stroke(selectedMethod == method ? theme.accent.opacity(0.3) : theme.secondaryText.opacity(DS.Opacity.subtle), lineWidth: 1)
                             )
                     }
                     .buttonStyle(.plain)

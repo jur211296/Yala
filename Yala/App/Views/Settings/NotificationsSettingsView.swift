@@ -316,7 +316,7 @@ struct NotificationCard: View {
                     } label: {
                         Image(systemName: "trash")
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(.red.opacity(0.7))
+                            .foregroundStyle(DS.Semantic.errorForeground.opacity(0.7))
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(L10n.Action.delete)

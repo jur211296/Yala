@@ -70,6 +70,7 @@ struct MilestoneUpgradeSheet: View {
 
                 // Features highlight
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    // A11Y-DM: paleta decorativa por feature (colores de sistema, adaptan a Dark Mode)
                     featureRow(icon: "waveform.badge.mic", text: L10n.Subscription.featureVoice, color: .hotPink)
                     featureRow(icon: "sparkles", text: L10n.FeatureGate.smartInsightsAI, color: .purple)
                     featureRow(icon: "building.columns.fill", text: L10n.Milestone.unlimitedAccounts, color: .blue)

@@ -39,6 +39,7 @@ enum BulkEditOption: String, CaseIterable, Identifiable {
         }
     }
 
+    // A11Y-DM: paleta decorativa por tipo de campo (colores de sistema, adaptan a Dark Mode)
     var iconColor: Color {
         switch self {
         case .account: return .blue

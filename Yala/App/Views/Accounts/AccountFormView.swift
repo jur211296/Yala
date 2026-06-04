@@ -478,6 +478,7 @@ struct AccountFormView: View {
                                     .overlay(
                                         Circle()
                                             .stroke(
+                                                // A11Y-DM: anillo blanco decorativo de selección sobre muestras de color arbitrarias
                                                 Color.white,
                                                 lineWidth: viewModel.selectedColorHex == hex ? 3 : 1)
                                     )

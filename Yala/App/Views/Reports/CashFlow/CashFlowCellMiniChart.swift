@@ -114,7 +114,7 @@ struct CashFlowCellMiniChart: View {
             .chartYAxis {
                 AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                        .foregroundStyle(Color.gray.opacity(0.1))
+                        .foregroundStyle(theme.secondaryText.opacity(0.1))
                     AxisValueLabel {
                         if let v = value.as(Double.self) {
                             Text(YalaFormatter.amountCompactTable(value: v))

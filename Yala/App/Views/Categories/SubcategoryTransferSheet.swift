@@ -107,6 +107,7 @@ struct SubcategoryTransferSheet: View {
 
     // MARK: - Actions Section
 
+    // A11Y-DM: colores decorativos por acción (.blue/.purple de sistema, adaptan a Dark Mode)
     private var actionsSection: some View {
         VStack(spacing: DS.Spacing.md) {
             // Opción 1: Transferir a subcategoría específica

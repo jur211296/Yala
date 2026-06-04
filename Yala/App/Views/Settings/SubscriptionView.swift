@@ -253,6 +253,7 @@ struct SubscriptionView: View {
 
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
+            // A11Y-DM: paleta decorativa por feature del paywall (colores de sistema, adaptan a Dark Mode)
             featureRow(icon: "building.columns.fill", text: L10n.Subscription.featureUnlimitedAccounts, color: .blue)
             featureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
             featureRow(icon: "sparkles", text: L10n.Subscription.featureAIAssistant, color: .electricIndigo)
