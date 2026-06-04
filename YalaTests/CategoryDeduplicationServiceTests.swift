@@ -264,6 +264,88 @@ struct CategoryDeduplicationServiceTests {
 
         #expect(customSub.category?.persistentModelID == setup.keeperCat.persistentModelID)
     }
+
+    // MARK: - Subcategory-level dedup (copias intra-categoría — el bug reportado)
+
+    private func subUUID(_ n: Int) -> UUID {
+        UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012d", n))")!
+    }
+
+    /// Setup del bug: 1 categoría "Hogar", N copias idénticas de "Seguro del hogar".
+    @MainActor
+    private func makeHomeInsuranceCopies(_ context: ModelContext, count: Int) throws -> (cat: YalaCategory, subs: [Subcategory]) {
+        let cat = Category(name: "Hogar", colorHex: "#475569", isIncome: false, isDefaultSeed: true, iconName: "house.fill")
+        context.insert(cat)
+        var subs: [Subcategory] = []
+        for i in 1...count {
+            let s = Subcategory(name: "Seguro del hogar", isDefaultSeed: true, sortOrder: 4, iconName: "house.and.flag.fill", category: cat)
+            s.shortcutID = subUUID(i)
+            context.insert(s)
+            subs.append(s)
+        }
+        try context.save()
+        return (cat, subs)
+    }
+
+    @MainActor @Test func dedupSubs_removesDuplicatesWithinSingleCategory() throws {
+        let context = try makeTestContext()
+        let setup = try makeHomeInsuranceCopies(context, count: 3)
+
+        let removed = CategoryDeduplicationService.deduplicateSeedSubcategories(in: context)
+
+        #expect(removed == 2)
+        let remaining = (setup.cat.subcategories ?? []).filter { $0.name == "Seguro del hogar" }
+        #expect(remaining.count == 1)
+        // Keeper = menor shortcutID (subUUID(1)).
+        #expect(remaining.first?.shortcutID == subUUID(1))
+    }
+
+    @MainActor @Test func dedupSubs_preservesTransactionRef() throws {
+        let context = try makeTestContext()
+        let setup = try makeHomeInsuranceCopies(context, count: 2)
+        let dup = setup.subs.first { $0.shortcutID == subUUID(2) }!  // no keeper
+        let account = makeTestAccount(context: context, name: "Acc")
+        let tx = makeTestTransaction(context: context, amount: 50, account: account, category: setup.cat, subcategory: dup)
+        try context.save()
+
+        _ = CategoryDeduplicationService.deduplicateSeedSubcategories(in: context)
+
+        #expect(tx.subcategory?.shortcutID == subUUID(1))  // reparentada al keeper
+    }
+
+    @MainActor @Test func dedupSubs_preservesBudgetRef() throws {
+        let context = try makeTestContext()
+        let setup = try makeHomeInsuranceCopies(context, count: 2)
+        let dup = setup.subs.first { $0.shortcutID == subUUID(2) }!
+        let budget = makeTestBudget(context: context, name: "Hogar Budget", subcategories: [dup])
+        try context.save()
+
+        _ = CategoryDeduplicationService.deduplicateSeedSubcategories(in: context)
+
+        #expect(budget.subcategories?.count == 1)
+        #expect(budget.subcategories?.first?.shortcutID == subUUID(1))
+    }
+
+    @MainActor @Test func dedupSubs_idempotent() throws {
+        let context = try makeTestContext()
+        _ = try makeHomeInsuranceCopies(context, count: 3)
+
+        let first = CategoryDeduplicationService.deduplicateSeedSubcategories(in: context)
+        let second = CategoryDeduplicationService.deduplicateSeedSubcategories(in: context)
+
+        #expect(first == 2)
+        #expect(second == 0)
+    }
+
+    @MainActor @Test func runAllDeduplication_cleansSubcategoryDuplicates() throws {
+        let context = try makeTestContext()
+        _ = try makeHomeInsuranceCopies(context, count: 3)
+
+        _ = CategoryDeduplicationService.runAllDeduplication(in: context)
+
+        let subs = try context.fetch(FetchDescriptor<Subcategory>())
+        #expect(subs.filter { $0.name == "Seguro del hogar" }.count == 1)
+    }
 }
 
 /// Container helper para los tests de re-parenting. Mantiene 1 lugar el setup duplicado.
