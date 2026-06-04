@@ -31,7 +31,7 @@ Causa raíz también cerrada: `UI-PATTERNS.md` actualizado a la nomenclatura rea
 
 **Dimensión a11y — CERRADA**: verificación reveló que `16e90f1d` ya había resuelto 16 hallazgos (el reporte predataba ese commit). Restante cerrado en 2 commits: 8 labels VoiceOver (`2e4d93c7`, + keys nuevas `expand`/`collapse`) y 9 áreas táctiles ≥44pt (`2709e391`). Las filas de día (7 chips) usan expansión **vertical** 36→44h para no desbordar; M/A selector device-QA OK en iPhone 17 Pro.
 
-**Dimensión componentes — CERRADA**: 2 empty states a mano migrados a `YalaEmptyState` (`64cb28c0`, Tags + Records, preservando el mensaje filter-aware + botón "Limpiar filtros"). Los **8 icon-badges NO se migran** (el reporte erró): `.yalaIconBadge*` tiene **0 usos** en la app (dead code) y renderiza `RoundedRectangle`, mientras la convención real (`RecordRowView` y resto) usa `Circle`. Migrar sería regresión visual + inconsistencia → se quedan como `Circle` hand-rolled (correcto). Nota: `.yalaIconBadge*` queda como dead code candidato a borrado en sprint de limpieza.
+**Dimensión componentes — CERRADA**: 2 empty states a mano migrados a `YalaEmptyState` (`64cb28c0`, Tags + Records, preservando el mensaje filter-aware + botón "Limpiar filtros"). Los **8 icon-badges NO se migran** (el reporte erró): `.yalaIconBadge*` tiene **0 usos** en la app (dead code) y renderiza `RoundedRectangle`, mientras la convención real (`RecordRowView` y resto) usa `Circle`. Migrar sería regresión visual + inconsistencia → se quedan como `Circle` hand-rolled (correcto). **Update 2026-06-04**: `.yalaIconBadge*` (`YalaIconBadgeModifier` + las 3 funcs `yalaIconBadgeSmall/Medium/Large` + sus previews) **eliminado** del codebase (~50 LOC, build verde). Las constantes `DS.Icon.badge*` siguen vivas (~50+ usos con `Circle()`). Las filas de la subsección *Componentes* que proponían `.yalaIconBadge*` como fix quedan **obsoletas** — la convención correcta es `Circle()` hand-rolled.
 
 **Pendiente (deuda aceptada, no abordado):**
 - **backgrounds Pattern B** (~70, severidad baja) — `ZStack { PanelBackgroundView(); content }` manual, deuda incremental aceptada, migrar al tocar el archivo.
@@ -115,7 +115,7 @@ Dimensiones y spacings hardcodeados que mapean exacto a un token DS (`DS.Icon.*`
 | Yala/App/Views/Import/ImportAccountPickerSheet.swift:90 | alta | 40 = DS.ListRow.iconSize | `.frame(width: 40, height: 40)` | `DS.ListRow.iconSize` |
 | Yala/App/Views/Import/ImportCurrencyMappingSheet.swift:135 | alta | 24 = DS.Icon.badgeSmall | `.frame(width: 24, height: 24)` | `DS.Icon.badgeSmall` |
 | Yala/App/Views/Import/ImportCurrencyMappingSheet.swift:197 | alta | 32 = DS.Icon.badgeMedium | `.frame(width: 32, height: 32)` | `DS.Icon.badgeMedium` |
-| Yala/App/Views/Favorites/FavoriteRowView.swift:97 | alta | 40 = DS.ListRow.iconSize | `.frame(width: 40, height: 40)` | `DS.ListRow.iconSize` / `.yalaIconBadgeLarge` |
+| Yala/App/Views/Favorites/FavoriteRowView.swift:97 | alta | 40 = DS.ListRow.iconSize | `.frame(width: 40, height: 40)` | `DS.ListRow.iconSize` |
 | Yala/App/Views/More/MoreEditorSheet.swift:71 | alta | 52 = DS.FormRow.minHeight | `* 52` | `* DS.FormRow.minHeight` |
 | Yala/App/Views/More/MoreEditorSheet.swift:82 | alta | 28 = DS.FormRow.iconWidth | `.frame(width: 28, height: 28)` | `DS.FormRow.iconWidth` |
 | Yala/App/Views/More/MoreEditorSheet.swift:106 | alta | 28 = DS.FormRow.iconWidth | `.frame(width: 28, height: 28)` | `DS.FormRow.iconWidth` |
@@ -161,7 +161,7 @@ Dimensiones y spacings hardcodeados que mapean exacto a un token DS (`DS.Icon.*`
 | Yala/App/Views/Tags/TagFormView.swift:221 | alta | 32 = DS.Icon.badgeMedium | `.frame(width: 32, height: 32)` | `DS.Icon.badgeMedium` |
 | Yala/App/Views/Transactions/TransactionSuccessView.swift:319 | alta | 20 = DS.Icon.sizeLarge | `.frame(width: 20)` | `DS.Icon.sizeLarge` |
 | Yala/App/Views/Transactions/SaveAsFavoriteSheet.swift:150 | alta | 24 = DS.Icon.badgeSmall | `.frame(width: 24)` | `DS.Icon.badgeSmall` |
-| Yala/App/Views/WhatsNew/WhatsNewSheet.swift:112 | alta | 44 = DS.Button.actionSize | `.frame(width: 44, height: 44)` | `DS.Button.actionSize` / `.yalaIconBadgeLarge` |
+| Yala/App/Views/WhatsNew/WhatsNewSheet.swift:112 | alta | 44 = DS.Button.actionSize | `.frame(width: 44, height: 44)` | `DS.Button.actionSize` |
 | Yala/App/Views/Categories/CategoryDetailView.swift:187 | media | 70pt valor mágico | `.frame(width: 70, height: 70)` | constante local nombrada |
 | Yala/App/Views/Categories/CategoryDetailView.swift:459 | media | 36pt valor mágico | `.frame(width: 36, height: 36)` | `DS.Icon.badgeMedium` o constante |
 | Yala/App/Views/Categories/SubcategoryDetailView.swift:201 | media | 70pt valor mágico | `.frame(width: 70, height: 70)` | constante local nombrada |
@@ -240,7 +240,7 @@ Dimensiones y spacings hardcodeados que mapean exacto a un token DS (`DS.Icon.*`
 | Yala/App/Views/ExportWizard/FilterComponents.swift:190 | baja | 40 separador (semántica incorrecta) | `.frame(width: 1, height: 40)` | constante `separatorHeight` |
 | Yala/App/Views/Favorites/FavoritesListView.swift:151 | baja | 16=lg; 6 sin token | `EdgeInsets(top: 6, leading: 16, ...)` | `DS.Spacing.lg` lat.; `xs`/`sm` vert. |
 | Yala/App/Views/Groups/GroupNudgeBanner.swift:31 | baja | 24 = DS.Icon.badgeSmall | `.frame(width: 24)` | `DS.Icon.badgeSmall` |
-| Yala/App/Views/Chat/Onboarding/YalaAIOnboardingView.swift:178 | baja | 44 = DS.Button.actionSize | `.frame(width: 44, height: 44)` | `DS.Icon.badgeLarge` / `.yalaIconBadgeLarge` |
+| Yala/App/Views/Chat/Onboarding/YalaAIOnboardingView.swift:178 | baja | 44 = DS.Button.actionSize | `.frame(width: 44, height: 44)` | `DS.Icon.badgeLarge` |
 | Yala/App/Views/Chat/Onboarding/YalaAIOnboardingView.swift:390 | baja | 28 = DS.FormRow.iconWidth | `.frame(width: 28, height: 28)` | `DS.FormRow.iconWidth` / `DS.Icon.badgeSmall` |
 | Yala/App/Views/Onboarding/OnboardingView.swift:343 | baja | 24/8 = DS.Spacing.xxl/sm | `step == ... ? 24 : 8` | `DS.Spacing.xxl` / `sm` |
 | Yala/App/Views/Onboarding/OnboardingView.swift:645 | baja | 44 = DS.Button.actionSize | `.frame(width: 44, height: 44)` | `DS.Button.actionSize` |
@@ -560,7 +560,7 @@ Colores de sistema hardcodeados (`.blue`, `.purple`, `.red`, `.green`, `.orange`
 
 ### Componentes
 
-Icon badges implementados a mano (`ZStack + Circle + frame`) en lugar de `.yalaIconBadge*`, y empty states a mano en lugar de `YalaEmptyState`.
+Empty states a mano en lugar de `YalaEmptyState` (filas `alta`). ⚠️ **Las filas `media` de icon-badge NO son deuda**: proponían migrar a `.yalaIconBadge*`, pero ese modifier era dead code (renderizaba `RoundedRectangle`, divergente de la convención `Circle`) y fue **eliminado el 2026-06-04**. El `ZStack + Circle + frame` hand-rolled de esas filas es la convención **correcta** → ignorar la columna *Fix* en ellas.
 
 | Archivo:línea | Severidad | Regla | Snippet | Fix |
 |---|---|---|---|---|
@@ -625,7 +625,7 @@ Botones de solo-icono / elementos interactivos sin `.accessibilityLabel`, tap ta
 - UI-PATTERNS.md referencia `Color.yalaCard`, pero el código real usa `theme.*` / `.thCard` (token semántico vía environment).
 - UI-PATTERNS.md menciona `YalaTextButton`, que **no existe** en el código — el patrón real es `YalaPrimaryButton` / `YalaSecondaryButton` (+ el modifier `.selectableCard()` recién extraído).
 
-**Recomendación:** actualizar `$VAULT/planning/UI-PATTERNS.md` para reflejar la nomenclatura real (`.thCard` / `theme.accent`, `YalaPrimaryButton`/`YalaSecondaryButton`, `.solidCard()`/`.selectableCard()`, `.yalaScreenBackground()`, familia `.yalaIconBadge*`). El doc desactualizado induce a reimplementar a mano lo que ya existe — varios de los hallazgos de `glass-cards` y `botones` probablemente nacieron de seguir el doc viejo.
+**Recomendación:** actualizar `$VAULT/planning/UI-PATTERNS.md` para reflejar la nomenclatura real (`.thCard` / `theme.accent`, `YalaPrimaryButton`/`YalaSecondaryButton`, `.solidCard()`/`.selectableCard()`, `.yalaScreenBackground()`; los icon-badges son `Circle()` hand-rolled con tokens `DS.Icon.badge*` — la familia `.yalaIconBadge*` fue eliminada por dead code el 2026-06-04). El doc desactualizado induce a reimplementar a mano lo que ya existe — varios de los hallazgos de `glass-cards` y `botones` probablemente nacieron de seguir el doc viejo.
 
 ---
 

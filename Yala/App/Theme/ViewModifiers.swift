@@ -235,57 +235,6 @@ extension View {
     }
 }
 
-// MARK: - Icon Badge Modifier
-
-/// Aplica estilo de badge con icono (para categorías, subcategorías, etc.)
-struct YalaIconBadgeModifier: ViewModifier {
-    let size: CGFloat
-    let iconSize: CGFloat
-    let backgroundColor: Color
-    let foregroundColor: Color
-
-    func body(content: Content) -> some View {
-        content
-            .font(.system(size: iconSize, weight: .medium)) // A11Y-DT: DS tokens
-            .foregroundStyle(foregroundColor)
-            .frame(width: size, height: size)
-            .background(backgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: size * 0.25))
-    }
-}
-
-extension View {
-    /// Aplica estilo de badge pequeño (24pt)
-    func yalaIconBadgeSmall(background: Color, foreground: Color = .white) -> some View {
-        modifier(YalaIconBadgeModifier(
-            size: DS.Icon.badgeSmall,
-            iconSize: DS.Icon.sizeSmall,
-            backgroundColor: background,
-            foregroundColor: foreground
-        ))
-    }
-
-    /// Aplica estilo de badge mediano (32pt)
-    func yalaIconBadgeMedium(background: Color, foreground: Color = .white) -> some View {
-        modifier(YalaIconBadgeModifier(
-            size: DS.Icon.badgeMedium,
-            iconSize: DS.Icon.sizeMedium,
-            backgroundColor: background,
-            foregroundColor: foreground
-        ))
-    }
-
-    /// Aplica estilo de badge grande (40pt)
-    func yalaIconBadgeLarge(background: Color, foreground: Color = .white) -> some View {
-        modifier(YalaIconBadgeModifier(
-            size: DS.Icon.badgeLarge,
-            iconSize: DS.Icon.sizeLarge,
-            backgroundColor: background,
-            foregroundColor: foreground
-        ))
-    }
-}
-
 // MARK: - Safe Area Bottom Padding
 
 extension View {
@@ -697,7 +646,9 @@ extension View {
             // List row style
             HStack {
                 Image(systemName: "cart.fill")
-                    .yalaIconBadgeMedium(background: .blue)
+                    .foregroundStyle(.white)
+                    .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                    .background(.blue, in: Circle())
                 VStack(alignment: .leading) {
                     Text("Supermercado")
                     Text("Alimentación")
@@ -750,20 +701,5 @@ extension View {
         }
         .yalaFormRow(showChevron: true)
     }
-    .background(.thBackground)
-}
-
-#Preview("Icon Badges") {
-    HStack(spacing: DS.Spacing.xl) {
-        Image(systemName: "cart.fill")
-            .yalaIconBadgeSmall(background: .blue)
-
-        Image(systemName: "fork.knife")
-            .yalaIconBadgeMedium(background: .orange)
-
-        Image(systemName: "car.fill")
-            .yalaIconBadgeLarge(background: .green)
-    }
-    .padding()
     .background(.thBackground)
 }
