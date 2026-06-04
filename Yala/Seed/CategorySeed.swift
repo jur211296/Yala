@@ -515,7 +515,11 @@ func seedSystemGroupCategoriesIfNeeded(
     in modelContext: ModelContext,
     defaults: UserDefaults = .standard
 ) {
-    let flagKey = "seedSystemGroupCategoriesExecuted"
+    // V2: re-corre el backfill defensive del iconName para usuarios que sembraron
+    // las categorías sistema con el icono inválido previo ("Cobros de grupos" con
+    // person.2.crop.circle.fill.badge.plus, que no renderiza). El guard por flag V1
+    // las dejaba sin corregir porque retornaba antes del backfill.
+    let flagKey = "seedSystemGroupCategoriesExecutedV2"
 
     // Flag guard contra TOCTOU race con CloudKit sync
     if defaults.bool(forKey: flagKey) {
