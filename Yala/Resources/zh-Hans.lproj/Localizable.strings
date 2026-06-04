@@ -4426,3 +4426,9 @@
 "more.editor.title" = "自定义";
 "more.editor.sectionsHeader" = "板块顺序";
 "more.editor.tabBarHint" = "选择并排序底部标签栏";
+
+/* VoiceOver: expand a collapsible row */
+"accessibility.expand" = "展开";
+
+/* VoiceOver: collapse a collapsible row */
+"accessibility.collapse" = "折叠";

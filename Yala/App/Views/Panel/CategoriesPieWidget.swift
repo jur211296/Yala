@@ -772,6 +772,9 @@ struct CategoriesPieWidget: View {
                     .onTapGesture {
                         handleTap(item)
                     }
+                    .accessibilityElement()
+                    .accessibilityLabel(item.name)
+                    .accessibilityAddTraits(.isButton)
             }
         }
         .frame(height: 28)

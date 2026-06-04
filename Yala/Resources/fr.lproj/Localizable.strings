@@ -4415,3 +4415,9 @@
 "more.editor.title" = "Personnaliser";
 "more.editor.sectionsHeader" = "Ordre des sections";
 "more.editor.tabBarHint" = "Choisissez et ordonnez la barre d'onglets";
+
+/* VoiceOver: expand a collapsible row */
+"accessibility.expand" = "Développer";
+
+/* VoiceOver: collapse a collapsible row */
+"accessibility.collapse" = "Réduire";

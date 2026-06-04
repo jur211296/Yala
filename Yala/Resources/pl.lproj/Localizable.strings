@@ -4426,3 +4426,9 @@
 "more.editor.title" = "Dostosuj";
 "more.editor.sectionsHeader" = "Kolejność sekcji";
 "more.editor.tabBarHint" = "Wybierz i uporządkuj dolny pasek kart";
+
+/* VoiceOver: expand a collapsible row */
+"accessibility.expand" = "Rozwiń";
+
+/* VoiceOver: collapse a collapsible row */
+"accessibility.collapse" = "Zwiń";

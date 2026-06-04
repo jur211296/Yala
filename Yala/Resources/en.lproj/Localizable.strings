@@ -4420,3 +4420,9 @@
 "more.editor.title" = "Customize";
 "more.editor.sectionsHeader" = "Section order";
 "more.editor.tabBarHint" = "Choose and order the bottom tab bar";
+
+/* VoiceOver: expand a collapsible row */
+"accessibility.expand" = "Expand";
+
+/* VoiceOver: collapse a collapsible row */
+"accessibility.collapse" = "Collapse";

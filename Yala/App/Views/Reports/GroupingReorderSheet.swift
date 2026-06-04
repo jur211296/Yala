@@ -93,6 +93,9 @@ struct GroupingReorderSheet: View {
                         state.toggle(dimension)
                     }
                 }
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(L10n.Accessibility.remove)
+                .accessibilityHidden(dimension.isMandatory)
 
             Image(systemName: dimension.iconName)
                 .font(.body)

@@ -34,6 +34,9 @@ struct PanelHeroSection: View {
             .onTapGesture {
                 sessionState.navigateToDetail(.insights)
             }
+            .accessibilityAction(named: L10n.Accessibility.viewDetails) {
+                sessionState.navigateToDetail(.insights)
+            }
         }
     }
 }

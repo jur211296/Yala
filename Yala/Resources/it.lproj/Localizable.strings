@@ -4424,3 +4424,9 @@
 "more.editor.title" = "Personalizza";
 "more.editor.sectionsHeader" = "Ordine delle sezioni";
 "more.editor.tabBarHint" = "Scegli e ordina le schede della barra";
+
+/* VoiceOver: expand a collapsible row */
+"accessibility.expand" = "Espandi";
+
+/* VoiceOver: collapse a collapsible row */
+"accessibility.collapse" = "Comprimi";

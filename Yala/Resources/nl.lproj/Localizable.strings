@@ -4426,3 +4426,9 @@
 "more.editor.title" = "Aanpassen";
 "more.editor.sectionsHeader" = "Volgorde van secties";
 "more.editor.tabBarHint" = "Kies en orden de tabbalk onderaan";
+
+/* VoiceOver: expand a collapsible row */
+"accessibility.expand" = "Uitklappen";
+
+/* VoiceOver: collapse a collapsible row */
+"accessibility.collapse" = "Inklappen";

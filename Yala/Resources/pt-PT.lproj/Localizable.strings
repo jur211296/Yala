@@ -3650,3 +3650,9 @@
 "subscription.downgrade.selectBudgets" = "Selecione %d orçamentos para manter";
 "subscription.trial.daysRemaining" = "%d dias restantes";
 "tutorials.stepsCount" = "%d passos";
+
+/* VoiceOver: expand a collapsible row */
+"accessibility.expand" = "Expandir";
+
+/* VoiceOver: collapse a collapsible row */
+"accessibility.collapse" = "Recolher";

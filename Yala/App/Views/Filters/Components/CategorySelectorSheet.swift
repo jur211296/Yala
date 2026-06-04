@@ -158,6 +158,7 @@ struct CategorySelectorSheet: View {
                         .accessibilityHidden(true)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(isNoneSelected(for: category) ? L10n.Filters.selectAll : L10n.Filters.deselectAll)
 
                 // Expand/collapse
                 Button {
@@ -169,6 +170,7 @@ struct CategorySelectorSheet: View {
                         .accessibilityHidden(true)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(expandedCategories.contains(category.persistentModelID) ? L10n.Accessibility.collapse : L10n.Accessibility.expand)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)

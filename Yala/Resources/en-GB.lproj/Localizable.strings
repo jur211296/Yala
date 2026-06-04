@@ -3645,3 +3645,9 @@
 "subscription.downgrade.selectBudgets" = "Select %d budgets to keep";
 "subscription.trial.daysRemaining" = "%d days remaining";
 "tutorials.stepsCount" = "%d steps";
+
+/* VoiceOver: expand a collapsible row */
+"accessibility.expand" = "Expand";
+
+/* VoiceOver: collapse a collapsible row */
+"accessibility.collapse" = "Collapse";

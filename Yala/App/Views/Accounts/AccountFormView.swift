@@ -486,6 +486,7 @@ struct AccountFormView: View {
                             }
                             .buttonStyle(.plain)
                             .contentShape(Circle())
+                            .accessibilityLabel(L10n.Accessibility.colorOption(hex))
                         }
 
                         Button {

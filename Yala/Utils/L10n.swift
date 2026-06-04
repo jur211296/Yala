@@ -2258,6 +2258,8 @@ enum L10n {
         static var inbox: String { ls("accessibility.inbox", comment: "") }
         static var previousPeriod: String { ls("accessibility.previousPeriod", comment: "") }
         static var nextPeriod: String { ls("accessibility.nextPeriod", comment: "") }
+        static var expand: String { ls("accessibility.expand", comment: "") }
+        static var collapse: String { ls("accessibility.collapse", comment: "") }
         static var widgetPreferences: String { ls("accessibility.widgetPreferences", comment: "") }
         static var sectionsConfig: String { ls("accessibility.sectionsConfig", comment: "Opens the Panel sections config sheet") }
         static func toggleSection(_ name: String) -> String { String(format: ls("accessibility.toggleSection %@", comment: "Accessibility label for the per-section visibility toggle"), name) }

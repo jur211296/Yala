@@ -4426,3 +4426,9 @@
 "more.editor.title" = "カスタマイズ";
 "more.editor.sectionsHeader" = "セクションの順序";
 "more.editor.tabBarHint" = "下部タブバーの選択と並び替え";
+
+/* VoiceOver: expand a collapsible row */
+"accessibility.expand" = "展開";
+
+/* VoiceOver: collapse a collapsible row */
+"accessibility.collapse" = "折りたたむ";
