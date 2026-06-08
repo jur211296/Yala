@@ -261,4 +261,87 @@ struct ContentViewReadinessLogicTests {
         )
         #expect(ContentViewReadinessLogic.blocker(state: s) == "biometricLock")
     }
+
+    // MARK: - isBlockedSolelyByWelcomeChain (B4-04)
+
+    /// Builder con defaults limpios — varía solo las flags relevantes por test.
+    private func make(
+        isSplashDismissed: Bool = true,
+        isLocked: Bool = false,
+        isWipingData: Bool = false,
+        showOnboarding: Bool = false,
+        showWelcomeFlow: Bool = false,
+        showLanguageSelection: Bool = false,
+        showWelcomeRestore: Bool = false,
+        showInviteRecovery: Bool = false,
+        showFreshStartWipeAlert: Bool = false,
+        showRemoteWipeAlert: Bool = false,
+        showICloudRestartAlert: Bool = false,
+        hasActiveInboxAlert: Bool = false,
+        showGroupInviteOnboarding: Bool = false,
+        showGroupReconnect: Bool = false,
+        showFullModeActivation: Bool = false
+    ) -> ShellReadinessState {
+        ShellReadinessState(
+            isSplashDismissed: isSplashDismissed, isLocked: isLocked, isWipingData: isWipingData,
+            showOnboarding: showOnboarding, showWelcomeFlow: showWelcomeFlow,
+            showLanguageSelection: showLanguageSelection, showWelcomeRestore: showWelcomeRestore,
+            showInviteRecovery: showInviteRecovery, showFreshStartWipeAlert: showFreshStartWipeAlert,
+            showRemoteWipeAlert: showRemoteWipeAlert, showICloudRestartAlert: showICloudRestartAlert,
+            hasActiveInboxAlert: hasActiveInboxAlert, showGroupInviteOnboarding: showGroupInviteOnboarding,
+            showGroupReconnect: showGroupReconnect, showFullModeActivation: showFullModeActivation
+        )
+    }
+
+    // Cada cover de la cadena welcome, en solitario → SÍ es teardown-elegible.
+    @Test func welcomeFlowOnly_isSolelyWelcome() {
+        #expect(ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(showWelcomeFlow: true)))
+    }
+
+    @Test func welcomeRestoreOnly_isSolelyWelcome() {
+        #expect(ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(showWelcomeRestore: true)))
+    }
+
+    @Test func inviteRecoveryOnly_isSolelyWelcome() {
+        #expect(ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(showInviteRecovery: true)))
+    }
+
+    @Test func languageSelectionOnly_isSolelyWelcome() {
+        #expect(ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(showLanguageSelection: true)))
+    }
+
+    // Estado limpio → no hay blocker → nada que cerrar.
+    @Test func cleanState_notSolelyWelcome() {
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make()))
+    }
+
+    // onboarding NO es de la cadena welcome (excluido a propósito).
+    @Test func onboardingOnly_notSolelyWelcome() {
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(showOnboarding: true)))
+    }
+
+    // Blockers de mayor prioridad que sobreviven al clear → NO teardown
+    // (preserva la protección anti-"inbox alert tardío" y los gates de sistema).
+    @Test func welcomePlusLock_notSolelyWelcome() {
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(isLocked: true, showWelcomeFlow: true)))
+    }
+
+    @Test func welcomePlusSplash_notSolelyWelcome() {
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(isSplashDismissed: false, showWelcomeFlow: true)))
+    }
+
+    @Test func welcomePlusFreshStartAlert_notSolelyWelcome() {
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(showWelcomeFlow: true, showFreshStartWipeAlert: true)))
+    }
+
+    // welcomeFlow es el blocker de mayor prioridad, pero limpiar la cadena deja
+    // el inbox alert vivo → NO teardown (el caso que motivó el readiness gate).
+    @Test func welcomePlusActiveInboxAlert_notSolelyWelcome() {
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(showWelcomeFlow: true, hasActiveInboxAlert: true)))
+    }
+
+    // onboarding sobrevive al clear de la cadena welcome → NO teardown.
+    @Test func welcomePlusOnboarding_notSolelyWelcome() {
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(showOnboarding: true, showWelcomeFlow: true)))
+    }
 }

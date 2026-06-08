@@ -462,18 +462,22 @@ struct ContentView: View {
 
             // Router drains queued intents once readiness flips.
             updateContentViewReadiness()
+            // B4-04: el handoff splash→welcome no genera revision bump (markUnready
+            // no bumpea), así que el .onChange(revision) no re-dispara el drain. Un
+            // re-peek explícito aquí permite que un group invite encolado durante el
+            // splash cierre la cadena welcome y se presente.
+            drainContentViewIntents()
         }
     }
 
     // MARK: - Router Consumer
 
-    /// Single source of truth for `.contentView` readiness. Called from every
-    /// flag that can block shell presentation. Delegates to pure-logic
-    /// `ContentViewReadinessLogic.isReady(state:)` so the gating matrix is
-    /// testable independently of SwiftUI state.
+    /// Builds the current shell readiness snapshot from @State + SessionState.
+    /// Single source for both `updateContentViewReadiness` and the welcome-chain
+    /// teardown decision in `drainContentViewIntents`.
     @MainActor
-    private func updateContentViewReadiness() {
-        let state = ShellReadinessState(
+    private func currentShellReadinessState() -> ShellReadinessState {
+        ShellReadinessState(
             isSplashDismissed: SessionState.shared.isSplashDismissed,
             isLocked: authService.isLocked,
             isWipingData: SessionState.shared.isWipingData,
@@ -490,6 +494,15 @@ struct ContentView: View {
             showGroupReconnect: showGroupReconnect,
             showFullModeActivation: showFullModeActivation
         )
+    }
+
+    /// Single source of truth for `.contentView` readiness. Called from every
+    /// flag that can block shell presentation. Delegates to pure-logic
+    /// `ContentViewReadinessLogic.isReady(state:)` so the gating matrix is
+    /// testable independently of SwiftUI state.
+    @MainActor
+    private func updateContentViewReadiness() {
+        let state = currentShellReadinessState()
         let ready = ContentViewReadinessLogic.isReady(state: state)
         if ready {
             AppRouter.shared.markReady(.contentView)
@@ -517,6 +530,17 @@ struct ContentView: View {
     /// drain — handler may enqueue new intents, they process next tick.
     @MainActor
     private func drainContentViewIntents() {
+        // B4-04: un intent que supersede la cadena welcome (group invite/reconnect)
+        // está diseñado para REEMPLAZARLA, no apilarse. El cover del WelcomeFlow
+        // bloquea el readiness que necesita drenar ese intent → deadlock: el welcome
+        // bloquea el propio intent que lo cerraría. Si la cadena welcome es el ÚNICO
+        // blocker, ciérrala para que el drain (y la presentación) procedan.
+        if let next = AppRouter.shared.peekNext(for: .contentView),
+           next.supersedesWelcomeChain,
+           ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: currentShellReadinessState()) {
+            dismissWelcomeChainForSupersedingIntent(for: next.id)
+            updateContentViewReadiness()  // recompute síncrono → markReady(.contentView)
+        }
         guard let intent = AppRouter.shared.drainNext(for: .contentView) else { return }
         switch intent {
         case .showInboxAlert(let notif):
@@ -547,6 +571,22 @@ struct ContentView: View {
         default:
             break
         }
+    }
+
+    /// Cierra los 4 covers de la cadena welcome para que un intent que la
+    /// supersede (group invite/reconnect) pueda presentarse sin colisión —
+    /// `showWelcomeRestore`/`showInviteRecovery`/`showLanguageSelection` NO están
+    /// gateados, así que dejarlos abiertos apilaría dos covers (UI invisible).
+    /// `showOnboarding` se excluye a propósito (ver `welcomeChainBlockers`). El
+    /// `onDismiss` del reconnect sheet reabre welcome si hace falta. Llamado solo
+    /// cuando `isBlockedSolelyByWelcomeChain` es true.
+    @MainActor
+    private func dismissWelcomeChainForSupersedingIntent(for intentID: String) {
+        showLanguageSelection = false
+        showWelcomeFlow = false
+        showWelcomeRestore = false
+        showInviteRecovery = false
+        TelemetryService.routingWelcomeChainSuperseded(intentID: intentID)
     }
 
     /// Wait for AppBootstrapper to finish (StoreKit products, exchange rates, etc.)

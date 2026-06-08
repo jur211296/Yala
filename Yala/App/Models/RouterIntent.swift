@@ -249,6 +249,20 @@ extension RouterIntent {
             return true
         }
     }
+
+    /// Intents que REEMPLAZAN la cadena welcome/onboarding en lugar de apilarse
+    /// sobre ella. ContentView cierra la cadena welcome cuando uno de estos está
+    /// pendiente, de modo que su drain (y presentación) pase el readiness gate
+    /// — sin esto el cover del WelcomeFlow bloquea el propio intent que lo
+    /// reemplazaría (deadlock B4-04).
+    var supersedesWelcomeChain: Bool {
+        switch self {
+        case .presentGroupInviteOnboarding, .presentGroupReconnect:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 extension DeepLinkDestination {

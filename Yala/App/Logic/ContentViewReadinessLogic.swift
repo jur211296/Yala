@@ -80,4 +80,52 @@ enum ContentViewReadinessLogic {
 
         return nil
     }
+
+    /// Blockers que forman la cadena welcome/onboarding inicial. Un intent
+    /// `supersedesWelcomeChain` (group invite/reconnect) está diseñado para
+    /// REEMPLAZAR estos covers, no para apilarse — por eso pueden cerrarse para
+    /// dejar pasar su drain. `onboarding` NO está aquí: no es deadlock duro (se
+    /// auto-resuelve al completarlo) y tiene su propio dual-path.
+    static let welcomeChainBlockers: Set<String> = [
+        "languageSelection", "welcomeFlow", "welcomeRestore", "inviteRecovery"
+    ]
+
+    /// `true` sii el blocker actual pertenece a la cadena welcome Y limpiar esa
+    /// cadena dejaría al consumer listo. La 2ª condición es load-bearing: impide
+    /// el teardown cuando hay OTRO blocker (lock, splash, alerts, onboarding,
+    /// freshStartWipeAlert) que sobreviviría — preservando la protección
+    /// anti-"inbox alert tardío". Usado por `ContentView.drainContentViewIntents`
+    /// para cerrar la cadena welcome cuando un intent que la supersede está
+    /// pendiente (cierra el deadlock B4-04).
+    static func isBlockedSolelyByWelcomeChain(state: ShellReadinessState) -> Bool {
+        guard let current = blocker(state: state),
+              welcomeChainBlockers.contains(current) else { return false }
+        return isReady(state: state.withWelcomeChainCleared())
+    }
+}
+
+extension ShellReadinessState {
+    /// Copia con los 4 covers de la cadena welcome forzados a `false`. Usado por
+    /// `ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain` para decidir si
+    /// la cadena welcome es el ÚNICO blocker antes de cerrarla por un intent
+    /// superseding. Método (no campo nuevo) para no romper el init memberwise.
+    func withWelcomeChainCleared() -> ShellReadinessState {
+        ShellReadinessState(
+            isSplashDismissed: isSplashDismissed,
+            isLocked: isLocked,
+            isWipingData: isWipingData,
+            showOnboarding: showOnboarding,
+            showWelcomeFlow: false,
+            showLanguageSelection: false,
+            showWelcomeRestore: false,
+            showInviteRecovery: false,
+            showFreshStartWipeAlert: showFreshStartWipeAlert,
+            showRemoteWipeAlert: showRemoteWipeAlert,
+            showICloudRestartAlert: showICloudRestartAlert,
+            hasActiveInboxAlert: hasActiveInboxAlert,
+            showGroupInviteOnboarding: showGroupInviteOnboarding,
+            showGroupReconnect: showGroupReconnect,
+            showFullModeActivation: showFullModeActivation
+        )
+    }
 }

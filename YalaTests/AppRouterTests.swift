@@ -339,4 +339,21 @@ struct AppRouterTests {
         #expect(secondIntent == .presentNewTransaction)
         #expect(router._testQueue.isEmpty)
     }
+
+    // MARK: - supersedesWelcomeChain (B4-04)
+
+    /// Intents comunes NO deben gatillar el teardown de la cadena welcome.
+    /// (El true-path — group invite/reconnect — requiere `CKShare.Metadata`, no
+    /// construible en test sin CloudKit; se cubre vía ContentViewReadinessLogic
+    /// + device QA.)
+    @Test func supersedesWelcomeChain_falseForCommonIntents() {
+        #expect(RouterIntent.presentTrialOffer.supersedesWelcomeChain == false)
+        #expect(RouterIntent.presentFullModeActivation.supersedesWelcomeChain == false)
+        #expect(RouterIntent.iCloudMismatch.supersedesWelcomeChain == false)
+        #expect(RouterIntent.remoteWipe(skipOnboarding: false).supersedesWelcomeChain == false)
+        #expect(RouterIntent.remoteOnboardingCompleted.supersedesWelcomeChain == false)
+        #expect(RouterIntent.presentInboxSheet.supersedesWelcomeChain == false)
+        #expect(RouterIntent.presentWhatsNew(features: [], version: "1.0").supersedesWelcomeChain == false)
+        #expect(RouterIntent.navigate(.panel).supersedesWelcomeChain == false)
+    }
 }

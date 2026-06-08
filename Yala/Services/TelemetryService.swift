@@ -135,6 +135,7 @@ enum AnalyticsEvent: String {
     case routingIntentSuperseded     // a queued intent was dropped by an incoming one
     case routingIntentDeferred       // an incoming intent was persisted to DeferredIntentBuffer
     case routingReadinessBlocked     // a drain was blocked because a modal was visible
+    case routingWelcomeChainSuperseded // welcome chain dismissed to let a superseding intent drain (B4-04)
 }
 
 enum DuplicateDetectionContext: String {
@@ -253,6 +254,16 @@ enum TelemetryService {
     static func routingReadinessBlocked(blocker: String) {
         track(.routingReadinessBlocked, parameters: [
             "blocker": blocker
+        ])
+    }
+
+    /// Fires when ContentView dismisses the welcome chain so a pending
+    /// welcome-superseding intent (group invite/reconnect) can drain past the
+    /// readiness gate. Confirms the B4-04 deadlock fix triggers in production.
+    /// Privacy-first: only the intent ID, no payloads.
+    static func routingWelcomeChainSuperseded(intentID: String) {
+        track(.routingWelcomeChainSuperseded, parameters: [
+            "intent": intentID
         ])
     }
 
