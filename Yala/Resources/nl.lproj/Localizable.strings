@@ -4073,7 +4073,7 @@
 "groups.bridge.editFromGroup" = "Deze transactie synchroniseert met een groep. Bewerk deze vanuit de gedeelde uitgave.";
 "groups.bridge.assignFromInbox" = "Wijs een subcategorie toe vanuit je Inbox om deze af te ronden.";
 "groups.bridge.editSettlementInGroup" = "Deze transactie komt uit een afrekening. Bewerk het settlement in de groep.";
-"groups.bridge.editPartialBanner" = "Deze uitgave komt uit de groep. Je kunt rekening, categorie, tags en notitie bewerken. Bedrag en datum synchroniseren met de groep.";
+"groups.bridge.editPartialBanner" = "Deze uitgave komt uit de groep. Je kunt rekening, categorie en tags bewerken. Bedrag en datum synchroniseren met de groep.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ heeft deze uitgave geregistreerd in %2$@. Kies een rekening om het in je administratie bij te houden.";
 "groups.bridge.draftReasonCurrencyChanged" = "De valuta van de uitgave in %@ is gewijzigd. Kies een rekening om je deel te registreren.";
 "groups.card.moreDebts" = "+%d meer";

@@ -4073,7 +4073,7 @@
 "groups.bridge.editFromGroup" = "この取引はグループと同期しています。共有支出から編集してください。";
 "groups.bridge.assignFromInbox" = "Inboxからサブカテゴリを割り当てて完了させてください。";
 "groups.bridge.editSettlementInGroup" = "この取引は精算から来ています。グループ内でsettlementを編集してください。";
-"groups.bridge.editPartialBanner" = "この支出はグループからのものです。アカウント、カテゴリー、タグ、メモを編集できます。金額と日付はグループと同期します。";
+"groups.bridge.editPartialBanner" = "この支出はグループからのものです。アカウント、カテゴリー、タグを編集できます。金額と日付はグループと同期します。";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@さんが%2$@でこの支出を記録しました。記録に追加するアカウントを選択してください。";
 "groups.bridge.draftReasonCurrencyChanged" = "%@の支出の通貨が変更されました。あなたの分を記録するアカウントを選択してください。";
 "groups.card.moreDebts" = "+%d 件";

@@ -4062,7 +4062,7 @@
 "groups.bridge.editFromGroup" = "Diese Transaktion synchronisiert mit einer Gruppe. Bearbeiten Sie sie in der geteilten Ausgabe.";
 "groups.bridge.assignFromInbox" = "Weisen Sie eine Unterkategorie aus dem Inbox zu, um sie abzuschließen.";
 "groups.bridge.editSettlementInGroup" = "Diese Transaktion stammt aus einer Abrechnung. Bearbeiten Sie das Settlement in der Gruppe.";
-"groups.bridge.editPartialBanner" = "Diese Ausgabe stammt aus der Gruppe. Sie können Konto, Kategorie, Tags und Notiz bearbeiten. Betrag und Datum werden mit der Gruppe synchronisiert.";
+"groups.bridge.editPartialBanner" = "Diese Ausgabe stammt aus der Gruppe. Sie können Konto, Kategorie und Tags bearbeiten. Betrag und Datum werden mit der Gruppe synchronisiert.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ hat diese Ausgabe in %2$@ erfasst. Wählen Sie ein Konto, um sie in Ihren Aufzeichnungen zu führen.";
 "groups.bridge.draftReasonCurrencyChanged" = "Die Währung der Ausgabe in %@ wurde geändert. Wählen Sie ein Konto, um Ihren Anteil zu erfassen.";
 "groups.card.moreDebts" = "+%d weitere";
@@ -4363,7 +4363,7 @@
 "groups.bridge.optoutAlertYes" = "Ja, eintragen";
 "groups.bridge.optoutAlertNo" = "Nur in der Gruppe";
 "groups.bridge.deactivationSheetTitle" = "Persönliche Integration deaktivieren";
-"groups.bridge.deactivationSheetBody" = "Es gibt bereits vom Bridge erstellte Buchungen in Ihren Konten. Entscheiden Sie, was damit geschehen soll.";
+"groups.bridge.deactivationSheetBody" = "Es gibt bereits automatisch erstellte Buchungen in Ihren Konten. Entscheiden Sie, was damit geschehen soll.";
 "groups.bridge.deactivationOptionFreeze" = "Als Historie behalten";
 "groups.bridge.deactivationOptionDelete" = "Aus meinen Konten löschen";
 "groups.globalSettings.title" = "Gruppeneinstellungen";

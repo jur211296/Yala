@@ -372,11 +372,11 @@
 "groups.bridge.alertTitle" = "Group sync issue";
 "groups.bridge.deactivationOptionDelete" = "Delete from my accounts";
 "groups.bridge.deactivationOptionFreeze" = "Keep as historical";
-"groups.bridge.deactivationSheetBody" = "You already have transactions created by the bridge in your accounts. Choose what to do with them.";
+"groups.bridge.deactivationSheetBody" = "You already have transactions created automatically in your accounts. Choose what to do with them.";
 "groups.bridge.deactivationSheetTitle" = "Disable personal integration";
 "groups.bridge.draftReasonCurrencyChanged" = "The currency of the expense in %@ changed. Choose an account to record your share.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ registered this expense in %2$@. Choose an account to track it in your records.";
-"groups.bridge.editPartialBanner" = "This expense comes from the group. You can edit account, category, tags and note. Amount and date sync with the group.";
+"groups.bridge.editPartialBanner" = "This expense comes from the group. You can edit the account, category and tags. Amount and date sync with the group.";
 "groups.bridge.errorDelete" = "Couldn't delete the personal record for this expense.";
 "groups.bridge.errorNoAccounts" = "You don't have any accounts set up. Create one first.";
 "groups.bridge.errorTransaction" = "Your personal record for this expense will retry automatically.";

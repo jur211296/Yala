@@ -34,10 +34,6 @@ struct BridgeActivationSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                    Text(L10n.Groups.Bridge.activateTitle)
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.thPrimaryText)
-
                     Text(L10n.Groups.Bridge.activateBody)
                         .font(DS.Typography.body)
                         .foregroundStyle(.thSecondaryText)
@@ -79,7 +75,8 @@ struct BridgeActivationSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
+        .presentationDragIndicator(.hidden)
+        .interactiveDismissDisabled(true)
     }
 
     @ViewBuilder

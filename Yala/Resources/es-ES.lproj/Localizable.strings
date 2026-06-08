@@ -295,11 +295,11 @@
 "groups.bridge.alertTitle" = "Hubo un problema con el grupo";
 "groups.bridge.deactivationOptionDelete" = "Eliminar de mis cuentas";
 "groups.bridge.deactivationOptionFreeze" = "Mantener como histórico";
-"groups.bridge.deactivationSheetBody" = "Ya tienes movimientos creados por el bridge en tus cuentas. Elige qué hacer con ellos.";
+"groups.bridge.deactivationSheetBody" = "Ya tienes movimientos creados automáticamente en tus cuentas. Elige qué hacer con ellos.";
 "groups.bridge.deactivationSheetTitle" = "Desactivar integración personal";
 "groups.bridge.draftReasonCurrencyChanged" = "La moneda del gasto en %@ cambió. Elige cuenta para registrar tu parte.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ registró este gasto en %2$@. Elige cuenta para llevarlo a tus registros.";
-"groups.bridge.editPartialBanner" = "Este gasto viene del grupo. Puedes editar cuenta, categoría, etiquetas y nota. El monto y la fecha se sincronizan con el grupo.";
+"groups.bridge.editPartialBanner" = "Este gasto viene del grupo. Puedes editar la cuenta, la categoría y las etiquetas. El monto y la fecha se sincronizan con el grupo.";
 "groups.bridge.errorDelete" = "No se pudo borrar el registro personal del gasto.";
 "groups.bridge.errorNoAccounts" = "No tienes cuentas configuradas. Crea una primero.";
 "groups.bridge.errorTransaction" = "Tu registro personal del gasto se reintentará automáticamente.";

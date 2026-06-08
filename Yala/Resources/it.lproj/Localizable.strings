@@ -4071,7 +4071,7 @@
 "groups.bridge.editFromGroup" = "Questa transazione si sincronizza con un gruppo. Modificala dalla spesa condivisa.";
 "groups.bridge.assignFromInbox" = "Assegna una sottocategoria dalla Inbox per finalizzarla.";
 "groups.bridge.editSettlementInGroup" = "Questa transazione proviene da una liquidazione. Modifica il settlement nel gruppo.";
-"groups.bridge.editPartialBanner" = "Questa spesa viene dal gruppo. Puoi modificare conto, categoria, etichette e nota. Importo e data si sincronizzano con il gruppo.";
+"groups.bridge.editPartialBanner" = "Questa spesa viene dal gruppo. Puoi modificare conto, categoria ed etichette. Importo e data si sincronizzano con il gruppo.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ ha registrato questa spesa in %2$@. Scegli un conto per tracciarla nei tuoi registri.";
 "groups.bridge.draftReasonCurrencyChanged" = "La valuta della spesa in %@ è cambiata. Scegli un conto per registrare la tua parte.";
 "groups.card.moreDebts" = "+%d altri";

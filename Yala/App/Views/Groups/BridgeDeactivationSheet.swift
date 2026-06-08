@@ -50,10 +50,6 @@ struct BridgeDeactivationSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                    Text(L10n.Groups.Bridge.deactivationSheetTitle)
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.thPrimaryText)
-
                     Text(L10n.Groups.Bridge.deactivationSheetBody)
                         .font(DS.Typography.body)
                         .foregroundStyle(.thSecondaryText)
@@ -91,7 +87,8 @@ struct BridgeDeactivationSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
+        .presentationDragIndicator(.hidden)
+        .interactiveDismissDisabled(true)
     }
 
     @ViewBuilder

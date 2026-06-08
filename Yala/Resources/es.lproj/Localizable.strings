@@ -2888,7 +2888,7 @@
 "groups.bridge.editFromGroup" = "Esta transacción se sincroniza con un grupo. Edítala desde el gasto compartido.";
 "groups.bridge.assignFromInbox" = "Asigna subcategoría desde el Inbox para finalizarla.";
 "groups.bridge.editSettlementInGroup" = "Esta transacción proviene de una liquidación. Edita el settlement en el grupo.";
-"groups.bridge.editPartialBanner" = "Este gasto viene del grupo. Puedes editar cuenta, categoría, etiquetas y nota. El monto y la fecha se sincronizan con el grupo.";
+"groups.bridge.editPartialBanner" = "Este gasto viene del grupo. Puedes editar la cuenta, la categoría y las etiquetas. El monto y la fecha se sincronizan con el grupo.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ registró este gasto en %2$@. Elige cuenta para llevarlo a tus registros.";
 "groups.bridge.draftReasonCurrencyChanged" = "La moneda del gasto en %@ cambió. Elige cuenta para registrar tu parte.";
 "groups.bridge.activateTitle" = "Activar transacciones automáticas";
@@ -2914,7 +2914,7 @@
 
 // Bridge deactivation sheet (F5)
 "groups.bridge.deactivationSheetTitle" = "Desactivar integración personal";
-"groups.bridge.deactivationSheetBody" = "Ya tienes movimientos creados por el bridge en tus cuentas. Elige qué hacer con ellos.";
+"groups.bridge.deactivationSheetBody" = "Ya tienes movimientos creados automáticamente en tus cuentas. Elige qué hacer con ellos.";
 "groups.bridge.deactivationOptionFreeze" = "Mantener como histórico";
 "groups.bridge.deactivationOptionDelete" = "Eliminar de mis cuentas";
 

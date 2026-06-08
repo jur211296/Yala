@@ -301,7 +301,7 @@
 "groups.bridge.alertTitle" = "Problema com o grupo";
 "groups.bridge.draftReasonCurrencyChanged" = "A moeda da despesa em %@ mudou. Escolhe uma conta para registar a tua parte.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ registou esta despesa em %2$@. Escolhe uma conta para a acompanhar nos teus registos.";
-"groups.bridge.editPartialBanner" = "Esta despesa vem do grupo. Podes editar conta, categoria, etiquetas e nota. O valor e a data sincronizam com o grupo.";
+"groups.bridge.editPartialBanner" = "Esta despesa vem do grupo. Podes editar conta, categoria e etiquetas. O valor e a data sincronizam com o grupo.";
 "groups.bridge.errorDelete" = "Não foi possível eliminar o registo pessoal do gasto.";
 "groups.bridge.errorNoAccounts" = "Ainda não tens contas configuradas. Cria uma primeiro.";
 "groups.bridge.errorTransaction" = "O teu registo pessoal será automaticamente repetido.";
@@ -1517,7 +1517,7 @@
 "grouping.week" = "Semana";
 "groups.bridge.deactivationOptionDelete" = "Excluir das minhas contas";
 "groups.bridge.deactivationOptionFreeze" = "Manter como histórico";
-"groups.bridge.deactivationSheetBody" = "Você já tem movimentos criados pela ponte nas suas contas. Escolha o que fazer com eles.";
+"groups.bridge.deactivationSheetBody" = "Você já tem movimentos criados automaticamente nas suas contas. Escolha o que fazer com eles.";
 "groups.bridge.deactivationSheetTitle" = "Desativar integração pessoal";
 "groups.bridge.optoutAlertBody" = "Você pode criar um movimento pessoal na sua conta para refletir essa despesa, ou deixar somente dentro do grupo.";
 "groups.bridge.optoutAlertNo" = "Só no grupo";

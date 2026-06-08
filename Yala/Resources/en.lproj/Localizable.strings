@@ -2702,7 +2702,7 @@
 "groups.bridge.editFromGroup" = "This transaction syncs with a group. Edit it from the shared expense.";
 "groups.bridge.assignFromInbox" = "Assign a subcategory from your Inbox to finalize it.";
 "groups.bridge.editSettlementInGroup" = "This transaction comes from a settlement. Edit it from the group.";
-"groups.bridge.editPartialBanner" = "This expense comes from the group. You can edit account, category, tags and note. Amount and date sync with the group.";
+"groups.bridge.editPartialBanner" = "This expense comes from the group. You can edit the account, category and tags. Amount and date sync with the group.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ registered this expense in %2$@. Choose an account to track it in your records.";
 "groups.bridge.draftReasonCurrencyChanged" = "The currency of the expense in %@ changed. Choose an account to record your share.";
 "groups.bridge.activateTitle" = "Enable automatic transactions";
@@ -4369,7 +4369,7 @@
 "groups.bridge.optoutAlertYes" = "Yes, log it";
 "groups.bridge.optoutAlertNo" = "Group only";
 "groups.bridge.deactivationSheetTitle" = "Disable personal integration";
-"groups.bridge.deactivationSheetBody" = "You already have transactions created by the bridge in your accounts. Choose what to do with them.";
+"groups.bridge.deactivationSheetBody" = "You already have transactions created automatically in your accounts. Choose what to do with them.";
 "groups.bridge.deactivationOptionFreeze" = "Keep as historical";
 "groups.bridge.deactivationOptionDelete" = "Delete from my accounts";
 "groups.globalSettings.title" = "Groups Settings";
