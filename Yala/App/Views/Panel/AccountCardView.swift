@@ -45,9 +45,12 @@ struct AccountCardView: View {
         let isExcluded = isSelected && isExcludeMode
         let isHighlighted = isSelected && !isExcludeMode
 
+        // Las cuentas de sistema (`Grupos [moneda]`) usan un gris neutro adaptativo en vez
+        // del color de la paleta: no son cuentas reales del usuario y no deben competir
+        // visualmente con sus cuentas propias. `Color(.systemGray)` es dark-mode safe.
         let backgroundColor: Color =
             isHighlighted
-            ? Color(hex: account.colorHex)
+            ? (account.isSystemAccount ? Color(.systemGray) : Color(hex: account.colorHex))
             : theme.card.opacity(0.95)
 
         let foregroundColor: Color =
@@ -101,7 +104,9 @@ struct AccountCardView: View {
                     .stroke(DS.Colors.borderDark, lineWidth: 1)
             )
 
-            if let onEditTapped {
+            // Las cuentas de sistema no son editables → nunca mostramos el botón de edición
+            // (además evita que quede oculto detrás del badge "Sistema" en la misma esquina).
+            if let onEditTapped, !account.isSystemAccount {
                 Button {
                     onEditTapped()
                 } label: {
