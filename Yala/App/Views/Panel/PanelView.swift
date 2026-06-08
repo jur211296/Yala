@@ -288,6 +288,12 @@ struct PanelView: View {
             viewModel.updateDefaultCurrencyCode(newValue.rawValue)
             viewModel.recalculateData()
         }
+        .onChange(of: appPreferences.includeGroupsInPanelTotal) { _, _ in
+            // El toggle vive en un sheet del tab Grupos, desacoplado del Panel.
+            // Recalcular al volver para reflejar inclusión/exclusión de grupos
+            // en el saldo total agregado.
+            viewModel.recalculateData()
+        }
         .onChange(of: appPreferences.panelSectionsHidden) { oldValue, newValue in
             let next = Self.parseHiddenSections(newValue)
             guard viewModel.hiddenSections != next else { return }

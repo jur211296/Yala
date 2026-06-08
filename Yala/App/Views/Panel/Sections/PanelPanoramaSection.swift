@@ -107,11 +107,22 @@ struct PanelPanoramaSection: View {
         }
     }
 
+    /// Conteo de cuentas del saldo total, coherente con `viewModel.panelTotalBalance`:
+    /// excluye las cuentas sistema de grupos cuando `includeGroupsInPanelTotal` está OFF.
+    private var totalAccountsCount: Int {
+        let active = viewModel.accounts.filter { !$0.isArchived }
+        return PanelTotalAccountsLogic.accountsForTotal(
+            active,
+            includeGroups: appPreferences.includeGroupsInPanelTotal,
+            hasSelectedAccount: viewModel.selectedAccountID != nil
+        ).count
+    }
+
     private var accountsSummary: String? {
-        let activeCount = viewModel.accounts.count(where: { !$0.isArchived })
+        let activeCount = totalAccountsCount
         guard activeCount > 0 else { return nil }
         let formattedBalance = appPreferences.currency(
-            viewModel.currentBalance,
+            viewModel.panelTotalBalance,
             currencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
         return L10n.Panel.panoramaCollapsedSummary(formattedBalance, accounts: activeCount)
@@ -123,10 +134,10 @@ struct PanelPanoramaSection: View {
     /// el formattedBalance para concatenar el AttributedString del amount
     /// entre los fragmentos textuales — preserva la traducción cross-locale.
     private var accountsSummaryAttributed: AttributedString? {
-        let activeCount = viewModel.accounts.count(where: { !$0.isArchived })
+        let activeCount = totalAccountsCount
         guard activeCount > 0 else { return nil }
         let formattedBalance = appPreferences.currency(
-            viewModel.currentBalance,
+            viewModel.panelTotalBalance,
             currencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
         let full = L10n.Panel.panoramaCollapsedSummary(formattedBalance, accounts: activeCount)
@@ -137,7 +148,7 @@ struct PanelPanoramaSection: View {
             result.append(AttributedString(first))
         }
         result.append(AmountText.attributedAmount(
-            value: viewModel.currentBalance,
+            value: viewModel.panelTotalBalance,
             currencyCode: appPreferences.defaultCurrencyCode.rawValue,
             prefs: appPreferences
         ))

@@ -447,6 +447,11 @@ final class PanelViewModel {
 
     // MARK: - Widget Data (struct-backed — reduces observation surface)
 
+    /// Saldo total agregado del Panel ("Tienes X en N cuentas"), recalculado
+    /// SIEMPRE — independiente de la visibilidad del widget de Tendencias (cuyo
+    /// `trendChart.currentBalance` solo se actualiza si el widget está visible).
+    var panelTotalBalance: Double = 0
+
     var trendChart = PanelTrendData()
     var categoriesWidget = PanelCategoriesData()
     var subcategoriesWidget = PanelSubcategoriesData()
@@ -961,35 +966,23 @@ final class PanelViewModel {
         }
     }
 
-    /// Calcula el balance total "vivo" en la moneda preferida (TC actual sobre saldo nativo).
-    /// Si `includeGroupsInPanelTotal` está OFF, excluye cuentas sistema del total agregado;
-    /// la lista del carrusel se renderiza igual.
-    func totalBalanceInDefaultCurrency(
-        accounts: [Account],
-        transactions: [TransactionItem],
-        defaultCurrencyCode: String
-    ) -> Double {
-        let includeGroups = UserDefaults.standard.object(
-            forKey: AppPreferences.Keys.includeGroupsInPanelTotal
-        ) as? Bool ?? true
-        let effectiveAccounts = includeGroups
-            ? accounts
-            : accounts.filter { !$0.isSystemAccount }
-        return LiveBalanceCalculator.liveBalance(
-            accounts: effectiveAccounts,
-            transactions: transactions,
-            preferredCurrencyCode: defaultCurrencyCode
-        )
-    }
-
-    /// Calcula el balance mostrado: total o de cuenta seleccionada (vivo).
+    /// Calcula el balance mostrado: total de todas las cuentas o de la cuenta
+    /// seleccionada (vivo, TC actual sobre saldo nativo). En el total respeta
+    /// `includeGroupsInPanelTotal`: con el toggle OFF excluye las cuentas sistema
+    /// de grupos del agregado. Con una cuenta seleccionada el toggle no aplica.
     func displayedBalanceInDefaultCurrency(
         accounts: [Account],
         transactions: [TransactionItem],
         defaultCurrencyCode: String
     ) -> Double {
+        let includeGroups = appPreferences?.includeGroupsInPanelTotal ?? true
+        let effectiveAccounts = PanelTotalAccountsLogic.accountsForTotal(
+            accounts,
+            includeGroups: includeGroups,
+            hasSelectedAccount: self.selectedAccountID != nil
+        )
         return LiveBalanceCalculator.liveBalance(
-            accounts: accounts,
+            accounts: effectiveAccounts,
             transactions: transactions,
             preferredCurrencyCode: defaultCurrencyCode,
             selectedAccountID: self.selectedAccountID
@@ -1236,6 +1229,10 @@ final class PanelViewModel {
             transactions: transactions,
             defaultCurrencyCode: defaultCurrencyCode
         )
+        // El saldo total del panorama debe reflejar cambios (toggle de grupos,
+        // cuentas, TC) aunque el widget de Tendencias esté oculto — `trendChart`
+        // de abajo solo se reasigna cuando `trendVisible`.
+        if self.panelTotalBalance != newBalance { self.panelTotalBalance = newBalance }
 
         if trendVisible, let trendPoints = newTrendPoints {
             let newTrend = PanelTrendData(

@@ -59,7 +59,7 @@ enum TransactionType: String, CaseIterable, Identifiable {
 
 /// Tipo de división para el split calculator
 enum SplitType: String, CaseIterable, Identifiable {
-    case percentage  // Default — caso más común
+    case percentage  // primero en allCases (orden del menú); el default real del sistema es .equal
     case equal
     case exact
     case shares

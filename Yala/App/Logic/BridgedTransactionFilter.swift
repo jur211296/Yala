@@ -8,8 +8,9 @@
 //  Centraliza la lógica antes dispersa entre `RecordsViewModel`, `BudgetsViewModel`
 //  e `InsightsCalculator` — previene drift en V2 cuando se añadan readers de stats.
 //
-//  Default: defaults ON (toggle aún sin cablear), comportamiento de paridad con el
-//  estado previo (sin filtrado).
+//  Default: ON (incluir gastos de grupo). El toggle vive en GroupsGlobalSettingsView
+//  y está cableado en stats (FilterService.filterForTrends) y feed (RecordsViewModel);
+//  el default ON preserva el comportamiento previo cuando no se ha tocado.
 //
 
 import Foundation

@@ -47,7 +47,7 @@ enum SplitCalculator {
         }
     }
 
-    /// Rounds to 2 decimal places using banker's rounding.
+    /// Rounds to 2 decimal places (round half away from zero).
     private static func roundToTwoDecimals(_ value: Double) -> Double {
         (value * 100).rounded() / 100
     }

@@ -38,7 +38,8 @@ enum GroupSplitCalculator {
 
     // MARK: - Equal Split
 
-    /// Divides total equally. Uses largest remainder method to distribute rounding cents.
+    /// Divides total equally. Distributes leftover cents to the first participants
+    /// (array order); the sum of the parts always equals the total exactly.
     private static func equalSplit(
         total: Double,
         participants: [Participant]

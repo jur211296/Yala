@@ -640,18 +640,24 @@ final class SplitSyncManager {
                     }
                 case CKConstants.RecordType.splitMember:
                     if !existingMemberIDs.contains(modelID) {
-                        // bifurca pendingApproval vs active. Solo admins reciben notif "X quiere unirse".
+                        // Clasifica el member nuevo. Solo `active` notifica "se unió";
+                        // pending solo notifica al admin; un pending recibido por un
+                        // no-admin (o un estado terminal) NO dispara notif espuria.
                         let zoneName = record.recordID.zoneID.zoneName
                         let rawStatus = record[CKConstants.MemberField.status] as? String
+                        // admin solo importa para pending — compútalo lazy para no fetchear de más.
                         let isPending = rawStatus == SplitMemberStatus.pendingApproval.rawValue
                         let isAdmin = isPending && isCurrentUserAdminOfGroup(zoneName: zoneName, context: modelContext, cache: &adminCache)
                         #if DEBUG
                         print("SplitSync[#16-debug]: splitMember zone=\(zoneName) modelID=\(modelID) status=\(rawStatus ?? "nil") isPending=\(isPending) isAdmin=\(isAdmin)")
                         #endif
-                        if isPending, isAdmin {
+                        switch MemberChangeNotificationLogic.classifyNewMember(rawStatus: rawStatus, isCurrentUserAdmin: isAdmin) {
+                        case .pendingRequestForAdmin:
                             changeSet.newPendingMembers.append((modelID, groupID))
-                        } else {
+                        case .joined:
                             changeSet.newMembers.append((modelID, groupID))
+                        case .ignore:
+                            break
                         }
                     }
                 default: break
