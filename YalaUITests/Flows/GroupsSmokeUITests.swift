@@ -33,7 +33,16 @@ final class GroupsSmokeUITests: XCTestCase {
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "No apareció el tab Más.")
         moreTab.tap()
 
+        // La card Grupos vive en la sección "Más herramientas" (la última del
+        // dashboard de "Más", tras Estadísticas/Planificación/Reportes), dentro
+        // de un LazyVGrid: no se instancia hasta scrollearla a la vista. Bajamos
+        // hasta que aparezca antes de tapearla.
         let groupsRow = app.buttons["more_card_groups"]
+        var scrollAttempts = 0
+        while !groupsRow.exists && scrollAttempts < 8 {
+            app.swipeUp()
+            scrollAttempts += 1
+        }
         XCTAssertTrue(groupsRow.waitForExistence(timeout: 5), "No apareció la card Grupos en Más.")
         groupsRow.tap()
     }
