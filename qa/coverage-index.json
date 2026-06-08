@@ -43,17 +43,10 @@
         "Yala/App/Views/Settings/AccountsSettingsListView.swift"
       ],
       "scenarioIDs": [
-        "2.1",
-        "2.2",
-        "2.3",
-        "2.4",
-        "2.5",
-        "2.6",
-        "2.7",
-        "2.8",
-        "2.9",
-        "2.10",
-        "2.11"
+        "F-ACC-01",
+        "F-ACC-03",
+        "F-ACC-04",
+        "F-ACC-05"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/AccountsCrudUITests",
@@ -70,20 +63,7 @@
         "Yala/App/Views/Filters/FilterControlBar.swift"
       ],
       "scenarioIDs": [
-        "40.1 Segmented control en RecordsFiltersView",
-        "40.2 Modo Excluir — Cuentas",
-        "40.3 Modo Excluir — Categorías/Subcategorías",
-        "40.4 Modo Excluir — Tags",
-        "40.5 Modo Excluir — Monedas",
-        "40.6 Modo Excluir — Nature y TransactionNature",
-        "40.7 Chips visuales en modo excluir",
-        "40.8 Persistencia entre pestañas",
-        "40.9 Limpiar filtros",
-        "40.10 Exportación con modo excluir",
-        "40.11 Filtros no-entidad no afectados por modo",
-        "40.12 Localización del modo excluir",
-        "40.13 Auto-reset del modo excluir",
-        "40.14 Combinación de filtros en modo excluir"
+        "F-FIL-02"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/AdvancedFiltersUITests",
@@ -101,13 +81,7 @@
         "Yala/Models/Budget.swift"
       ],
       "scenarioIDs": [
-        "27.1.1",
-        "27.1.2",
-        "27.6.1",
-        "27.6.1b",
-        "27.6.4",
-        "27.6.5",
-        "27.6.6"
+        "F-BUD-03"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/BudgetAlertsConfigUITests",
@@ -125,27 +99,8 @@
         "Yala/App/Views/Planning/Components/BudgetPeriodSelectorSheet.swift"
       ],
       "scenarioIDs": [
-        "6.D.1",
-        "6.D.2",
-        "6.D.3",
-        "6.D.4",
-        "6.D.5",
-        "6.D.6",
-        "6.D.7",
-        "6.D.8",
-        "6.D.9",
-        "6.D.10",
-        "6.D.11",
-        "6.D.12",
-        "6.D.13",
-        "6.1",
-        "6.2",
-        "6.3",
-        "6.4",
-        "6.5",
-        "6.6",
-        "6.7",
-        "6.8"
+        "F-BUD-01",
+        "F-BUD-02"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/BudgetsCrudUITests",
@@ -160,12 +115,7 @@
         "Yala/Models/CashFlowPlan.swift"
       ],
       "scenarioIDs": [
-        "54.1",
-        "54.2",
-        "54.3",
-        "54.4",
-        "54.5",
-        "54.6"
+        "F-STA-06"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/CashFlowPlanUITests",
@@ -182,18 +132,8 @@
         "Yala/App/Logic/SubcategoryDedupGate.swift"
       ],
       "scenarioIDs": [
-        "3.1",
-        "3.2",
-        "3.3",
-        "3.4",
-        "3.5",
-        "3.6",
-        "3.7",
-        "3.8",
-        "3.9",
-        "3.10",
-        "5.10.2",
-        "5.10.3"
+        "F-CAT-01",
+        "F-CAT-02"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/CategoriesCrudUITests",
@@ -208,15 +148,10 @@
         "Yala/Services/Chat/**"
       ],
       "scenarioIDs": [
-        "25.1 AI FAB y Acceso",
-        "25.2 Chat Sheet — Estado Vacío",
-        "25.3 Chat Sheet — Interacción",
-        "25.4 Chat Sheet — Follow-up",
-        "25.5 Límites",
-        "25.6 Error States",
-        "25.7 ProfileView",
-        "25.8 Subscription Views",
-        "25.9 Privacidad"
+        "F-CHA-01",
+        "F-CHA-02",
+        "F-CHA-03",
+        "F-CHA-04"
       ],
       "classification": "agentic",
       "coverage": "none",
@@ -233,15 +168,8 @@
         "Yala/Services/InsightsLLMService.swift"
       ],
       "scenarioIDs": [
-        "44.1 Visibilidad — Pro + Consent + ≥5 txns",
-        "44.2 Dismiss y reset",
-        "44.3 Loading state",
-        "44.4 Cache contextual (30 min TTL)",
-        "44.5 Edge cases",
-        "44.6 Widget Preferences — Toggle Observaciones con IA",
-        "44.5 Personalización: Tono",
-        "44.6 Personalización: Enfoque",
-        "44.7 Tips en InsightCards"
+        "F-PAN-04",
+        "F-PAN-05"
       ],
       "classification": "agentic",
       "coverage": "none",
@@ -257,9 +185,7 @@
         "Yala/Services/FilterService.swift"
       ],
       "scenarioIDs": [
-        "25.3.1",
-        "25.3.2",
-        "25.3.3"
+        "F-STA-05"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/CurrencyFilterStatsUITests",
@@ -277,13 +203,14 @@
         "Yala/Utils/CurrencyUtils.swift"
       ],
       "scenarioIDs": [
-        "25.2.1",
-        "25.2.2",
-        "25.2.3",
-        "25.5.1",
-        "25.5.2",
-        "25.5.3",
-        "25.5.4"
+        "F-ONB-01",
+        "F-ONB-02",
+        "F-ONB-03",
+        "F-ONB-04",
+        "F-ONB-05",
+        "F-ONB-06",
+        "F-ONB-07",
+        "F-ONB-08"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/CurrencyPickerUITests",
@@ -298,14 +225,10 @@
         "Yala/App/Models/AppRouter.swift"
       ],
       "scenarioIDs": [
-        "DL-01",
-        "DL-02",
-        "DL-03",
-        "DL-04",
-        "DL-05",
-        "DL-06",
-        "DL-07",
-        "DL-08"
+        "F-NAV-01",
+        "F-NAV-02",
+        "F-NAV-06",
+        "F-NAV-07"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/DeeplinkRoutingUITests",
@@ -320,12 +243,9 @@
         "Yala/App/Views/Filters/FilterChipsSection.swift"
       ],
       "scenarioIDs": [
-        "42.1 Aplicar filtros",
-        "42.2 Descartar filtros (X)",
-        "42.3 Limpiar filtros",
-        "42.4 Toggle exclude mode",
-        "42.5 Navegación desde Panel",
-        "42.6 Exclude mode sin entities"
+        "F-FIL-01",
+        "F-FIL-02",
+        "F-FIL-03"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/DeferredFiltersUITests",
@@ -339,11 +259,8 @@
         "Yala/Services/**"
       ],
       "scenarioIDs": [
-        "14.1",
-        "14.3",
-        "14.4",
-        "14.5",
-        "14.6"
+        "F-EDG-01",
+        "F-EDG-02"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/EdgeCasesUITests",
@@ -357,9 +274,7 @@
         "Yala/Utils/TransactionsExportService.swift"
       ],
       "scenarioIDs": [
-        "12.4",
-        "12.5",
-        "12.6"
+        "F-IMP-03"
       ],
       "classification": "agentic",
       "coverage": "none",
@@ -373,11 +288,8 @@
         "Yala/App/Views/Settings/BudgetsFavoritesSettingsView.swift"
       ],
       "scenarioIDs": [
-        "8.1",
-        "8.2",
-        "8.3",
-        "8.4",
-        "8.5"
+        "F-FAV-01",
+        "F-FAV-02"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/FavoritesCrudUITests",
@@ -392,12 +304,8 @@
         "Yala/App/Views/Filters/**"
       ],
       "scenarioIDs": [
-        "11.1",
-        "11.2",
-        "11.3",
-        "11.4",
-        "11.5",
-        "11.6"
+        "F-FIL-01",
+        "F-FIL-03"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/FiltersUITests",
@@ -413,11 +321,8 @@
         "Yala/App/Views/Settings/**"
       ],
       "scenarioIDs": [
-        "55.1",
-        "55.2",
-        "55.3",
-        "55.4",
-        "55.5"
+        "F-TX-08",
+        "F-TX-09"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -440,40 +345,11 @@
         "Yala/Models/SplitShare.swift"
       ],
       "scenarioIDs": [
-        "A0-01",
-        "A0-02",
-        "A0-03",
-        "A0-04",
-        "A0-05",
-        "A0-06",
-        "A0-07",
-        "A0-08",
-        "A0-09",
-        "A0-10",
-        "A0-11",
-        "A0-12",
-        "A0-13",
-        "A0-14",
-        "A0-15",
-        "A0-16",
-        "A0-17",
-        "A0-18",
-        "A0-21",
-        "M6-01",
-        "M6-02",
-        "M6-03",
-        "M6-05",
-        "M6-08",
-        "M6-09",
-        "M6-10",
-        "M6-11",
-        "M6-12",
-        "M6-13",
-        "SP3-02",
-        "SP3-03",
-        "SP3-04",
-        "SP3-05",
-        "SP3-06"
+        "F-S2-02",
+        "F-S2-03",
+        "F-S2-04",
+        "F-S2-05",
+        "F-S3-04"
       ],
       "classification": "agentic",
       "coverage": "none",
@@ -493,34 +369,9 @@
         "Yala/App/Logic/BridgedTransactionFilter.swift"
       ],
       "scenarioIDs": [
-        "B-BRIDGE-01",
-        "B-BRIDGE-02",
-        "B-BRIDGE-03",
-        "B-BRIDGE-04",
-        "B-BRIDGE-05",
-        "B-BRIDGE-06",
-        "B-BRIDGE-07",
-        "B-BRIDGE-08",
-        "B-BRIDGE-09",
-        "B-BRIDGE-10",
-        "B-BRIDGE-11",
-        "B-BRIDGE-12",
-        "B-BRIDGE-13",
-        "B-BRIDGE-14",
-        "B-BRIDGE-15",
-        "B-BRIDGE-16",
-        "B-BRIDGE-17",
-        "B-BRIDGE-18",
-        "B-BRIDGE-19",
-        "B-BRIDGE-20",
-        "B-BRIDGE-21",
-        "B-BRIDGE-22",
-        "B-BRIDGE-23",
-        "B-BRIDGE-24",
-        "B-BRIDGE-26",
-        "B-BRIDGE-27",
-        "B-BRIDGE-28",
-        "B-BRIDGE-29"
+        "F-S1-06",
+        "F-S2-04",
+        "F-S2-05"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
@@ -544,23 +395,10 @@
         "Yala/Services/Groups/DebtSimplificationService.swift"
       ],
       "scenarioIDs": [
-        "26.1 Crear gasto compartido",
-        "26.2 Editar gasto compartido",
-        "26.3 Eliminar gasto compartido",
-        "26.4 Liquidar deudas",
-        "26.5 Confirmar/Rechazar liquidación",
-        "26.6 Multi-moneda",
-        "26.7 Member selector",
-        "26.8 Edge cases",
-        "28.1 Grupos — CRUD",
-        "28.2 Gastos — Registro y Split",
-        "28.3 Balances y Liquidaciones",
-        "28.6 Insights y Stats",
-        "28.7 Telemetría",
-        "28.8 Pull-to-Refresh y Error Handling",
-        "28.9 Permisos Admin vs Member (GC-12)",
-        "28.10 Eliminar Grupo (GC-12)",
-        "28.12 Empty State y Sync (GC-12)"
+        "F-S1-04",
+        "F-S1-05",
+        "F-S4-03",
+        "F-S4-04"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
@@ -578,31 +416,7 @@
         "Yala/App/Logic/Calculators/GroupSplitCalculator.swift"
       ],
       "scenarioIDs": [
-        "GR-EXP-NEW-01",
-        "GR-EXP-NEW-02",
-        "GR-EXP-NEW-03",
-        "GR-EXP-NEW-04",
-        "GR-EXP-NEW-05",
-        "GR-EXP-NEW-06",
-        "GR-EXP-NEW-07",
-        "GR-EXP-NEW-08",
-        "GR-EXP-NEW-09",
-        "GR-EXP-NEW-10",
-        "GR-EXP-NEW-11",
-        "GR-EXP-NEW-12",
-        "GR-EXP-NEW-13",
-        "GR-EXP-NEW-15",
-        "GR-EXP-NEW-16",
-        "GR-EXP-NEW-17",
-        "GR-EXP-NEW-18",
-        "GR-EXP-NEW-19",
-        "GR-EXP-NEW-20",
-        "GR-EXP-NEW-21",
-        "GR-EXP-NEW-22",
-        "GR-EXP-NEW-23",
-        "GR-EXP-NEW-24",
-        "GR-EXP-NEW-25",
-        "GR-EXP-NEW-LANDSCAPE"
+        "F-S1-05"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
@@ -618,9 +432,7 @@
         "Yala/App/Views/Groups/GroupExpenseFormView.swift"
       ],
       "scenarioIDs": [
-        "15-groups-form-create",
-        "15-groups-form-currency-toggle",
-        "15-groups-form-split-type-picker"
+        "F-S1-04"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
@@ -639,28 +451,11 @@
         "Yala/Models/SplitMember.swift"
       ],
       "scenarioIDs": [
-        "A3-01",
-        "A3-02",
-        "A3-03",
-        "A3-05",
-        "A3-06",
-        "A3-07",
-        "A3-08",
-        "A3-09",
-        "A3-05-bis",
-        "C2-01",
-        "C2-02",
-        "C3-01",
-        "28.4 Onboarding Diferenciado",
-        "28.11 Invitación y Confirmación (GC-12)",
-        "SP3-08",
-        "SP3-09",
-        "SP3-10",
-        "SP3-11",
-        "SP3-12",
-        "SP3-13",
-        "SP3-14",
-        "SP3-15"
+        "F-S3-02",
+        "F-S3-03",
+        "F-S4-01",
+        "F-S4-02",
+        "F-S4-05"
       ],
       "classification": "agentic",
       "coverage": "none",
@@ -676,14 +471,7 @@
         "Yala/App/Views/Panel/PanelView.swift"
       ],
       "scenarioIDs": [
-        "18.1",
-        "18.2",
-        "18.3",
-        "18.4",
-        "18.5",
-        "18.6",
-        "18.7",
-        "18.8"
+        "F-VIM-01"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/VoiceImageSettingsFabUITests",
@@ -703,35 +491,10 @@
         "Yala/Models/InboxDraft+TagsCSVMirror.swift"
       ],
       "scenarioIDs": [
-        "16.1",
-        "16.2",
-        "16.3",
-        "16.4",
-        "16.5",
-        "16.6",
-        "16.7",
-        "16.8",
-        "16.9",
-        "16.10",
-        "16.11",
-        "16.12",
-        "16.13",
-        "16.14",
-        "16.15",
-        "16.16",
-        "16.17",
-        "16.18",
-        "16.19",
-        "16.20",
-        "16.21",
-        "16.22",
-        "16.23",
-        "16.24",
-        "16.25",
-        "16.26",
-        "16.27",
-        "16.28",
-        "16.29"
+        "F-INB-01",
+        "F-INB-02",
+        "F-INB-03",
+        "F-INB-04"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/InboxCrudUITests",
@@ -749,18 +512,7 @@
         "Yala/App/ViewModels/InboxViewModel.swift"
       ],
       "scenarioIDs": [
-        "26.1.1",
-        "26.1.2",
-        "26.1.3",
-        "26.2.1",
-        "26.4.1",
-        "26.4.2",
-        "26.5.1",
-        "26.5.2",
-        "26.6.1",
-        "26.6.2",
-        "26.6.3",
-        "26.7.1"
+        "F-INB-05"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/InboxNewItemsModalUITests",
@@ -778,18 +530,8 @@
         "Yala/Services/ReportNotificationService.swift"
       ],
       "scenarioIDs": [
-        "24.1",
-        "24.4",
-        "24.5",
-        "24.6",
-        "24.7",
-        "24.8",
-        "24.9",
-        "24.10",
-        "24.11",
-        "24.12",
-        "24.13",
-        "24.15"
+        "F-NOT-01",
+        "F-NOT-02"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/NotificationsSettingsUITests",
@@ -805,16 +547,10 @@
         "Yala/App/Views/Onboarding/WelcomeFlowContainer.swift"
       ],
       "scenarioIDs": [
-        "1.1",
-        "1.2",
-        "1.3",
-        "1.4",
-        "1.5",
-        "1.6",
-        "1.7",
-        "1.8",
-        "1.9",
-        "1.10"
+        "F-ONB-01",
+        "F-ONB-02",
+        "F-ONB-03",
+        "F-ONB-04"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/OnboardingFlowUITests",
@@ -837,18 +573,8 @@
         "Yala/App/Views/Panel/ScheduledPaymentsWidget.swift"
       ],
       "scenarioIDs": [
-        "9.1",
-        "9.2",
-        "9.3",
-        "9.4",
-        "9.5",
-        "9.6",
-        "9.7",
-        "9.8",
-        "9.X1",
-        "9.X2",
-        "9.X3",
-        "9.X5"
+        "F-PAN-01",
+        "F-PAN-02"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/PanelDashboardUITests",
@@ -866,12 +592,9 @@
         "Yala/Services/TelemetryService.swift"
       ],
       "scenarioIDs": [
-        "53.1",
-        "53.2",
-        "53.3",
-        "53.4",
-        "53.5",
-        "53.6"
+        "F-PRO-01",
+        "F-PRO-03",
+        "F-PRO-04"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/ProConversionUpsellsUITests",
@@ -890,17 +613,8 @@
         "Yala/App/Views/Panel/ScheduledPaymentsWidget.swift"
       ],
       "scenarioIDs": [
-        "37.1 Saltar ocurrencia futura",
-        "37.2 Saltar ocurrencia pasada/vencida",
-        "37.3 Revertir skip (unskip)",
-        "37.4 Skip y drafts en Inbox",
-        "37.5 Skip pre-creación de draft",
-        "37.6 Filtros y skip",
-        "37.7 Widget Panel y skip",
-        "37.8 Vista calendario y skip",
-        "37.9 Notificaciones y skip",
-        "37.10 Cleanup automático",
-        "37.11 Localización"
+        "F-SCH-02",
+        "F-SCH-03"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/ScheduledPaymentSkipUITests",
@@ -918,14 +632,8 @@
         "Yala/App/Views/Settings/ScheduledPaymentsSettingsView.swift"
       ],
       "scenarioIDs": [
-        "7.1",
-        "7.2",
-        "7.3",
-        "7.4",
-        "7.5",
-        "7.6",
-        "7.7",
-        "7.8"
+        "F-SCH-01",
+        "F-SCH-02"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/ScheduledPaymentsCrudUITests",
@@ -941,8 +649,7 @@
         "Yala/App/Services/AppPreferences.swift"
       ],
       "scenarioIDs": [
-        "46.1 Prompt Divisas Secundarias (AccountForm)",
-        "46.2 Notification Permission Primer"
+        "F-ONB-07"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/SecondaryCurrencyPromptUITests",
@@ -959,15 +666,7 @@
         "Yala/App/Views/Panel/ExchangeRateWidget.swift"
       ],
       "scenarioIDs": [
-        "13.2",
-        "13.3",
-        "13.3.1",
-        "13.3.2",
-        "13.7",
-        "13.8",
-        "13.9",
-        "13.10",
-        "13.11"
+        "F-SET-05"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/CurrencySettingsUITests",
@@ -982,9 +681,8 @@
         "Yala/App/Views/Settings/TabBarConfigView.swift"
       ],
       "scenarioIDs": [
-        "13.1",
-        "13.5",
-        "13.6"
+        "F-SET-01",
+        "F-SET-03"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/ProfileSettingsUITests",
@@ -998,11 +696,8 @@
         "Yala/App/Views/Panel/SetupStepRow.swift"
       ],
       "scenarioIDs": [
-        "Sección 1.5: Setup Checklist Secuencial",
-        "Comportamiento secuencial",
-        "Progresion secuencial",
-        "AutoDetect + secuencial",
-        "Accesibilidad (SetupChecklist)"
+        "F-ONB-01",
+        "F-ONB-04"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1020,20 +715,9 @@
         "Yala/Services/InsightsLLMService.swift"
       ],
       "scenarioIDs": [
-        "43.1 Tab y navegación",
-        "43.2 Period Summary (siempre visible)",
-        "43.3 Quick Stats Grid",
-        "43.4 Compromisos",
-        "43.5 Streak Badge",
-        "43.6 Gráfico de gasto por día de semana",
-        "43.7 Distribución por naturaleza",
-        "43.8 Comparación año a año",
-        "43.9 Insights textuales (rule-based)",
-        "43.10 Edge cases",
-        "43.11 First-time tip",
-        "43.12 Pro + AI Insights",
-        "43.13 Settings (Smart Insights)",
-        "43.14 Locked fun fact (Free)"
+        "F-STA-01",
+        "F-STA-02",
+        "F-STA-03"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1048,9 +732,7 @@
         "Yala/App/Views/Records/RecordsStandaloneView.swift"
       ],
       "scenarioIDs": [
-        "21.4",
-        "21.5",
-        "21.6"
+        "F-TX-05"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/SmartRefinementFabUITests",
@@ -1067,16 +749,7 @@
         "Yala/Utils/TransactionsExportService.swift"
       ],
       "scenarioIDs": [
-        "52.1",
-        "52.2",
-        "52.3",
-        "52.4",
-        "52.5",
-        "52.6",
-        "52.7",
-        "52.8",
-        "52.9",
-        "52.10"
+        "F-TX-08"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/SplitCalculatorUITests",
@@ -1094,12 +767,10 @@
         "Yala/App/Views/Statistics/InsightsTabView.swift"
       ],
       "scenarioIDs": [
-        "10.1",
-        "10.2",
-        "10.3",
-        "10.4",
-        "10.5",
-        "10.6"
+        "F-STA-01",
+        "F-STA-03",
+        "F-STA-04",
+        "F-STA-05"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/StatisticsNavigationUITests",
@@ -1113,13 +784,7 @@
         "Yala/App/Views/Settings/TagsSettingsListView.swift"
       ],
       "scenarioIDs": [
-        "4.1",
-        "4.2",
-        "4.3",
-        "4.4",
-        "4.5",
-        "4.6",
-        "4.7"
+        "F-CAT-03"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/TagsCrudUITests",
@@ -1133,15 +798,7 @@
         "Yala/App/ViewModels/BulkEditViewModel.swift"
       ],
       "scenarioIDs": [
-        "5.14",
-        "5.15",
-        "5.16",
-        "5.17",
-        "5.18",
-        "5.19",
-        "5.20",
-        "5.21",
-        "5.22"
+        "F-TX-04"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/BulkEditUITests",
@@ -1159,20 +816,8 @@
         "Yala/App/Views/Records/RecordsStandaloneView.swift"
       ],
       "scenarioIDs": [
-        "5.1",
-        "5.2",
-        "5.3",
-        "5.4",
-        "5.5",
-        "5.6",
-        "5.7",
-        "5.8",
-        "5.9",
-        "5.10",
-        "5.10.1",
-        "5.11",
-        "5.12",
-        "5.13"
+        "F-TX-01",
+        "F-TX-02"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/TransactionsCrudUITests",
@@ -1187,14 +832,8 @@
         "Yala/App/Views/Transactions/DescriptionAutocomplete.swift"
       ],
       "scenarioIDs": [
-        "5.23",
-        "5.24",
-        "5.25",
-        "5.26",
-        "5.27",
-        "5.28",
-        "5.29",
-        "5.30"
+        "F-TX-02",
+        "F-TX-03"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/QuickActionsFavoritesUITests",
@@ -1209,12 +848,7 @@
         "Yala/App/Views/Panel/PanelView.swift"
       ],
       "scenarioIDs": [
-        "50.1 Detección de versión nueva",
-        "50.2 Interacción del banner",
-        "50.3 Posición en Panel",
-        "50.4 Cache y red",
-        "50.5 Data wipe",
-        "50.6 Localización"
+        "F-PRO-04"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/UpdateAvailableBannerUITests",
@@ -1229,11 +863,8 @@
         "Yala/Utils/CurrencyUtils.swift"
       ],
       "scenarioIDs": [
-        "25.4.1",
-        "25.4.2",
-        "25.4.3",
-        "25.4.4",
-        "25.4.5"
+        "F-VIM-02",
+        "F-VIM-07"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/VoiceInputCurrencyExamplesUITests",
@@ -1250,25 +881,7 @@
         "Yala/App/Views/Statistics/DetailContainerView.swift"
       ],
       "scenarioIDs": [
-        "17.1",
-        "17.2",
-        "17.3",
-        "17.4",
-        "17.5",
-        "17.6",
-        "17.7",
-        "17.8",
-        "17.9",
-        "17.10",
-        "17.11",
-        "17.12",
-        "17.43",
-        "17.44",
-        "17.45",
-        "17.46",
-        "17.47",
-        "17.48",
-        "Sección 17 - Validaciones de UI (toggle voz, selector idioma)"
+        "F-VIM-01"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/VoiceImageSettingsFabUITests",
@@ -1284,16 +897,7 @@
         "Yala/App/Views/Statistics/TrendsTabView.swift"
       ],
       "scenarioIDs": [
-        "39.1 Picker en Personalización",
-        "39.2 Modo Total — CashFlow solo gastos",
-        "39.3 Modo Total — NatureTrend",
-        "39.4 Modo Total — CashFlow bidireccional NO muestra línea",
-        "39.5 Sin datos suficientes",
-        "39.6 Modo Fragmentado — CashFlow solo gastos",
-        "39.7 Modo Fragmentado — fallback a Total",
-        "39.8 Modo Fragmentado — barras diarias agrupan por semana",
-        "39.9 Modo Fragmentado — barras semanales agrupan por mes",
-        "39.10 Desactivada — sin línea en ninguna gráfica"
+        "F-BUD-05"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1308,8 +912,7 @@
         "Yala/App/ViewModels/CashFlowPlanViewModel.swift"
       ],
       "scenarioIDs": [
-        "54.7",
-        "54.8"
+        "F-STA-06"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1325,15 +928,7 @@
         "YalaWidgets/Widgets/CashFlowWidget.swift"
       ],
       "scenarioIDs": [
-        "32.1 Waterfall con días mixtos (EXP-1.1)",
-        "32.2 Solo gastos + eje diario (EXP-1.2)",
-        "32.3 Solo ingresos + eje diario (EXP-1.3)",
-        "32.4 Vista mensual sin cambios (EXP-1.4)",
-        "32.5 Cambio de periodo (EXP-1.5)",
-        "32.6 Tooltip en waterfall (EXP-1.6)",
-        "32.7 Widget iOS large con periodo diario (EXP-1.7)",
-        "32.8 Widget iOS large con periodo mensual (EXP-1.8)",
-        "32.9 Día con neto exactamente 0 (EXP-1.9)"
+        "F-STA-03"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1350,14 +945,9 @@
         "Yala/App/Views/Profile/ProfileView.swift"
       ],
       "scenarioIDs": [
-        "48.1 Tour del Panel (Grupo A — 5 pasos)",
-        "48.2 Tour de Registro (Grupo B — 3 pasos)",
-        "48.3 Tour de Settings (Grupo D — 7 pasos)",
-        "48.4 Tour de Interactividad (Grupo C — 2 pasos)",
-        "48.5 ComparisonTip (TipKit — independiente)",
-        "48.6 Coordinación con Trial",
-        "48.7 Reset con Data Wipe",
-        "48.8 Localización de tours"
+        "F-NAV-03",
+        "F-NAV-04",
+        "F-NAV-05"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1379,18 +969,7 @@
         "YalaWidgets/Widgets/**"
       ],
       "scenarioIDs": [
-        "31.1 Activación / Desactivación",
-        "31.2 Creación de Transacciones",
-        "31.3 Panel",
-        "31.4 Estadísticas",
-        "31.5 Settings",
-        "31.6 Búsqueda y Records",
-        "31.7 Favoritos y Planificación",
-        "31.8 Notificaciones",
-        "31.9 Widgets iOS",
-        "31.10 Siri / Shortcuts",
-        "31.11 Onboarding",
-        "31.12 Reversibilidad"
+        "F-ONB-07"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1406,8 +985,7 @@
         "Yala/App/Views/Groups/Onboarding/OnboardingDemoNotificationBubble.swift"
       ],
       "scenarioIDs": [
-        "B-BRIDGE-01",
-        "B-BRIDGE-02"
+        "F-S1-03"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1423,16 +1001,9 @@
         "Yala/App/Logic/InboxHeroSubtitleLogic.swift"
       ],
       "scenarioIDs": [
-        "16.30",
-        "16.31",
-        "16.32",
-        "16.33",
-        "16.34",
-        "16.35",
-        "16.36",
-        "16.37",
-        "16.38",
-        "Sección 16 - Validaciones de UI (icono fuente, chips rojos campos faltantes, fecha relativa, color de monto, indicador confianza)"
+        "F-INB-02",
+        "F-INB-03",
+        "F-INB-04"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1448,16 +1019,8 @@
         "Yala/App/Views/Settings/TutorialCompletionView.swift"
       ],
       "scenarioIDs": [
-        "34.1 Flujo completo 8 pasos",
-        "34.2 Botón Empezar en paso correcto",
-        "34.3 Progress capsules",
-        "34.4 Contenido pantalla de privacidad",
-        "34.5 Link tutoriales",
-        "34.6 Rename a Tutoriales",
-        "35.1 Lista de tutoriales desde Perfil",
-        "35.2 Detalle de tutorial (carousel)",
-        "35.3 Tutoriales desde Onboarding",
-        "35.4 Idiomas"
+        "F-ONB-01",
+        "F-ONB-06"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1474,30 +1037,10 @@
         "Yala/App/Logic/FullModeActivationLogic.swift"
       ],
       "scenarioIDs": [
-        "45.1 Happy Path — Control Total",
-        "45.2 Happy Path — Solo Gastos",
-        "45.3 Sin Categorías Semilla",
-        "45.4 Validación de pasos",
-        "45.5 Saldo Cero",
-        "45.6 Back Navigation",
-        "45.7 Progress Indicator",
-        "45.8 Categorías filtradas por modo",
-        "45.9 Pasos eliminados no existen",
-        "45.10 Divisa del presupuesto",
-        "45.11 Keyboard dismiss",
-        "45.12 Guía de saldo",
-        "45.13 Preview card dinámica",
-        "47.1 Paso 2: Tres modos de uso",
-        "47.2 Calculadora de saldo: General + Día a día (cashFlow)",
-        "47.3 Calculadora de saldo: General + Control total (patrimonial)",
-        "47.3b Gastos compartidos (solo patrimonial)",
-        "47.4 Calculadora: Cuentas simples (Cash/Checking/Savings)",
-        "47.5 AccountFormView: Calculadora de saldo",
-        "47.6 Calculadora: Tarjeta de crédito (solo AccountFormView)",
-        "47.7 Sign picker contextual para TC",
-        "47.8 Balance hint contextual para TC",
-        "47.9 Strings suavizados",
-        "47.10 Localización completa"
+        "F-ONB-01",
+        "F-ONB-02",
+        "F-ONB-03",
+        "F-ONB-04"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1511,26 +1054,9 @@
         "Yala/App/Views/Groups/FullModeActivationView.swift"
       ],
       "scenarioIDs": [
-        "OB-VS-01",
-        "OB-VS-02",
-        "OB-VS-03",
-        "OB-VS-04",
-        "OB-VS-05",
-        "OB-VS-06",
-        "OB-VS-07",
-        "OB-VS-08",
-        "OB-VS-10..18",
-        "OB-VS-19",
-        "OB-VS-20",
-        "OB-VS-21",
-        "OB-VS-22",
-        "OB-VS-23",
-        "OB-VS-24",
-        "OB-VS-25",
-        "OB-VS-26",
-        "OB-VS-27",
-        "OB-VS-28",
-        "OB-VS-29"
+        "F-WEL-01",
+        "F-WEL-05",
+        "F-WEL-06"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1547,10 +1073,8 @@
         "Yala/App/Views/Panel/BudgetWidgetRow.swift"
       ],
       "scenarioIDs": [
-        "41.1 Budget Progress Bar — colores por contexto",
-        "41.2 Badge Recurrente en edición de transacción",
-        "41.3 Tipo de cuenta: Tarjeta de crédito",
-        "41.4 Notificación de pago de tarjeta de crédito"
+        "F-ACC-02",
+        "F-ACC-06"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1566,11 +1090,7 @@
         "Yala/App/Views/Planning/Components/**"
       ],
       "scenarioIDs": [
-        "25.1.1",
-        "25.1.2",
-        "25.1.3",
-        "25.1.4",
-        "25.1.5"
+        "F-SCH-01"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1584,7 +1104,7 @@
         "Yala/App/Views/Settings/AppIconSettingsView.swift"
       ],
       "scenarioIDs": [
-        "13.4"
+        "F-SET-04"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1602,30 +1122,14 @@
         "Yala/App/Views/Image/ImageSelectionView.swift"
       ],
       "scenarioIDs": [
-        "SC-DEMO-01",
-        "SC-DEMO-02",
-        "SC-DEMO-03",
-        "SC-DEMO-04",
-        "SC-DEMO-05",
-        "SC-DEMO-06",
-        "SC-DEMO-07",
-        "SC-DEMO-08",
-        "SC-DEMO-09",
-        "SC-DEMO-10",
-        "SC-DEMO-11",
-        "SC-DEMO-12",
-        "SC-DEMO-13",
-        "SC-DEMO-14",
-        "SC-DEMO-15",
-        "SC-DEMO-16",
-        "SC-DEMO-17",
-        "SC-DEMO-18",
-        "SC-DEMO-19",
-        "SC-DEMO-20",
-        "SC-DEMO-21",
-        "SC-DEMO-22",
-        "SC-DEMO-23",
-        "SC-DEMO-24"
+        "F-ONB-01",
+        "F-ONB-02",
+        "F-ONB-03",
+        "F-ONB-04",
+        "F-ONB-05",
+        "F-ONB-06",
+        "F-ONB-07",
+        "F-ONB-08"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1640,24 +1144,7 @@
         "Yala/App/Views/Records/RecordsStandaloneView.swift"
       ],
       "scenarioIDs": [
-        "R-01",
-        "R-02",
-        "R-03",
-        "R-04",
-        "R-05",
-        "R-06",
-        "R-07",
-        "R-08",
-        "R-09",
-        "R-10",
-        "R-11",
-        "R-12",
-        "R-13",
-        "R-14",
-        "R-15",
-        "R-16",
-        "R-17",
-        "R-18"
+        "F-STA-05"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1673,23 +1160,8 @@
         "Yala/App/Views/Settings/ThemeSettingsView.swift"
       ],
       "scenarioIDs": [
-        "38.1 Cambio de tema sin reinicio",
-        "38.2 Tema System sigue esquema del iPhone",
-        "38.3 Temas PRO requieren suscripción",
-        "38.4 Colores correctos por tema",
-        "38.5 Sheets y modales heredan tema",
-        "38.6 Persistencia entre sesiones",
-        "38.7 Data wipe resetea a System",
-        "38.8 Widgets iOS NO se afectan",
-        "38.9 Sombras adaptativas",
-        "38.10 Gradiente de fondo",
-        "38.11 ThemeSettingsView diseño",
-        "38.12 Localización de temas",
-        "38.13 Tema Liquid Glass — light mode",
-        "38.14 Tema Liquid Glass — dark mode",
-        "38.15 Tema Liquid Glass — adaptativo",
-        "38.16 Tema Liquid Glass — no regresión Translúcido",
-        "38.17 Tema Liquid Glass — preview en grid"
+        "F-SET-03",
+        "F-SET-04"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1702,11 +1174,7 @@
         "Yala/App/Views/Transactions/TransactionSuccessView.swift"
       ],
       "scenarioIDs": [
-        "33.1 Hero visual (BUG-19.1)",
-        "33.2 Animación escalonada (BUG-19.2)",
-        "33.3 Details card (BUG-19.3)",
-        "33.4 Brand Voice (BUG-19.4)",
-        "33.5 Accesibilidad (BUG-19.5)"
+        "F-TX-07"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1723,25 +1191,12 @@
         "Yala/App/Views/Onboarding/InviteRecoveryView.swift"
       ],
       "scenarioIDs": [
-        "A4-01",
-        "A4-02",
-        "A4-04",
-        "A4-05",
-        "A4-08",
-        "A4-09",
-        "A4-10",
-        "A4-11",
-        "A4-13",
-        "A4-17",
-        "A4-18",
-        "A4-19",
-        "A4-20",
-        "A4-22",
-        "A4-23",
-        "A4-24",
-        "A4-25",
-        "A4-26",
-        "A4-27"
+        "F-WEL-01",
+        "F-WEL-02",
+        "F-WEL-03",
+        "F-WEL-04",
+        "F-WEL-05",
+        "F-WEL-06"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1755,15 +1210,7 @@
         "Yala/App/Views/WhatsNew/WhatsNewConfig.swift"
       ],
       "scenarioIDs": [
-        "49.1 Returning user — versión actualizada",
-        "49.2 Fresh install",
-        "49.3 Race conditions",
-        "49.4 Persistencia",
-        "49.5 Data wipe",
-        "49.6 Sin features configuradas",
-        "49.7 Localización",
-        "49.8 Animación",
-        "49.9 Ajuste visual (v1.3)"
+        "F-PRO-05"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1779,26 +1226,7 @@
         "Yala/App/Views/Chat/AIPersonalizationSheet.swift"
       ],
       "scenarioIDs": [
-        "AI-OB-01",
-        "AI-OB-02",
-        "AI-OB-03",
-        "AI-OB-04",
-        "AI-OB-05",
-        "AI-OB-06",
-        "AI-OB-07",
-        "AI-OB-08",
-        "AI-OB-09",
-        "AI-OB-10",
-        "AI-OB-11",
-        "AI-OB-12",
-        "AI-OB-13",
-        "AI-OB-14",
-        "AI-OB-15",
-        "AI-OB-16",
-        "AI-OB-17",
-        "AI-OB-18",
-        "AI-OB-19",
-        "AI-OB-20"
+        "F-WEL-04"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
@@ -1813,11 +1241,8 @@
         "Yala/App/Services/AppPreferences.swift"
       ],
       "scenarioIDs": [
-        "41.1 Consent alert — primera activación",
-        "41.2 Consent persistente",
-        "41.3 Hint inline",
-        "41.4 Wipe de datos",
-        "41.5 Privacy policy web"
+        "F-CHA-01",
+        "F-CHA-04"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -1834,21 +1259,9 @@
         "Yala/App/Views/Settings/SiriShortcutsView.swift"
       ],
       "scenarioIDs": [
-        "22.1",
-        "22.2",
-        "22.3",
-        "22.4",
-        "22.5",
-        "22.6",
-        "22.7",
-        "22.8",
-        "22.9",
-        "22.10",
-        "22.11",
-        "22.12",
-        "22.13",
-        "22.14",
-        "22.15"
+        "F-WCS-01",
+        "F-WCS-02",
+        "F-WCS-07"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -1864,17 +1277,7 @@
         "Yala/Models/InboxDraft.swift"
       ],
       "scenarioIDs": [
-        "23.1",
-        "23.2",
-        "23.3",
-        "23.4",
-        "23.5",
-        "23.6",
-        "23.7",
-        "23.8",
-        "23.9",
-        "23.10",
-        "23.11"
+        "F-WCS-03"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -1889,15 +1292,8 @@
         "Yala/App/Views/Settings/BiometricSecurityView.swift"
       ],
       "scenarioIDs": [
-        "20.1",
-        "20.2",
-        "20.3",
-        "20.4",
-        "20.5",
-        "20.6",
-        "20.7",
-        "20.8",
-        "20.9"
+        "F-BIO-01",
+        "F-BIO-02"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -1912,21 +1308,7 @@
         "Yala/Services/NotificationService.swift"
       ],
       "scenarioIDs": [
-        "27.2.1",
-        "27.2.2",
-        "27.2.3",
-        "27.2.4",
-        "27.3.1",
-        "27.3.2",
-        "27.4.1",
-        "27.4.2",
-        "27.4.3",
-        "27.4.4",
-        "27.5.1",
-        "27.5.2",
-        "27.5.3",
-        "27.6.2",
-        "27.6.3"
+        "F-BUD-04"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -1940,18 +1322,7 @@
         "Yala/Shared/ControlCenterIntents.swift"
       ],
       "scenarioIDs": [
-        "29.1.1",
-        "29.1.2",
-        "29.2.1",
-        "29.2.2",
-        "29.2.3",
-        "29.3.1",
-        "29.3.2",
-        "29.4.1",
-        "29.4.2",
-        "29.5.1",
-        "29.5.2",
-        "29.5.3"
+        "F-WCS-04"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -1965,10 +1336,9 @@
         "Yala/Services/**"
       ],
       "scenarioIDs": [
-        "14.2",
-        "14.7",
-        "14.8",
-        "14.9"
+        "F-EDG-01",
+        "F-EDG-02",
+        "F-EDG-03"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -1983,13 +1353,8 @@
         "Yala/App/Views/Shared/TrialBanner.swift"
       ],
       "scenarioIDs": [
-        "39.1 Paywall muestra info de trial en plan cards",
-        "39.2 Botón de compra cambia con trial",
-        "39.3 Sheet post-onboarding aparece correctamente",
-        "39.4 Sheet NO aparece si ya es Pro",
-        "39.5 Flujo Empezar prueba gratis abre SubscriptionView",
-        "39.6 Quizás después cierra el sheet",
-        "39.7 Localización de trial UI"
+        "F-PRO-01",
+        "F-PRO-02"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2007,13 +1372,14 @@
         "Yala/Services/Groups/PendingLeaveShareTracker.swift"
       ],
       "scenarioIDs": [
-        "A0-19",
-        "A0-20",
-        "M6-04",
-        "M6-06",
-        "M6-07",
-        "M6-14",
-        "B-BRIDGE-25"
+        "F-S4-03",
+        "F-S4-04",
+        "F-S4-06",
+        "F-S4-07",
+        "F-S4-08",
+        "F-S4-09",
+        "F-S4-10",
+        "F-S5-01"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2029,14 +1395,8 @@
         "Yala/App/Models/RouterEntryGate.swift"
       ],
       "scenarioIDs": [
-        "27.1 Configuración de notificación",
-        "27.2 Prompt primera vez",
-        "27.3 Deep links",
-        "27.4 Rate limiting",
-        "27.5 Seed para upgrade",
-        "28.5 Nudges y Growth",
-        "A3-04",
-        "SP3-01"
+        "F-S4-01",
+        "F-S5-03"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2054,17 +1414,10 @@
         "Yala/App/AppBootstrapper.swift"
       ],
       "scenarioIDs": [
-        "30.1",
-        "30.2",
-        "30.3",
-        "30.4",
-        "30.5",
-        "30.6",
-        "30.7",
-        "30.8",
-        "30.9",
-        "30.10",
-        "30.11"
+        "F-ICL-01",
+        "F-ICL-02",
+        "F-ICL-03",
+        "F-ICL-04"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2080,12 +1433,8 @@
         "Yala/App/Logic/RemoteWipeSignalDecider.swift"
       ],
       "scenarioIDs": [
-        "36.1 PreferenceSyncService — Propagación de Preferencias (R2)",
-        "36.2 Alerta Datos encontrados con Defaults Detectados (R1)",
-        "36.3 Guardia de Semilla con Flag (R8 — TOCTOU Race)",
-        "36.4 Deduplicación de Categorías (R4)",
-        "36.5 Periodo de Gracia ante Wipe Remoto (R7)",
-        "36.6 Bootstrap Order"
+        "F-ICL-02",
+        "F-ICL-03"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2103,57 +1452,10 @@
         "Yala/App/Services/ImageOCR/OCRResult.swift"
       ],
       "scenarioIDs": [
-        "18.9",
-        "18.10",
-        "18.11",
-        "18.12",
-        "18.13",
-        "18.14",
-        "18.15",
-        "18.16",
-        "18.17",
-        "18.18",
-        "18.19",
-        "18.20",
-        "18.21",
-        "18.22",
-        "18.23",
-        "18.24",
-        "18.25",
-        "18.26",
-        "18.27",
-        "18.28",
-        "18.29",
-        "18.30",
-        "18.31",
-        "18.32",
-        "18.33",
-        "18.34",
-        "18.35",
-        "18.36",
-        "18.37",
-        "18.38",
-        "18.39",
-        "18.40",
-        "18.41",
-        "18.42",
-        "18.43",
-        "18.44",
-        "18.45",
-        "18.46",
-        "18.47",
-        "18.48",
-        "18.49",
-        "18.50",
-        "18.51",
-        "18.52",
-        "18.53",
-        "18.54",
-        "18.55",
-        "18.56",
-        "18.57",
-        "18.58",
-        "Sección 18 - Validaciones de UI + Validaciones de Vision API"
+        "F-VIM-04",
+        "F-VIM-05",
+        "F-VIM-06",
+        "F-VIM-08"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2168,15 +1470,8 @@
         "Yala/Utils/XLSXReader.swift"
       ],
       "scenarioIDs": [
-        "12.1",
-        "12.2",
-        "12.3",
-        "12.3.1",
-        "12.3.2",
-        "12.3.3",
-        "12.3.4",
-        "12.3.5",
-        "12.3.6"
+        "F-IMP-01",
+        "F-IMP-02"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2192,8 +1487,11 @@
         "Yala/App/Models/PresentationCoordinator.swift"
       ],
       "scenarioIDs": [
-        "26.3.1",
-        "26.3.2"
+        "F-INB-01",
+        "F-INB-02",
+        "F-INB-03",
+        "F-INB-04",
+        "F-INB-05"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2208,12 +1506,7 @@
         "Yala/Models/MerchantMemory.swift"
       ],
       "scenarioIDs": [
-        "19.1 (1, 2, 3 - Canonicalización)",
-        "19.2 (4, 5, 6, 7 - Sugerencia de Subcategoría)",
-        "19.3 (8, 9 - Integración con Voz)",
-        "19.4 (10 - Integración con Imágenes)",
-        "19.5 (11, 12 - Corrección y Aprendizaje)",
-        "19.6 (13 - Data Wipe)"
+        "F-TX-06"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2237,26 +1530,7 @@
         "Yala/App/AppBootstrapper.swift"
       ],
       "scenarioIDs": [
-        "BG-CSV-01",
-        "BG-CSV-02",
-        "BG-CSV-03",
-        "BG-CSV-04",
-        "BG-CSV-05",
-        "BG-CSV-06",
-        "TX-CSV-07",
-        "TX-CSV-08",
-        "MIG-V2-FLASH-01",
-        "MIG-V2-FLASH-02",
-        "MIG-V2-FLASH-03",
-        "MIG-V2-FLASH-04",
-        "MIG-V2-FLASH-05",
-        "MIG-V2-FLASH-06",
-        "MIG-V2-FLASH-07",
-        "MIG-V2-FLASH-08",
-        "MIG-V2-FLASH-09",
-        "MIG-V2-FLASH-10",
-        "MIG-V2-FLASH-11",
-        "MIG-V2-FLASH-12"
+        "F-IMP-04"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2272,9 +1546,7 @@
         "Yala/App/Views/Settings/NotificationsSettingsView.swift"
       ],
       "scenarioIDs": [
-        "24.2",
-        "24.3",
-        "24.14"
+        "F-NOT-02"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2288,7 +1560,12 @@
         "Yala/App/Services/PreferenceSyncService.swift"
       ],
       "scenarioIDs": [
-        "9.X4"
+        "F-PAN-01",
+        "F-PAN-02",
+        "F-PAN-03",
+        "F-PAN-04",
+        "F-PAN-05",
+        "F-PAN-06"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2301,11 +1578,9 @@
         "Yala/App/Views/**"
       ],
       "scenarioIDs": [
-        "Sección 15: Checklist Pre-Release — Matriz por Módulo",
-        "Checklist por Idioma",
-        "Checklist por Moneda",
-        "Checklist de Performance",
-        "Checklist Final"
+        "F-EDG-01",
+        "F-EDG-02",
+        "F-EDG-03"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2321,14 +1596,7 @@
         "Yala/Models/ScheduledPayment.swift"
       ],
       "scenarioIDs": [
-        "50b.1 Hora configurada (BUG-36)",
-        "50.2 Pago ya pagado (BUG-37)",
-        "50.3 Draft en warm resume (BUG-38)",
-        "50.4 Días restantes (BUG-39)",
-        "51.1 Background task lifecycle",
-        "51.2 Cold launch debounce",
-        "51.3 Non-Gregorian calendar",
-        "51.4 Brand voice spot check"
+        "F-SCH-03"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2345,13 +1613,8 @@
         "Yala/App/Views/Image/ImageSelectionView.swift"
       ],
       "scenarioIDs": [
-        "21.1",
-        "21.2",
-        "21.3",
-        "21.7",
-        "21.8",
-        "21.9",
-        "21.10"
+        "F-TX-05",
+        "F-TX-06"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2365,7 +1628,7 @@
         "Yala/Utils/TransactionCSVImportService.swift"
       ],
       "scenarioIDs": [
-        "5.10.4"
+        "F-IMP-02"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2379,37 +1642,9 @@
         "Yala/Services/VoiceTranscriptionService.swift"
       ],
       "scenarioIDs": [
-        "17.13",
-        "17.14",
-        "17.15",
-        "17.16",
-        "17.17",
-        "17.18",
-        "17.19",
-        "17.20",
-        "17.21",
-        "17.22",
-        "17.23",
-        "17.24",
-        "17.25",
-        "17.26",
-        "17.27",
-        "17.28",
-        "17.29",
-        "17.30",
-        "17.31",
-        "17.32",
-        "17.33",
-        "17.34",
-        "17.35",
-        "17.36",
-        "17.37",
-        "17.38",
-        "17.39",
-        "17.40",
-        "17.41",
-        "17.42",
-        "Sección 17 - Validaciones de UI (botón micrófono, círculo pulsante, contador duración, estados de carga, mensajes de error)"
+        "F-VIM-02",
+        "F-VIM-03",
+        "F-VIM-08"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2425,11 +1660,12 @@
         "Web/src/i18n/translations.ts"
       ],
       "scenarioIDs": [
-        "A4-03",
-        "A4-06",
-        "A4-07",
-        "A4-12",
-        "A4-21"
+        "F-WEL-01",
+        "F-WEL-02",
+        "F-WEL-03",
+        "F-WEL-04",
+        "F-WEL-05",
+        "F-WEL-06"
       ],
       "classification": "manual",
       "coverage": "manual",
@@ -2446,36 +1682,8 @@
         "Yala/Services/WidgetDataCache.swift"
       ],
       "scenarioIDs": [
-        "28.1.1",
-        "28.1.2",
-        "28.1.3",
-        "28.1.4",
-        "28.1.5",
-        "28.1.6",
-        "28.1.7",
-        "28.1.8",
-        "28.2.1",
-        "28.2.2",
-        "28.2.3",
-        "28.2.4",
-        "28.2.5",
-        "28.3.1",
-        "28.3.2",
-        "28.3.3",
-        "28.3.4",
-        "28.3.5",
-        "28.3.6",
-        "28.4.1",
-        "28.4.2",
-        "28.4.3",
-        "28.4.4",
-        "28.4.5",
-        "28.4.6",
-        "28.5.1",
-        "28.5.2",
-        "28.5.3",
-        "28.6.1",
-        "28.6.2"
+        "F-WCS-05",
+        "F-WCS-06"
       ],
       "classification": "manual",
       "coverage": "manual",
