@@ -3702,6 +3702,14 @@ enum L10n {
         static var wipeGroupsExclusionNote: String {
             ls("settings.wipeGroupsExclusionNote", comment: "")
         }
+        /// Descripción de "Borrar datos" en modo solo-grupos (sin finanzas personales).
+        static var resetDataDescriptionGroupsOnly: String {
+            ls("settings.resetDataDescriptionGroupsOnly", comment: "")
+        }
+        /// Advertencia de la alerta de borrado en modo solo-grupos.
+        static var deleteDataWarningGroupsOnly: String {
+            ls("settings.deleteDataWarningGroupsOnly", comment: "")
+        }
         static var delete: String { ls("settings.delete", comment: "") }
         static var cancel: String { ls("settings.cancel", comment: "") }
         static var iconOriginal: String { ls("settings.iconOriginal", comment: "") }

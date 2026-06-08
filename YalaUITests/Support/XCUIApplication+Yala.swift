@@ -22,7 +22,8 @@ extension XCUIApplication {
         onboarding: Bool = false,
         inboxAlert: Bool = false,
         forceUpdate: Bool = false,
-        aiConsent: Bool = false
+        aiConsent: Bool = false,
+        groupInvite: Bool = false
     ) -> XCUIApplication {
         var args = ["-uitest"]
         if reset { args.append("-uitest-reset") }
@@ -40,6 +41,7 @@ extension XCUIApplication {
         if inboxAlert { args.append("-uitest-inbox-alert") }
         if forceUpdate { args.append("-uitest-force-update") }
         if aiConsent { args.append("-uitest-ai-consent") }
+        if groupInvite { args.append("-uitest-group-invite") }
         launchArguments = args
         launch()
         return self

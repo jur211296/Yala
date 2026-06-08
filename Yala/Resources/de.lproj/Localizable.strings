@@ -4432,3 +4432,9 @@
 
 /* Split type short label (segmented control) */
 "split.typeSharesShort" = "Anteile";
+
+/* Reset-data screen description — groups-only mode */
+"settings.resetDataDescriptionGroupsOnly" = "Dieser Vorgang setzt dein Yala-Profil und deine Einstellungen auf einen Anfangszustand zurück. Deine Gruppen werden nicht gelöscht: Verwalte sie im Tab „Gruppen“.";
+
+/* Delete-data confirmation warning — groups-only mode */
+"settings.deleteDataWarningGroupsOnly" = "Diese Aktion ist unwiderruflich. Dein Yala-Profil und deine Einstellungen werden zurückgesetzt.";

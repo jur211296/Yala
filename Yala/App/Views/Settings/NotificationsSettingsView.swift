@@ -16,17 +16,30 @@ struct NotificationsSettingsView: View {
 
     @State private var viewModel = NotificationsSettingsViewModel()
 
+    private var isGroupInviteMode: Bool { SessionState.shared.isGroupInviteMode }
+
+    /// En solo-grupos solo la notificación de grupos (event-driven); el resto son
+    /// recordatorios/reportes/pagos personales. Regla en `GroupInviteVisibilityPolicy`.
+    private var visibleNotifications: [NotificationItem] {
+        let visibleTypes = Set(GroupInviteVisibilityPolicy.visibleNotificationTypes(
+            NotificationType.allCases, isGroupInvite: isGroupInviteMode))
+        return viewModel.notifications.filter { visibleTypes.contains($0.notificationType) }
+    }
+
     var body: some View {
         ZStack {
             PanelBackgroundView()
 
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    // Notificaciones configurables con budgetAlerts integrado
-                    if viewModel.isEmpty {
-                        // Solo mostrar budgetAlertsSection cuando no hay otras notificaciones
-                        budgetAlertsSection
-                        emptyState
+                    // Notificaciones configurables con budgetAlerts integrado.
+                    // En solo-grupos se filtra a la notif de grupos (sin budgetAlerts ni "+").
+                    if visibleNotifications.isEmpty {
+                        if !isGroupInviteMode {
+                            // Solo mostrar budgetAlertsSection cuando no hay otras notificaciones
+                            budgetAlertsSection
+                            emptyState
+                        }
                     } else {
                         notificationsListWithBudgetAlerts
                     }
@@ -45,11 +58,13 @@ struct NotificationsSettingsView: View {
                     dismiss()
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
-                    viewModel.isCreatingNew = true
+            if !isGroupInviteMode {
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
+                        viewModel.isCreatingNew = true
+                    }
+                    .accessibilityIdentifier("notifications_add")
                 }
-                .accessibilityIdentifier("notifications_add")
             }
         }
         .sheet(isPresented: $viewModel.isCreatingNew, onDismiss: { viewModel.closeEditor() }) {
@@ -129,11 +144,14 @@ struct NotificationsSettingsView: View {
     /// Notifications list with budgetAlertsSection at the end
     private var notificationsListWithBudgetAlerts: some View {
         VStack(spacing: DS.Spacing.md) {
-            ForEach(viewModel.notifications) { notification in
+            ForEach(visibleNotifications) { notification in
                 notificationCard(for: notification)
             }
 
-            budgetAlertsSection
+            // Alertas de presupuesto: finanzas personales — ocultas en solo-grupos.
+            if !isGroupInviteMode {
+                budgetAlertsSection
+            }
         }
     }
 

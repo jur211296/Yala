@@ -541,7 +541,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/NotificationsSettingsUITests",
       "owner": "",
-      "lastVerified": "2026-06-02"
+      "lastVerified": "2026-06-08"
     },
     {
       "area": "onboarding-flow",
@@ -690,9 +690,9 @@
         "F-SET-03"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/ProfileSettingsUITests",
+      "coverage": "xcuitest:YalaUITests/ProfileSettingsUITests, YalaUITests/ProfileGroupInviteUITests",
       "owner": "",
-      "lastVerified": "2026-06-03"
+      "lastVerified": "2026-06-08"
     },
     {
       "area": "setup-checklist",
@@ -1114,7 +1114,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-08"
     },
     {
       "area": "setup-checklist-demos",
@@ -1171,7 +1171,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-08"
     },
     {
       "area": "transaction-success-view",

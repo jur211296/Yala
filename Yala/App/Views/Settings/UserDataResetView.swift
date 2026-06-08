@@ -42,7 +42,9 @@ struct UserDataResetView: View {
                                     .font(DS.Typography.title)
 
                                 Text(
-                                    L10n.Settings.resetDataDescription
+                                    sessionState.isGroupInviteMode
+                                        ? L10n.Settings.resetDataDescriptionGroupsOnly
+                                        : L10n.Settings.resetDataDescription
                                 )
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
@@ -96,7 +98,9 @@ struct UserDataResetView: View {
             }
         } message: {
             Text(
-                L10n.Settings.deleteDataWarning + "\n\n"
+                (sessionState.isGroupInviteMode
+                    ? L10n.Settings.deleteDataWarningGroupsOnly
+                    : L10n.Settings.deleteDataWarning) + "\n\n"
                 + L10n.Settings.wipeICloudWarning + "\n\n"
                 + L10n.Settings.wipeGroupsExclusionNote
             )

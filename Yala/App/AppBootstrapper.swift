@@ -349,6 +349,16 @@ final class AppBootstrapper {
             UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
             UserDefaults.standard.set(true, forKey: "hasShownWelcomeChooser")
         }
+        // Modo solo-grupos determinista: onboarding saltado + onboardingMode=.groupInvite
+        // + tab Grupos seleccionado. El init de SessionState no deriva el tab, así que se
+        // setea explícitamente (idempotente; no-op en release vía hasArg).
+        if UITestHooks.forceGroupInvite {
+            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+            UserDefaults.standard.set(true, forKey: "hasShownWelcomeChooser")
+            OnboardingMode.setCurrent(.groupInvite)
+            SessionState.shared.onboardingMode = .groupInvite
+            SessionState.shared.selectedMainTab = .groups
+        }
     }
 
     /// Seed de datos UI-test al final del bootstrap + señal `uitest_ready`.

@@ -4444,3 +4444,9 @@
 
 /* Split type short label (segmented control) */
 "split.typeSharesShort" = "Udziały";
+
+/* Reset-data screen description — groups-only mode */
+"settings.resetDataDescriptionGroupsOnly" = "Ta operacja przywróci Twój profil i ustawienia Yala do stanu początkowego. Twoje grupy nie zostaną usunięte: zarządzaj nimi w zakładce Grupy.";
+
+/* Delete-data confirmation warning — groups-only mode */
+"settings.deleteDataWarningGroupsOnly" = "Tej operacji nie można cofnąć. Twój profil i ustawienia Yala zostaną przywrócone.";

@@ -4444,3 +4444,9 @@
 
 /* Split type short label (segmented control) */
 "split.typeSharesShort" = "Aandelen";
+
+/* Reset-data screen description — groups-only mode */
+"settings.resetDataDescriptionGroupsOnly" = "Deze actie zet je Yala-profiel en voorkeuren terug naar de begintoestand. Je groepen worden niet verwijderd: beheer ze via het tabblad Groepen.";
+
+/* Delete-data confirmation warning — groups-only mode */
+"settings.deleteDataWarningGroupsOnly" = "Deze actie is onomkeerbaar. Je Yala-profiel en voorkeuren worden teruggezet.";

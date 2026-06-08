@@ -72,6 +72,17 @@ struct ProfileView: View {
         FeatureGateService.shared.isProUser
     }
 
+    /// GC-08: en modo solo-grupos el perfil se reduce a lo esencial de grupos +
+    /// opciones universales; se ocultan las filas de finanzas personales.
+    private var isGroupInviteMode: Bool {
+        SessionState.shared.isGroupInviteMode
+    }
+
+    /// En solo-grupos no se muestra cromo Pro (no hay venta de Pro en ese modo).
+    private var showsProBadge: Bool {
+        isProUser && !isGroupInviteMode
+    }
+
     private var isVoiceLocked: Bool {
         !FeatureGateService.shared.canAccess(.voiceInput)
     }
@@ -112,7 +123,11 @@ struct ProfileView: View {
                             profileHeader
 
                             // Sections
-                            organizacionSection
+                            // Organización gestiona finanzas personales (cuentas, categorías,
+                            // presupuestos…): se omite por completo en modo solo-grupos.
+                            if !isGroupInviteMode {
+                                organizacionSection
+                            }
                             preferenciasSection
                             datosSection
                             seguridadSection
@@ -253,8 +268,9 @@ struct ProfileView: View {
         .task {
             // El coach mark monta un overlay-spotlight que intercepta taps; en uitest
             // bloquearía la navegación de Settings. Suprimido como el resto de overlays
-            // de primer uso (F1c).
-            guard !UITestHooks.isActive else { return }
+            // de primer uso (F1c). También en solo-grupos: varios anclajes apuntan a
+            // filas (Cuentas, Categorías…) ocultas en ese modo.
+            guard !UITestHooks.isActive, !isGroupInviteMode else { return }
             if !appPreferences.hasSeenSettingsTour {
                 do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
                 if !appPreferences.hasSeenSettingsTour {
@@ -263,7 +279,7 @@ struct ProfileView: View {
             }
         }
         .task(id: appPreferences.hasSeenSettingsTour) {
-            guard !UITestHooks.isActive else { return }
+            guard !UITestHooks.isActive, !isGroupInviteMode else { return }
             guard appPreferences.hasSeenSettingsTour else { return }
             // Re-check eligibility (covers race: subscribed before tours completed)
             ProTourManager.shared.triggerIfEligible()
@@ -288,7 +304,7 @@ struct ProfileView: View {
                     Circle()
                         .stroke(
                             LinearGradient(
-                                colors: isProUser
+                                colors: showsProBadge
                                     ? DS.Gradients.proBadge
                                     : [theme.accent, theme.accent.opacity(0.6)],
                                 startPoint: .topLeading,
@@ -320,7 +336,7 @@ struct ProfileView: View {
                     }
 
                     // Spark badge for Pro users
-                    if isProUser {
+                    if showsProBadge {
                         ZStack {
                             Circle()
                                 .fill(.thCard)
@@ -341,7 +357,7 @@ struct ProfileView: View {
                 .foregroundStyle(.primary)
 
             // Pro badge with cyan spark (only here, so it stands out)
-            if isProUser {
+            if showsProBadge {
                 proBadgeWithCyanSpark
             }
 
@@ -353,10 +369,10 @@ struct ProfileView: View {
 
         }
         .padding(.top, DS.Spacing.sm)
-        .padding(.bottom, isProUser ? DS.Spacing.lg : 0)
+        .padding(.bottom, showsProBadge ? DS.Spacing.lg : 0)
         .background(
             Group {
-                if isProUser {
+                if showsProBadge {
                     LinearGradient(
                         // A11Y-DM: tinte dorado Pro sutil decorativo (casi invisible, adapta a Dark Mode)
                         colors: [Color.yellow.opacity(0.03), Color.clear],
@@ -455,27 +471,36 @@ struct ProfileView: View {
     private var preferenciasSection: some View {
         SectionBox(title: L10n.Settings.preferences) {
             VStack(spacing: DS.Spacing.none) {
-                profileRow(
-                    icon: "slider.horizontal.3", title: L10n.Settings.personalization,
-                    iconColor: .indigo, destination: .personalization)
-                .accessibilityIdentifier("profile_personalization")
-                .coachMarkAnchor("settingsPersonalization")
-                SubsectionDivider()
+                // Personalización (formato, calendario, modo solo-gastos…) es de
+                // finanzas personales: oculta en solo-grupos.
+                if !isGroupInviteMode {
+                    profileRow(
+                        icon: "slider.horizontal.3", title: L10n.Settings.personalization,
+                        iconColor: .indigo, destination: .personalization)
+                    .accessibilityIdentifier("profile_personalization")
+                    .coachMarkAnchor("settingsPersonalization")
+                    SubsectionDivider()
+                }
+                // Notificaciones: universal (los grupos generan avisos).
                 profileRow(
                     icon: "bell.fill", title: L10n.Settings.notifications, iconColor: .red,
                     destination: .notifications)
                 .accessibilityIdentifier("profile_notifications")
-                SubsectionDivider()
-                profileRow(
-                    icon: "dollarsign.circle.fill", title: L10n.Settings.currencyAndExchange,
-                    iconColor: DS.Semantic.successForeground, destination: .currency
-                )
-                .accessibilityIdentifier("profile_currency")
-                SubsectionDivider()
-                profileRow(
-                    icon: "app.fill", title: L10n.Settings.appIcon,
-                    iconColor: .blue, destination: .appIcon)
-                .coachMarkAnchor("settingsAppIcon")
+                // Divisa/tasas e Icono de app: ocultos en solo-grupos (formato queda en
+                // defaults: 2 decimales + símbolo de la moneda del grupo).
+                if !isGroupInviteMode {
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "dollarsign.circle.fill", title: L10n.Settings.currencyAndExchange,
+                        iconColor: DS.Semantic.successForeground, destination: .currency
+                    )
+                    .accessibilityIdentifier("profile_currency")
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "app.fill", title: L10n.Settings.appIcon,
+                        iconColor: .blue, destination: .appIcon)
+                    .coachMarkAnchor("settingsAppIcon")
+                }
                 SubsectionDivider()
                 profileRow(
                     icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
@@ -497,32 +522,36 @@ struct ProfileView: View {
                     destination: .iCloudSync
                 )
 
-                SubsectionDivider()
+                // Importar/exportar operan sobre transacciones personales: ocultos en
+                // solo-grupos (solo existen movimientos virtuales de grupo).
+                if !isGroupInviteMode {
+                    SubsectionDivider()
 
-                Button {
-                    activeSheet = .importIntro
-                } label: {
-                    settingsRowContent(
-                        icon: "tray.and.arrow.down.fill", title: L10n.Settings.importData,
-                        iconColor: .blue)
+                    Button {
+                        activeSheet = .importIntro
+                    } label: {
+                        settingsRowContent(
+                            icon: "tray.and.arrow.down.fill", title: L10n.Settings.importData,
+                            iconColor: .blue)
+                    }
+                    .buttonStyle(.plain)
+
+                    SubsectionDivider()
+
+                    Button {
+                        activeSheet = .exportWizard
+                    } label: {
+                        settingsRowContent(
+                            icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
+                            iconColor: .mint
+                        )
+                        .opacity(!viewModel.hasTransactions ? 0.5 : 1.0)
+                    }
+                    .accessibilityHint(!viewModel.hasTransactions ? L10n.Accessibility.noTransactionsToExport : "")
+                    .disabled(!viewModel.hasTransactions)
+                    .buttonStyle(.plain)
+                    .coachMarkAnchor("proExportExtended")
                 }
-                .buttonStyle(.plain)
-
-                SubsectionDivider()
-
-                Button {
-                    activeSheet = .exportWizard
-                } label: {
-                    settingsRowContent(
-                        icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
-                        iconColor: .mint
-                    )
-                    .opacity(!viewModel.hasTransactions ? 0.5 : 1.0)
-                }
-                .accessibilityHint(!viewModel.hasTransactions ? L10n.Accessibility.noTransactionsToExport : "")
-                .disabled(!viewModel.hasTransactions)
-                .buttonStyle(.plain)
-                .coachMarkAnchor("proExportExtended")
 
                 SubsectionDivider()
 
@@ -544,10 +573,13 @@ struct ProfileView: View {
                     title: BiometricAuthService.shared.biometricType.displayName,
                     iconColor: DS.Semantic.successForeground,
                     destination: .biometricSecurity)
-                SubsectionDivider()
-                profileRow(
-                    icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
-                    iconColor: .blue, destination: .siriShortcuts)
+                // Atajos de Siri: registran gastos personales — fuera de alcance en solo-grupos.
+                if !isGroupInviteMode {
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
+                        iconColor: .blue, destination: .siriShortcuts)
+                }
                 SubsectionDivider()
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -559,14 +591,18 @@ struct ProfileView: View {
                         iconColor: .blue)
                 }
                 .buttonStyle(.plain)
-                SubsectionDivider()
-                profileRow(
-                    icon: "hand.raised.fill", title: L10n.Settings.aiPrivacy,
-                    iconColor: .indigo, destination: .aiPrivacy)
-                SubsectionDivider()
-                profileRow(
-                    icon: "creditcard.fill", title: L10n.Settings.subscriptions,
-                    iconColor: .purple, destination: .subscription)
+                // Privacidad IA (chat) y Suscripción Pro: ligadas a finanzas personales.
+                // En solo-grupos el upgrade fluye por "Activar Yala completo".
+                if !isGroupInviteMode {
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "hand.raised.fill", title: L10n.Settings.aiPrivacy,
+                        iconColor: .indigo, destination: .aiPrivacy)
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "creditcard.fill", title: L10n.Settings.subscriptions,
+                        iconColor: .purple, destination: .subscription)
+                }
                 #if DEBUG
                 if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {
                     SubsectionDivider()
@@ -701,11 +737,15 @@ struct ProfileView: View {
     private var ayudaSection: some View {
         SectionBox(title: L10n.Settings.help) {
             VStack(spacing: DS.Spacing.none) {
-                profileRow(
-                    icon: "book.fill", title: L10n.Settings.tutorials,
-                    iconColor: .electricIndigo, destination: .tips)
-                .coachMarkAnchor("settingsTutorials")
-                SubsectionDivider()
+                // Tutoriales: el catálogo es de finanzas personales (no hay tutorial de
+                // grupos) → oculto en solo-grupos.
+                if !isGroupInviteMode {
+                    profileRow(
+                        icon: "book.fill", title: L10n.Settings.tutorials,
+                        iconColor: .electricIndigo, destination: .tips)
+                    .coachMarkAnchor("settingsTutorials")
+                    SubsectionDivider()
+                }
                 profileRow(
                     icon: "questionmark.circle.fill", title: L10n.Settings.faq,
                     iconColor: .orange, destination: .faq)

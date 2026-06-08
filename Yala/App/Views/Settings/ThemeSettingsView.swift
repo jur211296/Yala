@@ -2,8 +2,9 @@
 //  ThemeSettingsView.swift
 //  Yala
 //
-//  Theme selection with 6 themes: 3 free + 3 PRO.
+//  Theme selection with 9 themes: 4 free + 5 PRO.
 //  Grid layout with preview cards following AppIconSettingsView pattern.
+//  En modo solo-grupos solo se muestran los temas free (sin candados de venta).
 //
 
 import SwiftUI
@@ -13,6 +14,8 @@ struct ThemeSettingsView: View {
     @Environment(ThemeManager.self) private var themeManager
 
     private let featureGate = FeatureGateService.shared
+
+    private var isGroupInviteMode: Bool { SessionState.shared.isGroupInviteMode }
 
     /// Called after theme changes to dismiss the entire profile sheet
     var onThemeChanged: (() -> Void)?
@@ -54,7 +57,7 @@ struct ThemeSettingsView: View {
 
                     // Theme Grid
                     LazyVGrid(columns: columns, spacing: DS.Spacing.lg) {
-                        ForEach(AppTheme.displayOrder) { appTheme in
+                        ForEach(GroupInviteVisibilityPolicy.selectableThemes(isGroupInvite: isGroupInviteMode)) { appTheme in
                             themeCard(for: appTheme)
                         }
                     }

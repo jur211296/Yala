@@ -3668,3 +3668,9 @@
 
 /* Split type short label (segmented control) */
 "split.typeSharesShort" = "Proporção";
+
+/* Reset-data screen description — groups-only mode */
+"settings.resetDataDescriptionGroupsOnly" = "Esta operacao redefine seu perfil e suas preferencias do Yala para um estado inicial. Seus grupos nao sao eliminados: gerencie-os na aba Grupos.";
+
+/* Delete-data confirmation warning — groups-only mode */
+"settings.deleteDataWarningGroupsOnly" = "Esta acao e irreversivel. Seu perfil e suas preferencias do Yala serao redefinidos.";

@@ -4442,3 +4442,9 @@
 
 /* Split type short label (segmented control) */
 "split.typeSharesShort" = "Quote";
+
+/* Reset-data screen description — groups-only mode */
+"settings.resetDataDescriptionGroupsOnly" = "Questa operazione ripristina il tuo profilo e le tue preferenze Yala a uno stato iniziale. I tuoi gruppi non vengono eliminati: gestiscili dalla scheda Gruppi.";
+
+/* Delete-data confirmation warning — groups-only mode */
+"settings.deleteDataWarningGroupsOnly" = "Questa azione e irreversibile. Il tuo profilo e le tue preferenze Yala verranno ripristinati.";

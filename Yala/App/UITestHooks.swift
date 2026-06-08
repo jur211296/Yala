@@ -42,6 +42,10 @@ final class UITestHooks {
     /// SIN marcar onboarding completado. Para testear el flujo de onboarding aislado.
     nonisolated static var startAtOnboarding: Bool { hasArg("-uitest-onboarding") }
 
+    /// `-uitest-group-invite`: arranca en modo solo-grupos (`OnboardingMode.groupInvite`),
+    /// con onboarding saltado y el tab Grupos seleccionado. Para testear el Perfil reducido.
+    nonisolated static var forceGroupInvite: Bool { hasArg("-uitest-group-invite") }
+
     /// `-uitest-inbox-alert`: tras el seed, encola `.showInboxAlert` con un payload de
     /// muestra para presentar el InboxAlertModal sin depender del sync de CloudKit.
     nonisolated static var showInboxAlert: Bool { hasArg("-uitest-inbox-alert") }
