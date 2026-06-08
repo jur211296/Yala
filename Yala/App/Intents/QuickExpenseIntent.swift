@@ -112,12 +112,13 @@ struct ApplePayTransactionIntent: AppIntent {
     // MARK: - Perform
 
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
+    func perform() async throws -> some IntentResult {
         TelemetryService.track(.intentInvoked, parameters: ["intent_type": "applePay"])
 
         guard let amountString = amount else {
             TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_amount"])
-            return .result(dialog: "shortcut.applePay.error.noAmount")
+            await notifyFailure()
+            return .result()
         }
 
         let container: ModelContainer
@@ -130,14 +131,17 @@ struct ApplePayTransactionIntent: AppIntent {
             #if DEBUG
             print("ApplePayTransactionIntent: Error creating ModelContainer: \(error)")
             #endif
-            return .result(dialog: "shortcut.error.database")
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "database"])
+            await notifyFailure()
+            return .result()
         }
 
         let context = container.mainContext
 
         guard let parsedResult = parseAmountAndCurrency(from: amountString, context: context) else {
             TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_amount"])
-            return .result(dialog: "shortcut.applePay.error.noAmount")
+            await notifyFailure()
+            return .result()
         }
 
         let finalAmount = parsedResult.amount
@@ -158,7 +162,9 @@ struct ApplePayTransactionIntent: AppIntent {
             accountCount = 0
         }
         guard accountCount > 0 else {
-            return .result(dialog: "shortcut.error.noAccount")
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_account"])
+            await notifyFailure()
+            return .result()
         }
 
         // Try to find account by detected currency (if unique match)
@@ -215,35 +221,46 @@ struct ApplePayTransactionIntent: AppIntent {
         do {
             try context.save()
         } catch {
-            return .result(dialog: "shortcut.error.save")
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "save_failed"])
+            await notifyFailure()
+            return .result()
         }
 
         let fallbackCurrency = detectedCurrency ?? "USD"
         let notifAmount = YalaFormatterStatic.currency(value: finalAmount, currencyCode: fallbackCurrency, forceFullPrecision: true)
         let noteText = finalNote.isEmpty ? "" : " — \(finalNote)"
         let notifBody = L10n.Shortcut.Notification.body(L10n.Shortcut.Notification.expense, notifAmount, noteText)
-        let notifTitle = L10n.Shortcut.Notification.title
 
-        // Push notification fire-and-forget — automation Wallet tiene budget ~5-10s.
-        // Esperar a notificationCenter.add() puede pasar el límite y hacer que iOS
-        // reporte "no se pudo ejecutar el atajo" tras un save() exitoso.
-        Task.detached(priority: .utility) {
-            await NotificationService.shared.sendNotification(
-                title: notifTitle,
-                body: notifBody,
-                deepLink: "inbox"
-            )
-        }
-
-        let formattedAmount = formatIntentCurrency(amount: finalAmount, currencyCode: fallbackCurrency)
-        let noteDisplay = finalNote.isEmpty ? "Apple Pay" : finalNote
-        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "applePay", "outcome": "draft_created"])
-        return .result(
-            dialog: "shortcut.applePay.success \(formattedAmount) \(noteDisplay)"
+        // Sin ProvidesDialog/ShowsSnippetView: la automation Wallet corre con la pantalla
+        // bloqueada, donde iOS no puede presentar UI → reportaría "no se pudo ejecutar el
+        // atajo" aunque el draft ya esté guardado. El único feedback es la notificación
+        // local (sí llega bloqueada). Se envía con `await` (no Task.detached): sendNotification
+        // solo consulta permisos + notificationCenter.add() (~ms), muy por debajo del budget,
+        // y await garantiza el envío antes de que el proceso del intent termine.
+        await NotificationService.shared.sendNotification(
+            title: L10n.Shortcut.Notification.title,
+            body: notifBody,
+            deepLink: "inbox"
         )
+
+        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "applePay", "outcome": "draft_created"])
+        return .result()
     }
 
     // MARK: - Helpers
+
+    /// Notificación de fallo. Sin dialog ni throw: la automation Wallet corre con la
+    /// pantalla bloqueada y cualquier UI haría que iOS reporte "no se pudo ejecutar el
+    /// atajo". La notif local sí llega bloqueada, así el usuario sabe que su pago no se
+    /// registró. `deepLink: nil` porque en los paths de fallo no hay draft que abrir.
+    @MainActor
+    private func notifyFailure() async {
+        await NotificationService.shared.sendNotification(
+            title: L10n.Shortcut.Notification.errorTitle,
+            body: L10n.Shortcut.Notification.errorBody,
+            deepLink: nil
+        )
+    }
 
     /// Parses amount and currency from Wallet text format
     /// Examples: "$32.04" -> (32.04, "USD"), "S/ 25.90" -> (25.90, "PEN"), "€25,50" -> (25.50, "EUR")

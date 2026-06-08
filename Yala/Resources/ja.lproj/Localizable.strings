@@ -2332,8 +2332,6 @@
 "shortcut.applePay.param.amount.description" = "取引金額(Walletから)";
 "shortcut.applePay.param.merchant" = "店舗";
 "shortcut.applePay.param.merchant.description" = "店舗名";
-"shortcut.applePay.error.noAmount" = "金額が必要です。Walletから取引金額を割り当ててください。";
-"shortcut.applePay.success %@ %@" = "ドラフトを作成しました: %2$@で%1$@。受信箱で確認してください。";
 
 // Summary localizado: la key es el literal inglés del macro Summary("...") con \(\.$var) → ${var}.
 "Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}" = "Apple Payから記録: 金額 ${amount}、店舗 ${merchant}";
@@ -4450,3 +4448,9 @@
 
 /* Delete-data confirmation warning — groups-only mode */
 "settings.deleteDataWarningGroupsOnly" = "この操作は取り消せません。Yalaのプロフィールと設定がリセットされます。";
+
+/* Apple Pay automation: failure notification title */
+"shortcut.notification.errorTitle" = "支払いを記録できませんでした";
+
+/* Apple Pay automation: failure notification body */
+"shortcut.notification.errorBody" = "Apple Payの支払いを保存できませんでした。Yalaを開いて手動で記録してください。";

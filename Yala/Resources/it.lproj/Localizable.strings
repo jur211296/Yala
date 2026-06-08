@@ -2330,8 +2330,6 @@
 "shortcut.applePay.param.amount.description" = "L'importo della transazione (da Wallet)";
 "shortcut.applePay.param.merchant" = "Esercente";
 "shortcut.applePay.param.merchant.description" = "Il nome dell'esercente";
-"shortcut.applePay.error.noAmount" = "L'importo è obbligatorio. Assegna l'importo della transazione da Wallet.";
-"shortcut.applePay.success %@ %@" = "Bozza creata: %@ presso %@. Controlla la posta in arrivo.";
 
 // Summary localizado: la key es el literal inglés del macro Summary("...") con \(\.$var) → ${var}.
 "Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}" = "Registra da Apple Pay i campi importo: ${amount} ed esercente: ${merchant}";
@@ -4448,3 +4446,9 @@
 
 /* Delete-data confirmation warning — groups-only mode */
 "settings.deleteDataWarningGroupsOnly" = "Questa azione e irreversibile. Il tuo profilo e le tue preferenze Yala verranno ripristinati.";
+
+/* Apple Pay automation: failure notification title */
+"shortcut.notification.errorTitle" = "Pagamento non registrato";
+
+/* Apple Pay automation: failure notification body */
+"shortcut.notification.errorBody" = "Non siamo riusciti a salvare il tuo pagamento Apple Pay. Apri Yala per registrarlo manualmente.";

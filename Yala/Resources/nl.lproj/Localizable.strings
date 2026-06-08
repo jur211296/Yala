@@ -2332,8 +2332,6 @@
 "shortcut.applePay.param.amount.description" = "Het bedrag van de transactie (uit Wallet)";
 "shortcut.applePay.param.merchant" = "Verkoper";
 "shortcut.applePay.param.merchant.description" = "Naam van de verkoper";
-"shortcut.applePay.error.noAmount" = "Bedrag is vereist. Wijs het transactiebedrag uit Wallet toe.";
-"shortcut.applePay.success %@ %@" = "Concept aangemaakt: %@ bij %@. Check je inbox om het te bekijken.";
 
 // Summary localizado: la key es el literal inglés del macro Summary("...") con \(\.$var) → ${var}.
 "Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}" = "Boek vanuit Apple Pay de velden bedrag: ${amount} en verkoper: ${merchant}";
@@ -4450,3 +4448,9 @@
 
 /* Delete-data confirmation warning — groups-only mode */
 "settings.deleteDataWarningGroupsOnly" = "Deze actie is onomkeerbaar. Je Yala-profiel en voorkeuren worden teruggezet.";
+
+/* Apple Pay automation: failure notification title */
+"shortcut.notification.errorTitle" = "Betaling niet geboekt";
+
+/* Apple Pay automation: failure notification body */
+"shortcut.notification.errorBody" = "We konden je Apple Pay-betaling niet opslaan. Open Yala om hem handmatig te boeken.";

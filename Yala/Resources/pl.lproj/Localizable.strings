@@ -2332,8 +2332,6 @@
 "shortcut.applePay.param.amount.description" = "Kwota transakcji (z Wallet)";
 "shortcut.applePay.param.merchant" = "Sprzedawca";
 "shortcut.applePay.param.merchant.description" = "Nazwa sprzedawcy";
-"shortcut.applePay.error.noAmount" = "Kwota jest wymagana. Przypisz kwotę transakcji z Wallet.";
-"shortcut.applePay.success %@ %@" = "Utworzono szkic: %@ w %@. Sprawdź skrzynkę, aby przejrzeć.";
 
 // Summary localizado: la key es el literal inglés del macro Summary("...") con \(\.$var) → ${var}.
 "Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}" = "Zapisz z Apple Pay pola kwota: ${amount} i sprzedawca: ${merchant}";
@@ -4450,3 +4448,9 @@
 
 /* Delete-data confirmation warning — groups-only mode */
 "settings.deleteDataWarningGroupsOnly" = "Tej operacji nie można cofnąć. Twój profil i ustawienia Yala zostaną przywrócone.";
+
+/* Apple Pay automation: failure notification title */
+"shortcut.notification.errorTitle" = "Nie zapisano płatności";
+
+/* Apple Pay automation: failure notification body */
+"shortcut.notification.errorBody" = "Nie udało się zapisać płatności Apple Pay. Otwórz Yala, aby zapisać ją ręcznie.";

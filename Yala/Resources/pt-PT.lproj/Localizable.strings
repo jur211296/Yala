@@ -2847,13 +2847,11 @@
 "setup.subtitle" = "Configure o Yala passo a passo";
 "setup.title" = "Primeiros passos";
 "shortcut.applePay.description" = "Cria um rascunho na caixa de entrada a partir de um pagamento Apple Pay. Após o gatilho do Wallet, conecte Valor → valor e Comerciante → comerciante.";
-"shortcut.applePay.error.noAmount" = "O valor é obrigatório. Atribua o valor da transação do Wallet.";
 "shortcut.applePay.param.amount" = "Valor";
 "shortcut.applePay.param.amount.description" = "O valor da transação (do Wallet)";
 "shortcut.applePay.param.merchant" = "Comerciante";
 "shortcut.applePay.param.merchant.description" = "O nome do comerciante";
 "shortcut.applePay.shortTitle" = "Registrar pagamento Apple Pay";
-"shortcut.applePay.success %@ %@" = "Rascunho criado: %@ em %@. Verifique sua caixa de entrada.";
 "shortcut.applePay.title" = "Registrar pagamento Apple Pay";
 "shortcut.error.consentRequired" = "Aceite o consentimento de IA no app antes de usar este atalho.";
 "shortcut.error.database" = "Não foi possível acessar o banco de dados";
@@ -3674,3 +3672,9 @@
 
 /* Delete-data confirmation warning — groups-only mode */
 "settings.deleteDataWarningGroupsOnly" = "Esta acao e irreversivel. Seu perfil e suas preferencias do Yala serao redefinidos.";
+
+/* Apple Pay automation: failure notification title */
+"shortcut.notification.errorTitle" = "Pagamento não registrado";
+
+/* Apple Pay automation: failure notification body */
+"shortcut.notification.errorBody" = "Não foi possível salvar seu pagamento do Apple Pay. Abra o Yala para registrá-lo manualmente.";

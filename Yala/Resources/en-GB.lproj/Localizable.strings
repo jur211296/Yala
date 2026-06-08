@@ -2867,13 +2867,11 @@
 "setup.subtitle" = "Set up Yala step by step";
 "setup.title" = "Getting started";
 "shortcut.applePay.description" = "Creates a draft in your inbox from an Apple Pay transaction. Use after the 'When I tap a card' Wallet trigger and connect Amount → amount, Merchant → merchant.";
-"shortcut.applePay.error.noAmount" = "Amount is required. Assign the transaction amount from Wallet.";
 "shortcut.applePay.param.amount" = "Amount";
 "shortcut.applePay.param.amount.description" = "The transaction amount (from Wallet)";
 "shortcut.applePay.param.merchant" = "Merchant";
 "shortcut.applePay.param.merchant.description" = "The merchant name";
 "shortcut.applePay.shortTitle" = "Record Apple Pay payment";
-"shortcut.applePay.success %@ %@" = "Draft created: %@ at %@. Check your inbox to review.";
 "shortcut.applePay.title" = "Record Apple Pay payment";
 "shortcut.error.consentRequired" = "Accept the AI consent in the app before using this shortcut.";
 "shortcut.error.database" = "Could not access database";
@@ -3669,3 +3667,9 @@
 
 /* Delete-data confirmation warning — groups-only mode */
 "settings.deleteDataWarningGroupsOnly" = "This action is irreversible. Your Yala profile and preferences will be reset.";
+
+/* Apple Pay automation: failure notification title */
+"shortcut.notification.errorTitle" = "Couldn't record payment";
+
+/* Apple Pay automation: failure notification body */
+"shortcut.notification.errorBody" = "We couldn't save your Apple Pay payment. Open Yala to record it manually.";

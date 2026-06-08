@@ -2332,8 +2332,6 @@
 "shortcut.applePay.param.amount.description" = "交易金额(来自 Wallet)";
 "shortcut.applePay.param.merchant" = "商家";
 "shortcut.applePay.param.merchant.description" = "商家名称";
-"shortcut.applePay.error.noAmount" = "金额必填。请从 Wallet 分配交易金额。";
-"shortcut.applePay.success %@ %@" = "草稿已创建:%@,在 %@。请到收件箱查看。";
 
 // Summary localizado: la key es el literal inglés del macro Summary("...") con \(\.$var) → ${var}.
 "Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}" = "从 Apple Pay 记录字段 amount: ${amount} 和 merchant: ${merchant}";
@@ -4450,3 +4448,9 @@
 
 /* Delete-data confirmation warning — groups-only mode */
 "settings.deleteDataWarningGroupsOnly" = "此操作不可逆。你的 Yala 个人资料和偏好将被重置。";
+
+/* Apple Pay automation: failure notification title */
+"shortcut.notification.errorTitle" = "无法记录支付";
+
+/* Apple Pay automation: failure notification body */
+"shortcut.notification.errorBody" = "无法保存你的 Apple Pay 支付。请打开 Yala 手动记录。";

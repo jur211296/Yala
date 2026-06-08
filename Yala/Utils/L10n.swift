@@ -1744,11 +1744,15 @@ enum L10n {
             static var draftReasonCurrencyChanged: String { ls("groups.bridge.draftReasonCurrencyChanged", comment: "") }
             // Activation/deactivation modals (F12)
             static var activateTitle: String { ls("groups.bridge.activateTitle", comment: "") }
-            static var activateBody: String { ls("groups.bridge.activateBody", comment: "") }
+            static func activateBody(_ count: Int) -> String {
+                String(format: ls("groups.bridge.activateBody", comment: ""), count)
+            }
             static var activateOptionFromNow: String { ls("groups.bridge.activateOptionFromNow", comment: "") }
             static var activateOptionFromNowHint: String { ls("groups.bridge.activateOptionFromNowHint", comment: "") }
             static var activateOptionImportAll: String { ls("groups.bridge.activateOptionImportAll", comment: "") }
-            static var activateOptionImportAllHint: String { ls("groups.bridge.activateOptionImportAllHint", comment: "") }
+            static func activateOptionImportAllHint(_ count: Int) -> String {
+                String(format: ls("groups.bridge.activateOptionImportAllHint", comment: ""), count)
+            }
             static var activateImportRegenerationNote: String { ls("groups.bridge.activateImportRegenerationNote", comment: "") }
             static var deactivateTitle: String { ls("groups.bridge.deactivateTitle", comment: "") }
             static var deactivateBody: String { ls("groups.bridge.deactivateBody", comment: "") }
@@ -5762,6 +5766,8 @@ enum L10n {
             static var title: String { ls("shortcut.notification.title", comment: "") }
             static var expense: String { ls("shortcut.notification.expense", comment: "") }
             static var income: String { ls("shortcut.notification.income", comment: "") }
+            static var errorTitle: String { ls("shortcut.notification.errorTitle", comment: "") }
+            static var errorBody: String { ls("shortcut.notification.errorBody", comment: "") }
             static func body(_ type: String, _ amount: String, _ note: String) -> String {
                 String(format: ls("shortcut.notification.body", comment: ""), type, amount, note)
             }
