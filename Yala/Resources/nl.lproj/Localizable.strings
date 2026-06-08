@@ -4432,3 +4432,15 @@
 
 /* VoiceOver: collapse a collapsible row */
 "accessibility.collapse" = "Inklappen";
+
+/* Split type short label (segmented control) */
+"split.typeEqualShort" = "Gelijk";
+
+/* Split type short label (segmented control) */
+"split.typePercentageShort" = "Procent";
+
+/* Split type short label (segmented control) */
+"split.typeExactShort" = "Bedrag";
+
+/* Split type short label (segmented control) */
+"split.typeSharesShort" = "Aandelen";

@@ -243,6 +243,30 @@ struct GroupSplitCalculatorTests {
         #expect(result == nil)
     }
 
+    // MARK: - Single Participant (cualquier tipo recibe el total)
+
+    @Test func exactSingleParticipant() {
+        // Exact que NO sumaría el total, pero al ser el único participante recibe todo.
+        let result = GroupSplitCalculator.calculate(
+            total: 100,
+            splitType: .exact,
+            participants: participants(["A"], values: [40])
+        )
+        let s = shares(result)
+        #expect(s["A"] == 100)
+    }
+
+    @Test func percentageSingleParticipant() {
+        // Porcentaje que NO sumaría 100, pero al ser el único participante recibe todo.
+        let result = GroupSplitCalculator.calculate(
+            total: 100,
+            splitType: .percentage,
+            participants: participants(["A"], values: [40])
+        )
+        let s = shares(result)
+        #expect(s["A"] == 100)
+    }
+
     // MARK: - Edge Cases
 
     @Test func emptyParticipantsReturnsNil() {

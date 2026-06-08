@@ -43,7 +43,7 @@ struct GroupExpenseFormView: View {
     @State private var showAccountSelector = false  // M6 Caso A
 
     /// Guard para evitar que `onTypeChange` del segmented dispare `showSplitDetail` al
-    /// hidratar prefill / mount inicial (cuando default del grupo es `.percentage`).
+    /// hidratar prefill / mount inicial (cuando el default del grupo no es `.equal`).
     /// Se setea a `true` al final de `onAppear`.
     @State private var didCompleteInitialPrefill = false
 
@@ -171,8 +171,12 @@ struct GroupExpenseFormView: View {
                 .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showCurrencyPicker) {
-                CurrencySelectorView(selectedCurrency: currencyCodeBinding)
-                    .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+                // NavigationStack para que el .toolbar con la "X" de CurrencySelectorView
+                // se renderice (sin barra de navegación no hay dónde colocarlo).
+                NavigationStack {
+                    CurrencySelectorView(selectedCurrency: currencyCodeBinding)
+                }
+                .presentationDetents(DS.Adaptive.sheetDetents([.large]))
             }
             .sheet(isPresented: $showAccountSelector) {
                 // M6: filtrado por moneda para que la cuenta seleccionada siempre sea compatible.
@@ -344,8 +348,9 @@ struct GroupExpenseFormView: View {
     private var splitTypeSegmentedSelector: some View {
         SplitTypeSegmentedSelector(selectedType: $viewModel.splitType) { newType in
             // Guard: solo abre el sheet cuando el cambio fue por tap del user
-            // (post-prefill / mount) Y requiere input (≠ .equal).
-            guard didCompleteInitialPrefill, newType != .equal else { return }
+            // (post-prefill / mount), requiere input (≠ .equal) y hay más de un
+            // participante (con uno solo no hay nada que repartir).
+            guard didCompleteInitialPrefill, newType != .equal, viewModel.isSplitConfigurable else { return }
             dismissKeyboard()
             showSplitDetail = true
         }
@@ -358,6 +363,8 @@ struct GroupExpenseFormView: View {
     /// `GroupSplitChipFormatter`. Chevron indica que es tappeable: abre el sheet.
     private var splitChipDetail: some View {
         Button {
+            // Con un solo participante no hay nada que configurar: el chip queda informativo.
+            guard viewModel.isSplitConfigurable else { return }
             dismissKeyboard()
             showSplitDetail = true
         } label: {
@@ -368,9 +375,11 @@ struct GroupExpenseFormView: View {
                         .font(DS.Typography.labelTiny)
                         .foregroundStyle(Color.hotPink)
                 }
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(DS.Semantic.splitMethodForeground.opacity(0.6))
+                if viewModel.isSplitConfigurable {
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.labelTiny)
+                        .foregroundStyle(DS.Semantic.splitMethodForeground.opacity(0.6))
+                }
             }
             .foregroundStyle(DS.Semantic.splitMethodForeground)
             .padding(.horizontal, DS.Spacing.md)

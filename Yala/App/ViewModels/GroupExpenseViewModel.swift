@@ -91,7 +91,15 @@ final class GroupExpenseViewModel {
         amount - sharesTotal
     }
 
+    /// `true` solo cuando hay más de un participante: únicamente entonces tiene sentido
+    /// configurar la división (abrir el sheet) o advertir de un desbalance. Con un solo
+    /// participante el split es trivial (todo es suyo).
+    var isSplitConfigurable: Bool { selectedMembers.count > 1 }
+
     var isSharesBalanced: Bool {
+        // Con un solo participante (o ninguno) la división es trivial → nunca desbalanceada.
+        // `canSave` sigue exigiendo monto válido y al menos un participante.
+        if selectedMembers.count <= 1 { return true }
         guard calculatedShares != nil else { return splitType == .equal && !selectedMemberIDs.isEmpty }
         return abs(remainingToAllocate) < 0.02
     }

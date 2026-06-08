@@ -286,4 +286,35 @@ struct GroupExpenseViewModelTests {
 
         #expect(vm.note == "")
     }
+
+    // MARK: - Single Participant (división trivial)
+
+    @Test func multipleParticipantsAreConfigurable() {
+        let (vm, _) = makeViewModel()
+        // Por default los 3 miembros activos quedan seleccionados.
+        #expect(vm.isSplitConfigurable == true)
+    }
+
+    @Test func singleParticipantIsNotConfigurable() {
+        let (vm, members) = makeViewModel()
+        vm.deselectAllMembers()
+        vm.toggleMember(members[0].id.uuidString)  // solo el current user
+        #expect(vm.selectedMemberIDs.count == 1)
+        #expect(vm.isSplitConfigurable == false)
+    }
+
+    @Test func singleParticipantIsBalancedEvenWhenTypeWouldUnbalance() {
+        // Tipo .percentage sin porcentajes configurados normalmente queda "desbalanceado",
+        // pero con un solo participante la división es trivial → balanceada, sin warning.
+        let (vm, members) = makeViewModel(defaultSplit: "percentage")
+        vm.deselectAllMembers()
+        vm.toggleMember(members[0].id.uuidString)
+
+        vm.amountString = "100"
+        #expect(vm.isSharesBalanced == true)
+
+        // También con monto en 0 (estado inicial) — no debe marcar desbalance prematuro.
+        vm.amountString = "0"
+        #expect(vm.isSharesBalanced == true)
+    }
 }

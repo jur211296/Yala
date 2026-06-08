@@ -1643,6 +1643,11 @@ enum L10n {
         static var typeEqual: String { ls("split.typeEqual", comment: "") }
         static var typeExact: String { ls("split.typeExact", comment: "") }
         static var typeShares: String { ls("split.typeShares", comment: "") }
+        // Short labels for the segmented selector (full names stay in the chip below the amount).
+        static var typePercentageShort: String { ls("split.typePercentageShort", comment: "") }
+        static var typeEqualShort: String { ls("split.typeEqualShort", comment: "") }
+        static var typeExactShort: String { ls("split.typeExactShort", comment: "") }
+        static var typeSharesShort: String { ls("split.typeSharesShort", comment: "") }
         static var percentage: String { ls("split.percentage", comment: "") }
         static var people: String { ls("split.people", comment: "") }
         static var yourPart: String { ls("split.yourPart", comment: "") }

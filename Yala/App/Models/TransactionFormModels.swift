@@ -59,8 +59,8 @@ enum TransactionType: String, CaseIterable, Identifiable {
 
 /// Tipo de división para el split calculator
 enum SplitType: String, CaseIterable, Identifiable {
-    case percentage  // primero en allCases (orden del menú); el default real del sistema es .equal
-    case equal
+    case equal       // primero en allCases (orden del segmented y selectores); también el default del sistema
+    case percentage
     case exact
     case shares
 
@@ -72,6 +72,17 @@ enum SplitType: String, CaseIterable, Identifiable {
         case .equal: return L10n.Split.typeEqual
         case .exact: return L10n.Split.typeExact
         case .shares: return L10n.Split.typeShares
+        }
+    }
+
+    /// Etiqueta compacta para el segmented selector. El nombre completo (`displayName`)
+    /// queda reservado al chip debajo del monto en GroupExpenseFormView.
+    var shortName: String {
+        switch self {
+        case .equal: return L10n.Split.typeEqualShort
+        case .percentage: return L10n.Split.typePercentageShort
+        case .exact: return L10n.Split.typeExactShort
+        case .shares: return L10n.Split.typeSharesShort
         }
     }
 

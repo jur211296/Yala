@@ -2,7 +2,9 @@
 //  SplitTypeSegmentedSelector.swift
 //  Yala
 //
-//  Segmented control for SplitType (percentage / equal / exact / shares).
+//  Segmented control for SplitType (equal / percentage / exact / shares),
+//  rendered with short labels and no icons so the four segments fit one row.
+//  The full type name lives in the chip below the amount.
 //  Visual pattern matches TransactionTypeSelectorView (custom HStack with
 //  animated capsule fill) — chosen over Picker(.segmented) for control over
 //  DT XXL fallback and consistent look in iOS 26.
@@ -49,21 +51,17 @@ struct SplitTypeSegmentedSelector: View {
     }
 
     private func pillLabel(for type: SplitType) -> some View {
-        HStack(spacing: DS.Spacing.xxs) {
-            Image(systemName: type.iconName)
-                .font(.footnote.weight(selectedType == type ? .semibold : .regular))
-            Text(type.displayName)
-                .font(.footnote.weight(selectedType == type ? .semibold : .regular))
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .foregroundStyle(selectedType == type ? .white : .secondary)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, DS.Chip.paddingV)
-        .background(
-            Capsule()
-                .fill(selectedType == type ? DS.Semantic.splitMethodForeground : Color.clear)
-        )
+        Text(type.shortName)
+            .font(.footnote.weight(selectedType == type ? .semibold : .regular))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .foregroundStyle(selectedType == type ? .white : .secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, DS.Chip.paddingV)
+            .background(
+                Capsule()
+                    .fill(selectedType == type ? DS.Semantic.splitMethodForeground : Color.clear)
+            )
     }
 
     // MARK: - DT XXL fallback (Menu)

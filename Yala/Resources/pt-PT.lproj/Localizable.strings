@@ -3656,3 +3656,15 @@
 
 /* VoiceOver: collapse a collapsible row */
 "accessibility.collapse" = "Recolher";
+
+/* Split type short label (segmented control) */
+"split.typeEqualShort" = "Iguais";
+
+/* Split type short label (segmented control) */
+"split.typePercentageShort" = "Porcentagem";
+
+/* Split type short label (segmented control) */
+"split.typeExactShort" = "Valor";
+
+/* Split type short label (segmented control) */
+"split.typeSharesShort" = "Proporção";

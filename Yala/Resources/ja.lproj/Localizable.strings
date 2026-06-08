@@ -4432,3 +4432,15 @@
 
 /* VoiceOver: collapse a collapsible row */
 "accessibility.collapse" = "折りたたむ";
+
+/* Split type short label (segmented control) */
+"split.typeEqualShort" = "均等";
+
+/* Split type short label (segmented control) */
+"split.typePercentageShort" = "割合";
+
+/* Split type short label (segmented control) */
+"split.typeExactShort" = "金額";
+
+/* Split type short label (segmented control) */
+"split.typeSharesShort" = "シェア";

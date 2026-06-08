@@ -24,6 +24,13 @@ enum GroupSplitCalculator {
     ) -> [(memberID: String, amount: Double)]? {
         guard total > 0, !participants.isEmpty else { return nil }
 
+        // Un solo participante: recibe el total completo, sea cual sea el tipo de división —
+        // dividir entre uno es trivial. Evita el falso "desbalanceado" en .exact/.percentage
+        // cuando el usuario aún no configuró valores por participante.
+        if participants.count == 1 {
+            return [(memberID: participants[0].memberID, amount: roundTwo(total))]
+        }
+
         switch splitType {
         case .equal:
             return equalSplit(total: total, participants: participants)

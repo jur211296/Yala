@@ -4430,3 +4430,15 @@
 
 /* VoiceOver: collapse a collapsible row */
 "accessibility.collapse" = "Comprimi";
+
+/* Split type short label (segmented control) */
+"split.typeEqualShort" = "Uguali";
+
+/* Split type short label (segmented control) */
+"split.typePercentageShort" = "Percentuale";
+
+/* Split type short label (segmented control) */
+"split.typeExactShort" = "Importo";
+
+/* Split type short label (segmented control) */
+"split.typeSharesShort" = "Quote";
