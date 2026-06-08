@@ -72,7 +72,10 @@ final class CategoryDetailViewModel {
     }
 
     var isSystemCategory: Bool {
-        category.isIncome || category.name == "Otros"
+        // `isSystem` cubre las categorías sistema del bridge de grupos ("Grupos",
+        // "Cobros de grupos"). Se preserva la protección legacy de "Otros" y de las
+        // categorías de ingreso, que ya eran read-only por esta vía.
+        category.isSystem || category.isIncome || category.name == "Otros"
     }
 
     // MARK: - Init

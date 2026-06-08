@@ -35,6 +35,10 @@ struct CategoriesSettingsListView: View {
                         if !viewModel.hiddenCategories.isEmpty {
                             hiddenCategoriesSection
                         }
+
+                        if !viewModel.systemCategories.isEmpty {
+                            systemCategoriesSection
+                        }
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
@@ -205,6 +209,37 @@ struct CategoriesSettingsListView: View {
                     if index < viewModel.hiddenCategories.count - 1 {
                         Divider()
                             .padding(.leading, viewModel.isEditing ? DS.Spacing.formIndent + DS.Spacing.xs : DS.Spacing.lg)
+                    }
+                }
+            }
+            .padding(.vertical, DS.Chip.paddingV)
+            .solidCard()
+        }
+    }
+
+    // MARK: - System Categories Section (read-only)
+
+    /// Categorías sistema del bridge de grupos. Espejo de la sección "Sistema" de
+    /// Cuentas: filas sin Button, sin chevron y sin botón de borrado — read-only.
+    private var systemCategoriesSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // Reusa el string "Sistema" de Account.System (misma palabra) para no
+            // duplicar la key en los 16 locales.
+            Text(L10n.Account.System.badge)
+                .font(DS.Typography.headline)
+                .foregroundStyle(Color.primary.opacity(0.6))
+                .padding(.leading, DS.Chip.paddingV)
+
+            VStack(spacing: DS.Spacing.none) {
+                ForEach(Array(viewModel.systemCategories.enumerated()), id: \.element.id) { index, category in
+                    categoryRow(category)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .accessibilityElement(children: .combine)
+
+                    if index < viewModel.systemCategories.count - 1 {
+                        Divider()
+                            .padding(.leading, DS.Spacing.lg)
                     }
                 }
             }

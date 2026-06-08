@@ -19,6 +19,10 @@ struct SubcategoryDetailView: View {
 
     private var isEditing: Bool { subcategoryToEdit != nil }
 
+    /// Las subcategorías sistema (bridge de grupos + legacy "Ajuste de saldo"/
+    /// "Transferencia") son read-only: no se pueden eliminar.
+    private var isSystemSubcategory: Bool { subcategoryToEdit?.isAnySystem ?? false }
+
     @State private var name: String
     @State private var selectedNeed: SubcategoryNeed
     @State private var isVisible: Bool
@@ -296,8 +300,8 @@ struct SubcategoryDetailView: View {
                 }
             }
 
-            // Delete button (only when editing an existing subcategory)
-            if isEditing {
+            // Delete button (only when editing an existing, non-system subcategory)
+            if isEditing && !isSystemSubcategory {
                 SectionBox(title: "") {
                     Button {
                         transactionCount = countTransactions()

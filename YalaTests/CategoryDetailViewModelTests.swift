@@ -14,8 +14,8 @@ import Testing
 struct CategoryDetailViewModelTests {
 
     /// Create a Category without ModelContext (avoids CloudKit race condition crashes)
-    private func makePlainCategory(name: String, isIncome: Bool = false) -> YalaCategory {
-        YalaCategory(name: name, colorHex: "#EF4444", isIncome: isIncome)
+    private func makePlainCategory(name: String, isIncome: Bool = false, isSystem: Bool = false) -> YalaCategory {
+        YalaCategory(name: name, colorHex: "#EF4444", isIncome: isIncome, isSystem: isSystem)
     }
 
     // MARK: - hasUnsavedChanges
@@ -71,5 +71,20 @@ struct CategoryDetailViewModelTests {
     @MainActor @Test func isSystemCategory_normal_false() {
         let vm = CategoryDetailViewModel(category: makePlainCategory(name: "Comida"))
         #expect(vm.isSystemCategory == false)
+    }
+
+    @MainActor @Test func isSystemCategory_systemFlagExpense_true() {
+        // "Grupos" (expense, isSystem). Caso raíz del bug: el getter previo solo
+        // miraba isIncome / "Otros", así que esta categoría daba false y exponía
+        // los controles de edición y borrado.
+        let vm = CategoryDetailViewModel(category: makePlainCategory(name: "Grupos", isSystem: true))
+        #expect(vm.isSystemCategory == true)
+    }
+
+    @MainActor @Test func isSystemCategory_systemFlagIncome_true() {
+        // "Cobros de grupos" (income, isSystem) — protegida por isSystem además de isIncome.
+        let vm = CategoryDetailViewModel(
+            category: makePlainCategory(name: "Cobros de grupos", isIncome: true, isSystem: true))
+        #expect(vm.isSystemCategory == true)
     }
 }

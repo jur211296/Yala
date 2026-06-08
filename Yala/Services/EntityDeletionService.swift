@@ -88,6 +88,12 @@ final class EntityDeletionService {
     /// - Parameter subcategories: The category's subcategories (pass from @Query)
     /// - Note: This will orphan any transactions using these subcategories
     func deleteCategory(_ category: Category, withSubcategories subcategories: [Subcategory]) throws {
+        // Defensa en profundidad: las categorías sistema del bridge de grupos no se
+        // pueden eliminar (rompería el bridge SplitExpense ↔ TransactionItem).
+        guard !category.isSystem else {
+            throw EntityDeletionError.systemEntityProtected
+        }
+
         let context = try requireContext()
 
         // Delete subcategories first to avoid SwiftUI @Query conflicts
@@ -107,6 +113,12 @@ final class EntityDeletionService {
     /// Deletes a subcategory
     /// - Parameter subcategory: The subcategory to delete
     func deleteSubcategory(_ subcategory: Subcategory) throws {
+        // Defensa en profundidad: las subcategorías sistema (bridge de grupos +
+        // legacy "Ajuste de saldo"/"Transferencia") no se pueden eliminar.
+        guard !subcategory.isAnySystem else {
+            throw EntityDeletionError.systemEntityProtected
+        }
+
         let affectedBudgets = subcategory.budgets ?? []
         try delete(subcategory)
         reencodeBudgetCSVMirrors(in: affectedBudgets)
@@ -364,6 +376,7 @@ final class EntityDeletionService {
 enum EntityDeletionError: LocalizedError {
     case noContext
     case deletionFailed(Error)
+    case systemEntityProtected
 
     var errorDescription: String? {
         switch self {
@@ -371,6 +384,8 @@ enum EntityDeletionError: LocalizedError {
             return "EntityDeletionService: No ModelContext available"
         case .deletionFailed(let error):
             return "EntityDeletionService: Deletion failed - \(error.localizedDescription)"
+        case .systemEntityProtected:
+            return "EntityDeletionService: Cannot delete a system entity"
         }
     }
 }

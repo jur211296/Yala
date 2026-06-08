@@ -39,11 +39,18 @@ final class CategoriesSettingsListViewModel {
     }
 
     var activeCategories: [Category] {
-        orderedCategories.filter { $0.isVisible }
+        orderedCategories.filter { $0.isVisible && !$0.isSystem }
     }
 
     var hiddenCategories: [Category] {
-        orderedCategories.filter { !$0.isVisible }
+        orderedCategories.filter { !$0.isVisible && !$0.isSystem }
+    }
+
+    /// Categorías sistema del bridge de grupos ("Grupos", "Cobros de grupos").
+    /// Se muestran en una sección read-only aparte (espejo de las cuentas sistema):
+    /// no editables ni eliminables, sin navegación al detalle.
+    var systemCategories: [Category] {
+        orderedCategories.filter { $0.isSystem }
     }
 
     var isEmpty: Bool {
@@ -100,6 +107,11 @@ final class CategoriesSettingsListViewModel {
 
     func handleCategoryDelete(_ category: Category) {
         guard let context = modelContext else { return }
+
+        // Las categorías sistema no se borran (esta ruta usa context.delete directo,
+        // sin pasar por EntityDeletionService). Defensa: el botón "−" tampoco se
+        // renderiza para ellas porque viven en la sección read-only.
+        guard !category.isSystem else { return }
 
         let count = countTransactionsInCategory(category)
         if count > 0 {
