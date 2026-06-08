@@ -138,7 +138,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/CategoriesCrudUITests",
       "owner": "",
-      "lastVerified": "2026-06-04"
+      "lastVerified": "2026-06-08"
     },
     {
       "area": "chat-assistant",
