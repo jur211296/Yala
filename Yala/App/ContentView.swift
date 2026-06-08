@@ -398,6 +398,12 @@ struct ContentView: View {
                 authService.appDidEnterForeground()
                 // GC-08: Recalculate user segment on each foreground activation
                 UserSegmentService.shared.recalculate()
+                // Re-emite un invite pendiente persistido si su intent transient fue
+                // dropeado por resetTransients en background. `isPresenting` evita
+                // re-presentar cuando el cover de invite/reconnect ya está abierto.
+                AppBootstrapper.shared.reEmitPendingInviteIfNeeded(
+                    isPresenting: showGroupInviteOnboarding || showGroupReconnect
+                )
             default:
                 break
             }
@@ -1020,6 +1026,9 @@ private struct GroupInviteModifier: ViewModifier {
             }
             .fullScreenCover(isPresented: $showGroupInviteOnboarding) {
                 GroupInviteOnboardingView(inviteMetadata: pendingInviteMetadata) {
+                    // Consumo del invite pendiente: el flujo se completó → no debe
+                    // re-emerger en el próximo cold launch / foreground.
+                    PendingInviteStore.clear()
                     hasCompletedOnboarding = true
                     showGroupInviteOnboarding = false
                     pendingInviteMetadata = nil
@@ -1027,6 +1036,9 @@ private struct GroupInviteModifier: ViewModifier {
                 .environment(SessionState.shared)
             }
             .sheet(isPresented: $showGroupReconnect, onDismiss: {
+                // Consumo del invite pendiente al cerrar el reconnect (X / swipe / CTA).
+                // Incondicional y antes de reabrir welcome → no re-emerge.
+                PendingInviteStore.clear()
                 pendingReconnectInvite = nil
                 // Pre-onboarding: user llegó al sheet vía Chooser → InviteRecoveryView →
                 // handleInviteLink. Cualquier dismiss (X, swipe down, CTA) sin reabrir

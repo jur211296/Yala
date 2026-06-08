@@ -47,11 +47,11 @@ final class AppBootstrapper {
     // MARK: - State
 
     private(set) var isInitialized = false
-    /// Invite share URL buffered before bootstrap completes. Drained inside bootstrap().
-    var deferredInviteShareURL: URL?
-    /// Branded metadata del invite (n/i/c/m del URL) capturada cuando el invite
-    /// llega antes de que bootstrap termine. Drenada junto con `deferredInviteShareURL`.
-    var deferredInviteBrandedMetadata: InviteLinkService.BrandedMetadata = .empty
+    /// Guard runtime (NO persistido) contra procesamiento concurrente de un invite:
+    /// el re-emit (cold launch + foreground) y un `handleInviteLink` warm podrían
+    /// lanzar `acceptShareFromURL` en paralelo. Runtime-only — un re-launch debe
+    /// poder reintentar. El invite pendiente vive en `PendingInviteStore` (persistente).
+    private var isProcessingInvite = false
     private var subscriptionCheckTask: Task<Void, Never>?
     private var remoteChangeTask: Task<Void, Never>?
     private var remoteChangeLeadingFired = false
@@ -309,13 +309,10 @@ final class AppBootstrapper {
         if uiTestActive { await applyUITestSeed(context: context) }
         #endif
 
-        // 19. Process deferred invite link (cold launch via universal link)
-        if let pendingShareURL = deferredInviteShareURL {
-            deferredInviteShareURL = nil
-            let pendingBranded = deferredInviteBrandedMetadata
-            deferredInviteBrandedMetadata = .empty
-            Task { await acceptShareFromURL(pendingShareURL, brandedMetadata: pendingBranded) }
-        }
+        // 19. Re-emit pending invite (cold launch via universal link / native share).
+        // Reads PendingInviteStore (persistent) — covers invites that arrived
+        // pre-bootstrap AND invites dropped by resetTransients in a prior session.
+        reEmitPendingInviteIfNeeded(isPresenting: false)
 
         // 20. Drain DeferredIntentBuffer: re-submit any RouterIntent that
         // arrived during pre-bootstrap, biometric lock, or mid-onboarding.
@@ -1081,15 +1078,16 @@ final class AppBootstrapper {
         #endif
 
         if !isInitialized {
-            deferredInviteShareURL = shareURL
-            deferredInviteBrandedMetadata = brandedMetadata
+            // Persistente (no in-memory) → el invite sobrevive un kill antes de que
+            // bootstrap corra. El paso 19 lo procesa vía `reEmitPendingInviteIfNeeded`.
+            PendingInviteStore.save(PendingInviteEntry(shareURL: shareURL, branded: brandedMetadata))
             #if DEBUG
-            print("AppBootstrapper: Deferring invite — not yet initialized")
+            print("AppBootstrapper: Deferring invite (persisted) — not yet initialized")
             #endif
             return
         }
 
-        Task { await acceptShareFromURL(shareURL, brandedMetadata: brandedMetadata) }
+        processInvite(shareURL: shareURL, branded: brandedMetadata)
     }
 
     /// A12: Decisión de routing para un share aceptado. Pure function — testeable.
@@ -1133,6 +1131,61 @@ final class AppBootstrapper {
         return .showReconnect(mode: .standardReconnect)
     }
 
+    /// Re-emite el invite pendiente persistido si procede. Llamado en cold launch
+    /// (bootstrap paso 19, `isPresenting: false`) y en foreground
+    /// (`ContentView` `.active`, con el estado real de presentación).
+    func reEmitPendingInviteIfNeeded(isPresenting: Bool) {
+        // Simetría con el guard de `handleInviteLink`: no procesar pre-bootstrap
+        // (routing leería SessionState/onboardingMode aún sin inicializar). El paso
+        // 19 corre post-`isInitialized`; un `.active` temprano de ContentView se
+        // difiere hasta ese paso (o al siguiente foreground warm).
+        guard isInitialized else { return }
+        guard let entry = PendingInviteStore.current(),
+              let resolved = entry.resolved(),
+              Self.shouldReEmitInvite(
+                  storeHasEntry: true,
+                  isProcessing: isProcessingInvite,
+                  queueHasInviteIntent: AppRouter.shared.contains(where: Self.isInviteIntent),
+                  isPresenting: isPresenting
+              )
+        else { return }
+        TelemetryService.inviteReEmittedFromStore()
+        processInvite(shareURL: resolved.url, branded: resolved.branded)
+    }
+
+    /// Pure-logic del guard de re-emisión. Re-emite solo si hay un invite pendiente,
+    /// no hay otro procesamiento en vuelo, no hay ya un intent de invite encolado, y
+    /// no hay un invite presentándose (cover abierto) — esto último evita la
+    /// re-presentación espuria que el clear-on-complete causaría con el cover abierto.
+    nonisolated static func shouldReEmitInvite(
+        storeHasEntry: Bool,
+        isProcessing: Bool,
+        queueHasInviteIntent: Bool,
+        isPresenting: Bool
+    ) -> Bool {
+        storeHasEntry && !isProcessing && !queueHasInviteIntent && !isPresenting
+    }
+
+    /// `true` si el intent es uno de los de invite de grupo (guard del re-emit).
+    nonisolated static func isInviteIntent(_ intent: RouterIntent) -> Bool {
+        switch intent {
+        case .presentGroupInviteOnboarding, .presentGroupReconnect: return true
+        default: return false
+        }
+    }
+
+    /// Lanza `acceptShareFromURL` con guard de concurrencia. El `guard` es síncrono
+    /// en MainActor → un segundo llamador lo ve de inmediato y aborta. El flag se
+    /// libera siempre vía `defer`, aunque el fetch/accept lance.
+    private func processInvite(shareURL: URL, branded: InviteLinkService.BrandedMetadata) {
+        guard !isProcessingInvite else { return }
+        isProcessingInvite = true
+        Task { @MainActor in
+            defer { isProcessingInvite = false }
+            await acceptShareFromURL(shareURL, brandedMetadata: branded)
+        }
+    }
+
     /// Acepta un CKShare a partir de su URL.
     /// A12: Comportamiento simétrico con `YalaAppDelegate.userDidAcceptCloudKitShareWith`.
     /// `brandedMetadata` lleva nombre/icono/color del grupo extraídos del URL
@@ -1152,9 +1205,35 @@ final class AppBootstrapper {
             )
         } catch {
             logger.error("Failed to accept share from URL: \(error.localizedDescription, privacy: .public)")
-            RouterEntryGate.shared.submit(.showInviteError(
-                String(localized: "groups.invite.linkInvalidDetail")
-            ))
+            if Self.isRecoverableInviteFetchError(error) {
+                // Red transitoria: NO limpiar el store ni mostrar error — el re-emit
+                // reintentará en el próximo foreground (acotado por el TTL de 24h).
+                #if DEBUG
+                logger.debug("acceptShareFromURL: recoverable network error — will retry on next foreground")
+                #endif
+            } else {
+                // Permanente (share borrado, sin permiso, link inválido): limpia el
+                // store para no re-loopear y notifica al usuario.
+                PendingInviteStore.clear()
+                RouterEntryGate.shared.submit(.showInviteError(
+                    String(localized: "groups.invite.linkInvalidDetail")
+                ))
+            }
+        }
+    }
+
+    /// `true` si el error de fetch/accept del share es transitorio (red) y vale la
+    /// pena reintentar — vs permanente (share borrado, sin permiso, link inválido),
+    /// donde se limpia el store. Espejo de la filosofía de `PendingLeaveShareTracker`
+    /// (persistir para reintentar ante fallos de red).
+    nonisolated static func isRecoverableInviteFetchError(_ error: Error) -> Bool {
+        guard let ckError = error as? CKError else { return false }
+        switch ckError.code {
+        case .networkUnavailable, .networkFailure, .serviceUnavailable,
+             .requestRateLimited, .zoneBusy:
+            return true
+        default:
+            return false
         }
     }
 

@@ -136,6 +136,8 @@ enum AnalyticsEvent: String {
     case routingIntentDeferred       // an incoming intent was persisted to DeferredIntentBuffer
     case routingReadinessBlocked     // a drain was blocked because a modal was visible
     case routingWelcomeChainSuperseded // welcome chain dismissed to let a superseding intent drain (B4-04)
+    case inviteReEmittedFromStore      // a persisted group invite was re-emitted after the transient intent was dropped
+    case invitePendingExpired          // a persisted group invite was purged by TTL (24h) before presenting
 }
 
 enum DuplicateDetectionContext: String {
@@ -265,6 +267,20 @@ enum TelemetryService {
         track(.routingWelcomeChainSuperseded, parameters: [
             "intent": intentID
         ])
+    }
+
+    /// Fires when a persisted group invite is re-emitted from `PendingInviteStore`
+    /// (cold launch or foreground) after the transient intent was dropped by
+    /// `resetTransients`. Confirms the fix rescues invites in production.
+    /// Privacy-first: no payload.
+    static func inviteReEmittedFromStore() {
+        track(.inviteReEmittedFromStore)
+    }
+
+    /// Fires when a persisted group invite is purged by TTL (24h) without ever
+    /// being presented. Privacy-first: no payload.
+    static func invitePendingExpired() {
+        track(.invitePendingExpired)
     }
 
     /// Reports orphan / malformed / pairing repair from `TransferPairReconcileService`.

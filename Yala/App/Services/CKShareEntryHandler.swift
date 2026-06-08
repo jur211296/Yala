@@ -36,6 +36,15 @@ enum CKShareEntryHandler {
         branded: InviteLinkService.BrandedMetadata = .empty,
         source: Source
     ) async {
+        // SSOT de persistencia para AMBOS entry points (universal link +
+        // `userDidAcceptCloudKitShareWith` nativo): los intents de invite son
+        // transient y `AppRouter.resetTransients()` los dropea en `.background`.
+        // Guardamos la share URL (re-resoluble) para re-emitir en cold launch /
+        // foreground. El `CKShare.Metadata` opaco nunca se serializa.
+        if let shareURL = metadata.share.url {
+            PendingInviteStore.save(PendingInviteEntry(shareURL: shareURL, branded: branded))
+        }
+
         let sessionState = SessionState.shared
         let hasCompletedOnboarding = UserDefaults.standard.bool(
             forKey: AppPreferences.Keys.hasCompletedOnboarding

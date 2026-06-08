@@ -5,6 +5,7 @@
 //  Unit tests for AppBootstrapper retry logic and invite link handling.
 //
 
+import CloudKit
 import Foundation
 import SwiftData
 import Testing
@@ -259,5 +260,65 @@ struct AppBootstrapperTests {
             currentMemberStatus: .pendingApproval
         )
         #expect(decision == .showReconnect(mode: .pendingDuplicate))
+    }
+
+    // MARK: - shouldReEmitInvite (pure guard del re-emit de invites pendientes)
+
+    @Test func shouldReEmitInvite_allConditionsMet_returnsTrue() {
+        #expect(AppBootstrapper.shouldReEmitInvite(
+            storeHasEntry: true, isProcessing: false,
+            queueHasInviteIntent: false, isPresenting: false
+        ))
+    }
+
+    @Test func shouldReEmitInvite_noEntry_returnsFalse() {
+        #expect(!AppBootstrapper.shouldReEmitInvite(
+            storeHasEntry: false, isProcessing: false,
+            queueHasInviteIntent: false, isPresenting: false
+        ))
+    }
+
+    @Test func shouldReEmitInvite_alreadyProcessing_returnsFalse() {
+        #expect(!AppBootstrapper.shouldReEmitInvite(
+            storeHasEntry: true, isProcessing: true,
+            queueHasInviteIntent: false, isPresenting: false
+        ))
+    }
+
+    @Test func shouldReEmitInvite_intentAlreadyQueued_returnsFalse() {
+        #expect(!AppBootstrapper.shouldReEmitInvite(
+            storeHasEntry: true, isProcessing: false,
+            queueHasInviteIntent: true, isPresenting: false
+        ))
+    }
+
+    @Test func shouldReEmitInvite_coverPresenting_returnsFalse() {
+        // Cover ya abierto → NO re-emitir (evita re-presentación espuria que el
+        // clear-on-complete causaría con el cover visible).
+        #expect(!AppBootstrapper.shouldReEmitInvite(
+            storeHasEntry: true, isProcessing: false,
+            queueHasInviteIntent: false, isPresenting: true
+        ))
+    }
+
+    // MARK: - isRecoverableInviteFetchError (red transitoria vs permanente)
+
+    @Test func isRecoverableInviteFetchError_networkErrors_returnTrue() {
+        #expect(AppBootstrapper.isRecoverableInviteFetchError(CKError(.networkUnavailable)))
+        #expect(AppBootstrapper.isRecoverableInviteFetchError(CKError(.networkFailure)))
+        #expect(AppBootstrapper.isRecoverableInviteFetchError(CKError(.serviceUnavailable)))
+        #expect(AppBootstrapper.isRecoverableInviteFetchError(CKError(.requestRateLimited)))
+        #expect(AppBootstrapper.isRecoverableInviteFetchError(CKError(.zoneBusy)))
+    }
+
+    @Test func isRecoverableInviteFetchError_permanentErrors_returnFalse() {
+        #expect(!AppBootstrapper.isRecoverableInviteFetchError(CKError(.unknownItem)))
+        #expect(!AppBootstrapper.isRecoverableInviteFetchError(CKError(.permissionFailure)))
+        #expect(!AppBootstrapper.isRecoverableInviteFetchError(CKError(.invalidArguments)))
+    }
+
+    @Test func isRecoverableInviteFetchError_nonCKError_returnsFalse() {
+        struct Boom: Error {}
+        #expect(!AppBootstrapper.isRecoverableInviteFetchError(Boom()))
     }
 }

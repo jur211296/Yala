@@ -92,7 +92,7 @@ enum InviteLinkService {
 
     /// Metadata branded del invite link (parámetros n/i/c/m del URL). Usada
     /// para personalizar el banner de invitación con identidad del grupo.
-    struct BrandedMetadata: Equatable, Sendable {
+    struct BrandedMetadata: Equatable, Sendable, Codable {
         let name: String?
         let icon: String?
         let color: String?

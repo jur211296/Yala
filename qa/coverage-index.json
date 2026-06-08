@@ -448,6 +448,8 @@
         "Yala/App/Views/Groups/GroupStatsView.swift",
         "Yala/Services/Groups/GroupUserIdentityService.swift",
         "Yala/Services/Groups/InviteLinkService.swift",
+        "Yala/Services/Groups/PendingInviteStore.swift",
+        "Yala/App/Services/CKShareEntryHandler.swift",
         "Yala/Models/SplitMember.swift"
       ],
       "scenarioIDs": [
@@ -460,7 +462,7 @@
       "classification": "agentic",
       "coverage": "none",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-08"
     },
     {
       "area": "image-settings-fab",

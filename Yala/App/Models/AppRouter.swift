@@ -151,6 +151,7 @@ final class AppRouter {
         readyConsumers.removeAll()
         revision = 0
         DeferredIntentBuffer.shared.clear()
+        PendingInviteStore.clear()
     }
 
     // MARK: - Internals
