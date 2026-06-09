@@ -127,11 +127,41 @@ final class DraftService {
                 TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
                 return targetTx
             }
-            // TX target ausente: sync race con remote delete del expense, o flow inválido.
-            // Logger.error en lugar de print(DEBUG) para que se capture en producción.
-            Logger(subsystem: "com.yala", category: "GroupBridge").error(
-                "groupExpense draft target TX not found for splitExpenseID=\(splitID, privacy: .public). Falling back."
+            // Target con subcategory==nil ausente: o el gasto ya se clasificó en otro device (y
+            // sincronizó), o el expense se borró remotamente. NO caer al path genérico de abajo
+            // — insertaría una TransactionItem nueva SIN splitExpenseID (fantasma duplicada, ya
+            // que account/amount/subcategory no-nil pasarían los guard let). Resolver según
+            // exista CUALQUIER TX para este splitExpenseID.
+            let logger = Logger(subsystem: "com.yala", category: "GroupBridge")
+            let anyTxDescriptor = FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID == splitID }
             )
+            // Caso A puede tener 2 TX con el mismo splitExpenseID (la real en cuenta del usuario
+            // + la virtual "Préstamo a grupos" en cuenta sistema). Preferir la real para el
+            // retorno idempotente; .first como fallback determinista si solo hubiera virtuales.
+            let candidateTxs = try context.fetch(anyTxDescriptor)
+            let existingTx = candidateTxs.first { $0.account?.isSystemAccount == false } ?? candidateTxs.first
+            cacheDisplayValues(draft)
+            context.delete(draft)
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+
+            if case .discardRedundant = GroupDraftFinalizationLogic.resolveMissingPointerTarget(
+                existsAnyTxForSplitID: existingTx != nil
+            ), let existingTx {
+                // Idempotente: el draft era redundante (la TX ya existía, clasificada en otro device).
+                logger.error(
+                    "groupExpense draft for splitExpenseID=\(splitID, privacy: .public) already classified elsewhere; discarded redundant draft."
+                )
+                TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
+                return existingTx
+            }
+            // No existe ninguna TX → el expense desapareció. El draft stale ya se limpió arriba;
+            // propagar error claro (la sheet de finalización lo muestra en su catch).
+            logger.error(
+                "groupExpense draft target TX missing and no TX exists for splitExpenseID=\(splitID, privacy: .public); deleted stale draft."
+            )
+            throw DraftServiceError.groupExpenseTargetMissing
         }
 
         // A0-Bridge V2.0 (D7): drafts groupSettlement crean TX nueva en cuenta real
@@ -784,6 +814,9 @@ enum DraftServiceError: LocalizedError {
     /// Solo se borran al eliminar el expense/settlement origen en el grupo.
     case cannotDeleteGroupDraft
     case cannotRejectGroupDraft
+    /// Draft-puntero `.groupExpense` cuyo expense origen se borró remotamente (no existe TX).
+    /// El draft stale ya se limpió; este error informa al usuario en la sheet de finalización.
+    case groupExpenseTargetMissing
 
     var errorDescription: String? {
         switch self {
@@ -801,6 +834,8 @@ enum DraftServiceError: LocalizedError {
             return "DraftService: Save failed - \(error.localizedDescription)"
         case .cannotDeleteGroupDraft, .cannotRejectGroupDraft:
             return L10n.Inbox.groupDraftCannotDelete
+        case .groupExpenseTargetMissing:
+            return L10n.Inbox.errorGroupExpenseGone
         }
     }
 }

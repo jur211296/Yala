@@ -4863,6 +4863,9 @@ enum L10n {
         static var errorFutureDate: String {
             ls("inbox.errorFutureDate", comment: "")
         }
+        static var errorGroupExpenseGone: String {
+            ls("inbox.errorGroupExpenseGone", comment: "")
+        }
         static var duplicateWarningTitle: String {
             ls("inbox.duplicateWarningTitle", comment: "")
         }

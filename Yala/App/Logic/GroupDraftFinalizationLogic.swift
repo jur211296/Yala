@@ -68,4 +68,26 @@ enum GroupDraftFinalizationLogic {
         if needsAccount { return .accountOnly }
         return .subcategoryOnly
     }
+
+    // MARK: - Approve-side
+
+    /// Resolución de un draft-puntero `.groupExpense` (Caso A fallback / Caso B / M5 heredado)
+    /// cuyo target — la TX con `splitExpenseID == splitID && subcategory == nil` — NO se encontró.
+    /// Sin esta decisión, `approveDraft` caía al path genérico e insertaba una TX nueva SIN
+    /// `splitExpenseID` → transacción fantasma duplicada (account/amount/subcategory no-nil pasan
+    /// los `guard let`). Ningún draft de grupo debe materializar una TX nueva por fall-through.
+    enum StalePointerResolution: Equatable {
+        /// Ya existe una TX para ese `splitExpenseID` (clasificada en otro device y sincronizada).
+        /// El draft es redundante → borrarlo y devolver la TX existente (idempotente).
+        case discardRedundant
+        /// No existe NINGUNA TX para ese `splitExpenseID` (el expense se borró remotamente).
+        /// Borrar el draft stale y lanzar error claro (la sheet lo muestra).
+        case deleteStaleAndThrow
+    }
+
+    /// - Parameter existsAnyTxForSplitID: ¿hay CUALQUIER TX con ese `splitExpenseID`,
+    ///   independientemente de su subcategoría?
+    static func resolveMissingPointerTarget(existsAnyTxForSplitID: Bool) -> StalePointerResolution {
+        existsAnyTxForSplitID ? .discardRedundant : .deleteStaleAndThrow
+    }
 }

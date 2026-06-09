@@ -4473,3 +4473,6 @@
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
 "inbox.groupExpenseAccountSubcategoryDraft.banner" = "グループ「%@」の支出です。お金が出た口座を割り当て、分類するサブカテゴリーを選んでください。金額と日付はグループが管理します。";
+
+/* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
+"inbox.errorGroupExpenseGone" = "この共有支出はグループにもう存在しません。";

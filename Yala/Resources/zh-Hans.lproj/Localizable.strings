@@ -4473,3 +4473,6 @@
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
 "inbox.groupExpenseAccountSubcategoryDraft.banner" = "群组「%@」的支出。请指定资金来源的账户并选择一个子类别；金额和日期由群组管理。";
+
+/* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
+"inbox.errorGroupExpenseGone" = "此共享支出在群组中已不存在。";

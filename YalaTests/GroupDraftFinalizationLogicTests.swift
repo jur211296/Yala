@@ -112,4 +112,23 @@ struct GroupDraftFinalizationLogicTests {
             targetTransactionIDIsNil: true, needsAccount: false, needsSubcategory: false
         ) == .subcategoryOnly)
     }
+
+    // MARK: - resolveMissingPointerTarget
+
+    @Test
+    func missingPointer_txAlreadyClassified_discardRedundant() {
+        // La TX ya se clasificó en otro device (sync). El draft es redundante → idempotente.
+        #expect(GroupDraftFinalizationLogic.resolveMissingPointerTarget(
+            existsAnyTxForSplitID: true
+        ) == .discardRedundant)
+    }
+
+    @Test
+    func missingPointer_noTxAtAll_deleteStaleAndThrow() {
+        // No existe NINGUNA TX → el expense se borró remotamente. NO materializar TX nueva
+        // (fantasma): limpiar el draft stale y lanzar error.
+        #expect(GroupDraftFinalizationLogic.resolveMissingPointerTarget(
+            existsAnyTxForSplitID: false
+        ) == .deleteStaleAndThrow)
+    }
 }

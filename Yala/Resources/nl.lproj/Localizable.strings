@@ -4473,3 +4473,6 @@
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
 "inbox.groupExpenseAccountSubcategoryDraft.banner" = "Uitgave van groep %@. Wijs de rekening toe waar het geld vandaan kwam en kies een subcategorie om het in te delen; het bedrag en de datum worden door de groep beheerd.";
+
+/* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
+"inbox.errorGroupExpenseGone" = "Deze gedeelde uitgave bestaat niet meer in de groep.";

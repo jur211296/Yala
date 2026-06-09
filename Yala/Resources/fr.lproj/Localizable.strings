@@ -4462,3 +4462,6 @@
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
 "inbox.groupExpenseAccountSubcategoryDraft.banner" = "Dépense du groupe %@. Attribuez le compte d'où provient l'argent et choisissez une sous-catégorie pour la classer ; le montant et la date sont gérés par le groupe.";
+
+/* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
+"inbox.errorGroupExpenseGone" = "Cette dépense partagée n'existe plus dans le groupe.";
