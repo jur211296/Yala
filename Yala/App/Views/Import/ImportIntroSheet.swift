@@ -145,37 +145,34 @@ struct ImportIntroSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                VStack(spacing: DS.Spacing.lg) {
-                    ScrollView {
-                        VStack(spacing: DS.Spacing.xxl) {
-                            introSection
-                            templateSection
-                            toggleSection
-                        }
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.top, DS.Spacing.lg)
-                        .padding(.bottom, DS.Spacing.lg)
-                    }
-
-                    // Bottom Action Button
-                    VStack {
-                        YalaPrimaryButton(
-                            L10n.Import.selectFile,
-                            icon: "square.and.arrow.down",
-                            isDisabled: isImporting,
-                            isLoading: isImporting,
-                            disabledHint: isImporting ? "Importación en proceso" : nil
-                        ) {
-                            startImportFlow()
-                        }
+            VStack(spacing: DS.Spacing.lg) {
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xxl) {
+                        introSection
+                        templateSection
+                        toggleSection
                     }
                     .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.lg)
                 }
+
+                // Bottom Action Button
+                VStack {
+                    YalaPrimaryButton(
+                        L10n.Import.selectFile,
+                        icon: "square.and.arrow.down",
+                        isDisabled: isImporting,
+                        isLoading: isImporting,
+                        disabledHint: isImporting ? "Importación en proceso" : nil
+                    ) {
+                        startImportFlow()
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.lg)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Import.title)
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {

@@ -15,6 +15,9 @@ struct CashFlowOthersSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @State private var selectedDetent: PresentationDetent = .medium
+
+    private var isLargeDetent: Bool { selectedDetent == .large }
 
     private var otherResult: CashFlowOtherResult? {
         if isIncome {
@@ -39,7 +42,7 @@ struct CashFlowOthersSheet: View {
                 .padding(.top, DS.Spacing.md)
                 .yalaSafeBottomPadding()
             }
-            .yalaScreenBackground()
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(isIncome ? L10n.CashFlowPlan.othersIncomeTitle : L10n.CashFlowPlan.othersTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -50,7 +53,7 @@ struct CashFlowOthersSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
     }
 
     // MARK: - Description

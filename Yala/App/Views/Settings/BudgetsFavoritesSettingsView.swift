@@ -19,11 +19,8 @@ struct BudgetsFavoritesSettingsView: View {
     @State private var viewModel = BudgetsFavoritesSettingsViewModel()
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     if viewModel.isEmpty {
                         emptyState
                     } else {
@@ -49,7 +46,7 @@ struct BudgetsFavoritesSettingsView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.budgets)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

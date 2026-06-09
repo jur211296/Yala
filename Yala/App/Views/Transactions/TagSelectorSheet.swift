@@ -22,21 +22,18 @@ struct TagSelectorSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        if viewModel.isEmpty {
-                            emptyState
-                        } else {
-                            tagsList
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    if viewModel.isEmpty {
+                        emptyState
+                    } else {
+                        tagsList
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
                 }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Settings.tags)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

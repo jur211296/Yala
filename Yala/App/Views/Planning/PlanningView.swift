@@ -50,22 +50,19 @@ struct PlanningView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
+            VStack(spacing: DS.Spacing.none) {
+                // Contextual guide for current planning tab
+                planningGuide
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.xs)
 
-                VStack(spacing: DS.Spacing.none) {
-                    // Contextual guide for current planning tab
-                    planningGuide
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.top, DS.Spacing.xs)
-
-                    tabContent
-                }
-                .safeAreaInset(edge: .top) {
-                    navigationChipsBar
-                        .padding(.vertical, DS.Spacing.sm)
-                }
+                tabContent
             }
+            .safeAreaInset(edge: .top) {
+                navigationChipsBar
+                    .padding(.vertical, DS.Spacing.sm)
+            }
+            .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Planning.title)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {

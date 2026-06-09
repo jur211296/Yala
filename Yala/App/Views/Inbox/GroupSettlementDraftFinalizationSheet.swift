@@ -93,7 +93,7 @@ struct GroupSettlementDraftFinalizationSheet: View {
                 .padding(.top, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
-            .yalaScreenBackground()
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Inbox.GroupSettlementDraft.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -87,7 +87,7 @@ struct GroupExpenseDraftFinalizationSheet: View {
                 .padding(.top, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
-            .yalaScreenBackground()
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Inbox.GroupExpenseDraft.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

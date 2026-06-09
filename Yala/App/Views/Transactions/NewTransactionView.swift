@@ -224,10 +224,7 @@ struct NewTransactionView: View {
 
     private var transactionFormView: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                VStack(spacing: DS.Spacing.none) {
+            VStack(spacing: DS.Spacing.none) {
                     // P1-3: oculto en read-only (no se cambia el tipo de TX bridgeada).
                     if !isBridgedReadOnly {
                         transactionTypeSelector
@@ -272,10 +269,10 @@ struct NewTransactionView: View {
                             .padding(.bottom, DS.Spacing.xxl)
                     }
                 }
-                .scaleEffect(duplicateAnimationVisible ? 1.0 : 0.92)
-                .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
-                .dismissKeyboardOnTap()
-            }
+            .scaleEffect(duplicateAnimationVisible ? 1.0 : 0.92)
+            .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
+            .dismissKeyboardOnTap()
+            .yalaScreenBackground(.subtle)
             .navigationTitle(
                 (transactionToEdit != nil && !isDuplicating)
                     ? L10n.Transaction.editTransaction : L10n.Transaction.newTransaction

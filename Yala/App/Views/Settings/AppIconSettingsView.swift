@@ -79,11 +79,8 @@ struct AppIconSettingsView: View {
     ]
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "app.fill")
@@ -115,7 +112,7 @@ struct AppIconSettingsView: View {
                 }
                 .padding()
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.appIconTitle)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

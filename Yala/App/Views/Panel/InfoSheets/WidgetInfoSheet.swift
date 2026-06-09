@@ -50,7 +50,7 @@ struct WidgetInfoSheet<Preview: View>: View {
             .scrollBounceBehavior(.basedOnSize)
             // Fuera del Panel iOS pinta su glass nativo del sheet (sin gradient
             // propio); en el Panel se mantiene el `PanelBackgroundView`.
-            .yalaScreenBackground(isInPanel ? .panel : .transparent)
+            .yalaScreenBackground(isInPanel ? .subtle : .transparent)
             .navigationTitle(kind.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -67,28 +67,25 @@ struct CashFlowCellDetailSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView(.vertical, showsIndicators: false) {
-                    if let m = activeMonth, let lr = activeLineResult {
-                        VStack(spacing: DS.Spacing.xl) {
-                            if m.isCurrent {
-                                currentMonthContent(m: m, lr: lr)
-                            } else if m.isPast {
-                                pastMonthContent(m: m, lr: lr)
-                            } else {
-                                futureMonthContent(m: m, lr: lr)
-                            }
+            ScrollView(.vertical, showsIndicators: false) {
+                if let m = activeMonth, let lr = activeLineResult {
+                    VStack(spacing: DS.Spacing.xl) {
+                        if m.isCurrent {
+                            currentMonthContent(m: m, lr: lr)
+                        } else if m.isPast {
+                            pastMonthContent(m: m, lr: lr)
+                        } else {
+                            futureMonthContent(m: m, lr: lr)
                         }
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.vertical, DS.Spacing.xl)
-                        .yalaSafeBottomPadding()
-                        .dismissKeyboardOnTap()
                     }
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xl)
+                    .yalaSafeBottomPadding()
+                    .dismissKeyboardOnTap()
                 }
-                .scrollDismissesKeyboard(.interactively)
             }
+            .scrollDismissesKeyboard(.interactively)
+            .yalaScreenBackground(.subtle)
             .navigationTitle(lineResult.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

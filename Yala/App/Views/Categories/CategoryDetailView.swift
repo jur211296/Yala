@@ -56,21 +56,18 @@ struct CategoryDetailView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    header
-                    detailsSection
-                    subcategoriesSection
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.xxl)
-                .dismissKeyboardOnTap()
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
+                header
+                detailsSection
+                subcategoriesSection
             }
-            .scrollDismissesKeyboard(.interactively)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.xxl)
+            .dismissKeyboardOnTap()
         }
+        .scrollDismissesKeyboard(.interactively)
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Category.editTitle)
         .swipeBack()
         .toolbar {

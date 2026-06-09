@@ -48,9 +48,7 @@ struct BudgetDetailView: View {
 
     @ViewBuilder
     private var mainContent: some View {
-        ZStack {
-            PanelBackgroundView()
-
+        Group {
             if let summary {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
@@ -65,8 +63,11 @@ struct BudgetDetailView: View {
                     .padding(.vertical, DS.Spacing.xxl)
                 }
                 .scrollViewGlassEdges()
+            } else {
+                Color.clear
             }
         }
+        .yalaScreenBackground(.panel)
         .navigationTitle(budget.name)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

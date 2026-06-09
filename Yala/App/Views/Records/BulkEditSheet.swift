@@ -86,13 +86,10 @@ struct BulkEditSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        // Header with count
-                        Text(L10n.BulkEdit.editCount(selectedCount))
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    // Header with count
+                    Text(L10n.BulkEdit.editCount(selectedCount))
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -132,7 +129,7 @@ struct BulkEditSheet: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                 }
-            }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Action.edit)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -380,13 +377,10 @@ struct BulkTagEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        // Common tags section (tags that ALL selected transactions have)
-                        if !commonTags.isEmpty {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    // Common tags section (tags that ALL selected transactions have)
+                    if !commonTags.isEmpty {
                             SectionBox(title: L10n.BulkEdit.commonTags) {
                                 LazyVStack(spacing: DS.Spacing.none) {
                                     ForEach(Array(commonTags.enumerated()), id: \.element.persistentModelID) { index, tag in
@@ -450,7 +444,7 @@ struct BulkTagEditorSheet: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                 }
-            }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Settings.tags)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -626,25 +620,22 @@ struct BulkNoteEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                VStack(spacing: DS.Spacing.xxl) {
-                    SectionBox(title: "") {
-                        TextField(L10n.Transaction.notePlaceholder, text: $note, axis: .vertical)
-                            .lineLimit(3...6)
-                            .padding(.horizontal, DS.Spacing.lg)
-                            .padding(.vertical, DS.FormRow.paddingV)
-                            .focused($isFocused)
-                            .accessibilityIdentifier("bulk_note_field")
-                    }
-
-                    Spacer()
+            VStack(spacing: DS.Spacing.xxl) {
+                SectionBox(title: "") {
+                    TextField(L10n.Transaction.notePlaceholder, text: $note, axis: .vertical)
+                        .lineLimit(3...6)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.FormRow.paddingV)
+                        .focused($isFocused)
+                        .accessibilityIdentifier("bulk_note_field")
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.xxl)
-                .dismissKeyboardOnTap()
+
+                Spacer()
             }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.xxl)
+            .dismissKeyboardOnTap()
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Transaction.note)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -685,39 +676,36 @@ struct BulkAmountEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                VStack(spacing: DS.Spacing.xxl) {
-                    SectionBox(title: "") {
-                        HStack {
-                            TextField("0.00", text: $amountText)
-                                .keyboardType(.decimalPad)
-                                .font(DS.Typography.title)
-                                .padding(.horizontal, DS.Spacing.lg)
-                                .padding(.vertical, DS.FormRow.paddingV)
-                                .focused($isFocused)
-                                .onChange(of: isFocused) { _, focused in
-                                    if !focused && !amountText.isEmpty {
-                                        let value = AmountInputHelper.parseDecimal(amountText)
-                                        amountText = AmountInputHelper.formatWithGrouping(value)
-                                    }
+            VStack(spacing: DS.Spacing.xxl) {
+                SectionBox(title: "") {
+                    HStack {
+                        TextField("0.00", text: $amountText)
+                            .keyboardType(.decimalPad)
+                            .font(DS.Typography.title)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.vertical, DS.FormRow.paddingV)
+                            .focused($isFocused)
+                            .onChange(of: isFocused) { _, focused in
+                                if !focused && !amountText.isEmpty {
+                                    let value = AmountInputHelper.parseDecimal(amountText)
+                                    amountText = AmountInputHelper.formatWithGrouping(value)
                                 }
-                                .onChange(of: amountText) { _, newValue in
-                                    let filtered = AmountInputHelper.filterAmountInput(newValue)
-                                    if filtered != newValue {
-                                        amountText = filtered
-                                    }
+                            }
+                            .onChange(of: amountText) { _, newValue in
+                                let filtered = AmountInputHelper.filterAmountInput(newValue)
+                                if filtered != newValue {
+                                    amountText = filtered
                                 }
-                        }
+                            }
                     }
-
-                    Spacer()
                 }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.xxl)
-                .dismissKeyboardOnTap()
+
+                Spacer()
             }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.xxl)
+            .dismissKeyboardOnTap()
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Transaction.amount)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -129,60 +129,60 @@ struct RecordsStandaloneView: View {
 
     private var mainContent: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                RecordsTabView(
-                    viewModel: recordsViewModel,
-                    accounts: dataViewModel.accounts,
-                    categories: dataViewModel.categories,
-                    tags: dataViewModel.tags,
-                    subcategories: dataViewModel.allSubcategories,
-                    transactionDateRange: dataViewModel.computeTransactionDateRange(),
-                    defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
-                    onFilterChange: { recalculateData() }
-                )
-
-                // FAB (only when not in selection mode)
-                if !recordsViewModel.isSelectionMode {
-                    VStack {
-                        Spacer()
-                        HStack {
+            RecordsTabView(
+                viewModel: recordsViewModel,
+                accounts: dataViewModel.accounts,
+                categories: dataViewModel.categories,
+                tags: dataViewModel.tags,
+                subcategories: dataViewModel.allSubcategories,
+                transactionDateRange: dataViewModel.computeTransactionDateRange(),
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                onFilterChange: { recalculateData() }
+            )
+            .overlay(alignment: .bottom) {
+                ZStack(alignment: .bottom) {
+                    // FAB (only when not in selection mode)
+                    if !recordsViewModel.isSelectionMode {
+                        VStack {
                             Spacer()
-                            FABStackView(
-                                canUseVoiceInput: canUseVoiceInput,
-                                isVoiceLocked: isVoiceLocked,
-                                isImageLocked: isImageLocked,
-                                isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
-                                chatConsentAccepted: appPreferences.aiChatConsentAccepted,
-                                chatFABVisible: appPreferences.chatFABVisible,
-                                onVoiceTap: { showVoiceRecording = true },
-                                onImageTap: { showImageSelection = true },
-                                onManualTap: { recordsViewModel.showNewTransaction = true },
-                                onUpgradeVoice: { showUpgradeForVoice = true },
-                                onUpgradeImage: { showUpgradeForImage = true },
-                                onChatTap: {
-                                    switch YalaAIOnboardingLogic.nextScreen(
-                                        consentAccepted: appPreferences.aiChatConsentAccepted,
-                                        onboardingShown: appPreferences.hasShownYalaAIOnboarding
-                                    ) {
-                                    case .onboarding: showYalaAIOnboarding = true
-                                    case .chat:       showChatSheet = true
-                                    case .consent:    showChatConsentAlert = true
-                                    }
-                                },
-                                onUpgradeChat: { showUpgradeForChat = true },
-                                onChatConsentNeeded: { showChatConsentAlert = true }
-                            )
+                            HStack {
+                                Spacer()
+                                FABStackView(
+                                    canUseVoiceInput: canUseVoiceInput,
+                                    isVoiceLocked: isVoiceLocked,
+                                    isImageLocked: isImageLocked,
+                                    isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+                                    chatConsentAccepted: appPreferences.aiChatConsentAccepted,
+                                    chatFABVisible: appPreferences.chatFABVisible,
+                                    onVoiceTap: { showVoiceRecording = true },
+                                    onImageTap: { showImageSelection = true },
+                                    onManualTap: { recordsViewModel.showNewTransaction = true },
+                                    onUpgradeVoice: { showUpgradeForVoice = true },
+                                    onUpgradeImage: { showUpgradeForImage = true },
+                                    onChatTap: {
+                                        switch YalaAIOnboardingLogic.nextScreen(
+                                            consentAccepted: appPreferences.aiChatConsentAccepted,
+                                            onboardingShown: appPreferences.hasShownYalaAIOnboarding
+                                        ) {
+                                        case .onboarding: showYalaAIOnboarding = true
+                                        case .chat:       showChatSheet = true
+                                        case .consent:    showChatConsentAlert = true
+                                        }
+                                    },
+                                    onUpgradeChat: { showUpgradeForChat = true },
+                                    onChatConsentNeeded: { showChatConsentAlert = true }
+                                )
+                            }
                         }
                     }
-                }
 
-                // Selection action bar (with animation)
-                if recordsViewModel.isSelectionMode && !recordsViewModel.selectedRecordIDs.isEmpty {
-                    selectionActionBar
+                    // Selection action bar (with animation)
+                    if recordsViewModel.isSelectionMode && !recordsViewModel.selectedRecordIDs.isEmpty {
+                        selectionActionBar
+                    }
                 }
             }
+            .yalaScreenBackground(.panel)
             .animation(.spring(response: DS.Animation.springResponse, dampingFraction: DS.Animation.springDamping), value: recordsViewModel.isSelectionMode)
             .animation(.spring(response: DS.Animation.springResponse, dampingFraction: DS.Animation.springDamping), value: recordsViewModel.selectedRecordIDs.isEmpty)
             .navigationTitle(L10n.Records.title)

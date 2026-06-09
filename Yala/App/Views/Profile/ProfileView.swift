@@ -113,11 +113,8 @@ struct ProfileView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollViewReader { scrollProxy in
-                    ScrollView {
+            ScrollViewReader { scrollProxy in
+                ScrollView {
                         VStack(spacing: DS.Spacing.xxl) {
                             // Header
                             profileHeader
@@ -144,10 +141,10 @@ struct ProfileView: View {
                     }
                     .scrollDisabled(false)
                     .onAppear { settingsScrollProxy = scrollProxy }
-                }
             }
             .navigationTitle(L10n.Profile.title)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {

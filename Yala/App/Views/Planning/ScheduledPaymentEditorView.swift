@@ -178,7 +178,7 @@ struct ScheduledPaymentEditorView: View {
         }
         .scrollViewGlassEdges()
         .scrollDismissesKeyboard(.interactively)
-        .yalaScreenBackground()
+        .yalaScreenBackground(.subtle)
     }
 
     @ToolbarContentBuilder

@@ -19,11 +19,8 @@ struct CategoriesSettingsListView: View {
     @State private var viewModel = CategoriesSettingsListViewModel()
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     if viewModel.isEmpty {
                         emptyState
                     } else {
@@ -44,7 +41,7 @@ struct CategoriesSettingsListView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxxl)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.categories)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

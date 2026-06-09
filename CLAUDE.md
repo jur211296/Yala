@@ -106,18 +106,19 @@ Detalles completos en `$VAULT/planning/TESTING-STRATEGY.md`. Reglas mínimas:
 - TODA View root, sheet, fullScreenCover NUEVA → `.yalaScreenBackground(_:ignoredEdges:)`.
 - NUNCA aplicar `.background(theme.background)`, `.background(.thBackground)` ni default iOS sin background.
 - Forms/Lists dentro de sheet → `.scrollContentBackground(.hidden)` MANUAL antes del modifier (el modifier no lo hace automático para preservar predictibilidad).
-- Variantes (`YalaBackgroundVariant`):
-  - `.panel` (default) — PanelBackgroundView gradient temático. Destinos ricos (forms, selectors, tab roots, vistas navegadas).
-  - `.subtle` — `theme.background` plano. Decisión consciente para success/celebración donde el contenido brilla sin distraer.
-  - `.compact` — PanelBackgroundView sin `ignoresSafeArea` por default. Detents `.medium` / `.height(<320)`.
-  - `.transparent` — sin fondo. Sheets con `.glassSheet()` material.
-- Param `ignoredEdges: Edge.Set?`: si `nil`, default `.all` (excepto `.compact` que usa `[]`). Para vistas con `safeAreaInset` pasar edges específicos (`[.top]`, `[.bottom]`).
-- OUT: WelcomeFlow (`DS.Gradients.heroIndigoBlack` especializado), InboxAlertModal (custom modal Color.black backdrop), popovers (iOS nativo).
-- `GlassSheetModifier.glassSheet()` se mantiene como helper específico de sheets con `.presentationBackground(.ultraThinMaterial)` + drag indicator — convive con `.transparent` variant.
+- **Regla SSOT (reestructura 2026-06-08)**: el fondo lo determina el **contenedor de presentación RAÍZ** del stack. Una vista navegada (push) HEREDA el fondo de su stack — dentro de un tab → `.panel`; dentro de un sheet → el del sheet. **Un `.sheet` NUNCA es `.panel`.**
+- Variantes (`YalaBackgroundVariant`) — 3 tras eliminar `.compact`:
+  - `.panel` (default) — PanelBackgroundView gradient temático. SOLO vistas COMPLETAS: tab roots, vistas navegadas (push), fullScreenCover normal.
+  - `.subtle` — `theme.background` plano. CUALQUIER sheet desde el bottom (sin detents o `[.large]`); TODO el stack del sheet de Profile (los ~20 Settings + sub-navegación); y success/celebración.
+  - `.transparent` — sin fondo (DESNUDO, muestra el fondo de sistema del sheet — decisión owner, NO glassSheet). Sheets con detent PARCIAL (`.medium`/`.height`/`.fraction`). **Idiom-aware**: si el detent viene de `DS.Adaptive.sheetDetents(...)`, usar `DS.Adaptive.usesLargeSheets ? .subtle : .transparent` (iPad fuerza `.large` → debe ser subtle). Dual-detent `[.medium,.large]` con `selection: $selectedDetent` → `isLargeDetent ? .subtle : .transparent`.
+- `.compact` ELIMINADA. `AnimatedMeshBackground` + `MeshConfigResolver` borrados (dead code). `DS.Adaptive.usesLargeSheets` (= isPad||isiOSAppOnMac) expuesto para el fondo idiom-aware.
+- Param `ignoredEdges: Edge.Set?`: si `nil`, default `.all`. Para vistas con `safeAreaInset` pasar edges específicos (`[.top]`, `[.bottom]`).
+- OUT: WelcomeFlow/onboarding (`DS.Gradients.heroIndigoBlack` especializado), InboxAlertModal (custom modal Color.black backdrop), popovers (iOS nativo).
+- `GlassSheetModifier.glassSheet()` se mantiene como helper de sheets que SÍ quieren material (`.presentationBackground(.ultraThinMaterial)` + drag indicator). `.transparent` NO usa material (es desnudo).
 
 #### Patrones aceptados temporalmente (deuda incremental, migrar al tocar el archivo)
 
-- **Pattern B**: `ZStack { PanelBackgroundView(); content }` manual (~99 callsites). Funcionalmente equivalente al modifier (mismo ZStack interno). Sprint dedicado de cleanup post-épico cerrará el sanity grep "0 residuales".
+- **Pattern B**: `ZStack { PanelBackgroundView(); content }` manual. Migrado masivamente al modifier (2026-06-08). Residuales aceptados: `PanelView` (tab root complejo con overlays) + las 6 vistas de onboarding/welcome (fondo hero propio, OUT). Sanity: `grep -rn "PanelBackgroundView(" Yala/` solo muestra esas + `PanelBackgroundView.swift` (def) + `ViewModifiers.swift` (modifier).
 - **Pattern Subtle**: `ZStack { theme.background.ignoresSafeArea(); ...overlays; content }` en success screens (TransactionSuccessView, SubscriptionSuccessView, InboxApproveSuccessView, InboxBulkApproveSuccessView). Reescribir el ZStack rompería overlays propios (ConfettiView, RadialGradient glow). Semánticamente ES `.subtle`.
 
 ### Documentation & copy

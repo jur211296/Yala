@@ -29,11 +29,8 @@ struct SubcategorySelectorSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xl) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xl) {
                     if viewModel.isEmpty {
                         YalaEmptyState(
                             icon: "tag.fill",
@@ -102,7 +99,7 @@ struct SubcategorySelectorSheet: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xl)
             }
-            }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Transaction.subcategory)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

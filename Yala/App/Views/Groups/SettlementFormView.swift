@@ -126,7 +126,7 @@ struct SettlementFormView: View {
                 .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
-            .yalaScreenBackground()
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Groups.Settlement.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

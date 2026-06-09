@@ -30,11 +30,8 @@ struct UserDataResetView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: L10n.Settings.resetData) {
                         VStack(alignment: .leading, spacing: DS.Spacing.md) {
                             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
@@ -78,7 +75,7 @@ struct UserDataResetView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.resetData)
         .navigationBarTitleDisplayMode(.inline)
 

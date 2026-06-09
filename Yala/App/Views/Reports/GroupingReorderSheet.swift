@@ -64,7 +64,7 @@ struct GroupingReorderSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .yalaScreenBackground()
+            .yalaScreenBackground(.subtle)
             .environment(\.editMode, .constant(.active))
             .navigationTitle(L10n.Report.Grouping.drillDown)
             .navigationBarTitleDisplayMode(.inline)

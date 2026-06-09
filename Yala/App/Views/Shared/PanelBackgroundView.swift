@@ -12,26 +12,15 @@ import SwiftUI
 struct PanelBackgroundView: View {
     @Environment(\.yalaTheme) private var theme
     var ignoredEdges: Edge.Set = .all
-    /// Sheets compactas (detents `.medium` / `.height(<320)`) usan MeshGradient
-    /// animado en lugar del hero gradient principal — sutil, no roba atención.
-    var compact: Bool = false
 
     var body: some View {
         Group {
             if theme.usesMaterial {
-                if compact, let meshConfig = MeshConfigResolver.config(for: theme) {
-                    AnimatedMeshBackground(
-                        variant: meshConfig.variant,
-                        isLiquidGlass: meshConfig.isLiquidGlass
-                    )
-                    .accessibilityHidden(true)
-                } else {
-                    LinearGradient(
-                        colors: DS.Gradients.themeHero(for: theme),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
+                LinearGradient(
+                    colors: DS.Gradients.themeHero(for: theme),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
             } else if theme.hasGradient {
                 LinearGradient(
                     colors: [
@@ -46,89 +35,6 @@ struct PanelBackgroundView: View {
             }
         }
         .ignoresSafeArea(edges: ignoredEdges)
-    }
-}
-
-// MARK: - AnimatedMeshBackground (usado por PanelBackgroundView via MeshConfigResolver para themes translucent)
-
-struct AnimatedMeshBackground: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.scenePhase) private var scenePhase
-    let variant: TranslucentVariant
-    let isLiquidGlass: Bool
-
-    init(variant: TranslucentVariant, isLiquidGlass: Bool = false) {
-        self.variant = variant
-        self.isLiquidGlass = isLiquidGlass
-    }
-
-    var body: some View {
-        if reduceMotion {
-            staticMesh
-        } else {
-            // Pausar el TimelineView cuando la app está en background/inactive:
-            // ahorra ~30 FPS de recomputación de meshGradient en main thread,
-            // reduce termal durante snapshots del app switcher.
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: scenePhase != .active)) { timeline in
-                let time = timeline.date.timeIntervalSinceReferenceDate
-                meshGradient(time: time)
-            }
-        }
-    }
-
-    private var staticMesh: some View {
-        meshGradient(time: 0)
-    }
-
-    private static let liquidGlassColors: [Color] = [
-        Color(hex: "05050E"), Color(hex: "0A091A"), Color(hex: "05050E"),
-        Color(hex: "070713"), Color(hex: "100D24"), Color(hex: "080715"),
-        Color(hex: "05050E"), Color(hex: "080714"), Color(hex: "05050E"),
-    ]
-    private static let indigoColors: [Color] = [
-        Color(hex: "0A0A1A"), Color(hex: "1A1040"), Color(hex: "0A0A1A"),
-        Color(hex: "10082A"), Color(hex: "2A1A5E"), Color(hex: "1A0A30"),
-        Color(hex: "0A0A1A"), Color(hex: "150D35"), Color(hex: "0A0A1A"),
-    ]
-    private static let rosaColors: [Color] = [
-        Color(hex: "1A0A12"), Color(hex: "401028"), Color(hex: "1A0A12"),
-        Color(hex: "2A0820"), Color(hex: "5E1A40"), Color(hex: "300A28"),
-        Color(hex: "1A0A12"), Color(hex: "350D28"), Color(hex: "1A0A12"),
-    ]
-    private static let tealColors: [Color] = [
-        Color(hex: "0A1A18"), Color(hex: "103830"), Color(hex: "0A1A18"),
-        Color(hex: "082A22"), Color(hex: "1A5E4A"), Color(hex: "0A3028"),
-        Color(hex: "0A1A18"), Color(hex: "0D3528"), Color(hex: "0A1A18"),
-    ]
-
-    private var colors: [Color] {
-        if isLiquidGlass { return Self.liquidGlassColors }
-        switch variant {
-        case .indigo: return Self.indigoColors
-        case .rosa: return Self.rosaColors
-        case .teal: return Self.tealColors
-        }
-    }
-
-    private func meshGradient(time: Double) -> MeshGradient {
-        let speed = 0.03
-        let amp: Float = 0.06
-        let t = time * speed * .pi * 2
-
-        let cx = Float(0.5) + amp * Float(sin(t))
-        let cy = Float(0.5) + amp * Float(sin(t + 1.5))
-
-        let points: [SIMD2<Float>] = [
-            SIMD2(0.0, 0.0), SIMD2(0.5, 0.0), SIMD2(1.0, 0.0),
-            SIMD2(0.0, 0.5), SIMD2(cx, cy),    SIMD2(1.0, 0.5),
-            SIMD2(0.0, 1.0), SIMD2(0.5, 1.0), SIMD2(1.0, 1.0),
-        ]
-
-        return MeshGradient(
-            width: 3, height: 3,
-            points: points,
-            colors: colors
-        )
     }
 }
 

@@ -18,9 +18,7 @@ struct ImportAccountPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
+            Group {
                 if accounts.isEmpty {
                     VStack(spacing: DS.Spacing.md) {
                         Text(L10n.Import.noAccountsAvailable)
@@ -55,6 +53,7 @@ struct ImportAccountPickerSheet: View {
                     }
                 }
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Import.selectAccount)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

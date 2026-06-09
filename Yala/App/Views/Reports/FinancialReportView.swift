@@ -51,15 +51,13 @@ struct FinancialReportView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-                VStack(spacing: DS.Spacing.none) {
-                    reportGuide
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.top, DS.Spacing.xs)
-                    tabContent
-                }
+            VStack(spacing: DS.Spacing.none) {
+                reportGuide
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.xs)
+                tabContent
             }
+            .yalaScreenBackground()
             .safeAreaInset(edge: .top) {
                 navigationChipsBar
                     .padding(.vertical, DS.Spacing.sm)

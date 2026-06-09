@@ -20,11 +20,8 @@ struct BiometricSecurityView: View {
     @State private var didLoadInitialState: Bool = false
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: authService.biometricType.icon)
@@ -93,7 +90,7 @@ struct BiometricSecurityView: View {
                 }
                 .padding(DS.Spacing.lg)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Biometric.title)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

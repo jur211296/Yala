@@ -218,8 +218,6 @@ struct DetailContainerView: View {
 
     private var mainContent: some View {
         ZStack {
-            PanelBackgroundView()
-
             VStack(spacing: DS.Spacing.none) {
                 // Contextual guide for current statistics tab
                 statisticsGuide
@@ -271,6 +269,7 @@ struct DetailContainerView: View {
                 selectionActionBar
             }
         }
+        .yalaScreenBackground()
     }
 
     @ViewBuilder

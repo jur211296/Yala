@@ -70,8 +70,6 @@ struct GroupDetailView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView()
-
                 VStack(spacing: 0) {
                     if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
                         GroupNudgeBanner(
@@ -112,6 +110,7 @@ struct GroupDetailView: View {
                     newExpenseFAB
                 }
             }
+            .yalaScreenBackground(.panel)
             .safeAreaInset(edge: .top) {
                 navigationChipsBar
                     .padding(.vertical, DS.Spacing.sm)

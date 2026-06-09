@@ -28,11 +28,8 @@ struct AIPrivacySettingsView: View {
     @State private var showRevokeInsightsDialog = false
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.lg) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.lg) {
                     SectionBox(title: L10n.AIPrivacy.title) {
                         VStack(spacing: DS.Spacing.none) {
                             toggleRow(title: L10n.AIPrivacy.processingRow, isOn: $dataToggle)
@@ -63,7 +60,7 @@ struct AIPrivacySettingsView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.lg)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.AIPrivacy.title)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

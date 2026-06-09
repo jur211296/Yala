@@ -65,7 +65,7 @@ struct BridgeActivationSheet: View {
                 .padding(.top, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
-            .yalaScreenBackground(.panel)
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Groups.Bridge.activateTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

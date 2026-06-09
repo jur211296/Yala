@@ -386,8 +386,6 @@ struct CashFlowMethodPickerSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView()
-
                 ScrollView {
                     VStack(spacing: DS.Spacing.xl) {
                         // Live amount preview
@@ -441,6 +439,7 @@ struct CashFlowMethodPickerSheet: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.CashFlowPlan.calculationMethodTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

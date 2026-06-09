@@ -42,26 +42,23 @@ struct TagFormView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    generalSection
+                    iconSection
+                    colorSection
+                    statusSection
 
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        generalSection
-                        iconSection
-                        colorSection
-                        statusSection
-
-                        if viewModel.isEditing {
-                            deleteSection
-                        }
+                    if viewModel.isEditing {
+                        deleteSection
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
-                    .dismissKeyboardOnTap()
                 }
-                .scrollDismissesKeyboard(.interactively)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
+                .dismissKeyboardOnTap()
             }
+            .scrollDismissesKeyboard(.interactively)
+            .yalaScreenBackground(.subtle)
             .navigationTitle(viewModel.isEditing ? L10n.Tag.editTag : L10n.Tag.newTag)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

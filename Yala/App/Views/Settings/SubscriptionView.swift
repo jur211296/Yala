@@ -24,14 +24,14 @@ struct SubscriptionView: View {
     @State private var showSuccessView = false
 
     var body: some View {
-        ZStack {
+        Group {
             if store.isProUser {
-                PanelBackgroundView()
                 activeSubscriptionContent
             } else {
                 paywallContent
             }
         }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Subscription.title)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
@@ -129,7 +129,6 @@ struct SubscriptionView: View {
                 .padding(.top, DS.Spacing.xxl)
             }
         }
-        .yalaScreenBackground()
     }
 
     // MARK: - Hero Section

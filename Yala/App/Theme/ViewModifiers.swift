@@ -551,24 +551,21 @@ extension View {
 /// Variantes de background para vistas root, sheets, fullScreenCovers.
 /// SSOT para evitar inconsistencias (PanelBackgroundView vs theme.background plano).
 enum YalaBackgroundVariant {
-    /// `PanelBackgroundView()` con hero gradient theme-aware en los 4 themes
-    /// translucent (accent→negro, replicando WelcomeHero/Onboarding). Default
-    /// para destinos ricos: tab roots, sheets de form/editor, selectors, vistas
-    /// navegadas. En light/finance themes mantiene el LinearGradient existing.
+    /// `PanelBackgroundView()` con hero gradient theme-aware en los themes
+    /// translucent (accent→negro, replicando WelcomeHero/Onboarding). SOLO para
+    /// vistas completas: tab roots, vistas navegadas (push) y fullScreenCover.
+    /// En light/finance themes mantiene el LinearGradient existing.
     case panel
 
-    /// `theme.background` plano. Decisión consciente para success/celebración
-    /// donde el contenido (chip, monto, CTA) debe brillar sin distraer.
+    /// `theme.background` plano. Para CUALQUIER sheet desde el bottom (sin
+    /// detents o con `[.large]`) y para success/celebración donde el contenido
+    /// debe brillar sin distraer.
     case subtle
 
-    /// `PanelBackgroundView(compact: true)` — en themes translucent usa
-    /// `AnimatedMeshBackground` (sutil, no roba atención) en lugar del hero
-    /// gradient. Sin `ignoresSafeArea` por default. Para sheets con
-    /// `.presentationDetents([.medium])` o `.height(<320)`.
-    case compact
-
-    /// Sin fondo aplicado. Para sheets con `.glassSheet()` que usan material
-    /// como background del contenedor del sheet.
+    /// Sin fondo aplicado (desnudo): el sheet muestra su fondo de sistema. Para
+    /// sheets con detent parcial (`.medium`/`.height`/`.fraction`). En iPad el
+    /// detent se fuerza a `.large`, así que esos sheets usan `.subtle` vía
+    /// `DS.Adaptive.usesLargeSheets ? .subtle : .transparent`.
     case transparent
 }
 
@@ -586,18 +583,15 @@ struct YalaScreenBackgroundModifier: ViewModifier {
     let ignoredEdges: Edge.Set?
 
     private var effectiveEdges: Edge.Set {
-        ignoredEdges ?? (variant == .compact ? [] : .all)
+        ignoredEdges ?? .all
     }
 
     @ViewBuilder
     func body(content: Content) -> some View {
         switch variant {
-        case .panel, .compact:
+        case .panel:
             ZStack {
-                PanelBackgroundView(
-                    ignoredEdges: effectiveEdges,
-                    compact: variant == .compact
-                )
+                PanelBackgroundView(ignoredEdges: effectiveEdges)
                 content
             }
         case .subtle:
@@ -615,11 +609,11 @@ struct YalaScreenBackgroundModifier: ViewModifier {
 extension View {
     /// Aplica background temático según `variant`.
     ///
-    /// - Parameter variant: `.panel` (default, gradient), `.subtle` (plano success),
-    ///   `.compact` (detent pequeño), `.transparent` (delega a `.glassSheet()`).
-    /// - Parameter ignoredEdges: Si `nil`, usa default por variant (`.all` excepto
-    ///   `.compact` que usa `[]`). Pasar valor explícito (`[.top]`, `[.bottom]`)
-    ///   para coexistir con `safeAreaInset`.
+    /// - Parameter variant: `.panel` (gradient, vistas completas), `.subtle`
+    ///   (plano, sheets normales/success), `.transparent` (desnudo, sheets con
+    ///   detent parcial).
+    /// - Parameter ignoredEdges: Si `nil`, usa `.all`. Pasar valor explícito
+    ///   (`[.top]`, `[.bottom]`) para coexistir con `safeAreaInset`.
     func yalaScreenBackground(
         _ variant: YalaBackgroundVariant = .panel,
         ignoredEdges: Edge.Set? = nil

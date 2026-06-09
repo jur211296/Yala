@@ -43,23 +43,20 @@ struct ExportSummaryStepView: View {
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
+                headerSection
 
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    headerSection
+                filtersSummarySection
 
-                    filtersSummarySection
+                columnsSummarySection
 
-                    columnsSummarySection
-
-                    exportButtonSection
-                }
-                .padding(.vertical, DS.Spacing.xxl)
-                .padding(.horizontal, DS.Spacing.lg)
+                exportButtonSection
             }
+            .padding(.vertical, DS.Spacing.xxl)
+            .padding(.horizontal, DS.Spacing.lg)
         }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Export.summaryAndExport)
         .navigationBarTitleDisplayMode(.inline)
         .alert(L10n.Export.exportError, isPresented: $showErrorAlert, presenting: exportError) { _ in

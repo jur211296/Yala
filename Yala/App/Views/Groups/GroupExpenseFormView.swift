@@ -80,8 +80,6 @@ struct GroupExpenseFormView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView()
-
                 VStack(spacing: DS.Spacing.none) {
                     // Segmented control TOP-anchored: estabiliza el layout y evita
                     // el efecto "no estable" del sheet (sin nada anclado al top el
@@ -107,6 +105,7 @@ struct GroupExpenseFormView: View {
                 }
                 .dismissKeyboardOnTap()
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(viewModel.isEditMode ? L10n.Groups.Expense.editTitle : L10n.Groups.Expense.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -31,10 +31,7 @@ struct TutorialDetailView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            VStack(spacing: DS.Spacing.lg) {
+        VStack(spacing: DS.Spacing.lg) {
                 progressIndicator
                     .padding(.top, DS.Spacing.md)
 
@@ -66,7 +63,7 @@ struct TutorialDetailView: View {
                         .padding(.bottom, DS.Spacing.xxxl)
                 }
             }
-        }
+        .yalaScreenBackground(.subtle)
         .onChange(of: currentPage) {
             isVideoPlaying = false
             if currentPage == totalPages - 1 {

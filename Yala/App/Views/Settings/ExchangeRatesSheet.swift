@@ -27,11 +27,8 @@ struct ExchangeRatesSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    LazyVStack(spacing: DS.Spacing.lg) {
+            ScrollView {
+                LazyVStack(spacing: DS.Spacing.lg) {
                         ForEach(availableCurrencies, id: \.continent) { group in
                             SectionBox(title: group.continent.localizedName) {
                                 VStack(spacing: DS.Spacing.none) {
@@ -63,10 +60,10 @@ struct ExchangeRatesSheet: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.lg)
-                }
             }
             .navigationTitle(L10n.Settings.exchangeRate)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {

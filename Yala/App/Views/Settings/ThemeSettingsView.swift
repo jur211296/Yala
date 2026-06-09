@@ -31,11 +31,8 @@ struct ThemeSettingsView: View {
     ]
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "paintpalette.fill")
@@ -85,7 +82,7 @@ struct ThemeSettingsView: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.theme)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

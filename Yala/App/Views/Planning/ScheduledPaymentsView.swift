@@ -21,8 +21,6 @@ struct ScheduledPaymentsView: View {
 
     var body: some View {
         ZStack {
-            PanelBackgroundView()
-
             ScrollView {
                 VStack(spacing: DS.Spacing.none) {
                     // Tab segmented control
@@ -45,6 +43,7 @@ struct ScheduledPaymentsView: View {
             // FAB button for new payment
             newPaymentFAB
         }
+        .yalaScreenBackground(.panel)
         .sheet(isPresented: $viewModel.showPaymentEditor) {
             if let payment = viewModel.editingPayment {
                 ScheduledPaymentEditorView(payment: payment)

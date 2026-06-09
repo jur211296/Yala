@@ -55,11 +55,9 @@ struct FinancialScoreDetailSheet: View {
             // Medium usa el glass nativo del sheet iOS; large monta el gradient
             // temático para llenar la pantalla (paridad con BalanceLiveAnchorEducationSheet).
             ZStack {
-                if isLargeDetent {
-                    PanelBackgroundView()
-                }
                 content
             }
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

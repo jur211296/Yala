@@ -70,6 +70,7 @@ struct PanelSectionsConfigView: View {
                     YalaSaveButton(action: { dismiss() })
                 }
             }
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
         }
         .presentationDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.visible)
@@ -96,8 +97,6 @@ struct PanelSectionsConfigView: View {
 
     private var largeLayout: some View {
         ZStack {
-            PanelBackgroundView()
-
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
                     let sections = orderedToggleableSections

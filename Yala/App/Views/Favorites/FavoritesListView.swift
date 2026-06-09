@@ -56,7 +56,7 @@ struct FavoritesListView: View {
                 favoritesList
             }
         }
-        .yalaScreenBackground()
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Favorites.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

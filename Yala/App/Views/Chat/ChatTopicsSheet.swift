@@ -18,24 +18,21 @@ struct ChatTopicsSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    LazyVStack(spacing: DS.Spacing.sm) {
-                        if suggestions.isEmpty && isLoading {
-                            ForEach(0..<5, id: \.self) { _ in
-                                SkeletonPlaceholder(height: 56)
-                            }
-                        } else {
-                            ForEach(suggestions) { suggestion in
-                                topicChip(suggestion)
-                            }
+            ScrollView {
+                LazyVStack(spacing: DS.Spacing.sm) {
+                    if suggestions.isEmpty && isLoading {
+                        ForEach(0..<5, id: \.self) { _ in
+                            SkeletonPlaceholder(height: 56)
+                        }
+                    } else {
+                        ForEach(suggestions) { suggestion in
+                            topicChip(suggestion)
                         }
                     }
-                    .padding(DS.Spacing.lg)
                 }
+                .padding(DS.Spacing.lg)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Chat.Topics.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

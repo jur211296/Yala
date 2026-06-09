@@ -30,11 +30,8 @@ struct AccountsSettingsListView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Contextual guide for new users
                     ContextualGuideBanner.accounts()
 
@@ -71,7 +68,7 @@ struct AccountsSettingsListView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxxl)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.accounts)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

@@ -28,21 +28,18 @@ struct SubcategoryTransferSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    // Header con información
+                    headerSection
 
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        // Header con información
-                        headerSection
-
-                        // Opciones de acción
-                        actionsSection
-                    }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
+                    // Opciones de acción
+                    actionsSection
                 }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Subcategory.transferTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -189,10 +186,7 @@ struct SubcategoryTransferSheet: View {
 
     private var destinationPickerSheet: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
+            ScrollView {
                     VStack(spacing: DS.Spacing.lg) {
                         ForEach(viewModel.availableDestinations(excluding: subcategoryToDelete), id: \.category.persistentModelID) { group in
                             SectionBox(title: group.category.name) {
@@ -241,7 +235,7 @@ struct SubcategoryTransferSheet: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xl)
                 }
-            }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Subcategory.selectDestination)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

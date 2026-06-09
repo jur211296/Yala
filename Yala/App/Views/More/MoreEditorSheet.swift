@@ -19,20 +19,17 @@ struct MoreEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
                         sectionsReorderBlock
                         tabBarConfigBlock
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
-                }
             }
             .navigationTitle(L10n.More.Editor.title)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaSaveButton(action: { dismiss() })

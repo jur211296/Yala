@@ -40,11 +40,8 @@ struct PersonalDetailsView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
                         // Avatar header with photo picker
                         avatarHeader
 
@@ -58,11 +55,11 @@ struct PersonalDetailsView: View {
                     .padding(.top, DS.Spacing.xxl)
                     .padding(.bottom, DS.Spacing.xxxl)
                     .dismissKeyboardOnTap()
-                }
-                .scrollDismissesKeyboard(.interactively)
             }
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(L10n.Profile.personalDetails)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {

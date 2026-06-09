@@ -38,11 +38,8 @@ struct AccountFormView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
                         generalSection
                         ContextualGuideBanner.accountForm(accountType: viewModel.selectedType)
                         currencySection
@@ -78,7 +75,7 @@ struct AccountFormView: View {
                     .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
-            }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Account.configure)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

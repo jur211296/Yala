@@ -17,10 +17,7 @@ struct ScheduledPaymentsSettingsView: View {
     @State private var viewModel = ScheduledPaymentsSettingsViewModel()
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            VStack(spacing: DS.Spacing.none) {
+        VStack(spacing: DS.Spacing.none) {
                 // Tab selector
                 Picker("Tab", selection: $viewModel.selectedTab) {
                     ForEach(ScheduledPaymentsTab.allCases) { tab in
@@ -38,8 +35,8 @@ struct ScheduledPaymentsSettingsView: View {
                 } else {
                     paymentsList
                 }
-            }
         }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(NSLocalizedString("settings.plannedPayments", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

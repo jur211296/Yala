@@ -108,7 +108,7 @@ struct SaveAsFavoriteSheet: View {
                 .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
-            .yalaScreenBackground()
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Action.saveAsFavorite)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -354,10 +354,7 @@ struct SaveAsFavoriteSheet: View {
 
     private var tagSelectorSheet: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
+            ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         if viewModel.activeTags.isEmpty {
                             YalaEmptyState(
@@ -414,7 +411,7 @@ struct SaveAsFavoriteSheet: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                 }
-            }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Settings.tags)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

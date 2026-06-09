@@ -25,84 +25,81 @@ struct CashFlowAddLineSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xl) {
-                        // Type toggle
-                        Picker("", selection: $isIncome) {
-                            Text(L10n.CashFlowPlan.expenseSection).tag(false)
-                            Text(L10n.CashFlowPlan.incomeSection).tag(true)
-                        }
-                        .pickerStyle(.segmented)
-
-                        // 3 flow options
-                        VStack(spacing: DS.Spacing.none) {
-                            // Flow 1: From expenses
-                            NavigationLink {
-                                CashFlowAddFromExpensesView(
-                                    viewModel: viewModel,
-                                    currencyCode: currencyCode,
-                                    transactions: transactions,
-                                    isIncome: isIncome,
-                                    categories: sortedCategories
-                                )
-                            } label: {
-                                flowRow(
-                                    icon: "chart.bar.fill",
-                                    title: L10n.CashFlowPlan.addFromExpenses,
-                                    subtitle: L10n.CashFlowPlan.addFromExpensesDesc,
-                                    trailing: nil
-                                )
-                            }
-                            .buttonStyle(.plain)
-
-                            Divider().padding(.leading, DS.Spacing.xxl)
-
-                            // Flow 2: From scheduled payment
-                            let available = availableScheduledPayments
-                            NavigationLink {
-                                CashFlowAddFromScheduledView(
-                                    viewModel: viewModel,
-                                    currencyCode: currencyCode,
-                                    payments: available
-                                )
-                            } label: {
-                                flowRow(
-                                    icon: "calendar.badge.clock",
-                                    title: L10n.CashFlowPlan.addFromScheduled,
-                                    subtitle: L10n.CashFlowPlan.addFromScheduledDesc,
-                                    trailing: available.isEmpty ? nil : "\(available.count)"
-                                )
-                            }
-                            .buttonStyle(.plain)
-
-                            Divider().padding(.leading, DS.Spacing.xxl)
-
-                            // Flow 3: Custom line
-                            NavigationLink {
-                                CashFlowAddCustomLineView(
-                                    viewModel: viewModel,
-                                    currencyCode: currencyCode,
-                                    isIncome: isIncome
-                                )
-                            } label: {
-                                flowRow(
-                                    icon: "pencil.line",
-                                    title: L10n.CashFlowPlan.addCustomLine,
-                                    subtitle: L10n.CashFlowPlan.addCustomLineDesc,
-                                    trailing: nil
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .solidCard()
+            ScrollView {
+                VStack(spacing: DS.Spacing.xl) {
+                    // Type toggle
+                    Picker("", selection: $isIncome) {
+                        Text(L10n.CashFlowPlan.expenseSection).tag(false)
+                        Text(L10n.CashFlowPlan.incomeSection).tag(true)
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
+                    .pickerStyle(.segmented)
+
+                    // 3 flow options
+                    VStack(spacing: DS.Spacing.none) {
+                        // Flow 1: From expenses
+                        NavigationLink {
+                            CashFlowAddFromExpensesView(
+                                viewModel: viewModel,
+                                currencyCode: currencyCode,
+                                transactions: transactions,
+                                isIncome: isIncome,
+                                categories: sortedCategories
+                            )
+                        } label: {
+                            flowRow(
+                                icon: "chart.bar.fill",
+                                title: L10n.CashFlowPlan.addFromExpenses,
+                                subtitle: L10n.CashFlowPlan.addFromExpensesDesc,
+                                trailing: nil
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        Divider().padding(.leading, DS.Spacing.xxl)
+
+                        // Flow 2: From scheduled payment
+                        let available = availableScheduledPayments
+                        NavigationLink {
+                            CashFlowAddFromScheduledView(
+                                viewModel: viewModel,
+                                currencyCode: currencyCode,
+                                payments: available
+                            )
+                        } label: {
+                            flowRow(
+                                icon: "calendar.badge.clock",
+                                title: L10n.CashFlowPlan.addFromScheduled,
+                                subtitle: L10n.CashFlowPlan.addFromScheduledDesc,
+                                trailing: available.isEmpty ? nil : "\(available.count)"
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        Divider().padding(.leading, DS.Spacing.xxl)
+
+                        // Flow 3: Custom line
+                        NavigationLink {
+                            CashFlowAddCustomLineView(
+                                viewModel: viewModel,
+                                currencyCode: currencyCode,
+                                isIncome: isIncome
+                            )
+                        } label: {
+                            flowRow(
+                                icon: "pencil.line",
+                                title: L10n.CashFlowPlan.addCustomLine,
+                                subtitle: L10n.CashFlowPlan.addCustomLineDesc,
+                                trailing: nil
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .solidCard()
                 }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.CashFlowPlan.addLine)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -210,8 +207,6 @@ struct CashFlowAddFromExpensesView: View {
 
     var body: some View {
         ZStack {
-            PanelBackgroundView()
-
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {
                     if categories.isEmpty {
@@ -235,6 +230,7 @@ struct CashFlowAddFromExpensesView: View {
             }
             .scrollDismissesKeyboard(.interactively)
         }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.CashFlowPlan.addFromExpenses)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -489,8 +485,6 @@ struct CashFlowAddFromScheduledView: View {
 
     var body: some View {
         ZStack {
-            PanelBackgroundView()
-
             ScrollView {
                 VStack(spacing: DS.Spacing.xl) {
                     if payments.isEmpty {
@@ -512,6 +506,7 @@ struct CashFlowAddFromScheduledView: View {
             }
             .scrollDismissesKeyboard(.interactively)
         }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.CashFlowPlan.addFromScheduled)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -644,8 +639,6 @@ struct CashFlowAddCustomLineView: View {
 
     var body: some View {
         ZStack {
-            PanelBackgroundView()
-
             VStack(spacing: DS.Spacing.xl) {
                 VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                     Text(L10n.CashFlowPlan.lineNameLabel)
@@ -682,6 +675,7 @@ struct CashFlowAddCustomLineView: View {
             .padding(.vertical, DS.Spacing.xl)
             .dismissKeyboardOnTap()
         }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.CashFlowPlan.addCustomLine)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

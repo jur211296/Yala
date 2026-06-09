@@ -29,22 +29,19 @@ struct ImportCurrencyMappingSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                VStack(spacing: DS.Spacing.none) {
-                    ScrollView {
-                        VStack(spacing: DS.Spacing.xxl) {
-                            headerSection
-                            currencyMappingSection
-                        }
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.vertical, DS.Spacing.xxl)
+            VStack(spacing: DS.Spacing.none) {
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xxl) {
+                        headerSection
+                        currencyMappingSection
                     }
-
-                    importButton
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.vertical, DS.Spacing.xxl)
                 }
+
+                importButton
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Import.multiCurrencyDetected)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

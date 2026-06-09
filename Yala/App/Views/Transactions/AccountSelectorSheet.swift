@@ -36,51 +36,48 @@ struct AccountSelectorSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        let filteredAccounts = viewModel.activeAccounts.filter { account in
-                            if let exclude = excludeAccount,
-                               account.persistentModelID == exclude.persistentModelID {
-                                return false
-                            }
-                            if let currencyFilter, account.currencyCode != currencyFilter {
-                                return false
-                            }
-                            return true
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    let filteredAccounts = viewModel.activeAccounts.filter { account in
+                        if let exclude = excludeAccount,
+                           account.persistentModelID == exclude.persistentModelID {
+                            return false
                         }
+                        if let currencyFilter, account.currencyCode != currencyFilter {
+                            return false
+                        }
+                        return true
+                    }
 
-                        if filteredAccounts.isEmpty {
-                            YalaEmptyState.noAccounts()
-                        } else {
-                            SectionBox(title: "") {
-                                VStack(spacing: DS.Spacing.none) {
-                                    ForEach(
-                                        Array(filteredAccounts.enumerated()),
-                                        id: \.element.persistentModelID
-                                    ) { index, account in
-                                        if index > 0 {
-                                            SubsectionDivider()
-                                        }
+                    if filteredAccounts.isEmpty {
+                        YalaEmptyState.noAccounts()
+                    } else {
+                        SectionBox(title: "") {
+                            VStack(spacing: DS.Spacing.none) {
+                                ForEach(
+                                    Array(filteredAccounts.enumerated()),
+                                    id: \.element.persistentModelID
+                                ) { index, account in
+                                    if index > 0 {
+                                        SubsectionDivider()
+                                    }
 
-                                        AccountSelectorRow(
-                                            account: account,
-                                            isSelected: isSelected(account)
-                                        ) {
-                                            selectedAccount = account
-                                            dismiss()
-                                        }
+                                    AccountSelectorRow(
+                                        account: account,
+                                        isSelected: isSelected(account)
+                                    ) {
+                                        selectedAccount = account
+                                        dismiss()
                                     }
                                 }
                             }
                         }
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
                 }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

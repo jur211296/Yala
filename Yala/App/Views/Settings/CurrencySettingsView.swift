@@ -44,8 +44,6 @@ struct CurrencySettingsView: View {
 
     var body: some View {
         ZStack {
-            PanelBackgroundView()
-
             // Main Content
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
@@ -105,6 +103,7 @@ struct CurrencySettingsView: View {
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             }
         }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.currencyAndExchange)
         .navigationBarTitleDisplayMode(.inline)
         .interactiveDismissDisabled(isUpdating)

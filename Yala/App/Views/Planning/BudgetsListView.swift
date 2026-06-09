@@ -33,8 +33,6 @@ struct BudgetsListView: View {
 
     var body: some View {
         ZStack {
-            PanelBackgroundView()
-
             ScrollView {
                 VStack(spacing: DS.Spacing.xs) {
                     // Limit reached banner
@@ -80,6 +78,7 @@ struct BudgetsListView: View {
             // FAB button for new budget
             newBudgetFAB
         }
+        .yalaScreenBackground(.panel)
         .navigationDestination(for: BudgetNavigationID.self) { navID in
             BudgetDetailDestination(budgetID: navID.id, viewModel: viewModel)
         }

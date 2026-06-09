@@ -74,6 +74,7 @@ struct PanelSectionPreferencesSheet: View {
                     YalaSaveButton(action: { dismiss() })
                 }
             }
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
         }
         .presentationDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.visible)
@@ -117,8 +118,6 @@ struct PanelSectionPreferencesSheet: View {
 
     private var largeLayout: some View {
         ZStack {
-            PanelBackgroundView()
-
             ScrollView {
                 let types = viewModel.orderedWidgetTypes(in: kind)
                 VStack(spacing: DS.Spacing.none) {

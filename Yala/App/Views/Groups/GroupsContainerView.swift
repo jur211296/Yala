@@ -36,8 +36,6 @@ struct GroupsContainerView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView()
-
                 if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty {
                     YalaEmptyState.noGroups {
                         viewModel.showCreateGroup = true
@@ -106,6 +104,7 @@ struct GroupsContainerView: View {
                     newGroupFAB
                 }
             }
+            .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Groups.title)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {

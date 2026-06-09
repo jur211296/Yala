@@ -25,6 +25,7 @@ struct CashFlowLineConfigSheet: View {
     @State private var newOverrideMonth: Date = .now
     @State private var newOverrideAmount: String = ""
     @State private var newOverrideNote: String = ""
+    @State private var selectedDetent: PresentationDetent = .medium
 
     init(viewModel: CashFlowPlanViewModel, line: CashFlowLine, currencyCode: String, transactions: [TransactionItem] = []) {
         self.viewModel = viewModel
@@ -39,11 +40,11 @@ struct CashFlowLineConfigSheet: View {
         FeatureGateService.shared.canAccess(.cashFlowAdvanced)
     }
 
+    private var isLargeDetent: Bool { selectedDetent == .large }
+
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView()
-
                 ScrollView {
                     VStack(spacing: DS.Spacing.xl) {
                         categorySection
@@ -61,6 +62,7 @@ struct CashFlowLineConfigSheet: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(line.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -77,7 +79,7 @@ struct CashFlowLineConfigSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
         .confirmationDialog(
             L10n.CashFlowPlan.deleteLineConfirmation,
             isPresented: $showDeleteConfirmation,

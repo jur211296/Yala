@@ -64,11 +64,8 @@ struct PersonalizationSettingsView: View {
 
     var body: some View {
         @Bindable var prefs = appPreferences
-        return ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        return ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "slider.horizontal.3")
@@ -605,10 +602,10 @@ struct PersonalizationSettingsView: View {
                     Spacer()
                 }
                 .padding(DS.Spacing.lg)
-            }
         }
         .navigationTitle(L10n.Settings.personalization)
         .navigationBarTitleDisplayMode(.inline)
+        .yalaScreenBackground(.subtle)
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -745,26 +742,23 @@ private struct PeriodPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(availablePeriods) { period in
-                            periodRow(for: period)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(availablePeriods) { period in
+                        periodRow(for: period)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.defaultPeriod)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -818,26 +812,23 @@ private struct WeekdayPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(FirstWeekday.allCases) { weekday in
-                            weekdayRow(for: weekday)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(FirstWeekday.allCases) { weekday in
+                        weekdayRow(for: weekday)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.firstWeekday)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -897,26 +888,23 @@ private struct DecimalsPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(options, id: \.value) { option in
-                            decimalsRow(for: option)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(options, id: \.value) { option in
+                        decimalsRow(for: option)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.decimalPlaces)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -981,26 +969,23 @@ private struct CurrencyFormatPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(options, id: \.value) { option in
-                            formatRow(for: option)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(options, id: \.value) { option in
+                        formatRow(for: option)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.currencyFormat)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -1060,26 +1045,23 @@ private struct LanguagePickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(LanguageManager.supportedLanguages) { lang in
-                            languageRow(lang: lang)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(LanguageManager.supportedLanguages) { lang in
+                        languageRow(lang: lang)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.appLanguage)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(L10n.Action.cancel) { dismiss() }
@@ -1141,26 +1123,23 @@ private struct AverageLinePickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(options, id: \.value) { option in
-                            averageLineRow(for: option)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(options, id: \.value) { option in
+                        averageLineRow(for: option)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.averageLine)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -1222,26 +1201,23 @@ private struct AutoFocusPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(options) { option in
-                            autoFocusRow(for: option)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(options) { option in
+                        autoFocusRow(for: option)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.autoFocusField)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {

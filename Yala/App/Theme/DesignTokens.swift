@@ -421,12 +421,20 @@ enum DS {
             isWideScreen(sizeClass) ? DS.Spacing.xxxl : DS.Spacing.lg
         }
 
+        /// True on iPad and Mac Catalyst, where medium/fixed-height sheets are
+        /// forced to `.large` (too small otherwise for pickers / complex content).
+        /// Used both to adapt detents and to pick the sheet background variant:
+        /// a "partial" sheet is effectively `.large` here, so it must be `.subtle`,
+        /// not `.transparent`.
+        static var usesLargeSheets: Bool {
+            UIDevice.current.userInterfaceIdiom == .pad
+                || ProcessInfo.processInfo.isiOSAppOnMac
+        }
+
         /// Forces .large detents on iPad and Mac Catalyst where
         /// medium/fixed-height sheets are too small for pickers and complex content.
         static func sheetDetents(_ detents: Set<PresentationDetent>) -> Set<PresentationDetent> {
-            let needsLargeSheet = UIDevice.current.userInterfaceIdiom == .pad
-                || ProcessInfo.processInfo.isiOSAppOnMac
-            return needsLargeSheet ? [.large] : detents
+            usesLargeSheets ? [.large] : detents
         }
     }
 

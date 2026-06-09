@@ -27,11 +27,8 @@ struct NotificationsSettingsView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Notificaciones configurables con budgetAlerts integrado.
                     // En solo-grupos se filtra a la notif de grupos (sin budgetAlerts ni "+").
                     if visibleNotifications.isEmpty {
@@ -48,7 +45,7 @@ struct NotificationsSettingsView: View {
                 .padding(.vertical, DS.Spacing.xxxl)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Notifications.title)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

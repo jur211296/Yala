@@ -15,11 +15,8 @@ struct SmartInsightsSettingsView: View {
     var body: some View {
         @Bindable var prefs = appPreferences
         return NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
                         // Metrics Section
                         SectionBox(title: L10n.Insights.metricsSection) {
                             VStack(spacing: DS.Spacing.none) {
@@ -66,10 +63,10 @@ struct SmartInsightsSettingsView: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
-                }
             }
             .navigationTitle(L10n.Settings.customizeAISummary)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Action.done) { dismiss() }

@@ -16,23 +16,19 @@ struct NeedSelectorSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView(ignoredEdges: [])
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.md) {
-                        ForEach(SubcategoryNeed.allCases) { need in
-                            NeedOptionRow(
-                                need: need,
-                                isSelected: selectedNeed == need
-                            ) {
-                                selectedNeed = need
-                                dismiss()
-                            }
+            ScrollView {
+                VStack(spacing: DS.Spacing.md) {
+                    ForEach(SubcategoryNeed.allCases) { need in
+                        NeedOptionRow(
+                            need: need,
+                            isSelected: selectedNeed == need
+                        ) {
+                            selectedNeed = need
+                            dismiss()
                         }
                     }
-                    .padding()
                 }
+                .padding()
             }
             .navigationTitle(L10n.Category.need)
             .navigationBarTitleDisplayMode(.inline)
@@ -43,8 +39,8 @@ struct NeedSelectorSheet: View {
                     }
                 }
             }
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent, ignoredEdges: [])
         }
-
     }
 }
 

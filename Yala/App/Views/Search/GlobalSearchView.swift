@@ -24,9 +24,6 @@ struct GlobalSearchView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background for both states
-                PanelBackgroundView()
-
                 if isDataReady {
                     SearchContentView(searchText: $searchText, transactions: allTransactions)
                 } else {
@@ -40,6 +37,7 @@ struct GlobalSearchView: View {
                     }
                 }
             }
+            .yalaScreenBackground()
             .navigationTitle(L10n.Common.search)
             .navigationBarTitleDisplayMode(.large)
         }
@@ -148,19 +146,15 @@ struct SearchContentView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            VStack(spacing: DS.Spacing.none) {
-                // Filter chips (only show when searching)
-                if !searchText.isEmpty {
-                    filterChipsBar
-                        .padding(.top, DS.Spacing.sm)
-                }
-
-                // Always show results (all or filtered)
-                searchResultsView
+        VStack(spacing: DS.Spacing.none) {
+            // Filter chips (only show when searching)
+            if !searchText.isEmpty {
+                filterChipsBar
+                    .padding(.top, DS.Spacing.sm)
             }
+
+            // Always show results (all or filtered)
+            searchResultsView
         }
         .sheet(item: $editingTransaction) { transaction in
             NewTransactionView(transactionToEdit: transaction)

@@ -25,11 +25,8 @@ struct iCloudSyncSettingsView: View {
     private let isAutoRecoveryAvailable = false
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xl) {
                     statusCard
 
                     if syncService.isAccountAvailable {
@@ -51,7 +48,7 @@ struct iCloudSyncSettingsView: View {
                 }
                 .padding(.vertical, DS.Spacing.xxl)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.iCloud.title)
         .navigationBarTitleDisplayMode(.inline)
     }

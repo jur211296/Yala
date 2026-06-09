@@ -116,8 +116,6 @@ struct InboxBulkActionsSheet: View {
                     )
                 } else {
                     ZStack {
-                        PanelBackgroundView()
-
                         ScrollView {
                             VStack(spacing: DS.Spacing.xxl) {
                                 // Header with count
@@ -148,6 +146,7 @@ struct InboxBulkActionsSheet: View {
                             .padding(.vertical, DS.Spacing.xxl)
                         }
                     }
+                    .yalaScreenBackground(.subtle)
                     .navigationTitle(L10n.Action.edit)
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {

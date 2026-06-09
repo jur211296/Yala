@@ -169,7 +169,7 @@ struct SplitCalculatorSheet: View {
                 .dismissKeyboardOnTap()
             }
             .scrollContentBackground(.hidden)
-            .yalaScreenBackground(.panel)
+            .yalaScreenBackground(.subtle)
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle(L10n.Split.title)
             .navigationBarTitleDisplayMode(.inline)

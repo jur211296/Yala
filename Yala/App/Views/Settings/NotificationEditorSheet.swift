@@ -71,11 +71,8 @@ struct NotificationEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
                         // Icon preview (tappable for custom notifications)
                         iconPreview
 
@@ -106,17 +103,17 @@ struct NotificationEditorSheet: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                     .dismissKeyboardOnTap()
-                }
-                .scrollDismissesKeyboard(.interactively)
-                .sheet(isPresented: $showingIconPicker) {
-                    IconColorPickerSheet(
-                        selectedIconName: $selectedIconName,
-                        selectedColorHex: $selectedColorHex
-                    )
-                }
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .sheet(isPresented: $showingIconPicker) {
+                IconColorPickerSheet(
+                    selectedIconName: $selectedIconName,
+                    selectedColorHex: $selectedColorHex
+                )
             }
             .navigationTitle(notification?.localizedName ?? L10n.Notifications.addNew)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {

@@ -18,11 +18,8 @@ struct SiriShortcutsView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "mic.badge.plus")
@@ -55,7 +52,7 @@ struct SiriShortcutsView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .navigationTitle(String(localized: "siriShortcuts.title"))
         .navigationBarTitleDisplayMode(.inline)

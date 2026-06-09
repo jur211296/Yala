@@ -18,11 +18,8 @@ struct TagsSettingsListView: View {
     @State private var viewModel = TagsSettingsListViewModel()
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     if viewModel.isEmpty {
                         emptyState
                     } else {
@@ -39,7 +36,7 @@ struct TagsSettingsListView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxxl)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.tags)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

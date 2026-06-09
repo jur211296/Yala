@@ -30,9 +30,6 @@ struct DatePickerSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                if isLargeDetent {
-                    PanelBackgroundView()
-                }
                 VStack {
                     DatePicker(
                         title,
@@ -46,6 +43,7 @@ struct DatePickerSheet: View {
                     Spacer()
                 }
             }
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

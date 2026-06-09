@@ -73,11 +73,8 @@ struct ScheduledPaymentDetailView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Summary Card
                     summaryCard
 
@@ -97,7 +94,7 @@ struct ScheduledPaymentDetailView: View {
                 .padding(.vertical, DS.Spacing.xxl)
             }
             .scrollViewGlassEdges()
-        }
+        .yalaScreenBackground(.panel)
         .navigationTitle(payment.name)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

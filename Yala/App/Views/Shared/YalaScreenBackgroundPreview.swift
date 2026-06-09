@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Previews para el modifier `.yalaScreenBackground(_:ignoredEdges:)`.
-//  Visualiza las 4 variantes × selección de themes representativos.
+//  Visualiza las 3 variantes × selección de themes representativos.
 //
 
 import SwiftUI
@@ -45,7 +45,6 @@ private struct VariantDemo: View {
     VStack(spacing: 0) {
         VariantDemo(variant: .panel, label: ".panel")
         VariantDemo(variant: .subtle, label: ".subtle")
-        VariantDemo(variant: .compact, label: ".compact")
         VariantDemo(variant: .transparent, label: ".transparent")
     }
     .environment(\.yalaTheme, .liquidGlass)
@@ -55,7 +54,6 @@ private struct VariantDemo: View {
     VStack(spacing: 0) {
         VariantDemo(variant: .panel, label: ".panel")
         VariantDemo(variant: .subtle, label: ".subtle")
-        VariantDemo(variant: .compact, label: ".compact")
         VariantDemo(variant: .transparent, label: ".transparent")
     }
     .environment(\.yalaTheme, .light)
@@ -65,7 +63,6 @@ private struct VariantDemo: View {
     VStack(spacing: 0) {
         VariantDemo(variant: .panel, label: ".panel")
         VariantDemo(variant: .subtle, label: ".subtle")
-        VariantDemo(variant: .compact, label: ".compact")
         VariantDemo(variant: .transparent, label: ".transparent")
     }
     .environment(\.yalaTheme, .translucentRosa)
@@ -75,7 +72,6 @@ private struct VariantDemo: View {
     VStack(spacing: 0) {
         VariantDemo(variant: .panel, label: ".panel")
         VariantDemo(variant: .subtle, label: ".subtle")
-        VariantDemo(variant: .compact, label: ".compact")
         VariantDemo(variant: .transparent, label: ".transparent")
     }
     .environment(\.yalaTheme, .dark)

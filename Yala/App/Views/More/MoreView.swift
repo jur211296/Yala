@@ -66,11 +66,8 @@ struct MoreView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xl) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xl) {
                         if isGroupInviteMode {
                             activateFullYalaButton
                         } else {
@@ -79,10 +76,10 @@ struct MoreView: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
-                }
             }
             .navigationTitle(L10n.Tab.more)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.panel)
             .toolbar {
                 if !isGroupInviteMode {
                     ToolbarItem(placement: .topBarTrailing) {

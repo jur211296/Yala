@@ -31,9 +31,6 @@ struct BalanceLiveAnchorEducationSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                if isLargeDetent {
-                    PanelBackgroundView()
-                }
                 ScrollView {
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                         todayBalanceSection
@@ -45,6 +42,7 @@ struct BalanceLiveAnchorEducationSheet: View {
                 }
                 .scrollBounceBehavior(.basedOnSize)
             }
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(L10n.Panel.LiveAnchorEducation.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

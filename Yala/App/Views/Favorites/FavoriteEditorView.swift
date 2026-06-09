@@ -63,27 +63,24 @@ struct FavoriteEditorView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
+            VStack(spacing: DS.Spacing.none) {
+                // Transaction type selector (without transfer)
+                transactionTypeSelector
+                    .padding(.top, DS.Spacing.sm)
 
-                VStack(spacing: DS.Spacing.none) {
-                    // Transaction type selector (without transfer)
-                    transactionTypeSelector
-                        .padding(.top, DS.Spacing.sm)
+                Spacer()
 
-                    Spacer()
+                // Central content
+                centralContent
 
-                    // Central content
-                    centralContent
+                Spacer()
 
-                    Spacer()
-
-                    // Bottom selection chips
-                    bottomChips
-                        .padding(.bottom, DS.Spacing.lg)
-                }
-                .dismissKeyboardOnTap()
+                // Bottom selection chips
+                bottomChips
+                    .padding(.bottom, DS.Spacing.lg)
             }
+            .dismissKeyboardOnTap()
+            .yalaScreenBackground(.subtle)
             .navigationTitle(favorite != nil ? L10n.Favorites.editTitle : L10n.Favorites.newTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

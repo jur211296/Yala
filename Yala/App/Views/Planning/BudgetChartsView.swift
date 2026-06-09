@@ -164,11 +164,8 @@ struct BudgetChartsView: View {
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.lg) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.lg) {
                     // Mini-resumen del presupuesto arriba
                     miniSummaryCard
 
@@ -205,9 +202,9 @@ struct BudgetChartsView: View {
                 }
                 .padding(.vertical, DS.Spacing.lg)
                 .padding(.horizontal, DS.Spacing.lg)
-            }
-            .scrollViewGlassEdges()
         }
+        .scrollViewGlassEdges()
+        .yalaScreenBackground(.panel)
         .navigationTitle(L10n.BudgetDetail.chartsTitle)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

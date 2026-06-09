@@ -39,34 +39,31 @@ struct CurrencySelectorView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
+        ScrollView {
+            LazyVStack(spacing: DS.Spacing.lg) {
+            // Recommended section
+            recommendedSection
 
-            ScrollView {
-                LazyVStack(spacing: DS.Spacing.lg) {
-                // Recommended section
-                recommendedSection
-
-                // Remaining currencies by continent
-                ForEach(filteredContinentGroups, id: \.continent) { group in
-                    SectionBox(title: group.continent.localizedName) {
-                        VStack(spacing: DS.Spacing.none) {
-                            ForEach(Array(group.currencies.enumerated()), id: \.element) {
-                                index, currency in
-                                if index > 0 {
-                                    SubsectionDivider()
-                                }
-                                currencyRow(currency: currency)
+            // Remaining currencies by continent
+            ForEach(filteredContinentGroups, id: \.continent) { group in
+                SectionBox(title: group.continent.localizedName) {
+                    VStack(spacing: DS.Spacing.none) {
+                        ForEach(Array(group.currencies.enumerated()), id: \.element) {
+                            index, currency in
+                            if index > 0 {
+                                SubsectionDivider()
                             }
+                            currencyRow(currency: currency)
                         }
                     }
                 }
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.lg)
         }
-            .refreshable {}
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.lg)
         }
+        .refreshable {}
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.preferredCurrency)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

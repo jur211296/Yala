@@ -100,7 +100,7 @@ struct GroupsGlobalSettingsView: View {
                 .padding(.top, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
-            .yalaScreenBackground(.panel)
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Groups.GlobalSettings.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

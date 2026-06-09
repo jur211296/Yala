@@ -24,14 +24,13 @@ struct TransactionAssociationSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView()
-
                 if candidates.isEmpty {
                     emptyState
                 } else {
                     candidatesList
                 }
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(NSLocalizedString("scheduled.associate.title", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

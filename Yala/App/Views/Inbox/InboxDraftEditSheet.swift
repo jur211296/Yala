@@ -260,8 +260,6 @@ struct InboxDraftEditSheet: View {
 
     private var mainContent: some View {
         ZStack {
-            PanelBackgroundView()
-
             VStack(spacing: DS.Spacing.none) {
                 // Transaction type selector (full width, at top)
                 if !sessionState.isExpensesOnlyMode {
@@ -280,6 +278,7 @@ struct InboxDraftEditSheet: View {
             }
             .dismissKeyboardOnTap()
         }
+        .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
     }
 
     // MARK: - Transaction Type Selector

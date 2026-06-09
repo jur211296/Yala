@@ -51,7 +51,7 @@ struct GroupReconnectView: View {
                 .padding(.bottom, DS.Spacing.xxl)
             }
             .padding(.horizontal, DS.Spacing.xxl)
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(.transparent)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {

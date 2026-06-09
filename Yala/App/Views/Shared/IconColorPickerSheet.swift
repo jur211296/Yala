@@ -238,7 +238,7 @@ struct IconColorPickerSheet: View {
                 .padding(.vertical, DS.Spacing.xl)
             }
             .scrollContentBackground(.hidden)
-            .yalaScreenBackground(.panel)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .navigationTitle(L10n.IconPicker.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

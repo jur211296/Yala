@@ -61,7 +61,7 @@ struct MemberPickerView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.sm)
             }
-            .yalaScreenBackground()
+            .yalaScreenBackground(.subtle)
             .navigationTitle(mode == .singleSelect ? L10n.Groups.Expense.paidByTitle : L10n.Groups.Expense.divideBetween)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

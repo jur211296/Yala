@@ -59,8 +59,6 @@ struct InboxView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView()
-
                 VStack(spacing: DS.Spacing.none) {
                     // Mini-hero (panel-aligned). Pending-global; oculto en selection mode.
                     miniHero
@@ -99,6 +97,7 @@ struct InboxView: View {
                     }
                 }
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Inbox.title)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
