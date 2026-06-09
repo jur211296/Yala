@@ -219,7 +219,7 @@ final class SplitSyncManager {
         }
 
         do {
-            try await container.accept(metadata)
+            _ = try await container.accept(metadata)
             #if DEBUG
             logger.info("Share accepted — shared engine will fetch zone data automatically")
             #endif

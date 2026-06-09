@@ -632,72 +632,76 @@ struct BidirectionalCashFlowChart: View {
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
             }
 
-            if isWaterfallMode {
-                // WATERFALL: cumulative bars — each starts where previous ended
-                ForEach(Array(waterfallBars.enumerated()), id: \.offset) { _, bar in
-                    BarMark(
-                        x: .value("Date", bar.date, unit: grouping.calendarUnit),
-                        yStart: .value("Start", bar.yStart),
-                        yEnd: .value("End", bar.yEnd)
+            // Mode-exclusive series rendered via empty-array ForEach guards
+            // (an if/else here emits _ConditionalContent, which only conforms
+            // to ChartContent on iOS 27+).
+
+            // WATERFALL: cumulative bars — each starts where previous ended
+            ForEach(isWaterfallMode ? Array(waterfallBars.enumerated()) : [], id: \.offset) { _, bar in
+                BarMark(
+                    x: .value("Date", bar.date, unit: grouping.calendarUnit),
+                    yStart: .value("Start", bar.yStart),
+                    yEnd: .value("End", bar.yEnd)
+                )
+                .foregroundStyle(
+                    bar.net >= 0 ? WidgetColors.income.gradient : WidgetColors.expense.gradient
+                )
+                .cornerRadius(WDS.Radius.xs)
+            }
+
+            // Income-only mode: bars upward (teal)
+            ForEach((!isWaterfallMode && hasOnlyIncome) ? Array(groupedPoints.enumerated()) : [], id: \.offset) { _, point in
+                BarMark(
+                    x: .value("Date", point.date, unit: grouping.calendarUnit),
+                    y: .value("Income", point.income)
+                )
+                .foregroundStyle(WidgetColors.income.gradient)
+                .cornerRadius(WDS.Radius.xs)
+            }
+
+            // Bidirectional mode (monthly)
+            ForEach((!isWaterfallMode && !hasOnlyIncome && !expensesOnly) ? Array(groupedPoints.enumerated()) : [], id: \.offset) { _, point in
+                BarMark(
+                    x: .value("Date", point.date, unit: grouping.calendarUnit),
+                    y: .value("Income", point.income)
+                )
+                .foregroundStyle(WidgetColors.income.gradient)
+                .cornerRadius(WDS.Radius.xs)
+
+                BarMark(
+                    x: .value("Date", point.date, unit: grouping.calendarUnit),
+                    y: .value("Expense", -point.expense)
+                )
+                .foregroundStyle(WidgetColors.expense.gradient)
+                .cornerRadius(WDS.Radius.xs)
+
+                // Net trend line only for monthly grouping
+                if grouping == .month {
+                    LineMark(
+                        x: .value("Date", point.date, unit: grouping.calendarUnit),
+                        y: .value("Net", point.net)
                     )
-                    .foregroundStyle(
-                        bar.net >= 0 ? WidgetColors.income.gradient : WidgetColors.expense.gradient
+                    .foregroundStyle(WidgetColors.electricIndigo)
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    .interpolationMethod(.monotone)
+
+                    PointMark(
+                        x: .value("Date", point.date, unit: grouping.calendarUnit),
+                        y: .value("Net", point.net)
                     )
-                    .cornerRadius(WDS.Radius.xs)
+                    .foregroundStyle(WidgetColors.electricIndigo)
+                    .symbolSize(20)
                 }
-            } else {
-                ForEach(Array(groupedPoints.enumerated()), id: \.offset) { _, point in
-                    if hasOnlyIncome {
-                        // Income-only mode: bars upward (teal)
-                        BarMark(
-                            x: .value("Date", point.date, unit: grouping.calendarUnit),
-                            y: .value("Income", point.income)
-                        )
-                        .foregroundStyle(WidgetColors.income.gradient)
-                        .cornerRadius(WDS.Radius.xs)
-                    } else if !expensesOnly {
-                        // Bidirectional mode (monthly)
-                        BarMark(
-                            x: .value("Date", point.date, unit: grouping.calendarUnit),
-                            y: .value("Income", point.income)
-                        )
-                        .foregroundStyle(WidgetColors.income.gradient)
-                        .cornerRadius(WDS.Radius.xs)
+            }
 
-                        BarMark(
-                            x: .value("Date", point.date, unit: grouping.calendarUnit),
-                            y: .value("Expense", -point.expense)
-                        )
-                        .foregroundStyle(WidgetColors.expense.gradient)
-                        .cornerRadius(WDS.Radius.xs)
-
-                        // Net trend line only for monthly grouping
-                        if grouping == .month {
-                            LineMark(
-                                x: .value("Date", point.date, unit: grouping.calendarUnit),
-                                y: .value("Net", point.net)
-                            )
-                            .foregroundStyle(WidgetColors.electricIndigo)
-                            .lineStyle(StrokeStyle(lineWidth: 2))
-                            .interpolationMethod(.monotone)
-
-                            PointMark(
-                                x: .value("Date", point.date, unit: grouping.calendarUnit),
-                                y: .value("Net", point.net)
-                            )
-                            .foregroundStyle(WidgetColors.electricIndigo)
-                            .symbolSize(20)
-                        }
-                    } else {
-                        // Expenses-only mode: bars upward
-                        BarMark(
-                            x: .value("Date", point.date, unit: grouping.calendarUnit),
-                            y: .value("Expense", point.expense)
-                        )
-                        .foregroundStyle(WidgetColors.expense.gradient)
-                        .cornerRadius(WDS.Radius.xs)
-                    }
-                }
+            // Expenses-only mode: bars upward
+            ForEach((!isWaterfallMode && !hasOnlyIncome && expensesOnly) ? Array(groupedPoints.enumerated()) : [], id: \.offset) { _, point in
+                BarMark(
+                    x: .value("Date", point.date, unit: grouping.calendarUnit),
+                    y: .value("Expense", point.expense)
+                )
+                .foregroundStyle(WidgetColors.expense.gradient)
+                .cornerRadius(WDS.Radius.xs)
             }
         }
         .widgetAccentable()

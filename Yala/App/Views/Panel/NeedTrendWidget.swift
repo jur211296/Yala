@@ -530,31 +530,18 @@ struct NeedTrendChartView: View {
         let yDomain: ClosedRange<Double> = 0...(maxValue * 1.05)  // 5% padding instead of default ~20%
 
         Chart {
-            ForEach(flattenData(points)) { item in
-                // If a need is selected, only show that nature (or dim others)
-                // Design Choice: If filtered, show ONLY that line. If not, show ALL lines stacked?
-                // Or show all lines but highlight selected?
-                // Let's match typical behavior: If filtered, show only that ONE series.
-                // If ALL (nil), show stacked area or multiple lines.
-                // Given "Gastos por naturaleza", Stacked Bar is good for composition.
-
-                if let selected = selectedNeed {
-                    if item.need == selected {
-                        BarMark(
-                            x: .value("Fecha", item.date, unit: chartUnit),
-                            y: .value("Monto", item.amount)
-                        )
-                        .foregroundStyle(item.need.color.gradient)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
-                                            }
-                } else {
-                    BarMark(
-                        x: .value("Fecha", item.date, unit: chartUnit),
-                        y: .value("Monto", item.amount)
-                    )
-                    .foregroundStyle(item.need.color.gradient)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
-                                    }
+            // Filter to the selected need (show all when none selected). Both
+            // branches rendered an identical BarMark, so this is a pure data filter.
+            ForEach(flattenData(points).filter { item in
+                guard let selected = selectedNeed else { return true }
+                return item.need == selected
+            }) { item in
+                BarMark(
+                    x: .value("Fecha", item.date, unit: chartUnit),
+                    y: .value("Monto", item.amount)
+                )
+                .foregroundStyle(item.need.color.gradient)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
             }
 
             averageLineMarks

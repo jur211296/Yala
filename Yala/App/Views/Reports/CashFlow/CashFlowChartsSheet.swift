@@ -643,54 +643,54 @@ struct CashFlowChartsSheet: View {
                 let showLabels = cachedSavings.count <= 10
 
                 Chart {
-                    ForEach(cachedSavings, id: \.monthKey) { point in
-                        if point.isPast {
-                            // Past: actual savings bar (teal/hotPink)
-                            BarMark(
-                                x: .value("Month", point.date, unit: .month),
-                                y: .value("Net", point.actual)
-                            )
-                            .foregroundStyle(
-                                point.actual >= 0
-                                    ? Color.incomeGraph.gradient
-                                    : Color.expenseGraph.gradient
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+                    // Past: actual savings bars + plan reference tick
+                    ForEach(cachedSavings.filter(\.isPast), id: \.monthKey) { point in
+                        BarMark(
+                            x: .value("Month", point.date, unit: .month),
+                            y: .value("Net", point.actual)
+                        )
+                        .foregroundStyle(
+                            point.actual >= 0
+                                ? Color.incomeGraph.gradient
+                                : Color.expenseGraph.gradient
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
 
-                            // Plan reference tick
-                            RuleMark(
-                                xStart: .value("Start", point.date, unit: .month),
-                                xEnd: .value("End", point.date, unit: .month),
-                                y: .value("Plan", point.planned)
-                            )
-                            .lineStyle(StrokeStyle(lineWidth: 2, dash: [3, 2]))
-                            .foregroundStyle(.thPrimaryText.opacity(0.5))
-                        } else {
-                            // Future: planned savings bar (grey)
-                            BarMark(
-                                x: .value("Month", point.date, unit: .month),
-                                y: .value("Net", point.planned)
-                            )
-                            .foregroundStyle(theme.secondaryText.opacity(0.3).gradient)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
-                        }
+                        // Plan reference tick
+                        RuleMark(
+                            xStart: .value("Start", point.date, unit: .month),
+                            xEnd: .value("End", point.date, unit: .month),
+                            y: .value("Plan", point.planned)
+                        )
+                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [3, 2]))
+                        .foregroundStyle(.thPrimaryText.opacity(0.5))
+                    }
 
-                        // Data labels
-                        if showLabels {
-                            let displayValue = point.isPast ? point.actual : point.planned
-                            PointMark(
-                                x: .value("Month", point.date, unit: .month),
-                                y: .value("Net", displayValue)
-                            )
-                            .symbolSize(0)
-                            .annotation(
-                                position: displayValue >= 0 ? .top : .bottom,
-                                spacing: DS.Spacing.xs
-                            ) {
-                                Text(YalaFormatter.axisK(displayValue))
-                                    .font(DS.Typography.labelTiny)
-                                    .foregroundStyle(.thSecondaryText)
-                            }
+                    // Future: planned savings bars (grey)
+                    ForEach(cachedSavings.filter { !$0.isPast }, id: \.monthKey) { point in
+                        BarMark(
+                            x: .value("Month", point.date, unit: .month),
+                            y: .value("Net", point.planned)
+                        )
+                        .foregroundStyle(theme.secondaryText.opacity(0.3).gradient)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+                    }
+
+                    // Data labels (past = actual, future = planned)
+                    ForEach(showLabels ? cachedSavings : [], id: \.monthKey) { point in
+                        let displayValue = point.isPast ? point.actual : point.planned
+                        PointMark(
+                            x: .value("Month", point.date, unit: .month),
+                            y: .value("Net", displayValue)
+                        )
+                        .symbolSize(0)
+                        .annotation(
+                            position: displayValue >= 0 ? .top : .bottom,
+                            spacing: DS.Spacing.xs
+                        ) {
+                            Text(YalaFormatter.axisK(displayValue))
+                                .font(DS.Typography.labelTiny)
+                                .foregroundStyle(.thSecondaryText)
                         }
                     }
 
