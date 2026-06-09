@@ -27,11 +27,14 @@ struct BridgeActivationSheet: View {
     /// Conteo de expenses pre-existentes del scope, resuelto una sola vez en `.onAppear`
     /// (evita re-fetch en cada render del body). Alimenta los `%d` de los copys.
     @State private var previousExpenseCount: Int = 0
+    @State private var selectedDetent: PresentationDetent = .medium
 
     enum Option: String, CaseIterable {
         case startNow
         case importAll
     }
+
+    private var isLargeDetent: Bool { selectedDetent == .large }
 
     var body: some View {
         NavigationStack {
@@ -65,7 +68,7 @@ struct BridgeActivationSheet: View {
                 .padding(.top, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(L10n.Groups.Bridge.activateTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -77,7 +80,7 @@ struct BridgeActivationSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.hidden)
         .interactiveDismissDisabled(true)
         .onAppear {

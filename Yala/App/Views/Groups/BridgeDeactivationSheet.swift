@@ -40,11 +40,14 @@ struct BridgeDeactivationSheet: View {
     @State private var selectedOption: Option = .keep
     @State private var isProcessing: Bool = false
     @State private var errorMessage: String?
+    @State private var selectedDetent: PresentationDetent = .medium
 
     enum Option: String, CaseIterable {
         case keep
         case delete
     }
+
+    private var isLargeDetent: Bool { selectedDetent == .large }
 
     var body: some View {
         NavigationStack {
@@ -74,7 +77,7 @@ struct BridgeDeactivationSheet: View {
                 .padding(.top, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(L10n.Groups.Bridge.deactivationSheetTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -86,7 +89,7 @@ struct BridgeDeactivationSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
         .presentationDragIndicator(.hidden)
         .interactiveDismissDisabled(true)
     }

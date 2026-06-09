@@ -20,6 +20,9 @@ struct TransactionAssociationSheet: View {
     @State private var candidates: [TransactionItem] = []
     @State private var showConfirmation: Bool = false
     @State private var selectedTransaction: TransactionItem?
+    @State private var selectedDetent: PresentationDetent = .medium
+
+    private var isLargeDetent: Bool { selectedDetent == .large }
 
     var body: some View {
         NavigationStack {
@@ -30,7 +33,7 @@ struct TransactionAssociationSheet: View {
                     candidatesList
                 }
             }
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(NSLocalizedString("scheduled.associate.title", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -58,6 +61,7 @@ struct TransactionAssociationSheet: View {
                 }
             }
         }
+        .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]), selection: $selectedDetent)
     }
 
     // MARK: - Empty State

@@ -122,7 +122,6 @@ struct ScheduledPaymentDetailView: View {
                 selectedMonth: viewModel.selectedMonth,
                 viewModel: viewModel
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
             .onDisappear(perform: refreshPaymentData)
         }
         .sheet(item: $editingTransaction) { transaction in

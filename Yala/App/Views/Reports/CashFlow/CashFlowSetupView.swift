@@ -367,6 +367,7 @@ struct CashFlowMethodPickerSheet: View {
     @State private var selectedMethod: EstimationMethod
     @State private var manualAmountText: String = ""
     @State private var previewAmount: Double
+    @State private var selectedDetent: PresentationDetent = .medium
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
@@ -382,6 +383,8 @@ struct CashFlowMethodPickerSheet: View {
             self._manualAmountText = State(initialValue: String(format: "%.0f", line.suggestedAmount))
         }
     }
+
+    private var isLargeDetent: Bool { selectedDetent == .large }
 
     var body: some View {
         NavigationStack {
@@ -439,7 +442,7 @@ struct CashFlowMethodPickerSheet: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
-            .yalaScreenBackground(.subtle)
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(L10n.CashFlowPlan.calculationMethodTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -453,7 +456,7 @@ struct CashFlowMethodPickerSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
     }
 
     // MARK: - Helpers
