@@ -14,7 +14,7 @@ struct TransactionAssociationSheet: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     let payment: ScheduledPayment
-    let selectedMonth: Date
+    let referenceDate: Date
     @Bindable var viewModel: ScheduledPaymentsViewModel
 
     @State private var candidates: [TransactionItem] = []
@@ -44,7 +44,7 @@ struct TransactionAssociationSheet: View {
                 }
             }
             .onAppear {
-                candidates = viewModel.fetchCandidateTransactions(for: payment, month: selectedMonth)
+                candidates = viewModel.fetchCandidateTransactions(for: payment, referenceDate: referenceDate)
             }
             .alert(
                 NSLocalizedString("scheduled.associate.confirm", comment: ""),

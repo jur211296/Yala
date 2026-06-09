@@ -2538,7 +2538,7 @@
 "report.uncategorized" = "Uncategorized";
 "scheduled.advance" = "Advance payment";
 "scheduled.associate.already" = "This expense is already linked";
-"scheduled.associate.candidatesHeader" = "Expenses this month";
+"scheduled.associate.candidatesHeader" = "Nearby expenses";
 "scheduled.associate.confirm" = "Link this expense to the scheduled payment?";
 "scheduled.associate.empty" = "No similar expenses found this month";
 "scheduled.associate.paymentHeader" = "Scheduled payment";

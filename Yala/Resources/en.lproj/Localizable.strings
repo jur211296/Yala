@@ -2934,7 +2934,7 @@
 "scheduled.associate.success" = "Expense linked";
 "scheduled.associate.empty" = "No similar expenses found this month";
 "scheduled.associate.paymentHeader" = "Scheduled payment";
-"scheduled.associate.candidatesHeader" = "Expenses this month";
+"scheduled.associate.candidatesHeader" = "Nearby expenses";
 "scheduled.associate.already" = "This expense is already linked";
 "scheduled.advance" = "Advance payment";
 "scheduled.view.record" = "View record";

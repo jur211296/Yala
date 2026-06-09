@@ -2508,7 +2508,7 @@
 "report.uncategorized" = "Sem categoria";
 "scheduled.advance" = "Adiantar pagamento";
 "scheduled.associate.already" = "Esta despesa já está vinculada";
-"scheduled.associate.candidatesHeader" = "Despesas do mes";
+"scheduled.associate.candidatesHeader" = "Despesas próximas";
 "scheduled.associate.confirm" = "Vincular esta despesa ao pagamento agendado?";
 "scheduled.associate.empty" = "Nenhuma despesa semelhante encontrada neste mês";
 "scheduled.associate.paymentHeader" = "Pagamento agendado";

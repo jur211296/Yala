@@ -2887,7 +2887,7 @@
 "scheduled.associate.success" = "Uitgave gekoppeld";
 "scheduled.associate.empty" = "Geen vergelijkbare uitgaven deze maand gevonden";
 "scheduled.associate.paymentHeader" = "Geplande betaling";
-"scheduled.associate.candidatesHeader" = "Uitgaven deze maand";
+"scheduled.associate.candidatesHeader" = "Nabije uitgaven";
 "scheduled.associate.already" = "Deze uitgave is al gekoppeld";
 "scheduled.advance" = "Vervroegde betaling";
 "scheduled.view.record" = "Boeking bekijken";

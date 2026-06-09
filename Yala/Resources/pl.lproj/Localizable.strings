@@ -2887,7 +2887,7 @@
 "scheduled.associate.success" = "Wydatek powiązany";
 "scheduled.associate.empty" = "Nie znaleziono podobnych wydatków w tym miesiącu";
 "scheduled.associate.paymentHeader" = "Zaplanowana płatność";
-"scheduled.associate.candidatesHeader" = "Wydatki w tym miesiącu";
+"scheduled.associate.candidatesHeader" = "Pobliskie wydatki";
 "scheduled.associate.already" = "Ten wydatek jest już powiązany";
 "scheduled.advance" = "Przyspiesz płatność";
 "scheduled.view.record" = "Zobacz wpis";

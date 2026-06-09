@@ -2887,7 +2887,7 @@
 "scheduled.associate.success" = "支出已关联";
 "scheduled.associate.empty" = "本月没有找到类似支出";
 "scheduled.associate.paymentHeader" = "计划付款";
-"scheduled.associate.candidatesHeader" = "本月支出";
+"scheduled.associate.candidatesHeader" = "近期支出";
 "scheduled.associate.already" = "此支出已关联";
 "scheduled.advance" = "提前付款";
 "scheduled.view.record" = "查看记录";

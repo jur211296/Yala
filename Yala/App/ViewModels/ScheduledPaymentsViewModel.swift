@@ -518,24 +518,25 @@ final class ScheduledPaymentsViewModel {
     // MARK: - Transaction Association (M3)
 
     /// Fetch candidate transactions for manual association with a scheduled payment.
-    /// Filters: same month, same type (income/expense), same account (if set), no existing association.
+    /// Filters: within ±15 days of the occurrence date, same type (income/expense), no existing association.
+    /// The window spans adjacent months so a payment registered just before/after the due date is still found.
     /// Sorted by amount proximity to payment amount.
-    func fetchCandidateTransactions(for payment: ScheduledPayment, month: Date) -> [TransactionItem] {
+    func fetchCandidateTransactions(for payment: ScheduledPayment, referenceDate: Date) -> [TransactionItem] {
         guard let context = modelContext else { return [] }
         let calendar = Calendar.current
-        guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [] }
+        let referenceDay = calendar.startOfDay(for: referenceDate)
+        guard let windowStart = calendar.date(byAdding: .day, value: -15, to: referenceDay),
+              let windowEnd = calendar.date(byAdding: .day, value: 16, to: referenceDay) else { return [] }
 
-        let monthStart = monthInterval.start
-        let monthEnd = monthInterval.end
         do {
             var descriptor = FetchDescriptor<TransactionItem>(
                 predicate: #Predicate<TransactionItem> { tx in
-                    tx.date >= monthStart && tx.date < monthEnd &&
+                    tx.date >= windowStart && tx.date < windowEnd &&
                     tx.scheduledPaymentID == nil
                 },
                 sortBy: [SortDescriptor(\.date, order: .reverse)]
             )
-            descriptor.fetchLimit = 100 // Perf: candidate picker — month-bounded + unlinked
+            descriptor.fetchLimit = 100 // Perf: candidate picker — window-bounded + unlinked
             var transactions = try context.fetch(descriptor)
 
             // Filter by transaction type (income matches income, expense matches expense)

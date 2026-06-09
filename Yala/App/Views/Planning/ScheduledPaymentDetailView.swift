@@ -23,6 +23,7 @@ struct ScheduledPaymentDetailView: View {
     @State private var showAssociationSheet = false
     @State private var showOccurrenceActions = false
     @State private var selectedOccurrenceDate: Date?
+    @State private var associationReferenceDate: Date?
     @State private var linkedTransactions: [TransactionItem] = []
     @State private var editingTransaction: TransactionItem?
     @State private var advancedDraft: InboxDraft?
@@ -119,7 +120,7 @@ struct ScheduledPaymentDetailView: View {
         .sheet(isPresented: $showAssociationSheet) {
             TransactionAssociationSheet(
                 payment: payment,
-                selectedMonth: viewModel.selectedMonth,
+                referenceDate: associationReferenceDate ?? viewModel.selectedMonth,
                 viewModel: viewModel
             )
             .onDisappear(perform: refreshPaymentData)
@@ -442,6 +443,7 @@ struct ScheduledPaymentDetailView: View {
                     }
                 }
                 Button {
+                    associationReferenceDate = date
                     showAssociationSheet = true
                 } label: {
                     Label(L10n.Scheduled.Detail.associateTitle, systemImage: "link.badge.plus")

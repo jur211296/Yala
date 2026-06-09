@@ -2883,7 +2883,7 @@
 "scheduled.associate.success" = "Despesa vinculada";
 "scheduled.associate.empty" = "Nenhuma despesa semelhante encontrada neste mês";
 "scheduled.associate.paymentHeader" = "Pagamento agendado";
-"scheduled.associate.candidatesHeader" = "Despesas do mes";
+"scheduled.associate.candidatesHeader" = "Despesas próximas";
 "scheduled.associate.already" = "Esta despesa já está vinculada";
 "scheduled.advance" = "Adiantar pagamento";
 "scheduled.view.record" = "Ver registo";

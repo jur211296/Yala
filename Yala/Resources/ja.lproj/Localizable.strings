@@ -2887,7 +2887,7 @@
 "scheduled.associate.success" = "支出をリンクしました";
 "scheduled.associate.empty" = "今月の似た支出は見つかりませんでした";
 "scheduled.associate.paymentHeader" = "予定支払い";
-"scheduled.associate.candidatesHeader" = "今月の支出";
+"scheduled.associate.candidatesHeader" = "近い時期の支出";
 "scheduled.associate.already" = "この支出はすでにリンクされています";
 "scheduled.advance" = "前倒し支払い";
 "scheduled.view.record" = "記録を表示";

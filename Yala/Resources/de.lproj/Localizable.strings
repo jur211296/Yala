@@ -2883,7 +2883,7 @@
 "scheduled.associate.success" = "Ausgabe verknüpft";
 "scheduled.associate.empty" = "Keine ähnlichen Ausgaben in diesem Monat gefunden";
 "scheduled.associate.paymentHeader" = "Geplante Zahlung";
-"scheduled.associate.candidatesHeader" = "Ausgaben dieses Monats";
+"scheduled.associate.candidatesHeader" = "Zeitnahe Ausgaben";
 "scheduled.associate.already" = "Diese Ausgabe ist bereits verknüpft";
 "scheduled.advance" = "Zahlung vorziehen";
 "scheduled.view.record" = "Eintrag anzeigen";
