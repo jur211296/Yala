@@ -154,6 +154,10 @@ final class AppBootstrapper {
         // 8. Initialize services with context
         currencyConverter.setContext(context)
         budgetAlertService.setContext(context)
+        // DraftService se usa fuera del flujo del Inbox (opt-in de gastos/liquidaciones de
+        // grupo), por lo que necesita el contexto desde el arranque y no solo just-in-time
+        // como lo seteaban las vistas del Inbox.
+        draftService.setContext(context)
 
         // 8.5. Migración V3: regen UUIDs + re-encode CSV mirrors en una sola save atómica.
         // Gated al hook `iCloudFirstImportCompleted` para garantizar que M2M está
