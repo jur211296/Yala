@@ -128,13 +128,15 @@ struct GroupStatsView: View {
                 .foregroundStyle(theme.accent.gradient)
                 .cornerRadius(DS.Radius.xs)
                 .annotation(position: .trailing) {
-                    AmountText(
-                        value: member.totalPaid,
-                        currencyCode: currencyCode,
-                        font: DS.Typography.captionSmall,
-                        secondaryFont: DS.Typography.captionSmall,
-                        tint: .secondary
-                    )
+                    // El contenido de `.annotation` se hostea fuera del árbol de
+                    // la vista y no propaga environment objects @Observable, así
+                    // que aquí NO se puede usar `AmountText` (lee
+                    // `@Environment(AppPreferences.self)`). Se formatea con el
+                    // `appPreferences` ya resuelto de la vista — mismo patrón que
+                    // el resto de annotations de charts en la app.
+                    Text(appPreferences.currency(member.totalPaid, currencyCode: currencyCode))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
                 }
                 .accessibilityLabel("\(member.displayName): \(appPreferences.currency(member.totalPaid, currencyCode: currencyCode))")
             }
