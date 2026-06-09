@@ -4,8 +4,11 @@
 //
 //  A0-Bridge V2.0 (P1-4): sheet dedicada para finalizar drafts source=.groupSettlement.
 //  Solo permite asignar cuenta (subcat sistema "Liquidación enviada/recibida" ya viene
-//  del bridge). Persiste defaultSettlementAccount tras éxito. La TX creada queda como
-//  TX manual independiente (D7) — no setea splitSettlementID.
+//  del bridge). La TX creada queda como TX manual independiente (D7) — no setea
+//  splitSettlementID.
+//
+//  El cuerpo visual usa GroupDraftFinalizationScaffold (mismo lenguaje que el editor
+//  normal del Inbox): banner explicativo, monto grande read-only, chip de cuenta activo.
 //
 
 import SwiftUI
@@ -37,63 +40,25 @@ struct GroupSettlementDraftFinalizationSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.lg) {
-                    GroupDraftReadOnlyHeader(
-                        groupName: groupName,
-                        note: draft.note,
-                        amount: draft.amount,
-                        currencyCode: resolvedCurrency,
-                        date: draft.effectiveDate,
-                        iconName: "arrow.left.arrow.right.circle.fill"
-                    )
-
-                    // Selector de cuenta
-                    Button {
-                        showAccountSelector = true
-                    } label: {
-                        HStack(spacing: DS.Spacing.md) {
-                            Text(L10n.Inbox.GroupSettlementDraft.assignAccount)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            if let account = selectedAccount {
-                                HStack(spacing: DS.Spacing.xs) {
-                                    Circle()
-                                        .fill(Color(hex: account.colorHex))
-                                        .frame(width: 20, height: 20) // A11Y-DT: row icon decorative
-                                    Text(account.name)
-                                        .font(DS.Typography.body)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(1)
-                                }
-                            } else {
-                                Text(L10n.Common.select)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.tertiary)
-                            }
-                            Image(systemName: "chevron.right")
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .contentShape(Rectangle())
-                        .padding(.horizontal, DS.FormRow.paddingH)
-                        .padding(.vertical, DS.FormRow.paddingV)
-                    }
-                    .buttonStyle(.plain)
-                    .panelCard()
-                    .padding(.horizontal, DS.Spacing.lg)
-
-                    YalaPrimaryButton(L10n.Inbox.GroupDraft.finalize, icon: "checkmark.circle.fill") {
-                        handleFinalize()
-                    }
-                    .disabled(selectedAccount == nil)
-                    .padding(.horizontal, DS.Spacing.lg)
+            GroupDraftFinalizationScaffold(
+                bannerMessage: String(format: L10n.Inbox.GroupSettlementDraft.banner, groupName),
+                note: draft.note,
+                amount: draft.amount,
+                currencyCode: resolvedCurrency,
+                date: draft.effectiveDate,
+                categoryReadOnly: categoryReadOnly,
+                finalizeDisabled: selectedAccount == nil,
+                onFinalize: { handleFinalize() }
+            ) {
+                SelectionChip(
+                    icon: "creditcard",
+                    text: selectedAccount?.name ?? L10n.Inbox.GroupSettlementDraft.assignAccount,
+                    isSelected: selectedAccount != nil,
+                    color: selectedAccount.map { Color(hex: $0.colorHex) }
+                ) {
+                    showAccountSelector = true
                 }
-                .padding(.top, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.safeBottom)
             }
-            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Inbox.GroupSettlementDraft.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -118,6 +83,15 @@ struct GroupSettlementDraftFinalizationSheet: View {
             // M6: NO defaults — eliminado resolvePreselectedAccount, user siempre elige cuenta.
             .onAppear { loadMetadata() }
         }
+    }
+
+    // MARK: - Derived
+
+    /// Chip de categoría read-only: subcat sistema "Liquidación enviada/recibida" (siempre
+    /// poblada por el bridge). Defensivo a `nil` durante hidratación lazy de CloudKit.
+    private var categoryReadOnly: (name: String, iconName: String, colorHex: String)? {
+        guard let sub = draft.subcategory else { return nil }
+        return (sub.name, sub.iconName ?? sub.safeCategory.iconName ?? "folder", sub.safeCategory.colorHex)
     }
 
     // MARK: - Actions

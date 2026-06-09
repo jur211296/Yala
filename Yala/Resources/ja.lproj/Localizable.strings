@@ -4458,3 +4458,12 @@
 
 /* Card del grupo: el usuario actual le debe a otro miembro (perspectiva iOwe) */
 "groups.card.youOwe" = "あなたは %@ に借りがあります";
+
+/* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
+"inbox.groupExpenseAccountDraft.banner" = "グループ「%@」の支出です。お金が出た口座を割り当てるだけです。金額と日付はグループが管理します。";
+
+/* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
+"inbox.groupExpenseDraft.banner" = "グループ「%@」の支出です。分類するサブカテゴリーを選ぶだけです。金額と日付はグループが管理します。";
+
+/* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
+"inbox.groupSettlementDraft.banner" = "グループ「%@」の精算です。口座を割り当てるだけです。金額と日付はグループが管理します。";

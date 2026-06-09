@@ -6,6 +6,9 @@
 //  Solo permite asignar subcategoría — los demás campos vienen del bridge y son read-only.
 //  approveDraft sigue el path TX-puntero (UPDATE de la TX virtual existente).
 //
+//  El cuerpo visual usa GroupDraftFinalizationScaffold (mismo lenguaje que el editor
+//  normal del Inbox): banner explicativo, monto grande read-only, chip de categoría activo.
+//
 
 import SwiftUI
 import SwiftData
@@ -36,58 +39,24 @@ struct GroupExpenseDraftFinalizationSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.lg) {
-                    GroupDraftReadOnlyHeader(
-                        groupName: groupName,
-                        note: draft.note,
-                        amount: draft.amount,
-                        currencyCode: resolvedCurrency,
-                        date: draft.effectiveDate,
-                        iconName: "person.2.fill"
-                    )
-
-                    // Selector de subcategoría
-                    Button {
-                        showSubcategorySelector = true
-                    } label: {
-                        HStack(spacing: DS.Spacing.md) {
-                            Text(L10n.Inbox.GroupExpenseDraft.assignSubcategory)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            if let sub = selectedSubcategory {
-                                Text(sub.name)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            } else {
-                                Text(L10n.Common.select)
-                                    .font(DS.Typography.body)
-                                    .foregroundStyle(.tertiary)
-                            }
-                            Image(systemName: "chevron.right")
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .contentShape(Rectangle())
-                        .padding(.horizontal, DS.FormRow.paddingH)
-                        .padding(.vertical, DS.FormRow.paddingV)
-                    }
-                    .buttonStyle(.plain)
-                    .panelCard()
-                    .padding(.horizontal, DS.Spacing.lg)
-
-                    YalaPrimaryButton(L10n.Inbox.GroupDraft.finalize, icon: "checkmark.circle.fill") {
-                        handleFinalize()
-                    }
-                    .disabled(selectedSubcategory == nil)
-                    .padding(.horizontal, DS.Spacing.lg)
+            GroupDraftFinalizationScaffold(
+                bannerMessage: String(format: L10n.Inbox.GroupExpenseDraft.banner, groupName),
+                note: draft.note,
+                amount: draft.amount,
+                currencyCode: resolvedCurrency,
+                date: draft.effectiveDate,
+                finalizeDisabled: selectedSubcategory == nil,
+                onFinalize: { handleFinalize() }
+            ) {
+                SelectionChip(
+                    icon: "tag",
+                    text: selectedSubcategory?.name ?? L10n.Inbox.GroupExpenseDraft.assignSubcategory,
+                    isSelected: selectedSubcategory != nil,
+                    color: selectedSubcategory.map { Color(hex: $0.safeCategory.colorHex) }
+                ) {
+                    showSubcategorySelector = true
                 }
-                .padding(.top, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.safeBottom)
             }
-            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Inbox.GroupExpenseDraft.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -3678,3 +3678,12 @@
 
 /* Card del grupo: el usuario actual le debe a otro miembro (perspectiva iOwe) */
 "groups.card.youOwe" = "Le debés a %@";
+
+/* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
+"inbox.groupExpenseAccountDraft.banner" = "Gasto del grupo %@. Solo asignale la cuenta de la que salió el dinero; el monto y la fecha los gestiona el grupo.";
+
+/* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
+"inbox.groupExpenseDraft.banner" = "Gasto del grupo %@. Solo elegí una subcategoría para clasificarlo; el monto y la fecha los gestiona el grupo.";
+
+/* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
+"inbox.groupSettlementDraft.banner" = "Liquidación del grupo %@. Solo asignale una cuenta; el monto y la fecha los gestiona el grupo.";

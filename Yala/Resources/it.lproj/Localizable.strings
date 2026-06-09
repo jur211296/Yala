@@ -4456,3 +4456,12 @@
 
 /* Card del grupo: el usuario actual le debe a otro miembro (perspectiva iOwe) */
 "groups.card.youOwe" = "Devi a %@";
+
+/* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
+"inbox.groupExpenseAccountDraft.banner" = "Spesa del gruppo %@. Assegna solo il conto da cui è uscito il denaro; l'importo e la data sono gestiti dal gruppo.";
+
+/* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
+"inbox.groupExpenseDraft.banner" = "Spesa del gruppo %@. Scegli solo una sottocategoria per classificarla; l'importo e la data sono gestiti dal gruppo.";
+
+/* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
+"inbox.groupSettlementDraft.banner" = "Liquidazione del gruppo %@. Assegna solo un conto; l'importo e la data sono gestiti dal gruppo.";

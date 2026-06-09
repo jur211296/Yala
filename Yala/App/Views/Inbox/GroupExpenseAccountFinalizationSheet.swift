@@ -9,6 +9,8 @@
 //  cuenta real con `splitExpenseID` setteado e invoca el bridge para regenerar TX virtual lent.
 //
 //  Hint contextual leído de `draft.originReasonKey` + interpolación de actor/group snapshot.
+//  El cuerpo visual usa GroupDraftFinalizationScaffold (mismo lenguaje que el editor normal
+//  del Inbox): banner explicativo, monto grande read-only, chip de cuenta activo, hint warning.
 //
 
 import SwiftUI
@@ -40,33 +42,25 @@ struct GroupExpenseAccountFinalizationSheet: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: DS.Spacing.lg) {
-                    GroupDraftReadOnlyHeader(
-                        groupName: groupName,
-                        note: draft.note,
-                        amount: draft.amount,
-                        currencyCode: resolvedCurrency,
-                        date: draft.effectiveDate,
-                        iconName: "person.2.fill"
-                    )
-
-                    // Hint contextual M6 — copy distinto según originReasonKey.
-                    contextualHint
-
-                    // Selector de cuenta (filtrado por moneda del expense).
-                    accountSelectorRow
-
-                    YalaPrimaryButton(L10n.Inbox.GroupDraft.finalize, icon: "checkmark.circle.fill") {
-                        handleFinalize()
-                    }
-                    .disabled(selectedAccount == nil)
-                    .padding(.horizontal, DS.Spacing.lg)
+            GroupDraftFinalizationScaffold(
+                bannerMessage: String(format: L10n.Inbox.GroupExpenseAccountDraft.banner, groupName),
+                note: draft.note,
+                amount: draft.amount,
+                currencyCode: resolvedCurrency,
+                date: draft.effectiveDate,
+                hint: hintMessage,
+                finalizeDisabled: selectedAccount == nil,
+                onFinalize: { handleFinalize() }
+            ) {
+                SelectionChip(
+                    icon: "creditcard",
+                    text: selectedAccount?.name ?? L10n.Inbox.GroupExpenseAccountDraft.assignAccount,
+                    isSelected: selectedAccount != nil,
+                    color: selectedAccount.map { Color(hex: $0.colorHex) }
+                ) {
+                    showAccountSelector = true
                 }
-                .padding(.top, DS.Spacing.lg)
-                .padding(.bottom, DS.Spacing.safeBottom)
             }
-            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Inbox.GroupExpenseAccountDraft.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -94,26 +88,10 @@ struct GroupExpenseAccountFinalizationSheet: View {
 
     // MARK: - Contextual Hint
 
-    @ViewBuilder
-    private var contextualHint: some View {
-        if let reasonKey = draft.originReasonKey {
-            let copy = resolveHintCopy(reasonKey: reasonKey)
-            HStack(alignment: .top, spacing: DS.Spacing.sm) {
-                Image(systemName: "info.circle.fill")
-                    .font(DS.Typography.body)
-                    .foregroundStyle(DS.Semantic.warningForeground)
-                Text(copy)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.leading)
-            }
-            .padding(DS.Spacing.lg)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.lg).fill(DS.Semantic.warningBackground)
-            )
-            .padding(.horizontal, DS.Spacing.lg)
-        }
+    /// Hint warning de causa específica (debajo del selector). Solo cuando hay `originReasonKey`.
+    private var hintMessage: String? {
+        guard let reasonKey = draft.originReasonKey else { return nil }
+        return resolveHintCopy(reasonKey: reasonKey)
     }
 
     /// Resuelve el copy contextual con interpolación de actor + group según el reasonKey.
@@ -129,45 +107,6 @@ struct GroupExpenseAccountFinalizationSheet: View {
             let actor = draft.originActorName ?? "?"
             return String(format: L10n.Groups.Bridge.draftReasonRemoteCreate, actor, group)
         }
-    }
-
-    // MARK: - Account Selector Row
-
-    private var accountSelectorRow: some View {
-        Button {
-            showAccountSelector = true
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Text(L10n.Inbox.GroupExpenseAccountDraft.assignAccount)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
-                Spacer()
-                if let account = selectedAccount {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Circle()
-                            .fill(Color(hex: account.colorHex))
-                            .frame(width: 20, height: 20) // A11Y-DT: row icon decorative
-                        Text(account.name)
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                } else {
-                    Text(L10n.Common.select)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.tertiary)
-                }
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
-            }
-            .contentShape(Rectangle())
-            .padding(.horizontal, DS.FormRow.paddingH)
-            .padding(.vertical, DS.FormRow.paddingV)
-        }
-        .buttonStyle(.plain)
-        .panelCard()
-        .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Actions

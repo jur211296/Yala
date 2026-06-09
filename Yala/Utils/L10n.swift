@@ -4721,17 +4721,23 @@ enum L10n {
         enum GroupExpenseDraft {
             static var title: String { ls("inbox.groupExpenseDraft.title", comment: "") }
             static var assignSubcategory: String { ls("inbox.groupExpenseDraft.assignSubcategory", comment: "") }
+            /// Banner explicativo (asignar categoría). Formato: %@ = nombre del grupo.
+            static var banner: String { ls("inbox.groupExpenseDraft.banner", comment: "") }
         }
 
         enum GroupSettlementDraft {
             static var title: String { ls("inbox.groupSettlementDraft.title", comment: "") }
             static var assignAccount: String { ls("inbox.groupSettlementDraft.assignAccount", comment: "") }
+            /// Banner explicativo (liquidación). Formato: %@ = nombre del grupo.
+            static var banner: String { ls("inbox.groupSettlementDraft.banner", comment: "") }
         }
 
         // M6: sheet finalización Caso A pendiente cuenta.
         enum GroupExpenseAccountDraft {
             static var title: String { ls("inbox.groupExpenseAccountDraft.title", comment: "") }
             static var assignAccount: String { ls("inbox.groupExpenseAccountDraft.assignAccount", comment: "") }
+            /// Banner explicativo (asignar cuenta). Formato: %@ = nombre del grupo.
+            static var banner: String { ls("inbox.groupExpenseAccountDraft.banner", comment: "") }
         }
 
         enum GroupDraft {
