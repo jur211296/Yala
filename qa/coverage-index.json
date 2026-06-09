@@ -340,6 +340,8 @@
         "Yala/App/Views/Inbox/GroupExpenseAccountFinalizationSheet.swift",
         "Yala/App/Views/Inbox/GroupExpenseAccountAndSubcategoryFinalizationSheet.swift",
         "Yala/App/Logic/GroupDraftFinalizationLogic.swift",
+        "Yala/App/Logic/BulkApproveRoutingLogic.swift",
+        "Yala/Services/DraftService.swift",
         "Yala/App/Views/Groups/BridgeActivationSheet.swift",
         "Yala/App/Views/Groups/BridgeDeactivationSheet.swift",
         "Yala/Models/SplitExpense.swift",
@@ -351,6 +353,7 @@
         "F-S2-03",
         "F-S2-04",
         "F-S2-05",
+        "F-S2-11",
         "F-S3-04"
       ],
       "classification": "agentic",

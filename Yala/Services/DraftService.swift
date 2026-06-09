@@ -331,10 +331,28 @@ final class DraftService {
     ) throws -> [TransactionItem] {
         let context = try requireContext()
         var transactions: [TransactionItem] = []
+        var genericApprovedCount = 0
         let preferredCode = CurrencyDefaults.currentPreferred
 
         for draft in drafts where draft.isReadyToApprove {
-            // Skip drafts with future dates
+            // Drafts de grupo → delegar a approveDraft (SSOT del ruteo de grupo). El path
+            // genérico de abajo insertaría una TransactionItem NUEVA sin splitExpenseID →
+            // doble conteo del gasto + la TX virtual del bridge quedaría sin subcategoría.
+            // (Un draft Caso A pendiente-cuenta cae al branch TX-puntero de approveDraft —no
+            // al que crea TX real— porque bulkUpdateAccount ya vació needsUserInput.)
+            if BulkApproveRoutingLogic.destination(isFromGroup: draft.isFromGroup) == .delegateToIndividual {
+                do {
+                    transactions.append(try approveDraft(draft, currencyConverter: currencyConverter))
+                } catch {
+                    #if DEBUG
+                    print("DraftService.bulkApprove: group draft delegation failed: \(error)")
+                    #endif
+                    // Resiliente: el draft queda pendiente para finalizar individual; sigue el resto.
+                }
+                continue
+            }
+
+            // Skip drafts with future dates (solo path genérico personal).
             guard draft.effectiveDate <= Date.now else { continue }
 
             guard let account = draft.account,
@@ -407,13 +425,16 @@ final class DraftService {
             }
 
             transactions.append(transaction)
+            genericApprovedCount += 1
         }
 
         try context.save()
 
-        // Count all approved drafts toward transaction total
-        if !transactions.isEmpty {
-            let txCount = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + transactions.count
+        // Count approved drafts toward transaction total — SOLO los personales inline.
+        // Los drafts de grupo delegados a approveDraft NO cuentan (sus branches de grupo no
+        // tocan el counter ni el review prompt), consistente con el flujo individual.
+        if genericApprovedCount > 0 {
+            let txCount = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + genericApprovedCount
             UserDefaults.standard.set(txCount, forKey: "transactionsSavedCount")
 
             if ReviewPromptService.shouldPrompt(transactionCount: txCount) {
