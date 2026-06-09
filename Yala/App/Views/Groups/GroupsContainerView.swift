@@ -359,23 +359,14 @@ struct GroupsContainerView: View {
             Spacer()
             HStack {
                 Spacer()
-                Button {
+                CircularPlusFAB(
+                    tint: theme.accent,
+                    accessibilityLabel: L10n.Groups.newGroup,
+                    accessibilityIdentifier: "groups_fab_new"
+                ) {
                     viewModel.showCreateGroup = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.white)
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .glassEffect(
-                            .regular.interactive().tint(theme.accent.opacity(0.6)),
-                            in: Circle()
-                        )
-                        .contentShape(Circle())
                 }
-                .buttonStyle(.plain)
                 .dsFloatingShadow()
-                .accessibilityLabel(L10n.Groups.newGroup)
-                .accessibilityIdentifier("groups_fab_new")
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)

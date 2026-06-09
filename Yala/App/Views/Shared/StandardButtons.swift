@@ -163,6 +163,111 @@ struct YalaSecondaryButton: View {
     }
 }
 
+// MARK: - Floating Action Button (FAB)
+
+/// Superficie circular compartida de los FAB. Bifurca por `theme.usesMaterial`:
+/// - Temas de material (Liquid Glass / Translucent): `.glassEffect` interactivo
+///   con tint translúcido — coherente con un lienzo donde todo es cristal.
+/// - Temas opacos (light, dark, indigo, rosa, teal, minimalist): gradiente
+///   ligero del color base. Un cristal lavado se perdía sobre fondos sólidos.
+///
+/// No aplica `.frame()`: cada callsite conserva el suyo (preserva el orden de
+/// modifiers y evita un frame anidado). Aplica siempre `.contentShape(Circle())`
+/// para que toda el área del círculo sea tappable.
+struct FABSurfaceModifier: ViewModifier {
+    @Environment(\.yalaTheme) private var theme
+    /// Color base del FAB (accent del tema, naranja de IA, gris deshabilitado…).
+    let base: Color
+    /// Opacidad del tint en la rama glass (los "+" usan 0.6; IA 0.5; locked 0.4).
+    var glassTintOpacity: Double = 0.6
+    /// Override del gradiente sólido (ej. proBadge en el FAB de IA). Si es `nil`
+    /// se deriva del `base` (base → base mezclado con negro).
+    var solidGradient: [Color]? = nil
+
+    func body(content: Content) -> some View {
+        Group {
+            if theme.usesMaterial {
+                content.glassEffect(
+                    .regular.interactive().tint(base.opacity(glassTintOpacity)),
+                    in: Circle()
+                )
+            } else {
+                content
+                    .background(
+                        LinearGradient(
+                            colors: solidGradient ?? [base, base.mix(with: .black, by: 0.18)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .clipShape(Circle())
+            }
+        }
+        .contentShape(Circle())
+    }
+}
+
+extension View {
+    /// Press feedback del FAB sin doblar animación: en temas de material el
+    /// `.interactive()` del glass ya anima la presión, así que usa `.plain`; en
+    /// temas opacos usa `BouncyButtonStyle` (que respeta Reduce Motion).
+    @ViewBuilder
+    func fabButtonStyle(usesMaterial: Bool) -> some View {
+        if usesMaterial {
+            buttonStyle(.plain)
+        } else {
+            buttonStyle(BouncyButtonStyle())
+        }
+    }
+}
+
+extension Color {
+    /// Color del símbolo "+" del FAB. En material siempre blanco (sobre el tint
+    /// translúcido). En sólido, contraste calculado sobre el `base` — necesario
+    /// porque accents claros (teal, minimalist) lavarían un blanco fijo.
+    static func fabPlusForeground(base: Color, usesMaterial: Bool) -> Color {
+        usesMaterial ? .white : Color.contrastingText(for: base)
+    }
+}
+
+/// FAB circular "+" estándar (crear gasto, presupuesto, grupo, pago). Encapsula
+/// símbolo + superficie (glass/sólido) + press feedback + tap target. El caller
+/// pone el posicionamiento (`VStack/HStack/Spacer/.padding`) y `.dsFloatingShadow()`.
+struct CircularPlusFAB: View {
+    @Environment(\.yalaTheme) private var theme
+
+    var systemName: String = "plus"
+    let tint: Color
+    let accessibilityLabel: String
+    var accessibilityIdentifier: String? = nil
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(DS.Typography.title)
+                .foregroundStyle(Color.fabPlusForeground(base: tint, usesMaterial: theme.usesMaterial))
+                .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
+                .modifier(FABSurfaceModifier(base: tint))
+        }
+        .fabButtonStyle(usesMaterial: theme.usesMaterial)
+        .accessibilityLabel(accessibilityLabel)
+        .modifier(OptionalAccessibilityIdentifier(identifier: accessibilityIdentifier))
+    }
+}
+
+/// Aplica `accessibilityIdentifier` solo cuando está presente (algunos FAB no lo tienen).
+private struct OptionalAccessibilityIdentifier: ViewModifier {
+    let identifier: String?
+    func body(content: Content) -> some View {
+        if let identifier {
+            content.accessibilityIdentifier(identifier)
+        } else {
+            content
+        }
+    }
+}
+
 #Preview("Buttons") {
     VStack(spacing: DS.Spacing.xl) {
         // Toolbar buttons

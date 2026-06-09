@@ -119,22 +119,14 @@ struct ScheduledPaymentsView: View {
             HStack {
                 Spacer()
 
-                Button {
+                CircularPlusFAB(
+                    tint: theme.accent,
+                    accessibilityLabel: L10n.Accessibility.newPayment,
+                    accessibilityIdentifier: "scheduled_payments_create_fab"
+                ) {
                     viewModel.createNewPayment()
-                } label: {
-                    Image(systemName: "plus")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.white)
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .glassEffect(
-                            .regular.interactive().tint(theme.accent.opacity(0.6)),
-                            in: Circle()
-                        )
-                        .contentShape(Circle())
                 }
-                .buttonStyle(.plain)
                 .dsFloatingShadow()
-                .accessibilityLabel(L10n.Accessibility.newPayment)
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)

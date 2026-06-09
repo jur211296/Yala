@@ -206,28 +206,19 @@ struct BudgetsListView: View {
             HStack {
                 Spacer()
 
-                Button {
+                CircularPlusFAB(
+                    tint: theme.accent,
+                    accessibilityLabel: L10n.Accessibility.newBudget,
+                    accessibilityIdentifier: "budgets_create_fab"
+                ) {
                     if FeatureGateService.shared.canCreate(.budgets, currentCount: activeBudgetsCount) {
                         viewModel.editingBudget = nil
                         viewModel.showBudgetEditor = true
                     } else {
                         showUpgradeSheet = true
                     }
-                } label: {
-                    Image(systemName: "plus")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.white)
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .glassEffect(
-                            .regular.interactive().tint(theme.accent.opacity(0.6)),
-                            in: Circle()
-                        )
-                        .contentShape(Circle())
                 }
-                .buttonStyle(.plain)
                 .dsFloatingShadow()
-                .accessibilityLabel(L10n.Accessibility.newBudget)
-                .accessibilityIdentifier("budgets_create_fab")
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)

@@ -350,23 +350,14 @@ struct GroupDetailView: View {
             Spacer()
             HStack {
                 Spacer()
-                Button {
+                CircularPlusFAB(
+                    tint: theme.accent,
+                    accessibilityLabel: L10n.Groups.Expense.newExpense,
+                    accessibilityIdentifier: "group_detail_fab_new_expense"
+                ) {
                     viewModel.activeSheet = .addExpense
-                } label: {
-                    Image(systemName: "plus")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.white)
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .glassEffect(
-                            .regular.interactive().tint(theme.accent.opacity(0.6)),
-                            in: Circle()
-                        )
-                        .contentShape(Circle())
                 }
-                .buttonStyle(.plain)
                 .dsFloatingShadow()
-                .accessibilityLabel(L10n.Groups.Expense.newExpense)
-                .accessibilityIdentifier("group_detail_fab_new_expense")
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)

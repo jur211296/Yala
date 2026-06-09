@@ -110,17 +110,7 @@ struct FABStackView: View {
             ZStack {
                 Image(systemName: "sparkles")
                     .font(DS.Typography.body.weight(.semibold))
-                    .foregroundStyle(
-                        isChatLocked
-                            ? AnyShapeStyle(DS.Semantic.disabledForeground)
-                            : AnyShapeStyle(
-                                LinearGradient(
-                                    colors: DS.Gradients.proBadge,
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    )
+                    .foregroundStyle(sparklesForeground)
 
                 if isChatLocked {
                     Image(systemName: "lock.fill")
@@ -130,19 +120,34 @@ struct FABStackView: View {
                 }
             }
             .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-            .glassEffect(
-                isChatLocked
-                    ? .regular.interactive().tint(DS.Semantic.disabledForeground.opacity(0.4))
-                    : .regular.interactive().tint(Color.orange.opacity(0.5)),
-                in: Circle()
-            )
-            .contentShape(Circle())
+            .modifier(FABSurfaceModifier(
+                base: isChatLocked ? DS.Semantic.disabledForeground : .orange,
+                glassTintOpacity: isChatLocked ? 0.4 : 0.5,
+                solidGradient: isChatLocked
+                    ? [DS.Semantic.neutralBackground, DS.Semantic.neutralBackground]
+                    : DS.Gradients.proBadge
+            ))
         }
-        .buttonStyle(.plain)
+        .fabButtonStyle(usesMaterial: theme.usesMaterial)
         .shadow(color: (isChatLocked ? Color.gray : Color.orange).opacity(0.2), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
         .coachMarkAnchor("proChatFab")
         .accessibilityLabel(L10n.Chat.title)
         .accessibilityIdentifier("fab_chat")
+    }
+
+    /// Foreground del icono sparkles del FAB de IA: gris si está bloqueado; sobre
+    /// cristal usa el gradiente proBadge; sobre fondo sólido (que ya es proBadge)
+    /// vuelve a blanco para legibilidad.
+    private var sparklesForeground: AnyShapeStyle {
+        if isChatLocked {
+            return AnyShapeStyle(DS.Semantic.disabledForeground)
+        }
+        if theme.usesMaterial {
+            return AnyShapeStyle(
+                LinearGradient(colors: DS.Gradients.proBadge, startPoint: .topLeading, endPoint: .bottomTrailing)
+            )
+        }
+        return AnyShapeStyle(Color.white)
     }
 
     // MARK: - Transaction FAB
@@ -154,18 +159,12 @@ struct FABStackView: View {
         } label: {
             Image(systemName: showFABMenu ? "xmark" : "plus")
                 .font(DS.Typography.title)
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.usesMaterial || showFABMenu ? .white : Color.contrastingText(for: background))
                 .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
                 .rotationEffect(.degrees(showFABMenu ? 90 : 0))
-                .glassEffect(
-                    .regular
-                        .interactive()
-                        .tint((showFABMenu ? DS.Semantic.disabledForeground : background).opacity(0.6)),
-                    in: Circle()
-                )
-                .contentShape(Circle())
+                .modifier(FABSurfaceModifier(base: showFABMenu ? DS.Semantic.disabledForeground : background))
         }
-        .buttonStyle(.plain)
+        .fabButtonStyle(usesMaterial: theme.usesMaterial)
         .dsFloatingShadow()
         .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
         .accessibilityIdentifier("fab_new_transaction")
