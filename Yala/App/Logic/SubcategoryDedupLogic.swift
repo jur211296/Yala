@@ -65,7 +65,7 @@ enum SubcategoryDedupLogic {
         let grouped = Dictionary(grouping: eligible, by: \.key)
         var result: [SubcatGroup] = []
         for (_, members) in grouped where members.count > 1 {
-            let sorted = members.map(\.sub).sorted(by: keeperRanksBefore)
+            let sorted = members.map(\.sub).sorted { keeperRanksBefore($0, $1) }
             result.append(SubcatGroup(keeper: sorted[0], duplicates: Array(sorted.dropFirst())))
         }
         return result
