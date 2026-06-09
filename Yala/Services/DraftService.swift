@@ -707,6 +707,11 @@ final class DraftService {
     /// Crea un draft `groupExpense` con `optInPersonalOnly=true` para que el user pueda
     /// aprobar más tarde la creación de TX real en cuenta personal. La TX virtual del
     /// expense ya fue creada por el bridge en el save original (branch `optoutVirtualOnly`).
+    ///
+    /// Enfoque B (B6-26): si el gasto no hereda subcategoría del grupo, el draft pide cuenta
+    /// **y** subcategoría juntas (sheet combinado) en vez de solo cuenta — alineado con el draft
+    /// del path auto-bridge (`createDraftCaseA`). Así el Inbox no muestra dos drafts (cuenta +
+    /// subcategoría) ni deja un puntero `[.subcategory]` huérfano cuando el virtual se reconcilia.
     func createGroupExpenseOptInDraft(
         splitExpenseID: String,
         groupZoneID: String
@@ -721,6 +726,31 @@ final class DraftService {
         guard let expense = try context.fetch(descriptor).first else {
             throw DraftServiceError.missingAccount
         }
+
+        // Espeja la resolución de subcategoría del bridge (`bridgeExpense`): un match a una
+        // subcat de SISTEMA no cuenta como clasificado. Si no se resuelve → pedir subcategoría.
+        let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
+        let resolvedSubcat: Subcategory? = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
+        let needsSubcategory = resolvedSubcat == nil
+
+        // El bridge ya creó (en el save del gasto) un draft TX-puntero `[.subcategory]` para el
+        // virtual `-myShare` cuando la subcat no se resolvió. El draft opt-in combinado ya pide
+        // la subcategoría, así que ese puntero queda redundante — y su virtual se borra al
+        // aprobar (reconciliación B6-25), dejándolo huérfano. Borrarlo aquí evita el doble draft
+        // y el huérfano (B6-26). Solo el puntero solo-subcategoría del mismo gasto; el resto de
+        // drafts se preserva.
+        if needsSubcategory {
+            let siblings = try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitExpenseID == splitExpenseID }
+            ))
+            for pointer in siblings where !pointer.optInPersonalOnly
+                && pointer.targetTransactionID == nil
+                && pointer.needsUserInput.contains(DraftInputRequirement.subcategory)
+                && !pointer.needsUserInput.contains(DraftInputRequirement.account) {
+                context.delete(pointer)
+            }
+        }
+
         let draft = InboxDraft(
             note: expense.expenseDescription,
             amount: -expense.amount,
@@ -729,8 +759,8 @@ final class DraftService {
             confidenceAmount: 1.0,
             confidenceDate: 1.0,
             confidenceMerchant: 1.0,
-            confidenceSubcategory: 1.0,
-            needsUserInput: [DraftInputRequirement.account],
+            confidenceSubcategory: needsSubcategory ? nil : 1.0,
+            needsUserInput: GroupDraftFinalizationLogic.caseADraftNeedsUserInput(needsSubcategory: needsSubcategory),
             splitExpenseID: splitExpenseID,
             splitGroupZoneID: groupZoneID,
             targetTransactionID: nil,
