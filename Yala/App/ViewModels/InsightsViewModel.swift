@@ -69,6 +69,11 @@ final class InsightsViewModel {
         customRange: DateInterval?,
         comparisonMode: ComparisonMode = .month
     ) {
+        // El toggle "incluir transacciones de grupos en estadísticas" filtra las TX
+        // bridgeadas y por tanto es un input del cálculo — debe entrar en la firma
+        // del gate, o cambiarlo no invalidaría el cache y dejaría insightData stale.
+        let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+
         var hasher = Hasher()
         hasher.combine(SessionState.shared.dataVersion)
         hasher.combine(criteria.hashValue)
@@ -77,6 +82,7 @@ final class InsightsViewModel {
         hasher.combine(comparisonMode)
         hasher.combine(currentTone)
         hasher.combine(currentFocus)
+        hasher.combine(includeBridgedGroupTx)
         if let customRange {
             hasher.combine(customRange.start)
             hasher.combine(customRange.duration)
@@ -85,7 +91,6 @@ final class InsightsViewModel {
         guard signature != lastInputsSignature else { return }
         lastInputsSignature = signature
 
-        let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
         insightData = InsightsCalculator.calculate(
             transactions: transactions,
             accounts: accounts,

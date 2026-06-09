@@ -294,6 +294,13 @@ struct PanelView: View {
             // en el saldo total agregado.
             viewModel.recalculateData()
         }
+        .onChange(of: appPreferences.includeGroupTransactionsInStats) { _, _ in
+            // Mismo sheet del tab Grupos: el Financial Score (calculateHealthWidget)
+            // incluye/excluye TX bridgeadas según esta preferencia. Recalcular
+            // in-place para que "Salud Financiera" no quede stale al volver o vía
+            // sync cross-device con el Panel ya montado.
+            viewModel.recalculateData()
+        }
         .onChange(of: appPreferences.panelSectionsHidden) { oldValue, newValue in
             let next = Self.parseHiddenSections(newValue)
             guard viewModel.hiddenSections != next else { return }

@@ -198,6 +198,13 @@ struct DetailContainerView: View {
             .onChange(of: sessionState.comparisonMode) { recalculateData() }
             .onChange(of: appPreferences.insightsTone) { recalculateData() }
             .onChange(of: appPreferences.insightsFocus) { recalculateData() }
+            // Toggles globales de grupos (sheet del tab Grupos). Refrescan in-place
+            // sin esperar a cambiar de período: includeGroupTransactionsInStats afecta
+            // insightData + Financial Score + Tendencias/Distribución;
+            // includeGroupTransactionsInFeed afecta la sub-pestaña Registros. También
+            // cubre cambios que llegan vía sync cross-device con la vista ya montada.
+            .onChange(of: appPreferences.includeGroupTransactionsInStats) { recalculateData() }
+            .onChange(of: appPreferences.includeGroupTransactionsInFeed) { recalculateData() }
             .modifier(
                 DetailContainerObservers(
                     sessionState: sessionState,
@@ -607,6 +614,10 @@ struct DetailContainerView: View {
         scoreHasher.combine(sessionState.dataVersion)
         scoreHasher.combine(scoreInterval.start)
         scoreHasher.combine(scoreInterval.end)
+        // El toggle de grupos altera el dataset del score (incluye/excluye TX
+        // bridgeadas) — sin esto, cambiarlo no invalidaría el gate y "Salud
+        // Financiera" quedaría stale hasta cambiar de período.
+        scoreHasher.combine(appPreferences.includeGroupTransactionsInStats)
         let scoreSignature = scoreHasher.finalize()
         if scoreSignature != lastScoreSignature {
             lastScoreSignature = scoreSignature
