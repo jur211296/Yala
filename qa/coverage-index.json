@@ -626,7 +626,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/ScheduledPaymentSkipUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-09"
     },
     {
       "area": "scheduled-payments",
@@ -645,7 +645,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/ScheduledPaymentsCrudUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-09"
     },
     {
       "area": "secondary-currency-and-notification-primer",
