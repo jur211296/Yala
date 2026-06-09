@@ -31,7 +31,9 @@ struct SubscriptionView: View {
                 paywallContent
             }
         }
-        .yalaScreenBackground(.subtle)
+        // Excepción a la regla "sheets → .subtle": la pantalla de venta Pro
+        // (paywall + suscripción activa) conserva el gradiente premium.
+        .yalaScreenBackground(.panel)
         .navigationTitle(L10n.Subscription.title)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
