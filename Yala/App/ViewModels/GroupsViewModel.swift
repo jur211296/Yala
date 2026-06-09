@@ -175,12 +175,17 @@ final class GroupsViewModel {
             expenses: expenses,
             shares: shares,
             settlements: settlements,
+            simplifyDebts: group.simplifyDebts,
             convertTo: group.showDebtsInSingleCurrency ? group.currencyCode : nil
         )
     }
 
-    /// Pure-logic helper para tests sin contexto. Calcula debts simplificadas filtradas
-    /// al current user, con perspectiva resuelta + nameLookup, sort by amount desc.
+    /// Pure-logic helper para tests sin contexto. Calcula debts filtradas al current
+    /// user, con perspectiva resuelta + nameLookup, sort by amount desc.
+    /// - Parameter simplifyDebts: respeta el toggle del grupo (`SplitGroup.simplifyDebts`).
+    ///   Debe coincidir con lo que muestra el detalle (pestaña Balances / Deudas pendientes);
+    ///   NO asumir siempre simplificado. Parámetro obligatorio a propósito — un default
+    ///   oculto causó que la card y el detalle divergieran.
     /// - Parameter convertTo: si no es nil y al menos un debt original está en otra
     ///   moneda, las debts se consolidan a esta moneda y los rows resultantes quedan
     ///   marcados con `wasConverted=true`.
@@ -189,6 +194,7 @@ final class GroupsViewModel {
         expenses: [SplitExpense],
         shares: [SplitShare],
         settlements: [SplitSettlement],
+        simplifyDebts: Bool,
         convertTo: String? = nil,
         converter: CurrencyConverting? = nil
     ) -> [DebtRow] {
@@ -205,7 +211,7 @@ final class GroupsViewModel {
             expenses: expenses,
             shares: shares,
             settlements: settlements,
-            simplifyDebts: true
+            simplifyDebts: simplifyDebts
         )
 
         let wasConverted: Bool

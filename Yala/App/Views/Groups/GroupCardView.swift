@@ -154,11 +154,9 @@ struct GroupCardView: View {
     private func perspectiveCopy(for row: GroupsViewModel.DebtRow) -> String {
         switch row.perspective {
         case .iOwe:
-            // "Le debes a {name}"
-            return L10n.Groups.Balance.owes + " " + row.counterpartyName
+            return L10n.Groups.Card.youOwe(row.counterpartyName)
         case .theyOweMe:
-            // "{name} te debe"
-            return row.counterpartyName + " " + L10n.Groups.Balance.isOwed
+            return L10n.Groups.Card.theyOweYou(row.counterpartyName)
         }
     }
 

@@ -1847,6 +1847,14 @@ enum L10n {
             static func moreDebts(_ count: Int) -> String {
                 String(format: ls("groups.card.moreDebts", comment: ""), count)
             }
+            /// "%@ te debe" — otro miembro le debe al usuario actual (perspectiva theyOweMe).
+            static func theyOweYou(_ name: String) -> String {
+                String(format: ls("groups.card.theyOweYou", comment: ""), name)
+            }
+            /// "Le debes a %@" — el usuario actual le debe a otro miembro (perspectiva iOwe).
+            static func youOwe(_ name: String) -> String {
+                String(format: ls("groups.card.youOwe", comment: ""), name)
+            }
         }
 
         enum Member {
@@ -1880,8 +1888,6 @@ enum L10n {
 
         enum Balance {
             static var title: String { ls("groups.balance.title", comment: "") }
-            static var owes: String { ls("groups.balance.owes", comment: "") }
-            static var isOwed: String { ls("groups.balance.isOwed", comment: "") }
             static var noDebts: String { ls("groups.balance.noDebts", comment: "") }
             static var pendingDebts: String { ls("groups.balance.pendingDebts", comment: "") }
             static var settlements: String { ls("groups.balance.settlements", comment: "") }

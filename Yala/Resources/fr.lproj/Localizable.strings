@@ -3165,8 +3165,6 @@
 "groups.member.removeWithDebtWarning" = "Cette personne a un solde ouvert dans le groupe. Si vous la supprimez, la dette reste ouverte. Continuer ?";
 "groups.member.actions" = "Actions du membre";
 "groups.balance.title" = "Soldes";
-"groups.balance.owes" = "doit";
-"groups.balance.isOwed" = "est dû";
 "groups.balance.noDebts" = "Tout est réglé !";
 "groups.balance.pendingDebts" = "Dettes en attente";
 "groups.balance.settlements" = "Règlements";
@@ -4443,3 +4441,9 @@
 
 /* Apple Pay automation: failure notification body */
 "shortcut.notification.errorBody" = "Nous n'avons pas pu enregistrer ton paiement Apple Pay. Ouvre Yala pour le saisir manuellement.";
+
+/* Card del grupo: otro miembro le debe al usuario actual (perspectiva theyOweMe) */
+"groups.card.theyOweYou" = "%@ vous doit";
+
+/* Card del grupo: el usuario actual le debe a otro miembro (perspectiva iOwe) */
+"groups.card.youOwe" = "Vous devez à %@";

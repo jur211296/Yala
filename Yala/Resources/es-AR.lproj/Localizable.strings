@@ -481,9 +481,7 @@
 "groups.activate.subtitle" = "Registra gastos, presupuestos y más";
 "groups.activate.title" = "Activar Yala completo";
 "groups.balance.confirmed" = "Confirmada";
-"groups.balance.isOwed" = "le deben";
 "groups.balance.noDebts" = "¡Están al día!";
-"groups.balance.owes" = "debe";
 "groups.balance.pending" = "Pendiente";
 "groups.balance.pendingDebts" = "Deudas pendientes";
 "groups.balance.settlements" = "Liquidaciones";
@@ -3674,3 +3672,9 @@
 
 /* Apple Pay automation: failure notification body */
 "shortcut.notification.errorBody" = "No pudimos guardar tu pago de Apple Pay. Abre Yala para registrarlo manualmente.";
+
+/* Card del grupo: otro miembro le debe al usuario actual (perspectiva theyOweMe) */
+"groups.card.theyOweYou" = "%@ te debe";
+
+/* Card del grupo: el usuario actual le debe a otro miembro (perspectiva iOwe) */
+"groups.card.youOwe" = "Le debés a %@";

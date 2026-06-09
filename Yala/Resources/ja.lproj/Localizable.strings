@@ -3175,8 +3175,6 @@
 "groups.member.removeWithDebtWarning" = "このメンバーにはグループ内で未精算の残高があります。削除しても債務は引き続き残ります。続けますか？";
 "groups.member.actions" = "メンバーのアクション";
 "groups.balance.title" = "残高";
-"groups.balance.owes" = "借りがある";
-"groups.balance.isOwed" = "貸しがある";
 "groups.balance.noDebts" = "すべて精算済み！";
 "groups.balance.pendingDebts" = "未払いの貸し借り";
 "groups.balance.settlements" = "精算";
@@ -4454,3 +4452,9 @@
 
 /* Apple Pay automation: failure notification body */
 "shortcut.notification.errorBody" = "Apple Payの支払いを保存できませんでした。Yalaを開いて手動で記録してください。";
+
+/* Card del grupo: otro miembro le debe al usuario actual (perspectiva theyOweMe) */
+"groups.card.theyOweYou" = "%@ はあなたに借りがあります";
+
+/* Card del grupo: el usuario actual le debe a otro miembro (perspectiva iOwe) */
+"groups.card.youOwe" = "あなたは %@ に借りがあります";

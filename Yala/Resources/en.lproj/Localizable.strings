@@ -3215,8 +3215,6 @@
 "groups.member.removeWithDebtWarning" = "This person has an open balance in the group. If you remove them, the debt stays open. Continue?";
 "groups.member.actions" = "Member actions";
 "groups.balance.title" = "Balances";
-"groups.balance.owes" = "owes";
-"groups.balance.isOwed" = "is owed";
 "groups.balance.noDebts" = "All settled up!";
 "groups.balance.pendingDebts" = "Pending debts";
 "groups.balance.settlements" = "Settlements";
@@ -4448,3 +4446,9 @@
 
 /* Apple Pay automation: failure notification body */
 "shortcut.notification.errorBody" = "We couldn't save your Apple Pay payment. Open Yala to record it manually.";
+
+/* Card del grupo: otro miembro le debe al usuario actual (perspectiva theyOweMe) */
+"groups.card.theyOweYou" = "%@ owes you";
+
+/* Card del grupo: el usuario actual le debe a otro miembro (perspectiva iOwe) */
+"groups.card.youOwe" = "You owe %@";

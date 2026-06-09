@@ -3175,8 +3175,6 @@
 "groups.member.removeWithDebtWarning" = "这位成员在群组中有未结清的余额。如果你将其删除，欠款仍会保留。要继续吗？";
 "groups.member.actions" = "成员操作";
 "groups.balance.title" = "余额";
-"groups.balance.owes" = "欠";
-"groups.balance.isOwed" = "应收";
 "groups.balance.noDebts" = "全部已结清!";
 "groups.balance.pendingDebts" = "待结债务";
 "groups.balance.settlements" = "结算";
@@ -4454,3 +4452,9 @@
 
 /* Apple Pay automation: failure notification body */
 "shortcut.notification.errorBody" = "无法保存你的 Apple Pay 支付。请打开 Yala 手动记录。";
+
+/* Card del grupo: otro miembro le debe al usuario actual (perspectiva theyOweMe) */
+"groups.card.theyOweYou" = "%@ 欠你";
+
+/* Card del grupo: el usuario actual le debe a otro miembro (perspectiva iOwe) */
+"groups.card.youOwe" = "你欠 %@";

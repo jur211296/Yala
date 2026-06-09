@@ -47,7 +47,7 @@ struct GroupsViewModelDebtsM6Tests {
 
     @Test func computeCurrentUserDebts_emptyWhenNoMembers() {
         let result = GroupsViewModel.computeCurrentUserDebts(
-            members: [], expenses: [], shares: [], settlements: []
+            members: [], expenses: [], shares: [], settlements: [], simplifyDebts: true
         )
         #expect(result.isEmpty)
     }
@@ -56,7 +56,7 @@ struct GroupsViewModelDebtsM6Tests {
         // Ningún miembro tiene isCurrentUser=true.
         let other = makeMember(name: "Maria")
         let result = GroupsViewModel.computeCurrentUserDebts(
-            members: [other], expenses: [], shares: [], settlements: []
+            members: [other], expenses: [], shares: [], settlements: [], simplifyDebts: true
         )
         #expect(result.isEmpty)
     }
@@ -64,7 +64,7 @@ struct GroupsViewModelDebtsM6Tests {
     @Test func computeCurrentUserDebts_emptyWhenNoExpenses() {
         let me = makeMember(name: "Me", isCurrentUser: true)
         let result = GroupsViewModel.computeCurrentUserDebts(
-            members: [me], expenses: [], shares: [], settlements: []
+            members: [me], expenses: [], shares: [], settlements: [], simplifyDebts: true
         )
         #expect(result.isEmpty)
     }
@@ -86,7 +86,7 @@ struct GroupsViewModelDebtsM6Tests {
         ]
         let result = GroupsViewModel.computeCurrentUserDebts(
             members: [me, maria, juan],
-            expenses: [exp], shares: shares, settlements: []
+            expenses: [exp], shares: shares, settlements: [], simplifyDebts: true
         )
         #expect(result.count == 1)
         #expect(result.first?.counterpartyName == "Maria")
@@ -106,7 +106,7 @@ struct GroupsViewModelDebtsM6Tests {
             makeShare(expenseID: exp.id, memberID: maria.id.uuidString, amount: 25)
         ]
         let result = GroupsViewModel.computeCurrentUserDebts(
-            members: [me, maria], expenses: [exp], shares: shares, settlements: []
+            members: [me, maria], expenses: [exp], shares: shares, settlements: [], simplifyDebts: true
         )
         #expect(result.first?.perspective == .iOwe)
         #expect(result.first?.counterpartyName == "Maria")
@@ -123,7 +123,7 @@ struct GroupsViewModelDebtsM6Tests {
             makeShare(expenseID: exp.id, memberID: maria.id.uuidString, amount: 25)
         ]
         let result = GroupsViewModel.computeCurrentUserDebts(
-            members: [me, maria], expenses: [exp], shares: shares, settlements: []
+            members: [me, maria], expenses: [exp], shares: shares, settlements: [], simplifyDebts: true
         )
         #expect(result.first?.perspective == .theyOweMe)
         #expect(result.first?.counterpartyName == "Maria")
@@ -152,7 +152,7 @@ struct GroupsViewModelDebtsM6Tests {
 
         let result = GroupsViewModel.computeCurrentUserDebts(
             members: [me, maria, juan],
-            expenses: [exp1, exp2], shares: shares1 + shares2, settlements: []
+            expenses: [exp1, exp2], shares: shares1 + shares2, settlements: [], simplifyDebts: true
         )
         #expect(result.count == 2)
         let currencies = Set(result.map(\.currencyCode))
@@ -180,7 +180,7 @@ struct GroupsViewModelDebtsM6Tests {
 
         let result = GroupsViewModel.computeCurrentUserDebts(
             members: [me, maria, juan],
-            expenses: [exp1, exp2], shares: shares1 + shares2, settlements: []
+            expenses: [exp1, exp2], shares: shares1 + shares2, settlements: [], simplifyDebts: true
         )
         #expect(result.count == 2)
         #expect(result[0].amount == 100)
@@ -211,6 +211,7 @@ struct GroupsViewModelDebtsM6Tests {
         let result = GroupsViewModel.computeCurrentUserDebts(
             members: [me, maria, juan],
             expenses: [exp1, exp2], shares: shares1 + shares2, settlements: [],
+            simplifyDebts: true,
             convertTo: "PEN",
             converter: MockCurrencyConverter(fixedRate: 3.8)
         )
@@ -242,6 +243,7 @@ struct GroupsViewModelDebtsM6Tests {
         let result = GroupsViewModel.computeCurrentUserDebts(
             members: [me, maria, juan],
             expenses: [exp1, exp2], shares: shares1 + shares2, settlements: [],
+            simplifyDebts: true,
             convertTo: nil
         )
         let currencies = Set(result.map(\.currencyCode))
@@ -263,6 +265,7 @@ struct GroupsViewModelDebtsM6Tests {
         let result = GroupsViewModel.computeCurrentUserDebts(
             members: [me, maria],
             expenses: [exp], shares: shares, settlements: [],
+            simplifyDebts: true,
             convertTo: "PEN",
             converter: MockCurrencyConverter(fixedRate: 3.8)
         )
@@ -286,6 +289,7 @@ struct GroupsViewModelDebtsM6Tests {
         let result = GroupsViewModel.computeCurrentUserDebts(
             members: [me, juan],
             expenses: [exp], shares: shares, settlements: [],
+            simplifyDebts: true,
             convertTo: "PEN",
             converter: MockCurrencyConverter(fixedRate: 1.0)
         )
@@ -294,5 +298,67 @@ struct GroupsViewModelDebtsM6Tests {
         #expect(result.first?.wasConverted == true)
         // Amount = 25 (USD original) * 1 (mock rate) = 25 — sin crash.
         #expect(result.first?.amount == 25)
+    }
+
+    // MARK: - Respeta el toggle de simplificación (regresión: card vs detalle)
+
+    @Test func computeCurrentUserDebts_respectsSimplifyToggle() {
+        // Yo (Me) soy acreedor; Beto y Ana me deben, y Beto además le debe a Ana.
+        // E1: Me paga 100 → Beto debe 60, Ana debe 30 (Me 10 propio, no genera deuda).
+        // E2: Ana paga 40 → Beto debe 20 (Ana 20 propio).
+        // Raw: Beto→Me 60, Ana→Me 30, Beto→Ana 20.  Net: Me +90, Beto -80, Ana -10.
+        let me = makeMember(name: "Me", isCurrentUser: true)
+        let beto = makeMember(name: "Beto")
+        let ana = makeMember(name: "Ana")
+
+        let e1 = makeExpense(amount: 100, paidByMemberID: me.id.uuidString)
+        let e1Shares = [
+            makeShare(expenseID: e1.id, memberID: beto.id.uuidString, amount: 60),
+            makeShare(expenseID: e1.id, memberID: ana.id.uuidString, amount: 30),
+            makeShare(expenseID: e1.id, memberID: me.id.uuidString, amount: 10)
+        ]
+        let e2 = makeExpense(amount: 40, paidByMemberID: ana.id.uuidString)
+        let e2Shares = [
+            makeShare(expenseID: e2.id, memberID: beto.id.uuidString, amount: 20),
+            makeShare(expenseID: e2.id, memberID: ana.id.uuidString, amount: 20)
+        ]
+        let members = [me, beto, ana]
+        let expenses = [e1, e2]
+        let shares = e1Shares + e2Shares
+
+        // Simplificado: Beto→Me 80, Ana→Me 10 (Me único acreedor; colapsa la deuda Beto→Ana).
+        let simplified = GroupsViewModel.computeCurrentUserDebts(
+            members: members, expenses: expenses, shares: shares, settlements: [],
+            simplifyDebts: true
+        )
+        #expect(simplified.count == 2)
+        #expect(simplified.allSatisfy { $0.perspective == .theyOweMe })
+        #expect(simplified[0].counterpartyName == "Beto")
+        #expect(simplified[0].amount == 80)
+        #expect(simplified[1].counterpartyName == "Ana")
+        #expect(simplified[1].amount == 10)
+
+        // Sin simplificar: Beto→Me 60, Ana→Me 30 (la deuda Beto→Ana no involucra a Me → filtrada).
+        let raw = GroupsViewModel.computeCurrentUserDebts(
+            members: members, expenses: expenses, shares: shares, settlements: [],
+            simplifyDebts: false
+        )
+        #expect(raw.count == 2)
+        #expect(raw.allSatisfy { $0.perspective == .theyOweMe })
+        #expect(raw[0].counterpartyName == "Beto")
+        #expect(raw[0].amount == 60)
+        #expect(raw[1].counterpartyName == "Ana")
+        #expect(raw[1].amount == 30)
+
+        // El toggle DEBE cambiar los montos mostrados (causa raíz del bug reportado).
+        // Variables intermedias tipadas para no exceder el type-checker dentro de #expect.
+        let simplifiedAmounts: [Double] = simplified.map(\.amount)
+        let rawAmounts: [Double] = raw.map(\.amount)
+        #expect(simplifiedAmounts != rawAmounts)
+        // Pero el neto del current user es invariante (suma = 90 en ambos) → el header
+        // "Te deben" cuadra independientemente del toggle.
+        let simplifiedSum: Double = simplifiedAmounts.reduce(0, +)
+        let rawSum: Double = rawAmounts.reduce(0, +)
+        #expect(simplifiedSum == rawSum)
     }
 }
