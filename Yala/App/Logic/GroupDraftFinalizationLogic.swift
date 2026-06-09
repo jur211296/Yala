@@ -42,6 +42,20 @@ enum GroupDraftFinalizationLogic {
         !skipDraftCleanup && hasRealTx && realTxSubcategoryIsNil && autoMatchFailed
     }
 
+    /// ¿(Re)crear el draft TX-puntero `[.subcategory]` del virtual `-myShare` en los paths
+    /// virtual-only (Caso B, Caso A bridge-OFF, Caso A `.groupInvite`)?
+    /// False si la subcat resolvió — o si un draft opt-in pendiente ya pide subcategoría
+    /// (sheet combinado `[.account, .subcategory]`): el bridge es delete+recreate idempotente
+    /// y cada re-bridge (sync round-trip, retry) recrearía el puntero que el opt-in ya cubre,
+    /// duplicando el ask en el Inbox; además el puntero quedaría huérfano al aprobar el opt-in,
+    /// cuando el virtual `-myShare` se reconcilia a `+lent`/no-virtual (B6-25/B6-26).
+    static func shouldCreateVirtualSubcategoryPointer(
+        autoMatchFailed: Bool,
+        optInDraftCoversSubcategory: Bool
+    ) -> Bool {
+        autoMatchFailed && !optInDraftCoversSubcategory
+    }
+
     // MARK: - Inbox-side
 
     /// Qué sheet de finalización mostrar para un draft `.groupExpense`.

@@ -154,6 +154,15 @@ final class GroupTransactionBridge {
             predicate: #Predicate { $0.splitExpenseID == expenseIDStr }
         ))
 
+        // Un draft opt-in pendiente con sheet combinado ya pide la subcategoría de este
+        // gasto. Los paths virtual-only NO deben (re)crear el puntero [.subcategory] en
+        // ese caso — el cleanup de abajo preserva el opt-in, y recrear el puntero en cada
+        // re-bridge duplicaba el draft en el Inbox (B6-26 parte 2). Computado pre-cleanup:
+        // los opt-in nunca se borran ahí.
+        let optInCoversSubcategory = existingPendingDrafts.contains {
+            $0.optInPersonalOnly && $0.needsUserInput.contains(DraftInputRequirement.subcategory)
+        }
+
         // Cleanup: TX virtuales son derivadas, siempre delete+recreate.
         for tx in existingVirtualTxs { context.delete(tx) }
         // Drafts pendientes: cleanup salvo si DraftService los está procesando (race).
@@ -188,6 +197,7 @@ final class GroupTransactionBridge {
                 lentAmount: lentAmount,
                 totalAmount: totalAmount,
                 realSubcat: realSubcat,
+                optInCoversSubcategory: optInCoversSubcategory,
                 virtualAccount: virtualAccount,
                 context: context
             )
@@ -204,6 +214,7 @@ final class GroupTransactionBridge {
                 lentAmount: lentAmount,
                 totalAmount: totalAmount,
                 realSubcat: realSubcat,
+                optInCoversSubcategory: optInCoversSubcategory,
                 virtualAccount: virtualAccount,
                 context: context
             )
@@ -226,6 +237,7 @@ final class GroupTransactionBridge {
                 lentAmount: lentAmount,
                 totalAmount: totalAmount,
                 realSubcat: realSubcat,
+                optInCoversSubcategory: optInCoversSubcategory,
                 virtualAccount: virtualAccount,
                 context: context
             )
@@ -358,6 +370,7 @@ final class GroupTransactionBridge {
         lentAmount: Double,
         totalAmount: Double,
         realSubcat: Subcategory?,
+        optInCoversSubcategory: Bool,
         virtualAccount: Account,
         context: ModelContext
     ) throws {
@@ -386,6 +399,7 @@ final class GroupTransactionBridge {
                 expense: expense,
                 myShareAmount: myShareAmount,
                 realSubcat: realSubcat,
+                optInCoversSubcategory: optInCoversSubcategory,
                 virtualAccount: virtualAccount,
                 context: context
             )
@@ -436,6 +450,7 @@ final class GroupTransactionBridge {
         expense: SplitExpense,
         myShareAmount: Double,
         realSubcat: Subcategory?,
+        optInCoversSubcategory: Bool,
         virtualAccount: Account,
         context: ModelContext
     ) {
@@ -457,7 +472,11 @@ final class GroupTransactionBridge {
         tx.recalculatePreferredCurrency(context: context)
 
         // Draft TX-puntero para asignar subcat si auto-match falló (path heredado M5).
-        if realSubcat == nil {
+        // Skip si un draft opt-in pendiente ya pide la subcategoría (B6-26 parte 2).
+        if GroupDraftFinalizationLogic.shouldCreateVirtualSubcategoryPointer(
+            autoMatchFailed: realSubcat == nil,
+            optInDraftCoversSubcategory: optInCoversSubcategory
+        ) {
             let draft = InboxDraft(
                 note: expense.expenseDescription,
                 amount: -myShareAmount,
@@ -486,6 +505,7 @@ final class GroupTransactionBridge {
         lentAmount: Double,
         totalAmount: Double,
         realSubcat: Subcategory?,
+        optInCoversSubcategory: Bool,
         virtualAccount: Account,
         context: ModelContext
     ) {
@@ -507,7 +527,10 @@ final class GroupTransactionBridge {
         context.insert(tx1)
         tx1.recalculatePreferredCurrency(context: context)
 
-        if realSubcat == nil {
+        if GroupDraftFinalizationLogic.shouldCreateVirtualSubcategoryPointer(
+            autoMatchFailed: realSubcat == nil,
+            optInDraftCoversSubcategory: optInCoversSubcategory
+        ) {
             let draft = InboxDraft(
                 note: expense.expenseDescription,
                 amount: -myShareAmount,

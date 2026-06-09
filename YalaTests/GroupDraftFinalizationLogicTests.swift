@@ -70,6 +70,36 @@ struct GroupDraftFinalizationLogicTests {
         ) == false)
     }
 
+    // MARK: - shouldCreateVirtualSubcategoryPointer
+
+    @Test
+    func virtualPointer_matchFails_noOptIn_true() {
+        // Comportamiento clásico (Caso B / M5): sin opt-in pendiente, el puntero se crea.
+        #expect(GroupDraftFinalizationLogic.shouldCreateVirtualSubcategoryPointer(
+            autoMatchFailed: true, optInDraftCoversSubcategory: false
+        ) == true)
+    }
+
+    @Test
+    func virtualPointer_optInAlreadyAsksSubcategory_false() {
+        // B6-26 parte 2: el opt-in combinado [.account, .subcategory] ya pide la subcat.
+        // Re-crear el puntero en cada re-bridge duplicaba el draft en el Inbox.
+        #expect(GroupDraftFinalizationLogic.shouldCreateVirtualSubcategoryPointer(
+            autoMatchFailed: true, optInDraftCoversSubcategory: true
+        ) == false)
+    }
+
+    @Test
+    func virtualPointer_matchSucceeds_false() {
+        // Subcat resuelta: nunca hay puntero, con o sin opt-in.
+        #expect(GroupDraftFinalizationLogic.shouldCreateVirtualSubcategoryPointer(
+            autoMatchFailed: false, optInDraftCoversSubcategory: false
+        ) == false)
+        #expect(GroupDraftFinalizationLogic.shouldCreateVirtualSubcategoryPointer(
+            autoMatchFailed: false, optInDraftCoversSubcategory: true
+        ) == false)
+    }
+
     // MARK: - route
 
     @Test

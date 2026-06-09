@@ -691,7 +691,25 @@ final class DraftService {
             throw error
         }
 
-        // 6. Cache + delete draft + save.
+        // 6. Cura de punteros residuales (B6-26): si la TX real quedó clasificada, tras la
+        // reconciliación ninguna TX del gasto queda con subcat nil — cualquier puntero
+        // [.subcategory] hermano (creado por un re-bridge mientras este draft esperaba)
+        // apunta a nada y quedaría huérfano en el Inbox. Si realSubcat es nil, se preserva:
+        // sigue siendo la vía para clasificar la TX real recién creada.
+        if realSubcat != nil {
+            let siblings = try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitExpenseID == splitID }
+            ))
+            for pointer in siblings where pointer.persistentModelID != draft.persistentModelID
+                && !pointer.optInPersonalOnly
+                && pointer.targetTransactionID == nil
+                && pointer.needsUserInput.contains(DraftInputRequirement.subcategory)
+                && !pointer.needsUserInput.contains(DraftInputRequirement.account) {
+                context.delete(pointer)
+            }
+        }
+
+        // Cache + delete draft + save.
         cacheDisplayValues(draft)
         context.delete(draft)
         try context.save()
