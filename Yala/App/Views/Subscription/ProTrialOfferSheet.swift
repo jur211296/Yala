@@ -128,7 +128,9 @@ struct ProTrialOfferSheet: View {
             }
         }
         .scrollBounceBehavior(.basedOnSize)
-        .yalaScreenBackground(.subtle)
+        // Excepción a la regla "sheets → .subtle": pantalla de venta Pro (oferta de
+        // trial) conserva el gradiente premium, igual que SubscriptionView.
+        .yalaScreenBackground(.panel)
         .task {
             await loadProductsWithTimeout()
         }
