@@ -72,5 +72,34 @@ enum DevSeedGroups {
             print("DevSeedGroups: save error: \(error)")
         }
     }
+
+    /// Borra TODOS los modelos de grupos (Split* + GroupBridgePreference) del store local.
+    /// Lo usa el reset del modo uitest: `DataWipeService.wipeAllUserData` los preserva a
+    /// propósito (decisión de producto — los grupos son compartidos vía CloudKit y el
+    /// usuario los abandona, no los borra). Sin esto, re-sembrar el perfil `.grupos`
+    /// apilaría un "Viaje a Cusco" duplicado encima del residual de la corrida anterior.
+    /// Los Split* no tienen `@Relationship` entre sí (se enlazan por `groupZoneID`), así
+    /// que el orden de borrado es indiferente.
+    static func reset(in context: ModelContext) {
+        deleteAll(SplitShare.self, in: context)
+        deleteAll(SplitExpense.self, in: context)
+        deleteAll(SplitSettlement.self, in: context)
+        deleteAll(SplitMember.self, in: context)
+        deleteAll(SplitGroup.self, in: context)
+        deleteAll(GroupBridgePreference.self, in: context)
+        do {
+            try context.save()
+        } catch {
+            print("DevSeedGroups: reset save error: \(error)")
+        }
+    }
+
+    private static func deleteAll<T: PersistentModel>(_ type: T.Type, in context: ModelContext) {
+        do {
+            try context.delete(model: T.self)
+        } catch {
+            print("DevSeedGroups: Error deleting \(T.self): \(error)")
+        }
+    }
 }
 #endif

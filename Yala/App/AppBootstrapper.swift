@@ -337,6 +337,11 @@ final class AppBootstrapper {
             } catch {
                 print("UITestHooks: reset error: \(error)")
             }
+            // `wipeAllUserData` preserva los modelos de grupos a propósito (el wipe real de
+            // Settings no borra grupos compartidos — el usuario los abandona). En uitest sí
+            // los limpiamos para aislar corridas: si no, re-sembrar el perfil `.grupos`
+            // apilaría grupos duplicados ("Viaje a Cusco" x2) encima del residual.
+            DevSeedGroups.reset(in: context)
             // Estado limpio entre tests: el wipe de SwiftData no toca UserDefaults, así que
             // un test que reordena/oculta tabs (TabBarConfigView) contaminaría a los demás.
             // Restaurar el tab bar al default (`[.panel, .statistics, .planning]`).
