@@ -66,7 +66,10 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         }
-        .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+        // Sheet full-height (sin detents en InboxView) → .subtle. El idiom-aware
+        // `usesLargeSheets ? .subtle : .transparent` es solo para detents parciales
+        // (InboxDraftEditSheet los tiene; estos sheets no).
+        .yalaScreenBackground(.subtle)
     }
 
     // MARK: - Banner
