@@ -24,6 +24,9 @@ struct BridgeActivationSheet: View {
     @State private var selectedOption: Option = .startNow
     @State private var isProcessing: Bool = false
     @State private var errorMessage: String?
+    /// Conteo de expenses pre-existentes del scope, resuelto una sola vez en `.onAppear`
+    /// (evita re-fetch en cada render del body). Alimenta los `%d` de los copys.
+    @State private var previousExpenseCount: Int = 0
 
     enum Option: String, CaseIterable {
         case startNow
@@ -34,7 +37,7 @@ struct BridgeActivationSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                    Text(L10n.Groups.Bridge.activateBody)
+                    Text(L10n.Groups.Bridge.activateBody(previousExpenseCount))
                         .font(DS.Typography.body)
                         .foregroundStyle(.thSecondaryText)
 
@@ -44,7 +47,7 @@ struct BridgeActivationSheet: View {
                                   hint: L10n.Groups.Bridge.activateOptionFromNowHint)
                         optionRow(.importAll,
                                   label: L10n.Groups.Bridge.activateOptionImportAll,
-                                  hint: L10n.Groups.Bridge.activateOptionImportAllHint)
+                                  hint: L10n.Groups.Bridge.activateOptionImportAllHint(previousExpenseCount))
                     }
 
                     if let errorMessage {
@@ -77,6 +80,15 @@ struct BridgeActivationSheet: View {
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.hidden)
         .interactiveDismissDisabled(true)
+        .onAppear {
+            do {
+                previousExpenseCount = try fetchScopedExpenses().count
+            } catch {
+                #if DEBUG
+                print("BridgeActivationSheet: Error fetching scoped expenses: \(error)")
+                #endif
+            }
+        }
     }
 
     @ViewBuilder
