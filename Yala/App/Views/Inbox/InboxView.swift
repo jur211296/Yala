@@ -154,14 +154,25 @@ struct InboxView: View {
                 // Drafts personales mantienen el flujo edit-completo existente.
                 switch draft.sourceType {
                 case .groupExpense:
-                    // M6: Caso A pendiente cuenta usa sheet dedicado para asignar cuenta personal real.
-                    // Detección: targetTransactionID==nil + needsUserInput contains "account".
-                    // El path subcat heredado (M5: targetTransactionID != nil) sigue usando el sheet existing.
-                    if draft.targetTransactionID == nil && draft.needsUserInput.contains(DraftInputRequirement.account) {
+                    // M6 + Enfoque B: route según qué falta. Account-only (sheet cuenta),
+                    // account+subcategory (sheet combinado, Enfoque B), o subcategory-only
+                    // (TX-puntero M5 heredado o fallback Caso A/B). El helper centraliza la
+                    // decisión y la mantiene en sync con la intención del bridge.
+                    let route = GroupDraftFinalizationLogic.route(
+                        targetTransactionIDIsNil: draft.targetTransactionID == nil,
+                        needsAccount: draft.needsUserInput.contains(DraftInputRequirement.account),
+                        needsSubcategory: draft.needsUserInput.contains(DraftInputRequirement.subcategory)
+                    )
+                    switch route {
+                    case .accountOnly:
                         GroupExpenseAccountFinalizationSheet(draft: draft) {
                             shouldDismissAfterApproval = true
                         }
-                    } else {
+                    case .accountAndSubcategory:
+                        GroupExpenseAccountAndSubcategoryFinalizationSheet(draft: draft) {
+                            shouldDismissAfterApproval = true
+                        }
+                    case .subcategoryOnly:
                         GroupExpenseDraftFinalizationSheet(draft: draft) {
                             shouldDismissAfterApproval = true
                         }

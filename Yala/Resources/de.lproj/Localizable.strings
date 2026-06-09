@@ -4455,3 +4455,9 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "Abrechnung aus der Gruppe %@. Weisen Sie nur ein Konto zu; Betrag und Datum verwaltet die Gruppe.";
+
+/* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "Konto und Unterkategorie zuweisen";
+
+/* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "Ausgabe aus der Gruppe %@. Weisen Sie das Konto zu, von dem das Geld stammt, und wählen Sie eine Unterkategorie zum Einordnen; Betrag und Datum verwaltet die Gruppe.";

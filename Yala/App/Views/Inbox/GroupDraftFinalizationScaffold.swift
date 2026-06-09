@@ -49,7 +49,7 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
             centralContent
             Spacer()
 
-            HStack { selector() }
+            HStack(spacing: DS.Spacing.sm) { selector() }
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.lg)

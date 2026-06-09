@@ -580,8 +580,15 @@ final class DraftService {
         }
 
         // 3. Crear TX cuenta real. Currency desde el expense (fuente de verdad del grupo).
-        let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
-        let realSubcat = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
+        // Enfoque B: si el user asignó subcategoría (sheet "cuenta + categoría"), usarla
+        // (override del auto-match). Si no, fallback al auto-match por nombre desde el grupo.
+        let realSubcat: Subcategory?
+        if let userAssigned = draft.subcategory {
+            realSubcat = userAssigned
+        } else {
+            let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
+            realSubcat = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
+        }
         let preferredCode = CurrencyDefaults.currentPreferred
         let amountInPreferred = currencyConverter.convert(
             Decimal(amount),

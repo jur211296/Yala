@@ -253,6 +253,7 @@ final class GroupTransactionBridge {
                     reason: .currencyChanged,
                     actorName: nil,  // sync remoto no expone "modifiedBy" → impersonal.
                     groupName: group.name,
+                    needsSubcategory: realSubcat == nil,
                     context: context
                 )
             }
@@ -274,6 +275,9 @@ final class GroupTransactionBridge {
             realTx.splitType = expense.splitType
             context.insert(realTx)
             realTx.recalculatePreferredCurrency(context: context)
+            // Enfoque B: exponer la TX real recién creada al bloque fallback de abajo
+            // (si su subcat quedó nil, ofrecerá clasificarla vía draft [.subcategory]).
+            existingRealTx = realTx
         } else if isRemoteSync {
             // Sync remoto sin cuenta local: draft pendiente con hint contextual.
             let payerName = resolveMemberDisplayName(memberID: expense.paidByMemberID, in: group, context: context)
@@ -282,6 +286,7 @@ final class GroupTransactionBridge {
                 reason: .remoteCreate,
                 actorName: payerName,
                 groupName: group.name,
+                needsSubcategory: realSubcat == nil,
                 context: context
             )
         } else {
@@ -299,6 +304,7 @@ final class GroupTransactionBridge {
                 reason: .remoteCreate,
                 actorName: nil,
                 groupName: group.name,
+                needsSubcategory: realSubcat == nil,
                 context: context
             )
         }
@@ -312,6 +318,23 @@ final class GroupTransactionBridge {
             virtualAccount: virtualAccount,
             context: context
         )
+
+        // Enfoque B: si la TX real quedó sin subcategoría y el auto-match falla, (re)crear draft
+        // [.subcategory] (TX-puntero, mismo mecanismo que Caso B) para clasificar desde el Inbox.
+        // Aplica a preserve+update y first-create — las únicas sub-ramas de este path (.full/
+        // .completed bridge-ON) que dejan una TX real con subcat=nil; las que crean draft
+        // [.account(+subcategory)] ya cubren el ask vía createDraftCaseA. Skip durante
+        // DraftService.approve (skipDraftCleanup): ahí el user ya asignó subcat. El cleanup de
+        // drafts pendientes (arriba) ya corrió → no duplica; el re-bridge lo recrea (igual que
+        // Caso B recrea su draft cada pasada).
+        if GroupDraftFinalizationLogic.shouldOfferCaseASubcategoryFallback(
+            skipDraftCleanup: skipDraftCleanup,
+            hasRealTx: existingRealTx != nil,
+            realTxSubcategoryIsNil: existingRealTx?.subcategory == nil,
+            autoMatchFailed: realSubcat == nil
+        ) {
+            createCaseASubcategoryDraft(expense: expense, account: existingRealTx?.account, context: context)
+        }
 
         try saveIfNeeded(shouldSave: shouldSave, context: context)
     }
@@ -528,11 +551,14 @@ final class GroupTransactionBridge {
     }
 
     /// M6: Crea InboxDraft pendiente de cuenta para Caso A cuando bridge no puede crear TX real.
+    /// Enfoque B: `needsSubcategory` pide además clasificar (sheet combinado) si el auto-match
+    /// de subcategoría falló.
     private func createDraftCaseA(
         expense: SplitExpense,
         reason: DraftOriginReason,
         actorName: String?,
         groupName: String,
+        needsSubcategory: Bool,
         context: ModelContext
     ) {
         let draft = InboxDraft(
@@ -546,7 +572,7 @@ final class GroupTransactionBridge {
             confidenceDate: 1.0,
             confidenceMerchant: 1.0,
             confidenceSubcategory: nil,
-            needsUserInput: [DraftInputRequirement.account],
+            needsUserInput: GroupDraftFinalizationLogic.caseADraftNeedsUserInput(needsSubcategory: needsSubcategory),
             splitExpenseID: expense.id.uuidString,
             splitGroupZoneID: expense.groupZoneID,
             splitSettlementID: nil,
@@ -554,6 +580,31 @@ final class GroupTransactionBridge {
             originReasonKey: reason.rawValue,
             originActorName: actorName,
             originGroupName: groupName
+        )
+        context.insert(draft)
+    }
+
+    /// Enfoque B: draft TX-puntero `[.subcategory]` para clasificar una TX real Caso A cuyo
+    /// auto-match de subcategoría falló. Mismo mecanismo que Caso B (`createCaseBVirtualMyShare`):
+    /// el dispatch de `approveDraft` localiza la TX por `splitExpenseID && subcategory == nil` y
+    /// le asigna la subcat (no crea TX nueva). `account` es el de la TX real (solo display).
+    private func createCaseASubcategoryDraft(expense: SplitExpense, account: Account?, context: ModelContext) {
+        let draft = InboxDraft(
+            note: expense.expenseDescription,
+            amount: -expense.amount,
+            date: expense.date,
+            account: account,
+            subcategory: nil,
+            sourceType: .groupExpense,
+            confidenceAmount: 1.0,
+            confidenceDate: 1.0,
+            confidenceMerchant: 1.0,
+            confidenceSubcategory: nil,
+            needsUserInput: [DraftInputRequirement.subcategory],
+            splitExpenseID: expense.id.uuidString,
+            splitGroupZoneID: expense.groupZoneID,
+            splitSettlementID: nil,
+            targetTransactionID: nil
         )
         context.insert(draft)
     }

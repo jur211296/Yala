@@ -338,6 +338,8 @@
         "Yala/App/Views/Inbox/GroupExpenseDraftFinalizationSheet.swift",
         "Yala/App/Views/Inbox/GroupSettlementDraftFinalizationSheet.swift",
         "Yala/App/Views/Inbox/GroupExpenseAccountFinalizationSheet.swift",
+        "Yala/App/Views/Inbox/GroupExpenseAccountAndSubcategoryFinalizationSheet.swift",
+        "Yala/App/Logic/GroupDraftFinalizationLogic.swift",
         "Yala/App/Views/Groups/BridgeActivationSheet.swift",
         "Yala/App/Views/Groups/BridgeDeactivationSheet.swift",
         "Yala/Models/SplitExpense.swift",

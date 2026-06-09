@@ -4467,3 +4467,9 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "グループ「%@」の精算です。口座を割り当てるだけです。金額と日付はグループが管理します。";
+
+/* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "口座とサブカテゴリを割り当て";
+
+/* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "グループ「%@」の支出です。お金が出た口座を割り当て、分類するサブカテゴリーを選んでください。金額と日付はグループが管理します。";

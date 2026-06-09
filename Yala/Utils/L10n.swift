@@ -4740,6 +4740,13 @@ enum L10n {
             static var banner: String { ls("inbox.groupExpenseAccountDraft.banner", comment: "") }
         }
 
+        // Enfoque B: sheet finalización Caso A cuando faltan cuenta + subcategoría (match falla).
+        enum GroupExpenseAccountSubcategoryDraft {
+            static var title: String { ls("inbox.groupExpenseAccountSubcategoryDraft.title", comment: "") }
+            /// Banner explicativo (asignar cuenta + subcategoría). Formato: %@ = nombre del grupo.
+            static var banner: String { ls("inbox.groupExpenseAccountSubcategoryDraft.banner", comment: "") }
+        }
+
         enum GroupDraft {
             static var finalize: String { ls("inbox.groupDraft.finalize", comment: "") }
             static var fromGroup: String { ls("inbox.groupDraft.fromGroup", comment: "") }

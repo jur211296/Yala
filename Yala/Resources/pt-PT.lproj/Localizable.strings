@@ -3691,3 +3691,9 @@
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
 "inbox.groupSettlementDraft.banner" = "Liquidação do grupo %@. Só tens de atribuir uma conta; o valor e a data são geridos pelo grupo.";
+
+/* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "Atribuir conta e subcategoria";
+
+/* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "Despesa do grupo %@. Atribui a conta de onde saiu o dinheiro e escolhe uma subcategoria para o classificar; o valor e a data são geridos pelo grupo.";
