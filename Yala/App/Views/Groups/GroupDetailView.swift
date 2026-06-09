@@ -225,6 +225,7 @@ struct GroupDetailView: View {
                 group: group,
                 debt: debt,
                 memberNameLookup: viewModel.memberNameLookup,
+                currentUserMemberID: viewModel.currentMemberID,
                 onSave: {}
             )
             .presentationDetents(DS.Adaptive.sheetDetents([.large]))

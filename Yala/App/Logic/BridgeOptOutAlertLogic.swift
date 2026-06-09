@@ -6,9 +6,9 @@
 //  el alert "¿También registrar en tu Yala personal?" (opt-in que crea draft Inbox).
 //
 //  Solo aplica a Caso A (yo pago) y Caso C (yo liquido) cuando bridge effective
-//  está OFF. Caso B (otro pagó) y Caso D (me liquidan via sync) NO requieren alert:
-//  el primero no involucra TX personal real; el segundo viene de sync remoto (sin form
-//  para acoplar alert in-line, manejado por draft auto en Inbox).
+//  está OFF. Caso B (otro pagó) y Caso D (yo recibo) NO requieren alert: el primero
+//  no involucra TX personal real; el segundo ya recibe su draft auto en Inbox desde
+//  el bridge (creación local o sync), por lo que el alert lo duplicaría.
 //
 
 import Foundation
@@ -37,5 +37,20 @@ enum BridgeOptOutAlertLogic {
         case .caseA, .caseC: return true
         case .caseB, .caseD: return false
         }
+    }
+
+    /// Caso del bridge para un settlement desde la perspectiva del current user.
+    /// - Returns: `.caseC` si soy quien paga (`from`), `.caseD` si soy quien recibe
+    ///   (`to`), `nil` si no participo (settlement entre otros — no debería ocurrir
+    ///   desde el form de liquidación; defensivo).
+    static func settlementCase(
+        currentUserMemberID: String?,
+        fromMemberID: String,
+        toMemberID: String
+    ) -> BridgeCase? {
+        guard let currentUserMemberID else { return nil }
+        if currentUserMemberID == fromMemberID { return .caseC }
+        if currentUserMemberID == toMemberID { return .caseD }
+        return nil
     }
 }

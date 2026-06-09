@@ -46,9 +46,53 @@ struct BridgeOptOutAlertLogicTests {
 
     @Test
     func bridgeOff_caseD_doesNotShowAlert() {
-        // Caso D: viene de sync remoto, no hay form para acoplar alert.
+        // Caso D: el bridge ya crea el draft auto, el alert lo duplicaría.
         #expect(BridgeOptOutAlertLogic.shouldShowAlert(
             case: .caseD, bridgeEffectivelyEnabled: false
+        ) == false)
+    }
+
+    // MARK: - settlementCase mapping
+
+    @Test
+    func settlementCase_currentUserIsFrom_isCaseC() {
+        #expect(BridgeOptOutAlertLogic.settlementCase(
+            currentUserMemberID: "me", fromMemberID: "me", toMemberID: "beto"
+        ) == .caseC)
+    }
+
+    @Test
+    func settlementCase_currentUserIsTo_isCaseD() {
+        // Escenario del bug: "Beto paga a Tú" → no debe disparar alert opt-in.
+        #expect(BridgeOptOutAlertLogic.settlementCase(
+            currentUserMemberID: "me", fromMemberID: "beto", toMemberID: "me"
+        ) == .caseD)
+    }
+
+    @Test
+    func settlementCase_currentUserNotInvolved_isNil() {
+        #expect(BridgeOptOutAlertLogic.settlementCase(
+            currentUserMemberID: "me", fromMemberID: "ana", toMemberID: "beto"
+        ) == nil)
+    }
+
+    @Test
+    func settlementCase_nilCurrentUser_isNil() {
+        #expect(BridgeOptOutAlertLogic.settlementCase(
+            currentUserMemberID: nil, fromMemberID: "ana", toMemberID: "beto"
+        ) == nil)
+    }
+
+    // El Caso D entrante via form local NO muestra alert (regresión B-S2-f):
+    // settlementCase → .caseD, y shouldShowAlert(.caseD, OFF) → false.
+    @Test
+    func settlementCaseD_withBridgeOff_compositeDoesNotShowAlert() {
+        let kase = BridgeOptOutAlertLogic.settlementCase(
+            currentUserMemberID: "me", fromMemberID: "beto", toMemberID: "me"
+        )
+        #expect(kase == .caseD)
+        #expect(BridgeOptOutAlertLogic.shouldShowAlert(
+            case: kase!, bridgeEffectivelyEnabled: false
         ) == false)
     }
 }

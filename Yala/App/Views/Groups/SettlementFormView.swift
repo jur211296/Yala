@@ -22,6 +22,9 @@ struct SettlementFormView: View {
     let group: SplitGroup
     let debt: Debt
     let memberNameLookup: [String: String]
+    /// Member ID del current user en este grupo (para distinguir Caso C/D). `nil` si
+    /// no se pudo resolver — el alert opt-in no se mostrará (defensivo).
+    let currentUserMemberID: String?
     let onSave: () -> Void
 
     // MARK: - State
@@ -51,11 +54,13 @@ struct SettlementFormView: View {
         group: SplitGroup,
         debt: Debt,
         memberNameLookup: [String: String],
+        currentUserMemberID: String?,
         onSave: @escaping () -> Void
     ) {
         self.group = group
         self.debt = debt
         self.memberNameLookup = memberNameLookup
+        self.currentUserMemberID = currentUserMemberID
         self.onSave = onSave
         self._amountString = State(initialValue: AmountInputHelper.formatWithGrouping(debt.amount))
     }
@@ -356,9 +361,17 @@ struct SettlementFormView: View {
             TelemetryService.track(.groupSettlementCreated)
             isSaving = false
 
-            // Opt-out: si bridge effective OFF y Caso C (.full/.completed), preguntar al user
-            // si quiere crear TX real opt-in. groupInvite no aplica (no hay cuentas reales).
-            if !bridgeEnabled && !sessionState.isGroupInviteMode {
+            // Opt-out: solo Caso C (yo pago) con bridge OFF dispara el alert opt-in que crea
+            // un draft personal. Caso D (yo recibo) ya tiene su draft auto del bridge — un
+            // segundo draft lo duplicaría. groupInvite no aplica (sin cuentas reales).
+            let bridgeCase = BridgeOptOutAlertLogic.settlementCase(
+                currentUserMemberID: currentUserMemberID,
+                fromMemberID: debt.fromMemberID,
+                toMemberID: debt.toMemberID
+            )
+            if !sessionState.isGroupInviteMode,
+               let bridgeCase,
+               BridgeOptOutAlertLogic.shouldShowAlert(case: bridgeCase, bridgeEffectivelyEnabled: bridgeEnabled) {
                 pendingOptInSettlementID = settlement.id.uuidString
                 showOptInAlert = true
                 return  // diferir dismiss hasta resolver alert
