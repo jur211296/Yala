@@ -23,13 +23,22 @@ enum GroupBridgeRaceCleaner {
     ///
     /// Single-fetch + Set lookup evita N+1 (un fetch por draft).
     ///
+    /// Excluye drafts `optInPersonalOnly` — representan intent del user pendiente de
+    /// aprobación (crear su TX personal más tarde) y NO deben borrarse aunque ya exista
+    /// una TX real con el mismo `splitExpenseID` (ej. la TX real de otro device llegó
+    /// vía sync). Simétrico con la protección del bridge (`GroupTransactionBridge` ~:163).
+    ///
     /// - Returns: Cantidad de drafts eliminados (para logging/telemetría).
     @discardableResult
     static func cleanupPendingDraftsWithMatchingTX(in context: ModelContext) -> Int {
         let drafts: [InboxDraft]
         do {
             drafts = try context.fetch(FetchDescriptor<InboxDraft>(
-                predicate: #Predicate { $0.sourceTypeRaw == "groupExpense" && $0.splitExpenseID != nil }
+                predicate: #Predicate {
+                    $0.sourceTypeRaw == "groupExpense"
+                        && $0.splitExpenseID != nil
+                        && $0.optInPersonalOnly == false
+                }
             ))
         } catch {
             #if DEBUG
@@ -71,12 +80,15 @@ enum GroupBridgeRaceCleaner {
     /// Pure-logic helper para tests sin contexto.
     /// Recibe colección de drafts + closure que indica si existe TX real para cada splitID.
     /// Devuelve los drafts que deberían eliminarse.
+    /// Excluye drafts `optInPersonalOnly` (intent pendiente del user — ver doc de
+    /// `cleanupPendingDraftsWithMatchingTX`).
     static func computeCleanupPlan(
         drafts: [InboxDraft],
         realTxExistsForSplitID: (String) -> Bool
     ) -> [InboxDraft] {
         drafts.filter { draft in
             guard draft.sourceType == .groupExpense,
+                  !draft.optInPersonalOnly,
                   draft.needsUserInput.contains(DraftInputRequirement.account),
                   let splitID = draft.splitExpenseID
             else { return false }

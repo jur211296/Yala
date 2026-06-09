@@ -40,6 +40,20 @@ struct GroupBridgeRaceCleanerTests {
         )
     }
 
+    private func makeGroupExpenseOptInDraft(splitID: String) -> InboxDraft {
+        // Opt-in personal (bridge OFF): misma forma que el pending-account pero con
+        // `optInPersonalOnly=true` — intent del user pendiente de aprobación.
+        InboxDraft(
+            note: "Cena",
+            amount: -100,
+            sourceType: .groupExpense,
+            needsUserInput: ["account"],
+            splitExpenseID: splitID,
+            splitGroupZoneID: "zone-1",
+            optInPersonalOnly: true
+        )
+    }
+
     // MARK: - computeCleanupPlan
 
     @Test func computeCleanupPlan_emptyDrafts() {
@@ -92,6 +106,30 @@ struct GroupBridgeRaceCleanerTests {
         #expect(plan.count == 2)
         let ids = Set(plan.compactMap(\.splitExpenseID))
         #expect(ids == ["exp-1", "exp-2"])
+    }
+
+    @Test func computeCleanupPlan_ignoresOptInDrafts() {
+        // Opt-in draft con TX real coexistente: NO se borra — es intent pendiente del user
+        // (la TX real pudo llegar de otro device vía sync). Simétrico con el bridge.
+        let draft = makeGroupExpenseOptInDraft(splitID: "expense-1")
+        let plan = GroupBridgeRaceCleaner.computeCleanupPlan(
+            drafts: [draft],
+            realTxExistsForSplitID: { _ in true }
+        )
+        #expect(plan.isEmpty)
+    }
+
+    @Test func computeCleanupPlan_optInCoexistsWithAutoDraft() {
+        // Mezcla: un draft auto (pending-account) y uno opt-in para distintos splitIDs, ambos
+        // con TX real. Solo el auto se borra; el opt-in sobrevive.
+        let autoDraft = makeGroupExpenseDraftPendingAccount(splitID: "auto-1")
+        let optInDraft = makeGroupExpenseOptInDraft(splitID: "optin-1")
+        let plan = GroupBridgeRaceCleaner.computeCleanupPlan(
+            drafts: [autoDraft, optInDraft],
+            realTxExistsForSplitID: { _ in true }
+        )
+        #expect(plan.count == 1)
+        #expect(plan.first?.splitExpenseID == "auto-1")
     }
 
     @Test func computeCleanupPlan_ignoresNonGroupExpenseSources() {
