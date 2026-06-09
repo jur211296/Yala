@@ -37,4 +37,42 @@ struct BridgeBranchLogicTests {
             isGroupInviteMode: false, effectiveBridgeEnabled: true
         ) == .fullPair)
     }
+
+    // MARK: - decideVirtualReconciliation (B6-25)
+
+    @Test
+    func noRealTx_returnsMyShareCost() {
+        // Bridge-OFF puro sin opt-in: el virtual -myShare ES mi costo (correcto).
+        #expect(BridgeBranchLogic.decideVirtualReconciliation(
+            hasRealTx: false, lentAmount: 20
+        ) == .myShareCost)
+        #expect(BridgeBranchLogic.decideVirtualReconciliation(
+            hasRealTx: false, lentAmount: 0
+        ) == .myShareCost)
+    }
+
+    @Test
+    func realTx_withLent_returnsLendingToCompensate() {
+        // 2 miembros: total 40, myShare 20, lent 20. Con real -40, el virtual debe ser +20
+        // → net = -20 = mi parte (no -60). Idéntico a bridge-ON Caso A.
+        #expect(BridgeBranchLogic.decideVirtualReconciliation(
+            hasRealTx: true, lentAmount: 20
+        ) == .lendingToCompensateReal)
+    }
+
+    @Test
+    func realTx_zeroLent_returnsNoVirtual() {
+        // Solo-yo: total 40, myShare 40, lent 0. Con real -40, sin virtual → net = -40 (no -80).
+        #expect(BridgeBranchLogic.decideVirtualReconciliation(
+            hasRealTx: true, lentAmount: 0
+        ) == .noVirtual)
+    }
+
+    @Test
+    func realTx_negativeLent_returnsNoVirtual() {
+        // Borde defensivo: lent negativo (data inconsistente) no debe crear un virtual.
+        #expect(BridgeBranchLogic.decideVirtualReconciliation(
+            hasRealTx: true, lentAmount: -5
+        ) == .noVirtual)
+    }
 }

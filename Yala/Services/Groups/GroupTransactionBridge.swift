@@ -174,17 +174,19 @@ final class GroupTransactionBridge {
         let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
         let realSubcat: Subcategory? = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
 
-        // Path Caso B (otro pagó): cleanup TX cuenta real residual + TX virtual -myShare como M5.
-        // PRESERVA TX real existing si bridge está OFF — pudo ser opt-in user-driven
-        // cuando aún era payer (Caso A); cambio de payer remoto no debería destruir el intent.
-        // Con bridge ON, mantener semántica legacy (TX real solo tiene sentido en Caso A).
+        // Path Caso B (otro pagó): virtual-only. Con bridge ON la TX real residual se borra
+        // (solo tiene sentido en Caso A). Con bridge OFF se preserva — pudo ser opt-in
+        // user-driven cuando aún era payer (Caso A); un cambio de payer no debería destruir
+        // el intent. Si el real sobrevive, el virtual se reconcilia a +lent (no -myShare)
+        // para no duplicar (B6-25). `bridgeVirtualOnly` centraliza la regla.
         if !isCaseA {
-            if let stale = existingRealTx, effectiveBridgeEnabled {
-                context.delete(stale)
-            }
-            createCaseBVirtualMyShare(
+            try bridgeVirtualOnly(
                 expense: expense,
+                existingRealTx: existingRealTx,
+                deleteStaleReal: effectiveBridgeEnabled,
                 myShareAmount: mySharedAmount,
+                lentAmount: lentAmount,
+                totalAmount: totalAmount,
                 realSubcat: realSubcat,
                 virtualAccount: virtualAccount,
                 context: context
@@ -209,28 +211,20 @@ final class GroupTransactionBridge {
             return
         }
 
-        // Path Caso A bridge effective OFF: solo TX virtual -myShare como Caso B.
-        // El opt-in alert + draft Inbox manejan creación TX real bajo demanda.
-        // Skipea TX virtual lent (sin cuenta real, sin préstamo a representar).
-        // PRESERVA la TX real si existe: pudo ser creada por opt-in user-driven (draft
-        // aprobado) o ser legacy de cuando el bridge estaba ON. El cleanup destructivo
-        // de TX real es responsabilidad de `BridgeDeactivationSheet` (freeze vs delete),
-        // no del bridge automático.
-        // Pero SÍ aplica preserve+update para mantener monto/fecha consistentes con el
-        // expense canónico cuando éste cambia — evita drift permanente.
+        // Path Caso A bridge effective OFF: virtual-only. Sin opt-in (no hay TX real) el
+        // virtual es -myShare = mi costo directo. Si el user aprobó el opt-in (TX real
+        // -total existe) el virtual pasa a +lent para NO duplicar (B6-25): net = -myShare,
+        // idéntico a bridge-ON Caso A. La TX real se PRESERVA — su cleanup destructivo es
+        // responsabilidad de `BridgeDeactivationSheet` (freeze vs delete), no del bridge
+        // automático — pero sí se preserve+update (monto/fecha) dentro de `bridgeVirtualOnly`.
         if !effectiveBridgeEnabled {
-            if let realTx = existingRealTx, realTx.currencyCode == expense.currencyCode {
-                realTx.amount = -totalAmount
-                realTx.date = expense.date
-                realTx.splitTotalAmount = totalAmount
-                realTx.splitType = expense.splitType
-                // account/subcategory/category/note/tags INTACTOS (preserve user edits).
-                // Recalcular conversión a moneda preferida: amount/date cambiaron.
-                realTx.recalculatePreferredCurrency(context: context)
-            }
-            createCaseBVirtualMyShare(
+            try bridgeVirtualOnly(
                 expense: expense,
+                existingRealTx: existingRealTx,
+                deleteStaleReal: false,
                 myShareAmount: mySharedAmount,
+                lentAmount: lentAmount,
+                totalAmount: totalAmount,
                 realSubcat: realSubcat,
                 virtualAccount: virtualAccount,
                 context: context
@@ -309,30 +303,110 @@ final class GroupTransactionBridge {
             )
         }
 
-        // TX virtual lent (+lentAmount) — siempre regenerada en Caso A `.full/.completed`. Skip si lent==0.
-        if lentAmount > 0 {
-            let loanSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .loanToGroups, context: context)
-            let virtualLent = TransactionItem(
-                date: expense.date,
-                amount: lentAmount,  // M6: lent (no totalAmount como M5).
-                currencyCode: expense.currencyCode,
-                note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
-                category: loanSubcat.safeCategory,
-                subcategory: loanSubcat,
-                account: virtualAccount
-            )
-            virtualLent.splitExpenseID = expenseIDStr
-            virtualLent.splitGroupZoneID = expense.groupZoneID
-            virtualLent.splitTotalAmount = totalAmount  // ref al gasto total origen.
-            virtualLent.splitType = expense.splitType
-            context.insert(virtualLent)
-            virtualLent.recalculatePreferredCurrency(context: context)
-        }
+        // TX virtual lent (+lentAmount) — siempre regenerada en Caso A `.full/.completed`.
+        // `createVirtualLent` es no-op si lent <= 0 (yo solo en el split).
+        try createVirtualLent(
+            expense: expense,
+            lentAmount: lentAmount,
+            totalAmount: totalAmount,
+            virtualAccount: virtualAccount,
+            context: context
+        )
 
         try saveIfNeeded(shouldSave: shouldSave, context: context)
     }
 
     // MARK: - Helpers (M6)
+
+    /// Path "virtual-only" (Caso B y Caso A bridge-OFF): el bridge NO crea TX real
+    /// automáticamente, pero reconcilia el virtual con cualquier TX real coexistente
+    /// (opt-in user-driven aprobado, o legacy de cuando el bridge estaba ON):
+    ///   - Hay TX real `-total` que sobrevive → virtual `+lent` (compensa; net = -myShare).
+    ///     Idéntico a bridge-ON Caso A. Si `lent == 0` → sin virtual (el real ya es mi costo).
+    ///   - NO hay TX real → virtual `-myShare` (mi costo directo).
+    /// Resuelve el doble conteo B6-25 (virtual `-myShare` + real `-total`, mismo signo).
+    /// - Parameter deleteStaleReal: `true` solo en Caso B bridge-ON (la TX real solo tiene
+    ///   sentido cuando yo soy payer; un cambio de payer con bridge ON la vuelve obsoleta).
+    private func bridgeVirtualOnly(
+        expense: SplitExpense,
+        existingRealTx: TransactionItem?,
+        deleteStaleReal: Bool,
+        myShareAmount: Double,
+        lentAmount: Double,
+        totalAmount: Double,
+        realSubcat: Subcategory?,
+        virtualAccount: Account,
+        context: ModelContext
+    ) throws {
+        var realTx = existingRealTx
+        if deleteStaleReal, let stale = realTx {
+            context.delete(stale)
+            realTx = nil
+        }
+
+        // Preserve+update del real superviviente: SOLO monto/fecha/grupo (jamás cuenta/
+        // subcat/note/tags). Gateado por currency compatible para no corromper data del user.
+        if let realTx, realTx.currencyCode == expense.currencyCode {
+            realTx.amount = -totalAmount
+            realTx.date = expense.date
+            realTx.splitTotalAmount = totalAmount
+            realTx.splitType = expense.splitType
+            realTx.recalculatePreferredCurrency(context: context)
+        }
+
+        switch BridgeBranchLogic.decideVirtualReconciliation(
+            hasRealTx: realTx != nil,
+            lentAmount: lentAmount
+        ) {
+        case .myShareCost:
+            createCaseBVirtualMyShare(
+                expense: expense,
+                myShareAmount: myShareAmount,
+                realSubcat: realSubcat,
+                virtualAccount: virtualAccount,
+                context: context
+            )
+        case .lendingToCompensateReal:
+            try createVirtualLent(
+                expense: expense,
+                lentAmount: lentAmount,
+                totalAmount: totalAmount,
+                virtualAccount: virtualAccount,
+                context: context
+            )
+        case .noVirtual:
+            break  // real -total ya es mi costo total (yo solo en el split).
+        }
+    }
+
+    /// Crea la TX virtual `+lent` (sistema "Préstamo a grupos") que compensa una TX real
+    /// `-total`: net (real `-total` + virtual `+lent`) = `-myShare`. No-op si `lent <= 0`.
+    /// Reusada por bridge-ON Caso A (`bridgeExpense`) y por `bridgeVirtualOnly`.
+    private func createVirtualLent(
+        expense: SplitExpense,
+        lentAmount: Double,
+        totalAmount: Double,
+        virtualAccount: Account,
+        context: ModelContext
+    ) throws {
+        guard lentAmount > 0 else { return }
+        let loanSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .loanToGroups, context: context)
+        let virtualLent = TransactionItem(
+            date: expense.date,
+            amount: lentAmount,  // M6: lent (no totalAmount como M5).
+            currencyCode: expense.currencyCode,
+            note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
+            category: loanSubcat.safeCategory,
+            subcategory: loanSubcat,
+            account: virtualAccount
+        )
+        virtualLent.splitExpenseID = expense.id.uuidString
+        virtualLent.splitGroupZoneID = expense.groupZoneID
+        virtualLent.splitTotalAmount = totalAmount  // ref al gasto total origen.
+        virtualLent.splitType = expense.splitType
+        context.insert(virtualLent)
+        virtualLent.recalculatePreferredCurrency(context: context)
+    }
 
     /// Caso B (otro pagó): TX virtual -myShare con subcat manual o draft TX-puntero.
     private func createCaseBVirtualMyShare(

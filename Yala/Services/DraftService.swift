@@ -92,20 +92,17 @@ final class DraftService {
     ) throws -> TransactionItem {
         let context = try requireContext()
 
-        // Draft con flag opt-in personal: la TX virtual ya fue creada por el bridge en
-        // el save original. Aquí solo materializa la TX real ligada al splitID sin
-        // re-invocar `bridgeExpense` (evitaría delete+recreate del lado virtual).
-        if draft.optInPersonalOnly {
-            if draft.sourceType == .groupExpense {
-                return try approveGroupExpenseOptInPersonalDraft(draft, currencyConverter: currencyConverter, context: context)
-            }
-            if draft.sourceType == .groupSettlement {
-                return try approveGroupSettlementOptInPersonalDraft(draft, currencyConverter: currencyConverter, context: context)
-            }
+        // Draft opt-in de settlement (bridge OFF): crea TX manual independiente SIN bridge —
+        // el virtual del settlement ya es de signo opuesto al real, compensa sin doble conteo.
+        // (Los opt-in de groupExpense NO se bifurcan aquí: caen al path de cuenta de abajo —
+        // crea la TX real Y reconcilia el virtual vía el bridge (+lent, sin doble conteo
+        // B6-25). El flag opt-in no altera ese flujo, así que comparten función.)
+        if draft.optInPersonalOnly, draft.sourceType == .groupSettlement {
+            return try approveGroupSettlementOptInPersonalDraft(draft, currencyConverter: currencyConverter, context: context)
         }
 
-        // M6: drafts groupExpense Caso A pendiente cuenta. Crea TX cuenta real con
-        // splitExpenseID + invoca bridge para regenerar TX virtual lent.
+        // M6: drafts groupExpense Caso A pendiente cuenta (incluye opt-in personal). Crea TX
+        // cuenta real con splitExpenseID + invoca el bridge → regenera/reconcilia la TX virtual.
         // Detección: groupExpense + targetTransactionID==nil + needsUserInput contains "account".
         if draft.sourceType == .groupExpense,
            draft.targetTransactionID == nil,
@@ -528,9 +525,11 @@ final class DraftService {
 
     // MARK: - M6: Approve groupExpense Caso A pendiente cuenta
 
-    /// Crea TX cuenta real con `splitExpenseID` setteado e invoca el bridge para regenerar
-    /// la TX virtual lent. La TX cuenta real recién creada activa el path preserve+update
-    /// del bridge (no se duplica).
+    /// Crea TX cuenta real con `splitExpenseID` setteado e invoca el bridge para regenerar/
+    /// reconciliar la TX virtual. La TX cuenta real recién creada activa el path preserve+update
+    /// del bridge (no se duplica). Cubre tanto drafts auto (pending-account) como opt-in personal
+    /// (bridge OFF) — el flag `optInPersonalOnly` no altera este flujo: con bridge OFF el bridge
+    /// reconcilia el virtual a `+lent` (sin doble conteo B6-25), con bridge ON regenera el par.
     ///
     /// **Orden de operaciones**:
     /// 1. Guard: campos requeridos del draft.
@@ -716,66 +715,6 @@ final class DraftService {
         )
         context.insert(draft)
         try context.save()
-    }
-
-    /// Aprueba un draft `groupExpense` opt-in: crea la TX real con `splitExpenseID` ligado
-    /// SIN invocar el bridge (la TX virtual ya existe — recrear duplicaría el par).
-    private func approveGroupExpenseOptInPersonalDraft(
-        _ draft: InboxDraft,
-        currencyConverter: CurrencyConverter,
-        context: ModelContext
-    ) throws -> TransactionItem {
-        guard let account = draft.account else { throw DraftServiceError.missingAccount }
-        guard let amount = draft.amount else { throw DraftServiceError.missingAmount }
-        guard let splitID = draft.splitExpenseID,
-              let zoneID = draft.splitGroupZoneID,
-              let splitUUID = UUID(uuidString: splitID) else {
-            throw DraftServiceError.missingAccount
-        }
-
-        let expenseDescriptor = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == splitUUID })
-        guard let expense = try context.fetch(expenseDescriptor).first else {
-            context.delete(draft)
-            try context.save()
-            throw DraftServiceError.missingAccount
-        }
-
-        let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
-        let realSubcat = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
-        let preferredCode = CurrencyDefaults.currentPreferred
-        let amountInPreferred = currencyConverter.convert(
-            Decimal(amount), from: expense.currencyCode, to: preferredCode,
-            on: draft.effectiveDate, context: context
-        )
-        let exchangeRate: Double = abs(amount) > 0.0001
-            ? (amountInPreferred as NSDecimalNumber).doubleValue / amount
-            : 1.0
-
-        let realTx = TransactionItem(
-            date: expense.date,
-            amount: amount,
-            currencyCode: expense.currencyCode,
-            note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
-            category: realSubcat?.safeCategory,
-            subcategory: realSubcat,
-            account: account
-        )
-        realTx.splitExpenseID = splitID
-        realTx.splitGroupZoneID = zoneID
-        realTx.splitTotalAmount = expense.amount
-        realTx.splitType = expense.splitType
-        realTx.exchangeRate = abs(exchangeRate)
-        realTx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
-        realTx.preferredCurrencyCode = preferredCode
-        context.insert(realTx)
-
-        cacheDisplayValues(draft)
-        context.delete(draft)
-        try context.save()
-        SessionState.shared.incrementDataVersion()
-        WidgetDataCache.updateCache(context: context)
-        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
-        return realTx
     }
 
     /// Aprueba un draft `groupSettlement` opt-in: crea TX manual ligada al settlement
