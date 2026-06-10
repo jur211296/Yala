@@ -3899,9 +3899,7 @@ enum L10n {
         static var today: String { ls("widget.today", comment: "") }
         static var noData: String { ls("widget.noData", comment: "") }
         static var loading: String { ls("widget.loading", comment: "") }
-        static var preferences: String { ls("widget.preferences", comment: "") }
         static var visible: String { ls("widget.visible", comment: "") }
-        static var size: String { ls("widget.size", comment: "") }
         static var summary: String { ls("widget.summary", comment: "") }
         static var list: String { ls("widget.list", comment: "") }
         static var calendar: String { ls("widget.calendar", comment: "") }

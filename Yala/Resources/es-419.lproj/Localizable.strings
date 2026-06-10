@@ -456,9 +456,9 @@
 // MARK: - Settings
 
 "settings.title" = "Configuración";
-"settings.theme" = "Tema";
+"settings.theme" = "Temas";
 "settings.currency" = "Moneda";
-"settings.appIcon" = "Ícono de app";
+"settings.appIcon" = "Icono de aplicación";
 "settings.personalization" = "Personalización";
 "settings.accounts" = "Cuentas";
 "settings.categories" = "Categorías";
@@ -485,7 +485,7 @@
 "settings.appLanguage" = "Idioma de la app";
 "settings.appLanguageRestart" = "Reinicia la app para aplicar el cambio.";
 "settings.imageInputEnabled" = "Entrada con imágenes";
-"settings.resetData" = "Borrar datos";
+"settings.resetData" = "Vaciar datos";
 "settings.version" = "Versión";
 "settings.light" = "Claro";
 "settings.dark" = "Oscuro";
@@ -499,7 +499,7 @@
 "settings.defaultCurrency" = "Moneda predeterminada";
 "settings.currentIcon" = "Ícono actual";
 "settings.resetAllData" = "Vaciar todos tus datos";
-"settings.deleteAllData" = "Eliminar todos mis datos";
+"settings.deleteAllData" = "Eliminar todos tus datos";
 
 // MARK: - Common
 
@@ -520,9 +520,7 @@
 
 // MARK: - Widgets
 
-"widget.preferences" = "Preferencias de widgets";
 "widget.visible" = "Visible";
-"widget.size" = "Tamaño";
 
 // MARK: - Planning
 
@@ -633,11 +631,10 @@
 
 "profile.title" = "Perfil";
 "profile.defaultName" = "Usuario";
-"profile.personalDetails" = "Datos personales";
+"profile.personalDetails" = "Detalles personales";
 "profile.dataManagement" = "Gestión de datos";
 "profile.appearance" = "Apariencia";
 "empty.noExpenses" = "Aún no tienes gastos registrados";
-"empty.noSubcategories" = "Aún no tienes subcategorías";
 "common.recent" = "Recientes";
 "tag.new" = "Nueva etiqueta";
 "tag.edit" = "Editar etiqueta";
@@ -759,13 +756,10 @@
 "widget.today" = "Hoy";
 
 // Widget Preferences
-"widget.preferences" = "Preferencias del panel";
 "widget.preferences.description" = "Elige qué quieres ver en tu panel principal y en qué orden.";
 "widget.resetLayout" = "Restablecer disposición original";
 "widget.alwaysVisible" = "Siempre visible";
 "widget.fixedPosition" = "Posición fija";
-"widget.visible" = "Visible";
-"widget.size" = "Tamaño: %@";
 "widget.summary" = "Resumen";
 "widget.list" = "Lista";
 "widget.calendar" = "Calendario";
@@ -1015,14 +1009,7 @@
 "statistics.categories" = "Distribución";
 "statistics.records" = "Registros";
 
-"period.thisWeek" = "Esta semana";
 "period.last7Days" = "Últimos 7 días";
-"period.last30Days" = "Últimos 30 días";
-"period.thisMonth" = "Este mes";
-"period.lastMonth" = "Mes pasado";
-"period.thisYear" = "Este año";
-"period.lastYear" = "Año pasado";
-"period.allTime" = "Todo el tiempo";
 
 "need.essential" = "Esencial";
 "need.priority" = "Prioritaria";
@@ -1033,9 +1020,6 @@
 "need.optional.desc" = "Gastos discrecionales o de ocio.";
 "need.unclassified.desc" = "Sin etiqueta de naturaleza específica.";
 
-"trendType.balance" = "Saldo";
-"trendType.income" = "Ingresos";
-"trendType.expense" = "Gastos";
 
 "cashFlowViewType.total" = "Total";
 "cashFlowViewType.byAccount" = "Por cuenta";
@@ -1161,12 +1145,10 @@
 "biometric.enableLockHint" = "Se te pedirá verificar tu identidad cada vez que abras la app.";
 "biometric.lockAfterHint" = "Elige cuánto tiempo puede pasar en segundo plano antes de bloquearse.";
 
-"profile.title" = "Perfil";
 "profile.edit" = "Editar perfil";
 "profile.importSuccess" = "Importación completada";
 "profile.importError" = "Error al importar";
 
-"profile.personalDetails" = "Detalles personales";
 "profile.changePhoto" = "Cambiar foto";
 "profile.addPhoto" = "Añadir foto";
 "profile.yourName" = "Tu nombre";
@@ -1195,22 +1177,13 @@
 "settings.recommendedCurrencies" = "Recomendadas";
 "common.lastUpdate" = "Última actualización:";
 
-"common.inactive" = "Inactivas";
-"common.hidden" = "Ocultas";
 "common.archived" = "Archivadas";
 "empty.tagsDescription" = "Crea etiquetas para organizar tus transacciones de forma flexible.";
 "empty.categoriesDescription" = "Crea categorías para clasificar tus ingresos y gastos.";
 "empty.accountsDescription" = "Crea cuentas para organizar tus finanzas por banco, efectivo u otros.";
 
-"profile.appearance" = "Apariencia";
-"settings.theme" = "Temas";
 "settings.themeDescription" = "Elige cómo quieres que se vea Yala.";
-"settings.system" = "Sistema";
-"settings.light" = "Claro";
-"settings.dark" = "Oscuro";
-"settings.appIcon" = "Icono de aplicación";
 "settings.appIconDescription" = "Elige el icono que mejor se adapte a tu estilo.";
-"settings.personalization" = "Personalización";
 "settings.personalizationDescription" = "Ajusta cómo funciona Yala según tus preferencias.";
 "settings.sectionInterface" = "Interfaz";
 "settings.sectionCalendar" = "Calendario";
@@ -1225,9 +1198,7 @@
 "settings.firstWeekdayDescription" = "Define qué día considerar como inicio de semana para filtros como 'Esta semana'.";
 "settings.sunday" = "Domingo";
 "settings.monday" = "Lunes";
-"settings.resetData" = "Vaciar datos";
 "settings.resetDataDescription" = "Esta operación eliminará de forma permanente tus cuentas, transacciones, presupuestos, tipos de cambio, categorías y cualquier otro dato asociado a tu perfil de Yala. Después del borrado, la app volverá a un estado similar al inicial.";
-"settings.deleteAllData" = "Eliminar todos tus datos";
 "settings.deleteDataConfirmation" = "¿Eliminar todos tus datos?";
 "settings.deleteDataWarning" = "Esta acción es irreversible. Se eliminarán todas tus cuentas, transacciones, presupuestos, tipos de cambio y categorías. Después de esto, Yala se reiniciará a un estado similar al inicial y no podrás recuperar tus datos.";
 "settings.wipeICloudWarning" = "Esto también eliminará tus datos de iCloud. Otros dispositivos sincronizados perderán estos datos.";
@@ -1659,12 +1630,9 @@
 "weekday.short.saturday" = "S";
 
 // Common (if not already present)
-"common.select" = "Seleccionar";
 "common.disabled" = "Desactivado";
-"common.none" = "Ninguno";
 "filters.none" = "Ninguno";
 "filters.transaction.type" = "Tipo de transacción";
-"filters.title" = "Filtros";
 "filters.clear" = "Limpiar";
 "action.close" = "Cerrar";
 
@@ -2869,7 +2837,6 @@
 "subcategory.salary" = "Salario";
 "subcategory.sales" = "Ventas";
 "subcategory.accountTransfer" = "Transferencia entre cuentas";
-"subcategory.balanceAdjustment" = "Ajustes de saldo";
 "subcategory.accountTransferOther" = "Transferencia entre cuentas";
 
 // MARK: - Scheduled Payments UX (M1-M7)

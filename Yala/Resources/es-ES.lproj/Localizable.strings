@@ -3592,12 +3592,10 @@
 "widget.of" = "de %@";
 "widget.ofExpense" = "del gasto";
 "widget.ofTotal" = "del total";
-"widget.preferences" = "Preferencias del panel";
 "widget.preferences.description" = "Elige qué quieres ver en tu panel principal y en qué orden.";
 "widget.recordsWillAppear" = "Cuando registres movimientos, aparecerán aquí";
 "widget.resetLayout" = "Restablecer disposición original";
 "widget.selectCurrencies" = "Selecciona hasta 2 divisas para comparar con %@";
-"widget.size" = "Tamaño: %@";
 "widget.sizeLabel" = "Tamaño";
 "widget.subcategories" = "Subcategorías";
 "widget.summary" = "Resumen";

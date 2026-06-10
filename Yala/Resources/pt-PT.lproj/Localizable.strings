@@ -3593,12 +3593,10 @@
 "widget.of" = "de %@";
 "widget.ofExpense" = "da despesa";
 "widget.ofTotal" = "do total";
-"widget.preferences" = "Preferencias do painel";
 "widget.preferences.description" = "Escolha o que voce quer ver no seu painel e em qual ordem.";
 "widget.recordsWillAppear" = "Quando voce registrar transacoes, elas aparecerao aqui.";
 "widget.resetLayout" = "Restaurar layout original";
 "widget.selectCurrencies" = "Selecione ate 2 moedas para comparar com %@";
-"widget.size" = "Tamanho: %@";
 "widget.sizeLabel" = "Tamanho";
 "widget.subcategories" = "Subcategorias";
 "widget.summary" = "Resumo";

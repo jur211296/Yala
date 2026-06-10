@@ -499,7 +499,7 @@
 "settings.defaultCurrency" = "默认货币";
 "settings.currentIcon" = "当前图标";
 "settings.resetAllData" = "重置你所有的数据";
-"settings.deleteAllData" = "删除我所有的数据";
+"settings.deleteAllData" = "删除全部数据";
 
 // MARK: - Common
 
@@ -520,9 +520,7 @@
 
 // MARK: - Widgets
 
-"widget.preferences" = "小组件偏好";
 "widget.visible" = "可见";
-"widget.size" = "大小";
 
 // MARK: - Planning
 
@@ -637,7 +635,6 @@
 "profile.dataManagement" = "数据管理";
 "profile.appearance" = "外观";
 "empty.noExpenses" = "你还没有记录任何支出";
-"empty.noSubcategories" = "还没有子类别";
 "common.recent" = "最近";
 "tag.new" = "新建标签";
 "tag.edit" = "编辑标签";
@@ -759,13 +756,10 @@
 "widget.today" = "今天";
 
 // Widget Preferences
-"widget.preferences" = "面板偏好";
 "widget.preferences.description" = "选择你想在面板上看到什么以及顺序。";
 "widget.resetLayout" = "恢复原始布局";
 "widget.alwaysVisible" = "始终可见";
 "widget.fixedPosition" = "固定位置";
-"widget.visible" = "可见";
-"widget.size" = "大小:%@";
 "widget.summary" = "摘要";
 "widget.list" = "列表";
 "widget.calendar" = "日历";
@@ -1015,14 +1009,7 @@
 "statistics.categories" = "分布";
 "statistics.records" = "记录";
 
-"period.thisWeek" = "本周";
 "period.last7Days" = "最近 7 天";
-"period.last30Days" = "最近 30 天";
-"period.thisMonth" = "本月";
-"period.lastMonth" = "上月";
-"period.thisYear" = "今年";
-"period.lastYear" = "去年";
-"period.allTime" = "全部时间";
 
 "need.essential" = "必需";
 "need.priority" = "优先";
@@ -1033,9 +1020,6 @@
 "need.optional.desc" = "可自行决定或休闲的支出。";
 "need.unclassified.desc" = "没有特定的需求标签。";
 
-"trendType.balance" = "余额";
-"trendType.income" = "收入";
-"trendType.expense" = "支出";
 
 "cashFlowViewType.total" = "总计";
 "cashFlowViewType.byAccount" = "按账户";
@@ -1161,12 +1145,10 @@
 "biometric.enableLockHint" = "你每次打开应用时都会被要求验证身份。";
 "biometric.lockAfterHint" = "选择应用在后台多久之后锁定。";
 
-"profile.title" = "个人资料";
 "profile.edit" = "编辑个人资料";
 "profile.importSuccess" = "导入完成";
 "profile.importError" = "导入错误";
 
-"profile.personalDetails" = "个人详情";
 "profile.changePhoto" = "更换照片";
 "profile.addPhoto" = "添加照片";
 "profile.yourName" = "你的名字";
@@ -1195,22 +1177,13 @@
 "settings.recommendedCurrencies" = "推荐";
 "common.lastUpdate" = "最后更新:";
 
-"common.inactive" = "未活跃";
-"common.hidden" = "已隐藏";
 "common.archived" = "已归档";
 "empty.tagsDescription" = "创建标签来灵活地组织你的交易。";
 "empty.categoriesDescription" = "创建类别来分类你的收入和支出。";
 "empty.accountsDescription" = "创建账户来按银行、现金或其他方式组织你的财务。";
 
-"profile.appearance" = "外观";
-"settings.theme" = "主题";
 "settings.themeDescription" = "选择 Yala 的外观。";
-"settings.system" = "系统";
-"settings.light" = "浅色";
-"settings.dark" = "深色";
-"settings.appIcon" = "应用图标";
 "settings.appIconDescription" = "选择最符合你风格的图标。";
-"settings.personalization" = "个性化";
 "settings.personalizationDescription" = "根据你的偏好调整 Yala 的工作方式。";
 "settings.sectionInterface" = "界面";
 "settings.sectionCalendar" = "日历";
@@ -1225,9 +1198,7 @@
 "settings.firstWeekdayDescription" = "设置「本周」等筛选的起始日。";
 "settings.sunday" = "星期日";
 "settings.monday" = "星期一";
-"settings.resetData" = "重置数据";
 "settings.resetDataDescription" = "此操作将永久删除你的账户、交易、预算、汇率、类别以及与你 Yala 资料相关的任何其他数据。删除后,应用将回到类似初始设置的状态。";
-"settings.deleteAllData" = "删除全部数据";
 "settings.deleteDataConfirmation" = "删除你所有的数据?";
 "settings.deleteDataWarning" = "此操作不可逆。你的全部账户、交易、预算、汇率和类别都将被删除。之后 Yala 会重置到类似初始设置的状态,你无法恢复数据。";
 "settings.wipeICloudWarning" = "这也会删除你的 iCloud 数据。其他已同步设备将丢失这些数据。";
@@ -1659,12 +1630,9 @@
 "weekday.short.saturday" = "六";
 
 // Common (if not already present)
-"common.select" = "选择";
 "common.disabled" = "已禁用";
-"common.none" = "无";
 "filters.none" = "无";
 "filters.transaction.type" = "交易类型";
-"filters.title" = "筛选";
 "filters.clear" = "清除";
 "action.close" = "关闭";
 
@@ -2683,7 +2651,6 @@
 "subcategory.salary" = "工资";
 "subcategory.sales" = "销售";
 "subcategory.accountTransfer" = "账户转账";
-"subcategory.balanceAdjustment" = "余额调整";
 "subcategory.accountTransferOther" = "账户转账";
 
 // MARK: - Tips & Tricks

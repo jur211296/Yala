@@ -520,9 +520,7 @@
 
 // MARK: - Widgets
 
-"widget.preferences" = "ウィジェット設定";
 "widget.visible" = "表示";
-"widget.size" = "サイズ";
 
 // MARK: - Planning
 
@@ -637,7 +635,6 @@
 "profile.dataManagement" = "データ管理";
 "profile.appearance" = "外観";
 "empty.noExpenses" = "支出はまだ記録されていません";
-"empty.noSubcategories" = "サブカテゴリーはまだありません";
 "common.recent" = "最近";
 "tag.new" = "新規タグ";
 "tag.edit" = "タグを編集";
@@ -759,13 +756,10 @@
 "widget.today" = "今日";
 
 // Widget Preferences
-"widget.preferences" = "ダッシュボード設定";
 "widget.preferences.description" = "ダッシュボードに表示する内容と順序を選んでください。";
 "widget.resetLayout" = "元のレイアウトに戻す";
 "widget.alwaysVisible" = "常に表示";
 "widget.fixedPosition" = "固定位置";
-"widget.visible" = "表示";
-"widget.size" = "サイズ: %@";
 "widget.summary" = "サマリー";
 "widget.list" = "リスト";
 "widget.calendar" = "カレンダー";
@@ -1015,14 +1009,7 @@
 "statistics.categories" = "内訳";
 "statistics.records" = "記録";
 
-"period.thisWeek" = "今週";
 "period.last7Days" = "過去7日間";
-"period.last30Days" = "過去30日間";
-"period.thisMonth" = "今月";
-"period.lastMonth" = "先月";
-"period.thisYear" = "今年";
-"period.lastYear" = "去年";
-"period.allTime" = "全期間";
 
 "need.essential" = "必需";
 "need.priority" = "優先";
@@ -1033,9 +1020,6 @@
 "need.optional.desc" = "裁量的・娯楽的な支出。";
 "need.unclassified.desc" = "性質タグが指定されていません。";
 
-"trendType.balance" = "残高";
-"trendType.income" = "収入";
-"trendType.expense" = "支出";
 
 "cashFlowViewType.total" = "合計";
 "cashFlowViewType.byAccount" = "口座別";
@@ -1161,12 +1145,10 @@
 "biometric.enableLockHint" = "アプリを開くたびに本人確認が求められます。";
 "biometric.lockAfterHint" = "ロックされるまでバックグラウンドに残せる時間を選択してください。";
 
-"profile.title" = "プロフィール";
 "profile.edit" = "プロフィールを編集";
 "profile.importSuccess" = "インポート完了";
 "profile.importError" = "インポートエラー";
 
-"profile.personalDetails" = "個人情報";
 "profile.changePhoto" = "写真を変更";
 "profile.addPhoto" = "写真を追加";
 "profile.yourName" = "お名前";
@@ -1195,22 +1177,13 @@
 "settings.recommendedCurrencies" = "おすすめ";
 "common.lastUpdate" = "最終更新:";
 
-"common.inactive" = "非アクティブ";
-"common.hidden" = "非表示";
 "common.archived" = "アーカイブ済み";
 "empty.tagsDescription" = "タグを作成して取引を柔軟に整理しましょう。";
 "empty.categoriesDescription" = "カテゴリーを作成して収入と支出を分類しましょう。";
 "empty.accountsDescription" = "口座を作成して銀行、現金などで資産を整理しましょう。";
 
-"profile.appearance" = "外観";
-"settings.theme" = "テーマ";
 "settings.themeDescription" = "Yalaの見た目を選びます。";
-"settings.system" = "システム";
-"settings.light" = "ライト";
-"settings.dark" = "ダーク";
-"settings.appIcon" = "アプリアイコン";
 "settings.appIconDescription" = "好みのスタイルのアイコンを選びましょう。";
-"settings.personalization" = "パーソナライズ";
 "settings.personalizationDescription" = "好みに合わせてYalaの動作を調整します。";
 "settings.sectionInterface" = "インターフェース";
 "settings.sectionCalendar" = "カレンダー";
@@ -1225,9 +1198,7 @@
 "settings.firstWeekdayDescription" = "「今週」などのフィルターで週の開始日を設定します。";
 "settings.sunday" = "日曜日";
 "settings.monday" = "月曜日";
-"settings.resetData" = "データをリセット";
 "settings.resetDataDescription" = "この操作はYalaのプロフィールに関連付けられた口座、取引、予算、為替レート、カテゴリーなどのデータを完全に削除します。削除後、アプリは初期設定に近い状態に戻ります。";
-"settings.deleteAllData" = "すべてのデータを削除";
 "settings.deleteDataConfirmation" = "すべてのデータを削除しますか？";
 "settings.deleteDataWarning" = "この操作は取り消せません。すべての口座、取引、予算、為替レート、カテゴリーが削除されます。Yalaは初期設定に近い状態にリセットされ、データは復元できません。";
 "settings.wipeICloudWarning" = "iCloudのデータも削除されます。同期している他のデバイスからもこのデータが消えます。";
@@ -1659,12 +1630,9 @@
 "weekday.short.saturday" = "土";
 
 // Common (if not already present)
-"common.select" = "選択";
 "common.disabled" = "無効";
-"common.none" = "なし";
 "filters.none" = "なし";
 "filters.transaction.type" = "取引種別";
-"filters.title" = "フィルター";
 "filters.clear" = "クリア";
 "action.close" = "閉じる";
 
@@ -2683,7 +2651,6 @@
 "subcategory.salary" = "給与";
 "subcategory.sales" = "売上";
 "subcategory.accountTransfer" = "口座振替";
-"subcategory.balanceAdjustment" = "残高調整";
 "subcategory.accountTransferOther" = "口座振替";
 
 // MARK: - Tips & Tricks

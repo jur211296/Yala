@@ -456,7 +456,7 @@
 // MARK: - Settings
 
 "settings.title" = "Settings";
-"settings.theme" = "Theme";
+"settings.theme" = "Themes";
 "settings.currency" = "Currency";
 "settings.appIcon" = "App Icon";
 "settings.personalization" = "Personalization";
@@ -499,7 +499,7 @@
 "settings.defaultCurrency" = "Default Currency";
 "settings.currentIcon" = "Current Icon";
 "settings.resetAllData" = "Reset all your data";
-"settings.deleteAllData" = "Delete all my data";
+"settings.deleteAllData" = "Delete All Data";
 
 // MARK: - Common
 
@@ -520,9 +520,7 @@
 
 // MARK: - Widgets
 
-"widget.preferences" = "Widget Preferences";
 "widget.visible" = "Visible";
-"widget.size" = "Size";
 
 // MARK: - Planning
 
@@ -637,7 +635,6 @@
 "profile.dataManagement" = "Data Management";
 "profile.appearance" = "Appearance";
 "empty.noExpenses" = "You don't have any expenses recorded yet";
-"empty.noSubcategories" = "No subcategories yet";
 "common.recent" = "Recent";
 "tag.new" = "New Tag";
 "tag.edit" = "Edit Tag";
@@ -759,13 +756,10 @@
 "widget.today" = "Today";
 
 // Widget Preferences
-"widget.preferences" = "Dashboard Preferences";
 "widget.preferences.description" = "Choose what you want to see on your dashboard and in what order.";
 "widget.resetLayout" = "Reset to original layout";
 "widget.alwaysVisible" = "Always visible";
 "widget.fixedPosition" = "Fixed position";
-"widget.visible" = "Visible";
-"widget.size" = "Size: %@";
 "widget.summary" = "Summary";
 "widget.list" = "List";
 "widget.calendar" = "Calendar";
@@ -1015,14 +1009,7 @@
 "statistics.categories" = "Distribution";
 "statistics.records" = "Records";
 
-"period.thisWeek" = "This Week";
 "period.last7Days" = "Last 7 Days";
-"period.last30Days" = "Last 30 Days";
-"period.thisMonth" = "This Month";
-"period.lastMonth" = "Last Month";
-"period.thisYear" = "This Year";
-"period.lastYear" = "Last Year";
-"period.allTime" = "All Time";
 
 "need.essential" = "Essential";
 "need.priority" = "Priority";
@@ -1033,9 +1020,6 @@
 "need.optional.desc" = "Discretionary or leisure expenses.";
 "need.unclassified.desc" = "No specific nature tag.";
 
-"trendType.balance" = "Balance";
-"trendType.income" = "Income";
-"trendType.expense" = "Expenses";
 
 "cashFlowViewType.total" = "Total";
 "cashFlowViewType.byAccount" = "By Account";
@@ -1161,12 +1145,10 @@
 "biometric.enableLockHint" = "You'll be asked to verify your identity each time you open the app.";
 "biometric.lockAfterHint" = "Choose how long the app can stay in the background before locking.";
 
-"profile.title" = "Profile";
 "profile.edit" = "Edit Profile";
 "profile.importSuccess" = "Import Completed";
 "profile.importError" = "Import Error";
 
-"profile.personalDetails" = "Personal Details";
 "profile.changePhoto" = "Change Photo";
 "profile.addPhoto" = "Add Photo";
 "profile.yourName" = "Your Name";
@@ -1195,22 +1177,13 @@
 "settings.recommendedCurrencies" = "Recommended";
 "common.lastUpdate" = "Last update:";
 
-"common.inactive" = "Inactive";
-"common.hidden" = "Hidden";
 "common.archived" = "Archived";
 "empty.tagsDescription" = "Create tags to organize your transactions flexibly.";
 "empty.categoriesDescription" = "Create categories to classify your income and expenses.";
 "empty.accountsDescription" = "Create accounts to organize your finances by bank, cash, or others.";
 
-"profile.appearance" = "Appearance";
-"settings.theme" = "Themes";
 "settings.themeDescription" = "Choose how Yala looks.";
-"settings.system" = "System";
-"settings.light" = "Light";
-"settings.dark" = "Dark";
-"settings.appIcon" = "App Icon";
 "settings.appIconDescription" = "Choose the icon that best fits your style.";
-"settings.personalization" = "Personalization";
 "settings.personalizationDescription" = "Adjust how Yala works according to your preferences.";
 "settings.sectionInterface" = "Interface";
 "settings.sectionCalendar" = "Calendar";
@@ -1225,9 +1198,7 @@
 "settings.firstWeekdayDescription" = "Set which day to consider as start of week for filters like 'This Week'.";
 "settings.sunday" = "Sunday";
 "settings.monday" = "Monday";
-"settings.resetData" = "Reset Data";
 "settings.resetDataDescription" = "This operation will permanently delete your accounts, transactions, budgets, exchange rates, categories, and any other data associated with your Yala profile. After deletion, the app will return to a state similar to initial setup.";
-"settings.deleteAllData" = "Delete All Data";
 "settings.deleteDataConfirmation" = "Delete all your data?";
 "settings.deleteDataWarning" = "This action is irreversible. All your accounts, transactions, budgets, exchange rates, and categories will be deleted. After this, Yala will reset to a state similar to initial setup and you cannot recover your data.";
 "settings.wipeICloudWarning" = "This will also delete your iCloud data. Other synced devices will lose this data.";
@@ -1508,7 +1479,7 @@
 "account.creditCard.paymentDay" = "Payment day";
 "account.creditCard.paymentNotification" = "Time to pay your credit card %@ 💳";
 "category.others" = "Others";
-"subcategory.balanceAdjustment" = "Balance adjustments";
+"subcategory.balanceAdjustment" = "Balance adjustment";
 
 // MARK: - Validation
 
@@ -1659,12 +1630,9 @@
 "weekday.short.saturday" = "S";
 
 // Common (if not already present)
-"common.select" = "Select";
 "common.disabled" = "Disabled";
-"common.none" = "None";
 "filters.none" = "None";
 "filters.transaction.type" = "Transaction type";
-"filters.title" = "Filters";
 "filters.clear" = "Clear";
 "action.close" = "Close";
 
@@ -2683,7 +2651,6 @@
 "subcategory.salary" = "Salary";
 "subcategory.sales" = "Sales";
 "subcategory.accountTransfer" = "Account transfer";
-"subcategory.balanceAdjustment" = "Balance adjustment";
 "subcategory.accountTransferOther" = "Account transfer";
 
 // MARK: - A0-Bridge Settings & Filters

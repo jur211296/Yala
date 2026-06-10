@@ -454,7 +454,7 @@
 // MARK: - Settings
 
 "settings.title" = "Einstellungen";
-"settings.theme" = "Design";
+"settings.theme" = "Designs";
 "settings.currency" = "Währung";
 "settings.appIcon" = "App-Symbol";
 "settings.personalization" = "Personalisierung";
@@ -518,9 +518,7 @@
 
 // MARK: - Widgets
 
-"widget.preferences" = "Widget-Einstellungen";
 "widget.visible" = "Sichtbar";
-"widget.size" = "Größe";
 
 // MARK: - Planning
 
@@ -635,7 +633,6 @@
 "profile.dataManagement" = "Datenverwaltung";
 "profile.appearance" = "Erscheinungsbild";
 "empty.noExpenses" = "Noch keine Ausgaben erfasst";
-"empty.noSubcategories" = "Noch keine Unterkategorien";
 "common.recent" = "Neueste";
 "tag.new" = "Neuer Tag";
 "tag.edit" = "Tag bearbeiten";
@@ -757,13 +754,10 @@
 "widget.today" = "Heute";
 
 // Widget Preferences
-"widget.preferences" = "Übersicht-Einstellungen";
 "widget.preferences.description" = "Wähle, was du in deiner Hauptübersicht sehen möchtest und in welcher Reihenfolge.";
 "widget.resetLayout" = "Ursprüngliche Anordnung wiederherstellen";
 "widget.alwaysVisible" = "Immer sichtbar";
 "widget.fixedPosition" = "Feste Position";
-"widget.visible" = "Sichtbar";
-"widget.size" = "Größe: %@";
 "widget.summary" = "Zusammenfassung";
 "widget.list" = "Liste";
 "widget.calendar" = "Kalender";
@@ -1013,14 +1007,7 @@
 "statistics.categories" = "Verteilung";
 "statistics.records" = "Einträge";
 
-"period.thisWeek" = "Diese Woche";
 "period.last7Days" = "Letzte 7 Tage";
-"period.last30Days" = "Letzte 30 Tage";
-"period.thisMonth" = "Dieser Monat";
-"period.lastMonth" = "Letzter Monat";
-"period.thisYear" = "Dieses Jahr";
-"period.lastYear" = "Letztes Jahr";
-"period.allTime" = "Gesamter Zeitraum";
 
 "need.essential" = "Wesentlich";
 "need.priority" = "Priorität";
@@ -1031,9 +1018,6 @@
 "need.optional.desc" = "Ermessensausgaben oder Freizeit.";
 "need.unclassified.desc" = "Keine spezifische Art festgelegt.";
 
-"trendType.balance" = "Saldo";
-"trendType.income" = "Einnahmen";
-"trendType.expense" = "Ausgaben";
 
 "cashFlowViewType.total" = "Gesamt";
 "cashFlowViewType.byAccount" = "Nach Konto";
@@ -1163,12 +1147,10 @@
 "biometric.enableLockHint" = "Sie werden bei jedem Öffnen der App aufgefordert, Ihre Identität zu bestätigen.";
 "biometric.lockAfterHint" = "Wählen Sie, wie lange die App im Hintergrund bleiben kann, bevor sie gesperrt wird.";
 
-"profile.title" = "Profil";
 "profile.edit" = "Profil bearbeiten";
 "profile.importSuccess" = "Import abgeschlossen";
 "profile.importError" = "Importfehler";
 
-"profile.personalDetails" = "Persönliche Daten";
 "profile.changePhoto" = "Foto ändern";
 "profile.addPhoto" = "Foto hinzufügen";
 "profile.yourName" = "Dein Name";
@@ -1197,22 +1179,13 @@
 "settings.recommendedCurrencies" = "Empfohlen";
 "common.lastUpdate" = "Letzte Aktualisierung:";
 
-"common.inactive" = "Inaktiv";
-"common.hidden" = "Ausgeblendet";
 "common.archived" = "Archiviert";
 "empty.tagsDescription" = "Erstelle Tags, um deine Transaktionen flexibel zu organisieren.";
 "empty.categoriesDescription" = "Erstelle Kategorien, um deine Einnahmen und Ausgaben zu klassifizieren.";
 "empty.accountsDescription" = "Erstelle Konten, um deine Finanzen nach Bank, Bargeld oder anderem zu organisieren.";
 
-"profile.appearance" = "Erscheinungsbild";
-"settings.theme" = "Designs";
 "settings.themeDescription" = "Wähle, wie Yala aussehen soll.";
-"settings.system" = "System";
-"settings.light" = "Hell";
-"settings.dark" = "Dunkel";
-"settings.appIcon" = "App-Symbol";
 "settings.appIconDescription" = "Wähle das Symbol, das am besten zu deinem Stil passt.";
-"settings.personalization" = "Personalisierung";
 "settings.personalizationDescription" = "Passe an, wie Yala nach deinen Vorlieben funktioniert.";
 "settings.sectionInterface" = "Oberflache";
 "settings.sectionCalendar" = "Kalender";
@@ -1227,9 +1200,7 @@
 "settings.firstWeekdayDescription" = "Lege fest, welcher Tag als Wochenbeginn gilt für Filter wie 'Diese Woche'.";
 "settings.sunday" = "Sonntag";
 "settings.monday" = "Montag";
-"settings.resetData" = "Daten löschen";
 "settings.resetDataDescription" = "Dieser Vorgang löscht dauerhaft deine Konten, Transaktionen, Budgets, Wechselkurse, Kategorien und alle anderen mit deinem Yala-Profil verbundenen Daten. Nach dem Löschen kehrt die App in einen Anfangszustand zurück.";
-"settings.deleteAllData" = "Alle deine Daten löschen";
 "settings.deleteDataConfirmation" = "Alle deine Daten löschen?";
 "settings.deleteDataWarning" = "Diese Aktion ist unwiderruflich. Alle deine Konten, Transaktionen, Budgets, Wechselkurse und Kategorien werden gelöscht. Danach wird Yala auf einen Anfangszustand zurückgesetzt und du kannst deine Daten nicht wiederherstellen.";
 "settings.wipeICloudWarning" = "Dies löscht auch deine iCloud-Daten. Andere synchronisierte Geräte verlieren diese Daten.";
@@ -1509,7 +1480,7 @@
 "account.creditCard.paymentDay" = "Zahlungstag";
 "account.creditCard.paymentNotification" = "Heute ist Zahltag für deine Kreditkarte %@ 💳";
 "category.others" = "Sonstige";
-"subcategory.balanceAdjustment" = "Saldoanpassungen";
+"subcategory.balanceAdjustment" = "Saldoanpassung";
 
 // MARK: - Validation
 
@@ -1660,12 +1631,9 @@
 "weekday.short.saturday" = "S";
 
 // Common (if not already present)
-"common.select" = "Auswählen";
 "common.disabled" = "Deaktiviert";
-"common.none" = "Keine";
 "filters.none" = "Keine";
 "filters.transaction.type" = "Transaktionstyp";
-"filters.title" = "Filter";
 "filters.clear" = "Löschen";
 "action.close" = "Schließen";
 
@@ -2868,7 +2836,6 @@
 "subcategory.salary" = "Gehalt";
 "subcategory.sales" = "Verkäufe";
 "subcategory.accountTransfer" = "Kontoüberweisung";
-"subcategory.balanceAdjustment" = "Saldoanpassung";
 "subcategory.accountTransferOther" = "Kontoüberweisung";
 
 // MARK: - Scheduled Payments UX (M1-M7)

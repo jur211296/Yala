@@ -177,6 +177,48 @@ struct LocalizationParityTests {
             #expect(duplicates.isEmpty, "Locale '\(locale.code)' has \(duplicates.count) keys in both .strings and .stringsdict: \(duplicates.sorted())")
         }
     }
+
+    // MARK: - keys duplicadas dentro de un mismo .strings
+
+    /// Una key declarada dos veces en un .strings es invisible para el resto de
+    /// esta suite: el runtime resuelve la ÚLTIMA declaración y `NSDictionary`
+    /// colapsa los duplicados al parsear, así que ni la paridad ni los
+    /// placeholders la detectan. Este test lee los archivos FUENTE del repo
+    /// (vía `#filePath`, como WidgetLocalizationParityTests) y cuenta
+    /// ocurrencias por key en ambos targets.
+    @Test func noDuplicateKeys_inAnyLocale() {
+        let repoRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // YalaTests/
+            .deletingLastPathComponent()  // repo root
+        let resourceRoots = ["Yala/Resources", "YalaWidgets/Resources"]
+        let keyPattern = #/^\s*"((?:[^"\\]|\\.)*)"\s*=/#
+
+        for root in resourceRoots {
+            let rootURL = repoRoot.appendingPathComponent(root)
+            let lprojs = (try? FileManager.default.contentsOfDirectory(
+                at: rootURL, includingPropertiesForKeys: nil
+            ))?.filter { $0.pathExtension == "lproj" } ?? []
+            #expect(!lprojs.isEmpty, "'\(root)' has zero .lproj directories — path issue")
+
+            for lproj in lprojs.sorted(by: { $0.path < $1.path }) {
+                let stringsURL = lproj.appendingPathComponent("Localizable.strings")
+                guard let content = try? String(contentsOf: stringsURL, encoding: .utf8) else {
+                    continue
+                }
+                var counts: [String: Int] = [:]
+                for line in content.split(separator: "\n") {
+                    if let match = line.firstMatch(of: keyPattern) {
+                        counts[String(match.1), default: 0] += 1
+                    }
+                }
+                let dups = counts.filter { $0.value > 1 }.keys.sorted()
+                #expect(
+                    dups.isEmpty,
+                    "\(root)/\(lproj.lastPathComponent) has duplicate keys (the LAST one silently wins at runtime): \(dups.prefix(8))"
+                )
+            }
+        }
+    }
 }
 
 struct BundleLocaleDriftTests {

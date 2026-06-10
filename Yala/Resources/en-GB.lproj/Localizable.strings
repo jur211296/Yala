@@ -3588,12 +3588,10 @@
 "widget.of" = "of %@";
 "widget.ofExpense" = "of expense";
 "widget.ofTotal" = "of total";
-"widget.preferences" = "Dashboard Preferences";
 "widget.preferences.description" = "Choose what you want to see on your dashboard and in what order.";
 "widget.recordsWillAppear" = "When you add transactions, they will appear here.";
 "widget.resetLayout" = "Reset to original layout";
 "widget.selectCurrencies" = "Select up to 2 currencies to compare with %@";
-"widget.size" = "Size: %@";
 "widget.sizeLabel" = "Size";
 "widget.subcategories" = "Subcategories";
 "widget.summary" = "Summary";
