@@ -56,15 +56,22 @@ struct FullModeActivationView: View {
                 $0.type == generalType && !$0.isSystemAccount
             }
         )
-        guard let accounts = try? modelContext.fetch(descriptor) else { return }
-        for account in accounts where FullModeActivationLogic.shouldDeleteResidualGeneralAccount(
-            type: account.type,
-            isSystemAccount: account.isSystemAccount,
-            hasTransactions: !(account.transactions?.isEmpty ?? true)
-        ) {
-            modelContext.delete(account)
+        do {
+            let accounts = try modelContext.fetch(descriptor)
+            for account in accounts where FullModeActivationLogic.shouldDeleteResidualGeneralAccount(
+                type: account.type,
+                isSystemAccount: account.isSystemAccount,
+                hasTransactions: !(account.transactions?.isEmpty ?? true)
+            ) {
+                modelContext.delete(account)
+            }
+            try modelContext.save()
+        } catch {
+            // El cleanup es defensivo: un fallo no debe bloquear la activación full.
+            #if DEBUG
+            print("FullModeActivationView: cleanup de cuenta General residual falló: \(error)")
+            #endif
         }
-        try? modelContext.save()
     }
 
     /// `OnboardingView.completeOnboarding` ya hizo seeds + account + notifs +

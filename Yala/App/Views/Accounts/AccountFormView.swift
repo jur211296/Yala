@@ -641,6 +641,8 @@ struct AccountFormView: View {
             #if DEBUG
             print("AccountFormView: Error deleting account: \(error)")
             #endif
+            viewModel.deleteErrorMessage = error.localizedDescription
+            viewModel.isShowingDeleteError = true
         }
     }
 }

@@ -1212,15 +1212,23 @@ struct MainTabView: View {
                 sessionState.selectMainTab(.groups)
             }
         case .presentDowngradeResolution:
-            let accounts = (try? modelContext.fetch(FetchDescriptor<Account>())) ?? []
-            let budgets = (try? modelContext.fetch(
-                FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive })
-            )) ?? []
-            let activeAccounts = accounts.filter { !$0.isArchived }
-            if activeAccounts.count > 2 || budgets.count > 3 {
-                downgradeAccounts = accounts
-                downgradeBudgets = budgets
-                showDowngradeResolution = true
+            do {
+                let accounts = try modelContext.fetch(FetchDescriptor<Account>())
+                let budgets = try modelContext.fetch(
+                    FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive })
+                )
+                let activeAccounts = accounts.filter { !$0.isArchived }
+                if activeAccounts.count > 2 || budgets.count > 3 {
+                    downgradeAccounts = accounts
+                    downgradeBudgets = budgets
+                    showDowngradeResolution = true
+                }
+            } catch {
+                // No presentar con datos parciales: el productor re-encola en el
+                // siguiente cold launch mientras la condición de downgrade persista.
+                #if DEBUG
+                print("ContentView: fetch downgrade falló: \(error)")
+                #endif
             }
         case .presentTrialExpired:
             showTrialExpired = true

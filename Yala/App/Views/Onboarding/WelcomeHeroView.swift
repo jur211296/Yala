@@ -403,7 +403,16 @@ struct WelcomeHeroView: View {
             _ = await iCloudSyncService.shared.forceFetchAndWait(timeout: Self.iCloudFetchTimeout)
             guard !Task.isCancelled else { return }
             await MainActor.run {
-                detectedSummary = try? modelContext.iCloudAccountSummary(appPreferences: appPreferences)
+                do {
+                    detectedSummary = try modelContext.iCloudAccountSummary(appPreferences: appPreferences)
+                } catch {
+                    // Sin summary el flujo sigue como cuenta vacía (sin alert de datos
+                    // detectados); markFetchCompleted corre igual para no colgar el Hero.
+                    #if DEBUG
+                    print("WelcomeHeroView: iCloudAccountSummary falló: \(error)")
+                    #endif
+                    detectedSummary = nil
+                }
                 markFetchCompleted()
             }
         }
