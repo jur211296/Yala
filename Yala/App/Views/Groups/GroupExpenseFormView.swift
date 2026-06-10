@@ -633,9 +633,12 @@ struct GroupExpenseFormView: View {
         DS.Haptic.success()
 
         // Opt-out: si Caso A + bridge effective OFF + creación (no edit), preguntar al
-        // user si quiere crear movimiento personal opt-in. Caso C tiene su propio alert
-        // en SettlementFormView. Casos B/D no aplican.
+        // user si quiere crear movimiento personal opt-in. NO en `.groupInvite`: ahí el
+        // bridge es M5 puro (par virtual, sin TX real) y el invitado minimal no tiene
+        // cuentas personales donde registrar — consistente con `isAccountRequired` y con
+        // el gate Caso C de `SettlementFormView`. Caso C tiene su propio alert allí. B/D no aplican.
         if !viewModel.effectiveBridgeEnabled,
+           !viewModel.isGroupInviteMode,
            viewModel.isCaseA,
            let createdID = viewModel.lastCreatedExpenseID {
             pendingOptInExpenseID = createdID
