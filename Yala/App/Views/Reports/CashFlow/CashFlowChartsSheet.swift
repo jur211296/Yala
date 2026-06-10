@@ -407,20 +407,15 @@ struct CashFlowChartsSheet: View {
                             Text(selectedMonth.date.formatted(.dateTime.month(.abbreviated).year()))
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.thSecondaryText)
-                            AmountText(
-                                value: selectedBalance,
-                                currencyCode: currencyCode,
-                                font: DS.Typography.labelSmall,
-                                tint: .primary
-                            )
+                            // `.annotation` no propaga environment objects — AmountText (lee
+                            // @Environment(AppPreferences.self)) dispara SIGTRAP aquí. Text pre-resuelto.
+                            Text(appPreferences.currency(selectedBalance, currencyCode: currencyCode))
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(.primary)
                             Divider()
-                            AmountText(
-                                value: selectedMonth.netFlow,
-                                currencyCode: currencyCode,
-                                font: DS.Typography.labelTiny,
-                                tint: .secondary,
-                                forceSign: true
-                            )
+                            Text(appPreferences.currency(selectedMonth.netFlow, currencyCode: currencyCode, forceSign: true))
+                                .font(DS.Typography.labelTiny)
+                                .foregroundStyle(.secondary)
                         }
                         .padding(.horizontal, DS.Spacing.sm)
                         .padding(.vertical, DS.Spacing.xs)

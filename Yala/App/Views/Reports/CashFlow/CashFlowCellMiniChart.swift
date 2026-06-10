@@ -86,11 +86,11 @@ struct CashFlowCellMiniChart: View {
                         alignment: tooltipAlignment(for: point.day, in: data)
                     ) {
                         VStack(spacing: DS.Spacing.xxs) {
-                            AmountText(
-                                value: point.cumulative,
-                                currencyCode: currencyCode,
-                                font: DS.Typography.label.weight(.semibold).monospacedDigit()
-                            )
+                            // `.annotation` no propaga environment objects — AmountText (lee
+                            // @Environment(AppPreferences.self)) dispara SIGTRAP aquí. Text pre-resuelto.
+                            Text(appPreferences.currency(point.cumulative, currencyCode: currencyCode))
+                                .font(DS.Typography.label.weight(.semibold).monospacedDigit())
+                                .foregroundStyle(.primary)
                             if point.daily > 0 {
                                 Text("+" + YalaFormatter.amountCompactTable(value: point.daily))
                                     .font(DS.Typography.captionSmall)

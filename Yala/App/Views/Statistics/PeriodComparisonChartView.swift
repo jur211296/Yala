@@ -175,11 +175,12 @@ struct PeriodComparisonChartView: View {
                             Text("\(periodLabel(for: selectedCurrentPoint.date)):")
                                 .font(DS.Typography.labelSmall)
                                 .foregroundStyle(.thPrimaryText)
-                            AmountText(
-                                value: selectedCurrentPoint.value,
-                                currencyCode: currencyCode,
-                                font: DS.Typography.labelSmall
-                            )
+                            // `.annotation` no propaga environment objects — AmountText (lee
+                            // @Environment(AppPreferences.self)) dispara SIGTRAP aquí. Text pre-resuelto
+                            // con el formatter estático (esta vista no inyecta AppPreferences).
+                            Text(YalaFormatterStatic.currency(value: selectedCurrentPoint.value, currencyCode: currencyCode))
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(.primary)
                         }
 
                         // Previous period value with original date (if exists)
@@ -192,12 +193,9 @@ struct PeriodComparisonChartView: View {
                                 Text("\(periodLabel(for: originalPrevDate)):")
                                     .font(DS.Typography.caption)
                                     .foregroundStyle(.thSecondaryText)
-                                AmountText(
-                                    value: previousPoint.value,
-                                    currencyCode: currencyCode,
-                                    font: DS.Typography.caption,
-                                    tint: .secondary
-                                )
+                                Text(YalaFormatterStatic.currency(value: previousPoint.value, currencyCode: currencyCode))
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }

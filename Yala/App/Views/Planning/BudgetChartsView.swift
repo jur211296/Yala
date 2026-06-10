@@ -308,12 +308,13 @@ struct BudgetChartsView: View {
                     )
                     .symbolSize(0)
                     .annotation(position: .top, spacing: DS.Spacing.xs) {
-                        AmountText(
-                            value: item.spent,
-                            currencyCode: budget.currencyCode,
-                            font: DS.Typography.labelTiny,
-                            tint: .secondary
-                        )
+                        // `.annotation` no propaga environment objects — AmountText (lee
+                        // @Environment(AppPreferences.self)) dispara SIGTRAP aquí. Text pre-resuelto.
+                        Text(appPreferences.currency(item.spent, currencyCode: budget.currencyCode))
+                            .font(DS.Typography.labelTiny)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                             .accessibilityLabel("\(item.label): \(appPreferences.currency(item.spent, currencyCode: budget.currencyCode))")
                     }
 
@@ -439,12 +440,9 @@ struct BudgetChartsView: View {
                                 Text(dayMonthLabel(point.date))
                                     .font(DS.Typography.captionSmall)
                                     .foregroundStyle(.thSecondaryText)
-                                AmountText(
-                                    value: point.cumulative,
-                                    currencyCode: budget.currencyCode,
-                                    font: DS.Typography.labelSmall,
-                                    tint: .primary
-                                )
+                                Text(appPreferences.currency(point.cumulative, currencyCode: budget.currencyCode))
+                                    .font(DS.Typography.labelSmall)
+                                    .foregroundStyle(.primary)
                             }
                             .padding(.horizontal, DS.Spacing.sm)
                             .padding(.vertical, DS.Spacing.xs)
