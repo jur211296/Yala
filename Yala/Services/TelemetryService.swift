@@ -104,6 +104,7 @@ enum AnalyticsEvent: String {
     case bridgeOverrideSet
     case bridgeActivationCompleted
     case bridgeDeactivationCompleted
+    case bridgeVirtualLentTxFailed      // params: role — TX2 virtual del préstamo no se pudo crear (saldo degradado)
 
     // Nudges
     case nudgeShown

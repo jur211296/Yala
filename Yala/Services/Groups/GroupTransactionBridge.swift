@@ -553,7 +553,8 @@ final class GroupTransactionBridge {
 
         // TX2 virtual +totalAmount sistema (préstamo). Skip si lent==0.
         if lentAmount > 0 {
-            if let loanSubcat = try? GroupBridgeSystemEntities.systemSubcategory(role: .loanToGroups, context: context) {
+            do {
+                let loanSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .loanToGroups, context: context)
                 let tx2 = TransactionItem(
                     date: expense.date,
                     amount: totalAmount,
@@ -569,6 +570,16 @@ final class GroupTransactionBridge {
                 tx2.splitType = expense.splitType
                 context.insert(tx2)
                 tx2.recalculatePreferredCurrency(context: context)
+            } catch {
+                // Falla degradada (decisión D-A): la TX1 ya insertada sobrevive — abortar
+                // aquí perdería el gasto completo. El saldo virtual queda desbalanceado
+                // hasta el próximo re-bridge; la telemetría mide si ocurre en producción.
+                #if DEBUG
+                print("GroupTransactionBridge: TX2 virtual lent falló: \(error)")
+                #endif
+                TelemetryService.track(.bridgeVirtualLentTxFailed, parameters: [
+                    "role": "loanToGroups"
+                ])
             }
         }
     }

@@ -149,18 +149,25 @@ final class GroupDetailViewModel {
     /// build `mySharesByExpense` con el share del current user. Evita N+1 query en el feed.
     private func rebuildBridgeMaps(context: ModelContext) {
         let zoneID = group.cloudKitZoneID
-        let bridgedTXs: [TransactionItem] = (try? context.fetch(FetchDescriptor<TransactionItem>(
-            predicate: #Predicate { $0.splitGroupZoneID == zoneID }
-        ))) ?? []
+        do {
+            let bridgedTXs = try context.fetch(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitGroupZoneID == zoneID }
+            ))
 
-        // TX1 preferida: subcat manual O nil (no TX2 sistema "Préstamo a grupos").
-        txBridgeMap = Dictionary(grouping: bridgedTXs, by: { $0.splitExpenseID ?? "" })
-            .compactMapValues { txs in
-                txs.first(where: { tx in
-                    guard let sub = tx.subcategory else { return true }
-                    return !sub.isAnySystem
-                })
-            }
+            // TX1 preferida: subcat manual O nil (no TX2 sistema "Préstamo a grupos").
+            txBridgeMap = Dictionary(grouping: bridgedTXs, by: { $0.splitExpenseID ?? "" })
+                .compactMapValues { txs in
+                    txs.first(where: { tx in
+                        guard let sub = tx.subcategory else { return true }
+                        return !sub.isAnySystem
+                    })
+                }
+        } catch {
+            #if DEBUG
+            print("GroupDetailViewModel: fetch de TX bridgeadas falló: \(error)")
+            #endif
+            txBridgeMap = [:]
+        }
 
         // mySharesByExpense: filter shares to current user only.
         if let currentID = currentMemberID {
