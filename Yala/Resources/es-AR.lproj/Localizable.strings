@@ -3696,3 +3696,11 @@
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Este gasto compartido ya no existe en el grupo.";
+"whatsNew.v20.groups.title" = "Gastos compartidos";
+"whatsNew.v20.groups.description" = "Crea grupos, divide gastos con amigos y Yala calcula quién le debe a quién. Ideal para viajes y planes en común.";
+"whatsNew.v20.ai.title" = "Te presentamos a Yala IA";
+"whatsNew.v20.ai.description" = "Tu asistente financiero. Registra gastos por voz o foto, resuelve dudas y recibe análisis claros de tu mes.";
+"whatsNew.v20.home.title" = "Tu inicio, a tu manera";
+"whatsNew.v20.home.description" = "Muestra, oculta y reordena las secciones de tu pantalla principal para ver primero lo que más te importa.";
+"whatsNew.v20.detail.title" = "Detalle al instante";
+"whatsNew.v20.detail.description" = "Toca cualquier movimiento para ver todos sus detalles y editarlo sin cambiar de pantalla.";

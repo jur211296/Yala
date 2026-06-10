@@ -5697,6 +5697,16 @@ enum L10n {
         static var v12ScheduledDescription: String { ls("whatsNew.v12.scheduled.description", comment: "") }
         static var v12MoreForYouTitle: String { ls("whatsNew.v12.moreForYou.title", comment: "") }
         static var v12MoreForYouDescription: String { ls("whatsNew.v12.moreForYou.description", comment: "") }
+
+        // v2.0 features
+        static var v20GroupsTitle: String { ls("whatsNew.v20.groups.title", comment: "") }
+        static var v20GroupsDescription: String { ls("whatsNew.v20.groups.description", comment: "") }
+        static var v20AITitle: String { ls("whatsNew.v20.ai.title", comment: "") }
+        static var v20AIDescription: String { ls("whatsNew.v20.ai.description", comment: "") }
+        static var v20HomeTitle: String { ls("whatsNew.v20.home.title", comment: "") }
+        static var v20HomeDescription: String { ls("whatsNew.v20.home.description", comment: "") }
+        static var v20DetailTitle: String { ls("whatsNew.v20.detail.title", comment: "") }
+        static var v20DetailDescription: String { ls("whatsNew.v20.detail.description", comment: "") }
     }
 
     // MARK: - App Update
