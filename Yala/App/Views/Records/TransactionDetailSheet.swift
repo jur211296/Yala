@@ -8,6 +8,12 @@
 //  dismiss+present. En iPad el sheet vive fijo en large y solo el botón entra
 //  a la edición. Decisiones de detents/swap en TransactionDetailSheetLogic.
 //
+//  Diseño neutro: sobre el fondo transparent del detent medium los tintes
+//  finos (pink/indigo) se pierden — monto, íconos y valores van en primary/
+//  secondary; el color solo vive en fills sólidos (badge de categoría, dot de
+//  cuenta, chips de tags). Hero compacto en línea para que la card de filas
+//  quepa sin corte en medium.
+//
 
 import SwiftData
 import SwiftUI
@@ -20,18 +26,13 @@ struct TransactionDetailSheet: View {
         return f
     }()
 
-    /// Badge del hero: más grande que el de las rows (DS.ListRow.iconSize)
-    /// pero contenido para que el detalle quepa en detent medium.
-    private static let heroBadgeSize: CGFloat = 64
     private static let rowIconWidth: CGFloat = 20
-    private static let accountDotSize: CGFloat = 8
 
     let transaction: TransactionItem
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.tagCatalog) private var tagCatalog
-    @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -90,7 +91,7 @@ struct TransactionDetailSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
-                    heroHeader
+                    compactHero
                     detailsCard
                 }
                 .padding(.horizontal, DS.Spacing.xl)
@@ -149,40 +150,53 @@ struct TransactionDetailSheet: View {
         transferPartnerAccount = partner?.account
     }
 
-    // MARK: - Hero
+    // MARK: - Hero compacto (badge + monto en línea, nota · fecha debajo)
 
-    private var heroHeader: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            heroBadge
-                .padding(.bottom, DS.Spacing.xs)
+    private var compactHero: some View {
+        VStack(spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.sm) {
+                heroBadge
 
-            AmountText(
-                value: transaction.amount,
-                currencyCode: transaction.currencyCode,
-                font: DS.Typography.heroAmount,
-                secondaryFont: DS.Typography.heroAmountSecondary,
-                tint: .color(transactionType.color),
-                forceFullPrecision: true
-            )
-
-            if let note = transaction.note, !note.isEmpty {
-                Text(note)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thPrimaryText)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
+                AmountText(
+                    value: transaction.amount,
+                    currencyCode: transaction.currencyCode,
+                    font: DS.Typography.largeTitle,
+                    secondaryFont: DS.Typography.body,
+                    tint: .primary,
+                    forceFullPrecision: true
+                )
             }
 
-            Text(Self.dateFormatter.string(from: transaction.date))
-                .font(DS.Typography.caption)
-                .foregroundStyle(.thSecondaryText)
+            noteAndDateLine
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
     }
 
+    /// "Nota · fecha" en una sola línea; sin nota queda solo la fecha.
+    private var noteAndDateLine: some View {
+        let dateText = Self.dateFormatter.string(from: transaction.date)
+        let note = transaction.note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        let notePart = Text(note).foregroundStyle(.primary)
+        let separatorPart = Text(" · ").foregroundStyle(.secondary)
+        let datePart = Text(dateText).foregroundStyle(.secondary)
+
+        return Group {
+            if note.isEmpty {
+                datePart
+            } else {
+                Text("\(notePart)\(separatorPart)\(datePart)")
+            }
+        }
+        .font(DS.Typography.subheadline)
+        .lineLimit(1)
+        .truncationMode(.tail)
+    }
+
     private var heroBadge: some View {
-        // Réplica del subcategoryIcon de RecordRowView a escala hero.
+        // Réplica del subcategoryIcon de RecordRowView (fill sólido: legible
+        // sobre el fondo transparent, a diferencia de un ícono tintado).
         let colorHex = transaction.category?.colorHex ?? AppConstants.defaultColorHex
         let iconName =
             transaction.subcategory?.iconName
@@ -192,16 +206,16 @@ struct TransactionDetailSheet: View {
         return ZStack {
             Circle()
                 .fill(isTransfer ? Color(.secondaryLabel) : Color(hex: colorHex))
-                .frame(width: Self.heroBadgeSize, height: Self.heroBadgeSize)
+                .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
             Image(systemName: isTransfer ? "arrow.left.arrow.right" : iconName)
-                .font(DS.Typography.title2)
+                .font(DS.Typography.label)
                 .foregroundStyle(.white)
                 .accessibilityHidden(true)
         }
     }
 
-    // MARK: - Details card
+    // MARK: - Details card (filas neutras, patrón TransactionSuccessView)
 
     private var detailsCard: some View {
         VStack(spacing: DS.Spacing.none) {
@@ -212,7 +226,6 @@ struct TransactionDetailSheet: View {
             } else if let account = transaction.account {
                 accountRow(
                     icon: "creditcard",
-                    iconTint: .secondary,
                     label: L10n.Transaction.account,
                     account: account
                 )
@@ -260,13 +273,13 @@ struct TransactionDetailSheet: View {
         )
     }
 
-    // MARK: - Rows (patrón TransactionSuccessView)
+    // MARK: - Rows (neutras: íconos/labels secondary, values primary)
 
     private var typeRow: some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: transactionType.iconName)
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(transactionType.color)
+                .foregroundStyle(.secondary)
                 .frame(width: Self.rowIconWidth)
                 .accessibilityHidden(true)
 
@@ -278,7 +291,7 @@ struct TransactionDetailSheet: View {
 
             Text(transactionType.displayName)
                 .font(DS.Typography.label)
-                .foregroundStyle(transactionType.color)
+                .foregroundStyle(.primary)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.FormRow.paddingV)
@@ -326,13 +339,11 @@ struct TransactionDetailSheet: View {
         .padding(.vertical, DS.FormRow.paddingV)
     }
 
-    private func accountRow(
-        icon: String, iconTint: Color, label: String, account: Account
-    ) -> some View {
+    private func accountRow(icon: String, label: String, account: Account) -> some View {
         HStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
                 .font(DS.Typography.subheadline)
-                .foregroundStyle(iconTint)
+                .foregroundStyle(.secondary)
                 .frame(width: Self.rowIconWidth)
                 .accessibilityHidden(true)
 
@@ -345,7 +356,7 @@ struct TransactionDetailSheet: View {
             HStack(spacing: DS.Spacing.xs) {
                 Circle()
                     .fill(Color(hex: account.colorHex))
-                    .frame(width: Self.accountDotSize, height: Self.accountDotSize)
+                    .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
                 Text(account.name)
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
@@ -367,7 +378,6 @@ struct TransactionDetailSheet: View {
             if let origin {
                 accountRow(
                     icon: "arrow.up.circle",
-                    iconTint: Color.hotPink,
                     label: L10n.Transaction.origin,
                     account: origin
                 )
@@ -375,7 +385,6 @@ struct TransactionDetailSheet: View {
             if let destination {
                 accountRow(
                     icon: "arrow.down.circle",
-                    iconTint: theme.accent,
                     label: L10n.Transaction.destination,
                     account: destination
                 )
@@ -432,7 +441,8 @@ struct TransactionDetailSheet: View {
 
             Spacer()
 
-            // Chips réplica de RecordRowView.tagsRow (límite 3 + "+N").
+            // Chips réplica de RecordRowView.tagsRow (límite 3 + "+N") — fill
+            // de color propio del tag (contenido del usuario, sólido y legible).
             HStack(spacing: DS.Spacing.xs) {
                 ForEach(Array(resolvedTags.prefix(3)), id: \.persistentModelID) { tag in
                     Text(tag.name)
