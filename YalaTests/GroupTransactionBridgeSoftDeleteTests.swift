@@ -143,6 +143,89 @@ struct GroupTransactionBridgeSoftDeleteTests {
         #expect(plan.txsToRelease.isEmpty, "TX ya liberada debe excluirse")
     }
 
+    // MARK: - computeFreezePlan (puntero [.subcategory] redundante → delete, no convert)
+
+    @Test func computeFreezePlan_caseASubcategoryPointer_withRealTx_deleted() {
+        // Bug B-S2-e: draft-puntero [.subcategory] Caso A cuya TX real se preserva en el freeze.
+        // Convertirlo a manual lo volvería aprobable → insertaría una TX duplicada.
+        let realAccount = Account(name: "BCP", currencyCode: "PEN", colorHex: "#000", iconName: "x", type: "bank", isSystemAccount: false)
+        let tx = TransactionItem(date: .now, amount: -100, currencyCode: "PEN", account: realAccount)
+        tx.splitExpenseID = "exp-A"
+        tx.splitGroupZoneID = "SplitGroup-uuid"
+
+        let draft = InboxDraft(sourceType: .groupExpense)
+        draft.splitExpenseID = "exp-A"
+        draft.splitGroupZoneID = "SplitGroup-uuid"
+        draft.needsUserInput = [DraftInputRequirement.subcategory]
+
+        let plan = GroupTransactionBridge.computeFreezePlan(transactions: [tx], drafts: [draft])
+        #expect(plan.draftsToDelete.count == 1, "Puntero con TX real preservada debe borrarse, no convertirse")
+        #expect(plan.draftsToDelete.first === draft)
+        #expect(plan.draftsToConvert.isEmpty)
+        #expect(plan.txsToRelease.count == 1, "La TX real se libera y persiste para clasificar editándola")
+    }
+
+    @Test func computeFreezePlan_caseBSubcategoryPointer_withVirtualSystemTx_deleted() {
+        // Caso B (otro pagó): el puntero apunta a una TX virtual en cuenta sistema, que el freeze
+        // preserva intacta (no la libera). El draft es igualmente redundante → delete.
+        let systemAccount = Account(name: "Grupos PEN", currencyCode: "PEN", colorHex: "#000", iconName: "x", type: "system", isSystemAccount: true)
+        let virtualTx = TransactionItem(date: .now, amount: -40, currencyCode: "PEN", account: systemAccount)
+        virtualTx.splitExpenseID = "exp-B"
+        virtualTx.splitGroupZoneID = "SplitGroup-uuid"
+
+        let draft = InboxDraft(sourceType: .groupExpense)
+        draft.splitExpenseID = "exp-B"
+        draft.splitGroupZoneID = "SplitGroup-uuid"
+        draft.needsUserInput = [DraftInputRequirement.subcategory]
+
+        let plan = GroupTransactionBridge.computeFreezePlan(transactions: [virtualTx], drafts: [draft])
+        #expect(plan.draftsToDelete.count == 1, "Puntero con TX virtual sistema preservada también es redundante")
+        #expect(plan.txsToRelease.isEmpty, "La virtual sistema no se libera")
+        #expect(plan.draftsToConvert.isEmpty)
+    }
+
+    @Test func computeFreezePlan_subcategoryPointer_orphanNoTx_convertedNotDeleted() {
+        // Defensa: puntero [.subcategory] sin ninguna TX para su splitExpenseID (la TX desapareció).
+        // Cae a convert, no a delete — no se pierde el rastro del gasto.
+        let draft = InboxDraft(sourceType: .groupExpense)
+        draft.splitExpenseID = "exp-orphan"
+        draft.splitGroupZoneID = "SplitGroup-uuid"
+        draft.needsUserInput = [DraftInputRequirement.subcategory]
+
+        let plan = GroupTransactionBridge.computeFreezePlan(transactions: [], drafts: [draft])
+        #expect(plan.draftsToDelete.isEmpty, "Sin TX coincidente el puntero no se borra")
+        #expect(plan.draftsToConvert.count == 1)
+    }
+
+    @Test func computeFreezePlan_caseAAccountDraft_convertedNotDeleted() {
+        // Caso A pendiente de cuenta: pide [.account, .subcategory], aún sin TX real. Aunque coexista
+        // una TX virtual lent con su splitExpenseID, NO es puntero de clasificación → convert a manual.
+        let systemAccount = Account(name: "Grupos PEN", currencyCode: "PEN", colorHex: "#000", iconName: "x", type: "system", isSystemAccount: true)
+        let virtualLent = TransactionItem(date: .now, amount: 60, currencyCode: "PEN", account: systemAccount)
+        virtualLent.splitExpenseID = "exp-C"
+        virtualLent.splitGroupZoneID = "SplitGroup-uuid"
+
+        let draft = InboxDraft(sourceType: .groupExpense)
+        draft.splitExpenseID = "exp-C"
+        draft.splitGroupZoneID = "SplitGroup-uuid"
+        draft.needsUserInput = [DraftInputRequirement.account, DraftInputRequirement.subcategory]
+
+        let plan = GroupTransactionBridge.computeFreezePlan(transactions: [virtualLent], drafts: [draft])
+        #expect(plan.draftsToDelete.isEmpty, "Un draft que pide cuenta no es puntero de clasificación")
+        #expect(plan.draftsToConvert.count == 1)
+    }
+
+    @Test func computeFreezePlan_groupExpenseEmptyNeedsInput_converted() {
+        // Fallback: groupExpense sin needsUserInput (no es puntero [.subcategory]) → convert.
+        let draft = InboxDraft(sourceType: .groupExpense)
+        draft.splitExpenseID = "exp-D"
+        draft.needsUserInput = []
+
+        let plan = GroupTransactionBridge.computeFreezePlan(transactions: [], drafts: [draft])
+        #expect(plan.draftsToDelete.isEmpty)
+        #expect(plan.draftsToConvert.count == 1)
+    }
+
     // MARK: - shouldBridgeExpense (pure-logic guard)
 
     @Test func shouldBridgeExpense_hiddenGroup_returnsFalse() {

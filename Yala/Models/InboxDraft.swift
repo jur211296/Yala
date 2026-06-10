@@ -22,7 +22,7 @@ enum DraftSourceType: String, Codable {
     case applePay
     case automation     // External automation (email parsed by AI, etc.)
     case siri           // Siri natural language entry
-    case groupExpense   // A0-Bridge: caso A/B sin match — apunta a TX existente via targetTransactionID
+    case groupExpense   // A0-Bridge: caso A/B sin match — apunta a TX existente via splitExpenseID
     case groupSettlement // A0-Bridge: caso C/D — TX cuenta real diferida hasta asignar cuenta
     case manual         // FU-02 cleanup: draft convertido tras soft-delete/leave/remove. Editable como personal.
 
@@ -49,7 +49,9 @@ enum DraftOriginReason: String {
 
 /// M6: Campos que un draft espera del user para finalizar. Centraliza los strings
 /// dispersos en `needsUserInput: [String]` para evitar typos cross-file.
-enum DraftInputRequirement {
+/// `nonisolated`: son constantes String puras (sin relación con el main actor); permite
+/// referenciarlas desde contextos nonisolated como `GroupTransactionBridge.computeFreezePlan`.
+nonisolated enum DraftInputRequirement {
     static let account = "account"
     static let subcategory = "subcategory"
     static let amount = "amount"
@@ -156,9 +158,11 @@ final class InboxDraft: Identifiable {
     var splitSettlementID: String?
 
     // MARK: - Group Bridge Draft Link (A0-Bridge)
-    /// Para drafts source=.groupExpense: apunta a la TransactionItem existente con subcat=nil.
-    /// Al finalizar el draft, se UPDATEa la subcategory de esa TX (no se crea TX nueva).
-    /// Para drafts source=.groupSettlement: nil (la TX se crea al finalizar con cuenta asignada).
+    /// Sin uso por el bridge actual: todas las creaciones de drafts en `GroupTransactionBridge`
+    /// lo dejan nil. El puntero de un draft `.groupExpense` a su TransactionItem (subcat=nil) se
+    /// resuelve por `splitExpenseID` (ver la rama `.groupExpense` de `DraftService.approveDraft`),
+    /// NO por este campo. Se conserva por compat de schema CloudKit; un valor no-nil no debe
+    /// asumirse como discriminador del puntero.
     var targetTransactionID: String?
 
     /// Opt-out flag: cuando `true`, este draft fue creado por el alert opt-in del form

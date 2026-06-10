@@ -950,6 +950,9 @@ final class GroupTransactionBridge {
     struct FreezePlan {
         let txsToRelease: [TransactionItem]
         let draftsToConvert: [InboxDraft]
+        /// Punteros de clasificación `[.subcategory]` redundantes: su TX se preserva en el freeze,
+        /// así que el draft sobra y, convertido a manual, duplicaría la TX al aprobarlo. Se borran.
+        let draftsToDelete: [InboxDraft]
     }
 
     /// Pure-logic: dado un array de TX/drafts ya fetcheados, devuelve qué hacer con cada uno.
@@ -962,10 +965,29 @@ final class GroupTransactionBridge {
         }
         let groupExpenseRaw = DraftSourceType.groupExpense.rawValue
         let groupSettlementRaw = DraftSourceType.groupSettlement.rawValue
-        let draftsToConvert = drafts.filter { draft in
-            draft.sourceTypeRaw == groupExpenseRaw || draft.sourceTypeRaw == groupSettlementRaw
+
+        var draftsToConvert: [InboxDraft] = []
+        var draftsToDelete: [InboxDraft] = []
+        for draft in drafts where draft.sourceTypeRaw == groupExpenseRaw || draft.sourceTypeRaw == groupSettlementRaw {
+            // Puntero de clasificación: draft `.groupExpense` que SOLO pide subcategoría (no cuenta)
+            // y apunta a una TX existente vía `splitExpenseID`. Esa TX se preserva en el freeze (la
+            // real, liberada arriba; o la virtual sistema, intacta), así que el user la clasifica
+            // editándola directamente — el draft es redundante. Convertido a manual duplicaría la TX
+            // al aprobarlo (el path genérico de `approveDraft` inserta una TransactionItem nueva). →
+            // borrarlo. Si el puntero quedó huérfano (sin TX para su `splitExpenseID`), cae a convert
+            // y no se pierde el rastro del gasto. Los drafts `[.account]` (Caso A pendiente de cuenta)
+            // y los `.groupSettlement` NO son punteros — siguen convirtiéndose a manual.
+            if draft.sourceTypeRaw == groupExpenseRaw,
+               draft.needsUserInput.contains(DraftInputRequirement.subcategory),
+               !draft.needsUserInput.contains(DraftInputRequirement.account),
+               let splitID = draft.splitExpenseID,
+               transactions.contains(where: { $0.splitExpenseID == splitID }) {
+                draftsToDelete.append(draft)
+            } else {
+                draftsToConvert.append(draft)
+            }
         }
-        return FreezePlan(txsToRelease: txsToRelease, draftsToConvert: draftsToConvert)
+        return FreezePlan(txsToRelease: txsToRelease, draftsToConvert: draftsToConvert, draftsToDelete: draftsToDelete)
     }
 
     /// Libera TX cuenta real (nilea splitExpenseID/splitSettlementID/splitGroupZoneID) +
@@ -1005,14 +1027,20 @@ final class GroupTransactionBridge {
             draft.needsUserInput = []
         }
 
-        guard !plan.txsToRelease.isEmpty || !plan.draftsToConvert.isEmpty else { return }
+        // Punteros de clasificación redundantes: su TX se preserva → el draft sobra. Borrarlo
+        // evita la TX duplicada que produciría aprobarlo ya convertido a manual.
+        for draft in plan.draftsToDelete {
+            context.delete(draft)
+        }
+
+        guard !plan.txsToRelease.isEmpty || !plan.draftsToConvert.isEmpty || !plan.draftsToDelete.isEmpty else { return }
 
         try context.save()
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
 
         #if DEBUG
-        Self.logger.info("freezeForSoftDelete zone=\(zoneID, privacy: .public) released=\(plan.txsToRelease.count, privacy: .public) converted=\(plan.draftsToConvert.count, privacy: .public)")
+        Self.logger.info("freezeForSoftDelete zone=\(zoneID, privacy: .public) released=\(plan.txsToRelease.count, privacy: .public) converted=\(plan.draftsToConvert.count, privacy: .public) deleted=\(plan.draftsToDelete.count, privacy: .public)")
         #endif
     }
 
