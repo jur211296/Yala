@@ -209,11 +209,21 @@ final class ChatAssistantService {
         modelContext: ModelContext,
         currencyCode: String
     ) async throws -> ChatAssistantResponse {
-        // Verificar que hay al menos una cuenta — sin cuentas no se puede registrar
+        // Verificar que hay al menos una cuenta — sin cuentas no se puede registrar.
+        // Un fetch fallido NO debe caer al guard (respondería "no hay cuentas" siendo falso):
+        // se propaga y el VM lo muestra como error genérico.
         let accountDescriptor = FetchDescriptor<Account>(
             predicate: #Predicate<Account> { !$0.isArchived }
         )
-        let accounts = (try? modelContext.fetch(accountDescriptor)) ?? []
+        let accounts: [Account]
+        do {
+            accounts = try modelContext.fetch(accountDescriptor)
+        } catch {
+            #if DEBUG
+            print("ChatAssistantService: fetch de cuentas falló: \(error)")
+            #endif
+            throw error
+        }
         guard !accounts.isEmpty else {
             return ChatAssistantResponse(
                 text: noAccountsText(),

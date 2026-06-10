@@ -641,9 +641,15 @@ final class ChatAssistantViewModel {
             // pero defensivo contra paths no-UI.
             var typeMatches = true
             if let id = value, let context = modelContext {
-                let allSubs = (try? context.fetch(FetchDescriptor<Subcategory>())) ?? []
-                if let sub = allSubs.first(where: { $0.persistentModelID == id }) {
-                    typeMatches = sub.safeCategory.isIncome == !draft.isExpense
+                do {
+                    let allSubs = try context.fetch(FetchDescriptor<Subcategory>())
+                    if let sub = allSubs.first(where: { $0.persistentModelID == id }) {
+                        typeMatches = sub.safeCategory.isIncome == !draft.isExpense
+                    }
+                } catch {
+                    #if DEBUG
+                    print("ChatAssistantViewModel: fetch de subcategorías falló: \(error)")
+                    #endif
                 }
             }
             if typeMatches { draft.subcategoryID = value }

@@ -864,23 +864,58 @@ final class FullFinancialContextBuilder {
             predicate: #Predicate<TransactionItem> { $0.date >= from && $0.date <= to },
             sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse)]
         )
-        return (try? ctx.fetch(descriptor)) ?? []
+        do {
+            return try ctx.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("FullFinancialContextBuilder: fetch de transacciones falló: \(error)")
+            #endif
+            return []
+        }
     }
 
     private func fetchBudgets(_ ctx: ModelContext) -> [Budget] {
-        (try? ctx.fetch(FetchDescriptor<Budget>())) ?? []
+        do {
+            return try ctx.fetch(FetchDescriptor<Budget>())
+        } catch {
+            #if DEBUG
+            print("FullFinancialContextBuilder: fetch de presupuestos falló: \(error)")
+            #endif
+            return []
+        }
     }
 
     private func fetchAccounts(_ ctx: ModelContext) -> [Account] {
-        (try? ctx.fetch(FetchDescriptor<Account>())) ?? []
+        do {
+            return try ctx.fetch(FetchDescriptor<Account>())
+        } catch {
+            #if DEBUG
+            print("FullFinancialContextBuilder: fetch de cuentas falló: \(error)")
+            #endif
+            return []
+        }
     }
 
     private func fetchTags(_ ctx: ModelContext) -> [Tag] {
-        (try? ctx.fetch(FetchDescriptor<Tag>())) ?? []
+        do {
+            return try ctx.fetch(FetchDescriptor<Tag>())
+        } catch {
+            #if DEBUG
+            print("FullFinancialContextBuilder: fetch de tags falló: \(error)")
+            #endif
+            return []
+        }
     }
 
     private func fetchScheduledPayments(_ ctx: ModelContext) -> [ScheduledPayment] {
-        (try? ctx.fetch(FetchDescriptor<ScheduledPayment>())) ?? []
+        do {
+            return try ctx.fetch(FetchDescriptor<ScheduledPayment>())
+        } catch {
+            #if DEBUG
+            print("FullFinancialContextBuilder: fetch de pagos programados falló: \(error)")
+            #endif
+            return []
+        }
     }
 
     // MARK: - Helpers
