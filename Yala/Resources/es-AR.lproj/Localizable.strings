@@ -3696,11 +3696,9 @@
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Este gasto compartido ya no existe en el grupo.";
-"whatsNew.v20.groups.title" = "Gastos compartidos";
-"whatsNew.v20.groups.description" = "Creá grupos, dividí gastos con amigos y Yala calcula quién le debe a quién. Ideal para viajes y planes en común.";
+"whatsNew.v20.groups.title" = "Grupos (Beta)";
+"whatsNew.v20.groups.description" = "Creá grupos para compartir gastos y Yala calcula quién le debe a quién. Y tranquilo: todo viaja por tu iCloud privado, sin servidores nuestros.";
 "whatsNew.v20.ai.title" = "Te presentamos a Yala IA";
-"whatsNew.v20.ai.description" = "Tu asistente financiero. Registrá gastos por voz o foto, resolvé dudas y recibí análisis claros de tu mes.";
-"whatsNew.v20.home.title" = "Tu inicio, a tu manera";
-"whatsNew.v20.home.description" = "Mostrá, ocultá y reordená las secciones de tu pantalla principal para ver primero lo que más te importa.";
-"whatsNew.v20.detail.title" = "Detalle al instante";
-"whatsNew.v20.detail.description" = "Tocá cualquier movimiento para ver todos sus detalles y editarlo sin cambiar de pantalla.";
+"whatsNew.v20.ai.description" = "Tu asistente financiero con inteligencia artificial. Hacele preguntas sobre tu dinero, pedile que registre tus gastos y recibí análisis claros de tu mes. Como un amigo que sabe de finanzas, a un mensaje de distancia.";
+"whatsNew.v20.redesign.title" = "Rediseño completo";
+"whatsNew.v20.redesign.description" = "Renovamos Yala de arriba a abajo: nuevos widgets, resúmenes más claros en cada sección y el nuevo acabado Liquid Glass de iOS en toda la app. Además, corregimos muchos errores para que todo se sienta más fluido.";

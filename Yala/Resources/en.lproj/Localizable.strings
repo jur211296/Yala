@@ -4470,11 +4470,9 @@
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "This shared expense no longer exists in the group.";
-"whatsNew.v20.groups.title" = "Shared expenses";
-"whatsNew.v20.groups.description" = "Create groups, split costs with friends, and Yala works out who owes whom. Perfect for trips and shared plans.";
+"whatsNew.v20.groups.title" = "Groups (Beta)";
+"whatsNew.v20.groups.description" = "Create groups to share expenses and let Yala work out who owes whom. And don't worry: everything travels through your private iCloud, never our servers.";
 "whatsNew.v20.ai.title" = "Meet Yala AI";
-"whatsNew.v20.ai.description" = "Your financial assistant. Log expenses by voice or photo, ask anything, and get clear insights on your month.";
-"whatsNew.v20.home.title" = "Your home, your way";
-"whatsNew.v20.home.description" = "Show, hide, and reorder the sections of your home screen so what matters most comes first.";
-"whatsNew.v20.detail.title" = "Details in a tap";
-"whatsNew.v20.detail.description" = "Tap any transaction to see its full details and edit it without leaving the screen.";
+"whatsNew.v20.ai.description" = "Your AI-powered financial assistant. Ask about your money, have it log your expenses, and get clear insights on your month. Like a friend who knows finance, just a message away.";
+"whatsNew.v20.redesign.title" = "A whole new look";
+"whatsNew.v20.redesign.description" = "We redesigned Yala top to bottom: new widgets, clearer summaries in every section, and the new Liquid Glass finish from iOS across the app. Plus, we fixed plenty of bugs so everything feels smoother.";

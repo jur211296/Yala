@@ -4464,11 +4464,9 @@
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Diese geteilte Ausgabe existiert nicht mehr in der Gruppe.";
-"whatsNew.v20.groups.title" = "[NEEDS_TRANSLATION] Gastos compartidos";
-"whatsNew.v20.groups.description" = "[NEEDS_TRANSLATION] Crea grupos, divide gastos con amigos y Yala calcula quién le debe a quién. Ideal para viajes y planes en común.";
-"whatsNew.v20.ai.title" = "[NEEDS_TRANSLATION] Te presentamos a Yala IA";
-"whatsNew.v20.ai.description" = "[NEEDS_TRANSLATION] Tu asistente financiero. Registra gastos por voz o foto, resuelve dudas y recibe análisis claros de tu mes.";
-"whatsNew.v20.home.title" = "[NEEDS_TRANSLATION] Tu inicio, a tu manera";
-"whatsNew.v20.home.description" = "[NEEDS_TRANSLATION] Muestra, oculta y reordena las secciones de tu pantalla principal para ver primero lo que más te importa.";
-"whatsNew.v20.detail.title" = "[NEEDS_TRANSLATION] Detalle al instante";
-"whatsNew.v20.detail.description" = "[NEEDS_TRANSLATION] Toca cualquier movimiento para ver todos sus detalles y editarlo sin cambiar de pantalla.";
+"whatsNew.v20.groups.title" = "Gruppen (Beta)";
+"whatsNew.v20.groups.description" = "Erstelle Gruppen, um Ausgaben zu teilen, und Yala berechnet, wer wem was schuldet. Keine Sorge: Alles läuft über deine private iCloud, niemals über unsere Server.";
+"whatsNew.v20.ai.title" = "Lerne Yala KI kennen";
+"whatsNew.v20.ai.description" = "Dein Finanzassistent mit künstlicher Intelligenz. Stelle ihm Fragen zu deinem Geld, lass ihn deine Ausgaben erfassen und erhalte klare Auswertungen deines Monats. Wie ein Freund, der sich mit Finanzen auskennt – nur eine Nachricht entfernt.";
+"whatsNew.v20.redesign.title" = "Komplett neu gestaltet";
+"whatsNew.v20.redesign.description" = "Wir haben Yala von Grund auf neu gestaltet: neue Widgets, übersichtlichere Zusammenfassungen in jedem Bereich und das neue Liquid-Glass-Design von iOS in der ganzen App. Außerdem haben wir viele Fehler behoben, damit sich alles flüssiger anfühlt.";

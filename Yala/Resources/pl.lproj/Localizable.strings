@@ -4476,11 +4476,9 @@
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Ten wspólny wydatek już nie istnieje w grupie.";
-"whatsNew.v20.groups.title" = "[NEEDS_TRANSLATION] Gastos compartidos";
-"whatsNew.v20.groups.description" = "[NEEDS_TRANSLATION] Crea grupos, divide gastos con amigos y Yala calcula quién le debe a quién. Ideal para viajes y planes en común.";
-"whatsNew.v20.ai.title" = "[NEEDS_TRANSLATION] Te presentamos a Yala IA";
-"whatsNew.v20.ai.description" = "[NEEDS_TRANSLATION] Tu asistente financiero. Registra gastos por voz o foto, resuelve dudas y recibe análisis claros de tu mes.";
-"whatsNew.v20.home.title" = "[NEEDS_TRANSLATION] Tu inicio, a tu manera";
-"whatsNew.v20.home.description" = "[NEEDS_TRANSLATION] Muestra, oculta y reordena las secciones de tu pantalla principal para ver primero lo que más te importa.";
-"whatsNew.v20.detail.title" = "[NEEDS_TRANSLATION] Detalle al instante";
-"whatsNew.v20.detail.description" = "[NEEDS_TRANSLATION] Toca cualquier movimiento para ver todos sus detalles y editarlo sin cambiar de pantalla.";
+"whatsNew.v20.groups.title" = "Grupy (Beta)";
+"whatsNew.v20.groups.description" = "Twórz grupy, aby dzielić wydatki, a Yala obliczy, kto komu ile jest winien. I bez obaw: wszystko przechodzi przez twój prywatny iCloud, nigdy przez nasze serwery.";
+"whatsNew.v20.ai.title" = "Poznaj Yala AI";
+"whatsNew.v20.ai.description" = "Twój asystent finansowy ze sztuczną inteligencją. Zadawaj pytania o swoje pieniądze, poproś o zapisanie wydatków i otrzymuj przejrzyste analizy miesiąca. Jak znajomy, który zna się na finansach – w zasięgu jednej wiadomości.";
+"whatsNew.v20.redesign.title" = "Zupełnie nowy wygląd";
+"whatsNew.v20.redesign.description" = "Przeprojektowaliśmy Yala od góry do dołu: nowe widżety, czytelniejsze podsumowania w każdej sekcji i nowe wykończenie Liquid Glass z iOS w całej aplikacji. Naprawiliśmy też wiele błędów, aby wszystko działało płynniej.";

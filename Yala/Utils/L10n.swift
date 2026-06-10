@@ -5703,10 +5703,8 @@ enum L10n {
         static var v20GroupsDescription: String { ls("whatsNew.v20.groups.description", comment: "") }
         static var v20AITitle: String { ls("whatsNew.v20.ai.title", comment: "") }
         static var v20AIDescription: String { ls("whatsNew.v20.ai.description", comment: "") }
-        static var v20HomeTitle: String { ls("whatsNew.v20.home.title", comment: "") }
-        static var v20HomeDescription: String { ls("whatsNew.v20.home.description", comment: "") }
-        static var v20DetailTitle: String { ls("whatsNew.v20.detail.title", comment: "") }
-        static var v20DetailDescription: String { ls("whatsNew.v20.detail.description", comment: "") }
+        static var v20RedesignTitle: String { ls("whatsNew.v20.redesign.title", comment: "") }
+        static var v20RedesignDescription: String { ls("whatsNew.v20.redesign.description", comment: "") }
     }
 
     // MARK: - App Update

@@ -103,16 +103,10 @@ enum WhatsNewConfig {
             description: L10n.WhatsNew.v20AIDescription
         ),
         WhatsNewFeature(
-            icon: "square.grid.2x2.fill",
-            iconColor: .orange,
-            title: L10n.WhatsNew.v20HomeTitle,
-            description: L10n.WhatsNew.v20HomeDescription
-        ),
-        WhatsNewFeature(
-            icon: "hand.tap.fill",
-            iconColor: .teal,
-            title: L10n.WhatsNew.v20DetailTitle,
-            description: L10n.WhatsNew.v20DetailDescription
+            icon: "paintbrush.fill",
+            iconColor: .pink,
+            title: L10n.WhatsNew.v20RedesignTitle,
+            description: L10n.WhatsNew.v20RedesignDescription
         ),
     ]
 

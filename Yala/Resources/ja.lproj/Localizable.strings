@@ -4476,11 +4476,9 @@
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "この共有支出はグループにもう存在しません。";
-"whatsNew.v20.groups.title" = "[NEEDS_TRANSLATION] Gastos compartidos";
-"whatsNew.v20.groups.description" = "[NEEDS_TRANSLATION] Crea grupos, divide gastos con amigos y Yala calcula quién le debe a quién. Ideal para viajes y planes en común.";
-"whatsNew.v20.ai.title" = "[NEEDS_TRANSLATION] Te presentamos a Yala IA";
-"whatsNew.v20.ai.description" = "[NEEDS_TRANSLATION] Tu asistente financiero. Registra gastos por voz o foto, resuelve dudas y recibe análisis claros de tu mes.";
-"whatsNew.v20.home.title" = "[NEEDS_TRANSLATION] Tu inicio, a tu manera";
-"whatsNew.v20.home.description" = "[NEEDS_TRANSLATION] Muestra, oculta y reordena las secciones de tu pantalla principal para ver primero lo que más te importa.";
-"whatsNew.v20.detail.title" = "[NEEDS_TRANSLATION] Detalle al instante";
-"whatsNew.v20.detail.description" = "[NEEDS_TRANSLATION] Toca cualquier movimiento para ver todos sus detalles y editarlo sin cambiar de pantalla.";
+"whatsNew.v20.groups.title" = "グループ（ベータ版）";
+"whatsNew.v20.groups.description" = "グループを作って費用を分担すると、Yala が誰が誰にいくら払うかを計算します。ご安心ください。データはすべてあなたのプライベートな iCloud を経由し、当社のサーバーは通りません。";
+"whatsNew.v20.ai.title" = "Yala AI のご紹介";
+"whatsNew.v20.ai.description" = "AI を搭載したあなたの家計アシスタント。お金について質問したり、支出の記録を頼んだり、今月の分かりやすい分析を受け取れます。お金に詳しい友だちのように、メッセージひとつですぐそばに。";
+"whatsNew.v20.redesign.title" = "全面リニューアル";
+"whatsNew.v20.redesign.description" = "Yala を隅々まで一新しました。新しいウィジェット、各画面のより見やすいサマリー、そしてアプリ全体に iOS の新しい Liquid Glass デザインを採用。さらに多くの不具合を修正し、すべてがより快適になりました。";

@@ -4465,11 +4465,9 @@
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Cette dépense partagée n'existe plus dans le groupe.";
-"whatsNew.v20.groups.title" = "[NEEDS_TRANSLATION] Gastos compartidos";
-"whatsNew.v20.groups.description" = "[NEEDS_TRANSLATION] Crea grupos, divide gastos con amigos y Yala calcula quién le debe a quién. Ideal para viajes y planes en común.";
-"whatsNew.v20.ai.title" = "[NEEDS_TRANSLATION] Te presentamos a Yala IA";
-"whatsNew.v20.ai.description" = "[NEEDS_TRANSLATION] Tu asistente financiero. Registra gastos por voz o foto, resuelve dudas y recibe análisis claros de tu mes.";
-"whatsNew.v20.home.title" = "[NEEDS_TRANSLATION] Tu inicio, a tu manera";
-"whatsNew.v20.home.description" = "[NEEDS_TRANSLATION] Muestra, oculta y reordena las secciones de tu pantalla principal para ver primero lo que más te importa.";
-"whatsNew.v20.detail.title" = "[NEEDS_TRANSLATION] Detalle al instante";
-"whatsNew.v20.detail.description" = "[NEEDS_TRANSLATION] Toca cualquier movimiento para ver todos sus detalles y editarlo sin cambiar de pantalla.";
+"whatsNew.v20.groups.title" = "Groupes (Bêta)";
+"whatsNew.v20.groups.description" = "Crée des groupes pour partager les dépenses et Yala calcule qui doit quoi à qui. Et rassure-toi : tout passe par ton iCloud privé, jamais par nos serveurs.";
+"whatsNew.v20.ai.title" = "Voici Yala IA";
+"whatsNew.v20.ai.description" = "Ton assistant financier doté d'intelligence artificielle. Pose-lui des questions sur ton argent, demande-lui d'enregistrer tes dépenses et reçois des analyses claires de ton mois. Comme un ami qui s'y connaît en finances, à portée de message.";
+"whatsNew.v20.redesign.title" = "Tout nouveau design";
+"whatsNew.v20.redesign.description" = "Nous avons repensé Yala de fond en comble : nouveaux widgets, résumés plus clairs dans chaque section et la nouvelle finition Liquid Glass d'iOS dans toute l'app. Nous avons aussi corrigé de nombreux bugs pour que tout soit plus fluide.";

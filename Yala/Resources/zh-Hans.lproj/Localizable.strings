@@ -4476,11 +4476,9 @@
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "此共享支出在群组中已不存在。";
-"whatsNew.v20.groups.title" = "[NEEDS_TRANSLATION] Gastos compartidos";
-"whatsNew.v20.groups.description" = "[NEEDS_TRANSLATION] Crea grupos, divide gastos con amigos y Yala calcula quién le debe a quién. Ideal para viajes y planes en común.";
-"whatsNew.v20.ai.title" = "[NEEDS_TRANSLATION] Te presentamos a Yala IA";
-"whatsNew.v20.ai.description" = "[NEEDS_TRANSLATION] Tu asistente financiero. Registra gastos por voz o foto, resuelve dudas y recibe análisis claros de tu mes.";
-"whatsNew.v20.home.title" = "[NEEDS_TRANSLATION] Tu inicio, a tu manera";
-"whatsNew.v20.home.description" = "[NEEDS_TRANSLATION] Muestra, oculta y reordena las secciones de tu pantalla principal para ver primero lo que más te importa.";
-"whatsNew.v20.detail.title" = "[NEEDS_TRANSLATION] Detalle al instante";
-"whatsNew.v20.detail.description" = "[NEEDS_TRANSLATION] Toca cualquier movimiento para ver todos sus detalles y editarlo sin cambiar de pantalla.";
+"whatsNew.v20.groups.title" = "群组（测试版）";
+"whatsNew.v20.groups.description" = "创建群组分摊支出，Yala 自动算出谁欠谁多少。请放心：所有数据只经过你的私人 iCloud，绝不经过我们的服务器。";
+"whatsNew.v20.ai.title" = "认识 Yala AI";
+"whatsNew.v20.ai.description" = "你的 AI 财务助手。向它询问你的财务状况，让它帮你记账，获取清晰的本月分析。就像一位懂理财的朋友，一条消息即可触达。";
+"whatsNew.v20.redesign.title" = "全新设计";
+"whatsNew.v20.redesign.description" = "我们对 Yala 进行了彻底重新设计：全新小组件、每个板块更清晰的摘要，以及贯穿整个应用的 iOS 全新 Liquid Glass 质感。此外，我们还修复了大量问题，让一切更顺滑。";
