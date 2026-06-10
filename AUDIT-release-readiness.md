@@ -63,43 +63,43 @@ El gotcha `AmountText` (lee `@Environment(AppPreferences)`) dentro de `.annotati
 | 5 | ✅ `Yala/App/Views/Statistics/PeriodComparisonChartView.swift:178` | RESUELTO (también L195) — `YalaFormatterStatic.currency` (vista sin `@Environment(AppPreferences)`). Device-QA: tooltip dual "S/ 80,324.00 / S/ 71,107.30" en vivo |
 | 6 | ✅ `Yala/App/Views/Reports/CashFlow/CashFlowSetupView.swift:331` | RESUELTO — `.dismissKeyboardOnTap()` en el VStack del ScrollView. Device-QA: teclado baja (3× verificado vía nodo keyboard del AX tree) |
 
-### Errores y unwraps (11)
+### Errores y unwraps (11) — ✅ RESUELTOS (#1 Tanda 1; #2-12 Tanda 2, 2026-06-10)
 
 | # | Ubicación | Regla | Fix |
 |---|---|---|---|
 | 1 | ✅ `Yala/App/Views/Subscription/ProTrialOfferSheet.swift:103` | **RESUELTO (Tanda 1, 06-10)** — botón Restaurar replicado de `SubscriptionView:104-110` (`.thPrimaryText`), tras "Quizás después". Device-QA: tap dispara `AppStore.sync`, el alert de error existente captura el fallo | — |
-| 2 | `Yala/App/ContentView.swift:1215` | `try?` silencia fetch en path crítico: si falla → `showDowngradeResolution` nunca se presenta → `.presentDowngradeResolution` se encola en **loop silencioso infinito** cada cold launch | `do/catch` con log `#if DEBUG` |
-| 3 | `Yala/Services/Groups/GroupTransactionBridge.swift:556` | `try?` omite la **TX2 virtual (+lent préstamo) completa** sin log ni fallback | `do/catch` + log DEBUG; considerar draft fallback como el path TX1 o convertir a `throws` |
-| 4 | `Yala/Services/ChatAssistantService.swift:216` (dim. swiftdata-uso, ver abajo) | — | — |
-| 5 | `Yala/App/Views/Accounts/AccountFormView.swift:637` | `catch` solo loggea: el alert de error de borrado **ya cableado** (L150) nunca se activa — el usuario no recibe feedback | Setear `viewModel.deleteErrorMessage` + `isShowingDeleteError = true` en el catch |
-| 6 | `Yala/App/Views/Groups/FullModeActivationView.swift:67` | `try? modelContext.save()` tras **borrar cuentas reales** — fallo silenciado sin log | `do/catch` + log `#if DEBUG` |
-| 7 | `Yala/App/Views/Onboarding/WelcomeHeroView.swift:406` | `try?` silencia error de `iCloudAccountSummary` (detección de cuenta en Welcome) | `do/catch` + log; `markFetchCompleted()` en ambos paths preserva el flujo |
-| 8 | `Yala/Models/Budget.swift:135` | `try?` silencia fetch en `computeDisplayProperties` | `do/catch` con log y fallback desde el catch |
-| 9 | `Yala/App/Services/ChatSuggestionsLLMService.swift:245` | `try?` dentro de un `do/catch` que ya loggea — silencia innecesariamente | Cambiar a `try` (el catch externo lo captura) |
-| 10 | `Yala/Utils/TransactionsExportService.swift:114` | `try?` silencia fetch de `Tag` en export | `do/catch` + log DEBUG + `allTags = []` |
-| 11 | `Yala/Utils/TransactionsExportService.swift:183` | Mismo patrón duplicado en `export()` | Ídem L114 |
-| 12 | `Yala/App/Logic/Calculators/WeekdaySpendingCalculator.swift:113` | Force unwrap `calendar.date(byAdding:)!` en path alcanzable con datos de usuario | `guard let next = ... else { break }` |
+| 2 | ✅ `Yala/App/ContentView.swift:1215` | **RESUELTO (Tanda 2, 06-10, `9c8618d7`)** — do/catch envolviendo ambos fetches + log; no presenta downgrade con datos parciales (el productor re-encola al siguiente cold launch) | — |
+| 3 | ✅ `Yala/Services/Groups/GroupTransactionBridge.swift:556` | **RESUELTO (Tanda 2, 06-10, `722fe8db`)** — D-A opción (a) confirmada por owner: do/catch + log DEBUG + telemetría `bridgeVirtualLentTxFailed` (falla degradada, la TX1 real sobrevive) | — |
+| 4 | ✅ `Yala/Services/ChatAssistantService.swift:216` (dim. swiftdata-uso, ver abajo) | — | — |
+| 5 | ✅ `Yala/App/Views/Accounts/AccountFormView.swift:637` | **RESUELTO (Tanda 2, 06-10, `9c8618d7`)** — el catch setea `deleteErrorMessage` + `isShowingDeleteError`; el alert cableado por fin se activa | — |
+| 6 | ✅ `Yala/App/Views/Groups/FullModeActivationView.swift:67` | **RESUELTO (Tanda 2, 06-10, `9c8618d7`)** — do/catch cubre fetch (L62) Y save (L70); cleanup defensivo no bloquea la activación | — |
+| 7 | ✅ `Yala/App/Views/Onboarding/WelcomeHeroView.swift:406` | **RESUELTO (Tanda 2, 06-10, `9c8618d7`)** — do/catch + log; `markFetchCompleted()` corre en ambos paths | — |
+| 8 | ✅ `Yala/Models/Budget.swift:135` | **RESUELTO (Tanda 2, 06-10, `95d396f9`)** — do/catch + log; el catch cae al fallback M2M existente | — |
+| 9 | ✅ `Yala/App/Services/ChatSuggestionsLLMService.swift:245` | **RESUELTO (Tanda 2, 06-10, `233822ea`)** — `try` directo; el catch externo que ya loggea lo captura | — |
+| 10 | ✅ `Yala/Utils/TransactionsExportService.swift:114` | **RESUELTO (Tanda 2, 06-10, `95d396f9`)** — do/catch + log + `allTags = []` (export degrada sin nombres de tags, no aborta) | — |
+| 11 | ✅ `Yala/Utils/TransactionsExportService.swift:183` | **RESUELTO (Tanda 2, 06-10, `95d396f9`)** — ídem L114 | — |
+| 12 | ✅ `Yala/App/Logic/Calculators/WeekdaySpendingCalculator.swift:113` | **RESUELTO (Tanda 2, 06-10, `95d396f9`)** — `guard let next = ... else { break }` | — |
 
-### SwiftData uso (5)
-
-| # | Ubicación | Regla | Fix |
-|---|---|---|---|
-| 1 | `Yala/Services/ChatAssistantService.swift:216` | `try?` fetch → `?? []` dispara el guard "no hay cuentas": el usuario recibe **respuesta incorrecta** aunque sí tenga cuentas | `do/catch` + log + propagar error tipado |
-| 2 | `Yala/Services/Chat/FullFinancialContextBuilder.swift:867` | Los 5 fetchers privados (867/871/875/879/883) con `try?` → **contexto financiero vacío al LLM** sin diagnóstico | `do/catch` + log DEBUG + `return []` |
-| 3 | `Yala/App/ViewModels/ChatAssistantViewModel.swift:644` | `try?` fetch Subcategory — la validación de tipo puede pasar siempre | `do/catch` + log DEBUG |
-| 4 | `Yala/App/ViewModels/GroupDetailViewModel.swift:152` | `try?` fetch en `rebuildBridgeMaps` — el outer do/catch no lo cubre | `do/catch` + log + `return` |
-| 5 | `Yala/Utils/TransactionsExportService.swift:90` | Funciones estáticas que manipulan `ModelContext` **sin `@MainActor`** | Anotar `exportToCSV`, `export`, `applyInMemoryFilters`, `makeExportData` |
-
-### State management (6)
+### SwiftData uso (5) — ✅ RESUELTOS (Tanda 2, 2026-06-10)
 
 | # | Ubicación | Regla | Fix |
 |---|---|---|---|
-| 1 | `Yala/Services/CurrencyConverter.swift:37` | `@Observable` **sin `@MainActor`** accede a `ModelContext` interno; `.shared` alcanzable desde cualquier actor | Añadir `@MainActor` a la clase |
-| 2 | `YalaTests/ChatAssistantViewModelTests.swift:106` | `UserDefaults.standard` directo en test (regla del proyecto) | Inyectar `UserDefaults` en el VM + suite aislada `test.\(UUID())` |
-| 3 | `YalaTests/ChatAssistantViewModelTests.swift:153` | Ídem (`clearPersistedSession`) | `makeIsolatedDefaults()` + inyección |
-| 4 | `YalaTests/ChatAssistantViewModelTests.swift:291` | Ídem (`stripsLegacyToolPayload`) | Ídem |
-| 5 | `YalaTests/ChatSuggestionsLLMServiceTests.swift:143` | `UserDefaults.standard` y la suite **no** es `.serialized` — riesgo mayor de contaminación | Inyectar defaults aislado en el service |
-| 6 | `YalaTests/ChatSuggestionsLLMServiceTests.swift:178` | Ídem (cache corrupta sembrada en `.standard`) | Mismo defaults aislado compartido con el helper |
+| 1 | ✅ `Yala/Services/ChatAssistantService.swift:216` | **RESUELTO (Tanda 2, 06-10, `233822ea`)** — do/catch + log + re-throw: el catch genérico del VM lo envuelve en `.networkError` → banner `errorGeneric` (ya no responde "no hay cuentas" siendo falso) | — |
+| 2 | ✅ `Yala/Services/Chat/FullFinancialContextBuilder.swift:867` | **RESUELTO (Tanda 2, 06-10, `233822ea`)** — los 5 fetchers (867/871/875/879/883) con do/catch + log DEBUG + `return []` | — |
+| 3 | ✅ `Yala/App/ViewModels/ChatAssistantViewModel.swift:644` | **RESUELTO (Tanda 2, 06-10, `233822ea`)** — do/catch + log DEBUG (comportamiento preservado, con diagnóstico) | — |
+| 4 | ✅ `Yala/App/ViewModels/GroupDetailViewModel.swift:152` | **RESUELTO (Tanda 2, 06-10, `722fe8db`)** — do/catch + log + `txBridgeMap = [:]`; `mySharesByExpense` no depende del fetch y sigue | — |
+| 5 | ✅ `Yala/Utils/TransactionsExportService.swift:90` | **RESUELTO (Tanda 2, 06-10, `95d396f9`)** — `@MainActor` en `exportToCSV`, `export`, `applyInMemoryFilters`, `makeExportData`; cascada: `TransactionItem.recalculatePreferredCurrency` también anotada (sus 3 callers ya eran @MainActor) | — |
+
+### State management (6) — ✅ RESUELTOS (Tanda 2, 2026-06-10)
+
+| # | Ubicación | Regla | Fix |
+|---|---|---|---|
+| 1 | ✅ `Yala/Services/CurrencyConverter.swift:37` | **RESUELTO (Tanda 2, 06-10, `95d396f9`)** — clase anotada `@MainActor` (callsites verificados todos main: CSV import usa funcs @MainActor, calculators con Mock en tests); suite `CurrencyConverterTests` anotada | — |
+| 2 | ✅ `YalaTests/ChatAssistantViewModelTests.swift:106` | **RESUELTO (Tanda 2, 06-10, `36bb7f9c`)** — `ChatAssistantViewModel.init(defaults: = .standard)` + test siembra/lee en `makeIsolatedDefaults()` | — |
+| 3 | ✅ `YalaTests/ChatAssistantViewModelTests.swift:153` | **RESUELTO (Tanda 2, 06-10, `36bb7f9c`)** — ídem (`clearPersistedSession` opera sobre el aislado inyectado) | — |
+| 4 | ✅ `YalaTests/ChatAssistantViewModelTests.swift:291` | **RESUELTO (Tanda 2, 06-10, `36bb7f9c`)** — ídem (`stripsLegacyToolPayload`) | — |
+| 5 | ✅ `YalaTests/ChatSuggestionsLLMServiceTests.swift:143` | **RESUELTO (Tanda 2, 06-10, `36bb7f9c`)** — `cachedSuggestions`/`setCached` aceptan `defaults:` (default `.standard`); los 3 tests de cache usan aislado y `clearCacheKeys()` se eliminó. Nota: la suite **ya era** `.serialized` (el audit estaba desactualizado en eso) | — |
+| 6 | ✅ `YalaTests/ChatSuggestionsLLMServiceTests.swift:178` | **RESUELTO (Tanda 2, 06-10, `36bb7f9c`)** — la siembra corrupta va al mismo defaults aislado que lee el service | — |
 
 ### L10n hardcoded — UI visible sin localizar (19 únicos)
 
