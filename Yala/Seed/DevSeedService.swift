@@ -15,20 +15,24 @@ enum DevSeedProfile: String {
     case realista
     case pesado
     case grupos
+    /// Como `.grupos` pero desde la perspectiva de un MIEMBRO no-owner recién unido
+    /// (saltando el accept de CKShare, imposible en sim) y deudor neto. Combinable con
+    /// `-uitest-group-invite` para el modo solo-grupos. Ver `DevSeedGroups.createAsInvitee`.
+    case gruposInvitado = "grupos-invitado"
 
     /// Días de historial de transacciones a generar (escala el volumen).
-    /// `minimal`/`grupos` (~1 semana) son rápidos para XCUITests. `realista`/`pesado`
-    /// para escenarios ricos / performance (arranque más lento, riesgo watchdog).
+    /// `minimal`/`grupos`/`gruposInvitado` (~1 semana) son rápidos para XCUITests.
+    /// `realista`/`pesado` para escenarios ricos / performance (arranque más lento, riesgo watchdog).
     var daysBack: Int {
         switch self {
-        case .minimal, .grupos: return 7
+        case .minimal, .grupos, .gruposInvitado: return 7
         case .realista: return 730
         case .pesado: return 3650
         }
     }
 
     /// Si además siembra un grupo de gastos compartidos (DevSeedGroups).
-    var seedsGroups: Bool { self == .grupos }
+    var seedsGroups: Bool { self == .grupos || self == .gruposInvitado }
 }
 
 @MainActor @Observable
@@ -138,10 +142,14 @@ final class DevSeedService {
             in: context
         )
 
-        // Step 10: Grupos (perfil .grupos) — grupo local para QA del tab Grupos
+        // Step 10: Grupos (perfiles .grupos / .gruposInvitado) — grupo local para QA del tab Grupos
         if profile.seedsGroups {
             updateStep("Grupos de prueba", progress: 0.97)
-            DevSeedGroups.create(in: context)
+            if profile == .gruposInvitado {
+                DevSeedGroups.createAsInvitee(in: context)
+            } else {
+                DevSeedGroups.create(in: context)
+            }
         }
 
         // Final save
