@@ -237,7 +237,6 @@ final class iCloudSyncService {
                 // M6: cada import successful dispara este event (no solo el primero).
                 // Consumido por GroupBridgeRaceCleaner para autodelete drafts pendientes
                 // Caso A cuando llega TX cuenta real vía sync personal.
-                // TODO post-M6: añadir debounce 1s coalesce si cold launch dispara muchas veces.
                 NotificationCenter.default.post(
                     name: .transactionsImportedFromSync,
                     object: nil

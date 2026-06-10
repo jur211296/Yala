@@ -897,7 +897,7 @@ struct GroupSettingsView: View {
 
     private func buildBrandedInviteURL(from ckURL: URL) -> URL {
         let name = UserDefaults.standard.string(forKey: "userName") ?? ""
-        let inviterName = name.isEmpty ? "Usuario" : name
+        let inviterName = name.isEmpty ? L10n.Profile.defaultName : name
         return InviteLinkService.buildInviteURL(
             shareURL: ckURL,
             group: group,

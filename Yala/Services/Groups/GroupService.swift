@@ -876,7 +876,7 @@ final class GroupService {
 
     private func currentUserDisplayName() -> String {
         let name = UserDefaults.standard.string(forKey: "userName") ?? ""
-        return name.isEmpty ? "Usuario" : name
+        return name.isEmpty ? L10n.Profile.defaultName : name
     }
 
     private func statusSortOrder(_ status: SplitMemberStatus) -> Int {

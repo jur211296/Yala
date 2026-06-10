@@ -316,7 +316,7 @@
       "area": "form-help-banners",
       "codeGlobs": [
         "Yala/App/Views/Shared/ContextualGuideBanner.swift",
-        "Yala/App/Views/Budgets/**",
+        "Yala/App/Views/Planning/Budget*.swift",
         "Yala/App/Views/Accounts/AccountFormView.swift",
         "Yala/App/Views/Settings/**"
       ],
