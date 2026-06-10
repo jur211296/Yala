@@ -164,7 +164,7 @@ struct ImportIntroSheet: View {
                         icon: "square.and.arrow.down",
                         isDisabled: isImporting,
                         isLoading: isImporting,
-                        disabledHint: isImporting ? "Importación en proceso" : nil
+                        disabledHint: isImporting ? L10n.Accessibility.importingHint : nil
                     ) {
                         startImportFlow()
                     }

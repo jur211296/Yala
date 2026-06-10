@@ -100,7 +100,7 @@ struct SubcategoriesPieWidgetProvider: AppIntentTimelineProvider {
             subcategories = top12 + [
                 WidgetSubcategory(
                     id: "others",
-                    name: "Otros",
+                    name: String(localized: "widget.ui.others", bundle: .main),
                     categoryName: "",
                     iconName: nil,
                     colorHex: "6B7280",

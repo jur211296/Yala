@@ -4482,3 +4482,18 @@
 "whatsNew.v20.ai.description" = "你的 AI 财务助手。向它询问你的财务状况，让它帮你记账，获取清晰的本月分析。就像一位懂理财的朋友，一条消息即可触达。";
 "whatsNew.v20.redesign.title" = "全新设计";
 "whatsNew.v20.redesign.description" = "我们对 Yala 进行了彻底重新设计：全新小组件、每个板块更清晰的摘要，以及贯穿整个应用的 iOS 全新 Liquid Glass 质感。此外，我们还修复了大量问题，让一切更顺滑。";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"common.vs" = "vs";
+"transaction.exchangeRateShort %@" = "汇率：%@";
+"cashFlowPlan.aiChipLabel" = "AI";
+"budgets.period.typeLabel" = "周期类型";
+"budgets.alerts.thresholdPlaceholder" = "1–100";
+"accessibility.variationIncrease %@" = "增加 %@";
+"accessibility.variationDecrease %@" = "减少 %@";
+"accessibility.processing" = "处理中";
+"accessibility.removeTab %@" = "移除%@";
+"accessibility.selectAtLeastOneColumn" = "请至少选择一列";
+"accessibility.completeRequiredFilters" = "请填写必填的筛选条件";
+"accessibility.exportingHint" = "正在导出";
+"accessibility.assignAllCurrencies" = "请分配所有货币";

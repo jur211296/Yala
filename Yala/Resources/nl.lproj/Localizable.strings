@@ -4482,3 +4482,18 @@
 "whatsNew.v20.ai.description" = "Je financiële assistent met kunstmatige intelligentie. Stel vragen over je geld, laat hem je uitgaven vastleggen en krijg heldere inzichten over je maand. Als een vriend die verstand heeft van geld, op slechts één bericht afstand.";
 "whatsNew.v20.redesign.title" = "Een compleet nieuw uiterlijk";
 "whatsNew.v20.redesign.description" = "We hebben Yala van top tot teen opnieuw ontworpen: nieuwe widgets, duidelijkere overzichten in elke sectie en de nieuwe Liquid Glass-afwerking van iOS in de hele app. Daarnaast hebben we veel bugs opgelost zodat alles soepeler aanvoelt.";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"common.vs" = "vs";
+"transaction.exchangeRateShort %@" = "Koers: %@";
+"cashFlowPlan.aiChipLabel" = "AI";
+"budgets.period.typeLabel" = "Periodetype";
+"budgets.alerts.thresholdPlaceholder" = "1–100";
+"accessibility.variationIncrease %@" = "Stijging %@";
+"accessibility.variationDecrease %@" = "Daling %@";
+"accessibility.processing" = "Bezig met verwerken";
+"accessibility.removeTab %@" = "%@ verwijderen";
+"accessibility.selectAtLeastOneColumn" = "Selecteer minstens één kolom";
+"accessibility.completeRequiredFilters" = "Vul de vereiste filters in";
+"accessibility.exportingHint" = "Bezig met exporteren";
+"accessibility.assignAllCurrencies" = "Wijs alle valuta's toe";

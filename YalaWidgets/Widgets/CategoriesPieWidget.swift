@@ -100,7 +100,7 @@ struct CategoriesPieWidgetProvider: AppIntentTimelineProvider {
             categories = top12 + [
                 WidgetCategory(
                     id: "others",
-                    name: "Otros",
+                    name: String(localized: "widget.ui.others", bundle: .main),
                     iconName: "ellipsis.circle",
                     colorHex: "6B7280",
                     amount: othersAmount,

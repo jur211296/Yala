@@ -141,3 +141,6 @@
 "widget.control.voiceExpense.desc" = "Yalaに音声で入力";
 "widget.control.photoExpense" = "画像入力";
 "widget.control.photoExpense.desc" = "Yalaに画像で記録";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"widget.ui.others" = "その他";

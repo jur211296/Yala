@@ -134,7 +134,7 @@ struct BudgetsListView: View {
     // MARK: - Period Type Segmented Control
 
     private var periodTypeSegmentedControl: some View {
-        Picker("Period Type", selection: $selectedSegment) {
+        Picker(L10n.Budgets.periodTypeLabel, selection: $selectedSegment) {
             Text(NSLocalizedString("budgets.period.weekly", comment: "")).tag(0)
             Text(NSLocalizedString("budgets.period.monthly", comment: "")).tag(1)
             Text(NSLocalizedString("budgets.period.yearly", comment: "")).tag(2)

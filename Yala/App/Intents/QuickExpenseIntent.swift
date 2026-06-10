@@ -622,7 +622,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         if isOfflineFallback {
             dialogText = String(localized: "shortcut.siriNatural.success.offline \(firstNote)")
         } else if partialFailures > 0 {
-            dialogText = String(localized: "shortcut.siriNatural.success.partial \(uniqueDrafts.count) \(parsedTransactions.count)")
+            dialogText = L10n.Shortcut.successPartial(uniqueDrafts.count, parsedTransactions.count)
         } else if uniqueDrafts.count == 1 {
             dialogText = String(localized: "shortcut.siriNatural.success.single \(firstNote)")
         } else {

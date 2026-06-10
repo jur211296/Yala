@@ -141,3 +141,6 @@
 "widget.control.voiceExpense.desc" = "向 Yala 口述你的记录";
 "widget.control.photoExpense" = "图片记录";
 "widget.control.photoExpense.desc" = "在 Yala 中用图片记录";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"widget.ui.others" = "其他";

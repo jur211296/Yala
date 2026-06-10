@@ -68,7 +68,7 @@ struct UserDataResetView: View {
                                 .padding(DS.Spacing.lg)
                             }
                             .disabled(isProcessing)
-                            .accessibilityHint(isProcessing ? "Procesando" : "")
+                            .accessibilityHint(isProcessing ? L10n.Accessibility.processing : "")
                         }
                     }
                 }

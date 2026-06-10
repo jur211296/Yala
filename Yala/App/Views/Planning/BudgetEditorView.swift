@@ -403,7 +403,7 @@ struct BudgetEditorView: View {
                         // Custom threshold input
                         if showCustomThreshold {
                             HStack(spacing: DS.Spacing.sm) {
-                                TextField("1–100", text: $customThresholdText)
+                                TextField(L10n.Budgets.thresholdPlaceholder, text: $customThresholdText)
                                     .keyboardType(.numberPad)
                                     .textFieldStyle(.roundedBorder)
                                     .frame(width: 80)

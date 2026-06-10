@@ -81,7 +81,7 @@ struct PieChartVariationHeader: View {
                        appPreferences.showVariations,
                        let prevAmount = previousAmount {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-                            Text("vs")
+                            Text(L10n.Common.vs)
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.thSecondaryText)
                             AmountText(

@@ -458,7 +458,7 @@ struct CashFlowChartsSheet: View {
         HStack(spacing: DS.Chip.spacing) {
             Image(systemName: "sparkles")
                 .font(.system(size: 10, weight: .semibold))
-            Text("IA")
+            Text(L10n.CashFlowPlan.aiChipLabel)
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
         }

@@ -226,7 +226,7 @@ struct ImportCurrencyMappingSheet: View {
                 L10n.Import.importAction,
                 icon: "square.and.arrow.down",
                 isDisabled: !allCurrenciesAssigned,
-                disabledHint: !allCurrenciesAssigned ? "Asigna todas las divisas" : nil
+                disabledHint: !allCurrenciesAssigned ? L10n.Accessibility.assignAllCurrencies : nil
             ) {
                 onImport(currencyAccountMap)
             }

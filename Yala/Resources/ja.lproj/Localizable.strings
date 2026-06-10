@@ -4482,3 +4482,18 @@
 "whatsNew.v20.ai.description" = "AI を搭載したあなたの家計アシスタント。お金について質問したり、支出の記録を頼んだり、今月の分かりやすい分析を受け取れます。お金に詳しい友だちのように、メッセージひとつですぐそばに。";
 "whatsNew.v20.redesign.title" = "全面リニューアル";
 "whatsNew.v20.redesign.description" = "Yala を隅々まで一新しました。新しいウィジェット、各画面のより見やすいサマリー、そしてアプリ全体に iOS の新しい Liquid Glass デザインを採用。さらに多くの不具合を修正し、すべてがより快適になりました。";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"common.vs" = "vs";
+"transaction.exchangeRateShort %@" = "レート: %@";
+"cashFlowPlan.aiChipLabel" = "AI";
+"budgets.period.typeLabel" = "期間の種類";
+"budgets.alerts.thresholdPlaceholder" = "1–100";
+"accessibility.variationIncrease %@" = "増加 %@";
+"accessibility.variationDecrease %@" = "減少 %@";
+"accessibility.processing" = "処理中";
+"accessibility.removeTab %@" = "%@を削除";
+"accessibility.selectAtLeastOneColumn" = "少なくとも1つの列を選択してください";
+"accessibility.completeRequiredFilters" = "必須フィルターを設定してください";
+"accessibility.exportingHint" = "エクスポート中";
+"accessibility.assignAllCurrencies" = "すべての通貨を割り当ててください";

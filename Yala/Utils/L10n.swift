@@ -989,6 +989,7 @@ enum L10n {
         static var bannerBody: String { ls("cashFlowPlan.bannerBody", comment: "") }
         static var selectAll: String { ls("cashFlowPlan.selectAll", comment: "") }
         static var total: String { ls("cashFlowPlan.total", comment: "") }
+        static var aiChipLabel: String { ls("cashFlowPlan.aiChipLabel", comment: "AI chip toggle — IA/AI/KI per locale") }
         static var lineNameLabel: String { ls("cashFlowPlan.lineNameLabel", comment: "") }
         static var lineNameHint: String { ls("cashFlowPlan.lineNameHint", comment: "") }
 
@@ -2346,6 +2347,14 @@ enum L10n {
         static var newBudget: String { ls("accessibility.newBudget", comment: "") }
         static var newPayment: String { ls("accessibility.newPayment", comment: "") }
         static var importingHint: String { ls("accessibility.importingHint", comment: "") }
+        static func variationIncrease(_ value: String) -> String { String(format: ls("accessibility.variationIncrease %@", comment: ""), value) }
+        static func variationDecrease(_ value: String) -> String { String(format: ls("accessibility.variationDecrease %@", comment: ""), value) }
+        static var processing: String { ls("accessibility.processing", comment: "") }
+        static func removeTab(_ name: String) -> String { String(format: ls("accessibility.removeTab %@", comment: ""), name) }
+        static var selectAtLeastOneColumn: String { ls("accessibility.selectAtLeastOneColumn", comment: "") }
+        static var completeRequiredFilters: String { ls("accessibility.completeRequiredFilters", comment: "") }
+        static var exportingHint: String { ls("accessibility.exportingHint", comment: "") }
+        static var assignAllCurrencies: String { ls("accessibility.assignAllCurrencies", comment: "") }
         static var fillRequiredFields: String { ls("accessibility.fillRequiredFields", comment: "") }
         static var noTransactions: String { ls("accessibility.noTransactions", comment: "") }
         static var selectDraftsFirst: String { ls("accessibility.selectDraftsFirst", comment: "") }
@@ -2614,6 +2623,10 @@ enum L10n {
             ls("transaction.destinationAccount", comment: "")
         }
         static var account: String { ls("transaction.account", comment: "") }
+        /// Caption abreviado del tipo de cambio bajo el monto convertido ("TC: 3.7500")
+        static func exchangeRateShort(_ rate: String) -> String {
+            String(format: ls("transaction.exchangeRateShort %@", comment: ""), rate)
+        }
         static var exchangeRate: String {
             ls("transaction.exchangeRate", comment: "")
         }
@@ -3849,6 +3862,7 @@ enum L10n {
             ls("common.recalculatingConversions", comment: "")
         }
         static var next: String { ls("common.next", comment: "") }
+        static var vs: String { ls("common.vs", comment: "Separator between current and previous amount in chart comparisons") }
         static var moreOptions: String { ls("common.moreOptions", comment: "") }
         static var comingSoon: String { ls("common.comingSoon", comment: "") }
         static var all: String { ls("common.all", comment: "") }
@@ -4098,6 +4112,11 @@ enum L10n {
 
         /// Hint when budget alerts are globally disabled
         static var alertsGlobalDisabledHint: String { ls("budgets.alerts.globalDisabledHint", comment: "") }
+
+        /// Accessibility label for the period type segmented picker
+        static var periodTypeLabel: String { ls("budgets.period.typeLabel", comment: "") }
+        /// Placeholder for the custom alert threshold field (1–100)
+        static var thresholdPlaceholder: String { ls("budgets.alerts.thresholdPlaceholder", comment: "") }
     }
 
     // MARK: - Budget Detail
@@ -5792,6 +5811,13 @@ enum L10n {
     // MARK: - Shortcut Notifications
 
     enum Shortcut {
+        /// Dialog del intent Siri cuando algunos items no se entendieron.
+        /// La key lleva los placeholders en el CONTENIDO (`%1$lld de %2$lld`), no en el
+        /// nombre — por eso requiere `String(format:)` con `Int64` y no `String(localized:)`.
+        static func successPartial(_ recorded: Int, _ total: Int) -> String {
+            String(format: ls("shortcut.siriNatural.success.partial", comment: ""), Int64(recorded), Int64(total))
+        }
+
         enum Notification {
             static var title: String { ls("shortcut.notification.title", comment: "") }
             static var expense: String { ls("shortcut.notification.expense", comment: "") }

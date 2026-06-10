@@ -262,7 +262,7 @@ struct WelcomeHeroView: View {
                         DS.Haptic.selection()
                         jumpTo(idx)
                     }
-                    .accessibilityLabel("Card \(idx + 1) of \(cards.count)")
+                    .accessibilityLabel(L10n.Accessibility.pageIndicator(idx + 1, cards.count))
             }
         }
         .accessibilityElement(children: .combine)

@@ -170,7 +170,7 @@ struct ExportFiltersStepView: View {
                         Text(L10n.Common.next)
                     }
                     .disabled(!isValid)
-                    .accessibilityHint(!isValid ? "Completa los filtros requeridos" : "")
+                    .accessibilityHint(!isValid ? L10n.Accessibility.completeRequiredFilters : "")
                 }
             }
         }

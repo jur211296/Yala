@@ -152,7 +152,7 @@ struct TabBarConfigView: View {
                         .foregroundStyle(DS.Semantic.errorForeground)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Quitar \(tab.displayName)"))
+                .accessibilityLabel(L10n.Accessibility.removeTab(tab.displayName))
                 .accessibilityIdentifier("tabconfig_remove_\(tab.id)")
             }
         }

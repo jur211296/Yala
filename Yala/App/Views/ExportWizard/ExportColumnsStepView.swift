@@ -62,7 +62,7 @@ struct ExportColumnsStepView: View {
                     Text(L10n.Common.next)
                 }
                 .disabled(!isValid)
-                .accessibilityHint(!isValid ? "Selecciona al menos una columna" : "")
+                .accessibilityHint(!isValid ? L10n.Accessibility.selectAtLeastOneColumn : "")
             }
         }
     }

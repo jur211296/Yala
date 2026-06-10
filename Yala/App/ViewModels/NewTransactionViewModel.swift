@@ -865,7 +865,7 @@ final class NewTransactionViewModel {
         } else {
             // Fallback: create expense category if somehow missing
             category = Category(
-                name: "Otros",
+                name: L10n.Category.other,
                 colorHex: "#64748B",
                 isIncome: false
             )
@@ -929,7 +929,7 @@ final class NewTransactionViewModel {
         } else {
             // Fallback: create income category if somehow missing
             category = Category(
-                name: "Ingresos",
+                name: L10n.Category.incomeCategory,
                 colorHex: "#14B8A6",
                 isIncome: true
             )

@@ -417,7 +417,7 @@ struct TrendsTabView: View {
                                 && trendsViewModel.detailPeriod != .allTime,
                                let prevTotal = previousPeriodTotal {
                                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-                                    Text("vs")
+                                    Text(L10n.Common.vs)
                                         .font(DS.Typography.caption)
                                         .foregroundStyle(.thSecondaryText)
                                     AmountText(
@@ -539,7 +539,7 @@ struct TrendsTabView: View {
 
                             if let prevTotal = previousPeriodTotal {
                                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-                                    Text("vs")
+                                    Text(L10n.Common.vs)
                                         .font(DS.Typography.caption)
                                         .foregroundStyle(.thSecondaryText)
                                     AmountText(
@@ -929,7 +929,7 @@ struct TrendsTabView: View {
                     cashFlowCard(
                         summary: summary,
                         previousSummary: previousCashFlowSummary,
-                        title: "Total",
+                        title: L10n.CashFlowViewType.total,
                         currencyCode: defaultCurrencyCode
                     )
                 } else {

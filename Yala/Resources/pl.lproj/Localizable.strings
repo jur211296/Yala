@@ -4482,3 +4482,18 @@
 "whatsNew.v20.ai.description" = "Twój asystent finansowy ze sztuczną inteligencją. Zadawaj pytania o swoje pieniądze, poproś o zapisanie wydatków i otrzymuj przejrzyste analizy miesiąca. Jak znajomy, który zna się na finansach – w zasięgu jednej wiadomości.";
 "whatsNew.v20.redesign.title" = "Zupełnie nowy wygląd";
 "whatsNew.v20.redesign.description" = "Przeprojektowaliśmy Yala od góry do dołu: nowe widżety, czytelniejsze podsumowania w każdej sekcji i nowe wykończenie Liquid Glass z iOS w całej aplikacji. Naprawiliśmy też wiele błędów, aby wszystko działało płynniej.";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"common.vs" = "vs";
+"transaction.exchangeRateShort %@" = "Kurs: %@";
+"cashFlowPlan.aiChipLabel" = "AI";
+"budgets.period.typeLabel" = "Typ okresu";
+"budgets.alerts.thresholdPlaceholder" = "1–100";
+"accessibility.variationIncrease %@" = "Wzrost %@";
+"accessibility.variationDecrease %@" = "Spadek %@";
+"accessibility.processing" = "Przetwarzanie";
+"accessibility.removeTab %@" = "Usuń %@";
+"accessibility.selectAtLeastOneColumn" = "Wybierz co najmniej jedną kolumnę";
+"accessibility.completeRequiredFilters" = "Uzupełnij wymagane filtry";
+"accessibility.exportingHint" = "Trwa eksportowanie";
+"accessibility.assignAllCurrencies" = "Przypisz wszystkie waluty";

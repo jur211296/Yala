@@ -141,3 +141,6 @@
 "widget.control.voiceExpense.desc" = "Podyktuj wpis do Yala";
 "widget.control.photoExpense" = "Wpis z obrazu";
 "widget.control.photoExpense.desc" = "Zapisz obrazem w Yala";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"widget.ui.others" = "Inne";

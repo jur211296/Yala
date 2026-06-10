@@ -141,3 +141,6 @@
 "widget.control.voiceExpense.desc" = "Dictez votre saisie à Yala";
 "widget.control.photoExpense" = "Saisie par image";
 "widget.control.photoExpense.desc" = "Enregistrez avec une image dans Yala";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"widget.ui.others" = "Autres";

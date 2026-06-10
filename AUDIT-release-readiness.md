@@ -101,35 +101,38 @@ El gotcha `AmountText` (lee `@Environment(AppPreferences)`) dentro de `.annotati
 | 5 | ✅ `YalaTests/ChatSuggestionsLLMServiceTests.swift:143` | **RESUELTO (Tanda 2, 06-10, `36bb7f9c`)** — `cachedSuggestions`/`setCached` aceptan `defaults:` (default `.standard`); los 3 tests de cache usan aislado y `clearCacheKeys()` se eliminó. Nota: la suite **ya era** `.serialized` (el audit estaba desactualizado en eso) | — |
 | 6 | ✅ `YalaTests/ChatSuggestionsLLMServiceTests.swift:178` | **RESUELTO (Tanda 2, 06-10, `36bb7f9c`)** — la siembra corrupta va al mismo defaults aislado que lee el service | — |
 
-### L10n hardcoded — UI visible sin localizar (19 únicos)
+### L10n hardcoded — UI visible sin localizar (19 únicos) — ✅ RESUELTOS (Tanda 3, 2026-06-10)
 
-| # | Ubicación | String | Fix |
+13 keys nuevas × 16 locales (voseo es-AR, Sie de, vouvoiement fr, です/ます ja, 你 zh-Hans, tu pt-PT/você pt-BR) + 1 key del target widgets × 16 + reuso de 4 accessors existentes. Bloque `/* MARK: Release 2.0 — a11y & UI keys */` al final de cada `Localizable.strings`.
+
+| # | Ubicación | String | Resolución |
 |---|---|---|---|
-| 1 | `Yala/App/ViewModels/NewTransactionViewModel.swift:868` | Categoría `"Otros"` **persistida en SwiftData** en español | `L10n.Category.other` (accessor ya existe, `L10n.swift:2844`) |
-| 2 | `Yala/App/ViewModels/NewTransactionViewModel.swift:932` | Categoría `"Ingresos"` persistida | `L10n.Category.incomeCategory` (`L10n.swift:2843`) |
-| 3 | `YalaWidgets/Widgets/CategoriesPieWidget.swift:103` | `"Otros"` en widget de producción (reportado 2×, mismo fix) | `String(localized: "widget.ui.others", bundle: .main)` + locales del target |
-| 4 | `YalaWidgets/Widgets/SubcategoriesPieWidget.swift:103` | `"Otros"` ídem | Misma key `widget.ui.others` (no duplicar strings) |
-| 5 | `Yala/App/Views/Records/TransactionDetailSheet.swift:493` | `"TC: "` (tipo de cambio) visible en todos los locales | Key `Transaction.exchangeRateLabel` |
-| 6 | `Yala/App/Views/Reports/CashFlow/CashFlowChartsSheet.swift:466` | Chip `"IA"` — en en/de debería ser AI/KI | Key `CashFlowPlan.aiChipLabel` por locale |
-| 7 | `Yala/App/Views/Statistics/TrendsTabView.swift:932` | Título `"Total"` | `L10n.CashFlowViewType.total` (ya usado en displayName L115) |
-| 8 | `Yala/App/Views/Panel/PieChartVariationHeader.swift:84` | `Text("vs")` — patrón split en 4 vistas; ja localiza `%@と比較` | Key standalone `common.vs` o componente unificado |
-| 9 | `Yala/App/Views/Planning/BudgetsListView.swift:137` | `Picker("Period Type", ...)` (VoiceOver) | Key l10n como los items del mismo Picker |
-| 10 | `Yala/App/Views/Planning/BudgetEditorView.swift:406` | Placeholder `"1–100"` | Key `budget.threshold.rangePlaceholder` |
-| 11 | `Yala/App/Views/Onboarding/WelcomeHeroView.swift:265` | a11yLabel `"Card X of Y"` **en inglés** (VoiceOver lo lee al combinar) | Key posicional `%1$d/%2$d` × 16 locales |
-| 12 | `Yala/App/Views/Shared/VariationChip.swift:109` | a11yLabel `"Aumento"/"Disminución"` en español | Keys `L10n.Accessibility.variationIncrease/Decrease` con `%@` |
-| 13 | `Yala/App/Views/Settings/UserDataResetView.swift:71` | a11yHint `"Procesando"` | Key `L10n.Common.processing` × 16 locales |
-| 14 | `Yala/App/Views/Settings/TabBarConfigView.swift:155` | `String(localized: "Quitar \(tab.displayName)")` — interpolación **no resuelve** clave en tabla | Key con formato `L10n.Settings.tabBarConfigRemove(_:)` × 16 |
-| 15 | `Yala/App/Views/ExportWizard/ExportColumnsStepView.swift:65` | a11yHint `"Selecciona al menos una columna"` | Key `L10n.Export.columnHintInvalid` |
-| 16 | `Yala/App/Views/ExportWizard/ExportFiltersStepView.swift:173` | a11yHint `"Completa los filtros requeridos"` | Key `L10n.Export.filterHintInvalid` |
-| 17 | `Yala/App/Views/ExportWizard/ExportSummaryStepView.swift:190` | a11yHint `"Exportación en proceso"` | Key `L10n.Export.exportingHint` |
-| 18 | `Yala/App/Views/Import/ImportIntroSheet.swift:167` | `disabledHint: "Importación en proceso"` | Key + 16 locales vía `add-l10n-key.sh` |
-| 19 | `Yala/App/Views/Import/ImportCurrencyMappingSheet.swift:229` | `disabledHint: "Asigna todas las divisas"` | Key `L10n.Import.assignAllCurrenciesHint` |
+| 1 | ✅ `NewTransactionViewModel.swift:868` | Categoría `"Otros"` persistida | `L10n.Category.other` (accessor existente) |
+| 2 | ✅ `NewTransactionViewModel.swift:932` | Categoría `"Ingresos"` persistida | `L10n.Category.incomeCategory` (existente) |
+| 3 | ✅ `CategoriesPieWidget.swift:103` | `"Otros"` en widget | Key nueva `widget.ui.others` × 16 en el bundle del TARGET widgets (`String(localized:bundle:)`, patrón `widget.ui.categorias` del mismo archivo) |
+| 4 | ✅ `SubcategoriesPieWidget.swift:103` | `"Otros"` ídem | Misma key `widget.ui.others` compartida |
+| 5 | ✅ `TransactionDetailSheet.swift:493` | `"TC: "` | Key nueva `transaction.exchangeRateShort %@` ("Rate:"/"Kurs:"/"レート:"…) |
+| 6 | ✅ `CashFlowChartsSheet.swift:466` | Chip `"IA"` | Key nueva `cashFlowPlan.aiChipLabel` (AI en/ja/zh/nl/pl, KI de, IA es/fr/it/pt) |
+| 7 | ✅ `TrendsTabView.swift:932` | Título `"Total"` | `L10n.CashFlowViewType.total` (existente) |
+| 8 | ✅ `PieChartVariationHeader.swift:84` | `Text("vs")` | Key nueva `common.vs` — migradas las **4 instancias** del patrón (también `TrendsTabView:420/:542` y `CashFlowWidget:437`, listadas como bajos) |
+| 9 | ✅ `BudgetsListView.swift:137` | `Picker("Period Type")` | Key nueva `budgets.period.typeLabel` |
+| 10 | ✅ `BudgetEditorView.swift:406` | Placeholder `"1–100"` | Key nueva `budgets.alerts.thresholdPlaceholder` (valor universal ×16) |
+| 11 | ✅ `WelcomeHeroView.swift:265` | a11yLabel `"Card X of Y"` | Reuso `L10n.Accessibility.pageIndicator(_:_:)` existente ("Página %1$d de %2$d") — 0 keys |
+| 12 | ✅ `VariationChip.swift:109` | `"Aumento"/"Disminución"` | Keys nuevas `accessibility.variationIncrease/Decrease %@` |
+| 13 | ✅ `UserDataResetView.swift:71` | a11yHint `"Procesando"` | Key nueva `accessibility.processing` (namespace a11y, no Common) |
+| 14 | ✅ `TabBarConfigView.swift:155` | `String(localized: "Quitar \(...)")` roto | Key nueva `accessibility.removeTab %@` + accessor con `String(format:)` |
+| 15 | ✅ `ExportColumnsStepView.swift:65` | a11yHint columna | Key nueva `accessibility.selectAtLeastOneColumn` (voseo es-AR "Seleccioná") |
+| 16 | ✅ `ExportFiltersStepView.swift:173` | a11yHint filtros | Key nueva `accessibility.completeRequiredFilters` ("Completá" es-AR) |
+| 17 | ✅ `ExportSummaryStepView.swift:190` | a11yHint exportación | Key nueva `accessibility.exportingHint` (pt-PT "em curso") |
+| 18 | ✅ `ImportIntroSheet.swift:167` | `disabledHint` import | Reuso `L10n.Accessibility.importingHint` existente — 0 keys |
+| 19 | ✅ `ImportCurrencyMappingSheet.swift:229` | `disabledHint` divisas | Key nueva `accessibility.assignAllCurrencies` ("Asigná" es-AR, tu pt-PT "Atribui") |
 
-### L10n recursos/keys (1)
+### L10n recursos/keys (1) — ✅ RESUELTO (Tanda 3, 2026-06-10) + 1 hallazgo nuevo cerrado
 
-| # | Ubicación | Regla | Fix |
+| # | Ubicación | Regla | Resolución |
 |---|---|---|---|
-| 1 | `Yala/App/Intents/QuickExpenseIntent.swift:625` | `String(localized:)` construye la clave `shortcut.siriNatural.success.partial %lld %lld` que **no existe en ninguno de los 16 .strings** — el usuario ve la key cruda | Añadir la key con sufijo en los 16 locales (`%1$lld`/`%2$lld`, paridad con las keys hermanas `success.single %@` etc.) |
+| 1 | ✅ `Yala/App/Intents/QuickExpenseIntent.swift:625` | `String(localized:)` con interpolación busca `…partial %lld %lld` que no existe → key cruda | La key **sin sufijo** ya existía en los 16 locales (el audit estaba desactualizado) con `%1$lld/%2$lld` de contenido. Fix: accessor `L10n.Shortcut.successPartial(_:_:)` con `String(format:)` + `Int64` y callsite migrado. Las hermanas `single %@`/`multiple %lld`/`offline %@` resuelven por sufijo en el nombre — no se tocan |
+| 2 | ✅ **NUEVO (destapado en Tanda 3)** — `YalaWidgets/Resources/{es-ES,es-AR,en-GB,pt-PT}.lproj` | Las 4 variantes del **target widgets** existían "overrides-only" (0 keys) — el patrón marker-only FALSO documentado en CLAUDE.md: con la variante como idioma de sistema, los widgets renderizaban **las 116 keys crudas** | Materializadas las 116 keys desde el padre (es-419/en/pt-BR) en las 4 variantes + suite nueva `WidgetLocalizationParityTests` (2 tests vía `#filePath` — los recursos del widget no están en `Bundle.main` y `LocalizationParityTests` no los cubría) |
 
 ### Performance — hot paths (2) — ✅ RESUELTOS (Tanda 1, 2026-06-10)
 
@@ -426,9 +429,9 @@ Máximo impacto / mínimo riesgo — ordenados por ROI:
 1. ✅ **RESUELTO (Tanda 1)** — Botón "Restaurar compras" en `ProTrialOfferSheet.swift:103`.
 2. ✅ **RESUELTO (Tanda 1)** — Los SIGTRAP de `AmountText` en `.annotation{}` (`BudgetChartsView:311/442`, `CashFlowCellMiniChart:89`, `CashFlowChartsSheet:410`, `PeriodComparisonChartView:178/195`).
 3. ✅ **RESUELTO (Tanda 1)** — `dismissKeyboardOnTap()` en `CashFlowSetupView:331` y `CashFlowAddLineSheet:586`.
-4. **`"Otros"`/`"Ingresos"` → L10n** en `NewTransactionViewModel:868/932` — 2 líneas; los accessors ya existen y evita persistir español en SwiftData de usuarios no-ES.
-5. **Key `widget.ui.others`** para los 2 pie widgets (`CategoriesPieWidget:103`, `SubcategoriesPieWidget:103`) — 1 key compartida.
-6. **Key `shortcut.siriNatural.success.partial %lld %lld`** × 16 locales vía `qa/scripts/add-l10n-key.sh` — la key actual nunca resuelve y el usuario ve la key cruda (`QuickExpenseIntent:625`).
+4. ✅ **RESUELTO (Tanda 3)** — `"Otros"`/`"Ingresos"` → L10n en `NewTransactionViewModel:868/932`.
+5. ✅ **RESUELTO (Tanda 3)** — Key `widget.ui.others` para los 2 pie widgets.
+6. ✅ **RESUELTO (Tanda 3)** — Siri `success.partial` vía accessor `L10n.Shortcut.successPartial` (la key ya existía ×16; lo roto era el callsite interpolado).
 7. ✅ **RESUELTO (Tanda 1)** — `UIHelpers.swift:317` NumberFormatter → `static let`.
 8. ✅ **RESUELTO (Tanda 1)** — `CategoryImportHelper.swift:48` `fetchLimit = 1`.
 9. **`ContentView.swift:1215` `try?` → do/catch** — corta el loop silencioso e infinito de `.presentDowngradeResolution`.

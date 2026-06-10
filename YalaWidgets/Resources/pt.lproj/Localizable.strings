@@ -141,3 +141,6 @@
 "widget.control.voiceExpense.desc" = "Dite seu registro para o Yala";
 "widget.control.photoExpense" = "Registro por imagem";
 "widget.control.photoExpense.desc" = "Registre com uma imagem no Yala";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"widget.ui.others" = "Outros";

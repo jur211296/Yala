@@ -141,3 +141,6 @@
 "widget.control.voiceExpense.desc" = "Dicteer je boeking aan Yala";
 "widget.control.photoExpense" = "Beeldinvoer";
 "widget.control.photoExpense.desc" = "Boek met een afbeelding in Yala";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"widget.ui.others" = "Overige";
