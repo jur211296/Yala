@@ -41,14 +41,14 @@ final class ChatSuggestionsLLMService {
         ChatSuggestionsConstants.cacheKeyPrefix + DayKeyFormatter.string(from: date)
     }
 
-    nonisolated static func cachedSuggestions(for date: Date) -> [ChatSuggestion]? {
-        guard let data = UserDefaults.standard.data(forKey: cacheKey(for: date)) else { return nil }
+    nonisolated static func cachedSuggestions(for date: Date, defaults: UserDefaults = .standard) -> [ChatSuggestion]? {
+        guard let data = defaults.data(forKey: cacheKey(for: date)) else { return nil }
         return try? JSONDecoder().decode([ChatSuggestion].self, from: data)
     }
 
-    nonisolated static func setCached(_ suggestions: [ChatSuggestion], for date: Date) {
+    nonisolated static func setCached(_ suggestions: [ChatSuggestion], for date: Date, defaults: UserDefaults = .standard) {
         guard let data = try? JSONEncoder().encode(suggestions) else { return }
-        UserDefaults.standard.set(data, forKey: cacheKey(for: date))
+        defaults.set(data, forKey: cacheKey(for: date))
     }
 
     // MARK: - Public API

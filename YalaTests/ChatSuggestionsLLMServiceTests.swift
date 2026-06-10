@@ -136,48 +136,37 @@ struct ChatSuggestionsLLMServiceTests {
         }
     }
 
-    // MARK: - Cache
-
-    /// Helper para limpiar cache antes/después de cada test.
-    private func clearCacheKeys() {
-        let defaults = UserDefaults.standard
-        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("chat_suggestions_") {
-            defaults.removeObject(forKey: key)
-        }
-    }
+    // MARK: - Cache (suite aislada por test — nace vacía, sin limpieza manual)
 
     @Test func cacheHit_returnsCachedSuggestions() throws {
-        clearCacheKeys()
-        defer { clearCacheKeys() }
+        let defaults = makeIsolatedDefaults()
 
         let suggestions = [
             ChatSuggestion(text: "uno", icon: "chart.pie", type: .general),
             ChatSuggestion(text: "dos", icon: "chart.bar", type: .general)
         ]
-        ChatSuggestionsLLMService.setCached(suggestions, for: Date.now)
+        ChatSuggestionsLLMService.setCached(suggestions, for: Date.now, defaults: defaults)
 
-        let cached = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now)
+        let cached = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now, defaults: defaults)
         #expect(cached?.count == 2)
         #expect(cached?[0].text == "uno")
     }
 
     @Test func cacheMissOrCorrupted_returnsNil() {
-        clearCacheKeys()
-        defer { clearCacheKeys() }
+        let defaults = makeIsolatedDefaults()
 
-        let result = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now)
+        let result = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now, defaults: defaults)
         #expect(result == nil)
     }
 
     @Test func cacheCorruptedData_returnsNil() {
-        clearCacheKeys()
-        defer { clearCacheKeys() }
+        let defaults = makeIsolatedDefaults()
 
-        // Sembrar data corrupta
+        // Sembrar data corrupta en el MISMO defaults aislado que lee el service
         let key = "chat_suggestions_" + DayKeyFormatter.string(from: Date.now)
-        UserDefaults.standard.set(Data([0xFF, 0x00, 0xAA]), forKey: key)
+        defaults.set(Data([0xFF, 0x00, 0xAA]), forKey: key)
 
-        let result = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now)
+        let result = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now, defaults: defaults)
         #expect(result == nil)
     }
 }

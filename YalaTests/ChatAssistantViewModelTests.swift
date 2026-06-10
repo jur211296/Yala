@@ -90,9 +90,7 @@ struct ChatAssistantViewModelTests {
     }
 
     @MainActor @Test func persistedSession_rehydratesAcrossInstances() throws {
-        clearChatSessionKeys()
-        defer { clearChatSessionKeys() }
-
+        let defaults = makeIsolatedDefaults()
         let context = try makeTestContext()
 
         // Construir y persistir manualmente un ChatPersistedSession del día actual
@@ -103,12 +101,12 @@ struct ChatAssistantViewModelTests {
         let blob = ChatPersistedSession(messages: messages, allTurns: [])
         let data = try JSONEncoder().encode(blob)
         let key = "chat_session_" + DayKeyFormatter.string(from: Date.now)
-        UserDefaults.standard.set(data, forKey: key)
+        defaults.set(data, forKey: key)
 
         // Nueva instancia del VM debe rehidratar la sesión.
         // `autoLoadSuggestions: false` evita el `Task { loadSuggestions }` que sobrevive
         // al test y crashea durante cleanup.
-        let vm = ChatAssistantViewModel()
+        let vm = ChatAssistantViewModel(defaults: defaults)
         vm.setContext(context, autoLoadSuggestions: false)
 
         #expect(vm.messages.count == 2)
@@ -144,19 +142,17 @@ struct ChatAssistantViewModelTests {
     }
 
     @MainActor @Test func clearPersistedSession_removesUserDefaultsKey() throws {
-        clearChatSessionKeys()
-        defer { clearChatSessionKeys() }
-
+        let defaults = makeIsolatedDefaults()
         let key = "chat_session_" + DayKeyFormatter.string(from: Date.now)
 
         // Sembrar data y verificar que existe
-        UserDefaults.standard.set(Data([0x01]), forKey: key)
-        #expect(UserDefaults.standard.data(forKey: key) != nil)
+        defaults.set(Data([0x01]), forKey: key)
+        #expect(defaults.data(forKey: key) != nil)
 
-        let vm = ChatAssistantViewModel()
+        let vm = ChatAssistantViewModel(defaults: defaults)
         vm.clearPersistedSession()
 
-        #expect(UserDefaults.standard.data(forKey: key) == nil)
+        #expect(defaults.data(forKey: key) == nil)
     }
 
     // MARK: - Suggestions
@@ -268,9 +264,7 @@ struct ChatAssistantViewModelTests {
     }
 
     @MainActor @Test func persistedSession_stripsLegacyToolPayload() throws {
-        clearChatSessionKeys()
-        defer { clearChatSessionKeys() }
-
+        let defaults = makeIsolatedDefaults()
         let context = try makeTestContext()
 
         // Persist blob with legacy QAPair carrying toolName + toolResultJSON
@@ -288,9 +282,9 @@ struct ChatAssistantViewModelTests {
         let blob = ChatPersistedSession(messages: messages, allTurns: [legacyTurn])
         let data = try JSONEncoder().encode(blob)
         let key = "chat_session_" + DayKeyFormatter.string(from: Date.now)
-        UserDefaults.standard.set(data, forKey: key)
+        defaults.set(data, forKey: key)
 
-        let vm = ChatAssistantViewModel()
+        let vm = ChatAssistantViewModel(defaults: defaults)
         vm.setContext(context, autoLoadSuggestions: false)
 
         // Turn rehidratado debería tener toolPayload nil tras el refactor context-rich

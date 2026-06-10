@@ -44,6 +44,13 @@ final class ChatAssistantViewModel {
 
     private var modelContext: ModelContext?
     private let service = ChatAssistantService.shared
+    /// Inyectable para tests (suite aislada); producción usa `.standard`.
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        self.contextHintDismissed = defaults.bool(forKey: "hasSeenChatContextHint")
+    }
 
     // MARK: - Persistence (day-calendar `chat_session_<YYYY-MM-DD>`)
 
@@ -225,7 +232,7 @@ final class ChatAssistantViewModel {
 
     // MARK: - Context Hint (one-time, after first response)
 
-    private var contextHintDismissed: Bool = UserDefaults.standard.bool(forKey: "hasSeenChatContextHint")
+    private var contextHintDismissed: Bool
 
     var showContextHint: Bool {
         !contextHintDismissed && messages.contains(where: { $0.role == .assistant })
@@ -233,7 +240,7 @@ final class ChatAssistantViewModel {
 
     func dismissContextHint() {
         contextHintDismissed = true
-        UserDefaults.standard.set(true, forKey: "hasSeenChatContextHint")
+        defaults.set(true, forKey: "hasSeenChatContextHint")
     }
 
     // MARK: - Limits
@@ -256,7 +263,6 @@ final class ChatAssistantViewModel {
     /// Llamado desde `onDisappear` y como autosave defensivo tras cada respuesta exitosa.
     func persistSession() {
         let key = Self.sessionKey(for: Date.now)
-        let defaults = UserDefaults.standard
 
         guard !messages.isEmpty else {
             defaults.removeObject(forKey: key)
@@ -276,7 +282,6 @@ final class ChatAssistantViewModel {
 
     /// Hidrata sesión del día actual si existe; limpia claves de días anteriores.
     private func loadPersistedSession() {
-        let defaults = UserDefaults.standard
         let todayKey = Self.sessionKey(for: Date.now)
 
         // Cleanup: borra todas las claves chat_session_* que NO sean del día actual
@@ -361,7 +366,7 @@ final class ChatAssistantViewModel {
 
     /// Borra la sesión del día actual de UserDefaults.
     func clearPersistedSession() {
-        UserDefaults.standard.removeObject(forKey: Self.sessionKey(for: Date.now))
+        defaults.removeObject(forKey: Self.sessionKey(for: Date.now))
     }
 
     // MARK: - Voice Input (Whisper)
