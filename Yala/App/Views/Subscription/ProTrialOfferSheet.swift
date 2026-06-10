@@ -108,6 +108,14 @@ struct ProTrialOfferSheet: View {
                             .foregroundStyle(.thSecondaryText)
                     }
 
+                    Button {
+                        Task { await store.restorePurchases() }
+                    } label: {
+                        Text(L10n.Subscription.restore)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.thPrimaryText)
+                    }
+
                     VStack(spacing: DS.Spacing.xs) {
                         Text(L10n.Subscription.legalFooter)
                             .font(DS.Typography.caption)
