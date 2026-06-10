@@ -97,6 +97,7 @@ struct CashFlowSetupView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.sm)
                 .yalaSafeBottomPadding()
+                .dismissKeyboardOnTap()
             }
             .scrollDisabled(showTour)
             .onAppear { setupScrollProxy = scrollProxy }

@@ -296,6 +296,13 @@ extension Color {
 /// - `appPreferences.X(...)` in `@MainActor` (Views/VMs) — reactive via Observation.
 /// - `YalaFormatterStatic.X(...)` outside `@MainActor` (AppIntents, background) — non-reactive.
 struct YalaFormatter {
+    private static let compactTableFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        return formatter
+    }()
+
     static func compactCurrency(value: Double) -> String {
         value.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)))
     }
@@ -314,10 +321,7 @@ struct YalaFormatter {
                 : String(format: "%@%.1fk", sign, k)
             return formatted
         }
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        let formattedNumber = formatter.string(from: NSNumber(value: absValue)) ?? "0"
+        let formattedNumber = compactTableFormatter.string(from: NSNumber(value: absValue)) ?? "0"
         return "\(sign)\(formattedNumber)"
     }
 

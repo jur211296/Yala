@@ -503,6 +503,7 @@ struct CashFlowAddFromScheduledView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xl)
                 .yalaSafeBottomPadding()
+                .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
         }
