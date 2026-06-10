@@ -106,6 +106,7 @@ final class TransactionItem {
 
     /// Recalculates exchangeRate, amountInPreferredCurrency, and preferredCurrencyCode
     /// based on the transaction's current amount and currencyCode.
+    @MainActor
     func recalculatePreferredCurrency(context: ModelContext) {
         let preferredCode = CurrencyDefaults.currentPreferred
         let amountInPreferred = CurrencyConverter.shared.convert(

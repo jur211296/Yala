@@ -132,12 +132,18 @@ final class Budget {
     ) -> (icon: String, color: String) {
         if let ids = budget.resolvedSubcategoryIDs(scheduleBackfill: true), !ids.isEmpty {
             let descriptor = FetchDescriptor<Subcategory>(predicate: #Predicate { ids.contains($0.shortcutID) })
-            let subs = (try? context.fetch(descriptor)) ?? []
-            if !subs.isEmpty {
-                return resolveDisplayProperties(from: subs)
+            do {
+                let subs = try context.fetch(descriptor)
+                if !subs.isEmpty {
+                    return resolveDisplayProperties(from: subs)
+                }
+            } catch {
+                #if DEBUG
+                print("Budget: fetch de subcategorías para display falló: \(error)")
+                #endif
             }
         }
-        // Fallback to M2M (legacy path or no filter)
+        // Fallback to M2M (legacy path, no filter, or failed fetch)
         return resolveDisplayProperties(from: budget.subcategories ?? [])
     }
 

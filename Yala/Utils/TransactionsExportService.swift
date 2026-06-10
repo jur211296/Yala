@@ -87,6 +87,7 @@ struct TransactionsExportService {
     ///   - `TransactionsExportError.invalidCustomDateRange` si el rango personalizado es inválido.
     ///   - `TransactionsExportError.noTransactionsToExport` si no hay datos que exportar.
     ///   - `TransactionsExportError.fileWriteFailed` si ocurre un error al escribir el archivo.
+    @MainActor
     static func exportToCSV(
         using filters: ExportFilters,
         columns: ExportColumns,
@@ -111,7 +112,16 @@ struct TransactionsExportService {
         let fetchedTransactions = try modelContext.fetch(fetchDescriptor)
 
         // Tag catalog para resolver UUIDs del CSV mirror → nombres en filtros y rows.
-        let allTags = (try? modelContext.fetch(FetchDescriptor<Tag>())) ?? []
+        // Un fetch fallido degrada a export sin nombres de tags (no aborta el export).
+        let allTags: [Tag]
+        do {
+            allTags = try modelContext.fetch(FetchDescriptor<Tag>())
+        } catch {
+            #if DEBUG
+            print("TransactionsExportService: fetch de tags falló: \(error)")
+            #endif
+            allTags = []
+        }
         let tagCatalog = Tag.byIDLookup(allTags)
 
         // 2) Aplicamos el resto de filtros en memoria (cuentas, categorías, montos, etc.).
@@ -156,6 +166,7 @@ struct TransactionsExportService {
     ///   - columns: Conjunto de columnas activas y su orden.
     ///   - modelContext: Contexto de SwiftData desde el que se leerán las transacciones.
     /// - Returns: `TransactionsExportResult` con la URL del archivo y el conteo de filas.
+    @MainActor
     static func export(
         format: ExportFormat,
         using filters: ExportFilters,
@@ -180,7 +191,16 @@ struct TransactionsExportService {
         let fetchedTransactions = try modelContext.fetch(fetchDescriptor)
 
         // Tag catalog para resolver UUIDs del CSV mirror → nombres en filtros y rows.
-        let allTags = (try? modelContext.fetch(FetchDescriptor<Tag>())) ?? []
+        // Un fetch fallido degrada a export sin nombres de tags (no aborta el export).
+        let allTags: [Tag]
+        do {
+            allTags = try modelContext.fetch(FetchDescriptor<Tag>())
+        } catch {
+            #if DEBUG
+            print("TransactionsExportService: fetch de tags falló: \(error)")
+            #endif
+            allTags = []
+        }
         let tagCatalog = Tag.byIDLookup(allTags)
 
         // 2) Aplicamos el resto de filtros en memoria.
@@ -251,6 +271,7 @@ struct TransactionsExportService {
     /// - Monto
     /// - Nota
     /// - Etiquetas
+    @MainActor
     static func applyInMemoryFilters(
         _ transactions: [TransactionItem],
         filters: ExportFilters,
@@ -512,6 +533,7 @@ struct TransactionsExportService {
     }
 
     /// Genera headers y filas de datos para exportación (usado por XLSX).
+    @MainActor
     static func makeExportData(
         transactions: [TransactionItem],
         columns: ExportColumns,

@@ -33,6 +33,7 @@ protocol CurrencyConverting {
 /// Central currency converter that uses stored exchange rates.
 /// All conversions in the app should go through this class.
 /// Supports @Environment injection in SwiftUI views.
+@MainActor
 @Observable
 final class CurrencyConverter: CurrencyConverting {
 

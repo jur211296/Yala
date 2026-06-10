@@ -110,7 +110,8 @@ struct WeekdaySpendingCalculator {
         for _ in 0..<remainder {
             let weekday = calendar.component(.weekday, from: current)
             occurrences[weekday, default: 0] += 1
-            current = calendar.date(byAdding: .day, value: 1, to: current)!
+            guard let next = calendar.date(byAdding: .day, value: 1, to: current) else { break }
+            current = next
         }
 
         return occurrences
