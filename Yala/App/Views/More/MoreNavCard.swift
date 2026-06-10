@@ -15,6 +15,7 @@ struct MoreNavCard: View {
     let title: String
     let subtitle: String
     let identifier: String
+    var badge: String? = nil
     let action: () -> Void
 
     var body: some View {
@@ -31,11 +32,24 @@ struct MoreNavCard: View {
                 }
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(title)
-                        .font(DS.Typography.subheadlineEmphasized)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(title)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+
+                        if let badge {
+                            Text(badge)
+                                .font(DS.Typography.captionSmall)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(Color.essentialNeed)
+                                .padding(.horizontal, DS.Spacing.xs)
+                                .padding(.vertical, DS.Spacing.xxs)
+                                .background(Capsule().fill(Color.essentialNeed.opacity(0.15)))
+                                .fixedSize()
+                        }
+                    }
 
                     Text(subtitle)
                         .font(DS.Typography.caption)

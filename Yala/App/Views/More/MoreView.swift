@@ -169,6 +169,7 @@ struct MoreView: View {
                         title: item.title,
                         subtitle: item.subtitle,
                         identifier: "more_card_\(item.id)",
+                        badge: item.badge,
                         action: item.action
                     )
                 }
@@ -213,7 +214,7 @@ struct MoreView: View {
                 NavItem(id: "records", icon: ConfigurableTab.records.iconName, title: ConfigurableTab.records.displayName, subtitle: L10n.More.Subtitle.records) {
                     RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
                 },
-                NavItem(id: "groups", icon: ConfigurableTab.groups.iconName, title: ConfigurableTab.groups.displayName, subtitle: L10n.More.Subtitle.groups) {
+                NavItem(id: "groups", icon: ConfigurableTab.groups.iconName, title: ConfigurableTab.groups.displayName, subtitle: L10n.More.Subtitle.groups, badge: "Beta") {
                     RouterEntryGate.shared.submit(.navigate(.groups))
                 },
                 NavItem(id: "profile", icon: "person.crop.circle.fill", title: L10n.Profile.title, subtitle: L10n.More.Subtitle.profile) {
@@ -273,5 +274,6 @@ private struct NavItem: Identifiable {
     let icon: String
     let title: String
     let subtitle: String
+    var badge: String? = nil
     let action: () -> Void
 }
