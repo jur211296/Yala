@@ -264,7 +264,7 @@ struct RecordsTabView: View {
                                 isSelected: viewModel.selectedRecordIDs.contains(
                                     record.persistentModelID),
                                 onTap: {
-                                    viewModel.editRecord(record)
+                                    viewModel.showRecordDetail(record)
                                 },
                                 onToggleSelection: {
                                     viewModel.toggleSelection(record.persistentModelID)

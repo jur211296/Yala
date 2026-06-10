@@ -764,6 +764,15 @@ private struct DetailContainerSheets: ViewModifier {
                         }
                 }
             }
+            .sheet(isPresented: $recordsViewModel.showTransactionDetail) {
+                if let transaction = recordsViewModel.editingTransaction {
+                    TransactionDetailSheet(transaction: transaction)
+                        .onDisappear {
+                            recordsViewModel.editingTransaction = nil
+                            reloadAndRecalculate()
+                        }
+                }
+            }
             .sheet(isPresented: $trendsViewModel.showFiltersSheet) {
                 RecordsFiltersView(recordsViewModel: recordsViewModel)
                     .onDisappear { recalculateData() }

@@ -28,8 +28,8 @@
       "none"
     ],
     "counts": {
-      "total": 93,
-      "deterministic": 39,
+      "total": 94,
+      "deterministic": 40,
       "agentic": 28,
       "manual": 26,
       "deterministicSinXCUITest": 0
@@ -816,6 +816,20 @@
       "lastVerified": "2026-06-01"
     },
     {
+      "area": "records-transaction-detail",
+      "codeGlobs": [
+        "Yala/App/Views/Records/TransactionDetailSheet.swift",
+        "Yala/App/Logic/TransactionDetailSheetLogic.swift"
+      ],
+      "scenarioIDs": [
+        "F-TX-01"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/RecordsDetailSheetUITests",
+      "owner": "",
+      "lastVerified": "2026-06-09"
+    },
+    {
       "area": "transactions-core-crud",
       "codeGlobs": [
         "Yala/App/Views/Transactions/NewTransactionView.swift",
@@ -1159,7 +1173,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-09"
     },
     {
       "area": "themes-system-9-themes",

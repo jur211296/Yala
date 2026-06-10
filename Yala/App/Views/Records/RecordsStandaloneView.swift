@@ -456,6 +456,15 @@ private struct RecordsStandaloneSheets: ViewModifier {
                         }
                 }
             }
+            .sheet(isPresented: $recordsViewModel.showTransactionDetail) {
+                if let transaction = recordsViewModel.editingTransaction {
+                    TransactionDetailSheet(transaction: transaction)
+                        .onDisappear {
+                            recordsViewModel.editingTransaction = nil
+                            reloadAndRecalculate()
+                        }
+                }
+            }
             .confirmationDialog(
                 L10n.Records.deleteConfirmTitle(recordsViewModel.selectedRecordIDs.count),
                 isPresented: $showDeleteConfirmation,

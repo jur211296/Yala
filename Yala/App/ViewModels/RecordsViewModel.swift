@@ -112,6 +112,7 @@ final class RecordsViewModel: Filterable {
     var showFiltersSheet: Bool = false
     var showNewTransaction: Bool = false
     var showEditTransaction: Bool = false
+    var showTransactionDetail: Bool = false
     var editingTransaction: TransactionItem?
 
     /// Mensaje de error surfaceado por `BulkEditSheet` cuando una operación bulk rechaza
@@ -391,10 +392,11 @@ final class RecordsViewModel: Filterable {
 
     // MARK: - Edit Actions
 
-    /// Prepare to edit a single record
-    func editRecord(_ record: TransactionItem) {
+    /// Tap de una row: abre el detalle read-only (TransactionDetailSheet);
+    /// la edición se alcanza desde ahí (botón Editar o drag a large).
+    func showRecordDetail(_ record: TransactionItem) {
         editingTransaction = record
-        showEditTransaction = true
+        showTransactionDetail = true
     }
 
     /// Handle edit action for selected records
