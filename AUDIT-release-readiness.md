@@ -2,9 +2,11 @@
 
 **Fecha:** 2026-06-10 · **Branch:** `2.0` · Auditoría completa: build + tests + 14 dimensiones de código/QA/higiene.
 
-## Veredicto: LISTO PARA RELEASE
+## Veredicto: LISTO PARA RELEASE — gateado SOLO al checklist físico
 
-Sin bloqueantes. Build limpio, 2766 tests verdes y los 31 fallos son crashes del bucket R8 conocido y documentado (no aserciones reales). Quedan **56 hallazgos de severidad alta** (ninguno bloqueante por sí solo) y una deuda significativa de device-QA pre-release listada en [Pendientes de QA](#pendientes-de-qa-pre-release).
+Sin bloqueantes de código. Build limpio, 2766 tests verdes y los 31 fallos son crashes del bucket R8 conocido y documentado (no aserciones reales). Quedan **56 hallazgos de severidad alta** (ninguno bloqueante por sí solo) y una deuda significativa de device-QA pre-release listada en [Pendientes de QA](#pendientes-de-qa-pre-release).
+
+**Cierre 2026-06-10 (sesión post-Tandas, commits `48da824e`…`cd2dcf3a`):** los 51 altos de código quedaron resueltos en las Tandas 1-3; los residuales accionables (dedupe l10n, glob, fallback Usuario, TODO, InfoPlist en-GB) cerrados; D-C (OpenAI/Privacy) documentada como diferido consciente en DECISIONS.md; 5 áreas del coverage-index re-verificadas en simulador. **Lo único que separa 2.0 del go es el checklist de device físico `$VAULT/planning/RELEASE-QA-2.0.md`** — gate G1-G5 (SUB-DEDUP, MIG-V2-FLASH cross-device, bridge personal, iCloud multi-device, Routing F12) que solo el owner puede ejecutar con 2 devices y data real.
 
 **Total: 296 hallazgos** (295 únicos — `YalaWidgets/Widgets/CategoriesPieWidget.swift:103` fue reportado por 2 especialistas con el mismo fix) → 0 bloqueantes · 56 altos · 143 medios · 97 bajos.
 
@@ -289,18 +291,18 @@ Los 8 medios de `qa-coverage` y los 16 de `release-hygiene` con regla "device QA
 | `YalaTests/SetupChecklistManagerTests.swift:168` | Key `pro.upsell.sessionCount` escrita en `.standard` sin cleanup | Confinaría con defaults aislado |
 | `YalaTests/TrendGroupingTests.swift:90` | `CurrencyDefaults.currentPreferred` lee `.standard` | Aislar/inyectar o rediseñar el assert sin leer `.standard` |
 
-### l10n-hardcoded (1)
+### l10n-hardcoded (1) — ✅ RESUELTO (cierre, 2026-06-10, `6fc6959f`)
 
 | Ubicación | Regla | Fix |
 |---|---|---|
-| `Yala/App/Views/Groups/GroupSettingsView.swift:900` | Fallback `"Usuario"` hardcodeado | `L10n.Profile.defaultName` (patrón GroupDetailViewModel:249) |
+| ✅ `Yala/App/Views/Groups/GroupSettingsView.swift:900` | **RESUELTO** — `L10n.Profile.defaultName` (patrón GroupDetailViewModel). El grep "todas las instancias" cazó un 2º sitio idéntico: `GroupService.currentUserDisplayName()` — también migrado. Los `"Usuario"` restantes son sentinels de comparación (AppPreferences/OnboardingPrefillResolver/iCloudSyncService) — NO localizables | — |
 
-### l10n recursos/keys (2)
+### l10n recursos/keys (2) — ✅ RESUELTOS (cierre, 2026-06-10, `48da824e`)
 
 | Ubicación | Regla | Fix |
 |---|---|---|
-| `Yala/Resources/es-419.lproj/Localizable.strings:459` | 31 keys duplicadas en los 13 locales base; **11 con valores en conflicto** (gana la última: `settings.theme` "Tema" vs "Temas", `widget.size`, `common.none`, `subcategory.balanceAdjustment` con 8 callsites, etc.) | Dedupe consciente del bloque legacy (~L455-1700) eligiendo valor correcto por key; variantes es-ES/en-GB/pt-PT ya limpias |
-| `Yala/Resources/es-419.lproj/Localizable.strings:768` | `widget.size` duplicada con placeholder divergente ("Tamaño" vs "Tamaño: %@") en 13 locales | Eliminar una declaración; borrar accessors muertos `L10n.Widget.size/preferences` (`Yala/Utils/L10n.swift:3888-3890`) |
+| ✅ `es-419.lproj` (bloque legacy) | **RESUELTO** — dedupe de las 31 keys duplicadas en los 13 locales (12 base ×31 + es-AR ×1). Las 11 en conflicto decididas por key verificando callsites: `subcategory.balanceAdjustment` conserva el valor runtime (matching por nombre persistido en 8 callsites — cambiarlo duplicaría subcats); 4 overrides por error objetivo (`common.none` → "Ninguna" por género del callsite, fr `common.select` recupera el acento, `empty.noSubcategories` forma larga canónica en en/nl/pl/zh-Hans, de `deleteAllData` → "Alle meine Daten löschen" porque la du-form violaba "Sie de"); el resto conserva el valor visible hoy (última). Nuevo test `noDuplicateKeys_inAnyLocale` (lee FUENTE vía `#filePath` — `NSDictionary` colapsa dups; cubre app + widget target) previene regresión | — |
+| ✅ `widget.size`/`widget.preferences` | **RESUELTO** — ambas keys eliminadas de los 16 locales + accessors muertos `L10n.Widget.size/preferences` borrados (0 callsites verificado incl. YalaTests/YalaUITests) | — |
 
 ### gotchas (1) — ✅ RESUELTO (Tanda 1, 2026-06-10)
 
@@ -324,12 +326,12 @@ Los 8 medios de `qa-coverage` y los 16 de `release-hygiene` con regla "device QA
 | `YalaTests/GroupNotificationServiceTests.swift:124` | `AppRouter.shared._testReset()` sin `.serialized` | `@Suite(.serialized)` |
 | `YalaTests/GroupExpenseViewModelTests.swift:246` | `_testResetContext()` sin `defer { restore }` — context queda nil para suites externas | Capturar prev + `defer` restore |
 
-### privacy / Apple compliance (2)
+### privacy / Apple compliance (2) — 📋 DECISIÓN D-C DOCUMENTADA (2026-06-10, DECISIONS.md — diferido consciente a post-2.0)
 
-| Ubicación | Regla | Fix |
+| Ubicación | Regla | Resolución |
 |---|---|---|
-| `Yala/Resources/PrivacyInfo.xcprivacy:9` | `NSPrivacyCollectedDataTypes` solo declara Audio/Fotos; el chat IA envía **contexto financiero** (montos, notas, tags) a OpenAI | Añadir `FinancialInfo` (y/u `OtherUserContent`), Linked=false, Tracking=false, purpose AppFunctionality — alineado con la nutrition label de ASC |
-| `Yala/Resources/Info.plist:20` | `OPENAI_API_KEY` resuelta queda **extraíble del IPA** (`plutil`) | Proxy backend / gateway con App Attest y sacar keys del plist; mientras tanto, rate-limit y cuota en el dashboard de OpenAI |
+| 📋 `Yala/Resources/PrivacyInfo.xcprivacy:9` | `NSPrivacyCollectedDataTypes` solo declara Audio/Fotos; el chat IA envía contexto financiero a OpenAI | **Diferido consciente** (D-C en `$VAULT/planning/DECISIONS.md` [2026-06-10]): técnicamente conforme; el consent in-app (rechazo Apple #2) cubre el disclosure. `FinancialInfo` se añadirá junto con el épico del proxy |
+| 📋 `Yala/Resources/Info.plist:20` | `OPENAI_API_KEY` extraíble del IPA | **Diferido consciente** (misma decisión): mitigación real = proxy backend con App Attest (épico post-2.0); interina = rate-limit + cuota en dashboard OpenAI, key rotable sin release |
 
 ### dead-code (1)
 
@@ -337,11 +339,11 @@ Los 8 medios de `qa-coverage` y los 16 de `release-hygiene` con regla "device QA
 |---|---|---|
 | `Yala/App/Views/Transactions/Components/TransactionAmountInputView.swift:12` | Archivo entero sin referencias (extraído de NewTransactionView, nunca cableado) | Eliminar el archivo completo |
 
-### release-hygiene (1 — el resto en §Pendientes de QA)
+### release-hygiene (1 — el resto en §Pendientes de QA) — ✅ RESUELTO (cierre, 2026-06-10, `6fc6959f`)
 
 | Ubicación | Regla | Fix |
 |---|---|---|
-| `Yala/Services/iCloudSyncService.swift:240` | TODO crítico duplicado en código (ya existe ticket `Backlog/debounce-transactions-imported-from-sync-observer.md`) | Eliminar el marker o implementar el debounce 1s |
+| ✅ `Yala/Services/iCloudSyncService.swift:240` | **RESUELTO** — marker TODO eliminado (el ticket `Backlog/debounce-transactions-imported-from-sync-observer.md` es la SSOT; el comment de design intent M6 se conserva) | — |
 
 ---
 
@@ -374,7 +376,7 @@ Los 8 medios de `qa-coverage` y los 16 de `release-hygiene` con regla "device QA
 7. `Yala/Seed/CategorySeed.swift:328` y `:514` — seeds que manipulan ModelContext sin `@MainActor` — anotar para enforcement del compilador.
 8. `Yala/App/Views/WhatsNew/WhatsNewSheet.swift:89` — Task con sleep en onAppear sin cancelación — migrar a `.task{}` (se cancela solo).
 9. `Yala/App/Views/More/MoreView.swift:217` — badge `"Beta"` sin key ni marker — key L10n o comentario justificando el tecnicismo universal.
-10. `Yala/Resources/en-GB.lproj/InfoPlist.strings` — ausente (es-ES/es-AR/pt-PT sí lo tienen) — copiar de `en.lproj` para paridad (3 keys de permisos).
+10. ✅ **RESUELTO (cierre, `48da824e`)** — `en-GB.lproj/InfoPlist.strings` creado desde `en.lproj` (era el único de los 16 sin el archivo).
 
 ---
 
@@ -390,16 +392,16 @@ Consolidación de `release-hygiene` (device QA pendiente) + `qa-coverage`. **El 
 - [ ] **migration-csv-mirror** — F-IMP-04 cold launch con cuenta poblada (AppBootstrapper tocado 5×) (`qa/coverage-index.json:1541`)
 - [ ] **icloud-sync-multi-device** — F-ICL-01..04 manual multi-device (`qa/coverage-index.json:1431`)
 
-### Áreas stale del coverage-index (medias)
+### Áreas stale del coverage-index (medias) — re-verificación sim 2026-06-10 (`cd2dcf3a`)
 
 - [ ] **apple-pay-automation** — F-WCS-03 en device físico con pantalla bloqueada; recién entonces actualizar lastVerified (`qa/coverage-index.json:1296`)
-- [ ] **inbox-crud** — re-correr `InboxCrudUITests` (InboxView/InboxDraft tocados 06-08/09) (`qa/coverage-index.json:492`)
-- [ ] **whats-new-sheet** — F-PRO-05 con el contenido 2.0 reescrito (`qa/coverage-index.json:1231`)
-- [ ] **transactions-core-crud** — re-correr `TransactionsCrudUITests` (detalle read-only nuevo 06-09) (`qa/coverage-index.json:833`)
-- [ ] **cashflow-waterfall-chart** — F-STA-03 render del waterfall post-fix de Chart builders (`qa/coverage-index.json:947`)
-- [ ] **panel-dashboard-logic** — `PanelDashboardUITests` + refresh del toggle `includeGroupTransactionsInStats` (`qa/coverage-index.json:571`)
-- [ ] **form-help-banners** — corregir glob roto `Yala/App/Views/Budgets/**` → `Yala/App/Views/Planning/Budget*.swift` (`qa/coverage-index.json:319`)
-- [ ] **Drift sistémico** — correr `/qa-sync` para re-verificar por lotes y actualizar lastVerified (81/94 áreas); reforzar el contrato "mismo commit actualiza el área" (`qa/coverage-index.json`)
+- [x] **inbox-crud** — ✅ `InboxCrudUITests` 2/2 verdes (06-10). Requirió fix del harness: el contenido 2.0 de WhatsNewConfig bloqueaba todo XCUITest post-onboarding (`applyUITestHooksEarly` ahora marca `lastSeenAppVersion`)
+- [x] **whats-new-sheet** — ✅ F-PRO-05 sim: el sheet 2.0 (Groups Beta / Yala AI / new look) renderiza; el trigger por versión y el gating anti-apilamiento del router verificados. El trigger real update-encima cae en el checklist físico (evidencia en `$VAULT/Attachments/qa-2026-06-10-whatsnew-sheet-v2.png`)
+- [x] **transactions-core-crud** — ✅ `TransactionsCrudUITests` 2/2 verdes (06-10)
+- [ ] **cashflow-waterfall-chart** — F-STA-03 pasa al checklist como manual ~5 min (RELEASE-QA-2.0.md D5): el wizard del plan no es operable vía agent-device (sheets anidados). El fix del SIGTRAP del tooltip ya tuvo device-QA en Tanda 1
+- [x] **panel-dashboard-logic** — ✅ `PanelDashboardUITests` 2/2 verdes (06-10). El refresh del toggle `includeGroupTransactionsInStats` se verifica de verdad en G3 del checklist físico (sin datos de grupos el smoke sim es vacío)
+- [x] **form-help-banners** — ✅ glob corregido a `Yala/App/Views/Planning/Budget*.swift` (`6fc6959f`, validador OK)
+- [ ] **Drift sistémico** — bajado en 5 áreas (06-10); el resto del drift (mayormente commits 06-08/09) se documenta en `python3 qa/qa-sync.py` (advisory) y baja con el checklist físico + próximas sesiones
 
 ### Device-QA acumulado documentado en CLAUDE.md
 
@@ -434,8 +436,8 @@ Máximo impacto / mínimo riesgo — ordenados por ROI:
 6. ✅ **RESUELTO (Tanda 3)** — Siri `success.partial` vía accessor `L10n.Shortcut.successPartial` (la key ya existía ×16; lo roto era el callsite interpolado).
 7. ✅ **RESUELTO (Tanda 1)** — `UIHelpers.swift:317` NumberFormatter → `static let`.
 8. ✅ **RESUELTO (Tanda 1)** — `CategoryImportHelper.swift:48` `fetchLimit = 1`.
-9. **`ContentView.swift:1215` `try?` → do/catch** — corta el loop silencioso e infinito de `.presentDowngradeResolution`.
-10. **`qa/coverage-index.json:319` glob roto** de form-help-banners → `Yala/App/Views/Planning/` — 1 línea, el área vuelve a mapear código.
+9. ✅ **RESUELTO (Tanda 2, `9c8618d7`)** — `ContentView.swift:1215` `try?` → do/catch.
+10. ✅ **RESUELTO (cierre, `6fc6959f`)** — glob de form-help-banners → `Yala/App/Views/Planning/Budget*.swift` (5 archivos reales; validador OK).
 
 ---
 
