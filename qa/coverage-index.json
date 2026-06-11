@@ -145,7 +145,9 @@
       "codeGlobs": [
         "Yala/App/Views/Chat/**",
         "Yala/Services/ChatAssistantService.swift",
-        "Yala/Services/Chat/**"
+        "Yala/Services/Chat/**",
+        "Yala/App/Services/ChatSuggestionsLLMService.swift",
+        "Yala/App/Services/SuggestionsRewriterService.swift"
       ],
       "scenarioIDs": [
         "F-CHA-01",
@@ -156,7 +158,7 @@
       "classification": "agentic",
       "coverage": "none",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-11"
     },
     {
       "area": "contextual-ai-insight-panel",

@@ -35,20 +35,31 @@ final class ChatSuggestionsLLMService {
         return _openAI
     }
 
-    // MARK: - Cache (UserDefaults, key chat_suggestions_<YYYY-MM-DD>)
+    // MARK: - Cache (UserDefaults, key chat_suggestions_<YYYY-MM-DD>_<language>)
 
-    nonisolated private static func cacheKey(for date: Date) -> String {
-        ChatSuggestionsConstants.cacheKeyPrefix + DayKeyFormatter.string(from: date)
+    // El idioma forma parte de la key: si el user cambia el idioma de la app,
+    // las sugerencias del día cacheadas en el idioma anterior no deben servirse.
+    nonisolated private static func cacheKey(for date: Date, language: String) -> String {
+        ChatSuggestionsConstants.cacheKeyPrefix + DayKeyFormatter.string(from: date) + "_" + language
     }
 
-    nonisolated static func cachedSuggestions(for date: Date, defaults: UserDefaults = .standard) -> [ChatSuggestion]? {
-        guard let data = defaults.data(forKey: cacheKey(for: date)) else { return nil }
+    nonisolated static func cachedSuggestions(
+        for date: Date,
+        language: String,
+        defaults: UserDefaults = .standard
+    ) -> [ChatSuggestion]? {
+        guard let data = defaults.data(forKey: cacheKey(for: date, language: language)) else { return nil }
         return try? JSONDecoder().decode([ChatSuggestion].self, from: data)
     }
 
-    nonisolated static func setCached(_ suggestions: [ChatSuggestion], for date: Date, defaults: UserDefaults = .standard) {
+    nonisolated static func setCached(
+        _ suggestions: [ChatSuggestion],
+        for date: Date,
+        language: String,
+        defaults: UserDefaults = .standard
+    ) {
         guard let data = try? JSONEncoder().encode(suggestions) else { return }
-        defaults.set(data, forKey: cacheKey(for: date))
+        defaults.set(data, forKey: cacheKey(for: date, language: language))
     }
 
     // MARK: - Public API
@@ -58,14 +69,21 @@ final class ChatSuggestionsLLMService {
     /// "Entretenimiento" cuando el user no lo tiene), pasa por `SuggestionsRewriterService`
     /// para reescribirlas usando solo nombres reales del user.
     func fetchOrGenerate(modelContext: ModelContext) async -> [ChatSuggestion] {
+        // Idioma de la UI vía AppLocale (override in-app → Locale.preferredLanguages → en).
+        // NUNCA Locale.current.identifier: refleja la región de formato (AppleLocale, ej.
+        // "es_PE") aunque la app corra localizada en otro idioma — las sugerencias saldrían
+        // en el idioma de la región, no en el de la interfaz.
+        let language = AppLocale.current.identifier
+
         // Cache hit
-        if let cached = Self.cachedSuggestions(for: Date.now), cached.count >= ChatSuggestionsConstants.minItems {
+        if let cached = Self.cachedSuggestions(for: Date.now, language: language),
+           cached.count >= ChatSuggestionsConstants.minItems {
             return cached
         }
 
         // Generate via LLM (call 1)
         do {
-            let context = buildContext(modelContext: modelContext)
+            let context = buildContext(modelContext: modelContext, language: language)
             let raw = try await generate(context: context)
 
             // Validate + rewrite si hay inválidas (call 2 condicional)
@@ -81,7 +99,7 @@ final class ChatSuggestionsLLMService {
                 whitelist: whitelist,
                 language: context.language
             )
-            Self.setCached(validated, for: Date.now)
+            Self.setCached(validated, for: Date.now, language: language)
             TelemetryService.track(.chatSuggestionsLLMSucceeded, parameters: ["count": String(validated.count)])
             return validated
         } catch {
@@ -171,16 +189,7 @@ final class ChatSuggestionsLLMService {
 
     // MARK: - Context Builder
 
-    private func buildContext(modelContext: ModelContext) -> ChatSuggestionsContext {
-        // BCP-47 completo (e.g. "es-AR", "pt-BR") — el LLM ajusta tono según variante regional.
-        let language: String
-        if let override = LanguageManager.overrideLanguage {
-            language = override
-        } else {
-            let id = Locale.current.identifier
-            language = id.isEmpty ? "es" : id
-        }
-
+    private func buildContext(modelContext: ModelContext, language: String) -> ChatSuggestionsContext {
         let now = Date.now
         let calendar = Calendar.current
         let monthStart = calendar.dateInterval(of: .month, for: now)?.start ?? now
@@ -300,51 +309,69 @@ final class ChatSuggestionsLLMService {
     // MARK: - Prompts
 
     private func buildSystemPrompt(language: String) -> String {
-        """
+        // El few-shot example va en el idioma del usuario (es/en cubren la base hispana
+        // y el resto de locales): gpt-4.1-nano pesa el ejemplo más que la instrucción —
+        // un ejemplo fijo en español producía sugerencias en español con la UI en inglés.
+        let isSpanish = SupportedLocale.from(language)?.code.hasPrefix("es") ?? language.hasPrefix("es")
+        let example = isSpanish
+            ? """
+            { "text": "¿Por qué gasté más en Restaurantes este mes?", "icon": "chart.pie" },
+            { "text": "¿Cuánto me queda del presupuesto de Mercado?", "icon": "chart.bar" }
+            """
+            : """
+            { "text": "Why did I spend more on Restaurants this month?", "icon": "chart.pie" },
+            { "text": "How much is left in my Groceries budget?", "icon": "chart.bar" }
+            """
+
+        return """
         You generate personalized chat conversation starters for a personal finance app.
 
         CRITICAL RULES:
-        - RESPOND ONLY IN \(language). Do NOT translate. Do NOT mix languages.
+        - WRITE EVERY suggestion in the user's language: \(language). Do NOT translate user data names. Do NOT mix languages.
         - Output STRICT JSON: { "suggestions": [{ "text": "…", "icon": "<sf-symbol>" }, ...] }
         - Generate exactly 10 suggestions.
         - Each text ≤ 80 chars, phrased as a question the user could ask the assistant.
         - Be SPECIFIC to the user's data: cite categories, merchants or budget names provided in the user message. Avoid generic questions.
         - Mix topics: spending breakdown, budgets, comparisons, trends, projections, day-of-week patterns, recurring payments.
-        - Tone: cercano, 2nd person ("tú"). Brand voice: nunca regaña.
+        - Tone: warm and close, 2nd person. Brand voice: never scold.
         - Allowed icons: chart.bar, chart.pie, chart.line.uptrend.xyaxis, calendar, arrow.left.arrow.right, creditcard, storefront, dollarsign.circle, percent, banknote, cart, sparkles.
 
-        EXAMPLE (ES):
+        EXAMPLE (format reference — your output MUST be in \(language)):
         {
           "suggestions": [
-            { "text": "¿Por qué gasté más en Restaurantes este mes?", "icon": "chart.pie" },
-            { "text": "¿Cuánto me queda del presupuesto de Mercado?", "icon": "chart.bar" }
+            \(example)
           ]
         }
         """
     }
 
+    // Labels del user prompt en inglés a propósito: el system prompt es inglés y
+    // gpt-4.1-nano hereda el idioma del contexto que lo rodea — labels en español
+    // sesgaban sugerencias al español aunque `language` pidiera otro idioma.
+    // El recordatorio final de idioma pesa más que el system prompt en modelos chicos.
     private func buildUserPrompt(context: ChatSuggestionsContext) -> String {
         var parts: [String] = []
         if !context.topCategories.isEmpty {
-            parts.append("Top categorías: \(context.topCategories.joined(separator: ", "))")
+            parts.append("Top categories: \(context.topCategories.joined(separator: ", "))")
         }
         if !context.subcategoryNames.isEmpty {
-            parts.append("Subcategorías: \(context.subcategoryNames.prefix(20).joined(separator: ", "))")
+            parts.append("Subcategories: \(context.subcategoryNames.prefix(20).joined(separator: ", "))")
         }
         if !context.merchantNames.isEmpty {
-            parts.append("Merchants frecuentes: \(context.merchantNames.joined(separator: ", "))")
+            parts.append("Frequent merchants: \(context.merchantNames.joined(separator: ", "))")
         }
         if !context.activeBudgets.isEmpty {
-            parts.append("Presupuestos activos: \(context.activeBudgets.joined(separator: ", "))")
+            parts.append("Active budgets: \(context.activeBudgets.joined(separator: ", "))")
         }
         if !context.tagNames.isEmpty {
-            parts.append("Etiquetas: \(context.tagNames.joined(separator: ", "))")
+            parts.append("Tags: \(context.tagNames.joined(separator: ", "))")
         }
         if !context.recurringPaidNames.isEmpty {
-            parts.append("Recurrentes pagados este mes: \(context.recurringPaidNames.joined(separator: ", "))")
+            parts.append("Recurring paid this month: \(context.recurringPaidNames.joined(separator: ", "))")
         }
-        parts.append("Ingresos del mes: \(Int(context.totalIncome))")
-        parts.append("Gastos del mes: \(Int(context.totalExpense))")
+        parts.append("Month income: \(Int(context.totalIncome))")
+        parts.append("Month expenses: \(Int(context.totalExpense))")
+        parts.append("Remember: write ALL 10 suggestions in \(context.language).")
         return parts.joined(separator: "\n")
     }
 }

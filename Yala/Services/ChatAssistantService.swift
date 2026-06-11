@@ -156,11 +156,14 @@ final class ChatAssistantService {
     ) async throws -> String {
         let needsAnomalies = AnomalyKeywords.matches(question)
 
-        let locale = Locale.current
+        // Idioma de la UI vía AppLocale (override in-app → Locale.preferredLanguages → en).
+        // NUNCA Locale.current.identifier: refleja la región de formato (AppleLocale, ej.
+        // "es_PE") aunque la app corra localizada en otro idioma — el LLM respondería en
+        // el idioma de la región, no en el de la interfaz.
         // BCP-47 completo (e.g. "es-AR", "pt-BR") — el LLM entiende variantes regionales y
         // ajusta tono (voseo argentino, registro coloquial brasileño, etc.) si se le pasa.
-        let language = LanguageManager.overrideLanguage ?? locale.identifier
-        let country = locale.region?.identifier ?? "US"
+        let language = AppLocale.current.identifier
+        let country = Locale.current.region?.identifier ?? "US"
         let currencyDisplay = CurrencyCode(rawValue: currencyCode)?.symbol ?? currencyCode
 
         let context = contextBuilder.build(

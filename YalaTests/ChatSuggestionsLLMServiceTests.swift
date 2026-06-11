@@ -145,9 +145,9 @@ struct ChatSuggestionsLLMServiceTests {
             ChatSuggestion(text: "uno", icon: "chart.pie", type: .general),
             ChatSuggestion(text: "dos", icon: "chart.bar", type: .general)
         ]
-        ChatSuggestionsLLMService.setCached(suggestions, for: Date.now, defaults: defaults)
+        ChatSuggestionsLLMService.setCached(suggestions, for: Date.now, language: "es-419", defaults: defaults)
 
-        let cached = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now, defaults: defaults)
+        let cached = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now, language: "es-419", defaults: defaults)
         #expect(cached?.count == 2)
         #expect(cached?[0].text == "uno")
     }
@@ -155,7 +155,7 @@ struct ChatSuggestionsLLMServiceTests {
     @Test func cacheMissOrCorrupted_returnsNil() {
         let defaults = makeIsolatedDefaults()
 
-        let result = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now, defaults: defaults)
+        let result = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now, language: "es-419", defaults: defaults)
         #expect(result == nil)
     }
 
@@ -163,10 +163,28 @@ struct ChatSuggestionsLLMServiceTests {
         let defaults = makeIsolatedDefaults()
 
         // Sembrar data corrupta en el MISMO defaults aislado que lee el service
-        let key = "chat_suggestions_" + DayKeyFormatter.string(from: Date.now)
+        let key = "chat_suggestions_" + DayKeyFormatter.string(from: Date.now) + "_es-419"
         defaults.set(Data([0xFF, 0x00, 0xAA]), forKey: key)
 
-        let result = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now, defaults: defaults)
+        let result = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now, language: "es-419", defaults: defaults)
         #expect(result == nil)
+    }
+
+    @Test func cache_isIsolatedPerLanguage() throws {
+        let defaults = makeIsolatedDefaults()
+
+        let suggestions = [
+            ChatSuggestion(text: "uno", icon: "chart.pie", type: .general),
+            ChatSuggestion(text: "dos", icon: "chart.bar", type: .general),
+            ChatSuggestion(text: "tres", icon: "calendar", type: .general)
+        ]
+        ChatSuggestionsLLMService.setCached(suggestions, for: Date.now, language: "es-419", defaults: defaults)
+
+        // Cambiar de idioma no debe servir las sugerencias cacheadas en el idioma anterior
+        let other = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now, language: "en", defaults: defaults)
+        #expect(other == nil)
+
+        let same = ChatSuggestionsLLMService.cachedSuggestions(for: Date.now, language: "es-419", defaults: defaults)
+        #expect(same?.count == 3)
     }
 }

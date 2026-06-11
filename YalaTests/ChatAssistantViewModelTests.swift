@@ -172,7 +172,8 @@ struct ChatAssistantViewModelTests {
             ChatSuggestion(text: "Categoría con más gasto", icon: "chart.bar.fill", type: .biggestCategory),
             ChatSuggestion(text: "Estado de tu presupuesto", icon: "dollarsign.circle.fill", type: .activeBudget),
         ]
-        ChatSuggestionsLLMService.setCached(mockSuggestions, for: Date.now)
+        // Mismo idioma que derivará `fetchOrGenerate` para que el seed haga cache-hit.
+        ChatSuggestionsLLMService.setCached(mockSuggestions, for: Date.now, language: AppLocale.current.identifier)
 
         let vm = ChatAssistantViewModel()
         let context = try makeTestContext()
