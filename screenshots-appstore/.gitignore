@@ -1,0 +1,5 @@
+# Artefactos pesados regenerables — la fuente de verdad es generator/
+# raw/: capturas crudas del sim, duplicadas en generator/public/screenshots*
+# export/: PNGs finales para ASC, se regeneran con #export-set en el preview
+/raw/
+/export/
