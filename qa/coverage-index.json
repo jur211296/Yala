@@ -509,7 +509,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/InboxCrudUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-10"
     },
     {
       "area": "inbox-new-items-modal",
@@ -589,7 +589,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/PanelDashboardUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-10"
     },
     {
       "area": "pro-conversion-upsells",
@@ -846,7 +846,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/TransactionsCrudUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-10"
     },
     {
       "area": "transactions-quick-actions-favorites",
@@ -1239,7 +1239,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-06-10"
     },
     {
       "area": "yala-ai-onboarding",
@@ -1559,7 +1559,7 @@
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-02"
+      "lastVerified": "2026-06-10"
     },
     {
       "area": "notifications-permissions-delivery",

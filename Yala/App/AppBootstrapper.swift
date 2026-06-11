@@ -368,6 +368,11 @@ final class AppBootstrapper {
             SessionState.shared.onboardingMode = .groupInvite
             SessionState.shared.selectedMainTab = .groups
         }
+        // El What's New de la versión corriente se marca visto en todo arranque
+        // uitest: con contenido publicado para la versión (WhatsNewConfig), el sheet
+        // intercepta el primer tap de cualquier XCUITest post-onboarding.
+        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+        UserDefaults.standard.set(currentVersion, forKey: "lastSeenAppVersion")
     }
 
     /// Seed de datos UI-test al final del bootstrap + señal `uitest_ready`.
