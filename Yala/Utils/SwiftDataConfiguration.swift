@@ -219,7 +219,16 @@ enum SwiftDataConfiguration {
         if isUITesting {
             return ModelConfiguration("YalaGroups-UITest", schema: groupsSchema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
         }
-        return ModelConfiguration(groupsDatabaseName, schema: groupsSchema)
+        // `cloudKitDatabase: .none` es CRÍTICO en producción. El default de
+        // ModelConfiguration es `.automatic`, que adjunta NSPersistentCloudKitContainer
+        // al container PRIMARIO del entitlement (`iCloud.com.jurgenschmidt.yala`, el
+        // personal) — NO al container de grupos. Sin `.none` se crea un segundo canal de
+        // sync redundante (record types `CD_Split*` en la private DB personal) que duplica
+        // los datos del grupo y compite con el CKSyncEngine manual (filas SplitGroup
+        // duplicadas por mismo `cloudKitZoneID`, resurrección de borrados, doble cuota).
+        // Grupos sincroniza SOLO vía CKSyncEngine en `iCloud.com.jurgenschmidt.yala.groups`
+        // (ver Services/Groups/). Espeja la decisión de las ramas de test/UITest de arriba.
+        return ModelConfiguration(groupsDatabaseName, schema: groupsSchema, cloudKitDatabase: .none)
     }
 
     /// Database name for groups store, derived from personal databaseName.
