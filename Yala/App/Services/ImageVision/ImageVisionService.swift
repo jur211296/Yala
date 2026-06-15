@@ -75,24 +75,9 @@ final class ImageVisionService {
 
     // MARK: - Properties
 
-    @ObservationIgnored
-    private var _openAI: OpenAI?
-    @ObservationIgnored
-    private var _openAIInitialized = false
-
-    private var openAI: OpenAI? {
-        if !_openAIInitialized {
-            _openAIInitialized = true
-            if let apiKey = APIKeyService.openAIAPIKey {
-                _openAI = OpenAI(apiToken: apiKey)
-            }
-        }
-        return _openAI
-    }
-
-    /// Returns true if the Vision API is available (API key configured)
+    /// La disponibilidad real se resuelve al llamar al proxy (degradación graciosa si falla).
     var isAvailable: Bool {
-        openAI != nil
+        true
     }
 
     // MARK: - System Prompt
@@ -155,8 +140,11 @@ final class ImageVisionService {
     /// - Returns: VisionResponse with extracted transactions
     /// - Throws: VisionError if analysis fails
     func analyze(image: UIImage) async throws -> VisionResponse {
-        guard let client = openAI else {
-            throw VisionError.noAPIKey
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .vision)
+        } catch {
+            throw VisionError.networkError(error)
         }
 
         // Encode image to base64

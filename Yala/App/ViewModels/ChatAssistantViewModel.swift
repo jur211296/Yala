@@ -198,7 +198,10 @@ final class ChatAssistantViewModel {
 
     // MARK: - Error Handling
 
-    private func handleError(_ error: ChatAssistantError) {
+    private func handleError(_ rawError: ChatAssistantError) {
+        // Mapea errores de cuota del gateway (429) que llegan envueltos como .networkError
+        // al error tipado correcto (límite diario / ráfaga). Aditivo: el resto queda igual.
+        let error = ProxyErrorMapper.remap(rawError)
         switch error {
         case .timeout:
             errorMessage = L10n.Chat.errorTimeout

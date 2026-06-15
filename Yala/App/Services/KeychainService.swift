@@ -46,6 +46,17 @@ struct KeychainService {
         return data.withUnsafeBytes { $0.load(as: Int.self) }
     }
 
+    /// Save a string value to Keychain
+    static func setString(_ value: String, forKey key: String) {
+        save(data: Data(value.utf8), forKey: key)
+    }
+
+    /// Get a string value from Keychain (nil if absent)
+    static func getString(forKey key: String) -> String? {
+        guard let data = load(forKey: key) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
     /// Delete a value from Keychain
     static func delete(forKey key: String) {
         let query: [String: Any] = [

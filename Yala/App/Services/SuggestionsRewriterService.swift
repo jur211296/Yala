@@ -22,23 +22,6 @@ final class SuggestionsRewriterService {
     static let shared = SuggestionsRewriterService()
     private init() {}
 
-    // MARK: - OpenAI Client (lazy)
-
-    @ObservationIgnored
-    private var _openAI: OpenAI?
-    @ObservationIgnored
-    private var _openAIInitialized = false
-
-    private var openAI: OpenAI? {
-        if !_openAIInitialized {
-            _openAIInitialized = true
-            if let apiKey = APIKeyService.openAIAPIKey {
-                _openAI = OpenAI(apiToken: apiKey)
-            }
-        }
-        return _openAI
-    }
-
     // MARK: - Whitelist
 
     /// Whitelist de nombres reales del user — categorías, subcategorías, budgets, tags.
@@ -97,7 +80,12 @@ final class SuggestionsRewriterService {
         if invalid.isEmpty { return suggestions }
 
         // Hay inválidas → re-prompt al LLM
-        guard let client = openAI else { throw ChatSuggestionsLLMError.noAPIKey }
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .suggestions)
+        } catch {
+            throw ChatSuggestionsLLMError.noAPIKey
+        }
         guard NetworkMonitor.shared.isConnected else { throw ChatSuggestionsLLMError.offline }
 
         let rewritten = try await rewrite(

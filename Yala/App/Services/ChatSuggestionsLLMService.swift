@@ -18,23 +18,6 @@ final class ChatSuggestionsLLMService {
     static let shared = ChatSuggestionsLLMService()
     private init() {}
 
-    // MARK: - OpenAI Client (lazy)
-
-    @ObservationIgnored
-    private var _openAI: OpenAI?
-    @ObservationIgnored
-    private var _openAIInitialized = false
-
-    private var openAI: OpenAI? {
-        if !_openAIInitialized {
-            _openAIInitialized = true
-            if let apiKey = APIKeyService.openAIAPIKey {
-                _openAI = OpenAI(apiToken: apiKey)
-            }
-        }
-        return _openAI
-    }
-
     // MARK: - Cache (UserDefaults, key chat_suggestions_<YYYY-MM-DD>_<language>)
 
     // El idioma forma parte de la key: si el user cambia el idioma de la app,
@@ -147,7 +130,12 @@ final class ChatSuggestionsLLMService {
     // MARK: - Generation
 
     private func generate(context: ChatSuggestionsContext) async throws -> [ChatSuggestion] {
-        guard let client = openAI else { throw ChatSuggestionsLLMError.noAPIKey }
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .suggestions)
+        } catch {
+            throw ChatSuggestionsLLMError.noAPIKey
+        }
         guard NetworkMonitor.shared.isConnected else { throw ChatSuggestionsLLMError.offline }
 
         let systemPrompt = buildSystemPrompt(language: context.language)

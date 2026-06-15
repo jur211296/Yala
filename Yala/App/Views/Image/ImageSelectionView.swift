@@ -756,12 +756,6 @@ struct ImageSelectionView: View {
     private func processAllImages() async {
         guard !selectedImages.isEmpty else { return }
 
-        // Check for API key first
-        guard APIKeyService.hasOpenAIAPIKey else {
-            handleError(L10n.Image.errorNoApiKey, type: .noApiKey)
-            return
-        }
-
         // Check for network connection
         guard networkMonitor.isConnected else {
             handleError(L10n.Image.errorNoConnection, type: .noConnection)

@@ -90,21 +90,6 @@ final class VoiceTranscriptionService {
 
     // MARK: - Properties
 
-    @ObservationIgnored
-    private var _openAI: OpenAI?
-    @ObservationIgnored
-    private var _openAIInitialized = false
-
-    private var openAI: OpenAI? {
-        if !_openAIInitialized {
-            _openAIInitialized = true
-            if let apiKey = APIKeyService.openAIAPIKey {
-                _openAI = OpenAI(apiToken: apiKey)
-            }
-        }
-        return _openAI
-    }
-
     // MARK: - Public Methods
 
     /// Transcribes audio data to text using OpenAI Whisper API.
@@ -116,8 +101,11 @@ final class VoiceTranscriptionService {
         audioData: Data,
         language: VoiceLanguage = .system
     ) async throws -> TranscriptionResult {
-        guard let client = openAI else {
-            throw TranscriptionError.noAPIKey
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .voice)
+        } catch {
+            throw TranscriptionError.networkError(error)
         }
 
         guard !audioData.isEmpty else {

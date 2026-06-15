@@ -69,25 +69,10 @@ final class InsightsLLMService {
     // MARK: - Properties
 
     @ObservationIgnored
-    private var _openAI: OpenAI?
-    @ObservationIgnored
-    private var _openAIInitialized = false
-
-    @ObservationIgnored
     private var cache: [String: CacheEntry] = [:]
 
     @ObservationIgnored
     private var lastCallTime: Date?
-
-    private var openAI: OpenAI? {
-        if !_openAIInitialized {
-            _openAIInitialized = true
-            if let apiKey = APIKeyService.openAIAPIKey {
-                _openAI = OpenAI(apiToken: apiKey)
-            }
-        }
-        return _openAI
-    }
 
     // MARK: - Cache
 
@@ -120,8 +105,11 @@ final class InsightsLLMService {
         tone: InsightTone = .normal,
         focus: InsightFocus = .balanced
     ) async throws -> LLMInsightResponse {
-        guard let client = openAI else {
-            throw InsightsLLMError.noAPIKey
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+        } catch {
+            throw InsightsLLMError.networkError(error)
         }
 
         // Rate limit: 5s between calls
@@ -466,8 +454,11 @@ final class InsightsLLMService {
         excludeText: String? = nil,
         forcedAngle: String? = nil
     ) async throws -> String? {
-        guard let client = openAI else {
-            throw InsightsLLMError.noAPIKey
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+        } catch {
+            throw InsightsLLMError.networkError(error)
         }
 
         // Rate limit: 5s between contextual calls (independent from main insights)
@@ -571,8 +562,11 @@ final class InsightsLLMService {
         projection: CashFlowProjection,
         currencyCode: String
     ) async throws -> String? {
-        guard let client = openAI else {
-            throw InsightsLLMError.noAPIKey
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+        } catch {
+            throw InsightsLLMError.networkError(error)
         }
 
         if let lastCall = lastContextualCallTime,
@@ -708,8 +702,11 @@ final class InsightsLLMService {
         deviations: [(name: String, planned: Double, actual: Double, excess: Double)],
         currencyCode: String
     ) async throws -> String? {
-        guard let client = openAI else {
-            throw InsightsLLMError.noAPIKey
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+        } catch {
+            throw InsightsLLMError.networkError(error)
         }
 
         if let lastCall = lastDeviationCallTime,
@@ -809,8 +806,11 @@ final class InsightsLLMService {
             return cached.text
         }
 
-        guard let client = openAI else {
-            throw InsightsLLMError.noAPIKey
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+        } catch {
+            throw InsightsLLMError.networkError(error)
         }
 
         let systemPrompt = Self.heroSystemPrompt(ctx: ctx)

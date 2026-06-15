@@ -33,23 +33,6 @@ final class ChatIntentClassifierService {
     static let minConfidence: Double = 0.7
     private static let timeoutSeconds: TimeInterval = 8
 
-    // MARK: - OpenAI Client
-
-    @ObservationIgnored
-    private var _openAI: OpenAI?
-    @ObservationIgnored
-    private var _openAIInitialized = false
-
-    private var openAI: OpenAI? {
-        if !_openAIInitialized {
-            _openAIInitialized = true
-            if let apiKey = APIKeyService.openAIAPIKey {
-                _openAI = OpenAI(apiToken: apiKey)
-            }
-        }
-        return _openAI
-    }
-
     // MARK: - Public API
 
     struct Classification {
@@ -62,7 +45,16 @@ final class ChatIntentClassifierService {
     /// Clasifica el texto del user. Si el LLM falla por red/parse, usa regex.
     /// Si ni el regex matchea, default a `.ask`.
     func classify(text: String) async -> Classification {
-        guard let client = openAI, NetworkMonitor.shared.isConnected else {
+        guard NetworkMonitor.shared.isConnected else {
+            return Self.regexFallback(text)
+        }
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .suggestions)
+        } catch {
+            #if DEBUG
+            print("ChatIntentClassifierService: proxy no disponible (\(error)) — regex fallback")
+            #endif
             return Self.regexFallback(text)
         }
 

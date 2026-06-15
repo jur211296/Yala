@@ -21,23 +21,6 @@ final class ChatAssistantService {
     static let shared = ChatAssistantService()
     private init() {}
 
-    // MARK: - OpenAI Client
-
-    @ObservationIgnored
-    private var _openAI: OpenAI?
-    @ObservationIgnored
-    private var _openAIInitialized = false
-
-    private var openAI: OpenAI? {
-        if !_openAIInitialized {
-            _openAIInitialized = true
-            if let apiKey = APIKeyService.openAIAPIKey {
-                _openAI = OpenAI(apiToken: apiKey)
-            }
-        }
-        return _openAI
-    }
-
     // MARK: - Context Builder (caché 60s vive aquí)
 
     @ObservationIgnored
@@ -97,7 +80,12 @@ final class ChatAssistantService {
         forceIntent: ChatIntent? = nil
     ) async throws -> ChatAssistantResponse {
         // === Common guards (apply to all 3 paths) ===
-        guard let client = openAI else { throw ChatAssistantError.noAPIKey }
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .chat)
+        } catch {
+            throw ChatAssistantError.networkError(error)
+        }
         guard NetworkMonitor.shared.isConnected else { throw ChatAssistantError.offline }
         guard questionsToday < Self.dailyLimit else { throw ChatAssistantError.dailyLimitReached }
         let trimmed = question.trimmingCharacters(in: .whitespacesAndNewlines)

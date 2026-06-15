@@ -642,13 +642,6 @@ struct VoiceRecordingView: View {
         errorMessage = nil
         errorType = nil
 
-        // Check for API key first
-        guard APIKeyService.hasOpenAIAPIKey else {
-            errorType = .noApiKey
-            errorMessage = L10n.Voice.errorNoApiKey
-            return
-        }
-
         // Check for network connection
         guard networkMonitor.isConnected else {
             errorType = .noConnection

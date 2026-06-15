@@ -48,7 +48,8 @@ final class ExchangeRateAPIService: ExchangeRateProviderProtocol {
 
     // MARK: - Properties
 
-    private let baseURL = "https://api.exchangerate.host"
+    /// Apunta al gateway de Yala (no a exchangerate.host directo). La key vive en el Worker.
+    private var baseURL: String { ProxyConfig.baseURL.absoluteString + "/rates" }
     private let session: URLSession
     private let dateFormatter: DateFormatter
 
@@ -61,39 +62,29 @@ final class ExchangeRateAPIService: ExchangeRateProviderProtocol {
         self.dateFormatter.timeZone = TimeZone(identifier: "UTC")
     }
 
-    // MARK: - API Key
-
-    private var apiKey: String? {
-        // Read from Info.plist (set via Build Settings from xcconfig)
-        guard let key = Bundle.main.object(forInfoDictionaryKey: "EXCHANGE_RATE_API_KEY") as? String,
-              !key.isEmpty,
-              key != "$(EXCHANGE_RATE_API_KEY)"
-        else {
-            return nil
-        }
-        return key
-    }
-
     // MARK: - ExchangeRateProviderProtocol
 
     func fetchLatest(base: String, symbols: [String]) async throws -> LiveRateResult {
-        guard let apiKey = apiKey else {
-            throw ExchangeRateProviderError.apiError("Exchange rate API key not configured. Add EXCHANGE_RATE_API_KEY to Secrets.xcconfig")
-        }
-
         let currenciesString = symbols.joined(separator: ",")
 
-        // exchangerate.host uses 'source' instead of 'base' and 'currencies' instead of 'symbols'
-        let urlString =
-            "\(baseURL)/live?access_key=\(apiKey)&source=\(base)&currencies=\(currenciesString)"
+        // El gateway inyecta la access_key server-side; el cliente solo pasa source/currencies.
+        let urlString = "\(baseURL)/live?source=\(base)&currencies=\(currenciesString)"
 
         guard let url = URL(string: urlString) else {
             throw ExchangeRateProviderError.invalidURL
         }
 
+        let token: String
+        do {
+            token = try await AppAttestClient.shared.currentSessionToken()
+        } catch {
+            throw ExchangeRateProviderError.networkError(error)
+        }
+
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.timeoutInterval = 30
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
         let data: Data
         let response: URLResponse
@@ -162,25 +153,29 @@ final class ExchangeRateAPIService: ExchangeRateProviderProtocol {
         startDate: Date,
         endDate: Date
     ) async throws -> [String: [String: Double]] {
-        guard let apiKey = apiKey else {
-            throw ExchangeRateProviderError.apiError("Exchange rate API key not configured. Add EXCHANGE_RATE_API_KEY to Secrets.xcconfig")
-        }
-
         let currenciesString = symbols.joined(separator: ",")
         let startDateString = dateFormatter.string(from: startDate)
         let endDateString = dateFormatter.string(from: endDate)
 
-        // exchangerate.host uses /timeframe for historical data
+        // El gateway inyecta la access_key server-side.
         let urlString =
-            "\(baseURL)/timeframe?access_key=\(apiKey)&source=\(base)&currencies=\(currenciesString)&start_date=\(startDateString)&end_date=\(endDateString)"
+            "\(baseURL)/timeframe?source=\(base)&currencies=\(currenciesString)&start_date=\(startDateString)&end_date=\(endDateString)"
 
         guard let url = URL(string: urlString) else {
             throw ExchangeRateProviderError.invalidURL
         }
 
+        let token: String
+        do {
+            token = try await AppAttestClient.shared.currentSessionToken()
+        } catch {
+            throw ExchangeRateProviderError.networkError(error)
+        }
+
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.timeoutInterval = 60
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
         let data: Data
         let response: URLResponse
