@@ -1,6 +1,6 @@
 # Rediseño web Yala 2.0 — Resumen
 
-Rama: `web/redesign-2.0` (desde `2.0`). Stack intacto: Astro 5, Tailwind, i18n (es/en/de/fr/it/pt), middleware de routing por idioma. **No se tocaron rutas ni el sistema i18n.** Build verde (`npm run build`).
+Trabajo commiteado en `2.0` (rama oficial); respaldo en `web/redesign-2.0`. Stack intacto: Astro 5, Tailwind, i18n (es/en/de/fr/it/pt), middleware de routing por idioma. **No se tocaron rutas ni el sistema i18n.** Build verde (`npm run build`).
 
 ---
 
