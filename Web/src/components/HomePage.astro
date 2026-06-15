@@ -19,6 +19,16 @@ const langUrls = Object.keys(languages).map(l => ({
 const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
 const termsUrl = lang === 'es' ? '/terms' : `/${lang}/terms`;
 const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
+
+// Screenshots 2.0 — idioma-aware con fallback a ES (raw en/ no tiene panel-hero/stats-tendencias)
+const imgLang = lang === 'es' ? 'es' : 'en';
+const SS = '/images/screenshots/v2';
+const mock = (name: string, esOnly = false) => `${SS}/mockups/${name}-${esOnly ? 'es' : imgLang}.jpg`;
+const galleryItems = [
+  { slug: '01-hero' }, { slug: '02-yala-ia' }, { slug: '03-grupos' }, { slug: '04-registro' },
+  { slug: '05-score' }, { slug: '06-presupuestos' }, { slug: '07-flujo-caja' },
+  { slug: '08-distribucion' }, { slug: '09-temas' }, { slug: '10-privacidad' },
+].map(g => ({ ...g, src: `${SS}/gallery/${g.slug}-${imgLang}.jpg` }));
 ---
 
 <!-- Header -->
@@ -30,9 +40,11 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
         <img src="/images/logo-light.png" alt="Yala" class="h-9 logo-light" />
       </a>
 
-      <div class="hidden md:flex items-center gap-8">
+      <div class="hidden md:flex items-center gap-6">
         <a href="#why" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navWhy}</a>
         <a href="#features" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navFeatures}</a>
+        <a href="#yala-ia" class="text-sm text-neutral-400 hover:text-yala-cyan transition-colors">{t.navYalaAI}</a>
+        <a href="#grupos" class="text-sm text-neutral-400 hover:text-yala-cyan transition-colors">{t.navGroups}</a>
         <a href="#how" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navHow}</a>
         <a href="#privacy" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navPrivacy}</a>
         <a href="#pricing" class="text-sm text-neutral-400 hover:text-white transition-colors">{t.navPricing}</a>
@@ -89,6 +101,8 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
   <div class="container-wide py-4 flex flex-col gap-3">
     <a href="#why" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navWhy}</a>
     <a href="#features" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navFeatures}</a>
+    <a href="#yala-ia" class="text-sm text-neutral-400 hover:text-yala-cyan transition-colors py-2 mobile-nav-link">{t.navYalaAI}</a>
+    <a href="#grupos" class="text-sm text-neutral-400 hover:text-yala-cyan transition-colors py-2 mobile-nav-link">{t.navGroups}</a>
     <a href="#how" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navHow}</a>
     <a href="#privacy" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navPrivacy}</a>
     <a href="#pricing" class="text-sm text-neutral-400 hover:text-white transition-colors py-2 mobile-nav-link">{t.navPricing}</a>
@@ -135,10 +149,11 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
     </div>
 
     <!-- Hero Screenshot - Panel Principal -->
-    <div class="mt-16 flex justify-center">
-      <div class="w-64 sm:w-72 md:w-80 iphone-mockup animate-float">
-        <img src="/images/screenshots/panel-principal-dark.png" alt="Yala - Panel Principal" class="screenshot-dark" />
-        <img src="/images/screenshots/panel-principal-light.png" alt="Yala - Panel Principal" class="screenshot-light" />
+    <div class="mt-16 flex justify-center device-glow">
+      <div class="animate-float">
+        <div id="hero-device" class="w-64 sm:w-72 md:w-80 iphone-mockup hero-tilt">
+          <img src={mock('panel-hero', true)} alt="Yala — Panel principal" loading="eager" />
+        </div>
       </div>
     </div>
   </section>
@@ -308,6 +323,34 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
         <p class="text-neutral-400 text-lg max-w-2xl mx-auto">{t.featuresSubtitle}</p>
       </div>
 
+      <!-- 2.0 Stars: Yala IA + Grupos -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto mb-6">
+        <div class="glass-card card-glow p-8 flex flex-col min-h-[200px] border-yala-cyan/30 animate-on-scroll stagger-1">
+          <div class="flex items-center justify-between mb-6">
+            <div class="w-14 h-14 rounded-2xl bg-yala-cyan/20 flex items-center justify-center">
+              <svg class="w-7 h-7 text-yala-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+              </svg>
+            </div>
+            <span class="text-xs font-bold px-3 py-1 rounded-full bg-yala-cyan/15 text-yala-cyan border border-yala-cyan/30">{t.yalaaiBadge}</span>
+          </div>
+          <h3 class="text-2xl font-semibold mb-3">{t.featureAITitle}</h3>
+          <p class="text-neutral-400 leading-relaxed">{t.featureAIDesc}</p>
+        </div>
+        <div class="glass-card card-glow p-8 flex flex-col min-h-[200px] border-nature-priority/30 animate-on-scroll stagger-2">
+          <div class="flex items-center justify-between mb-6">
+            <div class="w-14 h-14 rounded-2xl bg-nature-priority/20 flex items-center justify-center">
+              <svg class="w-7 h-7 text-nature-priority" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/>
+              </svg>
+            </div>
+            <span class="text-xs font-bold px-3 py-1 rounded-full bg-nature-priority/15 text-nature-priority border border-nature-priority/30">{t.groupsBadge}</span>
+          </div>
+          <h3 class="text-2xl font-semibold mb-3">{t.featureGroupsTitle}</h3>
+          <p class="text-neutral-400 leading-relaxed">{t.featureGroupsDesc}</p>
+        </div>
+      </div>
+
       <!-- 2 Large Cards Top Row -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto mb-6">
         <!-- Feature 1 - Captura Inteligente (Large) -->
@@ -429,6 +472,82 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
       </div>
   </section>
 
+  <!-- YALA IA SECTION -->
+  <section id="yala-ia" class="py-20 md:py-28" style="background: var(--bg-secondary);">
+    <div class="container-wide">
+      <div class="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+        <div class="animate-on-scroll">
+          <span class="inline-flex items-center gap-2 mb-5 text-xs font-bold px-3 py-1.5 rounded-full bg-yala-cyan/15 text-yala-cyan border border-yala-cyan/30">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            {t.yalaaiBadge}
+          </span>
+          <h2 class="text-3xl sm:text-4xl font-bold mb-3">{t.yalaaiTitle}</h2>
+          <p class="text-xl text-gradient font-semibold mb-8">{t.yalaaiSubtitle}</p>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span class="text-neutral-300">{t.yalaaiBullet1}</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span class="text-neutral-300">{t.yalaaiBullet2}</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span class="text-neutral-300">{t.yalaaiBullet3}</span>
+            </li>
+          </ul>
+          <p class="mt-8 text-sm text-neutral-500 leading-relaxed">
+            {t.yalaaiNote} <a href={privacyUrl} class="text-yala-cyan hover:text-yala-indigo underline underline-offset-2 transition-colors">{t.navPrivacy}</a>
+          </p>
+        </div>
+        <div class="animate-on-scroll stagger-2 flex justify-center device-glow">
+          <div class="w-60 sm:w-64 md:w-72 iphone-mockup">
+            <img src={mock('chat-analisis')} alt="Yala IA — chat" loading="lazy" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GRUPOS SECTION -->
+  <section id="grupos" class="py-20 md:py-28">
+    <div class="container-wide">
+      <div class="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+        <div class="animate-on-scroll stagger-2 flex justify-center device-glow md:order-1 order-2">
+          <div class="w-60 sm:w-64 md:w-72 iphone-mockup">
+            <img src={mock('grupos-lista')} alt="Yala — Grupos" loading="lazy" />
+          </div>
+        </div>
+        <div class="animate-on-scroll md:order-2 order-1">
+          <span class="inline-flex items-center gap-2 mb-5 text-xs font-bold px-3 py-1.5 rounded-full bg-nature-priority/15 text-nature-priority border border-nature-priority/30">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-7.75 4 4 0 000 7.75z"/></svg>
+            {t.groupsBadge}
+          </span>
+          <h2 class="text-3xl sm:text-4xl font-bold mb-3">{t.groupsTitle}</h2>
+          <p class="text-xl text-gradient font-semibold mb-8">{t.groupsSubtitle}</p>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-nature-priority flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span class="text-neutral-300">{t.groupsBullet1}</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-nature-priority flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span class="text-neutral-300">{t.groupsBullet2}</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="w-5 h-5 text-nature-priority flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span class="text-neutral-300">{t.groupsBullet3}</span>
+            </li>
+          </ul>
+          <p class="mt-8 text-sm text-neutral-500 leading-relaxed">
+            {t.groupsNote} <a href={privacyUrl} class="text-nature-priority hover:text-yala-indigo underline underline-offset-2 transition-colors">{t.navPrivacy}</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- HOW IT WORKS -->
   <section id="how" class="py-20 md:py-28" style="background: var(--bg-secondary);">
     <div class="container-wide">
@@ -444,8 +563,7 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
         <h3 class="text-xl font-semibold mb-3">{t.howStep1Title}</h3>
         <p class="text-neutral-400 mb-6">{t.howStep1Desc}</p>
         <div class="w-40 mx-auto iphone-mockup-sm">
-          <img src="/images/screenshots/paso1-dark.png" alt="Registrar gastos" class="screenshot-dark" loading="lazy" />
-          <img src="/images/screenshots/paso1-light.png" alt="Registrar gastos" class="screenshot-light" loading="lazy" />
+          <img src={mock('nuevo-registro')} alt="Registrar gastos" loading="lazy" />
         </div>
       </div>
 
@@ -455,8 +573,7 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
         <h3 class="text-xl font-semibold mb-3">{t.howStep2Title}</h3>
         <p class="text-neutral-400 mb-6">{t.howStep2Desc}</p>
         <div class="w-40 mx-auto iphone-mockup-sm">
-          <img src="/images/screenshots/categorias-dark.png" alt="Categorías organizadas" class="screenshot-dark" loading="lazy" />
-          <img src="/images/screenshots/categorias-light.png" alt="Categorías organizadas" class="screenshot-light" loading="lazy" />
+          <img src={mock('panel-distribucion')} alt="Categorías organizadas" loading="lazy" />
         </div>
       </div>
 
@@ -466,8 +583,7 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
         <h3 class="text-xl font-semibold mb-3">{t.howStep3Title}</h3>
         <p class="text-neutral-400 mb-6">{t.howStep3Desc}</p>
         <div class="w-40 mx-auto iphone-mockup-sm">
-          <img src="/images/screenshots/tendencias-dark.png" alt="Gráficos y tendencias" class="screenshot-dark" loading="lazy" />
-          <img src="/images/screenshots/tendencias-light.png" alt="Gráficos y tendencias" class="screenshot-light" loading="lazy" />
+          <img src={mock('stats-tendencias', true)} alt="Gráficos y tendencias" loading="lazy" />
         </div>
       </div>
     </div>
@@ -504,13 +620,35 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
         </div>
 
         <!-- Analytics Screenshot - Estadísticas -->
-        <div class="animate-on-scroll stagger-2">
+        <div class="animate-on-scroll stagger-2 device-glow">
           <div class="max-w-xs mx-auto iphone-mockup">
-            <img src="/images/screenshots/estadisticas-categorias-dark.png" alt="Estadísticas y análisis" class="screenshot-dark" loading="lazy" />
-            <img src="/images/screenshots/estadisticas-categorias-light.png" alt="Estadísticas y análisis" class="screenshot-light" loading="lazy" />
+            <img src={mock('stats-resumen')} alt="Estadísticas y análisis" loading="lazy" />
           </div>
         </div>
       </div>
+  </section>
+
+  <!-- GALLERY SECTION -->
+  <section class="py-20 md:py-28 overflow-hidden">
+    <div class="container-wide">
+      <div class="text-center mb-12 animate-on-scroll">
+        <h2 class="text-3xl sm:text-4xl font-bold mb-4">{t.galleryTitle}</h2>
+        <p class="text-neutral-400 text-lg max-w-2xl mx-auto">{t.gallerySubtitle}</p>
+      </div>
+    </div>
+    <div class="gallery-marquee" tabindex="0" role="group" aria-label={t.galleryTitle}>
+      <div class="gallery-track py-2">
+        {[...galleryItems, ...galleryItems].map((g, i) => (
+          <img
+            src={g.src}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            class="h-[400px] sm:h-[460px] w-auto rounded-3xl border border-white/10 shadow-2xl flex-shrink-0"
+          />
+        ))}
+      </div>
+    </div>
   </section>
 
   <!-- PRIVACY SECTION -->
@@ -718,6 +856,12 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
               </svg>
               <span class="text-neutral-300">{t.pricingPro7}</span>
             </li>
+            <li class="flex items-center gap-3">
+              <svg class="w-5 h-5 text-yala-cyan flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span class="text-neutral-300">{t.pricingPro8}</span>
+            </li>
           </ul>
           <a href="https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109" target="_blank" rel="noopener" class="btn-primary w-full text-center">{t.pricingProCta}</a>
         </div>
@@ -799,6 +943,26 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
             </svg>
           </summary>
           <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq7A}</p>
+        </details>
+
+        <details class="card group animate-on-scroll">
+          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
+            {t.faq8Q}
+            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </summary>
+          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq8A}</p>
+        </details>
+
+        <details class="card group animate-on-scroll">
+          <summary class="p-6 cursor-pointer flex items-center justify-between font-semibold list-none">
+            {t.faq9Q}
+            <svg class="w-5 h-5 text-neutral-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </summary>
+          <p class="px-6 pb-6 text-neutral-400 -mt-2">{t.faq9A}</p>
         </details>
       </div>
     </div>
@@ -923,4 +1087,18 @@ const supportUrl = lang === 'es' ? '/support' : `/${lang}/support`;
   }, { threshold: 0.1 });
 
   document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+
+  // Hero device tilt (cursor-driven) — desktop only, respects reduced-motion
+  const heroDevice = document.getElementById('hero-device');
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = window.matchMedia('(pointer: fine)').matches;
+  if (heroDevice && !prefersReduced && finePointer) {
+    const maxTilt = 5;
+    window.addEventListener('mousemove', (e) => {
+      const dx = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+      const dy = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+      heroDevice.style.setProperty('--tiltY', `${(dx * maxTilt).toFixed(2)}deg`);
+      heroDevice.style.setProperty('--tiltX', `${(-dy * maxTilt).toFixed(2)}deg`);
+    }, { passive: true });
+  }
 </script>
