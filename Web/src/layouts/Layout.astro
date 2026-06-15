@@ -10,7 +10,7 @@ interface Props {
 
 const {
 	title,
-	description = "Tu centro de control financiero. Registra en segundos, entiende en minutos.",
+	description = "Tu centro de control financiero con Yala IA y gastos compartidos. Registra en segundos, entiende en minutos.",
 	lang = 'es'
 } = Astro.props;
 ---
@@ -41,6 +41,7 @@ const {
 		<title>{title}</title>
 	</head>
 	<body>
+		<div class="aurora-bg" aria-hidden="true"></div>
 		<slot />
 	</body>
 </html>
