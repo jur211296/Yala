@@ -2,6 +2,18 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "yala-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "Web",
+        "run",
+        "dev"
+      ],
+      "port": 4321,
+      "autoPort": true
+    },
+    {
       "name": "yala-screenshots",
       "runtimeExecutable": "bun",
       "runtimeArgs": [
