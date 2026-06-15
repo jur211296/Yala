@@ -24,6 +24,8 @@ Además, las funciones Pro previas siguen igual: **voz** (audio + transcripción
 
 **Postura de OpenAI sobre entrenamiento:** según la política de la **API** de OpenAI, los datos enviados por API **no se usan para entrenar modelos por defecto**. El texto lo refleja así. → **A confirmar por revisión legal** contra los términos vigentes de OpenAI al publicar.
 
+**Alineación con el consent in-app (verificada 2026-06-14):** el texto de la web se redactó para ser consistente con el **consentimiento que el usuario acepta dentro de la app** (`Yala/Resources/*.lproj/Localizable.strings` → `aiConsent.chatMessage`), que enmarca el envío como *"un resumen de tu situación financiera: saldos y nombres de tus cuentas, totales por categoría, comercios frecuentes, presupuestos y pagos recurrentes"*. La web usa ese mismo marco y añade detalle propio de una política (subcategorías, etiquetas) — sin contradecir el consent ni declarar menos de lo que la app envía. La auditoría `AUDIT-appstore-guidelines.md` (raíz del repo) detalla qué envía `FullFinancialContextBuilder` y confirma esta lista. La versión anterior del consent in-app afirmaba falsamente *"account names are never shared"* (hallazgo #2 del audit) — ya corregida por la sesión de App Store.
+
 ---
 
 ## B. Política de Privacidad — cambios
@@ -69,7 +71,7 @@ IP 6→7, Suscripciones 7→8, Limitación 8→9, Terminación 9→10, Cambios 1
 
 Apple compara web ↔ app ↔ App Store Connect. Estos puntos **no se tocaron** (fuera del alcance web) pero requieren decisión:
 
-1. **`Yala/Resources/PrivacyInfo.xcprivacy` NO declara `FinancialInfo`.** Hoy solo declara `AudioData` y `PhotosorVideos`. Con Yala IA enviando datos financieros a OpenAI, las **nutrition labels de App Store Connect** podrían necesitar declarar recolección/uso de datos financieros y/o el sub-procesador. Existe la decisión **D-C** (diferir `FinancialInfo` post-2.0, con proxy backend + App Attest como épico futuro; el consentimiento in-app cubre el disclosure). → **Revisar con la política de Apple**: aunque el manifiesto técnico difiera, las nutrition labels de ASC deben ser consistentes con lo que la web/consent declaran.
+1. **`Yala/Resources/PrivacyInfo.xcprivacy` → `FinancialInfo`.** La sesión de App Store **ya añadió** `NSPrivacyCollectedDataTypeFinancialInfo` (linked, no-tracking, AppFunctionality) al manifiesto — alineado con el disclosure de la web. Pendiente del owner: (a) commitear ese cambio, y (b) reflejarlo en las **nutrition labels de App Store Connect** (Apple compara web ↔ app ↔ ASC). Reabrir la decisión **D-C** en `DECISIONS.md`. Detalle en `AUDIT-appstore-guidelines.md` (hallazgo #3).
 
 2. **`App Store/metadata/description-*.md`** aún dicen *"no almacenamos nada en servidores… Tu información es tuya. Punto."* → matizar en ASC por Yala IA (OpenAI) y Grupos (CloudKit), para que la ficha del App Store no contradiga la web.
 
