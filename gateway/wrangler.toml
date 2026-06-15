@@ -51,6 +51,7 @@ ENFORCE = "observe"
 APPLE_TEAM_ID = "3WKFFVD66J"
 APPLE_BUNDLE_IDS = "com.jurgenschmidt.yala"
 ATTEST_ENV = "production"
+TRUST_ATTESTED_AS_PRO = "false"   # EXPLÍCITO: jamás Pro-trust en prod (cierra el trap; prod exige suscripción real)
 
 [[env.production.d1_databases]]
 binding = "DB"
