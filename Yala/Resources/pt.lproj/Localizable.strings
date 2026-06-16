@@ -2910,13 +2910,13 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Processamento de voz e imagens";
-"aiConsent.processingMessage" = "Estas funções usam OpenAI para processar os teus dados:\n\n• Voz: a tua gravação de áudio é transcrita\n• Imagens: a foto é analisada para extrair dados\n\nAs tuas despesas individuais e informações pessoais nunca são compartilhadas. A OpenAI não usa estes dados para treinar os seus modelos.";
+"aiConsent.processingMessage" = "Estas funções usam OpenAI para processar os teus dados:\n\n• Voz: a tua gravação de áudio é transcrita\n• Imagens: a foto (recibo ou captura de ecrã) é analisada para extrair os dados da despesa\n\nApenas o que envias nesse momento é processado. A OpenAI não usa estes dados para treinar os seus modelos.";
 "aiConsent.insightsTitle" = "Resumo inteligente";
-"aiConsent.insightsMessage" = "Esta função envia totais, percentuais e tendências à OpenAI para gerar um resumo das tuas finanças.\n\nAs tuas despesas individuais, histórico de transações e informações pessoais nunca são compartilhados. A OpenAI não usa estes dados para treinar os seus modelos.";
+"aiConsent.insightsMessage" = "Esta função envia à OpenAI um resumo das tuas finanças — totais e tendências por categoria, orçamentos e pagamentos recorrentes — para gerar a tua análise.\n\nO teu histórico completo de transações não é enviado. A OpenAI não usa estes dados para treinar os seus modelos.";
 "aiConsent.accept" = "Aceitar e ativar";
 "aiConsent.privacyPolicy" = "Política de privacidade";
 "aiConsent.inlineHintProcessing" = "Os teus dados de voz e imagens são processados com OpenAI. Não são armazenados permanentemente.";
-"aiConsent.inlineHintInsights" = "Apenas totais e tendências são enviados à OpenAI para o resumo. Não são armazenados permanentemente.";
+"aiConsent.inlineHintInsights" = "O resumo das tuas finanças é enviado à OpenAI para a análise. Não é armazenado permanentemente.";
 "aiConsent.inlineHintBoth" = "Os teus dados de voz, imagens e resumo são processados com OpenAI. Não são armazenados permanentemente.";
 
 // MARK: - Insights Settings
@@ -3449,8 +3449,8 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Assistente financeiro";
-"aiConsent.chatMessage" = "Esta função envia dados específicos da sua consulta ao OpenAI para responder suas perguntas: nomes de comerciantes, valores e datas das transações relevantes, e status dos orçamentos relacionados.\n\nSeu histórico completo, notas pessoais e nomes de contas nunca são compartilhados. O OpenAI não usa esses dados para treinar seus modelos.";
-"aiConsent.inlineHintChat" = "Os dados da sua consulta são processados pelo OpenAI. Não são armazenados permanentemente.";
+"aiConsent.chatMessage" = "Para responder às suas perguntas, esta função envia ao OpenAI um resumo da sua situação financeira: saldos e nomes das suas contas, totais por categoria, comerciantes frequentes, orçamentos e pagamentos recorrentes.\n\nOs dados são usados apenas para gerar a resposta. O OpenAI não os usa para treinar os seus modelos.";
+"aiConsent.inlineHintChat" = "O resumo das suas finanças é processado pelo OpenAI para responder. Não é armazenado permanentemente.";
 "aiConsent.inlineHintMultiple" = "Várias funções de IA usam o OpenAI para processar seus dados. Não são armazenados permanentemente.";
 
 // MARK: - Chat Assistant Feature Gate & Settings

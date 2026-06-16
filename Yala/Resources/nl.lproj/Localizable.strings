@@ -2914,13 +2914,13 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Spraak- en afbeeldingsverwerking";
-"aiConsent.processingMessage" = "Deze functies gebruiken OpenAI om je gegevens te verwerken:\n\n• Spraak: je audio-opname wordt getranscribeerd\n• Afbeeldingen: de foto wordt geanalyseerd om gegevens eruit te halen\n\nJe individuele transacties en persoonlijke informatie worden nooit gedeeld. OpenAI gebruikt deze gegevens niet voor training.";
+"aiConsent.processingMessage" = "Deze functies gebruiken OpenAI om je gegevens te verwerken:\n\n• Spraak: je audio-opname wordt getranscribeerd\n• Afbeeldingen: de foto (bon of schermafbeelding) wordt geanalyseerd om de uitgavegegevens eruit te halen\n\nAlleen wat je op dat moment verstuurt, wordt verwerkt. OpenAI gebruikt deze gegevens niet om zijn modellen te trainen.";
 "aiConsent.insightsTitle" = "Slim overzicht";
-"aiConsent.insightsMessage" = "Deze functie stuurt totalen, percentages en trends naar OpenAI om een samenvatting van je financiën te genereren.\n\nJe individuele transacties, transactiegeschiedenis en persoonlijke informatie worden nooit gedeeld. OpenAI gebruikt deze gegevens niet voor training.";
+"aiConsent.insightsMessage" = "Deze functie stuurt een samenvatting van je financiën naar OpenAI — totalen en trends per categorie, budgetten en terugkerende betalingen — om je analyse te genereren.\n\nJe volledige transactiegeschiedenis wordt niet verstuurd. OpenAI gebruikt deze gegevens niet om zijn modellen te trainen.";
 "aiConsent.accept" = "Accepteren en inschakelen";
 "aiConsent.privacyPolicy" = "Privacybeleid";
 "aiConsent.inlineHintProcessing" = "Je spraak- en afbeeldingsgegevens worden door OpenAI verwerkt. Ze worden niet permanent bewaard.";
-"aiConsent.inlineHintInsights" = "Alleen totalen en trends worden naar OpenAI gestuurd voor het overzicht. Ze worden niet permanent bewaard.";
+"aiConsent.inlineHintInsights" = "Je financiële samenvatting wordt voor de analyse naar OpenAI gestuurd. Deze wordt niet permanent bewaard.";
 "aiConsent.inlineHintBoth" = "Je spraak-, afbeeldings- en samenvattingsgegevens worden door OpenAI verwerkt. Ze worden niet permanent bewaard.";
 
 // MARK: - Insights Settings
@@ -3453,8 +3453,8 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Financiële assistent";
-"aiConsent.chatMessage" = "Deze functie stuurt gegevens die specifiek voor je vraag relevant zijn naar OpenAI om je vragen te beantwoorden: namen van verkopers, bedragen en datums van relevante transacties en gerelateerde budgetstatus.\n\nJe volledige geschiedenis, persoonlijke notities en rekeningnamen worden nooit gedeeld. OpenAI gebruikt deze gegevens niet om zijn modellen te trainen.";
-"aiConsent.inlineHintChat" = "De gegevens van je vraag worden door OpenAI verwerkt. Ze worden niet permanent bewaard.";
+"aiConsent.chatMessage" = "Om je vragen te beantwoorden stuurt deze functie een samenvatting van je financiële situatie naar OpenAI: saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten en terugkerende betalingen.\n\nDe gegevens worden alleen gebruikt om het antwoord te genereren. OpenAI gebruikt ze niet om zijn modellen te trainen.";
+"aiConsent.inlineHintChat" = "Je financiële samenvatting wordt door OpenAI verwerkt om te antwoorden. Deze wordt niet permanent bewaard.";
 "aiConsent.inlineHintMultiple" = "Meerdere AI-functies gebruiken OpenAI om je gegevens te verwerken. Ze worden niet permanent bewaard.";
 
 // MARK: - Chat Assistant Feature Gate & Settings

@@ -2961,13 +2961,13 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Voice & Image Processing";
-"aiConsent.processingMessage" = "These features use OpenAI to process your data:\n\n• Voice: your audio recording is transcribed\n• Images: the photo is analyzed to extract data\n\nYour individual transactions and personal information are never shared. OpenAI does not use this data for training.";
+"aiConsent.processingMessage" = "These features use OpenAI to process your data:\n\n• Voice: your audio recording is transcribed\n• Images: the photo (receipt or screenshot) is analyzed to extract the expense details\n\nOnly what you send at that moment is processed. OpenAI does not use this data to train its models.";
 "aiConsent.insightsTitle" = "Smart Overview";
-"aiConsent.insightsMessage" = "This feature sends totals, percentages, and trends to OpenAI to generate a summary of your finances.\n\nYour individual transactions, transaction history, and personal information are never shared. OpenAI does not use this data for training.";
+"aiConsent.insightsMessage" = "This feature sends OpenAI a summary of your finances —totals and trends by category, budgets, and recurring payments— to generate your analysis.\n\nYour full transaction history is not sent. OpenAI does not use this data to train its models.";
 "aiConsent.accept" = "Accept and Enable";
 "aiConsent.privacyPolicy" = "Privacy Policy";
 "aiConsent.inlineHintProcessing" = "Your voice and image data is processed with OpenAI. It is not stored permanently.";
-"aiConsent.inlineHintInsights" = "Only totals and trends are sent to OpenAI for the overview. They are not stored permanently.";
+"aiConsent.inlineHintInsights" = "Your financial summary is sent to OpenAI for the analysis. It is not stored permanently.";
 "aiConsent.inlineHintBoth" = "Your voice, image, and summary data is processed with OpenAI. It is not stored permanently.";
 
 // MARK: - Insights Settings
@@ -3493,8 +3493,8 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Financial assistant";
-"aiConsent.chatMessage" = "This feature sends data specific to your query to OpenAI to answer your questions: merchant names, amounts and dates of relevant transactions, and related budget status.\n\nYour full history, personal notes, and account names are never shared. OpenAI does not use this data to train its models.";
-"aiConsent.inlineHintChat" = "Your query data is processed by OpenAI. It is not stored permanently.";
+"aiConsent.chatMessage" = "To answer your questions, this feature sends OpenAI a summary of your financial situation: your account balances and names, totals by category, frequent merchants, budgets, and recurring payments.\n\nThe data is used only to generate the response. OpenAI does not use it to train its models.";
+"aiConsent.inlineHintChat" = "Your financial summary is processed by OpenAI to answer. It is not stored permanently.";
 "aiConsent.inlineHintMultiple" = "Multiple AI features use OpenAI to process your data. It is not stored permanently.";
 
 // MARK: - Chat Assistant Feature Gate & Settings

@@ -2914,13 +2914,13 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "音声・画像の処理";
-"aiConsent.processingMessage" = "これらの機能はOpenAIを使ってデータを処理します:\n\n• 音声: 録音した音声を文字起こし\n• 画像: 写真を分析してデータを抽出\n\n個別の取引や個人情報は共有されません。OpenAIはこのデータを学習に使用しません。";
+"aiConsent.processingMessage" = "これらの機能はOpenAIを使ってデータを処理します：\n\n• 音声：録音した音声を文字起こしします\n• 画像：写真（レシートやスクリーンショット）を分析して支出データを抽出します\n\nその時に送信した内容のみが処理されます。OpenAIはこのデータをモデルの学習に使用しません。";
 "aiConsent.insightsTitle" = "スマート概要";
-"aiConsent.insightsMessage" = "この機能は合計、割合、推移をOpenAIに送信して資産状況のサマリーを生成します。\n\n個別の取引、取引履歴、個人情報は共有されません。OpenAIはこのデータを学習に使用しません。";
+"aiConsent.insightsMessage" = "この機能は家計の概要（カテゴリ別の合計と推移、予算、定期的な支払い）をOpenAIに送信して分析を生成します。\n\n取引履歴の全体は送信されません。OpenAIはこのデータをモデルの学習に使用しません。";
 "aiConsent.accept" = "同意して有効化";
 "aiConsent.privacyPolicy" = "プライバシーポリシー";
 "aiConsent.inlineHintProcessing" = "音声と画像のデータはOpenAIで処理されます。永続的に保存されることはありません。";
-"aiConsent.inlineHintInsights" = "概要のためにOpenAIへ送信されるのは合計と推移のみです。永続的に保存されることはありません。";
+"aiConsent.inlineHintInsights" = "あなたの財務概要は分析のためOpenAIに送信されます。永続的に保存されることはありません。";
 "aiConsent.inlineHintBoth" = "音声、画像、サマリーのデータはOpenAIで処理されます。永続的に保存されることはありません。";
 
 // MARK: - Insights Settings
@@ -3453,8 +3453,8 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "金融アシスタント";
-"aiConsent.chatMessage" = "この機能は質問に答えるため、関連データをOpenAIに送信します: 店舗名、関連取引の金額と日付、関連する予算の状態。\n\n履歴全体、個人的なメモ、口座名は共有されません。OpenAIはこのデータをモデルの学習に使用しません。";
-"aiConsent.inlineHintChat" = "質問データはOpenAIで処理されます。永続的に保存されることはありません。";
+"aiConsent.chatMessage" = "ご質問にお答えするため、この機能はあなたの財務状況の概要をOpenAIに送信します：口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い。\n\nデータは回答の生成にのみ使用されます。OpenAIはこのデータをモデルの学習に使用しません。";
+"aiConsent.inlineHintChat" = "あなたの財務概要は回答のためOpenAIで処理されます。永続的に保存されることはありません。";
 "aiConsent.inlineHintMultiple" = "複数のAI機能がOpenAIでデータを処理します。永続的に保存されることはありません。";
 
 // MARK: - Chat Assistant Feature Gate & Settings

@@ -2914,13 +2914,13 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "语音和图片处理";
-"aiConsent.processingMessage" = "这些功能使用 OpenAI 处理你的数据:\n\n• 语音:你的录音会被转写\n• 图片:照片会被分析以提取数据\n\n你的单笔交易和个人信息绝不会被分享。OpenAI 不会使用这些数据用于训练。";
+"aiConsent.processingMessage" = "这些功能使用 OpenAI 处理你的数据：\n\n• 语音：你的录音会被转写\n• 图片：照片（收据或截图）会被分析以提取支出数据\n\n仅处理你当时发送的内容。OpenAI 不会使用这些数据来训练其模型。";
 "aiConsent.insightsTitle" = "智能概览";
-"aiConsent.insightsMessage" = "此功能将总计、百分比和趋势发送到 OpenAI 来生成你财务的摘要。\n\n你的单笔交易、交易历史和个人信息绝不会被分享。OpenAI 不会使用这些数据用于训练。";
+"aiConsent.insightsMessage" = "此功能会向 OpenAI 发送你财务的摘要——按类别的总计和趋势、预算以及定期付款——以生成你的分析。\n\n不会发送你的完整交易历史。OpenAI 不会使用这些数据来训练其模型。";
 "aiConsent.accept" = "接受并启用";
 "aiConsent.privacyPolicy" = "隐私政策";
 "aiConsent.inlineHintProcessing" = "你的语音和图片数据由 OpenAI 处理,不会被永久存储。";
-"aiConsent.inlineHintInsights" = "只有总计和趋势会被发送到 OpenAI 用于概览,不会被永久存储。";
+"aiConsent.inlineHintInsights" = "你的财务摘要会发送到 OpenAI 用于分析，不会被永久存储。";
 "aiConsent.inlineHintBoth" = "你的语音、图片和摘要数据由 OpenAI 处理,不会被永久存储。";
 
 // MARK: - Insights Settings
@@ -3453,8 +3453,8 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "财务助理";
-"aiConsent.chatMessage" = "此功能将与你查询相关的数据发送到 OpenAI 来回答问题:相关交易的商家名称、金额、日期以及相关预算状态。\n\n你的完整历史、个人备注和账户名称绝不会被分享。OpenAI 不会使用这些数据来训练其模型。";
-"aiConsent.inlineHintChat" = "你的查询数据由 OpenAI 处理,不会被永久存储。";
+"aiConsent.chatMessage" = "为回答你的问题，此功能会向 OpenAI 发送你财务状况的摘要：你的账户余额和名称、按类别的总计、常用商家、预算和定期付款。\n\n这些数据仅用于生成回答。OpenAI 不会使用这些数据来训练其模型。";
+"aiConsent.inlineHintChat" = "你的财务摘要由 OpenAI 处理以作答，不会被永久存储。";
 "aiConsent.inlineHintMultiple" = "多项 AI 功能使用 OpenAI 处理你的数据,不会被永久存储。";
 
 // MARK: - Chat Assistant Feature Gate & Settings
