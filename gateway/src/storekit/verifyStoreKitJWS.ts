@@ -25,18 +25,39 @@ interface TransactionPayload {
  * activa de Yala = Pro (Yala tiene una única suscripción Pro). Acepta Sandbox y Production.
  */
 export async function verifyStoreKitJWS(env: Env, jws: string | undefined): Promise<Entitlement | null> {
-  if (!jws) return null;
+  if (!jws) return null; // sin suscripción (usuario Free) — caso común, no se loguea
   const payload = (await verifyAppleJWS(jws)) as TransactionPayload | null;
-  if (!payload) return null;
+  if (!payload) {
+    console.log("[storekit-reject] jws-invalid");
+    return null;
+  }
+  if (!payload.bundleId || !acceptedBundleIDs(env).includes(payload.bundleId)) {
+    console.log(`[storekit-reject] bundleId:${payload.bundleId}`);
+    return null;
+  }
+  if (payload.type !== "Auto-Renewable Subscription") {
+    console.log(`[storekit-reject] type:${payload.type}`);
+    return null;
+  }
+  if (payload.revocationDate) {
+    console.log("[storekit-reject] revoked");
+    return null;
+  }
+  if (!payload.productId || !payload.originalTransactionId || !payload.expiresDate) {
+    console.log("[storekit-reject] missing-fields");
+    return null;
+  }
+  if (payload.expiresDate <= Date.now()) {
+    console.log("[storekit-reject] expired");
+    return null;
+  }
 
-  if (!payload.bundleId || !acceptedBundleIDs(env).includes(payload.bundleId)) return null;
-  if (payload.type !== "Auto-Renewable Subscription") return null;
-  if (payload.revocationDate) return null;
-  if (!payload.productId || !payload.originalTransactionId || !payload.expiresDate) return null;
-  if (payload.expiresDate <= Date.now()) return null;
-  // En producción exigir transacción de Production (no Sandbox). Staging acepta ambas (TestFlight/QA).
-  // Sin esto, una suscripción sandbox (gratis de crear) firmada por Apple daría Pro en prod.
-  if (env.ENVIRONMENT === "production" && payload.environment !== "Production") return null;
+  // TestFlight usa StoreKit SANDBOX incluso en builds de producción → se aceptan Sandbox Y Production.
+  // La barrera real es App Attest (entorno production: solo builds genuinas de TestFlight/App Store) +
+  // el rate-limit por device. Rechazar Sandbox rompería a TODOS los testers de TestFlight.
+  if (env.ENVIRONMENT === "production" && payload.environment === "Sandbox") {
+    console.log("[storekit] sandbox sub aceptada en prod (TestFlight)");
+  }
 
   return {
     productId: payload.productId,
