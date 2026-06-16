@@ -40,7 +40,15 @@ final class CurrencyConverter: CurrencyConverting {
     // MARK: - Singleton (for backward compatibility)
 
     /// Shared instance for backward compatibility. Prefer @Environment injection in Views.
-    static let shared = CurrencyConverter()
+    /// `nonisolated`: lets nonisolated pure-logic calculators/helpers reference it as a default
+    /// argument (`converter: CurrencyConverting = CurrencyConverter.shared`). The conversion path
+    /// is already engineered for cross-actor reads (lock-protected rates cache).
+    nonisolated static let shared = CurrencyConverter()
+
+    /// `nonisolated` initializer so the `nonisolated` `shared` singleton can be constructed off
+    /// any actor. Every stored property has a default (or is optional → nil) and none require the
+    /// main actor, so an empty nonisolated init is sound.
+    nonisolated init() {}
 
     // MARK: - Properties
 
@@ -163,7 +171,9 @@ final class CurrencyConverter: CurrencyConverting {
 
     /// Invalidates the latest-rates cache. Call after `ExchangeRateService`
     /// persists fresh rates so subsequent conversions read updated data.
-    func invalidateLatestRatesCache() {
+    /// `nonisolated`: only touches the thread-safe `OSAllocatedUnfairLock`, so it is safe to
+    /// call from anywhere — including the `@Sendable` `.yalaExchangeRatesUpdated` observer.
+    nonisolated func invalidateLatestRatesCache() {
         latestRatesCache.withLock { $0 = nil }
     }
 
