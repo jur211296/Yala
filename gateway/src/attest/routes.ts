@@ -102,6 +102,13 @@ export async function handleAssert(c: Ctx): Promise<Response> {
   if (!row) return jsonError("yala_attest_unknown_key", "key no registrada; re-registrar", 401);
   if (row.revoked) return jsonError("yala_attest_invalid", "key revocada", 401);
 
+  // Accepted-risk (2026-06-16, decisión del owner): el ciclo leer-verificar-escribir del counter NO
+  // es atómico. Un /code-review puede marcarlo como race — está aceptado a propósito, NO es bug.
+  // El replay SECUENCIAL ya lo bloquea verifyAssertion (newCounter <= stored → throw); el único hueco
+  // es replay CONCURRENTE de una assertion CAPTURADA en ventana de ms, y el blast radius está acotado
+  // por rate-limit por device + gate Pro + hard cap de OpenAI (no expone keys ni datos). Fix disponible
+  // si cambia el modelo de amenaza: CAS en updateCounter (UPDATE … WHERE key_id=? AND counter<?) +
+  // rechazar si changes===0. Ver DESIGN-secure-proxy-gateway.md.
   try {
     const { newCounter } = await verifyAssertion(assertion, challenge, publicKeyBytes(row), row.counter, appIds(c.env));
     await updateCounter(c.env, keyId, newCounter);
