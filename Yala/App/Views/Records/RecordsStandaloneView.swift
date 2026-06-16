@@ -99,7 +99,24 @@ struct RecordsStandaloneView: View {
                 dataViewModel.setContext(modelContext)
                 performRecalculation()
             }
-            .onDisappear { recalculateTask?.cancel() }
+            .onDisappear {
+                recalculateTask?.cancel()
+                recordsViewModel.exitDuplicateMode()   // modo efímero: se apaga al salir de la vista
+            }
+            .onChange(of: recordsViewModel.duplicateModeActive) { _, isActive in
+                recalculateData()
+                if isActive {
+                    TelemetryService.track(.recordsDuplicateModeActivated, parameters: [
+                        "byAmount": String(recordsViewModel.duplicateCriteria.amount),
+                        "byNote": String(recordsViewModel.duplicateCriteria.note),
+                        "bySubcategory": String(recordsViewModel.duplicateCriteria.subcategory),
+                        "byDate": String(recordsViewModel.duplicateCriteria.date),
+                    ])
+                }
+            }
+            .onChange(of: recordsViewModel.duplicateCriteria) { _, _ in
+                recalculateData()
+            }
             .onChange(of: sessionState.dataVersion) { _, _ in
                 reloadAndRecalculate()
             }
@@ -202,35 +219,7 @@ struct RecordsStandaloneView: View {
     @ToolbarContentBuilder
     private var normalModeToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: DS.Spacing.md) {
-                // Selection button
-                Button {
-                    recordsViewModel.enterSelectionMode()
-                } label: {
-                    Image(systemName: "checklist")
-                        .font(DS.Typography.body.weight(.medium))
-                        .foregroundStyle(.thToolbarIcon)
-                }
-                .accessibilityLabel(L10n.Action.select)
-
-                // Filters button
-                Button {
-                    recordsViewModel.showFiltersSheet = true
-                } label: {
-                    Image(systemName: "line.3.horizontal.decrease")
-                        .font(DS.Typography.body.weight(.medium))
-                        .foregroundStyle(.thToolbarIcon)
-                }
-                .accessibilityLabel(L10n.Filters.title)
-                .overlay(alignment: .topTrailing) {
-                    if recordsViewModel.activeFilterCount > 0 {
-                        Circle()
-                            .fill(Color.hotPink)
-                            .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
-                            .offset(x: 2, y: -2)
-                    }
-                }
-            }
+            RecordsOverflowMenu(viewModel: recordsViewModel)
         }
 
         // iOS 26 spacer creates separate glass groups

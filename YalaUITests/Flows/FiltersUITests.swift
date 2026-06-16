@@ -5,7 +5,7 @@
 //  Cobertura XCUITest del área `filters` (escenarios 11.1-11.6): el sheet de
 //  filtros de Registros y la aplicación de un filtro de texto (nota). Flujo:
 //  abrir filtros → escribir nota → aplicar → reabrir → el texto persiste.
-//  Reusa la navegación a Records y `filters_toolbar_button`/`filters_apply_button`.
+//  Reusa la navegación a Records, el menú (···) (`openRecordsFilters`) y `filters_apply_button`.
 //  Seed `minimal`. Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
 //
 
@@ -36,7 +36,7 @@ final class FiltersUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         openRecords(app)
-        app.buttons["filters_toolbar_button"].tap()
+        app.openRecordsFilters()
 
         XCTAssertTrue(
             app.textFields["filters_note_field"].waitForExistence(timeout: 5),
@@ -51,7 +51,7 @@ final class FiltersUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         openRecords(app)
-        app.buttons["filters_toolbar_button"].tap()
+        app.openRecordsFilters()
 
         let noteField = app.textFields["filters_note_field"]
         XCTAssertTrue(noteField.waitForExistence(timeout: 5), "No apareció filters_note_field.")
@@ -62,9 +62,8 @@ final class FiltersUITests: XCTestCase {
         app.buttons["filters_apply_button"].tap()
 
         // Reabrir filtros: el texto del filtro de nota debe persistir.
-        let filtersButton = app.buttons["filters_toolbar_button"]
-        XCTAssertTrue(filtersButton.waitForExistence(timeout: 5), "No volvió a Registros tras aplicar.")
-        filtersButton.tap()
+        XCTAssertTrue(app.recordsOverflowMenu.waitForExistence(timeout: 5), "No volvió a Registros tras aplicar.")
+        app.openRecordsFilters()
 
         let noteFieldReopened = app.textFields["filters_note_field"]
         XCTAssertTrue(noteFieldReopened.waitForExistence(timeout: 5), "No reabrió el sheet de filtros.")

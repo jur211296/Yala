@@ -38,7 +38,7 @@ final class DeferredFiltersUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         openRecords(app)
-        app.buttons["filters_toolbar_button"].tap()
+        app.openRecordsFilters()
 
         let noteField = app.textFields["filters_note_field"]
         XCTAssertTrue(noteField.waitForExistence(timeout: 5), "No apareció filters_note_field.")
@@ -49,9 +49,8 @@ final class DeferredFiltersUITests: XCTestCase {
         app.buttons["filters_close_button"].tap()
 
         // Reabrir: el campo de nota no debe conservar el texto descartado.
-        let filtersButton = app.buttons["filters_toolbar_button"]
-        XCTAssertTrue(filtersButton.waitForExistence(timeout: 5), "No volvió a Registros tras descartar.")
-        filtersButton.tap()
+        XCTAssertTrue(app.recordsOverflowMenu.waitForExistence(timeout: 5), "No volvió a Registros tras descartar.")
+        app.openRecordsFilters()
 
         let reopened = app.textFields["filters_note_field"]
         XCTAssertTrue(reopened.waitForExistence(timeout: 5), "No reabrió el sheet de filtros.")
@@ -69,7 +68,7 @@ final class DeferredFiltersUITests: XCTestCase {
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         openRecords(app)
-        app.buttons["filters_toolbar_button"].tap()
+        app.openRecordsFilters()
 
         let noteField = app.textFields["filters_note_field"]
         XCTAssertTrue(noteField.waitForExistence(timeout: 5), "No apareció filters_note_field.")
@@ -79,9 +78,8 @@ final class DeferredFiltersUITests: XCTestCase {
 
         app.buttons["filters_apply_button"].tap()
 
-        let filtersButton = app.buttons["filters_toolbar_button"]
-        XCTAssertTrue(filtersButton.waitForExistence(timeout: 5), "No volvió a Registros tras aplicar.")
-        filtersButton.tap()
+        XCTAssertTrue(app.recordsOverflowMenu.waitForExistence(timeout: 5), "No volvió a Registros tras aplicar.")
+        app.openRecordsFilters()
 
         let reopened = app.textFields["filters_note_field"]
         XCTAssertTrue(reopened.waitForExistence(timeout: 5), "No reabrió el sheet de filtros.")

@@ -3714,3 +3714,21 @@
 "accessibility.completeRequiredFilters" = "Complete the required filters";
 "accessibility.exportingHint" = "Export in progress";
 "accessibility.assignAllCurrencies" = "Assign all currencies";
+
+/* Records: toggle to identify potential duplicates */
+"records.duplicates.menuTitle" = "Identify duplicates";
+
+/* Records: duplicate match criteria submenu */
+"records.duplicates.matchBy" = "Match by";
+
+/* Records: turn off duplicate identification */
+"records.duplicates.deactivate" = "Turn off";
+
+/* Records: empty state title when no duplicates found */
+"records.duplicates.emptyTitle" = "No duplicates";
+
+/* Records: empty state message when no duplicates found */
+"records.duplicates.emptyMessage" = "No records match the selected criteria.";
+
+/* Records: banner title shown while duplicate mode active */
+"records.duplicates.bannerTitle" = "Possible duplicates";

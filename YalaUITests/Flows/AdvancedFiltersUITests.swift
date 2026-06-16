@@ -38,9 +38,7 @@ final class AdvancedFiltersUITests: XCTestCase {
 
         openRecords(app)
 
-        let filtersButton = app.buttons["filters_toolbar_button"]
-        XCTAssertTrue(filtersButton.waitForExistence(timeout: 5), "No apareció el botón de filtros.")
-        filtersButton.tap()
+        app.openRecordsFilters()
 
         XCTAssertTrue(
             app.segmentedControls["filters_include_exclude_picker"].waitForExistence(timeout: 5),
@@ -58,7 +56,7 @@ final class AdvancedFiltersUITests: XCTestCase {
 
         openRecords(app)
 
-        app.buttons["filters_toolbar_button"].tap()
+        app.openRecordsFilters()
 
         let picker = app.segmentedControls["filters_include_exclude_picker"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5), "No se montó el selector Incluir/Excluir.")
@@ -70,9 +68,8 @@ final class AdvancedFiltersUITests: XCTestCase {
         apply.tap()
 
         // Reabrir el sheet: el modo Excluir debe persistir (segmento 2º seleccionado).
-        let filtersButton = app.buttons["filters_toolbar_button"]
-        XCTAssertTrue(filtersButton.waitForExistence(timeout: 5), "No volvió a Registros tras aplicar.")
-        filtersButton.tap()
+        XCTAssertTrue(app.recordsOverflowMenu.waitForExistence(timeout: 5), "No volvió a Registros tras aplicar.")
+        app.openRecordsFilters()
 
         let pickerReopened = app.segmentedControls["filters_include_exclude_picker"]
         XCTAssertTrue(pickerReopened.waitForExistence(timeout: 5), "No reabrió el sheet de filtros.")

@@ -1528,6 +1528,15 @@ enum L10n {
         static func deleteConfirmTitle(_ count: Int) -> String {
             String(format: ls("records.deleteConfirmTitle", comment: ""), count)
         }
+
+        enum Duplicates {
+            static var menuTitle: String { ls("records.duplicates.menuTitle", comment: "") }
+            static var matchBy: String { ls("records.duplicates.matchBy", comment: "") }
+            static var deactivate: String { ls("records.duplicates.deactivate", comment: "") }
+            static var emptyTitle: String { ls("records.duplicates.emptyTitle", comment: "") }
+            static var emptyMessage: String { ls("records.duplicates.emptyMessage", comment: "") }
+            static var bannerTitle: String { ls("records.duplicates.bannerTitle", comment: "") }
+        }
     }
 
     // MARK: - Filters

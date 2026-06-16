@@ -29,7 +29,7 @@ final class CurrencyFilterStatsUITests: XCTestCase {
             chipsBar.swipeLeft()
         }
         recordsChip.tap()
-        app.buttons["filters_toolbar_button"].tap()
+        app.openRecordsFilters()
     }
 
     /// Smoke: el sheet de filtros ofrece el chip de moneda USD (multi-moneda en el seed).
@@ -61,9 +61,8 @@ final class CurrencyFilterStatsUITests: XCTestCase {
         app.buttons["filters_apply_button"].tap()
 
         // Reabrir filtros: el chip USD debe seguir seleccionado (.isSelected).
-        let filtersButton = app.buttons["filters_toolbar_button"]
-        XCTAssertTrue(filtersButton.waitForExistence(timeout: 5), "No volvió a Registros tras aplicar.")
-        filtersButton.tap()
+        XCTAssertTrue(app.recordsOverflowMenu.waitForExistence(timeout: 5), "No volvió a Registros tras aplicar.")
+        app.openRecordsFilters()
 
         let usdReopened = app.buttons["filters_currency_chip_USD"]
         XCTAssertTrue(usdReopened.waitForExistence(timeout: 5), "No reabrió el sheet de filtros.")

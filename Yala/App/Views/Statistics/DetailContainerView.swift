@@ -151,7 +151,10 @@ struct DetailContainerView: View {
                 dataViewModel.setContext(modelContext)
                 performRecalculation()
             }
-            .onDisappear { recalculateTask?.cancel() }
+            .onDisappear {
+                recalculateTask?.cancel()
+                recordsViewModel.exitDuplicateMode()   // modo efímero
+            }
             .onChange(of: scenePhase) { _, newPhase in
                 switch newPhase {
                 case .background, .inactive:
@@ -175,6 +178,9 @@ struct DetailContainerView: View {
             }
             .onChange(of: selectedTab) { _, newTab in
                 TelemetryService.track(.statsTabViewed, parameters: ["tab": newTab.rawValue])
+                if newTab != .records {
+                    recordsViewModel.exitDuplicateMode()   // modo efímero: se apaga al salir del tab Registros
+                }
                 if sessionState.selectedDetailTab != newTab {
                     sessionState.selectedDetailTab = newTab
                 }
@@ -210,6 +216,7 @@ struct DetailContainerView: View {
                 DetailContainerObservers(
                     sessionState: sessionState,
                     trendsViewModel: trendsViewModel,
+                    recordsViewModel: recordsViewModel,
                     categories: dataViewModel.categories,
                     subcategories: dataViewModel.allSubcategories,
                     recalculateData: recalculateData
@@ -400,27 +407,14 @@ struct DetailContainerView: View {
     @ToolbarContentBuilder
     private var normalModeToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: DS.Spacing.md) {
-                // Selection button (only for Records)
-                if selectedTab == .records {
-                    Button {
-                        recordsViewModel.enterSelectionMode()
-                    } label: {
-                        Image(systemName: "checklist")
-                            .font(DS.Typography.body).fontWeight(.medium)
-                            .foregroundStyle(.thToolbarIcon)
-                    }
-                    .accessibilityLabel(L10n.Action.select)
-                    .accessibilityIdentifier("records_select_button")
-                }
-
-                // Filters button
+            if selectedTab == .records {
+                // Tab Registros: menú (···) con Seleccionar + Filtrar + Identificar duplicados.
+                RecordsOverflowMenu(viewModel: recordsViewModel)
+                    .accessibilityIdentifier("records_overflow_menu")
+            } else {
+                // Tendencias / Categorías / Insights: solo botón Filtrar (→ trendsViewModel).
                 Button {
-                    if selectedTab == .records {
-                        recordsViewModel.showFiltersSheet = true
-                    } else {
-                        trendsViewModel.showFiltersSheet = true
-                    }
+                    trendsViewModel.showFiltersSheet = true
                 } label: {
                     Image(systemName: "line.3.horizontal.decrease")
                         .font(DS.Typography.body).fontWeight(.medium)
@@ -429,12 +423,7 @@ struct DetailContainerView: View {
                 .accessibilityLabel(L10n.Accessibility.filters)
                 .accessibilityIdentifier("filters_toolbar_button")
                 .overlay(alignment: .topTrailing) {
-                    let showIndicator = (selectedTab == .records && recordsViewModel.activeFilterCount > 0) ||
-                                       (selectedTab == .trends && trendsViewModel.activeFilterCount > 0) ||
-                                       (selectedTab == .categories && trendsViewModel.activeFilterCount > 0) ||
-                                       (selectedTab == .insights && trendsViewModel.activeFilterCount > 0)
-
-                    if showIndicator {
+                    if trendsViewModel.activeFilterCount > 0 {
                         Circle()
                             .fill(Color.hotPink)
                             .frame(width: 8, height: 8)
@@ -808,6 +797,7 @@ private struct DetailContainerSheets: ViewModifier {
 private struct DetailContainerObservers: ViewModifier {
     let sessionState: SessionState
     @Bindable var trendsViewModel: StatisticsViewModel
+    @Bindable var recordsViewModel: RecordsViewModel
     let categories: [Category]
     let subcategories: [Subcategory]
     let recalculateData: () -> Void
@@ -822,6 +812,21 @@ private struct DetailContainerObservers: ViewModifier {
             ))
             // isAggregatedView is local to StatisticsViewModel (not a SessionState proxy)
             .onChange(of: trendsViewModel.isAggregatedView) { _, _ in recalculateData() }
+            // "Identificar duplicados": recompute al togglear modo/criterios + telemetría al activar.
+            .onChange(of: recordsViewModel.duplicateModeActive) { _, isActive in
+                recalculateData()
+                if isActive {
+                    TelemetryService.track(.recordsDuplicateModeActivated, parameters: [
+                        "byAmount": String(recordsViewModel.duplicateCriteria.amount),
+                        "byNote": String(recordsViewModel.duplicateCriteria.note),
+                        "bySubcategory": String(recordsViewModel.duplicateCriteria.subcategory),
+                        "byDate": String(recordsViewModel.duplicateCriteria.date),
+                    ])
+                }
+            }
+            .onChange(of: recordsViewModel.duplicateCriteria) { _, _ in
+                recalculateData()
+            }
     }
 }
 

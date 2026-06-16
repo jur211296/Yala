@@ -4464,3 +4464,21 @@
 "accessibility.completeRequiredFilters" = "Vul de vereiste filters in";
 "accessibility.exportingHint" = "Bezig met exporteren";
 "accessibility.assignAllCurrencies" = "Wijs alle valuta's toe";
+
+/* Records: toggle to identify potential duplicates */
+"records.duplicates.menuTitle" = "Duplicaten identificeren";
+
+/* Records: duplicate match criteria submenu */
+"records.duplicates.matchBy" = "Vergelijken op";
+
+/* Records: turn off duplicate identification */
+"records.duplicates.deactivate" = "Uitschakelen";
+
+/* Records: empty state title when no duplicates found */
+"records.duplicates.emptyTitle" = "Geen duplicaten";
+
+/* Records: empty state message when no duplicates found */
+"records.duplicates.emptyMessage" = "Geen records komen overeen met de gekozen criteria.";
+
+/* Records: banner title shown while duplicate mode active */
+"records.duplicates.bannerTitle" = "Mogelijke duplicaten";

@@ -41,6 +41,13 @@ struct RecordsTabView: View {
         ScrollView {
             VStack(spacing: DS.Spacing.md) {
                 heroSummary
+
+                if viewModel.duplicateModeActive {
+                    DuplicateModeBanner(count: viewModel.filteredCount) {
+                        viewModel.exitDuplicateMode()
+                    }
+                }
+
                 filterBarPanel
 
                 if viewModel.groupedRecords.isEmpty {
@@ -379,18 +386,68 @@ struct RecordsTabView: View {
 
     // MARK: - Empty State Content
 
+    @ViewBuilder
     private var emptyStateContent: some View {
-        YalaEmptyState(
-            icon: "list.bullet.rectangle",
-            title: L10n.Records.noRecords,
-            message: viewModel.hasActiveFilters
-                ? L10n.Statistics.noRecordsFiltered
-                : L10n.Statistics.noRecordsDescription,
-            actionTitle: viewModel.hasActiveFilters ? L10n.Filters.clearFilters : nil,
-            action: viewModel.hasActiveFilters ? {
-                viewModel.clearFilters()
-                onFilterChange()
-            } : nil
-        )
+        if viewModel.duplicateModeActive {
+            // Modo duplicados sin resultados: el banner de arriba sigue visible para desactivar.
+            YalaEmptyState(
+                icon: "doc.on.doc",
+                title: L10n.Records.Duplicates.emptyTitle,
+                message: L10n.Records.Duplicates.emptyMessage,
+                actionTitle: nil,
+                action: nil
+            )
+        } else {
+            YalaEmptyState(
+                icon: "list.bullet.rectangle",
+                title: L10n.Records.noRecords,
+                message: viewModel.hasActiveFilters
+                    ? L10n.Statistics.noRecordsFiltered
+                    : L10n.Statistics.noRecordsDescription,
+                actionTitle: viewModel.hasActiveFilters ? L10n.Filters.clearFilters : nil,
+                action: viewModel.hasActiveFilters ? {
+                    viewModel.clearFilters()
+                    onFilterChange()
+                } : nil
+            )
+        }
+    }
+}
+
+// MARK: - Duplicate Mode Banner
+
+/// Banner mostrado sobre los filtros aplicados mientras el modo "Identificar
+/// duplicados" está activo. Muestra el conteo y permite desactivar el modo.
+private struct DuplicateModeBanner: View {
+    @Environment(\.yalaTheme) private var theme
+    let count: Int
+    let onDeactivate: () -> Void
+
+    var body: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "doc.on.doc")
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(theme.accent)
+
+            Text("\(L10n.Records.Duplicates.bannerTitle) · \(count)")
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.thPrimaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Spacer(minLength: DS.Spacing.sm)
+
+            Button(action: onDeactivate) {
+                Text(L10n.Records.Duplicates.deactivate)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(theme.accent)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.sm)
+        .solidCard(radius: DS.Radius.lg)
+        .padding(.horizontal, DS.Spacing.lg)
+        .accessibilityElement(children: .combine)
     }
 }

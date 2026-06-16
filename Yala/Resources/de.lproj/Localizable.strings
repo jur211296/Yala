@@ -4452,3 +4452,21 @@
 "accessibility.completeRequiredFilters" = "Füllen Sie die erforderlichen Filter aus";
 "accessibility.exportingHint" = "Export läuft";
 "accessibility.assignAllCurrencies" = "Weisen Sie alle Währungen zu";
+
+/* Records: toggle to identify potential duplicates */
+"records.duplicates.menuTitle" = "Duplikate erkennen";
+
+/* Records: duplicate match criteria submenu */
+"records.duplicates.matchBy" = "Abgleichen nach";
+
+/* Records: turn off duplicate identification */
+"records.duplicates.deactivate" = "Deaktivieren";
+
+/* Records: empty state title when no duplicates found */
+"records.duplicates.emptyTitle" = "Keine Duplikate";
+
+/* Records: empty state message when no duplicates found */
+"records.duplicates.emptyMessage" = "Keine Einträge stimmen mit den gewählten Kriterien überein.";
+
+/* Records: banner title shown while duplicate mode active */
+"records.duplicates.bannerTitle" = "Mögliche Duplikate";

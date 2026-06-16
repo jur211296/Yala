@@ -39,3 +39,4 @@ qa/results/
 # Agent skills (third-party, reinstall via: npx skills add)
 .agents/
 .claude/skills/ui-ux-pro-max/scripts/__pycache__/
+.claude/sessions/tests-passed

@@ -4464,3 +4464,21 @@
 "accessibility.completeRequiredFilters" = "请填写必填的筛选条件";
 "accessibility.exportingHint" = "正在导出";
 "accessibility.assignAllCurrencies" = "请分配所有货币";
+
+/* Records: toggle to identify potential duplicates */
+"records.duplicates.menuTitle" = "识别重复项";
+
+/* Records: duplicate match criteria submenu */
+"records.duplicates.matchBy" = "匹配条件";
+
+/* Records: turn off duplicate identification */
+"records.duplicates.deactivate" = "关闭";
+
+/* Records: empty state title when no duplicates found */
+"records.duplicates.emptyTitle" = "无重复项";
+
+/* Records: empty state message when no duplicates found */
+"records.duplicates.emptyMessage" = "没有符合所选条件的记录。";
+
+/* Records: banner title shown while duplicate mode active */
+"records.duplicates.bannerTitle" = "可能的重复项";

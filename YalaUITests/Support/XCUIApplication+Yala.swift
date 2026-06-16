@@ -77,4 +77,33 @@ extension XCUIApplication {
         XCTAssertTrue(row.waitForExistence(timeout: timeout), "No apareció la fila de ajustes '\(rowID)'.")
         row.tap()
     }
+
+    // MARK: - Menú (···) de Registros
+
+    /// El menú (···) de la toolbar de Registros (tab Registros de Estadísticas /
+    /// RecordsStandaloneView). Visible solo en modo normal (no en modo selección).
+    /// Señal canónica de "estamos en la lista de Registros en modo normal".
+    var recordsOverflowMenu: XCUIElement { buttons["records_overflow_menu"] }
+
+    /// Abre el menú (···) de Registros y toca "Filtrar". El botón `filters_toolbar_button`
+    /// vive ahora DENTRO del menú (antes era un botón directo del toolbar).
+    func openRecordsFilters(timeout: TimeInterval = 10) {
+        let menu = recordsOverflowMenu
+        XCTAssertTrue(menu.waitForExistence(timeout: timeout), "No apareció el menú (···) de Registros.")
+        menu.tap()
+        let filters = buttons["filters_toolbar_button"]
+        XCTAssertTrue(filters.waitForExistence(timeout: timeout), "El menú (···) no ofreció 'Filtrar'.")
+        filters.tap()
+    }
+
+    /// Abre el menú (···) de Registros y toca "Seleccionar" → entra en modo selección.
+    /// El botón `records_select_button` vive ahora DENTRO del menú.
+    func openRecordsSelectMode(timeout: TimeInterval = 10) {
+        let menu = recordsOverflowMenu
+        XCTAssertTrue(menu.waitForExistence(timeout: timeout), "No apareció el menú (···) de Registros.")
+        menu.tap()
+        let select = buttons["records_select_button"]
+        XCTAssertTrue(select.waitForExistence(timeout: timeout), "El menú (···) no ofreció 'Seleccionar'.")
+        select.tap()
+    }
 }

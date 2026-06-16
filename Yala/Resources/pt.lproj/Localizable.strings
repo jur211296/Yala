@@ -4460,3 +4460,21 @@
 "accessibility.completeRequiredFilters" = "Preencha os filtros obrigatórios";
 "accessibility.exportingHint" = "Exportação em andamento";
 "accessibility.assignAllCurrencies" = "Atribua todas as moedas";
+
+/* Records: toggle to identify potential duplicates */
+"records.duplicates.menuTitle" = "Identificar duplicados";
+
+/* Records: duplicate match criteria submenu */
+"records.duplicates.matchBy" = "Comparar por";
+
+/* Records: turn off duplicate identification */
+"records.duplicates.deactivate" = "Desativar";
+
+/* Records: empty state title when no duplicates found */
+"records.duplicates.emptyTitle" = "Sem duplicados";
+
+/* Records: empty state message when no duplicates found */
+"records.duplicates.emptyMessage" = "Nenhum registro corresponde aos critérios escolhidos.";
+
+/* Records: banner title shown while duplicate mode active */
+"records.duplicates.bannerTitle" = "Possíveis duplicados";

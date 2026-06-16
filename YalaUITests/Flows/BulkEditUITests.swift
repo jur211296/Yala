@@ -36,9 +36,7 @@ final class BulkEditUITests: XCTestCase {
         }
         recordsChip.tap()
 
-        let selectButton = app.buttons["records_select_button"]
-        XCTAssertTrue(selectButton.waitForExistence(timeout: 5), "No apareció el botón de modo selección.")
-        selectButton.tap()
+        app.openRecordsSelectMode()
     }
 
     /// Smoke: modo selección → seleccionar 2 TX → editar masivo abre BulkEditSheet.
@@ -102,9 +100,9 @@ final class BulkEditUITests: XCTestCase {
         XCTAssertTrue(done.waitForExistence(timeout: 5), "No apareció bulk_edit_done tras aplicar la nota (el cambio no se registró).")
         done.tap()
 
-        // El flujo completó: vuelve a la lista en modo normal (botón de selección disponible).
+        // El flujo completó: vuelve a la lista en modo normal (menú (···) disponible).
         XCTAssertTrue(
-            app.buttons["records_select_button"].waitForExistence(timeout: 5),
+            app.recordsOverflowMenu.waitForExistence(timeout: 5),
             "Tras la edición masiva no se volvió a la lista en modo normal."
         )
     }

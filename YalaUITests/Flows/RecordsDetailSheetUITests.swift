@@ -58,7 +58,7 @@ final class RecordsDetailSheetUITests: XCTestCase {
             "El sheet de detalle no se cerró tras tocar la X."
         )
         XCTAssertTrue(
-            app.buttons["records_select_button"].waitForExistence(timeout: 5),
+            app.recordsOverflowMenu.waitForExistence(timeout: 5),
             "No se volvió a la lista de Registros tras cerrar el detalle."
         )
     }

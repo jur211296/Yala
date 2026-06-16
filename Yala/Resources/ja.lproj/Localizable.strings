@@ -4464,3 +4464,21 @@
 "accessibility.completeRequiredFilters" = "必須フィルターを設定してください";
 "accessibility.exportingHint" = "エクスポート中";
 "accessibility.assignAllCurrencies" = "すべての通貨を割り当ててください";
+
+/* Records: toggle to identify potential duplicates */
+"records.duplicates.menuTitle" = "重複を特定";
+
+/* Records: duplicate match criteria submenu */
+"records.duplicates.matchBy" = "照合する項目";
+
+/* Records: turn off duplicate identification */
+"records.duplicates.deactivate" = "オフにする";
+
+/* Records: empty state title when no duplicates found */
+"records.duplicates.emptyTitle" = "重複なし";
+
+/* Records: empty state message when no duplicates found */
+"records.duplicates.emptyMessage" = "選択した条件に一致する記録はありません。";
+
+/* Records: banner title shown while duplicate mode active */
+"records.duplicates.bannerTitle" = "重複の可能性";

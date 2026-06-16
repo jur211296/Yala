@@ -3718,3 +3718,21 @@
 "accessibility.completeRequiredFilters" = "Completa los filtros requeridos";
 "accessibility.exportingHint" = "Exportación en proceso";
 "accessibility.assignAllCurrencies" = "Asigna todas las divisas";
+
+/* Records: toggle to identify potential duplicates */
+"records.duplicates.menuTitle" = "Identificar duplicados";
+
+/* Records: duplicate match criteria submenu */
+"records.duplicates.matchBy" = "Coincidir por";
+
+/* Records: turn off duplicate identification */
+"records.duplicates.deactivate" = "Desactivar";
+
+/* Records: empty state title when no duplicates found */
+"records.duplicates.emptyTitle" = "Sin duplicados";
+
+/* Records: empty state message when no duplicates found */
+"records.duplicates.emptyMessage" = "No hay registros que coincidan en los criterios elegidos.";
+
+/* Records: banner title shown while duplicate mode active */
+"records.duplicates.bannerTitle" = "Posibles duplicados";

@@ -167,6 +167,7 @@ enum AnalyticsEvent: String {
     case widgetConfigured = "Atajos · Widget configurado"             // params: tipo
     case reportViewed = "Análisis · Reporte visto"
     case statsTabViewed = "Estadísticas · Tab visto"                  // params: tab
+    case recordsDuplicateModeActivated = "Registros · Identificar duplicados"  // params: byAmount, byNote, bySubcategory, byDate
 }
 
 enum DuplicateDetectionContext: String {

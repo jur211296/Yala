@@ -108,6 +108,14 @@ final class RecordsViewModel: Filterable {
     /// Selected record IDs for bulk actions
     var selectedRecordIDs: Set<PersistentIdentifier> = []
 
+    /// Whether "identify duplicates" mode is active (ephemeral, per-view — resets on view/tab change)
+    var duplicateModeActive: Bool = false
+
+    /// Which fields must match for two records to count as duplicates (default: all 4)
+    var duplicateCriteria = RecordsDuplicateLogic.Criteria(
+        amount: true, note: true, subcategory: true, date: true
+    )
+
     /// Sheet states
     var showFiltersSheet: Bool = false
     var showNewTransaction: Bool = false
@@ -232,6 +240,30 @@ final class RecordsViewModel: Filterable {
             criteria: criteria
         )
 
+        // "Identify duplicates" mode: post-filter the result to keep only records with
+        // at least one potential duplicate (exact match over selected criteria). Runs on
+        // the already-filtered set ("duplicates within what you're filtering"). Excludes
+        // transfers/adjustments — their pair is legitimate, not a duplicate to delete.
+        if duplicateModeActive && !duplicateCriteria.isEmpty {
+            let candidates = groupedRecords.flatMap(\.records).compactMap {
+                tx -> RecordsDuplicateLogic.Candidate<PersistentIdentifier>? in
+                guard tx.balanceAdjustmentType == nil else { return nil }
+                return .init(
+                    id: tx.persistentModelID,
+                    amount: tx.amount,
+                    currencyCode: tx.currencyCode,
+                    note: tx.note,
+                    subcategoryID: tx.subcategory?.shortcutID.uuidString,
+                    date: tx.date
+                )
+            }
+            let dupIDs = RecordsDuplicateLogic.duplicateIDs(in: candidates, criteria: duplicateCriteria)
+            groupedRecords = groupedRecords.compactMap { group in
+                let kept = group.records.filter { dupIDs.contains($0.persistentModelID) }
+                return kept.isEmpty ? nil : (group.date, kept)
+            }
+        }
+
         // Update cached summary (calculated once per filter change, not per render)
         calculateSummary()
     }
@@ -306,6 +338,11 @@ final class RecordsViewModel: Filterable {
     func exitSelectionMode() {
         isSelectionMode = false
         selectedRecordIDs.removeAll()
+    }
+
+    /// Exit "identify duplicates" mode (ephemeral — also called on view/tab change)
+    func exitDuplicateMode() {
+        duplicateModeActive = false
     }
 
     /// Delete selected records (including transfer pairs)
