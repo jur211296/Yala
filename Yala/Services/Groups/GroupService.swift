@@ -458,6 +458,8 @@ final class GroupService {
             try await SplitSyncManager.shared.sendPendingChanges(for: group)
         }
 
+        TelemetryService.track(.groupLeft)
+
         // Captura (zoneName, ownerName) ANTES de borrar el SplitGroup local para que el
         // retry persistente funcione si la red falla durante `leaveShare`.
         let leaveShareZoneName = group.cloudKitZoneID

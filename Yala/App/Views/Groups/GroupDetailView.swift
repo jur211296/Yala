@@ -259,6 +259,9 @@ struct GroupDetailView: View {
             withTransaction(transaction) {
                 selectedTab = tab
             }
+            if tab == .balances {
+                TelemetryService.track(.groupBalancesViewed)
+            }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: tab.icon)

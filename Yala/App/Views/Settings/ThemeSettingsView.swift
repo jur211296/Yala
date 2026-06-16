@@ -111,9 +111,11 @@ struct ThemeSettingsView: View {
             } else if appTheme == .translucent {
                 // Show variant picker for translucent theme
                 themeManager.userChoice = appTheme
+                TelemetryService.track(.themeChanged, parameters: ["tema": String(describing: appTheme)])
                 showTranslucentVariantPicker = true
             } else {
                 themeManager.userChoice = appTheme
+                TelemetryService.track(.themeChanged, parameters: ["tema": String(describing: appTheme)])
                 // Dismiss theme view + parent profile sheet
                 Task {
                     try? await Task.sleep(for: .milliseconds(300))

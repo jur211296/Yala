@@ -132,6 +132,9 @@ final class BudgetAlertService {
                 limit: budget.limitAmount,
                 currencyCode: currencyCode
             )
+            await MainActor.run {
+                TelemetryService.track(.budgetAlertTriggered, parameters: ["umbral": String(maxThreshold)])
+            }
         }
     }
 

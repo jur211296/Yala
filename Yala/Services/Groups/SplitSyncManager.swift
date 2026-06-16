@@ -245,6 +245,8 @@ final class SplitSyncManager {
             // Recompute local isCurrentUser flags (device-specific; not synced).
             await GroupService.shared.refreshCurrentUserFlags()
 
+            await MainActor.run { TelemetryService.track(.groupInviteAccepted) }
+
             // Navigate to Groups tab (unless routing is handled by invite/reconnect flow)
             if !skipNavigation {
                 await MainActor.run { RouterEntryGate.shared.submit(.navigate(.groups)) }

@@ -137,8 +137,12 @@ struct GroupSettingsView: View {
             }
             .sheet(isPresented: $showShareSheet) {
                 if let url = shareURL {
-                    ActivityView(activityItems: [url])
+                    ActivityView(activityItems: [url]) { completed in
+                        if completed {
+                            TelemetryService.track(.groupInviteSent, parameters: ["via": "link"])
                         }
+                    }
+                }
             }
             .confirmationDialog(
                 L10n.Groups.Member.remove,

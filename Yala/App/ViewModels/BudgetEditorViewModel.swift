@@ -280,6 +280,10 @@ final class BudgetEditorViewModel {
                 "isNew": String(existing == nil),
             ])
 
+            if existing == nil, (try? context.fetchCount(FetchDescriptor<Budget>())) == 1 {
+                TelemetryService.track(.firstBudget, parameters: ["periodo": periodType.rawValue])
+            }
+
             return savedBudgetID ?? existing?.persistentModelID
         } catch {
             #if DEBUG
@@ -300,6 +304,7 @@ final class BudgetEditorViewModel {
             try service.deleteBudget(budget)
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
+            TelemetryService.track(.budgetDeleted)
             return true
         } catch {
             #if DEBUG

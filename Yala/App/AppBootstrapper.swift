@@ -716,8 +716,19 @@ final class AppBootstrapper {
 
     // MARK: - Scene Phase Handlers
 
+    /// Skips the first `.active` (that's the cold launch, already covered by appLaunched);
+    /// subsequent ones are genuine warm resumes.
+    private var hasSeenInitialActive = false
+
     /// Llamar cuando la app se activa (scenePhase == .active)
     func handleBecameActive(context: ModelContext) {
+        // Warm-start telemetry
+        if hasSeenInitialActive {
+            TelemetryService.track(.appResumed)
+        } else {
+            hasSeenInitialActive = true
+        }
+
         // Apply any pending remote CloudKit changes on foreground resume
         sessionState.applyPendingChangesIfNeeded()
 

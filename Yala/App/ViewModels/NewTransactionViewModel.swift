@@ -564,6 +564,10 @@ final class NewTransactionViewModel {
                 let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
                 UserDefaults.standard.set(count, forKey: "transactionsSavedCount")
 
+                if count == 1 {
+                    TelemetryService.track(.firstTransaction, parameters: ["origen": "manual"])
+                }
+
                 // Check if we should prompt for App Store review
                 if ReviewPromptService.shouldPrompt(transactionCount: count) {
                     RouterEntryGate.shared.submit(.requestAppStoreReview)

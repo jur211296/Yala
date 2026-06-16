@@ -271,6 +271,7 @@ struct BulkEditSheet: View {
         viewModel.bulkUpdateAccount(account, context: modelContext)
         guard viewModel.bulkUpdateError == nil else { return }
         appliedChanges.insert(.account)
+        TelemetryService.track(.bulkEditApplied, parameters: ["campo": "account"])
         onComplete()
     }
 
@@ -278,6 +279,7 @@ struct BulkEditSheet: View {
         viewModel.bulkUpdateSubcategory(subcategory, context: modelContext)
         guard viewModel.bulkUpdateError == nil else { return }
         appliedChanges.insert(.subcategory)
+        TelemetryService.track(.bulkEditApplied, parameters: ["campo": "subcategory"])
         onComplete()
     }
 
@@ -291,6 +293,7 @@ struct BulkEditSheet: View {
         guard viewModel.bulkUpdateError == nil else { return }
         if !tagsToAdd.isEmpty || !tagsToRemove.isEmpty {
             appliedChanges.insert(.tag)
+            TelemetryService.track(.bulkEditApplied, parameters: ["campo": "tag"])
             onComplete()
         }
     }
@@ -299,6 +302,7 @@ struct BulkEditSheet: View {
         viewModel.bulkUpdateNote(note, context: modelContext)
         guard viewModel.bulkUpdateError == nil else { return }
         appliedChanges.insert(.note)
+        TelemetryService.track(.bulkEditApplied, parameters: ["campo": "note"])
         onComplete()
     }
 
@@ -306,6 +310,7 @@ struct BulkEditSheet: View {
         viewModel.bulkUpdateAmount(amount, context: modelContext)
         guard viewModel.bulkUpdateError == nil else { return }
         appliedChanges.insert(.amount)
+        TelemetryService.track(.bulkEditApplied, parameters: ["campo": "amount"])
         onComplete()
     }
 

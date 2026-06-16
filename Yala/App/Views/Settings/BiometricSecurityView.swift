@@ -113,6 +113,7 @@ struct BiometricSecurityView: View {
             guard didLoadInitialState else { return }
             guard !isProcessingToggle else { return }
             isProcessingToggle = true
+            TelemetryService.track(.biometricLockToggled, parameters: ["accion": newValue ? "activado" : "desactivado"])
 
             if newValue {
                 Task {

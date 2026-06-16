@@ -174,6 +174,7 @@ struct DetailContainerView: View {
                 if selectedTab != newValue { selectedTab = newValue }
             }
             .onChange(of: selectedTab) { _, newTab in
+                TelemetryService.track(.statsTabViewed, parameters: ["tab": newTab.rawValue])
                 if sessionState.selectedDetailTab != newTab {
                     sessionState.selectedDetailTab = newTab
                 }
