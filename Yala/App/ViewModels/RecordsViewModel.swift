@@ -123,6 +123,11 @@ final class RecordsViewModel: Filterable {
     var showTransactionDetail: Bool = false
     var editingTransaction: TransactionItem?
 
+    /// Difiere la limpieza de `editingTransaction` cuando el detalle cede el paso
+    /// al editor (botón Editar): el detalle se cierra y el padre, en su `onDismiss`,
+    /// consume este flag para presentar NewTransactionView con la misma TX.
+    private var pendingEditAfterDetail = false
+
     /// Mensaje de error surfaceado por `BulkEditSheet` cuando una operación bulk rechaza
     /// la mutación (e.g., subcategoría sobre transferencias).
     var bulkUpdateError: String?
@@ -430,10 +435,24 @@ final class RecordsViewModel: Filterable {
     // MARK: - Edit Actions
 
     /// Tap de una row: abre el detalle read-only (TransactionDetailSheet);
-    /// la edición se alcanza desde ahí (botón Editar o drag a large).
+    /// la edición se alcanza desde ahí con el botón Editar.
     func showRecordDetail(_ record: TransactionItem) {
         editingTransaction = record
         showTransactionDetail = true
+    }
+
+    /// Botón Editar del detalle: cierra el detalle (slide-down) sin perder la TX.
+    /// El padre presenta NewTransactionView al recibir el `onDismiss` del detalle.
+    func requestEditFromDetail() {
+        pendingEditAfterDetail = true
+        showTransactionDetail = false
+    }
+
+    /// Consume el flag en el `onDismiss` del detalle. `true` → presentar el editor
+    /// (conservar la TX, sin recalcular); `false` → cierre normal del detalle.
+    func consumePendingEditAfterDetail() -> Bool {
+        defer { pendingEditAfterDetail = false }
+        return pendingEditAfterDetail
     }
 
     /// Handle edit action for selected records

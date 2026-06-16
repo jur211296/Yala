@@ -3,9 +3,8 @@
 //  YalaTests
 //
 //  Tests pure-logic para `TransactionDetailSheetLogic` (sheet de detalle de
-//  transacción en Records). Sin SwiftData ni ModelContext — verifica la matriz
-//  de detents iPhone/iPad × mode, el trigger drag-to-edit y la clasificación
-//  visual de la TX.
+//  transacción en Records). Sin SwiftData ni ModelContext — verifica el detent
+//  inicial iPhone/iPad y la clasificación visual de la TX.
 //
 
 import Foundation
@@ -23,62 +22,6 @@ struct TransactionDetailSheetLogicTests {
 
     @Test func initialDetent_iPad_isLarge() {
         #expect(TransactionDetailSheetLogic.initialDetent(usesLargeSheets: true) == .large)
-    }
-
-    // MARK: - availableDetents
-
-    @Test func availableDetents_detailOniPhone_allowsMediumAndLarge() {
-        #expect(
-            TransactionDetailSheetLogic.availableDetents(mode: .detail, usesLargeSheets: false)
-                == [.medium, .large]
-        )
-    }
-
-    @Test func availableDetents_detailOniPad_isLargeOnly() {
-        #expect(
-            TransactionDetailSheetLogic.availableDetents(mode: .detail, usesLargeSheets: true)
-                == [.large]
-        )
-    }
-
-    @Test func availableDetents_editOniPhone_isLargeOnly() {
-        #expect(
-            TransactionDetailSheetLogic.availableDetents(mode: .edit, usesLargeSheets: false)
-                == [.large]
-        )
-    }
-
-    @Test func availableDetents_editOniPad_isLargeOnly() {
-        #expect(
-            TransactionDetailSheetLogic.availableDetents(mode: .edit, usesLargeSheets: true)
-                == [.large]
-        )
-    }
-
-    // MARK: - shouldSwitchToEdit
-
-    @Test func shouldSwitchToEdit_largeFromDetailOniPhone_switches() {
-        #expect(
-            TransactionDetailSheetLogic.shouldSwitchToEdit(
-                newDetent: .large, mode: .detail, usesLargeSheets: false))
-    }
-
-    @Test func shouldSwitchToEdit_largeFromDetailOniPad_doesNotSwitch() {
-        #expect(
-            !TransactionDetailSheetLogic.shouldSwitchToEdit(
-                newDetent: .large, mode: .detail, usesLargeSheets: true))
-    }
-
-    @Test func shouldSwitchToEdit_mediumFromDetail_doesNotSwitch() {
-        #expect(
-            !TransactionDetailSheetLogic.shouldSwitchToEdit(
-                newDetent: .medium, mode: .detail, usesLargeSheets: false))
-    }
-
-    @Test func shouldSwitchToEdit_largeWhileEditing_doesNotRefire() {
-        #expect(
-            !TransactionDetailSheetLogic.shouldSwitchToEdit(
-                newDetent: .large, mode: .edit, usesLargeSheets: false))
     }
 
     // MARK: - kind

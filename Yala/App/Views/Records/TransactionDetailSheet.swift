@@ -2,11 +2,13 @@
 //  TransactionDetailSheet.swift
 //  Yala
 //
-//  Sheet de detalle read-only de una transacción (Records). Abre en detent
-//  medium (quick look estilo Wallet); el botón Editar o el drag a large hacen
-//  swap in-place a NewTransactionView dentro del mismo sheet — sin encadenar
-//  dismiss+present. En iPad el sheet vive fijo en large y solo el botón entra
-//  a la edición. Decisiones de detents/swap en TransactionDetailSheetLogic.
+//  Sheet de detalle read-only de una transacción (Records). Detent fijo:
+//  medium en iPhone (quick look estilo Wallet), large en iPad. Sin dragger ni
+//  drag-to-edit; la edición se alcanza con el botón Editar, que cierra este
+//  sheet y deja que el padre presente NewTransactionView en su `onDismiss`
+//  (reemplazo de sheet nativo: este baja, el editor sube desde abajo). El padre
+//  difiere la limpieza de `editingTransaction` vía pendingEditAfterDetail (VM).
+//  Clasificación visual de la TX en TransactionDetailSheetLogic.
 //
 //  Diseño neutro: sobre el fondo transparent del detent medium los tintes
 //  finos (pink/indigo) se pierden — monto, íconos y valores van en primary/
@@ -30,59 +32,28 @@ struct TransactionDetailSheet: View {
 
     let transaction: TransactionItem
 
+    /// Botón Editar. El padre marca pendingEditAfterDetail y cierra este sheet;
+    /// al cerrarse presenta NewTransactionView (reemplazo de sheet nativo).
+    let onEdit: () -> Void
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.tagCatalog) private var tagCatalog
     @Environment(AppPreferences.self) private var appPreferences
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var mode: TransactionDetailSheetLogic.Mode = .detail
-    @State private var selectedDetent: PresentationDetent =
-        TransactionDetailSheetLogic.initialDetent(usesLargeSheets: DS.Adaptive.usesLargeSheets)
-        .presentationDetent
     @State private var transferPartnerAccount: Account?
 
+    /// Detent fijo: medium (iPhone) / large (iPad). Sin `selection` — ya no hay
+    /// drag-to-edit que dispare cambios de modo.
+    private var detent: PresentationDetent {
+        TransactionDetailSheetLogic.initialDetent(usesLargeSheets: DS.Adaptive.usesLargeSheets)
+            .presentationDetent
+    }
+
     var body: some View {
-        Group {
-            if mode == .edit {
-                // Sin wrapper: NewTransactionView trae NavigationStack + fondo
-                // .subtle propios; su X hace dismiss() y cierra este sheet.
-                NewTransactionView(transactionToEdit: transaction)
-                    .transition(.opacity)
-            } else {
-                detailContent
-                    .transition(.opacity)
-            }
-        }
-        .presentationDetents(availableDetents, selection: $selectedDetent)
-        .presentationDragIndicator(
-            mode == .detail && !DS.Adaptive.usesLargeSheets ? .visible : .automatic
-        )
-        .onChange(of: selectedDetent) { _, newValue in
-            guard
-                TransactionDetailSheetLogic.shouldSwitchToEdit(
-                    newDetent: TransactionDetailSheetLogic.Detent(newValue),
-                    mode: mode,
-                    usesLargeSheets: DS.Adaptive.usesLargeSheets
-                )
-            else { return }
-            dsWithAnimation(reduceMotion) { mode = .edit }
-        }
-    }
-
-    private var availableDetents: Set<PresentationDetent> {
-        Set(
-            TransactionDetailSheetLogic.availableDetents(
-                mode: mode, usesLargeSheets: DS.Adaptive.usesLargeSheets
-            ).map(\.presentationDetent)
-        )
-    }
-
-    private func switchToEdit() {
-        dsWithAnimation(reduceMotion) {
-            selectedDetent = .large
-            mode = .edit
-        }
+        detailContent
+            .presentationDetents([detent])
+            .presentationDragIndicator(.hidden)
     }
 
     // MARK: - Detail content
@@ -109,7 +80,7 @@ struct TransactionDetailSheet: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Action.edit) {
-                        switchToEdit()
+                        onEdit()
                     }
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.primary)
@@ -508,9 +479,5 @@ extension TransactionDetailSheetLogic.Detent {
         case .medium: return .medium
         case .large: return .large
         }
-    }
-
-    fileprivate init(_ detent: PresentationDetent) {
-        self = detent == .large ? .large : .medium
     }
 }

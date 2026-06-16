@@ -445,13 +445,23 @@ private struct RecordsStandaloneSheets: ViewModifier {
                         }
                 }
             }
-            .sheet(isPresented: $recordsViewModel.showTransactionDetail) {
+            .sheet(
+                isPresented: $recordsViewModel.showTransactionDetail,
+                onDismiss: {
+                    // Reemplazo de sheet: si se pidió editar, presenta el editor
+                    // (conserva la TX); si no, cierre normal (limpia + recalcula).
+                    if recordsViewModel.consumePendingEditAfterDetail() {
+                        recordsViewModel.showEditTransaction = true
+                    } else {
+                        recordsViewModel.editingTransaction = nil
+                        reloadAndRecalculate()
+                    }
+                }
+            ) {
                 if let transaction = recordsViewModel.editingTransaction {
-                    TransactionDetailSheet(transaction: transaction)
-                        .onDisappear {
-                            recordsViewModel.editingTransaction = nil
-                            reloadAndRecalculate()
-                        }
+                    TransactionDetailSheet(transaction: transaction) {
+                        recordsViewModel.requestEditFromDetail()
+                    }
                 }
             }
             .confirmationDialog(
