@@ -47,7 +47,7 @@ name = "yala-gateway-production"
 
 [env.production.vars]
 ENVIRONMENT = "production"
-ENFORCE = "observe"
+ENFORCE = "enforce"                         # enforce activo (rate-limit por device); rollback → "observe" + redeploy
 APPLE_TEAM_ID = "3WKFFVD66J"
 APPLE_BUNDLE_IDS = "com.jurgenschmidt.yala"
 ATTEST_ENV = "production"
