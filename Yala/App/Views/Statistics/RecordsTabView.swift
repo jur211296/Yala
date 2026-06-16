@@ -314,7 +314,9 @@ struct RecordsTabView: View {
             Spacer()
             viewModeSelector
         }
-        .padding(.horizontal, DS.Spacing.lg)
+        // El margen lateral lo da el contentMargins del ScrollView (scrollViewGlassEdges,
+        // DS.Spacing.lg). NO añadir padding horizontal propio aquí o se duplica (32pt) y el
+        // header queda más adentro que la lista y que las secciones de Tendencias/Distribución.
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
     }
@@ -447,7 +449,8 @@ private struct DuplicateModeBanner: View {
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.sm)
         .solidCard(radius: DS.Radius.lg)
-        .padding(.horizontal, DS.Spacing.lg)
+        // Sin padding horizontal externo: el margen lo da el contentMargins del ScrollView
+        // (16pt), igual que las filas de la lista. Añadirlo aquí duplicaría el margen (32pt).
         .accessibilityElement(children: .combine)
     }
 }
