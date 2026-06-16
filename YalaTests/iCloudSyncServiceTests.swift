@@ -43,7 +43,7 @@ struct iCloudSyncServiceTests {
 
         #expect(service.lastSuccessfulExportDate == endDate)
         #expect(service.status.isIdle)
-        #expect(service.consecutiveExportFailures == 0)
+        #expect(service.consecutiveFailures == 0)
     }
 
     @MainActor @Test func importSuccess_updatesLastImportDate() {
@@ -73,7 +73,7 @@ struct iCloudSyncServiceTests {
         service.apply(eventType: .exportEvent, error: ckError(.networkUnavailable), endDate: nil)
         service.apply(eventType: .exportEvent, error: ckError(.networkUnavailable), endDate: nil)
 
-        #expect(service.consecutiveExportFailures == 3)
+        #expect(service.consecutiveFailures == 3)
         #expect(service.lastExportError?.code == .networkUnavailable)
     }
 
@@ -82,19 +82,21 @@ struct iCloudSyncServiceTests {
 
         service.apply(eventType: .exportEvent, error: ckError(.networkUnavailable), endDate: nil)
         service.apply(eventType: .exportEvent, error: ckError(.networkUnavailable), endDate: nil)
-        #expect(service.consecutiveExportFailures == 2)
+        #expect(service.consecutiveFailures == 2)
 
         service.apply(eventType: .exportEvent, error: nil, endDate: Date.now)
-        #expect(service.consecutiveExportFailures == 0)
+        #expect(service.consecutiveFailures == 0)
     }
 
-    @MainActor @Test func setupFailure_setsFailedImmediately_noDebounce() {
+    @MainActor @Test func setupFailure_retriable_isSuppressedBelowThreshold() {
         let service = freshService()
 
         service.apply(eventType: .setup, error: ckError(.serviceUnavailable), endDate: nil)
 
-        // Setup failures bypass the 3s debounce — visible immediately.
-        #expect(service.status.isFailed)
+        // A single transient setup failure no longer alarms — it's suppressed
+        // below the threshold and the state stays benign (.idle, no banner).
+        #expect(!service.status.isFailed)
+        #expect(service.status.isIdle)
     }
 
     // MARK: - notAuthenticated → noAccount
@@ -118,15 +120,71 @@ struct iCloudSyncServiceTests {
         #expect(!service.status.isFailed)
     }
 
-    @MainActor @Test func exportFailureThenSuccessWithin3s_cancelsFailedTransition() async {
+    @MainActor @Test func persistentFailureThenSuccessWithin3s_cancelsFailedTransition() async {
         let service = freshService()
 
-        service.apply(eventType: .exportEvent, error: ckError(.networkUnavailable), endDate: nil)
+        // Reach the threshold so a failed transition is actually scheduled,
+        // then a success within the debounce window must cancel it.
+        for _ in 0..<3 {
+            service.apply(eventType: .exportEvent, error: ckError(.networkUnavailable), endDate: nil)
+        }
         service.apply(eventType: .exportEvent, error: nil, endDate: Date.now)
 
         // Await the cancelled debounce Task to settle (returns ~immediately
         // because cancel() interrupts Task.sleep). Avoids sleeping the full 3s.
         await service._testAwaitPendingTransition()
+        #expect(service.status.isIdle)
+        #expect(service.consecutiveFailures == 0)
+    }
+
+    // MARK: - Transient suppression (Option B: only surface persistent/actionable)
+
+    @MainActor @Test func shouldSurfaceFailure_table() {
+        // Non-retriable (actionable) → surface even on the first failure.
+        #expect(iCloudSyncService.shouldSurfaceFailure(retriable: false, consecutiveFailures: 1, threshold: 3))
+        // Retriable below threshold → suppressed.
+        #expect(!iCloudSyncService.shouldSurfaceFailure(retriable: true, consecutiveFailures: 1, threshold: 3))
+        #expect(!iCloudSyncService.shouldSurfaceFailure(retriable: true, consecutiveFailures: 2, threshold: 3))
+        // Retriable at/above threshold → surface.
+        #expect(iCloudSyncService.shouldSurfaceFailure(retriable: true, consecutiveFailures: 3, threshold: 3))
+        #expect(iCloudSyncService.shouldSurfaceFailure(retriable: true, consecutiveFailures: 4, threshold: 3))
+    }
+
+    @MainActor @Test func transientError_belowThreshold_suppressesToIdle_clearingSpinner() {
+        let service = freshService()
+
+        // In-progress export shows a spinner...
+        service.apply(eventType: .exportEvent, error: nil, endDate: nil)
+        #expect(service.status.isSyncing)
+
+        // ...a single transient failure must NOT surface the banner, and must
+        // clear the spinner (→ .idle) so "Sincronizar ahora" isn't stuck loading.
+        service.apply(eventType: .exportEvent, error: ckError(.networkUnavailable), endDate: nil)
+        #expect(!service.status.isFailed)
+        #expect(service.status.isIdle)
+    }
+
+    @MainActor @Test func mixedFailures_incrementSameUnifiedCounter() {
+        let service = freshService()
+
+        service.apply(eventType: .setup, error: ckError(.serviceUnavailable), endDate: nil)
+        service.apply(eventType: .importEvent, error: ckError(.networkUnavailable), endDate: nil)
+        service.apply(eventType: .exportEvent, error: ckError(.networkFailure), endDate: nil)
+
+        // Failures across all three event types feed one threshold counter.
+        #expect(service.consecutiveFailures == 3)
+    }
+
+    @MainActor @Test func transientFailuresThenSuccess_resetsCounterAndStaysIdle() {
+        let service = freshService()
+
+        service.apply(eventType: .exportEvent, error: ckError(.networkUnavailable), endDate: nil)
+        service.apply(eventType: .importEvent, error: ckError(.networkUnavailable), endDate: nil)
+        #expect(service.consecutiveFailures == 2)
+
+        // Any success resets the unified counter.
+        service.apply(eventType: .importEvent, error: nil, endDate: Date.now)
+        #expect(service.consecutiveFailures == 0)
         #expect(service.status.isIdle)
     }
 

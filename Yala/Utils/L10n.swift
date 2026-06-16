@@ -5810,6 +5810,7 @@ enum L10n {
         static var remoteWipeCancel: String { ls("icloud.remoteWipe.cancel", comment: "") }
         static var forceSyncButton: String { ls("icloud.forceSync.button", comment: "") }
         static var forceSyncDescription: String { ls("icloud.forceSync.description", comment: "") }
+        static var forceSyncOfflineNote: String { ls("icloud.forceSync.offlineNote", comment: "") }
         static var mismatchTitle: String { ls("icloud.mismatch.title", comment: "") }
         static var mismatchMessage: String { ls("icloud.mismatch.message", comment: "") }
         static var mismatchAction: String { ls("icloud.mismatch.action", comment: "") }

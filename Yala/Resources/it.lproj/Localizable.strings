@@ -4480,3 +4480,6 @@
 
 /* Records: banner title shown while duplicate mode active */
 "records.duplicates.bannerTitle" = "Possibili duplicati";
+
+/* Contextual note when a manual 'Sync now' tap can't reach iCloud (transient/offline). Non-alarming; reassures data is safe on device. */
+"icloud.forceSync.offlineNote" = "Non siamo riusciti a raggiungere iCloud in questo momento. I tuoi dati sono al sicuro e verranno sincronizzati appena torna la connessione.";

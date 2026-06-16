@@ -16,6 +16,9 @@ struct iCloudSyncSettingsView: View {
     @State private var syncService = iCloudSyncService.shared
     @State private var isForceSyncDisabled = false
     @State private var showTechnical = false
+    /// Set when an explicit "Sync now" tap couldn't reach iCloud (transient).
+    /// Drives a contextual, non-alarming note — never the global banner.
+    @State private var manualSyncUnreachable = false
     #if DEBUG
     @State private var dedupHookDisabled = UserDefaults.standard.bool(forKey: AppPreferences.Keys.subcatDedupRemoteHookDisabled)
     #endif
@@ -252,7 +255,9 @@ struct iCloudSyncSettingsView: View {
                 isLoading: syncService.status.isSyncing
             ) {
                 Task {
-                    await syncService.forceSync(modelContext: modelContext)
+                    manualSyncUnreachable = false
+                    let result = await syncService.forceSync(modelContext: modelContext)
+                    manualSyncUnreachable = (result == .unreachable)
                     isForceSyncDisabled = true
                     do {
                         try await Task.sleep(for: .seconds(30))
@@ -267,8 +272,29 @@ struct iCloudSyncSettingsView: View {
                 .font(DS.Typography.caption)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
+
+            if manualSyncUnreachable {
+                offlineNote
+            }
         }
         .padding(.horizontal, DS.Spacing.lg)
+        .animation(.easeInOut(duration: 0.2), value: manualSyncUnreachable)
+    }
+
+    /// Contextual, non-alarming note when an explicit "Sync now" tap couldn't
+    /// reach iCloud. Neutral info icon (not the red/amber alert styling) —
+    /// reassures the user their data is safe (Brand Voice §4.4).
+    private var offlineNote: some View {
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            Image(systemName: "info.circle")
+                .foregroundStyle(.secondary)
+            Text(L10n.iCloud.forceSyncOfflineNote)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .transition(.opacity)
     }
 
     // MARK: - Helpers

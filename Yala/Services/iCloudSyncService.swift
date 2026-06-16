@@ -64,7 +64,10 @@ final class iCloudSyncService {
     private(set) var lastSuccessfulImportDate: Date?
     private(set) var lastExportError: CKError?
     private(set) var lastImportError: CKError?
-    private(set) var consecutiveExportFailures: Int = 0
+    /// Consecutive failed sync cycles (setup/import/export) with no success in
+    /// between. Resets on ANY successful event. Gates whether a *transient*
+    /// error surfaces the banner, and feeds `.stalled` detection.
+    private(set) var consecutiveFailures: Int = 0
 
     /// Flag in-memory que indica si CloudKit completó al menos un importEvent
     /// con endDate (sin error). Usado por servicios dependientes de data
@@ -100,6 +103,13 @@ final class iCloudSyncService {
     private var pendingFailedTransition: Task<Void, Never>?
 
     private static let stalledThresholdDays = 7
+
+    /// Consecutive failed sync cycles (no success in between) required before a
+    /// *transient/retriable* error becomes user-visible as `.failed`. A single
+    /// cold-start hiccup never reaches this — only a sustained problem does.
+    /// Non-retriable (actionable) errors ignore this and surface immediately
+    /// (after the standard debounce). Tunable.
+    private static let failureThreshold = 3
 
     // MARK: - Initialization
 
@@ -206,14 +216,10 @@ final class iCloudSyncService {
         switch eventType {
         case .setup:
             if let error {
-                // Setup failures are shown immediately (no debounce) — container
-                // failed to initialize, user needs to know.
-                setStatus(.failed(
-                    code: error.code,
-                    endDate: endDate ?? .now,
-                    retriable: isRetriable(error)
-                ))
+                consecutiveFailures += 1
+                surfaceOrSuppress(error)
             } else if let endDate {
+                consecutiveFailures = 0
                 setStatus(.success(endDate))
             } else {
                 setStatus(.syncing(kind: .setup))
@@ -222,9 +228,11 @@ final class iCloudSyncService {
         case .importEvent:
             if let error {
                 lastImportError = error
-                scheduleFailedTransition(code: error.code, retriable: isRetriable(error))
+                consecutiveFailures += 1
+                surfaceOrSuppress(error)
             } else if let endDate {
                 lastSuccessfulImportDate = endDate
+                consecutiveFailures = 0
                 pendingFailedTransition?.cancel()
                 promoteToIdleOrStalled()
                 if !hasCompletedFirstImport {
@@ -248,17 +256,16 @@ final class iCloudSyncService {
         case .exportEvent:
             if let error {
                 lastExportError = error
-                consecutiveExportFailures += 1
-                let retriable = isRetriable(error)
-                scheduleFailedTransition(code: error.code, retriable: retriable)
+                consecutiveFailures += 1
+                surfaceOrSuppress(error)
                 TelemetryService.track(.cloudkitExportFailed, parameters: [
                     "code": String(error.code.rawValue),
-                    "retriable": String(retriable),
+                    "retriable": String(isRetriable(error)),
                 ])
             } else if let endDate {
                 let duration = lastSuccessfulExportDate.map { endDate.timeIntervalSince($0) } ?? 0
                 lastSuccessfulExportDate = endDate
-                consecutiveExportFailures = 0
+                consecutiveFailures = 0
                 pendingFailedTransition?.cancel()
                 promoteToIdleOrStalled()
                 TelemetryService.track(.cloudkitExportSucceeded, parameters: [
@@ -302,6 +309,30 @@ final class iCloudSyncService {
         }
     }
 
+    /// Decides whether a sync error reaches the user-visible `.failed` banner.
+    /// Non-retriable (actionable) errors surface after the debounce. Transient
+    /// errors stay silent until they persist past `failureThreshold` consecutive
+    /// cycles — a single cold-start hiccup never alarms the user. Assumes
+    /// `consecutiveFailures` was already incremented for this error.
+    private func surfaceOrSuppress(_ error: CKError) {
+        let retriable = isRetriable(error)
+        if Self.shouldSurfaceFailure(
+            retriable: retriable,
+            consecutiveFailures: consecutiveFailures,
+            threshold: Self.failureThreshold
+        ) {
+            scheduleFailedTransition(code: error.code, retriable: retriable)
+        } else {
+            // Transient and not yet persistent: keep quiet. Data is safe locally
+            // and will sync once conditions recover. Reset to .idle so any
+            // in-progress spinner clears and the banner stays hidden.
+            #if DEBUG
+            print("iCloudSync: transient error suppressed (\(consecutiveFailures)/\(Self.failureThreshold)) code=\(error.code.rawValue)")
+            #endif
+            setStatus(.idle)
+        }
+    }
+
     /// After a successful sync, decide between .idle and .stalled based on
     /// how long since the last success AND whether we have any failure history.
     /// Without failure history, >7 days just means "user didn't create data" —
@@ -312,7 +343,7 @@ final class iCloudSyncService {
             return
         }
         let days = Calendar.current.dateComponents([.day], from: last, to: .now).day ?? 0
-        let hasFailureHistory = consecutiveExportFailures > 0 || lastExportError != nil
+        let hasFailureHistory = consecutiveFailures > 0 || lastExportError != nil
 
         if days > Self.stalledThresholdDays && hasFailureHistory {
             let wasAlreadyStalled = status.isStalled
@@ -328,6 +359,15 @@ final class iCloudSyncService {
         } else {
             setStatus(.idle)
         }
+    }
+
+    /// Pure decision: should this error reach the user-visible `.failed` banner?
+    /// Non-retriable (actionable) errors always surface. Transient/retriable
+    /// errors only surface once they persist past `threshold` consecutive cycles
+    /// with no success in between. Exposed for tests.
+    static func shouldSurfaceFailure(retriable: Bool, consecutiveFailures: Int, threshold: Int) -> Bool {
+        guard retriable else { return true }
+        return consecutiveFailures >= threshold
     }
 
     /// Classification used to decide UI copy and retry strategy.
@@ -382,15 +422,23 @@ final class iCloudSyncService {
         }
     }
 
+    /// Outcome of an explicit "Sync now" tap, used to show contextual,
+    /// non-alarming feedback in the Sync Settings screen only — never the
+    /// global banner. `.unreachable` means the manual attempt couldn't reach
+    /// iCloud (offline / transient blip); local data stays safe.
+    enum ManualSyncResult: Equatable { case ok, unreachable, failed }
+
     /// Pings CloudKit to wake up the sync engine, saves local changes,
     /// deduplicates seed categories, and refreshes all views.
-    /// The observer now reflects real progress during this call.
-    func forceSync(modelContext: ModelContext) async {
+    /// The observer reflects real progress during this call; the return value
+    /// only drives the contextual offline note in Sync Settings.
+    @discardableResult
+    func forceSync(modelContext: ModelContext) async -> ManualSyncResult {
         guard isAccountAvailable else {
             setStatus(.noAccount)
-            return
+            return .failed
         }
-        guard !status.isSyncing else { return }
+        guard !status.isSyncing else { return .ok }
 
         setStatus(.syncing(kind: .exporting))
 
@@ -401,18 +449,25 @@ final class iCloudSyncService {
             CategoryDeduplicationService.runAllDeduplication(in: modelContext)
             SessionState.shared.incrementDataVersion()
             // Don't set status here — the observer will surface the real result.
+            return .ok
         } catch {
             #if DEBUG
             print("iCloudSync: Force sync error: \(error)")
             #endif
             if let ckError = error as? CKError {
                 apply(eventType: .exportEvent, error: ckError, endDate: nil)
+                // A retriable error just means we couldn't reach iCloud right
+                // now. The user explicitly asked to sync, so surface it as a
+                // contextual note (not the red banner — `apply` keeps the
+                // status benign for transient errors).
+                return isRetriable(ckError) ? .unreachable : .failed
             } else {
                 // Non-CKError (e.g. context save / merge conflict): the
                 // NSPersistentCloudKitContainer observer will never fire to
                 // clear the `.syncing(.exporting)` we set above, so reset to
                 // `.idle` here to avoid a stuck spinner and re-enable retries.
                 setStatus(.idle)
+                return .failed
             }
         }
     }
@@ -440,7 +495,7 @@ final class iCloudSyncService {
         lastSuccessfulImportDate = nil
         lastExportError = nil
         lastImportError = nil
-        consecutiveExportFailures = 0
+        consecutiveFailures = 0
         hasCompletedFirstImport = false
         _testIgnoreExternalEvents = true
         _testForceAccountAvailable = nil
@@ -459,7 +514,7 @@ final class iCloudSyncService {
     func _qaSimulateFailed(code: CKError.Code = .networkUnavailable, visibleFor: TimeInterval = 10) {
         pendingFailedTransition?.cancel()
         lastExportError = CKError(code)
-        consecutiveExportFailures += 1
+        consecutiveFailures += 1
         setStatus(.failed(code: code, endDate: .now, retriable: isRetriable(CKError(code))))
         Task { [weak self] in
             try? await Task.sleep(for: .seconds(visibleFor))
