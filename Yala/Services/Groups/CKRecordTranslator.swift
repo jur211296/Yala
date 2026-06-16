@@ -45,6 +45,23 @@ enum CKRecordTranslator {
         return val != 0
     }
 
+    // MARK: - Amount Sanitization (untrusted remote ingestion)
+
+    /// Tope de magnitud razonable para un monto de dinero entrante.
+    /// La zona CKShare es `.readWrite`, así que un miembro con un cliente modificado puede
+    /// escribir Doubles arbitrarios (NaN, Infinity, negativos, magnitudes absurdas). El path
+    /// de escritura local valida `amount > 0`; esto es el guard equivalente para la ingestión
+    /// remota, que de otro modo entra cruda a los cálculos de balance y al bridge personal.
+    static let maxRemoteAmount: Double = 1_000_000_000_000  // 1e12
+
+    /// Sanea un monto deserializado de un CKRecord no confiable.
+    /// - `nil` o no-finito (NaN/Inf) → `fallback` (en insert es 0; en update preserva el valor local válido).
+    /// - finito → clamp a `[0, maxRemoteAmount]` (los montos de expense/share/settlement son positivos por diseño).
+    static func sanitizeAmount(_ raw: Double?, fallback: Double = 0) -> Double {
+        guard let value = raw, value.isFinite else { return fallback }
+        return min(max(value, 0), maxRemoteAmount)
+    }
+
     // MARK: - SplitGroup ↔ GroupMeta
 
     static func record(from group: SplitGroup, in zoneID: CKRecordZone.ID) -> CKRecord {
@@ -160,7 +177,7 @@ enum CKRecordTranslator {
         let expense = SplitExpense()
         expense.id = id
         expense.groupZoneID = record.recordID.zoneID.zoneName
-        expense.amount = record.encryptedValues[F.amount] as? Double ?? 0
+        expense.amount = sanitizeAmount(record.encryptedValues[F.amount] as? Double)
         expense.expenseDescription = record.encryptedValues[F.description] as? String ?? ""
         expense.note = record.encryptedValues[F.note] as? String
         expense.date = record[F.date] as? Date ?? Date.now
@@ -176,7 +193,7 @@ enum CKRecordTranslator {
 
     static func update(_ expense: SplitExpense, from record: CKRecord) {
         typealias F = CKConstants.ExpenseField
-        expense.amount = record.encryptedValues[F.amount] as? Double ?? expense.amount
+        expense.amount = sanitizeAmount(record.encryptedValues[F.amount] as? Double, fallback: expense.amount)
         expense.expenseDescription = record.encryptedValues[F.description] as? String ?? expense.expenseDescription
         expense.note = record.encryptedValues[F.note] as? String
         expense.date = record[F.date] as? Date ?? expense.date
@@ -279,7 +296,7 @@ enum CKRecordTranslator {
         typealias F = CKConstants.ShareField
         let share = SplitShare()
         share.id = id
-        share.amount = record.encryptedValues[F.amount] as? Double ?? 0
+        share.amount = sanitizeAmount(record.encryptedValues[F.amount] as? Double)
         if let expenseStr = record[F.expenseRecordName] as? String, let expID = UUID(uuidString: expenseStr) {
             share.expenseID = expID
         }
@@ -292,7 +309,7 @@ enum CKRecordTranslator {
 
     static func update(_ share: SplitShare, from record: CKRecord) {
         typealias F = CKConstants.ShareField
-        share.amount = record.encryptedValues[F.amount] as? Double ?? share.amount
+        share.amount = sanitizeAmount(record.encryptedValues[F.amount] as? Double, fallback: share.amount)
         if let expenseStr = record[F.expenseRecordName] as? String, let expID = UUID(uuidString: expenseStr) {
             share.expenseID = expID
         }
@@ -337,7 +354,7 @@ enum CKRecordTranslator {
         let settlement = SplitSettlement()
         settlement.id = id
         settlement.groupZoneID = record.recordID.zoneID.zoneName
-        settlement.amount = record.encryptedValues[F.amount] as? Double ?? 0
+        settlement.amount = sanitizeAmount(record.encryptedValues[F.amount] as? Double)
         settlement.note = record.encryptedValues[F.note] as? String
         settlement.fromMemberID = record[F.fromMemberID] as? String ?? ""
         settlement.toMemberID = record[F.toMemberID] as? String ?? ""
@@ -350,7 +367,7 @@ enum CKRecordTranslator {
 
     static func update(_ settlement: SplitSettlement, from record: CKRecord) {
         typealias F = CKConstants.SettlementField
-        settlement.amount = record.encryptedValues[F.amount] as? Double ?? settlement.amount
+        settlement.amount = sanitizeAmount(record.encryptedValues[F.amount] as? Double, fallback: settlement.amount)
         settlement.note = record.encryptedValues[F.note] as? String
         settlement.fromMemberID = record[F.fromMemberID] as? String ?? settlement.fromMemberID
         settlement.toMemberID = record[F.toMemberID] as? String ?? settlement.toMemberID

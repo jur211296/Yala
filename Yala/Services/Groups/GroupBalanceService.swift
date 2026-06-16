@@ -255,6 +255,14 @@ enum GroupBalanceService {
 
     // MARK: - Consolidated Balances (single currency)
 
+    /// Defensa en profundidad: `Decimal(Double.nan)` / `Decimal(.infinity)` provocan un trap
+    /// fatal en runtime. Los montos ya se sanean en la ingestión remota
+    /// (`CKRecordTranslator.sanitizeAmount`), pero esto protege también registros persistidos
+    /// antes de ese fix y cualquier cálculo que pudiera producir un valor no-finito.
+    private static func safeDecimal(_ value: Double) -> Decimal {
+        Decimal(value.isFinite ? value : 0)
+    }
+
     /// Consolidate multi-currency balances into a single target currency.
     /// Groups balances by member and converts each via the provided converter.
     static func consolidatedBalances(
@@ -276,10 +284,10 @@ enum GroupBalanceService {
                     totalOwes += balance.totalOwes
                 } else {
                     let convertedPaid = converter.convertWithLatestRate(
-                        Decimal(balance.totalPaid), from: balance.currencyCode, to: targetCurrency
+                        safeDecimal(balance.totalPaid), from: balance.currencyCode, to: targetCurrency
                     )
                     let convertedOwes = converter.convertWithLatestRate(
-                        Decimal(balance.totalOwes), from: balance.currencyCode, to: targetCurrency
+                        safeDecimal(balance.totalOwes), from: balance.currencyCode, to: targetCurrency
                     )
                     totalPaid += NSDecimalNumber(decimal: convertedPaid).doubleValue
                     totalOwes += NSDecimalNumber(decimal: convertedOwes).doubleValue
@@ -308,7 +316,7 @@ enum GroupBalanceService {
         let converted = debts.map { debt -> Debt in
             if debt.currencyCode == targetCurrency { return debt }
             let convertedAmount = converter.convertWithLatestRate(
-                Decimal(debt.amount), from: debt.currencyCode, to: targetCurrency
+                safeDecimal(debt.amount), from: debt.currencyCode, to: targetCurrency
             )
             return Debt(
                 fromMemberID: debt.fromMemberID,
