@@ -278,7 +278,10 @@ struct InboxDraftEditSheet: View {
             }
             .dismissKeyboardOnTap()
         }
-        .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
+        // Sheet full-height (presentado sin detents desde InboxView) → .subtle.
+        // El idiom-aware `usesLargeSheets ? .subtle : .transparent` es solo para
+        // detents parciales; aquí dejaba ver el gris de sistema del sheet en iPhone.
+        .yalaScreenBackground(.subtle)
     }
 
     // MARK: - Transaction Type Selector
