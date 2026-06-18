@@ -197,36 +197,17 @@ struct SankeyFlowCalculator {
         // Build links.
         var links: [SankeyLink] = []
 
-        // col 0 → col 1: every source node (real income + virtual deficit)
-        // splits proportionally between "Gastos", "Planificados" and "Disponible".
-        // Ratios use totalSourceFlow (= totalIncome + deficit) so the loop also
-        // handles the case where totalIncome == 0 but deficit > 0.
-        let totalSourceFlow = totalIncome + deficit
-        if totalSourceFlow > 0 {
-            let toExpensesRatio = pool / totalSourceFlow
-            let toAvailableRatio = surplus / totalSourceFlow
-            let toPlannedUnifiedRatio = plannedShown / totalSourceFlow
-            let toPlannedRecurringRatio = recurringShown / totalSourceFlow
-            let toPlannedSubscriptionRatio = subscriptionShown / totalSourceFlow
-
-            let expensesNode = poolNodes.first { $0.id == SankeyNodeID.poolExpenses }
-            let availableNode = poolNodes.first { $0.id == SankeyNodeID.poolAvailable }
-            let plannedNode = poolNodes.first { $0.id == SankeyNodeID.poolPlanned }
-            let plannedRecurringNode = poolNodes.first { $0.id == SankeyNodeID.poolPlannedRecurring }
-            let plannedSubscriptionNode = poolNodes.first { $0.id == SankeyNodeID.poolPlannedSubscription }
-
-            for inc in allIncomeNodes {
-                appendIncomeLink(&links, from: inc, to: expensesNode, ratio: toExpensesRatio)
-                appendIncomeLink(&links, from: inc, to: plannedNode, ratio: toPlannedUnifiedRatio)
-                appendIncomeLink(&links, from: inc, to: plannedRecurringNode, ratio: toPlannedRecurringRatio)
-                appendIncomeLink(&links, from: inc, to: plannedSubscriptionNode, ratio: toPlannedSubscriptionRatio)
-                // The virtual deficit node never feeds Disponible — by definition
-                // it represents missing funds, not surplus.
-                if inc.id != SankeyNodeID.incomeDeficit {
-                    appendIncomeLink(&links, from: inc, to: availableNode, ratio: toAvailableRatio)
-                }
-            }
-        }
+        // col 0 → col 1: waterfall fill instead of a proportional split. Income
+        // sources (already sorted by amount desc, with the virtual deficit node
+        // appended last) fill pool destinations top-to-bottom — "Gastos", then
+        // "Planificados", then "Disponible" — via a two-pointer sweep. Each source
+        // feeds as few destinations as possible, so the diagram shows a few thick
+        // bands filling from the top down rather than every source fanning a thin
+        // sliver into every destination.
+        //
+        // Balance holds exactly: Σ sources (totalIncome + deficit) == Σ destinations
+        // (pool + plannedShown + surplus), so the sweep consumes every node fully.
+        appendWaterfallLinks(&links, sources: allIncomeNodes, targets: poolNodes)
 
         // Categories without expense in the period are NOT promoted from the planned branch:
         // an SP pointing to such a category sees its rama terminate at column 1 (no ghost cat nodes).
@@ -327,23 +308,53 @@ struct SankeyFlowCalculator {
 
     // MARK: - Link helpers
 
-    /// Append an income → pool link only if the target exists and the weight is positive.
-    private static func appendIncomeLink(
+    /// Distributes flow from `sources` into `targets` with a top-to-bottom
+    /// waterfall sweep: both columns are consumed in their given vertical order
+    /// (largest first), each source filling the current target until one of them
+    /// is exhausted. Emits at most `sources.count + targets.count - 1` links — far
+    /// fewer than a proportional split's cartesian product — and yields a planar,
+    /// crossing-free diagram that fills from the top down.
+    ///
+    /// The virtual deficit source and the "Disponible" target are mutually
+    /// exclusive (deficit > 0 ⟹ surplus == 0 ⟹ no Disponible node, and vice
+    /// versa), so the legacy "deficit never feeds Disponible" rule holds
+    /// structurally without an explicit guard here.
+    private static func appendWaterfallLinks(
         _ links: inout [SankeyLink],
-        from inc: SankeyNode,
-        to target: SankeyNode?,
-        ratio: Double
+        sources: [SankeyNode],
+        targets: [SankeyNode]
     ) {
-        guard let target, ratio > 0 else { return }
-        let weight = inc.amount * ratio
-        guard weight > 0 else { return }
-        links.append(SankeyLink(
-            id: "\(inc.id)__\(target.id)",
-            sourceID: inc.id,
-            targetID: target.id,
-            amount: weight,
-            sourceColorHex: inc.colorHex
-        ))
+        guard !sources.isEmpty, !targets.isEmpty else { return }
+        let epsilon = 0.005
+        var sourceIndex = 0
+        var targetIndex = 0
+        var sourceRemaining = sources[sourceIndex].amount
+        var targetRemaining = targets[targetIndex].amount
+
+        while sourceIndex < sources.count, targetIndex < targets.count {
+            let flow = min(sourceRemaining, targetRemaining)
+            if flow > epsilon {
+                let source = sources[sourceIndex]
+                let target = targets[targetIndex]
+                links.append(SankeyLink(
+                    id: "\(source.id)__\(target.id)",
+                    sourceID: source.id,
+                    targetID: target.id,
+                    amount: flow,
+                    sourceColorHex: source.colorHex
+                ))
+            }
+            sourceRemaining -= flow
+            targetRemaining -= flow
+            if sourceRemaining <= epsilon {
+                sourceIndex += 1
+                if sourceIndex < sources.count { sourceRemaining = sources[sourceIndex].amount }
+            }
+            if targetRemaining <= epsilon {
+                targetIndex += 1
+                if targetIndex < targets.count { targetRemaining = targets[targetIndex].amount }
+            }
+        }
     }
 
     /// Append a Planificados → expense-category link only if both source/target exist and weight is positive.

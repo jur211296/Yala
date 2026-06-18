@@ -433,6 +433,69 @@ struct SankeyFlowCalculatorTests {
         #expect(incToAvailable?.amount == 600)
     }
 
+    @Test func compute_incomeWaterfall_multipleSourcesMultipleTargets_fillsTopDown() {
+        // Two income sources (1000, 600) and two pool targets (Gastos 700,
+        // Disponible 900). A proportional split would fan all 4 combinations;
+        // the waterfall fills top-to-bottom so the largest source pours into
+        // Gastos first, its remainder into Disponible, then the next source
+        // tops up Disponible — 3 links, not 4, and "Bonus" never touches Gastos.
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let base = makeSubcategory(name: "Base", category: salary)
+        let bonus = makeSubcategory(name: "Bonus", category: salary)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 1000, category: salary, subcategory: base),
+            makeTransaction(amount: 600, category: salary, subcategory: bonus),
+            makeTransaction(amount: -700, category: food)
+        ]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval
+        )
+
+        let incomeNodes = result.nodes(in: .income)
+        let baseID = incomeNodes.first { $0.name == "Base" }?.id
+        let bonusID = incomeNodes.first { $0.name == "Bonus" }?.id
+
+        // Only income→pool links from the two real sources.
+        let incomeIDs = Set(incomeNodes.map(\.id))
+        let incomeToPool = result.links.filter { incomeIDs.contains($0.sourceID) }
+        #expect(incomeToPool.count == 3)
+
+        let baseToExpenses = result.links.first { $0.sourceID == baseID && $0.targetID == "pool_expenses" }
+        let baseToAvailable = result.links.first { $0.sourceID == baseID && $0.targetID == "pool_available" }
+        let bonusToExpenses = result.links.first { $0.sourceID == bonusID && $0.targetID == "pool_expenses" }
+        let bonusToAvailable = result.links.first { $0.sourceID == bonusID && $0.targetID == "pool_available" }
+
+        #expect(baseToExpenses?.amount == 700)   // largest source fills Gastos fully
+        #expect(baseToAvailable?.amount == 300)  // its remainder spills to Disponible
+        #expect(bonusToExpenses == nil)          // smaller source never reaches Gastos
+        #expect(bonusToAvailable?.amount == 600) // it only tops up Disponible
+    }
+
+    @Test func compute_incomeWaterfall_deficitSourceFillsRemainder() {
+        // Real income (100) covers the top of "Gastos"; the virtual deficit node
+        // (appended last) pours into whatever Gastos still needs — no proportional
+        // sliver from both into both.
+        let salary = makeCategory(name: "Salary", isIncome: true)
+        let food = makeCategory(name: "Food")
+        let txs = [
+            makeTransaction(amount: 100, category: salary),
+            makeTransaction(amount: -400, category: food)
+        ]
+        let result = SankeyFlowCalculator.compute(
+            transactions: txs,
+            interval: defaultInterval
+        )
+
+        let salaryID = result.nodes(in: .income).first { $0.id != "inc_deficit" }?.id
+        let salaryToExpenses = result.links.first { $0.sourceID == salaryID && $0.targetID == "pool_expenses" }
+        let deficitToExpenses = result.links.first { $0.sourceID == "inc_deficit" && $0.targetID == "pool_expenses" }
+
+        #expect(salaryToExpenses?.amount == 100)  // real income fills the top
+        #expect(deficitToExpenses?.amount == 300) // deficit covers the remainder (400 - 100)
+    }
+
     @Test func compute_gastosToExpenseLinks_sumToPool() {
         let salary = makeCategory(name: "Salary", isIncome: true)
         let food = makeCategory(name: "Food")
