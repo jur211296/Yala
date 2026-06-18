@@ -53,8 +53,14 @@ xcodebuild -exportArchive \
 
 ## 3. Después de subir (esto lo cierra Claude vía `asc`, o tú en la web)
 Una vez el build 25 termine de procesar (~15–30 min, estado VALID):
-1. Adjuntar build 25 a la versión 2.0 (`asc versions attach-build`) → la versión sale de `INVALID_BINARY`.
-2. `asc submit preflight` (9 checks).
-3. `asc submit create --confirm` → `WAITING_FOR_REVIEW`.
+1. Adjuntar build 25 a la versión 2.0 (`asc versions attach-build`) → la versión sale de `INVALID_BINARY` y queda **editable**.
+2. **Añadir los 4 locales nuevos** (nl-NL, pl, ja, zh-Hans). Ya traducidos y validados, pero ASC bloquea crear localizations mientras la versión está en `INVALID_BINARY` (`A relationship cannot be created in current state`). Tras el paso 1 ya se puede:
+   - `asc metadata pull --app 6758253109 --version 2.0 --app-info <ID-editable> --dir ./meta`
+   - `python3 "App Store/asc-extra-locales-2.0.py" ./meta`  (inyecta los 4 locales en ./meta)
+   - `asc metadata push --app 6758253109 --version 2.0 --app-info <ID> --dir ./meta --dry-run` → debe mostrar **4 adds, 0 deletes**; repetir sin `--dry-run` para aplicar.
+   - Screenshots de los 4: copiar el set en **inglés** (`asc screenshots download` de en-US → `upload` a cada locale nuevo, IPHONE_67 + IPAD_PRO_3GEN_129).
+   - Textos revisables en `App Store/metadata-2.0-extra-locales.md`.
+3. `asc submit preflight` (9 checks).
+4. `asc submit create --confirm` → `WAITING_FOR_REVIEW`.
 
 > Credenciales y gotchas completos: `$VAULT/planning/ASC-CLI.md`.
