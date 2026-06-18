@@ -23,33 +23,36 @@ Estado al 2026-06-18:
 - [ ] Tener la cuenta de App Store Connect logueada en Xcode (Settings → Accounts) **o**, si usas CLI,
       copiar `~/.appstoreconnect/private_keys/AuthKey_A8BZSYVCD2.p8`.
 
-## 2. Archivar y subir
+## 2. Archivar + EXPORTAR en la Mac estable (Xcode 26.6 RC) → genera el .ipa
 
-### Opción A — Xcode GUI (recomendada para un archive puntual)
+⚠️ **El archive (compilar) Y el export deben hacerse con el Xcode 26.6 RC.** El `DTXcodeBuild`/SDK que Apple valida (el del rechazo ITMS-90111) queda horneado en esas dos fases. El **upload** (paso 2b) es transporte puro — no recompila ni re-firma — y puede hacerse en la Mac principal. **No exportar en la Mac principal (Xcode 26.5): arriesga re-rechazo de SDK.**
+
+### GUI (recomendado)
 1. Scheme **Yala** (producción, NO "Yala Dev") · destino "Any iOS Device".
 2. Product → Archive.
-3. Organizer → Distribute App → App Store Connect → Upload (signing automático).
+3. Organizer → Distribute App → App Store Connect → **Export** (NO "Upload") → guarda el `.ipa`.
+4. Pasar el `.ipa` a la Mac principal (AirDrop/USB) — más chico que el `.xcarchive`.
 
-### Opción B — CLI
+### CLI (alternativa)
 ```bash
 xcodebuild -scheme Yala -configuration Release \
-  -archivePath ./build/Yala.xcarchive \
-  -allowProvisioningUpdates \
+  -archivePath ./build/Yala.xcarchive -allowProvisioningUpdates \
   -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_A8BZSYVCD2.p8 \
-  -authenticationKeyID A8BZSYVCD2 \
-  -authenticationKeyIssuerID 7cf8546d-d793-484a-80f6-cd6600455951 \
+  -authenticationKeyID A8BZSYVCD2 -authenticationKeyIssuerID 7cf8546d-d793-484a-80f6-cd6600455951 \
   archive
-
 xcodebuild -exportArchive \
   -archivePath ./build/Yala.xcarchive \
   -exportOptionsPlist .asc/artifacts/export-build24/ExportOptions.plist \
-  -exportPath ./build/export \
-  -allowProvisioningUpdates \
+  -exportPath ./build/export -allowProvisioningUpdates \
   -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_A8BZSYVCD2.p8 \
-  -authenticationKeyID A8BZSYVCD2 \
-  -authenticationKeyIssuerID 7cf8546d-d793-484a-80f6-cd6600455951
-# subir el .ipa exportado con altool o Transporter
+  -authenticationKeyID A8BZSYVCD2 -authenticationKeyIssuerID 7cf8546d-d793-484a-80f6-cd6600455951
+# resultado: ./build/export/Yala.ipa  → pasar a la Mac principal
 ```
+
+## 2b. Subir el .ipa (en la Mac principal — Xcode-agnóstico)
+El upload solo transporta el binario ya compilado; el `DTXcodeBuild` (26.6) embebido es lo que Apple valida.
+- **Transporter.app** (Mac App Store): arrastrar el `.ipa` → Deliver, **o**
+- CLI: `xcrun altool --upload-app -t ios -f ./Yala.ipa --apiKey A8BZSYVCD2 --apiIssuer 7cf8546d-d793-484a-80f6-cd6600455951`
 
 ## 3. Después de subir (esto lo cierra Claude vía `asc`, o tú en la web)
 Una vez el build 25 termine de procesar (~15–30 min, estado VALID):
