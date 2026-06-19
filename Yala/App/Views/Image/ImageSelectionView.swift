@@ -85,7 +85,7 @@ struct ImageSelectionView: View {
             .dsAnimation(.easeInOut(duration: 0.3), value: isCountingDown, reduceMotion: reduceMotion)
             .dsAnimation(.easeInOut(duration: 0.3), value: isProcessing, reduceMotion: reduceMotion)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.thBackground)
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Image.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -188,7 +188,7 @@ struct ImageSelectionView: View {
                         .padding(.horizontal, DS.Spacing.xl)
                         .padding(.bottom, DS.Spacing.xxl)
                     }
-                    .background(.thBackground)
+                    .yalaScreenBackground(.subtle)
                     .navigationTitle(preview.label)
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
@@ -756,12 +756,6 @@ struct ImageSelectionView: View {
     private func processAllImages() async {
         guard !selectedImages.isEmpty else { return }
 
-        // Check for API key first
-        guard APIKeyService.hasOpenAIAPIKey else {
-            handleError(L10n.Image.errorNoApiKey, type: .noApiKey)
-            return
-        }
-
         // Check for network connection
         guard networkMonitor.isConnected else {
             handleError(L10n.Image.errorNoConnection, type: .noConnection)
@@ -809,10 +803,21 @@ struct ImageSelectionView: View {
             existingDrafts: existingDrafts
         )
 
-        // If all are duplicates, navigate to existing drafts instead of re-inserting
+        // If all are duplicates, navigate to the EXISTING (already-inserted) drafts
+        // instead of the transitory new ones. Passing the non-inserted drafts to the
+        // approval flow would let SwiftData persist a duplicate transaction + draft.
         if uniqueDrafts.isEmpty {
             draftsCreated = 0
-            await handleNavigation(drafts: allDrafts)
+            let matchedExisting = existingDrafts.filter { existing in
+                allDrafts.contains { DraftDeduplicationService.isDuplicate($0, existing) }
+            }
+            if matchedExisting.isEmpty {
+                // Defensive: no concrete match resolved — send the user to the Inbox
+                // rather than presenting a transitory, never-inserted draft.
+                showInbox = true
+            } else {
+                await handleNavigation(drafts: matchedExisting)
+            }
             return
         }
 

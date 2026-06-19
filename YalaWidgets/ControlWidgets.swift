@@ -13,21 +13,6 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-// MARK: - Manual Entry Control
-
-@available(iOS 18.0, *)
-struct ManualEntryControl: ControlWidget {
-    var body: some ControlWidgetConfiguration {
-        StaticControlConfiguration(kind: "com.yala.control.manualEntry") {
-            ControlWidgetButton(action: OpenManualEntryIntent()) {
-                Label("widget.control.newExpense", systemImage: "sparkles")
-            }
-        }
-        .displayName("widget.control.newExpense")
-        .description("widget.control.newExpense.desc")
-    }
-}
-
 // MARK: - Voice Entry Control
 
 @available(iOS 18.0, *)
@@ -35,7 +20,7 @@ struct VoiceEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.yala.control.voiceEntry") {
             ControlWidgetButton(action: OpenVoiceEntryIntent()) {
-                Label("widget.control.voiceLabel", systemImage: "mic.badge.plus")
+                Label("widget.control.voiceExpense", systemImage: "mic.badge.plus")
             }
         }
         .displayName("widget.control.voiceExpense")
@@ -50,7 +35,7 @@ struct ImageEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "com.yala.control.imageEntry") {
             ControlWidgetButton(action: OpenImageEntryIntent()) {
-                Label("widget.control.photoLabel", systemImage: "photo.badge.plus")
+                Label("widget.control.photoExpense", systemImage: "photo.badge.plus")
             }
         }
         .displayName("widget.control.photoExpense")

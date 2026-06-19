@@ -10,7 +10,7 @@ import SwiftUI
 
 struct CashFlowWidget: View {
     @Environment(\.yalaTheme) private var theme
-    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
+    @Environment(AppPreferences.self) private var appPreferences
     let summary: CashFlowSummary
     let size: WidgetSize
     let period: String
@@ -23,15 +23,27 @@ struct CashFlowWidget: View {
     // Period Comparison (optional)
     let previousAmount: Double?
     let comparisonPeriodText: String?
+    let variationDisplay: VariationDisplayConfig
 
     // Filter state for dimming non-selected bars
     let selectedTransactionNatures: Set<TransactionNature>
+
+    /// Ancho medido de las barras income/expense — reemplaza containerRelativeFrame que causaba
+    /// ciclo de medición con contentMargins del ScrollView padre, bloqueando el main thread.
+    @State private var incomeBarWidth: CGFloat = 0
+    @State private var expenseBarWidth: CGFloat = 0
 
     // Control whether to show InfoHintButton (false when shown in parent header)
     let showInfoHint: Bool
 
     // When true, hides income bars and KPIs in compact layout
     let isExpensesOnlyMode: Bool
+
+    /// Optional override del botón info en el header. Cuando se pasa, sustituye
+    /// al `InfoHintButton` legacy (popover compacto) por el `WidgetInfoButton`
+    /// pedagógico del Panel. El callsite no-Panel lo deja nil → conserva
+    /// el comportamiento legacy.
+    let headerInfoButton: AnyView?
 
     /// Max data points before hiding bar labels to avoid overlap
     private static let maxBarsForLabels = 10
@@ -47,9 +59,11 @@ struct CashFlowWidget: View {
         displayMode: TrendType? = nil,
         previousAmount: Double? = nil,
         comparisonPeriodText: String? = nil,
+        variationDisplay: VariationDisplayConfig = .full,
         selectedTransactionNatures: Set<TransactionNature> = [],
         showInfoHint: Bool = true,
-        isExpensesOnlyMode: Bool = false
+        isExpensesOnlyMode: Bool = false,
+        headerInfoButton: AnyView? = nil
     ) {
         self.summary = summary
         self.size = size
@@ -61,9 +75,11 @@ struct CashFlowWidget: View {
         self.displayMode = displayMode
         self.previousAmount = previousAmount
         self.comparisonPeriodText = comparisonPeriodText
+        self.variationDisplay = variationDisplay
         self.selectedTransactionNatures = selectedTransactionNatures
         self.showInfoHint = showInfoHint
         self.isExpensesOnlyMode = isExpensesOnlyMode
+        self.headerInfoButton = headerInfoButton
     }
 
     /// Check if we have no data to display
@@ -87,24 +103,11 @@ struct CashFlowWidget: View {
         }
     }
 
-    /// KPI label based on display mode
+    /// Header label. `customTitle` preserves call sites that need account/
+    /// currency-specific labels (e.g. Statistics CashFlow). In the Panel the
+    /// title is always "Flujo de efectivo" regardless of `displayMode`.
     private var kpiLabel: String {
-        // If customTitle is provided, use it (for account/currency specific views)
-        if let title = customTitle {
-            return title
-        }
-
-        // Otherwise, use display mode label
-        switch displayMode {
-        case .balance:
-            return L10n.CashFlow.netFlow
-        case .income:
-            return L10n.CashFlow.income
-        case .expense:
-            return L10n.CashFlow.expense
-        case .none:
-            return L10n.CashFlow.title
-        }
+        customTitle ?? L10n.CashFlow.title
     }
 
     // MARK: - Smart Axis Logic
@@ -191,10 +194,16 @@ struct CashFlowWidget: View {
             }
         }()
 
-        return SmartAxisHelper.calculateSmartAxisDates(
+        let rawDates = SmartAxisHelper.calculateSmartAxisDates(
             forDataDates: activeChartData.map(\.date),
             grouping: calendarUnit
         )
+
+        guard let firstDate = activeChartData.first?.date,
+              let lastDate = activeChartData.last?.date else { return rawDates }
+        return SmartAxisHelper.deduplicatedAxisDates(
+            rawDates, firstDate: firstDate, lastDate: lastDate,
+            forceGrouping: grouping.forceAxisGrouping)
     }
 
     /// Format axis label based on data span and grouping
@@ -275,7 +284,7 @@ struct CashFlowWidget: View {
 
     /// Whether the total average line should be shown
     private var shouldShowTotalAverage: Bool {
-        averageLineMode == 1
+        appPreferences.averageLineMode == 1
             && activeChartData.count >= 2
             && !isWaterfallMode
             && (hasOnlyExpenses || hasOnlyIncome)
@@ -283,7 +292,7 @@ struct CashFlowWidget: View {
 
     /// Whether segmented average should be shown
     private var shouldShowSegmentedAverage: Bool {
-        averageLineMode == 2
+        appPreferences.averageLineMode == 2
             && !isWaterfallMode
             && (hasOnlyExpenses || hasOnlyIncome)
     }
@@ -307,45 +316,137 @@ struct CashFlowWidget: View {
     }
 
     var body: some View {
+        if size == .small {
+            smallBody
+        } else {
+            regularBody
+        }
+    }
+
+    // MARK: - Small layout (PP2-06c)
+    //
+    // Simplified to mirror `.medium`: header + net KPI + two normalized horizontal bars
+    // (income / expense). No temporal chart — the `.small` card is too narrow to display
+    // bucketed bars legibly; the full chart lives in `.medium`/`.large`.
+
+    private var smallBody: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            PanelSmallWidgetHeader(
+                title: L10n.CashFlow.title,
+                accessibilityLabel: L10n.CashFlow.title,
+                action: onShowDetail,
+                headerInfoButton: headerInfoButton
+            )
+
+            if hasNoData {
+                YalaEmptyState(
+                    icon: "chart.bar.xaxis",
+                    title: L10n.Widget.noExpensesPeriod,
+                    style: .widget
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                    AmountText(
+                        value: summary.netFlow,
+                        currencyCode: summary.currencyCode,
+                        font: DS.Typography.headline,
+                        forceSign: true
+                    )
+
+                    if variationDisplay.showsSmallVariation && previousAmount != nil {
+                        VariationChip(
+                            currentAmount: summary.netFlow,
+                            previousAmount: previousAmount,
+                            size: .small,
+                            showNAWhenNil: false,
+                            isExpenseContext: false
+                        )
+                    }
+                }
+
+                smallSummaryBars
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .panelCard(small: true)
+        .frame(height: WidgetSize.smallHeight)
+    }
+
+    /// Income + Expense horizontal bars normalized against the larger of the two totals.
+    /// Copies the visual pattern of the `.medium` layout but without the side labels,
+    /// so the compact card stays readable.
+    private var smallSummaryBars: some View {
+        let maxVal = max(summary.totalIncome, summary.totalExpense)
+
+        return VStack(spacing: DS.Spacing.sm) {
+            if !isExpensesOnlyMode {
+                PanelSmallBarRow(
+                    label: L10n.CashFlow.income,
+                    amount: summary.totalIncome,
+                    ratio: maxVal > 0 ? (summary.totalIncome / maxVal) : 0,
+                    color: .incomeGraph,
+                    currencyCode: summary.currencyCode,
+                    dimmed: isIncomeDimmed
+                )
+            }
+            PanelSmallBarRow(
+                label: L10n.CashFlow.expense,
+                amount: summary.totalExpense,
+                ratio: maxVal > 0 ? (summary.totalExpense / maxVal) : 0,
+                color: .expenseGraph,
+                currencyCode: summary.currencyCode,
+                dimmed: isExpenseDimmed
+            )
+        }
+    }
+
+    // MARK: - Regular (medium / large — existing)
+
+    private var regularBody: some View {
         VStack(spacing: DS.Spacing.none) {
             // Header with title, subtitle and value
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(kpiLabel)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
-                        .padding(.bottom, DS.Spacing.xxs)
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                        Text(kpiLabel)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.primary)
 
-                    // KPI with "vs previous amount" - only show when we have data
+                        if showInfoHint {
+                            WidgetHeaderInfoSlot(
+                                injected: headerInfoButton,
+                                legacyTitle: L10n.WidgetType.cashFlow,
+                                legacyMessage: L10n.Widget.Hint.cashFlow
+                            )
+                        }
+                    }
+                    .padding(.bottom, DS.Spacing.xxs)
+
                     if !hasNoData {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                            Text(
-                                YalaFormatter.currency(
-                                    value: kpiValue, currencyCode: summary.currencyCode,
-                                    forceSign: displayMode == .balance || displayMode == .none)
+                            AmountText(
+                                value: kpiValue,
+                                currencyCode: summary.currencyCode,
+                                font: DS.Typography.headline,
+                                forceSign: displayMode == .balance || displayMode == .none
                             )
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
 
-                            // Show previous period value for comparison
-                            if let prevAmount = previousAmount {
-                                Text("vs \(YalaFormatter.number(value: prevAmount))")
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(.thSecondaryText)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.7)
+                            if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousAmount {
+                                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+                                    Text(L10n.Common.vs)
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(.thSecondaryText)
+                                    AmountText(
+                                        value: prevAmount,
+                                        currencyCode: summary.currencyCode,
+                                        font: DS.Typography.caption,
+                                        tint: .secondary
+                                    )
+                                }
                             }
                         }
                     }
-                }
-
-                if showInfoHint {
-                    InfoHintButton(
-                        title: L10n.WidgetType.cashFlow,
-                        message: L10n.Widget.Hint.cashFlow
-                    )
                 }
 
                 Spacer()
@@ -361,7 +462,9 @@ struct CashFlowWidget: View {
                             isExpenseContext: displayMode == .expense
                         )
 
-                        if let periodText = comparisonPeriodText, !periodText.isEmpty {
+                        if variationDisplay.showsComparisonPeriodLabel,
+                           let periodText = comparisonPeriodText,
+                           !periodText.isEmpty {
                             Text(periodText)
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.thSecondaryText)
@@ -369,15 +472,6 @@ struct CashFlowWidget: View {
                     }
                 }
 
-                if onShowDetail != nil {
-                    Button(action: { onShowDetail?() }) {
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(L10n.Accessibility.viewDetails)
-                }
             }
             .padding([.horizontal, .top], DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
@@ -388,14 +482,7 @@ struct CashFlowWidget: View {
                 contentView
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .fill(.thCard)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
-        )
+        .solidCard(radius: DS.Panel.widgetRadius)
     }
 
     @State private var selectedDate: Date?
@@ -414,161 +501,164 @@ struct CashFlowWidget: View {
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
                     }
 
-                    if isWaterfallMode {
-                        // WATERFALL: cumulative bars — each starts where previous ended
-                        let bars = waterfallBars
-                        let showLabels = bars.count <= Self.maxBarsForLabels
-                        ForEach(Array(bars.enumerated()), id: \.offset) { _, bar in
-                            BarMark(
-                                x: .value("Date", bar.date, unit: calendarUnit(for: grouping)),
-                                yStart: .value("Start", bar.yStart),
-                                yEnd: .value("End", bar.yEnd)
-                            )
-                            .foregroundStyle(
-                                bar.net >= 0 ? Color.incomeGraph.gradient : Color.expenseGraph.gradient
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+                    // Mode-exclusive series rendered via empty-array ForEach guards
+                    // (an if/else here emits _ConditionalContent, which only conforms
+                    // to ChartContent on iOS 27+).
+                    let waterfallShowLabels = waterfallBars.count <= Self.maxBarsForLabels
+                    let barShowLabels = activeChartData.count <= Self.maxBarsForLabels
+                        && (hasOnlyExpenses || hasOnlyIncome)
 
-                            // Data label
-                            if showLabels {
-                                PointMark(
-                                    x: .value("Date", bar.date, unit: calendarUnit(for: grouping)),
-                                    y: .value("End", bar.yEnd)
-                                )
-                                .symbolSize(0)
-                                .annotation(position: bar.net >= 0 ? .top : .bottom, spacing: DS.Spacing.xs) {
-                                    Text(formatK(bar.net))
-                                        .font(DS.Typography.labelTiny)
-                                        .foregroundStyle(.thSecondaryText)
-                                }
+                    // WATERFALL: cumulative bars — each starts where previous ended
+                    ForEach(isWaterfallMode ? Array(waterfallBars.enumerated()) : [], id: \.offset) { _, bar in
+                        BarMark(
+                            x: .value("Date", bar.date, unit: calendarUnit(for: grouping)),
+                            yStart: .value("Start", bar.yStart),
+                            yEnd: .value("End", bar.yEnd)
+                        )
+                        .foregroundStyle(
+                            bar.net >= 0 ? Color.incomeGraph.gradient : Color.expenseGraph.gradient
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+
+                        // Data label
+                        if waterfallShowLabels {
+                            PointMark(
+                                x: .value("Date", bar.date, unit: calendarUnit(for: grouping)),
+                                y: .value("End", bar.yEnd)
+                            )
+                            .symbolSize(0)
+                            .annotation(position: bar.net >= 0 ? .top : .bottom, spacing: DS.Spacing.xs) {
+                                Text(formatK(bar.net))
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(.thSecondaryText)
                             }
                         }
-                    } else {
-                        let showLabels = activeChartData.count <= Self.maxBarsForLabels
-                            && (hasOnlyExpenses || hasOnlyIncome)
-                        ForEach(activeChartData) { data in
-                            if hasOnlyExpenses {
-                                // Only expenses mode: show expenses as positive bars upward
-                                BarMark(
-                                    x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                    y: .value("Expense", data.expense)
-                                )
-                                .foregroundStyle(Color.expenseGraph.gradient)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+                    }
 
-                                // Data label
-                                if showLabels {
-                                    PointMark(
-                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                        y: .value("Expense", data.expense)
-                                    )
-                                    .symbolSize(0)
-                                    .annotation(position: .top, spacing: DS.Spacing.xs) {
-                                        Text(formatK(data.expense))
-                                            .font(DS.Typography.labelTiny)
-                                            .foregroundStyle(.thSecondaryText)
-                                    }
-                                }
-                            } else if hasOnlyIncome {
-                                // Only income mode: show income bars upward (teal)
-                                BarMark(
-                                    x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                    y: .value("Income", data.income)
-                                )
-                                .foregroundStyle(Color.incomeGraph.gradient)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+                    // Only expenses mode: show expenses as positive bars upward
+                    ForEach((!isWaterfallMode && hasOnlyExpenses) ? activeChartData : []) { data in
+                        BarMark(
+                            x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                            y: .value("Expense", data.expense)
+                        )
+                        .foregroundStyle(Color.expenseGraph.gradient)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
 
-                                // Data label
-                                if showLabels {
-                                    PointMark(
-                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                        y: .value("Income", data.income)
-                                    )
-                                    .symbolSize(0)
-                                    .annotation(position: .top, spacing: DS.Spacing.xs) {
-                                        Text(formatK(data.income))
-                                            .font(DS.Typography.labelTiny)
-                                            .foregroundStyle(.thSecondaryText)
-                                    }
-                                }
-                            } else {
-                                // Default bidirectional mode (monthly)
-                                BarMark(
-                                    x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                    y: .value("Income", data.income)
-                                )
-                                .foregroundStyle(Color.incomeGraph.gradient)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
-
-                                // Income data label
-                                if showLabels, data.income > 0 {
-                                    PointMark(
-                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                        y: .value("Income", data.income)
-                                    )
-                                    .symbolSize(0)
-                                    .annotation(position: .top, spacing: DS.Spacing.xs) {
-                                        Text(formatK(data.income))
-                                            .font(DS.Typography.labelTiny)
-                                            .foregroundStyle(.thSecondaryText)
-                                    }
-                                }
-
-                                // Net flow label above income bar (bidirectional only, not waterfall)
-                                if activeChartData.count <= Self.maxBarsForLabels {
-                                    let net = data.income - data.expense
-                                    PointMark(
-                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                        y: .value("Net", data.income)
-                                    )
-                                    .symbolSize(0)
-                                    .annotation(position: .top, spacing: DS.Spacing.xs) {
-                                        Text(net >= 0 ? "+\(formatK(net))" : formatK(net))
-                                            .font(DS.Typography.labelTiny)
-                                            .fontWeight(.semibold)
-                                            .foregroundStyle(.primary)
-                                    }
-                                }
-
-                                BarMark(
-                                    x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                    y: .value("Expense", -data.expense)
-                                )
-                                .foregroundStyle(Color.expenseGraph.gradient)
-                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
-
-                                // Expense data label
-                                if showLabels, data.expense > 0 {
-                                    PointMark(
-                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                        y: .value("Expense", -data.expense)
-                                    )
-                                    .symbolSize(0)
-                                    .annotation(position: .bottom, spacing: DS.Spacing.xs) {
-                                        Text(formatK(data.expense))
-                                            .font(DS.Typography.labelTiny)
-                                            .foregroundStyle(.thSecondaryText)
-                                    }
-                                }
-
-                                // Net Flow Line - always indigo regardless of theme
-                                if grouping == .month {
-                                    LineMark(
-                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                        y: .value("Net", data.net)
-                                    )
-                                    .foregroundStyle(Color.electricIndigo)
-                                    .lineStyle(StrokeStyle(lineWidth: 2))
-                                    .interpolationMethod(.monotone)
-
-                                    PointMark(
-                                        x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
-                                        y: .value("Net", data.net)
-                                    )
-                                    .foregroundStyle(Color.electricIndigo)
-                                    .symbolSize(20)
-                                }
+                        // Data label
+                        if barShowLabels {
+                            PointMark(
+                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                y: .value("Expense", data.expense)
+                            )
+                            .symbolSize(0)
+                            .annotation(position: .top, spacing: DS.Spacing.xs) {
+                                Text(formatK(data.expense))
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(.thSecondaryText)
                             }
+                        }
+                    }
+
+                    // Only income mode: show income bars upward (teal)
+                    ForEach((!isWaterfallMode && hasOnlyIncome) ? activeChartData : []) { data in
+                        BarMark(
+                            x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                            y: .value("Income", data.income)
+                        )
+                        .foregroundStyle(Color.incomeGraph.gradient)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+
+                        // Data label
+                        if barShowLabels {
+                            PointMark(
+                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                y: .value("Income", data.income)
+                            )
+                            .symbolSize(0)
+                            .annotation(position: .top, spacing: DS.Spacing.xs) {
+                                Text(formatK(data.income))
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(.thSecondaryText)
+                            }
+                        }
+                    }
+
+                    // Default bidirectional mode (monthly)
+                    ForEach((!isWaterfallMode && !hasOnlyExpenses && !hasOnlyIncome) ? activeChartData : []) { data in
+                        BarMark(
+                            x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                            y: .value("Income", data.income)
+                        )
+                        .foregroundStyle(Color.incomeGraph.gradient)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+
+                        // Income data label
+                        if barShowLabels, data.income > 0 {
+                            PointMark(
+                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                y: .value("Income", data.income)
+                            )
+                            .symbolSize(0)
+                            .annotation(position: .top, spacing: DS.Spacing.xs) {
+                                Text(formatK(data.income))
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(.thSecondaryText)
+                            }
+                        }
+
+                        // Net flow label above income bar (bidirectional only, not waterfall)
+                        if activeChartData.count <= Self.maxBarsForLabels {
+                            let net = data.income - data.expense
+                            PointMark(
+                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                y: .value("Net", data.income)
+                            )
+                            .symbolSize(0)
+                            .annotation(position: .top, spacing: DS.Spacing.xs) {
+                                Text(net >= 0 ? "+\(formatK(net))" : formatK(net))
+                                    .font(DS.Typography.labelTiny)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.primary)
+                            }
+                        }
+
+                        BarMark(
+                            x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                            y: .value("Expense", -data.expense)
+                        )
+                        .foregroundStyle(Color.expenseGraph.gradient)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
+
+                        // Expense data label
+                        if barShowLabels, data.expense > 0 {
+                            PointMark(
+                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                y: .value("Expense", -data.expense)
+                            )
+                            .symbolSize(0)
+                            .annotation(position: .bottom, spacing: DS.Spacing.xs) {
+                                Text(formatK(data.expense))
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(.thSecondaryText)
+                            }
+                        }
+
+                        // Net Flow Line - always indigo regardless of theme
+                        if grouping == .month {
+                            LineMark(
+                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                y: .value("Net", data.net)
+                            )
+                            .foregroundStyle(Color.electricIndigo)
+                            .lineStyle(StrokeStyle(lineWidth: 2))
+                            .interpolationMethod(.monotone)
+
+                            PointMark(
+                                x: .value("Date", data.date, unit: calendarUnit(for: grouping)),
+                                y: .value("Net", data.net)
+                            )
+                            .foregroundStyle(Color.electricIndigo)
+                            .symbolSize(20)
                         }
                     }
 
@@ -577,7 +667,7 @@ struct CashFlowWidget: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(L10n.Accessibility.cashFlowChart)
                 .accessibilityValue(activeChartData.isEmpty ? L10n.Accessibility.noData :
-                    L10n.Accessibility.cashFlowSummary(income: YalaFormatter.currency(value: summary.totalIncome, currencyCode: summary.currencyCode), expense: YalaFormatter.currency(value: summary.totalExpense, currencyCode: summary.currencyCode)))
+                    L10n.Accessibility.cashFlowSummary(income: appPreferences.currency(summary.totalIncome, currencyCode: summary.currencyCode), expense: appPreferences.currency(summary.totalExpense, currencyCode: summary.currencyCode)))
                 .chartXScale(domain: dataXDomain)
                 .chartYScale(domain: dataYDomain)
                 .chartXAxis {
@@ -640,50 +730,45 @@ struct CashFlowWidget: View {
 
                                 if isWaterfallMode {
                                     // Waterfall: show net with color matching bar sign
-                                    HStack(spacing: DS.Spacing.xs) {
+                                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                                         Circle()
                                             .fill(selectedData.net >= 0 ? Color.incomeGraph : Color.expenseGraph)
                                             .frame(width: 6, height: 6)
-                                        Text(
-                                            YalaFormatter.currency(
-                                                value: selectedData.net,
-                                                currencyCode: summary.currencyCode, forceSign: true)
+                                        AmountText(
+                                            value: selectedData.net,
+                                            currencyCode: summary.currencyCode,
+                                            font: DS.Typography.labelTiny,
+                                            forceSign: true
                                         )
-                                        .font(DS.Typography.labelTiny)
-                                        .foregroundStyle(.primary)
                                     }
                                 } else {
                                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                                        HStack(spacing: DS.Spacing.xs) {
+                                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                                             Circle().fill(Color.incomeGraph).frame(width: 6, height: 6)
-                                            Text(
-                                                YalaFormatter.currency(
-                                                    value: selectedData.income,
-                                                    currencyCode: summary.currencyCode, forceSign: true)
+                                            AmountText(
+                                                value: selectedData.income,
+                                                currencyCode: summary.currencyCode,
+                                                font: DS.Typography.labelTiny,
+                                                forceSign: true
                                             )
-                                            .font(DS.Typography.labelTiny)
-                                            .foregroundStyle(.primary)
                                         }
-                                        HStack(spacing: DS.Spacing.xs) {
+                                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                                             Circle().fill(Color.expenseGraph).frame(width: 6, height: 6)
-                                            Text(
-                                                YalaFormatter.currency(
-                                                    value: -selectedData.expense,
-                                                    currencyCode: summary.currencyCode)
+                                            AmountText(
+                                                value: -selectedData.expense,
+                                                currencyCode: summary.currencyCode,
+                                                font: DS.Typography.labelTiny
                                             )
-                                            .font(DS.Typography.labelTiny)
-                                            .foregroundStyle(.primary)
                                         }
                                         Divider()
-                                        HStack(spacing: DS.Spacing.xs) {
+                                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                                             Circle().fill(Color.electricIndigo).frame(width: 6, height: 6)
-                                            Text(
-                                                YalaFormatter.currency(
-                                                    value: selectedData.net,
-                                                    currencyCode: summary.currencyCode, forceSign: true)
+                                            AmountText(
+                                                value: selectedData.net,
+                                                currencyCode: summary.currencyCode,
+                                                font: DS.Typography.labelTiny,
+                                                forceSign: true
                                             )
-                                            .font(DS.Typography.labelTiny)
-                                            .foregroundStyle(.primary)
                                         }
                                     }
                                 }
@@ -691,18 +776,16 @@ struct CashFlowWidget: View {
                                 // Average line in tooltip
                                 if let avg = tooltipAverage(for: selectedData.date) {
                                     Divider()
-                                    HStack(spacing: DS.Spacing.xs) {
+                                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                                         Text("x̄")
                                             .font(DS.Typography.labelTiny)
                                             .foregroundStyle(.thSecondaryText)
                                             .frame(width: 6)
-                                        Text(
-                                            YalaFormatter.currency(
-                                                value: avg,
-                                                currencyCode: summary.currencyCode)
+                                        AmountText(
+                                            value: avg,
+                                            currencyCode: summary.currencyCode,
+                                            font: DS.Typography.labelTiny
                                         )
-                                        .font(DS.Typography.labelTiny)
-                                        .foregroundStyle(.primary)
                                     }
                                 }
                             }
@@ -714,10 +797,11 @@ struct CashFlowWidget: View {
                             )
                             .fixedSize()
                             .position(
+                                // Centrado verticalmente en el plot area — evita choque con
+                                // el KPI del header del card (Statistics tab + Panel widget).
                                 x: max(80, min(xPos + plotFrame.origin.x, geo.size.width - 80)),
-                                y: plotFrame.minY + 20
+                                y: plotFrame.midY
                             )
-                            .offset(y: -50)
                         }
                     }
                 }
@@ -747,30 +831,26 @@ struct CashFlowWidget: View {
                                     .font(DS.Typography.subheadline)
                                     .foregroundStyle(.thSecondaryText)
                                 Spacer()
-                                Text(
-                                    YalaFormatter.currency(
-                                        value: summary.totalIncome, currencyCode: summary.currencyCode)
+                                AmountText(
+                                    value: summary.totalIncome,
+                                    currencyCode: summary.currencyCode,
+                                    font: DS.Typography.body, secondaryFont: DS.Typography.caption
                                 )
-                                .font(DS.Typography.amountSmall)
-                                .foregroundStyle(.thPrimaryText)
                             }
                             // Bar
-                            GeometryReader { geo in
-                                ZStack(alignment: .leading) {
-                                    // Track
-                                    Capsule()
-                                        .fill(.thPrimaryText.opacity(0.05))
-                                        .frame(height: 8)
+                            ZStack(alignment: .leading) {
+                                // Track
+                                Capsule()
+                                    .fill(.thPrimaryText.opacity(0.05))
+                                    .frame(height: 8)
 
-                                    // Fill - teal color for income
-                                    let width =
-                                        maxVal > 0 ? (summary.totalIncome / maxVal) * geo.size.width : 0
-                                    Capsule()
-                                        .fill(Color.incomeGraph)
-                                        .frame(width: max(width, 6), height: 8)
-                                }
+                                // Fill - teal color for income
+                                let incomeRatio = maxVal > 0 ? (summary.totalIncome / maxVal) : 0
+                                Capsule()
+                                    .fill(Color.incomeGraph)
+                                    .frame(width: max(incomeBarWidth * incomeRatio, 6), height: 8)
                             }
-                            .frame(height: 8)
+                            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { incomeBarWidth = $0 }
                         }
                         .opacity(isIncomeDimmed ? 0.4 : 1.0)
                     }
@@ -778,34 +858,30 @@ struct CashFlowWidget: View {
                     // Expense Group
                     VStack(spacing: DS.Spacing.xs) {
                         HStack {
-                            Text(L10n.Transaction.expense)
+                            Text(L10n.CashFlow.expense)
                                 .font(DS.Typography.subheadline)
                                 .foregroundStyle(.thSecondaryText)
                             Spacer()
-                            Text(
-                                YalaFormatter.currency(
-                                    value: summary.totalExpense, currencyCode: summary.currencyCode)
+                            AmountText(
+                                value: summary.totalExpense,
+                                currencyCode: summary.currencyCode,
+                                font: DS.Typography.body, secondaryFont: DS.Typography.caption
                             )
-                            .font(DS.Typography.amountSmall)
                         }
                         // Bar
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                // Track
-                                Capsule()
-                                    .fill(.thPrimaryText.opacity(0.05))
-                                    .frame(height: 8)
+                        ZStack(alignment: .leading) {
+                            // Track
+                            Capsule()
+                                .fill(.thPrimaryText.opacity(0.05))
+                                .frame(height: 8)
 
-                                // Fill
-                                let width =
-                                    maxVal > 0
-                                    ? (summary.totalExpense / maxVal) * geo.size.width : 0
-                                Capsule()
-                                    .fill(Color.expenseGraph)
-                                    .frame(width: max(width, 6), height: 8)
-                            }
+                            // Fill
+                            let expenseRatio = maxVal > 0 ? (summary.totalExpense / maxVal) : 0
+                            Capsule()
+                                .fill(Color.expenseGraph)
+                                .frame(width: max(expenseBarWidth * expenseRatio, 6), height: 8)
                         }
-                        .frame(height: 8)
+                        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { expenseBarWidth = $0 }
                     }
                     .opacity(isExpenseDimmed ? 0.4 : 1.0)
                 }
@@ -846,7 +922,7 @@ struct CashFlowWidget: View {
                     averageSegmentLabel(segment: segment, index: index)
                 }
             }
-        } else if averageLineMode == 2 && !isWaterfallMode
+        } else if appPreferences.averageLineMode == 2 && !isWaterfallMode
             && (hasOnlyExpenses || hasOnlyIncome) && activeChartData.count >= 2
         {
             // Fallback to total when < 2 segments
@@ -888,7 +964,7 @@ struct CashFlowWidget: View {
             return averageSegments.first(where: { date >= $0.startDate && date < $0.endDate })?.average
         }
         // Fallback: segmented mode but < 2 segments → total
-        if averageLineMode == 2 && !isWaterfallMode
+        if appPreferences.averageLineMode == 2 && !isWaterfallMode
             && (hasOnlyExpenses || hasOnlyIncome) && activeChartData.count >= 2
         {
             return totalAverageValue

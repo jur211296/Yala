@@ -28,8 +28,15 @@ final class TransactionItem {
     var account: Account?
 
     /// CloudKit: must be optional
+    /// LEGACY: kept only for cascade .nullify when a Tag is deleted.
+    /// DO NOT read from this for filtering logic. Read via resolvedTagIDs() helper.
+    /// Writers MUST use setTags(from:) to keep both sides (M2M + CSV) in sync.
     @Relationship(deleteRule: .nullify)
     var tags: [Tag]?
+
+    /// CSV mirror of `tags` M2M — SSOT for read (eager, travels in the TX record).
+    /// Solves CloudKit lazy hydration race where M2M can appear nil post cold start.
+    var tagIDs: String?
 
     /// Inverse relationship: draft that created this transaction (CloudKit requirement)
     @Relationship(deleteRule: .nullify)
@@ -74,6 +81,15 @@ final class TransactionItem {
     /// Divisor total (nil para exact)
     var splitDivisor: Double?
 
+    // MARK: - Shared Expense Link
+    /// ID del SplitExpense vinculado (nil = gasto personal normal)
+    var splitExpenseID: String?
+    /// Zone ID del grupo para queries rápidos
+    var splitGroupZoneID: String?
+    /// ID del SplitSettlement vinculado (nil = gasto personal o expense bridgeado)
+    /// Permite distinguir TX de liquidaciones para `unbridgeSettlement` y bloqueo de edición.
+    var splitSettlementID: String?
+
     // MARK: - Metadata
     /// Timestamp de creación del registro (usado para ordenar registros del mismo día)
     var createdAt: Date = Date.now
@@ -90,6 +106,7 @@ final class TransactionItem {
 
     /// Recalculates exchangeRate, amountInPreferredCurrency, and preferredCurrencyCode
     /// based on the transaction's current amount and currencyCode.
+    @MainActor
     func recalculatePreferredCurrency(context: ModelContext) {
         let preferredCode = CurrencyDefaults.currentPreferred
         let amountInPreferred = CurrencyConverter.shared.convert(
@@ -122,7 +139,8 @@ final class TransactionItem {
         exchangeRate: Double = 1.0,
         amountInPreferredCurrency: Double = 0.0,
         preferredCurrencyCode: String = "PEN",
-        isExchangeRateProvisional: Bool = false
+        isExchangeRateProvisional: Bool = false,
+        tagIDs: String? = nil
     ) {
         self.date = date
         self.amount = amount
@@ -136,5 +154,7 @@ final class TransactionItem {
         self.amountInPreferredCurrency = amountInPreferredCurrency
         self.preferredCurrencyCode = preferredCurrencyCode
         self.isExchangeRateProvisional = isExchangeRateProvisional
+        // Auto-mirror: derivar tagIDs desde `tags` si el caller no lo pasó explícito.
+        self.tagIDs = tagIDs ?? CSVMirrorCodec.encode(tags.map(\.id))
     }
 }

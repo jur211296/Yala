@@ -31,42 +31,39 @@ struct CategorySelectorSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    SectionBox(title: L10n.Filters.selectCategories) {
+                        VStack(spacing: DS.Spacing.none) {
+                            selectAllRow
 
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        SectionBox(title: L10n.Filters.selectCategories) {
-                            VStack(spacing: DS.Spacing.none) {
-                                selectAllRow
+                            SubsectionDivider()
 
-                                SubsectionDivider()
+                            ForEach(Array(categories.enumerated()), id: \.element.id) {
+                                index, category in
+                                VStack(spacing: DS.Spacing.none) {
+                                    categoryRow(category)
 
-                                ForEach(Array(categories.enumerated()), id: \.element.id) {
-                                    index, category in
-                                    VStack(spacing: DS.Spacing.none) {
-                                        categoryRow(category)
-
-                                        if expandedCategories.contains(category.persistentModelID) {
-                                            ForEach(visibleSubcategories(for: category)) {
-                                                subcategory in
-                                                SubsectionDivider()
-                                                subcategoryRow(subcategory, category: category)
-                                            }
+                                    if expandedCategories.contains(category.persistentModelID) {
+                                        ForEach(visibleSubcategories(for: category)) {
+                                            subcategory in
+                                            SubsectionDivider()
+                                            subcategoryRow(subcategory, category: category)
                                         }
                                     }
+                                }
 
-                                    if index < categories.count - 1 {
-                                        SubsectionDivider()
-                                    }
+                                if index < categories.count - 1 {
+                                    SubsectionDivider()
                                 }
                             }
                         }
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
                 }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Filters.selectCategories)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -158,6 +155,7 @@ struct CategorySelectorSheet: View {
                         .accessibilityHidden(true)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(isNoneSelected(for: category) ? L10n.Filters.selectAll : L10n.Filters.deselectAll)
 
                 // Expand/collapse
                 Button {
@@ -169,6 +167,7 @@ struct CategorySelectorSheet: View {
                         .accessibilityHidden(true)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(expandedCategories.contains(category.persistentModelID) ? L10n.Accessibility.collapse : L10n.Accessibility.expand)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)

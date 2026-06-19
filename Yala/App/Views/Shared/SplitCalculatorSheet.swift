@@ -69,6 +69,7 @@ struct SplitCalculatorSheet: View {
     let onDismiss: () -> Void
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @FocusState private var focusedField: CalcField?
 
@@ -161,11 +162,14 @@ struct SplitCalculatorSheet: View {
                     }
                     .disabled(calculatedResult == nil)
                     .accessibilityHint(calculatedResult == nil ? L10n.Accessibility.completeCalculation : "")
+                    .accessibilityIdentifier("split_calc_use_button")
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.lg)
+                .dismissKeyboardOnTap()
             }
-            .background(.thBackground)
+            .scrollContentBackground(.hidden)
+            .yalaScreenBackground(.subtle)
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle(L10n.Split.title)
             .navigationBarTitleDisplayMode(.inline)
@@ -309,6 +313,7 @@ struct SplitCalculatorSheet: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("split_calc_preset_\(value)")
             }
         }
     }
@@ -384,9 +389,10 @@ struct SplitCalculatorSheet: View {
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
             Spacer()
-            Text("\(currencySymbol.map { "\($0) " } ?? "")\(YalaFormatter.number(value: amount, forceFullPrecision: true))")
+            Text("\(currencySymbol.map { "\($0) " } ?? "")\(appPreferences.number(amount, forceFullPrecision: true))")
                 .font(DS.Typography.title2)
                 .foregroundStyle(Color.hotPink)
+                .accessibilityIdentifier("split_calc_result")
         }
         .padding(DS.Spacing.md)
         .background(Color.hotPink.opacity(0.08))

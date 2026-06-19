@@ -129,6 +129,8 @@ final class StatisticsViewModel: Filterable {
         set { SessionState.shared.isExcludeMode = newValue }
     }
 
+    var sharedExpenseFilter: SharedExpenseFilter = .all
+
     /// Selected period (using DetailPeriod for expanded options)
     var detailPeriod: DetailPeriod {
         get { SessionState.shared.selectedPeriod }
@@ -163,6 +165,15 @@ final class StatisticsViewModel: Filterable {
     /// Y-axis domain for the chart
     var yDomain: ClosedRange<Double> = 0...100
 
+    /// Dot suelto "hoy" con saldo vivo. La View lo renderiza separado de la
+    /// curva (PointMark con anillo) cuando la métrica es .balance y el
+    /// período cubre hoy. Nil en otros casos.
+    var trendLiveAnchor: PanelViewModel.BarPoint? = nil
+
+    /// Desglose por moneda nativa del `trendLiveAnchor`. Habilita el sheet
+    /// educativo "Tu saldo hoy" desde la pill "Hoy ⓘ" del chart.
+    var trendLiveAnchorBreakdown: [String: Decimal]? = nil
+
     /// Trend grouping based on period
     var trendGrouping: TrendGrouping = .month
 
@@ -183,6 +194,11 @@ final class StatisticsViewModel: Filterable {
 
     /// Current actual balance (sum of accounts' current balance)
     var currentBalance: Double = 0
+
+    /// Sankey flow data for the Distribution tab widget.
+    /// Computed via `calculateSankeyData(...)`; recomputes only when the non-category
+    /// deps change (see `sankeyInputKey`). Tap-filtering does NOT invalidate this.
+    private(set) var sankeyData: SankeyData = .empty
 
     /// Maximum number of records to show
     let maxRecentRecords: Int = 10
@@ -270,12 +286,55 @@ final class StatisticsViewModel: Filterable {
         detailPeriod.dateInterval(customRange: customDateRange)
     }
 
+    // MARK: - Sankey Input Key
+
+    /// Snapshot of all filter/period deps that should trigger a Sankey recompute.
+    /// Deliberately excludes `selectedCategories`, `selectedSubcategories`, `selectedMetric`
+    /// and `selectedTransactionNatures` — tap-filtering and metric switches do NOT alter
+    /// the flow structure, only the dimming overlay in the view.
+    struct SankeyInputKey: Equatable {
+        let interval: DateInterval
+        /// Planned-occurrences interval (independent of `interval`). Differs from
+        /// `interval` because planned extends to end-of-current-month, while transactions
+        /// stay truncated to today. Including it here triggers a recompute when
+        /// crossing month boundaries with `.thisYear` active.
+        let plannedInterval: DateInterval?
+        let accounts: Set<PersistentIdentifier>
+        let tags: Set<PersistentIdentifier>
+        let currencies: Set<CurrencyCode>
+        let needs: Set<SubcategoryNeed>
+        let amountCondition: AmountFilterCondition
+        let searchText: String
+        let isExcludeMode: Bool
+    }
+
+    var sankeyInputKey: SankeyInputKey {
+        SankeyInputKey(
+            interval: panelDateInterval,
+            plannedInterval: detailPeriod.plannedInterval(customRange: customDateRange),
+            accounts: selectedAccounts,
+            tags: selectedTags,
+            currencies: selectedCurrencies,
+            needs: selectedNeeds,
+            amountCondition: amountCondition,
+            searchText: searchText,
+            isExcludeMode: isExcludeMode
+        )
+    }
+
+    /// True when the Sankey shows planificados truncated to end-of-current-month.
+    /// Drives the hint shown below the chart.
+    var shouldShowPlannedHint: Bool {
+        detailPeriod.shouldShowPlannedHint(customRange: customDateRange)
+    }
+
     // MARK: - Data Calculation
 
     /// Calculate trend data based on current filters and metric
     func calculateTrendData(
         accounts: [Account],
         transactions: [TransactionItem],
+        allTags: [Tag],
         defaultCurrencyCode: String
     ) {
         // Enforce metric lock based on filters
@@ -289,7 +348,7 @@ final class StatisticsViewModel: Filterable {
         currentInterval = interval
 
         // Build filter criteria and apply
-        let criteria = buildTrendFilterCriteria(interval: interval)
+        let criteria = buildTrendFilterCriteria(interval: interval, allTags: allTags)
 
         let filtered = FilterService.filterForTrends(
             transactions: transactions,
@@ -303,25 +362,37 @@ final class StatisticsViewModel: Filterable {
         calculateTotals(
             filtered: filtered,
             eligibleAccounts: eligibleAccounts,
-            allTransactions: transactions
+            allTransactions: transactions,
+            defaultCurrencyCode: defaultCurrencyCode
         )
 
         // Calculate trend points based on metric using unified TrendDataProcessor
         if isAggregatedView {
+            let trendType = mapMetricToTrendType(selectedMetric)
+            let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
+                for: trendType,
+                interval: interval,
+                accounts: eligibleAccounts,
+                transactions: transactions,
+                preferredCurrencyCode: defaultCurrencyCode
+            )
             let result = TrendDataProcessor.processTrendData(
                 transactions: filtered,
                 accounts: eligibleAccounts,
-                metric: mapMetricToTrendType(selectedMetric),
+                metric: trendType,
                 period: detailPeriod,
                 grouping: trendGrouping,
                 interval: interval,
-                currencyCode: defaultCurrencyCode
+                currencyCode: defaultCurrencyCode,
+                liveBalanceOverride: liveBalanceOverride
             )
             if result.points != trendPoints { trendPoints = result.points }
             if result.rawPoints != rawTrendPoints { rawTrendPoints = result.rawPoints }
             yDomain = result.yDomain
             if result.totalIncome != totalIncome { totalIncome = result.totalIncome }
             if result.totalExpense != totalExpense { totalExpense = result.totalExpense }
+            if result.liveAnchor != trendLiveAnchor { trendLiveAnchor = result.liveAnchor }
+            if result.liveAnchorNativeBalances != trendLiveAnchorBreakdown { trendLiveAnchorBreakdown = result.liveAnchorNativeBalances }
             dataMetric = selectedMetric
         } else {
             calculatePerAccountTrend(
@@ -336,12 +407,88 @@ final class StatisticsViewModel: Filterable {
         buildRecentRecords(from: filtered)
     }
 
+    // MARK: - Sankey Data
+
+    /// Recompute the Sankey flow data for the Distribution widget.
+    ///
+    /// Uses a dedicated `FilterCriteria` that **omits** `selectedCategories` /
+    /// `selectedSubcategories` so the flow structure remains stable when the user
+    /// taps a category or subcategory elsewhere (dimming happens in the view).
+    /// Always applies the current `panelDateInterval`, independent of `selectedMetric`.
+    ///
+    /// The "Planificados" branch is computed via `PlannedOccurrenceBuilder` from the
+    /// pending occurrences of active expense scheduled payments within `interval`.
+    /// Pass `scheduledPayments: []` to disable the branch (rollback path).
+    func calculateSankeyData(
+        allTransactions: [TransactionItem],
+        accounts: [Account],
+        scheduledPayments: [ScheduledPayment],
+        allTags: [Tag],
+        defaultCurrencyCode: String
+    ) {
+        let interval = panelDateInterval
+        let criteria = buildSankeyFilterCriteria(interval: interval, allTags: allTags)
+        let filtered = FilterService.filterForTrends(
+            transactions: allTransactions,
+            accounts: accounts,
+            criteria: criteria
+        )
+        // Use the dedicated planned interval (extends to end-of-current-month for
+        // active periods, nil for retrospective ones). Distinct from `interval`
+        // which truncates to today for transactions.
+        let plannedPending: [PlannedOccurrence]
+        if let plannedInterval = detailPeriod.plannedInterval(customRange: customDateRange) {
+            plannedPending = PlannedOccurrenceBuilder.build(
+                scheduledPayments: scheduledPayments,
+                filteredTransactions: filtered,
+                interval: plannedInterval,
+                selectedAccounts: selectedAccounts,
+                defaultCurrencyCode: defaultCurrencyCode,
+                converter: CurrencyConverter.shared
+            )
+        } else {
+            plannedPending = []
+        }
+        let newData = SankeyFlowCalculator.compute(
+            transactions: filtered,
+            interval: interval,
+            maxPerColumn: 15,
+            plannedPending: plannedPending,
+            plannedSplit: .byKind,
+            propagatePlannedToCategories: true
+        )
+        if newData != sankeyData { sankeyData = newData }
+    }
+
+    /// Build a FilterCriteria dedicated to the Sankey widget:
+    /// - Excludes `selectedCategories`/`selectedSubcategories` (tap filters don't shrink the flow).
+    /// - Always sets `dateInterval: interval` (unlike `buildTrendFilterCriteria`, which sets nil for `.balance`).
+    private func buildSankeyFilterCriteria(interval: DateInterval, allTags: [Tag]) -> FilterCriteria {
+        var criteria = FilterCriteria(
+            selectedAccounts: selectedAccounts,
+            selectedCategories: [],
+            selectedSubcategories: [],
+            selectedTags: selectedTags,
+            selectedNeeds: selectedNeeds,
+            selectedCurrencies: selectedCurrencies,
+            isExcludeMode: isExcludeMode,
+            transactionTypeFilter: .all,
+            amountCondition: amountCondition,
+            searchText: searchText,
+            dateInterval: interval
+        )
+        criteria.populateTagUUIDs(
+            from: allTags.filter { selectedTags.contains($0.persistentModelID) }
+        )
+        return criteria
+    }
+
     // MARK: - Calculation Helpers
 
     /// Build FilterCriteria for trend calculations
-    private func buildTrendFilterCriteria(interval: DateInterval) -> FilterCriteria {
+    private func buildTrendFilterCriteria(interval: DateInterval, allTags: [Tag]) -> FilterCriteria {
         let isBalanceMetric = selectedMetric == .balance
-        return FilterCriteria(
+        var criteria = FilterCriteria(
             selectedAccounts: selectedAccounts,
             selectedCategories: selectedCategories,
             selectedSubcategories: selectedSubcategories,
@@ -354,6 +501,10 @@ final class StatisticsViewModel: Filterable {
             searchText: searchText,
             dateInterval: isBalanceMetric ? nil : interval
         )
+        criteria.populateTagUUIDs(
+            from: allTags.filter { selectedTags.contains($0.persistentModelID) }
+        )
+        return criteria
     }
 
     /// Compute eligible accounts for trend calculations (archived accounts still count)
@@ -373,7 +524,8 @@ final class StatisticsViewModel: Filterable {
     private func calculateTotals(
         filtered: [TransactionItem],
         eligibleAccounts: [Account],
-        allTransactions: [TransactionItem]
+        allTransactions: [TransactionItem],
+        defaultCurrencyCode: String
     ) {
         let newIncome =
             filtered
@@ -387,13 +539,14 @@ final class StatisticsViewModel: Filterable {
             .reduce(0) { $0 + abs($1.amountInPreferredCurrency) }
         if newExpense != totalExpense { totalExpense = newExpense }
 
-        let newBalance = eligibleAccounts.reduce(0.0) { total, account in
-            let transactionSum =
-                allTransactions
-                .filter { $0.account?.persistentModelID == account.persistentModelID }
-                .reduce(0.0) { $0 + $1.amountInPreferredCurrency }
-            return total + transactionSum
-        }
+        // KPI Saldo Actual: usa LiveBalanceCalculator (TC actual sobre saldo
+        // nativo) en vez de sumar snapshots históricos — coherente con la
+        // card de Balance Total del Panel.
+        let newBalance = LiveBalanceCalculator.liveBalance(
+            accounts: eligibleAccounts,
+            transactions: allTransactions,
+            preferredCurrencyCode: defaultCurrencyCode
+        )
         if newBalance != currentBalance { currentBalance = newBalance }
     }
 

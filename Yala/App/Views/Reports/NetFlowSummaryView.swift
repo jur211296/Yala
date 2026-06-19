@@ -14,13 +14,14 @@ struct NetFlowSummaryView: View {
     let variation: Double?
     let currencyCode: String
 
-    @AppStorage("showVariations") private var showVariations: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
+    private var showVariations: Bool { appPreferences.showVariations }
 
     var body: some View {
         HStack(spacing: DS.Spacing.sm) {
             // Icon matching TrendsTabView balance
             Image(systemName: TrendType.balance.iconName)
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(.primary)
                 .frame(width: DS.Chip.dotSize)
 
@@ -34,19 +35,25 @@ struct NetFlowSummaryView: View {
 
             // Thin divider
             Divider()
-                .frame(height: 28)
+                .frame(height: DS.Sizing.dividerHeightStandard)
 
             // Amounts
             VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                Text(YalaFormatter.currency(value: currentAmount, currencyCode: currencyCode))
-                    .font(DS.Typography.label)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(currentAmount >= 0 ? Color.electricIndigo : Color.hotPink)
+                AmountText(
+                    value: currentAmount,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.label.weight(.semibold),
+                    tint: .color(currentAmount >= 0 ? Color.electricIndigo : Color.hotPink)
+                )
 
                 if let previousAmount {
-                    Text(YalaFormatter.currency(value: previousAmount, currencyCode: currencyCode))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    AmountText(
+                        value: previousAmount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.captionSmall,
+                        secondaryFont: DS.Typography.captionSmall,
+                        tint: .secondary
+                    )
                 }
             }
             .frame(minWidth: 80, alignment: .trailing)

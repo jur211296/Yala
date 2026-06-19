@@ -16,11 +16,24 @@ struct TrendChartView: View {
 
     let period: DetailPeriod
     var chartHeight: CGFloat = 220
+    /// PP2-06c: compact mode for `.small` widget — hides Y-axis, the "today" marker
+    /// and caps the X-axis to at most 2 labels (first + last data point).
+    var compact: Bool = false
+    /// Dot suelto en `Date.now` con saldo vivo (LiveBalanceCalculator). No-nil
+    /// solo en métricas de balance cuando el período cubre hoy. Se renderiza
+    /// como un PointMark con anillo, sin annotation propia (el `todayMarker`
+    /// ya marca el contexto temporal con texto "Hoy"). En compact se omite.
+    var liveAnchor: PanelViewModel.BarPoint? = nil
+    /// Desglose por moneda nativa del `liveAnchor`. Habilita el sheet
+    /// educativo "Tu saldo hoy" en multi-currency. Nil → tap no abre sheet.
+    var liveAnchorBreakdown: [String: Decimal]? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var draggingDate: Date?  // For transient drag state
+    @State private var pulseAnimate = false
+    @State private var showEducationSheet = false
 
     var body: some View {
         // Disable animations completely to prevent interpolation between data states
@@ -67,6 +80,7 @@ struct TrendChartView: View {
             // Use .monotone to prevent overshoots at extreme points
             // (.catmullRom can cause visual distortion at first/last points)
             let interpolation: InterpolationMethod = .monotone
+            let solidLineWidth: CGFloat = compact ? 3 : 2
 
             // Past & Today: Solid Line & Area
             ForEach(pastPoints, id: \.date) { point in
@@ -83,7 +97,7 @@ struct TrendChartView: View {
                     y: .value(L10n.Common.amount, point.value)
                 )
                 .interpolationMethod(interpolation)
-                .lineStyle(StrokeStyle(lineWidth: 2))
+                .lineStyle(StrokeStyle(lineWidth: solidLineWidth))
                 .foregroundStyle(primaryLineColor.opacity(dimOpacity))
 
                 // DATA ANNOTATIONS FOR WEEK VIEW
@@ -108,7 +122,7 @@ struct TrendChartView: View {
                     y: .value(L10n.Common.amount, point.value)
                 )
                 .interpolationMethod(interpolation)
-                .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                .lineStyle(StrokeStyle(lineWidth: solidLineWidth, dash: [5, 5]))
                 .foregroundStyle(.thSecondaryText)  // Explicit Gray for distinction
             }
 
@@ -122,19 +136,13 @@ struct TrendChartView: View {
                 .symbolSize(64)
             }
 
-            // Marker for "Today"
-            RuleMark(x: .value(L10n.Widget.today, today))
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
-                .foregroundStyle(.thSecondaryText.opacity(0.5))
-                .annotation(position: .top, alignment: .center, spacing: DS.Spacing.sm) {
-                    Text(L10n.Widget.today)
-                        .font(DS.Typography.labelTiny)
-                        .foregroundStyle(.thPrimaryText)
-                        .padding(.horizontal, DS.Spacing.xs)
-                        .padding(.vertical, DS.Spacing.xs)
-                        .background(.thCard, in: RoundedRectangle(cornerRadius: DS.Radius.xs))
-                        .shadow(radius: 1)
-                }
+            // Marker for "Today" (omitted entirely in compact mode)
+            todayMarker(today: today)
+
+            // Dot del saldo vivo en `today` se renderiza FUERA del Chart{} en
+            // `.chartOverlay` más abajo — PointMark no soporta animación de
+            // scale/opacity para el pulse, ni `.onTapGesture` para abrir el
+            // sheet educativo.
 
             // Average line
             averageLineMarks
@@ -165,10 +173,14 @@ struct TrendChartView: View {
                 .symbolSize(100)
                 .foregroundStyle(.thCard)
 
-                // Invisible anchor point at top of chart for tooltip
+                // Invisible anchor point for tooltip — placed ~35% below the chart top
+                // so the bubble doesn't choque con el KPI del header del card (Statistics
+                // tab + Panel widget) ni se salga off-canvas.
+                let tooltipAnchorY = yDomain.upperBound
+                    - (yDomain.upperBound - yDomain.lowerBound) * 0.35
                 PointMark(
                     x: .value(L10n.Common.selectedDate, activeDate),
-                    y: .value("Top", yDomain.upperBound)
+                    y: .value("TooltipAnchor", tooltipAnchorY)
                 )
                 .symbolSize(0)
                 .annotation(
@@ -207,16 +219,19 @@ struct TrendChartView: View {
                 }
             }
         }
-        // Y-Axis: Right (Trailing) only - minimal gridlines
+        // Y-Axis: Trailing with minimal gridlines; hidden via opacity in compact mode.
         .chartYAxis {
+            let gridOpacity: Double = compact ? 0 : 0.1
+            let labelOpacity: Double = compact ? 0 : 1
             AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                    .foregroundStyle(.thSecondaryText.opacity(0.1))
+                    .foregroundStyle(.thSecondaryText.opacity(gridOpacity))
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
                         Text(formatK(doubleValue))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
+                            .opacity(labelOpacity)
                     }
                 }
             }
@@ -226,15 +241,16 @@ struct TrendChartView: View {
         // X-Axis Scale from Interval
         .chartXScale(domain: paddedXDomain)
         .chartXAxis {
-            // Smart dynamic X-axis labels
-            AxisMarks(values: smartAxisDates) { value in
+            // Compact mode caps the X-axis to first + last data labels only.
+            let axisValues = compact ? compactAxisDates : smartAxisDates
+            let gridOpacity: Double = compact ? 0 : 0.1
+            AxisMarks(values: axisValues) { value in
                 AxisGridLine()
-                    .foregroundStyle(.thSecondaryText.opacity(0.1))
+                    .foregroundStyle(.thSecondaryText.opacity(gridOpacity))
 
                 if let date = value.as(Date.self) {
-                    // Use trailing anchor for last label to prevent truncation
-                    let isLast = date == smartAxisDates.last
-                    let isFirst = date == smartAxisDates.first
+                    let isLast = date == axisValues.last
+                    let isFirst = date == axisValues.first
                     let anchor: UnitPoint = isLast ? .topTrailing : (isFirst ? .topLeading : .top)
 
                     AxisValueLabel(anchor: anchor) {
@@ -246,11 +262,111 @@ struct TrendChartView: View {
             }
         }
         .chartXSelection(value: $draggingDate)  // Native iOS 17+ selection - works with scroll
+        .chartOverlay { proxy in
+            ZStack {
+                todayHintPillOverlay(proxy: proxy)
+                liveAnchorOverlay(proxy: proxy)
+            }
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.Accessibility.trendChart(trendType.displayName))
         .accessibilityValue(trendPoints.isEmpty ? L10n.Accessibility.noData :
             L10n.Accessibility.dataPoints(trendPoints.count))
+        .compactChartAxes(compact: compact)
         .frame(height: chartHeight)
+        .onAppear {
+            if !reduceMotion { pulseAnimate = true }
+        }
+        .onDisappear {
+            pulseAnimate = false
+        }
+        .sheet(isPresented: $showEducationSheet) {
+            if let breakdown = liveAnchorBreakdown,
+               let anchor = liveAnchor {
+                BalanceLiveAnchorEducationSheet(
+                    liveAnchorValue: anchor.value,
+                    historicalValue: rawPoints.last?.value,
+                    nativeBalances: breakdown,
+                    preferredCurrencyCode: currencyCode
+                )
+            }
+        }
+    }
+
+    /// Overlay de la pill "Hoy ⓘ" — vive fuera del `Chart{}` para que el tap
+    /// no sea capturado por `.chartXSelection`. Posicionada cerca del top del
+    /// plot area, alineada con la línea vertical del `todayMarker`.
+    @ViewBuilder
+    private func todayHintPillOverlay(proxy: ChartProxy) -> some View {
+        let today = Calendar.current.startOfDay(for: Date.now)
+        GeometryReader { geo in
+            if !compact,
+               paddedXDomain.contains(today),
+               let plotFrame = proxy.plotFrame,
+               let xPos = proxy.position(forX: today)
+            {
+                let frame = geo[plotFrame]
+                let absoluteX = xPos + frame.origin.x
+                let absoluteY = frame.origin.y + DS.Spacing.md
+
+                TodayHintGlassPill { showEducationSheet = true }
+                    .position(x: absoluteX, y: absoluteY)
+            }
+        }
+    }
+
+    /// Overlay del dot "Hoy" — ring fino + halo pulsante + tap area amplia.
+    /// Vive fuera del `Chart{}` porque PointMark no soporta animaciones de
+    /// scale/opacity ni gestos de tap. La posición se calcula vía ChartProxy.
+    @ViewBuilder
+    private func liveAnchorOverlay(proxy: ChartProxy) -> some View {
+        GeometryReader { geo in
+            if let anchor = liveAnchor,
+               !compact,
+               paddedXDomain.contains(anchor.date),
+               let plotFrame = proxy.plotFrame,
+               let xPos = proxy.position(forX: anchor.date),
+               let yPos = proxy.position(forY: anchor.value)
+            {
+                let frame = geo[plotFrame]
+                let absoluteX = xPos + frame.origin.x
+                let absoluteY = yPos + frame.origin.y
+
+                ZStack {
+                    // Halo pulsante (escala 1.0→1.3, opacity 0.25→0)
+                    Circle()
+                        .fill(trendType.color)
+                        .frame(width: 18, height: 18)
+                        .scaleEffect(pulseAnimate ? 1.3 : 1.0)
+                        .opacity(pulseAnimate ? 0.0 : 0.25)
+                        .animation(
+                            reduceMotion ? nil :
+                                .easeInOut(duration: 1.4)
+                                .repeatForever(autoreverses: false),
+                            value: pulseAnimate
+                        )
+
+                    // Ring exterior fino
+                    Circle()
+                        .stroke(trendType.color, lineWidth: 1.5)
+                        .frame(width: 10, height: 10)
+
+                    // Centro hueco (color del card)
+                    Circle()
+                        .fill(.thCard)
+                        .frame(width: 7, height: 7)
+                }
+                .frame(width: 48, height: 48)
+                .contentShape(Circle())
+                .position(x: absoluteX, y: absoluteY)
+                .onTapGesture { showEducationSheet = true }
+                .accessibilityElement()
+                .accessibilityLabel(L10n.Panel.LiveAnchorEducation.dotA11yLabel)
+                .accessibilityAddTraits(.isButton)
+                .coachMarkAnchor("todayFXHint")
+                .allowsHitTesting(true)
+            }
+        }
     }
 
     // Padded X Domain Logic - Use actual data range when available
@@ -266,12 +382,40 @@ struct TrendChartView: View {
                 -padding)...interval.end.addingTimeInterval(padding)
         }
 
-        let span = lastDate.timeIntervalSince(firstDate)
+        // Extender hasta liveAnchor.date si cae fuera del rango de datos (caso
+        // típico: última tx hace varios días pero el período cubre hoy). Esto
+        // beneficia también al `todayMarker` que verifica `paddedXDomain.contains(today)`.
+        let effectiveLastDate = max(lastDate, liveAnchor?.date ?? lastDate)
+        let span = effectiveLastDate.timeIntervalSince(firstDate)
         let padding = max(span * 0.05, 86400)  // At least 1 day padding
-        return firstDate.addingTimeInterval(-padding)...lastDate.addingTimeInterval(padding)
+        return firstDate.addingTimeInterval(-padding)...effectiveLastDate.addingTimeInterval(padding)
     }
 
     // MARK: - Smart Axis Labels
+
+    /// Today marker — omitted when `compact` OR when `today` falls outside the
+    /// chart's X-axis range (no point rendering a marker the user can't see).
+    /// La pill "Hoy ⓘ" vive en `chartOverlay` (no en annotation interna del
+    /// `Chart{}`) porque `.chartXSelection` captura los taps del área del
+    /// plot antes de que lleguen a las annotations — el overlay se procesa
+    /// en una capa por encima del selection gesture.
+    @ChartContentBuilder
+    private func todayMarker(today: Date) -> some ChartContent {
+        if !compact && paddedXDomain.contains(today) {
+            RuleMark(x: .value(L10n.Widget.today, today))
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
+                .foregroundStyle(.thSecondaryText.opacity(0.5))
+        }
+    }
+
+    /// Axis dates for compact mode: first + last data point only (empty if <2 points).
+    private var compactAxisDates: [Date] {
+        guard let firstDate = trendPoints.first?.date,
+              let lastDate = trendPoints.last?.date,
+              firstDate != lastDate
+        else { return trendPoints.first.map { [$0.date] } ?? [] }
+        return [firstDate, lastDate]
+    }
 
     /// Calculate smart axis dates aligned with actual data points
     private var smartAxisDates: [Date] {
@@ -283,10 +427,16 @@ struct TrendChartView: View {
             }
         }()
 
-        return SmartAxisHelper.calculateSmartAxisDates(
+        let rawDates = SmartAxisHelper.calculateSmartAxisDates(
             forDataDates: trendPoints.map(\.date),
             grouping: calendarUnit
         )
+
+        guard let firstDate = trendPoints.first?.date,
+              let lastDate = trendPoints.last?.date else { return rawDates }
+        return SmartAxisHelper.deduplicatedAxisDates(
+            rawDates, firstDate: firstDate, lastDate: lastDate,
+            forceGrouping: grouping.forceAxisGrouping)
     }
 
     /// Format axis label based on data span (include year if multiple years)
@@ -403,7 +553,7 @@ struct TrendChartView: View {
 
     /// Total average of raw point values (nil when off or not balance)
     private var totalAverageValue: Double? {
-        guard trendType == .balance, averageLineMode >= 1, rawPoints.count >= 2 else { return nil }
+        guard trendType == .balance, appPreferences.averageLineMode >= 1, rawPoints.count >= 2 else { return nil }
         let sum = rawPoints.reduce(0.0) { $0 + $1.value }
         return sum / Double(rawPoints.count)
     }
@@ -419,6 +569,21 @@ struct TrendChartView: View {
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.thSecondaryText)
                 }
+        }
+    }
+}
+
+// MARK: - Compact chart modifier
+
+private extension View {
+    /// Hides the Y axis when `compact` so the plot area fills the card edge-to-edge.
+    /// The X axis remains (first + last labels) — that's configured inside `TrendChartView`.
+    @ViewBuilder
+    func compactChartAxes(compact: Bool) -> some View {
+        if compact {
+            self.chartYAxis(.hidden)
+        } else {
+            self
         }
     }
 }

@@ -2,39 +2,12 @@
 //  ControlCenterIntents.swift
 //  Shared
 //
-//  App Intents for Control Center widgets.
-//  IMPORTANT: This file must have Target Membership in BOTH Yala and YalaWidgetsExtension.
+//  App Intents for Control Center widgets (Voice + Image entry).
+//  Target membership: YalaWidgetsExtension only (excluded from Yala main).
 //
 
 import AppIntents
 import Foundation
-
-struct OpenManualEntryIntent: AppIntent {
-    static var title: LocalizedStringResource = "widget.control.newExpense"
-    static var description = IntentDescription("widget.control.newExpense.desc")
-    static var openAppWhenRun: Bool = true
-
-    func perform() async throws -> some IntentResult {
-        guard let appGroupID = Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String else {
-            #if DEBUG
-            print("🎯 ERROR: APP_GROUP_IDENTIFIER not found in Info.plist")
-            #endif
-            return .result()
-        }
-
-        #if DEBUG
-        print("🎯 OpenManualEntryIntent.perform() EXECUTED")
-        #endif
-        if let defaults = UserDefaults(suiteName: appGroupID) {
-            defaults.set("new-transaction", forKey: "pendingControlAction")
-            defaults.synchronize()
-            #if DEBUG
-            print("🎯 Wrote 'new-transaction' to App Group: \(appGroupID)")
-            #endif
-        }
-        return .result()
-    }
-}
 
 struct OpenVoiceEntryIntent: AppIntent {
     static var title: LocalizedStringResource = "widget.control.voiceExpense"

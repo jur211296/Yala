@@ -28,9 +28,9 @@ final class TagsSettingsListViewModel {
     var tagToEdit: Tag?
     var isEditMode = false
 
-    // MARK: - Sort Order (synced from AppStorage via View)
+    // MARK: - Sort Order (synced from AppPreferences via View)
 
-    var tagsSortOrderNamesRaw: String = "" {
+    var tagsSortOrderNames: [String] = [] {
         didSet {
             tagSortIndexCache = nil
         }
@@ -40,15 +40,12 @@ final class TagsSettingsListViewModel {
 
     private var tagSortIndexCache: [String: Int]?
 
-    private var tagsSortOrderNames: [String] {
-        tagsSortOrderNamesRaw.split(separator: "|").map(String.init)
-    }
-
     private var tagSortIndex: [String: Int] {
         if let cache = tagSortIndexCache {
             return cache
         }
-        let index = Dictionary(uniqueKeysWithValues: tagsSortOrderNames.enumerated().map { ($1, $0) })
+        let index = Dictionary(tagsSortOrderNames.enumerated().map { ($1, $0) },
+                               uniquingKeysWith: { first, _ in first })
         tagSortIndexCache = index
         return index
     }
@@ -106,11 +103,10 @@ final class TagsSettingsListViewModel {
 
     // MARK: - Reorder Logic
 
-    func moveTag(from source: IndexSet, to destination: Int) -> String {
+    func moveTag(from source: IndexSet, to destination: Int) -> [String] {
         var currentOrder = orderedActiveTags.map { $0.name }
         currentOrder.move(fromOffsets: source, toOffset: destination)
-        let newRaw = currentOrder.joined(separator: "|")
-        tagsSortOrderNamesRaw = newRaw
-        return newRaw
+        tagsSortOrderNames = currentOrder
+        return currentOrder
     }
 }

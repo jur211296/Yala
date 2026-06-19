@@ -80,12 +80,36 @@ Ejecutar checks en paralelo usando Grep SOLO sobre los archivos identificados:
 ### H. State Management
 - `@State` sin `private` → debe ser `private`
 - `@Observable` sin `@MainActor` → debe tener @MainActor
-- `Binding(get:` en body → antipattern, usar @Binding + .onChange
-- `AnyView(` → usar @ViewBuilder, Group o generics
+- `@AppStorage(` en views nuevas (post-AppPreferences) → debe inyectar `AppPreferences` vía `@Environment` y usar `appPreferences.X`
+- `@AppStorage(` dentro de clase con `@Observable` → no triggerea updates, mover a `AppPreferences`
+- `Binding(get:` en body → antipattern, usar `@Binding` + `.onChange`
+- `AnyView(` → usar `@ViewBuilder`, `Group` o generics
 - `onTapGesture {` en vez de Button → pierde accesibilidad
-- IGNORAR: `@State` en #Preview, `AnyView` en type-erased collections justificadas
+- `@StateObject` / `@Published` / `ObservableObject` → preferir `@Observable` + `@State`/`@Bindable`
+- IGNORAR: `@State` en `#Preview`, `AnyView` en type-erased collections justificadas
 
-### I. TODOs pendientes
+### I. SwiftData / CloudKit compat
+- `@Attribute(.unique)` → PROHIBIDO con CloudKit (CKError), usar índice manual
+- `@Relationship` sin `inverse:` en relación bidireccional → corregir
+- `@Relationship` sin `deleteRule:` explícito → especificar (`.cascade`, `.nullify`, `.deny`)
+- Propiedad `@Model` sin valor por defecto (no-Optional, no inicializada) → CKError, dar default
+- `@Relationship var x: Type` non-Optional → CKError, hacer Optional o dar default
+- IGNORAR: propiedades Identifiable estándar (`id`), tests dentro de YalaTests/
+
+### J. iOS 26 gotchas críticos
+- `ToolbarSpacer(.fixed)` sin parámetro `placement:` → `placement` es OBLIGATORIO
+- `containerRelativeFrame(.horizontal)` dentro de `ScrollView(.vertical)` con `.contentMargins` → DEADLOCK de layout (splash nunca dismissa sin crash log). Usar `onGeometryChange`.
+- `NavigationView` → `NavigationStack` (deprecated, ya cubierto en E pero crítico para iOS 26)
+- IGNORAR: ToolbarSpacer con placement correcto, containerRelativeFrame en ScrollView horizontal
+
+### K. Convenciones Yala (CLAUDE.md)
+- View root nueva, sheet, fullScreenCover sin `.yalaScreenBackground(_:ignoredEdges:)` → aplicar modifier
+- `.background(theme.background)` o `.background(.thBackground)` directo → usar `.yalaScreenBackground()`
+- Form/List con TextField/TextEditor/SecureField sin `dismissKeyboardOnTap()` → añadir desde primer commit
+- `// removed`, `// TODO: cleanup tras X`, `// added for the Y flow` → comments narrando tarea/historia, eliminar (rastro va en commit msg)
+- IGNORAR: comments con `// A11Y-DT:`, `// A11Y-DM:`, `// DS-`, `// WHY:` (justificaciones intencionales)
+
+### L. TODOs pendientes
 - Pattern: `TODO|FIXME|HACK|XXX`
 
 ## PASO 3: REPORTE
@@ -95,15 +119,18 @@ Ejecutar checks en paralelo usando Grep SOLO sobre los archivos identificados:
 
 | Check | Estado | Encontrados |
 |-------|--------|-------------|
-| Errores silenciados (try?) | ✓/✗ | N |
-| Force unwraps (!) | ✓/✗ | N |
-| Prints producción | ✓/✗ | N |
-| Valores hardcodeados | ✓/✗ | N |
-| APIs deprecated | ✓/✗ | N |
-| Concurrencia | ✓/✗ | N |
-| Strings sin L10n | ✓/✗ | N |
-| State management | ✓/✗ | N |
-| TODOs pendientes | ✓/✗ | N |
+| A. Errores silenciados (try?) | ✓/✗ | N |
+| B. Force unwraps (!) | ✓/✗ | N |
+| C. Prints producción | ✓/✗ | N |
+| D. Valores hardcodeados | ✓/✗ | N |
+| E. APIs deprecated | ✓/✗ | N |
+| F. Concurrencia | ✓/✗ | N |
+| G. Strings sin L10n | ✓/✗ | N |
+| H. State management | ✓/✗ | N |
+| I. SwiftData / CloudKit | ✓/✗ | N |
+| J. iOS 26 gotchas | ✓/✗ | N |
+| K. Convenciones Yala | ✓/✗ | N |
+| L. TODOs pendientes | ✓/✗ | N |
 
 ### Issues (archivo:línea — descripción)
 [Lista priorizada: críticos primero, luego warnings]

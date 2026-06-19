@@ -30,23 +30,11 @@ struct ProfileView: View {
 
     @State private var viewModel = ProfileViewModel()
 
-    @AppStorage("userName") private var userName: String = "Usuario"
-    @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
     private var effectiveColorfulIcons: Bool {
-        theme.forcesMonochromeIcons ? false : colorfulIcons
+        theme.forcesMonochromeIcons ? false : appPreferences.colorfulIcons
     }
     private var profileStorage: ProfileImageStorage { .shared }
-    @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
-    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
-    @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
-    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
-    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
-    @AppStorage("aiInsightsConsentAccepted") private var aiInsightsConsentAccepted: Bool = false
-    @AppStorage(InsightTone.storageKey) private var insightsToneRaw: String = InsightTone.normal.rawValue
-    @AppStorage(InsightFocus.storageKey) private var insightsFocusRaw: String = InsightFocus.balanced.rawValue
-    @State private var showAIConsentAlert: Bool = false
-    @State private var showInsightsConsentAlert: Bool = false
-    @State private var pendingConsentForVoice: Bool = true
 
     // Navigation & Sheets
     @State private var navigationPath = NavigationPath()
@@ -57,17 +45,15 @@ struct ProfileView: View {
     @State private var showImportResult: Bool = false
 
     // Permission denied alert
-    @State private var showPermissionDeniedAlert: Bool = false
-    @State private var permissionDeniedType: String = ""
 
     // Subscription state
     @State private var showUpgradeForVoice = false
     @State private var showUpgradeForImage = false
     @State private var showUpgradeForInsights = false
+    @State private var showUpgradeForChat = false
     @State private var showSupportSheet = false
 
     // Coach mark: Settings tour
-    @AppStorage("hasSeenSettingsTour") private var hasSeenSettingsTour = false
     @State private var showSettingsTour = false
     @State private var settingsTourIndex = 0
     @State private var settingsScrollProxy: ScrollViewProxy?
@@ -86,6 +72,17 @@ struct ProfileView: View {
         FeatureGateService.shared.isProUser
     }
 
+    /// GC-08: en modo solo-grupos el perfil se reduce a lo esencial de grupos +
+    /// opciones universales; se ocultan las filas de finanzas personales.
+    private var isGroupInviteMode: Bool {
+        SessionState.shared.isGroupInviteMode
+    }
+
+    /// En solo-grupos no se muestra cromo Pro (no hay venta de Pro en ese modo).
+    private var showsProBadge: Bool {
+        isProUser && !isGroupInviteMode
+    }
+
     private var isVoiceLocked: Bool {
         !FeatureGateService.shared.canAccess(.voiceInput)
     }
@@ -98,12 +95,8 @@ struct ProfileView: View {
         !FeatureGateService.shared.canAccess(.smartInsightsAI)
     }
 
-    private var selectedTone: InsightTone {
-        InsightTone(rawValue: insightsToneRaw) ?? .normal
-    }
-
-    private var selectedFocus: InsightFocus {
-        InsightFocus(rawValue: insightsFocusRaw) ?? .balanced
+    private var isChatLocked: Bool {
+        !FeatureGateService.shared.canAccess(.chatAssistant)
     }
 
     enum ProfileSheet: Identifiable {
@@ -120,19 +113,19 @@ struct ProfileView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollViewReader { scrollProxy in
-                    ScrollView {
+            ScrollViewReader { scrollProxy in
+                ScrollView {
                         VStack(spacing: DS.Spacing.xxl) {
                             // Header
                             profileHeader
 
                             // Sections
-                            organizacionSection
+                            // Organización gestiona finanzas personales (cuentas, categorías,
+                            // presupuestos…): se omite por completo en modo solo-grupos.
+                            if !isGroupInviteMode {
+                                organizacionSection
+                            }
                             preferenciasSection
-                            aiFeaturesSection
                             datosSection
                             seguridadSection
                             ayudaSection
@@ -148,10 +141,10 @@ struct ProfileView: View {
                     }
                     .scrollDisabled(false)
                     .onAppear { settingsScrollProxy = scrollProxy }
-                }
             }
             .navigationTitle(L10n.Profile.title)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -168,6 +161,17 @@ struct ProfileView: View {
                         accounts: viewModel.accounts,
                         categories: viewModel.categories,
                         onImportCompleted: { result in
+                            let countBucket: String
+                            switch result.count {
+                            case 0: countBucket = "0"
+                            case 1...10: countBucket = "1-10"
+                            case 11...100: countBucket = "11-100"
+                            default: countBucket = "100+"
+                            }
+                            TelemetryService.track(.dataImported, parameters: [
+                                "exito": String(result.isSuccess),
+                                "cantidad_bucket": countBucket,
+                            ])
                             // Store result and show alert after sheet animation completes
                             activeSheet = nil
                             importResult = result
@@ -192,57 +196,16 @@ struct ProfileView: View {
             } message: { result in
                 Text(result.message)
             }
-            .alert(
-                permissionDeniedType,
-                isPresented: $showPermissionDeniedAlert
-            ) {
-                Button(L10n.Voice.openSettings) {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        openURL(url)
-                    }
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                if permissionDeniedType == L10n.Settings.voiceInputEnabled {
-                    Text(L10n.Voice.errorMicPermission)
-                } else {
-                    Text(L10n.Image.errorPhotoPermission)
-                }
-            }
-            .alert(L10n.AIConsent.processingTitle, isPresented: $showAIConsentAlert) {
-                Button(L10n.AIConsent.accept) {
-                    aiDataConsentAccepted = true
-                    if pendingConsentForVoice {
-                        voiceInputEnabled = true
-                    } else {
-                        imageInputEnabled = true
-                    }
-                }
-                Button(L10n.AIConsent.privacyPolicy) {
-                    openURL(AppConstants.privacyURL)
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.AIConsent.processingMessage)
-            }
-            .alert(L10n.AIConsent.insightsTitle, isPresented: $showInsightsConsentAlert) {
-                Button(L10n.AIConsent.accept) {
-                    aiInsightsConsentAccepted = true
-                }
-                Button(L10n.AIConsent.privacyPolicy) {
-                    openURL(AppConstants.privacyURL)
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.AIConsent.insightsMessage)
-            }
             .onAppear {
-                // Auto-navigate to destination from setup checklist
-                if let dest = initialDestination ?? SessionState.shared.pendingProfileDestination {
-                    SessionState.shared.pendingProfileDestination = nil
+                // Auto-navigate to destination passed by caller (e.g. sync settings sheet).
+                if let dest = initialDestination {
                     navigationPath.append(dest)
                 }
             }
+            // .routerConsumer(.profile) removed in F7 — was dead code (drained
+            // .profileNavigate intent but never produced one, and consumed without
+            // acting). Profile navigation flows through ContentView.handleMainTabIntent
+            // for tab routing instead.
             .navigationDestination(for: ProfileDestination.self) { destination in
                 switch destination {
                 case .accounts:
@@ -285,6 +248,8 @@ struct ProfileView: View {
                     iCloudSyncSettingsView()
                 case .siriShortcuts:
                     SiriShortcutsView()
+                case .aiPrivacy:
+                    AIPrivacySettingsView()
                 }
             }
             .onAppear {
@@ -297,7 +262,7 @@ struct ProfileView: View {
             isPresented: $showSettingsTour,
             currentIndex: $settingsTourIndex,
             scrollProxy: settingsScrollProxy,
-            onComplete: { hasSeenSettingsTour = true }
+            onComplete: { appPreferences.hasSeenSettingsTour = true }
         )
         .coachMarkOverlay(
             steps: ProTourSteps.profileSteps,
@@ -309,15 +274,21 @@ struct ProfileView: View {
             }
         )
         .task {
-            if !hasSeenSettingsTour {
+            // El coach mark monta un overlay-spotlight que intercepta taps; en uitest
+            // bloquearía la navegación de Settings. Suprimido como el resto de overlays
+            // de primer uso (F1c). También en solo-grupos: varios anclajes apuntan a
+            // filas (Cuentas, Categorías…) ocultas en ese modo.
+            guard !UITestHooks.isActive, !isGroupInviteMode else { return }
+            if !appPreferences.hasSeenSettingsTour {
                 do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
-                if !hasSeenSettingsTour {
+                if !appPreferences.hasSeenSettingsTour {
                     showSettingsTour = true
                 }
             }
         }
-        .task(id: hasSeenSettingsTour) {
-            guard hasSeenSettingsTour else { return }
+        .task(id: appPreferences.hasSeenSettingsTour) {
+            guard !UITestHooks.isActive, !isGroupInviteMode else { return }
+            guard appPreferences.hasSeenSettingsTour else { return }
             // Re-check eligibility (covers race: subscribed before tours completed)
             ProTourManager.shared.triggerIfEligible()
             guard ProTourManager.shared.currentPhase == .profile else { return }
@@ -341,7 +312,7 @@ struct ProfileView: View {
                     Circle()
                         .stroke(
                             LinearGradient(
-                                colors: isProUser
+                                colors: showsProBadge
                                     ? DS.Gradients.proBadge
                                     : [theme.accent, theme.accent.opacity(0.6)],
                                 startPoint: .topLeading,
@@ -366,14 +337,14 @@ struct ProfileView: View {
                             .fill(theme.accent.opacity(0.1))
                             .frame(width: 90, height: 90)
 
-                        Image(systemName: userProfileIcon.isEmpty ? "person.fill" : userProfileIcon)
+                        Image(systemName: appPreferences.userProfileIcon.isEmpty ? "person.fill" : appPreferences.userProfileIcon)
                             .font(.system(size: avatarIconSize))
                             .foregroundStyle(theme.accent)
                             .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     }
 
                     // Spark badge for Pro users
-                    if isProUser {
+                    if showsProBadge {
                         ZStack {
                             Circle()
                                 .fill(.thCard)
@@ -386,14 +357,15 @@ struct ProfileView: View {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Accessibility.profile)
 
             // Name
-            Text(userName)
+            Text(appPreferences.userName)
                 .font(DS.Typography.title)
                 .foregroundStyle(.primary)
 
             // Pro badge with cyan spark (only here, so it stands out)
-            if isProUser {
+            if showsProBadge {
                 proBadgeWithCyanSpark
             }
 
@@ -405,11 +377,12 @@ struct ProfileView: View {
 
         }
         .padding(.top, DS.Spacing.sm)
-        .padding(.bottom, isProUser ? DS.Spacing.lg : 0)
+        .padding(.bottom, showsProBadge ? DS.Spacing.lg : 0)
         .background(
             Group {
-                if isProUser {
+                if showsProBadge {
                     LinearGradient(
+                        // A11Y-DM: tinte dorado Pro sutil decorativo (casi invisible, adapta a Dark Mode)
                         colors: [Color.yellow.opacity(0.03), Color.clear],
                         startPoint: .top,
                         endPoint: .bottom
@@ -425,6 +398,9 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showUpgradeForInsights) {
             UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
+        }
+        .sheet(isPresented: $showUpgradeForChat) {
+            UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
         }
     }
 
@@ -488,11 +464,13 @@ struct ProfileView: View {
                     iconColor: .cyan,
                     destination: .planned
                 )
+                .accessibilityIdentifier("profile_planned")
                 .coachMarkAnchor("settingsPlanned")
                 SubsectionDivider()
                 profileRow(
                     icon: "star.fill", title: L10n.Settings.favorites, iconColor: .yellow,
                     destination: .favorites)
+                    .accessibilityIdentifier("profile_favorites")
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -501,24 +479,36 @@ struct ProfileView: View {
     private var preferenciasSection: some View {
         SectionBox(title: L10n.Settings.preferences) {
             VStack(spacing: DS.Spacing.none) {
-                profileRow(
-                    icon: "slider.horizontal.3", title: L10n.Settings.personalization,
-                    iconColor: .indigo, destination: .personalization)
-                .coachMarkAnchor("settingsPersonalization")
-                SubsectionDivider()
+                // Personalización (formato, calendario, modo solo-gastos…) es de
+                // finanzas personales: oculta en solo-grupos.
+                if !isGroupInviteMode {
+                    profileRow(
+                        icon: "slider.horizontal.3", title: L10n.Settings.personalization,
+                        iconColor: .indigo, destination: .personalization)
+                    .accessibilityIdentifier("profile_personalization")
+                    .coachMarkAnchor("settingsPersonalization")
+                    SubsectionDivider()
+                }
+                // Notificaciones: universal (los grupos generan avisos).
                 profileRow(
                     icon: "bell.fill", title: L10n.Settings.notifications, iconColor: .red,
                     destination: .notifications)
-                SubsectionDivider()
-                profileRow(
-                    icon: "dollarsign.circle.fill", title: L10n.Settings.currencyAndExchange,
-                    iconColor: DS.Semantic.successForeground, destination: .currency
-                )
-                SubsectionDivider()
-                profileRow(
-                    icon: "app.fill", title: L10n.Settings.appIcon,
-                    iconColor: .blue, destination: .appIcon)
-                .coachMarkAnchor("settingsAppIcon")
+                .accessibilityIdentifier("profile_notifications")
+                // Divisa/tasas e Icono de app: ocultos en solo-grupos (formato queda en
+                // defaults: 2 decimales + símbolo de la moneda del grupo).
+                if !isGroupInviteMode {
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "dollarsign.circle.fill", title: L10n.Settings.currencyAndExchange,
+                        iconColor: DS.Semantic.successForeground, destination: .currency
+                    )
+                    .accessibilityIdentifier("profile_currency")
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "app.fill", title: L10n.Settings.appIcon,
+                        iconColor: .blue, destination: .appIcon)
+                    .coachMarkAnchor("settingsAppIcon")
+                }
                 SubsectionDivider()
                 profileRow(
                     icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
@@ -529,372 +519,6 @@ struct ProfileView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
-    private var aiFeaturesSection: some View {
-        SectionBox(title: L10n.Settings.aiFeatures) {
-            VStack(spacing: DS.Spacing.none) {
-                voiceInputRow
-                    .coachMarkAnchor("proVoiceInput")
-                SubsectionDivider()
-                imageInputRow
-                    .coachMarkAnchor("proImageInput")
-                SubsectionDivider()
-                smartInsightsToggleRow
-                    .coachMarkAnchor("proSmartInsights")
-
-                let hasProcessing = aiDataConsentAccepted && (voiceInputEnabled || imageInputEnabled)
-                let hasInsights = aiInsightsConsentAccepted
-                if hasProcessing || hasInsights {
-                    Text(hasProcessing && hasInsights ? L10n.AIConsent.inlineHintBoth
-                         : hasProcessing ? L10n.AIConsent.inlineHintProcessing
-                         : L10n.AIConsent.inlineHintInsights)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.vertical, DS.Spacing.sm)
-                }
-            }
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-    }
-
-    private var smartInsightsToggleRow: some View {
-        VStack(spacing: DS.Spacing.none) {
-            // Toggle row
-            Button {
-                if isSmartInsightsLocked {
-                    showUpgradeForInsights = true
-                }
-            } label: {
-                HStack(spacing: DS.Spacing.md) {
-                    if effectiveColorfulIcons {
-                        Image(systemName: "sparkles")
-                            .font(DS.Typography.subheadline).fontWeight(.medium)
-                            .foregroundStyle(.white)
-                            .frame(width: 28, height: 28)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.purple) // DS-OK: decorative section accent
-                            )
-                            .opacity(isSmartInsightsLocked ? 0.5 : 1)
-                    } else {
-                        Image(systemName: "sparkles")
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
-                            .frame(width: 28)
-                            .opacity(isSmartInsightsLocked ? 0.5 : 1)
-                    }
-
-                    Text(L10n.Insights.aiToggle)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(isSmartInsightsLocked ? .secondary : .primary)
-
-                    if isSmartInsightsLocked {
-                        ProBadge(size: .small)
-                    }
-
-                    Spacer()
-
-                    if isSmartInsightsLocked {
-                        Image(systemName: "lock.fill")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .accessibilityHidden(true)
-                    } else {
-                        Toggle(L10n.Insights.aiToggle, isOn: Binding(
-                            get: { aiInsightsConsentAccepted },
-                            set: { newValue in
-                                if newValue && !aiInsightsConsentAccepted {
-                                    showInsightsConsentAlert = true
-                                } else {
-                                    aiInsightsConsentAccepted = newValue
-                                }
-                            }
-                        ))
-                            .labelsHidden()
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            // Tone selector (only visible when enabled and not locked)
-            if aiInsightsConsentAccepted && !isSmartInsightsLocked {
-                HStack(spacing: DS.Spacing.md) {
-                    Color.clear
-                        .frame(width: 28, height: 28)
-
-                    Text(L10n.Insights.toneLabel)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Menu {
-                        ForEach(InsightTone.allCases) { tone in
-                            Button {
-                                insightsToneRaw = tone.rawValue
-                                PreferenceSyncService.shared.set(string: tone.rawValue, forKey: InsightTone.storageKey)
-                                InsightsLLMService.shared.invalidateCache()
-                            } label: {
-                                HStack {
-                                    Text(tone.displayName)
-                                    if insightsToneRaw == tone.rawValue {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Text(selectedTone.displayName)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(DS.Typography.captionSmall.weight(.medium))
-                                .foregroundStyle(.primary)
-                        }
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.FormRow.paddingV)
-
-                // Focus selector
-                HStack(spacing: DS.Spacing.md) {
-                    Color.clear
-                        .frame(width: 28, height: 28)
-
-                    Text(L10n.Insights.focusLabel)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Menu {
-                        ForEach(InsightFocus.allCases) { focus in
-                            Button {
-                                insightsFocusRaw = focus.rawValue
-                                PreferenceSyncService.shared.set(string: focus.rawValue, forKey: InsightFocus.storageKey)
-                                InsightsLLMService.shared.invalidateCache()
-                            } label: {
-                                HStack {
-                                    Text(focus.displayName)
-                                    if insightsFocusRaw == focus.rawValue {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Text(selectedFocus.displayName)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(DS.Typography.captionSmall.weight(.medium))
-                                .foregroundStyle(.primary)
-                        }
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.FormRow.paddingV)
-            }
-        }
-    }
-
-    private var voiceInputRow: some View {
-        VStack(spacing: DS.Spacing.none) {
-            // Toggle row
-            Button {
-                if isVoiceLocked {
-                    showUpgradeForVoice = true
-                }
-            } label: {
-                HStack(spacing: DS.Spacing.md) {
-                    if effectiveColorfulIcons {
-                        Image(systemName: "waveform.badge.mic")
-                            .font(DS.Typography.subheadline).fontWeight(.medium)
-                            .foregroundStyle(.white)
-                            .frame(width: 28, height: 28)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.hotPink) // DS-OK: decorative section accent
-                            )
-                            .opacity(isVoiceLocked ? 0.5 : 1)
-                    } else {
-                        Image(systemName: "waveform.badge.mic")
-                            .font(DS.Typography.body)
-                            .foregroundStyle(.primary)
-                            .frame(width: 28)
-                            .opacity(isVoiceLocked ? 0.5 : 1)
-                    }
-
-                    Text(L10n.Settings.voiceInputEnabled)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(isVoiceLocked ? .secondary : .primary)
-
-                    if isVoiceLocked {
-                        ProBadge(size: .small)
-                    }
-
-                    Spacer()
-
-                    if isVoiceLocked {
-                        Image(systemName: "lock.fill")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .accessibilityHidden(true)
-                    } else {
-                        Toggle(L10n.Settings.voiceInputEnabled, isOn: $voiceInputEnabled)
-                            .labelsHidden()
-
-                            .onChange(of: voiceInputEnabled) { _, isEnabled in
-                                guard isEnabled else { return }
-                                if !aiDataConsentAccepted {
-                                    voiceInputEnabled = false
-                                    pendingConsentForVoice = true
-                                    showAIConsentAlert = true
-                                    return
-                                }
-                                let status = AVAudioApplication.shared.recordPermission
-                                if status == .undetermined {
-                                    AVAudioApplication.requestRecordPermission { granted in
-                                        Task { @MainActor in
-                                            if !granted {
-                                                voiceInputEnabled = false
-                                                permissionDeniedType = L10n.Settings.voiceInputEnabled
-                                                showPermissionDeniedAlert = true
-                                            }
-                                        }
-                                    }
-                                } else if status == .denied {
-                                    voiceInputEnabled = false
-                                    permissionDeniedType = L10n.Settings.voiceInputEnabled
-                                    showPermissionDeniedAlert = true
-                                }
-                            }
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.FormRow.paddingV)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            // Language selector (only visible when enabled and not locked)
-            if voiceInputEnabled && !isVoiceLocked {
-                HStack(spacing: DS.Spacing.md) {
-                    // Empty space to align with icon
-                    Color.clear
-                        .frame(width: 28, height: 28)
-
-                    Text(L10n.Settings.voiceLanguage)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Menu {
-                        ForEach(VoiceLanguage.allCases) { language in
-                            Button {
-                                voiceLanguageRaw = language.rawValue
-                                PreferenceSyncService.shared.set(string: language.rawValue, forKey: "voiceLanguage")
-                            } label: {
-                                HStack {
-                                    Text(language.displayName)
-                                    if voiceLanguageRaw == language.rawValue {
-                                        Image(systemName: "checkmark")
-                                    }
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Text(VoiceLanguage(rawValue: voiceLanguageRaw)?.displayName ?? L10n.VoiceLanguage.system)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.primary)
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(DS.Typography.captionSmall.weight(.medium))
-                                .foregroundStyle(.primary)
-                        }
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.FormRow.paddingV)
-            }
-        }
-    }
-
-    private var imageInputRow: some View {
-        Button {
-            if isImageLocked {
-                showUpgradeForImage = true
-            }
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                if effectiveColorfulIcons {
-                    Image(systemName: "photo.on.rectangle")
-                        .font(DS.Typography.subheadline).fontWeight(.medium)
-                        .foregroundStyle(.white)
-                        .frame(width: 28, height: 28)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.teal) // DS-OK: decorative section accent
-                        )
-                        .opacity(isImageLocked ? 0.5 : 1)
-                } else {
-                    Image(systemName: "photo.on.rectangle")
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-                        .frame(width: 28)
-                        .opacity(isImageLocked ? 0.5 : 1)
-                }
-
-                Text(L10n.Settings.imageInputEnabled)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(isImageLocked ? .secondary : .primary)
-
-                if isImageLocked {
-                    ProBadge(size: .small)
-                }
-
-                Spacer()
-
-                if isImageLocked {
-                    Image(systemName: "lock.fill")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                } else {
-                    Toggle(L10n.Settings.imageInputEnabled, isOn: $imageInputEnabled)
-                        .labelsHidden()
-
-                        .onChange(of: imageInputEnabled) { _, isEnabled in
-                            guard isEnabled else { return }
-                            if !aiDataConsentAccepted {
-                                imageInputEnabled = false
-                                pendingConsentForVoice = false
-                                showAIConsentAlert = true
-                                return
-                            }
-                            let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-                            if status == .notDetermined {
-                                PHPhotoLibrary.requestAuthorization(for: .readWrite) { _ in }
-                            } else if status == .denied || status == .restricted {
-                                imageInputEnabled = false
-                                permissionDeniedType = L10n.Settings.imageInputEnabled
-                                showPermissionDeniedAlert = true
-                            }
-                        }
-                }
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.FormRow.paddingV)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
 
     private var datosSection: some View {
         SectionBox(title: L10n.Settings.data) {
@@ -906,32 +530,36 @@ struct ProfileView: View {
                     destination: .iCloudSync
                 )
 
-                SubsectionDivider()
+                // Importar/exportar operan sobre transacciones personales: ocultos en
+                // solo-grupos (solo existen movimientos virtuales de grupo).
+                if !isGroupInviteMode {
+                    SubsectionDivider()
 
-                Button {
-                    activeSheet = .importIntro
-                } label: {
-                    settingsRowContent(
-                        icon: "tray.and.arrow.down.fill", title: L10n.Settings.importData,
-                        iconColor: .blue)
+                    Button {
+                        activeSheet = .importIntro
+                    } label: {
+                        settingsRowContent(
+                            icon: "tray.and.arrow.down.fill", title: L10n.Settings.importData,
+                            iconColor: .blue)
+                    }
+                    .buttonStyle(.plain)
+
+                    SubsectionDivider()
+
+                    Button {
+                        activeSheet = .exportWizard
+                    } label: {
+                        settingsRowContent(
+                            icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
+                            iconColor: .mint
+                        )
+                        .opacity(!viewModel.hasTransactions ? 0.5 : 1.0)
+                    }
+                    .accessibilityHint(!viewModel.hasTransactions ? L10n.Accessibility.noTransactionsToExport : "")
+                    .disabled(!viewModel.hasTransactions)
+                    .buttonStyle(.plain)
+                    .coachMarkAnchor("proExportExtended")
                 }
-                .buttonStyle(.plain)
-
-                SubsectionDivider()
-
-                Button {
-                    activeSheet = .exportWizard
-                } label: {
-                    settingsRowContent(
-                        icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
-                        iconColor: .mint
-                    )
-                    .opacity(!viewModel.hasTransactions ? 0.5 : 1.0)
-                }
-                .accessibilityHint(!viewModel.hasTransactions ? L10n.Accessibility.noTransactionsToExport : "")
-                .disabled(!viewModel.hasTransactions)
-                .buttonStyle(.plain)
-                .coachMarkAnchor("proExportExtended")
 
                 SubsectionDivider()
 
@@ -953,10 +581,13 @@ struct ProfileView: View {
                     title: BiometricAuthService.shared.biometricType.displayName,
                     iconColor: DS.Semantic.successForeground,
                     destination: .biometricSecurity)
-                SubsectionDivider()
-                profileRow(
-                    icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
-                    iconColor: .blue, destination: .siriShortcuts)
+                // Atajos de Siri: registran gastos personales — fuera de alcance en solo-grupos.
+                if !isGroupInviteMode {
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "mic.badge.plus", title: String(localized: "settings.siriShortcuts"),
+                        iconColor: .blue, destination: .siriShortcuts)
+                }
                 SubsectionDivider()
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -968,10 +599,18 @@ struct ProfileView: View {
                         iconColor: .blue)
                 }
                 .buttonStyle(.plain)
-                SubsectionDivider()
-                profileRow(
-                    icon: "creditcard.fill", title: L10n.Settings.subscriptions,
-                    iconColor: .purple, destination: .subscription)
+                // Privacidad IA (chat) y Suscripción Pro: ligadas a finanzas personales.
+                // En solo-grupos el upgrade fluye por "Activar Yala completo".
+                if !isGroupInviteMode {
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "hand.raised.fill", title: L10n.Settings.aiPrivacy,
+                        iconColor: .indigo, destination: .aiPrivacy)
+                    SubsectionDivider()
+                    profileRow(
+                        icon: "creditcard.fill", title: L10n.Settings.subscriptions,
+                        iconColor: .purple, destination: .subscription)
+                }
                 #if DEBUG
                 if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {
                     SubsectionDivider()
@@ -1106,11 +745,15 @@ struct ProfileView: View {
     private var ayudaSection: some View {
         SectionBox(title: L10n.Settings.help) {
             VStack(spacing: DS.Spacing.none) {
-                profileRow(
-                    icon: "book.fill", title: L10n.Settings.tutorials,
-                    iconColor: .electricIndigo, destination: .tips)
-                .coachMarkAnchor("settingsTutorials")
-                SubsectionDivider()
+                // Tutoriales: el catálogo es de finanzas personales (no hay tutorial de
+                // grupos) → oculto en solo-grupos.
+                if !isGroupInviteMode {
+                    profileRow(
+                        icon: "book.fill", title: L10n.Settings.tutorials,
+                        iconColor: .electricIndigo, destination: .tips)
+                    .coachMarkAnchor("settingsTutorials")
+                    SubsectionDivider()
+                }
                 profileRow(
                     icon: "questionmark.circle.fill", title: L10n.Settings.faq,
                     iconColor: .orange, destination: .faq)
@@ -1220,4 +863,5 @@ struct ProfileView: View {
 
 #Preview {
     ProfileView()
+        .previewAppPreferences()
 }

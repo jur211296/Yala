@@ -231,8 +231,6 @@ struct MultiSelectionList<T: Identifiable & Hashable>: View {
 
     var body: some View {
         ZStack {
-            PanelBackgroundView()
-
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: "") {
@@ -275,6 +273,7 @@ struct MultiSelectionList<T: Identifiable & Hashable>: View {
                 .padding(.vertical, DS.Spacing.xxl)
             }
         }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
     }

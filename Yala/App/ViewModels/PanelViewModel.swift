@@ -18,6 +18,14 @@ struct PanelTrendData: Equatable {
     var trendGrouping: TrendGrouping = .day
     var dataTrendType: TrendType = .balance
     var currentBalance: Double = 0
+    /// Dot suelto "hoy" con saldo vivo. La View lo renderiza separado de la
+    /// curva (PointMark con anillo) cuando la métrica es .balance y el
+    /// período cubre hoy. Nil en otros casos.
+    var trendLiveAnchor: BarPoint? = nil
+    /// Desglose por moneda nativa del `trendLiveAnchor`. Habilita la UX
+    /// educativa multi-currency en el sheet "Tu saldo hoy". Nil cuando no
+    /// hay liveAnchor.
+    var trendLiveAnchorBreakdown: [String: Decimal]? = nil
 }
 
 struct PanelCategoriesData: Equatable {
@@ -40,6 +48,9 @@ struct PanelNeedData: Equatable {
 struct PanelCashFlowData: Equatable {
     var cashFlowSummary: CashFlowSummary? = nil
     var cashFlowGrouping: TrendGrouping = .day
+    /// Net flow from the previous period — drives the variation chip in `.small`.
+    /// `nil` when period == .allTime or when there's no data for the previous interval.
+    var previousNetFlow: Double? = nil
 }
 
 struct PanelBudgetsData: Equatable {
@@ -76,12 +87,71 @@ struct ScheduledPaymentCalendarEntry: Equatable, Identifiable {
 }
 
 struct PanelScheduledPaymentsData: Equatable {
-    var monthlyTotal: Double = 0
-    var activeCount: Int = 0
+    var monthlyTotal: Double = 0                // Filtered por scheduledPaymentsWidgetFilter
+    var paidAmount: Double = 0                  // PP2-06b polish: monto ya pagado filtered (small ring)
+    var activeCount: Int = 0                    // Filtered count
+    var pendingCount: Int = 0                   // PP2-06b polish: definiciones con ≥1 ocurrencia no pagada/no skipped, filtered
     var displayMonth: Date = .now
     var periodLabel: String = ""
     var upcomingPayments: [ScheduledPaymentListItem] = []
     var paymentsByDay: [Int: [ScheduledPaymentCalendarEntry]] = [:]
+}
+
+/// Pre-computed payload for the Panel 2.0 "Salud Financiera" section.
+/// `score` stays `nil` until the first successful calculation so the view knows to hide.
+struct PanelHealthData: Equatable {
+    var score: FinancialScore? = nil
+}
+
+struct PanelWeekdayData: Equatable {
+    var weekdaySpending: [WeekdaySpending] = []
+}
+
+/// Pre-computed payload for the TagsPie widget in the Distribución section.
+struct PanelTagsData: Equatable {
+    var topTags: [TagSpendingSummary] = []
+    var previousTotalAmount: Double? = nil
+}
+
+/// Pre-computed payload for the period comparison page of the Trends carousel.
+/// Shape mirrors the inputs of `PeriodComparisonChartView`. When
+/// `supportsComparison` is false (period is `.allTime`) the view renders a
+/// custom empty state instead of the chart.
+struct PanelPeriodComparisonData: Equatable {
+    var currentPoints: [BarPoint] = []
+    var previousPoints: [BarPoint] = []
+    var yDomain: ClosedRange<Double> = 0...1
+    var currentInterval: DateInterval = DateInterval(start: .now, end: .now)
+    var previousInterval: DateInterval = DateInterval(start: .now, end: .now)
+    var grouping: TrendGrouping = .day
+    var comparisonMode: ComparisonMode = .month
+    var trendType: TrendType = .balance
+    var period: DetailPeriod = .thisMonth
+    var currentTotal: Double = 0
+    var previousTotal: Double? = nil
+    var supportsComparison: Bool = true
+
+    var deltaPercent: Double? {
+        guard supportsComparison, let prev = previousTotal, prev != 0 else { return nil }
+        return PreviousPeriodHelper.calculateVariation(currentAmount: currentTotal, previousAmount: prev)
+    }
+}
+
+/// Pre-computed payload for the Panel 2.0 Hero del mes (P20-04).
+/// `data` stays `nil` until the first `calculateHeroWidget()` pass so the
+/// view knows to skip rendering during the initial skeleton frame.
+struct PanelHeroData: Equatable {
+    var data: HeroMonthData? = nil
+}
+
+/// Income/expense aggregates restringidos al `panelDateInterval` actual —
+/// alimentan el card "Disponible · Período" del Hero. Independientes del
+/// `HeroMonthData` (que siempre clasifica el mes calendario) porque el card
+/// debe reflejar el filtro de período del usuario.
+struct PanelHeroPeriodData: Equatable {
+    var income: Double = 0
+    var expense: Double = 0
+    var available: Double { max(0, income - expense) }
 }
 
 @MainActor
@@ -127,6 +197,12 @@ final class PanelViewModel {
     /// Session state — weak to avoid retain cycle
     private weak var sessionState: SessionState?
 
+    /// AppPreferences SSOT for per-section widget order/hidden (P20-03).
+    /// Injected by `PanelView` via `setAppPreferences(_:)` on `.task`, BEFORE
+    /// `setContext(...)`. While nil (bootstrap), `isWidgetVisible(_:)` returns
+    /// `true` fallback and `activeWidgets(in:)` falls back to legacy filtering.
+    private var appPreferences: AppPreferences?
+
     // MARK: - Recalculation State
 
     /// Debounced recalculation task — coalesces rapid onChange cascades
@@ -154,8 +230,39 @@ final class PanelViewModel {
     /// True after first loadData() completes. PanelView shows skeleton placeholder while false.
     private(set) var isReady: Bool = false
 
-    // UI State (not filters)
-    var leadingColumnIndex: Int? = 0
+    /// Panel sections the user has hidden. Synced from
+    /// `AppPreferences.panelSectionsHidden` via `PanelView.onChange`. Hidden
+    /// sections skip their calculation and keep their cached output until the
+    /// section is re-shown.
+    var hiddenSections: Set<PanelSectionKind> = []
+
+    /// Whether a Panel section currently contributes to `performCalculation`.
+    /// Sections with `canBeHidden == false` always compute.
+    func isSectionVisible(_ kind: PanelSectionKind) -> Bool {
+        guard kind.canBeHidden else { return true }
+        return !hiddenSections.contains(kind)
+    }
+
+    /// Whether a section has at least one visible widget. Used by
+    /// `PanelFilterAndWidgetsSection.visibleSections` to auto-hide multi-widget
+    /// sections where the user has individually hidden every widget — the
+    /// "restore" affordance in `PanelSectionsConfigView` is the recovery path.
+    ///
+    /// Single-widget sections (health, accounts, latestRecords, tools) always
+    /// have content as long as `isSectionVisible` is true.
+    func hasAnyVisibleWidget(in section: PanelSectionKind) -> Bool {
+        switch section {
+        case .health, .accounts, .latestRecords, .tools:
+            return true
+        case .tendencias, .distribucion, .planificacion:
+            // Early-exit scan — avoids constructing the full WidgetConfig array
+            // on every Panel render (this method runs inside `visibleSections`
+            // filter, once per section per render).
+            let hidden = draftHidden[section] ?? appPreferences?.hidden(for: section) ?? []
+            let hiddenSet = Set(hidden)
+            return buildOrderedRawWidgets(for: section).contains(where: { !hiddenSet.contains($0) })
+        }
+    }
 
     // MARK: - Filter Properties (SSOT: Read/Write from SessionState)
 
@@ -180,14 +287,11 @@ final class PanelViewModel {
     // Widget Configuration Manager (delegated)
     let widgetConfig = WidgetConfigManager()
 
-    // Computed properties for backward compatibility with views
+    // Computed property exposing the legacy JSON's widget configs (for `size`
+    // only — order and visibility are SSOT'd in AppPreferences).
     var widgetConfigs: [WidgetConfig] {
         get { widgetConfig.configs }
         set { widgetConfig.configs = newValue }
-    }
-
-    var layoutRows: [WidgetConfigManager.WidgetRow] {
-        widgetConfig.layoutRows
     }
 
     // MARK: - Constants
@@ -270,13 +374,15 @@ final class PanelViewModel {
             #endif
         }
 
-        var transactionsDesc = FetchDescriptor<TransactionItem>(
+        // Fetch ALL transactions — no fetchLimit. The previous 2000-row cap dropped the
+        // oldest records, which corrupted the running balance in the Trend widget
+        // (visible as a constant vertical offset vs. Statistics → Tendencias).
+        let transactionsDesc = FetchDescriptor<TransactionItem>(
             sortBy: [
                 SortDescriptor(\.date, order: .reverse),
                 SortDescriptor(\.createdAt, order: .reverse)
             ]
         )
-        transactionsDesc.fetchLimit = 2000
         do {
             let fetched = try context.fetch(transactionsDesc)
             if fetched != transactions { transactions = fetched }
@@ -341,6 +447,11 @@ final class PanelViewModel {
 
     // MARK: - Widget Data (struct-backed — reduces observation surface)
 
+    /// Saldo total agregado del Panel ("Tienes X en N cuentas"), recalculado
+    /// SIEMPRE — independiente de la visibilidad del widget de Tendencias (cuyo
+    /// `trendChart.currentBalance` solo se actualiza si el widget está visible).
+    var panelTotalBalance: Double = 0
+
     var trendChart = PanelTrendData()
     var categoriesWidget = PanelCategoriesData()
     var subcategoriesWidget = PanelSubcategoriesData()
@@ -349,6 +460,18 @@ final class PanelViewModel {
     var budgetsWidget = PanelBudgetsData()
     var exchangeRateWidget = PanelExchangeRateData()
     var scheduledPaymentsWidget = PanelScheduledPaymentsData()
+    var healthWidget = PanelHealthData()
+    var heroWidget = PanelHeroData()
+    var heroPeriodWidget = PanelHeroPeriodData()
+    var weekdayWidget = PanelWeekdayData()
+    var periodComparisonWidget = PanelPeriodComparisonData()
+    var tagsWidget = PanelTagsData()
+
+    /// Reemplaza el rule-based `subtext` del hero cuando es Pro + consent y
+    /// hay cache hit o la API respondió. Nil ⇒ el view usa fallback
+    /// rule-based inmediato (también determina la visibilidad del badge
+    /// "Pro" en `PanelHeroSection`, derivado de `!= nil`).
+    var heroAISubtitle: String? = nil
 
     // Pre-computed account data — eliminates passing [TransactionItem] to AccountsCarouselView
     private(set) var accountBalances: [PersistentIdentifier: Double] = [:]
@@ -362,10 +485,13 @@ final class PanelViewModel {
     var previousCategoriesTotalAmount: Double? { categoriesWidget.previousTotalAmount }
     var topSubcategories: [SubcategorySpendingSummary] { subcategoriesWidget.topSubcategories }
     var previousSubcategoriesTotalAmount: Double? { subcategoriesWidget.previousTotalAmount }
+    var topTags: [TagSpendingSummary] { tagsWidget.topTags }
+    var previousTagsTotalAmount: Double? { tagsWidget.previousTotalAmount }
     var needTrendPoints: [NeedTrendPoint] { needWidget.needTrendPoints }
     var previousNeedTotalAmount: Double? { needWidget.previousTotalAmount }
     var previousNeedAmounts: [SubcategoryNeed: Double] { needWidget.previousAmounts }
     var cashFlowSummary: CashFlowSummary? { cashFlowWidget.cashFlowSummary }
+    var cashFlowPreviousNet: Double? { cashFlowWidget.previousNetFlow }
     var latestRecords: [TransactionItem] { _latestRecords }
     var topBudgetSummaries: [BudgetSummary] { budgetsWidget.topBudgetSummaries }
     var hasBudgetsButNoFavorites: Bool { budgetsWidget.hasBudgetsButNoFavorites }
@@ -374,6 +500,8 @@ final class PanelViewModel {
     var processedTrendPoints: [BarPoint] { trendChart.processedTrendPoints }
     var rawTrendPoints: [BarPoint] { trendChart.rawTrendPoints }
     var processedYDomain: ClosedRange<Double> { trendChart.processedYDomain }
+    var trendLiveAnchor: BarPoint? { trendChart.trendLiveAnchor }
+    var trendLiveAnchorBreakdown: [String: Decimal]? { trendChart.trendLiveAnchorBreakdown }
     var currentInterval: DateInterval { trendChart.currentInterval }
     var currentPeriod: DetailPeriod { trendChart.currentPeriod }
     var trendTotalIncome: Double { trendChart.trendTotalIncome }
@@ -529,46 +657,278 @@ final class PanelViewModel {
         loadExchangeRateCurrencySelection()
     }
 
-    // MARK: - Widget Logic (Delegated to WidgetConfigManager)
+    // MARK: - Widget Logic
 
-    func loadWidgetConfigs() {
-        widgetConfig.load()
+    /// Visible widgets of a section, driven by `AppPreferences.panel<Section>Order/Hidden`
+    /// (SSOT since P20-03). The function is self-healing:
+    ///  - filters raw values that don't belong to this section (foreign / corrupt entries)
+    ///  - dedupes duplicates
+    ///  - appends known section defaults missing from stored order (widget types added in
+    ///    future versions appear at the tail automatically)
+    ///  - excludes entries listed in `panel<Section>Hidden`
+    /// Then maps each `WidgetType` to its `WidgetConfig` in `widgetConfigs` (preserving
+    /// legacy `size`) or synthesizes a default one if missing.
+    ///
+    /// Bootstrap fallback: when `appPreferences` is still nil (e.g. first frame before
+    /// `setAppPreferences` is called), returns the legacy filter so render is never
+    /// empty. The next frame, after injection, re-renders with the real state.
+    func activeWidgets(in section: PanelSectionKind) -> [WidgetConfig] {
+        guard appPreferences != nil else {
+            // Bootstrap fallback — legacy filter.
+            return widgetConfigs.filter { $0.type.panelSection == section && $0.isVisible }
+        }
+        let hidden = Set(draftHidden[section] ?? appPreferences?.hidden(for: section) ?? [])
+        let visibleRaw = buildOrderedRawWidgets(for: section).filter { !hidden.contains($0) }
+
+        return visibleRaw.compactMap { raw -> WidgetConfig? in
+            guard let type = WidgetType(rawValue: raw) else { return nil }
+            if let existing = widgetConfigs.first(where: { $0.type == type }) {
+                // Legacy `isVisible` is overridden — per-section SSOT already filtered hidden.
+                var config = existing
+                config.isVisible = true
+                return config
+            }
+            return WidgetConfig(id: UUID(), type: type, isVisible: true, size: .medium)
+        }
     }
 
-    func saveWidgetConfigs() {
+    /// Full ordered list of widget types in a section (visible + hidden), draft-or-persisted.
+    /// Used by `PanelSectionPreferencesSheet` to render every row (including hidden ones
+    /// with their toggle off).
+    func orderedWidgetTypes(in section: PanelSectionKind) -> [WidgetType] {
+        buildOrderedRawWidgets(for: section).compactMap { WidgetType(rawValue: $0) }
+    }
+
+    /// Orders Panel sections per user preference: anchored sections first
+    /// (`accounts`, `health`), then reorderables in `panelSectionsOrder` order
+    /// (fallback: default `reorderableSections` order). Sections visible but
+    /// not present in the stored order are appended at the end (defensive:
+    /// future `PanelSectionKind` cases added in app updates land at the bottom).
+    func orderedPanelSections(_ visibleSections: [PanelSectionKind]) -> [PanelSectionKind] {
+        let visibleSet = Set(visibleSections)
+        guard let prefs = appPreferences else {
+            return visibleSections
+        }
+        return prefs.orderedSectionKinds().filter { visibleSet.contains($0) }
+    }
+
+    /// Self-healing resolution of the per-section widget order:
+    /// 1. Pull stored order (draft-or-persisted); empty on fresh install.
+    /// 2. Drop raw values foreign to this section (corruption guard).
+    /// 3. Deduplicate.
+    /// 4. Append section defaults missing from stored order (widget types added in
+    ///    future app versions appear at the tail automatically).
+    private func buildOrderedRawWidgets(for section: PanelSectionKind) -> [String] {
+        let sectionTypes = WidgetType.defaultWidgets(in: section)
+        let sectionRawValues = Set(sectionTypes.map(\.rawValue))
+
+        let stored = draftOrder[section] ?? appPreferences?.order(for: section) ?? []
+        var seen: Set<String> = []
+        var orderedRaw: [String] = []
+        for raw in stored where sectionRawValues.contains(raw) && !seen.contains(raw) {
+            seen.insert(raw)
+            orderedRaw.append(raw)
+        }
+        for type in sectionTypes where !seen.contains(type.rawValue) {
+            orderedRaw.append(type.rawValue)
+        }
+        return orderedRaw
+    }
+
+    /// True when a widget is currently marked visible (draft-or-persisted).
+    func isWidgetHidden(_ type: WidgetType) -> Bool {
+        let section = type.panelSection
+        let hidden = draftHidden[section] ?? appPreferences?.hidden(for: section) ?? []
+        return hidden.contains(type.rawValue)
+    }
+
+    /// True when a widget should render and compute. Checks both the section-level
+    /// hidden flag (P20-02) and the per-widget hidden flag (P20-03). Consults draft
+    /// so widgets stop computing immediately when toggled in the sheet, without
+    /// waiting for the 200ms debounce.
+    /// Permissive fallback during bootstrap: when `appPreferences` is nil, returns
+    /// `true` to avoid incorrectly gating compute on the first frame.
+    func isWidgetVisible(_ type: WidgetType) -> Bool {
+        guard let prefs = appPreferences else { return true }
+        let section = type.panelSection
+        if prefs.panelSectionsHidden.contains(section.rawValue) { return false }
+        let hidden = draftHidden[section] ?? prefs.hidden(for: section)
+        return !hidden.contains(type.rawValue)
+    }
+
+    /// Inject AppPreferences. Called by `PanelView` in `.task` BEFORE `setContext(...)`
+    /// so the first `performCalculation()` sees the real per-widget visibility state.
+    func setAppPreferences(_ prefs: AppPreferences) {
+        self.appPreferences = prefs
+    }
+
+    // MARK: - Widget Size (P20-11)
+
+    /// Current `.medium` / `.large` size for a widget type.
+    /// Falls back to `.medium` when the widget isn't yet stored (first launch
+    /// pre-injection, or widget type introduced after last save).
+    func widgetSize(_ type: WidgetType) -> WidgetSize {
+        widgetConfigs.first(where: { $0.type == type })?.size ?? .medium
+    }
+
+    /// Updates the `.medium` / `.large` size for a widget type. Persists via
+    /// `WidgetConfigManager.save()` (silent per-widget store — not the
+    /// per-section SSOT). Triggers a recalculation so the widget renders at
+    /// its new variant immediately.
+    ///
+    /// No-op when the widget type doesn't support size variants or when the
+    /// value is already the requested one (the Equatable guard on
+    /// `widgetConfigs = newValue` prevents spurious observer notifications).
+    ///
+    /// Widgets de Planificación (`budgets` + `scheduledPayments`) se
+    /// sincronizan como par para garantizar un grid ordenado: si uno → `.small`,
+    /// el otro también; si uno sube desde `.small` a M/L, el otro sale de small
+    /// al tamaño más pequeño disponible que no sea small.
+    func setWidgetSize(_ type: WidgetType, size: WidgetSize) {
+        guard type.supportsSize else { return }
+        guard let idx = widgetConfigs.firstIndex(where: { $0.type == type }) else { return }
+        guard widgetConfigs[idx].size != size else { return }
+        var updated = widgetConfigs
+        updated[idx].size = size
+        widgetConfigs = updated
         widgetConfig.save()
+
+        if type.panelSection == .planificacion, !isSyncingPair {
+            syncPlanificacionPair(changedType: type, newSize: size)
+        }
     }
 
-    func resetWidgetConfigs() {
-        widgetConfig.reset()
+    /// Flag privada — previene recursión infinita en el pair sync sin
+    /// exponer un parámetro `skipPairSync` en la API pública de `setWidgetSize`.
+    @ObservationIgnored private var isSyncingPair = false
+
+    /// Restaura un widget al Panel eliminándolo del array `*Hidden` de su
+    /// sección. No-op si ya está visible. Usa la SSOT de prefs (P20-03) — no
+    /// muta `widgetConfigs.isVisible`, que es solo fallback de bootstrap.
+    /// Inverso de la lógica que esconde widgets en `PanelSectionsConfigView`.
+    func addWidgetToPanel(_ type: WidgetType) {
+        guard let prefs = appPreferences else { return }
+        let raw = type.rawValue
+        let section = type.panelSection
+
+        var hidden = prefs.hidden(for: section)
+        guard let idx = hidden.firstIndex(of: raw) else { return }
+        hidden.remove(at: idx)
+        prefs.setHidden(hidden, for: section)
     }
 
-    func activeWidgets() -> [WidgetConfig] {
-        return widgetConfig.activeWidgets()
+    /// Sincroniza el tamaño del otro widget de Planificación con el que acaba
+    /// de cambiar, manteniendo la invariante "ambos small" o "ambos no-small".
+    private func syncPlanificacionPair(changedType: WidgetType, newSize: WidgetSize) {
+        let otherType: WidgetType = (changedType == .budgets) ? .scheduledPayments : .budgets
+        let otherCurrent = widgetSize(otherType)
+
+        let targetSize: WidgetSize
+        if newSize == .small {
+            targetSize = .small
+        } else {
+            // Uno sube desde small → el otro sale de small al más pequeño
+            // tamaño disponible que NO sea small. Si el otro ya está fuera
+            // de small, no tocar (permite S↔M ↔ S↔L según preferencia).
+            guard otherCurrent == .small else { return }
+            targetSize = otherType.supportedSizes.first(where: { $0 != .small }) ?? .medium
+        }
+
+        guard otherCurrent != targetSize else { return }
+        isSyncingPair = true
+        setWidgetSize(otherType, size: targetSize)
+        isSyncingPair = false
     }
 
-    func toggleWidgetVisibility(id: UUID) {
-        widgetConfig.toggleVisibility(id: id)
+    // MARK: - Section Preferences Mutators (P20-03)
+    //
+    // Draft state + 200ms debounce batches rapid reorder/toggle operations from
+    // `PanelSectionPreferencesSheet`. Writes flush on sheet dismiss via
+    // `flushPendingSectionWrites()`. Reset writes synchronously and clears drafts.
+
+    private var draftOrder: [PanelSectionKind: [String]] = [:]
+    private var draftHidden: [PanelSectionKind: [String]] = [:]
+    private var pendingSectionWrites: [PanelSectionKind: Task<Void, Never>] = [:]
+
+    private static let sectionWriteDebounce: Duration = .milliseconds(200)
+
+    /// Reorder widgets within a section. Updates draft instantly (UI sees new order),
+    /// debounces the AppPreferences write by 200ms to batch rapid drags. No-op drags
+    /// (drop on same position) exit early — no draft mutation, no observer notification.
+    func moveWidgetInSection(_ kind: PanelSectionKind, from source: IndexSet, to destination: Int) {
+        let current = draftOrder[kind] ?? orderedWidgetTypes(in: kind).map(\.rawValue)
+        var updated = current
+        updated.move(fromOffsets: source, toOffset: destination)
+        guard updated != current else { return }
+        draftOrder[kind] = updated
+        scheduleSectionWrite(for: kind)
     }
 
-    func updateWidgetSize(id: UUID, newSize: WidgetSize) {
-        widgetConfig.updateSize(id: id, newSize: newSize)
+    /// Toggle per-widget visibility. Mutation is instant; persistence is debounced.
+    /// Early-returns when the toggle is already in the requested state.
+    func setWidgetHidden(_ type: WidgetType, hidden: Bool) {
+        let kind = type.panelSection
+        let current = draftHidden[kind] ?? appPreferences?.hidden(for: kind) ?? []
+        let contains = current.contains(type.rawValue)
+        guard contains != hidden else { return }
+        var hiddenSet = Set(current)
+        if hidden {
+            hiddenSet.insert(type.rawValue)
+        } else {
+            hiddenSet.remove(type.rawValue)
+        }
+        draftHidden[kind] = Array(hiddenSet)
+        scheduleSectionWrite(for: kind)
     }
 
-    func updateScheduledPaymentsMode(id: UUID, mode: ScheduledPaymentsWidgetMode) {
-        widgetConfig.updateScheduledPaymentsMode(id: id, mode: mode)
+    /// Clears section's Order + Hidden so `activeWidgets(in:)` falls back to
+    /// `WidgetType.defaultWidgets(in:)`. Cancels any pending debounce, clears draft,
+    /// and writes synchronously — the user expects "Restablecer" to take effect now.
+    func resetSectionPreferences(_ kind: PanelSectionKind) {
+        pendingSectionWrites[kind]?.cancel()
+        pendingSectionWrites[kind] = nil
+        draftOrder[kind] = nil
+        draftHidden[kind] = nil
+        appPreferences?.setOrder([], for: kind)
+        appPreferences?.setHidden([], for: kind)
     }
 
-    func moveWidget(from source: IndexSet, to destination: Int) {
-        widgetConfig.move(from: source, to: destination)
+    /// Flushes all pending debounced writes synchronously. Called from sheet
+    /// `.onDisappear` so drag-then-dismiss-quickly sequences never lose state.
+    func flushPendingSectionWrites() {
+        let pending = pendingSectionWrites
+        pendingSectionWrites.removeAll()
+        for (kind, task) in pending {
+            task.cancel()
+            commitDraft(for: kind)
+        }
     }
 
-    func beginWidgetPreferencesEditing() {
-        widgetConfig.deferLayoutUpdates = true
+    private func scheduleSectionWrite(for kind: PanelSectionKind) {
+        pendingSectionWrites[kind]?.cancel()
+        pendingSectionWrites[kind] = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: Self.sectionWriteDebounce)
+            guard !Task.isCancelled else { return }
+            guard let self else { return }
+            self.commitDraft(for: kind)
+            self.pendingSectionWrites[kind] = nil
+        }
     }
 
-    func endWidgetPreferencesEditing() {
-        widgetConfig.deferLayoutUpdates = false
+    private func commitDraft(for kind: PanelSectionKind) {
+        guard let prefs = appPreferences else {
+            draftOrder[kind] = nil
+            draftHidden[kind] = nil
+            return
+        }
+        if let order = draftOrder[kind] {
+            prefs.setOrder(order, for: kind)
+            draftOrder[kind] = nil
+        }
+        if let hidden = draftHidden[kind] {
+            prefs.setHidden(hidden, for: kind)
+            draftHidden[kind] = nil
+        }
     }
 
     // We keep these as simple properties or computed ones based on what the View passes
@@ -586,7 +946,8 @@ final class PanelViewModel {
     func orderedActiveAccounts(from accounts: [Account], sortOrderNames: [String]) -> [Account] {
         let activeAccounts = accounts.filter { !$0.isArchived }
         let indexByName = Dictionary(
-            uniqueKeysWithValues: sortOrderNames.enumerated().map { ($1, $0) })
+            sortOrderNames.enumerated().map { ($1, $0) },
+            uniquingKeysWith: { first, _ in first })
 
         return activeAccounts.sorted { a, b in
             let ia = indexByName[a.name]
@@ -605,32 +966,26 @@ final class PanelViewModel {
         }
     }
 
-    /// Calculates the total balance in the default currency.
-    /// Uses pre-calculated amountInPreferredCurrency for optimal performance.
-    func totalBalanceInDefaultCurrency(
-        accounts: [Account],
-        transactions: [TransactionItem],
-        defaultCurrencyCode: String
-    ) -> Double {
-        return BalanceHelper.totalBalance(
-            accounts: accounts,
-            transactions: transactions,
-            preferredCurrencyCode: defaultCurrencyCode
-        )
-    }
-
-    /// Calculates the displayed balance (either total or selected account).
-    /// Uses date-specific exchange rates for each transaction for accuracy.
+    /// Calcula el balance mostrado: total de todas las cuentas o de la cuenta
+    /// seleccionada (vivo, TC actual sobre saldo nativo). En el total respeta
+    /// `includeGroupsInPanelTotal`: con el toggle OFF excluye las cuentas sistema
+    /// de grupos del agregado. Con una cuenta seleccionada el toggle no aplica.
     func displayedBalanceInDefaultCurrency(
         accounts: [Account],
         transactions: [TransactionItem],
         defaultCurrencyCode: String
     ) -> Double {
-        return BalanceHelper.displayedBalance(
-            accounts: accounts,
+        let includeGroups = appPreferences?.includeGroupsInPanelTotal ?? true
+        let effectiveAccounts = PanelTotalAccountsLogic.accountsForTotal(
+            accounts,
+            includeGroups: includeGroups,
+            hasSelectedAccount: self.selectedAccountID != nil
+        )
+        return LiveBalanceCalculator.liveBalance(
+            accounts: effectiveAccounts,
             transactions: transactions,
-            selectedAccountID: self.selectedAccountID,
-            preferredCurrencyCode: defaultCurrencyCode
+            preferredCurrencyCode: defaultCurrencyCode,
+            selectedAccountID: self.selectedAccountID
         )
     }
 
@@ -683,14 +1038,12 @@ final class PanelViewModel {
 
     // MARK: - Navigation
 
-    /// Navigates to a Statistics detail tab, setting temporary tab if Statistics is hidden.
-    /// Moved from PanelView to eliminate closure parameters in child views.
+    /// Navigates to a Statistics detail tab. Visibility (and the
+    /// temporaryTab + delay dance for tabs hidden in "More") is handled by
+    /// `SessionState.selectMainTab(_:)`.
     func navigateToStatistics(_ detailTab: DetailViewTab) {
-        let json = UserDefaults.standard.string(forKey: TabBarConfiguration.storageKey)
-            ?? TabBarConfiguration.default.toJSON()
-        let isVisible = TabBarConfiguration.fromJSON(json).activeTabs.contains(.statistics)
-        if !isVisible { sessionState?.temporaryTab = .statistics }
-        sessionState?.navigateToDetail(detailTab)
+        sessionState?.selectedDetailTab = detailTab
+        sessionState?.selectMainTab(.statistics)
     }
 
     /// Whether voice input can be used (requires active accounts and visible subcategories).
@@ -704,40 +1057,22 @@ final class PanelViewModel {
 
     func ensureAccountsSortOrderConsistency(
         accounts: [Account],
-        currentOrderRaw: String
-    ) -> String {
+        currentOrder: [String]
+    ) -> [String] {
         let activeAccounts = accounts.filter { !$0.isArchived }
         let activeNames = activeAccounts.map { $0.name }
 
         if activeNames.isEmpty {
-            return ""
+            return []
         }
 
-        let currentOrder = currentOrderRaw.split(separator: "|").map(String.init)
         var newOrder = currentOrder.filter { activeNames.contains($0) }
 
         for name in activeNames where !newOrder.contains(name) {
             newOrder.append(name)
         }
 
-        return newOrder.joined(separator: "|")
-    }
-
-    private func convertToPreferredCurrency(
-        amount: Decimal,
-        from source: CurrencyCode,
-        to target: CurrencyCode
-    ) -> Decimal {
-        if source == target {
-            return amount
-        }
-
-        // Use CurrencyConverter with API rates for consistency with chart calculations
-        return currencyConverter.convertWithLatestRate(
-            amount,
-            from: source.rawValue,
-            to: target.rawValue
-        )
+        return newOrder
     }
 
     // MARK: - Trend Logic (Year Only - Tight Range)
@@ -783,53 +1118,107 @@ final class PanelViewModel {
             defaultCurrencyCode: defaultCurrencyCode
         )
 
-        // 2. Calculate ALL widget data (unconditionally to ensure data is ready when widgets are added)
+        // Per-widget visibility (P20-03 promoted guards from section- to widget-level).
+        let trendVisible = isWidgetVisible(.trend)
+        let cashFlowVisible = isWidgetVisible(.cashFlow)
+        let needVisible = isWidgetVisible(.expensesByNeed)
+        let categoriesVisible = isWidgetVisible(.categoriesPie)
+        let subcategoriesVisible = isWidgetVisible(.subcategoriesPie)
+        let weekdayVisible = isWidgetVisible(.weekdayBar)
+        let tagsVisible = isWidgetVisible(.tagsPie)
 
-        // Trend chart - use unified TrendDataProcessor
-        let newProcessedData:
-            (points: [BarPoint], rawPoints: [BarPoint], yDomain: ClosedRange<Double>)
+        // 2. Calculate widget data per visible widget
+
+        // Trend chart
+        var newTrendPoints: (points: [BarPoint], rawPoints: [BarPoint], yDomain: ClosedRange<Double>)?
         var newTrendTotalIncome = trendTotalIncome
         var newTrendTotalExpense = trendTotalExpense
         var newTrendFinalBalance = trendFinalBalance
-        // For balance, use all transactions (no date filter) to calculate running balance
-        let transactionsForTrend = trendType == .balance
-            ? calcContext.balanceTransactions
-            : calcContext.filteredTransactions
-        let result = TrendDataProcessor.processTrendData(
-            transactions: transactionsForTrend,
-            accounts: calcContext.eligibleAccounts,
-            metric: trendType,
-            period: calcContext.period,
-            grouping: calcContext.trendGrouping,
-            interval: calcContext.effectiveInterval,
-            currencyCode: calcContext.defaultCurrencyCode
-        )
-        newProcessedData = (result.points, result.rawPoints, result.yDomain)
-        newTrendTotalIncome = result.totalIncome
-        newTrendTotalExpense = result.totalExpense
-        newTrendFinalBalance = result.finalBalance
+        var newTrendLiveAnchor: BarPoint? = nil
+        var newTrendLiveAnchorBreakdown: [String: Decimal]? = nil
+        if trendVisible {
+            // For balance, use all transactions (no date filter) to calculate running balance
+            let transactionsForTrend = trendType == .balance
+                ? calcContext.balanceTransactions
+                : calcContext.filteredTransactions
+            let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
+                for: trendType,
+                interval: calcContext.effectiveInterval,
+                accounts: calcContext.eligibleAccounts,
+                transactions: calcContext.balanceTransactions,
+                preferredCurrencyCode: calcContext.defaultCurrencyCode
+            )
+            let result = TrendDataProcessor.processTrendData(
+                transactions: transactionsForTrend,
+                accounts: calcContext.eligibleAccounts,
+                metric: trendType,
+                period: calcContext.period,
+                grouping: calcContext.trendGrouping,
+                interval: calcContext.effectiveInterval,
+                currencyCode: calcContext.defaultCurrencyCode,
+                liveBalanceOverride: liveBalanceOverride
+            )
+            newTrendPoints = (result.points, result.rawPoints, result.yDomain)
+            newTrendTotalIncome = result.totalIncome
+            newTrendTotalExpense = result.totalExpense
+            newTrendFinalBalance = result.finalBalance
+            newTrendLiveAnchor = result.liveAnchor
+            newTrendLiveAnchorBreakdown = result.liveAnchorNativeBalances
+        }
 
-        // Categories - used by both topSpending and categoriesPie widgets
-        let categoriesResult = calculateCategoriesWidget(context: calcContext)
-        let newTopSpendingCategories = categoriesResult.categories
-        let newPreviousCategoriesTotal = categoriesResult.previousTotal
+        // Categories — Distribución
+        var newTopSpendingCategories = topSpendingCategories
+        var newPreviousCategoriesTotal = categoriesWidget.previousTotalAmount
+        if categoriesVisible {
+            let categoriesResult = calculateCategoriesWidget(context: calcContext)
+            newTopSpendingCategories = categoriesResult.categories
+            newPreviousCategoriesTotal = categoriesResult.previousTotal
+        }
 
-        // Subcategories - used by both topSubcategories and subcategoriesPie widgets
-        let subcategoriesResult = calculateSubcategoriesWidget(context: calcContext)
-        let newTopSubcategories = subcategoriesResult.subcategories
-        let newPreviousSubcategoriesTotal = subcategoriesResult.previousTotal
+        // Subcategories — Distribución
+        var newTopSubcategories = topSubcategories
+        var newPreviousSubcategoriesTotal = subcategoriesWidget.previousTotalAmount
+        if subcategoriesVisible {
+            let subcategoriesResult = calculateSubcategoriesWidget(context: calcContext)
+            newTopSubcategories = subcategoriesResult.subcategories
+            newPreviousSubcategoriesTotal = subcategoriesResult.previousTotal
+        }
 
-        // Cash Flow
-        let newCashFlowSummary = calculateCashFlowWidget(context: calcContext)
+        // Cash Flow — Tendencias
+        var newCashFlowSummary = cashFlowWidget.cashFlowSummary
+        var newCashFlowPreviousNet = cashFlowWidget.previousNetFlow
+        if cashFlowVisible {
+            let cashFlowResult = calculateCashFlowWidget(context: calcContext)
+            newCashFlowSummary = cashFlowResult.summary
+            newCashFlowPreviousNet = cashFlowResult.previousNetFlow
+        }
 
-        // Latest Records
+        // Need Trend — Tendencias
+        var newNeedTrendPoints = needWidget.needTrendPoints
+        var newPreviousNeedTotal = needWidget.previousTotalAmount
+        var newPreviousNeedAmounts = needWidget.previousAmounts
+        if needVisible {
+            let needResult = calculateNeedWidget(context: calcContext)
+            newNeedTrendPoints = needResult.points
+            newPreviousNeedTotal = needResult.previousTotal
+            newPreviousNeedAmounts = needResult.previousAmounts
+        }
+
+        if weekdayVisible {
+            calculateWeekdayWidget(context: calcContext)
+        }
+
+        if tagsVisible {
+            calculateTagsWidget(context: calcContext)
+        }
+
+        // Second page of the Trends carousel — same visibility guard as the trend chart
+        if trendVisible {
+            calculatePeriodComparisonWidget(context: calcContext)
+        }
+
+        // Latest Records — always computes (non-toggleable section)
         let newLatestRecords = calculateLatestRecordsWidget(context: calcContext)
-
-        // Need Trend
-        let needResult = calculateNeedWidget(context: calcContext)
-        let newNeedTrendPoints = needResult.points
-        let newPreviousNeedTotal = needResult.previousTotal
-        let newPreviousNeedAmounts = needResult.previousAmounts
 
         // 3. BATCH STATE UPDATE — Atomic struct assignments collapse ~21 individual
         // @Observable notifications into ~6 struct-level comparisons.
@@ -840,46 +1229,64 @@ final class PanelViewModel {
             transactions: transactions,
             defaultCurrencyCode: defaultCurrencyCode
         )
-        let newTrend = PanelTrendData(
-            processedTrendPoints: newProcessedData.points,
-            rawTrendPoints: newProcessedData.rawPoints,
-            processedYDomain: newProcessedData.yDomain,
-            currentInterval: calcContext.effectiveInterval,
-            currentPeriod: self.selectedPeriod,
-            trendTotalIncome: newTrendTotalIncome,
-            trendTotalExpense: newTrendTotalExpense,
-            trendFinalBalance: newTrendFinalBalance,
-            trendGrouping: calcContext.trendGrouping,
-            dataTrendType: self.trendType,
-            currentBalance: newBalance
-        )
-        if newTrend != trendChart { trendChart = newTrend }
+        // El saldo total del panorama debe reflejar cambios (toggle de grupos,
+        // cuentas, TC) aunque el widget de Tendencias esté oculto — `trendChart`
+        // de abajo solo se reasigna cuando `trendVisible`.
+        if self.panelTotalBalance != newBalance { self.panelTotalBalance = newBalance }
 
-        let newCategories = PanelCategoriesData(
-            topSpendingCategories: newTopSpendingCategories,
-            previousTotalAmount: newPreviousCategoriesTotal
-        )
-        if newCategories != categoriesWidget { categoriesWidget = newCategories }
+        if trendVisible, let trendPoints = newTrendPoints {
+            let newTrend = PanelTrendData(
+                processedTrendPoints: trendPoints.points,
+                rawTrendPoints: trendPoints.rawPoints,
+                processedYDomain: trendPoints.yDomain,
+                currentInterval: calcContext.effectiveInterval,
+                currentPeriod: self.selectedPeriod,
+                trendTotalIncome: newTrendTotalIncome,
+                trendTotalExpense: newTrendTotalExpense,
+                trendFinalBalance: newTrendFinalBalance,
+                trendGrouping: calcContext.trendGrouping,
+                dataTrendType: self.trendType,
+                currentBalance: newBalance,
+                trendLiveAnchor: newTrendLiveAnchor,
+                trendLiveAnchorBreakdown: newTrendLiveAnchorBreakdown
+            )
+            if newTrend != trendChart { trendChart = newTrend }
+        }
 
-        let newSubcategories = PanelSubcategoriesData(
-            topSubcategories: newTopSubcategories,
-            previousTotalAmount: newPreviousSubcategoriesTotal
-        )
-        if newSubcategories != subcategoriesWidget { subcategoriesWidget = newSubcategories }
+        if needVisible {
+            let newNeed = PanelNeedData(
+                needTrendPoints: newNeedTrendPoints,
+                previousTotalAmount: newPreviousNeedTotal,
+                previousAmounts: newPreviousNeedAmounts,
+                needGrouping: calcContext.needGrouping
+            )
+            if newNeed != needWidget { needWidget = newNeed }
+        }
 
-        let newNeed = PanelNeedData(
-            needTrendPoints: newNeedTrendPoints,
-            previousTotalAmount: newPreviousNeedTotal,
-            previousAmounts: newPreviousNeedAmounts,
-            needGrouping: calcContext.needGrouping
-        )
-        if newNeed != needWidget { needWidget = newNeed }
+        if cashFlowVisible {
+            let newCashFlow = PanelCashFlowData(
+                cashFlowSummary: newCashFlowSummary,
+                cashFlowGrouping: calcContext.cashFlowGrouping,
+                previousNetFlow: newCashFlowPreviousNet
+            )
+            if newCashFlow != cashFlowWidget { cashFlowWidget = newCashFlow }
+        }
 
-        let newCashFlow = PanelCashFlowData(
-            cashFlowSummary: newCashFlowSummary,
-            cashFlowGrouping: calcContext.cashFlowGrouping
-        )
-        if newCashFlow != cashFlowWidget { cashFlowWidget = newCashFlow }
+        if categoriesVisible {
+            let newCategories = PanelCategoriesData(
+                topSpendingCategories: newTopSpendingCategories,
+                previousTotalAmount: newPreviousCategoriesTotal
+            )
+            if newCategories != categoriesWidget { categoriesWidget = newCategories }
+        }
+
+        if subcategoriesVisible {
+            let newSubcategories = PanelSubcategoriesData(
+                topSubcategories: newTopSubcategories,
+                previousTotalAmount: newPreviousSubcategoriesTotal
+            )
+            if newSubcategories != subcategoriesWidget { subcategoriesWidget = newSubcategories }
+        }
 
         if newLatestRecords != _latestRecords { _latestRecords = newLatestRecords }
 
@@ -964,10 +1371,13 @@ final class PanelViewModel {
                 }
             }
 
-            // Tag Filter
+            // Tag Filter — CSV-mirror SSOT (sobrevive CloudKit lazy hydration).
             if !selectedTags.isEmpty {
-                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                if transactionTagIDs.isDisjoint(with: selectedTags) { return false }
+                let selectedUUIDs = Set(
+                    tags.filter { selectedTags.contains($0.persistentModelID) }.map(\.id)
+                )
+                let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+                if txTagUUIDs.isDisjoint(with: selectedUUIDs) { return false }
             }
 
             // Currency Filter
@@ -1044,6 +1454,10 @@ final class PanelViewModel {
     ) -> FilterCriteria {
         var criteria = FilterCriteria()
         criteria.selectedTags = selectedTags
+        // CSV-mirror SSOT: poblar tagUUIDs desde el catálogo local. Sobrevive
+        // CloudKit lazy hydration de la M2M `transaction.tags`.
+        let selectedTagObjects = tags.filter { selectedTags.contains($0.persistentModelID) }
+        criteria.populateTagUUIDs(from: selectedTagObjects)
         criteria.selectedCurrencies = selectedCurrencies
         criteria.isExcludeMode = isExcludeMode
         criteria.amountCondition = amountCondition
@@ -1325,14 +1739,39 @@ final class PanelViewModel {
     }
 
     /// Calculate cash flow summary (excludes adjustments/initial balances)
-    private func calculateCashFlowWidget(context: PanelCalculationContext) -> CashFlowSummary? {
-        return CashFlowCalculator.calculateCashFlow(
+    private func calculateCashFlowWidget(context: PanelCalculationContext) -> (summary: CashFlowSummary?, previousNetFlow: Double?) {
+        let summary = CashFlowCalculator.calculateCashFlow(
             transactions: context.expenseFilteredTransactions,
             interval: context.effectiveInterval,
             grouping: context.cashFlowGrouping,
             currencyCode: context.defaultCurrencyCode,
             converter: context.converter
         )
+
+        // Skip previous period for "All Time" (no meaningful comparison).
+        guard context.period != .allTime else {
+            return (summary, nil)
+        }
+
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: context.period,
+            mode: .month,
+            customRange: nil
+        )
+        let previousTransactions = context.transactionsWithoutDateFilter.filter {
+            previousInterval.contains($0.date)
+        }
+        let previousSummary = CashFlowCalculator.calculateCashFlow(
+            transactions: previousTransactions,
+            interval: previousInterval,
+            grouping: context.cashFlowGrouping,
+            currencyCode: context.defaultCurrencyCode,
+            converter: context.converter
+        )
+        let previousNet: Double? = (previousSummary.totalIncome == 0 && previousSummary.totalExpense == 0)
+            ? nil
+            : previousSummary.netFlow
+        return (summary, previousNet)
     }
 
     /// Calculate latest records (excludes adjustments/initial balances)
@@ -1423,6 +1862,18 @@ final class PanelViewModel {
         } else {
             selectedCategoryID = id
             isCategorySelectionImplicit = false
+        }
+    }
+
+    /// Multi-select toggle for the Panel's TagsPie widget. Reuses
+    /// `selectedTags` (backed by `SessionState.shared.selectedTags`); the
+    /// Panel's filter pipeline already propagates this selection to every
+    /// widget via `buildPanelCalculationContext` + `FilterCriteria.selectedTags`.
+    func toggleTagFilter(_ id: PersistentIdentifier) {
+        if selectedTags.contains(id) {
+            selectedTags.remove(id)
+        } else {
+            selectedTags.insert(id)
         }
     }
 
@@ -1671,34 +2122,31 @@ final class PanelViewModel {
 
         // Apply budget filters
 
-        // Account filter
-        if let accounts = budget.accounts, !accounts.isEmpty {
-            let accountIDs = Set(accounts.map { $0.persistentModelID })
+        // Account filter (CSV mirror SSOT con M2M fallback + auto-cura)
+        if let accountUUIDs = budget.resolvedAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
             filtered = filtered.filter { transaction in
-                if let accountID = transaction.account?.persistentModelID {
-                    return accountIDs.contains(accountID)
+                if let account = transaction.account {
+                    return accountUUIDs.contains(account.shortcutID)
                 }
                 return false
             }
         }
 
-        // Subcategory filter
-        if let subcategories = budget.subcategories, !subcategories.isEmpty {
-            let subIDs = Set(subcategories.map { $0.persistentModelID })
+        // Subcategory filter (CSV mirror SSOT con M2M fallback + auto-cura)
+        if let subcategoryUUIDs = budget.resolvedSubcategoryIDs(scheduleBackfill: true), !subcategoryUUIDs.isEmpty {
             filtered = filtered.filter { transaction in
-                if let subID = transaction.subcategory?.persistentModelID {
-                    return subIDs.contains(subID)
+                if let subcategory = transaction.subcategory {
+                    return subcategoryUUIDs.contains(subcategory.shortcutID)
                 }
                 return false
             }
         }
 
-        // Tag filter
-        if let budgetTags = budget.tags, !budgetTags.isEmpty {
-            let tagIDs = Set(budgetTags.map { $0.persistentModelID })
+        // Tag filter — ambos lados (budget + tx) usan CSV mirror SSOT.
+        if let budgetTagUUIDs = budget.resolvedTagIDs(scheduleBackfill: true), !budgetTagUUIDs.isEmpty {
             filtered = filtered.filter { transaction in
-                let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-                return !transactionTagIDs.isDisjoint(with: tagIDs)
+                let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+                return !txTagUUIDs.isDisjoint(with: budgetTagUUIDs)
             }
         }
 
@@ -1715,35 +2163,22 @@ final class PanelViewModel {
         // Only count expenses (not income)
         filtered = filtered.filter { $0.category?.isIncome == false }
 
-        // Sum amounts in budget's currency
+        // Sum amounts in budget's currency. Delega al helper único de
+        // BudgetsViewModel para consistencia: TC actual cuando difiere la
+        // moneda, sin la heurística de "ramas mezcladas" anterior.
         let spent = filtered.reduce(0.0) { sum, transaction in
-            let amount: Double
-            if transaction.currencyCode == budget.currencyCode {
-                // Same currency as budget — use original amount
-                amount = transaction.amount
-            } else if transaction.preferredCurrencyCode == budget.currencyCode {
-                // Preferred currency matches budget — use pre-converted amount
-                amount = transaction.amountInPreferredCurrency
-            } else if let _ = modelContext,
-                      let fromCode = CurrencyCode(rawValue: transaction.currencyCode),
-                      let toCode = CurrencyCode(rawValue: budget.currencyCode) {
-                // Different currency — convert using latest rates
-                let converted = convertToPreferredCurrency(
-                    amount: Decimal(transaction.amount),
-                    from: fromCode,
-                    to: toCode
-                )
-                amount = NSDecimalNumber(decimal: converted).doubleValue
-            } else {
-                amount = transaction.amount
-            }
-            return sum + abs(amount)
+            sum + abs(BudgetsViewModel.budgetAmount(of: transaction, in: budget.currencyCode))
         }
 
         let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
         let daysRemaining = getBudgetDaysRemaining(budget: budget, interval: interval)
         let status = getBudgetStatus(budget: budget, spending: spent)
-        let (icon, color) = budget.displayProperties
+        let (icon, color): (String, String) = {
+            if let ctx = modelContext {
+                return Budget.computeDisplayProperties(for: budget, in: ctx)
+            }
+            return budget.displayProperties
+        }()
 
         return BudgetSummary(
             budget: budget,
@@ -1758,7 +2193,7 @@ final class PanelViewModel {
 
     /// Get date interval for a budget period
     private func getBudgetDateInterval(budget: Budget) -> DateInterval {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
 
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
             let start = calendar.startOfMonth(for: Date.now)
@@ -1795,7 +2230,7 @@ final class PanelViewModel {
 
     /// Calculate days remaining in budget period
     private func getBudgetDaysRemaining(budget: Budget, interval: DateInterval) -> Int {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         let today = Date.now
 
         if today > interval.end {
@@ -1896,14 +2331,6 @@ final class PanelViewModel {
             pendingReload = false
             if shouldReload {
                 loadData()
-                let currentOrder = UserDefaults.standard.string(forKey: "accountsSortOrderNames") ?? ""
-                let newOrder = ensureAccountsSortOrderConsistency(
-                    accounts: accounts,
-                    currentOrderRaw: currentOrder
-                )
-                if newOrder != currentOrder {
-                    PreferenceSyncService.shared.set(string: newOrder, forKey: "accountsSortOrderNames")
-                }
             }
             performCalculation()
         }
@@ -1919,15 +2346,487 @@ final class PanelViewModel {
             context: context,
             sessionState: sessionState
         )
-        calculateBudgetsWidget(
-            budgets: budgets,
-            transactions: transactions,
-            defaultCurrencyCode: defaultCurrencyCode,
-            excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
-            excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
-        )
+        if isWidgetVisible(.budgets) {
+            calculateBudgetsWidget(
+                budgets: budgets,
+                transactions: transactions,
+                defaultCurrencyCode: defaultCurrencyCode,
+                excludedCategoryIDs: sessionState.isExcludeMode ? sessionState.selectedCategoryIDs : [],
+                excludedSubcategoryIDs: sessionState.isExcludeMode ? sessionState.selectedSubcategoryIDs : []
+            )
+        }
+        // Shared paidAmounts fetch between the scheduled-payments widget and the
+        // Salud Financiera section when both target the current calendar month.
+        // If they target different months (e.g. user navigating planification to a
+        // past month), each section falls back to its own fetch.
+        let scheduledVisible = isWidgetVisible(.scheduledPayments)
+        let healthVisible = isSectionVisible(.health)
+        var sharedPaidAmounts: [String: [PaidOccurrenceInfo]]? = nil
+        let calendar = Calendar.current
+        let currentMonthInterval = calendar.dateInterval(of: .month, for: .now)
+        let currentMonthStart = currentMonthInterval?.start
+        let planMonthStart = calendar.dateInterval(of: .month, for: scheduledPaymentsDisplayMonth)?.start
+        let canShareFetch = scheduledVisible
+            && healthVisible
+            && currentMonthStart != nil
+            && currentMonthStart == planMonthStart
+
+        // Cache the filter once — used by both fetch branches below.
+        let activePayments: [ScheduledPayment] = (canShareFetch || healthVisible)
+            ? scheduledPayments.filter { $0.isActive }
+            : []
+
+        if canShareFetch, let monthStart = currentMonthStart {
+            sharedPaidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                for: activePayments, month: monthStart, context: context
+            )
+        }
+
+        if scheduledVisible {
+            calculateScheduledPaymentsWidget(injectedPaidAmounts: sharedPaidAmounts)
+        }
+
+        if healthVisible {
+            // El score Salud Financiera ahora reacciona a `selectedPeriod`. Para el
+            // rango del período cargamos `paidAmounts` con el overload `interval:`.
+            // Reusamos `sharedPaidAmounts` solo si el período es el mes en curso
+            // (caso común — evita un fetch redundante).
+            let scoreInterval = selectedPeriod.dateInterval(customRange: customDateRange)
+            let paidForHealth: [String: [PaidOccurrenceInfo]]
+            if let shared = sharedPaidAmounts,
+               let monthInterval = currentMonthInterval,
+               scoreInterval == monthInterval {
+                paidForHealth = shared
+            } else {
+                paidForHealth = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                    for: activePayments, interval: scoreInterval, context: context
+                )
+            }
+            calculateHealthWidget(paidAmounts: paidForHealth)
+        }
+
         calculateAccountPeriodExpenses()
-        calculateScheduledPaymentsWidget()
+        // Hero always computes — it replaces the Panel title and cannot be
+        // hidden (see epic out-of-scope). Cheap O(n) pass over `transactions`;
+        // the equality guard in `calculateHeroWidget()` suppresses no-op
+        // @Observable notifications when the data hasn't changed.
+        let (_, heroEligibleAccountIDs) = computeEligibleAccounts(from: accounts)
+        calculateHeroWidget(
+            eligibleAccountIDs: heroEligibleAccountIDs,
+            monthInterval: currentMonthInterval,
+            periodInterval: panelDateInterval
+        )
+    }
+
+    private func calculateWeekdayWidget(context: PanelCalculationContext) {
+        let spending = WeekdaySpendingCalculator.calculate(
+            transactions: context.filteredTransactions,
+            interval: context.effectiveInterval,
+            currencyCode: context.defaultCurrencyCode,
+            converter: currencyConverter
+        )
+        let newData = PanelWeekdayData(weekdaySpending: spending)
+        if newData != weekdayWidget { weekdayWidget = newData }
+    }
+
+    /// TagsPie widget (Distribución). Enriches each tag summary with its
+    /// previous-period amount (mirrors `calculateCategoriesWidget`/`calculateSubcategoriesWidget`)
+    /// so the pie shows per-tag variation — otherwise the second calculation
+    /// would be pure waste.
+    private func calculateTagsWidget(context: PanelCalculationContext) {
+        // Tags catalog needed to resolve UUIDs from CSV mirror → Tag objects.
+        let allTags: [Tag] = (try? modelContext?.fetch(FetchDescriptor<Tag>())) ?? []
+
+        var currentData = TagSpendingCalculator.calculateTopSpending(
+            transactions: context.filteredTransactions,
+            interval: context.effectiveInterval,
+            currencyCode: context.defaultCurrencyCode,
+            allTags: allTags
+        )
+
+        guard context.period != .allTime else {
+            let newData = PanelTagsData(topTags: currentData, previousTotalAmount: nil)
+            if newData != tagsWidget { tagsWidget = newData }
+            return
+        }
+
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: context.period,
+            mode: .month,
+            customRange: nil
+        )
+        let previousTransactions = context.transactionsWithoutDateFilter.filter {
+            previousInterval.contains($0.date)
+        }
+        let previousData = TagSpendingCalculator.calculateTopSpending(
+            transactions: previousTransactions,
+            interval: previousInterval,
+            currencyCode: context.defaultCurrencyCode,
+            allTags: allTags
+        )
+
+        let previousTotal = previousData.reduce(0) { $0 + $1.amount }
+        let previousAmounts = Dictionary(
+            uniqueKeysWithValues: previousData.map { ($0.tag.persistentModelID, $0.amount) }
+        )
+        for index in currentData.indices {
+            currentData[index].previousAmount = previousAmounts[currentData[index].tag.persistentModelID]
+        }
+
+        let newData = PanelTagsData(
+            topTags: currentData,
+            previousTotalAmount: previousTotal > 0 ? previousTotal : nil
+        )
+        if newData != tagsWidget { tagsWidget = newData }
+    }
+
+    /// Mode is `.year` for `.thisYear`, `.month` otherwise. `.allTime` disables
+    /// the comparison (no bounded previous interval). Metric mirrors the trend
+    /// chart via `SessionState.selectedTrendMetric`, forced to `.expense` when
+    /// `isExpensesOnlyMode` is active.
+    private func calculatePeriodComparisonWidget(context: PanelCalculationContext) {
+        guard context.period != .allTime else {
+            let newData = PanelPeriodComparisonData(supportsComparison: false)
+            if newData != periodComparisonWidget { periodComparisonWidget = newData }
+            return
+        }
+
+        let session = SessionState.shared
+        let metric: TrendMetric = session.isExpensesOnlyMode ? .expense : session.selectedTrendMetric
+        let trendType = convertMetricToTrendType(metric)
+        let isBalance = (trendType == .balance)
+        let mode: ComparisonMode = context.period == .thisYear ? .year : .month
+
+        let previousInterval = PreviousPeriodHelper.previousInterval(
+            for: context.period,
+            mode: mode,
+            customRange: session.customDateRange
+        )
+
+        let currentTxs: [TransactionItem]
+        let previousTxs: [TransactionItem]
+        if isBalance {
+            // Running balance requires all transactions without date filter
+            currentTxs = context.balanceTransactions
+            previousTxs = context.balanceTransactions
+        } else {
+            currentTxs = context.filteredTransactions
+            previousTxs = context.transactionsWithoutDateFilter.filter {
+                previousInterval.contains($0.date)
+            }
+        }
+
+        // Override solo en current; previous siempre histórico.
+        let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
+            for: trendType,
+            interval: context.effectiveInterval,
+            accounts: context.eligibleAccounts,
+            transactions: context.balanceTransactions,
+            preferredCurrencyCode: context.defaultCurrencyCode
+        )
+
+        let currentResult = TrendDataProcessor.processTrendData(
+            transactions: currentTxs,
+            accounts: context.eligibleAccounts,
+            metric: trendType,
+            period: context.period,
+            grouping: .day,
+            interval: context.effectiveInterval,
+            currencyCode: context.defaultCurrencyCode,
+            liveBalanceOverride: liveBalanceOverride
+        )
+
+        let previousResult = TrendDataProcessor.processTrendData(
+            transactions: previousTxs,
+            accounts: context.eligibleAccounts,
+            metric: trendType,
+            period: context.period,
+            grouping: .day,
+            interval: previousInterval,
+            currencyCode: context.defaultCurrencyCode
+        )
+
+        let allValues = currentResult.points.map(\.value) + previousResult.points.map(\.value)
+        let yDomain: ClosedRange<Double>
+        if let minV = allValues.min(), let maxV = allValues.max() {
+            let padding = (maxV - minV) * 0.1
+            yDomain = (minV - padding)...(maxV + padding)
+        } else {
+            yDomain = 0...1
+        }
+
+        let currentTotal = currentResult.points.last?.value ?? 0
+        let previousTotal: Double? = previousResult.points.isEmpty
+            ? nil
+            : (previousResult.points.last?.value ?? 0)
+
+        let newData = PanelPeriodComparisonData(
+            currentPoints: currentResult.points,
+            previousPoints: previousResult.points,
+            yDomain: yDomain,
+            currentInterval: context.effectiveInterval,
+            previousInterval: previousInterval,
+            grouping: .day,
+            comparisonMode: mode,
+            trendType: trendType,
+            period: context.period,
+            currentTotal: currentTotal,
+            previousTotal: previousTotal,
+            supportsComparison: true
+        )
+        if newData != periodComparisonWidget { periodComparisonWidget = newData }
+    }
+
+    /// Pre-computes the Financial Score for the Panel 2.0 "Salud Financiera" section.
+    /// Called from `performCalculation()` only when `.health` section is visible.
+    /// El score reacciona a `selectedPeriod` — cada cambio de período recalcula.
+    private func calculateHealthWidget(paidAmounts: [String: [PaidOccurrenceInfo]]) {
+        let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+        let newScore = FinancialScoreCalculator.calculate(
+            transactions: transactions,
+            budgets: budgets,
+            scheduledPayments: scheduledPayments,
+            accounts: accounts,
+            paidAmounts: paidAmounts,
+            period: selectedPeriod,
+            customRange: customDateRange,
+            preferredCurrencyCode: defaultCurrencyCode,
+            includeBridgedGroupTx: includeBridgedGroupTx
+        )
+        let newData = PanelHealthData(score: newScore)
+        if newData != healthWidget { healthWidget = newData }
+    }
+
+    /// Pre-computes the Hero del mes payload (P20-04).
+    ///
+    /// Runs on every `performCalculation()` because the Hero replaces the
+    /// Panel title and is always visible. It stays cheap:
+    ///  - single O(n) pass over `transactions` restricted to the current
+    ///    calendar month,
+    ///  - zero new fetches (all models are already loaded),
+    ///  - uses `TransactionItem.amountInPreferredCurrency` — the snapshot
+    ///    conversion already persisted on each transaction, so there is no
+    ///    live call to `CurrencyConverter` here.
+    /// Only budgets with `periodType == "monthly"` feed the total; mixing
+    /// weekly/yearly would distort the ratio. Pro-rating other periodicities
+    /// is a future refinement tracked in the epic.
+    private func calculateHeroWidget(
+        eligibleAccountIDs: Set<PersistentIdentifier>,
+        monthInterval: DateInterval?,
+        periodInterval: DateInterval
+    ) {
+        guard let monthInterval else { return }
+
+        // Mes anterior natural — independiente del selectedPeriod del Panel,
+        // el Hero siempre compara contra el mes calendario anterior.
+        let prevStart = Calendar.current.date(byAdding: .month, value: -1, to: monthInterval.start) ?? monthInterval.start
+        let prevInterval = DateInterval(start: prevStart, end: monthInterval.start)
+
+        // Todos los montos numéricos del Hero (pills del mes, trend "vs mes
+        // anterior", card "Disponible · Período") respetan `eligibleAccountIDs`,
+        // que engloba cuenta seleccionada + `excludeFromStatistics`. Filtros
+        // finos (categoría, subcategoría, need, focused date) NO aplican al
+        // Hero por decisión de producto. El estado del calculator y la IA
+        // reaccionan naturalmente a estos inputs — su lógica no se modifica.
+        let buckets = HeroBucketsCalculator.calculate(
+            transactions: transactions,
+            monthInterval: monthInterval,
+            prevInterval: prevInterval,
+            periodInterval: periodInterval,
+            eligibleAccountIDs: eligibleAccountIDs
+        )
+
+        let newPeriod = PanelHeroPeriodData(income: buckets.periodIncome, expense: buckets.periodExpense)
+        if newPeriod != heroPeriodWidget { heroPeriodWidget = newPeriod }
+
+        let totalMonthlyBudget = budgets
+            .filter { $0.periodType == "monthly" }
+            .reduce(0.0) { $0 + $1.limitAmount }
+
+        let newData = HeroMonthCalculator.calculate(
+            monthIncome: buckets.monthIncome,
+            monthExpense: buckets.monthExpense,
+            totalMonthlyBudget: totalMonthlyBudget
+        )
+        let wrapped = PanelHeroData(data: newData)
+        let dataChanged = wrapped != heroWidget
+        if dataChanged { heroWidget = wrapped }
+
+        lastHeroTrendContext = TrendContext(
+            prevExpense: buckets.prevExpense,
+            prevHasAnyTx: buckets.prevHasAnyTx,
+            totalMonthlyBudget: totalMonthlyBudget,
+            monthInterval: monthInterval
+        )
+
+        // Re-generar IA cuando cambien los montos. Limpiar el cache aquí
+        // garantiza que el mensaje cite los montos actuales aunque el cambio
+        // sea menor que el bucket del hash (p.ej. una tx de <100 del bucket).
+        // El guard `dataChanged` evita spam de telemetría cuando
+        // performCalculation corre múltiples veces sin cambios reales.
+        if dataChanged {
+            HeroMessageCache.clear()
+            generateHeroAIIfEligible(data: newData)
+        }
+    }
+
+    // MARK: - Hero IA
+
+    /// Snapshot de los agregados del mes anterior + budget que necesita
+    /// `generateHeroAIIfEligible`. Recalculado en cada `calculateHeroWidget`
+    /// para que `retriggerHeroAI` (invocado por observadores de consent/Pro)
+    /// no tenga que re-iterar `transactions`.
+    private struct TrendContext {
+        let prevExpense: Double
+        let prevHasAnyTx: Bool
+        let totalMonthlyBudget: Double
+        let monthInterval: DateInterval
+    }
+
+    private var lastHeroTrendContext: TrendContext?
+
+    /// Cache-key único de telemetría; `trackOnce` dedupea por sesión.
+    private static let heroTelemetryKey = "panelHero"
+
+    /// Task en vuelo — permite cancelar la anterior si llega otro trigger
+    /// (evita last-writer-wins stale cuando Pro/consent togglean en rápido).
+    private var heroAITask: Task<Void, Never>?
+
+    /// Reintenta la generación del mensaje IA usando el último `heroWidget`
+    /// computado. Lo llaman los observers de `PanelView` cuando cambia
+    /// consent o estado Pro.
+    func retriggerHeroAI() {
+        guard let data = heroWidget.data else { return }
+        generateHeroAIIfEligible(data: data)
+    }
+
+    /// Genera el mensaje IA si el usuario es Pro + tiene consent + feature activa.
+    /// Free, Pro sin consent, o Pro con feature apagada quedan en rule-based
+    /// silencioso (`heroAISubtitle = nil`).
+    private func generateHeroAIIfEligible(data: HeroMonthData) {
+        guard FeatureGateService.shared.canAccess(.smartInsightsAI),
+              appPreferences?.aiInsightsConsentAccepted == true,
+              let trend = lastHeroTrendContext else {
+            heroAITask?.cancel()
+            heroAITask = nil
+            heroAISubtitle = nil
+            return
+        }
+
+        let ctx = buildHeroContext(data: data, trend: trend)
+
+        if let cached = HeroMessageCache.read(),
+           cached.hash == HeroMessageCache.contextHash(ctx) {
+            heroAISubtitle = cached.text
+            TelemetryService.trackOnce(.panelHeroAICacheHit, key: Self.heroTelemetryKey)
+            return
+        }
+
+        heroAITask?.cancel()
+        heroAITask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let text = try await InsightsLLMService.shared.generateHeroMessage(context: ctx)
+                guard !Task.isCancelled else { return }
+                self.heroAISubtitle = text
+                TelemetryService.track(.panelHeroAIGenerated)
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.heroAISubtitle = nil
+            }
+        }
+    }
+
+    /// Construye el `HeroContext` a partir de los agregados ya calculados en
+    /// `calculateHeroWidget`. Cero fetches y cero iteraciones extra.
+    private func buildHeroContext(data: HeroMonthData, trend: TrendContext) -> HeroContext {
+        let spendingTrend: HeroSpendingTrend?
+        if !trend.prevHasAnyTx || trend.prevExpense <= 0 {
+            spendingTrend = nil
+        } else {
+            let ratio = data.expense / trend.prevExpense
+            if ratio > 1.05 { spendingTrend = .up }
+            else if ratio < 0.95 { spendingTrend = .down }
+            else { spendingTrend = .flat }
+        }
+
+        let percentBudget: Double? = trend.totalMonthlyBudget > 0
+            ? data.expense / trend.totalMonthlyBudget
+            : nil
+
+        let rawName = appPreferences?.userName ?? ""
+        let userName: String? = rawName.isEmpty ? nil : rawName
+
+        let currencyCode = defaultCurrencyCode
+
+        let formattedIncome = snapshotCurrency(data.income, code: currencyCode)
+        let formattedExpense = snapshotCurrency(data.expense, code: currencyCode)
+        let formattedAvailable = snapshotCurrency(data.available, code: currencyCode)
+
+        // Datos del mes anterior — solo cuando hay data real (prevHasAnyTx).
+        // Delta firmado: positivo gasta más, negativo gasta menos.
+        let previousExpense: Double? = trend.prevHasAnyTx ? trend.prevExpense : nil
+        let formattedPreviousExpense: String? = previousExpense.map { snapshotCurrency($0, code: currencyCode) }
+        let expenseDelta: Double? = previousExpense.map { data.expense - $0 }
+        let formattedExpenseDelta: String? = expenseDelta.map { snapshotCurrency(abs($0), code: currencyCode) }
+
+        // Enriquecimiento contextual — reusa computes ya realizados por los
+        // widgets de Distribución/Tendencias (zero overhead). Si el user
+        // oculta esos widgets los campos llegan nil y el prompt se adapta.
+        let topCat = topSpendingCategories.first
+        let topCategory: String? = topCat?.category.name
+        let formattedTopCategoryAmount: String? = topCat.map { snapshotCurrency($0.amount, code: currencyCode) }
+        // Reusa el helper canónico de variación (`PreviousPeriodHelper`) que el
+        // resto del Panel usa para chips/headers — evita divergencia semántica.
+        let topCategoryDeltaPercent: Double? = topCat?.variation
+
+        let topDay = weekdayWidget.weekdaySpending.max(by: { $0.average < $1.average })
+        let topWeekday: String? = topDay?.weekdayLongName
+        let formattedTopWeekdayAmount: String? = topDay.map { snapshotCurrency($0.average, code: currencyCode) }
+
+        let monthProgress = Double(data.daysElapsed) / Double(max(data.daysTotal, 1))
+
+        return HeroContext(
+            state: data.state,
+            financialScore: healthWidget.score.flatMap(\.total),
+            percentBudgetUsed: percentBudget,
+            spendingTrend: spendingTrend,
+            monthName: Self.monthNameFormatter.string(from: trend.monthInterval.start).localizedCapitalized,
+            userName: userName,
+            daysRemaining: data.daysRemaining,
+            daysElapsed: data.daysElapsed,
+            locale: AppLocale.current.identifier,
+            income: data.income,
+            expense: data.expense,
+            available: data.available,
+            formattedIncome: formattedIncome,
+            formattedExpense: formattedExpense,
+            formattedAvailable: formattedAvailable,
+            previousExpense: previousExpense,
+            formattedPreviousExpense: formattedPreviousExpense,
+            expenseDelta: expenseDelta,
+            formattedExpenseDelta: formattedExpenseDelta,
+            topCategory: topCategory,
+            formattedTopCategoryAmount: formattedTopCategoryAmount,
+            topCategoryDeltaPercent: topCategoryDeltaPercent,
+            topWeekday: topWeekday,
+            formattedTopWeekdayAmount: formattedTopWeekdayAmount,
+            monthProgress: monthProgress
+        )
+    }
+
+    private static let monthNameFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.dateFormat = "MMMM"
+        return f
+    }()
+
+    /// Snapshot del payload IA — no reactivo. Usa `appPreferences.currency` cuando está
+    /// inyectado; en bootstrap (nil) cae al estático para preservar paridad de output.
+    private func snapshotCurrency(_ value: Double, code: String) -> String {
+        if let appPreferences { return appPreferences.currency(value, currencyCode: code) }
+        return YalaFormatterStatic.currency(value: value, currencyCode: code)
     }
 
     /// Pre-computes total account balances (not period-dependent).
@@ -1999,64 +2898,112 @@ final class PanelViewModel {
 
     /// Pre-computes all scheduled payments widget data from cached models.
     /// Called from performCalculation() — runs outside the SwiftUI render pass.
-    private func calculateScheduledPaymentsWidget() {
+    ///
+    /// - Parameter injectedPaidAmounts: Optional pre-computed paidAmounts map. When provided,
+    ///   skips the internal fetch and uses the injected value. Used by `performCalculation()`
+    ///   to share the fetch with `calculateHealthWidget()` when both sections are visible and
+    ///   they target the same month. Pass `nil` to preserve the original (self-fetch) behavior.
+    private func calculateScheduledPaymentsWidget(
+        injectedPaidAmounts: [String: [PaidOccurrenceInfo]]? = nil
+    ) {
         guard let context = modelContext else { return }
 
         let displayMonth = scheduledPaymentsDisplayMonth
         let calendar = Calendar.current
 
         // 1. Filter payments (replaces widget's filteredPayments computed property)
+        let allActive = scheduledPayments.filter { $0.isActive }
         let filtered: [ScheduledPayment]
         if let categoryFilter = scheduledPaymentsWidgetFilter.paymentCategoryFilter {
-            filtered = scheduledPayments.filter { $0.isActive && $0.paymentCategory == categoryFilter }
+            filtered = allActive.filter { $0.paymentCategory == categoryFilter }
         } else {
-            filtered = scheduledPayments.filter { $0.isActive }
+            filtered = allActive
         }
 
-        // 2. Load paid amounts (moves from widget's .task(id:) to here)
-        let paidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
-            for: filtered, month: displayMonth, context: context
-        )
+        // 2. Load paid amounts (use injected if provided to share with health section,
+        // else fetch — moves from widget's .task(id:) to here)
+        let paidAmounts: [String: [PaidOccurrenceInfo]] = injectedPaidAmounts
+            ?? ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                for: filtered, month: displayMonth, context: context
+            )
 
-        // 3. Calculate monthly total (moves from widget's calculateMonthlyTotal())
+        // 3. Calculate monthly total + paid amount (filtered).
         var monthlyTotal: Double = 0
+        var paidAmount: Double = 0
         if calendar.dateInterval(of: .month, for: displayMonth) != nil {
             let converter = currencyConverter
-            let expensePayments = filtered.filter { $0.transactionType != "income" }
 
-            for payment in expensePayments {
-                let occurrences = ScheduledPaymentDateCalculator.paymentDatesInMonth(
-                    params: payment.dateCalculatorParams, month: displayMonth
-                )
-                var remainingInfos = paidAmounts[payment.id.uuidString] ?? []
+            /// Returns (total, paid). `total` sums expense occurrences (paid at real amount, pending at planned amount).
+            /// `paid` sums only the occurrences that have a `PaidOccurrenceInfo` associated.
+            func accumulateMonthlyTotal(
+                payments: [ScheduledPayment],
+                paid: [String: [PaidOccurrenceInfo]]
+            ) -> (total: Double, paid: Double) {
+                var total: Double = 0
+                var paidTotal: Double = 0
+                let expensePayments = payments.filter { $0.transactionType != "income" }
 
-                for date in occurrences.sorted() {
-                    let isSkipped = payment.isDateSkipped(date)
-                    let amount: Double
-                    let currency: String
-                    if !remainingInfos.isEmpty && !isSkipped {
-                        let info = remainingInfos.removeFirst()
-                        amount = info.amount
-                        currency = info.currencyCode
-                    } else if !isSkipped {
-                        amount = payment.amount
-                        currency = payment.currencyCode
-                    } else {
-                        continue
-                    }
+                for payment in expensePayments {
+                    let occurrences = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                        params: payment.dateCalculatorParams, month: displayMonth
+                    )
+                    var remainingInfos = paid[payment.id.uuidString] ?? []
 
-                    if currency != defaultCurrencyCode, amount > 0 {
-                        let converted = converter.convertWithLatestRate(
-                            Decimal(amount),
-                            from: currency,
-                            to: defaultCurrencyCode,
-                            context: context
-                        )
-                        monthlyTotal += NSDecimalNumber(decimal: converted).doubleValue
-                    } else {
-                        monthlyTotal += amount
+                    for date in occurrences.sorted() {
+                        let isSkipped = payment.isDateSkipped(date)
+                        let amount: Double
+                        let currency: String
+                        let isPaidOccurrence: Bool
+                        if !remainingInfos.isEmpty && !isSkipped {
+                            let info = remainingInfos.removeFirst()
+                            amount = info.amount
+                            currency = info.currencyCode
+                            isPaidOccurrence = true
+                        } else if !isSkipped {
+                            amount = payment.amount
+                            currency = payment.currencyCode
+                            isPaidOccurrence = false
+                        } else {
+                            continue
+                        }
+
+                        let convertedAmount: Double
+                        if currency != defaultCurrencyCode, amount > 0 {
+                            let converted = converter.convertWithLatestRate(
+                                Decimal(amount),
+                                from: currency,
+                                to: defaultCurrencyCode,
+                                context: context
+                            )
+                            convertedAmount = NSDecimalNumber(decimal: converted).doubleValue
+                        } else {
+                            convertedAmount = amount
+                        }
+
+                        total += convertedAmount
+                        if isPaidOccurrence { paidTotal += convertedAmount }
                     }
                 }
+                return (total, paidTotal)
+            }
+
+            let filteredResult = accumulateMonthlyTotal(payments: filtered, paid: paidAmounts)
+            monthlyTotal = filteredResult.total
+            paidAmount = filteredResult.paid
+        }
+
+        // 3c. PP2-06b polish: pending count filtered — definiciones con ≥1 ocurrencia
+        //     no pagada/no skipped en displayMonth. Income excluido (espeja accumulateMonthlyTotal).
+        var pendingCount = 0
+        for payment in filtered where payment.transactionType != "income" {
+            let dates = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                params: payment.dateCalculatorParams, month: displayMonth
+            )
+            guard !dates.isEmpty else { continue }
+            let paidOccurrences = paidAmounts[payment.id.uuidString]?.count ?? 0
+            let skippedCount = dates.count(where: { payment.isDateSkipped($0) })
+            if dates.count - paidOccurrences - skippedCount > 0 {
+                pendingCount += 1
             }
         }
 
@@ -2140,7 +3087,9 @@ final class PanelViewModel {
         // 6. Assemble and compare
         let newData = PanelScheduledPaymentsData(
             monthlyTotal: monthlyTotal,
+            paidAmount: paidAmount,
             activeCount: filtered.count,
+            pendingCount: pendingCount,
             displayMonth: displayMonth,
             periodLabel: Self.monthYearFormatter.string(from: displayMonth).capitalized,
             upcomingPayments: upcomingPayments,

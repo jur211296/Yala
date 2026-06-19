@@ -230,10 +230,18 @@ struct PaymentRowView: View {
             Spacer()
 
             // Amount
-            Text(formattedAmount)
-                .font(WDS.Typography.value)
-                .foregroundStyle(amountColor)
-                .widgetAccentable()
+            WidgetAmountText(
+                value: payment.isIncome ? abs(payment.amount) : -abs(payment.amount),
+                currencyCode: payment.currencyCode,
+                displayFormat: displayFormat,
+                font: WDS.Typography.value,
+                secondaryFont: WDS.Typography.valueSecondary,
+                tint: .color(amountColor),
+                forceSign: true,
+                isEstimate: payment.isVariableAmount ?? false,
+                fractionDigits: 2
+            )
+            .widgetAccentable()
         }
     }
 
@@ -284,21 +292,6 @@ struct PaymentRowView: View {
         }
     }
 
-    private var formattedAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-
-        let formatted = formatter.string(from: NSNumber(value: payment.amount)) ?? "0.00"
-        let prefix = payment.isIncome ? "+" : "-"
-        let currency = displayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: payment.currencyCode)
-            : payment.currencyCode
-
-        let estimatePrefix = (payment.isVariableAmount ?? false) ? "≈ " : ""
-        return "\(estimatePrefix)\(prefix)\(currency) \(formatted)"
-    }
 }
 
 // MARK: - Widget Definition

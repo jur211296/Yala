@@ -10,6 +10,7 @@ import Testing
 
 @testable import Yala
 
+@MainActor
 struct CurrencyConverterTests {
 
     private let converter = CurrencyConverter.shared

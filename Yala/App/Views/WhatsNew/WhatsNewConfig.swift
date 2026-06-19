@@ -19,7 +19,8 @@ enum WhatsNewConfig {
             return version1_1
         case "1.2":
             return version1_2
-        // case "1.3": return version1_3
+        case "2.0":
+            return version2_0
         default:
             return nil
         }
@@ -27,6 +28,7 @@ enum WhatsNewConfig {
 
     // MARK: - Version 1.1
 
+    // A11Y-DM: paleta decorativa por feature del carrusel (colores de sistema, adaptan a Dark Mode)
     private static let version1_1: [WhatsNewFeature] = [
         WhatsNewFeature(
             icon: "chart.bar.doc.horizontal.fill",
@@ -50,6 +52,7 @@ enum WhatsNewConfig {
 
     // MARK: - Version 1.2
 
+    // A11Y-DM: paleta decorativa por feature del carrusel (colores de sistema, adaptan a Dark Mode)
     private static let version1_2: [WhatsNewFeature] = [
         WhatsNewFeature(
             icon: "chart.line.uptrend.xyaxis",
@@ -80,6 +83,30 @@ enum WhatsNewConfig {
             iconColor: .green,
             title: L10n.WhatsNew.v12MoreForYouTitle,
             description: L10n.WhatsNew.v12MoreForYouDescription
+        ),
+    ]
+
+    // MARK: - Version 2.0
+
+    // A11Y-DM: paleta decorativa por feature del carrusel (colores de sistema, adaptan a Dark Mode)
+    private static let version2_0: [WhatsNewFeature] = [
+        WhatsNewFeature(
+            icon: "person.2.fill",
+            iconColor: .green,
+            title: L10n.WhatsNew.v20GroupsTitle,
+            description: L10n.WhatsNew.v20GroupsDescription
+        ),
+        WhatsNewFeature(
+            icon: "sparkles",
+            iconColor: .indigo,
+            title: L10n.WhatsNew.v20AITitle,
+            description: L10n.WhatsNew.v20AIDescription
+        ),
+        WhatsNewFeature(
+            icon: "paintbrush.fill",
+            iconColor: .pink,
+            title: L10n.WhatsNew.v20RedesignTitle,
+            description: L10n.WhatsNew.v20RedesignDescription
         ),
     ]
 

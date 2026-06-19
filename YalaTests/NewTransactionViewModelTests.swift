@@ -500,4 +500,155 @@ struct NewTransactionViewModelTests {
         vm.isSplitStale = true
         #expect(vm.isSplitStale == true)
     }
+
+    // MARK: - Transfer pair ID resolution
+
+    @Test("Resolve transfer pairID returns existing valid UUID")
+    func resolveTransferPairID_returnsExisting() {
+        let validUUID = UUID().uuidString
+        let result = NewTransactionViewModel.resolveTransferPairID(existingPairID: validUUID)
+        #expect(result == validUUID)
+    }
+
+    @Test("Resolve transfer pairID generates new UUID when nil")
+    func resolveTransferPairID_generatesNewWhenNil() {
+        let result = NewTransactionViewModel.resolveTransferPairID(existingPairID: nil)
+        #expect(UUID(uuidString: result) != nil)
+    }
+
+    @Test("Resolve transfer pairID generates new UUID when empty")
+    func resolveTransferPairID_generatesNewWhenEmpty() {
+        let result = NewTransactionViewModel.resolveTransferPairID(existingPairID: "")
+        #expect(UUID(uuidString: result) != nil)
+        #expect(result != "")
+    }
+
+    @Test("Resolve transfer pairID is stable across calls when existing")
+    func resolveTransferPairID_stableAcrossCalls() {
+        let existing = UUID().uuidString
+        let first = NewTransactionViewModel.resolveTransferPairID(existingPairID: existing)
+        let second = NewTransactionViewModel.resolveTransferPairID(existingPairID: existing)
+        #expect(first == second)
+        #expect(first == existing)
+    }
+
+    @Test("Resolve transfer pairID rejects malformed (non-UUID) strings")
+    func resolveTransferPairID_rejectsMalformedUUID() {
+        let result = NewTransactionViewModel.resolveTransferPairID(existingPairID: "abc-123-not-a-uuid")
+        #expect(UUID(uuidString: result) != nil)
+        #expect(result != "abc-123-not-a-uuid")
+    }
+
+    @Test("Resolve transfer pairID trims whitespace and preserves valid trimmed UUID")
+    func resolveTransferPairID_trimsWhitespace() {
+        let validUUID = UUID().uuidString
+        let padded = "  \(validUUID)  \n"
+        let result = NewTransactionViewModel.resolveTransferPairID(existingPairID: padded)
+        #expect(result == validUUID)
+    }
+
+    @Test("Resolve transfer pairID generates new UUID for whitespace-only strings")
+    func resolveTransferPairID_whitespaceOnlyGeneratesNew() {
+        let result = NewTransactionViewModel.resolveTransferPairID(existingPairID: "   \n\t  ")
+        #expect(UUID(uuidString: result) != nil)
+        #expect(result.trimmingCharacters(in: .whitespacesAndNewlines) == result)
+    }
+
+    @Test("Resolve transfer pairID canonicalizes lowercase UUID to uppercase")
+    func resolveTransferPairID_canonicalizesCaseToUppercase() {
+        let lower = "550e8400-e29b-41d4-a716-446655440000"
+        let result = NewTransactionViewModel.resolveTransferPairID(existingPairID: lower)
+        #expect(result == lower.uppercased())
+        #expect(result.contains("550E8400"))  // sanity: canonical uppercase
+    }
+
+    @Test("Resolve transfer pairID candidates falls back to second when first is empty")
+    func resolveTransferPairID_candidatesFallback() {
+        let validUUID = UUID().uuidString
+        let result = NewTransactionViewModel.resolveTransferPairID(candidates: ["", validUUID])
+        #expect(result == validUUID)
+    }
+
+    @Test("Resolve transfer pairID candidates skips nil/empty/malformed and picks first valid")
+    func resolveTransferPairID_candidatesPicksFirstValid() {
+        let validUUID = UUID().uuidString
+        let result = NewTransactionViewModel.resolveTransferPairID(
+            candidates: [nil, "  ", "not-a-uuid", validUUID, "another"]
+        )
+        #expect(result == validUUID)
+    }
+
+    @Test("Resolve transfer pairID candidates generates new when all invalid")
+    func resolveTransferPairID_candidatesAllInvalid() {
+        let result = NewTransactionViewModel.resolveTransferPairID(
+            candidates: [nil, "", "abc-xyz", "   "]
+        )
+        #expect(UUID(uuidString: result) != nil)
+    }
+
+    // MARK: - transactionType didSet (B-NEW-1)
+
+    @MainActor
+    @Test("Setting transactionType to .expense clears transfer state")
+    func transactionType_setToExpense_clearsTransferState() async {
+        let vm = NewTransactionViewModel()
+        vm.transactionType = .transfer
+        vm.destinationAmount = 50.0
+        vm.exchangeRate = 1.5
+        vm.isExchangeRateManual = true
+        // editingTransferPair se setearía vía prefill; aquí simulamos solo lo testable sin context
+
+        vm.transactionType = .expense
+
+        #expect(vm.editingTransferPair == nil)
+        #expect(vm.destinationAccount == nil)
+        #expect(vm.exchangeRate == 1.0)
+        #expect(vm.destinationAmount == 0.0)
+        #expect(vm.isExchangeRateManual == false)
+    }
+
+    @MainActor
+    @Test("Setting transactionType to .income clears transfer state")
+    func transactionType_setToIncome_clearsTransferState() async {
+        let vm = NewTransactionViewModel()
+        vm.transactionType = .transfer
+        vm.destinationAmount = 50.0
+        vm.exchangeRate = 1.5
+
+        vm.transactionType = .income
+
+        #expect(vm.destinationAccount == nil)
+        #expect(vm.exchangeRate == 1.0)
+        #expect(vm.destinationAmount == 0.0)
+    }
+
+    @MainActor
+    @Test("Setting transactionType to same value is no-op")
+    func transactionType_setToSameType_noOp() async {
+        let vm = NewTransactionViewModel()
+        vm.transactionType = .expense
+        vm.destinationAmount = 100.0  // Would survive only if didSet doesn't fire
+
+        vm.transactionType = .expense  // Same value
+
+        #expect(vm.destinationAmount == 100.0)
+    }
+
+    @MainActor
+    @Test("Toggling .expense ↔ .income preserves exchangeRate (didSet only fires on .transfer exit)")
+    func transactionType_expenseIncomeToggle_preservesExchangeRate() async {
+        let vm = NewTransactionViewModel()
+        vm.exchangeRate = 3.7  // Foreign-currency TX prefilled rate
+        vm.destinationAmount = 50.0
+
+        vm.transactionType = .income  // .expense → .income (NO transfer involvement)
+
+        #expect(vm.exchangeRate == 3.7)
+        #expect(vm.destinationAmount == 50.0)
+
+        vm.transactionType = .expense  // .income → .expense
+
+        #expect(vm.exchangeRate == 3.7)
+        #expect(vm.destinationAmount == 50.0)
+    }
 }

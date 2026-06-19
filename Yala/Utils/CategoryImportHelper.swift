@@ -45,11 +45,12 @@ enum CategoryImportHelper {
         // Buscamos una categoría ya existente con el mismo nombre (sin filtrar por isIncome).
         // Esto permite que categorías "neutrales" como "Otros" funcionen para transferencias
         // que tienen montos positivos (entrada) y negativos (salida).
-        let descriptor = FetchDescriptor<Category>(
+        var descriptor = FetchDescriptor<Category>(
             predicate: #Predicate { category in
                 category.name == trimmedName
             }
         )
+        descriptor.fetchLimit = 1
 
         let fetchedCategories: [Category]
         do {

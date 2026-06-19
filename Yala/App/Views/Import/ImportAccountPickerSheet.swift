@@ -18,9 +18,7 @@ struct ImportAccountPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
+            Group {
                 if accounts.isEmpty {
                     VStack(spacing: DS.Spacing.md) {
                         Text(L10n.Import.noAccountsAvailable)
@@ -55,6 +53,7 @@ struct ImportAccountPickerSheet: View {
                     }
                 }
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Import.selectAccount)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -87,7 +86,7 @@ struct ImportAccountPickerSheet: View {
         HStack(spacing: DS.Spacing.md) {
             RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                 .fill(colorForHex(account.colorHex))
-                .frame(width: 40, height: 40)
+                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
                 .overlay(
                     Image(systemName: displayIconName(for: account))
                         .foregroundStyle(.white)

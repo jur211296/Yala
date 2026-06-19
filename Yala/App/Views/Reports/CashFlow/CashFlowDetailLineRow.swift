@@ -18,6 +18,7 @@ struct CashFlowDetailLineRow: View {
     let onDeleteLine: (() -> Void)?
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         Button {
@@ -96,11 +97,12 @@ struct CashFlowDetailLineRow: View {
     private var amountColumn: some View {
         VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
             // Display amount
-            Text(YalaFormatter.currency(value: displayAmount, currencyCode: currencyCode))
-                .font(DS.Typography.amountSmall)
-                .fontWeight(.semibold)
-                .foregroundStyle(amountColor)
-                .monospacedDigit()
+            AmountText(
+                value: displayAmount,
+                currencyCode: currencyCode,
+                font: DS.Typography.amountSmall.weight(.semibold).monospacedDigit(),
+                tint: .color(amountColor)
+            )
 
             // Progress bar for current month
             if month.isCurrent, let progress = lineResult.progress {
@@ -155,18 +157,16 @@ struct CashFlowDetailLineRow: View {
     // MARK: - Progress Bar
 
     private func progressBar(progress: Double) -> some View {
-        GeometryReader { geo in
-            let clamped = min(1.0, max(0, progress))
-            let barWidth = geo.size.width * clamped
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(DS.Semantic.neutralBackground)
-                    .frame(height: 4)
-                Capsule()
-                    .fill(progress > 1.0 ? Color.hotPink : theme.accent)
-                    .frame(width: max(4, barWidth), height: 4)
-            }
+        let clamped = min(1.0, max(0, progress))
+        return ZStack(alignment: .leading) {
+            Capsule()
+                .fill(DS.Semantic.neutralBackground)
+                .frame(height: DS.Sizing.progressBarHeight)
+            Capsule()
+                .fill(progress > 1.0 ? Color.hotPink : theme.accent)
+                .frame(maxWidth: .infinity, maxHeight: DS.Sizing.progressBarHeight)
+                .scaleEffect(x: max(0.05, clamped), anchor: .leading)
         }
-        .frame(height: 4)
+        .frame(height: DS.Sizing.progressBarHeight)
     }
 }

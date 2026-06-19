@@ -21,6 +21,7 @@ struct TrendsTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
 
     // MARK: - Data (passed from parent)
@@ -31,23 +32,11 @@ struct TrendsTabView: View {
     let tags: [Tag]
     let allTransactions: [TransactionItem]
 
-    // MARK: - Settings
-
-    @AppStorage("showVariations") private var showVariations: Bool = true
-
-    // MARK: - Persistent Sort Order (matches Profile/Accounts view)
-
-    @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
-
-    /// Account names in user-defined order (pipe-separated)
-    private var accountsSortOrderNames: [String] {
-        accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
-    }
-
     /// Sort accounts by user-defined order (from AccountsSettingsListView)
     private func sortedAccountIDs(_ ids: [PersistentIdentifier]) -> [PersistentIdentifier] {
-        let order = accountsSortOrderNames
-        let indexByName = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+        let order = appPreferences.accountsSortOrderNames
+        let indexByName = Dictionary(order.enumerated().map { ($1, $0) },
+                                     uniquingKeysWith: { first, _ in first })
 
         return ids.sorted { id1, id2 in
             let name1 = accounts.first(where: { $0.persistentModelID == id1 })?.name ?? ""
@@ -68,8 +57,8 @@ struct TrendsTabView: View {
     // MARK: - External Dependencies
 
     @Bindable var trendsViewModel: StatisticsViewModel
+    @Bindable var insightsViewModel: InsightsViewModel
     let defaultCurrencyCode: String
-    let onNavigateToRecords: () -> Void
 
     // MARK: - State
 
@@ -97,11 +86,20 @@ struct TrendsTabView: View {
     @State private var previousCashFlowByAccount: [PersistentIdentifier: CashFlowSummary] = [:]
     @State private var previousCashFlowByCurrency: [String: CashFlowSummary] = [:]
 
-    // Trend charts carousel state
-    @State private var trendChartsCarouselPosition: Int = 0
+    @State private var weekdaySpending: [WeekdaySpending] = []
 
     // Custom period picker state
     @State private var showCustomPeriodPicker: Bool = false
+
+    // Debounce task for cashflow + period comparison recalculation.
+    // Coalesces rapid onChange bursts (filter changes, bulk transaction inserts).
+    @State private var recalcTask: Task<Void, Never>?
+
+    // Trend Insight Card (F4)
+    @State private var showUpgradeSheet = false
+    @State private var showInsightsConsentAlert = false
+
+    @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
 
     // MARK: - Cash Flow View Type
 
@@ -133,71 +131,66 @@ struct TrendsTabView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: DS.Spacing.xl) {
-                controlBar
-                trendsHeader
-                trendChartsCarousel
-                cashFlowWidget
-                recentRecordsSection
+            VStack(spacing: DS.Spacing.md) {
+                heroSummary
+                filterBarPanel
+
+                // Hero siempre montado: period menu accesible incluso con 0 tx.
+                if hasNoData {
+                    YalaEmptyState(
+                        icon: "chart.line.uptrend.xyaxis",
+                        title: L10n.Empty.noData
+                    )
+                    .padding(.top, DS.Spacing.xxxxl)
+                } else {
+                    LazyVStack(spacing: DS.Spacing.xl) {
+                        chartsLayout
+                        cashFlowWidget
+                        weekdayChartSection
+                        trendInsightCard            // mueve al final: cierre narrativo
+                    }
+                    .yalaSafeBottomPadding()
+                }
             }
-            .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.sm)
-            .yalaSafeBottomPadding()
         }
+        .scrollViewGlassEdges()
         .onAppear {
+            // Initial computation must be synchronous so the first render shows real data
+            // rather than empty placeholders. Subsequent updates go through the debounce.
             calculateCashFlowData()
             calculatePeriodComparisonData()
+            calculateWeekdayData()
         }
-        .onChange(of: trendsViewModel.detailPeriod) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedAccounts) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedCategories) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedSubcategories) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedTags) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedNeeds) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: trendsViewModel.selectedMetric) {
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: sessionState.comparisonMode) {
-            // Recalculate when comparison mode changes (P-1 vs A-1)
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        .onChange(of: sessionState.selectedTransactionNatures) {
-            // SSOT: trendsViewModel.selectedTransactionNatures IS sessionState.selectedTransactionNatures
-            // Just recalculate when it changes
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
-        // Use count instead of full array to avoid crashes during data wipe
-        // while still detecting when transactions are added/deleted
-        .onChange(of: allTransactions.count) {
-            calculateCashFlowData()
-            calculatePeriodComparisonData()
-        }
+        .onDisappear { recalcTask?.cancel() }
+        .onChange(of: trendsViewModel.detailPeriod)            { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedAccounts)        { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedCategories)      { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedSubcategories)   { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedTags)            { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedNeeds)           { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedCurrencies)      { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.amountCondition)         { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.searchText)              { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.isExcludeMode)           { scheduleTrendsRecalc() }
+        .onChange(of: trendsViewModel.selectedMetric)          { scheduleTrendsRecalc() }
+        .onChange(of: sessionState.comparisonMode)             { scheduleTrendsRecalc() }
+        .onChange(of: sessionState.selectedTransactionNatures) { scheduleTrendsRecalc() }
+        // Use count instead of full array to avoid crashes during data wipe.
+        // Longer debounce (300ms) tolerates bulk inserts (import, draft dedup).
+        .onChange(of: allTransactions.count)                   { scheduleTrendsRecalc(debounceMs: 300) }
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
                 maxDate: transactionDateRange.end,
                 currentRange: sessionState.customDateRange
             )
+        }
+        .sheet(isPresented: $showUpgradeSheet) {
+            UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
+        }
+        .insightsConsentAlert(isPresented: $showInsightsConsentAlert) {
+            Task { await insightsViewModel.triggerAIGeneration() }
         }
     }
 
@@ -209,115 +202,164 @@ struct TrendsTabView: View {
         return (start, end)
     }
 
-    // MARK: - Control Bar
+    // MARK: - Hero Summary (edge-to-edge, paralelo a InsightsTabView)
 
-    private var controlBar: some View {
+    @ViewBuilder
+    private var heroSummary: some View {
+        let summary = insightsViewModel.insightData?.periodSummary
+        let txCount = summary?.transactionCount ?? 0
+        let hasRecords = txCount > 0
+
+        VStack(alignment: .center, spacing: DS.Spacing.xs) {
+            TrendsPeriodMenu(
+                selectedPeriod: trendsViewModel.detailPeriod,
+                customDateRange: sessionState.customDateRange,
+                onSelect: { sessionState.selectedPeriod = $0 },
+                onCustomTapped: { showCustomPeriodPicker = true }
+            )
+            .equatable()
+
+            if hasRecords, let summary {
+                // KPI period-specific (matches Insights hero). Card interno + chart
+                // preservan running balance — el hero refleja el agregado del período.
+                AmountText(
+                    value: heroKPIValue(for: summary),
+                    currencyCode: defaultCurrencyCode,
+                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
+                )
+                .contentTransition(.numericText())
+            }
+
+            if hasRecords, let summary {
+                incomeExpenseChips(summary)
+            }
+
+            if let summary, let text = heroVariationSubtitle(for: summary) {
+                Text(text)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, summaryVerticalPadding)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    /// Subtitle motivacional específico de Trends — describe la variación del
+    /// balance del período (no del metric activo). 4 ramas: onset / stable /
+    /// up / down. `previousPeriodLabel` viene con prefix "vs " hardcoded en
+    /// `PreviousPeriodHelper.formatComparisonText`; lo strippeamos porque las
+    /// keys L10n ya incluyen "vs %@" en su forma natural por idioma.
+    private func heroVariationSubtitle(for summary: PeriodSummary) -> String? {
+        guard summary.transactionCount > 0 else { return nil }
+
+        let prev = strippedComparisonLabel(summary.previousPeriodLabel)
+
+        guard let variation = summary.balanceVariation else {
+            // Sin período previo comparable (`.allTime`, primer mes, etc.).
+            return L10n.Stats.Trends.heroOnset
+        }
+
+        if abs(variation) < 5 {
+            return L10n.Stats.Trends.heroStable
+        }
+
+        let percent = Int(abs(variation).rounded())
+        return variation > 0
+            ? L10n.Stats.Trends.heroVarUp(percent, prev)
+            : L10n.Stats.Trends.heroVarDown(percent, prev)
+    }
+
+    @ViewBuilder
+    private func incomeExpenseChips(_ summary: PeriodSummary) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            if !sessionState.isExpensesOnlyMode {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "arrow.up.right")
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(Color.incomeGraph)
+                        .accessibilityHidden(true)
+                    AmountText(
+                        value: summary.totalIncome,
+                        currencyCode: defaultCurrencyCode,
+                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
+                        tint: .secondary
+                    )
+                    if appPreferences.showVariations {
+                        VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
+                    }
+                }
+            }
+
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: "arrow.down.right")
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(Color.expenseGraph)
+                    .accessibilityHidden(true)
+                AmountText(
+                    value: summary.totalExpense,
+                    currencyCode: defaultCurrencyCode,
+                    font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
+                    tint: .secondary
+                )
+                if appPreferences.showVariations {
+                    VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
+                }
+            }
+        }
+    }
+
+    // MARK: - Filter Bar (panel style)
+
+    private var filterBarPanel: some View {
         FilterControlBar(
-            periodSelector: periodSelector,
+            periodSelector: EmptyView(),
             viewModel: trendsViewModel,
             accounts: accounts,
             categories: categories,
             allSubcategories: allSubcategories,
             tags: tags,
-            animationValue: trendsViewModel.detailPeriod
+            animationValue: trendsViewModel.detailPeriod,
+            panelStyle: true,
+            inlinePeriodSelector: false
         )
     }
 
-    private var periodSelector: some View {
-        TrendsPeriodMenu(
-            selectedPeriod: trendsViewModel.detailPeriod,
-            customDateRange: sessionState.customDateRange,
-            onSelect: { period in
-                sessionState.selectedPeriod = period
-            },
-            onCustomTapped: {
-                showCustomPeriodPicker = true
-            }
-        )
-        .equatable()
+    // MARK: - Empty Gating
+
+    /// Empty tab cuando no hay data en ninguna sub-sección (incluye cashFlow para
+    /// no mostrar empty si solo hay flujo de efectivo agregado).
+    private var hasNoData: Bool {
+        !hasTrendData
+            && !weekdaySpending.contains(where: { $0.average > 0 })
+            && cashFlowSummary == nil
     }
 
-    // MARK: - Trends Header
-
-    /// Header with title "Tendencias", metric selector (balance/ing/gas), and comparison mode selector (P-1/A-1)
-    /// Placed outside carousel, similar to CategoriesTabView
-    private var trendsHeader: some View {
-        HStack {
-            Text(L10n.Trend.title)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-
-            InfoHintButton(
-                title: L10n.Trend.title,
-                message: L10n.Widget.Hint.trend
-            )
-
-            Spacer()
-
-            // Metric selector (hidden in expenses-only mode)
-            if !sessionState.isExpensesOnlyMode {
-                metricSelector
-            }
-
-            // Comparison mode selector (hidden when showVariations is OFF or for periods where only one mode makes sense)
-            if showVariations && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod) {
-                ComparisonModeSelector()
-            }
-        }
-    }
-
-    // MARK: - Trend Charts Carousel
+    // MARK: - Charts Layout (preserva iPad wide side-by-side)
 
     @ViewBuilder
-    private var trendChartsCarousel: some View {
+    private var chartsLayout: some View {
         let isWide = DS.Adaptive.isWideScreen(sizeClass)
-        let hasTwoCharts = showVariations && trendsViewModel.detailPeriod != .allTime
+        let hasComparison = appPreferences.showVariations
+            && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod)
 
-        VStack(spacing: DS.Spacing.md) {
-            if isWide && hasTwoCharts {
-                // iPad: show both charts side by side
-                HStack(alignment: .top, spacing: DS.Spacing.lg) {
-                    chartCard
-                        .frame(maxWidth: .infinity)
-                    periodComparisonCard
-                        .frame(maxWidth: .infinity)
-                }
-                .frame(height: 330)
-            } else {
-                // iPhone or single chart: paging TabView
-                TabView(selection: $trendChartsCarouselPosition) {
-                    chartCard
-                        .tag(0)
-
-                    if hasTwoCharts {
-                        periodComparisonCard
-                            .tag(1)
-                    }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(height: 330)
-
-                // Page indicators - only on compact with 2 pages
-                if hasTwoCharts {
-                    HStack(spacing: DS.Spacing.sm) {
-                        ForEach(0..<2, id: \.self) { index in
-                            Circle()
-                                .fill(
-                                    trendChartsCarouselPosition == index
-                                        ? theme.primaryText : theme.secondaryText.opacity(0.3)
-                                )
-                                .frame(width: 6, height: 6)
-                                .animation(
-                                    .easeInOut(duration: 0.2), value: trendChartsCarouselPosition)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                }
+        if isWide && hasComparison {
+            HStack(alignment: .top, spacing: DS.Spacing.lg) {
+                trendChartSection.frame(maxWidth: .infinity)
+                comparisonChartSection.frame(maxWidth: .infinity)
+            }
+        } else {
+            trendChartSection
+            if hasComparison {
+                comparisonChartSection
             }
         }
     }
 
-    /// Check if there's no trend data to display
+    /// Check if there's trend data to display
     private var hasTrendData: Bool {
         !trendsViewModel.trendPoints.isEmpty
     }
@@ -327,39 +369,91 @@ struct TrendsTabView: View {
         !currentPeriodPoints.isEmpty
     }
 
-    private var chartCard: some View {
+    // MARK: - Trend Chart Section (title + metric selector afuera; header interno simétrico a Comparativa)
+
+    @ViewBuilder
+    private var trendChartSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(L10n.Trend.title)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                if !sessionState.isExpensesOnlyMode {
+                    metricSelector
+                }
+            }
+
+            chartCardBody
+                .panelCard()
+        }
+    }
+
+    @ViewBuilder
+    private var chartCardBody: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            // Header with variation chip (only show full header when there's data)
-            if hasTrendData {
-                HStack(alignment: .top) {
-                    chartHeader
+            // Header interno simétrico a comparisonChartBody:
+            //   left: trendType.displayName + KPI(.headline) + "vs S/ X" inline
+            //   right: VariationChip(.medium) + "vs Abr 26" caption
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(trendsViewModel.selectedMetric.displayName)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.thPrimaryText)
 
-                    Spacer()
+                        WidgetInfoButton(kind: .trend)
+                    }
 
-                    // Variation chip with "vs period" text below (hidden for All Time or when showVariations is OFF)
-                    if showVariations && trendsViewModel.detailPeriod != .allTime {
-                        VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                            VariationChip(
-                                currentAmount: currentPeriodTotal,
-                                previousAmount: previousPeriodTotal,
-                                size: .medium,
-                                showNAWhenNil: true,
-                                isExpenseContext: trendsViewModel.selectedMetric == .expense
+                    if hasTrendData {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                            AmountText(
+                                value: currentKPIValue,
+                                currencyCode: defaultCurrencyCode,
+                                font: DS.Typography.headline
                             )
 
-                            Text(comparisonPeriodText)
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.thSecondaryText)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
+                            if appPreferences.showVariations
+                                && trendsViewModel.detailPeriod != .allTime,
+                               let prevTotal = previousPeriodTotal {
+                                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+                                    Text(L10n.Common.vs)
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(.thSecondaryText)
+                                    AmountText(
+                                        value: prevTotal,
+                                        currencyCode: defaultCurrencyCode,
+                                        font: DS.Typography.caption,
+                                        tint: .secondary
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            } else {
-                // Simple title when no data
-                Text(chartTitle)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thPrimaryText)
+
+                Spacer()
+
+                if hasTrendData,
+                   appPreferences.showVariations
+                    && trendsViewModel.detailPeriod != .allTime {
+                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                        VariationChip(
+                            currentAmount: currentPeriodTotal,
+                            previousAmount: previousPeriodTotal,
+                            size: .medium,
+                            showNAWhenNil: true,
+                            isExpenseContext: trendsViewModel.selectedMetric == .expense
+                        )
+
+                        Text(comparisonPeriodText)
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.thSecondaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
             }
 
             if hasTrendData {
@@ -373,32 +467,17 @@ struct TrendsTabView: View {
                     trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
                     focusedDate: $trendsViewModel.focusedDate,
                     period: trendsViewModel.detailPeriod,
-                    chartHeight: 220
+                    chartHeight: 170,
+                    liveAnchor: trendsViewModel.trendLiveAnchor,
+                    liveAnchorBreakdown: trendsViewModel.trendLiveAnchorBreakdown
                 )
-                .padding(.top, DS.Spacing.sm)
             } else {
-                trendEmptyState
+                chartEmptyState
             }
         }
-        .padding(DS.Card.padding)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
-    private var trendEmptyState: some View {
-        YalaEmptyState(
-            icon: "chart.line.uptrend.xyaxis",
-            title: L10n.Empty.noData
-        )
-        .frame(height: 220)
-    }
-
-    private var comparisonEmptyState: some View {
+    private var chartEmptyState: some View {
         YalaEmptyState(
             icon: "chart.line.uptrend.xyaxis",
             title: L10n.Empty.noData
@@ -416,38 +495,66 @@ struct TrendsTabView: View {
         }
     }
 
-    private var periodComparisonCard: some View {
+    // MARK: - Comparison Chart Section (title afuera + M/A derecha + .panelCard)
+
+    @ViewBuilder
+    private var comparisonChartSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // Title FUERA del card + M/A selector a la derecha
+            HStack {
+                Text(L10n.Stats.Trends.comparisonTitle)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                ComparisonModeSelector()
+            }
+
+            comparisonChartBody
+                .panelCard()
+        }
+    }
+
+    @ViewBuilder
+    private var comparisonChartBody: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            // Header with KPI and variation chip (only show full header when there's data)
             if hasComparisonData {
+                // Header interno: KPI value left + variation chip top-right
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        Text(periodComparisonTitle)
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.thPrimaryText)
-
-                        // KPI value with "vs" previous
-                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                            Text(currentKPIValue)
-                                .font(DS.Typography.headline)
+                        // Subtítulo principal (simetría con trendChartBody "Saldo/Ingresos/Gastos")
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text(periodComparisonTitle)
+                                .font(DS.Typography.subheadlineEmphasized)
                                 .foregroundStyle(.thPrimaryText)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
+
+                            WidgetInfoButton(kind: .periodComparison)
+                        }
+
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                            AmountText(
+                                value: currentKPIValue,
+                                currencyCode: defaultCurrencyCode,
+                                font: DS.Typography.headline
+                            )
 
                             if let prevTotal = previousPeriodTotal {
-                                Text("vs \(YalaFormatter.number(value: prevTotal))")
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(.thSecondaryText)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.7)
+                                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+                                    Text(L10n.Common.vs)
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(.thSecondaryText)
+                                    AmountText(
+                                        value: prevTotal,
+                                        currencyCode: defaultCurrencyCode,
+                                        font: DS.Typography.caption,
+                                        tint: .secondary
+                                    )
+                                }
                             }
                         }
-                        .padding(.top, DS.Spacing.xs)
                     }
 
                     Spacer()
 
-                    // Variation chip with "vs period" text below
                     VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                         VariationChip(
                             currentAmount: currentPeriodTotal,
@@ -463,16 +570,9 @@ struct TrendsTabView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
+                    .accessibilityElement(children: .combine)
                 }
-            } else {
-                // Simple title when no data
-                Text(periodComparisonTitle)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thPrimaryText)
-            }
 
-            // Chart or empty state
-            if hasComparisonData {
                 PeriodComparisonChartView(
                     currentPeriodPoints: currentPeriodPoints,
                     previousPeriodPoints: previousPeriodPoints,
@@ -486,23 +586,15 @@ struct TrendsTabView: View {
                     ),
                     currencyCode: defaultCurrencyCode,
                     trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
-                    chartHeight: 220,
+                    chartHeight: 170,
                     period: trendsViewModel.detailPeriod,
                     comparisonMode: sessionState.comparisonMode
                 )
                 .padding(.top, DS.Spacing.sm)
             } else {
-                comparisonEmptyState
+                chartEmptyState
             }
         }
-        .padding(DS.Card.padding)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
     /// Short comparison period text (e.g., "vs Nov 25") for display below chips
@@ -520,34 +612,6 @@ struct TrendsTabView: View {
             period: trendsViewModel.detailPeriod,
             mode: sessionState.comparisonMode
         )
-    }
-
-    private var chartHeader: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            Text(chartTitle)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thPrimaryText)
-
-            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                Text(currentKPIValue)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thPrimaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                // Show previous period value for comparison (hidden for All Time or when showVariations is OFF)
-                if showVariations && trendsViewModel.detailPeriod != .allTime,
-                   let prevTotal = previousPeriodTotal {
-                    Text("vs \(YalaFormatter.number(value: prevTotal))")
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.thSecondaryText)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-            }
-            .padding(.top, DS.Spacing.xs)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// Check if any category/subcategory/need filters are active
@@ -622,37 +686,250 @@ struct TrendsTabView: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    // MARK: - Cash Flow Widget
+    // MARK: - Trend Insight Card (protagonista única, rule-based Free + AI Pro)
+
+    private var isProUser: Bool {
+        FeatureGateService.shared.canAccess(.smartInsightsAI)
+    }
+
+    @ViewBuilder
+    private var trendInsightCard: some View {
+        let txCount = insightsViewModel.insightData?.periodSummary.transactionCount ?? 0
+
+        // Gate: solo aparece con >= 5 tx en período actual
+        if txCount >= 5 {
+            if isProUser {
+                proTrendInsightCard
+            } else {
+                freeTrendInsightCard
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var freeTrendInsightCard: some View {
+        let finding = TrendInsightLogic.finding(
+            metric: trendsViewModel.selectedMetric,
+            currentTotal: currentPeriodTotal,
+            previousTotal: previousPeriodTotal
+        )
+
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(theme.accent)
+                    .accessibilityHidden(true)
+                Text(L10n.Stats.Trends.insightTitleFree(periodDisplayName))
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+            }
+
+            Text(findingText(finding))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(3)
+
+            Button {
+                showUpgradeSheet = true
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "sparkles")
+                        .font(DS.Typography.caption)
+                    Text(L10n.Stats.Trends.refineWithAI)
+                        .font(DS.Typography.caption)
+                }
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .background(theme.accent.opacity(0.12))
+                .foregroundStyle(theme.accent)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard()
+    }
+
+    @ViewBuilder
+    private var proTrendInsightCard: some View {
+        if insightsViewModel.aiActivated {
+            if insightsViewModel.isLoadingAI {
+                AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+            } else if let aiHero = insightsViewModel.aiInsights?.heroText {
+                proAIInsightCard(aiHero: aiHero)
+            } else if let error = insightsViewModel.aiError {
+                AIInsightCardComponents.errorCard(error)
+            }
+        } else {
+            proPreAIInsightCard
+        }
+    }
+
+    /// Header consistente entre pre-AI y post-AI (sparkles + "Análisis del período").
+    @ViewBuilder
+    private var proInsightHeader: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "sparkles")
+                .font(DS.Typography.body)
+                .foregroundStyle(theme.accent)
+                .accessibilityHidden(true)
+            Text(L10n.Stats.Trends.insightTitlePro)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.primary)
+        }
+    }
+
+    @ViewBuilder
+    private func proAIInsightCard(aiHero: String) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            proInsightHeader
+
+            Text(AIInsightCardComponents.markdownAttributed(aiHero))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Footer balanceado: tag identitario izquierda + chip "Regenerar" derecha.
+            HStack {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "sparkles")
+                        .font(DS.Typography.captionSmall)
+                    Text(L10n.Stats.Trends.aiFootnote)
+                        .font(DS.Typography.captionSmall)
+                }
+                .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button {
+                    Task { await insightsViewModel.triggerAIGeneration() }
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(DS.Typography.caption)
+                        Text(L10n.Stats.Trends.regenerate)
+                            .font(DS.Typography.caption)
+                    }
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(theme.accent.opacity(0.12))
+                    .foregroundStyle(theme.accent)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard()
+    }
+
+    @ViewBuilder
+    private var proPreAIInsightCard: some View {
+        let finding = TrendInsightLogic.finding(
+            metric: trendsViewModel.selectedMetric,
+            currentTotal: currentPeriodTotal,
+            previousTotal: previousPeriodTotal
+        )
+
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            proInsightHeader
+
+            Text(findingText(finding))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(3)
+
+            Button {
+                if appPreferences.aiInsightsConsentAccepted {
+                    Task { await insightsViewModel.triggerAIGeneration() }
+                } else {
+                    showInsightsConsentAlert = true
+                }
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "sparkles")
+                        .font(DS.Typography.caption)
+                    Text(L10n.Stats.Trends.generateAI)
+                        .font(DS.Typography.caption)
+                }
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .background(theme.accent.opacity(0.12))
+                .foregroundStyle(theme.accent)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard()
+    }
+
+    /// Mapea TrendInsightFinding → string localizado. La localización vive en el
+    /// callsite (helper pure-logic L10n-free).
+    private func findingText(_ finding: TrendInsightFinding) -> String {
+        let prev = strippedComparisonLabel(comparisonPeriodText)
+        let period = periodDisplayName
+
+        switch finding {
+        case .onset:
+            return L10n.Stats.Trends.Insight.onset(period)
+        case .variationUp(let percent, let metric):
+            switch metric {
+            case .expense: return L10n.Stats.Trends.Insight.varUpExpense(percent, prev)
+            case .income:  return L10n.Stats.Trends.Insight.varUpIncome(percent, prev)
+            case .balance: return L10n.Stats.Trends.Insight.varUpBalance(percent, prev)
+            }
+        case .variationDown(let percent, let metric):
+            switch metric {
+            case .expense: return L10n.Stats.Trends.Insight.varDownExpense(percent, prev)
+            case .income:  return L10n.Stats.Trends.Insight.varDownIncome(percent, prev)
+            case .balance: return L10n.Stats.Trends.Insight.varDownBalance(percent, prev)
+            }
+        case .stable(let metric):
+            switch metric {
+            case .expense: return L10n.Stats.Trends.Insight.stableExpense
+            case .income:  return L10n.Stats.Trends.Insight.stableIncome
+            case .balance: return L10n.Stats.Trends.Insight.stableBalance
+            }
+        }
+    }
+
+    private var periodDisplayName: String {
+        trendsViewModel.detailPeriod.displayName
+    }
+
+    /// Strip "vs " hardcoded por `PreviousPeriodHelper.formatComparisonText` —
+    /// las keys L10n ya escriben "vs %@" en su forma natural por idioma (JA/ZH
+    /// reordenan posicional). El strip evita "vs vs".
+    private func strippedComparisonLabel(_ label: String) -> String {
+        label.hasPrefix("vs ") ? String(label.dropFirst(3)) : label
+    }
+
+    // MARK: - Cash Flow Widget (title + selector afuera, widget interno preserva su card)
 
     @ViewBuilder
     private var cashFlowWidget: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            // Header with selector
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
                 Text(L10n.CashFlow.title)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
 
-                InfoHintButton(
-                    title: L10n.WidgetType.cashFlow,
-                    message: L10n.Widget.Hint.cashFlow
-                )
-
                 Spacer()
 
                 cashFlowViewSelector
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.top, DS.Spacing.lg)
 
-            // Content based on view type
+            // Contenido NO envuelto — CashFlowWidget interno ya tiene su .solidCard(radius: DS.Panel.widgetRadius)
             switch cashFlowViewType {
             case .total:
                 if let summary = cashFlowSummary {
                     cashFlowCard(
                         summary: summary,
                         previousSummary: previousCashFlowSummary,
-                        title: "Total",
+                        title: L10n.CashFlowViewType.total,
                         currencyCode: defaultCurrencyCode
                     )
                 } else {
@@ -682,13 +959,7 @@ struct TrendsTabView: View {
             title: L10n.Empty.noData
         )
         .frame(height: 200)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .solidCard()
     }
 
     private var cashFlowViewSelector: some View {
@@ -874,9 +1145,9 @@ struct TrendsTabView: View {
         title: String,
         currencyCode: String
     ) -> some View {
-        // Calculate previous total based on selected metric (only when showVariations is ON)
+        // Calculate previous total based on selected metric (only when appPreferences.showVariations is ON)
         let previousTotal: Double? = {
-            guard showVariations else { return nil }
+            guard appPreferences.showVariations else { return nil }
             guard trendsViewModel.detailPeriod != .allTime else { return nil }
             guard let prev = previousSummary else { return nil }
             switch trendsViewModel.selectedMetric {
@@ -897,20 +1168,11 @@ struct TrendsTabView: View {
             interval: trendsViewModel.panelDateInterval,
             onShowDetail: nil,
             customTitle: title,
-            displayMode: convertMetricToTrendType(trendsViewModel.selectedMetric),
+            displayMode: mapMetricToTrendType(trendsViewModel.selectedMetric),
             previousAmount: previousTotal,
-            comparisonPeriodText: showVariations && trendsViewModel.detailPeriod != .allTime ? comparisonPeriodText : nil,
-            showInfoHint: false
+            comparisonPeriodText: appPreferences.showVariations && trendsViewModel.detailPeriod != .allTime ? comparisonPeriodText : nil,
+            headerInfoButton: AnyView(WidgetInfoButton(kind: .cashFlow))
         )
-    }
-
-    /// Convert TrendMetric (Statistics) to TrendType (Panel) for CashFlowWidget compatibility
-    private func convertMetricToTrendType(_ metric: TrendMetric) -> TrendType {
-        switch metric {
-        case .balance: return .balance
-        case .income: return .income
-        case .expense: return .expense
-        }
     }
 
     /// Determine grouping for cash flow widget based on selected period
@@ -926,93 +1188,41 @@ struct TrendsTabView: View {
         }
     }
 
-    // MARK: - Recent Records Section
-
-    private var recentRecordsSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text(L10n.Statistics.latestRecords)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thPrimaryText)
-
-            if trendsViewModel.recentRecords.isEmpty {
-                emptyRecordsState
-            } else {
-                ForEach(trendsViewModel.recentRecords.prefix(5), id: \.persistentModelID) {
-                    record in
-                    CompactRecordRow(record: record, currencyCode: defaultCurrencyCode)
-                }
-            }
-
-            Button {
-                onNavigateToRecords()
-            } label: {
-                HStack {
-                    Spacer()
-                    Text(L10n.Action.viewAll)
-                        .font(DS.Typography.headline)
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.caption)
-                    Spacer()
-                }
-                .padding(.vertical, DS.Spacing.md)
-                .foregroundStyle(theme.accent)
-                .background(theme.accent.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(DS.Card.padding)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-    }
-
-    private var emptyRecordsState: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(DS.Typography.title)
-                .foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
-            Text(L10n.Records.noRecords)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, DS.Spacing.xl)
-    }
-
     // MARK: - Helpers
 
-    private var currentKPIValue: String {
+    /// KPI period-specific para el hero (matches `InsightsTabView.heroSummary`).
+    /// Distinto de `currentKPIValue` que para `.balance` retorna el running balance
+    /// final del chart (global, no responde al período). El hero usa el agregado del
+    /// período para coherencia cross-tab y para que el largeTitle responda al filtro.
+    private func heroKPIValue(for summary: PeriodSummary) -> Double {
+        switch trendsViewModel.selectedMetric {
+        case .balance: return summary.netBalance
+        case .income:  return summary.totalIncome
+        case .expense: return summary.totalExpense
+        }
+    }
+
+    private var currentKPIValue: Double {
         // When scrubbing the chart, show the hovered point value (use RAW points)
         if let focusedDate = trendsViewModel.focusedDate,
             let point = trendsViewModel.rawTrendPoints.first(where: {
                 Calendar.current.isDate($0.date, inSameDayAs: focusedDate)
             })
         {
-            return YalaFormatter.currency(value: point.value, currencyCode: defaultCurrencyCode)
+            return point.value
         }
 
         // Otherwise, show metric-specific KPI
-        let value: Double
         switch trendsViewModel.selectedMetric {
         case .balance:
             // Balance: show the last RAW chart point value (actual end balance, not smoothed)
-            value = trendsViewModel.rawTrendPoints.last?.value ?? 0
+            return trendsViewModel.rawTrendPoints.last?.value ?? 0
         case .income:
             // Income: show TOTAL income for the period
-            value = trendsViewModel.totalIncome
+            return trendsViewModel.totalIncome
         case .expense:
             // Expense: show TOTAL expense for the period
-            value = trendsViewModel.totalExpense
-        }
-        return YalaFormatter.currency(value: value, currencyCode: defaultCurrencyCode)
-    }
-
-    private var chartTitle: String {
-        switch trendsViewModel.selectedMetric {
-        case .balance: return L10n.Trend.balanceTitle
-        case .income: return L10n.Trend.incomeTitle
-        case .expense: return L10n.Trend.expenseTitle
+            return trendsViewModel.totalExpense
         }
     }
 
@@ -1024,7 +1234,153 @@ struct TrendsTabView: View {
         }
     }
 
-    // MARK: - Chip Text Helpers
+    // MARK: - Debounced Recalculation
+
+    /// Debounces `calculateCashFlowData` + `calculatePeriodComparisonData` so rapid onChange
+    /// bursts (filter changes, bulk transaction inserts) collapse into a single pass.
+    /// Default 200ms for filter changes; use 300ms for `allTransactions.count` to tolerate imports.
+    private func scheduleTrendsRecalc(debounceMs: Int = 200) {
+        recalcTask?.cancel()
+        recalcTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(debounceMs)) } catch { return }
+            guard !Task.isCancelled else { return }
+            calculateCashFlowData()
+            calculatePeriodComparisonData()
+            calculateWeekdayData()
+        }
+    }
+
+    // MARK: - Weekday Spending Calculation
+
+    /// Calcula el promedio de gasto por día de la semana respetando los filtros activos.
+    /// Reusa el patrón de `calculateCashFlowData` (mismo intervalo + criteria).
+    private func calculateWeekdayData() {
+        guard !allTransactions.isEmpty else {
+            weekdaySpending = []
+            return
+        }
+
+        let baseInterval = trendsViewModel.panelDateInterval
+        let effectiveInterval: DateInterval = {
+            guard trendsViewModel.detailPeriod == .allTime else { return baseInterval }
+            let dates = allTransactions.map(\.date)
+            guard let first = dates.min(), let last = dates.max() else { return baseInterval }
+            let calendar = Calendar.current
+            let start = calendar.startOfDay(for: first)
+            let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: last)) ?? last
+            return DateInterval(start: start, end: end)
+        }()
+
+        var criteria = FilterCriteria(
+            selectedAccounts: trendsViewModel.selectedAccounts,
+            selectedCategories: trendsViewModel.selectedCategories,
+            selectedSubcategories: trendsViewModel.selectedSubcategories,
+            selectedTags: trendsViewModel.selectedTags,
+            selectedNeeds: trendsViewModel.selectedNeeds,
+            selectedCurrencies: trendsViewModel.selectedCurrencies,
+            isExcludeMode: trendsViewModel.isExcludeMode,
+            transactionTypeFilter: .all,
+            amountCondition: trendsViewModel.amountCondition,
+            searchText: trendsViewModel.searchText,
+            dateInterval: effectiveInterval
+        )
+        criteria.populateTagUUIDs(
+            from: tags.filter { criteria.selectedTags.contains($0.persistentModelID) }
+        )
+
+        let filtered = FilterService.filterForTrends(
+            transactions: allTransactions,
+            accounts: accounts,
+            criteria: criteria
+        )
+
+        let result = WeekdaySpendingCalculator.calculate(
+            transactions: filtered,
+            interval: effectiveInterval,
+            currencyCode: defaultCurrencyCode
+        )
+        if result != weekdaySpending { weekdaySpending = result }
+    }
+
+    // MARK: - Weekday Chart Section (title afuera + header interno con KPI estilo Panel-Small)
+
+    @ViewBuilder
+    private var weekdayChartSection: some View {
+        if weekdaySpending.contains(where: { $0.average > 0 }) {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                // Title de sección FUERA del card (consistencia con Tendencias/Comparativa)
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(L10n.Insights.weekdayAverage)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                }
+
+                weekdayCardBody
+                    .panelCard()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var weekdayCardBody: some View {
+        // Promedio semanal = suma de averages por día (mismo cálculo que Panel small).
+        let weeklyAverage = weekdaySpending.reduce(0) { $0 + $1.average }
+        let topDay = weekdaySpending.filter { $0.average > 0 }.max(by: { $0.average < $1.average })
+
+        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+            // Header interno simétrico a Trend + Comparativa
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(L10n.Panel.WeekdayBar.smallTitle)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.thPrimaryText)
+
+                        WidgetInfoButton(kind: .weekdayBar)
+                    }
+
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                        AmountText(
+                            value: weeklyAverage,
+                            currencyCode: defaultCurrencyCode,
+                            font: DS.Typography.headline, secondaryFont: DS.Typography.caption
+                        )
+                        Text(L10n.Panel.WeekdayBar.perWeekSuffix)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.thSecondaryText)
+                    }
+                }
+
+                Spacer()
+
+                // Día pico top-right como info secundaria (paralelo a VariationChip+caption)
+                if let top = topDay {
+                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                        Text(top.weekdayLongName.capitalized)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.thPrimaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                        AmountText(
+                            value: top.average,
+                            currencyCode: defaultCurrencyCode,
+                            font: DS.Typography.caption, secondaryFont: DS.Typography.captionSmall,
+                            tint: .secondary
+                        )
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(L10n.Panel.WeekdayBar.smallTitle): \(top.weekdayLongName.capitalized)")
+                }
+            }
+
+            WeekdayBarChart(
+                data: weekdaySpending,
+                currencyCode: defaultCurrencyCode,
+                chartHeight: 140
+            )
+        }
+    }
 
     // MARK: - Cash Flow Data Calculation
 
@@ -1058,7 +1414,7 @@ struct TrendsTabView: View {
         let interval = effectiveInterval
 
         // Build filter criteria
-        let criteria = FilterCriteria(
+        var criteria = FilterCriteria(
             selectedAccounts: trendsViewModel.selectedAccounts,
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
@@ -1070,6 +1426,9 @@ struct TrendsTabView: View {
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: interval
+        )
+        criteria.populateTagUUIDs(
+            from: tags.filter { criteria.selectedTags.contains($0.persistentModelID) }
         )
 
         // Filter transactions (reuse fetchedTransactions from above)
@@ -1141,7 +1500,7 @@ struct TrendsTabView: View {
         )
 
         // Build filter criteria for previous period (same filters as current period)
-        let previousCriteria = FilterCriteria(
+        var previousCriteria = FilterCriteria(
             selectedAccounts: trendsViewModel.selectedAccounts,
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
@@ -1153,6 +1512,9 @@ struct TrendsTabView: View {
             amountCondition: trendsViewModel.amountCondition,
             searchText: trendsViewModel.searchText,
             dateInterval: previousInterval
+        )
+        previousCriteria.populateTagUUIDs(
+            from: tags.filter { previousCriteria.selectedTags.contains($0.persistentModelID) }
         )
 
         // Filter transactions for previous period
@@ -1235,7 +1597,7 @@ struct TrendsTabView: View {
         let isBalanceMetric = trendsViewModel.selectedMetric == .balance
 
         // Base criteria WITHOUT date interval (for balance) or WITH date interval (for income/expense)
-        let baseCriteria = FilterCriteria(
+        var baseCriteria = FilterCriteria(
             selectedAccounts: trendsViewModel.selectedAccounts,
             selectedCategories: trendsViewModel.selectedCategories,
             selectedSubcategories: trendsViewModel.selectedSubcategories,
@@ -1248,6 +1610,9 @@ struct TrendsTabView: View {
             searchText: trendsViewModel.searchText,
             dateInterval: isBalanceMetric ? nil : currentInterval
         )
+        baseCriteria.populateTagUUIDs(
+            from: tags.filter { baseCriteria.selectedTags.contains($0.persistentModelID) }
+        )
 
         // For balance: filter by account/category but NOT by date, pass ALL transactions
         // For income/expense: filter by date too
@@ -1257,16 +1622,26 @@ struct TrendsTabView: View {
             criteria: baseCriteria
         )
 
+        // Override solo en current; previous siempre histórico.
+        let trendType = mapMetricToTrendType(trendsViewModel.selectedMetric)
+        let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
+            for: trendType,
+            interval: currentInterval,
+            accounts: eligibleAccounts,
+            transactions: allTransactions,
+            preferredCurrencyCode: defaultCurrencyCode
+        )
+
         // Calculate current period data
         let currentResult = TrendDataProcessor.processTrendData(
             transactions: filteredTransactions,
             accounts: eligibleAccounts,
-            metric: convertMetricToTrendType(trendsViewModel.selectedMetric),
+            metric: trendType,
             period: trendsViewModel.detailPeriod,
             grouping: .day,
             interval: currentInterval,
             currencyCode: defaultCurrencyCode,
-
+            liveBalanceOverride: liveBalanceOverride
         )
 
         // For previous period with income/expense, we need separate filtering
@@ -1276,7 +1651,7 @@ struct TrendsTabView: View {
             previousFiltered = filteredTransactions
         } else {
             // Filter for previous period date range
-            let previousCriteria = FilterCriteria(
+            var previousCriteria = FilterCriteria(
                 selectedAccounts: trendsViewModel.selectedAccounts,
                 selectedCategories: trendsViewModel.selectedCategories,
                 selectedSubcategories: trendsViewModel.selectedSubcategories,
@@ -1289,6 +1664,9 @@ struct TrendsTabView: View {
                 searchText: trendsViewModel.searchText,
                 dateInterval: previousInterval
             )
+            previousCriteria.populateTagUUIDs(
+                from: tags.filter { previousCriteria.selectedTags.contains($0.persistentModelID) }
+            )
             previousFiltered = FilterService.filterForTrends(
                 transactions: allTransactions,
                 accounts: accounts,
@@ -1296,16 +1674,15 @@ struct TrendsTabView: View {
             )
         }
 
-        // Calculate previous period data
+        // Calculate previous period data — siempre histórico, sin override.
         let previousResult = TrendDataProcessor.processTrendData(
             transactions: previousFiltered,
             accounts: eligibleAccounts,
-            metric: convertMetricToTrendType(trendsViewModel.selectedMetric),
+            metric: trendType,
             period: trendsViewModel.detailPeriod,
             grouping: .day,
             interval: previousInterval,
-            currencyCode: defaultCurrencyCode,
-
+            currencyCode: defaultCurrencyCode
         )
 
         // Update state with equality guards
@@ -1330,145 +1707,4 @@ struct TrendsTabView: View {
         }
     }
 
-}
-
-// MARK: - Compact Record Row
-
-/// Compact record row matching RecentRecordsWidget layout exactly
-struct CompactRecordRow: View {
-    let record: TransactionItem
-    let currencyCode: String
-
-    var body: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            // Icon
-            subcategoryIcon(size: 36)
-
-            // Left column: Note/Category and Date
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                // Line 1: Note (bold) or Subcategory as fallback
-                if let note = record.note, !note.isEmpty {
-                    Text(note)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    // Line 2: Subcategory • Date
-                    Text(secondaryLine)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                } else {
-                    Text(record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    // Date as secondary
-                    Text(shortDateFormat)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            }
-
-            Spacer()
-
-            // Right column: Amount + Nature
-            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                Text(formattedAmount)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(amountColor)
-
-                // Nature indicator (if available)
-                if let subcategory = record.subcategory {
-                    needIndicator(for: subcategory.need)
-                }
-            }
-        }
-    }
-
-    // MARK: - Nature Indicator
-
-    private func needIndicator(for need: SubcategoryNeed) -> some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Circle()
-                .fill(need.color)
-                .frame(width: 6, height: 6)
-
-            Text(need.displayName)
-                .font(DS.Typography.labelTiny)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, DS.Spacing.xs)
-        .padding(.vertical, DS.Spacing.xxs)
-        .background(
-            Capsule()
-                .fill(need.color.opacity(0.1))
-        )
-    }
-
-    // MARK: - Subcategory Icon
-
-    private func subcategoryIcon(size iconSize: CGFloat) -> some View {
-        let colorHex =
-            record.subcategory?.colorHex
-            ?? record.category?.colorHex
-            ?? AppConstants.defaultColorHex
-
-        let iconName =
-            record.subcategory?.iconName
-            ?? record.category?.iconName
-            ?? "tag.fill"
-
-        return ZStack {
-            Circle()
-                .fill(Color(hex: colorHex))
-                .frame(width: iconSize, height: iconSize)
-
-            Image(systemName: iconName)
-                .font(.system(size: iconSize * 0.4)) // A11Y-DT: fixed size — icon from caller parameter
-                .foregroundStyle(.white)
-        }
-    }
-
-    // MARK: - Helpers
-
-    private var secondaryLine: String {
-        var parts: [String] = []
-
-        // Show subcategory/category
-        if record.note != nil && !(record.note?.isEmpty ?? true) {
-            if let subcategory = record.subcategory {
-                parts.append(subcategory.name)
-            } else if let category = record.category {
-                parts.append(category.name)
-            }
-        }
-
-        // Then date
-        parts.append(shortDateFormat)
-
-        return parts.joined(separator: " • ")
-    }
-
-    private var amountColor: Color {
-        let isIncome = record.category?.isIncome ?? (record.amount >= 0)
-        return isIncome ? Color.electricIndigo : Color.hotPink
-    }
-
-    private static let shortDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale.current
-        formatter.dateFormat = "d MMM"
-        return formatter
-    }()
-
-    private var shortDateFormat: String {
-        Self.shortDateFormatter.string(from: record.date).replacing(".", with: "")
-    }
-
-    private var formattedAmount: String {
-        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
-    }
 }

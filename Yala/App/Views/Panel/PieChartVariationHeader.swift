@@ -15,7 +15,7 @@ struct PieChartVariationHeader: View {
 
     // MARK: - Settings
 
-    @AppStorage("showVariations") private var showVariations: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Properties
 
@@ -26,8 +26,14 @@ struct PieChartVariationHeader: View {
     let period: DetailPeriod
     let customRange: DateInterval?
     let comparisonMode: ComparisonMode
+    var variationDisplay: VariationDisplayConfig = .full
 
     var onShowDetail: (() -> Void)?
+
+    /// Slot opcional renderizado inline a la derecha del `Text(title)`.
+    /// Permite inyectar el botón pedagógico (`WidgetHeaderInfoSlot`) al lado
+    /// del título sin envolver el componente entero en otro HStack.
+    var titleAccessory: AnyView? = nil
 
     // MARK: - Computed Properties
 
@@ -53,26 +59,38 @@ struct PieChartVariationHeader: View {
         HStack(alignment: .top) {
             // Left: Title and Amount
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(title)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-                    .padding(.bottom, DS.Spacing.xxs)
-
-                // KPI with "vs previous amount"
                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                    Text(formattedCurrency(totalAmount))
-                        .font(DS.Typography.headline)
+                    Text(title)
+                        .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                    if let titleAccessory {
+                        titleAccessory
+                    }
+                }
+                .padding(.bottom, DS.Spacing.xxs)
+
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                    AmountText(
+                        value: totalAmount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.headline
+                    )
 
                     // Show previous period value for comparison (only when showVariations is ON)
-                    if showVariations, let prevAmount = previousAmount {
-                        Text("vs \(YalaFormatter.number(value: prevAmount))")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.thSecondaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                    if variationDisplay.showsPreviousAmountLabel,
+                       appPreferences.showVariations,
+                       let prevAmount = previousAmount {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
+                            Text(L10n.Common.vs)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.thSecondaryText)
+                            AmountText(
+                                value: prevAmount,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.caption,
+                                tint: .secondary
+                            )
+                        }
                     }
                 }
             }
@@ -80,7 +98,7 @@ struct PieChartVariationHeader: View {
             Spacer()
 
             // Right: Variation chip and comparison text (show when previousAmount exists and showVariations is ON)
-            if showVariations && previousAmount != nil {
+            if appPreferences.showVariations && previousAmount != nil {
                 VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
                     // Variation chip
                     VariationChip(
@@ -92,7 +110,7 @@ struct PieChartVariationHeader: View {
                     )
 
                     // Comparison period text
-                    if !comparisonText.isEmpty {
+                    if variationDisplay.showsComparisonPeriodLabel && !comparisonText.isEmpty {
                         Text(comparisonText)
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
@@ -102,26 +120,13 @@ struct PieChartVariationHeader: View {
                 }
             }
 
-            // Chevron for detail (if provided)
-            if onShowDetail != nil {
-                Button {
-                    onShowDetail?()
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Accessibility.viewDetails)
-                .padding(.leading, DS.Spacing.sm)
-            }
         }
     }
 
     // MARK: - Helpers
 
     private func formattedCurrency(_ value: Double) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
+        appPreferences.currency(value, currencyCode: currencyCode)
     }
 }
 

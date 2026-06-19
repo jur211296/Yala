@@ -42,26 +42,23 @@ struct TagFormView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-                    .dismissKeyboardOnTap()
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    generalSection
+                    iconSection
+                    colorSection
+                    statusSection
 
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        generalSection
-                        iconSection
-                        colorSection
-                        statusSection
-
-                        if viewModel.isEditing {
-                            deleteSection
-                        }
+                    if viewModel.isEditing {
+                        deleteSection
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
                 }
-                .scrollDismissesKeyboard(.interactively)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
+                .dismissKeyboardOnTap()
             }
+            .scrollDismissesKeyboard(.interactively)
+            .yalaScreenBackground(.subtle)
             .navigationTitle(viewModel.isEditing ? L10n.Tag.editTag : L10n.Tag.newTag)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -141,6 +138,7 @@ struct TagFormView: View {
                         .foregroundStyle(.secondary)
                     TextField(L10n.Tag.namePlaceholder, text: $viewModel.name)
                         .focused($isNameFieldFocused)
+                        .accessibilityIdentifier("tag_name_field")
                         .onChange(of: viewModel.name) { oldValue, newValue in
                             if newValue.count > 20 {
                                 viewModel.name = String(newValue.prefix(20))
@@ -160,7 +158,7 @@ struct TagFormView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Circle()
                         .fill(colorForHex(viewModel.selectedColorHex))
-                        .frame(width: 40, height: 40)
+                        .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
                         .overlay(
                             Image(systemName: viewModel.selectedIconName)
                                 .font(DS.Typography.body).fontWeight(.medium)
@@ -192,24 +190,27 @@ struct TagFormView: View {
                         spacing: DS.Spacing.md
                     ) {
                         ForEach(Tag.defaultColors, id: \.self) { hex in
-                            Circle()
-                                .fill(colorForHex(hex))
-                                .frame(width: 32, height: 32)
-                                .overlay(
-                                    Circle()
-                                        .stroke(
-                                            Color.white,
-                                            lineWidth: viewModel.selectedColorHex.uppercased()
-                                                == hex.uppercased() ? 3 : 1)
-                                )
-                                .shadow(
-                                    radius: viewModel.selectedColorHex.uppercased() == hex.uppercased() ? 4 : 0
-                                )
-                                .accessibilityLabel(L10n.Accessibility.colorOption(hex))
-                                .accessibilityAddTraits(viewModel.selectedColorHex.uppercased() == hex.uppercased() ? .isSelected : [])
-                                .onTapGesture {
-                                    viewModel.selectedColorHex = hex
-                                }
+                            Button {
+                                viewModel.selectedColorHex = hex
+                            } label: {
+                                Circle()
+                                    .fill(colorForHex(hex))
+                                    .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(
+                                                Color.white,
+                                                lineWidth: viewModel.selectedColorHex.uppercased()
+                                                    == hex.uppercased() ? 3 : 1)
+                                    )
+                                    .shadow(
+                                        radius: viewModel.selectedColorHex.uppercased() == hex.uppercased() ? 4 : 0
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .contentShape(Circle())
+                            .accessibilityLabel(L10n.Accessibility.colorOption(hex))
+                            .accessibilityAddTraits(viewModel.selectedColorHex.uppercased() == hex.uppercased() ? .isSelected : [])
                         }
 
                         Button {
@@ -217,7 +218,7 @@ struct TagFormView: View {
                         } label: {
                             Circle()
                                 .fill(DS.Colors.borderDark)
-                                .frame(width: 32, height: 32)
+                                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                                 .overlay(
                                     Image(systemName: "plus")
                                         .font(DS.Typography.labelSmall)

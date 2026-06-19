@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": [
+          "3WKFFVD66J.com.jurgenschmidt.yala",
+          "3WKFFVD66J.com.jurgenschmidt.yala.dev"
+        ],
+        "components": [
+          {
+            "/": "/invite",
+            "?": { "s": "*" },
+            "comment": "Group invite universal links"
+          }
+        ]
+      }
+    ]
+  }
+}

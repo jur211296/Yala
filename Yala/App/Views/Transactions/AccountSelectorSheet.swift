@@ -20,54 +20,64 @@ struct AccountSelectorSheet: View {
     @Binding var selectedAccount: Account?
     let title: String
     var excludeAccount: Account?
+    var currencyFilter: String?
 
-    init(selectedAccount: Binding<Account?>, title: String? = nil, excludeAccount: Account? = nil) {
+    init(
+        selectedAccount: Binding<Account?>,
+        title: String? = nil,
+        excludeAccount: Account? = nil,
+        currencyFilter: String? = nil
+    ) {
         _selectedAccount = selectedAccount
         self.title = title ?? L10n.Account.selectAccount
         self.excludeAccount = excludeAccount
+        self.currencyFilter = currencyFilter
     }
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        let filteredAccounts = viewModel.activeAccounts.filter { account in
-                            guard let exclude = excludeAccount else { return true }
-                            return account.persistentModelID != exclude.persistentModelID
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    let filteredAccounts = viewModel.activeAccounts.filter { account in
+                        if let exclude = excludeAccount,
+                           account.persistentModelID == exclude.persistentModelID {
+                            return false
                         }
+                        if let currencyFilter, account.currencyCode != currencyFilter {
+                            return false
+                        }
+                        return true
+                    }
 
-                        if filteredAccounts.isEmpty {
-                            YalaEmptyState.noAccounts()
-                        } else {
-                            SectionBox(title: "") {
-                                VStack(spacing: DS.Spacing.none) {
-                                    ForEach(
-                                        Array(filteredAccounts.enumerated()),
-                                        id: \.element.persistentModelID
-                                    ) { index, account in
-                                        if index > 0 {
-                                            SubsectionDivider()
-                                        }
+                    if filteredAccounts.isEmpty {
+                        YalaEmptyState.noAccounts()
+                    } else {
+                        SectionBox(title: "") {
+                            VStack(spacing: DS.Spacing.none) {
+                                ForEach(
+                                    Array(filteredAccounts.enumerated()),
+                                    id: \.element.persistentModelID
+                                ) { index, account in
+                                    if index > 0 {
+                                        SubsectionDivider()
+                                    }
 
-                                        AccountSelectorRow(
-                                            account: account,
-                                            isSelected: isSelected(account)
-                                        ) {
-                                            selectedAccount = account
-                                            dismiss()
-                                        }
+                                    AccountSelectorRow(
+                                        account: account,
+                                        isSelected: isSelected(account)
+                                    ) {
+                                        selectedAccount = account
+                                        dismiss()
                                     }
                                 }
                             }
                         }
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
                 }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -132,6 +142,7 @@ struct AccountSelectorRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("account_selector_row_\(account.name)")
         .accessibilityLabel(L10n.Accessibility.accountRow(account.name, account.currencyCode))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

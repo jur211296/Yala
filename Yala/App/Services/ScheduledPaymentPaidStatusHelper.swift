@@ -24,27 +24,37 @@ enum ScheduledPaymentPaidStatusHelper {
         loadPaidAmounts(for: payments, month: month, context: context).mapValues(\.count)
     }
 
-    /// Returns per-occurrence paid info [paymentIDString: [PaidOccurrenceInfo]] for the given month.
-    /// Each entry contains the real transaction amount, currency, and date — sorted ascending by date.
-    /// Checks both InboxDraft (approved with sourceScheduledPaymentID) and
-    /// TransactionItem (with scheduledPaymentID).
-    static func loadPaidAmounts(for payments: [ScheduledPayment], month: Date, context: ModelContext) -> [String: [PaidOccurrenceInfo]] {
+    /// Returns per-occurrence paid info `[paymentIDString: [PaidOccurrenceInfo]]` for the given month.
+    /// Wrapper que mantiene la firma original — delega al overload basado en `interval:`.
+    static func loadPaidAmounts(
+        for payments: [ScheduledPayment], month: Date, context: ModelContext
+    ) -> [String: [PaidOccurrenceInfo]] {
         let calendar = Calendar.current
         guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [:] }
+        return loadPaidAmounts(for: payments, interval: monthInterval, context: context)
+    }
 
+    /// Returns per-occurrence paid info for the given interval. Each entry contains the
+    /// real transaction amount, currency, and date — sorted ascending by date.
+    /// Checks both InboxDraft (approved with sourceScheduledPaymentID) and
+    /// TransactionItem (with scheduledPaymentID).
+    static func loadPaidAmounts(
+        for payments: [ScheduledPayment], interval: DateInterval, context: ModelContext
+    ) -> [String: [PaidOccurrenceInfo]] {
+        let calendar = Calendar.current
         var result: [String: [PaidOccurrenceInfo]] = [:]
         let paymentIDs = Set(payments.map { $0.id.uuidString })
-        let monthStart = monthInterval.start
-        let monthEnd = monthInterval.end
+        let intervalStart = interval.start
+        let intervalEnd = interval.end
         var countedPairs: Set<String> = []
 
-        // Query 1: InboxDrafts approved with sourceScheduledPaymentID (filtered by month)
+        // Query 1: InboxDrafts approved with sourceScheduledPaymentID (filtered by interval)
         do {
             var draftDescriptor = FetchDescriptor<InboxDraft>(
                 predicate: #Predicate<InboxDraft> { draft in
                     draft.statusRaw == "approved"
                         && draft.sourceScheduledPaymentID != nil
-                        && draft.createdAt >= monthStart && draft.createdAt < monthEnd
+                        && draft.createdAt >= intervalStart && draft.createdAt < intervalEnd
                 }
             )
             draftDescriptor.propertiesToFetch = [\.sourceScheduledPaymentID, \.date, \.amount, \.createdAt, \.cachedCurrencyCode]
@@ -53,7 +63,7 @@ enum ScheduledPaymentPaidStatusHelper {
             for draft in approvedDrafts {
                 guard let spID = draft.sourceScheduledPaymentID, paymentIDs.contains(spID) else { continue }
                 let draftDate = draft.date ?? draft.createdAt
-                if draftDate >= monthStart && draftDate < monthEnd {
+                if draftDate >= intervalStart && draftDate < intervalEnd {
                     let realAmount = draft.amount.map { abs($0) }
                     let realCurrency = draft.cachedCurrencyCode ?? "USD"
                     #if DEBUG
@@ -77,12 +87,12 @@ enum ScheduledPaymentPaidStatusHelper {
             #endif
         }
 
-        // Query 2: TransactionItems with scheduledPaymentID (filtered by month, skip already counted from drafts)
+        // Query 2: TransactionItems with scheduledPaymentID (filtered by interval, skip already counted from drafts)
         do {
             var txDescriptor = FetchDescriptor<TransactionItem>(
                 predicate: #Predicate<TransactionItem> { tx in
                     tx.scheduledPaymentID != nil
-                        && tx.date >= monthStart && tx.date < monthEnd
+                        && tx.date >= intervalStart && tx.date < intervalEnd
                 }
             )
             txDescriptor.propertiesToFetch = [\.scheduledPaymentID, \.date, \.amount, \.currencyCode]

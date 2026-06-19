@@ -29,9 +29,9 @@ final class AccountsSettingsListViewModel {
     var accountToEdit: Account?
     var isEditMode = false
 
-    // MARK: - Sort Order (synced from AppStorage via View)
+    // MARK: - Sort Order (synced from AppPreferences via View)
 
-    var accountsSortOrderNamesRaw: String = "" {
+    var accountsSortOrderNames: [String] = [] {
         didSet {
             accountSortIndexCache = nil
         }
@@ -41,21 +41,22 @@ final class AccountsSettingsListViewModel {
 
     private var accountSortIndexCache: [String: Int]?
 
-    private var accountsSortOrderNames: [String] {
-        accountsSortOrderNamesRaw.split(separator: "|").map(String.init)
-    }
-
     private var accountSortIndex: [String: Int] {
         if let cache = accountSortIndexCache {
             return cache
         }
-        let index = Dictionary(uniqueKeysWithValues: accountsSortOrderNames.enumerated().map { ($1, $0) })
+        let index = Dictionary(accountsSortOrderNames.enumerated().map { ($1, $0) },
+                               uniquingKeysWith: { first, _ in first })
         accountSortIndexCache = index
         return index
     }
 
     var activeAccounts: [Account] {
-        accounts.filter { !$0.isArchived }
+        accounts.filter { !$0.isArchived && !$0.isSystemAccount }
+    }
+
+    var systemAccounts: [Account] {
+        accounts.filter { $0.isSystemAccount && !$0.isArchived }
     }
 
     var orderedActiveAccounts: [Account] {
@@ -158,12 +159,11 @@ final class AccountsSettingsListViewModel {
 
     // MARK: - Reorder Logic
 
-    func moveAccount(from source: IndexSet, to destination: Int) -> String {
+    func moveAccount(from source: IndexSet, to destination: Int) -> [String] {
         var currentOrder = orderedActiveAccounts.map { $0.name }
         currentOrder.move(fromOffsets: source, toOffset: destination)
-        let newRaw = currentOrder.joined(separator: "|")
-        accountsSortOrderNamesRaw = newRaw
-        return newRaw
+        accountsSortOrderNames = currentOrder
+        return currentOrder
     }
 
     // MARK: - Helper for Edit

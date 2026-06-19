@@ -46,11 +46,8 @@ struct SupportFormSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(alignment: .leading, spacing: DS.Spacing.xxl) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxl) {
                         // Type picker
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                             Text(L10n.Support.type)
@@ -129,10 +126,12 @@ struct SupportFormSheet: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.top, DS.Spacing.xxl)
-                }
+                    .dismissKeyboardOnTap()
             }
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(L10n.Support.title)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {

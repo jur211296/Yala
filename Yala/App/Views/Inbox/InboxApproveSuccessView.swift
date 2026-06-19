@@ -33,6 +33,7 @@ struct InboxApproveSuccessView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var showHero = false
     @State private var showCheckmark = false
     @State private var showAmount = false
@@ -128,11 +129,15 @@ struct InboxApproveSuccessView: View {
                     }
 
                     // Promoted amount
-                    Text(YalaFormatter.currency(value: data.amount, currencyCode: data.currencyCode, forceFullPrecision: true))
-                        .font(DS.Typography.largeTitle)
-                        .foregroundStyle(typeColor)
-                        .scaleEffect(showAmount ? 1.0 : 0.8)
-                        .opacity(showAmount ? 1.0 : 0.0)
+                    AmountText(
+                        value: data.amount,
+                        currencyCode: data.currencyCode,
+                        font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                        tint: .color(typeColor),
+                        forceFullPrecision: true
+                    )
+                    .scaleEffect(showAmount ? 1.0 : 0.8)
+                    .opacity(showAmount ? 1.0 : 0.0)
                 }
                 .padding(.bottom, DS.Spacing.xxxl)
 
@@ -226,10 +231,7 @@ struct InboxApproveSuccessView: View {
             }
         }
         .padding(.vertical, DS.Spacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(.thCard)
-        )
+        .panelCard()
     }
 
     private static let dateFormatter: DateFormatter = {
@@ -330,13 +332,8 @@ struct InboxApproveSuccessView: View {
     private var actionButtons: some View {
         VStack(spacing: DS.Spacing.md) {
             // Primary: Accept (go back to inbox)
-            Button(action: onAccept) {
-                Text(L10n.Common.accept)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-
-            .controlSize(.large)
+            YalaPrimaryButton(L10n.Common.accept, action: onAccept)
+                .accessibilityIdentifier("inbox_success_accept")
 
             // Secondary: Approve next (if available)
             if hasNextDraft {

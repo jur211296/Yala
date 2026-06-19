@@ -29,8 +29,9 @@ final class ScheduledPaymentEditorViewModel {
 
     // MARK: - Computed Properties
 
+    /// A0-Bridge: excluye cuentas sistema (`isSystemAccount`) de pickers manuales.
     var activeAccounts: [Account] {
-        allAccounts.filter { !$0.isArchived }
+        allAccounts.filter { !$0.isArchived && !$0.isSystemAccount }
     }
 
     var activeTags: [Tag] {
@@ -121,7 +122,7 @@ final class ScheduledPaymentEditorViewModel {
             existingPayment.paymentCategory = paymentCategory.rawValue
             existingPayment.account = account
             existingPayment.subcategory = subcategory
-            existingPayment.tags = tagsArray
+            existingPayment.setTags(from: tagsArray)
             existingPayment.needOverride = needOverride
 
             // Recurrence
@@ -183,6 +184,10 @@ final class ScheduledPaymentEditorViewModel {
                 "isNew": String(existing == nil),
             ])
 
+            if existing == nil, (try? context.fetchCount(FetchDescriptor<ScheduledPayment>())) == 1 {
+                TelemetryService.track(.firstScheduledPayment, parameters: ["recurrencia": recurrenceType.rawValue])
+            }
+
             return paymentID
         } catch {
             #if DEBUG
@@ -203,6 +208,7 @@ final class ScheduledPaymentEditorViewModel {
             try service.deleteScheduledPayment(payment)
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
+            TelemetryService.track(.scheduledPaymentDeleted)
             return true
         } catch {
             #if DEBUG

@@ -24,9 +24,6 @@ struct GlobalSearchView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background for both states
-                PanelBackgroundView()
-
                 if isDataReady {
                     SearchContentView(searchText: $searchText, transactions: allTransactions)
                 } else {
@@ -40,6 +37,7 @@ struct GlobalSearchView: View {
                     }
                 }
             }
+            .yalaScreenBackground()
             .navigationTitle(L10n.Common.search)
             .navigationBarTitleDisplayMode(.large)
         }
@@ -49,6 +47,9 @@ struct GlobalSearchView: View {
             placement: .navigationBarDrawer(displayMode: .always),
             prompt: L10n.Common.search
         )
+        .onSubmit(of: .search) {
+            TelemetryService.track(.searchPerformed)
+        }
         .task {
             // Delay to let Query load, then reveal content smoothly
             do {
@@ -72,13 +73,13 @@ struct SearchContentView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.tagCatalog) private var tagCatalog
     @Binding var searchText: String
     let transactions: [TransactionItem]  // Passed from parent
 
     @State private var selectedFilter: SearchFilter = .all
     @State private var editingTransaction: TransactionItem?
-
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = "PEN"
 
     // MARK: - Filtered Results
 
@@ -89,7 +90,7 @@ struct SearchContentView: View {
             let categoryMatch = transaction.category?.name.lowercased().contains(lowercasedSearch) ?? false
             let subcategoryMatch = transaction.subcategory?.name.lowercased().contains(lowercasedSearch) ?? false
             let accountMatch = transaction.account?.name.lowercased().contains(lowercasedSearch) ?? false
-            let tagMatch = (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
+            let tagMatch = matchesTagName(transaction: transaction, lowercasedSearch: lowercasedSearch)
             return noteMatch || categoryMatch || subcategoryMatch || accountMatch || tagMatch
         case .note:
             return transaction.note?.lowercased().contains(lowercasedSearch) ?? false
@@ -102,7 +103,16 @@ struct SearchContentView: View {
         case .need:
             return transaction.subcategory?.need.displayName.lowercased().contains(lowercasedSearch) ?? false
         case .tag:
-            return (transaction.tags ?? []).contains { $0.name.lowercased().contains(lowercasedSearch) }
+            return matchesTagName(transaction: transaction, lowercasedSearch: lowercasedSearch)
+        }
+    }
+
+    /// CSV-mirror SSOT: resuelve UUIDs vía catalog → Tag.name lowercased contains query.
+    /// Sobrevive lazy hydration de la M2M `tx.tags` durante cold launch.
+    private func matchesTagName(transaction: TransactionItem, lowercasedSearch: String) -> Bool {
+        let txTagIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+        return txTagIDs.contains { uuid in
+            tagCatalog[uuid]?.name.lowercased().contains(lowercasedSearch) ?? false
         }
     }
 
@@ -139,19 +149,15 @@ struct SearchContentView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            VStack(spacing: DS.Spacing.none) {
-                // Filter chips (only show when searching)
-                if !searchText.isEmpty {
-                    filterChipsBar
-                        .padding(.top, DS.Spacing.sm)
-                }
-
-                // Always show results (all or filtered)
-                searchResultsView
+        VStack(spacing: DS.Spacing.none) {
+            // Filter chips (only show when searching)
+            if !searchText.isEmpty {
+                filterChipsBar
+                    .padding(.top, DS.Spacing.sm)
             }
+
+            // Always show results (all or filtered)
+            searchResultsView
         }
         .sheet(item: $editingTransaction) { transaction in
             NewTransactionView(transactionToEdit: transaction)
@@ -240,7 +246,7 @@ struct SearchContentView: View {
                 ForEach(groupedResults, id: \.date) { group in
                     Section {
                         ForEach(group.records, id: \.persistentModelID) { record in
-                            SearchResultRow(record: record, currencyCode: defaultCurrencyCode) {
+                            SearchResultRow(record: record, currencyCode: appPreferences.defaultCurrencyCode.rawValue) {
                                 editingTransaction = record
                             }
                             .padding(.horizontal, DS.Spacing.lg)
@@ -336,7 +342,7 @@ struct SearchResultRow: View {
     let currencyCode: String
     let onTap: () -> Void
 
-    @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         Button {
@@ -377,8 +383,7 @@ struct SearchResultRow: View {
             .padding(.vertical, DS.Spacing.md)
             .padding(.horizontal, DS.Spacing.md)
             .contentShape(Rectangle())
-            .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
+            .solidCard(radius: DS.Radius.card)
         }
         .buttonStyle(.plain)
     }
@@ -390,7 +395,7 @@ struct SearchResultRow: View {
         return ZStack {
             Circle()
                 .fill(Color(hex: colorHex))
-                .frame(width: 40, height: 40)
+                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
             Image(systemName: iconName)
                 .font(DS.Typography.label)
@@ -398,19 +403,8 @@ struct SearchResultRow: View {
         }
     }
 
-    private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: DS.Radius.card)
-            .fill(.thCard)
-            .shadow(
-                color: Color.black.opacity(theme.shadowOpacity),
-                radius: 6,
-                x: 0,
-                y: 3
-            )
-    }
-
     private var formattedAmount: String {
-        YalaFormatter.currency(value: record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
+        appPreferences.currency(record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
     }
 
     private var amountColor: Color {
@@ -428,4 +422,5 @@ struct SearchResultRow: View {
                 Subcategory.self,
                 Tag.self,
             ], inMemory: true)
+        .previewAppPreferences()
 }

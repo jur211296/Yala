@@ -150,4 +150,32 @@ struct BudgetsViewModelTests {
         #expect(icon == "chart.pie.fill")
         #expect(color == "#6366F1")
     }
+
+    // MARK: - userConfiguredCalendar firstWeekday Regression
+    // Regression for the bug where weekly budgets started on Sunday (system default)
+    // instead of the user's "Monday" preference. Helper now reads firstWeekday from
+    // the injected UserDefaults and BudgetsViewModel routes all weekly math through it.
+
+    @Test("userConfiguredCalendar respects Monday preference")
+    func userConfiguredCalendar_respectsMondayPreference() {
+        let defaults = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        defaults.set(2, forKey: "firstWeekday")
+        let cal = userConfiguredCalendar(defaults: defaults)
+        #expect(cal.firstWeekday == 2)
+    }
+
+    @Test("userConfiguredCalendar respects Sunday preference")
+    func userConfiguredCalendar_respectsSundayPreference() {
+        let defaults = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        defaults.set(1, forKey: "firstWeekday")
+        let cal = userConfiguredCalendar(defaults: defaults)
+        #expect(cal.firstWeekday == 1)
+    }
+
+    @Test("userConfiguredCalendar defaults to Monday when preference unset")
+    func userConfiguredCalendar_defaultsToMondayWhenUnset() {
+        let defaults = UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+        let cal = userConfiguredCalendar(defaults: defaults)
+        #expect(cal.firstWeekday == 2, "Default should be Monday (2), not system default Sunday (1)")
+    }
 }

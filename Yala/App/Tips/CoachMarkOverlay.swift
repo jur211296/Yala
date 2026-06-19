@@ -387,7 +387,15 @@ struct CoachMarkOverlay: View {
             .padding(.top, DS.Spacing.xs)
         }
         .padding(DS.Spacing.xl)
-        .background(.thCard)
+        .background {
+            if theme.usesMaterial {
+                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                    .fill(.ultraThinMaterial)
+            } else {
+                RoundedRectangle(cornerRadius: DS.Radius.lg)
+                    .fill(theme.card)
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
         .shadow(
             color: Color.black.opacity(0.2),

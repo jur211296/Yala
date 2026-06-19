@@ -9,6 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct RecentRecordsWidget: View {
+    @Environment(AppPreferences.self) private var appPreferences
     let records: [TransactionItem]
     let currencyCode: String
 
@@ -18,6 +19,9 @@ struct RecentRecordsWidget: View {
     // I will remove 'size' property and update PanelView callsite to be cleaner.
 
     var onShowMore: (() -> Void)? = nil
+
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
 
     // MARK: - Static Formatters (avoid recreation on each render)
 
@@ -45,46 +49,26 @@ struct RecentRecordsWidget: View {
                 mediumLayout
             }
         }
-        .padding(DS.Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .panelCard()
     }
 
     // MARK: - Header
 
     private var headerSection: some View {
-        HStack(alignment: .top) {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
             Text(L10n.Records.latest)
-                .font(DS.Typography.headline)
+                .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
-            InfoHintButton(
-                title: L10n.WidgetType.latestRecords,
-                message: L10n.Widget.Hint.recentRecords
+            WidgetHeaderInfoSlot(
+                injected: headerInfoButton,
+                legacyTitle: L10n.WidgetType.latestRecords,
+                legacyMessage: L10n.Widget.Hint.recentRecords
             )
 
             Spacer()
-
-            // Chevron always visible if action exists (since M size always has it)
-            if onShowMore != nil {
-                Button {
-                    onShowMore?()
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, DS.Spacing.xs)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Accessibility.viewAllRecords)
-            }
         }
     }
 
@@ -139,11 +123,15 @@ struct RecentRecordsWidget: View {
 
             Spacer()
 
-            // Right Column: Amount + Nature (matches CompactRecordRow and RecordRowView)
+            // Right Column: Amount + Nature (matches RecordRowView)
             VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                Text(formattedAmount(record.amount, currencyCode: record.currencyCode))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(amountColor(for: record))
+                AmountText(
+                    value: record.amount,
+                    currencyCode: record.currencyCode,
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
+                    tint: .color(amountColor(for: record)),
+                    forceFullPrecision: true
+                )
 
                 // Nature indicator (if available)
                 if let subcategory = record.subcategory {
@@ -231,7 +219,7 @@ struct RecentRecordsWidget: View {
     }
 
     private func formattedAmount(_ value: Double, currencyCode: String) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode, forceFullPrecision: true)
+        appPreferences.currency(value, currencyCode: currencyCode, forceFullPrecision: true)
     }
 
     // MARK: - Empty State

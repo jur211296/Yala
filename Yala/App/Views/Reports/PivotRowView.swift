@@ -13,7 +13,8 @@ struct PivotRowView: View {
     let level: Int
     let preferredCurrency: String
 
-    @AppStorage("showVariations") private var showVariations: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
+    private var showVariations: Bool { appPreferences.showVariations }
 
     /// Currency to use for formatting this node
     private var displayCurrency: String {
@@ -36,19 +37,27 @@ struct PivotRowView: View {
 
             // Thin divider between label and amounts
             Divider()
-                .frame(height: 28)
+                .frame(height: DS.Sizing.dividerHeightStandard)
 
             // Amounts
             VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                Text(YalaFormatter.currency(value: node.amount, currencyCode: displayCurrency))
-                    .font(level == 0 ? DS.Typography.label : DS.Typography.labelSmall)
-                    .fontWeight(level == 0 ? .semibold : .medium)
-                    .foregroundStyle(node.isIncome ? Color.electricIndigo : .primary)
+                AmountText(
+                    value: node.amount,
+                    currencyCode: displayCurrency,
+                    font: level == 0
+                        ? DS.Typography.label.weight(.semibold)
+                        : DS.Typography.labelSmall.weight(.medium),
+                    tint: node.isIncome ? .color(Color.electricIndigo) : .primary
+                )
 
                 if let previousAmount = node.previousAmount {
-                    Text(YalaFormatter.currency(value: previousAmount, currencyCode: displayCurrency))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                    AmountText(
+                        value: previousAmount,
+                        currencyCode: displayCurrency,
+                        font: DS.Typography.captionSmall,
+                        secondaryFont: DS.Typography.captionSmall,
+                        tint: .secondary
+                    )
                 }
             }
             .frame(minWidth: 80, alignment: .trailing)
@@ -97,7 +106,7 @@ struct PivotRowView: View {
         } else if let iconName = node.iconName {
             // Non-entity dimension icon (tipo, divisa, naturaleza)
             Image(systemName: iconName)
-                .font(.caption2)
+                .font(DS.Typography.captionSmall)
                 .foregroundStyle(node.isIncome ? Color.electricIndigo : Color.hotPink)
                 .frame(width: DS.Chip.dotSize)
         }

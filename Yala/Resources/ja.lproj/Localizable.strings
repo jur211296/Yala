@@ -1,0 +1,4487 @@
+/*
+  Localizable.strings (Japanese)
+  Yala
+
+  Japanese translations for localization support.
+*/
+
+// MARK: - Date Formats
+
+"date.weekOf %@" = "%@の週";
+"date.today" = "今日";
+"date.yesterday" = "昨日";
+
+// MARK: - Panel
+
+"panel.accounts" = "口座";
+"panel.widgets" = "ウィジェット";
+"panel.section.health" = "金融の健全性";
+"panel.section.tendencias" = "推移";
+"panel.section.distribucion" = "内訳";
+"panel.section.planificacion" = "計画";
+"panel.section.latestRecords" = "最新の記録";
+"panel.section.tools" = "ツール";
+
+// P20-11: Section footer CTAs
+"panel.seeMoreInTrends" = "推移をもっと見る";
+"panel.seeMoreInDistribution" = "内訳をもっと見る";
+"panel.seeAllRecords" = "すべて表示";
+"panel.seeBudgets" = "予算を見る";
+"panel.seeScheduledPayments" = "予定支払いを見る";
+"panel.seeMoreHint.trends" = "推移画面を開きます";
+"panel.seeMoreHint.distribution" = "内訳画面を開きます";
+"panel.seeMoreHint.records" = "すべての記録を開きます";
+"panel.seeMoreHint.budgets" = "予算画面を開きます";
+"panel.seeMoreHint.scheduled" = "予定支払い画面を開きます";
+
+// P20-11: Widget size picker
+"panel.widgetSize.small" = "小";
+"panel.widgetSize.medium" = "中";
+"panel.widgetSize.large" = "大";
+
+// P20-11: Accounts collapse
+// Collapsible group Accounts + Financial Health
+"panel.panorama.title" = "資産状況";
+"panel.panorama.expand" = "資産状況を開く";
+"panel.panorama.collapse" = "資産状況を閉じる";
+"panel.panorama.collapsedValue" = "閉じた状態";
+"panel.panorama.expandedValue" = "開いた状態";
+
+"panel.weekdaySubtitle" = "曜日別の平均";
+"panel.weekdayBar.smallTitle" = "1日の平均";
+"panel.weekdayBar.largeTitle" = "曜日別の平均支出";
+"panel.weekdayBar.perWeekSuffix" = "/週";
+"panel.filterBar.sectionTitle" = "適用中のフィルター";
+"panel.periodComparison.vs %@" = "%@と比較";
+"panel.periodComparison.vsWithYear %@ %@" = "%@ %@と比較";
+"panel.periodComparison.requiresPeriod" = "比較する月や期間を選んでください";
+"panel.sectionsConfig.title" = "パネル設定";
+"panel.sectionsConfig.footer" = "必要のないセクションを非表示にできます。いつでも元に戻せます。";
+"panel.sectionsConfig.emptySection" = "すべてのウィジェットが非表示です";
+"panel.sectionsConfig.restoreWidgets %@" = "%@のウィジェットを復元";
+"panel.sectionPrefs.title" = "設定";
+"panel.totalBalance" = "合計残高";
+
+// Financial Health (P20-06)
+"panel.health.cardTitle" = "金融の健全性";
+"panel.health.emptyBadge" = "—";
+"panel.health.subScore.budget" = "予算";
+"panel.health.subScore.activity" = "リズム";
+"panel.health.subScore.bills" = "コミットメント";
+// Detail sheet — Total
+"panel.health.total.sheet.title" = "金融の健全性";
+"panel.health.total.sheet.explanation" = "3つの要素を組み合わせています：予算、記録のリズム、期間内のコミットメント。それぞれの重みは異なり、適用されないものがあると再調整されます。";
+"panel.health.total.headline.high" = "絶好調です！";
+"panel.health.total.headline.mid" = "いいリズムですね";
+"panel.health.total.headline.low" = "小さな一歩から始めましょう";
+"panel.health.total.headline.empty" = "最初の記録から始めてみましょう";
+
+// Detail sheet — Budget
+"panel.health.budget.sheet.title" = "予算の状況";
+"panel.health.budget.sheet.explanation" = "今月の予算の進み具合を見ています。余裕があれば加点、超過すると少し減点します。あくまで指針として活用してください。";
+"panel.health.budget.headline.high" = "予算は順調です！";
+"panel.health.budget.headline.mid" = "上限をしっかり意識できています";
+"panel.health.budget.headline.low" = "少し調整すれば大丈夫";
+"panel.health.budget.headline.empty" = "予算があると安心して使えます";
+"panel.health.budget.cta.view" = "予算を見る";
+"panel.health.budget.cta.create" = "最初の予算を作る";
+
+// Detail sheet — Activity
+"panel.health.activity.sheet.title" = "あなたのリズム";
+"panel.health.activity.sheet.explanation" = "この期間中に支出を記録していない日が連続した最長期間を測定します。2日までは普通ですが、それを超えるとリズムに影響が出ます。";
+"panel.health.activity.headline.high" = "良いリズムです！🎉";
+"panel.health.activity.headline.mid" = "リズムは順調です";
+"panel.health.activity.headline.low" = "リズムが少し落ちています";
+"panel.health.activity.headline.empty" = "まだ何も記録していません — いつでも始められます";
+"panel.health.activity.cta.view" = "記録を見る";
+"panel.health.activity.cta.create" = "最初の支出を記録";
+
+// Detail sheet — Bills
+"panel.health.bills.sheet.title" = "あなたのコミットメント";
+"panel.health.bills.sheet.explanation" = "2つの要素を組み合わせています：残高が期間内の保留中の支払いをカバーするか、収入のうちサブスクリプションや定期支払いに使われる割合。";
+"panel.health.bills.headline.high" = "コミットメントはコントロール下にあります 💪";
+"panel.health.bills.headline.mid" = "コミットメントは管理可能です";
+"panel.health.bills.headline.low" = "コミットメントが流れに重くのしかかっています";
+"panel.health.bills.headline.empty" = "まだ予定された支払いはありません";
+"panel.health.bills.cta.view" = "支払いを見る";
+"panel.health.bills.cta.create" = "最初の予定支払いを作る";
+
+// VoiceOver full card summary
+"panel.health.voiceover.summary" = "金融の健全性: %1$@。予算 %2$@。活動 %3$@。支払い %4$@。";
+// VoiceOver — individual sub-score value (PP2-02)
+"panel.health.voiceover.score" = "100点中%d点";
+// VoiceOver — fallback when a sub-score has no data
+"panel.health.voiceover.noData" = "データなし";
+
+// MARK: - Panel Hero (PP2-01)
+
+// Chip — greets by name; the golden emoji lives in the SF Symbol icon
+"panel.hero.chip.monthStart %@ %@" = "%1$@さん、%2$@が始まりました";
+"panel.hero.chip.default %@" = "%@さん";
+
+// KPI fallback (aiSubtitle takes the KPI slot when available)
+// Markdown bold (**amount**) renders via AttributedString(markdown:)
+"panel.hero.kpi.monthStart %@ %d" = "今月もスタート、一歩ずつ進めましょう。";
+"panel.hero.kpi.onTrack %@ %@ %@ %d" = "今月はいいリズムです、この調子で。";
+"panel.hero.kpi.neutral %@ %@ %@ %d" = "今月も順調に進んでいます。";
+"panel.hero.kpi.tight %@ %@ %d" = "やりくりは大変ですが、一歩ずつ進めましょう。";
+"panel.hero.kpi.overBudget %@ %@" = "明日からまた仕切り直し、大丈夫です。";
+
+"panel.hero.upsellCTA" = "AIでメッセージをカスタマイズ";
+"panel.hero.availableLabel" = "利用可能";
+
+// MARK: - Trend Widget
+
+"trend.title" = "推移";
+"trend.balance.title" = "残高の推移";
+"trend.income.title" = "収入の推移";
+"trend.expense.title" = "支出の推移";
+"trend.filterBlockedMessage" = "先にカテゴリーまたは性質のフィルターを解除してください";
+"trend.filterBlockedTitle" = "この機能は使えません";
+
+// MARK: - Periods
+
+"period.thisWeek" = "今週";
+"period.lastWeek" = "先週";
+"period.nextWeek" = "来週";
+"period.thisMonth" = "今月";
+"period.lastMonth" = "先月";
+"period.nextMonth" = "来月";
+"period.last30Days" = "過去30日間";
+"period.thisYear" = "今年";
+"period.lastYear" = "去年";
+"period.nextYear" = "来年";
+"period.allTime" = "全期間";
+"period.custom" = "カスタム";
+"period.startDate" = "開始日";
+"period.endDate" = "終了日";
+
+// MARK: - Trend Types
+
+"trendType.balance" = "残高";
+"trendType.income" = "収入";
+"trendType.expense" = "支出";
+
+// MARK: - Groupings
+
+"grouping.day" = "日";
+"grouping.week" = "週";
+"grouping.month" = "月";
+
+// MARK: - Cash Flow
+
+"cashFlow.title" = "キャッシュフロー";
+"cashFlow.income" = "収入";
+"cashFlow.expense" = "支出";
+"cashFlow.net" = "純額";
+
+// MARK: - Categories
+
+"categories.title" = "カテゴリー";
+"categories.topSpending" = "トップカテゴリー";
+"categories.others" = "その他";
+"categories.noCategory" = "未分類";
+
+// MARK: - Subcategories
+
+"subcategories.title" = "サブカテゴリー";
+"subcategories.noSubcategory" = "サブカテゴリーなし";
+
+// MARK: - Need
+
+"need.expensesByNeed" = "性質別の支出";
+
+// MARK: - Records
+
+"records.title" = "記録";
+"records.latest" = "最新の記録";
+"records.noRecords" = "この期間に記録はありません";
+"records.viewModeListA11y" = "リスト表示";
+"records.viewModeCalendarA11y" = "カレンダー表示";
+"records.noRecordsThisDay" = "この日に記録はありません";
+
+// MARK: - Filters
+
+"filters.title" = "フィルター";
+"filters.all" = "すべて";
+"filters.allAccounts" = "すべての口座";
+"filters.allCategories" = "すべてのカテゴリー";
+"filters.clearFilters" = "フィルターをクリア";
+"filters.selectCategories" = "カテゴリーを選択";
+"filters.selectAll" = "すべて選択";
+"filters.deselectAll" = "すべて解除";
+"filters.noSubcategories" = "サブカテゴリーがありません";
+"filters.noneSelected" = "未選択";
+"filters.allSubcategories" = "すべてのサブカテゴリー";
+"filters.filterOptions" = "フィルターオプション";
+"filters.noteContains" = "メモに含む...";
+"filters.selectAccounts" = "口座を選択";
+"filters.selectTags" = "タグを選択";
+"filters.selectCurrencies" = "通貨を選択";
+"filters.allTags" = "すべてのタグ";
+"filters.noTags" = "タグなし";
+"filters.allCurrencies" = "利用可能なすべて";
+"filters.allNeeds" = "すべての性質";
+"filters.selectedCount" = "%d件選択中";
+"filters.categories" = "カテゴリー";
+"filters.type" = "種別";
+"filters.need" = "性質";
+"filters.currency" = "通貨";
+"filters.includeMode" = "含める";
+"filters.excludeMode" = "除外";
+"filters.nothingExcluded" = "なし";
+"filters.datePrefix %@" = "日付: %@";
+
+// MARK: - Actions
+
+"action.apply" = "適用";
+"action.cancel" = "キャンセル";
+"action.done" = "完了";
+"action.save" = "保存";
+"action.delete" = "削除";
+"action.edit" = "編集";
+"action.add" = "追加";
+"action.viewAll" = "すべて表示";
+"action.viewLess" = "少なく表示";
+"action.multipleEdit" = "複数編集";
+"action.back" = "戻る";
+"action.next" = "次へ";
+"action.duplicate" = "複製";
+"action.favorite" = "お気に入り";
+"action.recurring" = "定期";
+"action.saveAsFavorite" = "お気に入りとして保存";
+"action.saveAsRecurring" = "定期として保存";
+"action.savedAsFavorite" = "お気に入りに保存しました";
+"action.savedAsRecurring" = "定期として保存しました";
+"action.duplicated" = "複製しました - 保存して新規作成";
+"action.select" = "選択";
+"action.retry" = "再試行";
+"action.later" = "あとで";
+"action.reorder" = "並び替え";
+"action.clearAll" = "すべてのフィルターをクリア";
+
+// MARK: - Search
+
+"search.noResults" = "結果が見つかりませんでした";
+"search.tryAnotherTerm" = "別の検索語を試してください";
+"search.resultsCount" = "%d件の結果";
+"search.filter.all" = "すべて";
+"search.filter.note" = "メモ";
+"search.filter.category" = "カテゴリー";
+"search.filter.subcategory" = "サブカテゴリー";
+"search.filter.account" = "口座";
+"search.filter.need" = "性質";
+"search.filter.tag" = "タグ";
+
+// MARK: - Exchange Rate
+
+"exchangeRate.title" = "為替レート";
+"exchangeRate.updated" = "更新済み";
+"exchangeRate.loadError" = "為替レートを取得できませんでした。少ししてからもう一度お試しください。";
+"exchangeRate.noSecondaryCurrenciesHint" = "次の場所で副通貨を選択できます";
+"exchangeRate.noSecondaryCurrenciesPath" = "プロフィール > 通貨と為替";
+
+// MARK: - Empty States
+
+"empty.noData" = "ここにデータが表示されます";
+"empty.noTransactions" = "ここに取引が表示されます";
+"empty.noFavorites" = "お気に入りはまだありません";
+"empty.noTags" = "タグはまだありません";
+"empty.noAccounts" = "口座はまだありません";
+"empty.noCategories" = "カテゴリーはまだありません";
+"empty.noSubcategories" = "サブカテゴリーはまだありません";
+"empty.activateCategoriesTitle" = "カテゴリがまだありません";
+"empty.activateCategoriesMessage" = "今すぐ作成して、グループの支出を整理し、統計を見ましょう。プロフィールから管理できます。";
+"empty.activateCategoriesAction" = "カテゴリを作成";
+
+// MARK: - Transaction
+
+"transaction.new" = "新規取引";
+"transaction.edit" = "取引を編集";
+"transaction.type" = "種別";
+"transaction.amount" = "金額";
+"transaction.note" = "メモ";
+"transaction.notePlaceholder" = "メモを入力";
+"transaction.date" = "日付";
+"transaction.tags" = "タグ";
+"transaction.addTags" = "タグを追加";
+"transaction.category" = "カテゴリー";
+"transaction.subcategory" = "サブカテゴリー";
+"transaction.select" = "選択";
+"transaction.total" = "合計";
+"transaction.income" = "収入";
+"transaction.expense" = "支出";
+"transaction.transfer" = "振替";
+"transaction.origin" = "出金元";
+"transaction.destination" = "入金先";
+"transaction.exchangeRate" = "為替レート";
+"transaction.willReceive" = "受取金額";
+"transaction.createAnother" = "もう1件追加";
+"transaction.recents" = "最近の項目";
+"transaction.successTitle" = "完了！";
+"transaction.type.expense" = "支出";
+"transaction.type.income" = "収入";
+"transaction.type.transfer" = "振替";
+
+// MARK: - Account
+
+"account.new" = "新規口座";
+"account.edit" = "口座を編集";
+"account.name" = "名前";
+"account.type" = "種別";
+"account.currency" = "通貨";
+"account.balance" = "残高";
+"account.initialBalance" = "初期残高";
+"account.sign" = "符号";
+"account.positive" = "プラス";
+"account.negative" = "マイナス";
+"account.sign.inFavor" = "受取";
+"account.sign.consumed" = "支出済み";
+"account.adjustment" = "調整";
+"account.selected" = "選択中";
+"account.selectAccount" = "口座を選択";
+"account.archived" = "アーカイブ済み";
+"account.archive" = "口座をアーカイブ";
+"account.unarchive" = "アーカイブ解除";
+"account.excludeFromStats" = "統計から除外";
+"account.delete" = "口座を削除";
+
+// MARK: - Category
+
+"category.new" = "新規カテゴリー";
+"category.edit" = "カテゴリーを編集";
+"category.name" = "名前";
+"category.need" = "性質";
+"category.show" = "表示";
+"category.addSubcategory" = "サブカテゴリーを追加";
+"category.subcategories" = "サブカテゴリー";
+"category.noSubcategoriesYet" = "このカテゴリーにはまだサブカテゴリーがありません。";
+"category.requiresSubcategory" = "新規カテゴリーを作成するには、少なくとも1つのサブカテゴリーを追加する必要があります。";
+
+// MARK: - Alert
+
+"alert.unsavedChanges" = "保存されていない変更があります";
+"alert.discardChanges" = "破棄";
+"alert.keepEditing" = "編集を続ける";
+"alert.confirmDelete" = "確認";
+"alert.deleteWarning" = "この操作は取り消せません";
+
+// MARK: - Import
+
+"import.title" = "取引をインポート";
+"import.selectFile" = "ファイルを選択";
+"import.importing" = "インポート中...";
+"import.downloadTemplate" = "テンプレートをダウンロード";
+"import.createCategories" = "新規カテゴリーを作成";
+"import.continue" = "続ける";
+"import.noAccountsAvailable" = "利用可能な口座がありません";
+"import.createAccountFirst" = "取引をインポートする前に少なくとも1つの口座を作成してください。";
+"import.completed" = "インポートが完了しました";
+"import.error" = "インポート中に問題が発生しました";
+"import.templateGenerated" = "テンプレートを生成しました";
+"import.templateGeneratedMessage" = "テンプレートが正常に生成されました。編集してからこの画面に戻り、インポートできます。";
+"import.introDescription" = "CSVやExcelファイルから一括で取引を追加できます。";
+"import.templateDescription" = "正しい形式で取り込むため、公式テンプレートをご利用ください。";
+"import.categoriesDescription" = "存在しないカテゴリーがファイルに含まれている場合、自動的に作成されます。";
+"import.selectAccount" = "口座を選択";
+"import.fileUrlError" = "ファイルを読み込めませんでした。もう一度選択してみてください。";
+"import.createAccountBeforeImport" = "取引をインポートする前に少なくとも1つの口座を作成してください。";
+
+// Multi-currency import
+"import.multiCurrencyDetected" = "複数の通貨を検出しました";
+"import.assignAccountPerCurrency" = "ファイル内の各通貨に口座を割り当ててください。";
+"import.selectAccountForCurrency" = "口座を選択";
+"import.currenciesDetected" = "%d種類の通貨を検出";
+"import.recordsImportedMultiCurrency" = "%d件の記録を%d種類の通貨でインポートしました。";
+"import.noAccountsForCurrency" = "%@の口座がありません。先にこの通貨の口座を作成してください。";
+"import.noCurrenciesDetected" = "ファイルから有効な通貨を検出できませんでした。";
+"import.importAction" = "インポート";
+
+// MARK: - Export
+
+"export.title" = "エクスポート";
+"export.filters" = "フィルター";
+"export.columns" = "列";
+"export.summary" = "概要";
+"export.format" = "形式";
+"export.period" = "期間";
+"export.selectAll" = "すべて選択";
+"export.deselectAll" = "すべて解除";
+
+// MARK: - Favorites
+
+"favorites.title" = "お気に入りの支払い";
+"favorites.new" = "新規お気に入り";
+"favorites.edit" = "お気に入りを編集";
+"favorites.noFavorites" = "お気に入りはまだありません";
+"favorites.createTemplate" = "よく使う支払いをテンプレートとして登録すると、すばやく記録できます。";
+"favorites.newTitle" = "新規お気に入り";
+"favorites.editTitle" = "お気に入りを編集";
+"favorites.namePlaceholder" = "お気に入りの名前";
+"favorites.notConfigured" = "未設定";
+"favorites.descriptionPlaceholder" = "説明(任意)";
+"favorites.saveDescription" = "この支払いをお気に入りとして保存すると、似た支出をすばやく記録できます。取引の作成・編集画面の右上にある⭐から呼び出せます。プロフィールのお気に入り支払いからいつでも編集できます。";
+
+// MARK: - Scheduled
+
+"scheduled.saveDescription" = "予定支払いを作成すると、定期的な支出や収入をお知らせします。プロフィールの予定支払いセクションでいつでも編集・有効化・無効化できます。";
+"scheduled.paid" = "支払い済み";
+"scheduled.overdue" = "期限超過";
+"scheduled.skip" = "スキップ";
+"scheduled.skip.undo" = "スキップを取り消す";
+"scheduled.skip.confirm.title" = "今回の支払いをスキップしますか？";
+"scheduled.skip.confirm.message" = "支出として記録されません。あとで取り消すこともできます。";
+"scheduled.skip.overdue.title" = "期限超過の支払いをスキップ";
+"scheduled.status.skipped" = "スキップ済み";
+"scheduled.status.paid" = "支払い済み";
+"scheduled.unlink" = "取引のリンクを解除";
+"scheduled.status.overdue" = "期限超過";
+"scheduled.draftCreatedTitle" = "未払いの支払いがあります！";
+"scheduled.draftCreatedMessage" = "%d件の予定支払いが受信箱に追加されました。準備できたら確認してください。";
+"scheduled.viewInbox" = "受信箱を見る";
+
+// MARK: - Inbox Alert Modal
+
+"inbox.alert.title.scheduled" = "未払いの支払いがあります！";
+"inbox.alert.title.subscriptions" = "確認すべきサブスクリプション！";
+"inbox.alert.title.automations" = "新しい自動記録！";
+"inbox.alert.title.mixed" = "受信箱に新しい記録があります！";
+"inbox.alert.message.scheduled" = "%d件の予定支払いが受信箱に追加されました。";
+"inbox.alert.message.subscriptions" = "%d件のサブスクリプションが受信箱に追加されました。";
+"inbox.alert.message.mixed.scheduled" = "%d件の支払い";
+"inbox.alert.message.mixed.subscriptions" = "%d件のサブスクリプション";
+"inbox.alert.message.mixed.automations" = "%d件の自動記録";
+"inbox.alert.message.mixed.connector" = "と";
+
+// MARK: - Settings
+
+"settings.title" = "設定";
+"settings.theme" = "テーマ";
+"settings.currency" = "通貨";
+"settings.appIcon" = "アプリアイコン";
+"settings.personalization" = "パーソナライズ";
+"settings.accounts" = "口座";
+"settings.categories" = "カテゴリー";
+"settings.tags" = "タグ";
+"settings.notifications" = "通知";
+"settings.favorites" = "お気に入りの支払い";
+"settings.budgets" = "予算";
+"settings.budgetsFavorites" = "お気に入りの予算";
+"settings.budgetsFavoritesInfo" = "お気に入りの予算は予算ウィジェットに表示されます(中サイズで3件、大サイズで5件)。";
+"settings.budgetsFavoritesEmptyHint" = "計画タブで予算を作成してください。";
+"settings.budgetsFavoritesReorder" = "お気に入りを並び替え";
+"budgets.favorites.previewTitle" = "ウィジェットのプレビュー";
+"budgets.favorites.previewEmpty" = "プレビューを見るにはお気に入りを選択してください";
+"settings.tabBarConfig" = "ナビゲーションをカスタマイズ";
+"settings.tabBarConfigInfo" = "下部バーに表示するセクションを選んでください。最小1、最大3。";
+"settings.tabBarConfigActive" = "アクティブなタブ";
+"settings.tabBarConfigAvailable" = "利用可能";
+"settings.tabBarConfigReorderHint" = "長押しで並び替え";
+"settings.tabBarConfigMinWarning" = "少なくとも1つのセクションが必要です";
+"settings.tabBarConfigMaxWarning" = "最大3セクションまで";
+"settings.plannedPayments" = "予定支払い";
+"settings.voiceInputEnabled" = "音声入力";
+"settings.voiceLanguage" = "音声言語";
+"settings.appLanguage" = "アプリの言語";
+"settings.appLanguageRestart" = "変更を反映するにはアプリを再起動してください。";
+"settings.imageInputEnabled" = "画像入力";
+"settings.resetData" = "データをリセット";
+"settings.version" = "バージョン";
+"settings.light" = "ライト";
+"settings.dark" = "ダーク";
+"settings.system" = "システム";
+"settings.theme.indigo" = "インディゴ";
+"settings.theme.rosa" = "ローズ";
+"settings.theme.teal" = "ティール";
+"settings.theme.minimalist" = "ミニマル";
+"settings.theme.translucent" = "半透明";
+"settings.theme.liquidGlass" = "リキッドグラス";
+"settings.defaultCurrency" = "既定の通貨";
+"settings.currentIcon" = "現在のアイコン";
+"settings.resetAllData" = "すべてのデータをリセット";
+"settings.deleteAllData" = "すべてのデータを削除";
+
+// MARK: - Common
+
+"common.accept" = "同意する";
+"common.name" = "名前";
+"common.alias" = "エイリアス";
+"common.color" = "色";
+"common.icon" = "アイコン";
+"common.changeIcon" = "アイコンを変更";
+"common.search" = "検索";
+"common.loading" = "読み込み中...";
+"common.error" = "エラー";
+"common.success" = "成功";
+"common.dataPrivacy" = "データはデバイスの外に出ません";
+"common.active" = "アクティブ";
+"common.hidden" = "非表示";
+"common.inactive" = "非アクティブ";
+
+// MARK: - Widgets
+
+"widget.visible" = "表示";
+
+// MARK: - Planning
+
+"planning.title" = "計画";
+"planning.budgets" = "予算";
+"planning.goals" = "目標";
+"planning.comingSoon" = "近日公開";
+"planning.scheduledPayments" = "予定支払い";
+"planning.scheduled.totalLabel" = "今月の合計";
+"planning.budgetCharts.spentOf" = "%@ / %@ 使用";
+"planning.budgetCharts.byCategoryHint" = "カテゴリをタップしてサブカテゴリを確認してください。";
+"planning.budgetCharts.byCategoryTitle" = "カテゴリ別";
+"planning.budgetCharts.spendingHint" = "日ごとの累積支出です。";
+"planning.budgetCharts.spendingTitle" = "期間の支出";
+"planning.budgetCharts.historyHint" = "過去6期間の実績を確認できます。";
+"planning.budgetCharts.historyTitle" = "履歴";
+
+// MARK: - Budgets
+
+"budgets.title" = "予算";
+"budgets.empty.title" = "予算はまだありません";
+"budgets.empty.message" = "支出をうまく管理するために予算を作成しましょう。";
+"budgets.includeSharedExpenses" = "シェア支出を含める";
+"budgets.includeSharedExpensesHint" = "オフにすると、個人の支出のみが対象になります";
+"budgets.widget.noFavorites.title" = "お気に入り予算がありません";
+"budgets.widget.noFavorites.message" = "ここに表示するには、設定 > 予算でお気に入りに登録してください。";
+"budgets.widget.selectFavorites" = "お気に入りを選択";
+"budgets.alerts.title" = "通知";
+"budgets.alerts.enable" = "上限に近づいたら通知";
+"budgets.alerts.thresholds" = "通知タイミング:";
+"budgets.alerts.message.50" = "「%1$@」は半分到達 — %3$@中%2$@を使用";
+"budgets.alerts.message.75" = "「%1$@」の75%%を使用 — %3$@中%2$@";
+"budgets.alerts.message.90" = "「%1$@」の残りが少なくなりました — %3$@中%2$@を使用";
+"budgets.alerts.message.100" = "「%1$@」の上限に到達しました — %3$@中%2$@";
+"budgets.alerts.globalDisabledHint" = "予算アラートを受け取るには、プロフィール > 通知で有効化してください";
+"budgets.alerts.custom" = "カスタム";
+"budgets.alerts.addThreshold" = "追加";
+"budgets.new" = "新規予算";
+"budgets.edit" = "予算を編集";
+"budgets.delete" = "予算を削除";
+"budgets.delete.confirm.title" = "予算を削除しますか？";
+"budgets.delete.confirm.message" = "この操作は取り消せません。";
+
+// Budget Period Types
+"budgets.period.weekly" = "毎週";
+"budgets.period.monthly" = "毎月";
+"budgets.period.yearly" = "毎年";
+"budgets.period.unique" = "1回限り";
+"budgets.period.all" = "すべて";
+
+// Budget Status
+"budgets.status.exceeded" = "超過";
+"budgets.status.active" = "アクティブ";
+"budgets.status.inactive" = "非アクティブ";
+"budget.noInactive" = "非アクティブな予算はありません";
+
+// Budget Details
+"budgets.spent.percent" = "%@使用";
+"budgets.days.remaining" = "残り%@日";
+"budgets.period.past" = "過去";
+"budgets.amount.of" = "/ %@";
+"budgets.exceeded.encouragement" = "予算を超えました — 次回はうまくいきますよ！";
+
+// Budget Editor
+"budgets.editor.name.placeholder" = "予算名";
+"budgets.editor.amount.placeholder" = "金額";
+"budgets.editor.basic.info" = "基本情報";
+"budgets.editor.filters" = "フィルター";
+"budgets.editor.period.type" = "期間";
+"budgets.editor.date.range" = "日付範囲";
+"budgets.editor.start.date" = "開始日";
+"budgets.editor.end.date" = "終了日";
+
+// Period Selector
+"budgets.period.selector.title.weekly" = "週を選ぶ";
+"budgets.period.selector.title.monthly" = "月を選ぶ";
+"budgets.period.selector.title.yearly" = "年を選ぶ";
+"budgets.period.week.of" = "%@の週";
+"budgets.period.current.week" = "今週";
+"budgets.period.current.month" = "今月";
+"budgets.period.current.year" = "今年";
+"budgets.period.confirm" = "完了";
+"budgets.period.goToToday" = "今日へ";
+
+// Budget Detail
+"budgets.detail.info" = "詳細";
+"budgets.detail.period" = "期間";
+"budgets.detail.accounts" = "口座";
+"budgets.detail.categories" = "カテゴリー";
+"budgets.detail.tags" = "タグ";
+"budgets.detail.needs" = "性質";
+"budgets.detail.alerts" = "通知";
+"budgets.detail.allAccounts" = "すべての口座";
+"budgets.detail.allCategories" = "すべてのカテゴリー";
+"budgets.detail.subcategories" = "サブカテゴリー";
+"budgets.detail.allSubcategories" = "すべてのサブカテゴリー";
+"budgets.detail.notFound" = "予算が見つかりません";
+"budgets.detail.status" = "状態";
+
+// Budget Charts
+"budgets.charts.title" = "グラフ";
+"budgets.charts.compliance" = "支出と上限";
+"budgets.charts.dailySpending" = "累積支出";
+"budgets.charts.categoryBreakdown" = "カテゴリー別";
+"budgets.charts.noData" = "この期間のデータはありません";
+
+// MARK: - Profile
+
+"profile.title" = "プロフィール";
+"profile.defaultName" = "ユーザー";
+"profile.personalDetails" = "個人情報";
+"profile.dataManagement" = "データ管理";
+"profile.appearance" = "外観";
+"empty.noExpenses" = "支出はまだ記録されていません";
+"common.recent" = "最近";
+"tag.new" = "新規タグ";
+"tag.edit" = "タグを編集";
+"tag.delete" = "タグを削除";
+"settings.currencyAndExchange" = "通貨と為替";
+"common.updatingRecords" = "記録を更新中...";
+"common.recalculatingConversions" = "過去の換算を再計算中";
+"export.customizeFile" = "ファイルをカスタマイズ";
+"export.csvGeneratedSuccess" = "ファイルが正常に生成されました。";
+"export.confirmExport" = "エクスポートを確認";
+"export.selectColumns" = "列を選択";
+"export.availableColumns" = "利用可能な列";
+"export.columnsDescription" = "エクスポートに含める列を選択してください。少なくとも1つ必要です。";
+"export.summaryAndExport" = "サマリーとエクスポート";
+"export.summaryDescription" = "ファイルを生成する前に、選択中のフィルターと列を確認してください。";
+"export.filtersSummary" = "フィルターのサマリー";
+"export.columnsToExport" = "エクスポートする列";
+"export.exportToCSV" = "CSVにエクスポート";
+"export.exportBtn" = "エクスポート";
+"export.exportError" = "エクスポート中に問題が発生しました";
+"export.exportCompleted" = "エクスポートが完了しました";
+"export.backToSettings" = "設定に戻る";
+"export.exportData" = "データをエクスポート";
+"export.greaterThan" = "より大きい";
+"export.lessThan" = "より小さい";
+"export.selectSingleCurrency" = "金額でフィルターするには通貨を1つ選択してください。";
+"export.allAvailable" = "利用可能なすべて";
+"export.noTagsSelected" = "タグなし";
+"export.noSubcategorySelected" = "サブカテゴリー未選択";
+"export.any" = "任意";
+"export.between" = "範囲";
+"export.condition" = "条件";
+"export.noneSelected" = "なし";
+"export.accountsSelected" = "%d件選択中";
+"export.allCategories" = "すべてのカテゴリー";
+"export.allTags" = "すべてのタグ";
+"export.allCurrencies" = "すべて";
+"export.column.date" = "日付";
+"export.column.amount" = "金額";
+"export.column.currency" = "通貨";
+"export.column.account" = "口座";
+"export.column.category" = "カテゴリー";
+"export.column.subcategory" = "サブカテゴリー";
+"export.column.tags" = "タグ";
+"export.column.note" = "メモ";
+"export.column.date.description" = "yyyy-MM-dd形式の日付。";
+"export.column.amount.description" = "取引金額(小数点2桁)。";
+"export.column.currency.description" = "通貨コード(PEN、USD、EUR)。";
+"export.column.account.description" = "関連付けられた口座名。";
+"export.column.category.description" = "取引のメインカテゴリー。";
+"export.column.subcategory.description" = "具体的なサブカテゴリー。";
+"export.column.tags.description" = "関連付けられたタグ(';'で区切る)。";
+"export.column.note.description" = "取引の自由記述メモ。";
+"common.next" = "次へ";
+"settings.versionInfo" = "バージョン1.0.0 (ビルド1)";
+"tab.panel" = "ホーム";
+"tab.statistics" = "統計";
+"tab.planning" = "計画";
+"tab.more" = "もっと見る";
+"tab.search" = "検索";
+"tab.records" = "記録";
+"tab.reports" = "レポート";
+"tab.groups" = "グループ";
+"report.title" = "金融レポート";
+"report.tab.comparative" = "比較";
+"report.tab.cashFlow" = "キャッシュフロー";
+"report.income" = "収入";
+"report.expense" = "支出";
+"report.netFlow" = "純フロー";
+"report.noData" = "データなし";
+"report.noDataDescription" = "この期間に記録はありません";
+"report.uncategorized" = "未分類";
+"report.noSubcategory" = "サブカテゴリーなし";
+"report.noTag" = "タグなし";
+"report.noAccount" = "口座なし";
+"report.grouping.type" = "種別";
+"report.grouping.category" = "カテゴリー";
+"report.grouping.subcategory" = "サブカテゴリー";
+"report.grouping.tag" = "タグ";
+"report.grouping.account" = "口座";
+"report.grouping.currency" = "通貨";
+"report.grouping.nature" = "性質";
+"report.grouping.drillDown" = "深掘り";
+"report.grouping.hint" = "階層を追加すると詳細が表示されます。優先度はドラッグで並び替えできます。";
+"report.grouping.active" = "アクティブ";
+"report.grouping.available" = "利用可能";
+"common.moreOptions" = "その他のオプション";
+"common.comingSoon" = "近日公開";
+"panel.greeting" = "%@さん、こんにちは";
+"panel.title" = "%@さんのパネル";
+"panel.fabVoice" = "音声";
+"panel.fabImage" = "画像";
+"panel.fabManual" = "手動";
+"panel.spent" = "支出済み";
+"panel.aiInsightsTitle" = "AIインサイト";
+"panel.aiInsightsDescription" = "資産状況に関するスマートなコメント";
+"panel.dismissInsight" = "インサイトを非表示";
+"panel.aiConsentRequired" = "設定 → AIインサイトでAIを有効にしてください";
+"panel.preparingInsight" = "インサイトを準備中...";
+"panel.insightMenuRegenerate" = "再生成";
+"panel.insightMenuDifferentAngle" = "別の視点で";
+"panel.insightMenuHideHour" = "1時間非表示";
+"panel.insightMenuHideToday" = "今日は非表示";
+
+
+// Panel — Live Anchor Education (sheet "Tu saldo hoy")
+"panel.liveAnchorEducation.title" = "今日の残高";
+"panel.liveAnchorEducation.heroFormat" = "今日は%@お持ちです";
+"panel.liveAnchorEducation.bodyLineOneFormat" = "すべて%@に両替した場合の現在のお金の価値です。";
+"panel.liveAnchorEducation.bodyLineTwoFormat" = "代わりに各取引をその日のレートで合算すると、%@になります。";
+"panel.liveAnchorEducation.bodyLineThree" = "なぜ違いがあるのでしょう？他の通貨でお金をお持ちで、それらの通貨は今日異なる価値を持っています。";
+"panel.liveAnchorEducation.todayQuestion" = "今日の残高";
+"panel.liveAnchorEducation.whyQuestion" = "なぜこの金額？";
+"panel.liveAnchorEducation.breakdownToggle" = "通貨別に表示";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "本日 ≈ %@";
+"panel.liveAnchorEducation.coachTitle" = "残高は自然と動きます";
+"panel.liveAnchorEducation.coachMessage" = "他の通貨でお金をお持ちのとき、その価値は日々変わります。タップして詳しく見てみましょう。";
+"panel.liveAnchorEducation.dotA11yLabel" = "現在の為替レートでの本日の残高。タップして詳細を確認してください。";
+"widget.today" = "今日";
+
+// Widget Preferences
+"widget.preferences.description" = "ダッシュボードに表示する内容と順序を選んでください。";
+"widget.resetLayout" = "元のレイアウトに戻す";
+"widget.alwaysVisible" = "常に表示";
+"widget.fixedPosition" = "固定位置";
+"widget.summary" = "サマリー";
+"widget.list" = "リスト";
+"widget.calendar" = "カレンダー";
+
+// Widget Types
+"widgetType.trend" = "推移";
+"widgetType.topSpending" = "トップカテゴリー";
+"widgetType.topSubcategories" = "トップサブカテゴリー";
+"widgetType.cashFlow" = "キャッシュフロー";
+"widgetType.categoriesPie" = "カテゴリー";
+"widgetType.subcategoriesPie" = "サブカテゴリー";
+"widgetType.latestRecords" = "最新の記録";
+"widgetType.expensesByNeed" = "性質";
+"widgetType.expensesByTag" = "タグ";
+"widgetType.exchangeRate" = "為替レート";
+"widgetType.budgets" = "予算";
+"widgetType.scheduledPayments" = "予定支払い";
+"widgetType.weekdayBar" = "1日の平均";
+"widgetType.periodComparison" = "今月と先月の比較";
+
+// MARK: - Scheduled Payments Widget
+"scheduled.widget.empty.title" = "予定の支払いはありません";
+"scheduled.widget.empty.message" = "予定の支払いはここに表示されます";
+"scheduled.widget.tomorrow" = "明日";
+"scheduled.widget.smallTitle" = "予定";
+"scheduled.widget.largeTitle.recurring" = "定期支払い";
+"scheduled.widget.smallToPay" = "支払予定";
+"scheduled.widget.smallPaidAmount" = "%@支払い済み";
+"scheduled.widget.smallActivePending" = "今月%1$d件 · 残り%2$d件";
+"scheduled.widget.smallAllPaid" = "すべて完了！";
+"scheduled.payments.count" = "アクティブな支払い%d件";
+"scheduled.calendar.show.all" = "すべて表示";
+"scheduled.calendar.day.empty" = "この日の支払いはありません";
+"scheduled.calendar.month.empty" = "今月の支払いはありません";
+
+"widget.sizeLabel" = "サイズ";
+"widget.chatFab.toggle" = "Yalaに聞く";
+"widget.chatFab.description" = "AI金融アシスタントのボタンを表示します。";
+"widget.chatFab.hint" = "メイン画面にチャットボタンを表示するか制御します。";
+"widget.aiCapabilities.header" = "AI機能";
+
+"common.all" = "すべて";
+"widget.main" = "メイン";
+"widget.topCategories" = "トップカテゴリー";
+"widget.topSubcategories" = "トップサブカテゴリー";
+"widget.subcategories" = "サブカテゴリー";
+"widget.noExpensesPeriod" = "この期間に支出はまだありません。";
+"widget.noExpensesDescriptionCategories" = "取引を追加すると、トップカテゴリーがここに表示されます。";
+"widget.noExpensesDescriptionSubcategories" = "取引を追加すると、トップサブカテゴリーがここに表示されます。";
+"widget.of" = "/ %@";
+"widget.ofTotal" = "合計に対して";
+"widget.ofExpense" = "支出に対して";
+"widget.categoryAbbr" = "カテ.";
+
+"common.others" = "その他";
+"common.remaining" = "残り";
+"widget.categories" = "カテゴリー";
+"widget.noExpensesSubcategoriesPeriod" = "この期間にサブカテゴリー別の支出はまだありません。";
+"widget.distributionByCategory" = "カテゴリー";
+"widget.distributionBySubcategory" = "サブカテゴリー";
+"widget.distributionByNeed" = "性質";
+"widget.distributionByTag" = "タグ別の内訳";
+"widget.noDataForPeriod" = "この期間のデータはまだありません";
+"widget.selectCurrencies" = "%@と比較する通貨を最大2つ選択";
+"widget.currenciesToCompare" = "比較する通貨";
+"widget.noRecordsForFilters" = "この期間とフィルターに該当する記録はありません";
+"widget.recordsWillAppear" = "取引を追加すると、ここに表示されます。";
+"widget.total" = "合計";
+"widget.average" = "平均";
+
+"common.uncategorized" = "未分類";
+"cashFlow.netFlow" = "純フロー";
+
+// Cash Flow Plan
+"cashFlowPlan.title" = "キャッシュフロー";
+"cashFlowPlan.description" = "過去6ヶ月を分析して計画を作成しました。必要に応じて確認・調整してください。";
+"cashFlowPlan.createButton" = "計画を作成";
+"cashFlowPlan.startingBalance" = "現在の残高はいくらですか？(任意)";
+"cashFlowPlan.startingBalanceHelper" = "今すぐ使えるお金(銀行、財布など)があれば、ここに入力してください。今後の収入に加算されます。";
+"cashFlowPlan.incomeSection" = "収入";
+"cashFlowPlan.expenseSection" = "支出";
+"cashFlowPlan.recommendedBadge" = "おすすめ";
+"cashFlowPlan.otherExpenses" = "未分類の支出";
+"cashFlowPlan.otherExpensesDesc" = "計画に含まれていないカテゴリーからの支出";
+"cashFlowPlan.otherIncome" = "未分類の収入";
+"cashFlowPlan.emptyState" = "データがまだありません";
+"cashFlowPlan.emptyStateMessage" = "支出と収入を最低1ヶ月記録してください、計画を作成します。";
+"cashFlowPlan.monthsActive" = "ヶ月";
+"cashFlowPlan.suggestedSource" = "%dヶ月の活動データに基づく";
+"cashFlowPlan.bannerTitle" = "キャッシュフローとは？";
+"cashFlowPlan.bannerBody" = "毎月の収入と支出の計画です。お金が足りるか、調整が必要かが分かります。";
+"cashFlowPlan.available" = "利用可能";
+"cashFlowPlan.accumulated" = "累積";
+"cashFlowPlan.accumulatedShort" = "累積";
+"cashFlowPlan.addLine" = "項目を追加";
+"cashFlowPlan.thisMonth" = "今月";
+"cashFlowPlan.pastMonth" = "過去";
+"cashFlowPlan.futureMonth" = "予測";
+"cashFlowPlan.executionPercent" = "%d%%使用";
+"cashFlowPlan.densityFull" = "詳細";
+"cashFlowPlan.densityIcons" = "アイコン";
+"cashFlowPlan.estimationMethod" = "金額の計算方法は？";
+"cashFlowPlan.calculationMethodTitle" = "金額の計算";
+"cashFlowPlan.average3m" = "3ヶ月平均";
+"cashFlowPlan.average6m" = "6ヶ月平均";
+"cashFlowPlan.average12m" = "12ヶ月平均";
+"cashFlowPlan.lastMonth" = "先月";
+"cashFlowPlan.manual" = "固定金額";
+"cashFlowPlan.scheduled" = "予定支払い";
+"cashFlowPlan.trend" = "推移";
+"cashFlowPlan.custom" = "カスタム";
+"cashFlowPlan.context" = "コンテキスト";
+"cashFlowPlan.trendLabel" = "推移";
+"cashFlowPlan.rangeLabel" = "範囲";
+"cashFlowPlan.plan" = "予定";
+"cashFlowPlan.real" = "支出済み";
+"cashFlowPlan.realIncome" = "受取済み";
+"cashFlowPlan.difference" = "差額";
+"cashFlowPlan.adjustAmount" = "金額を調整";
+"cashFlowPlan.othersTitle" = "未分類の支出";
+"cashFlowPlan.othersDesc" = "記録の中で計画に含まれていない支出です。+をタップして追加できます。";
+"cashFlowPlan.othersHint" = "たまにしか発生しないものは気にせず、毎月繰り返すものだけ追加すれば大丈夫です。";
+"cashFlowPlan.othersIncomeTitle" = "未分類の収入";
+"cashFlowPlan.othersIncomeDesc" = "記録の中で計画に含まれていない収入です。+をタップして追加できます。";
+"cashFlowPlan.othersIncomeHint" = "毎月繰り返すものだけ追加すれば大丈夫です。";
+"cashFlowPlan.promoteCategory" = "計画に追加";
+"cashFlowPlan.resetPlan" = "計画をリセット";
+"cashFlowPlan.resetConfirmation" = "計画をリセットしますか？すべての項目と調整が削除されます。この操作は取り消せません。";
+"cashFlowPlan.deleteLineConfirmation" = "この項目を計画から削除しますか？この操作は取り消せません。";
+"cashFlowPlan.suggestPayment" = "新しい支払い: %@。計画に追加しますか？";
+"cashFlowPlan.chartsTitle" = "グラフ";
+"cashFlowPlan.chartsSectionTitle" = "キャッシュフロー";
+"cashFlowPlan.accumulatedBalance" = "累積残高";
+"cashFlowPlan.incomeVsExpense" = "収入 vs 支出";
+"cashFlowPlan.composition" = "支出の構成";
+"cashFlowPlan.realVsPlan" = "実績 vs 計画";
+"cashFlowPlan.trendByLine" = "項目別の推移";
+"cashFlowPlan.selectAll" = "すべて選択";
+"cashFlowPlan.total" = "合計";
+"cashFlowPlan.lineNameLabel" = "項目名";
+"cashFlowPlan.lineNameHint" = "カスタマイズできます";
+"cashFlowPlan.availableHintTitle" = "利用可能";
+"cashFlowPlan.availableHintMessage" = "今月の残金: 収入から支出を引いた額。";
+"cashFlowPlan.accumulatedHintTitle" = "累積";
+"cashFlowPlan.accumulatedHintMessage" = "計画開始からの合計残高。各月の利用可能額を積み上げた数値です。";
+"cashFlowPlan.editStartingBalance" = "初期残高を編集";
+"cashFlowPlan.editStartingBalanceSave" = "保存";
+"cashFlowPlan.average3mDesc" = "過去3ヶ月の平均支出";
+"cashFlowPlan.average6mDesc" = "過去6ヶ月の平均";
+"cashFlowPlan.average12mDesc" = "過去1年の平均";
+"cashFlowPlan.lastMonthDesc" = "先月の支出額";
+"cashFlowPlan.manualDesc" = "正確な金額を自分で設定";
+"cashFlowPlan.scheduledDesc" = "予定支払いの金額を使用";
+"cashFlowPlan.trendDesc" = "最近数ヶ月のトレンドから計算";
+"cashFlowPlan.customDesc" = "平均する月を選択";
+"cashFlowPlan.monthSummaryOnTrack" = "今月の予想支出のうち%d%%を使用しました";
+"cashFlowPlan.monthSummaryOver" = "今月の予想を%d%%超過しています";
+"cashFlowPlan.monthSummaryUnder" = "%d%%だけ使用 — 今月は順調です";
+"cashFlowPlan.configureHorizon" = "期間を設定";
+"cashFlowPlan.monthsAhead" = "先の月数";
+"cashFlowPlan.monthsBack" = "過去の月数";
+"cashFlowPlan.showAccumulatedBalance" = "累積を表示";
+"cashFlowPlan.startingBalanceDateLabel" = "残高の日付";
+"cashFlowPlan.startingBalanceDateHelper" = "この残高はいつ時点のものですか？日付未選択の場合は今日になります。";
+
+// Cell Detail Sheet (Inc 4)
+"cashFlowPlan.cellDetailOf" = "/";
+"cashFlowPlan.cellDetailRemaining" = "残り%@";
+"cashFlowPlan.cellDetailRecentTransactions" = "最近の取引";
+"cashFlowPlan.cellDetailSpent" = "支出額";
+"cashFlowPlan.cellDetailEarned" = "受取額";
+"cashFlowPlan.cellDetailMore" = "多い";
+"cashFlowPlan.cellDetailLess" = "少ない";
+"cashFlowPlan.cellDetailOverrideActive" = "金額を手動で調整しました";
+"cashFlowPlan.cellDetailNote" = "メモ(任意)";
+"cashFlowPlan.cellDetailSaveAdjustment" = "調整を保存";
+"cashFlowPlan.overrideScopeTitle" = "調整の範囲";
+"cashFlowPlan.overrideScopeMessage" = "この金額を今月のみに適用しますか？それとも今後の月にも適用しますか？";
+"cashFlowPlan.overrideScopeThisMonth" = "今月のみ";
+"cashFlowPlan.overrideScopeThisAndFuture" = "今月と今後の月";
+"cashFlowPlan.cellDetailDailyProgress" = "1日の進捗";
+
+// Config improvements (Inc 5)
+"cashFlowPlan.contextHistory" = "履歴コンテキスト";
+"cashFlowPlan.monthsWithActivity" = "12ヶ月中%dヶ月";
+"cashFlowPlan.addOverride" = "調整を追加";
+"cashFlowPlan.overrideMonth" = "月";
+"cashFlowPlan.overrideAmount" = "金額";
+"cashFlowPlan.configLine" = "項目を設定";
+
+// Add Line redesign (Inc 6)
+"cashFlowPlan.addFromExpenses" = "自分の支出から";
+"cashFlowPlan.addFromExpensesDesc" = "履歴のあるサブカテゴリーを選択";
+"cashFlowPlan.addFromScheduled" = "予定支払いから";
+"cashFlowPlan.addFromScheduledDesc" = "アクティブな支払いを固定項目として使用";
+"cashFlowPlan.addCustomLine" = "カスタム項目";
+"cashFlowPlan.addCustomLineDesc" = "自由な名前と金額";
+"cashFlowPlan.monthlyAverage" = "月平均";
+"cashFlowPlan.frequency" = "頻度";
+"cashFlowPlan.noScheduledPayments" = "利用可能な予定支払いがありません";
+"cashFlowPlan.noCategories" = "履歴のあるカテゴリーがありません";
+
+// Charts redesign (Inc 7)
+"cashFlowPlan.chartProjection" = "残高予測";
+"cashFlowPlan.chartDeviation" = "確認すべき支出";
+"cashFlowPlan.chartDeviationSubtitle" = "計画より多く使ったサブカテゴリー";
+"cashFlowPlan.chartSavings" = "月々の貯蓄";
+"cashFlowPlan.chartProjectionSubtitle" = "時間経過による累積残高";
+"cashFlowPlan.chartDeviationOver" = "予算超過";
+"cashFlowPlan.chartDeviationUnder" = "節約";
+"cashFlowPlan.chartDangerZone" = "危険ゾーン";
+"cashFlowPlan.chartRollingAvg" = "移動平均";
+"cashFlowPlan.chartNeedMoreData" = "最低2ヶ月のデータが必要です";
+"cashFlowPlan.analyzingProjection" = "予測を分析中...";
+"cashFlowPlan.enableAIObservations" = "AIインサイトを使う";
+"cashFlowPlan.commentNegative" = "%@から残高がマイナスになります — 何か調整できないか確認してください";
+"cashFlowPlan.commentTight" = "今月は少し厳しめ — 残りの余裕は%@です";
+"cashFlowPlan.commentHealthy" = "計画は順調 — 期間終了時に累積%@になります";
+"cashFlowPlan.commentDefault" = "予測は%dヶ月先までカバーします";
+"cashFlowPlan.chartAllWithinPlan" = "支出項目はすべて計画内に収まっています";
+"cashFlowPlan.deviationCommentSingle" = "%@で計画より%@多く使いました";
+"cashFlowPlan.deviationCommentMultiple" = "%@が一番超過しており、追加で%@、合計%@の超過です";
+"cashFlowPlan.chartSavingsSubtitle" = "計画に対する月々の貯蓄額";
+"cashFlowPlan.chartPlanned" = "計画";
+"cashFlowPlan.commentSavingsBelow" = "計画より月々%@少なく貯めています — どこか支出を減らせますか？";
+"cashFlowPlan.commentSavingsAbove" = "月々の貯蓄計画を%@上回っています — 残高は%@に達する見込み";
+"cashFlowPlan.commentHealthyWithSavings" = "計画は順調 — 月々約%@貯めて、最終的に%@になります";
+
+"common.unknownError" = "問題が発生しました";
+"common.saveError" = "変更を保存できませんでした。もう一度お試しください。";
+"common.deleteError" = "削除できませんでした。もう一度お試しください。";
+"widget.noExpensesNeedPeriod" = "この期間に性質別の支出記録はありません。";
+
+"account.addAccount" = "口座を追加";
+
+"common.date" = "日付";
+"common.amount" = "金額";
+"common.base" = "基準";
+"common.selectedDate" = "選択した日付";
+"common.selectedValue" = "選択した値";
+"common.selected" = "選択中";
+"common.details" = "詳細";
+"common.select" = "選択";
+
+"statistics.title" = "統計";
+"statistics.trends" = "推移";
+"statistics.categories" = "内訳";
+"statistics.records" = "記録";
+
+"period.last7Days" = "過去7日間";
+
+"need.essential" = "必需";
+"need.priority" = "優先";
+"need.optional" = "任意";
+"need.unclassified" = "未分類";
+"need.essential.desc" = "削減しにくい必需的な支出。";
+"need.priority.desc" = "重要だが多少融通の効く支出。";
+"need.optional.desc" = "裁量的・娯楽的な支出。";
+"need.unclassified.desc" = "性質タグが指定されていません。";
+
+
+"cashFlowViewType.total" = "合計";
+"cashFlowViewType.byAccount" = "口座別";
+"cashFlowViewType.byCurrency" = "通貨別";
+
+"listViewType.categories" = "カテゴリー";
+"listViewType.subcategories" = "サブカテゴリー";
+
+"comparison.month" = "月";
+"comparison.year" = "年";
+"comparison.monthShort" = "P-1";
+"comparison.yearShort" = "Y-1";
+
+"statistics.noRecordsFiltered" = "このフィルターに該当する記録はありません";
+"statistics.noRecordsDescription" = "取引を追加すると、ここに表示されます。";
+"statistics.periodComparison" = "前期間との比較";
+"statistics.vsPreviousPeriod" = "前期間と比較";
+"statistics.vsPreviousYear" = "前年と比較";
+"statistics.currentPeriod" = "今期間";
+"statistics.previousPeriod" = "前期間";
+"statistics.latestRecords" = "最新の記録";
+"statistics.noCategoryData" = "カテゴリーのデータなし";
+"statistics.noSubcategoryData" = "サブカテゴリーのデータなし";
+"statistics.noExpensesInPeriod" = "選択した期間に支出はありません";
+"statistics.topCategories" = "トップカテゴリー";
+"statistics.topSubcategories" = "トップサブカテゴリー";
+"statistics.noDataToShow" = "表示するデータがまだありません";
+"statistics.noRecords" = "記録なし";
+"statistics.ofExpense" = "支出に対して";
+"statistics.spendingAnalysis" = "支出分析";
+"statistics.incomeAnalysis" = "収入分析";
+
+// MARK: - Insights
+"insights.title" = "概要";
+"insights.records" = "記録";
+"insights.inThisPeriod" = "この期間に";
+"insights.dailyAverage" = "1日の平均";
+"insights.topCategory" = "トップカテゴリー";
+"insights.topSubcategory" = "トップサブカテゴリー";
+"insights.highestExpense" = "最大の支出";
+"insights.highestAvgWeekday" = "最も支出の多い曜日";
+"insights.subscriptions" = "サブスクリプション";
+"insights.quickStats" = "クイック統計";
+"insights.comparison" = "期間比較";
+"insights.weekdayAverage" = "曜日別の平均支出";
+"insights.needDistribution" = "性質別の支出";
+"insights.commitments" = "コミット項目";
+"insights.commitmentsNote" = "各予算の現在期間";
+"insights.pendingPayments" = "未払いの支払い";
+"insights.activeSubscriptions" = "アクティブなサブスクリプション";
+"insights.budgetsAtRisk" = "リスクのある予算";
+"insights.yearOverYear" = "前年同期比";
+"insights.yearComparison" = "去年: %@、今年: %@。";
+"insights.intelligentInsights" = "インサイト";
+"insights.funFact" = "豆知識";
+"insights.emptyTitle" = "データがまだありません";
+"insights.emptyBody" = "支出を記録するとインサイトが表示されます";
+"insights.fewTransactions" = "もっと記録するとインサイトが充実します";
+"insights.monthly" = "毎月";
+"insights.perDay" = "1日あたり";
+"insights.ofTotal" = "合計に対して";
+"insights.analyzingData" = "データを分析中...";
+"insights.activateAITitle" = "スマート概要を利用できます";
+"insights.activateAIBody" = "プロフィール > AI機能で有効化・カスタマイズできます。";
+"insights.activateAIDisclaimer" = "OpenAIには集計データのみが送信されます(合計、割合、推移)。個別の取引や個人情報は共有されません。";
+"insights.activate" = "有効化";
+"insights.goToSettings" = "設定に移動";
+"insights.notInterested" = "興味なし";
+"insights.offlineCached" = "オフラインです。直近の分析を表示しています。";
+"insights.offlineNoCache" = "オフラインです。接続するとパーソナライズされたインサイトを利用できます。";
+
+"settings.organization" = "整理";
+"settings.preferences" = "設定";
+"settings.aiFeatures" = "AI機能";
+"settings.customizeAISummary" = "AIサマリーをカスタマイズ";
+"settings.customizeAISummaryHint" = "スマート概要に表示する指標やグラフを選んでください。";
+"settings.data" = "データ";
+"settings.security" = "セキュリティとアカウント";
+"settings.help" = "ヘルプが必要ですか？";
+"settings.legal" = "法的情報";
+
+"settings.importData" = "ファイルをインポート";
+"settings.exportData" = "データをエクスポート";
+"settings.wipeData" = "データを消去";
+"settings.faceId" = "Face ID";
+"settings.permissions" = "権限";
+"settings.aiPrivacy" = "AIプライバシーとデータ";
+"settings.subscriptions" = "サブスクリプションを管理";
+"settings.rateApp" = "評価とおすすめ";
+"settings.tutorials" = "チュートリアル";
+"settings.faq" = "よくある質問";
+"settings.contact" = "お問い合わせ";
+"settings.privacy" = "プライバシーポリシー";
+"settings.terms" = "利用規約";
+
+// Support
+"support.title" = "お問い合わせ";
+"support.type" = "お問い合わせの種類";
+"support.typeError" = "バグ";
+"support.typeImprovement" = "改善";
+"support.typeIdea" = "アイデア";
+"support.message" = "お問い合わせ内容";
+"support.messagePlaceholder" = "詳しく教えてください...";
+"support.send" = "送信";
+
+// Biometric
+"biometric.title" = "生体認証セキュリティ";
+"biometric.description" = "生体認証またはデバイスのパスコードで金融情報を保護します。";
+"biometric.enableLock" = "ロックを有効化";
+"biometric.lockAfter" = "ロックまでの時間";
+"biometric.timeout.immediate" = "10秒";
+"biometric.timeout.oneMinute" = "1分";
+"biometric.timeout.fiveMinutes" = "5分";
+"biometric.timeout.fifteenMinutes" = "15分";
+"biometric.authReason" = "Yalaのロックを解除して資産にアクセス";
+"biometric.enableReason" = "ロックを有効にするため本人確認をしてください";
+"biometric.authFailed" = "認証に失敗しました";
+"biometric.authFailedMessage" = "本人確認できませんでした。もう一度お試しください。";
+"biometric.locked" = "Yalaはロック中です";
+"biometric.unlockPrompt" = "ボタンをタップしてロック解除";
+"biometric.unlock" = "ロック解除";
+"biometric.passcode" = "パスコード";
+"biometric.enableLockHint" = "アプリを開くたびに本人確認が求められます。";
+"biometric.lockAfterHint" = "ロックされるまでバックグラウンドに残せる時間を選択してください。";
+
+"profile.edit" = "プロフィールを編集";
+"profile.importSuccess" = "インポート完了";
+"profile.importError" = "インポートエラー";
+
+"profile.changePhoto" = "写真を変更";
+"profile.addPhoto" = "写真を追加";
+"profile.yourName" = "お名前";
+"profile.aliasPlaceholder" = "user_123";
+"profile.characters" = "文字";
+"profile.minChars" = "最小3文字";
+"profile.maxChars" = "最大20文字";
+"profile.allowedChars" = "英数字とアンダースコアのみ";
+"profile.aliasAvailable" = "このエイリアスは利用可能です";
+"profile.aliasHelper" = "3〜20文字。英数字とアンダースコアのみ。";
+"profile.privacyTitle" = "データはデバイスの外に出ません";
+"profile.privacyDesc" = "Yalaは個人データをこのデバイス上にのみ保存します。AI機能(音声、画像、インサイト)は任意で、集計データのみを処理し、個別の取引や個人情報は扱いません。";
+"profile.aliasFutureNote" = "備考: エイリアスの一意性チェックは、シェア支出機能の実装時に利用可能になります。";
+"profile.proMember" = "PROメンバー";
+"profile.choosePhoto" = "写真を選ぶ";
+"profile.chooseIcon" = "アイコンを選ぶ";
+"profile.removeAvatar" = "削除";
+"profile.editAvatar" = "アバターを編集";
+
+"settings.currencyDescription" = "メイン通貨を選択し、最新の為替レートを確認します。";
+"settings.preferredCurrency" = "優先通貨";
+"settings.exchangeRate" = "為替レート";
+"settings.secondaryCurrencies" = "副通貨";
+"settings.secondaryCurrenciesHint" = "為替レートウィジェットで優先通貨と比較する通貨を最大2つ選択してください。";
+"settings.showMoreCurrencies" = "もっと通貨を表示";
+"settings.recommendedCurrencies" = "おすすめ";
+"common.lastUpdate" = "最終更新:";
+
+"common.archived" = "アーカイブ済み";
+"empty.tagsDescription" = "タグを作成して取引を柔軟に整理しましょう。";
+"empty.categoriesDescription" = "カテゴリーを作成して収入と支出を分類しましょう。";
+"empty.accountsDescription" = "口座を作成して銀行、現金などで資産を整理しましょう。";
+
+"settings.themeDescription" = "Yalaの見た目を選びます。";
+"settings.appIconDescription" = "好みのスタイルのアイコンを選びましょう。";
+"settings.personalizationDescription" = "好みに合わせてYalaの動作を調整します。";
+"settings.sectionInterface" = "インターフェース";
+"settings.sectionCalendar" = "カレンダー";
+"settings.sectionIndicators" = "指標";
+"settings.sectionFormat" = "数値の形式";
+"settings.defaultPeriod" = "既定の期間";
+"settings.defaultPeriodDescription" = "アプリを開いたときに既定で適用される期間です。期間セレクタからいつでも一時的に変更できます。";
+"settings.colorfulIcons" = "カラフルアイコン";
+"settings.colorfulIconsDescription" = "プロフィールセクションにiOS設定アプリ風のカラーアイコンを表示します。";
+"settings.colorfulIconsDisabledByTheme" = "現在のテーマにより自動的に無効になっています。";
+"settings.firstWeekday" = "週の開始日";
+"settings.firstWeekdayDescription" = "「今週」などのフィルターで週の開始日を設定します。";
+"settings.sunday" = "日曜日";
+"settings.monday" = "月曜日";
+"settings.resetDataDescription" = "この操作はYalaのプロフィールに関連付けられた口座、取引、予算、為替レート、カテゴリーなどのデータを完全に削除します。削除後、アプリは初期設定に近い状態に戻ります。";
+"settings.deleteDataConfirmation" = "すべてのデータを削除しますか？";
+"settings.deleteDataWarning" = "この操作は取り消せません。すべての口座、取引、予算、為替レート、カテゴリーが削除されます。Yalaは初期設定に近い状態にリセットされ、データは復元できません。";
+"settings.wipeICloudWarning" = "iCloudのデータも削除されます。同期している他のデバイスからもこのデータが消えます。";
+"settings.wipeGroupsExclusionNote" = "これにはグループは含まれません。グループから抜けるには、グループタブで保留中を清算してから退会してください。";
+"settings.delete" = "削除";
+"settings.cancel" = "キャンセル";
+"settings.iconOriginal" = "オリジナル";
+"settings.iconDark" = "ダーク";
+"settings.iconLight" = "ライト";
+"settings.iconNeon" = "ネオン";
+"settings.deleteAllDataAction" = "完全に削除";
+"settings.deletingData" = "データを削除中...";
+"settings.appIconTitle" = "アプリアイコン";
+"settings.iconNotSupported" = "このデバイスは代替アイコンに対応していません。";
+"settings.iconChangeFailed" = "アイコンの変更に失敗しました: %@";
+"settings.deleteDataError" = "データの削除中に問題が発生しました";
+"settings.deleteDataUnknownError" = "データの削除中に問題が発生しました。もう一度お試しください。";
+
+"transaction.newTransaction" = "新規取引";
+"transaction.editTransaction" = "取引を編集";
+"transaction.description" = "説明";
+"transaction.descriptionHint" = "@で口座、!でカテゴリー、#でタグを指定";
+"transaction.sourceAccount" = "出金元口座";
+"transaction.destinationAccount" = "入金先口座";
+"transaction.account" = "口座";
+"tag.newTag" = "新規タグ";
+"tag.editTag" = "タグを編集";
+"tag.createFirstDescription" = "最初のタグを作成して取引を整理しましょう";
+"tag.deleteConfirmation" = "タグを削除しますか？";
+"tag.namePlaceholder" = "名前(最大20文字)";
+"tag.color" = "色";
+"tag.colorSelected" = "選択中: %@";
+
+// MARK: - Currency Names
+// Latin America
+"currency.pen" = "ペルー・ソル";
+"currency.usd" = "米ドル";
+"currency.mxn" = "メキシコ・ペソ";
+"currency.cop" = "コロンビア・ペソ";
+"currency.brl" = "ブラジル・レアル";
+"currency.ars" = "アルゼンチン・ペソ";
+"currency.clp" = "チリ・ペソ";
+"currency.uyu" = "ウルグアイ・ペソ";
+"currency.bob" = "ボリビア・ボリビアーノ";
+"currency.pyg" = "パラグアイ・グアラニー";
+"currency.crc" = "コスタリカ・コロン";
+"currency.gtq" = "グアテマラ・ケツァル";
+"currency.hnl" = "ホンジュラス・レンピラ";
+"currency.nio" = "ニカラグア・コルドバ";
+"currency.pab" = "パナマ・バルボア";
+"currency.dop" = "ドミニカ・ペソ";
+// Europe
+"currency.eur" = "ユーロ";
+"currency.gbp" = "英ポンド";
+"currency.chf" = "スイス・フラン";
+"currency.sek" = "スウェーデン・クローナ";
+"currency.nok" = "ノルウェー・クローネ";
+"currency.dkk" = "デンマーク・クローネ";
+"currency.pln" = "ポーランド・ズロチ";
+"currency.czk" = "チェコ・コルナ";
+"currency.huf" = "ハンガリー・フォリント";
+"currency.ron" = "ルーマニア・レイ";
+"currency.rub" = "ロシア・ルーブル";
+"currency.uah" = "ウクライナ・フリヴニャ";
+"currency.try" = "トルコ・リラ";
+// Asia
+"currency.jpy" = "日本円";
+"currency.cny" = "中国元";
+"currency.krw" = "韓国ウォン";
+"currency.inr" = "インド・ルピー";
+"currency.idr" = "インドネシア・ルピア";
+"currency.php" = "フィリピン・ペソ";
+"currency.thb" = "タイ・バーツ";
+"currency.myr" = "マレーシア・リンギット";
+"currency.sgd" = "シンガポール・ドル";
+"currency.hkd" = "香港ドル";
+"currency.twd" = "新台湾ドル";
+"currency.vnd" = "ベトナム・ドン";
+// Oceania
+"currency.aud" = "オーストラリア・ドル";
+"currency.nzd" = "ニュージーランド・ドル";
+// Middle East
+"currency.aed" = "UAEディルハム";
+"currency.sar" = "サウジアラビア・リヤル";
+"currency.ils" = "イスラエル・新シェケル";
+"currency.qar" = "カタール・リヤル";
+"currency.kwd" = "クウェート・ディナール";
+// Africa
+"currency.zar" = "南アフリカ・ランド";
+"currency.egp" = "エジプト・ポンド";
+"currency.ngn" = "ナイジェリア・ナイラ";
+"currency.kes" = "ケニア・シリング";
+"currency.mad" = "モロッコ・ディルハム";
+// North America
+"currency.cad" = "カナダ・ドル";
+
+// MARK: - Currency Plural Names (short, no country)
+// Latin America
+"currency.plural.pen" = "ソル";
+"currency.plural.usd" = "ドル";
+"currency.plural.mxn" = "ペソ";
+"currency.plural.cop" = "ペソ";
+"currency.plural.brl" = "レアル";
+"currency.plural.ars" = "ペソ";
+"currency.plural.clp" = "ペソ";
+"currency.plural.uyu" = "ペソ";
+"currency.plural.bob" = "ボリビアーノ";
+"currency.plural.pyg" = "グアラニー";
+"currency.plural.crc" = "コロン";
+"currency.plural.gtq" = "ケツァル";
+"currency.plural.hnl" = "レンピラ";
+"currency.plural.nio" = "コルドバ";
+"currency.plural.pab" = "バルボア";
+"currency.plural.dop" = "ペソ";
+// Europe
+"currency.plural.eur" = "ユーロ";
+"currency.plural.gbp" = "ポンド";
+"currency.plural.chf" = "フラン";
+"currency.plural.sek" = "クローナ";
+"currency.plural.nok" = "クローネ";
+"currency.plural.dkk" = "クローネ";
+"currency.plural.pln" = "ズロチ";
+"currency.plural.czk" = "コルナ";
+"currency.plural.huf" = "フォリント";
+"currency.plural.ron" = "レイ";
+"currency.plural.rub" = "ルーブル";
+"currency.plural.uah" = "フリヴニャ";
+"currency.plural.try" = "リラ";
+// Asia
+"currency.plural.jpy" = "円";
+"currency.plural.cny" = "元";
+"currency.plural.krw" = "ウォン";
+"currency.plural.inr" = "ルピー";
+"currency.plural.idr" = "ルピア";
+"currency.plural.php" = "ペソ";
+"currency.plural.thb" = "バーツ";
+"currency.plural.myr" = "リンギット";
+"currency.plural.sgd" = "ドル";
+"currency.plural.hkd" = "ドル";
+"currency.plural.twd" = "ドル";
+"currency.plural.vnd" = "ドン";
+// Oceania
+"currency.plural.aud" = "ドル";
+"currency.plural.nzd" = "ドル";
+// Middle East
+"currency.plural.aed" = "ディルハム";
+"currency.plural.sar" = "リヤル";
+"currency.plural.ils" = "シェケル";
+"currency.plural.qar" = "リヤル";
+"currency.plural.kwd" = "ディナール";
+// Africa
+"currency.plural.zar" = "ランド";
+"currency.plural.egp" = "ポンド";
+"currency.plural.ngn" = "ナイラ";
+"currency.plural.kes" = "シリング";
+"currency.plural.mad" = "ディルハム";
+// North America
+"currency.plural.cad" = "ドル";
+
+// MARK: - Continents
+"continent.latinAmerica" = "ラテンアメリカ";
+"continent.europe" = "ヨーロッパ";
+"continent.asia" = "アジア";
+"continent.oceania" = "オセアニア";
+"continent.middleEast" = "中東";
+"continent.africa" = "アフリカ";
+"continent.northAmerica" = "北アメリカ";
+
+"common.seeAll" = "すべて表示";
+"common.none" = "なし";
+"common.ok" = "OK";
+
+"common.selectColor" = "色を選択";
+"common.useThisColor" = "この色を使う";
+"common.newColor" = "新しい色";
+"common.understood" = "了解";
+"common.cannotUndo" = "この操作は取り消せません";
+"common.general" = "一般";
+"common.status" = "状態";
+"common.actions" = "アクション";
+"account.configure" = "口座を設定";
+"account.deleteError" = "この口座は削除できません";
+"account.accountName" = "口座名";
+"account.accountNumber" = "口座番号";
+"category.editTitle" = "カテゴリーを編集";
+"category.hiddenTitle" = "カテゴリーを非表示";
+"category.hiddenDescription" = "このカテゴリーとサブカテゴリーはセレクタに表示されなくなりますが、履歴データは失われません。";
+"category.addOneSubcategory" = "少なくとも1つのサブカテゴリーを追加";
+"category.newCategory" = "新規カテゴリー";
+"category.namePlaceholder" = "カテゴリー名";
+"category.activeSubcategories" = "アクティブなサブカテゴリー";
+"category.hiddenSubcategories" = "非表示のサブカテゴリー";
+"category.details" = "詳細";
+"category.delete" = "カテゴリーを削除";
+"category.deleteConfirmTitle" = "カテゴリーを削除しますか？";
+"category.deleteConfirmMessage" = "カテゴリーとそのすべてのサブカテゴリーが削除されます。この操作は取り消せません。";
+"category.cannotDeleteTitle" = "削除できません";
+"category.cannotDeleteMessage" = "このカテゴリーには%d件の取引を持つサブカテゴリーが含まれています。削除するには、まず各サブカテゴリーから取引を削除または移動してください。";
+"subcategory.newTitle" = "新規サブカテゴリー";
+"subcategory.editTitle" = "サブカテゴリーを編集";
+"subcategory.delete" = "サブカテゴリーを削除";
+"subcategory.deleteConfirmTitle" = "サブカテゴリーを削除しますか？";
+"subcategory.deleteConfirmMessage" = "この操作は取り消せません";
+"subcategory.cannotDeleteTitle" = "削除できません";
+"subcategory.cannotDeleteMessage" = "このサブカテゴリーには%d件の取引があります。削除する前に取引を別のサブカテゴリーに移動してください。";
+"subcategory.transferTitle" = "取引を移動";
+"subcategory.transferHeader" = "このサブカテゴリーには取引があります";
+"subcategory.transferDescription" = "「%@」に%d件の取引があります。削除前にどう処理するか選んでください。";
+"subcategory.transferToSpecific" = "別のサブカテゴリーへ移動";
+"subcategory.transferToSpecificDesc" = "取引を移動する移動先のサブカテゴリーを選択してください";
+"subcategory.transferToUnassigned" = "未割り当てへ移動";
+"subcategory.transferToUnassignedDesc" = "取引はその他の「未割り当て」サブカテゴリーに移動されます";
+"subcategory.deleteTransactions" = "取引を削除";
+"subcategory.deleteTransactionsDesc" = "すべての取引が完全に削除されます";
+"subcategory.selectDestination" = "移動先を選択";
+"subcategory.deleteTransactionsConfirmTitle" = "取引を削除しますか？";
+"subcategory.deleteTransactionsConfirm" = "削除";
+"subcategory.details" = "サブカテゴリーの詳細";
+"subcategory.namePlaceholder" = "サブカテゴリー名";
+"subcategory.unassigned" = "未割り当て";
+"subcategory.deleteTransactionsConfirmMessage" = "%d件の取引が完全に削除されます。この操作は取り消せません。";
+
+"account.deleteBalanceError" = "残高が0でないため、この口座は削除できません。削除する前に残高を0に調整してください。";
+"account.type.general" = "一般";
+"account.type.cash" = "現金";
+"account.type.current" = "普通預金";
+"account.type.savings" = "貯蓄";
+"account.type.creditCard" = "クレジットカード";
+"account.type.investment" = "投資";
+"account.type.loan" = "ローン";
+"account.type.other" = "その他";
+
+"iconPicker.title" = "カスタマイズ";
+"iconPicker.preview" = "プレビュー";
+"iconPicker.shopping" = "ショッピング";
+"iconPicker.food" = "食事";
+"iconPicker.transport" = "交通";
+"iconPicker.finance" = "金融";
+"iconPicker.home" = "住居";
+"iconPicker.services" = "サービス";
+"iconPicker.entertainment" = "娯楽";
+"iconPicker.sports" = "スポーツ";
+"iconPicker.health" = "健康";
+"iconPicker.personalCare" = "パーソナルケア";
+"iconPicker.education" = "教育";
+"iconPicker.work" = "仕事";
+"iconPicker.pets" = "ペット";
+"iconPicker.need" = "性質";
+"iconPicker.tech" = "テクノロジー";
+"iconPicker.travel" = "旅行";
+"iconPicker.communication" = "通信";
+"iconPicker.tools" = "ツール";
+"iconPicker.security" = "セキュリティ";
+"iconPicker.symbols" = "シンボル";
+"iconPicker.direction" = "方向";
+"iconPicker.other" = "その他";
+
+"need.title" = "支出の性質";
+"need.incomeNotApplicable" = "性質の分類は支出にのみ適用されます";
+
+// MARK: - Balance Adjustments
+
+"account.newBalance" = "新しい残高";
+"account.currentBalance" = "現在の残高";
+"account.adjustmentPreview" = "%@の調整が作成されます";
+"account.initialBalanceNote" = "初期残高";
+"account.adjustmentNote" = "残高調整";
+"account.existingInitialBalance" = "すでに%@の初期残高があります。変更しますか？";
+"account.modifyInitialBalance" = "初期残高を変更";
+"account.adjustmentDate" = "調整日";
+"account.finalBalance" = "最終残高";
+"account.adjustByEntry" = "記録で調整";
+"account.adjustByEntryDesc" = "正しい残高を入力すると、修正用の記録が作成されます。記録忘れの支出があった場合に使ってください。";
+"account.changeInitialBalanceName" = "初期残高を変更";
+"account.changeInitialBalanceDesc" = "正しい残高を入力すると、口座の初期残高が変更されます。長期間記録していない場合に使ってください。";
+"account.creditCard.sectionTitle" = "クレジットカード";
+"account.creditCard.paymentReminder" = "支払日に通知";
+"account.creditCard.paymentDay" = "支払日";
+"account.creditCard.paymentNotification" = "クレジットカード%@の支払い時期です 💳";
+"category.others" = "その他";
+"subcategory.balanceAdjustment" = "残高調整";
+
+// MARK: - Validation
+
+"validation.enterAmountGreaterThanZero" = "0より大きい金額を入力してください";
+"validation.selectSourceAccount" = "出金元の口座を選択してください";
+"validation.selectDestinationAccount" = "入金先の口座を選択してください";
+"validation.accountsMustBeDifferent" = "口座が同じではいけません";
+"validation.selectAccount" = "口座を選択してください";
+"validation.selectSubcategory" = "サブカテゴリーを選択してください";
+"validation.completeFieldsFirst" = "先に金額、口座、カテゴリーを入力してください";
+"validation.futureDateTitle" = "未来の日付は使えません";
+"validation.futureDateMessage" = "未来の日付の取引は記録できません。定期的な支出は予定支払いをご利用ください。";
+
+// MARK: - Transfer
+
+"transfer.transferTo" = "%@へ振替";
+"transfer.transferFrom" = "%@から振替";
+"transfer.categoryName" = "口座間振替";
+
+// MARK: - More
+
+// MARK: - Scheduled Payments
+
+// Recurrence Types
+"scheduled.recurrence.weekly" = "毎週";
+"scheduled.recurrence.monthly" = "毎月";
+"scheduled.recurrence.yearly" = "毎年";
+
+// Payment Categories
+"scheduled.category.recurring" = "定期";
+"scheduled.category.subscription" = "サブスクリプション";
+
+// Due Status
+"scheduled.status.past" = "期限超過";
+"scheduled.status.today" = "今日";
+"scheduled.status.upcoming" = "もうすぐ";
+
+// Tabs
+"scheduled.tab.recurring" = "定期";
+"scheduled.tab.subscriptions" = "サブスクリプション";
+"scheduled.tab.all" = "すべて";
+
+// Empty State
+"scheduled.empty.title" = "予定支払いはまだありません";
+"scheduled.empty.message" = "定期支払いやサブスクリプションのリマインダーを作成しましょう";
+
+// Due Text
+"scheduled.due.yesterday" = "昨日";
+"scheduled.due.today" = "今日";
+"scheduled.due.tomorrow" = "明日";
+
+// Actions
+"scheduled.new" = "新規予定支払い";
+"scheduled.edit" = "予定支払いを編集";
+"scheduled.delete" = "支払いを削除";
+"scheduled.delete.confirm.title" = "予定支払いを削除しますか？";
+"scheduled.delete.confirm.message" = "この操作は取り消せません。";
+
+// Editor Sections
+"scheduled.editor.basic.info" = "基本情報";
+"scheduled.editor.options" = "オプション";
+"scheduled.editor.name.placeholder" = "支払い名";
+"scheduled.editor.note.placeholder" = "支出の説明(任意)";
+"scheduled.editor.type" = "取引種別";
+"scheduled.editor.payment.category" = "支払いカテゴリー";
+"scheduled.editor.classification" = "分類";
+"scheduled.editor.account" = "口座";
+"scheduled.editor.subcategory" = "サブカテゴリー";
+"scheduled.editor.recurrence" = "繰り返し";
+"scheduled.help.title" = "予定支払いとは？";
+"scheduled.help.message" = "サブスクリプション、家賃、公共料金など、繰り返し発生する支払いを管理します。期限が近づいたらYalaがお知らせし、支払い履歴も保存します。";
+"scheduled.editor.next.due" = "次回支払日";
+"scheduled.editor.day.of.month" = "月の日付";
+"scheduled.editor.day.of.week" = "曜日";
+"scheduled.editor.notifications" = "通知";
+"scheduled.editor.preview" = "今後の日付";
+"scheduled.notify.on.due" = "支払日に通知";
+"scheduled.notify.days.before" = "何日前に通知";
+"scheduled.select.subcategory" = "サブカテゴリーを選択";
+"scheduled.is.subscription" = "サブスクリプションですか？";
+
+// Variable amount
+"scheduled.variableAmount.toggle" = "見込み金額";
+"scheduled.variableAmount.helper" = "承認時に実際の金額を調整できます";
+"scheduled.variableAmount.badge" = "見込み";
+
+// Recurrence - New logic
+"scheduled.recurrence.onetime" = "1回限り";
+"scheduled.recurrence.recurring" = "定期";
+"scheduled.recurrence.daily" = "毎日";
+"scheduled.recurrence.day" = "日";
+"scheduled.recurrence.week" = "週";
+"scheduled.recurrence.month" = "月";
+"scheduled.recurrence.year" = "年";
+"scheduled.recurrence.days" = "日";
+"scheduled.recurrence.weeks" = "週";
+"scheduled.recurrence.months" = "ヶ月";
+"scheduled.recurrence.years" = "年";
+"scheduled.every" = "毎";
+"scheduled.which.days" = "どの曜日？";
+"scheduled.payment.date" = "支払日";
+"scheduled.start.date" = "開始日";
+"scheduled.has.end.date" = "終了日あり";
+"scheduled.end.date" = "終了日";
+"scheduled.yearly.date" = "年間日付";
+
+// Scheduled Payments - Settings & Detail
+"settings.scheduled.payments" = "定期支払い";
+"scheduled.empty.settings.hint" = "定期支払いを作成して、いつもの支出や収入を忘れないようにしましょう。";
+"scheduled.inactive" = "非アクティブ";
+"scheduled.status.inactive" = "支払いが非アクティブ";
+"scheduled.detail.frequency" = "頻度";
+"scheduled.detail.next.date" = "次回日付";
+"scheduled.detail.end.date" = "終了日";
+"scheduled.detail.upcoming" = "もうすぐ";
+"scheduled.detail.history" = "履歴";
+"scheduled.detail.info.note" = "この履歴は繰り返し設定に基づく予定支払日です。";
+"scheduled.detail.not.found" = "支払いが見つかりません";
+"scheduled.next.first" = "次回の支払い";
+"scheduled.next.second" = "2回目の支払い";
+"scheduled.next.third" = "3回目の支払い";
+
+// Subscriptions View
+"subscriptions.title" = "サブスクリプション";
+"subscriptions.count" = "アクティブなサブスクリプション%d件";
+"subscriptions.empty.title" = "サブスクリプションはまだありません";
+"subscriptions.empty.message" = "Netflix、Spotifyなどのサービスを追加しましょう";
+"subscriptions.calendar.empty" = "今月のサブスクリプションはありません";
+"subscriptions.day.empty" = "この日のサブスクリプションはありません";
+"subscriptions.show.all" = "すべて表示";
+
+// Weekdays
+"weekday.sunday" = "日曜日";
+"weekday.monday" = "月曜日";
+"weekday.tuesday" = "火曜日";
+"weekday.wednesday" = "水曜日";
+"weekday.thursday" = "木曜日";
+"weekday.friday" = "金曜日";
+"weekday.saturday" = "土曜日";
+
+// Weekdays - Short
+"weekday.short.sunday" = "日";
+"weekday.short.monday" = "月";
+"weekday.short.tuesday" = "火";
+"weekday.short.wednesday" = "水";
+"weekday.short.thursday" = "木";
+"weekday.short.friday" = "金";
+"weekday.short.saturday" = "土";
+
+// Common (if not already present)
+"common.disabled" = "無効";
+"filters.none" = "なし";
+"filters.transaction.type" = "取引種別";
+"filters.clear" = "クリア";
+"action.close" = "閉じる";
+
+// MARK: - Accessibility
+"accessibility.closeMenu" = "メニューを閉じる";
+"accessibility.newRecord" = "新規記録";
+"accessibility.filters" = "フィルター";
+"accessibility.clearFilters" = "フィルターをクリア";
+"accessibility.cancelRecording" = "録音をキャンセル";
+"accessibility.stopRecording" = "録音を停止";
+"accessibility.startRecording" = "録音開始";
+"accessibility.cancelPreview" = "プレビューをキャンセル";
+"accessibility.cancelProcessing" = "処理をキャンセル";
+"accessibility.cashFlowChart" = "キャッシュフローのグラフ";
+"accessibility.categoryPieChart" = "カテゴリー別の支出円グラフ";
+"accessibility.subcategoryPieChart" = "サブカテゴリー別の支出円グラフ";
+"accessibility.tagPieChart" = "タグ別の支出円グラフ";
+"accessibility.widgetFixed" = "固定ウィジェット、常時表示";
+"accessibility.favoriteTemplates" = "お気に入りのテンプレート";
+"accessibility.exceeded" = "超過";
+"accessibility.inbox" = "受信箱";
+"accessibility.nextPeriod" = "次の期間";
+"accessibility.previousPeriod" = "前の期間";
+"accessibility.widgetPreferences" = "ウィジェット設定";
+"accessibility.sectionsConfig" = "パネル設定";
+"accessibility.toggleSection %@" = "%@を表示";
+"accessibility.sectionPrefsButton %@" = "%@の設定";
+"accessibility.createAccountFirst" = "最低1つの口座と1つのカテゴリーを作成してください";
+"accessibility.removeFilter" = "フィルターを削除";
+"balance.status.good" = "良好";
+"balance.status.critical" = "危険";
+"balance.status.normal" = "通常";
+"accessibility.viewDetails" = "詳細を見る";
+"accessibility.viewAllRecords" = "すべての記録を見る";
+"accessibility.viewAllCategories" = "すべてのカテゴリーを見る";
+"accessibility.deleteSubcategory" = "サブカテゴリーを削除";
+"accessibility.deleteCategory" = "カテゴリーを削除";
+"accessibility.deleteTag" = "タグを削除";
+"accessibility.processAudio" = "音声を処理";
+"accessibility.exchangeRateChart" = "為替レートのグラフ";
+"accessibility.periodComparison" = "期間比較のグラフ";
+"accessibility.needTrend" = "性質別の支出グラフ";
+"accessibility.noData" = "データなし";
+"accessibility.completeFormHint" = "保存するには金額、口座、カテゴリーを入力してください";
+"accessibility.completeSelectionHint" = "必須の選択を完了してください";
+"accessibility.periodComparisonValue %d" = "今期間と前期間の比較、データポイント%d件";
+"accessibility.trendChart %@" = "%@の推移グラフ";
+"accessibility.dataPoints %d" = "データポイント%d件";
+"accessibility.categoriesCount %d %@" = "カテゴリー%d件、合計%@";
+"accessibility.subcategoriesCount %d %@" = "サブカテゴリー%d件、合計%@";
+"accessibility.tagsCount %d %@" = "タグ%d件、合計%@";
+"accessibility.periodsCount %d" = "期間%d件";
+"accessibility.currenciesCount %d" = "通貨%d種類";
+"accessibility.cashFlowSummary %@ %@" = "収入%@、支出%@";
+"accessibility.selectAtLeastOneDraft" = "少なくとも1件のドラフトを選択してください";
+"accessibility.approveCompleteHint" = "承認するには口座、金額、カテゴリーを入力してください";
+"accessibility.updatingExchangeRates" = "為替レートを更新中";
+"accessibility.authenticating" = "認証中";
+"accessibility.showMoreSubcategories" = "サブカテゴリーをさらに表示";
+"accessibility.subscriptionToggle" = "サブスクリプションとしてマーク";
+"accessibility.skipSync" = "待機をスキップしてセットアップを続ける";
+"accessibility.tabLimitReached" = "タブの上限に達しました";
+"accessibility.noTransactionsToExport" = "エクスポートする取引がありません";
+"accessibility.accountCard %@ %@" = "口座%@、残高%@";
+"accessibility.editAccount" = "口座を編集";
+"accessibility.pageIndicator %d %d" = "%2$dページ中%1$dページ目";
+"accessibility.accountRow %@ %@" = "口座%@、通貨%@";
+"accessibility.budgetRow %@ %d %@ %@" = "予算%1$@、%2$dパーセント使用、%4$@中%3$@";
+"accessibility.searchResultRow %@ %@ %@" = "%@、%@、%@";
+"accessibility.regeneratingInsights" = "インサイトを生成中、お待ちください";
+"accessibility.completeCalculation" = "結果を計算するには値を入力してください";
+"accessibility.noDraftsToApprove" = "承認できるドラフトはありません";
+"accessibility.categoriesLocked" = "選択したカテゴリーのサブカテゴリーを表示中";
+"accessibility.systemMonochromeIcons" = "システム設定によりモノクロアイコンになっています";
+"accessibility.maxCurrenciesSelected" = "通貨の選択上限に達しました";
+"accessibility.invalidThreshold" = "有効な閾値を入力してください";
+"accessibility.filterScheduledAll" = "すべての支払い";
+"accessibility.filterScheduledRecurring" = "フィルター: 定期";
+"accessibility.filterScheduledSubscriptions" = "フィルター: サブスクリプション";
+"accessibility.calendarDay %d" = "%d日";
+"accessibility.recentRecord %@ %@ %@" = "%@、%@、%@";
+"accessibility.sourceAmount" = "出金額";
+"accessibility.destinationAmount" = "入金額";
+"accessibility.exchangeRate" = "為替レート";
+"accessibility.draftRow %@ %@ %@" = "ドラフト: %@、%@、%@";
+"accessibility.metricBalance" = "残高";
+"accessibility.metricIncome" = "収入";
+"accessibility.metricExpense" = "支出";
+"accessibility.colorOption %@" = "色 %@";
+"accessibility.close" = "閉じる";
+"accessibility.dismiss" = "閉じる";
+"accessibility.remove" = "削除";
+"accessibility.clearSelection" = "選択をクリア";
+"accessibility.selectColor" = "色を選択";
+"accessibility.newBudget" = "新規予算";
+"accessibility.newPayment" = "新規予定支払い";
+"accessibility.importingHint" = "インポート中";
+"accessibility.fillRequiredFields" = "必須項目をすべて入力してください";
+"accessibility.noTransactions" = "利用可能な取引がありません";
+"accessibility.selectDraftsFirst" = "先に少なくとも1件のドラフトを選択してください";
+"accessibility.proFeature" = "Proサブスクリプションが必要です";
+"accessibility.noActiveAccounts" = "アクティブな口座がありません";
+"accessibility.noInactiveBudgets" = "復元できる非アクティブな予算がありません";
+"accessibility.profile" = "プロフィール";
+
+// MARK: - Widget Hints
+
+"settings.widgetHints" = "ヘルプヒント";
+"settings.widgetHintsDescription" = "各グラフの説明を表示するインフォボタンをウィジェットに表示します。";
+"settings.showVariations" = "比較";
+"settings.showVariationsDescription" = "前期間との比較や変動率を表示します。";
+"settings.averageLine" = "平均線";
+"settings.averageLineDescription" = "棒グラフに平均線を表示します。";
+"settings.averageLine.off" = "オフ";
+"settings.averageLine.total" = "合計";
+"settings.averageLine.segmented" = "セグメント";
+"settings.averageLine.offDescription" = "グラフに平均線を表示しません。";
+"settings.averageLine.totalDescription" = "全体平均を示す水平線。";
+"settings.averageLine.segmentedDescription" = "期間ごとに区切り、変動率を表示します。";
+"settings.decimalPlaces" = "小数点以下の桁数";
+"settings.decimalPlacesDescription" = "合計とグラフにのみ適用されます。個別の記録は常に小数点2桁で表示されます。";
+"settings.decimalsNone" = "小数なし";
+"settings.decimalsOne" = "1桁";
+"settings.decimalsTwo" = "2桁";
+"settings.currencyFormat" = "通貨の形式";
+"settings.currencyFormatDescription" = "通貨コード(USD)とシンボル($)のどちらを表示するか選択します。";
+"settings.currencyCode" = "コード(PEN、USD)";
+"settings.currencySymbol" = "シンボル(S/、$)";
+"settings.autoFocusField" = "オートフォーカス項目";
+"settings.autoFocusFieldDescription" = "新規の手動記録を作成すると、選択した項目に自動でキーボードが開きます。";
+"settings.autoFocusAmount" = "金額";
+"settings.autoFocusNote" = "説明";
+"settings.autoFocusNone" = "なし";
+
+// Expenses Only Mode
+"settings.sectionUsageMode" = "使い方モード";
+"settings.expensesOnlyMode" = "支出のみ";
+"settings.expensesOnlyModeDescription" = "収入、振替、残高を非表示にします。データは削除されず、表示されないだけです。";
+"settings.expensesOnlyActivateTitle" = "支出のみモードを有効にしますか？";
+"settings.expensesOnlyActivateMessage" = "アプリ全体で収入、振替、残高が非表示になります。いつでも元に戻せます。";
+"settings.expensesOnlyActivateConfirm" = "はい、有効にする";
+"settings.expensesOnlyDeactivateTitle" = "支出のみモードを無効にしますか？";
+"settings.expensesOnlyDeactivateMessage" = "収入、振替、残高が再び表示されます。";
+"settings.expensesOnlyDeactivateConfirm" = "はい、無効にする";
+"settings.expensesOnlyActive" = "有効";
+"settings.categoryHidden" = "(非表示)";
+
+"widget.hint.trend" = "選択した期間における残高、収入、支出の推移を表示します。";
+"widget.hint.topCategories" = "今期間に最も支出の多かったカテゴリー。";
+"widget.hint.topSubcategories" = "カテゴリーでフィルターされた支出の多いサブカテゴリー。";
+"widget.hint.categoriesPie" = "カテゴリー別の支出割合。";
+"widget.hint.subcategoriesPie" = "サブカテゴリー別の支出割合。";
+"widget.hint.tagsPie" = "割り当てられたタグ別の支出分布。";
+"widget.hint.needTrend" = "支出を必需、優先、任意に分類します。";
+"widget.hint.cashFlow" = "収入と支出を比較して純フローを確認します。";
+"widget.hint.recentRecords" = "最近の取引。";
+"widget.hint.budgets" = "アクティブな予算の状態。";
+"widget.hint.exchangeRate" = "優先通貨の最新の為替レート。";
+"widget.hint.scheduledPayments" = "もうすぐの予定支払いとサブスクリプション。";
+"widget.hint.spendingAnalysis" = "カテゴリー、サブカテゴリー、タグ、支出種別ごとの内訳。";
+"widget.hint.incomeAnalysis" = "カテゴリー、サブカテゴリー、タグ別の収入の内訳。";
+
+// MARK: - Onboarding
+
+"onboarding.welcomeTitle" = "お金を整理しましょう";
+"onboarding.welcomeSubtitle" = "Yalaを設定するのに数ステップだけです。";
+"onboarding.nameLabel" = "なんとお呼びしましょう？";
+"onboarding.namePlaceholder" = "お名前";
+"onboarding.currencyTitle" = "メイン通貨";
+"onboarding.currencySubtitle" = "最もよく使う通貨を選択してください。";
+"onboarding.secondaryTitle" = "副通貨";
+"onboarding.secondarySubtitle" = "他の通貨も使いますか？為替レートを表示する通貨を最大2つ選択できます。";
+"onboarding.secondaryHint" = "%d / %d 選択中";
+"onboarding.periodTitle" = "既定の期間";
+"onboarding.periodSubtitle" = "アプリを開いたときに既定で表示する期間はどれにしますか？";
+"onboarding.finish" = "始めましょう";
+"onboarding.startUsingYala" = "Yalaを始める";
+"onboarding.categoriesTitle" = "始めるためのカテゴリー";
+"onboarding.categoriesSubtitle" = "初日から支出を整理しやすいよう、よく使うカテゴリーを用意しました。";
+"onboarding.categoriesYes" = "このカテゴリーで始める";
+"onboarding.categoriesNo" = "ゼロから始める";
+"onboarding.categoriesRecommended" = "おすすめ";
+"onboarding.categoriesInfo" = "各カテゴリーには詳細なサブカテゴリーが含まれます。プロフィール > カテゴリーで確認・カスタマイズできます。";
+"onboarding.notificationsTitle" = "お知らせを受け取りますか？";
+"onboarding.notificationsSubtitle" = "役立つリマインダーを有効にしましょう。いつでも変更できます。";
+"onboarding.notificationsSkip" = "今はやめておきます";
+"onboarding.notificationsSelectAll" = "すべて有効";
+"onboarding.notificationsDeselectAll" = "すべて無効";
+"onboarding.recommended" = "おすすめ";
+"onboarding.languageTitle" = "言語を選択";
+"onboarding.languageSubtitle" = "お使いの言語にはまだ対応していません。以下から1つ選んでください！";
+
+// Expenses Only Mode - Onboarding
+"onboarding.expensesOnlyTitle" = "Yalaをどう使いますか？";
+"onboarding.expensesOnlySubtitle" = "お金の整理の仕方を選んでください。あとで設定から変更できます。";
+"onboarding.expensesOnlyOptionAll" = "フルコントロール";
+"onboarding.expensesOnlyOptionExpenses" = "支出のみ";
+"onboarding.expensesOnlyDescAll" = "支出、収入、振替、口座残高";
+"onboarding.expensesOnlyDescExpenses" = "支出だけを記録、シンプルに";
+// Usage Mode: 3 options
+"onboarding.usageMode.expensesOnly" = "支出のみ";
+"onboarding.usageMode.expensesOnly.quote" = "「お金の使い道だけ知りたい」";
+"onboarding.usageMode.expensesOnly.desc" = "支出だけを記録します。残高もなく、シンプル。";
+"onboarding.usageMode.dayToDay" = "日々の管理";
+"onboarding.usageMode.dayToDay.quote" = "「使えるお金がいくらあるか把握したい」";
+"onboarding.usageMode.dayToDay.desc" = "支出、収入、口座残高。手早く実用的。";
+"onboarding.usageMode.fullControl" = "実残高";
+"onboarding.usageMode.fullControl.quote" = "「持っているお金、借りているお金、貸しているお金、すべてを1つの数字で管理したい」";
+"onboarding.usageMode.fullControl.desc" = "口座、カード、他人とのやり取りまで、すべてを残高に含めます。表示される数字が本当に自分のお金です。";
+"onboarding.privacyTitle" = "準備完了";
+"onboarding.privacySubtitle" = "Yalaを使い始める準備ができました";
+"onboarding.privacyLocal" = "金融データはデバイス内に保存されます";
+"onboarding.privacyNoTracking" = "トラッキングや広告はありません";
+"onboarding.privacyIcloud" = "データにアクセスできるのはあなただけ";
+"onboarding.privacyNoSharing" = "AI機能は機微データを共有・保存しません";
+"onboarding.categoriesDefault" = "既定のカテゴリー";
+"onboarding.categoriesCustom" = "カスタムカテゴリー";
+"onboarding.privacyTutorialsHint" = "Yalaのチュートリアルとヒントを見る";
+"onboarding.tutorialsTitle" = "Yalaの使い方を学ぶ";
+"onboarding.tutorialsSubtitle" = "資産管理を最大限活用するための短いガイド";
+"onboarding.tutorialsExplore" = "チュートリアルを見る";
+"onboarding.tutorialsSettingsHint" = "設定からいつでも見られます";
+"onboarding.accountTitle" = "最初の口座";
+"onboarding.accountSubtitle" = "口座はお金を保管している場所を表します。各口座には1つの通貨があります。";
+"onboarding.accountTypeLabel" = "口座の種類";
+"onboarding.accountNameLabel" = "口座名";
+"onboarding.accountNamePlaceholder" = "例: メイン口座";
+"onboarding.accountCurrencyLabel" = "口座の通貨";
+"onboarding.accountBalanceLabel" = "初期残高";
+"onboarding.accountBalanceHint" = "現在のおおよその残高。普通預金: 利用可能額。貯蓄: 貯めている額。";
+"onboarding.accountBalanceSkipHint" = "分からなければ0のままでOK、あとから口座で調整できます。";
+"onboarding.accountBalanceHintGeneral" = "今日使える支払い手段すべての合計を考えてください。おおよその額で大丈夫です。";
+"onboarding.accountBalanceHintCash" = "今手元にある現金。正確でなくて大丈夫、あとから調整できます。";
+"onboarding.accountBalanceHintChecking" = "今日使える銀行残高。正確でなくて大丈夫、あとから調整できます。";
+"onboarding.accountBalanceHintSavings" = "この口座に貯めている合計。正確でなくて大丈夫、あとから調整できます。";
+"onboarding.accountBalanceLearnMore" = "残高を一緒に計算しましょう";
+"onboarding.balanceGuideHint" = "ステップごとにご案内します";
+"onboarding.balanceManualOption" = "残高を知っています";
+"onboarding.balanceManualHint" = "自分で入力します";
+"onboarding.balanceGuidedIncompleteHint" = "計算が完了していません。タップして再開してください。";
+"onboarding.privacyLocalShort" = "データはあなたの端末に";
+"onboarding.privacyNoTrackingShort" = "追跡や広告なし";
+"onboarding.privacyIcloudShort" = "あなただけがアクセス";
+"onboarding.privacyNoSharingShort" = "安全な AI";
+"onboarding.accountBalanceGuideTitle" = "残高はどう計算する？";
+"onboarding.accountBalanceGuideIntro" = "初期残高は、Yalaに「いくらから始めるか」を伝えるものです。1円単位の正確さは不要、おおよその額で十分です。選んだ口座の種類ごとの考え方を以下に示します。";
+"onboarding.accountBalanceGuideGeneral" = "1つの通貨で支払い手段をまとめた一般口座を使う場合、残高は使えるお金の合計を表します。\n\n計算するには普通預金、貯蓄、現金などすべてを合算します。クレジットカードの未払い分があれば、より正確に把握するために差し引いてもよいですし、あとで各カードを別の口座として管理することもできます。\n\nその最終値が初期残高です。";
+"onboarding.accountBalanceGuideCash" = "これは一番シンプル: 今手元にある現金はいくらですか？財布や引き出し、現金を保管している場所を確認しましょう。\n\n正確である必要はありません。だいたい50くらいなら、50で構いません。あとから調整できます。";
+"onboarding.accountBalanceGuideChecking" = "普通預金(またはデビット)口座の利用可能残高は、銀行アプリやATMで確認できます。\n\n今日確認できる利用可能残高を入力してください。複数の普通預金口座がある場合は、各口座をYalaで作成することも、まとめることもできます。お好みでどうぞ。";
+"onboarding.accountBalanceGuideSavings" = "貯蓄口座にいくら貯まっていますか？複数ある場合は、各口座をYalaで作成することも、まとめることもできます。\n\n貯めている合計を入力してください。銀行で利息が表示されている場合は、それも含めましょう。";
+"onboarding.accountBalanceGuideClosing" = "完璧でなくて大丈夫 — 大事なのは始めることです。";
+"onboarding.accountBalanceHintCreditCard" = "現時点でこのカードに使った金額。正確でなくて大丈夫、あとから調整できます。";
+// Balance Calculator Sheet
+// Calculator field hints
+"onboarding.calc.bankAccountsHint" = "普通預金やデビット口座にあるお金すべて";
+"onboarding.calc.savingsHint" = "貯蓄口座にあるお金や別管理しているお金";
+"onboarding.calc.cashHint" = "手元にある紙幣・硬貨";
+"onboarding.calc.creditCardSpendingHint" = "今月カードで使った金額";
+"onboarding.calc.creditLineHint" = "銀行が設定したクレジット枠の上限";
+"onboarding.calc.availableCreditHint" = "カードに残っている利用可能枠";
+"onboarding.calc.title" = "残高の計算をお手伝いします";
+"onboarding.calc.intro" = "正確である必要はありません。おおよそで大丈夫。";
+"onboarding.calc.bankAccounts" = "銀行口座";
+"onboarding.calc.savings" = "貯蓄";
+"onboarding.calc.cash" = "現金";
+"onboarding.calc.creditCardSpending" = "クレジットカード支出";
+"onboarding.calc.optional" = "(任意)";
+"onboarding.calc.available" = "利用可能 →";
+"onboarding.calc.balance" = "残高 →";
+"onboarding.calc.tipCashFlow" = "クレジットカードを使う場合は、別口座としていつでも追加できます。";
+"onboarding.calc.tipPatrimonial" = "他人と支出を共有する場合は、貸し借りを含めるとより正確な残高になります。";
+"onboarding.calc.useBalance" = "この残高を使う";
+"onboarding.calc.adjustLater" = "いつでも調整できます。";
+"onboarding.calc.instruction" = "お金がある項目だけ入力してください。残りは自動計算します。";
+"onboarding.calc.directSpending" = "いくら使いましたか？";
+"onboarding.calc.directSpendingHint" = "この通貨でカードに使った合計。他の通貨で使った場合はこの通貨分のみ入力してください。";
+"onboarding.calc.switchToDirect" = "使った金額を直接入力する";
+"onboarding.calc.switchToDetailed" = "クレジット枠と利用可能額を使う";
+// Shared expenses (patrimonial only)
+"onboarding.calc.sharedExpenses" = "シェア支出";
+"onboarding.calc.othersOweMe" = "他人があなたに借りている";
+"onboarding.calc.iOwe" = "あなたが借りている";
+// Credit card calculator
+"onboarding.calc.creditCard.title" = "クレジットカード";
+"onboarding.calc.creditLine" = "クレジット枠";
+"onboarding.calc.availableCredit" = "利用可能";
+"onboarding.calc.currentSpending" = "現在の支出 →";
+"onboarding.calc.yourBalance" = "残高 →";
+"onboarding.calc.creditCard.tip" = "残高は、まだ支払っていない支出を反映します。";
+// Simple account explanations
+"onboarding.calc.cashExplanation" = "財布や現金を保管している場所を確認し、合計してください。おおよそで大丈夫です。";
+"onboarding.calc.checkingExplanation" = "銀行アプリやATMで利用可能残高を確認し、今日表示されている数字を入力してください。";
+"onboarding.calc.savingsExplanation" = "いくら貯めていますか？複数の貯蓄口座がある場合、合算するか各口座を別に作成できます。";
+"onboarding.calc.balanceLabelChecking" = "口座のお金";
+"onboarding.calc.balanceLabelSavings" = "貯めている金額";
+"onboarding.calc.balanceLabelCash" = "現金の額";
+"onboarding.accountImportTip" = "プロフィール > インポートから、好きな口座に記録をインポートできます。";
+"onboarding.accountMoreTip" = "口座はいつでも追加できます。複数通貨を使う場合は通貨ごとに最低1つ作成しましょう。";
+"onboarding.budgetTitle" = "今月どれくらい使う予定ですか？";
+"onboarding.budgetSubtitle" = "予算は設定額に近づいたらお知らせします。カテゴリーと月額の目安を選んでください。";
+"onboarding.budgetYes" = "支出を管理したい";
+"onboarding.budgetNo" = "今はやめておきます";
+"onboarding.budgetCategoryLabel" = "どのカテゴリー？";
+"onboarding.budgetAmountLabel" = "月額";
+"onboarding.budgetAmountPlaceholder" = "例: 500";
+"onboarding.budgetMoreTip" = "計画 > 予算でさらに予算を作成したり、既存のものを編集できます。";
+"onboarding.budgetPreviewLabel" = "予算のプレビュー";
+
+// Purpose step (binary)
+"onboarding.purpose.title" = "Yalaで何をしたいですか？";
+"onboarding.purpose.expenses" = "支出だけ管理したい";
+"onboarding.purpose.expensesDesc" = "使ったお金を記録するだけ";
+"onboarding.purpose.control" = "お金を総合的に管理";
+"onboarding.purpose.controlDesc" = "支出、収入、保有額";
+// Accounts step (binary)
+"onboarding.accounts.title" = "Yalaでお金をどう整理しますか？";
+"onboarding.accounts.single" = "1つの口座にまとめる";
+"onboarding.accounts.singleDesc" = "通貨ごとにメイン口座を1つ、そこにすべてのお金を入れる";
+"onboarding.accounts.multiple" = "口座ごとに分ける";
+"onboarding.accounts.multipleDesc" = "貯蓄、デビット、クレジット...各口座の残高を把握";
+// Account type step
+"onboarding.accountType.title" = "最初の口座を作りましょう";
+"onboarding.accountType.subtitle" = "今すぐ作成する口座を選んでください。あとでプロフィールから追加できます。";
+"onboarding.accountType.checkingHint" = "普段使う銀行口座";
+"onboarding.accountType.savingsHint" = "貯蓄を保管する口座";
+"onboarding.accountType.creditHint" = "クレジットカード";
+"onboarding.accountType.cashHint" = "手元にある紙幣と硬貨";
+// Name hint
+"onboarding.nameHint" = "本名、ニックネーム、お好きなものでOK";
+"onboarding.categories.viewSubs" = "サブカテゴリーを表示";
+// Currency + Name step (adaptive)
+"onboarding.currencyName.titleSingle" = "メイン口座を作りましょう";
+"onboarding.currencyName.subtitleSingle" = "最もよく使う通貨に絞ります。この口座でお金を管理します。";
+"onboarding.currencyName.titleSeparate" = "口座に名前を付けましょう";
+"onboarding.currencyName.subtitleSeparate" = "名前と使用する通貨を選んでください。";
+// Balance step
+"onboarding.balance.title" = "この口座にいくらありますか？";
+"onboarding.balance.subtitle" = "おおよそで大丈夫です。いつでも調整できます。";
+// Confirmation step
+"onboarding.confirm.title" = "Yalaのセットアップ内容";
+"onboarding.confirm.accountLabel" = "口座";
+"onboarding.confirm.currencyLabel" = "通貨";
+"onboarding.confirm.balanceLabel" = "残高";
+"onboarding.confirm.modeLabel" = "モード";
+"onboarding.confirm.motivationExpenses" = "支出を把握する準備ができました！";
+"onboarding.confirm.motivationDayToDay" = "資産計画はここから始まります！";
+"onboarding.confirm.motivationFullControl" = "今日からすべて把握しましょう！";
+
+// MARK: - Bulk Edit
+"bulkEdit.currencyWarning" = "口座を変更すると、選択中の取引の通貨も更新されます。";
+"bulkEdit.editCount" = "%d件の取引を編集";
+"bulkEdit.successMessage" = "取引を更新しました";
+"bulkEdit.cannotEditTransferSubcategory" = "送金のサブカテゴリは変更できません。個別に編集してください。";
+"bulkEdit.cannotEditTransferAccount" = "送金の口座は変更できません。個別に編集してください。";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "異なる通貨間の送金額は一括編集できません。為替レートを保つため個別に編集してください。";
+"bulkEdit.commonTags" = "選択中すべてに含まれる";
+"bulkEdit.partialTags" = "一部に含まれる";
+"bulkEdit.availableTags" = "追加可能";
+
+// MARK: - Voice Language
+"voiceLanguage.system" = "システム";
+"voiceLanguage.spanish" = "スペイン語";
+"voiceLanguage.english" = "英語";
+
+// MARK: - Voice Input
+"voice.title" = "音声メモ";
+"voice.recording" = "録音中...";
+"voice.recorded" = "録音済み";
+"voice.pleaseWait" = "お待ちください";
+"voice.tapToRecord" = "タップして録音";
+"voice.youCanSay" = "次のように話せます:";
+"voice.hintTypeExample" = "支出/収入/振替";
+"voice.hintAmountExample" = "50 %@";
+"voice.hintSubcategoryExample" = "レストラン";
+"voice.hintMerchantExample" = "Starbucks";
+"voice.hintTagExample" = "仕事";
+"voice.hintDateExample" = "今日/昨日";
+"voice.exampleLabel" = "例";
+"voice.example1" = "Starbucksでコーヒーに50 %@";
+"voice.example2" = "フリーランスの仕事で1000 %@の収入";
+"voice.example3" = "貯蓄口座へ200 %@振替";
+"voice.processingAudio" = "音声を処理中...";
+"voice.analyzing" = "分析中...";
+"voice.parsing" = "データを抽出中...";
+"voice.saving" = "保存中...";
+"voice.errorNoAmount" = "金額を検出できませんでした。もう一度お試しください。";
+"voice.errorNoApiKey" = "音声サービスに接続できませんでした。後ほどもう一度お試しください。";
+"voice.errorNoConnection" = "インターネット接続がありません。この機能には接続が必要です。";
+"voice.errorMicPermission" = "マイクの権限が拒否されました。設定で有効にしてください。";
+"voice.errorSaveFailed" = "ドラフトを保存できませんでした。もう一度お試しください。";
+"voice.openSettings" = "設定を開く";
+"voice.tryImage" = "画像を使う";
+
+// MARK: - Inbox
+"inbox.title" = "受信箱";
+"inbox.pending" = "保留中";
+"inbox.archived" = "アーカイブ済み";
+"inbox.noDescription" = "説明なし";
+"inbox.noAmount" = "金額なし";
+"inbox.missingLabel" = "未入力データ";
+"inbox.needsAccount" = "口座を選択";
+"inbox.needsSubcategory" = "サブカテゴリーを選択";
+"inbox.approve" = "承認";
+"inbox.delete" = "削除";
+"inbox.noPending" = "保留中のドラフトはありません";
+"inbox.noPendingDescription" = "新しい音声や画像のドラフトはここに表示されます。";
+"inbox.bulkHint" = "一括操作するには「選択」をタップ";
+"inbox.subtitleMultiplePending" = "%d件の取引が待機中、一歩ずつ進めましょう。";
+"inbox.subtitleOnePending" = "1件の取引が待機中、お時間のあるときに確認してください。";
+"inbox.subtitleAllDone" = "受信箱はゼロです、お疲れさまでした。";
+"inbox.pendingBadge" = "%d件保留中";
+"inbox.newTag" = "新規";
+"inbox.noArchived" = "アーカイブ済みのドラフトはありません";
+"inbox.noArchivedDescription" = "承認・却下したドラフトはここに表示されます。";
+"inbox.selectedCount" = "%d件選択中";
+"inbox.editDraft" = "ドラフトを編集";
+"inbox.cannotApprove" = "承認できません";
+"inbox.sourceVoice" = "音声";
+"inbox.sourceEmail" = "メール";
+"inbox.sourceScreenshot" = "スクリーンショット";
+"inbox.sourceScreenshotList" = "リスト";
+"inbox.sourceReceipt" = "レシート";
+"inbox.sourceScheduledPayment" = "予定支払い";
+"inbox.sourceSubscription" = "サブスクリプション";
+"inbox.sourceApplePay" = "Apple Pay";
+"inbox.sourceAutomation" = "オートメーション";
+"inbox.sourceSiri" = "Siri";
+"inbox.errorNoAccount" = "口座を選択してください";
+"inbox.errorNoAmount" = "金額を入力してください";
+"inbox.errorNoSubcategory" = "サブカテゴリーを選択してください";
+"inbox.errorArchivedAccount" = "この口座はアーカイブされています。ドラフトを編集して口座を変更すると承認できます。";
+"inbox.errorFutureDate" = "未来の日付の取引は承認できません";
+"inbox.duplicateWarningTitle" = "重複の可能性があります";
+"inbox.duplicateWarningMessage" = "似た取引がすでに存在します。それでも作成しますか？";
+"inbox.createAnyway" = "それでも作成";
+"inbox.deleteConfirmMessage" = "%d件のドラフトを削除してもよろしいですか？";
+"inbox.approveableCount" = "%d/%d件が承認可能";
+"inbox.saveLater" = "あとで承認";
+"inbox.deleteTitle" = "ドラフトを削除";
+"inbox.deleteMessage" = "この操作は取り消せません。";
+"inbox.reject" = "却下";
+"inbox.approveAll" = "すべて承認";
+"inbox.returnToPending" = "保留に戻す";
+"inbox.discardChangesTitle" = "変更を破棄しますか？";
+"inbox.discardChanges" = "破棄";
+"inbox.keepEditing" = "編集を続ける";
+"inbox.discardChangesMessage" = "保存されていない変更が失われます。";
+"inbox.approveSuccess" = "取引を作成しました";
+"inbox.approveNext" = "次を承認";
+"inbox.transactionCreated" = "件の取引を作成";
+"inbox.transactionsCreated" = "件の取引を作成";
+"inbox.viewInRecords" = "記録で表示";
+"inbox.backToInbox" = "受信箱に戻る";
+
+// MARK: - Image Input
+"image.title" = "画像";
+"image.selectTitle" = "画像を選択";
+"image.selectSubtitle" = "銀行のスクリーンショットやレシートをスキャンして取引を自動作成します。";
+"image.selectButton" = "画像を選択";
+"image.processing" = "処理中...";
+"image.processingSubtitle" = "画像からデータを抽出中";
+"image.errorTitle" = "エラー";
+"image.errorLoad" = "画像を読み込めませんでした";
+"image.errorNoData" = "画像から取引を検出できませんでした";
+"image.errorUnrecognized" = "認識できない画像種別です";
+"image.errorGeneric" = "画像の処理中にエラーが発生しました";
+"image.errorPhotoPermission" = "写真の権限が拒否されました。設定で有効にしてください。";
+"image.errorCorrupted" = "画像を処理できませんでした。別の画像でお試しください。";
+"image.errorSaveFailed" = "ドラフトを保存できませんでした。もう一度お試しください。";
+"image.errorNoApiKey" = "画像サービスに接続できませんでした。後ほどもう一度お試しください。";
+"image.errorNoConnection" = "インターネット接続がありません。画像分析には接続が必要です。";
+"image.openSettings" = "設定を開く";
+"image.transactionDetected" = "件の取引を検出";
+"image.transactionsDetectedCount" = "件の取引を検出";
+"image.reviewDraft" = "確認";
+"image.transactionsDetected" = "取引を検出しました";
+"image.goToInbox" = "受信箱へ";
+"image.transactionsDetectedMessage" = "%d件の取引を検出しました。受信箱で確認・承認できます。";
+"image.analyzingIn" = "%d秒後に分析...";
+"image.imagesSelected" = "%d枚の画像を選択中";
+"image.youCanUpload" = "アップロード可能なもの:";
+"image.hintReceipts" = "購入のレシート";
+"image.hintBankScreenshots" = "銀行のスクリーンショット";
+"image.hintRestaurantTickets" = "レストランの伝票";
+"image.hintStatements" = "口座明細";
+"image.hintPaymentProofs" = "支払いの証明";
+"image.hintMultiple" = "複数まとめて";
+"image.exampleLabel" = "例";
+"image.example1" = "スーパーのレシートの写真";
+"image.example2" = "銀行振込のスクリーンショット";
+"image.example3" = "旅行で複数の伝票の写真";
+
+// MARK: - Subscription
+"subscription.title" = "Yala Pro";
+"subscription.paywallTitle" = "Yalaの全機能を解放";
+"subscription.paywallSubtitle" = "高度なツールで資産管理を次のレベルへ";
+"subscription.subscribe" = "登録する";
+"subscription.processing" = "処理中...";
+"subscription.restore" = "購入を復元";
+"subscription.planMonthly" = "月額";
+"subscription.planYearly" = "年額";
+"subscription.perYear" = "/年";
+"subscription.perMonth" = "%@/月";
+"subscription.saveBadge" = "%d%%お得";
+"subscription.feature.voice" = "無制限の音声入力";
+"subscription.feature.image" = "レシート・画像のスキャン";
+"subscription.feature.reports" = "高度なレポートとグラフ";
+"subscription.feature.currencies" = "すべての通貨と為替レート";
+"subscription.feature.themes" = "カスタムテーマ";
+"subscription.feature.export" = "ExcelとCSVへのエクスポート";
+"subscription.legalFooter" = "料金はApple IDに請求されます。期間終了の24時間以上前にキャンセルしない限り、サブスクリプションは自動更新されます。";
+"subscription.termsLink" = "利用規約とプライバシーポリシー";
+"subscription.termsOfUseLink" = "利用規約";
+"subscription.privacyPolicyLink" = "プライバシーポリシー";
+"subscription.errorTitle" = "購入エラー";
+"subscription.activeTitle" = "Yala Proをご利用中";
+"subscription.activeSubtitle" = "すべてのプレミアム機能を利用できます";
+"subscription.currentPlan" = "現在のプラン";
+"subscription.renewsOn" = "更新日";
+"subscription.manageInAppStore" = "App Storeで管理";
+
+// MARK: - Tips & Tricks
+"tips.subtitle" = "Yalaを最大限に活用する";
+"tips.section.quickEntry" = "クイック入力";
+"tips.section.organize" = "お金を整理";
+"tips.section.advanced" = "上級テクニック";
+"tips.voice.title" = "支出を音声で入力";
+"tips.voice.detail" = "音声入力を有効にして「ランチ35ドル」のように話してみましょう。Yalaは金額、日付、メモを自然に理解します。";
+"tips.camera.title" = "レシートやスクリーンショットを読み取り";
+"tips.camera.detail" = "レシートや銀行のスクリーンショットを撮影。Yalaが金額を抽出し、自動でドラフトを作成します。";
+"tips.favorites.title" = "よく使う支払いを保存";
+"tips.favorites.detail" = "同じ支払いが多いですか？支出をお気に入りに保存すると、次回は+メニューから1タップで記録できます。";
+"tips.budgets.title" = "予算を作成";
+"tips.budgets.detail" = "カテゴリーごとに月の予算を設定。上限に近づいたらYalaがお知らせするので、超過を防げます。";
+"tips.tags.title" = "特別な支出にタグ";
+"tips.tags.detail" = "「旅行」や「住宅プロジェクト」などのタグでカテゴリーをまたいだ支出をまとめて、合計を確認できます。";
+"tips.filters.title" = "フィルターと期間比較";
+"tips.filters.detail" = "カテゴリー、タグ、口座、期間で必要な情報だけ表示。月ごとに比較して変化を捉えましょう。";
+"tips.export.title" = "データをエクスポート";
+"tips.export.detail" = "設定 > エクスポートから支出をCSVやExcelでダウンロード。表計算分析やバックアップに最適。";
+"tips.faceID.title" = "Face IDで保護";
+"tips.faceID.detail" = "設定 > セキュリティで生体認証ロックを有効化。アプリを離れたとき、または一定時間後にロックできます。";
+"tips.siri.title" = "音声で支出をメモ";
+"tips.siri.detail" = "「Yalaに支出をメモ」と話して、続けて詳細を口述します";
+"tips.siri.close" = "Siri候補を閉じる";
+
+// MARK: - TipKit (contextual guides)
+"tipkit.skip" = "ガイドをスキップ";
+"tipkit.next" = "次へ";
+"tipkit.done" = "完了";
+"tipkit.comparison.title" = "比較して理解する";
+"tipkit.comparison.message" = "前期間や前年と比較して、状況を把握しましょう。";
+
+// Group D: Settings Tour
+"tipkit.settingsAppIcon.title" = "アイコン";
+"tipkit.settingsAppIcon.message" = "アプリのアイコンを変えて、自分らしい仕上げに。";
+"tipkit.settingsTheme.title" = "テーマ";
+"tipkit.settingsTheme.message" = "クラシック、ミニマル、半透明から好みのスタイルを選択。";
+"tipkit.settings.accounts.title" = "口座";
+"tipkit.settings.accounts.message" = "銀行口座、現金などを追加して整理。";
+"tipkit.settings.categories.title" = "カテゴリー";
+"tipkit.settings.categories.message" = "カテゴリーをカスタマイズして支出と収入を分類。";
+"tipkit.settings.tags.title" = "タグ";
+"tipkit.settings.tags.message" = "プロジェクト、旅行など好きな単位で支出をまとめるタグを作成。";
+"tipkit.settings.budgets.title" = "予算";
+"tipkit.settings.budgets.message" = "支出の上限を設定し、近づいたら通知。";
+"tipkit.settings.planned.title" = "予定支払い";
+"tipkit.settings.planned.message" = "定期的な支払いをスケジュールすれば、Yalaが時間通りにお知らせ。";
+"tipkit.settings.personalization.title" = "パーソナライズ";
+"tipkit.settings.personalization.message" = "言語、通貨、外観を調整して自分らしいYalaに。";
+"tipkit.settings.tutorials.title" = "チュートリアル";
+"tipkit.settings.tutorials.message" = "Yalaを最大限に活用するためのステップバイステップガイド。";
+"tipkit.cfSetup.banner.title" = "あなた専用に作成";
+"tipkit.cfSetup.banner.message" = "最近の数ヶ月を分析して計画を作成しました。お好みで調整してください。";
+"tipkit.cfSetup.line.title" = "収入と支出";
+"tipkit.cfSetup.line.message" = "各項目は毎月稼ぐ・支払うものです。✓をタップして計画に含めましょう。";
+"tipkit.cfSetup.starting.title" = "初期残高";
+"tipkit.cfSetup.starting.message" = "貯蓄がある場合はここに入力すると計画がより正確になります。";
+"tipkit.cfSetup.create.title" = "計画を作成";
+"tipkit.cfSetup.create.message" = "問題なければ、ここをタップして計画を有効化します。";
+"tipkit.cfTable.cell.title" = "詳細を見る";
+"tipkit.cfTable.cell.message" = "金額をタップすると、その元データと計算方法が表示されます。";
+"tipkit.cfTable.available.title" = "残金";
+"tipkit.cfTable.available.message" = "毎月いくら残るか(または足りないか)を確認できます。";
+"tipkit.cfTable.add.title" = "項目を追加";
+"tipkit.cfTable.add.message" = "収入や支出が抜けている場合はここから追加してください。";
+
+// Pro Tour
+"tipkit.pro.voiceInput.title" = "音声入力";
+"tipkit.pro.voiceInput.message" = "支出を口述で入力できます。話すだけでYalaが記録します。";
+"tipkit.pro.imageInput.title" = "画像入力";
+"tipkit.pro.imageInput.message" = "レシートや請求書の写真を添付すると、Yalaが1件以上の取引を抽出します。";
+"tipkit.pro.smartInsights.title" = "スマートインサイト";
+"tipkit.pro.smartInsights.message" = "これを有効にすると、YalaがAIで資産状況に関するインサイトを生成します。";
+"tipkit.pro.exportExtended.title" = "無制限エクスポート";
+"tipkit.pro.exportExtended.message" = "1年分、全履歴、カスタム範囲でデータをエクスポートできます。";
+"tipkit.pro.premiumIcons.title" = "限定アイコン";
+"tipkit.pro.premiumIcons.message" = "プレミアムアイコンからアプリを自分仕様に。";
+"tipkit.pro.proThemes.title" = "プレミアムテーマ";
+"tipkit.pro.proThemes.message" = "Yalaに自分らしい彩りを加える限定カラーテーマを発見。";
+"tipkit.pro.fab.title" = "新しい記録方法";
+"tipkit.pro.fab.message" = "ここをタップして音声、画像、手動で記録できます。3つの選択肢が揃いました。";
+"tipkit.pro.chatFab.title" = "金融アシスタント";
+"tipkit.pro.chatFab.message" = "支出、予算などをYalaに聞いてみましょう。";
+"tipkit.pro.aiSummary.title" = "AIサマリー";
+"tipkit.pro.aiSummary.message" = "1タップで資産状況のスマートサマリーを生成。役立つインサイトをすぐに。";
+"tipkit.aiCharts.pro.title" = "AIインサイト";
+"tipkit.aiCharts.pro.message" = "ここをタップしてキャッシュフローのスマートインサイトを取得。";
+"tipkit.aiCharts.free.title" = "スマートインサイト";
+"tipkit.aiCharts.free.message" = "Proにアップグレードすると、AIで資産状況のインサイトが手に入ります。";
+
+// MARK: - FAQ
+"faq.subtitle" = "よくある質問への回答";
+"faq.section.general" = "一般";
+"faq.section.data" = "データ";
+"faq.section.pro" = "Yala Pro";
+"faq.whatIsYala.q" = "Yalaとは？";
+"faq.whatIsYala.a" = "Yalaは個人向けの資産管理アプリです。支出と収入の追跡、カテゴリーやタグでの整理、予算作成、明確なレポートでお金の状況を把握できます。";
+"faq.howToRecord.q" = "支出はどう記録する？";
+"faq.howToRecord.a" = "メイン画面の+ボタンをタップ。金額を手入力する、音声で口述する、カメラでレシートを読み取るなどの方法があります。Yalaが詳細を埋めてくれます。";
+"faq.multiCurrency.q" = "複数通貨は使える？";
+"faq.multiCurrency.a" = "はい。Yalaは7通貨(PEN、USD、EUR、MXN、COP、BRL、GBP)に対応。設定 > 通貨でメイン通貨を設定し、副通貨を追加できます。";
+"faq.changeCategory.q" = "支出のカテゴリーはどう変更する？";
+"faq.changeCategory.a" = "支出を開いてカテゴリーをタップで変更できます。複数まとめて変更するには一括編集を使用: 記録を長押しして対象を選択してください。";
+"faq.importData.q" = "データをインポートできる？";
+"faq.importData.a" = "はい。設定 > インポートからCSVまたはExcelファイルをアップロード。Yalaが列を自動検出し、通貨ごとに口座を割り当てられます。";
+"faq.exportData.q" = "データはどうエクスポートする？";
+"faq.exportData.a" = "設定 > エクスポートからCSVまたはExcel形式を選択。すべての記録をダウンロードして表計算分析やバックアップに利用できます。";
+"faq.deleteData.q" = "すべてのデータを削除できる？";
+"faq.deleteData.a" = "はい。設定 > データを消去ですべての情報を削除できます。この操作は取り消せないため、先にバックアップのエクスポートをおすすめします。";
+"faq.whatIsPro.q" = "Yala Proには何が含まれる？";
+"faq.whatIsPro.a" = "Yala Proは音声入力、カメラでのレシート読み取り、限定テーマなどのプレミアム機能を解放します。設定 > サブスクリプションですべての特典を確認できます。";
+"faq.cancelSub.q" = "サブスクリプションはどうキャンセルする？";
+"faq.cancelSub.a" = "設定 > サブスクリプション > App Storeで管理から、いつでも管理・キャンセルできます。Proアクセスは支払い済み期間の終了まで継続します。";
+
+// MARK: - Shortcuts (App Intents)
+"shortcut.quickExpense.title" = "新規入力";
+"shortcut.quickExpense.description" = "金額、口座、カテゴリー、タグを指定してYalaに新しい記録を作成します。";
+"shortcut.quickExpense.shortTitle" = "新規入力";
+
+// Errors
+"shortcut.error.database" = "データベースにアクセスできませんでした";
+"shortcut.error.noAccount" = "利用可能な口座がありません。先に口座を作成してください。";
+"shortcut.error.save" = "記録を保存できませんでした";
+"shortcut.error.consentRequired" = "このショートカットを使う前にアプリ内でAI同意を承認してください。";
+
+// Voice Entry Shortcut
+"shortcut.voiceEntry.title" = "音声で記録";
+"shortcut.voiceEntry.description" = "音声録音を開いて口述で支出を記録します";
+"shortcut.voiceEntry.shortTitle" = "音声で記録";
+"shortcut.voiceEntry.opening" = "音声入力を開いています...";
+
+// Image Entry Shortcut
+"shortcut.imageEntry.title" = "画像で記録";
+"shortcut.imageEntry.description" = "画像ピッカーを開いて写真から支出を記録します";
+"shortcut.imageEntry.shortTitle" = "画像で記録";
+"shortcut.imageEntry.opening" = "画像入力を開いています...";
+
+// MARK: - Apple Pay Intent
+
+"shortcut.applePay.title" = "Apple Payの支払いを記録";
+"shortcut.applePay.description" = "Apple Payの取引から受信箱にドラフトを作成します。Walletの「カードをタップしたとき」トリガーの後で使用し、金額→amount、店舗→merchantを接続してください。";
+"shortcut.applePay.shortTitle" = "Apple Payの支払いを記録";
+"shortcut.applePay.param.amount" = "金額";
+"shortcut.applePay.param.amount.description" = "取引金額(Walletから)";
+"shortcut.applePay.param.merchant" = "店舗";
+"shortcut.applePay.param.merchant.description" = "店舗名";
+
+// Summary localizado: la key es el literal inglés del macro Summary("...") con \(\.$var) → ${var}.
+"Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}" = "Apple Payから記録: 金額 ${amount}、店舗 ${merchant}";
+
+// MARK: - Automation Entry Shortcut
+
+// MARK: - Siri Natural Language Entry
+"shortcut.siriNatural.title" = "Siriでメモ";
+"shortcut.siriNatural.description" = "Siriで自然な言葉で支出を記録";
+"shortcut.siriNatural.shortTitle" = "Siriでメモ";
+"shortcut.siriNatural.param.text" = "テキスト";
+"shortcut.siriNatural.dialog.askText" = "何を記録しますか？";
+"shortcut.siriNatural.error.noText" = "記録するテキストが入力されませんでした。";
+"shortcut.siriNatural.error.parsingFailed" = "テキストを理解できませんでした。「コーヒーに50」のように試してください。";
+"shortcut.siriNatural.error.proRequired" = "Siri入力を使うにはYala Proを有効にしてください。";
+"shortcut.siriNatural.success.single %@" = "ドラフトを作成しました: %@。受信箱で確認してください。";
+"shortcut.siriNatural.success.multiple %lld" = "%lld件のドラフトを作成しました。受信箱で確認してください。";
+"shortcut.siriNatural.success.offline %@" = "基本ドラフトを作成しました: %@。受信箱で詳細を補完してください。";
+"shortcut.siriNatural.notification.title" = "Siriから新しいドラフト";
+"shortcut.siriNatural.notification.body %@" = "%@のドラフトが作成されました。受信箱で確認してください。";
+"shortcut.siriNatural.notification.bodyOffline" = "基本ドラフトを作成しました(オフライン)。詳細を補完してください。";
+
+// MARK: - Control Center (iOS 18+)
+// Labels shown in Control Center (keep short - limited space)
+"control.quickExpense.label" = "クイック支出";
+"control.quickExpense.displayName" = "クイック支出";
+"control.quickExpense.description" = "支出をすばやく記録";
+"control.quickExpense.intentTitle" = "Yalaを開く";
+"control.quickExpense.intentDescription" = "Yalaを開いて支出を記録します";
+
+"control.voiceEntry.label" = "音声入力";
+"control.voiceEntry.displayName" = "音声入力";
+"control.voiceEntry.description" = "音声で記録を口述";
+"control.voiceEntry.intentTitle" = "音声入力を開く";
+"control.voiceEntry.intentDescription" = "Yalaを音声録音モードで開きます";
+
+"control.imageEntry.label" = "画像入力";
+"control.imageEntry.displayName" = "画像入力";
+"control.imageEntry.description" = "画像や写真で記録";
+"control.imageEntry.intentTitle" = "画像入力を開く";
+"control.imageEntry.intentDescription" = "Yalaをカメラモードで開いて記録します";
+
+// MARK: - Notifications
+"notifications.title" = "通知";
+"notifications.addNew" = "新規通知";
+"notifications.edit" = "編集";
+"notifications.delete" = "削除";
+"notifications.deleteConfirm" = "この通知を削除してもよろしいですか？";
+"notifications.permissionRequired" = "通知を有効にする";
+"notifications.permissionMessage" = "リマインダーを送るには、設定で通知を有効にする必要があります。";
+"notifications.openSettings" = "設定へ";
+
+// Form fields
+"notifications.name" = "名前";
+"notifications.namePlaceholder" = "例: マイリマインダー";
+"notifications.text" = "メッセージ";
+"notifications.textPlaceholder" = "例: 支出を確認する時間です！";
+"notifications.time" = "時刻";
+"notifications.active" = "有効";
+
+// Report data types
+"notifications.data.balance" = "残高";
+"notifications.data.expenses" = "支出";
+"notifications.data.income" = "収入";
+"notifications.data.topCategory" = "支出の多いカテゴリー";
+"notifications.selectData" = "何を見ますか？";
+
+// Day preferences
+"notifications.day.sunday" = "日曜日";
+"notifications.day.monday" = "月曜日";
+"notifications.day.lastOfMonth" = "月の最終日";
+"notifications.day.firstOfMonth" = "月の初日";
+"notifications.selectDay" = "いつ受け取りますか？";
+"notifications.allDays" = "毎日";
+"notifications.selectWeekdays" = "どの曜日？";
+
+// Reminders (Brand Voice)
+"notifications.endOfDay.name" = "1日の終わり";
+"notifications.endOfDay.text" = "今日はどうでしたか？👋 忘れる前に支出を記録しましょう";
+"notifications.lunchTime.name" = "食事の時間";
+"notifications.lunchTime.text" = "何を食べましたか？🍽️ 覚えているうちに記録";
+
+// Reports
+"notifications.dailyReport.name" = "日次サマリー";
+"notifications.dailyReport.hint" = "%@に1日の%@が表示されます";
+"notifications.weeklyReport.name" = "週次サマリー";
+"notifications.weeklyReport.hint" = "毎週%2$@に1週間の%1$@が届きます";
+"notifications.monthlyReport.name" = "月次サマリー";
+"notifications.monthlyReport.hint" = "%2$@に1ヶ月の%1$@が表示されます";
+
+// System notifications
+"notifications.scheduledPayments.name" = "予定支払い";
+"notifications.scheduledPayments.hint" = "もうすぐの支払いがあるときにお知らせします";
+
+// Groups
+"notifications.groups.name" = "グループ";
+"notifications.groups.hint" = "他のメンバーが支出を追加したり、支払いをした際の通知";
+"notifications.groups.newExpense" = "%1$@が%2$@の支出を追加: %3$@";
+"notifications.groups.newExpenseNoDesc" = "%@が%@の支出を追加";
+"notifications.groups.modifiedExpense" = "%@が「%@」を編集";
+"notifications.groups.settlement" = "%@があなたに%@支払いました";
+"notifications.groups.newMember" = "%@がグループに参加しました";
+"notifications.groups.multipleChanges" = "新しい変更が%d件";
+"notifications.groups.fallbackGroup" = "グループ";
+"notifications.groups.fallbackMember" = "誰か";
+
+// Empty state
+"notifications.empty.title" = "通知はありません";
+"notifications.empty.message" = "リマインダーを設定して資産管理を続けましょう";
+
+// Test
+"notifications.testNotification" = "テストリマインダー";
+"notifications.testReport.balance.daily" = "今日の終了時の残高: $1,250.00 💰";
+"notifications.testReport.balance.weekly" = "今週の終了時の残高: $1,250.00 💰";
+"notifications.testReport.balance.monthly" = "今月の終了時の残高: $1,250.00 💰";
+"notifications.testReport.expenses.daily" = "今日$85.00使いました 📊";
+"notifications.testReport.expenses.weekly" = "今週$350.00使いました 📊";
+"notifications.testReport.expenses.monthly" = "今月$1,200.00使いました 📊";
+"notifications.testReport.income.daily" = "今日$500.00受け取りました 🎉";
+"notifications.testReport.income.weekly" = "今週$2,500.00受け取りました 🎉";
+"notifications.testReport.income.monthly" = "今月$8,500.00受け取りました 🎉";
+"notifications.testReport.topCategory.daily" = "今日のトップ支出: 食事 ($45.00) 👀";
+"notifications.testReport.topCategory.weekly" = "今週のトップ支出: 食事 ($180.00) 👀";
+"notifications.testReport.topCategory.monthly" = "今月のトップ支出: 食事 ($650.00) 👀";
+"notifications.testReport.scheduledPayment" = "3日後に支払いがあります: 「Netflix」 USD 14.99";
+
+// Section headers
+"notifications.section.reminders" = "リマインダー";
+"notifications.section.reports" = "レポート";
+"notifications.section.system" = "システム";
+"notifications.section.custom" = "カスタム";
+"notifications.budgetAlerts.title" = "予算アラート";
+"notifications.budgetAlerts.hint" = "予算の上限に近づいたら通知します";
+
+// Scheduled Payment Notifications (personalized)
+"notifications.scheduledPayment.dueToday" = "%2$@の支払い時期: %1$@ 💰";
+"notifications.scheduledPayment.dueSoon" = "%3$@の支払いは%1$d日後: %2$@ 📅";
+"notifications.scheduledPayment.overdue" = "%2$@の%1$@が期限超過 — 支払いましたか？ 👀";
+"notifications.scheduledPayment.dueToday.income" = "%2$@からの%1$@が今日入金！ 🎉";
+"notifications.scheduledPayment.dueSoon.income" = "%3$@からの%2$@が%1$d日後に入金 📅";
+"notifications.scheduledPayment.overdue.income" = "%2$@からの%1$@を期待していました — 受け取りましたか？ 👀";
+
+// Report Notifications (with real data)
+"notifications.report.balance.daily" = "今日の終了時の残高: %@ 💰";
+"notifications.report.balance.weekly" = "今週の終了時の残高: %@ 💰";
+"notifications.report.balance.monthly" = "今月の終了時の残高: %@ 💰";
+"notifications.report.expenses.daily" = "今日%@使いました 📊";
+"notifications.report.expenses.weekly" = "今週%@使いました 📊";
+"notifications.report.expenses.monthly" = "今月%@使いました 📊";
+"notifications.report.income.daily" = "今日%@受け取りました 🎉";
+"notifications.report.income.weekly" = "今週%@受け取りました 🎉";
+"notifications.report.income.monthly" = "今月%@受け取りました 🎉";
+"notifications.report.topCategory.daily" = "今日のトップ支出: %@ 👀";
+"notifications.report.topCategory.weekly" = "今週のトップ支出: %@ 👀";
+"notifications.report.topCategory.monthly" = "今月のトップ支出: %@ 👀";
+
+// Report Notifications (empty state)
+"notifications.report.empty.expenses.daily" = "穏やかな1日！支出なし ✨";
+"notifications.report.empty.expenses.weekly" = "穏やかな週！支出の記録なし ✨";
+"notifications.report.empty.expenses.monthly" = "穏やかな月！支出の記録なし ✨";
+"notifications.report.empty.income" = "今回は収入なし — 大丈夫 ✨";
+"notifications.report.empty.topCategory" = "支出なし！財布もお休み 😊";
+
+// MARK: - iCloud Sync
+
+"icloud.title" = "iCloud同期";
+"icloud.description" = "データはiCloudと自動で同期され、同じアカウントでサインインしているすべてのAppleデバイスで利用できます。";
+"icloud.privacyNote" = "データはあなた個人のiCloudアカウントに非公開で保存されます。Yalaがアクセスすることはありません。";
+"icloud.statusSynced" = "同期済み";
+"icloud.statusSyncing" = "同期中...";
+"icloud.statusNoAccount" = "iCloudアカウントなし";
+"icloud.statusError" = "同期エラー";
+"icloud.lastSync" = "最終同期: %@";
+"icloud.noAccountWarning" = "同期を有効にするには設定からiCloudにサインインしてください。";
+"icloud.syncingData" = "データを同期中...";
+"icloud.syncingDescription" = "iCloudから情報を取得しています。";
+"icloud.syncing.skip" = "新規としてセットアップ";
+"icloud.dataFoundTitle" = "データが見つかりました！";
+"icloud.dataFoundMessage" = "iCloudにデータが見つかりました。再設定は不要です。";
+"icloud.dataFoundAction" = "続ける";
+"icloud.syncIndicator.failed" = "iCloudで問題があります";
+"icloud.syncIndicator.hint" = "タップして詳細を確認";
+"icloud.detail.upToDate" = "最新の状態 — 最終同期 %@";
+"icloud.detail.errorTitle" = "現在iCloudに保存されていません";
+"icloud.detail.errorMessage" = "オフラインかiCloudが利用できません。データはこのデバイスに安全に保存されており、可能になり次第同期します。";
+"icloud.detail.stalledMessage" = "最近の変更はまだこのデバイスにあります。iCloudへ同期する方法を見ていきましょう。";
+"icloud.detail.technicalCode" = "技術詳細: %@";
+"icloud.detail.cta.retry" = "今すぐ再試行";
+"icloud.detail.cta.diagnose" = "確認と修復";
+"icloud.detail.cta.viewTechnical" = "技術詳細を表示";
+"icloud.remoteOnboardingCompleted" = "✓ 準備完了、データはこちらにあります";
+"icloud.remoteRestoreCompleted" = "✓ データを復元しました";
+"icloud.remoteWipe.title" = "データが利用できなくなりました";
+"icloud.remoteWipe.message" = "iCloudからデータが削除されました。新規に始めるか、戻ってくるのを待つことができます。";
+"icloud.remoteWipe.confirm" = "新規に始める";
+"icloud.remoteWipe.cancel" = "待つ";
+"icloud.forceSync.button" = "強制同期";
+"icloud.forceSync.description" = "iCloudの保留中データを確認します。このデバイスにデータが表示されない場合に使用してください。";
+"icloud.mismatch.title" = "iCloudが利用可能になりました";
+"icloud.mismatch.message" = "iCloudの準備前にYalaを開きました。アプリを閉じて再度開くと同期されます。";
+"icloud.mismatch.action" = "了解";
+
+// MARK: - Feature Gate
+
+// Feature names
+"featureGate.accounts" = "口座";
+"featureGate.budgets" = "予算";
+"featureGate.voiceInput" = "音声入力";
+"featureGate.imageInput" = "画像入力";
+"featureGate.premiumIcons" = "プレミアムアイコン";
+"featureGate.proThemes" = "Proテーマ";
+"featureGate.smartInsightsAI" = "スマートインサイトAI";
+"featureGate.cashFlowAdvanced" = "高度なキャッシュフロー";
+"featureGate.exportExtendedPeriods" = "拡張エクスポート期間";
+
+// Titles
+"featureGate.limitReachedTitle" = "上限に達しました";
+"featureGate.proFeatureTitle" = "Pro機能";
+"featureGate.trialExpiredTitle" = "トライアル終了";
+
+// Messages
+"featureGate.limitReachedMessage" = "無料プランの%@の上限に達しました。Proにアップグレードするとさらに作成できます。";
+"featureGate.proFeatureMessage" = "%@はYala Pro限定の機能です。";
+"featureGate.trialExpiredMessage" = "トライアル期間が終了しました。すべての機能を使い続けるには登録してください。";
+
+// Actions
+"featureGate.upgradeToPro" = "Proにアップグレード";
+"featureGate.upgrade" = "アップグレード";
+"featureGate.upgradeForMore" = "Proにアップグレードしてさらに活用";
+
+// Limit info
+"featureGate.limitInfo" = "%d / %d";
+
+// MARK: - Subscription Success
+
+"subscription.success.title" = "Yala Proへようこそ！";
+"subscription.success.subtitle" = "すべての機能を利用できます";
+"subscription.success.continue" = "始める";
+
+// Additional features for success view
+"subscription.feature.unlimitedAccounts" = "無制限の口座";
+"subscription.feature.unlimitedBudgets" = "無制限の予算";
+"subscription.feature.premiumIcons" = "プレミアムアプリアイコン";
+
+// MARK: - Trial Banner
+
+"subscription.trial.title" = "無料トライアル";
+"subscription.trial.endsToday" = "今日終了";
+"subscription.trial.endsTomorrow" = "明日終了";
+"subscription.trial.subscribe" = "登録する";
+
+// MARK: - Downgrade Resolution
+
+"subscription.downgrade.title" = "サブスクリプションが終了しました";
+"subscription.downgrade.subtitle" = "残しておく口座と予算を選んでください";
+"subscription.downgrade.confirm" = "選択を確定";
+"subscription.downgrade.reactivate" = "Proを再有効化";
+
+// Trial paywall
+"subscription.startFreeTrial" = "無料トライアルを開始";
+"subscription.trialThenPrice" = "%@日間無料、その後%@";
+
+// ProTrialOfferSheet
+"subscription.trialOffer.title" = "Yala Proを無料で試す";
+"subscription.trialOffer.subtitle" = "30日間すべての機能が使えます。縛りなし、いつでもキャンセル可能。";
+"subscription.trialOffer.startTrial" = "無料トライアル開始";
+"subscription.trialOffer.maybeLater" = "あとで";
+
+// MARK: - Shortcut Notifications
+
+"shortcut.notification.title" = "新しい自動記録";
+"shortcut.notification.expense" = "支出";
+"shortcut.notification.income" = "収入";
+"shortcut.notification.body" = "%2$@%3$@の%1$@が記録されました。アプリを開いて承認してください。";
+
+// MARK: - Category Seeds
+
+"category.food" = "食事";
+"category.shopping" = "ショッピング";
+"category.transport" = "交通";
+"category.finance" = "金融";
+"category.housing" = "住居";
+"category.entertainment" = "娯楽";
+"category.personal" = "個人";
+"category.pets" = "ペット";
+"category.vehicle" = "車両";
+"category.income" = "収入";
+"category.other" = "その他";
+
+// MARK: - Subcategory Seeds
+
+"subcategory.delivery" = "デリバリー";
+"subcategory.restaurants" = "レストラン";
+"subcategory.supplements" = "栄養補助食品";
+"subcategory.supermarkets" = "スーパーと食料品";
+"subcategory.personalCare" = "パーソナルケアと美容";
+"subcategory.pharmacy" = "薬局・救急";
+"subcategory.homeDecor" = "家庭用品とインテリア";
+"subcategory.otherShopping" = "その他";
+"subcategory.gifts" = "贈り物";
+"subcategory.clothing" = "衣類と靴";
+"subcategory.tech" = "テクノロジーとアクセサリー";
+"subcategory.occasionalMobility" = "臨時移動";
+"subcategory.rideshare" = "タクシー・配車";
+"subcategory.publicTransport" = "公共交通";
+"subcategory.fees" = "手数料";
+"subcategory.taxes" = "税金";
+"subcategory.pensions" = "年金・社会保険";
+"subcategory.loans" = "ローン・クレジット";
+"subcategory.insurance" = "保険";
+"subcategory.rent" = "家賃または住宅ローン";
+"subcategory.maintenance" = "メンテナンスと修理";
+"subcategory.otherHousing" = "その他";
+"subcategory.supportStaff" = "家事サポート";
+"subcategory.homeInsurance" = "住居保険";
+"subcategory.utilities" = "公共料金";
+"subcategory.bars" = "バー・社交";
+"subcategory.sports" = "スポーツ・レクリエーション";
+"subcategory.shows" = "ショー・イベント";
+"subcategory.nightlife" = "ナイトライフ・パーティー";
+"subcategory.hobbies" = "趣味・ゲーム";
+"subcategory.coupleDates" = "デート";
+"subcategory.streaming" = "ストリーミング・プラットフォーム";
+"subcategory.travel" = "旅行・休暇";
+"subcategory.consulting" = "コンサル・手続き";
+"subcategory.beauty" = "美容・エステ";
+"subcategory.education" = "教育・自己啓発";
+"subcategory.fitness" = "フィットネス・運動";
+"subcategory.health" = "健康・医療";
+"subcategory.leisureSubs" = "娯楽サブスクリプション";
+"subcategory.utilitySubs" = "実用サブスクリプション";
+"subcategory.phone" = "電話・通信";
+"subcategory.petAccessories" = "アクセサリー・おもちゃ";
+"subcategory.petFood" = "ペットフード";
+"subcategory.vet" = "獣医ケア";
+"subcategory.petServices" = "ペットサービス・トリミング";
+"subcategory.fuel" = "燃料";
+"subcategory.parking" = "駐車場";
+"subcategory.leasing" = "リース";
+"subcategory.vehicleMaintenance" = "車両メンテナンス";
+"subcategory.vehicleLoan" = "車両ローン";
+"subcategory.vehicleInsurance" = "自動車保険";
+"subcategory.rentalIncome" = "賃料収入";
+"subcategory.subsidies" = "助成金・補助金";
+"subcategory.freelance" = "フリーランス・請求";
+"subcategory.dividends" = "利息・配当";
+"subcategory.refunds" = "返金";
+"subcategory.giftIncome" = "贈与・その他収入";
+"subcategory.salary" = "給与";
+"subcategory.sales" = "売上";
+"subcategory.accountTransfer" = "口座振替";
+"subcategory.accountTransferOther" = "口座振替";
+
+// MARK: - Tips & Tricks
+// MARK: - Tutorials
+"tutorials.subtitle" = "Yalaを最大限に活用する方法を学ぶ";
+"tutorials.next" = "次へ";
+"tutorials.previous" = "前へ";
+"tutorials.done" = "完了";
+"tutorials.start" = "始める";
+"tutorials.understood" = "了解";
+"tutorials.nextTutorial" = "次のチュートリアル";
+"tutorials.stepLabel %d" = "ステップ%d";
+
+// Categories
+"tutorials.category.gettingStarted" = "はじめに";
+"tutorials.category.dailyUse" = "日々の使い方";
+"tutorials.category.personalization" = "パーソナライズ";
+"tutorials.category.advanced" = "上級";
+"tutorials.category.powerUser" = "パワーユーザー";
+
+// 1. createAccount (3 steps)
+"tutorials.createAccount.title" = "口座を作成";
+"tutorials.createAccount.intro.title" = "口座とは？";
+"tutorials.createAccount.intro.desc" = "銀行、財布、カードを設定して、お金がどこにあるかを管理します。";
+"tutorials.createAccount.step0.title" = "新規口座を作成";
+"tutorials.createAccount.step1.title" = "またはパネルから作成";
+"tutorials.createAccount.step2.title" = "詳細を入力";
+"tutorials.createAccount.completion.title" = "口座の準備ができました！";
+"tutorials.createAccount.completion.desc" = "口座を整理して分けておくことは、資産管理に不可欠です。各口座でデータをフィルターでき、推移を可視化しやすくなります。いつでも編集して初期残高を変更したり、現在の残高を調整できます。";
+
+// 2. createCategories (4 steps)
+"tutorials.createCategories.title" = "カテゴリーを作成";
+"tutorials.createCategories.intro.title" = "カテゴリーとは？";
+"tutorials.createCategories.intro.desc" = "種類別に支出を整理して、お金の使い道を把握します。";
+"tutorials.createCategories.step0.title" = "カテゴリーへ移動";
+"tutorials.createCategories.step1.title" = "サブカテゴリーを追加";
+"tutorials.createCategories.step2.title" = "サブカテゴリーを作成";
+"tutorials.createCategories.step3.title" = "カテゴリーをカスタマイズ";
+"tutorials.createCategories.completion.title" = "カテゴリーを作成しました！";
+"tutorials.createCategories.completion.desc" = "良いカテゴリー設計はレポートをより役立つものにします。いつでも編集や追加ができます。";
+
+// 3. createTags (2 steps)
+"tutorials.createTags.title" = "タグを作成";
+"tutorials.createTags.intro.title" = "タグとは？";
+"tutorials.createTags.intro.desc" = "カテゴリーをまたいで支出をまとめます。例: 食事、交通、ホテルを「旅行」タグでグループ化。";
+"tutorials.createTags.step0.title" = "タグへ移動";
+"tutorials.createTags.step1.title" = "タグをカスタマイズ";
+"tutorials.createTags.completion.title" = "タグを作成しました！";
+"tutorials.createTags.completion.desc" = "プロジェクト、旅行、イベントなどでタグを使って支出をまとめましょう。カテゴリーを超えた分析に最適です。";
+
+// 4. createRecord (4 steps)
+"tutorials.createRecord.title" = "支出を記録";
+"tutorials.createRecord.intro.title" = "手動記録";
+"tutorials.createRecord.intro.desc" = "支出を記録するほど、自分の資産状況がより理解できます。";
+"tutorials.createRecord.step0.title" = "+ボタンをタップ";
+"tutorials.createRecord.step1.title" = "記録の種類を選択";
+"tutorials.createRecord.step2.title" = "項目を入力";
+"tutorials.createRecord.step3.title" = "クイックショートカットを使う";
+"tutorials.createRecord.completion.title" = "支出を記録しました！";
+"tutorials.createRecord.completion.desc" = "その瞬間に支出を記録することが大切です。記録するほど、分析やレポートが資産状況の理解に役立ちます。";
+
+// 5. importData (2 steps)
+"tutorials.importData.title" = "データをインポート";
+"tutorials.importData.intro.title" = "データをインポート";
+"tutorials.importData.intro.desc" = "表計算や他のアプリから支出を数秒で取り込みます。";
+"tutorials.importData.step0.title" = "データインポートを選択";
+"tutorials.importData.step1.title" = "ファイルをインポート";
+"tutorials.importData.completion.title" = "データをインポートしました！";
+"tutorials.importData.completion.desc" = "履歴がYalaに反映されました。エラーがあれば詳細メッセージが表示され、なければ成功メッセージが出ます。記録を確認して、すべて正しく取り込まれたか確認しましょう。";
+
+// 6. createBudgets (4 steps)
+"tutorials.createBudgets.title" = "予算を作成";
+"tutorials.createBudgets.intro.title" = "予算とは？";
+"tutorials.createBudgets.intro.desc" = "支出の上限を設定し、近づいたら通知を受け取れます。";
+"tutorials.createBudgets.step0.title" = "計画を開く";
+"tutorials.createBudgets.step1.title" = "予算を設定";
+"tutorials.createBudgets.step2.title" = "お気に入りに追加";
+"tutorials.createBudgets.step3.title" = "いつでも編集";
+"tutorials.createBudgets.completion.title" = "予算が有効になりました！";
+"tutorials.createBudgets.completion.desc" = "リアルタイムで支出状況が見え、続けるかどうかの判断材料になります。こまめに確認して管理を続けましょう。";
+
+// 7. createScheduledPayments (5 steps)
+"tutorials.createScheduledPayments.title" = "予定支払い";
+"tutorials.createScheduledPayments.intro.title" = "予定支払いとは？";
+"tutorials.createScheduledPayments.intro.desc" = "家賃、公共料金、サブスクリプションを自動化 — Yalaが代わりに記録します。";
+"tutorials.createScheduledPayments.step0.title" = "計画を開く";
+"tutorials.createScheduledPayments.step1.title" = "詳細を入力";
+"tutorials.createScheduledPayments.step2.title" = "繰り返しを定義";
+"tutorials.createScheduledPayments.step3.title" = "サブスクリプションかをマーク";
+"tutorials.createScheduledPayments.step4.title" = "支払いを管理";
+"tutorials.createScheduledPayments.completion.title" = "支払いをスケジュールしました！";
+"tutorials.createScheduledPayments.completion.desc" = "定期支払いが自動で記録されます。実行のたびに通知が届きます。";
+
+// 8. createFavorites (2 steps)
+"tutorials.createFavorites.title" = "お気に入りの支払い";
+"tutorials.createFavorites.intro.title" = "お気に入りとは？";
+"tutorials.createFavorites.intro.desc" = "頻繁な支出をショートカットとして保存し、1タップで記録できます。";
+"tutorials.createFavorites.step0.title" = "お気に入りを作成";
+"tutorials.createFavorites.step1.title" = "すばやく使う";
+"tutorials.createFavorites.completion.title" = "お気に入りを保存しました！";
+"tutorials.createFavorites.completion.desc" = "お気に入りで繰り返しの支出にかかる時間を短縮できます。いくつでも作成可能で、いつでも編集できます。";
+
+// 9. editPanel (3 steps)
+"tutorials.editPanel.title" = "パネルをカスタマイズ";
+"tutorials.editPanel.intro.title" = "自分仕様のパネル";
+"tutorials.editPanel.intro.desc" = "パネルに表示するウィジェットをカスタマイズします。";
+"tutorials.editPanel.step0.title" = "パネルを開く";
+"tutorials.editPanel.step1.title" = "ウィジェットをカスタマイズ";
+"tutorials.editPanel.step2.title" = "必要ならリセット";
+"tutorials.editPanel.completion.title" = "パネルをカスタマイズしました！";
+"tutorials.editPanel.completion.desc" = "必要な情報だけが表示されるパネルになりました。管理スタイルに合わせていつでも変更できます。";
+
+// 10. panelFiltering (5 steps)
+"tutorials.panelFiltering.title" = "パネルのフィルター";
+"tutorials.panelFiltering.intro.title" = "フィルターで見つける";
+"tutorials.panelFiltering.intro.desc" = "口座、カテゴリー、タグ、期間で詳細分析。";
+"tutorials.panelFiltering.step0.title" = "グラフをタップしてフィルター";
+"tutorials.panelFiltering.step1.title" = "フィルターバーを確認";
+"tutorials.panelFiltering.step2.title" = "各ビューでフィルター";
+"tutorials.panelFiltering.step3.title" = "ビュー間でフィルターを共有";
+"tutorials.panelFiltering.step4.title" = "クイックフィルターボタンを使う";
+"tutorials.panelFiltering.completion.title" = "フィルターをマスターしました！";
+"tutorials.panelFiltering.completion.desc" = "フィルターは資産状況を深く理解する最良のツールです。組み合わせると、より精密な分析ができます。";
+
+// 11. inboxApproval (4 steps)
+"tutorials.inboxApproval.title" = "受信箱";
+"tutorials.inboxApproval.intro.title" = "スマートな受信箱";
+"tutorials.inboxApproval.intro.desc" = "Apple Pay、音声、カメラからの自動支出を確認・承認します。";
+"tutorials.inboxApproval.step0.title" = "音声や画像で記録";
+"tutorials.inboxApproval.step1.title" = "情報を補完して承認";
+"tutorials.inboxApproval.step2.title" = "複数まとめて記録";
+"tutorials.inboxApproval.step3.title" = "受信箱を管理";
+"tutorials.inboxApproval.completion.title" = "受信箱をマスターしました！";
+"tutorials.inboxApproval.completion.desc" = "受信箱の取引には期限がなく、いつでも承認・却下できます。ドラフトは承認するまで合計に影響しません。";
+
+// 12. applePay (4 steps)
+"tutorials.applePay.title" = "Apple Payで記録";
+"tutorials.applePay.intro.title" = "Apple Pay + Yala";
+"tutorials.applePay.intro.desc" = "Apple Payで支払うたびに、自動で支出を記録するように設定します。";
+"tutorials.applePay.step0.title" = "ショートカットを開く";
+"tutorials.applePay.step1.title" = "オートメーションを作成";
+"tutorials.applePay.step2.title" = "Yalaのショートカットを選択";
+"tutorials.applePay.step3.title" = "パラメータを設定";
+
+// Tutorial step descriptions (re-expanded)
+"tutorials.createAccount.step0.desc" = "プロフィールで口座セクションを選び、タップして新規口座を作成します。";
+"tutorials.createAccount.step1.desc" = "パネルから直接、新しい口座を追加するカードをタップして口座を作成できます。";
+"tutorials.createAccount.step2.desc" = "新しい口座の詳細を入力し、保存をタップします。";
+"tutorials.createCategories.step0.desc" = "プロフィールでカテゴリーセクションを選び、新規カテゴリーを作成します。";
+"tutorials.createCategories.step1.desc" = "カテゴリーを作成するには、必ずサブカテゴリーが関連付けられている必要があります。";
+"tutorials.createCategories.step2.desc" = "サブカテゴリーの作成はカテゴリーと同じくらい簡単: 名前を付け、性質を選び、必要に応じてアイコンを変更します。";
+"tutorials.createCategories.step3.desc" = "カテゴリーのアイコンと色をいつでも好みにカスタマイズできます。";
+"tutorials.createTags.step0.desc" = "プロフィールでタグセクションを選び、新規タグを作成します。";
+"tutorials.createTags.step1.desc" = "タグを好みにカスタマイズ: 名前、アイコン、色を設定します。";
+"tutorials.createRecord.step0.desc" = "パネルで+ボタンをタップ。Yala Proユーザーの場合は手動を選択してください。";
+"tutorials.createRecord.step1.desc" = "支出、収入、口座間振替を記録できます。為替レートはリアルタイムで自動計算されます。";
+"tutorials.createRecord.step2.desc" = "必須項目を入力: 金額、口座、サブカテゴリー。説明やタグも追加できます。";
+"tutorials.createRecord.step3.desc" = "クイックショートカット: @で口座、!でカテゴリー、#でタグ。各ショートカット内で入力すると検索が絞り込まれます。";
+"tutorials.importData.step0.desc" = "プロフィールでデータインポートセクションを選択します。";
+"tutorials.importData.step1.desc" = "デフォルトテンプレート(ここからダウンロード可能)に沿って、CSVやExcelを何度でもインポートできます。複数通貨のデータがある場合は通貨ごとに口座を選択するよう求められます。";
+"tutorials.createBudgets.step0.desc" = "メニューで計画を選び、予算タブで+ボタンを使って新規作成します。";
+"tutorials.createBudgets.step1.desc" = "名前、金額、期間(日次・月次・年次・1回限り、旅行やイベントなど)を設定。追跡する口座、カテゴリー、タグ、性質をカスタマイズ。閾値で通知を受けたい場合は通知をオンにします。";
+"tutorials.createBudgets.step2.desc" = "予算をお気に入りに追加するとパネルウィジェットに表示されます。最大3件まで好きな順序で選択できます。";
+"tutorials.createBudgets.step3.desc" = "予算をタップすればいつでも編集に戻れます。";
+"tutorials.createScheduledPayments.step0.desc" = "メニューで計画を選び、予定支払いタブで+ボタンを使って新規作成します。";
+"tutorials.createScheduledPayments.step1.desc" = "支払い名、金額、メモ(任意)、口座、サブカテゴリー、タグ(任意)を入力します。";
+"tutorials.createScheduledPayments.step2.desc" = "支払日と頻度を選択。最初の支払日を選び、当日や数日前に通知を受けたい場合は通知をオンにします。";
+"tutorials.createScheduledPayments.step3.desc" = "定期サブスクリプションの場合は、サブスクリプショントグルをオンにすることをお忘れなく。";
+"tutorials.createScheduledPayments.step4.desc" = "予定支払いをタップすると、今後の支払い、すでに完了した支払いの確認、いつでも編集ができます。";
+"tutorials.createFavorites.step0.desc" = "新規取引画面の上部にある星をタップして、新しいお気に入りを作成します。";
+"tutorials.createFavorites.step1.desc" = "事前入力したい項目を入力します。次回はお気に入りをタップするだけで、すべての項目が自動で埋まります。";
+"tutorials.editPanel.step0.desc" = "メイン画面に移動すると、利用可能なすべてのウィジェットで支出のサマリーが表示されます。";
+"tutorials.editPanel.step1.desc" = "パネルのカスタマイズボタンをタップすると、表示するウィジェットと順序を変更できます。";
+"tutorials.editPanel.step2.desc" = "カスタマイズ内の「リセット」をタップすればいつでも既定の順序に戻せます。";
+"tutorials.panelFiltering.step0.desc" = "Yalaのインタラクティブグラフを最大限活用しましょう。ほぼすべてのパネルがカテゴリーや性質でフィルター可能です。色々試して、自分に合うものを見つけてください。";
+"tutorials.panelFiltering.step1.desc" = "フィルターバーで適用中のフィルターをすべて確認できます。個別または一括でいつでも削除可能です。";
+"tutorials.panelFiltering.step2.desc" = "アプリの各ビューで、グラフを使って好みにフィルターできることが分かります。";
+"tutorials.panelFiltering.step3.desc" = "フィルターはすべてのビューに伝播するので、フィルターしたい対象のあらゆる指標を確認できます。";
+"tutorials.panelFiltering.step4.desc" = "一部のビューでは上部にフィルターセクションがあり、好みにフィルターしたり、1ボタンですべて削除できます。";
+"tutorials.inboxApproval.step0.desc" = "Yala Proユーザーが音声や画像で記録すると、自動的にドラフト画面が表示されます。Apple Pay記録ショートカットを使った場合も同様です。";
+"tutorials.inboxApproval.step1.desc" = "必須項目を入力して承認するだけ。通常通り取引が作成されます。";
+"tutorials.inboxApproval.step2.desc" = "音声や画像で複数の取引をまとめて記録することもできます。作成されたドラフトの数を案内し、受信箱で確認できます。";
+"tutorials.inboxApproval.step3.desc" = "受信箱では取引を承認、あとで承認、または直接却下できます。";
+"tutorials.applePay.step0.desc" = "ショートカットアプリを開いてオートメーションセクションへ移動します。";
+"tutorials.applePay.step1.desc" = "新規オートメーションをタップ、Walletオプションを選び、使うカードを選択して「すぐに実行」を選びます。";
+"tutorials.applePay.step2.desc" = "新規ショートカットを作成を選び、一番下までスクロールしてYalaを検索。Yala内のApple Pay記録ショートカットを選択します。";
+"tutorials.applePay.step3.desc" = "金額にショートカット入力 → 金額を選択。店舗と名前にも同様に設定。「実行時に表示」トグルをオフにします。";
+
+"tutorials.applePay.completion.title" = "Apple Payが連携されました！";
+"tutorials.applePay.completion.desc" = "これで選択したカードでApple Payを使うたびに自動記録されます。各支払いが受信箱にドラフトを作成します。";
+
+// MARK: - Scheduled Payments UX (M1-M7)
+"scheduled.period.selector.title" = "月を選択";
+"scheduled.summary.paid" = "支払い済み";
+"scheduled.summary.pending" = "保留中";
+"scheduled.filter.all" = "すべて";
+"scheduled.filter.paid" = "支払い済み";
+"scheduled.filter.pending" = "保留中";
+"scheduled.associate.title" = "支出をリンク";
+"scheduled.associate.confirm" = "この支出を予定支払いにリンクしますか？";
+"scheduled.associate.success" = "支出をリンクしました";
+"scheduled.associate.empty" = "今月の似た支出は見つかりませんでした";
+"scheduled.associate.paymentHeader" = "予定支払い";
+"scheduled.associate.candidatesHeader" = "近い時期の支出";
+"scheduled.associate.already" = "この支出はすでにリンクされています";
+"scheduled.advance" = "前倒し支払い";
+"scheduled.view.record" = "記録を表示";
+
+// MARK: - Siri Shortcuts
+"settings.siriShortcuts" = "Siriとショートカット";
+"siriShortcuts.title" = "Siriとショートカット";
+"siriShortcuts.subtitle" = "音声やクイックショートカットを使って即座に支出を記録します。";
+"siriShortcuts.siri.title" = "Siriで記録";
+"siriShortcuts.siri.description" = "支出を口述すると、受信箱にドラフトが作成されます。";
+"siriShortcuts.siri.proNote" = "Yala Proが必要";
+"siriShortcuts.siri.phrase" = "Yalaに記録を作成";
+"siriShortcuts.siri.alt1" = "次のようにも話せます: 「Yalaに支出をログ」";
+"siriShortcuts.siri.alt2" = "または: 「Yalaに支出を保存」";
+"siriShortcuts.all.title" = "その他のショートカット";
+"siriShortcuts.shortcut.quick" = "クイック記録";
+"siriShortcuts.shortcut.voice" = "音声入力";
+"siriShortcuts.shortcut.image" = "画像入力";
+"siriShortcuts.shortcut.applePay" = "Apple Pay";
+"siriShortcuts.shortcut.automation" = "オートメーション";
+"siriShortcuts.desc.quick" = "1タップで記録フォームを開きます。";
+"siriShortcuts.desc.voice" = "金額と説明を音声で口述します。";
+"siriShortcuts.desc.image" = "カメラでレシートや伝票を読み取ります。";
+"siriShortcuts.desc.applePay" = "Apple Payで行った支払いを記録します。";
+"siriShortcuts.desc.automation" = "システムショートカットで自動記録を作成します。";
+"siriShortcuts.phrase.quick" = "Yalaに記録";
+"siriShortcuts.phrase.voice" = "Yalaに音声で記録";
+"siriShortcuts.phrase.image" = "Yalaに画像で記録";
+"siriShortcuts.phrase.applePay" = "Yalaに Apple Payを記録";
+"siriShortcuts.phrase.automation" = "Yalaにオートメーションから記録";
+"siriShortcuts.faq.title" = "よくある質問";
+"siriShortcuts.faq.activateQ" = "Siriはどう有効化する？";
+"siriShortcuts.faq.activateA" = "自動です。フレーズをSiriに話しかければ、Yalaがリクエストを処理します。";
+"siriShortcuts.faq.inboxQ" = "Siriの記録はどこへ届く？";
+"siriShortcuts.faq.inboxA" = "Siri経由の記録は、確認用のドラフトとして受信箱に届きます。";
+"siriShortcuts.faq.offlineQ" = "オフラインでも動く？";
+"siriShortcuts.faq.offlineA" = "はい、ショートカットはインターネット接続なしでも基本モードで動作します。";
+
+// MARK: - AI Settings (Personalization Sheet from Chat)
+
+"aiSettings.title" = "AIをカスタマイズ";
+"aiSettings.toneSection" = "トーン";
+"aiSettings.styleSection" = "スタイル";
+"aiSettings.appliesHint" = "これらの設定はインサイト、アシスタント、パネルヒーローに適用されます。";
+
+// MARK: - AI Privacy (sub-view from Profile > Security)
+
+"aiPrivacy.title" = "AIプライバシーとデータ";
+"aiPrivacy.processingRow" = "処理(音声・画像)";
+"aiPrivacy.chatRow" = "Proアシスタント";
+"aiPrivacy.insightsRow" = "スマートインサイト";
+"aiPrivacy.revokeConfirmTitle" = "この機能を無効にしますか？";
+"aiPrivacy.revokeConfirmMessage" = "この機能のAIデータ処理を停止します。いつでも再有効化できます。";
+"aiPrivacy.revokeConfirmAction" = "無効化";
+"aiPrivacy.footerHint" = "データはインサイト、アシスタント、音声・画像入力を使うときのみ処理されます。個人情報を共有することはありません。";
+"aiPrivacy.policyLink" = "プライバシーポリシー";
+
+// MARK: - AI Consent
+"aiConsent.processingTitle" = "音声・画像の処理";
+"aiConsent.processingMessage" = "これらの機能はOpenAIを使ってデータを処理します：\n\n• 音声：録音した音声を文字起こしします\n• 画像：写真（レシートやスクリーンショット）を分析して支出データを抽出します\n\nその時に送信した内容のみが処理されます。OpenAIはこのデータをモデルの学習に使用しません。";
+"aiConsent.insightsTitle" = "スマート概要";
+"aiConsent.insightsMessage" = "この機能は家計の概要（カテゴリ別の合計と推移、予算、定期的な支払い）をOpenAIに送信して分析を生成します。\n\n取引履歴の全体は送信されません。OpenAIはこのデータをモデルの学習に使用しません。";
+"aiConsent.accept" = "同意して有効化";
+"aiConsent.privacyPolicy" = "プライバシーポリシー";
+"aiConsent.inlineHintProcessing" = "音声と画像のデータはOpenAIで処理されます。永続的に保存されることはありません。";
+"aiConsent.inlineHintInsights" = "あなたの財務概要は分析のためOpenAIに送信されます。永続的に保存されることはありません。";
+"aiConsent.inlineHintBoth" = "音声、画像、サマリーのデータはOpenAIで処理されます。永続的に保存されることはありません。";
+
+// MARK: - Insights Settings
+"insights.aiSectionTitle" = "人工知能";
+"insights.aiToggle" = "スマート概要";
+"insights.aiCaption" = "OpenAIが集計データを分析して個別化された分析を生成します。個別の取引は送信されません。";
+"insights.metricsSection" = "指標";
+"insights.chartsSection" = "グラフ";
+"insights.analysisSection" = "分析";
+"insights.restoreDefaults" = "既定値に戻す";
+
+// MARK: - Insights Rule-Based Templates
+// Rule-based insights — tone variants
+"insights.ruleTopCategory.normal" = "%@は今期間の支出の%d%%を占めています。";
+"insights.ruleTopCategory.considerate" = "%@は支出の%d%%を占めていますが、優先順位を考えると想定内かもしれません。";
+"insights.ruleTopCategory.sarcastic" = "%@が支出の%d%%を占めています。気をつけてみましょう。";
+"insights.ruleExpenseUp.normal" = "前期間と比べて支出が%@増えました。";
+"insights.ruleExpenseUp.considerate" = "支出が%@増えました — 今期間に異例の支出がなかったか確認してみる価値があります。";
+"insights.ruleExpenseUp.sarcastic" = "前期間に対して支出+%@。何が変わったか確認してみましょう。";
+"insights.ruleExpenseDown.normal" = "良いペース: 前期間に比べて支出が%@減りました。";
+"insights.ruleExpenseDown.considerate" = "データでは支出が%@減少 — ポジティブな結果です。";
+"insights.ruleExpenseDown.sarcastic" = "支出が%@ダウン、悪くないですね。";
+"insights.ruleBudgetRisk.normal" = "%@は上限の%d%%に達しています。";
+"insights.ruleBudgetRisk.considerate" = "%@は上限の%d%%に達していますが、ペースを調整すればまだ余裕があります。";
+"insights.ruleBudgetRisk.sarcastic" = "%@は上限の%d%%。落ち着いて、ただし注意を。";
+"insights.ruleOptionalHigh.normal" = "任意の支出が合計の%d%%を占めています。";
+"insights.ruleOptionalHigh.considerate" = "任意の支出が合計の%d%% — 必ずしも問題ではありませんが意識する価値があります。";
+"insights.ruleOptionalHigh.sarcastic" = "任意の支出が合計の%d%%。大したことないですが、参考まで。";
+// Tips
+"insights.tipTopCategory" = "%@の支出が一時的か、傾向の一部か確認しましょう";
+"insights.tipExpenseUp" = "支出が最も少なかった月と比較して何が変わったか見てみましょう";
+"insights.tipBudgetRisk" = "まだ日数が残っています — 残りは%@を控えめに";
+"insights.tipOptionalHigh" = "任意の支出を見直して、後回しにできるものを探してみましょう";
+
+"insights.ruleDailyAverage %@" = "1日あたり平均%@を使っています。";
+"insights.ruleSavingsPositive %d" = "収入の%d%%を貯蓄しています。";
+"insights.ruleSavingsNegative" = "この期間、支出が収入を上回りました。";
+"insights.ruleSharedRatio.normal" = "今期間の支出のうち%d%%がシェア支出です";
+"insights.ruleSharedRatio.considerate" = "支出の%d%%はシェアされていました — シェアは思いやり";
+"insights.ruleSharedRatio.sarcastic" = "支出の%d%%がシェア支出。次は誰が払う？";
+"insights.ruleMostExpensiveGroup.normal" = "%@はシェア支出の%d%%を占める最大のグループです";
+"insights.ruleMostExpensiveGroup.considerate" = "%@はシェア支出の%d%% — メインのグループです";
+"insights.ruleMostExpensiveGroup.sarcastic" = "%@がシェア支出の%d%%。圧倒的ですね。";
+"insights.ruleDominantSharedCategory.normal" = "%@がシェア支出の大部分を占めています(%d%%)";
+"insights.ruleDominantSharedCategory.considerate" = "シェア支出の大部分(%2$d%%)は%1$@です";
+"insights.ruleDominantSharedCategory.sarcastic" = "%@がシェア支出の%d%%。一緒に食べてばかり？";
+"insights.ruleSharedMoM.normal" = "前期間と比べてシェア支出が%@増えました";
+"insights.ruleSharedMoM.considerate" = "シェア支出が%@アップ — 臨時の支出がなかったか確認しましょう";
+"insights.ruleSharedMoM.sarcastic" = "シェア支出+%@。何かお祝いでも？";
+// Tone & Focus settings
+"insights.tone.normal" = "通常";
+"insights.tone.considerate" = "丁寧";
+"insights.tone.sarcastic" = "ストレート";
+"insights.tone.normal.preview" = "レストランが先月比32%増";
+"insights.tone.considerate.preview" = "レストランが32%増、ただし今月のイベントを考えると想定内かも";
+"insights.tone.sarcastic.preview" = "レストラン32%増、今月は少し使いすぎ";
+"insights.focus.balanced" = "バランス";
+"insights.focus.saver" = "節約志向";
+"insights.focus.cautious" = "慎重";
+"insights.focus.balanced.desc" = "資産状況の全体像";
+"insights.focus.saver.desc" = "節約のチャンスを優先";
+"insights.focus.cautious.desc" = "早めの警告とリスクのある予算";
+"insights.toneLabel" = "トーン";
+"insights.focusLabel" = "フォーカス";
+"insights.aiTeaser" = "AIインサイト";
+"insights.aiTeaserPlaceholder1" = "支出パターンを分析中...";
+"insights.aiTeaserPlaceholder2" = "節約のチャンスを特定中...";
+"insights.generateAI" = "スマートインサイトを生成";
+"insights.generateAIHint" = "上のボタンをタップしてAIインサイトを生成";
+
+// Secondary Currency Suggestion
+"account.secondaryCurrency.title" = "副通貨";
+"account.secondaryCurrency.message" = "%@の口座を追加しました。%@ → %@の為替レートを表示しますか？プロフィール > 通貨で変更できます。";
+"account.secondaryCurrency.accept" = "追加";
+"account.secondaryCurrency.reject" = "結構です";
+
+// Notification Primer
+"notificationPrimer.title" = "通知を有効にしますか？";
+"notificationPrimer.benefit1" = "日次の金融レポート";
+"notificationPrimer.benefit2" = "予定支払いのリマインダー";
+"notificationPrimer.benefit3" = "予算上限に近づいたときのアラート";
+"notificationPrimer.accept" = "通知を有効化";
+"notificationPrimer.reject" = "あとで";
+"notificationPrimer.hint" = "プロフィール > 通知で有効化できます";
+
+// MARK: - What's New
+"whatsNew.title" = "Yalaの新機能";
+"whatsNew.subtitle" = "バージョン%@";
+"whatsNew.continue" = "続ける";
+"whatsNew.v11.resumen.title" = "概要";
+"whatsNew.v11.resumen.description" = "資産状況のひと目: 平均、推移、支出の内訳。";
+"whatsNew.v11.budgetDetail.title" = "予算の内訳";
+"whatsNew.v11.budgetDetail.description" = "各予算がサブカテゴリーごとにどう配分されているか確認できます。";
+"whatsNew.v11.exclude.title" = "フィルターの除外モード";
+"whatsNew.v11.exclude.description" = "すべて選ぶのではなく、見たくないものを除外してフィルターできます。";
+"whatsNew.v12.cashFlow.title" = "キャッシュフロー";
+"whatsNew.v12.cashFlow.description" = "インタラクティブな表と7つの予測手法で将来の残高を予測。";
+"whatsNew.v12.comparative.title" = "比較レポート";
+"whatsNew.v12.comparative.description" = "ピボットテーブルと高度なフィルターで、期間ごとに収入と支出を比較。";
+"whatsNew.v12.themes.title" = "PROテーマ";
+"whatsNew.v12.themes.description" = "ミニマルと半透明の新テーマでアプリをカスタマイズ。";
+"whatsNew.v12.scheduled.title" = "予定支払い";
+"whatsNew.v12.scheduled.description" = "可変金額と回のスキップに対応しました。";
+"whatsNew.v12.moreForYou.title" = "さらにあなたへ";
+"whatsNew.v12.moreForYou.description" = "無料口座が4つに、30日間の無料トライアル付き。";
+
+// MARK: - App Update
+"appUpdate.title" = "新しいバージョンが利用可能";
+"appUpdate.message" = "バージョン%@がダウンロードできます";
+"appUpdate.updateButton" = "アップデート";
+"appUpdate.dismissButton" = "あとで";
+
+// MARK: - Split Calculator
+"action.calculate" = "計算";
+"split.title" = "自分の負担額を計算";
+"split.totalAmount" = "合計金額";
+"split.yourPortion" = "あなたの負担分";
+"split.useAmount" = "この金額を使う";
+"split.typePercentage" = "割合";
+"split.typeEqual" = "均等割り";
+"split.typeExact" = "正確な金額";
+"split.typeShares" = "シェア(口数)";
+"split.percentage" = "あなたの割合";
+"split.people" = "人数";
+"split.yourPart" = "あなたの分";
+"split.yourShares" = "あなたの口数";
+"split.totalShares" = "合計口数";
+"split.tipPercentage" = "合計に対するあなたの割合を入力。家庭の共有支出に最適。";
+"split.tipEqual" = "人数で均等に割ります。全員同じ金額を支払います。";
+"split.tipExact" = "あなたが負担する正確な金額を入力します。";
+"split.tipShares" = "口数の比で分けます。例: 5口のうち2口を負担。";
+"split.descPercentage %@ %@" = "%2$@の%1$@%%";
+"split.descEqual %d" = "÷ %d人";
+"split.descShares %d %d" = "%2$d口中%1$d口";
+"split.descExact %@" = "正確に%@";
+"split.sharesYouPay" = "あなたの負担";
+"split.sharesOf" = "/";
+"split.sharesParts" = "口";
+
+// MARK: - Groups
+"groups.title" = "グループ";
+"groups.new" = "新規グループ";
+"groups.edit" = "グループを編集";
+"groups.empty.title" = "グループがありません";
+"groups.empty.message" = "他の人と支出を分け合うグループを作成しましょう";
+"groups.empty.action" = "グループを作成";
+"groups.summary.owedToMe" = "受取分";
+"groups.summary.iOwe" = "支払分";
+"groups.summary.pendingSettlements" = "未確定の精算%d件";
+"groups.summary.allSettled" = "すべて精算済み！";
+"groups.detail.records" = "支出";
+"groups.detail.balances" = "残高";
+"groups.detail.stats" = "統計";
+"groups.detail.comingSoon" = "近日公開";
+"groups.stats.totalSpent" = "合計支出";
+"groups.stats.myPortion" = "自分の負担分";
+"groups.stats.whoPaysMost" = "支払いが多い人";
+"groups.stats.categories" = "カテゴリー";
+"groups.stats.monthlyTrend" = "月次推移";
+"groups.stats.noExpenses" = "支出がまだありません";
+"groups.stats.uncategorized" = "未分類";
+"groups.stats.thisMonth" = "今月";
+"groups.stats.last3Months" = "3ヶ月";
+"groups.stats.last6Months" = "6ヶ月";
+"groups.stats.thisYear" = "今年";
+"groups.stats.allTime" = "全期間";
+"groups.stats.assignCategoriesHint" = "支出にカテゴリを割り当てると、タイプ別の内訳が表示されます。";
+"groups.form.name" = "名前";
+"groups.form.namePlaceholder" = "グループ名";
+"groups.form.currency" = "通貨";
+"groups.form.icon" = "アイコン";
+"groups.form.simplifyDebts" = "貸し借りを簡素化";
+"groups.form.simplifyDebtsHint" = "メンバー間で必要な支払い回数を減らします";
+"groups.form.showDebtsInSingleCurrency" = "貸し借りを単一通貨で表示";
+"groups.form.showDebtsInSingleCurrencyHint" = "他通貨の支出を現在の為替レートで変換します。";
+"groups.form.defaultSplitType" = "既定の分け方";
+"groups.form.membersCanInvite" = "メンバーが招待可能";
+"groups.form.membersCanInviteHint" = "どのメンバーもグループに人を追加できるようにします";
+"groups.settings.title" = "グループ設定";
+"groups.settings.members" = "メンバー";
+"groups.settings.addMember" = "メンバーを追加";
+"groups.settings.addMemberPrompt" = "メンバー名";
+"groups.settings.invite" = "リンクで招待";
+"groups.settings.inviteLinkHint" = "リンクアクセスが有効な間は、このリンクを持つ人なら誰でもグループに参加できます。信頼できる人にだけ共有してください。";
+"groups.settings.leaveGroup" = "グループを退出";
+"groups.settings.leaveGroupConfirm" = "本当に退出しますか？個人の支出は残ります。";
+"groups.settings.leaveGroupWithDebtWarning" = "未精算の残高があるまま、グループから退出します。相手側にはこの債務が引き続き未精算として表示されます。続けますか？";
+"groups.settings.deleteGroup" = "グループを削除";
+"groups.settings.deleteGroupConfirm" = "このグループを削除しますか？";
+"groups.settings.deleteGroupFinalConfirm" = "グループはすべてのメンバーから消えます。この操作は取り消せません。";
+"groups.settings.deleteGroupDisabledHint" = "削除する前に未決済の残高を清算してください";
+"groups.settings.archive" = "グループをアーカイブ";
+"groups.settings.archiveWithDebtWarning" = "メンバー間に未払いの残高があります。アーカイブしても債務は残ります。続行しますか？";
+"groups.settings.archiveConfirm" = "このグループをアーカイブしますか？支出と残高は保持されます。";
+"groups.settings.generatingInvite" = "リンクを生成中…";
+"groups.settings.unarchive" = "アーカイブ解除";
+"groups.settings.archiveHint" = "支出と残高は保持されます。いつでもアーカイブ解除できます。";
+"groups.settings.showArchived" = "アーカイブ済みを表示";
+"groups.settings.showArchivedCount" = "アーカイブ済みを表示(%d)";
+"groups.settings.hideArchived" = "アーカイブ済みを非表示";
+"groups.settings.options" = "オプション";
+"groups.settings.info" = "情報";
+"groups.settings.dangerZone" = "危険ゾーン";
+
+// Bridge personal integration (per-group override)
+"groups.settings.personalIntegrationSectionTitle" = "個人連携";
+"groups.settings.personalIntegrationToggleLabel" = "このグループの支出を個人の口座に記録する";
+"groups.settings.personalIntegrationHintInheritOn" = "全体設定を継承しています（オン）。";
+"groups.settings.personalIntegrationHintLocalOff" = "このグループのみ：オフ。";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "ここでこのオプションを有効にするには、先にグループ設定で有効にしてください。";
+"groups.member.admin" = "管理者";
+"groups.member.member" = "メンバー";
+"groups.member.you" = "(あなた)";
+"groups.member.left" = "退出済み";
+"groups.member.removed" = "削除済み";
+"groups.member.changeRole" = "役割を変更";
+"groups.member.remove" = "メンバーを削除";
+"groups.member.removeConfirm" = "このメンバーをグループから削除しますか？";
+"groups.member.removeWithDebtWarning" = "このメンバーにはグループ内で未精算の残高があります。削除しても債務は引き続き残ります。続けますか？";
+"groups.member.actions" = "メンバーのアクション";
+"groups.balance.title" = "残高";
+"groups.balance.noDebts" = "すべて精算済み！";
+"groups.balance.pendingDebts" = "未払いの貸し借り";
+"groups.balance.settlements" = "精算";
+"groups.balance.confirmed" = "確認済み";
+"groups.balance.pending" = "保留中";
+"groups.expense.noExpenses" = "支出はありません";
+"groups.expense.youPaid" = "%@を支払いました";
+"groups.expense.memberPaid" = "%1$@さんが%2$@を支払いました";
+"groups.expense.youAreOwed" = "貸している";
+"groups.expense.youOwe" = "借りている";
+"groups.expense.notIncluded" = "不参加";
+"groups.expense.newExpense" = "新規支出";
+
+"export.column.splitTotal" = "元の合計";
+"export.column.splitPortion" = "負担分";
+"export.column.splitTotal.description" = "分ける前の合計金額";
+"export.column.splitPortion.description" = "負担分の説明";
+
+// MARK: - Pro Upgrade Banner
+
+"proBanner.title" = "資産管理を次のレベルへ";
+"proBanner.subtitle" = "音声入力、AIインサイト、無制限の口座を解放。";
+
+// MARK: - Milestone Upgrade
+
+"milestone.message10" = "良い習慣ができてきました。Yala Proなら音声で支出を口述できます。";
+"milestone.message50" = "素晴らしい！AIインサイトで支出に隠れたパターンを発見できます。";
+"milestone.message100" = "あなたは資産管理のプロですね。Yala Proで全機能を解放しましょう。";
+"milestone.notNow" = "あとで";
+"milestone.unlimitedAccounts" = "無制限の口座";
+
+// MARK: - Dev Seed
+
+// Accounts
+"devseed.accountMain" = "メイン口座";
+"devseed.accountSavings" = "貯蓄USD";
+// Tags
+"devseed.tagWork" = "仕事";
+"devseed.tagVacation" = "旅行";
+"devseed.tagShared" = "シェア";
+"devseed.tagUrgent" = "緊急";
+"devseed.tagFixed" = "固定";
+// Budgets
+"devseed.budgetEatingOut" = "外食";
+"devseed.budgetMobility" = "交通";
+"devseed.budgetFriendsOutings" = "友人との外出";
+"devseed.budgetPersonalCare" = "パーソナルケア";
+"devseed.budgetHomeEssentials" = "生活必需品";
+"devseed.budgetPet" = "Maia 🐶";
+// Scheduled Payments
+"devseed.spGym" = "ジム";
+"devseed.spRent" = "家賃";
+"devseed.spPhone" = "携帯電話";
+"devseed.spInsurance" = "保険";
+"devseed.spInternet" = "インターネット";
+// Notes — Fixed monthly
+"devseed.noteSalary" = "毎月の給与";
+"devseed.noteGymMonthly" = "毎月のジム";
+"devseed.noteRent" = "家賃";
+"devseed.notePhonePlan" = "携帯プラン";
+"devseed.noteElectricity" = "電気";
+"devseed.noteWater" = "水道";
+"devseed.noteElectricityWater" = "電気・水道";
+"devseed.noteInternetFiber" = "光インターネット";
+"devseed.noteInsuranceMonthly" = "毎月の保険";
+// Notes — Supermarket
+"devseed.noteSupermarket1" = "スーパー";
+"devseed.noteSupermarket2" = "食料品店";
+"devseed.noteSupermarket3" = "週次の食料品";
+"devseed.noteSupermarket4" = "備蓄";
+"devseed.noteSupermarket5" = "野菜・果物";
+// Notes — Restaurant
+"devseed.noteLunch" = "ランチ";
+"devseed.noteDinner" = "ディナー";
+"devseed.noteBrunch" = "ブランチ";
+"devseed.noteMealWithFriends" = "友人との食事";
+// Notes — Delivery
+"devseed.noteDelivery1" = "デリバリーアプリ";
+"devseed.noteDelivery2" = "宅配";
+"devseed.noteDeliveryFood" = "フードデリバリー";
+// Notes — Transport
+"devseed.noteTaxi" = "タクシー";
+"devseed.noteBus" = "バス";
+// Notes — Travel
+"devseed.noteHotel" = "ホテル";
+"devseed.noteFlight" = "航空券";
+"devseed.noteTour" = "ツアー";
+"devseed.noteExcursion" = "日帰り旅行";
+// Notes — Fuel
+"devseed.noteGasStation" = "ガソリンスタンド";
+"devseed.noteGasoline" = "ガソリン";
+"devseed.noteFuel" = "燃料";
+// Notes — Maintenance
+"devseed.noteRepair" = "修理";
+"devseed.noteCleaning" = "クリーニング";
+"devseed.notePlumber" = "配管工";
+"devseed.noteElectrician" = "電気技師";
+// Notes — Freelance
+"devseed.noteFreelance" = "フリーランス案件";
+"devseed.noteConsulting" = "コンサルティング";
+"devseed.noteSideProject" = "副業プロジェクト";
+// Notes — Transfers
+"devseed.noteTransferTo" = "%@へ振替";
+"devseed.noteTransferFrom" = "%@から振替";
+// Step labels
+"devseed.stepCategories" = "カテゴリーを設定中...";
+"devseed.stepAccounts" = "口座を作成中...";
+"devseed.stepTags" = "タグを作成中...";
+"devseed.stepExchangeRates" = "為替レートを生成中...";
+"devseed.stepBudgets" = "予算を作成中...";
+"devseed.stepScheduledPayments" = "予定支払いを作成中...";
+"devseed.stepSavingBase" = "基本データを保存中...";
+"devseed.stepTransactions" = "取引を生成中...";
+"devseed.stepInitialBalances" = "初期残高を設定中...";
+"devseed.stepSaving" = "保存中...";
+"devseed.stepDone" = "完了！";
+"devseed.stepDeleting" = "データを削除中...";
+"devseed.stepReloading" = "データを再読み込み中...";
+
+// MARK: - Setup Checklist
+
+"setup.title" = "はじめに";
+"setup.subtitle" = "Yalaを順番に設定しましょう";
+"setup.progress" = "%d / %d完了";
+"setup.collapse" = "最小化";
+"setup.continue" = "続ける";
+"setup.complete.title" = "準備完了！🎉";
+"setup.complete.subtitle" = "すべてのステップが完了しました。Yalaを使う準備ができました。";
+"setup.step.completed" = "完了";
+"setup.step.tapToStart" = "タップして開始";
+"setup.step.locked" = "ロック中のステップです。先に前のステップを完了してください。";
+"setup.nextStep" = "次のステップ: %@";
+
+"setup.step1.title" = "カスタマイズできる項目を見る";
+"setup.step2.title" = "最初の支出を記録";
+"setup.step3.title" = "最初の予算を設定";
+"setup.step4.title" = "定期支払いを追加";
+"setup.step5.title" = "Yalaの他の機能を発見";
+
+"setup.practice.title" = "完了！最初の%@を作成しました";
+"setup.practice.message" = "練習用なら、問題なく削除できます。";
+"setup.practice.keep" = "残す";
+"setup.practice.delete" = "練習用でした";
+"setup.practice.type.expense" = "支出";
+"setup.practice.type.budget" = "予算";
+"setup.practice.type.scheduled" = "予定支払い";
+"setup.practice.type.voiceTrial" = "音声支出";
+"setup.practice.type.imageTrial" = "写真支出";
+"setup.step6.title" = "音声記録を試す";
+"setup.step7.title" = "写真記録を試す";
+"setup.skipStep" = "あとで";
+"setup.imageTrial.pickExample" = "サンプル画像を選ぶ";
+"setup.imageTrial.orPickOwn" = "または自分で選ぶ";
+"setup.imageTrial.exampleReceipt" = "レシート";
+"setup.imageTrial.exampleBank" = "銀行通知";
+"setup.imageTrial.exampleList" = "取引一覧";
+"setup.imageTrial.useThisImage" = "この画像を使う";
+
+"setup.personalize.navTitle" = "Yalaをパーソナライズ";
+"setup.personalize.title" = "自分仕様にする";
+"setup.personalize.subtitle" = "あなたの個性を加えましょう。テーマ、アイコン、ウィジェットの見た目を変更できます。";
+"setup.personalize.personalizeAll" = "すべてパーソナライズ";
+"setup.personalize.personalizeAllSubtitle" = "名前、写真、通貨形式など";
+"setup.personalize.appIcon" = "アイコンを変える";
+"setup.personalize.appIconSubtitle" = "複数のアプリデザインから選択";
+"setup.personalize.theme" = "テーマを変える";
+"setup.personalize.themeSubtitle" = "クラシック、ミニマル、半透明";
+
+"setup.discover.navTitle" = "Yalaを発見";
+"setup.discover.title" = "Yalaはもっと多くのことができます";
+"setup.discover.subtitleFree" = "今できることと、解放できる機能を紹介します。";
+"setup.discover.subtitlePro" = "Proプランを最大限に活用しましょう。";
+"setup.discover.youCanAlready" = "今すぐできること";
+"setup.discover.proFeatures" = "Proを活用";
+"setup.discover.withPro" = "Yala Proで";
+"setup.discover.tryFree" = "30日間無料で試す";
+"setup.discover.done" = "了解！";
+"setup.discover.feature.manualEntry" = "支出と収入を記録";
+"setup.discover.feature.statistics" = "統計と推移を見る";
+"setup.discover.feature.budgets" = "カテゴリー別の予算を作成";
+"setup.discover.feature.scheduledPayments" = "定期支払いをスケジュール";
+"setup.discover.feature.notifications" = "アラートとリマインダー";
+"setup.discover.feature.aiInsights" = "スマートAI分析";
+"setup.discover.feature.voice" = "音声で支出を記録";
+"setup.discover.feature.imageCapture" = "カメラでレシートを読み取り";
+"setup.discover.feature.unlimitedBudgets" = "無制限の予算と口座";
+
+// MARK: - Contextual Guides
+
+"contextualGuide.dismiss" = "了解";
+"guide.panel.title" = "ここがあなたの概要です";
+"guide.panel.message" = "支出と残金がひと目で分かります。+をタップすると支出を追加できます。";
+"guide.trends.title" = "支出の調子はどうですか？";
+"guide.trends.message" = "このグラフは以前より使っているか少ないかを示します。線が上がっていれば支出が増えています。";
+"guide.categories.title" = "お金はどこに使っていますか？";
+"guide.categories.message" = "食事、交通など、それぞれにいくら使っているかが分かります。一番大きなスライスが、最も使っている分野です。";
+"guide.records.title" = "すべての支出";
+"guide.records.message" = "記録したすべての支出を日付順で表示します。タップすると詳細が見られます。";
+"guide.budgets.title" = "支出の上限を設定";
+"guide.budgets.message" = "予算は何かに使う上限額です。例: 今月は食費に500ドル以上使わない。";
+"guide.scheduled.title" = "定期的な支出";
+"guide.scheduled.message" = "Netflixや家賃など毎月の支払いはありますか？ここに追加すれば、Yalaが期限前にお知らせします。";
+"guide.accounts.title" = "整理されたお金";
+"guide.accounts.message" = "口座はお金を保管している場所(現金、銀行、カード)を表します。複数作成して個別に管理できます。";
+"guide.transaction.title" = "支出や収入を記録";
+"guide.transaction.message" = "金額とカテゴリーを入力するだけ。それ以外は任意です。記録するほど支出が把握しやすくなります。";
+"guide.comparative.title" = "期間を比較";
+"guide.comparative.message" = "今月と先月でどちらが多く使ったか確認できます。赤=多く使った、緑=少なく使った。";
+"guide.cashflow.title" = "今月もちますか？";
+"guide.cashflow.message" = "Yalaが収入と支出をもとに、月末までお金がもつかを計算します。";
+"guide.insights.title" = "Yalaが分析します";
+"guide.insights.message" = "支出に基づいて、Yalaが役立つ情報をお伝えします: 一番使った日、いつもより多く使っているかなど。";
+"guide.inbox.title" = "確認待ち";
+"guide.inbox.message" = "確認すべき支払いや自動支出があると、ここに表示されて確認できます。";
+"guide.budgetEditor.title" = "予算とは？";
+"guide.budgetEditor.message" = "何かに使う金額を管理するために設定する上限です。名前、金額、適用するカテゴリーを設定。いつでも編集・削除できます。";
+"guide.scheduledEditor.title" = "予定支払いとは？";
+"guide.scheduledEditor.message" = "家賃、Netflix、インターネットなど繰り返しの支出です。Yalaが各支払い前にお知らせします。いつでも編集・削除できます。";
+"guide.budgetFilter.title" = "この予算の対象は？";
+"guide.budgetFilter.allExpenses" = "すべての支出";
+"guide.budgetFilter.prefix" = "支出";
+"guide.budgetFilter.account" = "口座%@から";
+"guide.budgetFilter.accounts" = "口座%@から";
+"guide.budgetFilter.subcategory" = "サブカテゴリー%@";
+"guide.budgetFilter.subcategories" = "サブカテゴリー%@";
+"guide.budgetFilter.tag" = "タグ%@";
+"guide.budgetFilter.tags" = "タグ%@";
+"guide.budgetFilter.needs" = "性質%@";
+"guide.budgetFilter.andMore" = "他%lld件";
+"guide.budgetFilter.conjunction" = "と";
+"guide.accountForm.title" = "この口座について";
+"guide.accountForm.messageGeneral" = "すべての支出を記録するメイン口座。カード、財布、お好みのものでOKです。";
+"guide.accountForm.messageCash" = "持ち歩く現金。財布を確認しなくても残高が分かります。";
+"guide.accountForm.messageChecking" = "普段使う銀行口座。残高は銀行アプリのものと一致するようにしましょう。";
+"guide.accountForm.messageSavings" = "別管理しているお金。分けることで誤って使うのを防げます。";
+"guide.accountForm.messageCreditCard" = "カードの未払い分。Yalaはこの金額を総資産から差し引きます。";
+"guide.categoriesSettings.title" = "カテゴリーを整理";
+"guide.categoriesSettings.message" = "カテゴリーは支出をグループ化します(食事、交通、娯楽など)。詳細を分けたい場合はサブカテゴリーを作成できます。";
+"guide.tagsSettings.title" = "あらゆることをタグ付け";
+"guide.tagsSettings.message" = "タグは横断的です。「固定」「シェア」など好きな単位でマークでき、1つの支出に複数のタグを付けられます。";
+"guide.favoritesManage.title" = "頻繁な支払い";
+"guide.favoritesManage.message" = "頻繁な支出をここに保存。記録時はお気に入りをタップするだけですべて自動で埋まります。";
+
+// MARK: - Chat Assistant
+"chat.title" = "Yalaに聞く";
+"chat.inputPlaceholder" = "質問を入力...";
+"chat.send" = "送信";
+"chat.emptySubtitle" = "質問で資産状況を探検";
+"chat.errorTimeout" = "応答に時間がかかりすぎました。もう一度お試しください。";
+"chat.errorOffline" = "アシスタントを使うにはインターネット接続が必要です。";
+"chat.errorGeneric" = "問題が発生しました。もう一度お試しください。";
+"chat.errorNoData" = "その質問に該当するデータが見つかりませんでした。もう少し具体的にお願いします。";
+"chat.dailyLimitReached" = "今日の質問回数を使い切りました。明日また来てください！";
+"chat.questionsRemaining" = "今日はあと%d回質問できます";
+"chat.loading" = "考え中...";
+"chat.questionTooLong" = "質問が長すぎます。もう少し簡潔にお願いします。";
+"chat.contextHint" = "前の質問を覚えているので、続けて聞けます";
+
+/* Yala AI Redesign */
+"chat.assistantName" = "Yala AI";
+"chat.greeting" = "こんにちは、Yala AIです。資産状況について何が知りたいですか？";
+"chat.dailyResetSubtitle" = "日付が変わるとこの会話はクリアされます。";
+"chat.disclaimer" = "Yala AIは間違うこともあります。";
+"chat.daySeparatorToday" = "今日";
+"chat.topicsButton" = "トピック";
+"chat.errorTranscription" = "音声を文字起こしできませんでした。もう一度お試しください。";
+"chat.errorMicPermission" = "マイクの使用許可が必要です。";
+"chat.topics.title" = "会話のトピック";
+"chat.resetContext" = "会話のコンテキストをリセット";
+"chat.listening" = "聞いています…";
+"chat.transcribing" = "文字起こし中…";
+"chat.preparingAI" = "AIを準備中…";
+"chat.unavailable" = "Yala AIは現在利用できません。数分後にもう一度お試しください。";
+"chat.retry" = "再試行";
+"chat.noVoiceDetected" = "音声を検出できませんでした。もう一度お試しください。";
+"chat.contextMemory" = "Yala AIは%d件のメッセージを覚えています";
+
+// MARK: - Chat Draft (Yala AI Register)
+"chat.draft.chipExpense" = "支出";
+"chat.draft.chipIncome" = "収入";
+"chat.draft.amountPlaceholder" = "金額";
+"chat.draft.accountLabel" = "口座";
+"chat.draft.subcategoryLabel" = "サブカテゴリー";
+"chat.draft.dateLabel" = "日付";
+"chat.draft.noteLabel" = "メモ";
+"chat.draft.tagsLabel" = "タグ";
+"chat.draft.tagsNone" = "なし";
+"chat.draft.savedBadge" = "保存済み";
+"chat.draft.discardedBadge" = "破棄済み";
+"chat.draft.saveFailedGeneric" = "保存できませんでした。もう一度お試しください。";
+"chat.draft.saveFailedAccount" = "保存できません: 口座が存在しません。記録を編集してください。";
+"chat.draft.saveFailedSubcategory" = "保存できません: サブカテゴリーが存在しません。記録を編集してください。";
+"chat.draft.saveFailedAmount" = "保存できません: 金額が無効です。";
+"chat.draft.viewRecordsButton" = "保存した記録を見る";
+"chat.draft.discardButton" = "破棄";
+"chat.draft.selectAccount" = "口座を選択";
+"chat.draft.selectSubcategory" = "サブカテゴリーを選択";
+"chat.draft.saveButton" = "保存";
+"chat.draft.editButton" = "編集";
+"chat.draft.failedSavingLine" = "保存できませんでした。";
+"chat.draft.retryButton" = "再試行";
+"chat.draft.noAccountsBlocking" = "登録する前に、プロフィールから口座を作成してください。";
+"chat.draft.ambiguousCanned" = "支出を登録したいですか？それとも支出について聞きたいですか？";
+"chat.draft.ambiguousChipRegister" = "登録";
+"chat.draft.ambiguousChipAsk" = "質問";
+"chat.draft.confirmRegisterSingular" = "記録を確認:";
+"chat.draft.confirmRegisterPlural" = "記録を確認:";
+"chat.draft.overflowFormat" = "%d件の記録を検出しました。最初の%d件を保存します、残りは別のメッセージで送信してください。";
+
+// MARK: - Chat Assistant Consent
+"aiConsent.chatTitle" = "金融アシスタント";
+"aiConsent.chatMessage" = "ご質問にお答えするため、この機能はあなたの財務状況の概要をOpenAIに送信します：口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い。\n\nデータは回答の生成にのみ使用されます。OpenAIはこのデータをモデルの学習に使用しません。";
+"aiConsent.inlineHintChat" = "あなたの財務概要は回答のためOpenAIで処理されます。永続的に保存されることはありません。";
+"aiConsent.inlineHintMultiple" = "複数のAI機能がOpenAIでデータを処理します。永続的に保存されることはありません。";
+
+// MARK: - Chat Assistant Feature Gate & Settings
+"featureGate.chatAssistant" = "チャットアシスタント";
+"settings.chatAssistant" = "Yalaに聞く";
+"subscription.feature.aiAssistant" = "AI金融アシスタント";
+
+// GC-05: Expense Form
+"groups.expense.paidByTitle" = "支払者";
+"groups.expense.divideBetween" = "分担対象";
+"groups.expense.selectAll" = "すべて選択";
+"groups.expense.deselectAll" = "なし";
+"groups.expense.membersSelected %d %d" = "%d / %d選択中";
+"groups.expense.title" = "新規支出";
+"groups.expense.editTitle" = "支出を編集";
+"groups.expense.description" = "説明";
+"groups.expense.descriptionPlaceholder" = "何の支出ですか？";
+"groups.expense.note" = "メモ";
+"groups.expense.notePlaceholder" = "メモを追加...";
+"groups.expense.category" = "カテゴリー";
+"groups.expense.currency" = "通貨";
+"groups.expense.date" = "日付";
+"groups.expense.splitType" = "分け方";
+"groups.expense.remaining" = "残り";
+"groups.expense.remainingAmount" = "残り: %@";
+"groups.expense.balanced" = "釣り合い";
+"groups.expense.eachPays" = "1人あたり";
+
+// GC-05: Settlements
+"groups.settlement.title" = "支払いを記録";
+"groups.settlement.payTo" = "支払先";
+"groups.settlement.registerPayment" = "支払いを記録";
+"groups.settlement.confirm" = "確認";
+"groups.settlement.reject" = "却下";
+"groups.settlement.settle" = "精算";
+"groups.settlement.settleHint" = "この支払いを記録するフォームを開きます";
+"groups.settlement.confirmQuestion" = "この支払いを確認済みにしますか？";
+"groups.settlement.rejectQuestion" = "この支払いを却下しますか？";
+
+// Groups Notifications
+"groups.notifications.prompt.title" = "グループ通知";
+"groups.notifications.prompt.message" = "誰かが支出を追加したり、あなたに支払いをした際にお知らせします";
+"groups.notifications.prompt.enable" = "有効化";
+
+// Groups — Invite Onboarding (GC-08)
+"groups.invite.welcome" = "グループに招待されました";
+"groups.invite.welcomeWithGroup" = "%@に招待されました";
+"groups.invite.subtitle" = "Yalaは支出のシェアと貸し借りの管理をサポートします";
+"groups.invite.namePlaceholder" = "お名前";
+"groups.invite.joinButton" = "グループに参加";
+"groups.invite.ready" = "準備完了！";
+"groups.invite.goToGroup" = "グループへ";
+"groups.invite.linkInvalidTitle" = "無効なリンク";
+"groups.invite.linkInvalidDetail" = "このリンクは無効または期限切れです。管理者に新しいリンクを発行してもらってください。";
+
+// Groups — Bridge / Sync errors
+"groups.bridge.alertTitle" = "グループに問題が発生しました";
+"groups.bridge.errorTransaction" = "個人の記録は自動的に再試行されます。";
+"groups.bridge.errorTransactionUpdate" = "変更は個人の記録に反映されませんでした。もう一度試みます。";
+"groups.bridge.errorDelete" = "個人の記録を削除できませんでした。";
+"groups.bridge.errorNoAccounts" = "口座が設定されていません。先に1つ作成してください。";
+"groups.sync.errorAcceptShare" = "グループへの参加を完了できませんでした。もう一度お試しください。";
+"groups.sync.errorMemberSetup" = "グループに参加しましたが、識別情報に問題があります。アプリを再起動してください。";
+
+// Groups — Reconnect (GC-08)
+"groups.reconnect.title" = "グループに参加";
+"groups.reconnect.subtitle" = "シェアグループに招待されました";
+"groups.reconnect.fallbackGroupName" = "このグループ";
+"groups.reconnect.archived.title" = "%@はアーカイブされました";
+"groups.reconnect.archived.body" = "管理者がアーカイブしたため、変更はもう受け付けられません。";
+"groups.reconnect.archived.cta" = "OK";
+"groups.reconnect.alreadyMember.title" = "あなたはすでに%@に参加しています";
+"groups.reconnect.alreadyMember.body" = "グループへご案内します。";
+"groups.reconnect.alreadyMember.cta" = "グループを開く";
+"groups.reconnect.pendingDuplicate.title" = "%@への申請は審査中です";
+"groups.reconnect.pendingDuplicate.body" = "管理者がまだあなたの申請を承認していません。";
+"groups.reconnect.pendingDuplicate.cta" = "グループを表示";
+"groups.reconnect.rejectedRetry.title" = "申請は拒否されました";
+"groups.reconnect.rejectedRetry.body" = "もう一度申請すると、管理者が新しい申請を確認します。";
+"groups.reconnect.leftRetry.title" = "%@から退会しました";
+"groups.reconnect.leftRetry.body" = "戻りたい場合はもう一度申請してください。";
+"groups.reconnect.removedRetry.title" = "%@から削除されました";
+"groups.reconnect.removedRetry.body" = "戻りたい場合はもう一度申請してください。";
+"groups.reconnect.retryCta" = "もう一度申請";
+"groups.reconnect.subtitleWithGroup" = "%@に招待されました";
+
+// Groups — Activate Full Mode (GC-08)
+"groups.activate.title" = "Yalaの全機能を有効化";
+"groups.activate.subtitle" = "支出、予算などを管理";
+"groups.activate.accountStep" = "メイン口座は何ですか？";
+"groups.activate.accountName" = "口座名";
+"groups.activate.notificationStep" = "通知を受け取りますか？";
+"groups.activate.notificationMessage" = "支出のリマインダーや予算アラートを受け取れます";
+"groups.activate.enableNotifications" = "通知を有効化";
+"groups.activate.skipNotifications" = "あとで";
+"groups.activate.done" = "始める";
+
+// Groups — Nudges (GC-09)
+"groups.nudge.invitedSpendingInsight.title" = "シェア支出が増えています";
+"groups.nudge.invitedSpendingInsight.message" = "シェア支出に%@使いました。お金がどこに使われているか他も見てみますか？";
+"groups.nudge.invitedSpendingInsight.cta" = "Yalaを探検";
+"groups.nudge.invitedPostSettlement.title" = "支払いを記録しました";
+"groups.nudge.invitedPostSettlement.message" = "貸し借りを精算しました。お金の出どころを管理してみますか？";
+"groups.nudge.invitedPostSettlement.cta" = "Yalaの全機能を有効化";
+"groups.nudge.invitedMonthTwo.title" = "見えているのは一部だけ";
+"groups.nudge.invitedMonthTwo.message" = "グループは支出全体の%d%%を占めています。残りは未管理です。";
+"groups.nudge.invitedMonthTwo.cta" = "全体を見る";
+"groups.nudge.invitedSocialProof.title" = "友人もYalaを使っています";
+"groups.nudge.invitedSocialProof.message" = "グループの%d人がYalaの全機能を使っています。";
+"groups.nudge.invitedSocialProof.cta" = "Yalaの全機能を有効化";
+"groups.nudge.dormantGroupsAsMain.title" = "グループが待っています";
+"groups.nudge.dormantGroupsAsMain.message" = "未確認のシェア支出があります。状況を確認しましょう。";
+"groups.nudge.dormantGroupsAsMain.cta" = "グループを見る";
+"groups.nudge.dormantNewExpenses.title" = "新しい動き";
+"groups.nudge.dormantNewExpenses.cta" = "支出を見る";
+"groups.nudge.dormantSpendingGap.title" = "未管理の支出";
+"groups.nudge.dormantSpendingGap.message" = "シェア支出は複数あるのに、それ以外の支出が管理されていません。";
+"groups.nudge.dormantSpendingGap.cta" = "支出を記録";
+"groups.nudge.dormantQuickEntry.title" = "クイック入力";
+"groups.nudge.dormantQuickEntry.message" = "5秒で個人の支出を記録。";
+"groups.nudge.dormantQuickEntry.cta" = "記録";
+"groups.nudge.sporadicImbalance.title" = "アンバランスを検出";
+"groups.nudge.sporadicImbalance.message" = "今週シェア支出が%d件、個人の支出は%d件しか記録されていません。";
+"groups.nudge.sporadicImbalance.cta" = "了解";
+"groups.nudge.sporadicBudgetSuggestion.title" = "シェア支出に予算？";
+"groups.nudge.sporadicBudgetSuggestion.message" = "今月のシェア支出が多めです。予算があると管理に役立ちます。";
+"groups.nudge.sporadicBudgetSuggestion.cta" = "了解";
+"groups.nudge.sporadicTrendAlert.title" = "上昇傾向";
+"groups.nudge.sporadicTrendAlert.message" = "シェア支出が先月比%d%%増加しています。";
+"groups.nudge.sporadicTrendAlert.cta" = "了解";
+
+"statistics.sankey.title" = "お金の流れ";
+"statistics.sankey.expenses" = "支出";
+"statistics.sankey.available" = "利用可能";
+"statistics.sankey.others" = "その他";
+"statistics.sankey.planned" = "計画済み";
+"statistics.sankey.plannedRecurring" = "定期";
+"statistics.sankey.plannedSubscription" = "サブスクリプション";
+"statistics.sankey.otherFunds" = "その他の資金";
+"statistics.sankey.plannedHint" = "今月分の定期支払いとサブスクリプションのみが含まれます。";
+"statistics.sankey.toggleAmount" = "金額を表示";
+"statistics.sankey.togglePercentage" = "割合を表示";
+"stats.sankey.subtitle" = "資金フローの内訳";
+
+// MARK: - Shortcut Snippet (F5/F6/F7)
+"shortcut.snippet.account" = "口座";
+"shortcut.snippet.category" = "カテゴリー";
+"shortcut.snippet.date" = "日付";
+"shortcut.snippet.draftBadge" = "ドラフト — 受信箱で確認してください";
+"shortcut.siriNatural.error.parsingFailedHelp" = "理解できませんでした。例: 「コーヒーに50ドル」「ランチに25ドル記録」のようにお試しください";
+"shortcut.siriNatural.success.partial" = "%2$lld件中%1$lld件を記録しました(理解できなかったものがあります)。受信箱を確認してください。";
+
+/* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
+"panel.widgetInfo.addToPanel" = "パネルに追加";
+
+/* Panel Polish #2 — Title sheet pedagógico CashFlow */
+"panel.widgetInfo.cashFlow.title" = "キャッシュフロー";
+
+/* Panel Polish #2 — Chip 1 CashFlow */
+"panel.widgetInfo.cashFlow.chip1" = "収入";
+
+/* Panel Polish #2 — Chip 2 CashFlow */
+"panel.widgetInfo.cashFlow.chip2" = "支出";
+
+/* Panel Polish #2 — Chip 3 CashFlow */
+"panel.widgetInfo.cashFlow.chip3" = "期間別";
+
+/* Panel Polish #2 — Title sheet pedagógico Trend */
+"panel.widgetInfo.trend.title" = "残高の推移";
+
+/* Panel Polish #2 — Chip 1 Trend */
+"panel.widgetInfo.trend.chip1" = "インタラクティブ";
+
+/* Panel Polish #2 — Chip 2 Trend */
+"panel.widgetInfo.trend.chip2" = "期間別";
+
+// MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
+
+/* Panel Polish #2 — CashFlow S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatQ" = "何が表示されていますか？";
+
+/* Panel Polish #2 — CashFlow S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatA" = "期間中の収支です。収入と支出の差を、両方の合計を比較する2本のバーで表示しています。";
+
+/* Panel Polish #2 — CashFlow M: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatQ" = "何が表示されていますか？";
+
+/* Panel Polish #2 — CashFlow M: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatA" = "コンパクトサイズと同じ内容（収入、支出、収支）を、金額を詳しく見られる広いスペースで表示しています。";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatQ" = "何が表示されていますか？";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatA" = "選択された間隔に応じて、日・週・月単位でグループ化された期間中の収入と支出の推移です。";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowQ" = "グラフはどう操作しますか？";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowA" = "バーを長押しすると、特定のポイントの正確な詳細が表示されます。";
+
+/* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
+"panel.widgetInfo.cashFlow.balanceQ" = "なぜ合計フローが残高と一致しないのですか？";
+/* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
+"panel.widgetInfo.cashFlow.balanceA" = "フローの各動きは、発生した日の為替レートで記録されます。残高は、現在のレートで今日持っている金額を反映します。異なる通貨の口座をお持ちの場合、その差額は未実現の為替差益または差損です。";
+/* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatQ" = "何が表示されていますか？";
+
+/* Panel Polish #2 — Trend S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatA" = "アクティブなフィルターに応じた期間中の収支、収入、または支出を、ミニ推移グラフで表示しています。";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatQ" = "何が表示されていますか？";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatA" = "期間中の収支、収入、または支出の日々の推移です。";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowQ" = "グラフはどう操作しますか？";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowA" = "グラフを長押しすると、各ポイントの値が表示されます。ヘッダーのボタンで収支・収入・支出を切り替えられます。";
+
+/* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
+"panel.widgetInfo.cashFlow.chip4" = "インタラクティブ";
+
+/* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
+"panel.widgetInfo.categoriesPie.title" = "カテゴリー別の内訳";
+
+/* Panel Polish #2 — Chip 1 CategoriesPie (entidad) */
+"panel.widgetInfo.categoriesPie.chip1" = "カテゴリー";
+
+/* Panel Polish #2 — Chip 2 CategoriesPie (período) */
+"panel.widgetInfo.categoriesPie.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 CategoriesPie (Interactiva) */
+"panel.widgetInfo.categoriesPie.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta */
+"panel.widgetInfo.categoriesPie.smallWhatA" = "現在の期間における支出のカテゴリー別の内訳です。バブルは支出の大きいカテゴリーを示しています。";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Cómo interactúo?' */
+"panel.widgetInfo.categoriesPie.smallHowQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.smallHowA" = "バブルをタップすると、そのカテゴリーでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.largeWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta */
+"panel.widgetInfo.categoriesPie.largeWhatA" = "ドーナツは現在の期間におけるカテゴリー別の支出構成を示します。右側の凡例には各カテゴリーがパーセンテージとともに、大きい順に並んでいます。";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.categoriesPie.largeHowQ" = "グラフはどう操作しますか?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.largeHowA" = "ドーナツのスライス、バブル、または凡例の行をタップすると、そのカテゴリーでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+
+/* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
+"panel.widgetInfo.subcategoriesPie.title" = "サブカテゴリー別の内訳";
+
+/* Panel Polish #2 — Chip 1 SubcategoriesPie (entidad) */
+"panel.widgetInfo.subcategoriesPie.chip1" = "サブカテゴリー";
+
+/* Panel Polish #2 — Chip 2 SubcategoriesPie (período) */
+"panel.widgetInfo.subcategoriesPie.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva) */
+"panel.widgetInfo.subcategoriesPie.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallWhatA" = "現在の期間における支出のサブカテゴリー別の内訳です。上でカテゴリーをフィルターしている場合は、そのカテゴリーのサブカテゴリーだけが表示されます。";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallHowQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "バブルをタップすると、そのサブカテゴリーでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta */
+"panel.widgetInfo.subcategoriesPie.largeWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeWhatA" = "ドーナツは現在の期間におけるサブカテゴリー別の支出構成を示します。最大9件と、それ以上ある場合は「その他」グループが表示されます。右側の凡例には各サブカテゴリーがパーセンテージとともに並びます。";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.subcategoriesPie.largeHowQ" = "グラフはどう操作しますか?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "ドーナツのスライス、バブル、または凡例の行をタップすると、そのサブカテゴリーでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+
+/* Panel Polish #2 — Title sheet pedagógico TagsPie */
+"panel.widgetInfo.tagsPie.title" = "タグ別の内訳";
+
+/* Panel Polish #2 — Chip 1 TagsPie (entidad) */
+"panel.widgetInfo.tagsPie.chip1" = "タグ";
+
+/* Panel Polish #2 — Chip 2 TagsPie (período) */
+"panel.widgetInfo.tagsPie.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 TagsPie (Interactiva) */
+"panel.widgetInfo.tagsPie.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallWhatA" = "現在の期間における支出のタグ別の内訳です。バブルは支出の大きいタグを示しています。";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallHowQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallHowA" = "バブルをタップすると、そのタグでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeWhatA" = "ドーナツは現在の期間におけるタグ別の支出構成を示します。右側の凡例には各タグがパーセンテージとともに、大きい順に並んでいます。";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeHowQ" = "グラフはどう操作しますか?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeHowA" = "ドーナツのスライス、バブル、または凡例の行をタップすると、そのタグでパネル全体をフィルタリングできます。バブルを長押しすると正式名称が表示されます。";
+
+/* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
+"panel.widgetInfo.expensesByNeed.title" = "ニーズ別の内訳";
+
+/* Panel Polish #2 — Chip 1 ExpensesByNeed (entidad) */
+"panel.widgetInfo.expensesByNeed.chip1" = "ニーズ";
+
+/* Panel Polish #2 — Chip 2 ExpensesByNeed (período) */
+"panel.widgetInfo.expensesByNeed.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva) */
+"panel.widgetInfo.expensesByNeed.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallWhatA" = "現在の期間における支出をニーズの種類で分類した内訳です: 必須 (なくてはならないもの)、優先 (重要なもの)、任意 (ぜいたくなもの)。「未分類」は分類されていない支出がある場合にのみ表示されます。";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallHowQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallHowA" = "行をタップすると、そのニーズタイプでパネル全体をフィルタリングできます。もう一度タップするとフィルターが解除されます。";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumWhatA" = "ニーズタイプごとに1本のバーがあります。バーの長さは現在の期間における最大支出に対する相対比率を示し、どれが最も大きいかを一目で確認できます。";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumHowQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumHowA" = "バーをタップすると、そのニーズタイプでパネル全体をフィルタリングできます。もう一度タップするとフィルターが解除されます。";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta */
+"panel.widgetInfo.expensesByNeed.largeWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeWhatA" = "現在の期間の支出をニーズタイプ別に積み上げて表示します: 必須、優先、任意、未分類。横軸の各バーはグループ化に応じて1日、1週間、または1か月を表し、下の凡例は各タイプの全体的な比重を示します。";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.expensesByNeed.largeHowQ" = "グラフはどう操作しますか?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeHowA" = "バーの上で指をスライドさせると、特定の時点での内訳 (必須、優先などの金額と合計) が表示されます。凡例のチップをタップすると、そのニーズタイプだけを表示してパネルをフィルターできます。";
+
+/* Panel Polish #2 — Title sheet pedagógico TopCategories */
+"panel.widgetInfo.topCategories.title" = "主要なカテゴリー";
+
+/* Panel Polish #2 — Chip 1 TopCategories (entidad) */
+"panel.widgetInfo.topCategories.chip1" = "カテゴリー";
+
+/* Panel Polish #2 — Chip 2 TopCategories (período) */
+"panel.widgetInfo.topCategories.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
+"panel.widgetInfo.topCategories.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — TopCategories S: pregunta */
+"panel.widgetInfo.topCategories.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — TopCategories S: respuesta */
+"panel.widgetInfo.topCategories.smallWhatA" = "現在の期間で最も支出が多かった2つのカテゴリーです。バーは1位のカテゴリーに対する各カテゴリーの相対比率を示します。";
+
+/* Panel Polish #2 — TopCategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — TopCategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatA" = "現在の期間で支出が大きいカテゴリーを、多い順に並べたものです。各行には金額、合計に対する割合、そしてトップカテゴリーと比較するバーが表示されます。";
+
+/* Panel Polish #2 — TopCategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howA" = "行をタップすると、そのカテゴリーでパネル全体をフィルタリングできます。もう一度タップするとフィルターが解除されます。";
+
+/* Panel Polish #2 — Title sheet pedagógico TopSubcategories */
+"panel.widgetInfo.topSubcategories.title" = "主要なサブカテゴリー";
+
+/* Panel Polish #2 — Chip 1 TopSubcategories (entidad) */
+"panel.widgetInfo.topSubcategories.chip1" = "サブカテゴリー";
+
+/* Panel Polish #2 — Chip 2 TopSubcategories (período) */
+"panel.widgetInfo.topSubcategories.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
+"panel.widgetInfo.topSubcategories.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — TopSubcategories S: pregunta */
+"panel.widgetInfo.topSubcategories.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta */
+"panel.widgetInfo.topSubcategories.smallWhatA" = "現在の期間で最も支出が多かった2つのサブカテゴリーです。他のウィジェットでカテゴリーをフィルターしている場合は、そのカテゴリーのサブカテゴリーだけが表示されます。";
+
+/* Panel Polish #2 — TopSubcategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatA" = "現在の期間で支出が大きいサブカテゴリーを、多い順に並べたものです。各行には金額、所属カテゴリー内および全体に対する割合、そして1位と比較するバーが表示されます。";
+
+/* Panel Polish #2 — TopSubcategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topSubcategories.howQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector) */
+"panel.widgetInfo.topSubcategories.smallHowA" = "行をタップすると、そのサブカテゴリーでパネル全体をフィルタリングできます。";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
+"panel.widgetInfo.topSubcategories.regularHowA" = "行をタップすると、そのサブカテゴリーでパネル全体をフィルタリングできます。上のチップで一覧を1つのカテゴリーに絞り込めます。他のウィジェットですでにカテゴリーをフィルターしている場合は、セレクターはそのカテゴリーにロックされます。";
+
+/* Panel Polish #2 — Title sheet pedagógico RecentRecords */
+"panel.widgetInfo.recentRecords.title" = "最近の記録";
+
+/* Panel Polish #2 — Chip 1 RecentRecords (entidad) */
+"panel.widgetInfo.recentRecords.chip1" = "取引";
+
+/* Panel Polish #2 — Chip 2 RecentRecords (período) */
+"panel.widgetInfo.recentRecords.chip2" = "現在の期間";
+
+/* Panel Polish #2 — RecentRecords: pregunta */
+"panel.widgetInfo.recentRecords.whatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — RecentRecords: respuesta */
+"panel.widgetInfo.recentRecords.whatA" = "現在の期間における最新5件の取引です: 収入、支出、振替のいずれか。各行には金額 (収入と支出は異なる色で表示)、関連付けられたカテゴリーまたはサブカテゴリー、該当する場合はニーズタグ (必須、優先、任意) が表示されます。";
+
+/* Panel Polish #2 — Title sheet pedagógico ScheduledPayments */
+"panel.widgetInfo.scheduledPayments.title" = "予定された支払い";
+
+/* Panel Polish #2 — Chip 1 ScheduledPayments (entidad) */
+"panel.widgetInfo.scheduledPayments.chip1" = "今後の支払い";
+
+/* Panel Polish #2 — Chip 2 ScheduledPayments (mes en curso) */
+"panel.widgetInfo.scheduledPayments.chip2" = "今月";
+
+/* Panel Polish #2 — Chip 3 ScheduledPayments (Interactiva) */
+"panel.widgetInfo.scheduledPayments.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — ScheduledPayments: pregunta '¿Qué estás viendo?' (compartida S/M) */
+"panel.widgetInfo.scheduledPayments.whatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — ScheduledPayments S: respuesta */
+"panel.widgetInfo.scheduledPayments.smallWhatA" = "今月予定されている支払いのうち未払いの金額です。すでに支払った割合を示す進捗リングと、アクティブな支払いおよび保留中の支払いの件数も表示されます。下のフィルターで「すべて」「定期」「サブスクリプション」を切り替えられます。";
+
+/* Panel Polish #2 — ScheduledPayments M: respuesta */
+"panel.widgetInfo.scheduledPayments.mediumWhatA" = "今月の今後の支払い一覧です。各支払いには日付、金額、ステータス (保留中、支払い済み、スキップ) が表示されます。タイトル右側のフィルターで「すべて」「定期」「サブスクリプション」に絞り込めます。";
+
+/* Panel Polish #2 — ScheduledPayments: pregunta '¿Cómo interactúo?' (compartida S/M) */
+"panel.widgetInfo.scheduledPayments.howQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — ScheduledPayments S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.scheduledPayments.smallHowA" = "下のフィルターのアイコンをタップして、すべての支払い、定期のみ、またはサブスクリプションのみに絞り込めます。";
+
+/* Panel Polish #2 — ScheduledPayments M: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.scheduledPayments.mediumHowA" = "ウィジェット上部のフィルターアイコンをタップして、すべて、定期、サブスクリプションを切り替えられます。";
+
+/* Panel Polish #2 — Title sheet pedagógico Budgets */
+"panel.widgetInfo.budgets.title" = "お気に入りの予算";
+
+/* Panel Polish #2 — Chip 1 Budgets (Favoritos) */
+"panel.widgetInfo.budgets.chip1" = "お気に入り";
+
+/* Panel Polish #2 — Chip 2 Budgets (período) */
+"panel.widgetInfo.budgets.chip2" = "現在の期間";
+
+/* Panel Polish #2 — Chip 3 Budgets (Interactiva) */
+"panel.widgetInfo.budgets.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — Budgets S: pregunta */
+"panel.widgetInfo.budgets.smallWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — Budgets S: respuesta */
+"panel.widgetInfo.budgets.smallWhatA" = "お気に入りの予算2件と、期間中の支出額および上限に対する割合です。";
+
+/* Panel Polish #2 — Budgets M/L: pregunta (compartida) */
+"panel.widgetInfo.budgets.regularWhatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — Budgets M/L: respuesta (compartida) */
+"panel.widgetInfo.budgets.regularWhatA" = "お気に入りの予算と現在の期間の進捗を表示します: 使用した金額、上限の残額、ステータス (順調、ギリギリ、超過)。ヘッダーの星をタップすると、お気に入りに登録する予算を選ぶ画面が開きます。";
+
+/* Panel Polish #2 — Budgets: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.budgets.howQ" = "どう操作しますか?";
+
+/* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.budgets.howA" = "予算をタップすると、その予算のカテゴリーまたはタグに対応する取引でパネル全体をフィルタリングできます。もう一度タップするとフィルターが解除されます。";
+
+/* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
+"panel.widgetInfo.exchangeRate.title" = "為替レート";
+
+/* Panel Polish #2 — Chip 1 ExchangeRate (multi-divisa) */
+"panel.widgetInfo.exchangeRate.chip1" = "複数通貨";
+
+/* Panel Polish #2 — Chip 2 ExchangeRate (tasas actuales) */
+"panel.widgetInfo.exchangeRate.chip2" = "現在のレート";
+
+/* Panel Polish #2 — Chip 3 ExchangeRate (Interactiva) */
+"panel.widgetInfo.exchangeRate.chip3" = "インタラクティブ";
+
+/* Panel Polish #2 — ExchangeRate: pregunta */
+"panel.widgetInfo.exchangeRate.whatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta */
+"panel.widgetInfo.exchangeRate.whatA" = "優先通貨と、比較のために選択した最大2つの副通貨との為替レートの推移です。各ラインが1つの通貨を表し、タイトルの下には各通貨の最新レートと更新時刻が表示されます。";
+
+/* Panel Polish #2 — ExchangeRate: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.exchangeRate.howQ" = "グラフはどう操作しますか?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.exchangeRate.howA" = "ラインの上で指をスライドさせると、特定の日付の正確なレートが各通貨ごとのツールチップで表示されます。下の凡例のチップをタップすると1つの通貨だけを表示でき、もう一度タップするとすべての通貨に戻ります。";
+
+/* Panel Polish #2 — Title sheet pedagógico WeekdayBar */
+"panel.widgetInfo.weekdayBar.title" = "曜日別の支出";
+
+/* Panel Polish #2 — Chip 1 WeekdayBar (entidad) */
+"panel.widgetInfo.weekdayBar.chip1" = "曜日";
+
+/* Panel Polish #2 — Chip 2 WeekdayBar (período) */
+"panel.widgetInfo.weekdayBar.chip2" = "現在の期間";
+
+/* Panel Polish #2 — WeekdayBar: pregunta '¿Qué estás viendo?' (compartida S/L) */
+"panel.widgetInfo.weekdayBar.whatQ" = "何が表示されていますか?";
+
+/* Panel Polish #2 — WeekdayBar S: respuesta */
+"panel.widgetInfo.weekdayBar.smallWhatA" = "現在の期間における週ごとの平均支出額と、曜日ごとに1本ずつ並ぶミニ棒グラフです。最も高い2本の棒の上に金額が表示されます。";
+
+/* Panel Polish #2 — WeekdayBar L: respuesta */
+"panel.widgetInfo.weekdayBar.largeWhatA" = "現在の期間における曜日ごとの平均支出額です。支出のある各バーの上に正確な金額が表示されます。";
+"panel.widgetInfo.trend.fxMatchQ" = "なぜ最後のポイントが合計残高と一致しないことがあるのですか？";
+"panel.widgetInfo.trend.fxMatchA" = "最後のポイントは、現在の為替レートでの残高を反映します。それより前のポイントは、各取引日のレートを使用します。差額は為替変動による利益または損失で、異なる通貨の口座をお持ちの場合にのみ表示されます。";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "為替レートは残高にどのように影響しますか？";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yalaは、各口座の残高に現在の為替レートを適用して、優先通貨での残高を計算します。そのため、レートが変動して取引をしなくても、残高は上下することがあります。";
+
+// MARK: - A0-Bridge Settings & Filters
+"settings.sectionGroups" = "グループ";
+"settings.sectionGroupsHint" = "Yalaがグループの口座と取引を個人データとどのように組み合わせるかを設定します。";
+"settings.includeGroupsInPanelTotal" = "総残高にグループを含める";
+"settings.includeGroupTransactionsInStats" = "統計にグループ取引を含める";
+"filters.sectionShared" = "共有";
+"filters.includeGroupTransactions" = "グループ取引を含める";
+"filters.includeGroupTransactionsHint" = "オンの場合、共有支出から生成された動きがリストに表示されます。";
+
+// MARK: - A0-Bridge Bridge messages
+"groups.bridge.deleteExpenseBlocked" = "この支出には後の精算があります。削除する前に精算を削除または整理してください。";
+"groups.bridge.editFromGroup" = "この取引はグループと同期しています。共有支出から編集してください。";
+"groups.bridge.assignFromInbox" = "Inboxからサブカテゴリを割り当てて完了させてください。";
+"groups.bridge.editSettlementInGroup" = "この取引は精算から来ています。グループ内でsettlementを編集してください。";
+"groups.bridge.editPartialBanner" = "この支出はグループからのものです。アカウント、カテゴリー、タグを編集できます。金額と日付はグループと同期します。";
+"groups.bridge.draftReasonRemoteCreate" = "%1$@さんが%2$@でこの支出を記録しました。記録に追加するアカウントを選択してください。";
+"groups.bridge.draftReasonCurrencyChanged" = "%@の支出の通貨が変更されました。あなたの分を記録するアカウントを選択してください。";
+"groups.card.moreDebts" = "+%d 件";
+"inbox.groupExpenseAccountDraft.title" = "アカウントを割り当て";
+"inbox.groupExpenseAccountDraft.assignAccount" = "支払元アカウント";
+"groups.bridge.activateTitle" = "自動取引を有効にする";
+"groups.bridge.activateBody" = "今後、共有支出はあなたのグループ口座に反映されます。このグループには%d件の過去の支出があります。それらをどうしますか?";
+"groups.bridge.activateOptionFromNow" = "今から始める";
+"groups.bridge.activateOptionFromNowHint" = "新しい支出のみが反映されます。";
+"groups.bridge.activateOptionImportAll" = "全履歴をインポート";
+"groups.bridge.activateOptionImportAllHint" = "%d件の過去の支出とその精算の取引が作成されます。";
+"groups.bridge.activateImportRegenerationNote" = "既存の生成された取引は現在のルールに従って再生成されます。";
+"groups.bridge.deactivateTitle" = "自動取引を無効にする";
+"groups.bridge.deactivateBody" = "このグループによって生成された%d件の取引があります。削除すると、グループの残高が調整されます。";
+"groups.bridge.deactivateOptionDelete" = "削除する";
+"groups.bridge.deactivateOptionKeep" = "履歴として保持";
+"groups.bridge.importing" = "%d件の支出をインポート中…";
+"groups.bridge.importError" = "インポート中に問題が発生しました。もう一度お試しください。";
+"groups.bridge.upsellGroupInviteSettlement" = "Yalaを完全にアクティベートして、この支払いを実際の口座と照合しましょう。";
+
+// Bridge opt-out — alert post-save (F2c)
+"groups.bridge.optoutAlertTitle" = "個人のYalaにも記録しますか?";
+"groups.bridge.optoutAlertBody" = "この支出を反映する個人の取引を口座に作成することも、グループ内だけにとどめておくこともできます。";
+"groups.bridge.optoutAlertYes" = "はい、記録する";
+"groups.bridge.optoutAlertNo" = "グループのみ";
+
+// Bridge deactivation sheet (F5)
+"groups.bridge.deactivationSheetTitle" = "個人連携を無効にする";
+"groups.bridge.deactivationSheetBody" = "自動的に作成された取引がすでに口座にあります。それらをどうするか選択してください。";
+"groups.bridge.deactivationOptionFreeze" = "履歴として保持";
+"groups.bridge.deactivationOptionDelete" = "口座から削除する";
+
+// Groups Global Settings sheet (F3a)
+"groups.globalSettings.title" = "グループ設定";
+"groups.globalSettings.bridgeSectionTitle" = "個人のYalaとの連携";
+"groups.globalSettings.bridgeToggleLabel" = "グループの支出を個人の口座に記録する";
+"groups.globalSettings.bridgeCaption" = "オンにすると、あなたが支払うまたは精算する各支出が、選んだ個人の口座にも記録されます。残高が実態を反映します。";
+"groups.globalSettings.visibilitySectionTitle" = "表示";
+"groups.globalSettings.visibilityCaption" = "グループの取引をパネル、統計、記録フィードに表示するかどうかを管理します。";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "グループの取引を記録フィードに含める";
+
+// MARK: - A0-Bridge System Categories & Subcategories (グループ)
+"account.system.groups" = "グループ %@";
+"account.system.badge" = "システム";
+"category.system.groups" = "グループ";
+"category.system.groupCollections" = "グループ収入";
+"subcategory.system.loanToGroups" = "グループへの貸付";
+"subcategory.system.loanCollection" = "貸付の回収";
+"subcategory.system.settlementPayment" = "精算支払い";
+"subcategory.system.settlementSent" = "精算送信";
+"subcategory.system.settlementReceived" = "精算受領";
+"inbox.sourceGroupExpense" = "共有支出";
+"inbox.sourceGroupSettlement" = "精算";
+"inbox.sourceManual" = "手動";
+"inbox.groupDraftCannotDelete" = "この取引はソースグループからのみ削除できます。";
+
+/* A0-Bridge V2.0 — P0+P1 シート + 読み取り専用バナー */
+"groups.settlement.fromAccount" = "どの口座から？";
+"groups.settlement.fromAccountNone" = "なし — 後で完了します";
+"inbox.openInbox" = "受信箱を開く";
+"groups.detail.openGroup" = "グループを開く";
+"inbox.groupExpenseDraft.title" = "サブカテゴリを割り当てる";
+"inbox.groupExpenseDraft.assignSubcategory" = "サブカテゴリ";
+"inbox.groupSettlementDraft.title" = "口座を割り当てる";
+"inbox.groupSettlementDraft.assignAccount" = "送金先の口座";
+"inbox.groupDraft.finalize" = "完了する";
+"inbox.groupDraft.fromGroup" = "グループ：%@";
+"action.continue" = "続ける";
+
+// MARK: - A3: Pending approval flow
+"groups.member.statusPending" = "承認待ち";
+"groups.member.statusRejected" = "拒否されました";
+"groups.member.approve" = "承認する";
+"groups.member.reject" = "拒否する";
+"groups.member.approveConfirm" = "%@ をグループメンバーとして承認しますか？";
+"groups.member.rejectConfirm" = "%@ のリクエストを拒否しますか？別のリンクで再度アクセスをリクエストできます。";
+"groups.member.pendingRequestsSection" = "保留中のリクエスト";
+"groups.invite.waitingApproval.title" = "リクエストを送信しました";
+"groups.invite.waitingApproval.body" = "参加するには、グループの管理者の承認が必要です。準備ができたらお知らせします。";
+"groups.invite.waitingApproval.banner" = "管理者の承認を待っています";
+"groups.invite.rejected.title" = "リクエストが拒否されました";
+"groups.invite.rejected.body" = "管理者がリクエストを承認しませんでした。再度試したい場合は、新しいリンクを依頼してください。";
+"groups.notifications.newPendingRequest" = "👋 %1$@ さんが %2$@ への参加を希望しています";
+"groups.notifications.newPendingRequestBody" = "Yalaから承認または拒否してください。";
+"groups.errors.pendingApproval" = "まだこの操作はできません。管理者があなたのリクエストを承認する必要があります。";
+
+// MARK: - Welcome (A4 — Chooser pre-onboarding)
+"welcome.chooser.title" = "こんにちは！どうやってYalaにたどり着きましたか？";
+"welcome.chooser.subtitle" = "あなたに合わせた体験をご提供するため、教えてください。";
+"welcome.chooser.optionNew.title" = "初めて利用します";
+"welcome.chooser.optionNew.body" = "ゼロから始めましょう。一緒にステップごとに設定していきます。";
+"welcome.chooser.optionExisting.title" = "すでにアカウントがあります";
+"welcome.chooser.optionExisting.body" = "Yalaを再インストールしました。iCloudからデータを復元したいです。";
+"welcome.chooser.optionInvite.title" = "グループに招待されました";
+"welcome.chooser.optionInvite.body" = "招待リンクを持っています。グループに参加したいです。";
+
+"welcome.restore.searching" = "iCloudでデータを検索しています…";
+"welcome.restore.searchingTip" = "数秒かかることがあります。";
+"welcome.restore.foundTitle" = "%@さん、おかえりなさい！";
+"welcome.restore.foundTitleAnonymous" = "おかえりなさい！";
+"welcome.restore.foundBody" = "iCloudにデータが見つかりました：";
+"welcome.restore.foundAccounts" = "%d 件のアカウント";
+"welcome.restore.foundTransactions" = "%d 件の記録";
+"welcome.restore.foundBudgets" = "%d 件の予算";
+"welcome.restore.foundGroups" = "%d 件の共有グループ";
+"welcome.restore.continue" = "続ける";
+"welcome.restore.notFoundTitle" = "データが見つかりませんでした";
+"welcome.restore.notFoundBody" = "iCloudアカウントに関連するデータが見つかりません。最初から始めますか？";
+"welcome.restore.startFresh" = "ゼロから始める";
+"welcome.restore.retry" = "再検索";
+"welcome.restore.errorTitle" = "問題が発生しました";
+"welcome.restore.errorBody" = "iCloudのデータを検索できませんでした。もう一度試すか、最初から設定してください。";
+"welcome.restore.iCloudDisabledTitle" = "続行するにはiCloudを有効にしてください";
+"welcome.restore.iCloudDisabledBody" = "データを復元するにはiCloudが必要です。設定で有効にしてからもう一度お試しください。";
+"welcome.restore.openSettings" = "設定を開く";
+"welcome.restore.startFreshConfirm.title" = "最初から始めますか？";
+"welcome.restore.startFreshConfirm.body" = "以前のデータなしで新しいアカウントが作成されます。続行しますか？";
+"welcome.restore.startFreshConfirm.confirm" = "はい、最初から";
+"welcome.restore.startFreshConfirm.cancel" = "キャンセル";
+
+"welcome.invite.title" = "招待リンクを貼り付けてください";
+"welcome.invite.body" = "Yalaのグループに招待された場合は、受け取ったリンクをここに貼り付けてください。";
+"welcome.invite.placeholder" = "https://yala-app.pe/invite?...";
+"welcome.invite.invalidLink" = "Yalaのリンクではないようです。完全なリンクをコピーしたか確認してください。";
+"welcome.invite.join" = "グループに参加";
+"welcome.invite.back" = "戻る";
+
+// MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
+"welcome.hero.title" = "あなたの個人ファイナンスを、";
+"welcome.hero.titleAccent" = "簡単に。";
+"welcome.hero.subtitle" = "あなたは撮るだけ。Yalaが処理します。";
+"welcome.hero.cta" = "はじめる";
+"welcome.hero.trust" = "100%プライベート · あなたの情報はあなたのもの";
+
+"welcome.hero.cards.capture.title" = "レシートを撮影";
+"welcome.hero.cards.capture.body" = "カメラを向けるだけ。Yalaが読み取ります。";
+"welcome.hero.cards.assistant.title" = "音声とAIアシスタント";
+"welcome.hero.cards.assistant.body" = "話しかけるだけ。Yalaが答えます。";
+"welcome.hero.cards.groups.title" = "グループ精算";
+"welcome.hero.cards.groups.body" = "誰とでも割り勘。";
+"welcome.hero.cards.budgets.title" = "予算と目標";
+"welcome.hero.cards.budgets.body" = "限度を決めて、守る。";
+"welcome.hero.cards.multiAndCurrencies.title" = "複数口座と通貨";
+"welcome.hero.cards.multiAndCurrencies.body" = "カード、現金、48以上の通貨。";
+"welcome.hero.cards.import.title" = "履歴をインポート";
+"welcome.hero.cards.import.body" = "PDF、CSV、Excel。完了。";
+"welcome.hero.cards.icloud.title" = "プライベートiCloud";
+"welcome.hero.cards.icloud.body" = "あなたのデータは、あなたのiCloudに。サーバーなし。";
+"welcome.hero.cards.more.title" = "さらに多くの機能";
+"welcome.hero.cards.more.body" = "一緒に発見していきましょう。";
+
+// MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
+"welcome.detectedData.title" = "おかえりなさい！アカウントを見つけました";
+"welcome.detectedData.message" = "iCloudに%d件のアカウント、%d件の支出、%d件のカテゴリが保存されています。どうしますか?";
+"welcome.detectedData.loadMyData" = "データを読み込む";
+"welcome.detectedData.startFresh" = "ゼロから始める";
+
+
+// MARK: FreshStart (segunda barrera)
+"welcome.freshStart.alertTitle" = "最初から始める";
+"welcome.freshStart.alertMessage" = "このデバイスに既存のデータがあります。すべて削除して最初から始めますか？";
+"welcome.freshStart.alertConfirm" = "すべて削除して続ける";
+"groups.card.pendingApprovalChip" = "承認待ち";
+"groups.card.rejectedChip" = "リクエスト却下";
+"groups.card.leaveGroupAlertTitle" = "グループから退出しますか？";
+"groups.card.leaveGroupAlertBody" = "リクエストが却下されました。退出するとこのグループはリストから削除されます。個人の記録はそのまま残ります。";
+
+// MARK: - Yala AI Onboarding (5-step tutorial first-use post-consent)
+"yalaAI.onboarding.continue" = "続ける";
+"yalaAI.onboarding.back" = "戻る";
+"yalaAI.onboarding.close" = "閉じる";
+"yalaAI.onboarding.previewLabel" = "プレビュー";
+"yalaAI.onboarding.progressLabel" = "ステップ %1$d / %2$d";
+"yalaAI.onboarding.step1.title" = "Yala AIをご紹介します";
+"yalaAI.onboarding.step1.subtitle" = "あなたの家計のパートナーです。";
+"yalaAI.onboarding.step1.demoScenario1User" = "ランチに1,200円使いました。";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "完了しました。1,200円のランチを記録しました。";
+"yalaAI.onboarding.step1.demoScenario2User" = "今月のコーヒーにいくら使いましたか？";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "今月のコーヒーは4,500円です ☕ — 4月より12%減ですが、いつもの平均より800円多めです。";
+"yalaAI.onboarding.step1.demoScenario3User" = "アドバイスは？";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 デリバリーが先月より20%増えています。いつものペースに戻すと月8,000円、年間で約96,000円の節約になります。";
+"yalaAI.onboarding.step1.demoAmountLabel" = "ランチ";
+"yalaAI.onboarding.step1.a11yLabel" = "Yala AIが支出を記録するチャットの例";
+"yalaAI.onboarding.step2.title" = "できることはこちら";
+"yalaAI.onboarding.step2.subtitle" = "Yala AIを活用する3つの方法です。";
+"yalaAI.onboarding.step2.card1.badge" = "新機能";
+"yalaAI.onboarding.step2.card1.title" = "支出を即座に記録";
+"yalaAI.onboarding.step2.card1.body" = "テキストまたは音声で、フォームなし。話すだけです。";
+"yalaAI.onboarding.step2.card2.title" = "家計について質問";
+"yalaAI.onboarding.step2.card2.body" = "コーヒーにいくら使いましたか？最も高かった月は？";
+"yalaAI.onboarding.step2.card3.title" = "提案を受け取る";
+"yalaAI.onboarding.step2.card3.body" = "パターン、異常、節約のためのアイデア。";
+"yalaAI.onboarding.step3.title" = "Yalaのトーンを選んでください";
+"yalaAI.onboarding.step3.subtitle" = "Yalaが返答するときの話し方です。";
+"yalaAI.onboarding.step3.toneNormalDescription" = "バランスよく明確に。事実を飾らずにお伝えします。";
+"yalaAI.onboarding.step3.toneConsiderateDescription" = "やさしく寄り添う口調で。気分に配慮し、進歩を称えます。";
+"yalaAI.onboarding.step3.toneSarcasticDescription" = "ユーモアを交えて率直に。少し茶目っ気のある言い回しでお伝えします。";
+"yalaAI.onboarding.step3.toneNormalQuote" = "今週はコーヒーを3杯飲みました。予算内で順調です。";
+"yalaAI.onboarding.step3.toneConsiderateQuote" = "コーヒーは気分転換になります。予算内に収まっていますよ。";
+"yalaAI.onboarding.step3.toneSarcasticQuote" = "あと3杯で記録を更新ですね。それでも予算内です。";
+"yalaAI.onboarding.step4.title" = "Yalaのスタイルを選んでください";
+"yalaAI.onboarding.step4.subtitle" = "家計を見るときに重視するポイントです。";
+"yalaAI.onboarding.step4.focusBalancedDescription" = "支出と収入を同じ重みで見ます。";
+"yalaAI.onboarding.step4.focusSaverDescription" = "毎月、より多く節約できるようサポートします。";
+"yalaAI.onboarding.step4.focusCautiousDescription" = "ずれがあればお知らせし、見落としを防ぎます。";
+"yalaAI.onboarding.step4.focusBalancedQuote" = "今月の支出は収入でカバーできています。良いペースです。";
+"yalaAI.onboarding.step4.focusSaverQuote" = "外食を10%減らすと、月3,000円の節約になります。";
+"yalaAI.onboarding.step4.focusCautiousQuote" = "注意：デリバリーのペースが先月より速くなっています。";
+"yalaAI.onboarding.step5.title" = "準備完了！";
+"yalaAI.onboarding.step5.subtitle" = "いつでもYalaに必要なことを伝えてください。";
+"yalaAI.onboarding.step5.tip" = "💡 例：「500円のコーヒーを記録して」「今日いくら使った？」";
+"yalaAI.onboarding.step5.cta" = "チャットを始める";
+
+// MARK: - Stats Records polish
+
+"stats.records.motivationalOne" = "1件の記録 · 良いスタートです";
+"stats.records.motivationalMany %d" = "%d件の記録 · その調子です";
+
+"stats.insights.motivationalOne" = "1件の取引 · 良いスタートです";
+"stats.insights.motivationalMany %d" = "%d件の取引 · その調子です";
+"stats.insights.detailHeader" = "あなたの数字";
+"stats.insights.aiCardTitle" = "スマートサマリー";
+"stats.insights.aiCardSubtitle" = "AIでパーソナライズ";
+"stats.insights.dailyAvgIn %@" = "%@の1日あたり";
+
+"stats.insights.need.dailyFormat %@" = "≈ %@/日";
+
+"stats.insights.modeDetail" = "詳細";
+
+// MARK: - Stats Trends polish (stats-polish-panel-alignment)
+
+"stats.trends.comparisonTitle" = "比較";
+"stats.trends.insightTitleFree %@" = "あなたの%@をひと言で";
+"stats.trends.insightTitlePro" = "期間分析";
+"stats.trends.refineWithAI" = "AIで詳しく分析";
+"stats.trends.generateAI" = "AI分析を生成";
+"stats.trends.regenerate" = "再生成";
+"stats.trends.aiFootnote" = "AI分析";
+"stats.trends.heroOnset" = "Yalaを始めて最初の期間";
+"stats.trends.heroStable" = "残高は安定しています";
+"stats.trends.heroVarUp %d %@" = "%2$@より%1$d%%上 · この調子で";
+"stats.trends.heroVarDown %d %@" = "%2$@より%1$d%%下 · 頑張って、一歩ずつ";
+// MARK: Distribution
+"stats.distribution.heroSubtitle1 %d" = "%d件のカテゴリ";
+"stats.distribution.heroSubtitle2 %d %d" = "%d件のカテゴリ · %d件のサブカテゴリ";
+"stats.distribution.heroSubtitle3 %d %d %d" = "%d件のカテゴリ · %d件のサブカテゴリ · %d件のタグ";
+"stats.distribution.insightTitleFree %@" = "あなたの%@をひと目で";
+"stats.distribution.insightTitlePro" = "期間内の分布";
+"stats.distribution.aiFootnote" = "AI分析";
+"stats.distribution.modeCharts" = "グラフ";
+"stats.distribution.insight.onset %@" = "%@の傾向が見え始めています。もうすぐより明確なパターンが分かります。";
+"stats.distribution.insight.newCategory %@ %@" = "今%2$@、%1$@を試しましたね。";
+"stats.distribution.insight.concentrated %d %@" = "支出の%1$d%%が%2$@に集中しています。優先事項と合っていますか？";
+"stats.distribution.insight.balanced %d" = "支出は分散しています：どのカテゴリも%d%%を超えていません。バランスの取れた分布です。";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%3$@比で%2$@が%1$d%%上昇しました。この期間に何が変わったか見てみましょう。";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%3$@比で%2$@が%1$d%%下落しました。良い調整です。";
+"stats.distribution.insight.topSub %d %@ %@" = "%2$@は%3$@の中で%1$d%%を占めています。あなたの最大の具体的な項目です。";
+
+"stats.trends.insight.onset %@" = "Yalaを始めて最初の%@です";
+"stats.trends.insight.varUpExpense %d %@" = "支出が%2$@より%1$d%%増加。一緒に調整しましょう。";
+"stats.trends.insight.varDownExpense %d %@" = "支出が%2$@より%1$d%%減少。この調子で。";
+"stats.trends.insight.varUpIncome %d %@" = "収入が%2$@より%1$d%%増加。お見事です。";
+"stats.trends.insight.varDownIncome %d %@" = "収入が%2$@より%1$d%%減少。";
+"stats.trends.insight.varUpBalance %d %@" = "残高が%2$@より%1$d%%増加。";
+"stats.trends.insight.varDownBalance %d %@" = "残高が%2$@より%1$d%%減少。";
+"stats.trends.insight.stableExpense" = "支出は安定しています。";
+"stats.trends.insight.stableIncome" = "収入は安定しています。";
+"stats.trends.insight.stableBalance" = "残高は安定しています。";
+
+// MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
+"panel.widgetInfo.periodComparison.title" = "期間の比較";
+"panel.widgetInfo.periodComparison.chip1" = "比較";
+"panel.widgetInfo.periodComparison.chip2" = "期間別";
+"panel.widgetInfo.periodComparison.whatQ" = "ここに表示されているのは何ですか？";
+"panel.widgetInfo.periodComparison.whatA" = "現在の期間の残高・収入・支出を、前の期間と並べて表示しています。傾向が改善しているかどうかが一目で分かります。";
+"panel.widgetInfo.periodComparison.howQ" = "何と比較していますか？";
+"panel.widgetInfo.periodComparison.howA" = "Mをタップすると前月、Aをタップすると前年と比較できます。この選択はパネル全体の差分にも適用されます。";
+"panel.widgetInfo.sankey.title" = "お金の流れ";
+"panel.widgetInfo.sankey.chip1" = "流れ";
+"panel.widgetInfo.sankey.chip2" = "必要度別";
+"panel.widgetInfo.sankey.chip3" = "インタラクティブ";
+"panel.widgetInfo.sankey.whatQ" = "ここに表示されているのは何ですか？";
+"panel.widgetInfo.sankey.whatA" = "期間中のお金の経路です。どこから入って（収入）、どこへ向かうかを必要度別にまとめています。帯が太いほど大きな金額です。";
+"panel.widgetInfo.sankey.howQ" = "どう操作しますか？";
+"panel.widgetInfo.sankey.howA" = "カテゴリ・サブカテゴリ・流れの枝をタップすると、パネル全体をその経路で絞り込めます。もう一度タップで解除できます。";
+
+// MARK: GroupsOnboarding-keys
+"groups.onboarding.progressLabel" = "%1$d / %2$d ステップ";
+"groups.onboarding.step1.title" = "支払いをすっきり共有";
+"groups.onboarding.step1.subtitle" = "誰かがグループに支払いを追加すると、Yalaがすぐにお知らせします。";
+"groups.onboarding.step1.demoMemberName" = "さくら";
+"groups.onboarding.step1.demoGroupName" = "友達";
+"groups.onboarding.step1.demoNotifTemplate" = "%1$@さんがグループ「%3$@」に%2$@を追加しました";
+"groups.onboarding.step1.demoBalanceLabelInitial" = "残高: %@";
+"groups.onboarding.step1.demoBalanceLabelDebt" = "あなたの借り: %@";
+"groups.onboarding.step1.a11yLabelTemplate" = "%1$@さんがグループ「%3$@」に%2$@を追加しました。あなたの借りは%4$@になりました。";
+"groups.onboarding.step2.title" = "3ステップで完了。表計算は不要";
+"groups.onboarding.step2.subtitle" = "Yalaが分割、記録、精算をすべて行います。";
+"groups.onboarding.step2.card1.title" = "仲間とグループを作成";
+"groups.onboarding.step2.card1.body" = "家族、友達、旅行、仕事。必要なだけグループを作れます。";
+"groups.onboarding.step2.card2.title" = "支払いを記録すればYalaが分割";
+"groups.onboarding.step2.card2.body" = "分け方を選ぶだけ。Yalaが誰がいくら払うかを計算します。";
+"groups.onboarding.step2.card3.title" = "数タップで精算";
+"groups.onboarding.step2.card3.body" = "支払いを完了してゼロに戻します。議論もExcelも不要です。";
+
+"groups.onboarding.step2.bridgeAwareness" = "支出を支払うと、個人の口座にも自動的に記録します。残高が常に実態を反映するようにするためです。";
+"groups.onboarding.step3.title" = "プライバシーを第一に";
+"groups.onboarding.step3.subtitle" = "必要な情報だけを共有します。";
+"groups.onboarding.step3.point1" = "メンバー全員にiCloudアカウントが必要です。";
+"groups.onboarding.step3.point2" = "個人データはグループと同期されません。共有された支払いのみが同期されます。";
+"groups.onboarding.step3.cta" = "グループへ";
+
+"groups.onboarding.step3.bridgeAwareness" = "この動作はグループ設定で変更できます。";
+
+// MARK: FU-02-reconnect
+"groups.reconnect.deletedForAll.title" = "%@は削除されました";
+"groups.reconnect.deletedForAll.body" = "このグループは作成者によって削除されました。";
+"groups.reconnect.deletedForAll.cta" = "了解";
+
+// MARK: B-16 — groups.reconnect.backToStart
+"groups.reconnect.backToStart" = "最初に戻る";
+
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+"split.totalLabel" = "合計";
+"split.you" = "あなた";
+"split.rest" = "残り";
+"split.percentSuffix %@" = "(%@%%)";
+"split.sharesSuffix %d %d" = "(%d/%d 株)";
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "あなたが全額支払いました";
+
+
+/* MARK: MoreDashboard-keys (more redesign) */
+"more.subtitle.panel" = "毎日の概要をひと目で";
+"more.subtitle.insights" = "今期の大事なポイント";
+"more.subtitle.trends" = "お金の推移を確認";
+"more.subtitle.distribution" = "お金の使いみちを発見";
+"more.subtitle.budgets" = "上限を決めて進み具合を確認";
+"more.subtitle.scheduledPayments" = "これからの支払いとサブスク";
+"more.subtitle.comparative" = "期間を並べて比較";
+"more.subtitle.cashFlow" = "入ってくるお金と出ていくお金";
+"more.subtitle.records" = "すべての記録をひとつに";
+"more.subtitle.groups" = "割り勘を手軽に共有";
+"more.subtitle.profile" = "アカウントと設定";
+"more.toolsSection" = "その他の機能";
+
+
+/* MARK: MoreEditor-keys (more redesign Fase 2) */
+"more.editor.title" = "カスタマイズ";
+"more.editor.sectionsHeader" = "セクションの順序";
+"more.editor.tabBarHint" = "下部タブバーの選択と並び替え";
+
+/* VoiceOver: expand a collapsible row */
+"accessibility.expand" = "展開";
+
+/* VoiceOver: collapse a collapsible row */
+"accessibility.collapse" = "折りたたむ";
+
+/* Split type short label (segmented control) */
+"split.typeEqualShort" = "均等";
+
+/* Split type short label (segmented control) */
+"split.typePercentageShort" = "割合";
+
+/* Split type short label (segmented control) */
+"split.typeExactShort" = "金額";
+
+/* Split type short label (segmented control) */
+"split.typeSharesShort" = "シェア";
+
+/* Reset-data screen description — groups-only mode */
+"settings.resetDataDescriptionGroupsOnly" = "この操作で、Yalaのプロフィールと設定が初期状態に戻ります。グループは削除されません。「グループ」タブで管理してください。";
+
+/* Delete-data confirmation warning — groups-only mode */
+"settings.deleteDataWarningGroupsOnly" = "この操作は取り消せません。Yalaのプロフィールと設定がリセットされます。";
+
+/* Apple Pay automation: failure notification title */
+"shortcut.notification.errorTitle" = "支払いを記録できませんでした";
+
+/* Apple Pay automation: failure notification body */
+"shortcut.notification.errorBody" = "Apple Payの支払いを保存できませんでした。Yalaを開いて手動で記録してください。";
+
+/* Card del grupo: otro miembro le debe al usuario actual (perspectiva theyOweMe) */
+"groups.card.theyOweYou" = "%@ はあなたに借りがあります";
+
+/* Card del grupo: el usuario actual le debe a otro miembro (perspectiva iOwe) */
+"groups.card.youOwe" = "あなたは %@ に借りがあります";
+
+/* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
+"inbox.groupExpenseAccountDraft.banner" = "グループ「%@」の支出です。お金が出た口座を割り当てるだけです。金額と日付はグループが管理します。";
+
+/* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
+"inbox.groupExpenseDraft.banner" = "グループ「%@」の支出です。分類するサブカテゴリーを選ぶだけです。金額と日付はグループが管理します。";
+
+/* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
+"inbox.groupSettlementDraft.banner" = "グループ「%@」の精算です。口座を割り当てるだけです。金額と日付はグループが管理します。";
+
+/* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "口座とサブカテゴリを割り当て";
+
+/* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "グループ「%@」の支出です。お金が出た口座を割り当て、分類するサブカテゴリーを選んでください。金額と日付はグループが管理します。";
+
+/* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
+"inbox.errorGroupExpenseGone" = "この共有支出はグループにもう存在しません。";
+"whatsNew.v20.groups.title" = "グループ（ベータ版）";
+"whatsNew.v20.groups.description" = "グループを作って費用を分担すると、Yala が誰が誰にいくら払うかを計算します。ご安心ください。データはすべてあなたのプライベートな iCloud を経由し、当社のサーバーは通りません。";
+"whatsNew.v20.ai.title" = "Yala AI のご紹介";
+"whatsNew.v20.ai.description" = "AI を搭載したあなたの家計アシスタント。お金について質問したり、支出の記録を頼んだり、今月の分かりやすい分析を受け取れます。お金に詳しい友だちのように、メッセージひとつですぐそばに。";
+"whatsNew.v20.redesign.title" = "全面リニューアル";
+"whatsNew.v20.redesign.description" = "Yala を隅々まで一新しました。新しいウィジェット、各画面のより見やすいサマリー、そしてアプリ全体に iOS の新しい Liquid Glass デザインを採用。さらに多くの不具合を修正し、すべてがより快適になりました。";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"common.vs" = "vs";
+"transaction.exchangeRateShort %@" = "レート: %@";
+"cashFlowPlan.aiChipLabel" = "AI";
+"budgets.period.typeLabel" = "期間の種類";
+"budgets.alerts.thresholdPlaceholder" = "1–100";
+"accessibility.variationIncrease %@" = "増加 %@";
+"accessibility.variationDecrease %@" = "減少 %@";
+"accessibility.processing" = "処理中";
+"accessibility.removeTab %@" = "%@を削除";
+"accessibility.selectAtLeastOneColumn" = "少なくとも1つの列を選択してください";
+"accessibility.completeRequiredFilters" = "必須フィルターを設定してください";
+"accessibility.exportingHint" = "エクスポート中";
+"accessibility.assignAllCurrencies" = "すべての通貨を割り当ててください";
+
+/* Records: toggle to identify potential duplicates */
+"records.duplicates.menuTitle" = "重複を特定";
+
+/* Records: duplicate match criteria submenu */
+"records.duplicates.matchBy" = "照合する項目";
+
+/* Records: turn off duplicate identification */
+"records.duplicates.deactivate" = "オフにする";
+
+/* Records: empty state title when no duplicates found */
+"records.duplicates.emptyTitle" = "重複なし";
+
+/* Records: empty state message when no duplicates found */
+"records.duplicates.emptyMessage" = "選択した条件に一致する記録はありません。";
+
+/* Records: banner title shown while duplicate mode active */
+"records.duplicates.bannerTitle" = "重複の可能性";
+
+/* Contextual note when a manual 'Sync now' tap can't reach iCloud (transient/offline). Non-alarming; reassures data is safe on device. */
+"icloud.forceSync.offlineNote" = "現在 iCloud に接続できませんでした。データは安全に保存されており、接続が戻り次第同期されます。";

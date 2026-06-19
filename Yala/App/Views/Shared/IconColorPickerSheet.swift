@@ -237,7 +237,11 @@ struct IconColorPickerSheet: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xl)
             }
-            .background(.thBackground)
+            .scrollContentBackground(.hidden)
+            // Sheet full-height en todos sus callsites (sin detents o `.large`) → .subtle.
+            // El idiom-aware `usesLargeSheets ? .subtle : .transparent` es solo para
+            // sheets con detents parciales; aquí dejaba ver el gris de sistema en iPhone.
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.IconPicker.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -311,7 +315,7 @@ struct IconColorPickerSheet: View {
         } label: {
             Circle()
                 .fill(Color(hex: hex))
-                .frame(width: 40, height: 40)
+                .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 .overlay(
                     Circle()
                         .stroke(Color.white, lineWidth: tempColorHex == hex ? 3 : 0)
@@ -325,12 +329,14 @@ struct IconColorPickerSheet: View {
                     radius: 4, x: 0, y: 2)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(L10n.Accessibility.selectColor)
     }
 
     private var customColorButton: some View {
         ColorPicker("", selection: $customColor, supportsOpacity: false)
             .labelsHidden()
             .frame(width: 40, height: 40)
+            .accessibilityLabel(L10n.Accessibility.selectColor)
             .onChange(of: customColor) { _, newColor in
                 tempColorHex = newColor.toHex()
             }
@@ -384,6 +390,7 @@ struct IconColorPickerSheet: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(name)
     }
 }
 

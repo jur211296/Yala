@@ -22,31 +22,11 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo \"[$(date +%H:%M:%S)] Editado: $CLAUDE_FILE_PATH\" >> .claude/sessions/edits.log"
-          }
-        ]
-      },
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo \"[$(date +%H:%M:%S)] Escrito: $CLAUDE_FILE_PATH\" >> .claude/sessions/edits.log"
-          }
-        ]
-      },
-      {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command // \"\"' | grep -q 'git commit' && git push origin HEAD 2>&1 || true",
-            "timeout": 30,
-            "statusMessage": "Auto-pushing to remote..."
+            "command": "jq -r '.tool_input.command // \"\"' | grep -q 'git commit' && echo '[commit detectado — recuerda pushear al final]' || true"
           }
         ]
       }
@@ -73,6 +53,12 @@
           {
             "type": "command",
             "command": "echo \"[$(date -Iseconds)] Sesion terminada\" >> .claude/sessions/activity.log"
+          },
+          {
+            "type": "command",
+            "command": "cd /Users/jur/Yala && git log @{u}..HEAD --oneline 2>/dev/null | grep -q . && git push origin HEAD 2>&1 || true",
+            "timeout": 30,
+            "statusMessage": "Pushing unpushed commits..."
           }
         ]
       }

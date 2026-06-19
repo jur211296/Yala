@@ -69,25 +69,10 @@ final class InsightsLLMService {
     // MARK: - Properties
 
     @ObservationIgnored
-    private var _openAI: OpenAI?
-    @ObservationIgnored
-    private var _openAIInitialized = false
-
-    @ObservationIgnored
     private var cache: [String: CacheEntry] = [:]
 
     @ObservationIgnored
     private var lastCallTime: Date?
-
-    private var openAI: OpenAI? {
-        if !_openAIInitialized {
-            _openAIInitialized = true
-            if let apiKey = APIKeyService.openAIAPIKey {
-                _openAI = OpenAI(apiToken: apiKey)
-            }
-        }
-        return _openAI
-    }
 
     // MARK: - Cache
 
@@ -120,8 +105,11 @@ final class InsightsLLMService {
         tone: InsightTone = .normal,
         focus: InsightFocus = .balanced
     ) async throws -> LLMInsightResponse {
-        guard let client = openAI else {
-            throw InsightsLLMError.noAPIKey
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+        } catch {
+            throw InsightsLLMError.networkError(error)
         }
 
         // Rate limit: 5s between calls
@@ -196,7 +184,7 @@ final class InsightsLLMService {
         \(filterContext)
         FRAMEWORK DE ANÁLISIS (sigue este orden de prioridad):
         1. PANORAMA: total_expense, total_income, net_balance y sus variaciones. ¿Mes positivo o negativo? ¿Tendencia?
-        2. CONCENTRACIÓN: top_categories — ¿alguna categoría domina excesivamente? ¿Distribución saludable?
+        2. CONCENTRACIÓN: top_categories y category_tree (usa subcategorías para dar detalle) — ¿alguna categoría domina excesivamente? ¿Distribución saludable?
         3. COMPROMISOS: budgets_at_risk (compara spent vs limit), subscriptions (suscripciones: Netflix, Spotify, gym), recurring_payments (pagos fijos: renta, servicios, nómina), pending_payments
         4. PATRONES: highest_avg_weekday, daily_avg y su variación, highest_expense (gasto atípico?)
         5. NECESIDADES: distribución essential/priority/optional — ¿equilibrio razonable?
@@ -432,6 +420,8 @@ final class InsightsLLMService {
 
     @ObservationIgnored
     private var lastContextualCallTime: Date?
+    @ObservationIgnored
+    private var lastDeviationCallTime: Date?
 
     @ObservationIgnored
     private var contextualCache: [String: ContextualCacheEntry] = [:]
@@ -464,8 +454,11 @@ final class InsightsLLMService {
         excludeText: String? = nil,
         forcedAngle: String? = nil
     ) async throws -> String? {
-        guard let client = openAI else {
-            throw InsightsLLMError.noAPIKey
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+        } catch {
+            throw InsightsLLMError.networkError(error)
         }
 
         // Rate limit: 5s between contextual calls (independent from main insights)
@@ -474,9 +467,12 @@ final class InsightsLLMService {
             throw InsightsLLMError.rateLimited
         }
 
-        // Evict expired contextual entries (30 min TTL)
+        // Evict expired contextual entries (30 min default, 24h for cash flow)
         let now = Date.now
-        contextualCache = contextualCache.filter { now.timeIntervalSince($0.value.timestamp) < 1800 }
+        contextualCache = contextualCache.filter { entry in
+            let ttl: TimeInterval = entry.key.hasPrefix("cashflow_") ? 86400 : 1800
+            return now.timeIntervalSince(entry.value.timestamp) < ttl
+        }
 
         // Check cache (eviction above guarantees all entries are < 30 min)
         if let entry = contextualCache[key] {
@@ -557,4 +553,433 @@ final class InsightsLLMService {
             throw InsightsLLMError.networkError(error)
         }
     }
+
+    // MARK: - Cash Flow Projection Insight
+
+    /// Generate a single-sentence insight about the cash flow projection.
+    /// Uses contextualCache with 24h TTL. Key includes projection hash for invalidation.
+    func generateCashFlowInsight(
+        projection: CashFlowProjection,
+        currencyCode: String
+    ) async throws -> String? {
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+        } catch {
+            throw InsightsLLMError.networkError(error)
+        }
+
+        if let lastCall = lastContextualCallTime,
+           Date.now.timeIntervalSince(lastCall) < 5 {
+            throw InsightsLLMError.rateLimited
+        }
+
+        // Cache key: date + projection hash
+        let dayString = Self.dayFormatter.string(from: Date.now)
+        let projHash = Self.projectionHash(projection)
+        let cacheKey = "cashflow_\(dayString)_\(projHash)"
+
+        // Check cache (24h TTL)
+        if let entry = contextualCache[cacheKey],
+           Date.now.timeIntervalSince(entry.timestamp) < 86400 {
+            return entry.text
+        }
+
+        lastContextualCallTime = Date.now
+
+        // Build compact JSON
+        let data = Self.buildCashFlowPayload(projection: projection, currencyCode: currencyCode)
+        let jsonData = try JSONSerialization.data(withJSONObject: data)
+        let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+
+        let currencyDisplay = CurrencyCode(rawValue: currencyCode)?.symbol ?? currencyCode
+
+        let systemPrompt = """
+        Eres un analista financiero personal. Genera UNA SOLA oración (máximo 150 caracteres) sobre la proyección de flujo de caja del usuario.
+
+        REGLAS CRÍTICAS:
+        - SOLO menciona datos presentes en el JSON. NUNCA inventes montos o meses
+        - Cada afirmación debe corresponder a un campo específico
+        - Tutea ("tú"), lidera con el dato, nunca regañes ni juzgues, nunca hagas preguntas
+        - NUNCA uses "Debes...", "Tienes que...", "Obviamente..."
+        - Usa "gasto"/"ingreso", no "transacción". Siempre constructivo
+        - Usa **negritas** para la cifra clave
+        - Montos en \(currencyCode): SIEMPRE \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). Divisa ANTES del número
+
+        JSON: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
+        """
+
+        let query = ChatQuery(
+            messages: try buildChatMessages(system: systemPrompt, user: "Proyección de flujo de caja:\n\(jsonString)"),
+            model: .gpt4_1_mini,
+            responseFormat: .jsonObject,
+            temperature: 0.4
+        )
+
+        do {
+            let result = try await client.chats(query: query)
+
+            guard let content = result.choices.first?.message.content,
+                  let rawData = content.data(using: .utf8),
+                  let dict = try JSONSerialization.jsonObject(with: rawData) as? [String: Any] else {
+                throw InsightsLLMError.parseFailed
+            }
+
+            let comment = dict["comment"] as? String
+
+            if let comment {
+                contextualCache[cacheKey] = ContextualCacheEntry(text: comment, timestamp: Date.now)
+            }
+
+            return comment
+        } catch let error as InsightsLLMError {
+            throw error
+        } catch {
+            throw InsightsLLMError.networkError(error)
+        }
+    }
+
+    private static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    static func projectionHash(_ projection: CashFlowProjection) -> Int {
+        var hash = projection.months.count
+        hash = hash &* 31 &+ Int(projection.months.last?.accumulatedBalance ?? 0)
+        hash = hash &* 31 &+ Int(projection.totalProjectedNet)
+        return hash
+    }
+
+    private static func buildCashFlowPayload(projection: CashFlowProjection, currencyCode: String) -> [String: Any] {
+        let months = projection.months
+        let currentMonth = months.first(where: { $0.isCurrent })
+        let monthsWithBalance = months.filter { $0.accumulatedBalance != nil }
+        let lowestMonth = monthsWithBalance.min(by: { ($0.accumulatedBalance ?? 0) < ($1.accumulatedBalance ?? 0) })
+        let monthsNegative = months.filter { ($0.accumulatedBalance ?? 0) < 0 }.count
+        let avgNet = months.isEmpty ? 0 : months.map(\.netFlow).reduce(0, +) / Double(months.count)
+
+        var payload: [String: Any] = [
+            "startingBalance": projection.startingBalance,
+            "monthsTotal": months.count,
+            "monthsPositive": months.count - monthsNegative,
+            "monthsNegative": monthsNegative,
+            "avgMonthlyNet": Int(avgNet),
+            "currency": currencyCode,
+        ]
+
+        if let current = currentMonth {
+            payload["currentMonth"] = [
+                "name": current.date.formatted(.dateTime.month(.abbreviated).year()).lowercased(),
+                "income": Int(current.totalIncome),
+                "expense": Int(current.totalExpense),
+                "net": Int(current.netFlow),
+                "accumulated": Int(current.accumulatedBalance ?? 0),
+            ]
+        }
+
+        if let last = months.last {
+            payload["endMonth"] = [
+                "name": last.date.formatted(.dateTime.month(.abbreviated).year()).lowercased(),
+                "accumulated": Int(last.accumulatedBalance ?? 0),
+            ]
+        }
+
+        if let lowest = lowestMonth {
+            payload["lowestAccumulated"] = [
+                "month": lowest.date.formatted(.dateTime.month(.abbreviated).year()).lowercased(),
+                "balance": Int(lowest.accumulatedBalance ?? 0),
+            ]
+        }
+
+        return payload
+    }
+
+    // MARK: - Cash Flow Deviation Insight
+
+    func generateDeviationInsight(
+        deviations: [(name: String, planned: Double, actual: Double, excess: Double)],
+        currencyCode: String
+    ) async throws -> String? {
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+        } catch {
+            throw InsightsLLMError.networkError(error)
+        }
+
+        if let lastCall = lastDeviationCallTime,
+           Date.now.timeIntervalSince(lastCall) < 5 {
+            throw InsightsLLMError.rateLimited
+        }
+
+        guard !deviations.isEmpty else { return nil }
+
+        let cacheKey = "deviation_\(Self.dayFormatter.string(from: Date.now))_\(deviations.map(\.name).joined())"
+
+        if let entry = contextualCache[cacheKey],
+           Date.now.timeIntervalSince(entry.timestamp) < 86400 {
+            return entry.text
+        }
+
+        lastDeviationCallTime = Date.now
+
+        let items = deviations.map { d in
+            ["name": d.name, "planned": Int(d.planned), "actual": Int(d.actual), "excess": Int(d.excess)] as [String: Any]
+        }
+        let totalExcess = deviations.reduce(0.0) { $0 + $1.excess }
+        let payload: [String: Any] = [
+            "items": items,
+            "totalExcess": Int(totalExcess),
+            "currency": currencyCode,
+        ]
+
+        let jsonData = try JSONSerialization.data(withJSONObject: payload)
+        let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+        let currencyDisplay = CurrencyCode(rawValue: currencyCode)?.symbol ?? currencyCode
+
+        let systemPrompt = """
+        Eres un analista financiero personal. Genera UNA SOLA oración (máximo 150 caracteres) sobre las subcategorías donde el usuario gastó más de lo planeado.
+
+        REGLAS CRÍTICAS:
+        - SOLO menciona datos presentes en el JSON. NUNCA inventes montos o nombres
+        - Tutea ("tú"), lidera con el dato, nunca regañes ni juzgues, nunca hagas preguntas
+        - NUNCA uses "Debes...", "Tienes que...", "Obviamente..."
+        - Usa "gasto", no "transacción". Siempre constructivo, sugiere algo práctico si puedes
+        - Usa **negritas** para la cifra clave
+        - Montos en \(currencyCode): SIEMPRE \(currencyDisplay) NÚMERO (ej: \(currencyDisplay) 4,500). Divisa ANTES del número
+
+        JSON: {"comment": "una oración"} o {"comment": null} si no hay nada interesante.
+        """
+
+        let query = ChatQuery(
+            messages: try buildChatMessages(system: systemPrompt, user: "Desviaciones del plan:\n\(jsonString)"),
+            model: .gpt4_1_mini,
+            responseFormat: .jsonObject,
+            temperature: 0.4
+        )
+
+        do {
+            let result = try await client.chats(query: query)
+
+            guard let content = result.choices.first?.message.content,
+                  let rawData = content.data(using: .utf8),
+                  let dict = try JSONSerialization.jsonObject(with: rawData) as? [String: Any] else {
+                throw InsightsLLMError.parseFailed
+            }
+
+            let comment = dict["comment"] as? String
+
+            if let comment {
+                contextualCache[cacheKey] = ContextualCacheEntry(text: comment, timestamp: Date.now)
+            }
+
+            return comment
+        } catch let error as InsightsLLMError {
+            throw error
+        } catch {
+            throw InsightsLLMError.networkError(error)
+        }
+    }
+
+    // MARK: - Hero Message
+
+    /// Genera el `subtitle` del Hero del mes para usuarios Pro + consent.
+    ///
+    /// Contrato:
+    ///  - Cache check previo (día + hash) — si hit, return sin tocar la API
+    ///    ni `lastCallTime`. El caller mide `panelHeroAICacheHit` aparte.
+    ///  - 1 call/día máx por usuario gracias al cache: mientras el día y el
+    ///    hash del contexto no cambien, `read()` siempre gana.
+    ///  - Timeout 5s. Si gana el sleep, lanzamos `.networkError(TimeoutError)`
+    ///    y cancelamos el subtask del chat. La request en vuelo puede
+    ///    completar en background (OpenAI client no cancela sockets), pero
+    ///    ya no escribe cache porque el group retornó.
+    ///  - Validación post-parse: texto vacío o <15 chars se tratan como
+    ///    `.parseFailed` (no contamina el cache durante 24h).
+    ///  - Prompt compacto: ≤350 tokens system + ≤80 user (solo agregados).
+    func generateHeroMessage(context ctx: HeroContext) async throws -> String {
+        // Cache check antes de cualquier network hop.
+        if let cached = HeroMessageCache.read(),
+           cached.hash == HeroMessageCache.contextHash(ctx) {
+            return cached.text
+        }
+
+        let client: OpenAI
+        do {
+            client = try await ProxyClientFactory.makeOpenAI(category: .insights)
+        } catch {
+            throw InsightsLLMError.networkError(error)
+        }
+
+        let systemPrompt = Self.heroSystemPrompt(ctx: ctx)
+        let userMessage = "Contexto del mes:\n\(Self.heroUserPayload(ctx: ctx))"
+
+        let query = ChatQuery(
+            messages: try buildChatMessages(system: systemPrompt, user: userMessage),
+            model: .gpt4_1_mini,
+            responseFormat: .jsonObject,
+            // 0.75 da más variedad sin perder coherencia de tono.
+            temperature: 0.75
+        )
+
+        // Race: chat vs 5s sleep. `withThrowingTaskGroup` cancela children al
+        // salir — si gana el sleep, el chat subtask se cancela (la request
+        // network puede no honrar cancelación, pero el await nunca resume).
+        let text: String = try await withThrowingTaskGroup(of: String.self) { group in
+            group.addTask {
+                let result = try await client.chats(query: query)
+                guard let content = result.choices.first?.message.content else {
+                    throw InsightsLLMError.parseFailed
+                }
+                return content
+            }
+            group.addTask {
+                try await Task.sleep(for: .seconds(5))
+                throw InsightsLLMError.networkError(HeroTimeoutError())
+            }
+            defer { group.cancelAll() }
+            guard let first = try await group.next() else {
+                throw InsightsLLMError.parseFailed
+            }
+            return first
+        }
+
+        // Parse `{"text": "..."}` + validar longitud mínima.
+        guard let data = text.data(using: .utf8),
+              let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let raw = dict["text"] as? String else {
+            throw InsightsLLMError.parseFailed
+        }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.count >= 15 else {
+            throw InsightsLLMError.parseFailed
+        }
+
+        // Escribe al cache solo tras validación — evita servir placeholders
+        // durante 24h si el LLM devolvió algo degenerado.
+        let entry = HeroMessageCacheEntry(
+            day: HeroMessageCache.dayString(from: .now),
+            hash: HeroMessageCache.contextHash(ctx),
+            text: trimmed
+        )
+        HeroMessageCache.write(entry)
+
+        return trimmed
+    }
+
+    private static func heroSystemPrompt(ctx: HeroContext) -> String {
+        // El saludo del Hero ya muestra el nombre del usuario en otra fila
+        // ("Hola, Jür"). Repetirlo en el mensaje motivacional sobra.
+        let nameClause = "NO uses el nombre del usuario en el mensaje. El saludo del Hero ya lo muestra arriba — repetirlo se siente forzado."
+
+        // Pista contextual sutil sin compartir números — el LLM solo recibe
+        // dirección de tendencia (mejoró/empeoró/estable) para inspirar tono.
+        var contextHints: [String] = []
+        if let direction = ctx.spendingTrend {
+            switch direction {
+            case .down: contextHints.append("Gasta menos que el mes pasado (tendencia positiva).")
+            case .up:   contextHints.append("Gasta más que el mes pasado (sin regañar, solo observa).")
+            case .flat: contextHints.append("Ritmo similar al mes pasado.")
+            }
+        }
+        if let topCat = ctx.topCategory,
+           let delta = ctx.topCategoryDeltaPercent, abs(delta) > 15 {
+            let direction = delta > 0 ? "subió" : "bajó"
+            contextHints.append("La categoría \(topCat) \(direction) bastante vs mes pasado (sin citar número).")
+        }
+        let contextBlock = contextHints.isEmpty
+            ? "Sin pistas extras — basa el mensaje solo en el estado del mes."
+            : "Pistas (NO menciones nada de esto literalmente, solo úsalo para afinar el tono):\n" + contextHints.map { "  • \($0)" }.joined(separator: "\n")
+
+        let stateMood: String
+        switch ctx.state {
+        case .monthStart: stateMood = "El mes arranca — tono de bienvenida, ilusión por lo que viene."
+        case .onTrack:    stateMood = "Va bien vs el presupuesto — tono cálido, celebratorio sin exagerar."
+        case .neutral:    stateMood = "Va dentro de lo esperado — tono tranquilo, afirmativo."
+        case .tight:      stateMood = "Queda poco margen — tono alentador, nunca regañón."
+        case .overBudget: stateMood = "Pasó el presupuesto — tono motivacional, mañana es otro día."
+        }
+
+        return """
+        Eres Yala. Escribes UNA frase motivacional cortísima para el "Hero del mes" del panel del usuario. Tono cercano y humano, como una compañera financiera observadora — natural, NO un reporte.
+
+        IDIOMA: \(ctx.locale). Nunca mezcles idiomas.
+
+        REGLA CRÍTICA — SIN MONTOS NI PORCENTAJES:
+        - NUNCA escribas montos, porcentajes ni cifras financieras (otra parte del Hero ya las muestra).
+        - SÍ puedes mencionar `daysRemaining` (días que quedan en el mes) en formato natural — "los últimos X días", "X días por delante", "X días para cerrar" — solo si aporta contexto temporal al mensaje motivacional. Si no aporta, no lo metas.
+        - NO uses negritas markdown. NO uses **bold**.
+
+        REGLA CRÍTICA — GÉNERO DEL USUARIO:
+        - NUNCA asumas el género del usuario. NUNCA uses adjetivos o participios con género (NO "tranquila/tranquilo", NO "atento/atenta", NO "listo/lista", etc.).
+        - Usa SIEMPRE formas neutras: "todo bien", "bien ahí", "qué buen ritmo", "se nota el esfuerzo", "buen movimiento", "tu mes en marcha", "sigue así".
+        - Ante la duda, omite el adjetivo.
+
+        ESTADO DEL MES: \(stateMood)
+        Días que quedan en el mes: \(ctx.daysRemaining). (Disponible para mencionar si aporta — opcional.)
+
+        \(contextBlock)
+
+        FORMATO:
+        - 1 sola frase motivacional, cálida y natural. Máximo 2 si la primera necesita un complemento corto.
+        - Entre 40 y 90 caracteres en total. Si es más larga, acorta.
+        - NO hagas preguntas. NO uses emojis.
+
+        TONO (Brand Voice Yala):
+        - Tutea. Cercano, humano, sin jerga financiera.
+        - Personal, no plantilla — que se sienta dicho a esta persona en este momento.
+        - Constructiva, nunca regaña ni juzga.
+        - Nunca: "Debes", "Tienes que", "Obviamente", "Es fácil", "tú puedes" cliché.
+
+        \(nameClause)
+
+        EJEMPLOS de tono y longitud correctos (sin montos ni porcentajes; los días son opcionales y solo cuando aportan; siempre forma neutra de género):
+        - "Vas con buen ritmo este mes, sigue así."
+        - "Quedan 6 días para cerrar el mes, qué buen movimiento."
+        - "Tu mes en marcha — se nota el esfuerzo."
+        - "8 días por delante y todo en orden."
+        - "Mes ajustado pero manejable, paso a paso."
+        - "Mañana arrancamos fresco, todo en orden."
+        - "Empieza tranquilo el mes, sin prisa."
+
+        RESPUESTA (JSON estricto): {"text": "..."}
+        """
+    }
+
+    private static func heroUserPayload(ctx: HeroContext) -> String {
+        var payload: [String: Any] = [
+            "state": ctx.state.rawValue,
+            "month": ctx.monthName,
+            "daysRemaining": ctx.daysRemaining,
+            "daysElapsed": ctx.daysElapsed,
+            "monthProgress": Int((ctx.monthProgress * 100).rounded()),
+            "locale": ctx.locale,
+            "income": ctx.formattedIncome,
+            "expense": ctx.formattedExpense,
+            "available": ctx.formattedAvailable,
+        ]
+        if let score = ctx.financialScore { payload["financialScore"] = score }
+        if let percent = ctx.percentBudgetUsed { payload["percentBudgetUsed"] = Int((percent * 100).rounded()) }
+        if let trend = ctx.spendingTrend { payload["spendingTrend"] = trend.rawValue }
+        if let name = ctx.userName, !name.isEmpty { payload["userName"] = name }
+        if let prev = ctx.formattedPreviousExpense { payload["previousExpense"] = prev }
+        if let delta = ctx.formattedExpenseDelta { payload["expenseDelta"] = delta }
+
+        // PP2-07: enriquecimiento contextual (best-effort, reusa computes).
+        if let topCat = ctx.topCategory { payload["topCategory"] = topCat }
+        if let topCatAmt = ctx.formattedTopCategoryAmount { payload["topCategoryAmount"] = topCatAmt }
+        if let topCatDelta = ctx.topCategoryDeltaPercent {
+            payload["topCategoryDeltaPercent"] = Int(topCatDelta.rounded())
+        }
+        if let topDay = ctx.topWeekday { payload["topWeekday"] = topDay }
+        if let topDayAmt = ctx.formattedTopWeekdayAmount { payload["topWeekdayAmount"] = topDayAmt }
+
+        let data = (try? JSONSerialization.data(withJSONObject: payload)) ?? Data()
+        return String(data: data, encoding: .utf8) ?? "{}"
+    }
+
 }
+
+private struct HeroTimeoutError: Error {}

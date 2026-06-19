@@ -78,4 +78,4 @@ Results are saved to `/tmp/qa/{timestamp}/`:
 
 ## Coverage
 
-See `manifest.json` for detailed coverage. Current: 104 automated scripts covering core flows.
+**SSOT de cobertura: `coverage-index.json`** (validar: `bash qa/validate-coverage.sh`). `manifest.json` quedó deprecado (solo cubría secciones 1-15). 39 fixtures con JSON inválido movidas a `_deprecated/` (ver su README). Los scripts agent-device restantes (70) cubren flujos visuales/exploratorios; lo determinístico migra a XCUITest (`YalaUITests`).

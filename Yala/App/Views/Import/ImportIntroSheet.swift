@@ -145,51 +145,34 @@ struct ImportIntroSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                VStack(spacing: DS.Spacing.lg) {
-                    ScrollView {
-                        VStack(spacing: DS.Spacing.xxl) {
-                            introSection
-                            templateSection
-                            toggleSection
-                        }
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.top, DS.Spacing.lg)
-                        .padding(.bottom, DS.Spacing.lg)
-                    }
-
-                    // Bottom Action Button
-                    VStack {
-                        Button {
-                            startImportFlow()
-                        } label: {
-                            HStack(spacing: DS.Spacing.sm) {
-                                if isImporting {
-                                    ProgressView()
-                                        .progressViewStyle(.circular)
-                                        .tint(.white)
-                                    Text(L10n.Import.importing)
-                                } else {
-                                    Image(systemName: "square.and.arrow.down")
-                                    Text(L10n.Import.selectFile)
-                                }
-                            }
-                            .font(Typography.bodyLarge)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 52)
-                        }
-                        .buttonStyle(.borderedProminent)
-
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                        .disabled(isImporting)
-                        .accessibilityHint(isImporting ? "Importación en proceso" : "")
+            VStack(spacing: DS.Spacing.lg) {
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xxl) {
+                        introSection
+                        templateSection
+                        toggleSection
                     }
                     .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.lg)
                 }
+
+                // Bottom Action Button
+                VStack {
+                    YalaPrimaryButton(
+                        L10n.Import.selectFile,
+                        icon: "square.and.arrow.down",
+                        isDisabled: isImporting,
+                        isLoading: isImporting,
+                        disabledHint: isImporting ? L10n.Accessibility.importingHint : nil
+                    ) {
+                        startImportFlow()
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.lg)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Import.title)
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
@@ -306,12 +289,7 @@ struct ImportIntroSheet: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.FormRow.paddingV)
-                .background(.thCard)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                .overlay(
-                    RoundedRectangle(cornerRadius: DS.Radius.lg)
-                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                )
+                .solidCard(radius: DS.Radius.lg)
             }
 
             Text(L10n.Import.templateDescription)
@@ -338,12 +316,7 @@ struct ImportIntroSheet: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-            )
+            .solidCard(radius: DS.Radius.lg)
 
             Text(L10n.Import.categoriesDescription)
             .font(Typography.label)

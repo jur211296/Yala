@@ -66,27 +66,40 @@ struct DateContextProvider {
         """
     }
 
+    /// Mapping weekday number (1=Sun..7=Sat) → localized day names.
+    private static let weekdayNames: [Int: (es: String, en: String)] = [
+        1: ("domingo", "Sunday"),
+        2: ("lunes", "Monday"),
+        3: ("martes", "Tuesday"),
+        4: ("miércoles", "Wednesday"),
+        5: ("jueves", "Thursday"),
+        6: ("viernes", "Friday"),
+        7: ("sábado", "Saturday")
+    ]
+
+    private static let defaultFirstWeekday = 2 // Monday (Calendar.weekday convention: 1=Sun..7=Sat)
+
     /// Returns a formatted lookup of weekday names → most recent past date.
+    /// Order respects the user's `firstWeekday` preference (default Monday).
     private static func buildWeekdayLookup(
         from now: Date,
         calendar: Calendar,
         formatter: DateFormatter
     ) -> String {
-        let spanishDays = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
-        let englishDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-        // ISO weekday: Monday=2, Sunday=1 in Calendar, but we use ISO mapping
-        let isoWeekdays = [2, 3, 4, 5, 6, 7, 1] // Mon-Sun in Calendar.weekday
+        let stored = UserDefaults.standard.integer(forKey: AppPreferences.Keys.firstWeekday)
+        let firstWeekday = (1...7).contains(stored) ? stored : defaultFirstWeekday
 
+        let orderedWeekdays = Calendar.orderedWeekdays(firstWeekday: firstWeekday)
         let todayWeekday = calendar.component(.weekday, from: now) // 1=Sun, 2=Mon, ...
 
         var lines: [String] = []
-        for i in 0..<7 {
-            let targetWeekday = isoWeekdays[i]
+        for targetWeekday in orderedWeekdays {
             var daysBack = (todayWeekday - targetWeekday + 7) % 7
             if daysBack == 0 { daysBack = 7 } // "el lunes" = last Monday, not today
-            guard let date = calendar.date(byAdding: .day, value: -daysBack, to: now) else { continue }
+            guard let date = calendar.date(byAdding: .day, value: -daysBack, to: now),
+                  let names = weekdayNames[targetWeekday] else { continue }
             let dateStr = formatter.string(from: date)
-            lines.append("- \"el \(spanishDays[i])\" / \"\(englishDays[i])\" → \(dateStr)")
+            lines.append("- \"el \(names.es)\" / \"\(names.en)\" → \(dateStr)")
         }
         return lines.joined(separator: "\n")
     }

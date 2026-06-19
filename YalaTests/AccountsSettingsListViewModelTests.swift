@@ -45,22 +45,22 @@ struct AccountsSettingsListViewModelTests {
         #expect(vm.isEditMode == false)
     }
 
-    // MARK: - Sort Order Raw Parsing
+    // MARK: - Sort Order
 
-    @MainActor @Test func sortOrderNamesRaw_emptySplitsToEmpty() {
+    @MainActor @Test func sortOrderNames_emptyResultsInEmptyOrdered() {
         let vm = AccountsSettingsListViewModel()
-        vm.accountsSortOrderNamesRaw = ""
+        vm.accountsSortOrderNames = []
         // orderedActiveAccounts with empty accounts should be empty
         #expect(vm.orderedActiveAccounts.isEmpty)
     }
 
-    @MainActor @Test func sortOrderNamesRaw_invalidatesOnChange() {
+    @MainActor @Test func sortOrderNames_invalidatesCacheOnChange() {
         let vm = AccountsSettingsListViewModel()
-        vm.accountsSortOrderNamesRaw = "A|B|C"
+        vm.accountsSortOrderNames = ["A", "B", "C"]
         // Access to build cache
         _ = vm.orderedActiveAccounts
         // Change invalidates
-        vm.accountsSortOrderNamesRaw = "C|B|A"
+        vm.accountsSortOrderNames = ["C", "B", "A"]
         // No crash, still works
         #expect(vm.orderedActiveAccounts.isEmpty) // Empty because accounts is empty
     }
@@ -104,8 +104,8 @@ Tests generated:
 4. initialState_isPresentingCreateAccountFalse - Create sheet not shown
 5. initialState_accountToEditNil - No account selected for edit
 6. initialState_isEditModeFalse - Edit mode off by default
-7. sortOrderNamesRaw_emptySplitsToEmpty - Empty sort order works
-8. sortOrderNamesRaw_invalidatesOnChange - Cache invalidation on change
+7. sortOrderNames_emptyResultsInEmptyOrdered - Empty sort order works
+8. sortOrderNames_invalidatesCacheOnChange - Cache invalidation on change
 9. uiState_toggleEditMode - Edit mode toggle
 10. uiState_setPresentingCreateAccount - Create account sheet state
 11. uiState_setAccountToEdit - Account edit selection

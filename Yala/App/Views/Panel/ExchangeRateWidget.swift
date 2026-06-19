@@ -14,20 +14,22 @@ struct ExchangeRateWidget: View {
     let preferredCurrency: String
     @Binding var selectedCurrencies: [CurrencyCode]
     let grouping: TrendGrouping
-    let onShowDetail: (() -> Void)?
+
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
 
     init(
         data: ExchangeRateWidgetData?,
         preferredCurrency: String,
         selectedCurrencies: Binding<[CurrencyCode]>,
         grouping: TrendGrouping,
-        onShowDetail: (() -> Void)? = nil
+        headerInfoButton: AnyView? = nil
     ) {
         self.data = data
         self.preferredCurrency = preferredCurrency
         self._selectedCurrencies = selectedCurrencies
         self.grouping = grouping
-        self.onShowDetail = onShowDetail
+        self.headerInfoButton = headerInfoButton
     }
 
     @Environment(\.colorScheme) var colorScheme
@@ -36,8 +38,8 @@ struct ExchangeRateWidget: View {
     @State private var selectedDate: Date?
     @State private var filteredCurrency: CurrencyCode?
 
-    // Colors for currency lines (indexed by position)
-    private static let currencyColors: [Color] = [.electricIndigo, .hotPink, .teal, .orange]
+    // Colors for currency lines (max 2 secondary currencies — see PanelViewModel.selectedComparisonCurrencies).
+    private static let currencyColors: [Color] = [.electricIndigo, .hotPink]
 
     private func colorForIndex(_ index: Int) -> Color {
         Self.currencyColors[index % Self.currencyColors.count]
@@ -53,14 +55,7 @@ struct ExchangeRateWidget: View {
             // Content
             contentView
         }
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .fill(.thCard)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
-        )
+        .solidCard(radius: DS.Panel.widgetRadius)
     }
 
     // MARK: - Header
@@ -68,10 +63,18 @@ struct ExchangeRateWidget: View {
     private var headerView: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.ExchangeRate.title)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-                    .padding(.bottom, DS.Spacing.xxs)
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                    Text(L10n.ExchangeRate.title)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+
+                    WidgetHeaderInfoSlot(
+                        injected: headerInfoButton,
+                        legacyTitle: L10n.WidgetType.exchangeRate,
+                        legacyMessage: L10n.Widget.Hint.exchangeRate
+                    )
+                }
+                .padding(.bottom, DS.Spacing.xxs)
 
                 // Subtitle: "Hoy, HH:mm" or "d MMM, HH:mm"
                 if let data = data, !data.hasError {
@@ -85,26 +88,8 @@ struct ExchangeRateWidget: View {
                 }
             }
 
-            InfoHintButton(
-                title: L10n.WidgetType.exchangeRate,
-                message: L10n.Widget.Hint.exchangeRate
-            )
-
             Spacer()
 
-            // Optional Detail Chevron
-            if onShowDetail != nil {
-                Button {
-                    onShowDetail?()
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, DS.Spacing.sm)
-                }
-                .accessibilityLabel(L10n.Accessibility.viewDetails)
-                .buttonStyle(.plain)
-            }
         }
     }
 
@@ -570,4 +555,3 @@ struct ExchangeRateWidget: View {
         return SmartAxisHelper.formatAxisLabel(for: date, startDate: firstDate, endDate: lastDate)
     }
 }
-

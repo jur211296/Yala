@@ -4,13 +4,18 @@ import SwiftUI
 struct AccountsCarouselView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.horizontalSizeClass) private var sizeClass
-    @Bindable var viewModel: PanelViewModel
+    let viewModel: PanelViewModel
     let orderedAccounts: [Account]
     let accountBalances: [PersistentIdentifier: Double]
     let accountPeriodExpenses: [PersistentIdentifier: Double]
     var isExpensesOnlyMode: Bool = false
     let onAddAccount: () -> Void
     let onEditAccount: (Account) -> Void
+
+    /// Local UI state — previously lived en `PanelViewModel.leadingColumnIndex`, pero mantenerlo
+    /// en el VM compartido causaba re-render cross-cutting del Panel en cada snap horizontal.
+    /// Al moverlo a @State local, sólo este carrusel re-renderea mientras el usuario scrollea.
+    @State private var leadingColumnIndex: Int? = 0
 
     var body: some View {
         let allCards = orderedAccounts
@@ -22,29 +27,27 @@ struct AccountsCarouselView: View {
 
         let currentPage: Int = {
             guard pageCount > 1 else { return 0 }
-            let rawIndex = viewModel.leadingColumnIndex ?? 0
+            let rawIndex = leadingColumnIndex ?? 0
             return max(0, min(pageCount - 1, rawIndex))
         }()
 
         VStack(spacing: DS.Spacing.sm) {
-            GeometryReader { geo in
-                let totalWidth = geo.size.width
-                let spacing: CGFloat = DS.Spacing.md
-                let cardWidth = (totalWidth - spacing * CGFloat(cardsVisible - 1)) / CGFloat(cardsVisible)
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: spacing) {
-                        ForEach(0..<totalCards, id: \.self) { index in
-                            cardView(at: index, accounts: allCards)
-                                .frame(width: cardWidth)
-                        }
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Spacing.md) {
+                    ForEach(0..<totalCards, id: \.self) { index in
+                        cardView(at: index, accounts: allCards)
+                            .containerRelativeFrame(
+                                .horizontal,
+                                count: cardsVisible,
+                                spacing: DS.Spacing.md
+                            )
                     }
-                    .scrollTargetLayout()
                 }
-                .scrollTargetBehavior(.viewAligned)
-                .scrollPosition(id: $viewModel.leadingColumnIndex)
-                .frame(width: totalWidth)
+                .scrollTargetLayout()
             }
+            .scrollTargetBehavior(.viewAligned(limitBehavior: .alwaysByFew))
+            .scrollPosition(id: $leadingColumnIndex)
+            .contentMargins(.horizontal, 0, for: .scrollContent)
             .frame(height: 96)
 
             // Page indicator

@@ -204,6 +204,9 @@ enum DS {
         static let infoForeground = Color.blue
         static let undoForeground = Color.teal
         static let imageAccent = Color.teal
+        // Group expense split-method chip — teal con mejor contraste que infoBackground (azul) en dark mode.
+        static let splitMethodBackground = Color.teal.opacity(0.18)
+        static let splitMethodForeground = Color.teal
     }
 
     // MARK: - Shadow
@@ -240,6 +243,49 @@ enum DS {
         static let subscription: [Color] = [.orange, .hotPink]
         static let success: [Color] = [.green, .green.opacity(0.85)]
         static let warning: [Color] = [.orange, .red]
+
+        // MARK: Hero gradients (Panel 2.0 — Salud Financiera, Hero IA)
+
+        /// Calm hero gradient — used when the Financial Score ≥ 80.
+        /// Reused by P20-04 (Hero base) and P20-05 (Hero IA).
+        static let heroCalm: [Color] = [.indigo, .purple]
+
+        /// Neutral hero gradient — used when the Financial Score is 60–79.
+        static let heroNeutral: [Color] = [.purple, .hotPink]
+
+        /// Intense hero gradient — used when the Financial Score < 60.
+        /// Paired to contrast clearly against `heroNeutral` (pink → deep indigo)
+        /// without relying on red/orange (reserved for `warning`).
+        static let heroIntense: [Color] = [.hotPink, .indigo]
+
+        /// Indigo→negro vertical — fondo unificado del flow Welcome (Hero + Chooser).
+        static let heroIndigoBlack: [Color] = [.electricIndigo, .black]
+
+        /// Índigo→rosa para barras de intensidad de gasto (calendario de Registros):
+        /// índigo = gasto bajo, rosa = día de mayor gasto del periodo.
+        static let spendingHeat: [Color] = [.electricIndigo, .hotPink]
+
+        /// Theme-aware accent→negro vertical — fondo principal de vistas en los 4
+        /// themes translucent (Liquid Glass + Translucent Indigo/Rosa/Teal).
+        ///
+        /// Estética sobria tipo "estudio fotográfico": top oscurecido (accent
+        /// mezclado al 40% con negro) → bottom negro puro. El delta tonal
+        /// amplio da profundidad sin saturar el lienzo, permitiendo que la
+        /// marca viva en los acentos puntuales de widgets/CTAs (no en el fondo).
+        static func themeHero(for theme: YalaTheme) -> [Color] {
+            [theme.accent.mix(with: .black, by: 0.4), .black]
+        }
+
+        /// Picks the hero gradient for a given 0–100 financial score. `nil`
+        /// uses `heroCalm` as a neutral fallback for placeholder/empty states.
+        /// Single source of truth for card + detail sheet so thresholds stay
+        /// in sync.
+        static func heroFor(score: Int?) -> [Color] {
+            guard let score else { return heroCalm }
+            if score >= 80 { return heroCalm }
+            if score >= 60 { return heroNeutral }
+            return heroIntense
+        }
     }
 
     // MARK: - Chip Dimensions
@@ -289,6 +335,30 @@ enum DS {
 
         /// White overlay opacity for borders
         static let borderOpacity: Double = 0.1
+    }
+
+    // MARK: - Panel
+
+    /// Panel-specific visual tokens. These keep the home screen calmer than
+    /// larger detail/report surfaces without changing the global card system.
+    /// El padding "regular" reusa `DS.Card.paddingCompact` vía el helper
+    /// `View.panelCard(small:)`.
+    enum Panel {
+        static let smallWidgetPadding: CGFloat = 14
+        static let widgetRadius: CGFloat = 20
+        static let smallWidgetRadius: CGFloat = 18
+        /// Botón circular glass al lado de los títulos de sección
+        /// (prefs, toggle de panorama). Tamaño alineado con título de
+        /// sección reducido (subheadlineEmphasized).
+        static let headerAccessorySize: CGFloat = 26
+        /// Chevron `›` inline pegado al título de sección — más pequeño
+        /// que `headerAccessorySize` para que se sienta como acento del
+        /// título, no como acción protagónica.
+        static let headerChevronSize: CGFloat = 22
+        /// Botón circular glass al lado de los títulos de widget
+        /// (info/help). Más pequeño que `headerAccessorySize` para no
+        /// competir con los títulos de sección.
+        static let widgetAccessorySize: CGFloat = 22
     }
 
     // MARK: - Button Dimensions
@@ -351,12 +421,20 @@ enum DS {
             isWideScreen(sizeClass) ? DS.Spacing.xxxl : DS.Spacing.lg
         }
 
+        /// True on iPad and Mac Catalyst, where medium/fixed-height sheets are
+        /// forced to `.large` (too small otherwise for pickers / complex content).
+        /// Used both to adapt detents and to pick the sheet background variant:
+        /// a "partial" sheet is effectively `.large` here, so it must be `.subtle`,
+        /// not `.transparent`.
+        static var usesLargeSheets: Bool {
+            UIDevice.current.userInterfaceIdiom == .pad
+                || ProcessInfo.processInfo.isiOSAppOnMac
+        }
+
         /// Forces .large detents on iPad and Mac Catalyst where
         /// medium/fixed-height sheets are too small for pickers and complex content.
         static func sheetDetents(_ detents: Set<PresentationDetent>) -> Set<PresentationDetent> {
-            let needsLargeSheet = UIDevice.current.userInterfaceIdiom == .pad
-                || ProcessInfo.processInfo.isiOSAppOnMac
-            return needsLargeSheet ? [.large] : detents
+            usesLargeSheets ? [.large] : detents
         }
     }
 
@@ -410,11 +488,13 @@ enum DS {
     enum Typography {
         // MARK: Headings
         /// Screen titles, large headers
-        static let largeTitle = Font.largeTitle.weight(.bold)
+        static let largeTitle = Font.largeTitle.weight(.semibold)
         /// Section headers
         static let title = Font.title2.weight(.semibold)
         /// Subsection headers
         static let title2 = Font.title2.weight(.semibold)
+        /// Tertiary headers — pasos de wizard, empty states, badges de fecha
+        static let title3 = Font.title3.weight(.semibold)
         /// Card titles, subsections
         static let headline = Font.headline.weight(.semibold)
 
@@ -427,6 +507,8 @@ enum DS {
         static let body = Font.body
         /// Secondary body text
         static let subheadline = Font.subheadline
+        /// Widget titles, secondary emphasis
+        static let subheadlineEmphasized = Font.subheadline.weight(.semibold)
 
         // MARK: Labels
         /// UI labels, medium weight
@@ -471,6 +553,26 @@ enum DS {
         static let amount = Font.system(.body, design: .rounded).weight(.semibold)
         /// Small amounts
         static let amountSmall = Font.system(.subheadline, design: .rounded).weight(.medium)
+
+        // MARK: Hero Amount (AmountText)
+        // A11Y-DT: hero protagonista — tamaño fijo intencional, escala vía
+        // minimumScaleFactor(0.7) en AmountText (no Dynamic Type).
+        /// Hero amount integer — monto protagonista (Panel hero, Stats heroes, success screens).
+        static let heroAmount = Font.system(size: 44, weight: .semibold)
+        /// Hero amount secondary — symbol/decimal del hero (20pt regular).
+        static let heroAmountSecondary = Font.system(size: 20, weight: .regular)
+    }
+
+    // MARK: - Sizing
+
+    /// Dimensiones reusables (heights, widths) que no encajan en `Spacing`/`Radius`.
+    enum Sizing {
+        /// Altura estándar de dividers verticales en rows con info numérica
+        /// (NetFlowSummaryView, PivotRowView).
+        static let dividerHeightStandard: CGFloat = 28
+
+        /// Altura de progress bars compactos (CashFlowDetailLineRow, badges).
+        static let progressBarHeight: CGFloat = 4
     }
 }
 
@@ -524,5 +626,4 @@ func dsWithAnimation(_ reduceMotion: Bool, _ animation: Animation? = .easeInOut(
 
 /// Allows using `Typography.title` instead of `DS.Typography.title`
 typealias Typography = DS.Typography
-
 

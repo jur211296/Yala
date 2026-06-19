@@ -31,8 +31,9 @@ final class BudgetEditorViewModel {
 
     // MARK: - Computed Properties
 
+    /// A0-Bridge: excluye cuentas sistema de pickers manuales.
     var activeAccounts: [Account] {
-        allAccounts.filter { !$0.isArchived }
+        allAccounts.filter { !$0.isArchived && !$0.isSystemAccount }
     }
 
     var activeTags: [Tag] {
@@ -196,7 +197,8 @@ final class BudgetEditorViewModel {
         selectedTags: Set<PersistentIdentifier>,
         selectedNeeds: Set<SubcategoryNeed>,
         alertEnabled: Bool,
-        alertThresholds: Set<Int>
+        alertThresholds: Set<Int>,
+        includeSharedExpenses: Bool
     ) -> PersistentIdentifier? {
         guard let context = modelContext else { return nil }
 
@@ -219,14 +221,18 @@ final class BudgetEditorViewModel {
             existingBudget.isActive = isActive
             existingBudget.startDate = periodType == .unique ? startDate : nil
             existingBudget.endDate = periodType == .unique ? endDate : nil
-            existingBudget.accounts = accountsArray
-            existingBudget.subcategories = subcategoriesArray
-            existingBudget.tags = tagsArray
+            // Dual-write: setFilters keeps M2M + CSV mirror in sync.
+            existingBudget.setFilters(
+                accounts: accountsArray,
+                subcategories: subcategoriesArray,
+                tags: tagsArray
+            )
             existingBudget.natures = naturesString
             existingBudget.alertEnabled = alertEnabled
             existingBudget.alertThresholds = thresholdsString
+            existingBudget.includeSharedExpenses = includeSharedExpenses
         } else {
-            // Create new budget
+            // Create new budget (init populates M2M; setFilters then mirrors to CSV).
             let newBudget = Budget(
                 currencyCode: currencyCode,
                 limitAmount: limitAmount,
@@ -240,7 +246,13 @@ final class BudgetEditorViewModel {
                 natures: naturesString,
                 isActive: isActive,
                 alertEnabled: alertEnabled,
-                alertThresholds: thresholdsString
+                alertThresholds: thresholdsString,
+                includeSharedExpenses: includeSharedExpenses
+            )
+            newBudget.setFilters(
+                accounts: accountsArray,
+                subcategories: subcategoriesArray,
+                tags: tagsArray
             )
             context.insert(newBudget)
             newBudgetUUID = newBudget.id
@@ -268,6 +280,10 @@ final class BudgetEditorViewModel {
                 "isNew": String(existing == nil),
             ])
 
+            if existing == nil, (try? context.fetchCount(FetchDescriptor<Budget>())) == 1 {
+                TelemetryService.track(.firstBudget, parameters: ["periodo": periodType.rawValue])
+            }
+
             return savedBudgetID ?? existing?.persistentModelID
         } catch {
             #if DEBUG
@@ -288,6 +304,7 @@ final class BudgetEditorViewModel {
             try service.deleteBudget(budget)
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
+            TelemetryService.track(.budgetDeleted)
             return true
         } catch {
             #if DEBUG

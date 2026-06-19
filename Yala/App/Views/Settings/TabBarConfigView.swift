@@ -12,7 +12,7 @@ struct TabBarConfigView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
-    @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var localConfig: TabBarConfiguration = .default
 
@@ -26,11 +26,8 @@ struct TabBarConfigView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
                         infoHeader
                         activeTabsSection
                         if !localConfig.inactiveTabs.isEmpty {
@@ -39,26 +36,23 @@ struct TabBarConfigView: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
-                }
             }
             .navigationTitle(L10n.Settings.tabBarConfig)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.Action.cancel) {
+                    YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Action.save) {
-                        saveAndDismiss()
-                    }
-                    .fontWeight(.semibold)
+                    YalaSaveButton(action: { saveAndDismiss() }, accessibilityID: "tabconfig_save")
                 }
             }
         }
         .onAppear {
-            localConfig = TabBarConfiguration.fromJSON(tabConfigJSON)
+            localConfig = TabBarConfiguration.fromJSON(appPreferences.tabConfigJSON)
         }
     }
 
@@ -103,7 +97,7 @@ struct TabBarConfigView: View {
                 ForEach(Array(localConfig.activeTabs.enumerated()), id: \.element) { index, tab in
                     activeTabRow(tab, position: index + 1)
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowBackground(theme.card)
+                        .listRowBackground(Color.clear)
                         .listRowSeparator(index == localConfig.activeTabs.count - 1 ? .hidden : .visible)
                 }
                 .onMove(perform: moveTab)
@@ -111,17 +105,8 @@ struct TabBarConfigView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(localConfig.activeTabs.count) * 52)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
-            .dsSubtleShadow()
+            .frame(height: CGFloat(localConfig.activeTabs.count) * DS.FormRow.minHeight)
+            .solidCard()
             .environment(\.editMode, .constant(.active))
 
             // Validation message
@@ -167,7 +152,8 @@ struct TabBarConfigView: View {
                         .foregroundStyle(DS.Semantic.errorForeground)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(String(localized: "Quitar \(tab.displayName)"))
+                .accessibilityLabel(L10n.Accessibility.removeTab(tab.displayName))
+                .accessibilityIdentifier("tabconfig_remove_\(tab.id)")
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
@@ -194,16 +180,7 @@ struct TabBarConfigView: View {
                     }
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
-            .dsSubtleShadow()
+            .solidCard()
 
             // Max warning
             if !canActivate {
@@ -285,11 +262,12 @@ struct TabBarConfigView: View {
     }
 
     private func saveAndDismiss() {
-        tabConfigJSON = localConfig.toJSON()
+        appPreferences.tabConfigJSON = localConfig.toJSON()
         dismiss()
     }
 }
 
 #Preview {
     TabBarConfigView()
+        .previewAppPreferences()
 }

@@ -67,6 +67,7 @@ struct NotificationPrimerSheet: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.xl)
         }
+        .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
         .presentationDetents(DS.Adaptive.sheetDetents([.medium]))
     }
 

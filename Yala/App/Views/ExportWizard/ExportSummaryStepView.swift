@@ -43,23 +43,20 @@ struct ExportSummaryStepView: View {
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
+                headerSection
 
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    headerSection
+                filtersSummarySection
 
-                    filtersSummarySection
+                columnsSummarySection
 
-                    columnsSummarySection
-
-                    exportButtonSection
-                }
-                .padding(.vertical, DS.Spacing.xxl)
-                .padding(.horizontal, DS.Spacing.lg)
+                exportButtonSection
             }
+            .padding(.vertical, DS.Spacing.xxl)
+            .padding(.horizontal, DS.Spacing.lg)
         }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Export.summaryAndExport)
         .navigationBarTitleDisplayMode(.inline)
         .alert(L10n.Export.exportError, isPresented: $showErrorAlert, presenting: exportError) { _ in
@@ -97,7 +94,7 @@ struct ExportSummaryStepView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Export.confirmExport)
-                .font(.title3.weight(.semibold))
+                .font(DS.Typography.title3)
                 .foregroundStyle(.primary)
 
             Text(L10n.Export.summaryDescription)
@@ -190,7 +187,7 @@ struct ExportSummaryStepView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         }
         .disabled(isExporting)
-        .accessibilityHint(isExporting ? "Exportación en proceso" : "")
+        .accessibilityHint(isExporting ? L10n.Accessibility.exportingHint : "")
         .padding(.top, DS.Spacing.lg)
     }
 

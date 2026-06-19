@@ -1,11 +1,15 @@
 # Xcode
 DerivedData/
+.deriveddata/
 build/
+build_output_*.txt
 *.xcworkspace/xcuserdata/
 *.xcodeproj/project.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
 # SwiftPM
 .swiftpm/
+.spm/
+.spm-cache/
 # User-specific
 .DS_Store
 # Fastlane (si lo usas luego)
@@ -21,6 +25,12 @@ AuthKey_*.p8
 AuthKey_*.p8.txt
 .claude/sessions/*.log
 .vercel
+# App Store Connect API keys (never commit private keys)
+AuthKey_*.p8
+AuthKey_*.p8.txt
+*.p8
+# Private asc/ directory (App Store Connect local state)
+.asc/
 
 # ASC build artifacts
 .asc/artifacts/
@@ -34,3 +44,8 @@ qa/results/
 
 # Planning docs live in Obsidian vault (iCloud)
 .planning/
+
+# Agent skills (third-party, reinstall via: npx skills add)
+.agents/
+.claude/skills/ui-ux-pro-max/scripts/__pycache__/
+.claude/sessions/tests-passed

@@ -68,7 +68,7 @@ final class FavoriteEditorViewModel {
             existing.note = note.isEmpty ? nil : note
             existing.account = account
             existing.subcategory = subcategory
-            existing.tags = tags
+            existing.setTags(from: tags)
             existing.needOverride = needRaw
             existing.currencyCode = account?.currencyCode
         } else {

@@ -183,22 +183,13 @@ struct BudgetPeriodSelectorSheet: View {
             }
 
             // Confirm button
-            Button {
+            YalaPrimaryButton(NSLocalizedString("budgets.period.confirm", comment: "")) {
                 confirmSelection()
-            } label: {
-                Text(NSLocalizedString("budgets.period.confirm", comment: ""))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(theme.accent)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
-            .buttonStyle(.plain)
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         }
-        .background(theme.background)
+        .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
         .onAppear {
             generatePeriods()
         }
@@ -294,7 +285,7 @@ struct BudgetPeriodSelectorSheet: View {
     }()
 
     private func generatePeriods() {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         var generatedPeriods: [PeriodOption] = []
 
         // Calculate date range based on transactions

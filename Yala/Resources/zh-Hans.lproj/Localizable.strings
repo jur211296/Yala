@@ -1,0 +1,4487 @@
+/* 
+  Localizable.strings (English)
+  Yala
+  
+  English translations for localization support.
+*/
+
+// MARK: - Date Formats
+
+"date.weekOf %@" = "%@ 当周";
+"date.today" = "今天";
+"date.yesterday" = "昨天";
+
+// MARK: - Panel
+
+"panel.accounts" = "账户";
+"panel.widgets" = "小组件";
+"panel.section.health" = "财务健康";
+"panel.section.tendencias" = "趋势";
+"panel.section.distribucion" = "分布";
+"panel.section.planificacion" = "计划";
+"panel.section.latestRecords" = "最新记录";
+"panel.section.tools" = "工具";
+
+// P20-11: Section footer CTAs
+"panel.seeMoreInTrends" = "查看更多趋势";
+"panel.seeMoreInDistribution" = "查看更多分布";
+"panel.seeAllRecords" = "查看全部";
+"panel.seeBudgets" = "查看预算";
+"panel.seeScheduledPayments" = "查看计划付款";
+"panel.seeMoreHint.trends" = "打开趋势页面";
+"panel.seeMoreHint.distribution" = "打开分布页面";
+"panel.seeMoreHint.records" = "打开所有记录";
+"panel.seeMoreHint.budgets" = "打开预算页面";
+"panel.seeMoreHint.scheduled" = "打开计划付款页面";
+
+// P20-11: Widget size picker
+"panel.widgetSize.small" = "小";
+"panel.widgetSize.medium" = "中";
+"panel.widgetSize.large" = "大";
+
+// P20-11: Accounts collapse
+// Collapsible group Accounts + Financial Health
+"panel.panorama.title" = "你的财务";
+"panel.panorama.expand" = "展开你的财务";
+"panel.panorama.collapse" = "收起你的财务";
+"panel.panorama.collapsedValue" = "已收起";
+"panel.panorama.expandedValue" = "已展开";
+
+"panel.weekdaySubtitle" = "按星期几的平均值";
+"panel.weekdayBar.smallTitle" = "日均";
+"panel.weekdayBar.largeTitle" = "按星期几的平均支出";
+"panel.weekdayBar.perWeekSuffix" = "/周";
+"panel.filterBar.sectionTitle" = "已应用筛选";
+"panel.periodComparison.vs %@" = "对比 %@";
+"panel.periodComparison.vsWithYear %@ %@" = "对比 %@ %@";
+"panel.periodComparison.requiresPeriod" = "选择一个月或时间段来对比";
+"panel.sectionsConfig.title" = "配置面板";
+"panel.sectionsConfig.footer" = "隐藏你不需要的版块。你随时可以重新打开它们。";
+"panel.sectionsConfig.emptySection" = "所有小组件都已隐藏";
+"panel.sectionsConfig.restoreWidgets %@" = "恢复 %@ 小组件";
+"panel.sectionPrefs.title" = "偏好设置";
+"panel.totalBalance" = "总余额";
+
+// Financial Health (P20-06)
+"panel.health.cardTitle" = "你的财务健康";
+"panel.health.emptyBadge" = "—";
+"panel.health.subScore.budget" = "预算";
+"panel.health.subScore.activity" = "节奏";
+"panel.health.subScore.bills" = "承诺";
+// Detail sheet — Total
+"panel.health.total.sheet.title" = "你的财务健康";
+"panel.health.total.sheet.explanation" = "结合三个方面:你的预算、你的记录节奏以及你这个期间的承诺。每一项的权重不同,当某一项不适用时会重新平衡。";
+"panel.health.total.headline.high" = "你做得太棒了!";
+"panel.health.total.headline.mid" = "节奏不错";
+"panel.health.total.headline.low" = "小步前进,大有改变";
+"panel.health.total.headline.empty" = "从记录第一笔开始吧";
+
+// Detail sheet — Budget
+"panel.health.budget.sheet.title" = "你的预算";
+"panel.health.budget.sheet.explanation" = "我们看看本月你的预算执行得怎么样。还有余地会加分;超出会稍微扣点分。没什么大不了 — 只是一个参考。";
+"panel.health.budget.headline.high" = "你的预算很轻松!";
+"panel.health.budget.headline.mid" = "你在控制好你的额度";
+"panel.health.budget.headline.low" = "稍微调整一下就搞定";
+"panel.health.budget.headline.empty" = "预算让你更安心";
+"panel.health.budget.cta.view" = "查看我的预算";
+"panel.health.budget.cta.create" = "创建我的第一个预算";
+
+// Detail sheet — Activity
+"panel.health.activity.sheet.title" = "你的节奏";
+"panel.health.activity.sheet.explanation" = "测量在这个期间内没有记录支出的最长连续天数。最多 2 天不记录是正常的 — 超过这个范围,你的节奏就会受到影响。";
+"panel.health.activity.headline.high" = "你的节奏很棒！🎉";
+"panel.health.activity.headline.mid" = "你的节奏不错";
+"panel.health.activity.headline.low" = "你的节奏有所下降";
+"panel.health.activity.headline.empty" = "还没有记录任何内容 — 你想开始时随时开始";
+"panel.health.activity.cta.view" = "查看我的记录";
+"panel.health.activity.cta.create" = "记录我的第一笔支出";
+
+// Detail sheet — Bills
+"panel.health.bills.sheet.title" = "你的承诺";
+"panel.health.bills.sheet.explanation" = "结合两点:你的余额是否能覆盖这个期间内的待付款项,以及你的收入中有多少比例用于订阅和经常性付款。";
+"panel.health.bills.headline.high" = "你的承诺尽在掌控 💪";
+"panel.health.bills.headline.mid" = "你的承诺还可以管理";
+"panel.health.bills.headline.low" = "你的承诺给现金流带来压力";
+"panel.health.bills.headline.empty" = "你还没有预定的付款";
+"panel.health.bills.cta.view" = "查看我的账单";
+"panel.health.bills.cta.create" = "创建我的第一个计划付款";
+
+// VoiceOver full card summary
+"panel.health.voiceover.summary" = "财务健康:%1$@。预算 %2$@。活跃度 %3$@。账单 %4$@。";
+// VoiceOver — individual sub-score value (PP2-02)
+"panel.health.voiceover.score" = "%d 分(满分 100)";
+// VoiceOver — fallback when a sub-score has no data
+"panel.health.voiceover.noData" = "无数据";
+
+// MARK: - Panel Hero (PP2-01)
+
+// Chip — greets by name; the golden emoji lives in the SF Symbol icon
+"panel.hero.chip.monthStart %@ %@" = "你好,%1$@ — %2$@ 开始了";
+"panel.hero.chip.default %@" = "你好,%@";
+
+// KPI fallback (aiSubtitle takes the KPI slot when available)
+// Markdown bold (**amount**) renders via AttributedString(markdown:)
+"panel.hero.kpi.monthStart %@ %d" = "新的月份开始了,一步一步来。";
+"panel.hero.kpi.onTrack %@ %@ %@ %d" = "本月节奏不错,继续保持。";
+"panel.hero.kpi.neutral %@ %@ %@ %d" = "你的月份正在运转 — 一切井然有序。";
+"panel.hero.kpi.tight %@ %@ %d" = "本月有点紧但可控,一步一步来。";
+"panel.hero.kpi.overBudget %@ %@" = "明天重新开始,一切井然有序。";
+
+"panel.hero.upsellCTA" = "用 AI 个性化你的消息";
+"panel.hero.availableLabel" = "可用";
+
+// MARK: - Trend Widget
+
+"trend.title" = "趋势";
+"trend.balance.title" = "余额趋势";
+"trend.income.title" = "收入趋势";
+"trend.expense.title" = "支出趋势";
+"trend.filterBlockedMessage" = "请先移除类别或性质筛选";
+"trend.filterBlockedTitle" = "选项不可用";
+
+// MARK: - Periods
+
+"period.thisWeek" = "本周";
+"period.lastWeek" = "上周";
+"period.nextWeek" = "下周";
+"period.thisMonth" = "本月";
+"period.lastMonth" = "上月";
+"period.nextMonth" = "下月";
+"period.last30Days" = "最近 30 天";
+"period.thisYear" = "今年";
+"period.lastYear" = "去年";
+"period.nextYear" = "明年";
+"period.allTime" = "全部时间";
+"period.custom" = "自定义";
+"period.startDate" = "开始日期";
+"period.endDate" = "结束日期";
+
+// MARK: - Trend Types
+
+"trendType.balance" = "余额";
+"trendType.income" = "收入";
+"trendType.expense" = "支出";
+
+// MARK: - Groupings
+
+"grouping.day" = "日";
+"grouping.week" = "周";
+"grouping.month" = "月";
+
+// MARK: - Cash Flow
+
+"cashFlow.title" = "现金流";
+"cashFlow.income" = "收入";
+"cashFlow.expense" = "支出";
+"cashFlow.net" = "净额";
+
+// MARK: - Categories
+
+"categories.title" = "类别";
+"categories.topSpending" = "热门类别";
+"categories.others" = "其他";
+"categories.noCategory" = "未分类";
+
+// MARK: - Subcategories
+
+"subcategories.title" = "子类别";
+"subcategories.noSubcategory" = "无子类别";
+
+// MARK: - Need
+
+"need.expensesByNeed" = "按需求分类的支出";
+
+// MARK: - Records
+
+"records.title" = "记录";
+"records.latest" = "最新记录";
+"records.noRecords" = "本时间段无记录";
+"records.viewModeListA11y" = "列表视图";
+"records.viewModeCalendarA11y" = "日历视图";
+"records.noRecordsThisDay" = "当天无记录";
+
+// MARK: - Filters
+
+"filters.title" = "筛选";
+"filters.all" = "全部";
+"filters.allAccounts" = "全部账户";
+"filters.allCategories" = "全部类别";
+"filters.clearFilters" = "清除筛选";
+"filters.selectCategories" = "选择类别";
+"filters.selectAll" = "全选";
+"filters.deselectAll" = "全部取消";
+"filters.noSubcategories" = "无子类别";
+"filters.noneSelected" = "未选择";
+"filters.allSubcategories" = "全部子类别";
+"filters.filterOptions" = "筛选选项";
+"filters.noteContains" = "备注包含...";
+"filters.selectAccounts" = "选择账户";
+"filters.selectTags" = "选择标签";
+"filters.selectCurrencies" = "选择货币";
+"filters.allTags" = "全部标签";
+"filters.noTags" = "无标签";
+"filters.allCurrencies" = "全部可用";
+"filters.allNeeds" = "全部需求";
+"filters.selectedCount" = "已选 %d";
+"filters.categories" = "类别";
+"filters.type" = "类型";
+"filters.need" = "需求";
+"filters.currency" = "货币";
+"filters.includeMode" = "包含";
+"filters.excludeMode" = "排除";
+"filters.nothingExcluded" = "无";
+"filters.datePrefix %@" = "日期:%@";
+
+// MARK: - Actions
+
+"action.apply" = "应用";
+"action.cancel" = "取消";
+"action.done" = "完成";
+"action.save" = "保存";
+"action.delete" = "删除";
+"action.edit" = "编辑";
+"action.add" = "添加";
+"action.viewAll" = "查看全部";
+"action.viewLess" = "收起";
+"action.multipleEdit" = "批量编辑";
+"action.back" = "返回";
+"action.next" = "下一步";
+"action.duplicate" = "复制";
+"action.favorite" = "收藏";
+"action.recurring" = "周期性";
+"action.saveAsFavorite" = "保存为收藏";
+"action.saveAsRecurring" = "保存为周期付款";
+"action.savedAsFavorite" = "已保存为收藏";
+"action.savedAsRecurring" = "已保存为周期付款";
+"action.duplicated" = "已复制 — 保存以创建新条目";
+"action.select" = "选择";
+"action.retry" = "重试";
+"action.later" = "稍后";
+"action.reorder" = "重新排序";
+"action.clearAll" = "清除所有筛选";
+
+// MARK: - Search
+
+"search.noResults" = "没有找到任何结果";
+"search.tryAnotherTerm" = "试试其他搜索词";
+"search.resultsCount" = "%d 条结果";
+"search.filter.all" = "全部";
+"search.filter.note" = "备注";
+"search.filter.category" = "类别";
+"search.filter.subcategory" = "子类别";
+"search.filter.account" = "账户";
+"search.filter.need" = "需求";
+"search.filter.tag" = "标签";
+
+// MARK: - Exchange Rate
+
+"exchangeRate.title" = "汇率";
+"exchangeRate.updated" = "已更新";
+"exchangeRate.loadError" = "无法获取汇率。请稍后再试。";
+"exchangeRate.noSecondaryCurrenciesHint" = "你可以选择次要货币,在";
+"exchangeRate.noSecondaryCurrenciesPath" = "个人资料 > 货币与汇率";
+
+// MARK: - Empty States
+
+"empty.noData" = "你的数据将显示在这里";
+"empty.noTransactions" = "你的交易将显示在这里";
+"empty.noFavorites" = "你还没有任何收藏";
+"empty.noTags" = "你还没有任何标签";
+"empty.noAccounts" = "你还没有任何账户";
+"empty.noCategories" = "你还没有任何类别";
+"empty.noSubcategories" = "你还没有任何子类别";
+"empty.activateCategoriesTitle" = "还没有分类";
+"empty.activateCategoriesMessage" = "现在创建分类来整理你的群组支出并查看统计。你可以从个人资料管理它们。";
+"empty.activateCategoriesAction" = "创建分类";
+
+// MARK: - Transaction
+
+"transaction.new" = "新交易";
+"transaction.edit" = "编辑交易";
+"transaction.type" = "类型";
+"transaction.amount" = "金额";
+"transaction.note" = "备注";
+"transaction.notePlaceholder" = "写下备注";
+"transaction.date" = "日期";
+"transaction.tags" = "标签";
+"transaction.addTags" = "添加标签";
+"transaction.category" = "类别";
+"transaction.subcategory" = "子类别";
+"transaction.select" = "选择";
+"transaction.total" = "总计";
+"transaction.income" = "收入";
+"transaction.expense" = "支出";
+"transaction.transfer" = "转账";
+"transaction.origin" = "来源";
+"transaction.destination" = "目标";
+"transaction.exchangeRate" = "汇率";
+"transaction.willReceive" = "将收到";
+"transaction.createAnother" = "再添加一笔";
+"transaction.recents" = "最近";
+"transaction.successTitle" = "完成!";
+"transaction.type.expense" = "支出";
+"transaction.type.income" = "收入";
+"transaction.type.transfer" = "转账";
+
+// MARK: - Account
+
+"account.new" = "新建账户";
+"account.edit" = "编辑账户";
+"account.name" = "名称";
+"account.type" = "类型";
+"account.currency" = "货币";
+"account.balance" = "余额";
+"account.initialBalance" = "初始余额";
+"account.sign" = "符号";
+"account.positive" = "正数";
+"account.negative" = "负数";
+"account.sign.inFavor" = "对你有利";
+"account.sign.consumed" = "已支出";
+"account.adjustment" = "调整";
+"account.selected" = "已选";
+"account.selectAccount" = "选择账户";
+"account.archived" = "已归档";
+"account.archive" = "归档账户";
+"account.unarchive" = "取消归档";
+"account.excludeFromStats" = "从统计中排除";
+"account.delete" = "删除账户";
+
+// MARK: - Category
+
+"category.new" = "新建类别";
+"category.edit" = "编辑类别";
+"category.name" = "名称";
+"category.need" = "需求";
+"category.show" = "显示";
+"category.addSubcategory" = "添加子类别";
+"category.subcategories" = "子类别";
+"category.noSubcategoriesYet" = "此类别还没有子类别。";
+"category.requiresSubcategory" = "要创建新类别,你必须至少添加一个子类别。";
+
+// MARK: - Alert
+
+"alert.unsavedChanges" = "你有未保存的更改";
+"alert.discardChanges" = "丢弃";
+"alert.keepEditing" = "继续编辑";
+"alert.confirmDelete" = "确认";
+"alert.deleteWarning" = "此操作无法撤销";
+
+// MARK: - Import
+
+"import.title" = "导入交易";
+"import.selectFile" = "选择文件";
+"import.importing" = "导入中...";
+"import.downloadTemplate" = "下载模板";
+"import.createCategories" = "创建新类别";
+"import.continue" = "继续";
+"import.noAccountsAvailable" = "没有可用账户";
+"import.createAccountFirst" = "导入交易前请至少创建一个账户。";
+"import.completed" = "导入完成";
+"import.error" = "导入时出现问题";
+"import.templateGenerated" = "模板已生成";
+"import.templateGeneratedMessage" = "模板已成功生成。你现在可以编辑它,然后回到此页面进行导入。";
+"import.introDescription" = "从 CSV 或 Excel 文件批量添加你的财务交易。";
+"import.templateDescription" = "使用我们的官方模板以确保格式正确。";
+"import.categoriesDescription" = "如果文件中包含不存在的类别,系统会自动创建。";
+"import.selectAccount" = "选择一个账户";
+"import.fileUrlError" = "无法读取该文件。请重新选择。";
+"import.createAccountBeforeImport" = "导入交易前请至少创建一个账户。";
+
+// Multi-currency import
+"import.multiCurrencyDetected" = "检测到多种货币";
+"import.assignAccountPerCurrency" = "为文件中的每种货币指定一个账户。";
+"import.selectAccountForCurrency" = "选择账户";
+"import.currenciesDetected" = "检测到 %d 种货币";
+"import.recordsImportedMultiCurrency" = "已导入 %d 条记录,涉及 %d 种货币。";
+"import.noAccountsForCurrency" = "%@ 没有账户。请先创建一个该货币的账户。";
+"import.noCurrenciesDetected" = "文件中未检测到有效货币。";
+"import.importAction" = "导入";
+
+// MARK: - Export
+
+"export.title" = "导出";
+"export.filters" = "筛选";
+"export.columns" = "列";
+"export.summary" = "摘要";
+"export.format" = "格式";
+"export.period" = "时间段";
+"export.selectAll" = "全选";
+"export.deselectAll" = "全部取消";
+
+// MARK: - Favorites
+
+"favorites.title" = "收藏付款";
+"favorites.new" = "新建收藏";
+"favorites.edit" = "编辑收藏";
+"favorites.noFavorites" = "你还没有任何收藏";
+"favorites.createTemplate" = "创建周期性付款模板,让记录更快。";
+"favorites.newTitle" = "新建收藏";
+"favorites.editTitle" = "编辑收藏";
+"favorites.namePlaceholder" = "收藏名称";
+"favorites.notConfigured" = "未配置";
+"favorites.descriptionPlaceholder" = "描述(可选)";
+"favorites.saveDescription" = "把此付款保存为收藏,以便日后快速记录类似支出。在创建或编辑任何交易时,你会在右上角的 ⭐ 中找到它。你随时可以在个人资料中的「收藏付款」编辑它。";
+
+// MARK: - Scheduled
+
+"scheduled.saveDescription" = "创建一个计划付款,提醒你这笔周期性的支出或收入。你会在个人资料的「计划付款」版块找到它,可以随时编辑、启用或停用。";
+"scheduled.paid" = "已付款";
+"scheduled.overdue" = "已逾期";
+"scheduled.skip" = "跳过";
+"scheduled.skip.undo" = "撤销跳过";
+"scheduled.skip.confirm.title" = "跳过这次发生?";
+"scheduled.skip.confirm.message" = "它不会被记录为支出。你之后可以撤销。";
+"scheduled.skip.overdue.title" = "跳过逾期发生";
+"scheduled.status.skipped" = "已跳过";
+"scheduled.status.paid" = "已付款";
+"scheduled.unlink" = "取消关联交易";
+"scheduled.status.overdue" = "已逾期";
+"scheduled.draftCreatedTitle" = "你有待处理的付款!";
+"scheduled.draftCreatedMessage" = "%d 笔计划付款已添加到你的收件箱。准备好后查看它们。";
+"scheduled.viewInbox" = "查看收件箱";
+
+// MARK: - Inbox Alert Modal
+
+"inbox.alert.title.scheduled" = "你有待处理的付款!";
+"inbox.alert.title.subscriptions" = "有订阅需要查看!";
+"inbox.alert.title.automations" = "新的自动记录!";
+"inbox.alert.title.mixed" = "你的收件箱有新记录!";
+"inbox.alert.message.scheduled" = "%d 笔计划付款已添加到你的收件箱。";
+"inbox.alert.message.subscriptions" = "%d 个订阅已添加到你的收件箱。";
+"inbox.alert.message.mixed.scheduled" = "%d 笔付款";
+"inbox.alert.message.mixed.subscriptions" = "%d 个订阅";
+"inbox.alert.message.mixed.automations" = "%d 条自动记录";
+"inbox.alert.message.mixed.connector" = "和";
+
+// MARK: - Settings
+
+"settings.title" = "设置";
+"settings.theme" = "主题";
+"settings.currency" = "货币";
+"settings.appIcon" = "应用图标";
+"settings.personalization" = "个性化";
+"settings.accounts" = "账户";
+"settings.categories" = "类别";
+"settings.tags" = "标签";
+"settings.notifications" = "通知";
+"settings.favorites" = "收藏付款";
+"settings.budgets" = "预算";
+"settings.budgetsFavorites" = "收藏的预算";
+"settings.budgetsFavoritesInfo" = "收藏的预算会显示在预算小组件中(中等显示 3 个,大显示 5 个)。";
+"settings.budgetsFavoritesEmptyHint" = "在「计划」标签页创建预算。";
+"settings.budgetsFavoritesReorder" = "重新排序收藏";
+"budgets.favorites.previewTitle" = "你的小组件将显示成这样";
+"budgets.favorites.previewEmpty" = "选择收藏以查看预览";
+"settings.tabBarConfig" = "自定义导航";
+"settings.tabBarConfigInfo" = "选择在底部栏显示哪些版块。最少 1 个,最多 3 个。";
+"settings.tabBarConfigActive" = "活跃标签";
+"settings.tabBarConfigAvailable" = "可用";
+"settings.tabBarConfigReorderHint" = "长按以重新排序";
+"settings.tabBarConfigMinWarning" = "你必须至少有一个版块";
+"settings.tabBarConfigMaxWarning" = "最多 3 个版块";
+"settings.plannedPayments" = "计划付款";
+"settings.voiceInputEnabled" = "语音输入";
+"settings.voiceLanguage" = "语音语言";
+"settings.appLanguage" = "应用语言";
+"settings.appLanguageRestart" = "重启应用以应用更改。";
+"settings.imageInputEnabled" = "图片输入";
+"settings.resetData" = "重置数据";
+"settings.version" = "版本";
+"settings.light" = "浅色";
+"settings.dark" = "深色";
+"settings.system" = "系统";
+"settings.theme.indigo" = "靛蓝";
+"settings.theme.rosa" = "玫瑰";
+"settings.theme.teal" = "蓝绿";
+"settings.theme.minimalist" = "极简";
+"settings.theme.translucent" = "半透明";
+"settings.theme.liquidGlass" = "液态玻璃";
+"settings.defaultCurrency" = "默认货币";
+"settings.currentIcon" = "当前图标";
+"settings.resetAllData" = "重置你所有的数据";
+"settings.deleteAllData" = "删除全部数据";
+
+// MARK: - Common
+
+"common.accept" = "接受";
+"common.name" = "名称";
+"common.alias" = "别名";
+"common.color" = "颜色";
+"common.icon" = "图标";
+"common.changeIcon" = "更改图标";
+"common.search" = "搜索";
+"common.loading" = "加载中...";
+"common.error" = "错误";
+"common.success" = "成功";
+"common.dataPrivacy" = "你的数据永远不会离开你的设备";
+"common.active" = "活跃";
+"common.hidden" = "已隐藏";
+"common.inactive" = "未活跃";
+
+// MARK: - Widgets
+
+"widget.visible" = "可见";
+
+// MARK: - Planning
+
+"planning.title" = "计划";
+"planning.budgets" = "预算";
+"planning.goals" = "目标";
+"planning.comingSoon" = "即将推出";
+"planning.scheduledPayments" = "计划付款";
+"planning.scheduled.totalLabel" = "本月总计";
+"planning.budgetCharts.spentOf" = "已花费 %@,共 %@";
+"planning.budgetCharts.byCategoryHint" = "点击分类查看子分类。";
+"planning.budgetCharts.byCategoryTitle" = "按分类";
+"planning.budgetCharts.spendingHint" = "你按天累计的支出。";
+"planning.budgetCharts.spendingTitle" = "周期支出";
+"planning.budgetCharts.historyHint" = "你过去 6 个周期的表现。";
+"planning.budgetCharts.historyTitle" = "历史";
+
+// MARK: - Budgets
+
+"budgets.title" = "预算";
+"budgets.empty.title" = "你还没有任何预算";
+"budgets.empty.message" = "创建预算来更好地控制你的支出。";
+"budgets.includeSharedExpenses" = "包含共享支出";
+"budgets.includeSharedExpensesHint" = "关闭时,只统计你的个人支出";
+"budgets.widget.noFavorites.title" = "没有收藏的预算";
+"budgets.widget.noFavorites.message" = "在「设置 > 预算」中将预算标记为收藏即可在此查看。";
+"budgets.widget.selectFavorites" = "选择收藏";
+"budgets.alerts.title" = "提醒";
+"budgets.alerts.enable" = "达到额度时通知";
+"budgets.alerts.thresholds" = "在以下进度通知:";
+"budgets.alerts.message.50" = "「%1$@」已用一半 — %3$@ 中的 %2$@";
+"budgets.alerts.message.75" = "「%1$@」已用 75%% — %3$@ 中的 %2$@";
+"budgets.alerts.message.90" = "「%1$@」即将用完 — %3$@ 中的 %2$@";
+"budgets.alerts.message.100" = "你已用完「%1$@」的额度 — %3$@ 中的 %2$@";
+"budgets.alerts.globalDisabledHint" = "在「个人资料 > 通知」中启用预算提醒以接收";
+"budgets.alerts.custom" = "自定义";
+"budgets.alerts.addThreshold" = "添加";
+"budgets.new" = "新建预算";
+"budgets.edit" = "编辑预算";
+"budgets.delete" = "删除预算";
+"budgets.delete.confirm.title" = "删除预算?";
+"budgets.delete.confirm.message" = "此操作无法撤销。";
+
+// Budget Period Types
+"budgets.period.weekly" = "每周";
+"budgets.period.monthly" = "每月";
+"budgets.period.yearly" = "每年";
+"budgets.period.unique" = "一次性";
+"budgets.period.all" = "全部";
+
+// Budget Status
+"budgets.status.exceeded" = "已超出";
+"budgets.status.active" = "活跃";
+"budgets.status.inactive" = "未活跃";
+"budget.noInactive" = "没有未活跃的预算";
+
+// Budget Details
+"budgets.spent.percent" = "已支出 %@";
+"budgets.days.remaining" = "剩余 %@ 天";
+"budgets.period.past" = "过去";
+"budgets.amount.of" = "/ %@";
+"budgets.exceeded.encouragement" = "你超出了预算 — 下一个周期会更好!";
+
+// Budget Editor
+"budgets.editor.name.placeholder" = "预算名称";
+"budgets.editor.amount.placeholder" = "金额";
+"budgets.editor.basic.info" = "基本信息";
+"budgets.editor.filters" = "筛选";
+"budgets.editor.period.type" = "时间段";
+"budgets.editor.date.range" = "日期范围";
+"budgets.editor.start.date" = "开始日期";
+"budgets.editor.end.date" = "结束日期";
+
+// Period Selector
+"budgets.period.selector.title.weekly" = "选择一周";
+"budgets.period.selector.title.monthly" = "选择一月";
+"budgets.period.selector.title.yearly" = "选择一年";
+"budgets.period.week.of" = "%@ 当周";
+"budgets.period.current.week" = "本周";
+"budgets.period.current.month" = "本月";
+"budgets.period.current.year" = "今年";
+"budgets.period.confirm" = "完成";
+"budgets.period.goToToday" = "回到今天";
+
+// Budget Detail
+"budgets.detail.info" = "详情";
+"budgets.detail.period" = "时间段";
+"budgets.detail.accounts" = "账户";
+"budgets.detail.categories" = "类别";
+"budgets.detail.tags" = "标签";
+"budgets.detail.needs" = "需求";
+"budgets.detail.alerts" = "提醒";
+"budgets.detail.allAccounts" = "全部账户";
+"budgets.detail.allCategories" = "全部类别";
+"budgets.detail.subcategories" = "子类别";
+"budgets.detail.allSubcategories" = "全部子类别";
+"budgets.detail.notFound" = "未找到预算";
+"budgets.detail.status" = "状态";
+
+// Budget Charts
+"budgets.charts.title" = "图表";
+"budgets.charts.compliance" = "支出对比额度";
+"budgets.charts.dailySpending" = "累计支出";
+"budgets.charts.categoryBreakdown" = "按类别";
+"budgets.charts.noData" = "本时间段无数据";
+
+// MARK: - Profile
+
+"profile.title" = "个人资料";
+"profile.defaultName" = "用户";
+"profile.personalDetails" = "个人详情";
+"profile.dataManagement" = "数据管理";
+"profile.appearance" = "外观";
+"empty.noExpenses" = "你还没有记录任何支出";
+"common.recent" = "最近";
+"tag.new" = "新建标签";
+"tag.edit" = "编辑标签";
+"tag.delete" = "删除标签";
+"settings.currencyAndExchange" = "货币与汇率";
+"common.updatingRecords" = "正在更新记录...";
+"common.recalculatingConversions" = "正在重新计算历史汇率";
+"export.customizeFile" = "自定义你的文件";
+"export.csvGeneratedSuccess" = "文件已成功生成。";
+"export.confirmExport" = "确认导出";
+"export.selectColumns" = "选择列";
+"export.availableColumns" = "可用列";
+"export.columnsDescription" = "选择导出文件中要包含的列。你必须至少选择一列。";
+"export.summaryAndExport" = "摘要与导出";
+"export.summaryDescription" = "在生成文件前查看选定的筛选条件和列。";
+"export.filtersSummary" = "筛选摘要";
+"export.columnsToExport" = "要导出的列";
+"export.exportToCSV" = "导出为 CSV";
+"export.exportBtn" = "导出";
+"export.exportError" = "导出时出现问题";
+"export.exportCompleted" = "导出完成";
+"export.backToSettings" = "返回设置";
+"export.exportData" = "导出数据";
+"export.greaterThan" = "大于";
+"export.lessThan" = "小于";
+"export.selectSingleCurrency" = "选择一种货币以按金额筛选。";
+"export.allAvailable" = "全部可用";
+"export.noTagsSelected" = "无标签";
+"export.noSubcategorySelected" = "未选择子类别";
+"export.any" = "任意";
+"export.between" = "在...之间";
+"export.condition" = "条件";
+"export.noneSelected" = "无";
+"export.accountsSelected" = "已选 %d";
+"export.allCategories" = "全部类别";
+"export.allTags" = "全部标签";
+"export.allCurrencies" = "全部";
+"export.column.date" = "日期";
+"export.column.amount" = "金额";
+"export.column.currency" = "货币";
+"export.column.account" = "账户";
+"export.column.category" = "类别";
+"export.column.subcategory" = "子类别";
+"export.column.tags" = "标签";
+"export.column.note" = "备注";
+"export.column.date.description" = "日期,格式为 yyyy-MM-dd。";
+"export.column.amount.description" = "交易金额,保留 2 位小数。";
+"export.column.currency.description" = "货币代码 (PEN, USD, EUR)。";
+"export.column.account.description" = "关联账户名称。";
+"export.column.category.description" = "交易主类别。";
+"export.column.subcategory.description" = "具体子类别。";
+"export.column.tags.description" = "关联标签,以「;」分隔。";
+"export.column.note.description" = "交易的自由格式备注。";
+"common.next" = "下一步";
+"settings.versionInfo" = "版本 1.0.0 (Build 1)";
+"tab.panel" = "首页";
+"tab.statistics" = "统计";
+"tab.planning" = "计划";
+"tab.more" = "更多";
+"tab.search" = "搜索";
+"tab.records" = "记录";
+"tab.reports" = "报表";
+"tab.groups" = "群组";
+"report.title" = "财务报表";
+"report.tab.comparative" = "对比";
+"report.tab.cashFlow" = "现金流";
+"report.income" = "收入";
+"report.expense" = "支出";
+"report.netFlow" = "净流量";
+"report.noData" = "无数据";
+"report.noDataDescription" = "本时间段无记录";
+"report.uncategorized" = "未分类";
+"report.noSubcategory" = "无子类别";
+"report.noTag" = "无标签";
+"report.noAccount" = "无账户";
+"report.grouping.type" = "类型";
+"report.grouping.category" = "类别";
+"report.grouping.subcategory" = "子类别";
+"report.grouping.tag" = "标签";
+"report.grouping.account" = "账户";
+"report.grouping.currency" = "货币";
+"report.grouping.nature" = "需求";
+"report.grouping.drillDown" = "深入查看";
+"report.grouping.hint" = "添加层级以查看更多详情。拖动以重新排序优先级。";
+"report.grouping.active" = "活跃";
+"report.grouping.available" = "可用";
+"common.moreOptions" = "更多选项";
+"common.comingSoon" = "即将推出";
+"panel.greeting" = "你好,%@";
+"panel.title" = "%@ 的面板";
+"panel.fabVoice" = "语音";
+"panel.fabImage" = "图片";
+"panel.fabManual" = "手动";
+"panel.spent" = "已支出";
+"panel.aiInsightsTitle" = "AI 观察";
+"panel.aiInsightsDescription" = "对你财务的智能评论";
+"panel.dismissInsight" = "关闭观察";
+"panel.aiConsentRequired" = "在「设置 → AI 观察」中启用 AI";
+"panel.preparingInsight" = "正在准备观察...";
+"panel.insightMenuRegenerate" = "重新生成";
+"panel.insightMenuDifferentAngle" = "换个角度";
+"panel.insightMenuHideHour" = "隐藏一小时";
+"panel.insightMenuHideToday" = "今天隐藏";
+
+
+// Panel — Live Anchor Education (sheet "Tu saldo hoy")
+"panel.liveAnchorEducation.title" = "你今天的余额";
+"panel.liveAnchorEducation.heroFormat" = "你今天有 %@";
+"panel.liveAnchorEducation.bodyLineOneFormat" = "这是如果你把所有钱都换成 %@ 后现在的价值。";
+"panel.liveAnchorEducation.bodyLineTwoFormat" = "如果换一种方式：把每笔交易按当天的汇率相加，会是 %@。";
+"panel.liveAnchorEducation.bodyLineThree" = "为什么会有差异？你有其他货币的钱,这些货币今天的价值不同。";
+"panel.liveAnchorEducation.todayQuestion" = "你今天的余额";
+"panel.liveAnchorEducation.whyQuestion" = "为什么是这个数？";
+"panel.liveAnchorEducation.breakdownToggle" = "按货币查看";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "今天约 %@";
+"panel.liveAnchorEducation.coachTitle" = "你的余额会自己变动";
+"panel.liveAnchorEducation.coachMessage" = "当你有其他货币的钱时,它的价值每天都会变化。点一下我,看看是怎么回事。";
+"panel.liveAnchorEducation.dotA11yLabel" = "按当前汇率计算的今日余额。点击查看详情。";
+"widget.today" = "今天";
+
+// Widget Preferences
+"widget.preferences.description" = "选择你想在面板上看到什么以及顺序。";
+"widget.resetLayout" = "恢复原始布局";
+"widget.alwaysVisible" = "始终可见";
+"widget.fixedPosition" = "固定位置";
+"widget.summary" = "摘要";
+"widget.list" = "列表";
+"widget.calendar" = "日历";
+
+// Widget Types
+"widgetType.trend" = "趋势";
+"widgetType.topSpending" = "热门类别";
+"widgetType.topSubcategories" = "热门子类别";
+"widgetType.cashFlow" = "现金流";
+"widgetType.categoriesPie" = "类别";
+"widgetType.subcategoriesPie" = "子类别";
+"widgetType.latestRecords" = "最新记录";
+"widgetType.expensesByNeed" = "需求";
+"widgetType.expensesByTag" = "标签";
+"widgetType.exchangeRate" = "汇率";
+"widgetType.budgets" = "预算";
+"widgetType.scheduledPayments" = "计划付款";
+"widgetType.weekdayBar" = "日均";
+"widgetType.periodComparison" = "本月对比上月";
+
+// MARK: - Scheduled Payments Widget
+"scheduled.widget.empty.title" = "无即将到期的付款";
+"scheduled.widget.empty.message" = "你的即将到期付款将显示在这里";
+"scheduled.widget.tomorrow" = "明天";
+"scheduled.widget.smallTitle" = "已计划";
+"scheduled.widget.largeTitle.recurring" = "周期付款";
+"scheduled.widget.smallToPay" = "待付款";
+"scheduled.widget.smallPaidAmount" = "你已付款 %@";
+"scheduled.widget.smallActivePending" = "本月 %1$d 笔 · 还剩 %2$d";
+"scheduled.widget.smallAllPaid" = "全部跟上了!";
+"scheduled.payments.count" = "%d 笔活跃付款";
+"scheduled.calendar.show.all" = "显示全部";
+"scheduled.calendar.day.empty" = "这天没有付款";
+"scheduled.calendar.month.empty" = "本月没有付款";
+
+"widget.sizeLabel" = "大小";
+"widget.chatFab.toggle" = "问 Yala";
+"widget.chatFab.description" = "显示 AI 财务助手按钮。";
+"widget.chatFab.hint" = "控制聊天按钮是否在主屏幕显示。";
+"widget.aiCapabilities.header" = "AI 能力";
+
+"common.all" = "全部";
+"widget.main" = "主要";
+"widget.topCategories" = "热门类别";
+"widget.topSubcategories" = "热门子类别";
+"widget.subcategories" = "子类别";
+"widget.noExpensesPeriod" = "本时间段还没有支出。";
+"widget.noExpensesDescriptionCategories" = "添加交易后,你的热门类别将显示在这里。";
+"widget.noExpensesDescriptionSubcategories" = "添加交易后,你的热门子类别将显示在这里。";
+"widget.of" = "/ %@";
+"widget.ofTotal" = "占总额";
+"widget.ofExpense" = "占支出";
+"widget.categoryAbbr" = "类";
+
+"common.others" = "其他";
+"common.remaining" = "剩余";
+"widget.categories" = "类别";
+"widget.noExpensesSubcategoriesPeriod" = "本时间段还没有子类别支出。";
+"widget.distributionByCategory" = "类别";
+"widget.distributionBySubcategory" = "子类别";
+"widget.distributionByNeed" = "需求";
+"widget.distributionByTag" = "按标签分布";
+"widget.noDataForPeriod" = "本时间段还没有数据";
+"widget.selectCurrencies" = "选择最多 2 种货币与 %@ 对比";
+"widget.currenciesToCompare" = "对比货币";
+"widget.noRecordsForFilters" = "本时间段和筛选条件下没有记录";
+"widget.recordsWillAppear" = "添加交易后,它们将显示在这里。";
+"widget.total" = "总计";
+"widget.average" = "平均";
+
+"common.uncategorized" = "未分类";
+"cashFlow.netFlow" = "净流量";
+
+// Cash Flow Plan
+"cashFlowPlan.title" = "你的现金流";
+"cashFlowPlan.description" = "我们分析了你过去 6 个月的数据来构建你的计划。请查看并按需调整。";
+"cashFlowPlan.createButton" = "创建我的计划";
+"cashFlowPlan.startingBalance" = "你从多少开始?(可选)";
+"cashFlowPlan.startingBalanceHelper" = "如果今天你有可用的资金(银行、钱包等),请在此输入。我们会把它加到你未来的收入上。";
+"cashFlowPlan.incomeSection" = "收入";
+"cashFlowPlan.expenseSection" = "支出";
+"cashFlowPlan.recommendedBadge" = "推荐";
+"cashFlowPlan.otherExpenses" = "未分类支出";
+"cashFlowPlan.otherExpensesDesc" = "你计划中没有对应行的类别的支出";
+"cashFlowPlan.otherIncome" = "未分类收入";
+"cashFlowPlan.emptyState" = "还没有数据";
+"cashFlowPlan.emptyStateMessage" = "至少记录一个月的支出和收入,我们会为你构建计划。";
+"cashFlowPlan.monthsActive" = "个月";
+"cashFlowPlan.suggestedSource" = "基于 %d 个月的活动";
+"cashFlowPlan.bannerTitle" = "什么是现金流?";
+"cashFlowPlan.bannerBody" = "这是你逐月的收入和支出计划。它告诉你钱是否够用,或是需要做些调整。";
+"cashFlowPlan.available" = "可用";
+"cashFlowPlan.accumulated" = "累计";
+"cashFlowPlan.accumulatedShort" = "累计";
+"cashFlowPlan.addLine" = "添加行";
+"cashFlowPlan.thisMonth" = "本月";
+"cashFlowPlan.pastMonth" = "过去";
+"cashFlowPlan.futureMonth" = "预测";
+"cashFlowPlan.executionPercent" = "已支出 %d%%";
+"cashFlowPlan.densityFull" = "完整";
+"cashFlowPlan.densityIcons" = "图标";
+"cashFlowPlan.estimationMethod" = "我们如何计算这个金额?";
+"cashFlowPlan.calculationMethodTitle" = "金额计算";
+"cashFlowPlan.average3m" = "3 个月平均";
+"cashFlowPlan.average6m" = "6 个月平均";
+"cashFlowPlan.average12m" = "12 个月平均";
+"cashFlowPlan.lastMonth" = "上个月";
+"cashFlowPlan.manual" = "固定金额";
+"cashFlowPlan.scheduled" = "计划付款";
+"cashFlowPlan.trend" = "趋势";
+"cashFlowPlan.custom" = "自定义";
+"cashFlowPlan.context" = "背景";
+"cashFlowPlan.trendLabel" = "趋势";
+"cashFlowPlan.rangeLabel" = "范围";
+"cashFlowPlan.plan" = "估算";
+"cashFlowPlan.real" = "已支出";
+"cashFlowPlan.realIncome" = "已收到";
+"cashFlowPlan.difference" = "差额";
+"cashFlowPlan.adjustAmount" = "调整金额";
+"cashFlowPlan.othersTitle" = "未分类支出";
+"cashFlowPlan.othersDesc" = "这些是我们在你的记录中找到、但不在你计划里的支出。点击 + 即可添加。";
+"cashFlowPlan.othersHint" = "如果有些只是偶发的不必担心 — 只添加每月重复出现的。";
+"cashFlowPlan.othersIncomeTitle" = "未分类收入";
+"cashFlowPlan.othersIncomeDesc" = "这些是我们在你的记录中找到、但不在你计划里的收入条目。点击 + 即可添加。";
+"cashFlowPlan.othersIncomeHint" = "只添加每月重复出现的。";
+"cashFlowPlan.promoteCategory" = "添加到计划";
+"cashFlowPlan.resetPlan" = "重置计划";
+"cashFlowPlan.resetConfirmation" = "重置你的计划?所有行和调整都将被删除。此操作无法撤销。";
+"cashFlowPlan.deleteLineConfirmation" = "从你的计划中删除这一行?此操作无法撤销。";
+"cashFlowPlan.suggestPayment" = "新付款:%@。添加到计划?";
+"cashFlowPlan.chartsTitle" = "图表";
+"cashFlowPlan.chartsSectionTitle" = "你的现金流";
+"cashFlowPlan.accumulatedBalance" = "累计余额";
+"cashFlowPlan.incomeVsExpense" = "收入对比支出";
+"cashFlowPlan.composition" = "支出构成";
+"cashFlowPlan.realVsPlan" = "实际对比计划";
+"cashFlowPlan.trendByLine" = "按行趋势";
+"cashFlowPlan.selectAll" = "全选";
+"cashFlowPlan.total" = "总计";
+"cashFlowPlan.lineNameLabel" = "行名称";
+"cashFlowPlan.lineNameHint" = "你可以自定义";
+"cashFlowPlan.availableHintTitle" = "可用";
+"cashFlowPlan.availableHintMessage" = "本月你还剩下多少:收入减去支出。";
+"cashFlowPlan.accumulatedHintTitle" = "累计";
+"cashFlowPlan.accumulatedHintMessage" = "自计划开始以来你的总余额。它累加每月的可用部分。";
+"cashFlowPlan.editStartingBalance" = "编辑起始余额";
+"cashFlowPlan.editStartingBalanceSave" = "保存";
+"cashFlowPlan.average3mDesc" = "你过去 3 个月的支出平均值";
+"cashFlowPlan.average6mDesc" = "过去 6 个月的平均值";
+"cashFlowPlan.average12mDesc" = "过去一年的平均值";
+"cashFlowPlan.lastMonthDesc" = "你上个月的支出";
+"cashFlowPlan.manualDesc" = "你设定确切金额";
+"cashFlowPlan.scheduledDesc" = "使用你的计划付款金额";
+"cashFlowPlan.trendDesc" = "根据你最近几个月计算趋势";
+"cashFlowPlan.customDesc" = "选择特定月份取平均";
+"cashFlowPlan.monthSummaryOnTrack" = "本月你已支出预估的 %d%%";
+"cashFlowPlan.monthSummaryOver" = "本月你超出预估 %d%%";
+"cashFlowPlan.monthSummaryUnder" = "只支出了 %d%% — 本月你做得很棒";
+"cashFlowPlan.configureHorizon" = "配置时间范围";
+"cashFlowPlan.monthsAhead" = "向后月数";
+"cashFlowPlan.monthsBack" = "向前月数";
+"cashFlowPlan.showAccumulatedBalance" = "显示累计";
+"cashFlowPlan.startingBalanceDateLabel" = "余额日期";
+"cashFlowPlan.startingBalanceDateHelper" = "你是何时拥有此余额的?如果未选择日期,默认为今天。";
+
+// Cell Detail Sheet (Inc 4)
+"cashFlowPlan.cellDetailOf" = "/";
+"cashFlowPlan.cellDetailRemaining" = "你还剩 %@";
+"cashFlowPlan.cellDetailRecentTransactions" = "最近交易";
+"cashFlowPlan.cellDetailSpent" = "你支出了";
+"cashFlowPlan.cellDetailEarned" = "你赚到了";
+"cashFlowPlan.cellDetailMore" = "多";
+"cashFlowPlan.cellDetailLess" = "少";
+"cashFlowPlan.cellDetailOverrideActive" = "金额已手动调整";
+"cashFlowPlan.cellDetailNote" = "备注(可选)";
+"cashFlowPlan.cellDetailSaveAdjustment" = "保存调整";
+"cashFlowPlan.overrideScopeTitle" = "调整范围";
+"cashFlowPlan.overrideScopeMessage" = "你想只把此金额应用于本月,还是也应用到将来的月份?";
+"cashFlowPlan.overrideScopeThisMonth" = "仅本月";
+"cashFlowPlan.overrideScopeThisAndFuture" = "本月及未来月份";
+"cashFlowPlan.cellDetailDailyProgress" = "每日进度";
+
+// Config improvements (Inc 5)
+"cashFlowPlan.contextHistory" = "历史背景";
+"cashFlowPlan.monthsWithActivity" = "12 个月中的 %d 个月";
+"cashFlowPlan.addOverride" = "添加调整";
+"cashFlowPlan.overrideMonth" = "月份";
+"cashFlowPlan.overrideAmount" = "金额";
+"cashFlowPlan.configLine" = "配置行";
+
+// Add Line redesign (Inc 6)
+"cashFlowPlan.addFromExpenses" = "来自我的支出";
+"cashFlowPlan.addFromExpensesDesc" = "选择有历史的子类别";
+"cashFlowPlan.addFromScheduled" = "来自计划付款";
+"cashFlowPlan.addFromScheduledDesc" = "用一笔活跃付款作为固定行";
+"cashFlowPlan.addCustomLine" = "自定义行";
+"cashFlowPlan.addCustomLineDesc" = "自由命名和金额";
+"cashFlowPlan.monthlyAverage" = "月均";
+"cashFlowPlan.frequency" = "频率";
+"cashFlowPlan.noScheduledPayments" = "没有可用的计划付款";
+"cashFlowPlan.noCategories" = "没有有历史的类别";
+
+// Charts redesign (Inc 7)
+"cashFlowPlan.chartProjection" = "余额预测";
+"cashFlowPlan.chartDeviation" = "需查看的支出";
+"cashFlowPlan.chartDeviationSubtitle" = "你超出计划支出的子类别";
+"cashFlowPlan.chartSavings" = "月度储蓄";
+"cashFlowPlan.chartProjectionSubtitle" = "随时间累计的余额";
+"cashFlowPlan.chartDeviationOver" = "超出预算";
+"cashFlowPlan.chartDeviationUnder" = "已节省";
+"cashFlowPlan.chartDangerZone" = "危险区";
+"cashFlowPlan.chartRollingAvg" = "滚动平均";
+"cashFlowPlan.chartNeedMoreData" = "你需要至少 2 个月的数据";
+"cashFlowPlan.analyzingProjection" = "正在分析你的预测...";
+"cashFlowPlan.enableAIObservations" = "用 AI 生成观察";
+"cashFlowPlan.commentNegative" = "从 %@ 起你的余额将为负 — 看看是否可以调整一些项目";
+"cashFlowPlan.commentTight" = "本月有点紧 — 你还剩 %@ 的余地";
+"cashFlowPlan.commentHealthy" = "你的计划看起来很健康 — 这一段时间结束时累计余额会有 %@";
+"cashFlowPlan.commentDefault" = "你的预测覆盖未来 %d 个月";
+"cashFlowPlan.chartAllWithinPlan" = "你所有的支出行都在计划之内";
+"cashFlowPlan.deviationCommentSingle" = "在 %@ 你比计划多支出了 %@";
+"cashFlowPlan.deviationCommentMultiple" = "%@ 是你超出最多的地方,多支出 %@ — 总共比计划超出 %@";
+"cashFlowPlan.chartSavingsSubtitle" = "你每月相比计划节省了多少";
+"cashFlowPlan.chartPlanned" = "已计划";
+"cashFlowPlan.commentSavingsBelow" = "你每月比计划少存 %@ — 是否可以削减一些支出?";
+"cashFlowPlan.commentSavingsAbove" = "你比月度储蓄计划多存 %@ — 你的余额将达到 %@";
+"cashFlowPlan.commentHealthyWithSavings" = "你的计划看起来不错 — 你大约每月储蓄 %@ 并以 %@ 结束";
+
+"common.unknownError" = "出了点问题";
+"common.saveError" = "更改未保存。请重试。";
+"common.deleteError" = "无法删除。请再试一次。";
+"widget.noExpensesNeedPeriod" = "本时间段没有按需求记录的支出。";
+
+"account.addAccount" = "添加账户";
+
+"common.date" = "日期";
+"common.amount" = "金额";
+"common.base" = "基础";
+"common.selectedDate" = "所选日期";
+"common.selectedValue" = "所选值";
+"common.selected" = "已选";
+"common.details" = "详情";
+"common.select" = "选择";
+
+"statistics.title" = "统计";
+"statistics.trends" = "趋势";
+"statistics.categories" = "分布";
+"statistics.records" = "记录";
+
+"period.last7Days" = "最近 7 天";
+
+"need.essential" = "必需";
+"need.priority" = "优先";
+"need.optional" = "可选";
+"need.unclassified" = "未分类";
+"need.essential.desc" = "必需的支出,难以削减。";
+"need.priority.desc" = "重要但有一定灵活性。";
+"need.optional.desc" = "可自行决定或休闲的支出。";
+"need.unclassified.desc" = "没有特定的需求标签。";
+
+
+"cashFlowViewType.total" = "总计";
+"cashFlowViewType.byAccount" = "按账户";
+"cashFlowViewType.byCurrency" = "按货币";
+
+"listViewType.categories" = "类别";
+"listViewType.subcategories" = "子类别";
+
+"comparison.month" = "月";
+"comparison.year" = "年";
+"comparison.monthShort" = "P-1";
+"comparison.yearShort" = "Y-1";
+
+"statistics.noRecordsFiltered" = "在这些筛选条件下没有记录";
+"statistics.noRecordsDescription" = "添加交易后,它们将显示在这里。";
+"statistics.periodComparison" = "与上一时段对比";
+"statistics.vsPreviousPeriod" = "对比上一时段";
+"statistics.vsPreviousYear" = "对比上一年";
+"statistics.currentPeriod" = "当前时段";
+"statistics.previousPeriod" = "上一时段";
+"statistics.latestRecords" = "最新记录";
+"statistics.noCategoryData" = "无类别数据";
+"statistics.noSubcategoryData" = "无子类别数据";
+"statistics.noExpensesInPeriod" = "所选时段内无支出";
+"statistics.topCategories" = "热门类别";
+"statistics.topSubcategories" = "热门子类别";
+"statistics.noDataToShow" = "还没有数据可展示";
+"statistics.noRecords" = "无记录";
+"statistics.ofExpense" = "占支出";
+"statistics.spendingAnalysis" = "支出分析";
+"statistics.incomeAnalysis" = "收入分析";
+
+// MARK: - Insights
+"insights.title" = "概览";
+"insights.records" = "记录";
+"insights.inThisPeriod" = "在本时段";
+"insights.dailyAverage" = "日均";
+"insights.topCategory" = "热门类别";
+"insights.topSubcategory" = "热门子类别";
+"insights.highestExpense" = "最高支出";
+"insights.highestAvgWeekday" = "支出最多的一天";
+"insights.subscriptions" = "订阅";
+"insights.quickStats" = "速览";
+"insights.comparison" = "时段对比";
+"insights.weekdayAverage" = "按天平均支出";
+"insights.needDistribution" = "按需求支出";
+"insights.commitments" = "承诺支出";
+"insights.commitmentsNote" = "每个预算的当前时段";
+"insights.pendingPayments" = "待付款";
+"insights.activeSubscriptions" = "活跃订阅";
+"insights.budgetsAtRisk" = "高风险预算";
+"insights.yearOverYear" = "同比";
+"insights.yearComparison" = "去年:%@。今年:%@。";
+"insights.intelligentInsights" = "观察";
+"insights.funFact" = "趣事";
+"insights.emptyTitle" = "还没有数据";
+"insights.emptyBody" = "记录支出来查看你的洞察";
+"insights.fewTransactions" = "记录更多以解锁全部洞察";
+"insights.monthly" = "每月";
+"insights.perDay" = "每天";
+"insights.ofTotal" = "占总额";
+"insights.analyzingData" = "正在分析你的数据...";
+"insights.activateAITitle" = "智能概览可用";
+"insights.activateAIBody" = "在「个人资料 > AI 功能」中启用并自定义。";
+"insights.activateAIDisclaimer" = "只有汇总数据(总计、百分比、趋势)会发送到 OpenAI。你的单笔交易和个人数据从不会被共享。";
+"insights.activate" = "启用";
+"insights.goToSettings" = "前往设置";
+"insights.notInterested" = "不感兴趣";
+"insights.offlineCached" = "离线。显示上次分析。";
+"insights.offlineNoCache" = "离线。连接后即可获取个性化洞察。";
+
+"settings.organization" = "组织";
+"settings.preferences" = "偏好";
+"settings.aiFeatures" = "AI 功能";
+"settings.customizeAISummary" = "自定义 AI 摘要";
+"settings.customizeAISummaryHint" = "选择智能概览中显示哪些指标和图表。";
+"settings.data" = "数据";
+"settings.security" = "安全与账户";
+"settings.help" = "需要帮助?";
+"settings.legal" = "法律";
+
+"settings.importData" = "导入文件";
+"settings.exportData" = "导出数据";
+"settings.wipeData" = "清除数据";
+"settings.faceId" = "Face ID";
+"settings.permissions" = "权限";
+"settings.aiPrivacy" = "AI 隐私与数据";
+"settings.subscriptions" = "管理订阅";
+"settings.rateApp" = "评分与推荐";
+"settings.tutorials" = "教程";
+"settings.faq" = "常见问题";
+"settings.contact" = "联系我们";
+"settings.privacy" = "隐私政策";
+"settings.terms" = "使用条款";
+
+// Support
+"support.title" = "联系我们";
+"support.type" = "咨询类型";
+"support.typeError" = "Bug";
+"support.typeImprovement" = "改进";
+"support.typeIdea" = "想法";
+"support.message" = "描述你的咨询";
+"support.messagePlaceholder" = "详细告诉我们...";
+"support.send" = "发送";
+
+// Biometric
+"biometric.title" = "生物识别安全";
+"biometric.description" = "用生物识别认证或设备密码保护你的财务信息。";
+"biometric.enableLock" = "启用锁定";
+"biometric.lockAfter" = "锁定时机";
+"biometric.timeout.immediate" = "10 秒";
+"biometric.timeout.oneMinute" = "1 分钟";
+"biometric.timeout.fiveMinutes" = "5 分钟";
+"biometric.timeout.fifteenMinutes" = "15 分钟";
+"biometric.authReason" = "解锁 Yala 以访问你的财务";
+"biometric.enableReason" = "验证你的身份以启用锁定";
+"biometric.authFailed" = "认证失败";
+"biometric.authFailedMessage" = "无法验证你的身份。请重试。";
+"biometric.locked" = "Yala 已锁定";
+"biometric.unlockPrompt" = "点击按钮解锁";
+"biometric.unlock" = "解锁";
+"biometric.passcode" = "密码";
+"biometric.enableLockHint" = "你每次打开应用时都会被要求验证身份。";
+"biometric.lockAfterHint" = "选择应用在后台多久之后锁定。";
+
+"profile.edit" = "编辑个人资料";
+"profile.importSuccess" = "导入完成";
+"profile.importError" = "导入错误";
+
+"profile.changePhoto" = "更换照片";
+"profile.addPhoto" = "添加照片";
+"profile.yourName" = "你的名字";
+"profile.aliasPlaceholder" = "user_123";
+"profile.characters" = "字符";
+"profile.minChars" = "至少 3 个字符";
+"profile.maxChars" = "最多 20 个字符";
+"profile.allowedChars" = "只能包含字母、数字和下划线";
+"profile.aliasAvailable" = "别名可用";
+"profile.aliasHelper" = "3-20 个字符。只能包含字母、数字和下划线。";
+"profile.privacyTitle" = "你的数据永远不会离开你的设备";
+"profile.privacyDesc" = "Yala 仅在你的设备上存储个人数据。AI 功能(语音、图片和洞察)是可选的,只处理汇总数据 — 永远不会处理你的单笔交易或个人信息。";
+"profile.aliasFutureNote" = "注意:别名唯一性验证将在共享支出功能上线时可用。";
+"profile.proMember" = "PRO 会员";
+"profile.choosePhoto" = "选择照片";
+"profile.chooseIcon" = "选择图标";
+"profile.removeAvatar" = "移除";
+"profile.editAvatar" = "编辑头像";
+
+"settings.currencyDescription" = "选择你的主货币并查看最新汇率。";
+"settings.preferredCurrency" = "首选货币";
+"settings.exchangeRate" = "汇率";
+"settings.secondaryCurrencies" = "次要货币";
+"settings.secondaryCurrenciesHint" = "选择最多 2 种货币与你的首选货币在汇率小组件中对比。";
+"settings.showMoreCurrencies" = "显示更多货币";
+"settings.recommendedCurrencies" = "推荐";
+"common.lastUpdate" = "最后更新:";
+
+"common.archived" = "已归档";
+"empty.tagsDescription" = "创建标签来灵活地组织你的交易。";
+"empty.categoriesDescription" = "创建类别来分类你的收入和支出。";
+"empty.accountsDescription" = "创建账户来按银行、现金或其他方式组织你的财务。";
+
+"settings.themeDescription" = "选择 Yala 的外观。";
+"settings.appIconDescription" = "选择最符合你风格的图标。";
+"settings.personalizationDescription" = "根据你的偏好调整 Yala 的工作方式。";
+"settings.sectionInterface" = "界面";
+"settings.sectionCalendar" = "日历";
+"settings.sectionIndicators" = "指标";
+"settings.sectionFormat" = "数字格式";
+"settings.defaultPeriod" = "默认时段";
+"settings.defaultPeriodDescription" = "每次打开应用时默认使用此时段。你可以随时通过时段选择器临时更改。";
+"settings.colorfulIcons" = "彩色图标";
+"settings.colorfulIconsDescription" = "在个人资料版块中显示彩色图标,类似 iOS 设置的风格。";
+"settings.colorfulIconsDisabledByTheme" = "已被当前主题自动禁用。";
+"settings.firstWeekday" = "每周第一天";
+"settings.firstWeekdayDescription" = "设置「本周」等筛选的起始日。";
+"settings.sunday" = "星期日";
+"settings.monday" = "星期一";
+"settings.resetDataDescription" = "此操作将永久删除你的账户、交易、预算、汇率、类别以及与你 Yala 资料相关的任何其他数据。删除后,应用将回到类似初始设置的状态。";
+"settings.deleteDataConfirmation" = "删除你所有的数据?";
+"settings.deleteDataWarning" = "此操作不可逆。你的全部账户、交易、预算、汇率和类别都将被删除。之后 Yala 会重置到类似初始设置的状态,你无法恢复数据。";
+"settings.wipeICloudWarning" = "这也会删除你的 iCloud 数据。其他已同步设备将丢失这些数据。";
+"settings.wipeGroupsExclusionNote" = "这不会影响你的群组。要退出群组：进入「群组」，结算未结款项，逐一退出。";
+"settings.delete" = "删除";
+"settings.cancel" = "取消";
+"settings.iconOriginal" = "原版";
+"settings.iconDark" = "深色";
+"settings.iconLight" = "浅色";
+"settings.iconNeon" = "霓虹";
+"settings.deleteAllDataAction" = "确认删除";
+"settings.deletingData" = "正在删除数据...";
+"settings.appIconTitle" = "应用图标";
+"settings.iconNotSupported" = "此设备不支持替代图标。";
+"settings.iconChangeFailed" = "更改图标失败:%@";
+"settings.deleteDataError" = "删除数据时出现问题";
+"settings.deleteDataUnknownError" = "删除数据时出了点问题。请重试。";
+
+"transaction.newTransaction" = "新交易";
+"transaction.editTransaction" = "编辑交易";
+"transaction.description" = "描述";
+"transaction.descriptionHint" = "使用 @ 账户、! 类别、# 标签";
+"transaction.sourceAccount" = "源账户";
+"transaction.destinationAccount" = "目标账户";
+"transaction.account" = "账户";
+"tag.newTag" = "新建标签";
+"tag.editTag" = "编辑标签";
+"tag.createFirstDescription" = "创建你的第一个标签来组织你的交易";
+"tag.deleteConfirmation" = "删除标签?";
+"tag.namePlaceholder" = "名称(最多 20)";
+"tag.color" = "颜色";
+"tag.colorSelected" = "已选:%@";
+
+// MARK: - Currency Names
+// Latin America
+"currency.pen" = "秘鲁索尔";
+"currency.usd" = "美元";
+"currency.mxn" = "墨西哥比索";
+"currency.cop" = "哥伦比亚比索";
+"currency.brl" = "巴西雷亚尔";
+"currency.ars" = "阿根廷比索";
+"currency.clp" = "智利比索";
+"currency.uyu" = "乌拉圭比索";
+"currency.bob" = "玻利维亚诺";
+"currency.pyg" = "巴拉圭瓜拉尼";
+"currency.crc" = "哥斯达黎加科朗";
+"currency.gtq" = "危地马拉格查尔";
+"currency.hnl" = "洪都拉斯伦皮拉";
+"currency.nio" = "尼加拉瓜科多巴";
+"currency.pab" = "巴拿马巴波亚";
+"currency.dop" = "多米尼加比索";
+// Europe
+"currency.eur" = "欧元";
+"currency.gbp" = "英镑";
+"currency.chf" = "瑞士法郎";
+"currency.sek" = "瑞典克朗";
+"currency.nok" = "挪威克朗";
+"currency.dkk" = "丹麦克朗";
+"currency.pln" = "波兰兹罗提";
+"currency.czk" = "捷克克朗";
+"currency.huf" = "匈牙利福林";
+"currency.ron" = "罗马尼亚列伊";
+"currency.rub" = "俄罗斯卢布";
+"currency.uah" = "乌克兰格里夫纳";
+"currency.try" = "土耳其里拉";
+// Asia
+"currency.jpy" = "日元";
+"currency.cny" = "人民币";
+"currency.krw" = "韩元";
+"currency.inr" = "印度卢比";
+"currency.idr" = "印尼盾";
+"currency.php" = "菲律宾比索";
+"currency.thb" = "泰铢";
+"currency.myr" = "马来西亚林吉特";
+"currency.sgd" = "新加坡元";
+"currency.hkd" = "港币";
+"currency.twd" = "新台币";
+"currency.vnd" = "越南盾";
+// Oceania
+"currency.aud" = "澳元";
+"currency.nzd" = "新西兰元";
+// Middle East
+"currency.aed" = "阿联酋迪拉姆";
+"currency.sar" = "沙特里亚尔";
+"currency.ils" = "以色列新谢克尔";
+"currency.qar" = "卡塔尔里亚尔";
+"currency.kwd" = "科威特第纳尔";
+// Africa
+"currency.zar" = "南非兰特";
+"currency.egp" = "埃及镑";
+"currency.ngn" = "尼日利亚奈拉";
+"currency.kes" = "肯尼亚先令";
+"currency.mad" = "摩洛哥迪拉姆";
+// North America
+"currency.cad" = "加元";
+
+// MARK: - Currency Plural Names (short, no country)
+// Latin America
+"currency.plural.pen" = "索尔";
+"currency.plural.usd" = "美元";
+"currency.plural.mxn" = "比索";
+"currency.plural.cop" = "比索";
+"currency.plural.brl" = "雷亚尔";
+"currency.plural.ars" = "比索";
+"currency.plural.clp" = "比索";
+"currency.plural.uyu" = "比索";
+"currency.plural.bob" = "玻利维亚诺";
+"currency.plural.pyg" = "瓜拉尼";
+"currency.plural.crc" = "科朗";
+"currency.plural.gtq" = "格查尔";
+"currency.plural.hnl" = "伦皮拉";
+"currency.plural.nio" = "科多巴";
+"currency.plural.pab" = "巴波亚";
+"currency.plural.dop" = "比索";
+// Europe
+"currency.plural.eur" = "欧元";
+"currency.plural.gbp" = "英镑";
+"currency.plural.chf" = "法郎";
+"currency.plural.sek" = "克朗";
+"currency.plural.nok" = "克朗";
+"currency.plural.dkk" = "克朗";
+"currency.plural.pln" = "兹罗提";
+"currency.plural.czk" = "克朗";
+"currency.plural.huf" = "福林";
+"currency.plural.ron" = "列伊";
+"currency.plural.rub" = "卢布";
+"currency.plural.uah" = "格里夫纳";
+"currency.plural.try" = "里拉";
+// Asia
+"currency.plural.jpy" = "日元";
+"currency.plural.cny" = "元";
+"currency.plural.krw" = "韩元";
+"currency.plural.inr" = "卢比";
+"currency.plural.idr" = "盾";
+"currency.plural.php" = "比索";
+"currency.plural.thb" = "铢";
+"currency.plural.myr" = "林吉特";
+"currency.plural.sgd" = "新元";
+"currency.plural.hkd" = "港币";
+"currency.plural.twd" = "新台币";
+"currency.plural.vnd" = "盾";
+// Oceania
+"currency.plural.aud" = "澳元";
+"currency.plural.nzd" = "新西兰元";
+// Middle East
+"currency.plural.aed" = "迪拉姆";
+"currency.plural.sar" = "里亚尔";
+"currency.plural.ils" = "谢克尔";
+"currency.plural.qar" = "里亚尔";
+"currency.plural.kwd" = "第纳尔";
+// Africa
+"currency.plural.zar" = "兰特";
+"currency.plural.egp" = "埃及镑";
+"currency.plural.ngn" = "奈拉";
+"currency.plural.kes" = "先令";
+"currency.plural.mad" = "迪拉姆";
+// North America
+"currency.plural.cad" = "加元";
+
+// MARK: - Continents
+"continent.latinAmerica" = "拉丁美洲";
+"continent.europe" = "欧洲";
+"continent.asia" = "亚洲";
+"continent.oceania" = "大洋洲";
+"continent.middleEast" = "中东";
+"continent.africa" = "非洲";
+"continent.northAmerica" = "北美";
+
+"common.seeAll" = "查看全部";
+"common.none" = "无";
+"common.ok" = "好";
+
+"common.selectColor" = "选择颜色";
+"common.useThisColor" = "使用此颜色";
+"common.newColor" = "新颜色";
+"common.understood" = "明白了";
+"common.cannotUndo" = "此操作无法撤销";
+"common.general" = "通用";
+"common.status" = "状态";
+"common.actions" = "操作";
+"account.configure" = "配置账户";
+"account.deleteError" = "此账户无法删除";
+"account.accountName" = "账户名称";
+"account.accountNumber" = "账户编号";
+"category.editTitle" = "编辑类别";
+"category.hiddenTitle" = "类别已隐藏";
+"category.hiddenDescription" = "该类别及其子类别将不再出现在选择器中,但历史数据不会丢失。";
+"category.addOneSubcategory" = "至少添加一个子类别";
+"category.newCategory" = "新类别";
+"category.namePlaceholder" = "类别名称";
+"category.activeSubcategories" = "活跃子类别";
+"category.hiddenSubcategories" = "已隐藏子类别";
+"category.details" = "详情";
+"category.delete" = "删除类别";
+"category.deleteConfirmTitle" = "删除类别?";
+"category.deleteConfirmMessage" = "该类别及其全部子类别都将被删除。此操作无法撤销。";
+"category.cannotDeleteTitle" = "无法删除";
+"category.cannotDeleteMessage" = "此类别的子类别中有 %d 笔交易。要删除它,请先从每个子类别中删除或转移这些交易。";
+"subcategory.newTitle" = "新子类别";
+"subcategory.editTitle" = "编辑子类别";
+"subcategory.delete" = "删除子类别";
+"subcategory.deleteConfirmTitle" = "删除子类别?";
+"subcategory.deleteConfirmMessage" = "此操作无法撤销";
+"subcategory.cannotDeleteTitle" = "无法删除";
+"subcategory.cannotDeleteMessage" = "此子类别有 %d 笔交易。删除前请将这些交易转移到其他子类别。";
+"subcategory.transferTitle" = "转移交易";
+"subcategory.transferHeader" = "此子类别有交易";
+"subcategory.transferDescription" = "「%@」中有 %d 笔交易。删除前请决定如何处理它们。";
+"subcategory.transferToSpecific" = "转移到其他子类别";
+"subcategory.transferToSpecificDesc" = "选择目标子类别以移动这些交易";
+"subcategory.transferToUnassigned" = "移到「未分配」";
+"subcategory.transferToUnassignedDesc" = "交易将被移到「其他」中的「未分配」子类别";
+"subcategory.deleteTransactions" = "删除交易";
+"subcategory.deleteTransactionsDesc" = "所有交易都将被永久删除";
+"subcategory.selectDestination" = "选择目标";
+"subcategory.deleteTransactionsConfirmTitle" = "删除交易?";
+"subcategory.deleteTransactionsConfirm" = "删除";
+"subcategory.details" = "子类别详情";
+"subcategory.namePlaceholder" = "子类别名称";
+"subcategory.unassigned" = "未分配";
+"subcategory.deleteTransactionsConfirmMessage" = "%d 笔交易将被永久删除。此操作无法撤销。";
+
+"account.deleteBalanceError" = "无法删除此账户,因为它的余额不为零。请将余额调为 0 后再删除。";
+"account.type.general" = "通用";
+"account.type.cash" = "现金";
+"account.type.current" = "活期账户";
+"account.type.savings" = "储蓄";
+"account.type.creditCard" = "信用卡";
+"account.type.investment" = "投资";
+"account.type.loan" = "贷款";
+"account.type.other" = "其他";
+
+"iconPicker.title" = "自定义";
+"iconPicker.preview" = "预览";
+"iconPicker.shopping" = "购物";
+"iconPicker.food" = "餐饮";
+"iconPicker.transport" = "交通";
+"iconPicker.finance" = "金融";
+"iconPicker.home" = "住房";
+"iconPicker.services" = "服务";
+"iconPicker.entertainment" = "娱乐";
+"iconPicker.sports" = "运动";
+"iconPicker.health" = "健康";
+"iconPicker.personalCare" = "个人护理";
+"iconPicker.education" = "教育";
+"iconPicker.work" = "工作";
+"iconPicker.pets" = "宠物";
+"iconPicker.need" = "需求";
+"iconPicker.tech" = "科技";
+"iconPicker.travel" = "旅行";
+"iconPicker.communication" = "通讯";
+"iconPicker.tools" = "工具";
+"iconPicker.security" = "安全";
+"iconPicker.symbols" = "符号";
+"iconPicker.direction" = "方向";
+"iconPicker.other" = "其他";
+
+"need.title" = "支出需求";
+"need.incomeNotApplicable" = "需求分类仅适用于支出";
+
+// MARK: - Balance Adjustments
+
+"account.newBalance" = "新余额";
+"account.currentBalance" = "当前余额";
+"account.adjustmentPreview" = "将创建一笔 %@ 的调整";
+"account.initialBalanceNote" = "初始余额";
+"account.adjustmentNote" = "余额调整";
+"account.existingInitialBalance" = "你已经有一个 %@ 的初始余额。要修改吗?";
+"account.modifyInitialBalance" = "修改初始余额";
+"account.adjustmentDate" = "调整日期";
+"account.finalBalance" = "最终余额";
+"account.adjustByEntry" = "通过条目调整";
+"account.adjustByEntryDesc" = "输入正确的余额,我们会创建一笔修正条目。如果你忘记记录了一些支出,请用此方式。";
+"account.changeInitialBalanceName" = "更改初始余额";
+"account.changeInitialBalanceDesc" = "输入正确的余额,我们会更改账户中的初始余额。如果你很久没记录了,请用此方式。";
+"account.creditCard.sectionTitle" = "信用卡";
+"account.creditCard.paymentReminder" = "在还款日提醒";
+"account.creditCard.paymentDay" = "还款日";
+"account.creditCard.paymentNotification" = "该还信用卡 %@ 啦 💳";
+"category.others" = "其他";
+"subcategory.balanceAdjustment" = "余额调整";
+
+// MARK: - Validation
+
+"validation.enterAmountGreaterThanZero" = "输入大于 0 的金额";
+"validation.selectSourceAccount" = "选择源账户";
+"validation.selectDestinationAccount" = "选择目标账户";
+"validation.accountsMustBeDifferent" = "账户必须不同";
+"validation.selectAccount" = "选择一个账户";
+"validation.selectSubcategory" = "选择一个子类别";
+"validation.completeFieldsFirst" = "请先填写金额、账户和类别";
+"validation.futureDateTitle" = "不允许未来日期";
+"validation.futureDateMessage" = "你不能记录未来日期的交易。请使用「计划付款」处理周期性支出。";
+
+// MARK: - Transfer
+
+"transfer.transferTo" = "转账到 %@";
+"transfer.transferFrom" = "从 %@ 转账";
+"transfer.categoryName" = "账户间转账";
+
+// MARK: - More
+
+// MARK: - Scheduled Payments
+
+// Recurrence Types
+"scheduled.recurrence.weekly" = "每周";
+"scheduled.recurrence.monthly" = "每月";
+"scheduled.recurrence.yearly" = "每年";
+
+// Payment Categories
+"scheduled.category.recurring" = "周期性";
+"scheduled.category.subscription" = "订阅";
+
+// Due Status
+"scheduled.status.past" = "已逾期";
+"scheduled.status.today" = "今天";
+"scheduled.status.upcoming" = "即将到期";
+
+// Tabs
+"scheduled.tab.recurring" = "周期";
+"scheduled.tab.subscriptions" = "订阅";
+"scheduled.tab.all" = "全部";
+
+// Empty State
+"scheduled.empty.title" = "你还没有任何计划付款";
+"scheduled.empty.message" = "为你的周期付款和订阅创建提醒";
+
+// Due Text
+"scheduled.due.yesterday" = "昨天";
+"scheduled.due.today" = "今天";
+"scheduled.due.tomorrow" = "明天";
+
+// Actions
+"scheduled.new" = "新计划付款";
+"scheduled.edit" = "编辑计划付款";
+"scheduled.delete" = "删除付款";
+"scheduled.delete.confirm.title" = "删除计划付款?";
+"scheduled.delete.confirm.message" = "此操作无法撤销。";
+
+// Editor Sections
+"scheduled.editor.basic.info" = "基本信息";
+"scheduled.editor.options" = "选项";
+"scheduled.editor.name.placeholder" = "付款名称";
+"scheduled.editor.note.placeholder" = "支出描述(可选)";
+"scheduled.editor.type" = "交易类型";
+"scheduled.editor.payment.category" = "付款类别";
+"scheduled.editor.classification" = "分类";
+"scheduled.editor.account" = "账户";
+"scheduled.editor.subcategory" = "子类别";
+"scheduled.editor.recurrence" = "周期";
+"scheduled.help.title" = "什么是计划付款?";
+"scheduled.help.message" = "跟踪重复出现的付款 — 比如订阅、租金或账单。Yala 会在到期时提醒你,并保留你已支付的历史记录。";
+"scheduled.editor.next.due" = "下次到期日";
+"scheduled.editor.day.of.month" = "每月几号";
+"scheduled.editor.day.of.week" = "星期几";
+"scheduled.editor.notifications" = "通知";
+"scheduled.editor.preview" = "即将到来的日期";
+"scheduled.notify.on.due" = "到期日通知";
+"scheduled.notify.days.before" = "到期前几天通知";
+"scheduled.select.subcategory" = "选择子类别";
+"scheduled.is.subscription" = "这是订阅吗?";
+
+// Variable amount
+"scheduled.variableAmount.toggle" = "估算金额";
+"scheduled.variableAmount.helper" = "每次审批时你都可以调整实际金额";
+"scheduled.variableAmount.badge" = "估算";
+
+// Recurrence - New logic
+"scheduled.recurrence.onetime" = "一次性";
+"scheduled.recurrence.recurring" = "周期性";
+"scheduled.recurrence.daily" = "每日";
+"scheduled.recurrence.day" = "日";
+"scheduled.recurrence.week" = "周";
+"scheduled.recurrence.month" = "月";
+"scheduled.recurrence.year" = "年";
+"scheduled.recurrence.days" = "天";
+"scheduled.recurrence.weeks" = "周";
+"scheduled.recurrence.months" = "月";
+"scheduled.recurrence.years" = "年";
+"scheduled.every" = "每";
+"scheduled.which.days" = "哪几天?";
+"scheduled.payment.date" = "付款日期";
+"scheduled.start.date" = "开始日期";
+"scheduled.has.end.date" = "有结束日期";
+"scheduled.end.date" = "结束日期";
+"scheduled.yearly.date" = "每年日期";
+
+// Scheduled Payments - Settings & Detail
+"settings.scheduled.payments" = "周期付款";
+"scheduled.empty.settings.hint" = "创建周期付款以记住你的常规支出和收入。";
+"scheduled.inactive" = "未启用";
+"scheduled.status.inactive" = "付款未启用";
+"scheduled.detail.frequency" = "频率";
+"scheduled.detail.next.date" = "下次日期";
+"scheduled.detail.end.date" = "结束日期";
+"scheduled.detail.upcoming" = "即将到来";
+"scheduled.detail.history" = "历史";
+"scheduled.detail.info.note" = "此历史显示根据周期设置估算的付款日期。";
+"scheduled.detail.not.found" = "未找到付款";
+"scheduled.next.first" = "下一笔付款";
+"scheduled.next.second" = "第二笔付款";
+"scheduled.next.third" = "第三笔付款";
+
+// Subscriptions View
+"subscriptions.title" = "订阅";
+"subscriptions.count" = "%d 个活跃订阅";
+"subscriptions.empty.title" = "你还没有任何订阅";
+"subscriptions.empty.message" = "添加 Netflix、Spotify 等服务";
+"subscriptions.calendar.empty" = "本月没有订阅";
+"subscriptions.day.empty" = "这天没有订阅";
+"subscriptions.show.all" = "显示全部";
+
+// Weekdays
+"weekday.sunday" = "星期日";
+"weekday.monday" = "星期一";
+"weekday.tuesday" = "星期二";
+"weekday.wednesday" = "星期三";
+"weekday.thursday" = "星期四";
+"weekday.friday" = "星期五";
+"weekday.saturday" = "星期六";
+
+// Weekdays - Short
+"weekday.short.sunday" = "日";
+"weekday.short.monday" = "一";
+"weekday.short.tuesday" = "二";
+"weekday.short.wednesday" = "三";
+"weekday.short.thursday" = "四";
+"weekday.short.friday" = "五";
+"weekday.short.saturday" = "六";
+
+// Common (if not already present)
+"common.disabled" = "已禁用";
+"filters.none" = "无";
+"filters.transaction.type" = "交易类型";
+"filters.clear" = "清除";
+"action.close" = "关闭";
+
+// MARK: - Accessibility
+"accessibility.closeMenu" = "关闭菜单";
+"accessibility.newRecord" = "新记录";
+"accessibility.filters" = "筛选";
+"accessibility.clearFilters" = "清除筛选";
+"accessibility.cancelRecording" = "取消录音";
+"accessibility.stopRecording" = "停止录音";
+"accessibility.startRecording" = "开始录音";
+"accessibility.cancelPreview" = "取消预览";
+"accessibility.cancelProcessing" = "取消处理";
+"accessibility.cashFlowChart" = "现金流图表";
+"accessibility.categoryPieChart" = "按类别支出饼图";
+"accessibility.subcategoryPieChart" = "按子类别支出饼图";
+"accessibility.tagPieChart" = "按标签支出饼图";
+"accessibility.widgetFixed" = "固定小组件,始终可见";
+"accessibility.favoriteTemplates" = "收藏模板";
+"accessibility.exceeded" = "已超出";
+"accessibility.inbox" = "收件箱";
+"accessibility.nextPeriod" = "下一期";
+"accessibility.previousPeriod" = "上一期";
+"accessibility.widgetPreferences" = "小组件偏好";
+"accessibility.sectionsConfig" = "配置面板";
+"accessibility.toggleSection %@" = "显示 %@";
+"accessibility.sectionPrefsButton %@" = "%@ 偏好";
+"accessibility.createAccountFirst" = "至少创建一个账户和一个类别";
+"accessibility.removeFilter" = "移除筛选";
+"balance.status.good" = "良好";
+"balance.status.critical" = "危险";
+"balance.status.normal" = "正常";
+"accessibility.viewDetails" = "查看详情";
+"accessibility.viewAllRecords" = "查看全部记录";
+"accessibility.viewAllCategories" = "查看全部类别";
+"accessibility.deleteSubcategory" = "删除子类别";
+"accessibility.deleteCategory" = "删除类别";
+"accessibility.deleteTag" = "删除标签";
+"accessibility.processAudio" = "处理音频";
+"accessibility.exchangeRateChart" = "汇率图表";
+"accessibility.periodComparison" = "时段对比图表";
+"accessibility.needTrend" = "按需求支出图表";
+"accessibility.noData" = "无数据";
+"accessibility.completeFormHint" = "要保存,请填写金额、账户和类别";
+"accessibility.completeSelectionHint" = "完成必需的选择";
+"accessibility.periodComparisonValue %d" = "当前对比上一时段,%d 个数据点";
+"accessibility.trendChart %@" = "%@ 的趋势图";
+"accessibility.dataPoints %d" = "%d 个数据点";
+"accessibility.categoriesCount %d %@" = "%d 个类别,总计 %@";
+"accessibility.subcategoriesCount %d %@" = "%d 个子类别,总计 %@";
+"accessibility.tagsCount %d %@" = "%d 个标签,总计 %@";
+"accessibility.periodsCount %d" = "%d 个时段";
+"accessibility.currenciesCount %d" = "%d 种货币";
+"accessibility.cashFlowSummary %@ %@" = "收入 %@,支出 %@";
+"accessibility.selectAtLeastOneDraft" = "至少选择一个草稿";
+"accessibility.approveCompleteHint" = "要审批,请填写账户、金额和类别";
+"accessibility.updatingExchangeRates" = "正在更新汇率";
+"accessibility.authenticating" = "正在认证";
+"accessibility.showMoreSubcategories" = "显示更多子类别";
+"accessibility.subscriptionToggle" = "标记为订阅";
+"accessibility.skipSync" = "跳过等待并继续设置";
+"accessibility.tabLimitReached" = "已达标签上限";
+"accessibility.noTransactionsToExport" = "没有可导出的交易";
+"accessibility.accountCard %@ %@" = "账户 %@,余额 %@";
+"accessibility.editAccount" = "编辑账户";
+"accessibility.pageIndicator %d %d" = "第 %1$d 页 / 共 %2$d 页";
+"accessibility.accountRow %@ %@" = "账户 %@,货币 %@";
+"accessibility.budgetRow %@ %d %@ %@" = "预算 %@,已用 %d 百分比,%@ / %@";
+"accessibility.searchResultRow %@ %@ %@" = "%@,%@,%@";
+"accessibility.regeneratingInsights" = "正在生成洞察,请稍候";
+"accessibility.completeCalculation" = "填写各项值以计算结果";
+"accessibility.noDraftsToApprove" = "没有可审批的草稿";
+"accessibility.categoriesLocked" = "正在显示所选类别的子类别";
+"accessibility.systemMonochromeIcons" = "系统设置要求使用单色图标";
+"accessibility.maxCurrenciesSelected" = "已选择最多货币";
+"accessibility.invalidThreshold" = "请输入有效的阈值";
+"accessibility.filterScheduledAll" = "全部付款";
+"accessibility.filterScheduledRecurring" = "筛选:周期";
+"accessibility.filterScheduledSubscriptions" = "筛选:订阅";
+"accessibility.calendarDay %d" = "%d 日";
+"accessibility.recentRecord %@ %@ %@" = "%@,%@,%@";
+"accessibility.sourceAmount" = "源金额";
+"accessibility.destinationAmount" = "目标金额";
+"accessibility.exchangeRate" = "汇率";
+"accessibility.draftRow %@ %@ %@" = "草稿:%@,%@,%@";
+"accessibility.metricBalance" = "余额";
+"accessibility.metricIncome" = "收入";
+"accessibility.metricExpense" = "支出";
+"accessibility.colorOption %@" = "颜色 %@";
+"accessibility.close" = "关闭";
+"accessibility.dismiss" = "关闭";
+"accessibility.remove" = "移除";
+"accessibility.clearSelection" = "清除选择";
+"accessibility.selectColor" = "选择颜色";
+"accessibility.newBudget" = "新预算";
+"accessibility.newPayment" = "新计划付款";
+"accessibility.importingHint" = "正在导入";
+"accessibility.fillRequiredFields" = "填写所有必填字段";
+"accessibility.noTransactions" = "没有可用的交易";
+"accessibility.selectDraftsFirst" = "请先至少选择一个草稿";
+"accessibility.proFeature" = "需要 Pro 订阅";
+"accessibility.noActiveAccounts" = "没有可用的活跃账户";
+"accessibility.noInactiveBudgets" = "没有可恢复的未活跃预算";
+"accessibility.profile" = "个人资料";
+
+// MARK: - Widget Hints
+
+"settings.widgetHints" = "帮助提示";
+"settings.widgetHintsDescription" = "在小组件上显示信息按钮,解释每个图表的含义。";
+"settings.showVariations" = "对比";
+"settings.showVariationsDescription" = "显示与上一时段的百分比变化和对比图表。";
+"settings.averageLine" = "平均线";
+"settings.averageLineDescription" = "在柱状图上显示平均线。";
+"settings.averageLine.off" = "关闭";
+"settings.averageLine.total" = "总计";
+"settings.averageLine.segmented" = "分段";
+"settings.averageLine.offDescription" = "图表上不显示平均线。";
+"settings.averageLine.totalDescription" = "显示整体平均的横线。";
+"settings.averageLine.segmentedDescription" = "按时段分段并显示百分比变化。";
+"settings.decimalPlaces" = "小数位数";
+"settings.decimalPlacesDescription" = "仅适用于总计和图表。单笔记录始终显示 2 位小数。";
+"settings.decimalsNone" = "无小数";
+"settings.decimalsOne" = "1 位小数";
+"settings.decimalsTwo" = "2 位小数";
+"settings.currencyFormat" = "货币格式";
+"settings.currencyFormatDescription" = "选择显示货币代码 (USD) 或符号 ($)。";
+"settings.currencyCode" = "代码 (PEN、USD)";
+"settings.currencySymbol" = "符号 (S/、$)";
+"settings.autoFocusField" = "自动聚焦字段";
+"settings.autoFocusFieldDescription" = "创建新手动记录时,键盘会自动在所选字段上打开。";
+"settings.autoFocusAmount" = "金额";
+"settings.autoFocusNote" = "描述";
+"settings.autoFocusNone" = "无";
+
+// Expenses Only Mode
+"settings.sectionUsageMode" = "使用模式";
+"settings.expensesOnlyMode" = "仅支出";
+"settings.expensesOnlyModeDescription" = "隐藏收入、转账和余额。你的数据不会被删除,只是被隐藏。";
+"settings.expensesOnlyActivateTitle" = "启用「仅支出」模式?";
+"settings.expensesOnlyActivateMessage" = "收入、转账和余额将在整个应用中被隐藏。你随时可以撤销。";
+"settings.expensesOnlyActivateConfirm" = "好,启用";
+"settings.expensesOnlyDeactivateTitle" = "禁用「仅支出」模式?";
+"settings.expensesOnlyDeactivateMessage" = "收入、转账和余额将再次显示。";
+"settings.expensesOnlyDeactivateConfirm" = "好,禁用";
+"settings.expensesOnlyActive" = "已启用";
+"settings.categoryHidden" = "(已隐藏)";
+
+"widget.hint.trend" = "显示所选时段内你的余额、收入或支出的变化。";
+"widget.hint.topCategories" = "本时段你支出最多的类别。";
+"widget.hint.topSubcategories" = "支出最多的子类别,按类别筛选。";
+"widget.hint.categoriesPie" = "按类别的支出百分比分布。";
+"widget.hint.subcategoriesPie" = "按子类别的支出百分比分布。";
+"widget.hint.tagsPie" = "按所分配标签的支出分布。";
+"widget.hint.needTrend" = "把你的支出分类为必需、优先或可选。";
+"widget.hint.cashFlow" = "对比你的收入和支出查看净流量。";
+"widget.hint.recentRecords" = "你最近的交易。";
+"widget.hint.budgets" = "你活跃预算的状态。";
+"widget.hint.exchangeRate" = "你首选货币的最新汇率。";
+"widget.hint.scheduledPayments" = "即将到期的计划付款和订阅。";
+"widget.hint.spendingAnalysis" = "按类别、子类别、标签和支出类型分解支出。";
+"widget.hint.incomeAnalysis" = "按类别、子类别和标签分解收入。";
+
+// MARK: - Onboarding
+
+"onboarding.welcomeTitle" = "让我们把你的钱整理好";
+"onboarding.welcomeSubtitle" = "几步就能为你设置好 Yala。";
+"onboarding.nameLabel" = "我们怎么称呼你?";
+"onboarding.namePlaceholder" = "你的名字";
+"onboarding.currencyTitle" = "你的主货币";
+"onboarding.currencySubtitle" = "选择你最常用的货币。";
+"onboarding.secondaryTitle" = "次要货币";
+"onboarding.secondarySubtitle" = "你使用其他货币吗?选择最多 2 种以查看汇率。";
+"onboarding.secondaryHint" = "已选 %d / %d";
+"onboarding.periodTitle" = "默认时段";
+"onboarding.periodSubtitle" = "打开应用时你想看哪个时间范围?";
+"onboarding.finish" = "开始吧";
+"onboarding.startUsingYala" = "开始使用 Yala";
+"onboarding.categoriesTitle" = "起始类别";
+"onboarding.categoriesSubtitle" = "我们准备了常用类别,帮你从第一天开始就把支出整理好。";
+"onboarding.categoriesYes" = "使用这些类别开始";
+"onboarding.categoriesNo" = "从零开始";
+"onboarding.categoriesRecommended" = "推荐";
+"onboarding.categoriesInfo" = "每个类别都包含更细的子类别。你可以在「个人资料 > 类别」中查看和自定义。";
+"onboarding.notificationsTitle" = "想保持联系吗?";
+"onboarding.notificationsSubtitle" = "打开对你有帮助的提醒。你随时可以更改。";
+"onboarding.notificationsSkip" = "暂时不用,谢谢";
+"onboarding.notificationsSelectAll" = "全部启用";
+"onboarding.notificationsDeselectAll" = "全部禁用";
+"onboarding.recommended" = "推荐";
+"onboarding.languageTitle" = "选择你的语言";
+"onboarding.languageSubtitle" = "我们注意到你的语言尚未支持。别担心,从这些选项中挑一个吧!";
+
+// Expenses Only Mode - Onboarding
+"onboarding.expensesOnlyTitle" = "你想怎么使用 Yala?";
+"onboarding.expensesOnlySubtitle" = "选择你想如何整理钱。之后可以在设置中更改。";
+"onboarding.expensesOnlyOptionAll" = "完整控制";
+"onboarding.expensesOnlyOptionExpenses" = "仅支出";
+"onboarding.expensesOnlyDescAll" = "支出、收入、转账和账户余额";
+"onboarding.expensesOnlyDescExpenses" = "只跟踪你花的钱,不复杂";
+// Usage Mode: 3 options
+"onboarding.usageMode.expensesOnly" = "仅支出";
+"onboarding.usageMode.expensesOnly.quote" = "「我只想知道我的钱去哪了」";
+"onboarding.usageMode.expensesOnly.desc" = "只跟踪你的支出,仅此而已。无余额,不复杂。";
+"onboarding.usageMode.dayToDay" = "日常";
+"onboarding.usageMode.dayToDay.quote" = "「我想知道我还能花多少」";
+"onboarding.usageMode.dayToDay.desc" = "支出、收入和你的账户余额。快捷又实用。";
+"onboarding.usageMode.fullControl" = "真实余额";
+"onboarding.usageMode.fullControl.quote" = "「我想要一个数字涵盖所有:我有什么、欠什么、别人欠我什么」";
+"onboarding.usageMode.fullControl.desc" = "你把所有都计入余额 — 账户、卡片以及与他人之间的往来。你看到的数字是真正属于你的。";
+"onboarding.privacyTitle" = "全部就绪";
+"onboarding.privacySubtitle" = "你已准备好开始使用 Yala";
+"onboarding.privacyLocal" = "你的财务数据保留在你的设备上";
+"onboarding.privacyNoTracking" = "无跟踪、无广告";
+"onboarding.privacyIcloud" = "只有你能访问你的数据";
+"onboarding.privacyNoSharing" = "AI 功能不分享或存储敏感数据";
+"onboarding.categoriesDefault" = "默认类别";
+"onboarding.categoriesCustom" = "自定义类别";
+"onboarding.privacyTutorialsHint" = "探索 Yala 的教程和技巧";
+"onboarding.tutorialsTitle" = "学习如何使用 Yala";
+"onboarding.tutorialsSubtitle" = "简短的指南,帮你最大化利用你的财务";
+"onboarding.tutorialsExplore" = "探索教程";
+"onboarding.tutorialsSettingsHint" = "你随时可以在设置中找到这些";
+"onboarding.accountTitle" = "你的第一个账户";
+"onboarding.accountSubtitle" = "账户代表你存钱的地方。每个账户使用单一货币。";
+"onboarding.accountTypeLabel" = "账户类型";
+"onboarding.accountNameLabel" = "账户名称";
+"onboarding.accountNamePlaceholder" = "例如:我的主账户";
+"onboarding.accountCurrencyLabel" = "账户货币";
+"onboarding.accountBalanceLabel" = "初始余额";
+"onboarding.accountBalanceHint" = "你当前的大致余额。活期:可用资金。储蓄:已存的金额。";
+"onboarding.accountBalanceSkipHint" = "如果不知道,先填 0,以后在账户里调整。";
+"onboarding.accountBalanceHintGeneral" = "想想今天你所有付款方式中可用的钱有多少。粗略估计就行。";
+"onboarding.accountBalanceHintCash" = "你现在手上有的现金。不需要精确 — 之后可以调整。";
+"onboarding.accountBalanceHintChecking" = "你银行账户今天的可用余额。不需要精确 — 之后可以调整。";
+"onboarding.accountBalanceHintSavings" = "你在此账户中存的总额。不需要精确 — 之后可以调整。";
+"onboarding.accountBalanceLearnMore" = "我们一起算算你的余额";
+"onboarding.balanceGuideHint" = "我们一步步引导你";
+"onboarding.balanceManualOption" = "我知道我的余额";
+"onboarding.balanceManualHint" = "你自己输入";
+"onboarding.balanceGuidedIncompleteHint" = "你还没完成计算。点击继续。";
+"onboarding.privacyLocalShort" = "数据保存在你的设备";
+"onboarding.privacyNoTrackingShort" = "无跟踪、无广告";
+"onboarding.privacyIcloudShort" = "只有你可以访问";
+"onboarding.privacyNoSharingShort" = "安全 AI";
+"onboarding.accountBalanceGuideTitle" = "我怎么算我的余额?";
+"onboarding.accountBalanceGuideIntro" = "初始余额告诉 Yala 你从多少开始。不需要精确到分 — 粗略估计就行。下面是按你所选账户类型的思考方式。";
+"onboarding.accountBalanceGuideGeneral" = "如果你用一个通用账户来汇总同一货币的所有付款方式,你的余额反映你有多少可用的钱。\n\n要计算它,把所有相加:活期账户、储蓄、现金。如果有未付的信用卡费用,可以减去以更精确 — 或者之后把每张卡作为单独账户跟踪。\n\n最终的数字就是你的初始余额。";
+"onboarding.accountBalanceGuideCash" = "这是最直接的:你现在有多少现金?看看钱包、抽屉,或任何你存放现金的地方。\n\n不必担心精确 — 如果你觉得「大约 50」,就填 50。之后可以调整。";
+"onboarding.accountBalanceGuideChecking" = "你的活期(或借记)账户的可用余额可在网银 App 或 ATM 查询。\n\n填入今天看到的可用余额。如果有多个活期账户,可以为每个在 Yala 里创建一个,或合并起来 — 哪种方式适合你都行。";
+"onboarding.accountBalanceGuideSavings" = "你的储蓄账户里存了多少?如果有多个,可以为每个在 Yala 创建一个账户,或合并为一个。\n\n填入你存的总额。如果银行显示了已计利息,把它包含在总额里。";
+"onboarding.accountBalanceGuideClosing" = "如果不完美也别担心 — 重要的是开始。";
+"onboarding.accountBalanceHintCreditCard" = "到目前为止你用这张卡花了多少。不需要精确 — 之后可以调整。";
+// Balance Calculator Sheet
+// Calculator field hints
+"onboarding.calc.bankAccountsHint" = "你在活期或借记账户里的所有钱";
+"onboarding.calc.savingsHint" = "你在储蓄账户中或单独存放的钱";
+"onboarding.calc.cashHint" = "你手上的纸币和硬币";
+"onboarding.calc.creditCardSpendingHint" = "本月你在卡上花的钱";
+"onboarding.calc.creditLineHint" = "银行给你的总额度";
+"onboarding.calc.availableCreditHint" = "你卡上还剩多少";
+"onboarding.calc.title" = "我们帮你算余额";
+"onboarding.calc.intro" = "不必精确 — 粗略估计就行。";
+"onboarding.calc.bankAccounts" = "银行账户";
+"onboarding.calc.savings" = "储蓄";
+"onboarding.calc.cash" = "现金";
+"onboarding.calc.creditCardSpending" = "信用卡支出";
+"onboarding.calc.optional" = "(可选)";
+"onboarding.calc.available" = "你的可用 →";
+"onboarding.calc.balance" = "你的余额 →";
+"onboarding.calc.tipCashFlow" = "如果你使用信用卡,可以随时把它们作为单独账户添加。";
+"onboarding.calc.tipPatrimonial" = "如果你与他人分担支出,把别人欠你的和你欠的都包括进来,余额会更精确。";
+"onboarding.calc.useBalance" = "使用此余额";
+"onboarding.calc.adjustLater" = "你随时可以调整。";
+"onboarding.calc.instruction" = "只填你有钱的地方。我们会算其余的。";
+"onboarding.calc.directSpending" = "你花了多少?";
+"onboarding.calc.directSpendingHint" = "用这张卡在此货币下花的总额。如果在其他货币下也花,只填本货币的。";
+"onboarding.calc.switchToDirect" = "我更想直接填我花了多少";
+"onboarding.calc.switchToDetailed" = "我更想用额度和可用";
+// Shared expenses (patrimonial only)
+"onboarding.calc.sharedExpenses" = "共享支出";
+"onboarding.calc.othersOweMe" = "别人欠你";
+"onboarding.calc.iOwe" = "你欠别人";
+// Credit card calculator
+"onboarding.calc.creditCard.title" = "你的信用卡";
+"onboarding.calc.creditLine" = "信用额度";
+"onboarding.calc.availableCredit" = "可用";
+"onboarding.calc.currentSpending" = "当前支出 →";
+"onboarding.calc.yourBalance" = "你的余额 →";
+"onboarding.calc.creditCard.tip" = "你的余额反映已花费但尚未还的部分。";
+// Simple account explanations
+"onboarding.calc.cashExplanation" = "看看钱包以及任何存放现金的地方。全部相加 — 粗略估计就行。";
+"onboarding.calc.checkingExplanation" = "在你的网银 App 或 ATM 查看可用余额。填入今天看到的数字。";
+"onboarding.calc.savingsExplanation" = "你存了多少?如果有多个储蓄账户,你可以全部相加,或为每个创建一个账户。";
+"onboarding.calc.balanceLabelChecking" = "账户里的钱";
+"onboarding.calc.balanceLabelSavings" = "已存金额";
+"onboarding.calc.balanceLabelCash" = "你的现金";
+"onboarding.accountImportTip" = "在「个人资料 > 导入」中,你可以把记录导入到任意账户。";
+"onboarding.accountMoreTip" = "你随时可以添加更多账户。如果使用多种货币,每种至少创建一个。";
+"onboarding.budgetTitle" = "你打算花多少?";
+"onboarding.budgetSubtitle" = "预算让你知道何时接近你设的金额。挑一个类别和一个月度参考金额。";
+"onboarding.budgetYes" = "我想跟踪我的支出";
+"onboarding.budgetNo" = "暂时不用,谢谢";
+"onboarding.budgetCategoryLabel" = "哪个类别?";
+"onboarding.budgetAmountLabel" = "月度金额";
+"onboarding.budgetAmountPlaceholder" = "例如:500";
+"onboarding.budgetMoreTip" = "你可以在「计划 > 预算」中创建更多预算或编辑已有的。";
+"onboarding.budgetPreviewLabel" = "你的预算将显示成这样";
+
+// Purpose step (binary)
+"onboarding.purpose.title" = "你想用 Yala 做什么?";
+"onboarding.purpose.expenses" = "只跟踪我的支出";
+"onboarding.purpose.expensesDesc" = "记录你花的钱,仅此而已";
+"onboarding.purpose.control" = "管理我的钱";
+"onboarding.purpose.controlDesc" = "支出、收入,以及你有多少";
+// Accounts step (binary)
+"onboarding.accounts.title" = "你想怎样在 Yala 里整理你的钱?";
+"onboarding.accounts.single" = "全部合在一个账户里";
+"onboarding.accounts.singleDesc" = "每种货币一个主账户,把所有钱都包含进来";
+"onboarding.accounts.multiple" = "每个账户分开";
+"onboarding.accounts.multipleDesc" = "储蓄、借记、信用卡... 这样你知道每个有多少";
+// Account type step
+"onboarding.accountType.title" = "我们来创建你的第一个账户";
+"onboarding.accountType.subtitle" = "选择现在要创建的账户。之后可以在个人资料中添加更多。";
+"onboarding.accountType.checkingHint" = "你日常使用的银行账户";
+"onboarding.accountType.savingsHint" = "你存放储蓄的地方";
+"onboarding.accountType.creditHint" = "你的信用卡";
+"onboarding.accountType.cashHint" = "你手上的纸币和硬币";
+// Name hint
+"onboarding.nameHint" = "可以是你的名字、昵称或任何你喜欢的";
+"onboarding.categories.viewSubs" = "查看子类别";
+// Currency + Name step (adaptive)
+"onboarding.currencyName.titleSingle" = "我们来创建你的主账户";
+"onboarding.currencyName.subtitleSingle" = "我们专注你最重要的货币。这个账户用来跟踪你的钱。";
+"onboarding.currencyName.titleSeparate" = "给你的账户一个身份";
+"onboarding.currencyName.subtitleSeparate" = "给它取名并选择使用的货币。";
+// Balance step
+"onboarding.balance.title" = "这个账户里你有多少?";
+"onboarding.balance.subtitle" = "大致估计就行。你随时可以调整。";
+// Confirmation step
+"onboarding.confirm.title" = "这是你的 Yala 设置";
+"onboarding.confirm.accountLabel" = "账户";
+"onboarding.confirm.currencyLabel" = "货币";
+"onboarding.confirm.balanceLabel" = "余额";
+"onboarding.confirm.modeLabel" = "模式";
+"onboarding.confirm.motivationExpenses" = "准备好理解你的支出!";
+"onboarding.confirm.motivationDayToDay" = "你的财务计划从此开始!";
+"onboarding.confirm.motivationFullControl" = "从今天起一切尽在掌握!";
+
+// MARK: - Bulk Edit
+"bulkEdit.currencyWarning" = "更改账户会更新所选交易的货币。";
+"bulkEdit.editCount" = "编辑 %d 笔交易";
+"bulkEdit.successMessage" = "交易已成功更新";
+"bulkEdit.cannotEditTransferSubcategory" = "无法更改转账的子分类。请单独编辑每一笔。";
+"bulkEdit.cannotEditTransferAccount" = "无法更改转账的账户。请单独编辑每一笔。";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "无法批量编辑跨币种转账的金额。请单独编辑以保留汇率。";
+"bulkEdit.commonTags" = "在所有所选中";
+"bulkEdit.partialTags" = "在部分所选中";
+"bulkEdit.availableTags" = "可添加";
+
+// MARK: - Voice Language
+"voiceLanguage.system" = "系统";
+"voiceLanguage.spanish" = "西班牙语";
+"voiceLanguage.english" = "英语";
+
+// MARK: - Voice Input
+"voice.title" = "语音备注";
+"voice.recording" = "正在录音...";
+"voice.recorded" = "已录音";
+"voice.pleaseWait" = "请稍候";
+"voice.tapToRecord" = "点击录音";
+"voice.youCanSay" = "你可以说:";
+"voice.hintTypeExample" = "支出/收入/转账";
+"voice.hintAmountExample" = "50 %@";
+"voice.hintSubcategoryExample" = "餐厅";
+"voice.hintMerchantExample" = "Starbucks";
+"voice.hintTagExample" = "工作";
+"voice.hintDateExample" = "今天/昨天";
+"voice.exampleLabel" = "示例";
+"voice.example1" = "在 Starbucks 花了 50 %@ 喝咖啡";
+"voice.example2" = "自由职业收入 1000 %@";
+"voice.example3" = "向储蓄账户转账 200 %@";
+"voice.processingAudio" = "正在处理音频...";
+"voice.analyzing" = "正在分析...";
+"voice.parsing" = "正在提取数据...";
+"voice.saving" = "正在保存...";
+"voice.errorNoAmount" = "无法识别金额。请重试。";
+"voice.errorNoApiKey" = "无法连接到语音服务。请稍后再试。";
+"voice.errorNoConnection" = "无网络连接。使用此功能需要联网。";
+"voice.errorMicPermission" = "麦克风权限被拒绝。请在设置中启用。";
+"voice.errorSaveFailed" = "无法保存草稿。请重试。";
+"voice.openSettings" = "打开设置";
+"voice.tryImage" = "使用图片";
+
+// MARK: - Inbox
+"inbox.title" = "收件箱";
+"inbox.pending" = "待处理";
+"inbox.archived" = "已归档";
+"inbox.noDescription" = "无描述";
+"inbox.noAmount" = "无金额";
+"inbox.missingLabel" = "缺少数据";
+"inbox.needsAccount" = "选择账户";
+"inbox.needsSubcategory" = "选择子类别";
+"inbox.approve" = "审批";
+"inbox.delete" = "删除";
+"inbox.noPending" = "没有待处理草稿";
+"inbox.noPendingDescription" = "新的语音和图片草稿将显示在这里。";
+"inbox.bulkHint" = "点击「选择」进行批量操作";
+"inbox.subtitleMultiplePending" = "%d 笔交易等待中,一步一步来。";
+"inbox.subtitleOnePending" = "一笔交易等待中,有空时查看一下。";
+"inbox.subtitleAllDone" = "收件箱已清空,做得很棒。";
+"inbox.pendingBadge" = "%d 项待处理";
+"inbox.newTag" = "新";
+"inbox.noArchived" = "没有已归档草稿";
+"inbox.noArchivedDescription" = "已审批或已拒绝的草稿将显示在这里。";
+"inbox.selectedCount" = "已选 %d";
+"inbox.editDraft" = "编辑草稿";
+"inbox.cannotApprove" = "无法审批";
+"inbox.sourceVoice" = "语音";
+"inbox.sourceEmail" = "邮件";
+"inbox.sourceScreenshot" = "截图";
+"inbox.sourceScreenshotList" = "列表";
+"inbox.sourceReceipt" = "收据";
+"inbox.sourceScheduledPayment" = "计划付款";
+"inbox.sourceSubscription" = "订阅";
+"inbox.sourceApplePay" = "Apple Pay";
+"inbox.sourceAutomation" = "自动化";
+"inbox.sourceSiri" = "Siri";
+"inbox.errorNoAccount" = "你必须选择一个账户";
+"inbox.errorNoAmount" = "你必须指定金额";
+"inbox.errorNoSubcategory" = "你必须选择一个子类别";
+"inbox.errorArchivedAccount" = "此账户已归档。请编辑草稿并更换账户后再审批。";
+"inbox.errorFutureDate" = "无法审批未来日期的交易";
+"inbox.duplicateWarningTitle" = "可能重复";
+"inbox.duplicateWarningMessage" = "已存在类似交易。仍要创建吗?";
+"inbox.createAnyway" = "仍然创建";
+"inbox.deleteConfirmMessage" = "你确定要删除 %d 个草稿吗?";
+"inbox.approveableCount" = "%d / %d 可审批";
+"inbox.saveLater" = "稍后审批";
+"inbox.deleteTitle" = "删除草稿";
+"inbox.deleteMessage" = "此操作无法撤销。";
+"inbox.reject" = "拒绝";
+"inbox.approveAll" = "全部审批";
+"inbox.returnToPending" = "返回待处理";
+"inbox.discardChangesTitle" = "丢弃更改?";
+"inbox.discardChanges" = "丢弃";
+"inbox.keepEditing" = "继续编辑";
+"inbox.discardChangesMessage" = "你有未保存的更改将丢失。";
+"inbox.approveSuccess" = "交易已创建";
+"inbox.approveNext" = "审批下一个";
+"inbox.transactionCreated" = "笔交易已创建";
+"inbox.transactionsCreated" = "笔交易已创建";
+"inbox.viewInRecords" = "在记录中查看";
+"inbox.backToInbox" = "返回收件箱";
+
+// MARK: - Image Input
+"image.title" = "图片";
+"image.selectTitle" = "选择一张图片";
+"image.selectSubtitle" = "扫描银行截图或收据来自动创建交易。";
+"image.selectButton" = "选择图片";
+"image.processing" = "正在处理...";
+"image.processingSubtitle" = "正在从图片中提取数据";
+"image.errorTitle" = "错误";
+"image.errorLoad" = "无法加载图片";
+"image.errorNoData" = "图片中未检测到交易";
+"image.errorUnrecognized" = "无法识别的图片类型";
+"image.errorGeneric" = "处理图片时出错";
+"image.errorPhotoPermission" = "照片权限被拒绝。请在设置中启用。";
+"image.errorCorrupted" = "无法处理图片。请尝试其他图片。";
+"image.errorSaveFailed" = "无法保存草稿。请重试。";
+"image.errorNoApiKey" = "无法连接到图片服务。请稍后再试。";
+"image.errorNoConnection" = "无网络连接。分析图片需要联网。";
+"image.openSettings" = "打开设置";
+"image.transactionDetected" = "笔交易已检测";
+"image.transactionsDetectedCount" = "笔交易已检测";
+"image.reviewDraft" = "查看";
+"image.transactionsDetected" = "已检测到交易";
+"image.goToInbox" = "前往收件箱";
+"image.transactionsDetectedMessage" = "我们检测到 %d 笔交易。你可以在收件箱中查看并审批它们。";
+"image.analyzingIn" = "%d 秒后开始分析...";
+"image.imagesSelected" = "已选 %d 张图片";
+"image.youCanUpload" = "你可以上传:";
+"image.hintReceipts" = "购物收据";
+"image.hintBankScreenshots" = "银行截图";
+"image.hintRestaurantTickets" = "餐厅小票";
+"image.hintStatements" = "账户对账单";
+"image.hintPaymentProofs" = "付款证明";
+"image.hintMultiple" = "一次多张";
+"image.exampleLabel" = "示例";
+"image.example1" = "杂货收据照片";
+"image.example2" = "银行转账截图";
+"image.example3" = "旅行中的多张票据照片";
+
+// MARK: - Subscription
+"subscription.title" = "Yala Pro";
+"subscription.paywallTitle" = "解锁 Yala 的全部能量";
+"subscription.paywallSubtitle" = "用高级工具把你的财务带到下一阶段";
+"subscription.subscribe" = "订阅";
+"subscription.processing" = "正在处理...";
+"subscription.restore" = "恢复购买";
+"subscription.planMonthly" = "月度";
+"subscription.planYearly" = "年度";
+"subscription.perYear" = "/ 年";
+"subscription.perMonth" = "%@ / 月";
+"subscription.saveBadge" = "省 %d%%";
+"subscription.feature.voice" = "无限语音输入";
+"subscription.feature.image" = "收据和图片扫描";
+"subscription.feature.reports" = "高级报表与图表";
+"subscription.feature.currencies" = "全部货币与汇率";
+"subscription.feature.themes" = "自定义主题";
+"subscription.feature.export" = "导出 Excel 和 CSV";
+"subscription.legalFooter" = "费用将从你的 Apple 账户扣除。订阅将自动续期,除非至少在当前周期结束前 24 小时取消。";
+"subscription.termsLink" = "使用条款与隐私政策";
+"subscription.termsOfUseLink" = "使用条款";
+"subscription.privacyPolicyLink" = "隐私政策";
+"subscription.errorTitle" = "购买错误";
+"subscription.activeTitle" = "你已是 Yala Pro";
+"subscription.activeSubtitle" = "你已可使用全部高级功能";
+"subscription.currentPlan" = "当前方案";
+"subscription.renewsOn" = "续期日期";
+"subscription.manageInAppStore" = "在 App Store 管理";
+
+// MARK: - Tips & Tricks
+"tips.subtitle" = "把 Yala 用到极致";
+"tips.section.quickEntry" = "快速记录";
+"tips.section.organize" = "整理你的钱";
+"tips.section.advanced" = "进阶技巧";
+"tips.voice.title" = "用语音记录支出";
+"tips.voice.detail" = "启用语音输入并说类似「午餐 35 美元」的话。Yala 会自然理解金额、日期和备注。";
+"tips.camera.title" = "扫描收据和截图";
+"tips.camera.detail" = "拍下收据或银行截图。Yala 会自动提取金额并创建草稿。";
+"tips.favorites.title" = "保存常用付款";
+"tips.favorites.detail" = "经常付同一笔?把支出保存为收藏,下次从 + 菜单一键记录。";
+"tips.budgets.title" = "创建预算";
+"tips.budgets.detail" = "设定每月每个类别想花多少。Yala 会在你接近上限时提醒,避免超支。";
+"tips.tags.title" = "标记特殊支出";
+"tips.tags.detail" = "用「假期」或「家装」等标签把不同类别的支出归到一起,看你花了多少。";
+"tips.filters.title" = "筛选并对比时段";
+"tips.filters.detail" = "用筛选只看你关心的:按类别、标签、账户或时段。逐月对比发现变化。";
+"tips.export.title" = "导出你的数据";
+"tips.export.detail" = "在「设置 > 导出」中下载 CSV 或 Excel 格式的支出。适合电子表格分析或留存。";
+"tips.faceID.title" = "用 Face ID 保护";
+"tips.faceID.detail" = "在「设置 > 安全」中启用生物识别锁定。可以选择离开应用时或一段时间后激活。";
+"tips.siri.title" = "用语音备注支出";
+"tips.siri.detail" = "说:「在 Yala 备注一笔支出」,然后口述详情";
+"tips.siri.close" = "关闭 Siri 建议";
+
+// MARK: - TipKit (contextual guides)
+"tipkit.skip" = "跳过引导";
+"tipkit.next" = "下一步";
+"tipkit.done" = "完成";
+"tipkit.comparison.title" = "对比并学习";
+"tipkit.comparison.message" = "与上一时段或去年对比,看看你的状态。";
+
+// Group D: Settings Tour
+"tipkit.settingsAppIcon.title" = "你的图标";
+"tipkit.settingsAppIcon.message" = "更换应用图标,加点个人风格。";
+"tipkit.settingsTheme.title" = "你的主题";
+"tipkit.settingsTheme.message" = "在经典、极简或半透明中选择你的风格。";
+"tipkit.settings.accounts.title" = "你的账户";
+"tipkit.settings.accounts.message" = "添加和整理你的银行账户、现金等。";
+"tipkit.settings.categories.title" = "类别";
+"tipkit.settings.categories.message" = "自定义类别来分类你的支出和收入。";
+"tipkit.settings.tags.title" = "标签";
+"tipkit.settings.tags.message" = "创建标签按项目、旅行或任何你需要的方式分组支出。";
+"tipkit.settings.budgets.title" = "预算";
+"tipkit.settings.budgets.message" = "设定支出上限,在接近时获得提醒。";
+"tipkit.settings.planned.title" = "计划付款";
+"tipkit.settings.planned.message" = "安排周期付款,Yala 会按时提醒你。";
+"tipkit.settings.personalization.title" = "个性化";
+"tipkit.settings.personalization.message" = "调整语言、货币和外观,让 Yala 像你的。";
+"tipkit.settings.tutorials.title" = "教程";
+"tipkit.settings.tutorials.message" = "一步步的指南,帮你最大化 Yala。";
+"tipkit.cfSetup.banner.title" = "为你定制";
+"tipkit.cfSetup.banner.message" = "我们看了你最近几个月并搭好了计划。随意调整。";
+"tipkit.cfSetup.line.title" = "你的收入与支出";
+"tipkit.cfSetup.line.message" = "每行是你每月赚或付的项目。点击 ✓ 把它纳入计划。";
+"tipkit.cfSetup.starting.title" = "起始余额";
+"tipkit.cfSetup.starting.message" = "如果你已经有一些储蓄,请输入此处使计划更准确。";
+"tipkit.cfSetup.create.title" = "创建计划";
+"tipkit.cfSetup.create.message" = "一切就绪后,点击此处激活你的计划。";
+"tipkit.cfTable.cell.title" = "点击查看详情";
+"tipkit.cfTable.cell.message" = "点击任意金额查看它的来源和计算方式。";
+"tipkit.cfTable.available.title" = "剩余";
+"tipkit.cfTable.available.message" = "在这里你可以看到每月还剩多少(或还差多少)。";
+"tipkit.cfTable.add.title" = "添加行";
+"tipkit.cfTable.add.message" = "如果缺少某项收入或支出,在此添加。";
+
+// Pro Tour
+"tipkit.pro.voiceInput.title" = "语音输入";
+"tipkit.pro.voiceInput.message" = "现在你可以口述支出了。直接说,Yala 会替你记录。";
+"tipkit.pro.imageInput.title" = "图片输入";
+"tipkit.pro.imageInput.message" = "附上任意收据或发票的照片,Yala 会为你提取一笔或多笔交易。";
+"tipkit.pro.smartInsights.title" = "智能洞察";
+"tipkit.pro.smartInsights.message" = "打开它,Yala 会用 AI 生成关于你财务的观察。";
+"tipkit.pro.exportExtended.title" = "无限导出";
+"tipkit.pro.exportExtended.message" = "按完整年份、全部历史或自定义范围导出你的数据。";
+"tipkit.pro.premiumIcons.title" = "专属图标";
+"tipkit.pro.premiumIcons.message" = "从高级图标中选一个,个性化你的应用。";
+"tipkit.pro.proThemes.title" = "高级主题";
+"tipkit.pro.proThemes.message" = "发现专属配色主题,让 Yala 充满你的个人风格。";
+"tipkit.pro.fab.title" = "新的记录方式";
+"tipkit.pro.fab.message" = "点击此处通过语音、图片或手动记录。三种方式任你选。";
+"tipkit.pro.chatFab.title" = "你的财务助理";
+"tipkit.pro.chatFab.message" = "向 Yala 询问你的支出、预算等。";
+"tipkit.pro.aiSummary.title" = "你的 AI 摘要";
+"tipkit.pro.aiSummary.message" = "一键生成你财务的智能摘要。立即获得有用的观察。";
+"tipkit.aiCharts.pro.title" = "AI 观察";
+"tipkit.aiCharts.pro.message" = "点击这里获取关于你现金流的智能观察。";
+"tipkit.aiCharts.free.title" = "智能观察";
+"tipkit.aiCharts.free.message" = "升级到 Pro 即可获取关于你财务的 AI 洞察。";
+
+// MARK: - FAQ
+"faq.subtitle" = "最常见问题的解答";
+"faq.section.general" = "通用";
+"faq.section.data" = "你的数据";
+"faq.section.pro" = "Yala Pro";
+"faq.whatIsYala.q" = "什么是 Yala?";
+"faq.whatIsYala.a" = "Yala 是你的个人理财应用。它帮你跟踪支出和收入、按类别和标签整理钱、创建预算,并清晰看到财务状况。";
+"faq.howToRecord.q" = "我怎么记录一笔支出?";
+"faq.howToRecord.a" = "点击主屏幕的 + 按钮。你可以手动输入金额、用语音口述或用相机扫描收据。Yala 会替你填好详情。";
+"faq.multiCurrency.q" = "我可以使用多种货币吗?";
+"faq.multiCurrency.a" = "可以。Yala 支持 7 种货币 (PEN、USD、EUR、MXN、COP、BRL、GBP)。在「设置 > 货币」中设置主货币并添加次要货币。";
+"faq.changeCategory.q" = "我怎么更改一笔支出的类别?";
+"faq.changeCategory.a" = "打开支出并点击类别更改。要一次更改多个,使用批量编辑:长按一条记录然后选择要修改的。";
+"faq.importData.q" = "我可以导入数据吗?";
+"faq.importData.a" = "可以。前往「设置 > 导入」上传 CSV 或 Excel 文件。Yala 会自动检测列并允许你按货币分配账户。";
+"faq.exportData.q" = "我怎么导出数据?";
+"faq.exportData.a" = "前往「设置 > 导出」选择 CSV 或 Excel 格式。你可以下载所有记录用于电子表格分析或备份。";
+"faq.deleteData.q" = "我可以删除所有数据吗?";
+"faq.deleteData.a" = "可以。在「设置 > 清除数据」中可以删除所有信息。此操作无法撤销,建议先导出备份。";
+"faq.whatIsPro.q" = "Yala Pro 包含什么?";
+"faq.whatIsPro.a" = "Yala Pro 解锁高级功能如语音输入、相机收据扫描、专属主题等。所有福利可在「设置 > 订阅」查看。";
+"faq.cancelSub.q" = "我怎么取消订阅?";
+"faq.cancelSub.a" = "你可以随时在「设置 > 订阅 > 在 App Store 管理」中管理或取消订阅。Pro 权限将持续到付费周期结束。";
+
+// MARK: - Shortcuts (App Intents)
+"shortcut.quickExpense.title" = "新条目";
+"shortcut.quickExpense.description" = "在 Yala 中创建一条带金额、账户、类别和标签的新条目。";
+"shortcut.quickExpense.shortTitle" = "新条目";
+
+// Errors
+"shortcut.error.database" = "无法访问数据库";
+"shortcut.error.noAccount" = "没有可用账户。请先创建一个账户。";
+"shortcut.error.save" = "无法保存条目";
+"shortcut.error.consentRequired" = "使用此快捷指令前请在应用内接受 AI 同意。";
+
+// Voice Entry Shortcut
+"shortcut.voiceEntry.title" = "语音记录";
+"shortcut.voiceEntry.description" = "打开语音录音以口述记录支出";
+"shortcut.voiceEntry.shortTitle" = "语音记录";
+"shortcut.voiceEntry.opening" = "正在打开语音记录...";
+
+// Image Entry Shortcut
+"shortcut.imageEntry.title" = "图片记录";
+"shortcut.imageEntry.description" = "打开图片选择器以从照片记录支出";
+"shortcut.imageEntry.shortTitle" = "图片记录";
+"shortcut.imageEntry.opening" = "正在打开图片记录...";
+
+// MARK: - Apple Pay Intent
+
+"shortcut.applePay.title" = "记录 Apple Pay 付款";
+"shortcut.applePay.description" = "从一笔 Apple Pay 交易在你的收件箱创建一个草稿。请在 Wallet 的「点击卡片时」触发器后使用,并连接金额 → amount,商家 → merchant。";
+"shortcut.applePay.shortTitle" = "记录 Apple Pay 付款";
+"shortcut.applePay.param.amount" = "金额";
+"shortcut.applePay.param.amount.description" = "交易金额(来自 Wallet)";
+"shortcut.applePay.param.merchant" = "商家";
+"shortcut.applePay.param.merchant.description" = "商家名称";
+
+// Summary localizado: la key es el literal inglés del macro Summary("...") con \(\.$var) → ${var}.
+"Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}" = "从 Apple Pay 记录字段 amount: ${amount} 和 merchant: ${merchant}";
+
+// MARK: - Automation Entry Shortcut
+
+// MARK: - Siri Natural Language Entry
+"shortcut.siriNatural.title" = "用 Siri 备注";
+"shortcut.siriNatural.description" = "用自然语言通过 Siri 记录支出";
+"shortcut.siriNatural.shortTitle" = "用 Siri 备注";
+"shortcut.siriNatural.param.text" = "文本";
+"shortcut.siriNatural.dialog.askText" = "你想记录什么?";
+"shortcut.siriNatural.error.noText" = "没有提供要记录的文本。";
+"shortcut.siriNatural.error.parsingFailed" = "我没听懂。试试类似「咖啡 50」之类的。";
+"shortcut.siriNatural.error.proRequired" = "启用 Yala Pro 才能使用 Siri 输入。";
+"shortcut.siriNatural.success.single %@" = "草稿已创建:%@。请到收件箱查看。";
+"shortcut.siriNatural.success.multiple %lld" = "已创建 %lld 个草稿。请到收件箱查看。";
+"shortcut.siriNatural.success.offline %@" = "已创建基本草稿:%@。请在收件箱中补充详情。";
+"shortcut.siriNatural.notification.title" = "来自 Siri 的新草稿";
+"shortcut.siriNatural.notification.body %@" = "为「%@」创建了一个草稿。请到收件箱查看。";
+"shortcut.siriNatural.notification.bodyOffline" = "已创建基本草稿(离线)。请补充详情。";
+
+// MARK: - Control Center (iOS 18+)
+// Labels shown in Control Center (keep short - limited space)
+"control.quickExpense.label" = "快速支出";
+"control.quickExpense.displayName" = "快速支出";
+"control.quickExpense.description" = "快速记录一笔支出";
+"control.quickExpense.intentTitle" = "打开 Yala";
+"control.quickExpense.intentDescription" = "打开 Yala 以记录支出";
+
+"control.voiceEntry.label" = "语音记录";
+"control.voiceEntry.displayName" = "语音记录";
+"control.voiceEntry.description" = "口述你的条目";
+"control.voiceEntry.intentTitle" = "打开语音记录";
+"control.voiceEntry.intentDescription" = "以语音录音模式打开 Yala";
+
+"control.imageEntry.label" = "图片记录";
+"control.imageEntry.displayName" = "图片记录";
+"control.imageEntry.description" = "用图片或照片记录";
+"control.imageEntry.intentTitle" = "打开图片记录";
+"control.imageEntry.intentDescription" = "以相机模式打开 Yala 进行记录";
+
+// MARK: - Notifications
+"notifications.title" = "通知";
+"notifications.addNew" = "新通知";
+"notifications.edit" = "编辑";
+"notifications.delete" = "删除";
+"notifications.deleteConfirm" = "确定要删除此通知吗?";
+"notifications.permissionRequired" = "启用通知";
+"notifications.permissionMessage" = "为了发送提醒,我们需要你在「设置」中启用通知。";
+"notifications.openSettings" = "前往设置";
+
+// Form fields
+"notifications.name" = "名称";
+"notifications.namePlaceholder" = "例如:我的提醒";
+"notifications.text" = "消息";
+"notifications.textPlaceholder" = "例如:该看看你的支出啦!";
+"notifications.time" = "时间";
+"notifications.active" = "启用";
+
+// Report data types
+"notifications.data.balance" = "余额";
+"notifications.data.expenses" = "支出";
+"notifications.data.income" = "收入";
+"notifications.data.topCategory" = "支出最多的类别";
+"notifications.selectData" = "你想看什么?";
+
+// Day preferences
+"notifications.day.sunday" = "星期日";
+"notifications.day.monday" = "星期一";
+"notifications.day.lastOfMonth" = "每月最后一天";
+"notifications.day.firstOfMonth" = "每月第一天";
+"notifications.selectDay" = "什么时候收到?";
+"notifications.allDays" = "每天";
+"notifications.selectWeekdays" = "哪几天?";
+
+// Reminders (Brand Voice)
+"notifications.endOfDay.name" = "一天结束";
+"notifications.endOfDay.text" = "今天过得怎样?👋 别忘了记下你的支出";
+"notifications.lunchTime.name" = "用餐时间";
+"notifications.lunchTime.text" = "你吃了什么?🍽️ 趁着印象还新记下来";
+
+// Reports
+"notifications.dailyReport.name" = "每日摘要";
+"notifications.dailyReport.hint" = "每天 %@ 你会看到当天的%@";
+"notifications.weeklyReport.name" = "每周摘要";
+"notifications.weeklyReport.hint" = "每周%2$@ 你会收到当周的%1$@";
+"notifications.monthlyReport.name" = "每月摘要";
+"notifications.monthlyReport.hint" = "每月%2$@ 你会看到当月的%1$@";
+
+// System notifications
+"notifications.scheduledPayments.name" = "计划付款";
+"notifications.scheduledPayments.hint" = "我们会在你有即将到期的付款时通知你";
+
+// Groups
+"notifications.groups.name" = "群组";
+"notifications.groups.hint" = "其他成员添加支出或向你付款时提醒";
+"notifications.groups.newExpense" = "%@ 添加了一笔 %@ 的支出:%@";
+"notifications.groups.newExpenseNoDesc" = "%@ 添加了一笔 %@ 的支出";
+"notifications.groups.modifiedExpense" = "%@ 修改了「%@」";
+"notifications.groups.settlement" = "%@ 给你付了 %@";
+"notifications.groups.newMember" = "%@ 加入了群组";
+"notifications.groups.multipleChanges" = "%d 个新变化";
+"notifications.groups.fallbackGroup" = "群组";
+"notifications.groups.fallbackMember" = "某人";
+
+// Empty state
+"notifications.empty.title" = "无通知";
+"notifications.empty.message" = "设置提醒以保持你的财务正轨";
+
+// Test
+"notifications.testNotification" = "测试提醒";
+"notifications.testReport.balance.daily" = "今日收尾余额:$1,250.00 💰";
+"notifications.testReport.balance.weekly" = "本周后余额:$1,250.00 💰";
+"notifications.testReport.balance.monthly" = "本月后余额:$1,250.00 💰";
+"notifications.testReport.expenses.daily" = "你今天花了 $85.00 📊";
+"notifications.testReport.expenses.weekly" = "你本周花了 $350.00 📊";
+"notifications.testReport.expenses.monthly" = "你本月花了 $1,200.00 📊";
+"notifications.testReport.income.daily" = "你今天收到 $500.00 🎉";
+"notifications.testReport.income.weekly" = "你本周收到 $2,500.00 🎉";
+"notifications.testReport.income.monthly" = "你本月收到 $8,500.00 🎉";
+"notifications.testReport.topCategory.daily" = "你今天最大的支出:餐饮 ($45.00) 👀";
+"notifications.testReport.topCategory.weekly" = "你本周最大的支出:餐饮 ($180.00) 👀";
+"notifications.testReport.topCategory.monthly" = "你本月最大的支出:餐饮 ($650.00) 👀";
+"notifications.testReport.scheduledPayment" = "你有一笔付款将在 3 天后到期:「Netflix」 USD 14.99";
+
+// Section headers
+"notifications.section.reminders" = "提醒";
+"notifications.section.reports" = "报表";
+"notifications.section.system" = "系统";
+"notifications.section.custom" = "自定义";
+"notifications.budgetAlerts.title" = "预算提醒";
+"notifications.budgetAlerts.hint" = "在接近预算上限时获得通知";
+
+// Scheduled Payment Notifications (personalized)
+"notifications.scheduledPayment.dueToday" = "该为「%2$@」付款 %1$@ 啦 💰";
+"notifications.scheduledPayment.dueSoon" = "「%2$@」将在 %1$d 天后到期付款 %3$@ 📅";
+"notifications.scheduledPayment.overdue" = "「%2$@」付款 %1$@ 已到期 — 已经付了吗?👀";
+"notifications.scheduledPayment.dueToday.income" = "今天会收到来自「%2$@」的 %1$@!🎉";
+"notifications.scheduledPayment.dueSoon.income" = "%1$d 天后会从「%3$@」收到 %2$@ 📅";
+"notifications.scheduledPayment.overdue.income" = "你预期从「%2$@」收到 %1$@ — 到了吗?👀";
+
+// Report Notifications (with real data)
+"notifications.report.balance.daily" = "今日收尾余额:%@ 💰";
+"notifications.report.balance.weekly" = "本周后余额:%@ 💰";
+"notifications.report.balance.monthly" = "本月后余额:%@ 💰";
+"notifications.report.expenses.daily" = "你今天花了 %@ 📊";
+"notifications.report.expenses.weekly" = "你本周花了 %@ 📊";
+"notifications.report.expenses.monthly" = "你本月花了 %@ 📊";
+"notifications.report.income.daily" = "你今天收到 %@ 🎉";
+"notifications.report.income.weekly" = "你本周收到 %@ 🎉";
+"notifications.report.income.monthly" = "你本月收到 %@ 🎉";
+"notifications.report.topCategory.daily" = "你今天最大的支出:%@ 👀";
+"notifications.report.topCategory.weekly" = "你本周最大的支出:%@ 👀";
+"notifications.report.topCategory.monthly" = "你本月最大的支出:%@ 👀";
+
+// Report Notifications (empty state)
+"notifications.report.empty.expenses.daily" = "平静的一天!没有支出 ✨";
+"notifications.report.empty.expenses.weekly" = "平静的一周!没有记录支出 ✨";
+"notifications.report.empty.expenses.monthly" = "平静的一月!没有记录支出 ✨";
+"notifications.report.empty.income" = "这次没有收入 — 没事 ✨";
+"notifications.report.empty.topCategory" = "没有支出!你的钱包休息了 😊";
+
+// MARK: - iCloud Sync
+
+"icloud.title" = "iCloud 同步";
+"icloud.description" = "你的数据自动与 iCloud 同步,在所有用同一账号登录的 Apple 设备上都可使用。";
+"icloud.privacyNote" = "你的数据私密存储在你的个人 iCloud 账号中。Yala 无法访问。";
+"icloud.statusSynced" = "已同步";
+"icloud.statusSyncing" = "正在同步...";
+"icloud.statusNoAccount" = "无 iCloud 账号";
+"icloud.statusError" = "同步错误";
+"icloud.lastSync" = "上次同步:%@";
+"icloud.noAccountWarning" = "请在「设置」中登录 iCloud 以启用同步。";
+"icloud.syncingData" = "正在同步你的数据...";
+"icloud.syncingDescription" = "我们正在从 iCloud 取回你的信息。";
+"icloud.syncing.skip" = "作为新设备设置";
+"icloud.dataFoundTitle" = "找到数据!";
+"icloud.dataFoundMessage" = "我们在 iCloud 找到了你的数据。无需重新设置。";
+"icloud.dataFoundAction" = "继续";
+"icloud.syncIndicator.failed" = "iCloud 出了点问题";
+"icloud.syncIndicator.hint" = "点击查看发生了什么";
+"icloud.detail.upToDate" = "全部同步 — 上次同步 %@";
+"icloud.detail.errorTitle" = "目前未保存到 iCloud";
+"icloud.detail.errorMessage" = "你处于离线状态或 iCloud 不可用。你的数据在本设备上是安全的,可用时会同步。";
+"icloud.detail.stalledMessage" = "你最近的更改还在本设备上。我们看看怎样让它们到达 iCloud。";
+"icloud.detail.technicalCode" = "技术详情:%@";
+"icloud.detail.cta.retry" = "立即重试";
+"icloud.detail.cta.diagnose" = "检查并修复";
+"icloud.detail.cta.viewTechnical" = "查看技术详情";
+"icloud.remoteOnboardingCompleted" = "✓ 你已就绪,你的数据在这里";
+"icloud.remoteRestoreCompleted" = "✓ 数据已恢复";
+"icloud.remoteWipe.title" = "数据不再可用";
+"icloud.remoteWipe.message" = "你的数据已从 iCloud 移除。你可以从头开始,或等待它再同步回来。";
+"icloud.remoteWipe.confirm" = "重新开始";
+"icloud.remoteWipe.cancel" = "继续等待";
+"icloud.forceSync.button" = "强制同步";
+"icloud.forceSync.description" = "检查 iCloud 上的待同步数据。如果你的数据没有出现在此设备上,使用此功能。";
+"icloud.mismatch.title" = "iCloud 现已可用";
+"icloud.mismatch.message" = "Yala 在 iCloud 准备好之前打开了。请关闭并重新打开应用以同步你的数据。";
+"icloud.mismatch.action" = "明白了";
+
+// MARK: - Feature Gate
+
+// Feature names
+"featureGate.accounts" = "账户";
+"featureGate.budgets" = "预算";
+"featureGate.voiceInput" = "语音输入";
+"featureGate.imageInput" = "图片输入";
+"featureGate.premiumIcons" = "高级图标";
+"featureGate.proThemes" = "Pro 主题";
+"featureGate.smartInsightsAI" = "智能 AI 洞察";
+"featureGate.cashFlowAdvanced" = "高级现金流";
+"featureGate.exportExtendedPeriods" = "扩展导出时段";
+
+// Titles
+"featureGate.limitReachedTitle" = "已达上限";
+"featureGate.proFeatureTitle" = "Pro 功能";
+"featureGate.trialExpiredTitle" = "试用已结束";
+
+// Messages
+"featureGate.limitReachedMessage" = "你已达到免费计划的 %@ 上限。升级到 Pro 即可创建更多。";
+"featureGate.proFeatureMessage" = "%@ 是 Yala Pro 的专属功能。";
+"featureGate.trialExpiredMessage" = "你的试用已结束。订阅以继续享受全部功能。";
+
+// Actions
+"featureGate.upgradeToPro" = "升级到 Pro";
+"featureGate.upgrade" = "升级";
+"featureGate.upgradeForMore" = "升级到 Pro 解锁更多";
+
+// Limit info
+"featureGate.limitInfo" = "%d / %d";
+
+// MARK: - Subscription Success
+
+"subscription.success.title" = "欢迎加入 Yala Pro!";
+"subscription.success.subtitle" = "你现在可使用全部功能";
+"subscription.success.continue" = "开始使用";
+
+// Additional features for success view
+"subscription.feature.unlimitedAccounts" = "无限账户";
+"subscription.feature.unlimitedBudgets" = "无限预算";
+"subscription.feature.premiumIcons" = "高级应用图标";
+
+// MARK: - Trial Banner
+
+"subscription.trial.title" = "免费试用";
+"subscription.trial.endsToday" = "今天结束";
+"subscription.trial.endsTomorrow" = "明天结束";
+"subscription.trial.subscribe" = "订阅";
+
+// MARK: - Downgrade Resolution
+
+"subscription.downgrade.title" = "你的订阅已结束";
+"subscription.downgrade.subtitle" = "选择要保留的账户和预算";
+"subscription.downgrade.confirm" = "确认选择";
+"subscription.downgrade.reactivate" = "重新激活 Pro";
+
+// Trial paywall
+"subscription.startFreeTrial" = "开始你的免费试用";
+"subscription.trialThenPrice" = "免费 %@ 天,之后 %@";
+
+// ProTrialOfferSheet
+"subscription.trialOffer.title" = "免费试用 Yala Pro";
+"subscription.trialOffer.subtitle" = "30 天解锁全部功能。无承诺,可随时取消。";
+"subscription.trialOffer.startTrial" = "开始免费试用";
+"subscription.trialOffer.maybeLater" = "之后再说";
+
+// MARK: - Shortcut Notifications
+
+"shortcut.notification.title" = "新自动记录";
+"shortcut.notification.expense" = "支出";
+"shortcut.notification.income" = "收入";
+"shortcut.notification.body" = "已记录一笔 %@%@ 的%@。打开应用以审批。";
+
+// MARK: - Category Seeds
+
+"category.food" = "餐饮";
+"category.shopping" = "购物";
+"category.transport" = "交通";
+"category.finance" = "金融";
+"category.housing" = "住房";
+"category.entertainment" = "娱乐";
+"category.personal" = "个人";
+"category.pets" = "宠物";
+"category.vehicle" = "车辆";
+"category.income" = "收入";
+"category.other" = "其他";
+
+// MARK: - Subcategory Seeds
+
+"subcategory.delivery" = "外卖";
+"subcategory.restaurants" = "餐厅";
+"subcategory.supplements" = "膳食补充剂";
+"subcategory.supermarkets" = "超市与杂货";
+"subcategory.personalCare" = "个人护理与美容";
+"subcategory.pharmacy" = "药店与急救";
+"subcategory.homeDecor" = "家居与装饰";
+"subcategory.otherShopping" = "其他";
+"subcategory.gifts" = "礼物";
+"subcategory.clothing" = "服装与鞋类";
+"subcategory.tech" = "科技与配件";
+"subcategory.occasionalMobility" = "偶尔出行";
+"subcategory.rideshare" = "出租车与网约车";
+"subcategory.publicTransport" = "公共交通";
+"subcategory.fees" = "手续费与费用";
+"subcategory.taxes" = "税费";
+"subcategory.pensions" = "养老与缴费";
+"subcategory.loans" = "贷款与信贷";
+"subcategory.insurance" = "保险";
+"subcategory.rent" = "租金或房贷";
+"subcategory.maintenance" = "维护与维修";
+"subcategory.otherHousing" = "其他";
+"subcategory.supportStaff" = "服务人员";
+"subcategory.homeInsurance" = "家庭保险";
+"subcategory.utilities" = "水电煤";
+"subcategory.bars" = "酒吧与社交";
+"subcategory.sports" = "运动与休闲";
+"subcategory.shows" = "演出与活动";
+"subcategory.nightlife" = "夜生活与派对";
+"subcategory.hobbies" = "爱好与游戏";
+"subcategory.coupleDates" = "约会之夜";
+"subcategory.streaming" = "流媒体平台";
+"subcategory.travel" = "旅行与度假";
+"subcategory.consulting" = "咨询与办手续";
+"subcategory.beauty" = "美容与美学";
+"subcategory.education" = "教育与发展";
+"subcategory.fitness" = "健身与运动";
+"subcategory.health" = "健康与医疗";
+"subcategory.leisureSubs" = "休闲订阅";
+"subcategory.utilitySubs" = "实用订阅";
+"subcategory.phone" = "电话与通讯";
+"subcategory.petAccessories" = "配件与玩具";
+"subcategory.petFood" = "宠物食品";
+"subcategory.vet" = "兽医护理";
+"subcategory.petServices" = "宠物服务与美容";
+"subcategory.fuel" = "燃油";
+"subcategory.parking" = "停车";
+"subcategory.leasing" = "租赁";
+"subcategory.vehicleMaintenance" = "车辆保养";
+"subcategory.vehicleLoan" = "车贷";
+"subcategory.vehicleInsurance" = "车险";
+"subcategory.rentalIncome" = "租金收入";
+"subcategory.subsidies" = "补助与津贴";
+"subcategory.freelance" = "自由职业与开票";
+"subcategory.dividends" = "利息与股息";
+"subcategory.refunds" = "退款";
+"subcategory.giftIncome" = "礼物与其他收入";
+"subcategory.salary" = "工资";
+"subcategory.sales" = "销售";
+"subcategory.accountTransfer" = "账户转账";
+"subcategory.accountTransferOther" = "账户转账";
+
+// MARK: - Tips & Tricks
+// MARK: - Tutorials
+"tutorials.subtitle" = "学会如何最大化使用 Yala";
+"tutorials.next" = "下一步";
+"tutorials.previous" = "上一步";
+"tutorials.done" = "完成";
+"tutorials.start" = "开始";
+"tutorials.understood" = "明白了";
+"tutorials.nextTutorial" = "下一个教程";
+"tutorials.stepLabel %d" = "第 %d 步";
+
+// Categories
+"tutorials.category.gettingStarted" = "入门";
+"tutorials.category.dailyUse" = "日常使用";
+"tutorials.category.personalization" = "个性化";
+"tutorials.category.advanced" = "进阶";
+"tutorials.category.powerUser" = "高级用户";
+
+// 1. createAccount (3 steps)
+"tutorials.createAccount.title" = "创建账户";
+"tutorials.createAccount.intro.title" = "什么是账户?";
+"tutorials.createAccount.intro.desc" = "设置你的银行、钱包或卡片以跟踪钱在哪里。";
+"tutorials.createAccount.step0.title" = "创建一个新账户";
+"tutorials.createAccount.step1.title" = "或从面板创建";
+"tutorials.createAccount.step2.title" = "填写详情";
+"tutorials.createAccount.completion.title" = "你的账户已就绪!";
+"tutorials.createAccount.completion.desc" = "保持账户井然有序、清晰分隔对管理财务至关重要。每个账户让你筛选数据并更好地查看趋势。你可以随时编辑、修改初始余额或调整当前余额。";
+
+// 2. createCategories (4 steps)
+"tutorials.createCategories.title" = "创建类别";
+"tutorials.createCategories.intro.title" = "什么是类别?";
+"tutorials.createCategories.intro.desc" = "按类型整理支出,看清钱花在了哪。";
+"tutorials.createCategories.step0.title" = "前往类别";
+"tutorials.createCategories.step1.title" = "添加子类别";
+"tutorials.createCategories.step2.title" = "创建子类别";
+"tutorials.createCategories.step3.title" = "自定义你的类别";
+"tutorials.createCategories.completion.title" = "类别已创建!";
+"tutorials.createCategories.completion.desc" = "好的类别让你的报表更有用。你随时可以编辑或添加更多。";
+
+// 3. createTags (2 steps)
+"tutorials.createTags.title" = "创建标签";
+"tutorials.createTags.intro.title" = "什么是标签?";
+"tutorials.createTags.intro.desc" = "把跨类别的支出归到一起 — 比如「假期」涵盖餐饮、交通和酒店。";
+"tutorials.createTags.step0.title" = "前往标签";
+"tutorials.createTags.step1.title" = "自定义你的标签";
+"tutorials.createTags.completion.title" = "标签已创建!";
+"tutorials.createTags.completion.desc" = "用标签按项目、旅行或活动分组支出。它们对超越类别的分析非常完美。";
+
+// 4. createRecord (4 steps)
+"tutorials.createRecord.title" = "记录一笔支出";
+"tutorials.createRecord.intro.title" = "手动记录";
+"tutorials.createRecord.intro.desc" = "你记录的每一笔支出都让你更了解自己的财务。";
+"tutorials.createRecord.step0.title" = "点击 + 按钮";
+"tutorials.createRecord.step1.title" = "选择记录类型";
+"tutorials.createRecord.step2.title" = "填写各字段";
+"tutorials.createRecord.step3.title" = "使用快捷键";
+"tutorials.createRecord.completion.title" = "支出已记录!";
+"tutorials.createRecord.completion.desc" = "及时记录支出是关键。记录得越多,你的分析和报表越能帮你理解财务。";
+
+// 5. importData (2 steps)
+"tutorials.importData.title" = "导入数据";
+"tutorials.importData.intro.title" = "导入你的数据";
+"tutorials.importData.intro.desc" = "几秒就能从电子表格或其他应用导入支出。";
+"tutorials.importData.step0.title" = "选择「导入数据」";
+"tutorials.importData.step1.title" = "导入你的文件";
+"tutorials.importData.completion.title" = "数据已导入!";
+"tutorials.importData.completion.desc" = "你的历史数据已在 Yala 中。如有错误,你会收到含详情的清晰提示;否则会看到成功消息。请查看记录确认全部正确导入。";
+
+// 6. createBudgets (4 steps)
+"tutorials.createBudgets.title" = "创建预算";
+"tutorials.createBudgets.intro.title" = "什么是预算?";
+"tutorials.createBudgets.intro.desc" = "设置支出上限,在接近时获得通知。";
+"tutorials.createBudgets.step0.title" = "打开「计划」";
+"tutorials.createBudgets.step1.title" = "配置你的预算";
+"tutorials.createBudgets.step2.title" = "添加到收藏";
+"tutorials.createBudgets.step3.title" = "随时编辑";
+"tutorials.createBudgets.completion.title" = "预算已启用!";
+"tutorials.createBudgets.completion.desc" = "现在你可以实时看到支出情况,并对是否继续花钱做出更好的判断。常常查看以保持掌控。";
+
+// 7. createScheduledPayments (5 steps)
+"tutorials.createScheduledPayments.title" = "计划付款";
+"tutorials.createScheduledPayments.intro.title" = "什么是计划付款?";
+"tutorials.createScheduledPayments.intro.desc" = "自动化租金、水电、订阅 — Yala 替你记录。";
+"tutorials.createScheduledPayments.step0.title" = "打开「计划」";
+"tutorials.createScheduledPayments.step1.title" = "填写详情";
+"tutorials.createScheduledPayments.step2.title" = "定义周期";
+"tutorials.createScheduledPayments.step3.title" = "标记是否为订阅";
+"tutorials.createScheduledPayments.step4.title" = "管理你的付款";
+"tutorials.createScheduledPayments.completion.title" = "付款已计划!";
+"tutorials.createScheduledPayments.completion.desc" = "你的周期付款现在会自动记录。每次执行你都会收到通知。";
+
+// 8. createFavorites (2 steps)
+"tutorials.createFavorites.title" = "收藏付款";
+"tutorials.createFavorites.intro.title" = "什么是收藏?";
+"tutorials.createFavorites.intro.desc" = "把常用支出存为快捷,一键记录。";
+"tutorials.createFavorites.step0.title" = "创建一个收藏";
+"tutorials.createFavorites.step1.title" = "快速使用";
+"tutorials.createFavorites.completion.title" = "收藏已保存!";
+"tutorials.createFavorites.completion.desc" = "收藏帮你节省重复支出的时间。你可以拥有任意多个并随时编辑。";
+
+// 9. editPanel (3 steps)
+"tutorials.editPanel.title" = "自定义面板";
+"tutorials.editPanel.intro.title" = "你的面板,你做主";
+"tutorials.editPanel.intro.desc" = "自定义你面板上显示哪些小组件。";
+"tutorials.editPanel.step0.title" = "打开面板";
+"tutorials.editPanel.step1.title" = "自定义小组件";
+"tutorials.editPanel.step2.title" = "需要时重置";
+"tutorials.editPanel.completion.title" = "面板已自定义!";
+"tutorials.editPanel.completion.desc" = "你的面板现在精准展示你需要的。你随时可以更改以适应你的管理方式。";
+
+// 10. panelFiltering (5 steps)
+"tutorials.panelFiltering.title" = "面板筛选";
+"tutorials.panelFiltering.intro.title" = "用筛选找到你需要的";
+"tutorials.panelFiltering.intro.desc" = "按账户、类别、标签或时段进行精细分析。";
+"tutorials.panelFiltering.step0.title" = "点击图表筛选";
+"tutorials.panelFiltering.step1.title" = "查看筛选栏";
+"tutorials.panelFiltering.step2.title" = "在每个视图中筛选";
+"tutorials.panelFiltering.step3.title" = "看筛选跨视图传递";
+"tutorials.panelFiltering.step4.title" = "使用快速筛选按钮";
+"tutorials.panelFiltering.completion.title" = "筛选已掌握!";
+"tutorials.panelFiltering.completion.desc" = "筛选是深入理解财务的最佳工具。组合使用可以获得越来越精准的分析。";
+
+// 11. inboxApproval (4 steps)
+"tutorials.inboxApproval.title" = "收件箱";
+"tutorials.inboxApproval.intro.title" = "你的智能收件箱";
+"tutorials.inboxApproval.intro.desc" = "查看并审批来自 Apple Pay、语音或相机的自动支出。";
+"tutorials.inboxApproval.step0.title" = "用语音或图片记录";
+"tutorials.inboxApproval.step1.title" = "完成并审批";
+"tutorials.inboxApproval.step2.title" = "一次记录多笔";
+"tutorials.inboxApproval.step3.title" = "管理你的收件箱";
+"tutorials.inboxApproval.completion.title" = "收件箱已掌握!";
+"tutorials.inboxApproval.completion.desc" = "收件箱中的交易没有过期日期,你可以随时审批或拒绝。在你审批之前,草稿不会影响你的总计。";
+
+// 12. applePay (4 steps)
+"tutorials.applePay.title" = "用 Apple Pay 记录";
+"tutorials.applePay.intro.title" = "Apple Pay + Yala";
+"tutorials.applePay.intro.desc" = "设置自动支出记录,每次用 Apple Pay 付款都会被记录。";
+"tutorials.applePay.step0.title" = "打开「快捷指令」";
+"tutorials.applePay.step1.title" = "创建自动化";
+"tutorials.applePay.step2.title" = "选择 Yala 快捷指令";
+"tutorials.applePay.step3.title" = "配置参数";
+
+// Tutorial step descriptions (re-expanded)
+"tutorials.createAccount.step0.desc" = "在你的个人资料中,选择「账户」版块然后点击创建一个新账户。";
+"tutorials.createAccount.step1.desc" = "你也可以直接从面板的「添加新账户」卡片创建账户。";
+"tutorials.createAccount.step2.desc" = "填写新账户的详情然后点击保存。";
+"tutorials.createCategories.step0.desc" = "在你的个人资料中,选择「类别」版块然后创建一个新类别。";
+"tutorials.createCategories.step1.desc" = "记住:类别必须始终关联子类别才能创建。";
+"tutorials.createCategories.step2.desc" = "创建子类别和创建类别一样简单:取个名字、选择性质,可选地修改图标。";
+"tutorials.createCategories.step3.desc" = "随时按你喜好自定义类别的图标和颜色。";
+"tutorials.createTags.step0.desc" = "在你的个人资料中,选择「标签」版块然后创建一个新标签。";
+"tutorials.createTags.step1.desc" = "按你的喜好自定义标签:取名字、图标和颜色。";
+"tutorials.createRecord.step0.desc" = "在面板上点击 + 按钮。如果你是 Yala Pro 用户,选择「手动」。";
+"tutorials.createRecord.step1.desc" = "你可以记录支出、收入,甚至账户间转账。汇率会实时自动计算。";
+"tutorials.createRecord.step2.desc" = "填写必填字段:金额、账户、子类别。你也可以添加描述和任意标签。";
+"tutorials.createRecord.step3.desc" = "使用快捷键:@ 是账户、! 是类别、# 是标签。开始输入即可在每个快捷范围内细化搜索。";
+"tutorials.importData.step0.desc" = "在你的个人资料中,选择「导入数据」版块。";
+"tutorials.importData.step1.desc" = "你可以按默认模板多次导入 CSV 或 Excel,模板可以在那里下载。如果数据涉及多种货币,会请你为每种货币选择账户。";
+"tutorials.createBudgets.step0.desc" = "在菜单选择「计划」并切到「预算」标签。用 + 按钮创建一个新预算。";
+"tutorials.createBudgets.step1.desc" = "为它命名、设金额并定义周期:每日、每月、每年或一次性(用于旅行、活动等)。自定义要跟踪的账户、类别、标签和需求。如果想在某些进度获得提醒,打开通知。";
+"tutorials.createBudgets.step2.desc" = "你可以把预算加到「收藏」并显示在面板小组件中。按你喜欢的顺序选择最多 3 个。";
+"tutorials.createBudgets.step3.desc" = "记住你随时可以点击预算回来编辑。";
+"tutorials.createScheduledPayments.step0.desc" = "在菜单选择「计划」并切到「计划付款」标签。用 + 按钮创建一个新付款。";
+"tutorials.createScheduledPayments.step1.desc" = "填写付款名称、金额、备注(可选)、账户、子类别和标签(可选)。";
+"tutorials.createScheduledPayments.step2.desc" = "选择付款日和频率。选择第一次付款时间,如果想在当天或前几天通知,打开通知。";
+"tutorials.createScheduledPayments.step3.desc" = "如果是周期性订阅,别忘了打开「订阅」开关。";
+"tutorials.createScheduledPayments.step4.desc" = "点击一笔计划付款可查看即将到来的付款、已付款,以及随时编辑。";
+"tutorials.createFavorites.step0.desc" = "前往新交易页面,点击顶部的星标创建一个新收藏。";
+"tutorials.createFavorites.step1.desc" = "填写你想预填的字段。下次只需点击收藏即可看到所有字段自动填好。";
+"tutorials.editPanel.step0.desc" = "前往主屏幕,看到所有可用小组件的支出摘要。";
+"tutorials.editPanel.step1.desc" = "点击面板上的自定义按钮即可修改要显示的小组件及其顺序。";
+"tutorials.editPanel.step2.desc" = "记住:在自定义中点击「重置」即可恢复默认顺序。";
+"tutorials.panelFiltering.step0.desc" = "充分利用 Yala 的交互式图表。几乎所有面板都可按类别、需求等筛选。多多尝试,找到最适合你的。";
+"tutorials.panelFiltering.step1.desc" = "你有一个筛选栏显示所有已应用的筛选。你随时可以单个移除或一次清除全部。";
+"tutorials.panelFiltering.step2.desc" = "在应用的不同视图中,你都可以通过图表按你的喜好筛选。";
+"tutorials.panelFiltering.step3.desc" = "筛选会等同地传递到所有视图,因此你可以为任意筛选目标看到各种指标。";
+"tutorials.panelFiltering.step4.desc" = "在某些视图中,顶部还会有一个筛选版块,让你按喜好筛选或一键清除全部。";
+"tutorials.inboxApproval.step0.desc" = "如果你是 Yala Pro 用户,用语音或图片记录时会自动跳转到草稿。使用 Apple Pay 记录快捷指令时也是。";
+"tutorials.inboxApproval.step1.desc" = "只需填写必填字段并审批。交易将正常创建。";
+"tutorials.inboxApproval.step2.desc" = "你也可以用语音或图片记录多笔交易。它会告诉你创建了多少草稿,并引导你到收件箱查看。";
+"tutorials.inboxApproval.step3.desc" = "在收件箱中你可以审批交易、选择「稍后审批」延后查看,或直接拒绝。";
+"tutorials.applePay.step0.desc" = "打开「快捷指令」应用,前往「自动化」版块。";
+"tutorials.applePay.step1.desc" = "点击「新建自动化」,选择 Wallet 选项,选择要使用的卡片,然后选择「立即运行」。";
+"tutorials.applePay.step2.desc" = "选择「创建新快捷指令」,在最底部搜索 Yala。在 Yala 中选择「Apple Pay 记录」快捷指令。";
+"tutorials.applePay.step3.desc" = "金额选择「快捷指令输入」然后选择「金额」。商家和名称分别同样处理。关闭「运行时显示」开关。";
+
+"tutorials.applePay.completion.title" = "Apple Pay 已连接!";
+"tutorials.applePay.completion.desc" = "这样,每次用所选卡片使用 Apple Pay 都会自动记录。每笔付款都会在你的收件箱创建一个草稿。";
+
+// MARK: - Scheduled Payments UX (M1-M7)
+"scheduled.period.selector.title" = "选择月份";
+"scheduled.summary.paid" = "已付款";
+"scheduled.summary.pending" = "待处理";
+"scheduled.filter.all" = "全部";
+"scheduled.filter.paid" = "已付款";
+"scheduled.filter.pending" = "待处理";
+"scheduled.associate.title" = "关联支出";
+"scheduled.associate.confirm" = "把这笔支出与计划付款关联?";
+"scheduled.associate.success" = "支出已关联";
+"scheduled.associate.empty" = "本月没有找到类似支出";
+"scheduled.associate.paymentHeader" = "计划付款";
+"scheduled.associate.candidatesHeader" = "近期支出";
+"scheduled.associate.already" = "此支出已关联";
+"scheduled.advance" = "提前付款";
+"scheduled.view.record" = "查看记录";
+
+// MARK: - Siri Shortcuts
+"settings.siriShortcuts" = "Siri 与快捷指令";
+"siriShortcuts.title" = "Siri 与快捷指令";
+"siriShortcuts.subtitle" = "用语音或快捷指令即时记录支出。";
+"siriShortcuts.siri.title" = "用 Siri 记录";
+"siriShortcuts.siri.description" = "口述你的支出,会在你的收件箱创建一个草稿。";
+"siriShortcuts.siri.proNote" = "需要 Yala Pro";
+"siriShortcuts.siri.phrase" = "在 Yala 中创建一条记录";
+"siriShortcuts.siri.alt1" = "你也可以说:「在 Yala 备注一笔支出」";
+"siriShortcuts.siri.alt2" = "或:「在 Yala 保存一笔支出」";
+"siriShortcuts.all.title" = "其他快捷指令";
+"siriShortcuts.shortcut.quick" = "快速记录";
+"siriShortcuts.shortcut.voice" = "语音输入";
+"siriShortcuts.shortcut.image" = "图片输入";
+"siriShortcuts.shortcut.applePay" = "Apple Pay";
+"siriShortcuts.shortcut.automation" = "自动化";
+"siriShortcuts.desc.quick" = "一键打开记录表单。";
+"siriShortcuts.desc.voice" = "用语音口述金额和描述。";
+"siriShortcuts.desc.image" = "用相机扫描收据或票据。";
+"siriShortcuts.desc.applePay" = "记录一笔 Apple Pay 付款。";
+"siriShortcuts.desc.automation" = "用系统快捷指令创建自动记录。";
+"siriShortcuts.phrase.quick" = "在 Yala 中记录";
+"siriShortcuts.phrase.voice" = "用语音在 Yala 中记录";
+"siriShortcuts.phrase.image" = "用图片在 Yala 中记录";
+"siriShortcuts.phrase.applePay" = "在 Yala 记录 Apple Pay";
+"siriShortcuts.phrase.automation" = "在 Yala 记录自动化";
+"siriShortcuts.faq.title" = "常见问题";
+"siriShortcuts.faq.activateQ" = "我怎么激活 Siri?";
+"siriShortcuts.faq.activateA" = "自动激活。只需对 Siri 说出对应短语,Yala 就会处理你的请求。";
+"siriShortcuts.faq.inboxQ" = "Siri 创建的记录去哪里?";
+"siriShortcuts.faq.inboxA" = "Siri 创建的记录会以草稿形式到达你的收件箱供你查看。";
+"siriShortcuts.faq.offlineQ" = "离线时能用吗?";
+"siriShortcuts.faq.offlineA" = "可以,无网络时快捷指令以基础模式运行。";
+
+// MARK: - AI Settings (Personalization Sheet from Chat)
+
+"aiSettings.title" = "自定义 AI";
+"aiSettings.toneSection" = "语气";
+"aiSettings.styleSection" = "风格";
+"aiSettings.appliesHint" = "这些设置应用于洞察、助理和面板 Hero。";
+
+// MARK: - AI Privacy (sub-view from Profile > Security)
+
+"aiPrivacy.title" = "AI 隐私与数据";
+"aiPrivacy.processingRow" = "处理(语音和图片)";
+"aiPrivacy.chatRow" = "Pro 助理";
+"aiPrivacy.insightsRow" = "智能洞察";
+"aiPrivacy.revokeConfirmTitle" = "禁用此功能?";
+"aiPrivacy.revokeConfirmMessage" = "我们将停止处理此功能的 AI 数据。你随时可以重新启用。";
+"aiPrivacy.revokeConfirmAction" = "禁用";
+"aiPrivacy.footerHint" = "你的数据仅在使用洞察、助理或语音/图片输入时被处理。我们绝不分享你的个人信息。";
+"aiPrivacy.policyLink" = "隐私政策";
+
+// MARK: - AI Consent
+"aiConsent.processingTitle" = "语音和图片处理";
+"aiConsent.processingMessage" = "这些功能使用 OpenAI 处理你的数据：\n\n• 语音：你的录音会被转写\n• 图片：照片（收据或截图）会被分析以提取支出数据\n\n仅处理你当时发送的内容。OpenAI 不会使用这些数据来训练其模型。";
+"aiConsent.insightsTitle" = "智能概览";
+"aiConsent.insightsMessage" = "此功能会向 OpenAI 发送你财务的摘要——按类别的总计和趋势、预算以及定期付款——以生成你的分析。\n\n不会发送你的完整交易历史。OpenAI 不会使用这些数据来训练其模型。";
+"aiConsent.accept" = "接受并启用";
+"aiConsent.privacyPolicy" = "隐私政策";
+"aiConsent.inlineHintProcessing" = "你的语音和图片数据由 OpenAI 处理,不会被永久存储。";
+"aiConsent.inlineHintInsights" = "你的财务摘要会发送到 OpenAI 用于分析，不会被永久存储。";
+"aiConsent.inlineHintBoth" = "你的语音、图片和摘要数据由 OpenAI 处理,不会被永久存储。";
+
+// MARK: - Insights Settings
+"insights.aiSectionTitle" = "人工智能";
+"insights.aiToggle" = "智能概览";
+"insights.aiCaption" = "OpenAI 分析你的汇总数据来生成个性化分析。不会发送任何单笔交易。";
+"insights.metricsSection" = "指标";
+"insights.chartsSection" = "图表";
+"insights.analysisSection" = "分析";
+"insights.restoreDefaults" = "恢复默认";
+
+// MARK: - Insights Rule-Based Templates
+// Rule-based insights — tone variants
+"insights.ruleTopCategory.normal" = "%@ 占你本时段支出的 %d%%。";
+"insights.ruleTopCategory.considerate" = "%@ 占你支出的 %d%%,基于你的优先级,这从技术上看也可以预期。";
+"insights.ruleTopCategory.sarcastic" = "%@ 占了你 %d%% 的支出。多留意一点。";
+"insights.ruleExpenseUp.normal" = "你的支出比上一时段增加了 %@。";
+"insights.ruleExpenseUp.considerate" = "你的支出增加了 %@ — 值得思考本时段是否有不寻常的支出。";
+"insights.ruleExpenseUp.sarcastic" = "支出比上一时段多 %@。看看变了什么。";
+"insights.ruleExpenseDown.normal" = "节奏不错:你的支出比上一时段减少了 %@。";
+"insights.ruleExpenseDown.considerate" = "数据显示支出减少了 %@ — 是个积极的结果。";
+"insights.ruleExpenseDown.sarcastic" = "不错,支出减了 %@。还可以。";
+"insights.ruleBudgetRisk.normal" = "%@ 已用其额度的 %d%%。";
+"insights.ruleBudgetRisk.considerate" = "%@ 已用其额度的 %d%%,如果你调整节奏还有空间。";
+"insights.ruleBudgetRisk.sarcastic" = "%@ 已到额度的 %d%%。冷静,但要注意。";
+"insights.ruleOptionalHigh.normal" = "可选支出占你总额的 %d%%。";
+"insights.ruleOptionalHigh.considerate" = "可选支出占总额 %d%% — 不一定是问题,但值得留意。";
+"insights.ruleOptionalHigh.sarcastic" = "可选项占总额的 %d%%。没什么大事,但数字摆这里了。";
+// Tips
+"insights.tipTopCategory" = "看看是否有 %@ 支出是一次性或属于某种规律";
+"insights.tipExpenseUp" = "和你支出最少的月份对比看看变了什么";
+"insights.tipBudgetRisk" = "还剩几天 — 试着克制 %@ 的剩余支出";
+"insights.tipOptionalHigh" = "查看你的可选支出,看看哪些可以推迟";
+
+"insights.ruleDailyAverage %@" = "你平均每天花费 %@。";
+"insights.ruleSavingsPositive %d" = "你正在储蓄收入的 %d%%。";
+"insights.ruleSavingsNegative" = "本期支出超过了收入。";
+"insights.ruleSharedRatio.normal" = "你本时段 %d%% 的支出是共享的";
+"insights.ruleSharedRatio.considerate" = "你 %d%% 的支出是共享的 — 分担即关怀";
+"insights.ruleSharedRatio.sarcastic" = "你 %d%% 的支出是共享的。下次轮谁付?";
+"insights.ruleMostExpensiveGroup.normal" = "%@ 是你最贵的群组,占共享支出的 %d%%";
+"insights.ruleMostExpensiveGroup.considerate" = "%@ 占你共享支出的 %d%% — 是你的主要群组";
+"insights.ruleMostExpensiveGroup.sarcastic" = "%@ 占了你 %d%% 的共享支出。压倒性。";
+"insights.ruleDominantSharedCategory.normal" = "%@ 主导你的共享支出 (%d%%)";
+"insights.ruleDominantSharedCategory.considerate" = "你的共享支出大部分 (%2$d%%) 在 %1$@";
+"insights.ruleDominantSharedCategory.sarcastic" = "%@ 占你共享支出的 %d%%。只一起吃饭吗?";
+"insights.ruleSharedMoM.normal" = "你的共享支出比上一时段多 %@";
+"insights.ruleSharedMoM.considerate" = "共享支出多 %@ — 看看是否有额外支出";
+"insights.ruleSharedMoM.sarcastic" = "共享支出 +%@。在庆祝什么?";
+// Tone & Focus settings
+"insights.tone.normal" = "正常";
+"insights.tone.considerate" = "谨慎";
+"insights.tone.sarcastic" = "直接";
+"insights.tone.normal.preview" = "餐厅比上月多了 32%";
+"insights.tone.considerate.preview" = "餐厅多了 32%,本月若有活动也算合理";
+"insights.tone.sarcastic.preview" = "餐厅多了 32%,这个月稍稍超了";
+"insights.focus.balanced" = "均衡";
+"insights.focus.saver" = "储蓄者";
+"insights.focus.cautious" = "谨慎";
+"insights.focus.balanced.desc" = "财务的整体视角";
+"insights.focus.saver.desc" = "优先关注储蓄机会";
+"insights.focus.cautious.desc" = "提前预警和高风险预算";
+"insights.toneLabel" = "语气";
+"insights.focusLabel" = "聚焦";
+"insights.aiTeaser" = "AI 洞察";
+"insights.aiTeaserPlaceholder1" = "正在分析你的支出模式...";
+"insights.aiTeaserPlaceholder2" = "正在识别储蓄机会...";
+"insights.generateAI" = "生成智能观察";
+"insights.generateAIHint" = "点击上方按钮生成 AI 智能观察";
+
+// Secondary Currency Suggestion
+"account.secondaryCurrency.title" = "次要货币";
+"account.secondaryCurrency.message" = "你添加了一个 %@ 账户。想看 %@ → %@ 汇率吗?可以在「个人资料 > 货币」中更改。";
+"account.secondaryCurrency.accept" = "添加";
+"account.secondaryCurrency.reject" = "不用,谢谢";
+
+// Notification Primer
+"notificationPrimer.title" = "启用通知?";
+"notificationPrimer.benefit1" = "每日财务报告";
+"notificationPrimer.benefit2" = "计划付款提醒";
+"notificationPrimer.benefit3" = "接近预算上限时提醒";
+"notificationPrimer.accept" = "启用通知";
+"notificationPrimer.reject" = "暂时不用";
+"notificationPrimer.hint" = "你可以在「个人资料 > 通知」中启用";
+
+// MARK: - What's New
+"whatsNew.title" = "Yala 新功能";
+"whatsNew.subtitle" = "版本 %@";
+"whatsNew.continue" = "继续";
+"whatsNew.v11.resumen.title" = "概览";
+"whatsNew.v11.resumen.description" = "快速一览你的财务:平均、趋势和支出分布。";
+"whatsNew.v11.budgetDetail.title" = "预算分解";
+"whatsNew.v11.budgetDetail.description" = "探索每个预算如何在子类别间分布。";
+"whatsNew.v11.exclude.title" = "筛选中的排除模式";
+"whatsNew.v11.exclude.description" = "通过排除你不想看的内容来筛选,而非选择全部。";
+"whatsNew.v12.cashFlow.title" = "现金流";
+"whatsNew.v12.cashFlow.description" = "用交互表格和 7 种估算方法预测你未来的余额。";
+"whatsNew.v12.comparative.title" = "对比报表";
+"whatsNew.v12.comparative.description" = "用透视表和高级筛选对比不同时段的收入和支出。";
+"whatsNew.v12.themes.title" = "PRO 主题";
+"whatsNew.v12.themes.description" = "用全新的极简和半透明主题自定义应用。";
+"whatsNew.v12.scheduled.title" = "计划付款";
+"whatsNew.v12.scheduled.description" = "现在支持可变金额和跳过发生的选项。";
+"whatsNew.v12.moreForYou.title" = "为你提供更多";
+"whatsNew.v12.moreForYou.description" = "现在 4 个免费账户和 30 天免费试用。";
+
+// MARK: - App Update
+"appUpdate.title" = "新版本可用";
+"appUpdate.message" = "版本 %@ 已可下载";
+"appUpdate.updateButton" = "更新";
+"appUpdate.dismissButton" = "暂时不用";
+
+// MARK: - Split Calculator
+"action.calculate" = "计算";
+"split.title" = "计算我的部分";
+"split.totalAmount" = "总金额";
+"split.yourPortion" = "你的部分";
+"split.useAmount" = "使用金额";
+"split.typePercentage" = "百分比";
+"split.typeEqual" = "平均分";
+"split.typeExact" = "精确金额";
+"split.typeShares" = "按份数";
+"split.percentage" = "你的百分比";
+"split.people" = "人数";
+"split.yourPart" = "你的部分";
+"split.yourShares" = "你的份数";
+"split.totalShares" = "总份数";
+"split.tipPercentage" = "输入你占总额的百分比。适合家庭共享支出。";
+"split.tipEqual" = "把总额按人数平均分。每人付一样的。";
+"split.tipExact" = "输入你应付的精确金额。";
+"split.tipShares" = "按比例分。例如,如果你付总数 5 份中的 2 份。";
+"split.descPercentage %@ %@" = "%@%% / %@";
+"split.descEqual %d" = "÷ %d 人";
+"split.descShares %d %d" = "%d / %d 份";
+"split.descExact %@" = "%@ 精确";
+"split.sharesYouPay" = "你付";
+"split.sharesOf" = "/";
+"split.sharesParts" = "份";
+
+// MARK: - Groups
+"groups.title" = "群组";
+"groups.new" = "新群组";
+"groups.edit" = "编辑群组";
+"groups.empty.title" = "无群组";
+"groups.empty.message" = "创建一个群组来与他人分担支出";
+"groups.empty.action" = "创建群组";
+"groups.summary.owedToMe" = "别人欠你";
+"groups.summary.iOwe" = "你欠";
+"groups.summary.pendingSettlements" = "%d 笔待结清";
+"groups.summary.allSettled" = "全部已结清!";
+"groups.detail.records" = "支出";
+"groups.detail.balances" = "余额";
+"groups.detail.stats" = "统计";
+"groups.detail.comingSoon" = "即将推出";
+"groups.stats.totalSpent" = "总支出";
+"groups.stats.myPortion" = "我的部分";
+"groups.stats.whoPaysMost" = "谁付得最多";
+"groups.stats.categories" = "类别";
+"groups.stats.monthlyTrend" = "月度趋势";
+"groups.stats.noExpenses" = "还没有支出";
+"groups.stats.uncategorized" = "未分类";
+"groups.stats.thisMonth" = "本月";
+"groups.stats.last3Months" = "3 个月";
+"groups.stats.last6Months" = "6 个月";
+"groups.stats.thisYear" = "今年";
+"groups.stats.allTime" = "全部时间";
+"groups.stats.assignCategoriesHint" = "为你的支出分配分类即可查看按类型的明细。";
+"groups.form.name" = "名称";
+"groups.form.namePlaceholder" = "群组名称";
+"groups.form.currency" = "货币";
+"groups.form.icon" = "图标";
+"groups.form.simplifyDebts" = "简化债务";
+"groups.form.simplifyDebtsHint" = "减少成员间所需的付款次数";
+"groups.form.showDebtsInSingleCurrency" = "债务用单一货币";
+"groups.form.showDebtsInSingleCurrencyHint" = "按当前汇率把其他货币的支出转换。";
+"groups.form.defaultSplitType" = "默认分摊";
+"groups.form.membersCanInvite" = "成员可邀请";
+"groups.form.membersCanInviteHint" = "允许任意成员把人加入群组";
+"groups.settings.title" = "群组设置";
+"groups.settings.members" = "成员";
+"groups.settings.addMember" = "添加成员";
+"groups.settings.addMemberPrompt" = "成员名称";
+"groups.settings.invite" = "通过链接邀请";
+"groups.settings.inviteLinkHint" = "链接访问开启时，任何拥有此链接的人都可以加入群组。请只分享给你信任的人。";
+"groups.settings.leaveGroup" = "离开群组";
+"groups.settings.leaveGroupConfirm" = "你确定吗?你的个人支出将被保留。";
+"groups.settings.leaveGroupWithDebtWarning" = "你将带着未结清的余额离开群组。对方仍会看到这笔欠款处于未结清状态。要继续吗？";
+"groups.settings.deleteGroup" = "删除群组";
+"groups.settings.deleteGroupConfirm" = "确定删除该群组？";
+"groups.settings.deleteGroupFinalConfirm" = "该群组将对所有成员消失。此操作无法撤销。";
+"groups.settings.deleteGroupDisabledHint" = "请先结清未结余额再删除";
+"groups.settings.archive" = "归档群组";
+"groups.settings.archiveWithDebtWarning" = "成员之间存在未结余额。归档后债务仍然存在。继续吗？";
+"groups.settings.archiveConfirm" = "归档此群组吗？支出和余额将保留。";
+"groups.settings.generatingInvite" = "正在生成链接…";
+"groups.settings.unarchive" = "取消归档";
+"groups.settings.archiveHint" = "支出和余额会保留。你随时可以取消归档。";
+"groups.settings.showArchived" = "显示已归档";
+"groups.settings.showArchivedCount" = "显示已归档 (%d)";
+"groups.settings.hideArchived" = "隐藏已归档";
+"groups.settings.options" = "选项";
+"groups.settings.info" = "信息";
+"groups.settings.dangerZone" = "危险区";
+
+// Bridge personal integration (per-group override)
+"groups.settings.personalIntegrationSectionTitle" = "个人集成";
+"groups.settings.personalIntegrationToggleLabel" = "将此群组的支出记录到我的个人账户";
+"groups.settings.personalIntegrationHintInheritOn" = "继承你的通用设置（已开启）。";
+"groups.settings.personalIntegrationHintLocalOff" = "仅在此群组:已关闭。";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "要在此处启用此选项,请先在群组设置中启用它。";
+"groups.member.admin" = "管理员";
+"groups.member.member" = "成员";
+"groups.member.you" = "(你)";
+"groups.member.left" = "已离开";
+"groups.member.removed" = "已移除";
+"groups.member.changeRole" = "更改角色";
+"groups.member.remove" = "移除成员";
+"groups.member.removeConfirm" = "把这个成员从群组移除?";
+"groups.member.removeWithDebtWarning" = "这位成员在群组中有未结清的余额。如果你将其删除，欠款仍会保留。要继续吗？";
+"groups.member.actions" = "成员操作";
+"groups.balance.title" = "余额";
+"groups.balance.noDebts" = "全部已结清!";
+"groups.balance.pendingDebts" = "待结债务";
+"groups.balance.settlements" = "结算";
+"groups.balance.confirmed" = "已确认";
+"groups.balance.pending" = "待处理";
+"groups.expense.noExpenses" = "无支出";
+"groups.expense.youPaid" = "你支付了 %@";
+"groups.expense.memberPaid" = "%1$@ 支付了 %2$@";
+"groups.expense.youAreOwed" = "你借出";
+"groups.expense.youOwe" = "你借入";
+"groups.expense.notIncluded" = "未参与";
+"groups.expense.newExpense" = "新支出";
+
+"export.column.splitTotal" = "原总额";
+"export.column.splitPortion" = "份额";
+"export.column.splitTotal.description" = "拆分前的总金额";
+"export.column.splitPortion.description" = "份额描述";
+
+// MARK: - Pro Upgrade Banner
+
+"proBanner.title" = "把你的财务带到下一阶段";
+"proBanner.subtitle" = "解锁语音输入、AI 洞察和无限账户。";
+
+// MARK: - Milestone Upgrade
+
+"milestone.message10" = "你正在养成好习惯。用 Yala Pro 你可以语音口述支出。";
+"milestone.message50" = "了不起!用 AI 洞察你可以发现支出中隐藏的规律。";
+"milestone.message100" = "你是理财高手。用 Yala Pro 解锁全部体验。";
+"milestone.notNow" = "暂时不用";
+"milestone.unlimitedAccounts" = "无限账户";
+
+// MARK: - Dev Seed
+
+// Accounts
+"devseed.accountMain" = "主账户";
+"devseed.accountSavings" = "美元储蓄";
+// Tags
+"devseed.tagWork" = "工作";
+"devseed.tagVacation" = "假期";
+"devseed.tagShared" = "共享";
+"devseed.tagUrgent" = "紧急";
+"devseed.tagFixed" = "固定";
+// Budgets
+"devseed.budgetEatingOut" = "外出就餐";
+"devseed.budgetMobility" = "出行";
+"devseed.budgetFriendsOutings" = "朋友聚会";
+"devseed.budgetPersonalCare" = "个人护理";
+"devseed.budgetHomeEssentials" = "家居必需品";
+"devseed.budgetPet" = "Maia 🐶";
+// Scheduled Payments
+"devseed.spGym" = "健身房";
+"devseed.spRent" = "租金";
+"devseed.spPhone" = "电话";
+"devseed.spInsurance" = "保险";
+"devseed.spInternet" = "网络";
+// Notes — Fixed monthly
+"devseed.noteSalary" = "月薪";
+"devseed.noteGymMonthly" = "月度健身";
+"devseed.noteRent" = "租金";
+"devseed.notePhonePlan" = "电话套餐";
+"devseed.noteElectricity" = "电费";
+"devseed.noteWater" = "水费";
+"devseed.noteElectricityWater" = "水电费";
+"devseed.noteInternetFiber" = "光纤宽带";
+"devseed.noteInsuranceMonthly" = "月度保险";
+// Notes — Supermarket
+"devseed.noteSupermarket1" = "超市";
+"devseed.noteSupermarket2" = "杂货店";
+"devseed.noteSupermarket3" = "周末采购";
+"devseed.noteSupermarket4" = "储物补给";
+"devseed.noteSupermarket5" = "蔬菜水果";
+// Notes — Restaurant
+"devseed.noteLunch" = "午餐";
+"devseed.noteDinner" = "晚餐";
+"devseed.noteBrunch" = "早午餐";
+"devseed.noteMealWithFriends" = "和朋友吃饭";
+// Notes — Delivery
+"devseed.noteDelivery1" = "外卖软件";
+"devseed.noteDelivery2" = "送货上门";
+"devseed.noteDeliveryFood" = "外卖餐";
+// Notes — Transport
+"devseed.noteTaxi" = "出租车";
+"devseed.noteBus" = "公交";
+// Notes — Travel
+"devseed.noteHotel" = "酒店";
+"devseed.noteFlight" = "机票";
+"devseed.noteTour" = "旅游团";
+"devseed.noteExcursion" = "一日游";
+// Notes — Fuel
+"devseed.noteGasStation" = "加油站";
+"devseed.noteGasoline" = "汽油";
+"devseed.noteFuel" = "燃油";
+// Notes — Maintenance
+"devseed.noteRepair" = "维修";
+"devseed.noteCleaning" = "清洁";
+"devseed.notePlumber" = "水管工";
+"devseed.noteElectrician" = "电工";
+// Notes — Freelance
+"devseed.noteFreelance" = "自由项目";
+"devseed.noteConsulting" = "咨询";
+"devseed.noteSideProject" = "副业";
+// Notes — Transfers
+"devseed.noteTransferTo" = "转账到 %@";
+"devseed.noteTransferFrom" = "从 %@ 转账";
+// Step labels
+"devseed.stepCategories" = "正在设置类别...";
+"devseed.stepAccounts" = "正在创建账户...";
+"devseed.stepTags" = "正在创建标签...";
+"devseed.stepExchangeRates" = "正在生成汇率...";
+"devseed.stepBudgets" = "正在创建预算...";
+"devseed.stepScheduledPayments" = "正在创建计划付款...";
+"devseed.stepSavingBase" = "正在保存基础数据...";
+"devseed.stepTransactions" = "正在生成交易...";
+"devseed.stepInitialBalances" = "正在设置初始余额...";
+"devseed.stepSaving" = "正在保存...";
+"devseed.stepDone" = "完成!";
+"devseed.stepDeleting" = "正在删除数据...";
+"devseed.stepReloading" = "正在重新加载数据...";
+
+// MARK: - Setup Checklist
+
+"setup.title" = "入门";
+"setup.subtitle" = "一步一步设置 Yala";
+"setup.progress" = "已完成 %d / %d";
+"setup.collapse" = "最小化";
+"setup.continue" = "继续";
+"setup.complete.title" = "全部就绪!🎉";
+"setup.complete.subtitle" = "你完成了所有步骤。Yala 已为你准备好。";
+"setup.step.completed" = "已完成";
+"setup.step.tapToStart" = "点击开始";
+"setup.step.locked" = "步骤已锁定。请先完成前面的步骤。";
+"setup.nextStep" = "下一步:%@";
+
+"setup.step1.title" = "探索你可以自定义的全部内容";
+"setup.step2.title" = "记录你的第一笔支出";
+"setup.step3.title" = "设置你的第一个预算";
+"setup.step4.title" = "添加一笔周期付款";
+"setup.step5.title" = "发现 Yala 还能做什么";
+
+"setup.practice.title" = "完成!你创建了你的第一个%@";
+"setup.practice.message" = "如果只是练习,你可以放心删除。";
+"setup.practice.keep" = "保留";
+"setup.practice.delete" = "只是练习";
+"setup.practice.type.expense" = "支出";
+"setup.practice.type.budget" = "预算";
+"setup.practice.type.scheduled" = "计划付款";
+"setup.practice.type.voiceTrial" = "语音支出";
+"setup.practice.type.imageTrial" = "照片支出";
+"setup.step6.title" = "试试语音录入";
+"setup.step7.title" = "试试照片录入";
+"setup.skipStep" = "暂时不用";
+"setup.imageTrial.pickExample" = "选一张示例图片";
+"setup.imageTrial.orPickOwn" = "或选你自己的";
+"setup.imageTrial.exampleReceipt" = "收据";
+"setup.imageTrial.exampleBank" = "银行提醒";
+"setup.imageTrial.exampleList" = "交易";
+"setup.imageTrial.useThisImage" = "使用这张图片";
+
+"setup.personalize.navTitle" = "个性化你的 Yala";
+"setup.personalize.title" = "让它属于你";
+"setup.personalize.subtitle" = "加点个人风格。更换主题、图标或小组件外观。";
+"setup.personalize.personalizeAll" = "全面个性化";
+"setup.personalize.personalizeAllSubtitle" = "名字、照片、货币格式等";
+"setup.personalize.appIcon" = "更换图标";
+"setup.personalize.appIconSubtitle" = "从多种应用设计中挑选";
+"setup.personalize.theme" = "更换主题";
+"setup.personalize.themeSubtitle" = "经典、极简或半透明";
+
+"setup.discover.navTitle" = "发现 Yala";
+"setup.discover.title" = "Yala 还能做更多";
+"setup.discover.subtitleFree" = "这是你能做的 — 以及你可以解锁的。";
+"setup.discover.subtitlePro" = "充分利用你的 Pro 计划。";
+"setup.discover.youCanAlready" = "你已经可以";
+"setup.discover.proFeatures" = "用上 Pro";
+"setup.discover.withPro" = "拥有 Yala Pro";
+"setup.discover.tryFree" = "免费试用 30 天";
+"setup.discover.done" = "明白了!";
+"setup.discover.feature.manualEntry" = "记录支出和收入";
+"setup.discover.feature.statistics" = "查看你的统计和趋势";
+"setup.discover.feature.budgets" = "按类别创建预算";
+"setup.discover.feature.scheduledPayments" = "安排周期付款";
+"setup.discover.feature.notifications" = "获取提醒和通知";
+"setup.discover.feature.aiInsights" = "智能 AI 分析";
+"setup.discover.feature.voice" = "用语音记录支出";
+"setup.discover.feature.imageCapture" = "用相机扫描收据";
+"setup.discover.feature.unlimitedBudgets" = "无限预算和账户";
+
+// MARK: - Contextual Guides
+
+"contextualGuide.dismiss" = "明白了";
+"guide.panel.title" = "这是你的概览";
+"guide.panel.message" = "一眼看清你花了多少、还剩多少。点击 + 添加支出。";
+"guide.trends.title" = "你的支出怎么样?";
+"guide.trends.message" = "此图显示你比之前花得多还是少。如果线上升,说明你花得更多。";
+"guide.categories.title" = "你的钱花到哪去了?";
+"guide.categories.message" = "看看每件事花了多少:餐饮、交通等。最大的扇区就是你花得最多的。";
+"guide.records.title" = "你的全部支出";
+"guide.records.message" = "这里是你记录的所有支出,按日期排序。点击一笔查看详情。";
+"guide.budgets.title" = "设置支出上限";
+"guide.budgets.message" = "预算是你想在某项上花的最大金额。例如:本月餐饮不超过 $500。";
+"guide.scheduled.title" = "周期支出";
+"guide.scheduled.message" = "你每月付 Netflix?租金?在这里添加,Yala 会在到期前提醒你。";
+"guide.accounts.title" = "你的钱,有条理";
+"guide.accounts.message" = "每个账户代表你存钱的地方:现金、银行、卡片。你可以创建多个分别跟踪。";
+"guide.transaction.title" = "记录支出或收入";
+"guide.transaction.message" = "只需输入金额和类别。其他都是可选的。记录得越多,你越了解自己的支出。";
+"guide.comparative.title" = "对比时段";
+"guide.comparative.message" = "看看本月比上月花得多还是少。红色 = 花得多,绿色 = 花得少。";
+"guide.cashflow.title" = "你能撑到月底吗?";
+"guide.cashflow.message" = "Yala 根据你的收入和支出计算你的钱能否撑到月底。";
+"guide.insights.title" = "Yala 替你分析";
+"guide.insights.message" = "基于你的支出,Yala 告诉你有用的事:最贵的一天、是否花得比平时多等。";
+"guide.inbox.title" = "待审核";
+"guide.inbox.message" = "当你有需要确认的付款或自动支出时,它们会出现在这里供你查看。";
+"guide.budgetEditor.title" = "什么是预算?";
+"guide.budgetEditor.message" = "这是你为控制某项支出所设的上限。给它取名、设金额,选择适用的类别。你随时可以编辑或删除。";
+"guide.scheduledEditor.title" = "什么是计划付款?";
+"guide.scheduledEditor.message" = "这是重复的支出:租金、Netflix、网络... Yala 会在每次付款前提醒你。你随时可以编辑或删除。";
+"guide.budgetFilter.title" = "此预算覆盖什么?";
+"guide.budgetFilter.allExpenses" = "你的全部支出";
+"guide.budgetFilter.prefix" = "支出";
+"guide.budgetFilter.account" = "来自账户 %@";
+"guide.budgetFilter.accounts" = "来自账户 %@";
+"guide.budgetFilter.subcategory" = "在子类别 %@";
+"guide.budgetFilter.subcategories" = "在子类别 %@";
+"guide.budgetFilter.tag" = "标记 %@";
+"guide.budgetFilter.tags" = "标记 %@";
+"guide.budgetFilter.needs" = "%@ 性质";
+"guide.budgetFilter.andMore" = "另外 %lld 个";
+"guide.budgetFilter.conjunction" = "和";
+"guide.accountForm.title" = "关于此账户";
+"guide.accountForm.messageGeneral" = "你的主账户,用来跟踪所有支出。可以是你的卡、钱包或任何你喜欢的。";
+"guide.accountForm.messageCash" = "你随身携带的现金。让你不必查钱包就知道还剩多少。";
+"guide.accountForm.messageChecking" = "你日常使用的银行账户。余额应该和你网银 App 看到的一致。";
+"guide.accountForm.messageSavings" = "你存起来的钱。把它分开有助于避免不小心花掉。";
+"guide.accountForm.messageCreditCard" = "你卡上欠的金额。Yala 会从你的总净值中减去此金额。";
+"guide.categoriesSettings.title" = "整理你的类别";
+"guide.categoriesSettings.message" = "类别把你的支出分组:餐饮、交通、娱乐... 你可以创建子类别更精细。";
+"guide.tagsSettings.title" = "万能标签";
+"guide.tagsSettings.message" = "标签是横向的:你可以把任意支出标记为「固定」、「共享」或任何你需要的。一笔支出可以有多个标签。";
+"guide.favoritesManage.title" = "你最频繁的付款";
+"guide.favoritesManage.message" = "把你的常用支出存在这里。记录时点击收藏即可自动填入全部内容。";
+
+// MARK: - Chat Assistant
+"chat.title" = "问 Yala";
+"chat.inputPlaceholder" = "输入你的问题...";
+"chat.send" = "发送";
+"chat.emptySubtitle" = "用问题探索你的财务";
+"chat.errorTimeout" = "回复时间过长。请重试。";
+"chat.errorOffline" = "使用助手需要网络连接。";
+"chat.errorGeneric" = "出了点问题。请重试。";
+"chat.errorNoData" = "未找到该查询的数据。能更具体一点吗?";
+"chat.dailyLimitReached" = "你今天的提问次数已用完。明天再来!";
+"chat.questionsRemaining" = "你今天还剩 %d 次提问";
+"chat.loading" = "思考中...";
+"chat.questionTooLong" = "你的问题太长。请尝试更简洁。";
+"chat.contextHint" = "我可以记住你最后一个问题以便后续追问";
+
+/* Yala AI Redesign */
+"chat.assistantName" = "Yala AI";
+"chat.greeting" = "你好,我是 Yala AI。告诉我,你想了解你财务的什么?";
+"chat.dailyResetSubtitle" = "这个对话会在跨天时清除。";
+"chat.disclaimer" = "Yala AI 可能会出错。";
+"chat.daySeparatorToday" = "今天";
+"chat.topicsButton" = "话题";
+"chat.errorTranscription" = "我无法转写音频。请重试。";
+"chat.errorMicPermission" = "我需要使用麦克风的权限。";
+"chat.topics.title" = "对话话题";
+"chat.resetContext" = "重置对话上下文";
+"chat.listening" = "正在聆听…";
+"chat.transcribing" = "正在转写…";
+"chat.preparingAI" = "正在准备 AI…";
+"chat.unavailable" = "Yala AI 现在不可用。请几分钟后重试。";
+"chat.retry" = "重试";
+"chat.noVoiceDetected" = "没有检测到声音。请重试。";
+"chat.contextMemory" = "Yala AI 记住 %d 条消息";
+
+// MARK: - Chat Draft (Yala AI Register)
+"chat.draft.chipExpense" = "支出";
+"chat.draft.chipIncome" = "收入";
+"chat.draft.amountPlaceholder" = "金额";
+"chat.draft.accountLabel" = "账户";
+"chat.draft.subcategoryLabel" = "子类别";
+"chat.draft.dateLabel" = "日期";
+"chat.draft.noteLabel" = "备注";
+"chat.draft.tagsLabel" = "标签";
+"chat.draft.tagsNone" = "无";
+"chat.draft.savedBadge" = "已保存";
+"chat.draft.discardedBadge" = "已丢弃";
+"chat.draft.saveFailedGeneric" = "无法保存。请重试。";
+"chat.draft.saveFailedAccount" = "无法保存:账户已不存在。请编辑此条目。";
+"chat.draft.saveFailedSubcategory" = "无法保存:子类别已不存在。请编辑此条目。";
+"chat.draft.saveFailedAmount" = "无法保存:金额无效。";
+"chat.draft.viewRecordsButton" = "查看已保存条目";
+"chat.draft.discardButton" = "丢弃";
+"chat.draft.selectAccount" = "选择账户";
+"chat.draft.selectSubcategory" = "选择子类别";
+"chat.draft.saveButton" = "保存";
+"chat.draft.editButton" = "编辑";
+"chat.draft.failedSavingLine" = "无法保存。";
+"chat.draft.retryButton" = "重试";
+"chat.draft.noAccountsBlocking" = "登记前请先在个人资料中创建一个账户。";
+"chat.draft.ambiguousCanned" = "你想登记一笔支出,还是在询问你的支出情况?";
+"chat.draft.ambiguousChipRegister" = "登记";
+"chat.draft.ambiguousChipAsk" = "只是问问";
+"chat.draft.confirmRegisterSingular" = "确认条目:";
+"chat.draft.confirmRegisterPlural" = "确认条目:";
+"chat.draft.overflowFormat" = "我检测到 %d 条条目。先保存前 %d 条;其余请在另一条消息中发送。";
+
+// MARK: - Chat Assistant Consent
+"aiConsent.chatTitle" = "财务助理";
+"aiConsent.chatMessage" = "为回答你的问题，此功能会向 OpenAI 发送你财务状况的摘要：你的账户余额和名称、按类别的总计、常用商家、预算和定期付款。\n\n这些数据仅用于生成回答。OpenAI 不会使用这些数据来训练其模型。";
+"aiConsent.inlineHintChat" = "你的财务摘要由 OpenAI 处理以作答，不会被永久存储。";
+"aiConsent.inlineHintMultiple" = "多项 AI 功能使用 OpenAI 处理你的数据,不会被永久存储。";
+
+// MARK: - Chat Assistant Feature Gate & Settings
+"featureGate.chatAssistant" = "聊天助理";
+"settings.chatAssistant" = "问 Yala";
+"subscription.feature.aiAssistant" = "AI 财务助理";
+
+// GC-05: Expense Form
+"groups.expense.paidByTitle" = "付款人";
+"groups.expense.divideBetween" = "分摊给";
+"groups.expense.selectAll" = "全选";
+"groups.expense.deselectAll" = "无";
+"groups.expense.membersSelected %d %d" = "已选 %d / %d";
+"groups.expense.title" = "新支出";
+"groups.expense.editTitle" = "编辑支出";
+"groups.expense.description" = "描述";
+"groups.expense.descriptionPlaceholder" = "用于什么?";
+"groups.expense.note" = "备注";
+"groups.expense.notePlaceholder" = "添加备注...";
+"groups.expense.category" = "类别";
+"groups.expense.currency" = "货币";
+"groups.expense.date" = "日期";
+"groups.expense.splitType" = "分摊方式";
+"groups.expense.remaining" = "剩余";
+"groups.expense.remainingAmount" = "剩余:%@";
+"groups.expense.balanced" = "已平衡";
+"groups.expense.eachPays" = "每人付";
+
+// GC-05: Settlements
+"groups.settlement.title" = "记录付款";
+"groups.settlement.payTo" = "付给";
+"groups.settlement.registerPayment" = "记录付款";
+"groups.settlement.confirm" = "确认";
+"groups.settlement.reject" = "拒绝";
+"groups.settlement.settle" = "结清";
+"groups.settlement.settleHint" = "打开表单以登记此付款";
+"groups.settlement.confirmQuestion" = "把此付款标记为已确认?";
+"groups.settlement.rejectQuestion" = "拒绝此付款?";
+
+// Groups Notifications
+"groups.notifications.prompt.title" = "群组通知";
+"groups.notifications.prompt.message" = "在有人添加支出或向你付款时获得提醒";
+"groups.notifications.prompt.enable" = "启用";
+
+// Groups — Invite Onboarding (GC-08)
+"groups.invite.welcome" = "你被邀请加入一个群组";
+"groups.invite.welcomeWithGroup" = "你被邀请加入「%@」";
+"groups.invite.subtitle" = "Yala 帮你分摊支出并知道谁欠谁";
+"groups.invite.namePlaceholder" = "你的名字";
+"groups.invite.joinButton" = "加入群组";
+"groups.invite.ready" = "全部就绪!";
+"groups.invite.goToGroup" = "前往群组";
+"groups.invite.linkInvalidTitle" = "链接无效";
+"groups.invite.linkInvalidDetail" = "此链接已无效或已过期。请管理员生成新链接。";
+
+// Groups — Bridge / Sync errors
+"groups.bridge.alertTitle" = "群组同步出现问题";
+"groups.bridge.errorTransaction" = "你的个人记录将自动重试。";
+"groups.bridge.errorTransactionUpdate" = "更改未反映到你的个人记录。我们会重试。";
+"groups.bridge.errorDelete" = "无法删除该支出的个人记录。";
+"groups.bridge.errorNoAccounts" = "你还没有设置账户。请先创建一个。";
+"groups.sync.errorAcceptShare" = "无法完成加入群组。请再试一次。";
+"groups.sync.errorMemberSetup" = "你已加入，但群组中的身份出现问题。请重新打开应用。";
+
+// Groups — Reconnect (GC-08)
+"groups.reconnect.title" = "加入群组";
+"groups.reconnect.subtitle" = "你被邀请加入一个共享群组";
+"groups.reconnect.fallbackGroupName" = "此群组";
+"groups.reconnect.archived.title" = "%@ 已归档";
+"groups.reconnect.archived.body" = "管理员已归档此群组，不再接受变更。";
+"groups.reconnect.archived.cta" = "知道了";
+"groups.reconnect.alreadyMember.title" = "你已是 %@ 的成员";
+"groups.reconnect.alreadyMember.body" = "我们带你前往群组。";
+"groups.reconnect.alreadyMember.cta" = "打开群组";
+"groups.reconnect.pendingDuplicate.title" = "对 %@ 的申请仍在审核中";
+"groups.reconnect.pendingDuplicate.body" = "管理员尚未批准你的申请。";
+"groups.reconnect.pendingDuplicate.cta" = "查看群组";
+"groups.reconnect.rejectedRetry.title" = "你的申请被拒绝了";
+"groups.reconnect.rejectedRetry.body" = "再次申请，管理员会看到你的新申请。";
+"groups.reconnect.leftRetry.title" = "你已离开 %@";
+"groups.reconnect.leftRetry.body" = "如果想回来，请再次申请。";
+"groups.reconnect.removedRetry.title" = "你已被移出 %@";
+"groups.reconnect.removedRetry.body" = "如果想回来，请再次申请。";
+"groups.reconnect.retryCta" = "再次申请";
+"groups.reconnect.subtitleWithGroup" = "你被邀请加入「%@」";
+
+// Groups — Activate Full Mode (GC-08)
+"groups.activate.title" = "激活完整 Yala";
+"groups.activate.subtitle" = "跟踪支出、预算等";
+"groups.activate.accountStep" = "你的主账户是?";
+"groups.activate.accountName" = "账户名称";
+"groups.activate.notificationStep" = "想让我们提醒你吗?";
+"groups.activate.notificationMessage" = "获取支出提醒和预算提示";
+"groups.activate.enableNotifications" = "启用通知";
+"groups.activate.skipNotifications" = "暂时不用";
+"groups.activate.done" = "开始";
+
+// Groups — Nudges (GC-09)
+"groups.nudge.invitedSpendingInsight.title" = "你的共享支出在增长";
+"groups.nudge.invitedSpendingInsight.message" = "你已花费 %@ 在共享支出上。想看看你的钱还去哪了吗?";
+"groups.nudge.invitedSpendingInsight.cta" = "探索 Yala";
+"groups.nudge.invitedPostSettlement.title" = "付款已登记";
+"groups.nudge.invitedPostSettlement.message" = "你刚结清了一笔债务。想跟踪这笔钱从哪儿来吗?";
+"groups.nudge.invitedPostSettlement.cta" = "激活完整 Yala";
+"groups.nudge.invitedMonthTwo.title" = "你只看到了一部分";
+"groups.nudge.invitedMonthTwo.message" = "你的群组占你支出的 %d%%。其余还没被跟踪。";
+"groups.nudge.invitedMonthTwo.cta" = "查看全部";
+"groups.nudge.invitedSocialProof.title" = "你的朋友已经在用 Yala";
+"groups.nudge.invitedSocialProof.message" = "你群组里 %d 人已在使用完整 Yala。";
+"groups.nudge.invitedSocialProof.cta" = "激活完整 Yala";
+"groups.nudge.dormantGroupsAsMain.title" = "你的群组在等你";
+"groups.nudge.dormantGroupsAsMain.message" = "你有待处理的共享支出。看看进展如何。";
+"groups.nudge.dormantGroupsAsMain.cta" = "查看群组";
+"groups.nudge.dormantNewExpenses.title" = "新活动";
+"groups.nudge.dormantNewExpenses.cta" = "查看支出";
+"groups.nudge.dormantSpendingGap.title" = "未跟踪的支出";
+"groups.nudge.dormantSpendingGap.message" = "你有几笔共享支出,但其他支出还没被跟踪。";
+"groups.nudge.dormantSpendingGap.cta" = "记一笔支出";
+"groups.nudge.dormantQuickEntry.title" = "快速记录";
+"groups.nudge.dormantQuickEntry.message" = "5 秒记录一笔个人支出。";
+"groups.nudge.dormantQuickEntry.cta" = "记录";
+"groups.nudge.sporadicImbalance.title" = "检测到不平衡";
+"groups.nudge.sporadicImbalance.message" = "本周你记了 %d 笔共享支出但只有 %d 笔个人支出。";
+"groups.nudge.sporadicImbalance.cta" = "明白了";
+"groups.nudge.sporadicBudgetSuggestion.title" = "为共享支出设个预算?";
+"groups.nudge.sporadicBudgetSuggestion.message" = "你本月有很多共享支出。一个预算能帮你保持正轨。";
+"groups.nudge.sporadicBudgetSuggestion.cta" = "明白了";
+"groups.nudge.sporadicTrendAlert.title" = "上升趋势";
+"groups.nudge.sporadicTrendAlert.message" = "你的共享支出比上月多 %d%%。";
+"groups.nudge.sporadicTrendAlert.cta" = "明白了";
+
+"statistics.sankey.title" = "资金流";
+"statistics.sankey.expenses" = "支出";
+"statistics.sankey.available" = "可用";
+"statistics.sankey.others" = "其他";
+"statistics.sankey.planned" = "已计划";
+"statistics.sankey.plannedRecurring" = "周期";
+"statistics.sankey.plannedSubscription" = "订阅";
+"statistics.sankey.otherFunds" = "其他资金";
+"statistics.sankey.plannedHint" = "仅包含本月的定期付款和订阅。";
+"statistics.sankey.toggleAmount" = "显示金额";
+"statistics.sankey.togglePercentage" = "显示百分比";
+"stats.sankey.subtitle" = "资金流分布";
+
+// MARK: - Shortcut Snippet (F5/F6/F7)
+"shortcut.snippet.account" = "账户";
+"shortcut.snippet.category" = "类别";
+"shortcut.snippet.date" = "日期";
+"shortcut.snippet.draftBadge" = "草稿 — 在你的收件箱中查看";
+"shortcut.siriNatural.error.parsingFailedHelp" = "我没听懂。试试:「咖啡 50」或「午餐 25」";
+"shortcut.siriNatural.success.partial" = "已记录 %1$lld / %2$lld(有些我没听懂)。请到收件箱查看。";
+
+/* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
+"panel.widgetInfo.addToPanel" = "添加到面板";
+
+/* Panel Polish #2 — Title sheet pedagógico CashFlow */
+"panel.widgetInfo.cashFlow.title" = "现金流";
+
+/* Panel Polish #2 — Chip 1 CashFlow */
+"panel.widgetInfo.cashFlow.chip1" = "收入";
+
+/* Panel Polish #2 — Chip 2 CashFlow */
+"panel.widgetInfo.cashFlow.chip2" = "支出";
+
+/* Panel Polish #2 — Chip 3 CashFlow */
+"panel.widgetInfo.cashFlow.chip3" = "按期间";
+
+/* Panel Polish #2 — Title sheet pedagógico Trend */
+"panel.widgetInfo.trend.title" = "余额趋势";
+
+/* Panel Polish #2 — Chip 1 Trend */
+"panel.widgetInfo.trend.chip1" = "交互";
+
+/* Panel Polish #2 — Chip 2 Trend */
+"panel.widgetInfo.trend.chip2" = "按期间";
+
+// MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
+
+/* Panel Polish #2 — CashFlow S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatQ" = "你看到的是什么？";
+
+/* Panel Polish #2 — CashFlow S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatA" = "本期间的余额：收入与支出之间的差额，用两条柱状图比较两者的总额。";
+
+/* Panel Polish #2 — CashFlow M: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatQ" = "你看到的是什么？";
+
+/* Panel Polish #2 — CashFlow M: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatA" = "与紧凑尺寸相同的内容（收入、支出和余额），有更多空间详细查看金额。";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatQ" = "你看到的是什么？";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatA" = "本期间内你的收入和支出的演变，根据所选间隔按日、周或月分组。";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowQ" = "如何与图表互动？";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowA" = "长按某条柱状图以查看特定点的准确详情。";
+
+/* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
+"panel.widgetInfo.cashFlow.balanceQ" = "为什么总流量与我的余额不符？";
+/* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
+"panel.widgetInfo.cashFlow.balanceA" = "流量中的每一笔变动都按发生当日的汇率记账。你的余额反映的是今天按当前汇率持有的金额。如果你有不同币种的账户,差额就是未实现的汇兑损益。";
+/* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatQ" = "你看到的是什么？";
+
+/* Panel Polish #2 — Trend S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatA" = "根据当前筛选条件显示的本期间余额、收入或支出，附带迷你演变图。";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatQ" = "你看到的是什么？";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatA" = "本期间内你的余额、收入或支出的逐日演变。";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowQ" = "如何与图表互动？";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowA" = "长按图表查看每个点的数值。使用标题栏的按钮在余额、收入和支出之间切换。";
+
+/* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
+"panel.widgetInfo.cashFlow.chip4" = "可交互";
+
+/* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
+"panel.widgetInfo.categoriesPie.title" = "按类别分布";
+
+/* Panel Polish #2 — Chip 1 CategoriesPie (entidad) */
+"panel.widgetInfo.categoriesPie.chip1" = "类别";
+
+/* Panel Polish #2 — Chip 2 CategoriesPie (período) */
+"panel.widgetInfo.categoriesPie.chip2" = "当前周期";
+
+/* Panel Polish #2 — Chip 3 CategoriesPie (Interactiva) */
+"panel.widgetInfo.categoriesPie.chip3" = "可互动";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.smallWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta */
+"panel.widgetInfo.categoriesPie.smallWhatA" = "你在当前周期的支出按类别的分布情况。气泡标出占比最高的类别。";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Cómo interactúo?' */
+"panel.widgetInfo.categoriesPie.smallHowQ" = "如何操作?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.smallHowA" = "点击气泡可按该类别筛选面板其余内容。长按气泡可查看完整名称。";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.largeWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta */
+"panel.widgetInfo.categoriesPie.largeWhatA" = "环形图显示当前周期内各类别的支出占比。右侧图例按从高到低列出每个类别及其百分比。";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.categoriesPie.largeHowQ" = "如何与图表互动?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.largeHowA" = "点击环形图的某一段、气泡或图例中的一行,可按该类别筛选面板其余内容。长按气泡可查看完整名称。";
+
+/* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
+"panel.widgetInfo.subcategoriesPie.title" = "按子类别分布";
+
+/* Panel Polish #2 — Chip 1 SubcategoriesPie (entidad) */
+"panel.widgetInfo.subcategoriesPie.chip1" = "子类别";
+
+/* Panel Polish #2 — Chip 2 SubcategoriesPie (período) */
+"panel.widgetInfo.subcategoriesPie.chip2" = "当前周期";
+
+/* Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva) */
+"panel.widgetInfo.subcategoriesPie.chip3" = "可互动";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallWhatA" = "你在当前周期的支出按子类别的分布情况。如果上方已筛选某个类别,只会显示该类别下的子类别。";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallHowQ" = "如何操作?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "点击气泡可按该子类别筛选面板其余内容。长按气泡可查看完整名称。";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta */
+"panel.widgetInfo.subcategoriesPie.largeWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeWhatA" = "环形图显示当前周期内各子类别的支出占比,最多显示九个;若超过则合并为「其余」一组。右侧图例列出每一项及其百分比。";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.subcategoriesPie.largeHowQ" = "如何与图表互动?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "点击环形图的某一段、气泡或图例中的一行,可按该子类别筛选面板其余内容。长按气泡可查看完整名称。";
+
+/* Panel Polish #2 — Title sheet pedagógico TagsPie */
+"panel.widgetInfo.tagsPie.title" = "按标签分布";
+
+/* Panel Polish #2 — Chip 1 TagsPie (entidad) */
+"panel.widgetInfo.tagsPie.chip1" = "标签";
+
+/* Panel Polish #2 — Chip 2 TagsPie (período) */
+"panel.widgetInfo.tagsPie.chip2" = "当前周期";
+
+/* Panel Polish #2 — Chip 3 TagsPie (Interactiva) */
+"panel.widgetInfo.tagsPie.chip3" = "可互动";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallWhatA" = "你在当前周期的支出按标签的分布情况。气泡标出占比最高的标签。";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallHowQ" = "如何操作?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallHowA" = "点击气泡可按该标签筛选面板其余内容。长按气泡可查看完整名称。";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeWhatA" = "环形图显示当前周期内各标签的支出占比。右侧图例按从高到低列出每个标签及其百分比。";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeHowQ" = "如何与图表互动?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeHowA" = "点击环形图的某一段、气泡或图例中的一行,可按该标签筛选面板其余内容。长按气泡可查看完整名称。";
+
+/* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
+"panel.widgetInfo.expensesByNeed.title" = "按需求分布";
+
+/* Panel Polish #2 — Chip 1 ExpensesByNeed (entidad) */
+"panel.widgetInfo.expensesByNeed.chip1" = "需求";
+
+/* Panel Polish #2 — Chip 2 ExpensesByNeed (período) */
+"panel.widgetInfo.expensesByNeed.chip2" = "当前周期";
+
+/* Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva) */
+"panel.widgetInfo.expensesByNeed.chip3" = "可互动";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallWhatA" = "当前周期内的支出按需求类型分布:必要(不可或缺)、优先(重要)、可选(可舍弃)。仅当你有未归类支出时,才会出现「未分类」。";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallHowQ" = "如何操作?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallHowA" = "点击某一行可按该需求类型筛选面板其余内容。再次点击可取消筛选。";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumWhatA" = "每种需求类型对应一条柱。柱的长度展示其相对于当前周期最大支出的权重,便于一眼看出哪一种最大。";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumHowQ" = "如何操作?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumHowA" = "点击某一条柱可按该需求类型筛选面板其余内容。再次点击可取消筛选。";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta */
+"panel.widgetInfo.expensesByNeed.largeWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeWhatA" = "当前周期的支出按需求类型堆叠显示:必要、优先、可选、未分类。横轴上的每根柱代表一天、一周或一个月(取决于分组),下方图例展示每种类型的整体占比。";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.expensesByNeed.largeHowQ" = "如何与图表互动?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeHowA" = "在柱上滑动手指可查看某一时间点的分项——必要、优先等各占多少及合计。点击图例中的某个胶囊,可仅显示该需求类型并据此筛选面板。";
+
+/* Panel Polish #2 — Title sheet pedagógico TopCategories */
+"panel.widgetInfo.topCategories.title" = "主要类别";
+
+/* Panel Polish #2 — Chip 1 TopCategories (entidad) */
+"panel.widgetInfo.topCategories.chip1" = "类别";
+
+/* Panel Polish #2 — Chip 2 TopCategories (período) */
+"panel.widgetInfo.topCategories.chip2" = "当前周期";
+
+/* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
+"panel.widgetInfo.topCategories.chip3" = "可互动";
+
+/* Panel Polish #2 — TopCategories S: pregunta */
+"panel.widgetInfo.topCategories.smallWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — TopCategories S: respuesta */
+"panel.widgetInfo.topCategories.smallWhatA" = "你在当前周期内支出最多的两个类别。柱长展示每一项相对于第一项的权重。";
+
+/* Panel Polish #2 — TopCategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — TopCategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatA" = "你在当前周期内支出最多的类别,按从高到低排序。每行显示金额、占总支出的百分比,以及与最高类别比较的柱条。";
+
+/* Panel Polish #2 — TopCategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howQ" = "如何操作?";
+
+/* Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howA" = "点击某一行可按该类别筛选面板其余内容。再次点击可取消筛选。";
+
+/* Panel Polish #2 — Title sheet pedagógico TopSubcategories */
+"panel.widgetInfo.topSubcategories.title" = "主要子类别";
+
+/* Panel Polish #2 — Chip 1 TopSubcategories (entidad) */
+"panel.widgetInfo.topSubcategories.chip1" = "子类别";
+
+/* Panel Polish #2 — Chip 2 TopSubcategories (período) */
+"panel.widgetInfo.topSubcategories.chip2" = "当前周期";
+
+/* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
+"panel.widgetInfo.topSubcategories.chip3" = "可互动";
+
+/* Panel Polish #2 — TopSubcategories S: pregunta */
+"panel.widgetInfo.topSubcategories.smallWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta */
+"panel.widgetInfo.topSubcategories.smallWhatA" = "你在当前周期内支出最多的两个子类别。如果其他小组件已筛选某个类别,只会显示该类别下的子类别。";
+
+/* Panel Polish #2 — TopSubcategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatA" = "你在当前周期内支出最多的子类别,按从高到低排序。每行显示金额、占其所属类别和总支出的百分比,以及与首位比较的柱条。";
+
+/* Panel Polish #2 — TopSubcategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topSubcategories.howQ" = "如何操作?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector) */
+"panel.widgetInfo.topSubcategories.smallHowA" = "点击某一行可按该子类别筛选面板其余内容。";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
+"panel.widgetInfo.topSubcategories.regularHowA" = "点击某一行可按该子类别筛选面板其余内容。使用上方的胶囊筛选某一类别——或者,若你已在其他小组件筛选了某个类别,选择器会锁定为该类别。";
+
+/* Panel Polish #2 — Title sheet pedagógico RecentRecords */
+"panel.widgetInfo.recentRecords.title" = "最近的记录";
+
+/* Panel Polish #2 — Chip 1 RecentRecords (entidad) */
+"panel.widgetInfo.recentRecords.chip1" = "交易";
+
+/* Panel Polish #2 — Chip 2 RecentRecords (período) */
+"panel.widgetInfo.recentRecords.chip2" = "当前周期";
+
+/* Panel Polish #2 — RecentRecords: pregunta */
+"panel.widgetInfo.recentRecords.whatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — RecentRecords: respuesta */
+"panel.widgetInfo.recentRecords.whatA" = "当前周期内最近的五笔交易:收入、支出或转账。每行显示金额(收入和支出以不同颜色区分)、关联的类别或子类别,以及在适用时显示需求标签(必要、优先或可选)。";
+
+/* Panel Polish #2 — Title sheet pedagógico ScheduledPayments */
+"panel.widgetInfo.scheduledPayments.title" = "计划付款";
+
+/* Panel Polish #2 — Chip 1 ScheduledPayments (entidad) */
+"panel.widgetInfo.scheduledPayments.chip1" = "即将到来的付款";
+
+/* Panel Polish #2 — Chip 2 ScheduledPayments (mes en curso) */
+"panel.widgetInfo.scheduledPayments.chip2" = "本月";
+
+/* Panel Polish #2 — Chip 3 ScheduledPayments (Interactiva) */
+"panel.widgetInfo.scheduledPayments.chip3" = "可互动";
+
+/* Panel Polish #2 — ScheduledPayments: pregunta '¿Qué estás viendo?' (compartida S/M) */
+"panel.widgetInfo.scheduledPayments.whatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — ScheduledPayments S: respuesta */
+"panel.widgetInfo.scheduledPayments.smallWhatA" = "你本月还需支付的计划款项,包含已支付百分比的进度环以及活跃和待付款项的数量。底部的筛选可在全部、定期和订阅之间切换。";
+
+/* Panel Polish #2 — ScheduledPayments M: respuesta */
+"panel.widgetInfo.scheduledPayments.mediumWhatA" = "本月即将到来的付款列表,每项显示日期、金额和状态:待付、已付或已跳过。标题右侧的筛选可缩小至全部、定期或订阅。";
+
+/* Panel Polish #2 — ScheduledPayments: pregunta '¿Cómo interactúo?' (compartida S/M) */
+"panel.widgetInfo.scheduledPayments.howQ" = "如何操作?";
+
+/* Panel Polish #2 — ScheduledPayments S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.scheduledPayments.smallHowA" = "点击底部筛选中的某个图标,可缩小至全部付款、仅定期或仅订阅。";
+
+/* Panel Polish #2 — ScheduledPayments M: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.scheduledPayments.mediumHowA" = "点击小组件上方筛选中的某个图标,可在全部、定期或订阅之间切换。";
+
+/* Panel Polish #2 — Title sheet pedagógico Budgets */
+"panel.widgetInfo.budgets.title" = "收藏的预算";
+
+/* Panel Polish #2 — Chip 1 Budgets (Favoritos) */
+"panel.widgetInfo.budgets.chip1" = "收藏";
+
+/* Panel Polish #2 — Chip 2 Budgets (período) */
+"panel.widgetInfo.budgets.chip2" = "当前周期";
+
+/* Panel Polish #2 — Chip 3 Budgets (Interactiva) */
+"panel.widgetInfo.budgets.chip3" = "可互动";
+
+/* Panel Polish #2 — Budgets S: pregunta */
+"panel.widgetInfo.budgets.smallWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — Budgets S: respuesta */
+"panel.widgetInfo.budgets.smallWhatA" = "你的两个收藏预算,展示当前周期的支出和占预算上限的百分比。";
+
+/* Panel Polish #2 — Budgets M/L: pregunta (compartida) */
+"panel.widgetInfo.budgets.regularWhatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — Budgets M/L: respuesta (compartida) */
+"panel.widgetInfo.budgets.regularWhatA" = "你的收藏预算和当前周期的进度:已花费多少、距上限还剩多少,以及状态(正常、紧张或超支)。标题中的星标可打开界面,让你选择要收藏哪些预算。";
+
+/* Panel Polish #2 — Budgets: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.budgets.howQ" = "如何操作?";
+
+/* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.budgets.howA" = "点击某个预算可按其类别或标签的交易筛选面板其余内容。再次点击可取消筛选。";
+
+/* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
+"panel.widgetInfo.exchangeRate.title" = "汇率";
+
+/* Panel Polish #2 — Chip 1 ExchangeRate (multi-divisa) */
+"panel.widgetInfo.exchangeRate.chip1" = "多币种";
+
+/* Panel Polish #2 — Chip 2 ExchangeRate (tasas actuales) */
+"panel.widgetInfo.exchangeRate.chip2" = "当前汇率";
+
+/* Panel Polish #2 — Chip 3 ExchangeRate (Interactiva) */
+"panel.widgetInfo.exchangeRate.chip3" = "可互动";
+
+/* Panel Polish #2 — ExchangeRate: pregunta */
+"panel.widgetInfo.exchangeRate.whatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta */
+"panel.widgetInfo.exchangeRate.whatA" = "你偏好货币与最多两种次要货币之间的汇率走势。每条线代表一种货币,标题下方显示每种货币的最新汇率以及更新时间。";
+
+/* Panel Polish #2 — ExchangeRate: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.exchangeRate.howQ" = "如何与图表互动?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.exchangeRate.howA" = "在线条上滑动手指可查看某一日期的精确汇率,每种货币会显示一个工具提示。点击底部图例中的某个胶囊可仅显示一种货币;再次点击可恢复显示全部。";
+
+/* Panel Polish #2 — Title sheet pedagógico WeekdayBar */
+"panel.widgetInfo.weekdayBar.title" = "按周中各天的支出";
+
+/* Panel Polish #2 — Chip 1 WeekdayBar (entidad) */
+"panel.widgetInfo.weekdayBar.chip1" = "星期";
+
+/* Panel Polish #2 — Chip 2 WeekdayBar (período) */
+"panel.widgetInfo.weekdayBar.chip2" = "当前周期";
+
+/* Panel Polish #2 — WeekdayBar: pregunta '¿Qué estás viendo?' (compartida S/L) */
+"panel.widgetInfo.weekdayBar.whatQ" = "你看到了什么?";
+
+/* Panel Polish #2 — WeekdayBar S: respuesta */
+"panel.widgetInfo.weekdayBar.smallWhatA" = "你在当前周期内每周的平均支出,以及一个迷你柱状图——每天一根柱——最高的两根柱顶部会显示金额。";
+
+/* Panel Polish #2 — WeekdayBar L: respuesta */
+"panel.widgetInfo.weekdayBar.largeWhatA" = "你在当前周期内每周中各天的平均支出。每根有支出的柱顶部会显示精确金额。";
+"panel.widgetInfo.trend.fxMatchQ" = "为什么最后一个点可能与我的总余额不符?";
+"panel.widgetInfo.trend.fxMatchA" = "最后一个点反映的是按当前汇率计算的余额。前面的点使用每笔交易日期的汇率。差额是汇率波动产生的损益,只有当你有不同币种的账户时才会出现。";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "汇率如何影响我的余额?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala 使用当前汇率对每个账户的余额计算你的首选币种总余额。所以,即使你不进行任何交易,只要汇率变动,你的余额也可能上升或下降。";
+
+// MARK: - A0-Bridge Settings & Filters
+"settings.sectionGroups" = "群组";
+"settings.sectionGroupsHint" = "配置 Yala 如何将你的群组账户和交易与个人数据合并。";
+"settings.includeGroupsInPanelTotal" = "在总余额中包含群组";
+"settings.includeGroupTransactionsInStats" = "在统计中包含群组交易";
+"filters.sectionShared" = "共享";
+"filters.includeGroupTransactions" = "包含群组交易";
+"filters.includeGroupTransactionsHint" = "开启时,由共享支出生成的动态会出现在你的列表中。";
+
+// MARK: - A0-Bridge Bridge messages
+"groups.bridge.deleteExpenseBlocked" = "此支出有后续结算。请先删除或调整结算后再移除。";
+"groups.bridge.editFromGroup" = "此交易与一个群组同步。请从共享支出处编辑。";
+"groups.bridge.assignFromInbox" = "从 Inbox 分配子分类以完成它。";
+"groups.bridge.editSettlementInGroup" = "此交易来自结算。请在群组中编辑 settlement。";
+"groups.bridge.editPartialBanner" = "这笔支出来自群组。你可以编辑账户、分类和标签。金额和日期与群组同步。";
+"groups.bridge.draftReasonRemoteCreate" = "%1$@在%2$@中记录了这笔支出。选择一个账户将其纳入你的记录。";
+"groups.bridge.draftReasonCurrencyChanged" = "%@中支出的货币已更改。选择一个账户来记录你的份额。";
+"groups.card.moreDebts" = "+%d 更多";
+"inbox.groupExpenseAccountDraft.title" = "分配账户";
+"inbox.groupExpenseAccountDraft.assignAccount" = "来源账户";
+"groups.bridge.activateTitle" = "启用自动交易";
+"groups.bridge.activateBody" = "从现在起,共享支出将反映在你的群组账户中。此群组中你有 %d 笔之前的支出。我们要怎么处理它们?";
+"groups.bridge.activateOptionFromNow" = "从现在开始";
+"groups.bridge.activateOptionFromNowHint" = "只有新支出会被反映。";
+"groups.bridge.activateOptionImportAll" = "导入所有历史记录";
+"groups.bridge.activateOptionImportAllHint" = "将为 %d 笔之前的支出及其结算创建交易。";
+"groups.bridge.activateImportRegenerationNote" = "现有生成的交易将根据当前规则重新生成。";
+"groups.bridge.deactivateTitle" = "禁用自动交易";
+"groups.bridge.deactivateBody" = "此群组生成了 %d 笔交易。如果你删除它们,你的群组余额将被调整。";
+"groups.bridge.deactivateOptionDelete" = "删除它们";
+"groups.bridge.deactivateOptionKeep" = "保留为历史记录";
+"groups.bridge.importing" = "正在导入 %d 笔支出…";
+"groups.bridge.importError" = "导入时出现问题。请重试。";
+"groups.bridge.upsellGroupInviteSettlement" = "激活 Yala 完整版以将此付款与你的真实账户对账。";
+
+// Bridge opt-out — alert post-save (F2c)
+"groups.bridge.optoutAlertTitle" = "也记录到你的个人 Yala 吗?";
+"groups.bridge.optoutAlertBody" = "你可以在你的账户中创建一笔个人记录来反映这笔支出,或仅保留在群组内。";
+"groups.bridge.optoutAlertYes" = "是,记录";
+"groups.bridge.optoutAlertNo" = "仅群组";
+
+// Bridge deactivation sheet (F5)
+"groups.bridge.deactivationSheetTitle" = "禁用个人集成";
+"groups.bridge.deactivationSheetBody" = "你的账户中已有自动创建的交易。请选择如何处理它们。";
+"groups.bridge.deactivationOptionFreeze" = "保留为历史记录";
+"groups.bridge.deactivationOptionDelete" = "从我的账户中删除";
+
+// Groups Global Settings sheet (F3a)
+"groups.globalSettings.title" = "群组设置";
+"groups.globalSettings.bridgeSectionTitle" = "与你的个人 Yala 集成";
+"groups.globalSettings.bridgeToggleLabel" = "将群组支出记录到我的个人账户";
+"groups.globalSettings.bridgeCaption" = "开启后,你支付或结算的每笔支出也会记录到你选择的个人账户中。你的余额将反映真实情况。";
+"groups.globalSettings.visibilitySectionTitle" = "可见性";
+"groups.globalSettings.visibilityCaption" = "控制群组交易是否出现在你的面板、统计和记录动态中。";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "在记录动态中包含群组交易";
+
+// MARK: - A0-Bridge System Categories & Subcategories (群组)
+"account.system.groups" = "群组 %@";
+"account.system.badge" = "系统";
+"category.system.groups" = "群组";
+"category.system.groupCollections" = "群组收款";
+"subcategory.system.loanToGroups" = "向群组借出";
+"subcategory.system.loanCollection" = "借款回收";
+"subcategory.system.settlementPayment" = "结算付款";
+"subcategory.system.settlementSent" = "结算已发送";
+"subcategory.system.settlementReceived" = "结算已收到";
+"inbox.sourceGroupExpense" = "共享支出";
+"inbox.sourceGroupSettlement" = "结算";
+"inbox.sourceManual" = "手动";
+"inbox.groupDraftCannotDelete" = "此交易只能从源群组中删除。";
+
+/* A0-Bridge V2.0 — P0+P1 表单 + 只读横幅 */
+"groups.settlement.fromAccount" = "从哪个账户支付？";
+"groups.settlement.fromAccountNone" = "无 — 稍后完成";
+"inbox.openInbox" = "打开收件箱";
+"groups.detail.openGroup" = "打开群组";
+"inbox.groupExpenseDraft.title" = "分配子类别";
+"inbox.groupExpenseDraft.assignSubcategory" = "子类别";
+"inbox.groupSettlementDraft.title" = "分配账户";
+"inbox.groupSettlementDraft.assignAccount" = "目标账户";
+"inbox.groupDraft.finalize" = "完成";
+"inbox.groupDraft.fromGroup" = "群组：%@";
+"action.continue" = "继续";
+
+// MARK: - A3: Pending approval flow
+"groups.member.statusPending" = "等待批准";
+"groups.member.statusRejected" = "已拒绝";
+"groups.member.approve" = "批准";
+"groups.member.reject" = "拒绝";
+"groups.member.approveConfirm" = "批准 %@ 加入群组？";
+"groups.member.rejectConfirm" = "拒绝 %@ 的请求吗？对方可以使用其他链接重新申请加入。";
+"groups.member.pendingRequestsSection" = "待处理的请求";
+"groups.invite.waitingApproval.title" = "请求已发送";
+"groups.invite.waitingApproval.body" = "群组管理员需要批准你的加入请求。准备好后我们会通知你。";
+"groups.invite.waitingApproval.banner" = "等待管理员批准";
+"groups.invite.rejected.title" = "请求被拒绝";
+"groups.invite.rejected.body" = "管理员没有批准你的请求。如果你想再次尝试，可以请管理员发送新的链接。";
+"groups.notifications.newPendingRequest" = "👋 %1$@ 想要加入 %2$@";
+"groups.notifications.newPendingRequestBody" = "在 Yala 中批准或拒绝。";
+"groups.errors.pendingApproval" = "暂时还不能执行此操作。管理员需要先批准你的请求。";
+
+// MARK: - Welcome (A4 — Chooser pre-onboarding)
+"welcome.chooser.title" = "你好！你是怎么找到 Yala 的？";
+"welcome.chooser.subtitle" = "告诉我们，我们会为你定制体验。";
+"welcome.chooser.optionNew.title" = "我是新用户";
+"welcome.chooser.optionNew.body" = "和我从零开始吧。我会一步步帮你配置好一切。";
+"welcome.chooser.optionExisting.title" = "我已经有账户了";
+"welcome.chooser.optionExisting.body" = "我重新安装了 Yala，想从 iCloud 恢复我的数据。";
+"welcome.chooser.optionInvite.title" = "有人邀请我加入群组";
+"welcome.chooser.optionInvite.body" = "我有一个邀请链接，想要加入。";
+
+"welcome.restore.searching" = "正在 iCloud 中查找你的数据…";
+"welcome.restore.searchingTip" = "这可能需要几秒钟。";
+"welcome.restore.foundTitle" = "你好 %@！很高兴再次见到你。";
+"welcome.restore.foundTitleAnonymous" = "很高兴再次见到你！";
+"welcome.restore.foundBody" = "我们在 iCloud 中找到了你的数据：";
+"welcome.restore.foundAccounts" = "%d 个账户";
+"welcome.restore.foundTransactions" = "%d 条记录";
+"welcome.restore.foundBudgets" = "%d 个预算";
+"welcome.restore.foundGroups" = "%d 个共享群组";
+"welcome.restore.continue" = "继续";
+"welcome.restore.notFoundTitle" = "未找到数据";
+"welcome.restore.notFoundBody" = "你的 iCloud 账户没有关联的数据。想要重新开始吗？";
+"welcome.restore.startFresh" = "从零开始";
+"welcome.restore.retry" = "重新查找";
+"welcome.restore.errorTitle" = "出现了问题";
+"welcome.restore.errorBody" = "无法查找你的 iCloud 数据。请重试或从零开始配置。";
+"welcome.restore.iCloudDisabledTitle" = "请启用 iCloud 以继续";
+"welcome.restore.iCloudDisabledBody" = "你需要启用 iCloud 才能恢复数据。请在设置中启用并重试。";
+"welcome.restore.openSettings" = "打开设置";
+"welcome.restore.startFreshConfirm.title" = "重新开始？";
+"welcome.restore.startFreshConfirm.body" = "这将创建一个新账户，不会保留你之前的数据。继续吗？";
+"welcome.restore.startFreshConfirm.confirm" = "是，重新开始";
+"welcome.restore.startFreshConfirm.cancel" = "取消";
+
+"welcome.invite.title" = "粘贴你的邀请链接";
+"welcome.invite.body" = "如果有人邀请你加入 Yala 群组，请在这里粘贴你收到的链接。";
+"welcome.invite.placeholder" = "https://yala-app.pe/invite?...";
+"welcome.invite.invalidLink" = "这看起来不像是 Yala 的链接。请检查是否复制了完整的链接。";
+"welcome.invite.join" = "加入群组";
+"welcome.invite.back" = "返回";
+
+// MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
+"welcome.hero.title" = "你的个人财务,";
+"welcome.hero.titleAccent" = "轻松搞定。";
+"welcome.hero.subtitle" = "你拍下来。Yala 全搞定。";
+"welcome.hero.cta" = "开始";
+"welcome.hero.trust" = "100% 私密 · 你的信息始终与你同在";
+
+"welcome.hero.cards.capture.title" = "拍照即录";
+"welcome.hero.cards.capture.body" = "拍下来,Yala 自动识别。";
+"welcome.hero.cards.assistant.title" = "语音 + AI 助手";
+"welcome.hero.cards.assistant.body" = "跟它说,问它。Yala 都懂。";
+"welcome.hero.cards.groups.title" = "共享账目";
+"welcome.hero.cards.groups.body" = "跟谁都能分账。";
+"welcome.hero.cards.budgets.title" = "预算与目标";
+"welcome.hero.cards.budgets.body" = "设定上限,照做不误。";
+"welcome.hero.cards.multiAndCurrencies.title" = "多账户多币种";
+"welcome.hero.cards.multiAndCurrencies.body" = "银行卡、现金、48+ 种货币。";
+"welcome.hero.cards.import.title" = "导入你的历史";
+"welcome.hero.cards.import.body" = "PDF、CSV、Excel,一键搞定。";
+"welcome.hero.cards.icloud.title" = "私享 iCloud";
+"welcome.hero.cards.icloud.body" = "你的数据,在你的 iCloud。无服务器。";
+"welcome.hero.cards.more.title" = "还有更多";
+"welcome.hero.cards.more.body" = "我们一起来发现。";
+
+// MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
+"welcome.detectedData.title" = "欢迎回来!我们找到了你的账户";
+"welcome.detectedData.message" = "我们在你的 iCloud 中找到了 %d 个账户、%d 笔支出和 %d 个分类。你想怎么做?";
+"welcome.detectedData.loadMyData" = "加载我的数据";
+"welcome.detectedData.startFresh" = "从零开始";
+
+
+// MARK: FreshStart (segunda barrera)
+"welcome.freshStart.alertTitle" = "重新开始";
+"welcome.freshStart.alertMessage" = "我们在此设备上检测到已有数据。要全部清除并重新开始吗？";
+"welcome.freshStart.alertConfirm" = "全部清除并继续";
+"groups.card.pendingApprovalChip" = "等待批准";
+"groups.card.rejectedChip" = "申请被拒绝";
+"groups.card.leaveGroupAlertTitle" = "退出该群组？";
+"groups.card.leaveGroupAlertBody" = "你的申请被拒绝。退出后，该群组将从你的列表中移除。你的个人记录会保留。";
+
+// MARK: - Yala AI Onboarding (5-step tutorial first-use post-consent)
+"yalaAI.onboarding.continue" = "继续";
+"yalaAI.onboarding.back" = "返回";
+"yalaAI.onboarding.close" = "关闭";
+"yalaAI.onboarding.previewLabel" = "预览";
+"yalaAI.onboarding.progressLabel" = "第 %1$d 步，共 %2$d 步";
+"yalaAI.onboarding.step1.title" = "向你介绍 Yala AI";
+"yalaAI.onboarding.step1.subtitle" = "你的财务好帮手。";
+"yalaAI.onboarding.step1.demoScenario1User" = "午餐花了 12 元。";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "搞定！已记录你 12 元的午餐。";
+"yalaAI.onboarding.step1.demoScenario2User" = "本月咖啡花了多少？";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "本月咖啡花了 320 元 ☕ — 比 4 月少 12%，不过比你平时的平均高出 50 元。";
+"yalaAI.onboarding.step1.demoScenario3User" = "有什么建议吗？";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 你的外卖比上月高出 20%。回到平时的节奏每月可省 600 元 — 一年差不多 7,200 元。";
+"yalaAI.onboarding.step1.demoAmountLabel" = "午餐";
+"yalaAI.onboarding.step1.a11yLabel" = "Yala AI 记录支出的聊天示例";
+"yalaAI.onboarding.step2.title" = "你可以这样做";
+"yalaAI.onboarding.step2.subtitle" = "三种方式充分利用 Yala AI。";
+"yalaAI.onboarding.step2.card1.badge" = "新";
+"yalaAI.onboarding.step2.card1.title" = "即刻记录支出";
+"yalaAI.onboarding.step2.card1.body" = "文字或语音，无需表单。说一声就行。";
+"yalaAI.onboarding.step2.card2.title" = "询问你的财务";
+"yalaAI.onboarding.step2.card2.body" = "咖啡花了多少？最贵的月份是哪个？";
+"yalaAI.onboarding.step2.card3.title" = "获取建议";
+"yalaAI.onboarding.step2.card3.body" = "规律、异常、节省的想法。";
+"yalaAI.onboarding.step3.title" = "选择 Yala 的语气";
+"yalaAI.onboarding.step3.subtitle" = "Yala 在每次回复时与你交流的方式。";
+"yalaAI.onboarding.step3.toneNormalDescription" = "平衡清晰。直陈事实，不加修饰。";
+"yalaAI.onboarding.step3.toneConsiderateDescription" = "温柔贴心。关注你的情绪，为进步喝彩。";
+"yalaAI.onboarding.step3.toneSarcasticDescription" = "幽默直接。带点俏皮地把事情讲清楚。";
+"yalaAI.onboarding.step3.toneNormalQuote" = "本周喝了 3 杯咖啡。预算执行良好。";
+"yalaAI.onboarding.step3.toneConsiderateQuote" = "喝咖啡让你身心愉悦。在预算之内，一切都好。";
+"yalaAI.onboarding.step3.toneSarcasticQuote" = "再来三杯就破纪录了。不过仍在预算内。";
+"yalaAI.onboarding.step4.title" = "选择 Yala 的风格";
+"yalaAI.onboarding.step4.subtitle" = "Yala 在打理你的财务时关注的重点。";
+"yalaAI.onboarding.step4.focusBalancedDescription" = "同样关注支出与收入。";
+"yalaAI.onboarding.step4.focusSaverDescription" = "帮你削减开支，每月多攒一些。";
+"yalaAI.onboarding.step4.focusCautiousDescription" = "任何偏差都会提醒你，避免被动。";
+"yalaAI.onboarding.step4.focusBalancedQuote" = "本月收入足以覆盖支出。节奏不错。";
+"yalaAI.onboarding.step4.focusSaverQuote" = "餐饮开支减少 10%，每月可省 80 元。";
+"yalaAI.onboarding.step4.focusCautiousQuote" = "注意：本月外卖花费比上月更快。";
+"yalaAI.onboarding.step5.title" = "全部就绪！";
+"yalaAI.onboarding.step5.subtitle" = "随时告诉 Yala 你需要什么。";
+"yalaAI.onboarding.step5.tip" = "💡 试试：\"记录一杯 5 元的咖啡\" 或 \"今天我花了多少？\"";
+"yalaAI.onboarding.step5.cta" = "开始聊天";
+
+// MARK: - Stats Records polish
+
+"stats.records.motivationalOne" = "1 条记录 · 好的开始";
+"stats.records.motivationalMany %d" = "%d 条记录 · 继续保持";
+
+"stats.insights.motivationalOne" = "1 笔交易 · 好的开始";
+"stats.insights.motivationalMany %d" = "%d 笔交易 · 继续保持";
+"stats.insights.detailHeader" = "你的数据";
+"stats.insights.aiCardTitle" = "智能摘要";
+"stats.insights.aiCardSubtitle" = "由AI个性化";
+"stats.insights.dailyAvgIn %@" = "每天 %@";
+
+"stats.insights.need.dailyFormat %@" = "≈ %@/天";
+
+"stats.insights.modeDetail" = "详情";
+
+// MARK: - Stats Trends polish (stats-polish-panel-alignment)
+
+"stats.trends.comparisonTitle" = "对比";
+"stats.trends.insightTitleFree %@" = "你的%@速览";
+"stats.trends.insightTitlePro" = "周期分析";
+"stats.trends.refineWithAI" = "用 AI 进一步分析";
+"stats.trends.generateAI" = "生成 AI 分析";
+"stats.trends.regenerate" = "重新生成";
+"stats.trends.aiFootnote" = "AI 分析";
+"stats.trends.heroOnset" = "你与 Yala 的第一个周期";
+"stats.trends.heroStable" = "你的余额保持稳定";
+"stats.trends.heroVarUp %d %@" = "比%2$@高出%1$d%% · 继续保持";
+"stats.trends.heroVarDown %d %@" = "比%2$@低%1$d%% · 加油，一步一步来";
+// MARK: Distribution
+"stats.distribution.heroSubtitle1 %d" = "%d 个分类";
+"stats.distribution.heroSubtitle2 %d %d" = "%d 个分类 · %d 个子分类";
+"stats.distribution.heroSubtitle3 %d %d %d" = "%d 个分类 · %d 个子分类 · %d 个标签";
+"stats.distribution.insightTitleFree %@" = "一目了然你的 %@";
+"stats.distribution.insightTitlePro" = "本期分布";
+"stats.distribution.aiFootnote" = "AI 分析";
+"stats.distribution.modeCharts" = "图表";
+"stats.distribution.insight.onset %@" = "你的 %@ 正在成型。很快你会看到更清晰的模式。";
+"stats.distribution.insight.newCategory %@ %@" = "你这个 %2$@ 尝试了 %1$@。";
+"stats.distribution.insight.concentrated %d %@" = "你 %1$d%% 的支出集中在 %2$@。这符合你的优先事项吗？";
+"stats.distribution.insight.balanced %d" = "你的支出分散：没有任何分类超过 %d%%。分布均衡。";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%2$@ 较 %3$@ 上升 %1$d%%。让我们看看本期发生了什么变化。";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%2$@ 较 %3$@ 下降 %1$d%%。调整得不错。";
+"stats.distribution.insight.topSub %d %@ %@" = "%2$@ 在 %3$@ 中占 %1$d%%。这是你最大的具体项目。";
+
+"stats.trends.insight.onset %@" = "这是你与 Yala 的第一个%@";
+"stats.trends.insight.varUpExpense %d %@" = "你的支出比%2$@增加了 %1$d%%。一起来调整吧。";
+"stats.trends.insight.varDownExpense %d %@" = "你的支出比%2$@减少了 %1$d%%。继续保持。";
+"stats.trends.insight.varUpIncome %d %@" = "你的收入比%2$@增长了 %1$d%%。做得好。";
+"stats.trends.insight.varDownIncome %d %@" = "你的收入比%2$@减少了 %1$d%%。";
+"stats.trends.insight.varUpBalance %d %@" = "你的余额比%2$@增长了 %1$d%%。";
+"stats.trends.insight.varDownBalance %d %@" = "你的余额比%2$@减少了 %1$d%%。";
+"stats.trends.insight.stableExpense" = "你的支出保持稳定。";
+"stats.trends.insight.stableIncome" = "你的收入保持稳定。";
+"stats.trends.insight.stableBalance" = "你的余额保持稳定。";
+
+// MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
+"panel.widgetInfo.periodComparison.title" = "期间对比";
+"panel.widgetInfo.periodComparison.chip1" = "对比";
+"panel.widgetInfo.periodComparison.chip2" = "按期间";
+"panel.widgetInfo.periodComparison.whatQ" = "你看到的是什么？";
+"panel.widgetInfo.periodComparison.whatA" = "把你当前期间的余额、收入或支出与上一期间并排显示，让你一眼看出趋势是否在改善。";
+"panel.widgetInfo.periodComparison.howQ" = "在与什么对比？";
+"panel.widgetInfo.periodComparison.howA" = "点 M 与上月对比，点 A 与上年对比。这个选择也会应用到面板其他部分的变化数据。";
+"panel.widgetInfo.sankey.title" = "资金流向";
+"panel.widgetInfo.sankey.chip1" = "流向";
+"panel.widgetInfo.sankey.chip2" = "按需求";
+"panel.widgetInfo.sankey.chip3" = "可互动";
+"panel.widgetInfo.sankey.whatQ" = "你看到的是什么？";
+"panel.widgetInfo.sankey.whatA" = "你这段时间的资金路径：从哪里进来（收入），又流向哪里，按需求类型分组。色带越宽，金额越大。";
+"panel.widgetInfo.sankey.howQ" = "如何互动？";
+"panel.widgetInfo.sankey.howA" = "点一个分类、子分类或流向分支，就能按这个路径筛选面板。再点一次取消筛选。";
+
+// MARK: GroupsOnboarding-keys
+"groups.onboarding.progressLabel" = "第 %1$d 步,共 %2$d 步";
+"groups.onboarding.step1.title" = "轻松共享开支,清清楚楚";
+"groups.onboarding.step1.subtitle" = "群组中有人新增开支时,Yala 会立即通知你。";
+"groups.onboarding.step1.demoMemberName" = "苏菲";
+"groups.onboarding.step1.demoGroupName" = "朋友";
+"groups.onboarding.step1.demoNotifTemplate" = "%1$@ 在群组 %3$@ 中添加了 %2$@";
+"groups.onboarding.step1.demoBalanceLabelInitial" = "余额: %@";
+"groups.onboarding.step1.demoBalanceLabelDebt" = "你欠 %@";
+"groups.onboarding.step1.a11yLabelTemplate" = "%1$@ 在群组 %3$@ 中添加了 %2$@。你现在欠 %4$@。";
+"groups.onboarding.step2.title" = "三步搞定,告别表格";
+"groups.onboarding.step2.subtitle" = "Yala 帮你分摊、记录并结算。";
+"groups.onboarding.step2.card1.title" = "与你的圈子创建群组";
+"groups.onboarding.step2.card1.body" = "家人、朋友、旅行或工作。想建多少群组就建多少。";
+"groups.onboarding.step2.card2.title" = "记录开支,Yala 自动分摊";
+"groups.onboarding.step2.card2.body" = "选择每笔开支的分摊方式。Yala 算出谁该付多少。";
+"groups.onboarding.step2.card3.title" = "几下点击即可结清债务";
+"groups.onboarding.step2.card3.body" = "完成付款,清零开始。不用争论,不用 Excel。";
+
+"groups.onboarding.step2.bridgeAwareness" = "当你支付一笔支出时,我们也会自动将其记录到你的个人账户,让你的余额始终反映真实情况。";
+"groups.onboarding.step3.title" = "隐私优先";
+"groups.onboarding.step3.subtitle" = "只共享必要内容,不多不少。";
+"groups.onboarding.step3.point1" = "每位成员都需要一个 iCloud 账户。";
+"groups.onboarding.step3.point2" = "你的个人数据不会与群组同步,只有共享开支会同步。";
+"groups.onboarding.step3.cta" = "前往群组";
+
+"groups.onboarding.step3.bridgeAwareness" = "你可以在群组设置中更改此行为。";
+
+// MARK: FU-02-reconnect
+"groups.reconnect.deletedForAll.title" = "%@ 已被删除";
+"groups.reconnect.deletedForAll.body" = "该群组已被创建者删除。";
+"groups.reconnect.deletedForAll.cta" = "了解";
+
+// MARK: B-16 — groups.reconnect.backToStart
+"groups.reconnect.backToStart" = "返回首页";
+
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+"split.totalLabel" = "总计";
+"split.you" = "你";
+"split.rest" = "其余";
+"split.percentSuffix %@" = "(%@%%)";
+"split.sharesSuffix %d %d" = "(%d/%d 份)";
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "你支付了全部";
+
+
+/* MARK: MoreDashboard-keys (more redesign) */
+"more.subtitle.panel" = "你的每日概览";
+"more.subtitle.insights" = "本期最重要的内容";
+"more.subtitle.trends" = "看看你的钱如何变化";
+"more.subtitle.distribution" = "了解你的钱花在哪里";
+"more.subtitle.budgets" = "设定限额，掌握节奏";
+"more.subtitle.scheduledPayments" = "即将到来：账单和订阅";
+"more.subtitle.comparative" = "并排比较各个周期";
+"more.subtitle.cashFlow" = "进账与出账一目了然";
+"more.subtitle.records" = "所有记录尽在一处";
+"more.subtitle.groups" = "轻松分摊共同支出";
+"more.subtitle.profile" = "你的账户与偏好";
+"more.toolsSection" = "更多功能";
+
+
+/* MARK: MoreEditor-keys (more redesign Fase 2) */
+"more.editor.title" = "自定义";
+"more.editor.sectionsHeader" = "板块顺序";
+"more.editor.tabBarHint" = "选择并排序底部标签栏";
+
+/* VoiceOver: expand a collapsible row */
+"accessibility.expand" = "展开";
+
+/* VoiceOver: collapse a collapsible row */
+"accessibility.collapse" = "折叠";
+
+/* Split type short label (segmented control) */
+"split.typeEqualShort" = "平均";
+
+/* Split type short label (segmented control) */
+"split.typePercentageShort" = "百分比";
+
+/* Split type short label (segmented control) */
+"split.typeExactShort" = "金额";
+
+/* Split type short label (segmented control) */
+"split.typeSharesShort" = "份数";
+
+/* Reset-data screen description — groups-only mode */
+"settings.resetDataDescriptionGroupsOnly" = "此操作会将你的 Yala 个人资料和偏好重置为初始状态。你的群组不会被删除:请在「群组」标签页中管理它们。";
+
+/* Delete-data confirmation warning — groups-only mode */
+"settings.deleteDataWarningGroupsOnly" = "此操作不可逆。你的 Yala 个人资料和偏好将被重置。";
+
+/* Apple Pay automation: failure notification title */
+"shortcut.notification.errorTitle" = "无法记录支付";
+
+/* Apple Pay automation: failure notification body */
+"shortcut.notification.errorBody" = "无法保存你的 Apple Pay 支付。请打开 Yala 手动记录。";
+
+/* Card del grupo: otro miembro le debe al usuario actual (perspectiva theyOweMe) */
+"groups.card.theyOweYou" = "%@ 欠你";
+
+/* Card del grupo: el usuario actual le debe a otro miembro (perspectiva iOwe) */
+"groups.card.youOwe" = "你欠 %@";
+
+/* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
+"inbox.groupExpenseAccountDraft.banner" = "群组「%@」的支出。只需指定资金来源的账户；金额和日期由群组管理。";
+
+/* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
+"inbox.groupExpenseDraft.banner" = "群组「%@」的支出。只需选择一个子分类；金额和日期由群组管理。";
+
+/* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
+"inbox.groupSettlementDraft.banner" = "群组「%@」的结算。只需指定一个账户；金额和日期由群组管理。";
+
+/* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "分配账户和子类别";
+
+/* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "群组「%@」的支出。请指定资金来源的账户并选择一个子类别；金额和日期由群组管理。";
+
+/* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
+"inbox.errorGroupExpenseGone" = "此共享支出在群组中已不存在。";
+"whatsNew.v20.groups.title" = "群组（测试版）";
+"whatsNew.v20.groups.description" = "创建群组分摊支出，Yala 自动算出谁欠谁多少。请放心：所有数据只经过你的私人 iCloud，绝不经过我们的服务器。";
+"whatsNew.v20.ai.title" = "认识 Yala AI";
+"whatsNew.v20.ai.description" = "你的 AI 财务助手。向它询问你的财务状况，让它帮你记账，获取清晰的本月分析。就像一位懂理财的朋友，一条消息即可触达。";
+"whatsNew.v20.redesign.title" = "全新设计";
+"whatsNew.v20.redesign.description" = "我们对 Yala 进行了彻底重新设计：全新小组件、每个板块更清晰的摘要，以及贯穿整个应用的 iOS 全新 Liquid Glass 质感。此外，我们还修复了大量问题，让一切更顺滑。";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"common.vs" = "vs";
+"transaction.exchangeRateShort %@" = "汇率：%@";
+"cashFlowPlan.aiChipLabel" = "AI";
+"budgets.period.typeLabel" = "周期类型";
+"budgets.alerts.thresholdPlaceholder" = "1–100";
+"accessibility.variationIncrease %@" = "增加 %@";
+"accessibility.variationDecrease %@" = "减少 %@";
+"accessibility.processing" = "处理中";
+"accessibility.removeTab %@" = "移除%@";
+"accessibility.selectAtLeastOneColumn" = "请至少选择一列";
+"accessibility.completeRequiredFilters" = "请填写必填的筛选条件";
+"accessibility.exportingHint" = "正在导出";
+"accessibility.assignAllCurrencies" = "请分配所有货币";
+
+/* Records: toggle to identify potential duplicates */
+"records.duplicates.menuTitle" = "识别重复项";
+
+/* Records: duplicate match criteria submenu */
+"records.duplicates.matchBy" = "匹配条件";
+
+/* Records: turn off duplicate identification */
+"records.duplicates.deactivate" = "关闭";
+
+/* Records: empty state title when no duplicates found */
+"records.duplicates.emptyTitle" = "无重复项";
+
+/* Records: empty state message when no duplicates found */
+"records.duplicates.emptyMessage" = "没有符合所选条件的记录。";
+
+/* Records: banner title shown while duplicate mode active */
+"records.duplicates.bannerTitle" = "可能的重复项";
+
+/* Contextual note when a manual 'Sync now' tap can't reach iCloud (transient/offline). Non-alarming; reassures data is safe on device. */
+"icloud.forceSync.offlineNote" = "暂时无法连接 iCloud。你的数据很安全，恢复连接后会自动同步。";

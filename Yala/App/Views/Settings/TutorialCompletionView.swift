@@ -112,13 +112,7 @@ struct TutorialCompletionView: View {
 
                 // Action buttons
                 VStack(spacing: DS.Spacing.md) {
-                    Button(action: onDismiss) {
-                        Text(L10n.Tutorials.understood)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-
-                    .controlSize(.large)
+                    YalaPrimaryButton(L10n.Tutorials.understood, action: onDismiss)
 
                     if let next = tutorial.nextTutorial, let onNext = onNextTutorial {
                         Button {

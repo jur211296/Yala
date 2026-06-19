@@ -12,12 +12,9 @@ import SwiftUI
 struct PersonalDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @ScaledMetric(relativeTo: .largeTitle) private var avatarSize: CGFloat = 44 // A11Y-DT: @ScaledMetric
-
-    @AppStorage("userName") private var userName: String = "Usuario"
-    @AppStorage("userAlias") private var userAlias: String = ""
-    @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
 
     @State private var editedName: String = ""
     @State private var editedAlias: String = ""
@@ -43,12 +40,8 @@ struct PersonalDetailsView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-                    .dismissKeyboardOnTap()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
                         // Avatar header with photo picker
                         avatarHeader
 
@@ -61,11 +54,12 @@ struct PersonalDetailsView: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.top, DS.Spacing.xxl)
                     .padding(.bottom, DS.Spacing.xxxl)
-                }
-                .scrollDismissesKeyboard(.interactively)
+                    .dismissKeyboardOnTap()
             }
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(L10n.Profile.personalDetails)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
@@ -129,6 +123,7 @@ struct PersonalDetailsView: View {
             } label: {
                 avatarDisplay
             }
+            .accessibilityLabel(L10n.Accessibility.profile)
 
         }
         .padding(.vertical, DS.Spacing.sm)
@@ -250,9 +245,9 @@ struct PersonalDetailsView: View {
     // MARK: - Helpers
 
     private func loadCurrentValues() {
-        editedName = userName
-        editedAlias = userAlias
-        selectedIcon = userProfileIcon
+        editedName = appPreferences.userName
+        editedAlias = appPreferences.userAlias
+        selectedIcon = appPreferences.userProfileIcon
 
         // Migrate from UserDefaults if needed, then load from file
         ProfileImageStorage.shared.migrateFromUserDefaultsIfNeeded()
@@ -299,33 +294,28 @@ struct PersonalDetailsView: View {
     }
 
     private func saveAndDismiss() {
-        // Save name (trim whitespace and ensure not empty)
         let trimmedName = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
-        userName = trimmedName.isEmpty ? L10n.Profile.defaultName : trimmedName
-        PreferenceSyncService.shared.set(string: userName, forKey: "userName")
+        appPreferences.userName = trimmedName.isEmpty ? L10n.Profile.defaultName : trimmedName
 
         // Save alias (only if valid or empty)
         if isAliasValid || editedAlias.isEmpty {
-            userAlias = editedAlias.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            appPreferences.userAlias = editedAlias.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         }
 
         // Save profile image to file or clear it if icon is selected
         if let uiImage = profileUIImage {
             if let imageData = uiImage.jpegData(compressionQuality: 0.7) {
                 ProfileImageStorage.shared.save(imageData)
-                userProfileIcon = "" // Clear icon when photo is set
-                PreferenceSyncService.shared.set(string: "", forKey: "userProfileIcon")
+                appPreferences.userProfileIcon = "" // Clear icon when photo is set
             }
         } else if !selectedIcon.isEmpty {
             // Icon selected, clear image file
             ProfileImageStorage.shared.delete()
-            userProfileIcon = selectedIcon
-            PreferenceSyncService.shared.set(string: selectedIcon, forKey: "userProfileIcon")
+            appPreferences.userProfileIcon = selectedIcon
         } else if !hasCustomAvatar {
             // User removed avatar, clear both
             ProfileImageStorage.shared.delete()
-            userProfileIcon = ""
-            PreferenceSyncService.shared.set(string: "", forKey: "userProfileIcon")
+            appPreferences.userProfileIcon = ""
         }
 
         // Dismiss the sheet
@@ -416,6 +406,7 @@ struct IconPickerSheet: View {
 
 #Preview {
     PersonalDetailsView()
+        .previewAppPreferences()
 }
 
 #Preview("Icon Picker") {

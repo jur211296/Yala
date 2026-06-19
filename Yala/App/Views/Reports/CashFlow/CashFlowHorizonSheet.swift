@@ -11,6 +11,7 @@ struct CashFlowHorizonSheet: View {
     @Bindable var viewModel: CashFlowPlanViewModel
     @State private var monthsAhead: Int = 6
     @State private var monthsBack: Int = 3
+    @State private var showAccumulatedBalance: Bool = true
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -40,6 +41,11 @@ struct CashFlowHorizonSheet: View {
                             .monospacedDigit()
                             .frame(width: 32, alignment: .trailing)
                     }
+
+                    Divider()
+
+                    Toggle(L10n.CashFlowPlan.showAccumulatedBalance, isOn: $showAccumulatedBalance)
+                        .font(DS.Typography.label)
                 }
                 .padding(DS.Spacing.lg)
                 .background(
@@ -48,11 +54,13 @@ struct CashFlowHorizonSheet: View {
                 )
 
                 YalaPrimaryButton(L10n.Action.save, icon: "checkmark.circle.fill") {
-                    viewModel.updateHorizon(monthsAhead: monthsAhead, monthsBack: monthsBack)
+                    viewModel.updateHorizon(monthsAhead: monthsAhead, monthsBack: monthsBack, showAccumulatedBalance: showAccumulatedBalance)
                     dismiss()
                 }
             }
             .padding(DS.Spacing.xl)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .yalaScreenBackground(.transparent)
             .navigationTitle(L10n.CashFlowPlan.configureHorizon)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -67,6 +75,7 @@ struct CashFlowHorizonSheet: View {
         .onAppear {
             monthsAhead = viewModel.plan?.defaultMonthsAhead ?? 6
             monthsBack = viewModel.plan?.defaultMonthsBack ?? 3
+            showAccumulatedBalance = viewModel.plan?.showAccumulatedBalance ?? true
         }
     }
 }

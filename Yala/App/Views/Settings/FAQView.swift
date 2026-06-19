@@ -13,11 +13,8 @@ struct FAQView: View {
     @State private var expandedItem: FAQItem?
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "questionmark.circle.fill")
@@ -58,7 +55,7 @@ struct FAQView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.faq)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()

@@ -54,6 +54,26 @@ final class PreferenceSyncService {
         case insightsTone
         case insightsFocus
         case financialMindset
+        case onboardingMode
+        // Panel 2.0 — per-section order/hidden + reserved sectionsHidden (P20-02)
+        case panelTendenciasOrder
+        case panelTendenciasHidden
+        case panelDistribucionOrder
+        case panelDistribucionHidden
+        case panelPlanificacionOrder
+        case panelPlanificacionHidden
+        case panelSectionsHidden
+        case panelSectionsOrder
+        // P20-11 — Cuentas collapse state (synced so state follows across devices)
+        case panelAccountsCollapsed
+        // M2 (localización) — override de idioma elegido por el usuario, sincronizado cross-device
+        case appLanguageOverride
+        // A0-Bridge: 3 toggles existing (synced=true desde inicio pero faltaba el enum case)
+        case includeGroupTransactionsInFeed
+        case includeGroupsInPanelTotal
+        case includeGroupTransactionsInStats
+        // Bridge opt-out global per-user (synced=true). Cross-device sync de la decisión.
+        case bridgeGroupExpensesToPersonalAccounts
     }
 
     /// Keys for cross-device wipe coordination (iKV = remote, local = UserDefaults)
@@ -155,7 +175,49 @@ final class PreferenceSyncService {
                     }
                 }
 
-            case .budgetAlertsEnabled, .expensesOnlyMode, .colorfulIcons, .showVariations:
+            case .appLanguageOverride:
+                // Storage es App Group suite (compartido con widgets), NO standard.
+                let suite = LanguageManager.sharedDefaults
+                if iKV.object(forKey: k) != nil {
+                    let remote = iKV.string(forKey: k) ?? ""
+                    let current = suite.string(forKey: k) ?? ""
+                    if current != remote {
+                        if remote.isEmpty {
+                            suite.removeObject(forKey: k)
+                        } else {
+                            suite.set(remote, forKey: k)
+                        }
+                        // Notificar cambio de idioma en caliente para que la UI re-renderice
+                        NotificationCenter.default.post(name: .languageDidChange, object: nil)
+                    }
+                }
+
+            case .panelTendenciasOrder, .panelTendenciasHidden,
+                 .panelDistribucionOrder, .panelDistribucionHidden,
+                 .panelPlanificacionOrder, .panelPlanificacionHidden,
+                 .panelSectionsHidden, .panelSectionsOrder:
+                // Empty strings are a valid state (user hid every widget in a section).
+                if iKV.object(forKey: k) != nil {
+                    let remote = iKV.string(forKey: k) ?? ""
+                    if local.string(forKey: k) != remote {
+                        local.set(remote, forKey: k)
+                    }
+                }
+
+            case .onboardingMode:
+                // Never-downgrade merge: remote only wins if its rank is higher
+                if let remoteRaw = iKV.string(forKey: k), !remoteRaw.isEmpty,
+                   let remoteMode = OnboardingMode(rawValue: remoteRaw) {
+                    let localMode = OnboardingMode.current()
+                    if remoteMode.rank > localMode.rank {
+                        local.set(remoteRaw, forKey: k)
+                    }
+                }
+
+            case .budgetAlertsEnabled, .expensesOnlyMode, .colorfulIcons, .showVariations,
+                 .panelAccountsCollapsed,
+                 .includeGroupTransactionsInFeed, .includeGroupsInPanelTotal,
+                 .includeGroupTransactionsInStats, .bridgeGroupExpensesToPersonalAccounts:
                 if iKV.object(forKey: k) != nil {
                     local.set(iKV.bool(forKey: k), forKey: k)
                 }
@@ -178,13 +240,21 @@ final class PreferenceSyncService {
             SessionState.shared.selectedPeriod = period
         }
 
-        // expensesOnlyMode didSet propagates to app group + WidgetCenter
-        SessionState.shared.isExpensesOnlyMode = local.bool(forKey: SyncKey.expensesOnlyMode.rawValue)
+        // expensesOnlyMode didSet propagates to app group + WidgetCenter.
+        // Guard against assigning when the key is absent: Swift's didSet fires even
+        // when the value doesn't change, which would write the default `false` to
+        // UserDefaults and contaminate fresh-install detection in OnboardingView.
+        if local.object(forKey: SyncKey.expensesOnlyMode.rawValue) != nil {
+            SessionState.shared.isExpensesOnlyMode = local.bool(forKey: SyncKey.expensesOnlyMode.rawValue)
+        }
 
         // financialMindset (educational UI only)
         if let mindset = local.string(forKey: SyncKey.financialMindset.rawValue), !mindset.isEmpty {
             SessionState.shared.financialMindset = mindset
         }
+
+        // onboardingMode (never-downgrade already applied above)
+        SessionState.shared.onboardingMode = OnboardingMode.current()
 
         // Trigger UI refresh when formatting preferences change remotely
         if formattingChanged {
@@ -245,15 +315,33 @@ final class PreferenceSyncService {
 
             let onboardingAlreadyDone = remoteOnboarding > remoteWipe
 
+            // Bug #6 P0 mitigation: evaluate the decider at SIGNAL TIME (not drain
+            // time). If hasCompletedOnboarding=false right now (fresh-install with
+            // contaminated KV-Store), don't submit the intent — otherwise the
+            // readiness gate would park it across the onboarding session and
+            // process it post-onboarding, wiping the user's fresh data.
+            let hasCompletedOnboarding = local.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            let decision = RemoteWipeSignalDecider.decide(
+                hasCompletedOnboarding: hasCompletedOnboarding,
+                isWipingData: SessionState.shared.isWipingData,
+                hasRemoteWipeTimestamp: remoteWipe > 0
+            )
+
             #if DEBUG
-            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone))")
+            print("PreferenceSyncService: Remote wipe detected (onboardingAlreadyDone=\(onboardingAlreadyDone), shouldProcess=\(decision.shouldProcess))")
             #endif
 
-            NotificationCenter.default.post(
-                name: .remoteWipeDetected,
-                object: nil,
-                userInfo: [Self.onboardingAlreadyDoneKey: onboardingAlreadyDone]
-            )
+            // Mid-onboarding silencing: mark BOTH timestamps so neither Caso A nor B
+            // re-fires post-onboarding. Mirrors ContentView.markRemoteSignalsAsProcessed.
+            if decision.shouldMarkSignalsAsProcessed {
+                if remoteOnboarding > 0 {
+                    local.set(remoteOnboarding, forKey: WipeKey.localOnboarding)
+                }
+            }
+
+            guard decision.shouldProcess else { return }
+
+            RouterEntryGate.shared.submit(.remoteWipe(skipOnboarding: onboardingAlreadyDone))
             return
         }
 
@@ -269,10 +357,12 @@ final class PreferenceSyncService {
             print("PreferenceSyncService: Remote onboarding completed after wipe")
             #endif
 
-            NotificationCenter.default.post(
-                name: .remoteOnboardingCompleted,
-                object: nil
-            )
+            // Dual-path: also post to NotificationCenter so the ContentView
+            // observer can dismiss a visible onboarding screen INSTANTLY,
+            // bypassing the readiness gate (which blocks .contentView drain
+            // while showOnboarding=true — defeating the purpose of this signal).
+            NotificationCenter.default.post(name: .remoteOnboardingCompleted, object: nil)
+            RouterEntryGate.shared.submit(.remoteOnboardingCompleted)
         }
     }
 

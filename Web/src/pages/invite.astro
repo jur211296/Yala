@@ -1,0 +1,201 @@
+---
+export const prerender = false;
+
+import '../styles/global.css';
+import { detectLanguage, getTranslations } from '../i18n/translations';
+
+// i18n: detect locale via Accept-Language (SSR), fallback handled by detectLanguage
+const lang = detectLanguage(Astro.request.headers.get('accept-language'));
+const t = getTranslations(lang);
+Astro.response.headers.set('Vary', 'Accept-Language');
+
+// Parse query params server-side for OG tags
+const url = Astro.url;
+const groupName = url.searchParams.get('n') || t.inviteFallbackGroupName;
+const colorHex = url.searchParams.get('c') || '8B5CF6';
+const membersParam = url.searchParams.get('m') || '';
+const shareParam = url.searchParams.get('s') || '';
+const inviterName = url.searchParams.get('u') || '';
+const iconParam = url.searchParams.get('i') || 'person.2.fill';
+const members = membersParam ? membersParam.split(',').map((m: string) => decodeURIComponent(m.trim())).filter(Boolean) : [];
+
+const pageTitle = inviterName
+  ? t.invitePageTitleWithInviter.replace('{inviter}', inviterName).replace('{group}', groupName)
+  : t.invitePageTitle.replace('{group}', groupName);
+const pageDescription = t.invitePageDescription.replace('{group}', groupName);
+
+const appStoreURL = 'https://apps.apple.com/pe/app/yala-finanzas-sin-esfuerzo/id6758253109';
+const groupColor = `#${colorHex}`;
+
+// Deep link scheme parametrized via env var (yaladev for dev/preview, yala for production).
+const scheme = import.meta.env.PUBLIC_DEEP_LINK_SCHEME || 'yala';
+const appDeepLink = shareParam ? `${scheme}://invite?s=${shareParam}` : null;
+
+// SF Symbol → SVG path mapping (Lucide-inspired, 24x24 viewBox)
+const sfSymbolSVGs: Record<string, string> = {
+  // People
+  'person.fill': '<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4 0-8 1.8-8 4v2h16v-2c0-2.2-4-4-8-4Z"/>',
+  'person.2.fill': '<path d="M16 14c2.5 0 7 1.3 7 3.5V20H9v-2.5c0-2.2 4.5-3.5 7-3.5Zm-8 0c-.3 0-.7 0-1 .1C8.9 15 10 16.2 10 17.5V20H2v-2.5C2 15.3 5.5 14 8 14Zm8-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM8 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>',
+  'person.3.fill': '<path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-7 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm14 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM12 14c-3.5 0-7 1.5-7 3.5V20h14v-2.5c0-2-3.5-3.5-7-3.5Zm-7.5.5c-.2 0-.3 0-.5.1C2 15 1 16 1 17v2h4v-2.5c0-.8.3-1.5.7-2Zm15 .1c-.2-.1-.3-.1-.5-.1.4.5.7 1.2.7 2V20h4v-3c0-1-1-2-3-2.4Z"/>',
+
+  // Transport
+  'airplane': '<path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5Z"/>',
+  'car.fill': '<path d="M18.9 6c-.2-.6-.8-1-1.4-1h-12c-.7 0-1.2.4-1.4 1L2 12v8a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h14v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-8l-2.1-6ZM6.5 16A1.5 1.5 0 1 1 8 14.5 1.5 1.5 0 0 1 6.5 16Zm10 0a1.5 1.5 0 1 1 1.5-1.5 1.5 1.5 0 0 1-1.5 1.5ZM5 11l1.5-4.5h10L18 11H5Z"/>',
+  'bus.fill': '<path d="M4 16c0 .9.4 1.7 1 2.2V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.8c.6-.5 1-1.3 1-2.2V6c0-3.5-3.6-4-8-4S4 2.5 4 6v10Zm3.5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3ZM5 10V6h14v4H5Z"/>',
+
+  // Shopping
+  'cart.fill': '<path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2Zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2ZM7.2 14.6l.1-.2L8.1 12h7.5c.7 0 1.4-.4 1.7-1l3.9-7-1.7-1-3.9 7H8.5L4.3 2H1v2h2l3.6 7.6-1.4 2.5c-.7 1.3.2 2.9 1.8 2.9h12v-2H7.4c-.1 0-.2-.1-.2-.2v-.2Z"/>',
+  'bag.fill': '<path d="M18 6h-2c0-2.2-1.8-4-4-4S8 3.8 8 6H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2Zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2Z"/>',
+  'creditcard.fill': '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2Zm0 14H4v-6h16v6Zm0-10H4V6h16v2Z"/>',
+
+  // Food
+  'fork.knife': '<path d="M11 9H9V2H7v7H5V2H3v7a4 4 0 0 0 3 3.9V22h2v-9.1A4 4 0 0 0 11 9Zm2-1v8h2v6h2V2c-2.2 0-4 2.7-4 6Z"/>',
+  'cup.and.saucer.fill': '<path d="M20 8h-1V5H5v3H4a2 2 0 0 0 0 4h1.1A5 5 0 0 0 10 15.9V17H6v2h12v-2h-4v-1.1A5 5 0 0 0 18.9 12H20a2 2 0 0 0 0-4Zm0 2h-1V10h1v0Z"/>',
+  'birthday.cake.fill': '<path d="M12 6a2 2 0 0 0 2-2c0-.4-.1-.7-.2-1l-1.8-3-1.8 3c-.1.3-.2.6-.2 1a2 2 0 0 0 2 2Zm4.2 1H7.8C6.8 7 6 7.8 6 8.8V10H2v4h2v6h16v-6h2v-4h-6V8.8c0-1-.8-1.8-1.8-1.8Z"/>',
+
+  // Finance
+  'banknote.fill': '<path d="M2 6h20v12H2V6Zm10 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-8 1a2 2 0 0 0 2-2H4v2Zm0 6v2h2a2 2 0 0 0-2-2Zm16-6a2 2 0 0 0-2 2h2V9Zm0 6a2 2 0 0 0-2-2v2h2Z"/>',
+  'building.columns.fill': '<path d="M12 2 2 7v2h20V7L12 2ZM4 20v2h16v-2H4Zm1-9v7h2v-7H5Zm4 0v7h2v-7H9Zm4 0v7h2v-7h-2Zm4 0v7h2v-7h-2Z"/>',
+
+  // Home
+  'house.fill': '<path d="M12 3 2 12h3v8h6v-6h2v6h6v-8h3L12 3Z"/>',
+  'key.fill': '<path d="M12.6 10a5 5 0 1 0 0 4H17v4h4v-4h1v-4H12.6ZM7 14a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"/>',
+  'lightbulb.fill': '<path d="M9 21h6v-1H9v1Zm3-19A7 7 0 0 0 5 9c0 2.4 1.2 4.4 3 5.7V17h8v-2.3c1.8-1.3 3-3.3 3-5.7a7 7 0 0 0-7-7Z"/>',
+
+  // Entertainment
+  'gamecontroller.fill': '<path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2ZM11 13H9v2H7v-2H5v-2h2V9h2v2h2v2Zm4 2a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm4-2a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/>',
+  'music.note': '<path d="M12 3v10.6A3.5 3.5 0 1 0 14 17V7h4V3h-6ZM8.5 19A1.5 1.5 0 1 1 10 17.5 1.5 1.5 0 0 1 8.5 19Z"/>',
+  'film.fill': '<path d="M18 4v1h-2V4H8v1H6V4H4v16h2v-1h2v1h8v-1h2v1h2V4h-2ZM8 17H6v-2h2v2Zm0-4H6v-2h2v2Zm0-4H6V7h2v2Zm10 8h-2v-2h2v2Zm0-4h-2v-2h2v2Zm0-4h-2V7h2v2Z"/>',
+  'party.popper.fill': '<path d="M2 22 9.2 4.8l10 10L2 22Zm5.5-5.5L11 10l3 3-3.5 3.5ZM15 2l-2 4 2-1 2 1-2-4Zm6 5-4 2 1 2-1 2 4-2-1-2 1-2Zm-2 10-2-1-2 1 4 2v-4l-2 1 2 1Z"/>',
+  'headphones': '<path d="M3 18v-6a9 9 0 1 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Zm-18 0a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3Z"/>',
+
+  // Nature
+  'leaf.fill': '<path d="M17 8C8 10 5.9 16.2 3.8 19.2l1.5 1.1C7 17.6 11 13 17 12v2l5-5-5-5v4Z"/>',
+  'globe.americas.fill': '<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1 17.9A8 8 0 0 1 4 12c0-.7.1-1.3.2-2L9 14.8V16c0 1.1.9 2 2 2v1.9ZM18.3 16A2 2 0 0 0 17 14h-1v-3c0-.6-.4-1-1-1H9v-2h2c.6 0 1-.4 1-1V5h2c1.1 0 2-.9 2-2V3a8 8 0 0 1 2.3 13Z"/>',
+
+  // Travel
+  'suitcase.fill': '<path d="M20 6h-3V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2ZM9 4h6v2H9V4Z"/>',
+  'map.fill': '<path d="m15 21-6-2.1L3.4 21.2a.5.5 0 0 1-.7-.5V5.5L9 3l6 2.1L21.6 2.8a.5.5 0 0 1 .7.5V18.5L15 21ZM9 5v14l6 2V7L9 5Z"/>',
+  'tent.fill': '<path d="M12 2 2 22h20L12 2Zm0 5.3L17.7 20h-2.8L12 14.3 9.1 20H6.3L12 7.3Z"/>',
+  'beach.umbrella.fill': '<path d="M13.1 2.1a10 10 0 0 0-9 9L12 12l1.1-9.9ZM4 12a10 10 0 0 0 7.1 9.6L12 12 4 12Zm8 0 .9 9.6A10 10 0 0 0 22 12h-10ZM14.2 2.4A10 10 0 0 1 22 11H13.1l1.1-8.6ZM3 22l5-4h8l5 4H3Z"/>',
+
+  // Sports
+  'figure.run': '<path d="M13.5 5.5A1.75 1.75 0 1 0 15.25 3.75 1.75 1.75 0 0 0 13.5 5.5ZM9.8 8.9 7 23h2.1l1.8-8 2.1 2v6h2v-7.5L13 13.5l.6-3A6.4 6.4 0 0 0 18 13v-2a4.4 4.4 0 0 1-3.7-2L13 7.5A1.9 1.9 0 0 0 11.4 6.5c-.2 0-.4 0-.6.1L6 9v5h2V10.2l1.8-.8Z"/>',
+  'dumbbell.fill': '<path d="M6.5 6A1.5 1.5 0 0 0 5 7.5V10H3.5A1.5 1.5 0 0 0 2 11.5v1A1.5 1.5 0 0 0 3.5 14H5v2.5A1.5 1.5 0 0 0 6.5 18h1A1.5 1.5 0 0 0 9 16.5v-9A1.5 1.5 0 0 0 7.5 6h-1Zm11 0A1.5 1.5 0 0 0 16 7.5v9a1.5 1.5 0 0 0 1.5 1.5h1A1.5 1.5 0 0 0 20 16.5V14h1.5a1.5 1.5 0 0 0 1.5-1.5v-1A1.5 1.5 0 0 0 21.5 10H20V7.5A1.5 1.5 0 0 0 18.5 6h-1ZM9 11h6v2H9v-2Z"/>',
+
+  // Misc
+  'heart.fill': '<path d="M12 21.4C5.6 16.4 2 13 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.3.8 4.5 2.1A6.1 6.1 0 0 1 16.5 3C19.6 3 22 5.4 22 8.5c0 4.5-3.6 7.9-10 12.9Z"/>',
+  'star.fill': '<path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 18l-6.2 3 1.2-6.8-5-4.9 6.9-1L12 2Z"/>',
+  'gift.fill': '<path d="M20 7h-3.1c.1-.3.1-.7.1-1a3 3 0 0 0-3-3c-1.3 0-1.8.5-3 2-1.2-1.5-1.7-2-3-2a3 3 0 0 0-3 3c0 .3 0 .7.1 1H2v5h2v8h16v-8h2V7h-2Zm-9 13H6v-8h5v8Zm0-10H4V8h7v2Zm0-4c-1.3 0-2.4-1.4-3-2a1 1 0 0 1 1-1c.6 0 .8.1 2 2v1Zm2-1c1.2-1.9 1.4-2 2-2a1 1 0 0 1 1 1c-.6.6-1.7 2-3 2V5Zm0 5V8h7v2h-7Zm5 10h-5v-8h5v8Z"/>',
+  'bolt.fill': '<path d="M13 2 4 14h7v8l9-12h-7V2Z"/>',
+  'trophy.fill': '<path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.6 1.9 4.6 4.4 4.9.6 1.3 1.7 2.3 3.1 2.8V19H8v2h8v-2h-2.5v-3.3c1.4-.5 2.5-1.5 3.1-2.8C19.1 12.6 21 10.6 21 8V7c0-1.1-.9-2-2-2ZM5 8V7h2v3.8C5.8 10.3 5 9.3 5 8Zm14 0c0 1.3-.8 2.3-2 2.8V7h2v1Z"/>',
+  'crown.fill': '<path d="M2 17h20v3H2v-3ZM12 4l3 5 5-3-2 10H6L4 6l5 3 3-5Z"/>',
+  'flag.fill': '<path d="M14.4 6l-.2-1.2c-.1-.5-.6-.8-1.1-.8H5V22h2v-7h5.6l.2 1.2c.1.5.6.8 1.1.8H19V6h-4.6Z"/>',
+  'book.fill': '<path d="M21 4H7.5A2.5 2.5 0 0 0 5 6.5V20h14v-2H7.5a.5.5 0 0 1 0-1H19V4h2ZM7 15.5V6.5a.5.5 0 0 1 .5-.5H17v10H7.5a2.5 2.5 0 0 0-.5.05Z"/>',
+  'pawprint.fill': '<path d="M12 16c-2.2 0-4 1.8-4 3.5S9.8 22 12 22s4-.5 4-2.5-1.8-3.5-4-3.5Zm-4.5-3a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm9 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM6 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>',
+};
+
+const iconSVG = sfSymbolSVGs[iconParam] || sfSymbolSVGs['person.2.fill'];
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={pageDescription} />
+
+    <!-- Open Graph (WhatsApp, iMessage, Telegram previews) -->
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://yala-app.pe/icon-192.png" />
+    <meta property="og:url" content={url.href} />
+    <meta property="og:site_name" content="Yala" />
+    <meta property="og:locale" content={lang === 'pt' ? 'pt_BR' : lang} />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content="https://yala-app.pe/icon-192.png" />
+
+    <!-- Smart App Banner -->
+    <meta name="apple-itunes-app" content="app-id=6758253109" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+
+    <!-- Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <title>{pageTitle} — Yala</title>
+  </head>
+
+  <body class="bg-yala-slate text-neutral-100 font-sans min-h-screen flex flex-col items-center justify-center px-4 py-8">
+
+    <!-- Logo -->
+    <div class="mb-8">
+      <img src="/images/logo.png" alt="Yala" class="h-12" />
+    </div>
+
+    <!-- Invite Card -->
+    <div class="w-full max-w-sm rounded-2xl border p-6 text-center"
+         style={`background: rgba(28, 41, 71, 0.6); border-color: rgba(51, 65, 85, 0.6);`}>
+
+      <!-- Group Icon -->
+      <div class="mx-auto mb-4 w-16 h-16 rounded-full flex items-center justify-center"
+           style={`background: ${groupColor}20; border: 2px solid ${groupColor};`}>
+        <svg class="w-7 h-7" fill={groupColor} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <Fragment set:html={iconSVG} />
+        </svg>
+      </div>
+
+      <!-- Group Name -->
+      <h1 class="text-xl font-bold text-white mb-1">{groupName}</h1>
+
+      <!-- Members -->
+      {members.length > 0 && (
+        <div class="mb-5">
+          <p class="text-sm text-neutral-400 mb-2">{t.inviteMembers}</p>
+          <div class="flex flex-wrap justify-center gap-2">
+            {members.map((name: string) => (
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border"
+                    style={`background: ${groupColor}10; border-color: ${groupColor}40; color: ${groupColor};`}>
+                {name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {members.length === 0 && (
+        <p class="text-sm text-neutral-400 mb-5">{t.inviteInvitedFallback}</p>
+      )}
+
+      <!-- CTA Buttons -->
+      <div class="space-y-3">
+        {appDeepLink && (
+          <a href={appDeepLink}
+             class="block w-full px-6 py-3 rounded-xl font-semibold bg-yala-indigo text-white text-center transition-all duration-300 hover:shadow-yala hover:scale-[1.02] active:scale-[0.98]">
+            {t.inviteOpenInYala}
+          </a>
+        )}
+
+        <a href={appStoreURL} target="_blank" rel="noopener"
+           class="block w-full px-6 py-3 rounded-xl font-semibold border-2 border-yala-indigo text-yala-indigo text-center transition-all duration-300 hover:bg-yala-indigo hover:text-white">
+          {t.inviteDownloadAppStore}
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="mt-8 text-xs text-neutral-500">
+      {t.inviteFooter}
+    </p>
+
+  </body>
+</html>

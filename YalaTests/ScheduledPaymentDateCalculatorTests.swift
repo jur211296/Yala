@@ -14,6 +14,12 @@ struct ScheduledPaymentDateCalculatorTests {
 
     // MARK: - Helpers
 
+    /// Usa `Calendar.current` (no UTC fijo) por coherencia con el SUT, que también
+    /// usa current. Cambiar a UTC rompe los counts de días/semanas porque las
+    /// boundaries de mes dependen del timezone del runner. Aceptable: las fechas
+    /// de prueba (`date(2026, 1, 15)` etc.) son hardcoded, así que solo varía
+    /// el offset del día — no el mes. Flakiness solo posible si CI corre cerca
+    /// del cambio de mes en TZ extrema.
     private let calendar = Calendar.current
 
     private func date(_ year: Int, _ month: Int, _ day: Int) -> Date {

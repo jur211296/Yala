@@ -2,8 +2,6 @@
 //  DatePickerSheet.swift
 //  Yala
 //
-//  Extracted from NewTransactionView - Date picker modal sheet
-//
 
 import SwiftUI
 
@@ -11,13 +9,15 @@ import SwiftUI
 
 struct DatePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.yalaTheme) private var theme
     @Binding var selectedDate: Date
     var minDate: Date = .distantPast
     var maxDate: Date? = nil         // nil = Date.now at runtime (avoids stale capture)
     var title: String = L10n.Common.date
 
     @State private var workingDate: Date = .now
+    @State private var selectedDetent: PresentationDetent = .medium
+
+    private let detents = DS.Adaptive.sheetDetents([.medium, .large])
 
     /// Computed range: nil maxDate means "up to today" at render time
     private var dateRange: ClosedRange<Date> {
@@ -25,11 +25,11 @@ struct DatePickerSheet: View {
         return minDate...upper
     }
 
+    private var isLargeDetent: Bool { selectedDetent == .large }
+
     var body: some View {
         NavigationStack {
             ZStack {
-                theme.background.ignoresSafeArea()
-
                 VStack {
                     DatePicker(
                         title,
@@ -38,11 +38,12 @@ struct DatePickerSheet: View {
                         displayedComponents: [.date]
                     )
                     .datePickerStyle(.graphical)
-                    .padding()
+                    .padding(DS.Spacing.md)
 
                     Spacer()
                 }
             }
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -63,6 +64,7 @@ struct DatePickerSheet: View {
                 workingDate = selectedDate
             }
         }
-
+        .presentationDetents(detents, selection: $selectedDetent)
+        .presentationDragIndicator(.visible)
     }
 }

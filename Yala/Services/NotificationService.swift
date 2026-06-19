@@ -45,11 +45,8 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         if let destination = userInfo["deepLink"] as? String,
            let dest = Self.parseDestination(destination) {
             Task { @MainActor in
-                if SessionState.shared.isSplashDismissed {
-                    SessionState.shared.deepLinkDestination = dest
-                } else {
-                    SessionState.shared.deferredDeepLink = dest
-                }
+                TelemetryService.track(.notificationTapped, parameters: ["destino": destination.hasPrefix("groups/") ? "groups" : destination])
+                RouterEntryGate.shared.submit(.navigate(dest))
             }
         }
 
@@ -58,6 +55,12 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
     /// Parse deep link string to DeepLinkDestination
     static func parseDestination(_ destination: String) -> DeepLinkDestination? {
+        // Group-specific deep link: "groups/{UUID}"
+        if destination.hasPrefix("groups/") {
+            let groupID = String(destination.dropFirst("groups/".count))
+            return .groupDetail(groupID: groupID)
+        }
+
         switch destination {
         case "statistics": return .statistics
         case "planning": return .planning
@@ -67,6 +70,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         case "inbox": return .inbox
         case "scheduledPayments": return .scheduledPayments
         case "recordsStandalone": return .recordsStandalone
+        case "groups": return .groups
         default:
             #if DEBUG
             print("NotificationService: Unknown deep link: \(destination)")
@@ -209,8 +213,12 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     ///   - body: Notification body text
     ///   - deepLink: Optional deep link destination (e.g., "statistics", "planning", "budgets")
     func sendNotification(title: String, body: String, deepLink: String? = nil) async {
-        // Check permission first
-        guard await isAuthorized() else { return }
+        let settings = await notificationCenter.notificationSettings()
+        let authorized = settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional
+        #if DEBUG
+        print("NotifService[#16-debug]: sendNotification title=\"\(title)\" authStatus=\(settings.authorizationStatus.rawValue) authorized=\(authorized) alert=\(settings.alertSetting.rawValue) center=\(settings.notificationCenterSetting.rawValue) lockScreen=\(settings.lockScreenSetting.rawValue)")
+        #endif
+        guard authorized else { return }
 
         let content = UNMutableNotificationContent()
         content.title = title
@@ -232,9 +240,12 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
         do {
             try await notificationCenter.add(request)
+            #if DEBUG
+            print("NotifService[#16-debug]: notificationCenter.add OK identifier=\(request.identifier)")
+            #endif
         } catch {
             #if DEBUG
-            print("Error sending notification: \(error)")
+            print("NotifService[#16-debug]: Error sending notification: \(error)")
             #endif
         }
     }

@@ -37,6 +37,17 @@ final class CashFlowPlanViewModel {
     var suggestedLines: [SuggestedLine] = []
     private(set) var isLoading: Bool = false
 
+    // Cash flow comment state
+    private(set) var cashFlowComment: String?
+    private(set) var isLoadingComment: Bool = false
+    private var lastCommentProjectionHash: Int = 0
+    private var lastCommentWasAI: Bool = false
+
+    // Deviation comment state
+    private(set) var deviationComment: String?
+    private(set) var isLoadingDeviationComment: Bool = false
+    private var lastDeviationKey: String = ""
+
     // UI state
     var selectedLine: CashFlowLine?
     var showLineConfig: Bool = false
@@ -95,8 +106,14 @@ final class CashFlowPlanViewModel {
         let components = calendar.dateComponents([.year, .month], from: now)
         guard let currentMonthStart = calendar.date(from: components) else { return }
 
-        // Build and cache TransactionIndex for method recalculation
-        let validTransactions = transactions.filter { $0.category != nil && $0.balanceAdjustmentType == nil }
+        // Build and cache TransactionIndex for method recalculation.
+        // A0-Bridge: excluye TX con subcat sistema (Préstamo a grupos, Liquidación, etc.)
+        // del análisis de Cash Flow — son artefactos contables que distorsionan proyecciones.
+        let validTransactions = transactions.filter {
+            $0.category != nil
+                && $0.balanceAdjustmentType == nil
+                && $0.subcategory?.isAnySystem != true
+        }
         let resolvedCurrency = currencyCode.isEmpty ? "USD" : currencyCode
         let index = TransactionIndex(
             transactions: validTransactions, currencyCode: resolvedCurrency,
@@ -349,16 +366,44 @@ final class CashFlowPlanViewModel {
     }
 
     func promoteFromOthers(_ category: Category) {
-        guard let plan else { return }
-        let maxOrder = (plan.lines ?? []).map(\.sortOrder).max() ?? 0
-        let line = CashFlowLine(
-            name: category.name,
-            isIncome: category.isIncome,
-            sortOrder: maxOrder + 1,
-            estimationMethod: .average6m,
-            category: category
+        guard let ctx = modelContext, let plan else { return }
+        let visibleSubs = (category.subcategories ?? [])
+            .filter(\.isVisible)
+            .sorted { $0.sortOrder < $1.sortOrder }
+        let existingSubIDs = Set(
+            (plan.lines ?? []).filter(\.isEnabled)
+                .compactMap { $0.subcategory?.persistentModelID }
         )
-        addLine(line)
+        var maxOrder = (plan.lines ?? []).map(\.sortOrder).max() ?? 0
+
+        if visibleSubs.isEmpty {
+            let line = CashFlowLine(
+                name: category.name, isIncome: category.isIncome,
+                sortOrder: maxOrder + 1, estimationMethod: .average6m,
+                category: category
+            )
+            ctx.insert(line)
+            line.plan = plan
+        } else {
+            for sub in visibleSubs where !existingSubIDs.contains(sub.persistentModelID) {
+                maxOrder += 1
+                let line = CashFlowLine(
+                    name: sub.name, isIncome: category.isIncome,
+                    sortOrder: maxOrder, estimationMethod: .average6m,
+                    category: category, subcategory: sub
+                )
+                ctx.insert(line)
+                line.plan = plan
+            }
+        }
+
+        do {
+            try ctx.save()
+        } catch {
+            #if DEBUG
+            print("CashFlowPlanViewModel: Error promoting lines: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Overrides
@@ -474,10 +519,11 @@ final class CashFlowPlanViewModel {
         }
     }
 
-    func updateHorizon(monthsAhead: Int, monthsBack: Int) {
+    func updateHorizon(monthsAhead: Int, monthsBack: Int, showAccumulatedBalance: Bool) {
         guard let plan else { return }
         plan.defaultMonthsAhead = monthsAhead
         plan.defaultMonthsBack = monthsBack
+        plan.showAccumulatedBalance = showAccumulatedBalance
         do {
             try plan.modelContext?.save()
         } catch {
@@ -518,4 +564,162 @@ final class CashFlowPlanViewModel {
             payment.isActive && !linkedPaymentIDs.contains(payment.persistentModelID)
         }
     }
+
+    // MARK: - Cash Flow Comment
+
+    func loadCashFlowComment(currencyCode: String) async {
+        guard let projection else { return }
+
+        let hash = InsightsLLMService.projectionHash(projection)
+        let needsReload = cashFlowComment == nil || hash != lastCommentProjectionHash || !lastCommentWasAI
+        guard needsReload else { return }
+
+        isLoadingComment = true
+        do {
+            cashFlowComment = try await InsightsLLMService.shared.generateCashFlowInsight(
+                projection: projection,
+                currencyCode: currencyCode
+            )
+            lastCommentWasAI = true
+        } catch {
+            #if DEBUG
+            print("CashFlowPlanViewModel: LLM error: \(error)")
+            #endif
+            cashFlowComment = nil
+            lastCommentWasAI = false
+        }
+        isLoadingComment = false
+        lastCommentProjectionHash = hash
+    }
+
+    func loadDeviationComment(
+        deviations: [(name: String, planned: Double, actual: Double, excess: Double)],
+        currencyCode: String
+    ) async {
+        let key = deviations.map(\.name).joined(separator: ",")
+        guard !deviations.isEmpty, key != lastDeviationKey || deviationComment == nil else { return }
+
+        isLoadingDeviationComment = true
+        do {
+            deviationComment = try await InsightsLLMService.shared.generateDeviationInsight(
+                deviations: deviations,
+                currencyCode: currencyCode
+            )
+        } catch {
+            #if DEBUG
+            print("CashFlowPlanViewModel: Deviation LLM error: \(error)")
+            #endif
+            deviationComment = nil
+        }
+        isLoadingDeviationComment = false
+        lastDeviationKey = key
+    }
+
+    // Snapshot intencional: estos comments se almacenan en `cashFlowComment` /
+    // `deviationComment` del VM y se regeneran al recompute del plan, no al cambiar
+    // prefs en runtime. YalaFormatter deprecated permitido aquí — el string queda
+    // stale hasta el próximo recompute (UX aceptable: comment del sheet, no UI viva).
+    static func generateRuleBasedComment(_ projection: CashFlowProjection, currencyCode: String) -> String {
+        let months = projection.months
+        guard !months.isEmpty else { return "" }
+
+        let negativeMonths = months.filter { ($0.accumulatedBalance ?? 0) < 0 }
+        let currentMonth = months.first(where: { $0.isCurrent })
+
+        // Check for months going negative
+        if let firstNegative = negativeMonths.first {
+            let monthName = firstNegative.date.formatted(.dateTime.month(.wide)).lowercased()
+            return L10n.CashFlowPlan.commentNegative(monthName)
+        }
+
+        // Current month tight (net < 10% of income)
+        if let current = currentMonth, current.totalIncome > 0,
+           current.netFlow < current.totalIncome * 0.1 {
+            let margin = YalaFormatterStatic.currency(value: current.netFlow, currencyCode: currencyCode)
+            return L10n.CashFlowPlan.commentTight(margin)
+        }
+
+        // All positive — good health
+        if negativeMonths.isEmpty, let lastMonth = months.last {
+            let endBalance = YalaFormatterStatic.currency(value: lastMonth.accumulatedBalance ?? 0, currencyCode: currencyCode)
+            return L10n.CashFlowPlan.commentHealthy(endBalance)
+        }
+
+        // Default
+        return L10n.CashFlowPlan.commentDefault(months.count)
+    }
+
+    static func generateDeviationRuleComment(
+        _ deviations: [(name: String, amount: Double)],
+        currencyCode: String
+    ) -> String {
+        guard !deviations.isEmpty else { return "" }
+
+        let top = deviations[0]
+        let topFormatted = YalaFormatterStatic.currency(value: top.amount, currencyCode: currencyCode)
+
+        if deviations.count == 1 {
+            return L10n.CashFlowPlan.deviationCommentSingle(top.name, topFormatted)
+        }
+
+        let totalExcess = deviations.reduce(0.0) { $0 + $1.amount }
+        let totalFormatted = YalaFormatterStatic.currency(value: totalExcess, currencyCode: currencyCode)
+        return L10n.CashFlowPlan.deviationCommentMultiple(top.name, topFormatted, totalFormatted)
+    }
+
+    static func generateCombinedComment(
+        _ projection: CashFlowProjection,
+        savings: [(actual: Double, planned: Double)],
+        currencyCode: String
+    ) -> String {
+        let months = projection.months
+        guard !months.isEmpty else { return "" }
+
+        let negativeMonths = months.filter { ($0.accumulatedBalance ?? 0) < 0 }
+        let currentMonth = months.first(where: { $0.isCurrent })
+        let hasSavings = !savings.isEmpty
+        let avgActual = hasSavings ? savings.map(\.actual).reduce(0, +) / Double(savings.count) : 0
+        let avgPlanned = hasSavings ? savings.map(\.planned).reduce(0, +) / Double(savings.count) : 0
+
+        // 1. Balance goes negative
+        if let firstNegative = negativeMonths.first {
+            let monthName = firstNegative.date.formatted(.dateTime.month(.wide)).lowercased()
+            return L10n.CashFlowPlan.commentNegative(monthName)
+        }
+
+        // 2. Actual savings consistently below plan
+        if hasSavings, avgPlanned > 0, avgActual < avgPlanned * 0.8 {
+            let diff = YalaFormatterStatic.currency(value: avgPlanned - avgActual, currencyCode: currencyCode)
+            return L10n.CashFlowPlan.commentSavingsBelow(diff)
+        }
+
+        // 3. Current month tight (net < 10% of income)
+        if let current = currentMonth, current.totalIncome > 0,
+           current.netFlow < current.totalIncome * 0.1 {
+            let margin = YalaFormatterStatic.currency(value: current.netFlow, currencyCode: currencyCode)
+            return L10n.CashFlowPlan.commentTight(margin)
+        }
+
+        // 4. Actual savings beat plan
+        if hasSavings, avgActual >= avgPlanned, avgPlanned > 0, let lastMonth = months.last {
+            let diff = YalaFormatterStatic.currency(value: avgActual - avgPlanned, currencyCode: currencyCode)
+            let endBalance = YalaFormatterStatic.currency(value: lastMonth.accumulatedBalance ?? 0, currencyCode: currencyCode)
+            return L10n.CashFlowPlan.commentSavingsAbove(diff, endBalance)
+        }
+
+        // 5. Healthy plan
+        if negativeMonths.isEmpty, let lastMonth = months.last {
+            if hasSavings {
+                let avgFormatted = YalaFormatterStatic.currency(value: avgActual, currencyCode: currencyCode)
+                let endBalance = YalaFormatterStatic.currency(value: lastMonth.accumulatedBalance ?? 0, currencyCode: currencyCode)
+                return L10n.CashFlowPlan.commentHealthyWithSavings(avgFormatted, endBalance)
+            }
+            let endBalance = YalaFormatterStatic.currency(value: lastMonth.accumulatedBalance ?? 0, currencyCode: currencyCode)
+            return L10n.CashFlowPlan.commentHealthy(endBalance)
+        }
+
+        // 6. Default
+        return L10n.CashFlowPlan.commentDefault(months.count)
+    }
+
 }

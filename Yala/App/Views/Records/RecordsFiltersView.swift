@@ -64,10 +64,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
 
     private var mainContent: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
+            ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         // Include/Exclude mode selector
                         Picker("", selection: $localIsExcludeMode) {
@@ -75,6 +72,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                             Text(L10n.Filters.excludeMode).tag(true)
                         }
                         .pickerStyle(.segmented)
+                        .accessibilityIdentifier("filters_include_exclude_picker")
 
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: DS.Spacing.none) {
@@ -117,8 +115,10 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                     }
                     .padding(.vertical, DS.Spacing.xxl)
                     .padding(.horizontal, DS.Spacing.lg)
+                    .dismissKeyboardOnTap()
                 }
-            }
+                .scrollDismissesKeyboard(.interactively)
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Filters.title)
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
@@ -150,6 +150,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
+                    .accessibilityIdentifier("filters_close_button")
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -158,6 +159,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                         dismiss()
                     }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("filters_apply_button")
                 }
             }
         }
@@ -474,6 +476,8 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("filters_currency_chip_\(currency.rawValue)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var selectedCurrenciesText: String {
@@ -505,6 +509,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 .frame(width: DS.FormRow.iconWidth)
 
             TextField(L10n.Filters.noteContains, text: $localSearchText)
+                .accessibilityIdentifier("filters_note_field")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -514,50 +519,47 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
 
     private var accountsSheetView: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        SectionBox(title: "") {
-                            VStack(spacing: DS.Spacing.none) {
-                                ForEach(Array(filtersViewModel.activeAccounts.enumerated()), id: \.element.id) { index, account in
-                                    if index > 0 {
-                                        SubsectionDivider()
-                                    }
-
-                                    Button {
-                                        if localSelectedAccounts.contains(account.persistentModelID) {
-                                            localSelectedAccounts.remove(account.persistentModelID)
-                                        } else {
-                                            localSelectedAccounts.insert(account.persistentModelID)
-                                        }
-                                    } label: {
-                                        HStack {
-                                            Text(account.name)
-                                                .font(DS.Typography.body)
-                                                .foregroundStyle(.primary)
-                                            Spacer()
-                                            if localSelectedAccounts.contains(account.persistentModelID) {
-                                                Image(systemName: "checkmark")
-                                                    .foregroundStyle(theme.accent)
-                                                    .font(DS.Typography.headline)
-                                                    .accessibilityHidden(true)
-                                            }
-                                        }
-                                        .padding(.horizontal, DS.FormRow.paddingH)
-                                        .padding(.vertical, DS.FormRow.paddingV)
-                                        .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    SectionBox(title: "") {
+                        VStack(spacing: DS.Spacing.none) {
+                            ForEach(Array(filtersViewModel.activeAccounts.enumerated()), id: \.element.id) { index, account in
+                                if index > 0 {
+                                    SubsectionDivider()
                                 }
+
+                                Button {
+                                    if localSelectedAccounts.contains(account.persistentModelID) {
+                                        localSelectedAccounts.remove(account.persistentModelID)
+                                    } else {
+                                        localSelectedAccounts.insert(account.persistentModelID)
+                                    }
+                                } label: {
+                                    HStack {
+                                        Text(account.name)
+                                            .font(DS.Typography.body)
+                                            .foregroundStyle(.primary)
+                                        Spacer()
+                                        if localSelectedAccounts.contains(account.persistentModelID) {
+                                            Image(systemName: "checkmark")
+                                                .foregroundStyle(theme.accent)
+                                                .font(DS.Typography.headline)
+                                                .accessibilityHidden(true)
+                                        }
+                                    }
+                                    .padding(.horizontal, DS.FormRow.paddingH)
+                                    .padding(.vertical, DS.FormRow.paddingV)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
                 }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Filters.selectAccounts)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -592,56 +594,53 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
 
     private var tagsSheetView: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        SectionBox(title: "") {
-                            VStack(spacing: DS.Spacing.none) {
-                                ForEach(Array(filtersViewModel.activeTags.enumerated()), id: \.element.id) { index, tag in
-                                    if index > 0 {
-                                        SubsectionDivider()
-                                    }
-
-                                    Button {
-                                        if localSelectedTags.contains(tag.persistentModelID) {
-                                            localSelectedTags.remove(tag.persistentModelID)
-                                        } else {
-                                            localSelectedTags.insert(tag.persistentModelID)
-                                        }
-                                    } label: {
-                                        HStack(spacing: DS.Spacing.md) {
-                                            Circle()
-                                                .fill(Color(hex: tag.colorHex))
-                                                .frame(width: 10, height: 10)
-
-                                            Text(tag.name)
-                                                .font(DS.Typography.body)
-                                                .foregroundStyle(.primary)
-
-                                            Spacer()
-
-                                            if localSelectedTags.contains(tag.persistentModelID) {
-                                                Image(systemName: "checkmark")
-                                                    .foregroundStyle(theme.accent)
-                                                    .font(DS.Typography.headline)
-                                                    .accessibilityHidden(true)
-                                            }
-                                        }
-                                        .padding(.horizontal, DS.FormRow.paddingH)
-                                        .padding(.vertical, DS.FormRow.paddingV)
-                                        .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    SectionBox(title: "") {
+                        VStack(spacing: DS.Spacing.none) {
+                            ForEach(Array(filtersViewModel.activeTags.enumerated()), id: \.element.id) { index, tag in
+                                if index > 0 {
+                                    SubsectionDivider()
                                 }
+
+                                Button {
+                                    if localSelectedTags.contains(tag.persistentModelID) {
+                                        localSelectedTags.remove(tag.persistentModelID)
+                                    } else {
+                                        localSelectedTags.insert(tag.persistentModelID)
+                                    }
+                                } label: {
+                                    HStack(spacing: DS.Spacing.md) {
+                                        Circle()
+                                            .fill(Color(hex: tag.colorHex))
+                                            .frame(width: 10, height: 10)
+
+                                        Text(tag.name)
+                                            .font(DS.Typography.body)
+                                            .foregroundStyle(.primary)
+
+                                        Spacer()
+
+                                        if localSelectedTags.contains(tag.persistentModelID) {
+                                            Image(systemName: "checkmark")
+                                                .foregroundStyle(theme.accent)
+                                                .font(DS.Typography.headline)
+                                                .accessibilityHidden(true)
+                                        }
+                                    }
+                                    .padding(.horizontal, DS.FormRow.paddingH)
+                                    .padding(.vertical, DS.FormRow.paddingV)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
                 }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Filters.selectTags)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

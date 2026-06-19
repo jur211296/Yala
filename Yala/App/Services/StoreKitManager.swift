@@ -183,6 +183,7 @@ final class StoreKitManager {
                 TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "success"])
                 var completionParams = TelemetryService.upsellParameters(source: "purchase")
                 completionParams["productId"] = product.id
+                completionParams["plan"] = product.id.localizedCaseInsensitiveContains("year") ? "anual" : "mensual"
                 TelemetryService.track(.purchaseCompleted, parameters: completionParams)
                 if isInTrial {
                     TelemetryService.track(.trialStarted, parameters: completionParams)
@@ -224,15 +225,29 @@ final class StoreKitManager {
     /// Check current entitlements and update subscription state
     func updateSubscriptionStatus() async {
         #if DEBUG
+        // Cada rama DEV early-return DEBE syncear a App Group: el flag `isProUser`
+        // queda consistente cross-process (intents, widgets). Sin esto, SiriNatural
+        // en Yala Dev nunca pasa el gate Pro aunque "Simular Pro" esté ON.
         if devForceFreeTier {
             isProUser = false
+            syncToAppGroup()
             return
         }
         if devForceProTier {
             isProUser = true
+            syncToAppGroup()
+            return
+        }
+        // Dev build: default to Free — Configuration.storekit provides sandbox
+        // entitlements that would otherwise always grant Pro
+        if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {
+            isProUser = false
+            syncToAppGroup()
             return
         }
         #endif
+
+        let previouslyInTrial = isInTrial
 
         var foundActive: StoreKit.Transaction?
 
@@ -263,8 +278,19 @@ final class StoreKitManager {
             subscriptionExpirationDate = nil
         }
 
+        // Force chat FAB visible when transitioning to Pro
+        let wasAlreadyPro = isProUser
+
         // Update Pro status
         isProUser = nowProUser
+
+        if nowProUser && !wasAlreadyPro {
+            UserDefaults.standard.set(true, forKey: "chatFABVisible")
+        }
+
+        if wasAlreadyPro && !nowProUser {
+            TelemetryService.track(.subscriptionEnded, parameters: ["era_trial": String(previouslyInTrial)])
+        }
 
         // Track for downgrade detection
         if isProUser {
@@ -410,9 +436,11 @@ final class StoreKitManager {
             UserDefaults.standard.removeObject(forKey: Self.devForceFreeTierKey)
             isProUser = true
             wasProUser = true
+            UserDefaults.standard.set(true, forKey: "chatFABVisible")
         } else {
-            // Re-evaluate real entitlements instead of assuming free
-            Task { await updateSubscriptionStatus() }
+            devForceFreeTier = true
+            UserDefaults.standard.set(true, forKey: Self.devForceFreeTierKey)
+            isProUser = false
         }
         UserDefaults.standard.set(devForceProTier, forKey: Self.devForceProTierKey)
         syncToAppGroup()

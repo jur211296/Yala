@@ -29,6 +29,9 @@ final class Budget {
     var currentPeriodStart: Date?  // LEGACY: unused, kept for CloudKit compat with older versions
 
     // Many-to-many relationships - CloudKit: must be optional
+    // LEGACY: kept only for cascade .nullify when a related entity is deleted.
+    // DO NOT read from these for filtering/display logic. Read via resolvedXIDs() helpers.
+    // Writers MUST use setFilters(...) to keep both sides (M2M + CSV) in sync.
     @Relationship(deleteRule: .nullify, inverse: \Account.budgets)
     var accounts: [Account]?
 
@@ -38,6 +41,12 @@ final class Budget {
     @Relationship(deleteRule: .nullify, inverse: \Tag.budgets)
     var tags: [Tag]?
     var natures: String?    // Comma-separated nature values (e.g., "essential,priority")
+
+    // CSV mirror of M2M relations — SSOT for read (eager, travels in the Budget record).
+    // Solves CloudKit lazy hydration race where M2M can appear nil/[] post cold start.
+    var subcategoryIDs: String?   // CSV of Subcategory.shortcutID UUIDs
+    var accountIDs: String?       // CSV of Account.shortcutID UUIDs
+    var tagIDs: String?           // CSV of Tag.id UUIDs
     var isActive: Bool = true
     var createdAt: Date = Date.now
     var isFavorite: Bool = false
@@ -46,6 +55,9 @@ final class Budget {
     // Alert notifications
     var alertEnabled: Bool = false
     var alertThresholds: String? = nil  // CSV: "50,75,100"
+
+    // Shared expenses
+    var includeSharedExpenses: Bool = true
 
     init(
         id: UUID = UUID(),
@@ -66,7 +78,11 @@ final class Budget {
         isFavorite: Bool = false,
         favoriteOrder: Int = 0,
         alertEnabled: Bool = false,
-        alertThresholds: String? = nil
+        alertThresholds: String? = nil,
+        includeSharedExpenses: Bool = true,
+        subcategoryIDs: String? = nil,
+        accountIDs: String? = nil,
+        tagIDs: String? = nil
     ) {
         self.id = id
         self.currencyCode = currencyCode
@@ -87,14 +103,53 @@ final class Budget {
         self.favoriteOrder = favoriteOrder
         self.alertEnabled = alertEnabled
         self.alertThresholds = alertThresholds
+        self.includeSharedExpenses = includeSharedExpenses
+        // Auto-mirror: si caller no pasó CSV explícito, derivar desde M2M arrays
+        // para garantizar SSOT al construir. Si el explicit param es no-nil, respeta
+        // lo que el caller indicó (incluso `""` o un valor distinto del M2M).
+        self.subcategoryIDs = subcategoryIDs ?? CSVMirrorCodec.encode(subcategories.map(\.shortcutID))
+        self.accountIDs = accountIDs ?? CSVMirrorCodec.encode(accounts.map(\.shortcutID))
+        self.tagIDs = tagIDs ?? CSVMirrorCodec.encode(tags.map(\.id))
     }
 
     // MARK: - Display Properties
 
     /// Returns the icon and color for this budget based on its subcategories.
-    /// Single source of truth — used by widgets, views, and previews.
+    /// Legacy fallback that reads M2M directly — used by previews/tests sin context.
+    /// Prefer `Budget.computeDisplayProperties(for:in:)` for runtime callers — that
+    /// helper reads the CSV mirror first (eager, no CloudKit lazy race).
     var displayProperties: (icon: String, color: String) {
         let subs = subcategories ?? []
+        return Self.resolveDisplayProperties(from: subs)
+    }
+
+    /// Resolves icon/color from the CSV mirror (SSOT) with a fetch by `shortcutID`.
+    /// Falls back to M2M when the CSV is nil (legacy budgets pre-deploy).
+    @MainActor
+    static func computeDisplayProperties(
+        for budget: Budget,
+        in context: ModelContext
+    ) -> (icon: String, color: String) {
+        if let ids = budget.resolvedSubcategoryIDs(scheduleBackfill: true), !ids.isEmpty {
+            let descriptor = FetchDescriptor<Subcategory>(predicate: #Predicate { ids.contains($0.shortcutID) })
+            do {
+                let subs = try context.fetch(descriptor)
+                if !subs.isEmpty {
+                    return resolveDisplayProperties(from: subs)
+                }
+            } catch {
+                #if DEBUG
+                print("Budget: fetch de subcategorías para display falló: \(error)")
+                #endif
+            }
+        }
+        // Fallback to M2M (legacy path, no filter, or failed fetch)
+        return resolveDisplayProperties(from: budget.subcategories ?? [])
+    }
+
+    /// Pure helper that computes (icon, color) from a list of subcategories.
+    /// Same logic as the legacy `displayProperties` — shared between paths.
+    static func resolveDisplayProperties(from subs: [Subcategory]) -> (icon: String, color: String) {
         guard !subs.isEmpty else {
             return ("chart.pie.fill", AppConstants.defaultColorHex)
         }

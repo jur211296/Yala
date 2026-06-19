@@ -13,7 +13,7 @@ import SwiftUI
 struct BudgetChartsView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+    @Environment(AppPreferences.self) private var appPreferences
 
     let budget: Budget
     @Bindable var viewModel: BudgetsViewModel
@@ -36,7 +36,7 @@ struct BudgetChartsView: View {
     // MARK: - Local Period Computed Properties
 
     private var localDateInterval: DateInterval {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
 
         guard let pType = periodType else {
             let start = localSelectedMonth
@@ -71,7 +71,7 @@ struct BudgetChartsView: View {
     }
 
     private var localPeriodLabel: String {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
 
         guard let pType = periodType else { return "" }
 
@@ -124,7 +124,7 @@ struct BudgetChartsView: View {
     }
 
     private func localPreviousPeriod() {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         draggingDate = nil
         switch periodType {
         case .weekly:
@@ -143,7 +143,7 @@ struct BudgetChartsView: View {
     }
 
     private func localNextPeriod() {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         draggingDate = nil
         switch periodType {
         case .weekly:
@@ -164,14 +164,19 @@ struct BudgetChartsView: View {
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
+        ScrollView {
+            VStack(spacing: DS.Spacing.lg) {
+                    // Mini-resumen del presupuesto arriba
+                    miniSummaryCard
 
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
                     // 1. Compliance history (hidden for .unique)
                     if periodType != .unique {
-                        complianceChart
+                        sectionWithHeader(
+                            title: L10n.Planning.BudgetCharts.historyTitle,
+                            hint: L10n.Planning.BudgetCharts.historyHint
+                        ) {
+                            complianceChartContent
+                        }
                     }
 
                     // 2. Local period navigation (hidden for .unique)
@@ -180,15 +185,26 @@ struct BudgetChartsView: View {
                     }
 
                     // 3. Daily cumulative spending
-                    dailySpendingChart
+                    sectionWithHeader(
+                        title: L10n.Planning.BudgetCharts.spendingTitle,
+                        hint: L10n.Planning.BudgetCharts.spendingHint
+                    ) {
+                        dailySpendingChartContent
+                    }
 
                     // 4. Category breakdown
-                    categoryBreakdownSection
+                    sectionWithHeader(
+                        title: L10n.Planning.BudgetCharts.byCategoryTitle,
+                        hint: L10n.Planning.BudgetCharts.byCategoryHint
+                    ) {
+                        categoryBreakdownContent
+                    }
                 }
+                .padding(.vertical, DS.Spacing.lg)
                 .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.xxl)
-            }
         }
+        .scrollViewGlassEdges()
+        .yalaScreenBackground(.panel)
         .navigationTitle(L10n.BudgetDetail.chartsTitle)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -224,9 +240,10 @@ struct BudgetChartsView: View {
                 Image(systemName: "chevron.left")
                     .font(DS.Typography.headline)
                     .foregroundStyle(.secondary)
-                    .frame(width: 36, height: 36)
+                    .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Accessibility.previousPeriod)
 
             Spacer()
 
@@ -255,23 +272,24 @@ struct BudgetChartsView: View {
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.headline)
                     .foregroundStyle(.secondary)
-                    .frame(width: 36, height: 36)
+                    .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Accessibility.nextPeriod)
         }
         .padding(.vertical, DS.Spacing.sm)
     }
 
-    // MARK: - Compliance History Chart
+    // MARK: - Compliance History Chart Content
 
-    private var complianceChart: some View {
+    private var complianceChartContent: some View {
         let data = viewModel.getHistoricalSpending(
             budget: budget,
             periods: 6,
-            defaultCurrencyCode: defaultCurrencyCode
+            defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
 
-        return chartCard(title: L10n.BudgetDetail.chartsCompliance) {
+        return Group {
             if data.isEmpty {
                 emptyChartPlaceholder
             } else {
@@ -290,15 +308,21 @@ struct BudgetChartsView: View {
                     )
                     .symbolSize(0)
                     .annotation(position: .top, spacing: DS.Spacing.xs) {
-                        Text(YalaFormatter.currency(value: item.spent, currencyCode: budget.currencyCode))
+                        // `.annotation` no propaga environment objects — AmountText (lee
+                        // @Environment(AppPreferences.self)) dispara SIGTRAP aquí. Text pre-resuelto.
+                        Text(appPreferences.currency(item.spent, currencyCode: budget.currencyCode))
                             .font(DS.Typography.labelTiny)
-                            .foregroundStyle(.thSecondaryText)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .accessibilityLabel("\(item.label): \(appPreferences.currency(item.spent, currencyCode: budget.currencyCode))")
                     }
 
                     if let first = data.first, first.limit > 0 {
                         RuleMark(y: .value("Limit", first.limit))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                             .foregroundStyle(.secondary)
+                            .accessibilityLabel("Budget limit: \(appPreferences.currency(first.limit, currencyCode: budget.currencyCode))")
                     }
                 }
                 .chartXAxis {
@@ -330,9 +354,9 @@ struct BudgetChartsView: View {
         }
     }
 
-    // MARK: - Daily Cumulative Spending Chart
+    // MARK: - Daily Cumulative Spending Chart Content
 
-    private var dailySpendingChart: some View {
+    private var dailySpendingChartContent: some View {
         let data = viewModel.getDailyCumulativeSpending(
             budget: budget,
             in: localDateInterval
@@ -340,7 +364,7 @@ struct BudgetChartsView: View {
         let primaryColor = theme.accent
         let yTop = max(budget.limitAmount, data.last?.cumulative ?? 0) * 1.1
 
-        return chartCard(title: L10n.BudgetDetail.chartsDailySpending) {
+        return Group {
             if data.isEmpty {
                 emptyChartPlaceholder
             } else {
@@ -416,9 +440,9 @@ struct BudgetChartsView: View {
                                 Text(dayMonthLabel(point.date))
                                     .font(DS.Typography.captionSmall)
                                     .foregroundStyle(.thSecondaryText)
-                                Text(YalaFormatter.currency(value: point.cumulative, currencyCode: budget.currencyCode))
+                                Text(appPreferences.currency(point.cumulative, currencyCode: budget.currencyCode))
                                     .font(DS.Typography.labelSmall)
-                                    .foregroundStyle(.thPrimaryText)
+                                    .foregroundStyle(.primary)
                             }
                             .padding(.horizontal, DS.Spacing.sm)
                             .padding(.vertical, DS.Spacing.xs)
@@ -460,9 +484,9 @@ struct BudgetChartsView: View {
         }
     }
 
-    // MARK: - Category Breakdown (Interactive)
+    // MARK: - Category Breakdown Content (Interactive)
 
-    private var categoryBreakdownSection: some View {
+    private var categoryBreakdownContent: some View {
         let breakdown = viewModel.getCombinedBreakdown(budget: budget, in: localDateInterval)
         let parentData = breakdown.parentCategories
         let subData = breakdown.subcategories
@@ -476,7 +500,7 @@ struct BudgetChartsView: View {
         }
         let maxSubAmount = filteredSubs.max(by: { $0.amount < $1.amount })?.amount ?? 1
 
-        return chartCard(title: L10n.BudgetDetail.chartsCategoryBreakdown) {
+        return Group {
             if parentData.isEmpty {
                 emptyChartPlaceholder
             } else {
@@ -559,49 +583,85 @@ struct BudgetChartsView: View {
 
                     Spacer()
 
-                    Text(YalaFormatter.currency(value: amount, currencyCode: budget.currencyCode))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
+                    AmountText(
+                        value: amount,
+                        currencyCode: budget.currencyCode,
+                        font: DS.Typography.headline
+                    )
                 }
 
                 // Bar
-                GeometryReader { geo in
-                    let width = maxAmount > 0 ? (amount / maxAmount) * geo.size.width : 0
-
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(DS.Semantic.neutralBackground)
-                            .frame(height: 6)
-
-                        Capsule()
-                            .fill(Color(hex: color))
-                            .frame(width: width, height: 6)
-                    }
-                }
-                .frame(height: 6)
+                BreakdownBarView(amount: amount, maxAmount: maxAmount, color: color)
             }
         }
     }
 
-    // MARK: - Chart Card Container
+    // MARK: - Section with Header
 
-    private func chartCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text(title)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
+    /// Title FUERA + InfoHintButton al lado + content en `.panelCard()`.
+    @ViewBuilder
+    private func sectionWithHeader<Content: View>(
+        title: String,
+        hint: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(title)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                InfoHintButton(title: title, message: hint)
+                Spacer()
+            }
+            .padding(.horizontal, DS.Spacing.xs)
 
             content()
+                .padding(DS.Spacing.lg)
+                .solidCard(padding: 0, radius: DS.Panel.widgetRadius)
         }
-        .padding(DS.Spacing.xl)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(.thCard)
+    }
+
+    // MARK: - Mini Summary Card
+
+    private var miniSummaryCard: some View {
+        let summary = viewModel.buildSummary(
+            for: budget,
+            defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-        )
+        let spentText = appPreferences.currency(summary.spent, currencyCode: budget.currencyCode)
+        let limitText = appPreferences.currency(budget.limitAmount, currencyCode: budget.currencyCode)
+
+        return HStack(spacing: DS.Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(Color(hex: summary.color))
+                    .frame(width: 40, height: 40)
+                Image(systemName: summary.icon)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .accessibilityHidden(true)
+            }
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(budget.name)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                Text(L10n.Planning.BudgetCharts.spentOf(spentText, limitText))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            BudgetProgressBar(
+                percentage: summary.percentage,
+                color: summary.color,
+                isExceeded: summary.status == .exceeded
+            )
+            .frame(width: 80, height: 6)
+        }
+        .padding(DS.Spacing.lg)
+        .panelCard(small: true)
     }
 
     private var emptyChartPlaceholder: some View {
@@ -668,6 +728,30 @@ struct BudgetChartsView: View {
 
     private func dayMonthLabel(_ date: Date) -> String {
         Self.dayMonthFormatter.string(from: date)
+    }
+
+    // MARK: - Breakdown Bar (extracted for onGeometryChange — safe in vertical ScrollView with contentMargins)
+
+    private struct BreakdownBarView: View {
+        let amount: Double
+        let maxAmount: Double
+        let color: String
+
+        @State private var barWidth: CGFloat = 0
+
+        var body: some View {
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(DS.Semantic.neutralBackground)
+                    .frame(height: 6)
+
+                Capsule()
+                    .fill(Color(hex: color))
+                    .frame(width: maxAmount > 0 ? (amount / maxAmount) * barWidth : 0, height: 6)
+            }
+            .frame(height: 6)
+            .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
+        }
     }
 }
 

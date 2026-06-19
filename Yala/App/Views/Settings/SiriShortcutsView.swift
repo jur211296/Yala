@@ -18,15 +18,13 @@ struct SiriShortcutsView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "mic.badge.plus")
                             .font(DS.Typography.amountLarge)
+                            // A11Y-DM: azul de identidad de Siri (color de sistema, adapta a Dark Mode)
                             .foregroundStyle(.blue)
                             .padding(.bottom, DS.Spacing.sm)
                             .accessibilityHidden(true)
@@ -54,7 +52,7 @@ struct SiriShortcutsView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
         .navigationTitle(String(localized: "siriShortcuts.title"))
         .navigationBarTitleDisplayMode(.inline)
@@ -89,6 +87,7 @@ struct SiriShortcutsView: View {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: "mic.circle.fill")
                         .font(.system(size: siriIconSize))
+                        // A11Y-DM: azul de identidad de Siri (color de sistema, adapta a Dark Mode)
                         .foregroundStyle(.blue)
                         .accessibilityHidden(true)
 
@@ -211,6 +210,7 @@ struct SiriShortcutsView: View {
 
                 shortcutRow(
                     icon: "gearshape.fill",
+                    // A11Y-DM: gris neutro decorativo de la fila de automatización (sistema, adapta a Dark Mode)
                     iconColor: .gray,
                     name: String(localized: "siriShortcuts.shortcut.automation"),
                     description: String(localized: "siriShortcuts.desc.automation"),
@@ -239,7 +239,7 @@ struct SiriShortcutsView: View {
                         .fill(iconColor)
                 )
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(name)
                     .font(DS.Typography.bodyBold)
                     .foregroundStyle(.thPrimaryText)

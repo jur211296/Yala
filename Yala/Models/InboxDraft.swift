@@ -22,12 +22,39 @@ enum DraftSourceType: String, Codable {
     case applePay
     case automation     // External automation (email parsed by AI, etc.)
     case siri           // Siri natural language entry
+    case groupExpense   // A0-Bridge: caso A/B sin match — apunta a TX existente via splitExpenseID
+    case groupSettlement // A0-Bridge: caso C/D — TX cuenta real diferida hasta asignar cuenta
+    case manual         // FU-02 cleanup: draft convertido tras soft-delete/leave/remove. Editable como personal.
+
+    /// True para sources de grupos que NO permiten eliminar/rechazar (solo asignar+finalizar).
+    var isFromGroup: Bool {
+        self == .groupExpense || self == .groupSettlement
+    }
 }
 
 enum DraftStatus: String, Codable {
     case pending
     case approved
     case rejected
+}
+
+/// M6: Razón por la que el bridge creó un InboxDraft pendiente Caso A. Mapea a una
+/// L10n key estable que se interpola en `GroupExpenseAccountFinalizationSheet`.
+enum DraftOriginReason: String {
+    /// Sync remoto trajo el SplitExpense pero la TX cuenta real local aún no llegó.
+    case remoteCreate = "groups.bridge.draftReasonRemoteCreate"
+    /// Cambio de moneda en el grupo invalidó la cuenta personal previa.
+    case currencyChanged = "groups.bridge.draftReasonCurrencyChanged"
+}
+
+/// M6: Campos que un draft espera del user para finalizar. Centraliza los strings
+/// dispersos en `needsUserInput: [String]` para evitar typos cross-file.
+/// `nonisolated`: son constantes String puras (sin relación con el main actor); permite
+/// referenciarlas desde contextos nonisolated como `GroupTransactionBridge.computeFreezePlan`.
+nonisolated enum DraftInputRequirement {
+    static let account = "account"
+    static let subcategory = "subcategory"
+    static let amount = "amount"
 }
 
 // MARK: - InboxDraft
@@ -54,9 +81,16 @@ final class InboxDraft: Identifiable {
     @Relationship(deleteRule: .nullify, inverse: \Subcategory.inboxDrafts)
     var subcategory: Subcategory?
 
-    /// Etiquetas asociadas (relación N:N) - CloudKit: must be optional
+    /// Etiquetas asociadas (relación N:N) - CloudKit: must be optional.
+    /// LEGACY: kept only for cascade .nullify. Read via resolvedTagIDs() helper.
+    /// Writers MUST use setTags(from:) to keep both sides (M2M + CSV) in sync.
     @Relationship(deleteRule: .nullify, inverse: \Tag.inboxDrafts)
     var tags: [Tag]?
+
+    /// CSV mirror of `tags` M2M — SSOT for read (eager, travels in the draft record).
+    /// Sobrevive el race CloudKit lazy hydration: M2M puede aparecer nil mientras
+    /// llegan los Tag records. Approve lee desde CSV para no perder tags.
+    var tagIDs: String?
 
     /// Transacción creada al aprobar (para sincronización)
     /// Se establece deleteRule: .nullify para que si se elimina la transacción,
@@ -114,6 +148,43 @@ final class InboxDraft: Identifiable {
 
     /// ID del pago planificado que originó este draft (si aplica)
     var sourceScheduledPaymentID: String?
+
+    // MARK: - Shared Expense Link
+    /// ID del SplitExpense que originó este draft
+    var splitExpenseID: String?
+    /// Zone ID del grupo para queries rápidos
+    var splitGroupZoneID: String?
+    /// ID del SplitSettlement que originó este draft (drafts source=.groupSettlement)
+    var splitSettlementID: String?
+
+    // MARK: - Group Bridge Draft Link (A0-Bridge)
+    /// Sin uso por el bridge actual: todas las creaciones de drafts en `GroupTransactionBridge`
+    /// lo dejan nil. El puntero de un draft `.groupExpense` a su TransactionItem (subcat=nil) se
+    /// resuelve por `splitExpenseID` (ver la rama `.groupExpense` de `DraftService.approveDraft`),
+    /// NO por este campo. Se conserva por compat de schema CloudKit; un valor no-nil no debe
+    /// asumirse como discriminador del puntero.
+    var targetTransactionID: String?
+
+    /// Opt-out flag: cuando `true`, este draft fue creado por el alert opt-in del form
+    /// con bridge effective OFF. La TX virtual YA EXISTE (creada por el bridge en el save
+    /// original). Al aprobar, el flow debe SOLO crear la TX real con `splitExpenseID`/
+    /// `splitSettlementID` ligado — NO invocar el bridge (recrearía el par duplicando).
+    var optInPersonalOnly: Bool = false
+
+    // MARK: - Origin Hint (M6: drafts creados por bridge ante modificaciones remotas)
+
+    /// Key L10n del hint contextual cuando draft viene de modificación remota.
+    /// Ej: "groups.bridge.draftReasonRemoteCreate", "groups.bridge.draftReasonCurrencyChanged".
+    /// Renderizado en `GroupExpenseAccountFinalizationSheet` con interpolación de actor/group.
+    var originReasonKey: String?
+
+    /// Nombre snapshot del actor visible en el contexto del draft (ej. payer del expense).
+    /// Snapshot al crear — no se actualiza si el actor renombra después.
+    var originActorName: String?
+
+    /// Nombre snapshot del grupo en el contexto del draft.
+    /// Snapshot al crear para evitar fetch en hot path del UI render.
+    var originGroupName: String?
 
     // MARK: - Timestamps (CloudKit: defaults required)
 
@@ -227,8 +298,15 @@ final class InboxDraft: Identifiable {
         case .applePay: return "apple.logo"
         case .automation: return "gearshape.fill"
         case .siri: return "mic.badge.plus"
+        case .groupExpense: return "person.2.fill"
+        case .groupSettlement: return "arrow.left.arrow.right.circle.fill"
+        case .manual: return "square.and.pencil"
         }
     }
+
+    /// True si este draft NO permite eliminar/rechazar (solo asignar+finalizar).
+    /// Drafts de grupos solo se eliminan al borrar el expense/settlement origen.
+    var isFromGroup: Bool { sourceType.isFromGroup }
 
     // MARK: - Init
 
@@ -248,7 +326,16 @@ final class InboxDraft: Identifiable {
         confidenceSubcategory: Double? = nil,
         needsUserInput: [String] = ["account", "subcategory"],
         status: DraftStatus = .pending,
-        newlyCreatedTagNames: [String] = []
+        newlyCreatedTagNames: [String] = [],
+        splitExpenseID: String? = nil,
+        splitGroupZoneID: String? = nil,
+        splitSettlementID: String? = nil,
+        targetTransactionID: String? = nil,
+        originReasonKey: String? = nil,
+        originActorName: String? = nil,
+        originGroupName: String? = nil,
+        optInPersonalOnly: Bool = false,
+        tagIDs: String? = nil
     ) {
         self.note = note
         self.amount = amount
@@ -256,6 +343,8 @@ final class InboxDraft: Identifiable {
         self.account = account
         self.subcategory = subcategory
         self.tags = tags
+        // Auto-mirror: si caller no pasó tagIDs explícito, derivar desde `tags`.
+        self.tagIDs = tagIDs ?? CSVMirrorCodec.encode(tags.map(\.id))
         self.sourceTypeRaw = sourceType.rawValue
         self.rawText = rawText
         self.evidence = evidence
@@ -266,6 +355,14 @@ final class InboxDraft: Identifiable {
         self.needsUserInput = needsUserInput
         self.newlyCreatedTagNames = newlyCreatedTagNames
         self.statusRaw = status.rawValue
+        self.splitExpenseID = splitExpenseID
+        self.splitGroupZoneID = splitGroupZoneID
+        self.splitSettlementID = splitSettlementID
+        self.targetTransactionID = targetTransactionID
+        self.originReasonKey = originReasonKey
+        self.originActorName = originActorName
+        self.originGroupName = originGroupName
+        self.optInPersonalOnly = optInPersonalOnly
         self.createdAt = Date.now
         self.updatedAt = Date.now
     }

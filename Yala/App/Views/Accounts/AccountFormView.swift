@@ -38,12 +38,8 @@ struct AccountFormView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-                    .dismissKeyboardOnTap()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
                         generalSection
                         ContextualGuideBanner.accountForm(accountType: viewModel.selectedType)
                         currencySection
@@ -76,9 +72,10 @@ struct AccountFormView: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
+                    .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
-            }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Account.configure)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -232,7 +229,6 @@ struct AccountFormView: View {
                     .padding()
                 }
                 .buttonStyle(.plain)
-                .simultaneousGesture(TapGesture().onEnded { _ in focusedField = nil })
 
                 SubsectionDivider()
 
@@ -275,7 +271,6 @@ struct AccountFormView: View {
                 .padding()
             }
             .buttonStyle(.plain)
-            .simultaneousGesture(TapGesture().onEnded { _ in focusedField = nil })
         }
     }
 
@@ -300,7 +295,6 @@ struct AccountFormView: View {
                     .padding()
                 }
                 .buttonStyle(.plain)
-                .simultaneousGesture(TapGesture().onEnded { _ in focusedField = nil })
 
                 SubsectionDivider()
 
@@ -401,6 +395,7 @@ struct AccountFormView: View {
                                 .multilineTextAlignment(.trailing)
                                 .font(DS.Typography.largeTitle)
                                 .focused($focusedField, equals: .balance)
+                                .accessibilityIdentifier("account_balance_field")
                         }
                         .onChange(of: focusedField) { _, newField in
                             let isFocused = newField == .balance
@@ -471,19 +466,24 @@ struct AccountFormView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     HStack(spacing: DS.Spacing.lg) {
                         ForEach(viewModel.colorOptions, id: \.self) { hex in
-                            Circle()
-                                .fill(colorForHex(hex))
-                                .frame(width: 32, height: 32)
-                                .overlay(
-                                    Circle()
-                                        .stroke(
-                                            Color.white,
-                                            lineWidth: viewModel.selectedColorHex == hex ? 3 : 1)
-                                )
-                                .shadow(radius: viewModel.selectedColorHex == hex ? 4 : 0)
-                                .onTapGesture {
-                                    viewModel.selectedColorHex = hex
-                                }
+                            Button {
+                                viewModel.selectedColorHex = hex
+                            } label: {
+                                Circle()
+                                    .fill(colorForHex(hex))
+                                    .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(
+                                                // A11Y-DM: anillo blanco decorativo de selección sobre muestras de color arbitrarias
+                                                Color.white,
+                                                lineWidth: viewModel.selectedColorHex == hex ? 3 : 1)
+                                    )
+                                    .shadow(radius: viewModel.selectedColorHex == hex ? 4 : 0)
+                            }
+                            .buttonStyle(.plain)
+                            .contentShape(Circle())
+                            .accessibilityLabel(L10n.Accessibility.colorOption(hex))
                         }
 
                         Button {
@@ -491,7 +491,7 @@ struct AccountFormView: View {
                         } label: {
                             Circle()
                                 .fill(DS.Colors.borderDark)
-                                .frame(width: 32, height: 32)
+                                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                                 .overlay(
                                     Image(systemName: "plus")
                                         .font(DS.Typography.labelSmall)
@@ -641,6 +641,8 @@ struct AccountFormView: View {
             #if DEBUG
             print("AccountFormView: Error deleting account: \(error)")
             #endif
+            viewModel.deleteErrorMessage = error.localizedDescription
+            viewModel.isShowingDeleteError = true
         }
     }
 }

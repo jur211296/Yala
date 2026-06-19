@@ -157,10 +157,13 @@ struct AutocompleteHelper {
         // Get active tags
         let activeTags = allTags.filter { $0.isActive }
 
-        // Sort by recent usage
+        // Sort by recent usage — CSV-mirror SSOT via resolver + catalog del allTags.
+        let tagCatalog = Tag.byIDLookup(allTags)
         var tagUsage: [PersistentIdentifier: Date] = [:]
         for transaction in recentTransactions.prefix(100) {
-            for tag in transaction.tags ?? [] {
+            let txTagIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+            for uuid in txTagIDs {
+                guard let tag = tagCatalog[uuid] else { continue }
                 if tagUsage[tag.persistentModelID] == nil {
                     tagUsage[tag.persistentModelID] = transaction.date
                 }

@@ -41,7 +41,6 @@ struct QuickStatCell: View {
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Spacing.md)
-        .solidCard(radius: DS.Radius.md)
+        .panelCard(small: true)
     }
 }

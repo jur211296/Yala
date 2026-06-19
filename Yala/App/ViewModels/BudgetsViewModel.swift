@@ -38,6 +38,12 @@ final class BudgetsViewModel {
 
     private var modelContext: ModelContext?
 
+    // MARK: - Debounce state
+
+    private var recalculateTask: Task<Void, Never>?
+    private var pendingReload = false
+    private(set) var isInBackground = false
+
     // MARK: - Data
 
     private(set) var allBudgets: [Budget] = []
@@ -83,7 +89,7 @@ final class BudgetsViewModel {
 
     init() {
         // Initialize with current period
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         self.selectedWeek = calendar.startOfWeek(for: Date.now)
         self.selectedMonth = calendar.startOfMonth(for: Date.now)
         self.selectedYear = calendar.component(.year, from: Date.now)
@@ -93,7 +99,7 @@ final class BudgetsViewModel {
 
     /// Smart label for the current period (e.g. "Este mes", "Febrero 2026")
     var periodLabel: String {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
 
         switch selectedPeriodType {
         case .weekly:
@@ -149,7 +155,7 @@ final class BudgetsViewModel {
 
     /// Navigate to the previous period
     func previousPeriod() {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         switch selectedPeriodType {
         case .weekly:
             if let prev = calendar.date(byAdding: .weekOfYear, value: -1, to: selectedWeek) {
@@ -168,7 +174,7 @@ final class BudgetsViewModel {
 
     /// Navigate to the next period
     func nextPeriod() {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         switch selectedPeriodType {
         case .weekly:
             if let next = calendar.date(byAdding: .weekOfYear, value: 1, to: selectedWeek) {
@@ -293,7 +299,12 @@ final class BudgetsViewModel {
             let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
             let daysRemaining = getDaysRemaining(budget: budget)
             let status = getBudgetStatus(budget: budget, spending: spent)
-            let (icon, color) = budget.displayProperties
+            let (icon, color): (String, String) = {
+                if let ctx = modelContext {
+                    return Budget.computeDisplayProperties(for: budget, in: ctx)
+                }
+                return budget.displayProperties
+            }()
 
             return BudgetSummary(
                 budget: budget,
@@ -332,7 +343,12 @@ final class BudgetsViewModel {
         let percentage = budget.limitAmount > 0 ? (spent / budget.limitAmount) * 100.0 : 0.0
         let daysRemaining = getDaysRemaining(budget: budget)
         let status = getBudgetStatus(budget: budget, spending: spent)
-        let (icon, color) = budget.displayProperties
+        let (icon, color): (String, String) = {
+            if let ctx = modelContext {
+                return Budget.computeDisplayProperties(for: budget, in: ctx)
+            }
+            return budget.displayProperties
+        }()
 
         return BudgetSummary(
             budget: budget,
@@ -355,7 +371,7 @@ final class BudgetsViewModel {
             return []
         }
 
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         var results: [(label: String, spent: Double, limit: Double)] = []
 
         for offset in (1 - periods)...0 {
@@ -400,7 +416,7 @@ final class BudgetsViewModel {
 
     /// Returns daily cumulative spending for an explicit date interval.
     func getDailyCumulativeSpending(budget: Budget, in interval: DateInterval) -> [(date: Date, cumulative: Double)] {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         let today = Date.now
         let endDate = min(today, interval.end)
 
@@ -409,13 +425,11 @@ final class BudgetsViewModel {
         let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval)
         guard !filtered.isEmpty else { return [] }
 
-        let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
-
         // Group by day
         var dailyAmounts: [Date: Double] = [:]
         for tx in filtered {
             let day = calendar.startOfDay(for: tx.date)
-            let amount = useBudgetCurrency ? tx.amount : tx.amountInPreferredCurrency
+            let amount = Self.budgetAmount(of: tx, in: budget.currencyCode)
             dailyAmounts[day, default: 0] += abs(amount)
         }
 
@@ -451,14 +465,12 @@ final class BudgetsViewModel {
         let filtered = Self.filterTransactions(allTransactions, forBudget: budget, in: interval)
         guard !filtered.isEmpty else { return ([], []) }
 
-        let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
-
         var subBreakdown: [PersistentIdentifier: (name: String, icon: String, color: String, amount: Double, parentCategoryName: String)] = [:]
         var parentBreakdown: [PersistentIdentifier: (name: String, icon: String, color: String, amount: Double)] = [:]
 
         for tx in filtered {
             guard let sub = tx.subcategory else { continue }
-            let absAmount = abs(useBudgetCurrency ? tx.amount : tx.amountInPreferredCurrency)
+            let absAmount = abs(Self.budgetAmount(of: tx, in: budget.currencyCode))
             let cat = sub.safeCategory
 
             // Subcategory grouping
@@ -503,6 +515,9 @@ final class BudgetsViewModel {
 
     /// Filters transactions by budget criteria (accounts, subcategories, tags, natures, expenses only).
     /// Shared by calculateSpending, getDailyCumulativeSpending, and getCategoryBreakdown.
+    ///
+    /// Reads filters from the CSV mirror (SSOT, eager from CloudKit record) with
+    /// M2M lazy fallback + auto-heal. Lazy `nil` NO se interpreta como "sin filtros".
     static func filterTransactions(
         _ transactions: [TransactionItem],
         forBudget budget: Budget,
@@ -510,24 +525,46 @@ final class BudgetsViewModel {
     ) -> [TransactionItem] {
         var filtered = transactions.filter { interval.contains($0.date) }
 
-        if let accounts = budget.accounts, !accounts.isEmpty {
-            let accountIDs = Set(accounts.map { $0.persistentModelID })
+        // Telemetry: si el budget "luce sin filtros" pero NO es default (tiene name + limitAmount),
+        // dispara una vez por sesión para detectar budgets con filtros aparentemente vacíos.
+        let hasAnyResolvedFilter =
+            (budget.resolvedSubcategoryIDs() != nil)
+            || (budget.resolvedAccountIDs() != nil)
+            || (budget.resolvedTagIDs() != nil)
+            || (budget.natures?.isEmpty == false)
+        if !hasAnyResolvedFilter, !budget.name.isEmpty, budget.limitAmount > 0 {
+            let hadM2MNotEmpty =
+                !(budget.subcategories ?? []).isEmpty
+                || !(budget.accounts ?? []).isEmpty
+                || !(budget.tags ?? []).isEmpty
+            TelemetryService.trackOnce(
+                .budgetFiltersAppearEmpty,
+                key: budget.id.uuidString,
+                parameters: [
+                    "budgetID": budget.id.uuidString,
+                    "periodType": budget.periodType,
+                    "hadM2MNotEmpty": String(hadM2MNotEmpty),
+                ]
+            )
+        }
+
+        if let accountUUIDs = budget.resolvedAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
             filtered = filtered.filter { tx in
-                tx.account.map { accountIDs.contains($0.persistentModelID) } ?? false
+                tx.account.map { accountUUIDs.contains($0.shortcutID) } ?? false
             }
         }
 
-        if let subcategories = budget.subcategories, !subcategories.isEmpty {
-            let subIDs = Set(subcategories.map { $0.persistentModelID })
+        if let subcategoryUUIDs = budget.resolvedSubcategoryIDs(scheduleBackfill: true), !subcategoryUUIDs.isEmpty {
             filtered = filtered.filter { tx in
-                tx.subcategory.map { subIDs.contains($0.persistentModelID) } ?? false
+                tx.subcategory.map { subcategoryUUIDs.contains($0.shortcutID) } ?? false
             }
         }
 
-        if let budgetTags = budget.tags, !budgetTags.isEmpty {
-            let tagIDs = Set(budgetTags.map { $0.persistentModelID })
+        // Tag filter — ambos lados (budget + tx) usan CSV mirror SSOT.
+        if let budgetTagUUIDs = budget.resolvedTagIDs(scheduleBackfill: true), !budgetTagUUIDs.isEmpty {
             filtered = filtered.filter { tx in
-                !Set((tx.tags ?? []).map { $0.persistentModelID }).isDisjoint(with: tagIDs)
+                let txTagUUIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+                return !txTagUUIDs.isDisjoint(with: budgetTagUUIDs)
             }
         }
 
@@ -537,27 +574,60 @@ final class BudgetsViewModel {
             filtered = filtered.filter { natures.contains($0.effectiveNeed) }
         }
 
+        // Shared expense inclusion
+        if !budget.includeSharedExpenses {
+            filtered = filtered.filter { $0.splitExpenseID == nil }
+        }
+
+        // Excluir saldo inicial / ajustes / transferencias (consistente con
+        // FinancialReportViewModel y CashFlowPlanViewModel). La subcategoría
+        // "Ajuste de saldo" vive bajo "Otros" con isIncome=false, así que sin
+        // este filtro pasaría el corte y se sumaría como gasto vía abs(amount).
+        filtered = filtered.filter { $0.balanceAdjustmentType == nil }
+
         return filtered.filter { $0.category?.isIncome == false }
     }
 
     /// Shared spending calculation used by both BudgetsViewModel and BudgetAlertService.
-    /// Filters transactions by budget criteria and sums expense amounts.
+    /// Filters transactions by budget criteria and sums expense amounts en la
+    /// moneda del budget (multi-divisa: convierte con TC actual).
+    /// `converter` opcional → inyectable en tests.
     static func calculateSpending(
         budget: Budget,
         transactions: [TransactionItem],
-        interval: DateInterval
+        interval: DateInterval,
+        converter: CurrencyConverting? = nil
     ) -> Double {
         let filtered = filterTransactions(transactions, forBudget: budget, in: interval)
 
-        // Sum amounts based on budget account configuration:
-        // - If exactly 1 account: use transaction.amount (same currency as budget)
-        // - If 0 or multiple accounts: use amountInPreferredCurrency (normalized)
-        let useBudgetCurrency = (budget.accounts?.count ?? 0) == 1
-
         return filtered.reduce(0.0) { sum, tx in
-            let amount = useBudgetCurrency ? tx.amount : tx.amountInPreferredCurrency
-            return sum + abs(amount)
+            sum + abs(budgetAmount(of: tx, in: budget.currencyCode, converter: converter))
         }
+    }
+
+    /// Devuelve el monto de la transacción expresado en la moneda del budget.
+    /// Si las monedas coinciden, usa `tx.amount` directo. En multi-divisa,
+    /// convierte con TC actual (`convertWithLatestRate`) — coherente con la
+    /// semántica "presupuesto consumido HOY". El comportamiento previo
+    /// (heurística useBudgetCurrency basada en número de cuentas + fallback
+    /// a `amountInPreferredCurrency`) era incorrecto cuando la moneda
+    /// preferida del usuario != moneda del budget.
+    @MainActor
+    static func budgetAmount(
+        of tx: TransactionItem,
+        in budgetCurrencyCode: String,
+        converter: CurrencyConverting? = nil
+    ) -> Double {
+        if tx.currencyCode == budgetCurrencyCode {
+            return tx.amount
+        }
+        let resolvedConverter = converter ?? CurrencyConverter.shared
+        let converted = resolvedConverter.convertWithLatestRate(
+            Decimal(tx.amount),
+            from: tx.currencyCode,
+            to: budgetCurrencyCode
+        )
+        return NSDecimalNumber(decimal: converted).doubleValue
     }
 
     // MARK: - Budget Status Determination
@@ -589,7 +659,7 @@ final class BudgetsViewModel {
     /// Calculate days remaining in budget period
     func getDaysRemaining(budget: Budget) -> Int {
         let interval = getBudgetDateInterval(budget: budget)
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         let today = Date.now
 
         // If the period has ended (today is after the period), return -1 to indicate "Past"
@@ -609,7 +679,7 @@ final class BudgetsViewModel {
 
     /// Get date interval for a budget period
     func getBudgetDateInterval(budget: Budget) -> DateInterval {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
 
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
             // Fallback to selected month if invalid
@@ -680,6 +750,52 @@ final class BudgetsViewModel {
         } else {
             // Multiple categories: use app icon + electric indigo
             return ("chart.pie.fill", AppConstants.defaultColorHex)
+        }
+    }
+
+    // MARK: - Debounced Recalculation
+
+    /// Suppresses recalculation when the app leaves active state — prevents 0x8BADF00D.
+    func setBackground(_ value: Bool) {
+        isInBackground = value
+        if value {
+            recalculateTask?.cancel()
+            recalculateTask = nil
+            pendingReload = false
+        }
+    }
+
+    /// Cancel any pending recalculation (call from `.onDisappear`).
+    func cancelRecalculation() {
+        recalculateTask?.cancel()
+    }
+
+    /// Compute-only debounced (150ms). Use when a filter/UI input changed
+    /// but the underlying DB hasn't mutated.
+    func recalculateData(hideInactive: Bool, defaultCurrencyCode: String) {
+        scheduleRecalculation(reload: false, hideInactive: hideInactive, currency: defaultCurrencyCode)
+    }
+
+    /// Reload + compute debounced (150ms). Use when DB mutations could have
+    /// occurred (e.g. after editor dismiss or `dataVersion` bump).
+    func reloadAndRecalculate(hideInactive: Bool, defaultCurrencyCode: String) {
+        scheduleRecalculation(reload: true, hideInactive: hideInactive, currency: defaultCurrencyCode)
+    }
+
+    /// Shared debounce (150ms). `pendingReload` ensures a reload request isn't lost
+    /// if a subsequent compute-only call arrives within the debounce window.
+    private func scheduleRecalculation(reload: Bool, hideInactive: Bool, currency: String) {
+        guard !isInBackground else { return }
+        guard UIApplication.shared.applicationState == .active else { return }
+        if reload { pendingReload = true }
+        recalculateTask?.cancel()
+        recalculateTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            guard !Task.isCancelled else { return }
+            let shouldReload = pendingReload
+            pendingReload = false
+            if shouldReload { loadData() }
+            refreshBudgetData(hideInactive: hideInactive, defaultCurrencyCode: currency)
         }
     }
 }

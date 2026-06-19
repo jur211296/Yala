@@ -16,6 +16,7 @@ private let needPercentFormatter: NumberFormatter = {
 }()
 
 struct NeedTrendWidget: View {
+    @Environment(AppPreferences.self) private var appPreferences
     let trendPoints: [NeedTrendPoint]
     let selectedNeed: SubcategoryNeed?
     let currencyCode: String
@@ -32,9 +33,13 @@ struct NeedTrendWidget: View {
     var previousAmountByNeed: [SubcategoryNeed: Double] = [:]
     var showVariationHeader: Bool = false
     var comparisonMode: ComparisonMode = .month
+    var variationDisplay: VariationDisplayConfig = .full
 
     /// When true, shows a message that need classification doesn't apply to income
     var isIncomeMode: Bool = false
+
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
 
     private var totalAmount: Double {
         guard let need = selectedNeed else {
@@ -59,6 +64,19 @@ struct NeedTrendWidget: View {
 
     private var previousInterval: DateInterval {
         PreviousPeriodHelper.previousInterval(for: period, mode: comparisonMode, customRange: nil)
+    }
+
+    /// Totals per need across `trendPoints` — single-pass aggregation reused by the
+    /// `.small` and `.medium` layouts instead of 4 separate `.reduce(…)` calls.
+    private var needTotals: (essential: Double, priority: Double, optional: Double, unclassified: Double) {
+        var e = 0.0, p = 0.0, o = 0.0, u = 0.0
+        for point in trendPoints {
+            e += point.essential
+            p += point.priority
+            o += point.optional
+            u += point.unclassified
+        }
+        return (e, p, o, u)
     }
 
     private var comparisonText: String {
@@ -92,7 +110,9 @@ struct NeedTrendWidget: View {
         previousAmountByNeed: [SubcategoryNeed: Double] = [:],
         showVariationHeader: Bool = false,
         comparisonMode: ComparisonMode = .month,
-        isIncomeMode: Bool = false
+        variationDisplay: VariationDisplayConfig = .full,
+        isIncomeMode: Bool = false,
+        headerInfoButton: AnyView? = nil
     ) {
         self.trendPoints = trendPoints
         self.selectedNeed = selectedNeed
@@ -107,34 +127,147 @@ struct NeedTrendWidget: View {
         self.previousAmountByNeed = previousAmountByNeed
         self.showVariationHeader = showVariationHeader
         self.comparisonMode = comparisonMode
+        self.variationDisplay = variationDisplay
         self.isIncomeMode = isIncomeMode
+        self.headerInfoButton = headerInfoButton
     }
 
     var body: some View {
+        if size == .small {
+            smallBody
+        } else {
+            regularBody
+        }
+    }
+
+    // MARK: - Small layout (PP2-06c)
+
+    private var smallBody: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            PanelSmallWidgetHeader(
+                title: L10n.Widget.distributionByNeed,
+                accessibilityLabel: L10n.Widget.distributionByNeed,
+                action: onShowDetail,
+                headerInfoButton: headerInfoButton
+            )
+
+            if isIncomeMode {
+                Text(L10n.Need.incomeNotApplicable)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if trendPoints.isEmpty {
+                YalaEmptyState(icon: "chart.bar.fill", title: L10n.Empty.noExpenses, style: .widget)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                smallContent
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .panelCard(small: true)
+        .frame(height: WidgetSize.smallHeight)
+    }
+
+    private var smallContent: some View {
+        let totals = needTotals
+
+        // Always show the 3 canonical needs; add unclassified only if it has a value.
+        var entries: [(need: SubcategoryNeed, amount: Double)] = [
+            (.essential, totals.essential),
+            (.priority, totals.priority),
+            (.optional, totals.optional),
+        ]
+        if totals.unclassified > 0 {
+            entries.append((.unclassified, totals.unclassified))
+        }
+
+        let total = entries.reduce(0) { $0 + $1.amount }
+
+        return VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                AmountText(
+                    value: total,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption
+                )
+
+                if variationDisplay.showsSmallVariation, showVariationHeader, let variation {
+                    VariationChip(
+                        variation: variation,
+                        size: .small,
+                        isExpenseContext: true
+                    )
+                }
+            }
+
+            VStack(spacing: DS.Spacing.md) {
+                ForEach(entries, id: \.need) { entry in
+                    smallNeedRow(
+                        need: entry.need,
+                        amount: entry.amount,
+                        ratio: total > 0 ? (entry.amount / total) : 0
+                    )
+                }
+            }
+        }
+    }
+
+    private func smallNeedRow(
+        need: SubcategoryNeed,
+        amount: Double,
+        ratio: Double
+    ) -> some View {
+        let dimmed = selectedNeed != nil && selectedNeed != need
+        return PanelSmallBarRow(
+            label: need.displayName,
+            amount: amount,
+            ratio: ratio,
+            color: color(for: need),
+            currencyCode: currencyCode,
+            dimmed: dimmed,
+            onTap: { onSelectNeed(need) }
+        )
+    }
+
+    private func color(for need: SubcategoryNeed) -> Color {
+        switch need {
+        case .essential:    return .essentialNeed
+        case .priority:     return .priorityNeed
+        case .optional:     return .optionalNeed
+        case .unclassified: return DS.Semantic.disabledForeground
+        }
+    }
+
+    // MARK: - Medium / Large (existing)
+
+    private var regularBody: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             // Header - simplified when in income mode or no data (no KPI makes sense)
             HStack(alignment: .top) {
                 // Left: Title and total amount (hide KPI in income mode or when no data)
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text(L10n.Widget.distributionByNeed)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.thPrimaryText)
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                        Text(L10n.Widget.distributionByNeed)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.thPrimaryText)
 
-                    // Total amount with "vs previous" comparison - only show when NOT in income mode AND has data
+                        WidgetHeaderInfoSlot(
+                            injected: headerInfoButton,
+                            legacyTitle: L10n.WidgetType.expensesByNeed,
+                            legacyMessage: L10n.Widget.Hint.needTrend
+                        )
+                    }
+
                     if !isIncomeMode && !trendPoints.isEmpty {
                         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                            Text(
-                                YalaFormatter.currency(
-                                    value: totalAmount, currencyCode: currencyCode)
+                            AmountText(
+                                value: totalAmount,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.headline, secondaryFont: DS.Typography.caption
                             )
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.thPrimaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
 
-                            // Show previous period value for comparison
-                            if let prevAmount = previousTotalAmount {
-                                Text("vs \(YalaFormatter.number(value: prevAmount))")
+                            if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
+                                Text("vs \(appPreferences.number(prevAmount))")
                                     .font(DS.Typography.caption)
                                     .foregroundStyle(.thSecondaryText)
                                     .lineLimit(1)
@@ -144,11 +277,6 @@ struct NeedTrendWidget: View {
                     }
                 }
 
-                InfoHintButton(
-                    title: L10n.WidgetType.expensesByNeed,
-                    message: L10n.Widget.Hint.needTrend
-                )
-
                 Spacer()
 
                 // Right: Variation chip and comparison text (only when showVariationHeader and has data, not in income mode)
@@ -156,7 +284,7 @@ struct NeedTrendWidget: View {
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                         VariationChip(variation: variation, size: .medium)
 
-                        if !comparisonText.isEmpty {
+                        if variationDisplay.showsComparisonPeriodLabel && !comparisonText.isEmpty {
                             Text(comparisonText)
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.secondary)
@@ -166,18 +294,6 @@ struct NeedTrendWidget: View {
                     }
                 }
 
-                // Navigation / Detail
-                if onShowDetail != nil {
-                    Button {
-                        onShowDetail?()
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.top, DS.Spacing.xs)
-                }
             }
 
             // Content
@@ -203,12 +319,7 @@ struct NeedTrendWidget: View {
                 chartView
             }
         }
-        .padding(DS.Card.paddingCompact)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.lg)
-                .fill(.thCard)
-                .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 4)
-        )
+        .panelCard()
     }
 
     @ViewBuilder
@@ -231,11 +342,12 @@ struct NeedTrendWidget: View {
         } else {
             // Compact: Summary Bars Layout (like CashFlowWidget)
             VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                // Calculate totals and max for normalization
-                let essentialTotal = trendPoints.reduce(0) { $0 + $1.essential }
-                let priorityTotal = trendPoints.reduce(0) { $0 + $1.priority }
-                let optionalTotal = trendPoints.reduce(0) { $0 + $1.optional }
-                let unclassifiedTotal = trendPoints.reduce(0) { $0 + $1.unclassified }
+                // Single-pass totals — reused by Essential/Priority/Optional/Unclassified bars.
+                let totals = needTotals
+                let essentialTotal = totals.essential
+                let priorityTotal = totals.priority
+                let optionalTotal = totals.optional
+                let unclassifiedTotal = totals.unclassified
                 let maxVal = max(
                     essentialTotal, max(priorityTotal, max(optionalTotal, unclassifiedTotal)))
 
@@ -298,7 +410,7 @@ struct NeedTrendWidget: View {
 
 struct NeedTrendChartView: View {
     @Environment(\.yalaTheme) private var theme
-    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
+    @Environment(AppPreferences.self) private var appPreferences
 
     let points: [NeedTrendPoint]
     let selectedNeed: SubcategoryNeed?
@@ -331,10 +443,16 @@ struct NeedTrendChartView: View {
             }
         }()
 
-        return SmartAxisHelper.calculateSmartAxisDates(
+        let rawDates = SmartAxisHelper.calculateSmartAxisDates(
             forDataDates: points.map(\.date),
             grouping: calendarUnit
         )
+
+        guard let firstDate = points.first?.date,
+              let lastDate = points.last?.date else { return rawDates }
+        return SmartAxisHelper.deduplicatedAxisDates(
+            rawDates, firstDate: firstDate, lastDate: lastDate,
+            forceGrouping: grouping.forceAxisGrouping)
     }
 
     /// Format axis label based on data span and grouping
@@ -376,11 +494,11 @@ struct NeedTrendChartView: View {
     // MARK: - Average Line Logic
 
     private var shouldShowTotalAverage: Bool {
-        averageLineMode == 1 && points.count >= 2
+        appPreferences.averageLineMode == 1 && points.count >= 2
     }
 
     private var shouldShowSegmentedAverage: Bool {
-        averageLineMode == 2
+        appPreferences.averageLineMode == 2
     }
 
     private var totalAverageValue: Double {
@@ -412,31 +530,18 @@ struct NeedTrendChartView: View {
         let yDomain: ClosedRange<Double> = 0...(maxValue * 1.05)  // 5% padding instead of default ~20%
 
         Chart {
-            ForEach(flattenData(points)) { item in
-                // If a need is selected, only show that nature (or dim others)
-                // Design Choice: If filtered, show ONLY that line. If not, show ALL lines stacked?
-                // Or show all lines but highlight selected?
-                // Let's match typical behavior: If filtered, show only that ONE series.
-                // If ALL (nil), show stacked area or multiple lines.
-                // Given "Gastos por naturaleza", Stacked Bar is good for composition.
-
-                if let selected = selectedNeed {
-                    if item.need == selected {
-                        BarMark(
-                            x: .value("Fecha", item.date, unit: chartUnit),
-                            y: .value("Monto", item.amount)
-                        )
-                        .foregroundStyle(item.need.color.gradient)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
-                                            }
-                } else {
-                    BarMark(
-                        x: .value("Fecha", item.date, unit: chartUnit),
-                        y: .value("Monto", item.amount)
-                    )
-                    .foregroundStyle(item.need.color.gradient)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
-                                    }
+            // Filter to the selected need (show all when none selected). Both
+            // branches rendered an identical BarMark, so this is a pure data filter.
+            ForEach(flattenData(points).filter { item in
+                guard let selected = selectedNeed else { return true }
+                return item.need == selected
+            }) { item in
+                BarMark(
+                    x: .value("Fecha", item.date, unit: chartUnit),
+                    y: .value("Monto", item.amount)
+                )
+                .foregroundStyle(item.need.color.gradient)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
             }
 
             averageLineMarks
@@ -548,8 +653,7 @@ struct NeedTrendChartView: View {
                                     .foregroundStyle(Color.secondary)
                                 Spacer()
                                 Text(
-                                    YalaFormatter.currency(
-                                        value: selectedData.total, currencyCode: currencyCode)
+                                    appPreferences.currency(selectedData.total, currencyCode: currencyCode)
                                 )
                                 .font(DS.Typography.labelTiny)
                                 .foregroundStyle(Color.primary)
@@ -564,8 +668,7 @@ struct NeedTrendChartView: View {
                                         .foregroundStyle(Color.secondary)
                                     Spacer()
                                     Text(
-                                        YalaFormatter.currency(
-                                            value: avg, currencyCode: currencyCode)
+                                        appPreferences.currency(avg, currencyCode: currencyCode)
                                     )
                                     .font(DS.Typography.labelTiny)
                                     .foregroundStyle(Color.primary)
@@ -604,7 +707,7 @@ struct NeedTrendChartView: View {
         if isSegmentedAverageActive {
             return averageSegments.first(where: { date >= $0.startDate && date < $0.endDate })?.average
         }
-        if averageLineMode == 2 && points.count >= 2 {
+        if appPreferences.averageLineMode == 2 && points.count >= 2 {
             return totalAverageValue
         }
         return nil
@@ -645,7 +748,7 @@ struct NeedTrendChartView: View {
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
                 }
             }
-        } else if averageLineMode == 2 && points.count >= 2 {
+        } else if appPreferences.averageLineMode == 2 && points.count >= 2 {
             RuleMark(y: .value("Avg", totalAverageValue))
                 .foregroundStyle(.thSecondaryText.opacity(0.5))
                 .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
@@ -700,6 +803,7 @@ struct NeedTrendChartView: View {
     }
 
     struct TooltipRow: View {
+        @Environment(AppPreferences.self) private var appPreferences
         let need: SubcategoryNeed
         let amount: Double
         let currencyCode: String
@@ -712,9 +816,11 @@ struct NeedTrendChartView: View {
                     .foregroundStyle(Color.primary)
                 Spacer()
                 // Simple formatting for tooltip
-                Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(Color.primary)
+                AmountText(
+                    value: amount,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.labelTiny
+                )
             }
         }
     }
@@ -948,7 +1054,7 @@ extension SubcategoryNeed {
         case .essential: return .essentialNeed    // Amber
         case .priority: return .priorityNeedNew   // Violet
         case .optional: return .optionalNeed      // Rose
-        case .unclassified: return .gray
+        case .unclassified: return DS.Semantic.disabledForeground
         }
     }
 }
@@ -965,6 +1071,10 @@ struct NeedCompactBar: View {
     var variation: Double? = nil
     var showNAWhenNil: Bool = false
 
+    @Environment(AppPreferences.self) private var appPreferences
+
+    @State private var barWidth: CGFloat = 0
+
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: DS.Spacing.xs) {
@@ -974,30 +1084,31 @@ struct NeedCompactBar: View {
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(isSelected ? Color.primary : Color.secondary)
                     Spacer()
-                    Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
-                        .font(DS.Typography.amountSmall)
-                        .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+                    AmountText(
+                        value: amount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
+                        tint: isSelected ? .primary : .secondary
+                    )
 
                     // Variation chip (aligned right of amount)
                     VariationChip(variation: variation, size: .small, showNAWhenNil: showNAWhenNil)
                 }
 
                 // Progress Bar
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        // Track
-                        Capsule()
-                            .fill(Color.primary.opacity(0.05))
-                            .frame(height: 8)
+                ZStack(alignment: .leading) {
+                    // Track
+                    Capsule()
+                        .fill(Color.primary.opacity(0.05))
+                        .frame(height: 8)
 
-                        // Fill
-                        let width = maxAmount > 0 ? (amount / maxAmount) * geo.size.width : 0
-                        Capsule()
-                            .fill(need.color)
-                            .frame(width: max(width, 6), height: 8)
-                    }
+                    // Fill
+                    let ratio = maxAmount > 0 ? (amount / maxAmount) : 0
+                    Capsule()
+                        .fill(need.color)
+                        .frame(width: max(barWidth * ratio, 6), height: 8)
                 }
-                .frame(height: 8)
+                .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { barWidth = $0 }
             }
             .opacity(isSelected ? 1.0 : 0.4)
         }

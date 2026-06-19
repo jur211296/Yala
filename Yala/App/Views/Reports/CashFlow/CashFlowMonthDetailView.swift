@@ -20,6 +20,7 @@ struct CashFlowMonthDetailView: View {
     @State private var selectedCellLineID: UUID?
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         VStack(spacing: DS.Spacing.md) {
@@ -174,41 +175,49 @@ struct CashFlowMonthDetailView: View {
                     )
                 }
                 Spacer()
-                Text(YalaFormatter.currency(value: month.netFlow, currencyCode: currencyCode))
-                    .font(DS.Typography.amount)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
-                    .monospacedDigit()
+                AmountText(
+                    value: month.netFlow,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.amount.weight(.bold).monospacedDigit()
+                )
             }
 
-            Divider()
+            if viewModel.plan?.showAccumulatedBalance ?? true {
+                Divider()
 
-            // Accumulated
-            HStack {
-                HStack(spacing: DS.Spacing.xs) {
-                    Text(L10n.CashFlowPlan.accumulated)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.secondary)
-                    InfoHintButton(
-                        title: L10n.CashFlowPlan.accumulatedHintTitle,
-                        message: L10n.CashFlowPlan.accumulatedHintMessage
-                    )
-                    Spacer()
-                    Button {
-                        viewModel.showEditStartingBalance = true
-                    } label: {
-                        Image(systemName: "pencil.circle")
+                // Accumulated
+                HStack {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Text(L10n.CashFlowPlan.accumulated)
                             .font(DS.Typography.label)
+                            .foregroundStyle(.secondary)
+                        InfoHintButton(
+                            title: L10n.CashFlowPlan.accumulatedHintTitle,
+                            message: L10n.CashFlowPlan.accumulatedHintMessage
+                        )
+                        Spacer()
+                        Button {
+                            viewModel.showEditStartingBalance = true
+                        } label: {
+                            Image(systemName: "pencil.circle")
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Spacer()
+                    if let balance = month.accumulatedBalance {
+                        AmountText(
+                            value: balance,
+                            currencyCode: currencyCode,
+                            font: DS.Typography.amount.weight(.bold).monospacedDigit()
+                        )
+                    } else {
+                        Text("—")
+                            .font(DS.Typography.amount)
                             .foregroundStyle(.tertiary)
                     }
-                    .buttonStyle(.plain)
                 }
-                Spacer()
-                Text(YalaFormatter.currency(value: month.accumulatedBalance, currencyCode: currencyCode))
-                    .font(DS.Typography.amount)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
-                    .monospacedDigit()
             }
         }
         .padding(DS.Spacing.lg)
@@ -254,10 +263,12 @@ struct CashFlowMonthDetailView: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                     let displayAmount = result.realAmount ?? result.plannedAmount
-                    Text(YalaFormatter.currency(value: displayAmount, currencyCode: currencyCode))
-                        .font(DS.Typography.amountSmall)
-                        .foregroundStyle(.tertiary)
-                        .monospacedDigit()
+                    AmountText(
+                        value: displayAmount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.amountSmall.monospacedDigit(),
+                        tint: .secondary
+                    )
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.md)
@@ -292,11 +303,12 @@ struct CashFlowMonthDetailView: View {
 
                 Spacer()
 
-                Text(YalaFormatter.currency(value: total, currencyCode: currencyCode))
-                    .font(DS.Typography.amountSmall)
-                    .fontWeight(.bold)
-                    .foregroundStyle(isIncome ? Color.electricIndigo : Color.hotPink)
-                    .monospacedDigit()
+                AmountText(
+                    value: total,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.amountSmall.weight(.bold).monospacedDigit(),
+                    tint: .color(isIncome ? Color.electricIndigo : Color.hotPink)
+                )
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)

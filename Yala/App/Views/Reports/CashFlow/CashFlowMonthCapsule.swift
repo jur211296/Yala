@@ -12,8 +12,10 @@ struct CashFlowMonthCapsule: View {
     let month: CashFlowMonth
     let isSelected: Bool
     let currencyCode: String
+    let showAccumulatedBalance: Bool
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         VStack(spacing: DS.Spacing.xs) {
@@ -24,13 +26,15 @@ struct CashFlowMonthCapsule: View {
                 .foregroundStyle(foregroundColor)
                 .textCase(.uppercase)
 
-            Text(accumulatedText)
-                .font(DS.Typography.labelSmall)
-                .fontWeight(.semibold)
-                .foregroundStyle(.primary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            if showAccumulatedBalance {
+                Text(accumulatedText)
+                    .font(DS.Typography.labelSmall)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
 
             miniBar
 
@@ -45,17 +49,7 @@ struct CashFlowMonthCapsule: View {
         .frame(width: 78)
         .padding(.vertical, DS.Spacing.md)
         .padding(.horizontal, DS.Spacing.xxs)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .fill(isSelected ? theme.accent.opacity(0.1) : Color.clear)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
-                .strokeBorder(
-                    isSelected ? theme.accent : Color.clear,
-                    lineWidth: isSelected ? 2 : 0
-                )
-        )
+        .glassEffect(isSelected ? .regular : .clear, in: .rect(cornerRadius: DS.Radius.lg))
         .opacity(month.isPast && !isSelected ? 0.6 : 1.0)
         .contentShape(Rectangle())
     }
@@ -82,17 +76,18 @@ struct CashFlowMonthCapsule: View {
     // MARK: - Computed Text
 
     private var accumulatedText: String {
+        guard let balance = month.accumulatedBalance else { return "—" }
         if isSelected {
-            let amount = YalaFormatter.amountCompactTable(value: month.accumulatedBalance)
+            let amount = YalaFormatter.amountCompactTable(value: balance)
             return "\(L10n.CashFlowPlan.accumulatedShort): \(amount)"
         }
-        return YalaFormatter.amountCashFlowCell(value: month.accumulatedBalance, currencyCode: currencyCode)
+        return appPreferences.amountCashFlowCell(balance, currencyCode: currencyCode)
     }
 
     private var netFlowInfo: (text: String, color: Color) {
         let isPositive = month.netFlow >= 0
         let sign = isPositive ? "+" : ""
-        let text = sign + YalaFormatter.amountCashFlowCell(value: month.netFlow, currencyCode: currencyCode)
+        let text = sign + appPreferences.amountCashFlowCell(month.netFlow, currencyCode: currencyCode)
         let color: Color = isPositive ? .electricIndigo : .hotPink
         return (text, color)
     }

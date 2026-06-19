@@ -321,7 +321,8 @@ PASOS OBLIGATORIOS (usando outputs ya guardados):
       - REFINAMIENTO-*.md → Marcar items completados con ✅
       - PLAN.md → Marcar pasos ejecutados
       - PHASE*-SPEC.md → Marcar subfases/items completados
-      - QA-SCENARIOS.md → Agregar escenarios si aplica (OBLIGATORIO para feat: y fix: significativos)
+      - **`qa/coverage-index.json` (SSOT QA — OBLIGATORIO si el commit tocó código bajo `Yala/`):** actualizar el/las área(s) afectada(s) → `lastVerified` a hoy; si migraste un área `deterministic` a XCUITest, `coverage: "xcuitest:<File#test>"` + bajar `_meta.backlogBaseline`. Correr `python3 qa/qa-sync.py` (DRIFT de áreas tocadas) y `bash qa/validate-coverage.sh` (gate del ratchet).
+      - QA-SCENARIOS.md → narrativa humana opcional; la verdad ejecutable es el coverage-index + los tests.
       - Cualquier otro documento con checklists o items pendientes
 
       Para cada documento consultado:

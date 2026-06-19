@@ -119,12 +119,13 @@ final class TransactionService {
         SessionState.shared.incrementDataVersion()
     }
 
-    /// Updates subcategory for multiple transactions
-    /// - Parameters:
-    ///   - transactions: The transactions to update
-    ///   - subcategory: The new subcategory
+    /// Updates subcategory for multiple transactions.
+    /// Throws si la selección contiene transferencias — usan subcat sistema obligatoria.
     func bulkUpdateSubcategory(_ transactions: [TransactionItem], subcategory: Subcategory) throws {
         let context = try requireContext()
+        if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
+            throw TransactionServiceError.transferSubcategoryNotEditable
+        }
         for transaction in transactions {
             transaction.subcategory = subcategory
             transaction.category = subcategory.safeCategory
@@ -134,67 +135,112 @@ final class TransactionService {
         SessionState.shared.incrementDataVersion()
     }
 
-    /// Adds tags to multiple transactions
-    /// - Parameters:
-    ///   - transactions: The transactions to update
-    ///   - tags: The tags to add
+    /// Adds tags to multiple transactions.
+    /// Propaga al partner — MERGE con tags propios del partner (no clobber). Skip collision.
+    /// CSV-first read (resolvedTagIDs) con auto-heal: evita clobber cuando M2M lazy nil.
     func bulkAddTags(_ transactions: [TransactionItem], tags: [Tag]) throws {
         let context = try requireContext()
+        let toAddIDs = Set(tags.map(\.id))
+        var processedPairIDs: Set<String> = []
+
+        // Si el fetch lanza, propaga el error (no clobber silent — el old code
+        // tampoco perdía tags ante fetch failure porque no fetcheaba).
+        func applyAdd(to tx: TransactionItem) throws {
+            let currentIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+            let newIDs = currentIDs.union(toAddIDs)
+            guard newIDs != currentIDs else { return }   // idempotent
+            let resolved = try TagResolver.fetch(ids: newIDs, in: context)
+            tx.setTags(from: resolved)
+        }
+
         for transaction in transactions {
-            var currentTags = transaction.tags ?? []
-            for tag in tags {
-                if !currentTags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
-                    currentTags.append(tag)
-                }
+            try applyAdd(to: transaction)
+            if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+               let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                processedPairIDs.insert(pairID)
+                try applyAdd(to: partner)
             }
-            transaction.tags = currentTags
         }
         try context.save()
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
     }
 
-    /// Removes tags from multiple transactions
-    /// - Parameters:
-    ///   - transactions: The transactions to update
-    ///   - tags: The tags to remove
+    /// Removes tags from multiple transactions.
+    /// Propaga al partner. Skip collision.
+    /// CSV-first read with auto-heal (idem bulkAddTags).
     func bulkRemoveTags(_ transactions: [TransactionItem], tags: [Tag]) throws {
         let context = try requireContext()
-        let tagIDsToRemove = Set(tags.map { $0.persistentModelID })
+        let toRemoveIDs = Set(tags.map(\.id))
+        var processedPairIDs: Set<String> = []
+
+        func applyRemove(from tx: TransactionItem) throws {
+            let currentIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+            let newIDs = currentIDs.subtracting(toRemoveIDs)
+            guard newIDs != currentIDs else { return }   // idempotent
+            let resolved = try TagResolver.fetch(ids: newIDs, in: context)
+            tx.setTags(from: resolved)
+        }
+
         for transaction in transactions {
-            var currentTags = transaction.tags ?? []
-            currentTags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
-            transaction.tags = currentTags
+            try applyRemove(from: transaction)
+            if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+               let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                processedPairIDs.insert(pairID)
+                try applyRemove(from: partner)
+            }
         }
         try context.save()
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
     }
 
-    /// Updates note for multiple transactions
-    /// - Parameters:
-    ///   - transactions: The transactions to update
-    ///   - note: The new note (empty string becomes nil)
+    /// Updates note for multiple transactions.
+    /// Propaga al partner SOLO si su nota actual ya coincide con tx (preserva divergencia).
     func bulkUpdateNote(_ transactions: [TransactionItem], note: String) throws {
         let context = try requireContext()
         let finalNote = note.isEmpty ? nil : note
+        var processedPairIDs: Set<String> = []
         for transaction in transactions {
+            let originalNote = transaction.note
             transaction.note = finalNote
+
+            if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+               let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                processedPairIDs.insert(pairID)
+                if (originalNote ?? "") == (partner.note ?? "") {
+                    partner.note = finalNote
+                }
+            }
         }
         try context.save()
         SessionState.shared.incrementDataVersion()
     }
 
-    /// Updates amount for multiple transactions
-    /// - Parameters:
-    ///   - transactions: The transactions to update
-    ///   - amount: The new amount (will preserve expense/income sign)
+    /// Updates amount for multiple transactions.
+    /// Propaga al partner con signo opuesto para mantener balance del transfer. Throws si la
+    /// selección contiene cross-currency transfers (preservar exchange rate).
     func bulkUpdateAmount(_ transactions: [TransactionItem], amount: Double) throws {
         let context = try requireContext()
+        // Preserve exchange rate: throw si transfer cross-currency.
+        for tx in transactions {
+            if let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: tx, in: context),
+               tx.currencyCode != partner.currencyCode {
+                throw TransactionServiceError.transferAmountCrossCurrencyNotEditable
+            }
+        }
+        var processedPairIDs: Set<String> = []
         for transaction in transactions {
             // Preserve sign (expense = negative, income = positive)
             let sign: Double = transaction.amount < 0 ? -1 : 1
             transaction.amount = sign * abs(amount)
+
+            if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+               let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                processedPairIDs.insert(pairID)
+                let partnerSign: Double = partner.amount < 0 ? -1 : 1
+                partner.amount = partnerSign * abs(amount)
+            }
         }
         try context.save()
         WidgetDataCache.updateCache(context: context)
@@ -207,9 +253,15 @@ final class TransactionService {
 enum TransactionServiceError: LocalizedError {
     case noContext
     case saveFailed(Error)
+    case transferSubcategoryNotEditable
+    case transferAmountCrossCurrencyNotEditable
 
     var errorDescription: String? {
         switch self {
+        case .transferSubcategoryNotEditable:
+            return L10n.BulkEdit.cannotEditTransferSubcategory
+        case .transferAmountCrossCurrencyNotEditable:
+            return L10n.BulkEdit.cannotEditTransferAmountCrossCurrency
         case .noContext:
             return "TransactionService: No ModelContext available"
         case .saveFailed(let error):

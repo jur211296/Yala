@@ -35,6 +35,7 @@ enum UpgradeContext {
     }
 
     var iconColor: Color {
+        // A11Y-DM: colores decorativos por caso del prompt (sistema, adaptan a Dark Mode)
         switch self {
         case .limitReached: return .orange
         case .proFeature: return .purple
@@ -106,6 +107,7 @@ struct UpgradePromptSheet: View {
                         TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: source))
                         showSubscription = true
                     }
+                    .accessibilityIdentifier("upgrade_prompt_cta")
 
                     Button(L10n.Common.cancel) {
                         TelemetryService.track(.proUpsellDismissed, parameters: TelemetryService.upsellParameters(source: source))
@@ -117,7 +119,7 @@ struct UpgradePromptSheet: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.xxl)
             }
-            .background(.thBackground)
+            .yalaScreenBackground(.subtle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

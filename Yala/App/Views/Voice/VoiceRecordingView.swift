@@ -14,12 +14,10 @@ struct VoiceRecordingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(VoiceTranscriptionService.self) private var voiceTranscriptionService
     @Environment(TranscriptionParserService.self) private var transcriptionParserService
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var recorder = AudioRecorderService.shared
     @State private var networkMonitor = NetworkMonitor.shared
-
-    @AppStorage("voiceLanguage") private var voiceLanguageRaw: String = VoiceLanguage.system.rawValue
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.usd.rawValue
 
     @State private var errorMessage: String?
     @State private var errorType: VoiceErrorType?
@@ -62,14 +60,11 @@ struct VoiceRecordingView: View {
     }
 
     private var voiceLanguage: VoiceLanguage {
-        VoiceLanguage(rawValue: voiceLanguageRaw) ?? .system
+        appPreferences.voiceLanguage
     }
 
     private var preferredCurrencyName: String {
-        if let code = CurrencyCode(rawValue: defaultCurrencyCode) {
-            return code.shortPluralName
-        }
-        return CurrencyCode.usd.shortPluralName
+        appPreferences.defaultCurrencyCode.shortPluralName
     }
 
     var body: some View {
@@ -119,7 +114,7 @@ struct VoiceRecordingView: View {
             .dsAnimation(.easeInOut(duration: 0.3), value: isPreviewMode, reduceMotion: reduceMotion)
             .dsAnimation(.easeInOut(duration: 0.3), value: isProcessing, reduceMotion: reduceMotion)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.thBackground)
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Voice.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -415,6 +410,7 @@ struct VoiceRecordingView: View {
         .padding(DS.Spacing.md)
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .accessibilityIdentifier("voice_examples")
     }
 
     private func exampleRow(text: String) -> some View {
@@ -645,13 +641,6 @@ struct VoiceRecordingView: View {
     private func startRecording() async {
         errorMessage = nil
         errorType = nil
-
-        // Check for API key first
-        guard APIKeyService.hasOpenAIAPIKey else {
-            errorType = .noApiKey
-            errorMessage = L10n.Voice.errorNoApiKey
-            return
-        }
 
         // Check for network connection
         guard networkMonitor.isConnected else {
@@ -1189,4 +1178,5 @@ struct VoiceRecordingView: View {
 
 #Preview {
     VoiceRecordingView()
+        .previewAppPreferences()
 }

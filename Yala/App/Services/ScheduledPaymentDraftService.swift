@@ -72,7 +72,7 @@ struct ScheduledPaymentDraftService {
             }
 
             // Create draft
-            let draft = createDraft(from: payment)
+            let draft = createDraft(from: payment, context: context)
             context.insert(draft)
             draftsCreated += 1
             hasChanges = true
@@ -108,6 +108,11 @@ struct ScheduledPaymentDraftService {
 
         do {
             let drafts = try context.fetch(descriptor)
+            // Un draft PENDING (cualquier fecha) ya cubre la próxima ocurrencia — no crear otro.
+            // Cubre el draft adelantado (fechado hoy, no en nextDueDate) que de otro modo dejaría
+            // que processDuePayments creara un segundo draft al llegar la fecha → doble cobro.
+            if drafts.contains(where: { $0.statusRaw == "pending" }) { return true }
+            // Los APPROVED se filtran por fecha: uno viejo no debe bloquear una ocurrencia nueva.
             return drafts.contains { draft in
                 guard let draftDate = draft.date else { return false }
                 return calendar.isDate(draftDate, inSameDayAs: date)
@@ -149,7 +154,7 @@ struct ScheduledPaymentDraftService {
     }
 
     /// Create an InboxDraft from a ScheduledPayment
-    private static func createDraft(from payment: ScheduledPayment) -> InboxDraft {
+    private static func createDraft(from payment: ScheduledPayment, context: ModelContext) -> InboxDraft {
         // Determine source type based on payment category
         let sourceType: DraftSourceType = payment.paymentCategory == PaymentCategory.subscription.rawValue
             ? .subscription
@@ -163,13 +168,19 @@ struct ScheduledPaymentDraftService {
             signedAmount = -abs(payment.amount)
         }
 
+        // CSV-mirror SSOT: resolver + TagResolver para evitar lazy hydration race.
+        let draftTags = TagResolver.fetchOrEmpty(
+            ids: payment.resolvedTagIDs(scheduleBackfill: true) ?? [],
+            in: context,
+            errorContext: "ScheduledPaymentDraftService/createDraft"
+        )
         let draft = InboxDraft(
             note: payment.name,
             amount: signedAmount,
             date: payment.nextDueDate,
             account: payment.account,
             subcategory: payment.subcategory,
-            tags: payment.tags ?? [],
+            tags: draftTags,
             sourceType: sourceType,
             rawText: nil,
             evidence: payment.note,
@@ -231,7 +242,7 @@ struct ScheduledPaymentDraftService {
         }
 
         // Create draft with the specific unskipped date (not payment.nextDueDate)
-        let draft = createDraft(from: payment)
+        let draft = createDraft(from: payment, context: context)
         draft.date = targetDate
         context.insert(draft)
     }
@@ -319,14 +330,14 @@ struct ScheduledPaymentDraftService {
         }
 
         // Create draft with today's date
-        let draft = createDraft(from: payment)
+        let draft = createDraft(from: payment, context: context)
         draft.date = Calendar.current.startOfDay(for: Date.now)
         context.insert(draft)
 
-        // Update payment state (caller is responsible for saving)
-        payment.lastPaidDate = Date.now
-        advanceToNextDueDate(payment: payment)
-
+        // Do NOT advance nextDueDate / set lastPaidDate here: same contract as
+        // processDuePayments. The advance happens exactly once when the draft is
+        // approved (handleDraftApproved). Advancing here too would double-advance
+        // and skip an occurrence for an early-paid payment.
         return draft
     }
 

@@ -18,6 +18,7 @@ struct InboxDraftEditSheet: View {
     @Environment(DraftService.self) private var draftService
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @Bindable var draft: InboxDraft
 
@@ -25,6 +26,8 @@ struct InboxDraftEditSheet: View {
     @State private var viewModel = InboxDraftEditViewModel()
 
     // MARK: - State
+
+    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
     @State private var note: String = ""
     @State private var amountString: String = ""
@@ -43,8 +46,6 @@ struct InboxDraftEditSheet: View {
     @State private var showTagSelector = false
     @State private var showDatePicker = false
     @State private var showNeedSelector = false
-
-    @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
     // Focus state
     @FocusState private var isNoteFieldFocused: Bool
@@ -107,8 +108,22 @@ struct InboxDraftEditSheet: View {
         return "\(L10n.Inbox.missingLabel) \(missing.joined(separator: ", "))"
     }
 
-    private var currencyCode: String? {
-        selectedAccount?.currencyCode
+    private var currencySymbol: String? {
+        guard let code = selectedAccount?.currencyCode else { return nil }
+        return appPreferences.currencyIdentifier(for: code)
+    }
+
+    private var amountFontSize: CGFloat {
+        let length = amountString.count
+        let ratio: CGFloat
+        switch length {
+        case 0...7: ratio = 1.0       // 64pt base
+        case 8...9: ratio = 54.0 / 64.0
+        case 10...11: ratio = 46.0 / 64.0
+        case 12...13: ratio = 38.0 / 64.0
+        default: ratio = 32.0 / 64.0
+        }
+        return baseAmountSize * ratio
     }
 
     private var amountColor: Color {
@@ -245,10 +260,6 @@ struct InboxDraftEditSheet: View {
 
     private var mainContent: some View {
         ZStack {
-            theme.background
-                .ignoresSafeArea()
-                .dismissKeyboardOnTap()
-
             VStack(spacing: DS.Spacing.none) {
                 // Transaction type selector (full width, at top)
                 if !sessionState.isExpensesOnlyMode {
@@ -265,7 +276,12 @@ struct InboxDraftEditSheet: View {
                     .padding(.horizontal, DS.Spacing.xl)
                     .padding(.bottom, DS.Spacing.xxl)
             }
+            .dismissKeyboardOnTap()
         }
+        // Sheet full-height (presentado sin detents desde InboxView) → .subtle.
+        // El idiom-aware `usesLargeSheets ? .subtle : .transparent` es solo para
+        // detents parciales; aquí dejaba ver el gris de sistema del sheet en iPhone.
+        .yalaScreenBackground(.subtle)
     }
 
     // MARK: - Transaction Type Selector
@@ -367,7 +383,6 @@ struct InboxDraftEditSheet: View {
 
     private var dateSheet: some View {
         DatePickerSheet(selectedDate: $transactionDate)
-            .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
     }
 
     private var needSheet: some View {
@@ -408,7 +423,7 @@ struct InboxDraftEditSheet: View {
 
             // Note field
             TextField(L10n.Transaction.description, text: $note)
-                .font(DS.Typography.title)
+                .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .textContentType(.none)
@@ -457,10 +472,11 @@ struct InboxDraftEditSheet: View {
 
     private var amountDisplay: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-            if let code = currencyCode {
-                Text(code)
+            if let symbol = currencySymbol {
+                Text(symbol)
                     .font(.system(size: amountFontSize * 0.44, weight: .medium, design: .rounded))
                     .foregroundStyle(amountColor.opacity(0.7))
+                    .contentTransition(.numericText())
             }
 
             TextField("0.00", text: $amountString)
@@ -553,6 +569,9 @@ struct InboxDraftEditSheet: View {
         case .applePay: return L10n.Inbox.sourceApplePay
         case .automation: return L10n.Inbox.sourceAutomation
         case .siri: return L10n.Inbox.sourceSiri
+        case .groupExpense: return L10n.Inbox.sourceGroupExpense
+        case .groupSettlement: return L10n.Inbox.sourceGroupSettlement
+        case .manual: return L10n.Inbox.sourceManual
         }
     }
 
@@ -600,7 +619,7 @@ struct InboxDraftEditSheet: View {
                     }
                 }
             }
-            .padding(.horizontal, DS.Spacing.xl)
+            .padding(.horizontal, DS.Spacing.lg)
         }
     }
 
@@ -698,24 +717,12 @@ struct InboxDraftEditSheet: View {
                     approveDraft()
                 }
                 .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
+                .accessibilityIdentifier("inbox_approve_button")
             }
         }
     }
 
     // MARK: - Helpers
-
-    private var amountFontSize: CGFloat {
-        let length = amountString.count
-        let ratio: CGFloat
-        switch length {
-        case 0...7: ratio = 1.0       // 64pt base
-        case 8...9: ratio = 54.0 / 64.0
-        case 10...11: ratio = 46.0 / 64.0
-        case 12...13: ratio = 38.0 / 64.0
-        default: ratio = 32.0 / 64.0
-        }
-        return baseAmountSize * ratio
-    }
 
     private static let mediumDateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -752,7 +759,12 @@ struct InboxDraftEditSheet: View {
         transactionDate = draft.effectiveDate
         selectedAccount = draft.account
         selectedSubcategory = draft.subcategory
-        selectedTags = draft.tags ?? []
+        // CSV-mirror SSOT via resolver + TagResolver.
+        selectedTags = TagResolver.fetchOrEmpty(
+            ids: draft.resolvedTagIDs(scheduleBackfill: true) ?? [],
+            in: modelContext,
+            errorContext: "InboxDraftEditSheet/prefill"
+        )
 
         if let amt = draft.amount {
             amountString = AmountInputHelper.formatWithGrouping(abs(amt))
@@ -815,7 +827,7 @@ struct InboxDraftEditSheet: View {
         draft.date = transactionDate
         draft.account = selectedAccount
         draft.subcategory = selectedSubcategory
-        draft.tags = selectedTags
+        draft.setTags(from: selectedTags)
 
         draftService.setContext(modelContext)
         do {
@@ -899,7 +911,7 @@ struct InboxDraftEditSheet: View {
         transaction.account = account
         transaction.subcategory = subcategory
         transaction.category = subcategory.safeCategory
-        transaction.tags = selectedTags
+        transaction.setTags(from: selectedTags)
         transaction.exchangeRate = abs(exchangeRate)
         transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
         transaction.preferredCurrencyCode = preferredCode
@@ -917,7 +929,7 @@ struct InboxDraftEditSheet: View {
         draft.date = transactionDate
         draft.account = account
         draft.subcategory = subcategory
-        draft.tags = selectedTags
+        draft.setTags(from: selectedTags)
         draft.status = .approved
         draft.approvedTransaction = transaction
         draft.updatedAt = Date.now
@@ -1008,7 +1020,7 @@ struct InboxDraftEditSheet: View {
         // (so they persist if draft is returned to pending later)
         draft.account = selectedAccount
         draft.subcategory = selectedSubcategory
-        draft.tags = selectedTags
+        draft.setTags(from: selectedTags)
         draft.note = note
         if let amt = amount {
             draft.amount = isExpense ? -abs(amt) : abs(amt)

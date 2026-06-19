@@ -19,11 +19,8 @@ struct BudgetsFavoritesSettingsView: View {
     @State private var viewModel = BudgetsFavoritesSettingsViewModel()
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     if viewModel.isEmpty {
                         emptyState
                     } else {
@@ -49,7 +46,7 @@ struct BudgetsFavoritesSettingsView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.budgets)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
@@ -139,21 +136,13 @@ struct BudgetsFavoritesSettingsView: View {
                 }
             }
             .padding(DS.Spacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(theme.accent.opacity(0.2), lineWidth: 1)
-            )
-            .dsSubtleShadow()
+            .solidCard(radius: DS.Radius.xl)
         }
     }
 
     private func previewBudgetRow(_ budget: Budget) -> some View {
-        let (icon, colorHex) = budget.displayProperties
+        // CSV mirror SSOT con fallback M2M para legacy budgets pre-deploy.
+        let (icon, colorHex) = Budget.computeDisplayProperties(for: budget, in: modelContext)
 
         return HStack(spacing: DS.Spacing.md) {
             // Icon badge (matches BudgetWidgetRow)
@@ -242,23 +231,15 @@ struct BudgetsFavoritesSettingsView: View {
                     }
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
-            .dsSubtleShadow()
+            .solidCard()
         }
     }
 
     // MARK: - Budget Row
 
     private func budgetRow(_ budget: Budget) -> some View {
-        let (icon, colorHex) = budget.displayProperties
+        // CSV mirror SSOT con fallback M2M para legacy budgets pre-deploy.
+        let (icon, colorHex) = Budget.computeDisplayProperties(for: budget, in: modelContext)
 
         return HStack(spacing: DS.Spacing.none) {
             // Tappable area: opens editor
@@ -270,7 +251,7 @@ struct BudgetsFavoritesSettingsView: View {
                     ZStack {
                         Circle()
                             .fill(Color(hex: colorHex).opacity(0.15))
-                            .frame(width: 40, height: 40)
+                            .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
                         Image(systemName: icon)
                             .font(DS.Typography.body)
@@ -304,7 +285,7 @@ struct BudgetsFavoritesSettingsView: View {
                 Image(systemName: budget.isFavorite ? "star.fill" : "star")
                     .font(DS.Typography.body)
                     .foregroundStyle(budget.isFavorite ? DS.Semantic.favoriteIcon : Color.secondary)
-                    .frame(width: 44, height: 44)
+                    .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -316,7 +297,7 @@ struct BudgetsFavoritesSettingsView: View {
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.indicator)
                     .foregroundStyle(.tertiary)
-                    .frame(width: 44, height: 44)
+                    .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -351,7 +332,7 @@ struct BudgetsFavoritesSettingsView: View {
                 ForEach(Array(viewModel.favoriteBudgets.enumerated()), id: \.element.persistentModelID) { index, budget in
                     reorderRow(budget, position: index + 1)
                         .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                        .listRowBackground(theme.card)
+                        .listRowBackground(Color.clear)
                         .listRowSeparator(
                             index == 0 || index == viewModel.favoriteBudgets.count - 1 ? .hidden : .visible,
                             edges: index == 0 ? .top : .bottom
@@ -363,16 +344,7 @@ struct BudgetsFavoritesSettingsView: View {
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
             .frame(height: CGFloat(viewModel.favoriteBudgets.count) * 52)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
-            .dsSubtleShadow()
+            .solidCard()
             .environment(\.editMode, .constant(.active))
         }
     }

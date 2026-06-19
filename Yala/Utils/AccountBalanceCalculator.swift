@@ -36,7 +36,10 @@ struct AccountBalanceCalculator {
         allTransactions: [TransactionItem]
     ) -> Decimal {
         // Filtramos únicamente las transacciones de la cuenta dada.
-        let accountTransactions = allTransactions.filter { $0.account == account }
+        // Usamos `persistentModelID` en lugar de comparar modelos directamente para
+        // evitar inconsistencias entre instancias/caches de SwiftData.
+        let accountID = account.persistentModelID
+        let accountTransactions = allTransactions.filter { $0.account?.persistentModelID == accountID }
 
         // Partimos de 0 - el saldo inicial es ahora una transacción.
         return currentBalance(transactions: accountTransactions)

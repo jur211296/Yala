@@ -21,6 +21,8 @@ struct PanelSheetsModifier: ViewModifier {
     /// Read lazily inside sheet closures — NOT during body evaluation.
     @Environment(SessionState.self) private var sessionState
 
+    @Environment(AppPreferences.self) private var appPreferences
+
     @State private var showPracticeAlert = false
 
     /// Deferred practice data — stored during callback, consumed in onDismiss.
@@ -55,23 +57,16 @@ struct PanelSheetsModifier: ViewModifier {
             .sheet(isPresented: $sheets.isPresentingSettings, onDismiss: {
                 viewModel.reloadAndRecalculate()
             }) {
-                ProfileView(initialDestination: SessionState.shared.pendingProfileDestination)
+                ProfileView()
             }
-            .sheet(isPresented: $sheets.showWidgetPreferences, onDismiss: {
-                viewModel.endWidgetPreferencesEditing()
-                viewModel.reloadAndRecalculate()
-            }) {
-                WidgetPreferencesView(viewModel: viewModel)
-                    .presentationDragIndicator(.visible)
-                    // Deferred: mutating @Observable in .onAppear during sheet transition
-                    // causes an infinite layoutBelowIfNeeded loop (watchdog 0x8BADF00D).
-                    // The delay lets the transition finish; .task auto-cancels on dismiss.
-                    .task {
-                        do {
-                            try await Task.sleep(for: .milliseconds(500))
-                            viewModel.beginWidgetPreferencesEditing()
-                        } catch {}
-                    }
+            .sheet(isPresented: $sheets.showSectionsConfig) {
+                PanelSectionsConfigView()
+            }
+            .sheet(item: $sheets.sectionPrefsPresentation) { kind in
+                // Detents + drag indicator are declared inside the sheet so it
+                // can observe the current detent and adapt its background
+                // (glass material for medium, themed for large).
+                PanelSectionPreferencesSheet(kind: kind, viewModel: viewModel)
             }
             .sheet(isPresented: $sheets.showNewTransaction, onDismiss: {
                 viewModel.reloadAndRecalculate()
@@ -85,6 +80,21 @@ struct PanelSheetsModifier: ViewModifier {
                     prefillSubcategoryName: subcategoryName
                 )
                 .presentationDetents([.large])
+            }
+            .sheet(
+                isPresented: Binding(
+                    get: { sessionState.showNewTransactionFromChat },
+                    set: { newValue in
+                        sessionState.showNewTransactionFromChat = newValue
+                        if !newValue { sessionState.pendingChatDraftPrefill = nil }
+                    }
+                ),
+                onDismiss: { viewModel.reloadAndRecalculate() }
+            ) {
+                if let prefill = sessionState.pendingChatDraftPrefill {
+                    NewTransactionView(prefillFromChatDraft: prefill)
+                        .presentationDetents([.large])
+                }
             }
             .sheet(isPresented: $sheets.showVoiceRecording, onDismiss: {
                 handleVoiceRecordingDismiss()
@@ -139,11 +149,13 @@ struct PanelSheetsModifier: ViewModifier {
                 }
             }
             .sheet(isPresented: $sheets.showInbox, onDismiss: {
+                SessionState.shared.isInboxSheetVisible = false
                 viewModel.reloadAndRecalculate()
             }) {
                 InboxView(onNavigateToRecords: {
                     viewModel.navigateToStatistics(.records)
                 })
+                .onAppear { SessionState.shared.isInboxSheetVisible = true }
             }
             .sheet(isPresented: $sheets.showUpgradeForVoice) {
                 UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
@@ -153,6 +165,30 @@ struct PanelSheetsModifier: ViewModifier {
             }
             .sheet(isPresented: $sheets.showUpgradeForAccounts) {
                 UpgradePromptSheet(feature: .accounts, context: .limitReached)
+            }
+            .sheet(isPresented: $sheets.showChatSheet) {
+                ChatSheetView()
+            }
+            .yalaAIOnboardingSheet(
+                isPresented: $sheets.showYalaAIOnboarding,
+                pendingOpenChat: $sheets.pendingOpenChatAfterOnboarding,
+                showChatSheet: $sheets.showChatSheet,
+                launcher: .panel,
+                onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
+            )
+            .sheet(isPresented: $sheets.showUpgradeForChat) {
+                UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
+            }
+            .chatConsentAlert(isPresented: $sheets.showChatConsentAlert) {
+                // Consent recién aceptado por el alert. Decidimos siguiente paso vía pure-logic.
+                switch YalaAIOnboardingLogic.nextScreen(
+                    consentAccepted: true,
+                    onboardingShown: appPreferences.hasShownYalaAIOnboarding
+                ) {
+                case .onboarding: sheets.showYalaAIOnboarding = true
+                case .chat:       sheets.showChatSheet = true
+                case .consent:    break  // imposible: consent acaba de aceptarse
+                }
             }
             .aiConsentAlert(isPresented: $sheets.showAIConsentAlert, pendingInput: $sheets.pendingAIInput) { input in
                 switch input {
@@ -241,7 +277,5 @@ struct PanelSheetsModifier: ViewModifier {
         }
 
         viewModel.reloadAndRecalculate()
-
-        AppBootstrapper.shared.showDeferredActionsIfNeeded()
     }
 }

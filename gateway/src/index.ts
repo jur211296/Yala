@@ -1,0 +1,44 @@
+import { Hono } from "hono";
+import type { Env } from "./env";
+import { jsonError } from "./errors";
+import { handleAssert, handleChallenge, handleDevToken, handleRegister } from "./attest/routes";
+import { handleAudioTranscriptions, handleChatCompletions } from "./proxy/openai";
+import { handleRatesLive, handleRatesTimeframe } from "./proxy/rates";
+import { handleAppStoreWebhook } from "./proxy/webhook";
+
+/**
+ * Yala Gateway — entrada del Worker.
+ *
+ * Superficie OpenAI-compatible (/v1/*) para que el SDK MacPaw apunte aquí cambiando host/basePath.
+ * Las API keys reales se inyectan server-side; nunca viajan al cliente. NO se loguean bodies.
+ *
+ * Estado: scaffold (task #1). Los handlers reales llegan en tasks #2-#5; hoy responden 501
+ * con envelope OpenAI-compatible para que el contrato de errores sea testeable end-to-end.
+ */
+const app = new Hono<{ Bindings: Env }>();
+
+app.get("/healthz", (c) =>
+  c.json({ ok: true, environment: c.env.ENVIRONMENT ?? "unknown", enforce: c.env.ENFORCE ?? "observe" }),
+);
+
+// --- App Attest (task #2) ---
+app.post("/v1/attest/challenge", handleChallenge);
+app.post("/v1/attest/register", handleRegister);
+app.post("/v1/attest/assert", handleAssert);
+app.post("/v1/attest/dev", handleDevToken); // bypass dev/test (solo staging + DEV_SHARED_SECRET)
+
+// --- Proxy OpenAI (task #5): chat + vision + transcripción ---
+app.post("/v1/chat/completions", handleChatCompletions);
+app.post("/v1/audio/transcriptions", handleAudioTranscriptions);
+
+// --- Tasas de cambio (task #5): exchangerate.host con key server-side + Cache API ---
+app.get("/rates/live", handleRatesLive);
+app.get("/rates/timeframe", handleRatesTimeframe);
+
+// --- App Store Server Notifications V2 (task #5) ---
+app.post("/webhooks/appstore", handleAppStoreWebhook);
+
+app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
+
+export default app;
+export { RateLimiter } from "./rate_limiter";

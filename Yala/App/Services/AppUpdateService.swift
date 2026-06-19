@@ -114,6 +114,18 @@ final class AppUpdateService {
         dismissedInSession = true
     }
 
+    #if DEBUG
+    /// UI tests: fuerza el estado "hay update disponible" sin tocar la red,
+    /// para testear el UpdateAvailableBanner de forma determinista. La detección
+    /// real (URLSession a iTunes) queda fuera del XCUITest.
+    func forceUpdateAvailableForUITest() {
+        latestVersion = "99.0.0"
+        appStoreURL = URL(string: "https://apps.apple.com/app/idyala")
+        isUpdateAvailable = true
+        dismissedInSession = false
+    }
+    #endif
+
     // MARK: - Private
 
     private func loadCachedState() {

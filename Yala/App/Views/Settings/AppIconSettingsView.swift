@@ -79,11 +79,8 @@ struct AppIconSettingsView: View {
     ]
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "app.fill")
@@ -115,7 +112,7 @@ struct AppIconSettingsView: View {
                 }
                 .padding()
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.appIconTitle)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
@@ -215,13 +212,11 @@ struct AppIconSettingsView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.lg)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(
-                        isSelected ? Color.brandPrimary.opacity(0.3) : Color.primary.opacity(0.05),
-                        lineWidth: 1)
+            .selectableCard(
+                isSelected: isSelected,
+                radius: DS.Radius.lg,
+                activeColor: Color.brandPrimary.opacity(0.3),
+                inactiveColor: Color.primary.opacity(0.05)
             )
         }
         .buttonStyle(.plain)

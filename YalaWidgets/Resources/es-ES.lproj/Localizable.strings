@@ -1,0 +1,145 @@
+/* es-ES.lproj/Localizable.strings — YalaWidgets
+ * Materializa TODAS las keys del padre (es-419): iOS no hace fallback per-key
+ * cuando la variante es el idioma del sistema — un .lproj sparse muestra keys
+ * crudas en los widgets. Overrides peninsulares: editar el valor in-place.
+ */
+
+// MARK: - Gallery (nombres y descripciones en galería de widgets)
+"widget.gallery.scheduledPayments" = "Próximos pagos";
+"widget.gallery.scheduledPayments.desc" = "Tus próximos pagos y suscripciones";
+"widget.gallery.quickManual" = "Nuevo registro";
+"widget.gallery.quickManual.desc" = "Registra un gasto o ingreso manualmente";
+"widget.gallery.quickVoice" = "Registro por voz";
+"widget.gallery.quickVoice.desc" = "Dicta tu gasto o ingreso";
+"widget.gallery.quickImage" = "Escanear recibo";
+"widget.gallery.quickImage.desc" = "Registra desde una foto o recibo";
+"widget.gallery.cashFlow" = "Flujo de dinero";
+"widget.gallery.cashFlow.desc" = "Tu flujo de dinero neto";
+"widget.gallery.balance" = "Balance";
+"widget.gallery.balance.desc" = "Tu balance total con tendencia";
+"widget.gallery.budgets" = "Presupuestos";
+"widget.gallery.budgets.desc" = "Progreso de tus presupuestos";
+"widget.gallery.latestRecords" = "Últimos registros";
+"widget.gallery.latestRecords.desc" = "Tus transacciones más recientes";
+"widget.gallery.expense" = "Gastos";
+"widget.gallery.expense.desc" = "Tus gastos totales del período";
+"widget.gallery.categoriesPie" = "Categorías (Pie)";
+"widget.gallery.categoriesPie.desc" = "Distribución de gastos por categoría";
+"widget.gallery.subcategoriesPie" = "Subcategorías (Pie)";
+"widget.gallery.subcategoriesPie.desc" = "Distribución de gastos por subcategoría";
+"widget.gallery.topCategories" = "Top Categorías";
+"widget.gallery.topCategories.desc" = "Tus categorías con más gastos";
+"widget.gallery.topSubcategories" = "Top Subcategorías";
+"widget.gallery.topSubcategories.desc" = "Tus subcategorías con más gastos";
+
+// MARK: - Gallery (Lock Screen accessory widgets)
+"widget.gallery.accessoryBalance" = "Balance";
+"widget.gallery.accessoryBalance.desc" = "Tu saldo en pantalla de bloqueo";
+"widget.gallery.accessoryExpense" = "Gastos";
+"widget.gallery.accessoryExpense.desc" = "Tus gastos en pantalla de bloqueo";
+"widget.gallery.accessoryBudget" = "Presupuesto";
+"widget.gallery.accessoryBudget.desc" = "Tu presupuesto más usado";
+"widget.gallery.accessoryPayment" = "Próximo pago";
+"widget.gallery.accessoryPayment.desc" = "Tu próximo pago planificado";
+
+// MARK: - Intent titles and descriptions
+"widget.intent.cashFlow.title" = "Flujo de dinero";
+"widget.intent.cashFlow.desc" = "Muestra tu flujo de dinero neto";
+"widget.intent.balance.title" = "Balance";
+"widget.intent.balance.desc" = "Muestra tu balance total";
+"widget.intent.expense.title" = "Gastos";
+"widget.intent.expense.desc" = "Muestra tus gastos totales";
+"widget.intent.categoriesPie.title" = "Categorías (Pie)";
+"widget.intent.categoriesPie.desc" = "Distribución de gastos por categoría";
+"widget.intent.subcategoriesPie.title" = "Subcategorías (Pie)";
+"widget.intent.subcategoriesPie.desc" = "Distribución de gastos por subcategoría";
+"widget.intent.topCategories.title" = "Top Categorías";
+"widget.intent.topCategories.desc" = "Muestra tus categorías con más gastos";
+"widget.intent.topSubcategories.title" = "Top Subcategorías";
+"widget.intent.topSubcategories.desc" = "Muestra tus subcategorías con más gastos";
+"widget.intent.budgets.title" = "Presupuestos";
+"widget.intent.budgets.desc" = "Muestra el progreso de tus presupuestos";
+"widget.intent.scheduledPayments.title" = "Próximos pagos";
+"widget.intent.scheduledPayments.desc" = "Muestra tus próximos pagos planificados";
+"widget.intent.latestRecords.title" = "Últimos registros";
+"widget.intent.latestRecords.desc" = "Muestra tus transacciones más recientes";
+"widget.intent.accessoryBalance.title" = "Balance";
+"widget.intent.accessoryBalance.desc" = "Saldo del periodo";
+"widget.intent.accessoryExpense.title" = "Gastos";
+"widget.intent.accessoryExpense.desc" = "Gastos del periodo";
+"widget.intent.accessoryBudget.title" = "Presupuesto";
+"widget.intent.accessoryBudget.desc" = "Presupuesto más usado";
+"widget.intent.accessoryPayment.title" = "Próximo pago";
+"widget.intent.accessoryPayment.desc" = "Próximo pago planificado";
+"widget.intent.quickEntry.title" = "Registro rápido";
+"widget.intent.quickEntry.desc" = "Configura widgets de acción rápida para añadir registros";
+
+// MARK: - Selection Mode
+"widget.selection.mode.type" = "Mostrar";
+"widget.selection.automatic" = "Automático";
+"widget.selection.custom" = "Personalizado";
+
+// MARK: - Selection Parameters
+"widget.select.budgets" = "Presupuestos";
+"widget.select.payments" = "Pagos";
+
+// MARK: - Entities
+"widget.entity.budget" = "Presupuesto";
+"widget.entity.payment" = "Pago planificado";
+
+// MARK: - UI (textos en vistas de widgets)
+"widget.ui.noPayments" = "Sin pagos pendientes";
+"widget.ui.noBudgets" = "Sin presupuestos";
+"widget.ui.noRecords" = "Sin registros";
+"widget.ui.noExpenses" = "Sin gastos";
+"widget.ui.noData" = "Sin datos";
+"widget.ui.notEnoughData" = "Sin datos suficientes";
+"widget.ui.income" = "Ingresos";
+"widget.ui.expenses" = "Gastos";
+"widget.ui.balance" = "Balance";
+"widget.ui.netFlow" = "Flujo neto";
+"widget.ui.cashFlow" = "Flujo de dinero";
+"widget.ui.total" = "Total";
+"widget.ui.ofLimit" = "de %@";
+"widget.ui.newRecord" = "Registro rápido";
+"widget.ui.voiceRecord" = "Registro por voz";
+"widget.ui.scanReceipt" = "Registro por imagen";
+"widget.ui.upcomingPayments" = "Próximos pagos";
+"widget.ui.budgets" = "Presupuestos";
+"widget.ui.latestRecords" = "Últimos registros";
+"widget.ui.categories" = "Categorías";
+"widget.ui.subcategories" = "Subcategorías";
+"widget.ui.topCategories" = "Top Categorías";
+"widget.ui.topSubcategories" = "Top Subcategorías";
+"widget.ui.noNote" = "Sin nota";
+
+// MARK: - Date labels
+"widget.ui.overdue" = "Vencido";
+"widget.ui.today" = "Hoy";
+"widget.ui.tomorrow" = "Mañana";
+
+// MARK: - Period (selector de período)
+"widget.period.type" = "Período";
+"widget.period.sameAsApp" = "Mismo que en la app";
+"widget.period.thisWeek" = "Esta semana";
+"widget.period.last7Days" = "Últimos 7 días";
+"widget.period.last30Days" = "Últimos 30 días";
+"widget.period.thisMonth" = "Este mes";
+"widget.period.lastMonth" = "Mes pasado";
+"widget.period.thisYear" = "Este año";
+"widget.period.lastYear" = "Año pasado";
+"widget.period.allTime" = "Todo el tiempo";
+
+// MARK: - Payment Category
+"widget.paymentCategory.all" = "Todos";
+"widget.paymentCategory.recurring" = "Planificados";
+"widget.paymentCategory.subscription" = "Suscripciones";
+
+// MARK: - Control Widgets
+"widget.control.voiceExpense" = "Registro por voz";
+"widget.control.voiceExpense.desc" = "Dicta tu registro a Yala";
+"widget.control.photoExpense" = "Registro por imagen";
+"widget.control.photoExpense.desc" = "Registra con una imagen en Yala";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"widget.ui.others" = "Otros";

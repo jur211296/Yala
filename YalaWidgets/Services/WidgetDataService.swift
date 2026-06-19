@@ -20,6 +20,7 @@ struct WidgetTransaction: Codable {
     let categoryName: String?
     let categoryColor: String?
     let categoryIcon: String?
+    let subcategoryIcon: String?
     let subcategoryName: String?
     let isIncome: Bool
     let amountInPreferredCurrency: Double

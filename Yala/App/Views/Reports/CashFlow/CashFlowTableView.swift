@@ -20,7 +20,7 @@ struct CashFlowTableView: View {
     let currencyCode: String
 
     // Tour
-    @AppStorage("hasSeenCashFlowTableTour") private var hasSeenTour = false
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var showTour = false
     @State private var tourIndex = 0
     @State private var scrollProxy: ScrollViewProxy?
@@ -38,7 +38,8 @@ struct CashFlowTableView: View {
                         CashFlowMonthStrip(
                             months: projection.months,
                             selectedMonthKey: $viewModel.selectedMonthKey,
-                            currencyCode: currencyCode
+                            currencyCode: currencyCode,
+                            showAccumulatedBalance: viewModel.plan?.showAccumulatedBalance ?? true
                         )
 
                         // Month detail for selected month
@@ -76,7 +77,7 @@ struct CashFlowTableView: View {
             currentIndex: $tourIndex,
             scrollProxy: scrollProxy
         ) {
-            hasSeenTour = true
+            appPreferences.hasSeenCashFlowTableTour = true
         }
         .onAppear {
             recalculate()
@@ -87,7 +88,7 @@ struct CashFlowTableView: View {
             } catch {
                 return
             }
-            if viewModel.projection != nil && !hasSeenTour {
+            if viewModel.projection != nil && !appPreferences.hasSeenCashFlowTableTour {
                 showTour = true
             }
         }
@@ -211,6 +212,7 @@ private struct EditStartingBalanceSheet: View {
                 }
             }
             .padding(DS.Spacing.xl)
+            .dismissKeyboardOnTap()
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {

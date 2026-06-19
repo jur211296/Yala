@@ -3,17 +3,11 @@ import UniformTypeIdentifiers
 
 class ShareViewController: UIViewController {
 
-    /// App Group identifier read from Info.plist (set via Build Settings)
-    private var appGroupIdentifier: String {
-        Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String
-            ?? "group.com.jurgenschmidt.yala"
-    }
+    /// App Group identifier from shared helper.
+    private var appGroupIdentifier: String { WidgetURLHelper.appGroupIdentifier }
 
-    /// URL Scheme read from Info.plist (set via Build Settings)
-    private var urlScheme: String {
-        Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String
-            ?? "yala"
-    }
+    /// URL Scheme from shared helper.
+    private var urlScheme: String { WidgetURLHelper.urlScheme }
 
     override func viewDidLoad() {
         super.viewDidLoad()

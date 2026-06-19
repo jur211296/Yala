@@ -9,12 +9,17 @@ import SwiftUI
 
 // MARK: - Model
 
-struct WhatsNewFeature: Identifiable {
+struct WhatsNewFeature: Identifiable, Equatable {
     let id = UUID()
     let icon: String
     let iconColor: Color
     let title: String
     let description: String
+
+    // Identity for `.presentWhatsNew` intent dedup uses stable fields, not the UUID.
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.icon == rhs.icon && lhs.title == rhs.title && lhs.description == rhs.description
+    }
 }
 
 // MARK: - WhatsNewSheet
@@ -70,7 +75,7 @@ struct WhatsNewSheet: View {
             .padding(.bottom, DS.Spacing.xl)
             .padding(.top, DS.Spacing.md)
         }
-        .background(theme.background.ignoresSafeArea())
+        .yalaScreenBackground(.subtle)
         .presentationDetents([.large])
         .interactiveDismissDisabled()
         .onAppear {
@@ -104,7 +109,7 @@ struct WhatsNewSheet: View {
             Image(systemName: feature.icon)
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
+                .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                 .background(Circle().fill(feature.iconColor))
 
             VStack(alignment: .leading, spacing: DS.Spacing.xs) {

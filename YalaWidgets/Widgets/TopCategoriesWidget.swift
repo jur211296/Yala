@@ -179,9 +179,14 @@ struct CategoryRow: View {
                 Spacer()
 
                 // Amount
-                Text(formattedAmount)
-                    .font(WDS.Typography.value)
-                    .foregroundStyle(.secondary)
+                WidgetAmountText(
+                    value: category.amount,
+                    currencyCode: currencyCode,
+                    displayFormat: displayFormat,
+                    font: WDS.Typography.value,
+                    secondaryFont: WDS.Typography.valueSecondary,
+                    tint: .secondary
+                )
 
                 // Percentage inline
                 Text("\(Int(category.percentage))%")
@@ -212,18 +217,6 @@ struct CategoryRow: View {
         Color(hex: category.colorHex)
     }
 
-    private var formattedAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-
-        let formatted = formatter.string(from: NSNumber(value: category.amount)) ?? "0"
-        let currency = displayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: currencyCode)
-            : currencyCode
-
-        return "\(currency) \(formatted)"
-    }
 }
 
 // MARK: - Widget Definition

@@ -332,6 +332,213 @@ struct TrendDataProcessorTests {
         }
     }
 
+    // MARK: - processTrendData: liveBalanceOverride / liveAnchor
+
+    @Test func processTrendData_withLiveBalanceOverride_returnsLiveAnchor() {
+        // Curva histórica conserva sus puntos sin override; el saldo vivo se
+        // expone como liveAnchor separado. finalBalance refleja el saldo vivo
+        // (KPI bajo el chart sigue correcto).
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let day1 = today
+        let day2 = calendar.date(byAdding: .day, value: 1, to: today)!
+        let endDate = calendar.date(byAdding: .day, value: 2, to: today)!
+        let interval = DateInterval(start: day1, end: endDate)
+
+        let tx1 = makeTransaction(amount: 100, amountInPreferred: 100, date: day1)
+        let tx2 = makeTransaction(amount: -30, amountInPreferred: -30, date: day2)
+
+        let liveBalance = 9999.0
+        let result = TrendDataProcessor.processTrendData(
+            transactions: [tx1, tx2],
+            accounts: [],
+            metric: .balance,
+            period: .thisMonth,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN",
+            liveBalanceOverride: .init(value: liveBalance, nativeBalances: [:])
+        )
+
+        #expect(result.liveAnchor != nil)
+        #expect(result.liveAnchor?.value == liveBalance)
+        // rawPoints/chartPoints sin override: la curva queda histórica.
+        if let lastRaw = result.rawPoints.last {
+            #expect(lastRaw.value == 70)  // running balance histórico (100 - 30)
+        }
+        if let lastChart = result.points.last {
+            #expect(lastChart.value == 70)
+        }
+        // finalBalance ahora deriva del liveAnchor para el KPI.
+        #expect(result.finalBalance == liveBalance)
+    }
+
+    @Test func processTrendData_withoutOverride_returnsNilLiveAnchor() {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let interval = DateInterval(
+            start: today,
+            end: calendar.date(byAdding: .day, value: 1, to: today)!
+        )
+        let tx = makeTransaction(amount: 100, amountInPreferred: 100, date: today)
+
+        let result = TrendDataProcessor.processTrendData(
+            transactions: [tx],
+            accounts: [],
+            metric: .balance,
+            period: .thisMonth,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN",
+            liveBalanceOverride: nil
+        )
+        #expect(result.liveAnchor == nil)
+        #expect(result.finalBalance == 100)  // último histórico
+    }
+
+    @Test func processTrendData_liveAnchorAboveYDomain_expandsDomainUpper() {
+        // Si el saldo vivo está MUY por encima del rango histórico, el yDomain
+        // se extiende para incluirlo (sino el dot quedaría clipped).
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let interval = DateInterval(
+            start: today,
+            end: calendar.date(byAdding: .day, value: 1, to: today)!
+        )
+        let tx = makeTransaction(amount: 100, amountInPreferred: 100, date: today)
+
+        let liveBalance = 5000.0
+        let result = TrendDataProcessor.processTrendData(
+            transactions: [tx],
+            accounts: [],
+            metric: .balance,
+            period: .thisMonth,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN",
+            liveBalanceOverride: .init(value: liveBalance, nativeBalances: [:])
+        )
+        #expect(result.yDomain.upperBound >= liveBalance)
+    }
+
+    @Test func processTrendData_liveAnchorBelowYDomain_expandsDomainLower() {
+        // Caso simétrico: liveBalance negativo muy por debajo del rango.
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let interval = DateInterval(
+            start: today,
+            end: calendar.date(byAdding: .day, value: 1, to: today)!
+        )
+        let tx = makeTransaction(amount: 100, amountInPreferred: 100, date: today)
+
+        let liveBalance = -2000.0
+        let result = TrendDataProcessor.processTrendData(
+            transactions: [tx],
+            accounts: [],
+            metric: .balance,
+            period: .thisMonth,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN",
+            liveBalanceOverride: .init(value: liveBalance, nativeBalances: [:])
+        )
+        #expect(result.yDomain.lowerBound <= liveBalance)
+    }
+
+    @Test func processTrendData_liveAnchor_dateIsStartOfToday() {
+        // El liveAnchor.date es startOfDay(Date.now): estabilizado para que
+        // PanelTrendData Equatable mantenga su cache entre renders (Date.now
+        // a microsegundos invalidaría la struct cada vez).
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let interval = DateInterval(
+            start: today,
+            end: calendar.date(byAdding: .day, value: 1, to: today)!
+        )
+        let tx = makeTransaction(amount: 100, amountInPreferred: 100, date: today)
+
+        let result = TrendDataProcessor.processTrendData(
+            transactions: [tx],
+            accounts: [],
+            metric: .balance,
+            period: .thisMonth,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN",
+            liveBalanceOverride: .init(value: 500, nativeBalances: [:])
+        )
+        let expectedDate = calendar.startOfDay(for: Date.now)
+        #expect(result.liveAnchor?.date == expectedDate)
+    }
+
+    @Test func processTrendData_liveAnchor_dateIsStableAcrossCalls() {
+        // Dos llamadas consecutivas con el mismo input deben producir el mismo
+        // liveAnchor.date — invariante necesaria para que el guard
+        // `if result.liveAnchor != trendLiveAnchor` filtre no-ops.
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let interval = DateInterval(
+            start: today,
+            end: calendar.date(byAdding: .day, value: 1, to: today)!
+        )
+        let tx = makeTransaction(amount: 100, amountInPreferred: 100, date: today)
+
+        let r1 = TrendDataProcessor.processTrendData(
+            transactions: [tx], accounts: [], metric: .balance,
+            period: .thisMonth, grouping: .day, interval: interval,
+            currencyCode: "PEN", liveBalanceOverride: .init(value: 500, nativeBalances: [:])
+        )
+        let r2 = TrendDataProcessor.processTrendData(
+            transactions: [tx], accounts: [], metric: .balance,
+            period: .thisMonth, grouping: .day, interval: interval,
+            currencyCode: "PEN", liveBalanceOverride: .init(value: 500, nativeBalances: [:])
+        )
+        #expect(r1.liveAnchor == r2.liveAnchor)
+    }
+
+    @Test func processTrendData_emptyRawPoints_noLiveAnchor() {
+        // Sin transacciones, no hay liveAnchor aunque se pase override —
+        // construir el dot sin curva histórica de fondo no aporta señal.
+        let interval = DateInterval(
+            start: Date().addingTimeInterval(-86400),
+            end: Date()
+        )
+        let result = TrendDataProcessor.processTrendData(
+            transactions: [],
+            accounts: [],
+            metric: .balance,
+            period: .last7Days,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN",
+            liveBalanceOverride: .init(value: 1000, nativeBalances: [:])
+        )
+        #expect(result.liveAnchor == nil)
+    }
+
+    @Test func processTrendData_incomeMetric_ignoresOverride() {
+        // El liveAnchor solo aplica a métrica .balance — income/expense lo ignoran.
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let interval = DateInterval(
+            start: today,
+            end: calendar.date(byAdding: .day, value: 1, to: today)!
+        )
+        let tx = makeTransaction(amount: 100, amountInPreferred: 100, date: today)
+
+        let result = TrendDataProcessor.processTrendData(
+            transactions: [tx],
+            accounts: [],
+            metric: .income,
+            period: .thisMonth,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN",
+            liveBalanceOverride: .init(value: 9999, nativeBalances: [:])
+        )
+        #expect(result.liveAnchor == nil)
+    }
+
     // MARK: - Helper
 
     private func makeTransaction(

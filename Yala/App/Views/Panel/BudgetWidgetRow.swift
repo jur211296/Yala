@@ -11,6 +11,8 @@ struct BudgetWidgetRow: View {
     let summary: BudgetSummary
     let currencyCode: String
 
+    @Environment(AppPreferences.self) private var appPreferences
+
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
             // Icon badge
@@ -35,9 +37,12 @@ struct BudgetWidgetRow: View {
 
                     Spacer()
 
-                    Text(formattedSpent)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
+                    AmountText(
+                        value: summary.spent,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
+                        tint: summary.status == .exceeded ? .color(Color.hotPink) : .primary
+                    )
                 }
 
                 // Status info
@@ -75,12 +80,12 @@ struct BudgetWidgetRow: View {
     // MARK: - Formatters
 
     private var formattedSpent: String {
-        YalaFormatter.currency(value: summary.spent, currencyCode: currencyCode)
+        appPreferences.currency(summary.spent, currencyCode: currencyCode)
     }
 
     private var formattedLimit: String {
         String(format: NSLocalizedString("budgets.amount.of", comment: ""),
-               YalaFormatter.currency(value: summary.budget.limitAmount, currencyCode: currencyCode))
+               appPreferences.currency(summary.budget.limitAmount, currencyCode: currencyCode))
     }
 
     private var percentText: String {

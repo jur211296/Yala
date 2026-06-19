@@ -13,6 +13,7 @@ struct ScheduledPaymentDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     let payment: ScheduledPayment
@@ -22,6 +23,7 @@ struct ScheduledPaymentDetailView: View {
     @State private var showAssociationSheet = false
     @State private var showOccurrenceActions = false
     @State private var selectedOccurrenceDate: Date?
+    @State private var associationReferenceDate: Date?
     @State private var linkedTransactions: [TransactionItem] = []
     @State private var editingTransaction: TransactionItem?
     @State private var advancedDraft: InboxDraft?
@@ -72,11 +74,8 @@ struct ScheduledPaymentDetailView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Summary Card
                     summaryCard
 
@@ -93,10 +92,10 @@ struct ScheduledPaymentDetailView: View {
                     // Info note
                     infoNote
                 }
-                .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
-        }
+            .scrollViewGlassEdges()
+        .yalaScreenBackground(.panel)
         .navigationTitle(payment.name)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
@@ -121,10 +120,9 @@ struct ScheduledPaymentDetailView: View {
         .sheet(isPresented: $showAssociationSheet) {
             TransactionAssociationSheet(
                 payment: payment,
-                selectedMonth: viewModel.selectedMonth,
+                referenceDate: associationReferenceDate ?? viewModel.selectedMonth,
                 viewModel: viewModel
             )
-            .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
             .onDisappear(perform: refreshPaymentData)
         }
         .sheet(item: $editingTransaction) { transaction in
@@ -159,7 +157,7 @@ struct ScheduledPaymentDetailView: View {
                     .foregroundStyle(.secondary)
 
                 Text(formatAmount(payment.amount, isEstimate: payment.isVariableAmount))
-                    .font(.system(size: scaledAmountSize, weight: .bold))
+                    .font(DS.Typography.largeTitle)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     .foregroundStyle(payment.transactionType == "income" ? Color.electricIndigo : .primary)
 
@@ -237,14 +235,7 @@ struct ScheduledPaymentDetailView: View {
             }
         }
         .padding(DS.Spacing.xl)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(.thCard)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-        )
+        .solidCard(padding: 0, radius: DS.Panel.widgetRadius)
     }
 
     private func detailRow(icon: String, label: String, value: String) -> some View {
@@ -276,7 +267,7 @@ struct ScheduledPaymentDetailView: View {
                     .foregroundStyle(.thAccent)
                     .accessibilityHidden(true)
                 Text(L10n.Scheduled.Detail.upcoming)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
             }
             .padding(.leading, DS.Spacing.xs)
@@ -290,14 +281,7 @@ struct ScheduledPaymentDetailView: View {
                     }
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
+            .panelCard()
         }
     }
 
@@ -310,7 +294,7 @@ struct ScheduledPaymentDetailView: View {
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
                 Text(L10n.Scheduled.Detail.history)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
             }
             .padding(.leading, DS.Spacing.xs)
@@ -324,14 +308,7 @@ struct ScheduledPaymentDetailView: View {
                     }
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
+            .panelCard()
         }
     }
 
@@ -360,7 +337,7 @@ struct ScheduledPaymentDetailView: View {
                 // Date indicator
                 VStack(spacing: DS.Spacing.xxs) {
                     Text(dayOfMonth(date))
-                        .font(.title3.weight(.bold))
+                        .font(DS.Typography.title3.weight(.bold))
                         .foregroundStyle(isSkipped || isPast ? .secondary : .primary)
                     Text(monthAbbrev(date))
                         .font(DS.Typography.captionSmall)
@@ -426,6 +403,7 @@ struct ScheduledPaymentDetailView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("scheduled_occurrence")
         .opacity(isSkipped ? 0.6 : 1.0)
         .confirmationDialog(
             formatFullDate(date),
@@ -449,6 +427,7 @@ struct ScheduledPaymentDetailView: View {
                 Button(L10n.Scheduled.Detail.skipUndo) {
                     viewModel.unskipOccurrence(payment: payment, date: date)
                 }
+                .accessibilityIdentifier("scheduled_unskip_button")
             } else {
                 // "Adelantar gasto" for upcoming (not past) occurrences
                 if !isPast {
@@ -464,6 +443,7 @@ struct ScheduledPaymentDetailView: View {
                     }
                 }
                 Button {
+                    associationReferenceDate = date
                     showAssociationSheet = true
                 } label: {
                     Label(L10n.Scheduled.Detail.associateTitle, systemImage: "link.badge.plus")
@@ -471,6 +451,7 @@ struct ScheduledPaymentDetailView: View {
                 Button(L10n.Scheduled.Detail.skip, role: .destructive) {
                     viewModel.skipOccurrence(payment: payment, date: date)
                 }
+                .accessibilityIdentifier("scheduled_skip_button")
             }
         }
     }
@@ -478,8 +459,7 @@ struct ScheduledPaymentDetailView: View {
     /// Refresh linked transactions and recalculate payment data after sheet dismissal
     private func refreshPaymentData() {
         linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
-        viewModel.loadPayments()
-        viewModel.calculatePaymentData(payments: viewModel.allPayments)
+        viewModel.reloadAndRecalculate()
     }
 
     /// Unlink transactions associated with this payment for a specific date
@@ -545,7 +525,7 @@ struct ScheduledPaymentDetailView: View {
     }
 
     private func formatAmount(_ amount: Double, isEstimate: Bool = false) -> String {
-        YalaFormatter.currency(value: amount, currencyCode: payment.currencyCode, forceFullPrecision: true, isEstimate: isEstimate)
+        appPreferences.currency(amount, currencyCode: payment.currencyCode, forceFullPrecision: true, isEstimate: isEstimate)
     }
 
     private static let mediumDateFormatter: DateFormatter = {

@@ -71,12 +71,8 @@ struct NotificationEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-                    .dismissKeyboardOnTap()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
                         // Icon preview (tappable for custom notifications)
                         iconPreview
 
@@ -106,17 +102,18 @@ struct NotificationEditorSheet: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
-                }
-                .scrollDismissesKeyboard(.interactively)
-                .sheet(isPresented: $showingIconPicker) {
-                    IconColorPickerSheet(
-                        selectedIconName: $selectedIconName,
-                        selectedColorHex: $selectedColorHex
-                    )
-                }
+                    .dismissKeyboardOnTap()
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .sheet(isPresented: $showingIconPicker) {
+                IconColorPickerSheet(
+                    selectedIconName: $selectedIconName,
+                    selectedColorHex: $selectedColorHex
+                )
             }
             .navigationTitle(notification?.localizedName ?? L10n.Notifications.addNew)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -312,8 +309,12 @@ struct NotificationEditorSheet: View {
                     Circle()
                         .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
                 )
+                .frame(height: DS.Button.actionSize)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(weekday.short)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func toggleWeekday(_ weekday: Int) {
@@ -475,6 +476,7 @@ struct NotificationEditorSheet: View {
 
                             TextField(L10n.Notifications.namePlaceholder, text: $name)
                                 .focused($focusedField, equals: .name)
+                                .accessibilityIdentifier("notification_name_field")
                                 .onChange(of: name) { _, newValue in
                                     if newValue.count > NotificationItem.maxNameLength {
                                         name = String(newValue.prefix(NotificationItem.maxNameLength))
@@ -504,6 +506,7 @@ struct NotificationEditorSheet: View {
                         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                             TextField(L10n.Notifications.textPlaceholder, text: $text, axis: .vertical)
                                 .focused($focusedField, equals: .text)
+                                .accessibilityIdentifier("notification_text_field")
                                 .lineLimit(3...5)
                                 .onChange(of: text) { _, newValue in
                                     if newValue.count > NotificationItem.maxTextLength {
@@ -559,6 +562,8 @@ struct NotificationEditorSheet: View {
             return getTestTextForDataType(period: .monthly)
         case .scheduledPayments:
             return L10n.Notifications.testScheduledPayment
+        case .groups:
+            return L10n.Notifications.groupsHint
         case .endOfDay, .lunchTime, .custom:
             return text.isEmpty ? L10n.Notifications.endOfDayText : text
         }

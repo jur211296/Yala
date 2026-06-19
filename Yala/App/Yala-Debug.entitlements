@@ -4,10 +4,16 @@
 <dict>
 	<key>aps-environment</key>
 	<string>development</string>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:yala-app.pe</string>
+	</array>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>iCloud.com.jurgenschmidt.yala</string>
 		<string>iCloud.com.jurgenschmidt.yala.dev</string>
+		<string>iCloud.com.jurgenschmidt.yala.groups</string>
+		<string>iCloud.com.jurgenschmidt.yala.groups.dev</string>
 	</array>
 	<key>com.apple.developer.icloud-services</key>
 	<array>

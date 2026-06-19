@@ -18,10 +18,12 @@ struct BudgetEditorView: View {
 
     @State private var viewModel = BudgetEditorViewModel()
 
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
-    @AppStorage("budgetAlertsEnabled") private var budgetAlertsGloballyEnabled: Bool = false
+    @Environment(AppPreferences.self) private var appPreferences
 
     let budget: Budget?
+
+    // Error state
+    @State private var showSaveError = false
 
     // Basic Info
     @State private var name: String = ""
@@ -45,6 +47,7 @@ struct BudgetEditorView: View {
     @State private var selectedSubcategories: Set<PersistentIdentifier> = []
     @State private var selectedTags: Set<PersistentIdentifier> = []
     @State private var selectedNeeds: Set<SubcategoryNeed> = []
+    @State private var includeSharedExpenses: Bool = true
 
     // Sheet states
     @State private var showCategoriesSheet = false
@@ -55,6 +58,10 @@ struct BudgetEditorView: View {
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
     @FocusState private var isAmountFieldFocused: Bool
+
+    // Guards the account→currency derivation so it only runs on real user
+    // interaction, never while loadBudgetData() populates selectedAccounts.
+    @State private var didLoadInitialData = false
 
     var body: some View {
         NavigationStack {
@@ -86,19 +93,20 @@ struct BudgetEditorView: View {
                     budgetFilterBanner
                     filtersSection
 
+                    // Shared expenses toggle
+                    sharedExpensesToggle
+
                     // Delete Button (only for existing budgets)
                     if budget != nil {
                         deleteSection
                     }
                 }
                 .padding(.vertical, DS.Spacing.xxl)
-                .padding(.horizontal, DS.Spacing.lg)
+                .dismissKeyboardOnTap()
             }
+            .scrollViewGlassEdges()
             .scrollDismissesKeyboard(.interactively)
-            .background(
-                PanelBackgroundView()
-                    .dismissKeyboardOnTap()
-            )
+            .yalaScreenBackground(.subtle)
             .alert(
                 NSLocalizedString("budgets.delete.confirm.title", comment: ""),
                 isPresented: $showDeleteConfirmation
@@ -136,6 +144,11 @@ struct BudgetEditorView: View {
             .onAppear {
                 viewModel.setContext(modelContext, deletionService: deletionService)
                 loadBudgetData()
+                // Enable the account→currency derivation only after the load-induced
+                // selectedAccounts change has been delivered, so it never runs during load.
+                Task { @MainActor in
+                    didLoadInitialData = true
+                }
                 // Auto-focus name field for new budgets
                 if budget == nil {
                     Task {
@@ -145,16 +158,17 @@ struct BudgetEditorView: View {
                 }
             }
             .onChange(of: selectedAccounts) { _, newAccounts in
+                // Skip the initial population from loadBudgetData() so an
+                // existing budget's persisted currency is never overwritten.
+                guard didLoadInitialData else { return }
                 updateCurrencyFromAccounts(newAccounts)
             }
+            .onChange(of: viewModel.showSaveError) { _, new in if new { showSaveError = true } }
             .alert(
                 L10n.Common.error,
-                isPresented: Binding(
-                    get: { viewModel.showSaveError },
-                    set: { _ in viewModel.dismissSaveError() }
-                ),
+                isPresented: $showSaveError,
                 actions: {
-                    Button(L10n.Common.understood, role: .cancel) {}
+                    Button(L10n.Common.understood, role: .cancel) { viewModel.dismissSaveError() }
                 },
                 message: {
                     Text(L10n.Common.saveError)
@@ -179,6 +193,7 @@ struct BudgetEditorView: View {
                     )
                     .textContentType(.name)
                     .focused($isNameFieldFocused)
+                    .accessibilityIdentifier("budget_name_field")
                 }
                 .padding()
 
@@ -192,6 +207,7 @@ struct BudgetEditorView: View {
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
                         TextField("0.00", text: $limitAmount)
+                            .accessibilityIdentifier("budget_amount_field")
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .font(.system(size: scaledAmountSize, weight: .bold))
@@ -297,6 +313,20 @@ struct BudgetEditorView: View {
 
     }
 
+    // MARK: - Shared Expenses Toggle
+
+    private var sharedExpensesToggle: some View {
+        Toggle(isOn: $includeSharedExpenses) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Budgets.includeSharedExpenses)
+                    .font(DS.Typography.body)
+                Text(L10n.Budgets.includeSharedExpensesHint)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
     // MARK: - Alerts Section
 
     private var alertsSection: some View {
@@ -311,11 +341,11 @@ struct BudgetEditorView: View {
                         Text(L10n.Budgets.alertsEnable)
                     }
                 }
-
+                .accessibilityIdentifier("budget_alert_toggle")
                 .padding()
 
                 // Hint when global notifications are disabled
-                if !budgetAlertsGloballyEnabled {
+                if !appPreferences.budgetAlertsEnabled {
                     HStack(spacing: DS.Spacing.xs) {
                         Image(systemName: "info.circle")
                             .font(DS.Typography.caption)
@@ -362,8 +392,9 @@ struct BudgetEditorView: View {
                                 .padding(.vertical, DS.Spacing.sm)
                                 .background(
                                     Capsule()
-                                        .fill(showCustomThreshold ? theme.accent : Color(.tertiarySystemFill))
+                                        .fill(showCustomThreshold ? theme.accent : Color.clear)
                                 )
+                                .glassEffect(showCustomThreshold ? .clear : .regular.interactive(), in: .capsule)
                             }
                             .buttonStyle(.plain)
                         }
@@ -372,7 +403,7 @@ struct BudgetEditorView: View {
                         // Custom threshold input
                         if showCustomThreshold {
                             HStack(spacing: DS.Spacing.sm) {
-                                TextField("1–100", text: $customThresholdText)
+                                TextField(L10n.Budgets.thresholdPlaceholder, text: $customThresholdText)
                                     .keyboardType(.numberPad)
                                     .textFieldStyle(.roundedBorder)
                                     .frame(width: 80)
@@ -433,10 +464,13 @@ struct BudgetEditorView: View {
                 .padding(.vertical, DS.Spacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? theme.accent : Color(.tertiarySystemFill))
+                        .fill(isSelected ? theme.accent : Color.clear)
                 )
+                .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("budget_alert_threshold_\(threshold)")
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     // MARK: - Filters Section
@@ -725,13 +759,13 @@ struct BudgetEditorView: View {
            let account = viewModel.activeAccounts.first(where: { $0.persistentModelID == accountId }) {
             currencyCode = account.currencyCode
         } else {
-            currencyCode = defaultCurrencyCode
+            currencyCode = appPreferences.defaultCurrencyCode.rawValue
         }
     }
 
     private func loadBudgetData() {
         // Initialize currency code
-        currencyCode = defaultCurrencyCode
+        currencyCode = appPreferences.defaultCurrencyCode.rawValue
 
         guard let budget = budget else { return }
 
@@ -748,16 +782,61 @@ struct BudgetEditorView: View {
             endDate = end
         }
 
-        // Convert arrays to sets of PersistentIdentifiers
-        selectedAccounts = Set((budget.accounts ?? []).map { $0.persistentModelID })
-        selectedSubcategories = Set((budget.subcategories ?? []).map { $0.persistentModelID })
-        selectedTags = Set((budget.tags ?? []).map { $0.persistentModelID })
+        // Read filters from CSV mirror (SSOT) and map UUIDs → PersistentIdentifier
+        // using the already-loaded `viewModel.allXXX` collections.
+        if let accountUUIDs = budget.resolvedAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
+            selectedAccounts = Set(
+                viewModel.allAccounts
+                    .filter { accountUUIDs.contains($0.shortcutID) }
+                    .map(\.persistentModelID)
+            )
+            #if DEBUG
+            if selectedAccounts.isEmpty {
+                print("BudgetEditor: account CSV has \(accountUUIDs.count) UUIDs but 0 resolved — orphans?")
+            }
+            #endif
+        } else {
+            selectedAccounts = []
+        }
+
+        if let subUUIDs = budget.resolvedSubcategoryIDs(scheduleBackfill: true), !subUUIDs.isEmpty {
+            selectedSubcategories = Set(
+                viewModel.allSubcategories
+                    .filter { subUUIDs.contains($0.shortcutID) }
+                    .map(\.persistentModelID)
+            )
+            #if DEBUG
+            if selectedSubcategories.isEmpty {
+                print("BudgetEditor: subcategory CSV has \(subUUIDs.count) UUIDs but 0 resolved — orphans?")
+            }
+            #endif
+        } else {
+            selectedSubcategories = []
+        }
+
+        if let tagUUIDs = budget.resolvedTagIDs(scheduleBackfill: true), !tagUUIDs.isEmpty {
+            selectedTags = Set(
+                viewModel.allTags
+                    .filter { tagUUIDs.contains($0.id) }
+                    .map(\.persistentModelID)
+            )
+            #if DEBUG
+            if selectedTags.isEmpty {
+                print("BudgetEditor: tag CSV has \(tagUUIDs.count) UUIDs but 0 resolved — orphans?")
+            }
+            #endif
+        } else {
+            selectedTags = []
+        }
 
         // Parse natures string
         if let naturesString = budget.natures {
             let needStrings = naturesString.components(separatedBy: ",")
             selectedNeeds = Set(needStrings.compactMap { SubcategoryNeed(rawValue: $0) })
         }
+
+        // Load shared expenses setting
+        includeSharedExpenses = budget.includeSharedExpenses
 
         // Load alert settings
         alertEnabled = budget.alertEnabled
@@ -786,7 +865,8 @@ struct BudgetEditorView: View {
             selectedTags: selectedTags,
             selectedNeeds: selectedNeeds,
             alertEnabled: alertEnabled,
-            alertThresholds: selectedThresholds
+            alertThresholds: selectedThresholds,
+            includeSharedExpenses: includeSharedExpenses
         )
 
         if let savedID = saved {

@@ -13,6 +13,7 @@ struct BudgetRowView: View {
     let currencyCode: String
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         NavigationLink(value: BudgetNavigationID(id: summary.budget.persistentModelID)) {
@@ -80,29 +81,15 @@ struct BudgetRowView: View {
             }
             .padding(DS.Spacing.lg)
             .contentShape(Rectangle())
-            .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                    .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
-            )
-            .shadow(
-                color: Color.black.opacity(theme.shadowOpacity),
-                radius: 6,
-                x: 0,
-                y: 3
-            )
+            .solidCard(radius: DS.Radius.md)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(L10n.Accessibility.budgetRow(summary.budget.name, Int(summary.percentage), formattedSpent, formattedLimit))
+        .accessibilityIdentifier("budget_row_\(summary.budget.name)")
     }
 
     // MARK: - Components
-
-    private var cardBackground: some View {
-        theme.card
-    }
 
     private var budgetIcon: some View {
         ZStack {
@@ -147,10 +134,10 @@ struct BudgetRowView: View {
     // MARK: - Formatters
 
     private var formattedSpent: String {
-        YalaFormatter.currency(value: summary.spent, currencyCode: currencyCode)
+        appPreferences.currency(summary.spent, currencyCode: currencyCode)
     }
 
     private var formattedLimit: String {
-        YalaFormatter.currency(value: summary.budget.limitAmount, currencyCode: currencyCode)
+        appPreferences.currency(summary.budget.limitAmount, currencyCode: currencyCode)
     }
 }

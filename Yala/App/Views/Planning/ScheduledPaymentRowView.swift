@@ -13,6 +13,7 @@ struct ScheduledPaymentRowView: View {
     let currencyCode: String
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
         NavigationLink(value: summary.payment.persistentModelID) {
@@ -43,36 +44,21 @@ struct ScheduledPaymentRowView: View {
                     recurrenceBadge
                 }
             }
-            .padding(DS.Spacing.lg)
             .contentShape(Rectangle())
-            .background(cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                    .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
-            )
-            .shadow(
-                color: Color.black.opacity(theme.shadowOpacity),
-                radius: 6,
-                x: 0,
-                y: 3
-            )
+            .panelCard(small: true)
             .opacity(summary.isPaidForMonth || summary.isSkippedForMonth ? 0.6 : 1.0)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("scheduled_payment_row")
     }
 
     // MARK: - Components
-
-    private var cardBackground: some View {
-        theme.card
-    }
 
     private var paymentIcon: some View {
         ZStack {
             Circle()
                 .fill(Color(hex: summary.color))
-                .frame(width: 40, height: 40)
+                .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
 
             Image(systemName: summary.icon)
                 .font(DS.Typography.label)
@@ -178,6 +164,6 @@ struct ScheduledPaymentRowView: View {
     private var formattedAmount: String {
         let prefix = summary.payment.transactionType == "income" ? "+" : "-"
         let isEstimate = summary.paidAmount == nil && summary.payment.isVariableAmount
-        return prefix + YalaFormatter.currency(value: summary.displayAmount, currencyCode: summary.displayCurrencyCode, forceFullPrecision: true, isEstimate: isEstimate)
+        return prefix + appPreferences.currency(summary.displayAmount, currencyCode: summary.displayCurrencyCode, forceFullPrecision: true, isEstimate: isEstimate)
     }
 }

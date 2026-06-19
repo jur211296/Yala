@@ -14,13 +14,21 @@ struct CashFlowCalculatorTests {
 
     // MARK: - Helpers
 
+    /// Fecha fija para tests determinísticos: 2026-04-15 12:00 UTC.
+    /// Evita flakiness por transición de medianoche, DST, o timezone del CI.
+    private static let testNow: Date = {
+        var components = DateComponents(year: 2026, month: 4, day: 15, hour: 12)
+        components.timeZone = TimeZone(identifier: "UTC")
+        return Calendar(identifier: .gregorian).date(from: components)!
+    }()
+
     private func makeCategory(name: String, isIncome: Bool = false) -> YalaCategory {
         YalaCategory(name: name, colorHex: "#000000", isIncome: isIncome)
     }
 
     private func makeTransaction(
         amount: Double,
-        date: Date = Date(),
+        date: Date = CashFlowCalculatorTests.testNow,
         currencyCode: String = "USD",
         category: YalaCategory? = nil,
         balanceAdjustmentType: String? = nil,
@@ -41,19 +49,19 @@ struct CashFlowCalculatorTests {
         return tx
     }
 
-    /// A fixed interval spanning 7 days ending tomorrow, useful for day-grouped tests.
+    /// A fixed interval spanning 7 days ending tomorrow (relative to testNow).
     private var weekInterval: DateInterval {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Self.testNow)
         let start = calendar.date(byAdding: .day, value: -6, to: today)!
         let end = calendar.date(byAdding: .day, value: 1, to: today)!
         return DateInterval(start: start, end: end)
     }
 
-    /// A fixed interval spanning 3 months.
+    /// A fixed interval spanning 3 months (relative to testNow).
     private var threeMonthInterval: DateInterval {
         let calendar = Calendar.current
-        let components = calendar.dateComponents([.year, .month], from: Date())
+        let components = calendar.dateComponents([.year, .month], from: Self.testNow)
         let startOfMonth = calendar.date(from: components)!
         let start = calendar.date(byAdding: .month, value: -2, to: startOfMonth)!
         let end = calendar.date(byAdding: .month, value: 1, to: startOfMonth)!
@@ -80,7 +88,7 @@ struct CashFlowCalculatorTests {
 
     @Test func expensesOnly_correctTotals() {
         let cat = makeCategory(name: "Food")
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Self.testNow)
         let tx1 = makeTransaction(amount: -100, date: today, category: cat)
         let tx2 = makeTransaction(amount: -50, date: today, category: cat)
 
@@ -100,7 +108,7 @@ struct CashFlowCalculatorTests {
 
     @Test func incomeOnly_correctTotals() {
         let cat = makeCategory(name: "Salary", isIncome: true)
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Self.testNow)
         let tx = makeTransaction(amount: 3000, date: today, category: cat)
 
         let result = CashFlowCalculator.calculateCashFlow(
@@ -120,7 +128,7 @@ struct CashFlowCalculatorTests {
     @Test func mixedIncomeAndExpenses_correctNetFlow() {
         let expenseCat = makeCategory(name: "Food")
         let incomeCat = makeCategory(name: "Salary", isIncome: true)
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Self.testNow)
 
         let expense = makeTransaction(amount: -200, date: today, category: expenseCat)
         let income = makeTransaction(amount: 500, date: today, category: incomeCat)
@@ -141,7 +149,7 @@ struct CashFlowCalculatorTests {
 
     @Test func multiCurrency_usesConverterWithFixedRate() {
         let cat = makeCategory(name: "Food")
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Self.testNow)
         // Transaction in EUR, reporting in USD, rate 2.0 means 100 EUR = 200 USD
         let tx = makeTransaction(
             amount: -100,
@@ -170,7 +178,7 @@ struct CashFlowCalculatorTests {
 
     @Test func sameCurrency_usesAmountInPreferredCurrency() {
         let cat = makeCategory(name: "Food")
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Self.testNow)
         // preferredCurrencyCode matches target currencyCode => uses amountInPreferredCurrency directly
         let tx = makeTransaction(
             amount: -100,
@@ -197,7 +205,7 @@ struct CashFlowCalculatorTests {
 
     @Test func balanceAdjustment_isExcluded() {
         let cat = makeCategory(name: "Adjustment")
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Self.testNow)
         let tx = makeTransaction(
             amount: 500,
             date: today,
@@ -219,7 +227,7 @@ struct CashFlowCalculatorTests {
 
     @Test func balanceAdjustmentTypes_allExcluded() {
         let cat = makeCategory(name: "Adjustment")
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Self.testNow)
 
         let adjustmentTypes = [InitialBalanceService.typeInitialBalance, InitialBalanceService.typeAdjustment, TransactionItem.adjustmentTypeTransfer]
         let transactions = adjustmentTypes.map { type in
@@ -240,7 +248,7 @@ struct CashFlowCalculatorTests {
     // MARK: - 7. Transactions without category excluded
 
     @Test func noCategory_isExcluded() {
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Self.testNow)
         let tx = makeTransaction(amount: -100, date: today)
 
         let result = CashFlowCalculator.calculateCashFlow(
@@ -258,7 +266,7 @@ struct CashFlowCalculatorTests {
 
     @Test func chartData_fillsGapsWithZeros_dayGrouping() {
         let calendar = Calendar.current
-        let start = calendar.startOfDay(for: Date())
+        let start = calendar.startOfDay(for: Self.testNow)
         let end = calendar.date(byAdding: .day, value: 3, to: start)!
         let interval = DateInterval(start: start, end: end)
 
@@ -295,7 +303,7 @@ struct CashFlowCalculatorTests {
         let cat = makeCategory(name: "Food")
 
         // Create dates in month 1 (two months ago) and month 3 (this month)
-        let components = calendar.dateComponents([.year, .month], from: Date())
+        let components = calendar.dateComponents([.year, .month], from: Self.testNow)
         let startOfMonth = calendar.date(from: components)!
         let twoMonthsAgo = calendar.date(byAdding: .month, value: -2, to: startOfMonth)!
 
@@ -331,7 +339,7 @@ struct CashFlowCalculatorTests {
     @Test func outsideInterval_excluded() {
         let calendar = Calendar.current
         let cat = makeCategory(name: "Food")
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Self.testNow)
 
         let start = calendar.date(byAdding: .day, value: -3, to: today)!
         let end = calendar.date(byAdding: .day, value: 1, to: today)!
@@ -368,7 +376,7 @@ struct CashFlowCalculatorTests {
 
     @Test func chartData_netIsIncomeMinusExpense() {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
+        let today = calendar.startOfDay(for: Self.testNow)
         let start = today
         let end = calendar.date(byAdding: .day, value: 1, to: today)!
         let interval = DateInterval(start: start, end: end)
@@ -412,7 +420,7 @@ struct CashFlowCalculatorTests {
         let cat = makeCategory(name: "Food")
 
         // Get start of current week
-        let weekStart = calendar.dateInterval(of: .weekOfYear, for: Date())!.start
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: Self.testNow)!.start
         let dayInWeek1 = weekStart
         let dayInWeek2 = calendar.date(byAdding: .day, value: 2, to: weekStart)!
 
@@ -443,7 +451,7 @@ struct CashFlowCalculatorTests {
         let calendar = Calendar.current
         let cat = makeCategory(name: "Food")
 
-        let start = calendar.startOfDay(for: Date())
+        let start = calendar.startOfDay(for: Self.testNow)
         let day1 = start
         let day2 = calendar.date(byAdding: .day, value: 1, to: start)!
         let end = calendar.date(byAdding: .day, value: 2, to: start)!
@@ -469,7 +477,7 @@ struct CashFlowCalculatorTests {
 
     @Test func multiCurrencyIncome_convertsCorrectly() {
         let cat = makeCategory(name: "Freelance", isIncome: true)
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Self.testNow)
 
         // EUR income, converting to USD with rate 1.5
         let tx = makeTransaction(
@@ -501,7 +509,7 @@ struct CashFlowCalculatorTests {
     @Test func mixedValidAndInvalid_onlyValidCounted() {
         let cat = makeCategory(name: "Food")
         let incomeCat = makeCategory(name: "Salary", isIncome: true)
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Self.testNow)
 
         let validExpense = makeTransaction(amount: -100, date: today, category: cat)
         let validIncome = makeTransaction(amount: 500, date: today, category: incomeCat)

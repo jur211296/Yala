@@ -104,6 +104,7 @@ struct InboxAlertModal: View {
                             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("inbox_alert_view")
 
                     // Botón secundario
                     Button {
@@ -116,6 +117,7 @@ struct InboxAlertModal: View {
                             .padding(.vertical, DS.Spacing.sm)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("inbox_alert_dismiss")
                 }
             }
             .padding(DS.Spacing.xxl)

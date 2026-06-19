@@ -1,0 +1,288 @@
+//
+//  LocalizationParityTests.swift
+//  YalaTests
+//
+//  Tests CI que detectan drift entre los .strings de los locales soportados.
+//  Falla si una key existe en es pero no en en (o viceversa), si los placeholders
+//  no coinciden, o si hay strings vacíos.
+//
+
+import Foundation
+import Testing
+
+@testable import Yala
+
+struct LocalizationParityTests {
+
+    // Locale de referencia para paridad. Hoy es `es` (será es-419 post-M9).
+    private let referenceLocale = "es"
+
+    // MARK: - paridad de keys
+
+    /// Locales BASE (sin parent) deben tener paridad completa con el reference.
+    /// Las variantes regionales (parent != nil) son subset por diseño.
+    private var baseLocalesExcludingReference: [SupportedLocale] {
+        SupportedLocale.allCases.filter { $0.parent == nil && $0.code != referenceLocale }
+    }
+
+    @Test func everyBaseLocale_hasAllKeys_fromReference() {
+        let reference = StringsFileParser.parseStrings(forLocale: referenceLocale)
+        #expect(!reference.isEmpty, "Reference locale '\(referenceLocale)' has zero strings — bundle path issue")
+
+        let referenceKeys = Set(reference.keys)
+
+        for locale in baseLocalesExcludingReference {
+            let localeStrings = StringsFileParser.parseStrings(forLocale: locale.code)
+            #expect(!localeStrings.isEmpty, "Base locale '\(locale.code)' has zero strings")
+            let localeKeys = Set(localeStrings.keys)
+
+            let missing = referenceKeys.subtracting(localeKeys)
+            #expect(missing.isEmpty, "Base locale '\(locale.code)' is missing \(missing.count) keys from \(referenceLocale): \(missing.sorted().prefix(5))")
+        }
+    }
+
+    @Test func noOrphanKeys_inAnyBaseLocale() {
+        let reference = StringsFileParser.parseStrings(forLocale: referenceLocale)
+        let referenceKeys = Set(reference.keys)
+
+        for locale in baseLocalesExcludingReference {
+            let localeStrings = StringsFileParser.parseStrings(forLocale: locale.code)
+            let localeKeys = Set(localeStrings.keys)
+
+            let orphans = localeKeys.subtracting(referenceKeys)
+            #expect(orphans.isEmpty, "Base locale '\(locale.code)' has \(orphans.count) orphan keys not in \(referenceLocale): \(orphans.sorted().prefix(5))")
+        }
+    }
+
+    @Test func variants_areSubsetOfParent() {
+        // Variantes regionales (parent != nil) no deben tener keys ajenas al padre.
+        // El "universo" del padre es `.strings ∪ .stringsdict`: una variante puede
+        // materializar como entrada flat en `.strings` un plural que el padre define
+        // en `.stringsdict` (la variante no puede tener `.stringsdict` propio, ver
+        // `variants_doNotCreateOwnStringsdict`). Esa flat es la degradación graciosa
+        // que evita la key cruda cuando la variante es el idioma de sistema — válida,
+        // no un orphan. (p.ej. `groups.member.activeCount` vive en el stringsdict del
+        // padre y como flat en la variante.)
+        for variant in SupportedLocale.allCases where variant.parent != nil {
+            guard let parent = variant.parent else { continue }
+            let variantKeys = Set(StringsFileParser.parseStrings(forLocale: variant.code).keys)
+            let parentKeys = Set(StringsFileParser.parseStrings(forLocale: parent.code).keys)
+                .union(StringsFileParser.parseStringsdictKeys(forLocale: parent.code))
+
+            let orphans = variantKeys.subtracting(parentKeys)
+            #expect(orphans.isEmpty, "Variant '\(variant.code)' has \(orphans.count) keys not in parent '\(parent.code)' (.strings ∪ .stringsdict): \(orphans.sorted())")
+        }
+    }
+
+    /// Las variantes DEBEN materializar todas las keys del padre, no solo los overrides.
+    /// iOS NO hace fallback per-key cuando la variante es el idioma de SISTEMA: resuelve
+    /// `Bundle.main` contra el `.lproj` de la variante y devuelve la key cruda si falta.
+    /// El fallback manual de `ls()` (variante→padre→main) solo aplica con override in-app,
+    /// y los ~290 `NSLocalizedString` directos ni siquiera pasan por `ls()`. Combinado con
+    /// `variants_areSubsetOfParent`, esto fuerza paridad exacta variante == padre.
+    ///
+    /// El universo del padre es `.strings ∪ .stringsdict`: las keys plurales (que el
+    /// padre define en `.stringsdict`) también deben existir en la variante, pero como
+    /// entrada flat en `.strings` — la variante no puede tener `.stringsdict` propio
+    /// (`variants_doNotCreateOwnStringsdict`), así que materializa la forma "other".
+    /// Sin esto, un plural saldría crudo con la variante como idioma de sistema.
+    @Test func variants_haveAllKeys_fromParent() {
+        for variant in SupportedLocale.allCases where variant.parent != nil {
+            guard let parent = variant.parent else { continue }
+            let variantKeys = Set(StringsFileParser.parseStrings(forLocale: variant.code).keys)
+            let parentKeys = Set(StringsFileParser.parseStrings(forLocale: parent.code).keys)
+                .union(StringsFileParser.parseStringsdictKeys(forLocale: parent.code))
+
+            let missing = parentKeys.subtracting(variantKeys)
+            #expect(missing.isEmpty, "Variant '\(variant.code)' is missing \(missing.count) keys from parent '\(parent.code)' (.strings ∪ .stringsdict) — con idioma de sistema se verían CRUDAS. Materializa los valores del padre (plurales como flat 'other'): \(missing.sorted().prefix(5))")
+        }
+    }
+
+    // MARK: - placeholders
+
+    @Test func placeholders_matchAcrossLocales() {
+        let reference = StringsFileParser.parseStrings(forLocale: referenceLocale)
+
+        for locale in SupportedLocale.allCases where locale.code != referenceLocale {
+            let localeStrings = StringsFileParser.parseStrings(forLocale: locale.code)
+            for (key, refValue) in reference {
+                guard let localeValue = localeStrings[key] else { continue }
+                let refPlaceholders = StringsFileParser.extractPlaceholders(from: refValue)
+                let localePlaceholders = StringsFileParser.extractPlaceholders(from: localeValue)
+
+                if refPlaceholders.count != localePlaceholders.count {
+                    Issue.record("Placeholder count mismatch in '\(locale.code)' key '\(key)': ref has \(refPlaceholders) but locale has \(localePlaceholders)")
+                }
+            }
+        }
+    }
+
+    /// Las flats de degradación de plurales en variantes (la forma `other` del padre
+    /// materializada en `.strings` — ver `variants_haveAllKeys_fromParent`) deben conservar
+    /// los placeholders del plural del padre. `placeholders_matchAcrossLocales` NO las cubre:
+    /// itera el reference `es`, donde estas keys son stringsdict-only. Comparte con
+    /// `extractPlaceholders` la limitación de no capturar `%@` aislado — suficiente para los
+    /// plurales actuales, todos con un `%d` de conteo que ancla la comparación.
+    @Test func variantPluralFlats_matchParentPlaceholders() {
+        for variant in SupportedLocale.allCases where variant.parent != nil {
+            guard let parent = variant.parent else { continue }
+            let parentPlurals = StringsFileParser.parseStringsdictOtherPlaceholders(forLocale: parent.code)
+            let variantStrings = StringsFileParser.parseStrings(forLocale: variant.code)
+
+            for (key, parentPlaceholders) in parentPlurals {
+                // Presencia ya enforzada por variants_haveAllKeys_fromParent.
+                guard let flat = variantStrings[key] else { continue }
+                let flatPlaceholders = StringsFileParser.extractPlaceholders(from: flat)
+                #expect(flatPlaceholders.sorted() == parentPlaceholders.sorted(),
+                        "Variant '\(variant.code)' key '\(key)': flat placeholders \(flatPlaceholders.sorted()) ≠ parent .stringsdict 'other' \(parentPlaceholders.sorted())")
+            }
+        }
+    }
+
+    // MARK: - empty values
+
+    @Test func noEmptyValues_anywhere() {
+        for locale in SupportedLocale.allCases {
+            let strings = StringsFileParser.parseStrings(forLocale: locale.code)
+            for (key, value) in strings {
+                if value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Issue.record("Empty value in '\(locale.code)' key '\(key)'")
+                }
+            }
+        }
+    }
+
+    /// Falla si una key tiene el marcador `[NEEDS_TRANSLATION]` en cualquier locale.
+    /// El script `qa/scripts/add-l10n-key.sh` añade ese marcador como placeholder
+    /// cuando propaga una key nueva — el dev DEBE traducir cada locale antes de commit.
+    @Test func noNeedsTranslationMarker_anywhere() {
+        for locale in SupportedLocale.allCases {
+            let strings = StringsFileParser.parseStrings(forLocale: locale.code)
+            for (key, value) in strings {
+                if value.contains("[NEEDS_TRANSLATION]") {
+                    Issue.record("Locale '\(locale.code)' key '\(key)' tiene placeholder [NEEDS_TRANSLATION] — traduce antes de commit")
+                }
+            }
+        }
+    }
+
+    // MARK: - duplicate stringsdict / strings keys
+
+    @Test func noKeyDuplicatedBetweenStringsAndStringsdict() {
+        for locale in SupportedLocale.allCases {
+            let stringsKeys = Set(StringsFileParser.parseStrings(forLocale: locale.code).keys)
+            let stringsdictKeys = StringsFileParser.parseStringsdictKeys(forLocale: locale.code)
+
+            let duplicates = stringsKeys.intersection(stringsdictKeys)
+            #expect(duplicates.isEmpty, "Locale '\(locale.code)' has \(duplicates.count) keys in both .strings and .stringsdict: \(duplicates.sorted())")
+        }
+    }
+
+    // MARK: - keys duplicadas dentro de un mismo .strings
+
+    /// Una key declarada dos veces en un .strings es invisible para el resto de
+    /// esta suite: el runtime resuelve la ÚLTIMA declaración y `NSDictionary`
+    /// colapsa los duplicados al parsear, así que ni la paridad ni los
+    /// placeholders la detectan. Este test lee los archivos FUENTE del repo
+    /// (vía `#filePath`, como WidgetLocalizationParityTests) y cuenta
+    /// ocurrencias por key en ambos targets.
+    @Test func noDuplicateKeys_inAnyLocale() {
+        let repoRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // YalaTests/
+            .deletingLastPathComponent()  // repo root
+        let resourceRoots = ["Yala/Resources", "YalaWidgets/Resources"]
+        let keyPattern = #/^\s*"((?:[^"\\]|\\.)*)"\s*=/#
+
+        for root in resourceRoots {
+            let rootURL = repoRoot.appendingPathComponent(root)
+            let lprojs = (try? FileManager.default.contentsOfDirectory(
+                at: rootURL, includingPropertiesForKeys: nil
+            ))?.filter { $0.pathExtension == "lproj" } ?? []
+            #expect(!lprojs.isEmpty, "'\(root)' has zero .lproj directories — path issue")
+
+            for lproj in lprojs.sorted(by: { $0.path < $1.path }) {
+                let stringsURL = lproj.appendingPathComponent("Localizable.strings")
+                guard let content = try? String(contentsOf: stringsURL, encoding: .utf8) else {
+                    continue
+                }
+                var counts: [String: Int] = [:]
+                for line in content.split(separator: "\n") {
+                    if let match = line.firstMatch(of: keyPattern) {
+                        counts[String(match.1), default: 0] += 1
+                    }
+                }
+                let dups = counts.filter { $0.value > 1 }.keys.sorted()
+                #expect(
+                    dups.isEmpty,
+                    "\(root)/\(lproj.lastPathComponent) has duplicate keys (the LAST one silently wins at runtime): \(dups.prefix(8))"
+                )
+            }
+        }
+    }
+}
+
+struct BundleLocaleDriftTests {
+
+    @Test func bundleLocales_matchSupportedLocaleEnum() {
+        let bundleLocales = Set(Bundle.main.localizations).subtracting(["Base"])
+        let enumLocales = Set(SupportedLocale.allCases.map { $0.bundleResourceName })
+
+        // Bundle puede tener locales que el enum no expone (e.g. aliases temporales).
+        // El test mínimo es que TODAS las del enum estén en el bundle.
+        let missingFromBundle = enumLocales.subtracting(bundleLocales)
+        #expect(missingFromBundle.isEmpty, "SupportedLocale cases sin .lproj en bundle: \(missingFromBundle.sorted())")
+    }
+}
+
+struct StringsdictParityTests {
+
+    @Test func baseLocalesWithStringsdict_haveSameKeys() {
+        // Variantes regionales (pt-PT, etc.) NO crean stringsdict propio (heredan
+        // del padre). Solo locales BASE deben tener paridad de keys plurales.
+        let referenceKeys = StringsFileParser.parseStringsdictKeys(forLocale: "es")
+        #expect(referenceKeys.count >= 20, "Expected ~22 plural keys in es.stringsdict, got \(referenceKeys.count)")
+
+        let baseLocalesWithStringsdict = SupportedLocale.allCases.filter { locale in
+            locale.parent == nil && locale.code != "es" && !StringsFileParser.parseStringsdictKeys(forLocale: locale.code).isEmpty
+        }
+
+        for locale in baseLocalesWithStringsdict {
+            let keys = StringsFileParser.parseStringsdictKeys(forLocale: locale.code)
+            #expect(keys == referenceKeys, "Stringsdict drift in '\(locale.code)': missing \(referenceKeys.subtracting(keys).count), extra \(keys.subtracting(referenceKeys).count)")
+        }
+    }
+
+    @Test func pluralRule_pl_hasOneFewManyOther() {
+        // Polonia es el único locale con 4 reglas plurales (one/few/many/other).
+        // Verifica que el .stringsdict de pl declare las 4 formas en al menos
+        // una de las keys plurales (e.g. records.deleteConfirmTitle).
+        guard let path = Bundle.main.path(forResource: "pl", ofType: "lproj"),
+              let bundle = Bundle(path: path),
+              let url = bundle.url(forResource: "Localizable", withExtension: "stringsdict"),
+              let dict = NSDictionary(contentsOf: url) as? [String: Any] else {
+            Issue.record("pl.lproj/Localizable.stringsdict not found")
+            return
+        }
+
+        guard let entry = dict["records.deleteConfirmTitle"] as? [String: Any],
+              let countDict = entry["count"] as? [String: Any] else {
+            Issue.record("records.deleteConfirmTitle missing in pl stringsdict")
+            return
+        }
+
+        #expect(countDict["one"] != nil, "pl plural rule 'one' missing")
+        #expect(countDict["few"] != nil, "pl plural rule 'few' missing (2-4)")
+        #expect(countDict["many"] != nil, "pl plural rule 'many' missing (5+, special endings)")
+        #expect(countDict["other"] != nil, "pl plural rule 'other' missing (decimals)")
+    }
+
+    @Test func variants_doNotCreateOwnStringsdict() {
+        // Trade-off documentado en M4: stringsdict es all-or-nothing por archivo.
+        // Variantes regionales NO crean stringsdict propio salvo que las reglas
+        // plurales difieran del padre (no es el caso de pt-PT/es-ES/es-AR/en-GB).
+        for variant in SupportedLocale.allCases where variant.parent != nil {
+            let keys = StringsFileParser.parseStringsdictKeys(forLocale: variant.code)
+            #expect(keys.isEmpty, "Variant '\(variant.code)' must NOT have its own stringsdict (would force duplicating ALL plurals from parent)")
+        }
+    }
+}

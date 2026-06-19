@@ -18,6 +18,11 @@ final class InsightsViewModel {
 
     private(set) var insightData: InsightData?
 
+    /// Salud Financiera (mes actual). Siempre representa el mes calendario en curso —
+    /// el selector de periodo de Resumen no afecta este score (mismo contrato que el
+    /// widget del Panel). Nil hasta que `calculateFinancialScore` corra al menos una vez.
+    private(set) var financialScore: FinancialScore?
+
     // MARK: - AI State
 
     private(set) var aiInsights: LLMInsightResponse?
@@ -42,6 +47,13 @@ final class InsightsViewModel {
     var currentTone: InsightTone { .current }
     var currentFocus: InsightFocus { .current }
 
+    // MARK: - Equality Guard
+
+    private(set) var lastInputsSignature: Int = 0
+
+    /// Forces the next `calculateInsightsData` call to recompute even if inputs match.
+    func invalidateCache() { lastInputsSignature = 0 }
+
     // MARK: - Calculation
 
     /// Computes all insights data from filtered transactions.
@@ -57,6 +69,28 @@ final class InsightsViewModel {
         customRange: DateInterval?,
         comparisonMode: ComparisonMode = .month
     ) {
+        // El toggle "incluir transacciones de grupos en estadísticas" filtra las TX
+        // bridgeadas y por tanto es un input del cálculo — debe entrar en la firma
+        // del gate, o cambiarlo no invalidaría el cache y dejaría insightData stale.
+        let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+
+        var hasher = Hasher()
+        hasher.combine(SessionState.shared.dataVersion)
+        hasher.combine(criteria.hashValue)
+        hasher.combine(period)
+        hasher.combine(currencyCode)
+        hasher.combine(comparisonMode)
+        hasher.combine(currentTone)
+        hasher.combine(currentFocus)
+        hasher.combine(includeBridgedGroupTx)
+        if let customRange {
+            hasher.combine(customRange.start)
+            hasher.combine(customRange.duration)
+        }
+        let signature = hasher.finalize()
+        guard signature != lastInputsSignature else { return }
+        lastInputsSignature = signature
+
         insightData = InsightsCalculator.calculate(
             transactions: transactions,
             accounts: accounts,
@@ -69,8 +103,38 @@ final class InsightsViewModel {
             customRange: customRange,
             comparisonMode: comparisonMode,
             tone: currentTone,
-            focus: currentFocus
+            focus: currentFocus,
+            includeBridgedGroupTx: includeBridgedGroupTx
         )
+    }
+
+    /// Recalcula el Financial Score para el período seleccionado. Se invoca aparte
+    /// de `calculateInsightsData` porque tiene su propio gate de re-cálculo en
+    /// `DetailContainerView` (depende de `dataVersion + interval`, no de filtros).
+    /// `paidAmounts` se carga vía `ScheduledPaymentPaidStatusHelper` para el rango.
+    func calculateFinancialScore(
+        transactions: [TransactionItem],
+        budgets: [Budget],
+        scheduledPayments: [ScheduledPayment],
+        accounts: [Account],
+        paidAmounts: [String: [PaidOccurrenceInfo]],
+        period: DetailPeriod,
+        customRange: DateInterval?,
+        preferredCurrencyCode: String
+    ) {
+        let includeBridgedGroupTx = (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool) ?? true
+        let newScore = FinancialScoreCalculator.calculate(
+            transactions: transactions,
+            budgets: budgets,
+            scheduledPayments: scheduledPayments,
+            accounts: accounts,
+            paidAmounts: paidAmounts,
+            period: period,
+            customRange: customRange,
+            preferredCurrencyCode: preferredCurrencyCode,
+            includeBridgedGroupTx: includeBridgedGroupTx
+        )
+        if newScore != financialScore { financialScore = newScore }
     }
 
     // MARK: - AI Generation Context
@@ -141,7 +205,7 @@ final class InsightsViewModel {
 
         // Check prerequisites
         let isPro = FeatureGateService.shared.canAccess(.smartInsightsAI)
-        let hasConsent = UserDefaults.standard.bool(forKey: "aiInsightsConsentAccepted")
+        let hasConsent = UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
         let isOnline = NetworkMonitor.shared.isConnected
 
         guard isPro, hasConsent, isOnline else {
@@ -214,7 +278,8 @@ final class InsightsViewModel {
         let comparisonLabel = comparisonMode == .year ? "año anterior" : "periodo anterior"
         var result: [String: Any] = [
             "currency": currencyCode,
-            "currency_display": YalaFormatter.currencyIdentifier(for: currencyCode),
+            // Snapshot al payload IA — no reactivo. YalaFormatter deprecated permitido.
+            "currency_display": YalaFormatterStatic.currencyIdentifier(for: currencyCode),
             "locale": Locale.current.language.languageCode?.identifier ?? "es",
             "country": Locale.current.region?.identifier ?? "",
             "comparison_ref": comparisonLabel,
@@ -243,6 +308,11 @@ final class InsightsViewModel {
             let totalExpense = data.periodSummary.totalExpense
             let pctOfTotal = totalExpense > 0 ? Int((topSub.amount / totalExpense) * 100) : 0
             result["top_subcategory"] = ["name": subName, "amount": Int(topSub.amount), "pct_of_total": pctOfTotal] as [String: Any]
+        }
+
+        // Category → Subcategory tree (full context for LLM)
+        if !categories.isEmpty {
+            result["category_tree"] = categories.visibleCategoryTreeLabels()
         }
 
         // Highest expense
@@ -307,6 +377,34 @@ final class InsightsViewModel {
                 categories: categories,
                 tags: tags
             )
+        }
+
+        // Shared expenses context for AI
+        if let groupCtx = data.groupInsightsContext {
+            var sharedDict: [String: Any] = [
+                "total_shared": Int(groupCtx.totalSharedExpense),
+                "total_personal": Int(groupCtx.totalPersonalExpense),
+                "shared_count": groupCtx.sharedExpenseCount,
+                "active_groups": groupCtx.groupCount
+            ]
+            let totalExpense = data.periodSummary.totalExpense
+            if totalExpense > 0 {
+                sharedDict["shared_pct"] = Int((groupCtx.totalSharedExpense / totalExpense) * 100)
+            }
+            if !groupCtx.groupExpensesByGroup.isEmpty {
+                sharedDict["by_group"] = groupCtx.groupExpensesByGroup.prefix(5).map {
+                    ["name": $0.groupName, "amount": Int($0.total)] as [String: Any]
+                }
+            }
+            if !groupCtx.sharedCategoryBreakdown.isEmpty {
+                sharedDict["top_shared_categories"] = groupCtx.sharedCategoryBreakdown.prefix(3).map {
+                    ["name": $0.category, "amount": Int($0.amount)] as [String: Any]
+                }
+            }
+            if groupCtx.pendingDebtTotal > 0 {
+                sharedDict["pending_debt"] = Int(groupCtx.pendingDebtTotal)
+            }
+            result["shared_expenses"] = sharedDict
         }
 
         return result

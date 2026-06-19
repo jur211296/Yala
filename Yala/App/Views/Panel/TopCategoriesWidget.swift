@@ -8,7 +8,13 @@
 import SwiftData
 import SwiftUI
 
+/// Umbral para descartar invocaciones de `onGeometryChange` con micro-cambios
+/// sub-pt — evita layout loop al asignar `@State` en cada pass.
+/// Patrón aplicado también en `TopSubcategoriesWidget`. Ver crash 2026-04-30.
+private let geometryChangeThreshold: CGFloat = 0.5
+
 struct TopCategoriesWidget: View {
+    @Environment(AppPreferences.self) private var appPreferences
     let categories: [CategorySpendingSummary]
     let currencyCode: String
 
@@ -31,6 +37,9 @@ struct TopCategoriesWidget: View {
     var size: CardSize = .large
     var limit: Int? = nil  // nil = show all
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
+
     // MARK: - Static Formatters (avoid recreation on each render)
 
     fileprivate static let percentFormatter: NumberFormatter = {
@@ -45,6 +54,7 @@ struct TopCategoriesWidget: View {
     var period: DetailPeriod = .thisMonth
     var previousTotalAmount: Double? = nil
     var showVariationHeader: Bool = false
+    var variationDisplay: VariationDisplayConfig = .full
 
     private var totalAmount: Double {
         categories.reduce(0) { $0 + $1.amount }
@@ -71,24 +81,28 @@ struct TopCategoriesWidget: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: size == .small ? DS.Spacing.md : DS.Spacing.lg) {
-            headerSection
-
-            if categories.isEmpty {
-                emptyState
+        Group {
+            if size == .small {
+                smallCardContent
             } else {
-                contentForSize
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    headerSection
+
+                    if categories.isEmpty {
+                        emptyState
+                    } else {
+                        contentForSize
+                    }
+                }
             }
         }
-        .padding(size == .small ? DS.Spacing.lg : DS.Spacing.xl)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .topLeading
         )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .panelCard(small: size == .small)
+        .frame(height: size == .small ? WidgetSize.smallHeight : nil)
     }
 
     // MARK: - Content Switcher
@@ -111,22 +125,31 @@ struct TopCategoriesWidget: View {
         HStack(alignment: .top) {
             // Left: Title and total amount
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(size == .small ? L10n.Widget.main : L10n.Widget.topCategories)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                    Text(size == .small ? L10n.Widget.main : L10n.Widget.topCategories)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
 
-                // Total amount with vs comparison (only for medium/large with variation header)
+                    if size != .small {
+                        WidgetHeaderInfoSlot(
+                            injected: headerInfoButton,
+                            legacyTitle: L10n.WidgetType.topSpending,
+                            legacyMessage: L10n.Widget.Hint.topCategories
+                        )
+                    }
+                }
+
                 if showVariationHeader && size != .small && !categories.isEmpty {
                     HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                        Text(YalaFormatter.currency(value: totalAmount, currencyCode: currencyCode))
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                        AmountText(
+                            value: totalAmount,
+                            currencyCode: currencyCode,
+                            font: DS.Typography.headline, secondaryFont: DS.Typography.caption
+                        )
 
-                        if let prevAmount = previousTotalAmount {
-                            Text("vs \(YalaFormatter.number(value: prevAmount))")
+                        if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
+                            Text("vs \(appPreferences.number(prevAmount))")
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.thSecondaryText)
                                 .lineLimit(1)
@@ -136,13 +159,6 @@ struct TopCategoriesWidget: View {
                 }
             }
 
-            if size != .small {
-                InfoHintButton(
-                    title: L10n.WidgetType.topSpending,
-                    message: L10n.Widget.Hint.topCategories
-                )
-            }
-
             Spacer()
 
             // Right: Variation chip and comparison text (only when showVariationHeader and has data)
@@ -150,7 +166,7 @@ struct TopCategoriesWidget: View {
                 VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                     VariationChip(variation: variation, size: .medium)
 
-                    if !comparisonText.isEmpty {
+                    if variationDisplay.showsComparisonPeriodLabel && !comparisonText.isEmpty {
                         Text(comparisonText)
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.secondary)
@@ -160,19 +176,6 @@ struct TopCategoriesWidget: View {
                 }
             }
 
-            // Chevron for Detail View
-            if onShowMore != nil {
-                Button {
-                    onShowMore?()
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.secondary)
-                        .padding(.leading, DS.Spacing.xs)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Accessibility.viewAllCategories)
-            }
         }
     }
 
@@ -197,15 +200,7 @@ struct TopCategoriesWidget: View {
                     // In exclude mode, excluded items are hidden — no dimming needed
                     let shouldDim = !isExcludeMode && isAnySelected && !isSelected
 
-                    CategoryRow(
-                        summary: summary,
-                        maxAmount: maxAmount,
-                        currencyCode: currencyCode,
-                        showNAWhenNil: showVariationHeader
-                    )
-                    .opacity(shouldDim ? 0.3 : 1.0)  // Dimming effect
-                    .contentShape(Rectangle())  // Make entire row tappable
-                    .onTapGesture {
+                    Button {
                         if isSelected {
                             // Deselect if already selected?
                             // Requirements "filter that category". Maybe tap again to deselect is good UX.
@@ -216,7 +211,17 @@ struct TopCategoriesWidget: View {
                         } else {
                             onSelectCategory?(summary.category.persistentModelID)
                         }
+                    } label: {
+                        CategoryRow(
+                            summary: summary,
+                            maxAmount: maxAmount,
+                            currencyCode: currencyCode,
+                            showNAWhenNil: showVariationHeader
+                        )
                     }
+                    .buttonStyle(.plain)
+                    .opacity(shouldDim ? 0.3 : 1.0)  // Dimming effect
+                    .contentShape(Rectangle())  // Make entire row tappable
                 }
             }
         }
@@ -225,53 +230,116 @@ struct TopCategoriesWidget: View {
     // MARK: - Small Card Content
 
     private var smallCardContent: some View {
-        // Show only the top 1 category in a focused way
         Group {
-            if let topCategory = categories.first {
-                VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    // Large Icon
+            if categories.isEmpty {
+                smallEmptyState
+            } else {
+                // En exclude mode, el item excluido se esconde (espejo del largeLayout);
+                // en modo normal todos son visibles y el dim se aplica por row.
+                let visibleCategories: [CategorySpendingSummary] = {
+                    if isExcludeMode, let excludedID = selectedCategoryID {
+                        return categories.filter { $0.category.persistentModelID != excludedID }
+                    }
+                    return categories
+                }()
+
+                VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                    PanelSmallWidgetHeader(
+                        title: L10n.Widget.topCategories,
+                        accessibilityLabel: L10n.Panel.seeMoreInDistribution,
+                        action: onShowMore,
+                        headerInfoButton: headerInfoButton
+                    )
+
+                    VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                        ForEach(Array(visibleCategories.prefix(2))) { summary in
+                            smallCategoryRow(for: summary)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func smallCategoryRow(for summary: CategorySpendingSummary) -> some View {
+        let color = Color(hex: summary.category.colorHex)
+        let clampedPercentage = max(0, min(100, summary.percentage))
+        let isSelected = selectedCategoryID == summary.category.persistentModelID
+        let shouldDim = !isExcludeMode && selectedCategoryID != nil && !isSelected
+
+        Button {
+            onSelectCategory?(summary.category.persistentModelID)
+        } label: {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                // Línea 1: ícono + nombre (ocupa casi todo el ancho para nombres largos)
+                HStack(spacing: DS.Spacing.sm) {
                     ZStack {
                         Circle()
-                            .fill(Color(hex: topCategory.category.colorHex))
-                            .frame(width: 48, height: 48)  // Slightly smaller for dense layout
+                            .fill(color)
+                            .frame(width: 28, height: 28)
 
-                        Image(systemName: topCategory.category.iconName ?? "tag.fill")
-                            .font(DS.Typography.headline)
+                        Image(systemName: summary.category.iconName ?? "tag.fill")
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white)
                             .accessibilityHidden(true)
                     }
 
-                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        Text(topCategory.category.name)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                    Text(summary.category.name)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
 
-                        Text(formattedAmount(topCategory.amount))
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-                            .minimumScaleFactor(0.8)
-                            .lineLimit(1)
-
-                        Text(
-                            "\(formattedPercentage(topCategory.percentage)) \(L10n.Widget.ofTotal)"
-                        )
-                        .font(DS.Typography.labelTiny)
-                        .foregroundStyle(Color(hex: topCategory.category.colorHex))
-                        .padding(.horizontal, DS.Spacing.xs)
-                        .padding(.vertical, DS.Spacing.xxs)
-                        .background(Color(hex: topCategory.category.colorHex).opacity(0.1))
-                        .clipShape(Capsule())
-                    }
+                    Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.bottom, DS.Spacing.sm)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    onSelectCategory?(topCategory.category.persistentModelID)
+
+                // Línea 2: barra de progreso + monto + % (datos compactos juntos)
+                HStack(spacing: DS.Spacing.sm) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(color.opacity(0.15))
+
+                            Capsule()
+                                .fill(color)
+                                .frame(width: max(0, geo.size.width * CGFloat(clampedPercentage / 100.0)))
+                        }
+                    }
+                    .frame(height: 6)
+
+                    Text(formattedAmount(summary.amount))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 0)
                 }
             }
         }
+        .buttonStyle(.plain)
+        .opacity(shouldDim ? 0.3 : 1.0)
+        .contentShape(Rectangle())
+    }
+
+    /// Empty state compacto para el layout `.small` — evita `YalaEmptyState(style: .widget)`
+    /// que desborda el alto fijo del card.
+    private var smallEmptyState: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Spacer(minLength: 0)
+
+            Image(systemName: "folder.fill")
+                .font(.system(size: 24))
+                .foregroundStyle(.secondary)
+
+            Text("—")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Empty State
@@ -291,7 +359,7 @@ struct TopCategoriesWidget: View {
 
     // Helpers (moved inside View to be accessible)
     private func formattedAmount(_ value: Double) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
+        appPreferences.currency(value, currencyCode: currencyCode)
     }
 
     private func formattedPercentage(_ value: Double) -> String {
@@ -302,10 +370,14 @@ struct TopCategoriesWidget: View {
 // MARK: - Category Row Component
 
 private struct CategoryRow: View {
+    @Environment(AppPreferences.self) private var appPreferences
     let summary: CategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
     var showNAWhenNil: Bool = false
+
+    /// Ancho medido de la barra — reemplaza GeometryReader para soportar halfWidthPair.
+    @State private var barWidth: CGFloat = 0
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -330,9 +402,11 @@ private struct CategoryRow: View {
 
                     Spacer()
 
-                    Text(YalaFormatter.currency(value: summary.amount, currencyCode: currencyCode))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
+                    AmountText(
+                        value: summary.amount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption
+                    )
                 }
 
                 // Bar and Percentage
@@ -350,21 +424,21 @@ private struct CategoryRow: View {
                     }
 
                     // Bar
-                    GeometryReader { geo in
-                        let width =
-                            maxAmount > 0 ? (summary.amount / maxAmount) * geo.size.width : 0
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(DS.Semantic.neutralBackground)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 6)
 
-                        ZStack(alignment: .leading) {
-                            Capsule()
-                                .fill(DS.Semantic.neutralBackground)
-                                .frame(height: 6)
-
-                            Capsule()
-                                .fill(Color(hex: summary.category.colorHex))
-                                .frame(width: width, height: 6)
-                        }
+                        let width = maxAmount > 0 ? (summary.amount / maxAmount) * barWidth : 0
+                        Capsule()
+                            .fill(Color(hex: summary.category.colorHex))
+                            .frame(width: width, height: 6)
                     }
-                    .frame(height: 6)
+                    .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+                        guard abs(newWidth - barWidth) > geometryChangeThreshold else { return }
+                        barWidth = newWidth
+                    }
                 }
             }
         }

@@ -78,12 +78,28 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Resources/Info.plist,
+				Shared/ControlCenterIntents.swift,
 			);
 			target = 96CFFF922EC3CF06002AC31C /* Yala */;
+		};
+		A1B2C3D4E5F60123456789AB /* Exceptions for "YalaWidgets" folder in "Yala" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Utils/WidgetURLHelper.swift,
+			);
+			target = 96CFFF922EC3CF06002AC31C /* Yala */;
+		};
+		A1B2C3D4E5F60123456789CD /* Exceptions for "YalaWidgets" folder in "YalaShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Utils/WidgetURLHelper.swift,
+			);
+			target = CFADC3B72F2A42810040D198 /* YalaShare */;
 		};
 		CFA3952D2F33BC1500ED1D89 /* Exceptions for "Yala" folder in "YalaWidgetsExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				App/Logic/Helpers/WidgetAmountSplitter.swift,
 				Shared/ControlCenterIntents.swift,
 			);
 			target = CFB1B6AB2F30EC930083BC08 /* YalaWidgetsExtension */;
@@ -135,6 +151,8 @@
 		CFB1B6B22F30EC930083BC08 /* YalaWidgets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				A1B2C3D4E5F60123456789AB /* Exceptions for "YalaWidgets" folder in "Yala" target */,
+				A1B2C3D4E5F60123456789CD /* Exceptions for "YalaWidgets" folder in "YalaShare" target */,
 				CFB1B6C62F30EC940083BC08 /* Exceptions for "YalaWidgets" folder in "YalaWidgetsExtension" target */,
 			);
 			path = YalaWidgets;
@@ -269,8 +287,6 @@
 				96CFFFA72EC3CF09002AC31C /* YalaTests */,
 			);
 			name = YalaTests;
-			packageProductDependencies = (
-			);
 			productName = YalaTests;
 			productReference = 96CFFFA42EC3CF09002AC31C /* YalaTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -292,8 +308,6 @@
 				96CFFFB12EC3CF09002AC31C /* YalaUITests */,
 			);
 			name = YalaUITests;
-			packageProductDependencies = (
-			);
 			productName = YalaUITests;
 			productReference = 96CFFFAE2EC3CF09002AC31C /* YalaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -314,8 +328,6 @@
 				CFADC3B92F2A42810040D198 /* YalaShare */,
 			);
 			name = YalaShare;
-			packageProductDependencies = (
-			);
 			productName = YalaShare;
 			productReference = CFADC3B82F2A42810040D198 /* YalaShare.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -336,8 +348,6 @@
 				CFB1B6B22F30EC930083BC08 /* YalaWidgets */,
 			);
 			name = YalaWidgetsExtension;
-			packageProductDependencies = (
-			);
 			productName = YalaWidgetsExtension;
 			productReference = CFB1B6AC2F30EC930083BC08 /* YalaWidgetsExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -382,6 +392,16 @@
 				fr,
 				it,
 				de,
+				"pt-BR",
+				"pt-PT",
+				"es-419",
+				"es-ES",
+				"es-AR",
+				"en-GB",
+				nl,
+				pl,
+				ja,
+				"zh-Hans",
 			);
 			mainGroup = 96CFFF8A2EC3CF06002AC31C;
 			minimizedProjectReferenceProxies = 1;
@@ -515,7 +535,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Yala/App/Yala-Debug.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -531,7 +551,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -561,7 +581,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Yala/App/Yala-Release.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -577,7 +597,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -730,11 +750,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -752,11 +772,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -773,10 +793,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -793,10 +813,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -819,7 +839,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "Yala/App/Yala-Debug.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -836,7 +856,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -864,7 +884,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = "Yala/App/Yala-Debug.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -881,7 +901,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.dev;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -1033,11 +1053,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1055,11 +1075,11 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1076,10 +1096,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1096,10 +1116,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.YalaUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1118,7 +1138,7 @@
 				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala;
 				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YalaShare/Info.plist;
@@ -1130,7 +1150,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.YalaShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1153,7 +1173,7 @@
 				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala;
 				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YalaShare/Info.plist;
@@ -1165,7 +1185,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.YalaShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1188,7 +1208,7 @@
 				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala.dev;
 				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YalaShare/Info.plist;
@@ -1200,7 +1220,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.dev.YalaShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1223,7 +1243,7 @@
 				APP_GROUP_IDENTIFIER = group.com.jurgenschmidt.yala.dev;
 				CODE_SIGN_ENTITLEMENTS = YalaShare/YalaShare.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YalaShare/Info.plist;
@@ -1235,7 +1255,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.dev.YalaShare;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1261,7 +1281,7 @@
 				CODE_SIGN_ENTITLEMENTS = YalaWidgets/YalaWidgets.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YalaWidgets/Info.plist;
@@ -1273,7 +1293,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.YalaWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1300,7 +1320,7 @@
 				CODE_SIGN_ENTITLEMENTS = YalaWidgets/YalaWidgets.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YalaWidgets/Info.plist;
@@ -1312,7 +1332,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.YalaWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1338,7 +1358,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = YalaWidgets/YalaWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YalaWidgets/Info.plist;
@@ -1350,7 +1370,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.dev.YalaWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1375,7 +1395,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = YalaWidgets/YalaWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 25;
 				DEVELOPMENT_TEAM = 3WKFFVD66J;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = YalaWidgets/Info.plist;
@@ -1387,7 +1407,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.7;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jurgenschmidt.yala.dev.YalaWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

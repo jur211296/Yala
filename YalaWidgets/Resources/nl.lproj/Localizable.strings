@@ -1,0 +1,146 @@
+/*
+  Localizable.strings (Dutch)
+  YalaWidgets
+
+  Dutch localization for widget texts.
+*/
+
+// MARK: - Gallery (widget gallery names and descriptions)
+"widget.gallery.scheduledPayments" = "Aankomende betalingen";
+"widget.gallery.scheduledPayments.desc" = "Je aankomende betalingen en abonnementen";
+"widget.gallery.quickManual" = "Nieuwe boeking";
+"widget.gallery.quickManual.desc" = "Boek handmatig een uitgave of inkomst";
+"widget.gallery.quickVoice" = "Boeking via spraak";
+"widget.gallery.quickVoice.desc" = "Dicteer je uitgave of inkomst";
+"widget.gallery.quickImage" = "Bonnetje scannen";
+"widget.gallery.quickImage.desc" = "Boek vanaf een foto of bonnetje";
+"widget.gallery.cashFlow" = "Cashflow";
+"widget.gallery.cashFlow.desc" = "Je netto cashflow";
+"widget.gallery.balance" = "Saldo";
+"widget.gallery.balance.desc" = "Je totale saldo met trend";
+"widget.gallery.budgets" = "Budgetten";
+"widget.gallery.budgets.desc" = "De voortgang van je budgetten";
+"widget.gallery.latestRecords" = "Recente boekingen";
+"widget.gallery.latestRecords.desc" = "Je meest recente boekingen";
+"widget.gallery.expense" = "Uitgaven";
+"widget.gallery.expense.desc" = "Je totale uitgaven over de periode";
+"widget.gallery.categoriesPie" = "Categorieën (taart)";
+"widget.gallery.categoriesPie.desc" = "Verdeling van uitgaven per categorie";
+"widget.gallery.subcategoriesPie" = "Subcategorieën (taart)";
+"widget.gallery.subcategoriesPie.desc" = "Verdeling van uitgaven per subcategorie";
+"widget.gallery.topCategories" = "Topcategorieën";
+"widget.gallery.topCategories.desc" = "Je categorieën met de meeste uitgaven";
+"widget.gallery.topSubcategories" = "Topsubcategorieën";
+"widget.gallery.topSubcategories.desc" = "Je subcategorieën met de meeste uitgaven";
+
+// MARK: - Gallery (Lock Screen accessory widgets)
+"widget.gallery.accessoryBalance" = "Saldo";
+"widget.gallery.accessoryBalance.desc" = "Je saldo op het toegangsscherm";
+"widget.gallery.accessoryExpense" = "Uitgaven";
+"widget.gallery.accessoryExpense.desc" = "Je uitgaven op het toegangsscherm";
+"widget.gallery.accessoryBudget" = "Budget";
+"widget.gallery.accessoryBudget.desc" = "Je meest gebruikte budget";
+"widget.gallery.accessoryPayment" = "Volgende betaling";
+"widget.gallery.accessoryPayment.desc" = "Je volgende geplande betaling";
+
+// MARK: - Intent titles and descriptions
+"widget.intent.cashFlow.title" = "Cashflow";
+"widget.intent.cashFlow.desc" = "Toont je netto cashflow";
+"widget.intent.balance.title" = "Saldo";
+"widget.intent.balance.desc" = "Toont je totale saldo";
+"widget.intent.expense.title" = "Uitgaven";
+"widget.intent.expense.desc" = "Toont je totale uitgaven";
+"widget.intent.categoriesPie.title" = "Categorieën (taart)";
+"widget.intent.categoriesPie.desc" = "Verdeling van uitgaven per categorie";
+"widget.intent.subcategoriesPie.title" = "Subcategorieën (taart)";
+"widget.intent.subcategoriesPie.desc" = "Verdeling van uitgaven per subcategorie";
+"widget.intent.topCategories.title" = "Topcategorieën";
+"widget.intent.topCategories.desc" = "Toont je categorieën met de meeste uitgaven";
+"widget.intent.topSubcategories.title" = "Topsubcategorieën";
+"widget.intent.topSubcategories.desc" = "Toont je subcategorieën met de meeste uitgaven";
+"widget.intent.budgets.title" = "Budgetten";
+"widget.intent.budgets.desc" = "Toont de voortgang van je budgetten";
+"widget.intent.scheduledPayments.title" = "Aankomende betalingen";
+"widget.intent.scheduledPayments.desc" = "Toont je aankomende geplande betalingen";
+"widget.intent.latestRecords.title" = "Recente boekingen";
+"widget.intent.latestRecords.desc" = "Toont je meest recente boekingen";
+"widget.intent.accessoryBalance.title" = "Saldo";
+"widget.intent.accessoryBalance.desc" = "Saldo van de periode";
+"widget.intent.accessoryExpense.title" = "Uitgaven";
+"widget.intent.accessoryExpense.desc" = "Uitgaven van de periode";
+"widget.intent.accessoryBudget.title" = "Budget";
+"widget.intent.accessoryBudget.desc" = "Meest gebruikte budget";
+"widget.intent.accessoryPayment.title" = "Volgende betaling";
+"widget.intent.accessoryPayment.desc" = "Volgende geplande betaling";
+"widget.intent.quickEntry.title" = "Snelle invoer";
+"widget.intent.quickEntry.desc" = "Stel widgets in voor snelle acties om boekingen toe te voegen";
+
+// MARK: - Selection Mode
+"widget.selection.mode.type" = "Tonen";
+"widget.selection.automatic" = "Automatisch";
+"widget.selection.custom" = "Aangepast";
+
+// MARK: - Selection Parameters
+"widget.select.budgets" = "Budgetten";
+"widget.select.payments" = "Betalingen";
+
+// MARK: - Entities
+"widget.entity.budget" = "Budget";
+"widget.entity.payment" = "Geplande betaling";
+
+// MARK: - UI (texts in widget views)
+"widget.ui.noPayments" = "Geen openstaande betalingen";
+"widget.ui.noBudgets" = "Geen budgetten";
+"widget.ui.noRecords" = "Geen boekingen";
+"widget.ui.noExpenses" = "Geen uitgaven";
+"widget.ui.noData" = "Geen gegevens";
+"widget.ui.notEnoughData" = "Niet genoeg gegevens";
+"widget.ui.income" = "Inkomsten";
+"widget.ui.expenses" = "Uitgaven";
+"widget.ui.balance" = "Saldo";
+"widget.ui.netFlow" = "Nettostroom";
+"widget.ui.cashFlow" = "Cashflow";
+"widget.ui.total" = "Totaal";
+"widget.ui.ofLimit" = "van %@";
+"widget.ui.newRecord" = "Snelle invoer";
+"widget.ui.voiceRecord" = "Spraakinvoer";
+"widget.ui.scanReceipt" = "Beeldinvoer";
+"widget.ui.upcomingPayments" = "Aankomende betalingen";
+"widget.ui.budgets" = "Budgetten";
+"widget.ui.latestRecords" = "Recente boekingen";
+"widget.ui.categories" = "Categorieën";
+"widget.ui.subcategories" = "Subcategorieën";
+"widget.ui.topCategories" = "Topcategorieën";
+"widget.ui.topSubcategories" = "Topsubcategorieën";
+"widget.ui.noNote" = "Geen notitie";
+
+// MARK: - Date labels
+"widget.ui.overdue" = "Te laat";
+"widget.ui.today" = "Vandaag";
+"widget.ui.tomorrow" = "Morgen";
+
+// MARK: - Period (period selector)
+"widget.period.type" = "Periode";
+"widget.period.sameAsApp" = "Zelfde als app";
+"widget.period.thisWeek" = "Deze week";
+"widget.period.last7Days" = "Laatste 7 dagen";
+"widget.period.last30Days" = "Laatste 30 dagen";
+"widget.period.thisMonth" = "Deze maand";
+"widget.period.lastMonth" = "Vorige maand";
+"widget.period.thisYear" = "Dit jaar";
+"widget.period.lastYear" = "Vorig jaar";
+"widget.period.allTime" = "Altijd";
+
+// MARK: - Payment Category
+"widget.paymentCategory.all" = "Alle";
+"widget.paymentCategory.recurring" = "Terugkerend";
+"widget.paymentCategory.subscription" = "Abonnementen";
+
+// MARK: - Control Widgets
+"widget.control.voiceExpense" = "Spraakinvoer";
+"widget.control.voiceExpense.desc" = "Dicteer je boeking aan Yala";
+"widget.control.photoExpense" = "Beeldinvoer";
+"widget.control.photoExpense.desc" = "Boek met een afbeelding in Yala";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"widget.ui.others" = "Overige";

@@ -9,6 +9,32 @@
 import Foundation
 import SwiftData
 
+/// Perfil de datos a sembrar (controla volumen / contenido).
+enum DevSeedProfile: String {
+    case minimal
+    case realista
+    case pesado
+    case grupos
+    /// Como `.grupos` pero desde la perspectiva de un MIEMBRO no-owner recién unido
+    /// (saltando el accept de CKShare, imposible en sim) y deudor neto. Combinable con
+    /// `-uitest-group-invite` para el modo solo-grupos. Ver `DevSeedGroups.createAsInvitee`.
+    case gruposInvitado = "grupos-invitado"
+
+    /// Días de historial de transacciones a generar (escala el volumen).
+    /// `minimal`/`grupos`/`gruposInvitado` (~1 semana) son rápidos para XCUITests.
+    /// `realista`/`pesado` para escenarios ricos / performance (arranque más lento, riesgo watchdog).
+    var daysBack: Int {
+        switch self {
+        case .minimal, .grupos, .gruposInvitado: return 7
+        case .realista: return 730
+        case .pesado: return 3650
+        }
+    }
+
+    /// Si además siembra un grupo de gastos compartidos (DevSeedGroups).
+    var seedsGroups: Bool { self == .grupos || self == .gruposInvitado }
+}
+
 @MainActor @Observable
 final class DevSeedService {
 
@@ -20,14 +46,14 @@ final class DevSeedService {
 
     // MARK: - Seed
 
-    func seed(in context: ModelContext) async {
+    func seed(in context: ModelContext, profile: DevSeedProfile = .realista) async {
         guard !isSeeding else { return }
         isSeeding = true
         progress = 0
 
         let calendar = Calendar.current
         let endDate = Date.now
-        guard let startDate = calendar.date(byAdding: .year, value: -2, to: endDate) else {
+        guard let startDate = calendar.date(byAdding: .day, value: -profile.daysBack, to: endDate) else {
             isSeeding = false
             return
         }
@@ -37,6 +63,7 @@ final class DevSeedService {
         // Step 1: Ensure categories exist, then build subcategory lookup
         updateStep(L10n.DevSeed.stepCategories, progress: 0.02)
         seedCategoriesIfNeeded(in: context)
+        seedSystemGroupCategoriesIfNeeded(in: context)
         let subcategoryLookup = buildSubcategoryLookup(in: context)
 
         guard !subcategoryLookup.isEmpty else {
@@ -107,6 +134,23 @@ final class DevSeedService {
             subcategoryLookup: subcategoryLookup,
             in: context
         )
+
+        // Step 9.5: Inbox drafts (2 pending completos) — Inbox nunca vacío en dev/uitest.
+        DevSeedDrafts.create(
+            account: accounts.cuentaPrincipal,
+            subcategoryLookup: subcategoryLookup,
+            in: context
+        )
+
+        // Step 10: Grupos (perfiles .grupos / .gruposInvitado) — grupo local para QA del tab Grupos
+        if profile.seedsGroups {
+            updateStep("Grupos de prueba", progress: 0.97)
+            if profile == .gruposInvitado {
+                DevSeedGroups.createAsInvitee(in: context)
+            } else {
+                DevSeedGroups.create(in: context)
+            }
+        }
 
         // Final save
         updateStep(L10n.DevSeed.stepSaving, progress: 0.98)

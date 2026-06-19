@@ -12,16 +12,15 @@ struct ScheduledPaymentsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.scenePhase) private var scenePhase
 
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+    @Environment(AppPreferences.self) private var appPreferences
 
     // ViewModel
     @State private var viewModel = ScheduledPaymentsViewModel()
 
     var body: some View {
         ZStack {
-            PanelBackgroundView()
-
             ScrollView {
                 VStack(spacing: DS.Spacing.none) {
                     // Tab segmented control
@@ -35,7 +34,7 @@ struct ScheduledPaymentsView: View {
                         viewModel: viewModel,
                         payments: filteredPaymentsForCurrentTab,
                         tab: viewModel.selectedTab,
-                        currencyCode: defaultCurrencyCode,
+                        currencyCode: appPreferences.defaultCurrencyCode.rawValue,
                         onRefresh: { refreshData() }
                     )
                 }
@@ -44,6 +43,7 @@ struct ScheduledPaymentsView: View {
             // FAB button for new payment
             newPaymentFAB
         }
+        .yalaScreenBackground(.panel)
         .sheet(isPresented: $viewModel.showPaymentEditor) {
             if let payment = viewModel.editingPayment {
                 ScheduledPaymentEditorView(payment: payment)
@@ -66,24 +66,34 @@ struct ScheduledPaymentsView: View {
             viewModel.setContext(modelContext)
             viewModel.calculatePaymentData(payments: viewModel.allPayments)
 
-            // Auto-open editor from setup checklist (step 4)
-            if sessionState.shouldAutoOpenScheduledEditor {
-                sessionState.shouldAutoOpenScheduledEditor = false
-                viewModel.editingPayment = nil
-                viewModel.showPaymentEditor = true
-            }
+            // Auto-open editor from setup checklist — routed via AppRouter now.
+        }
+        .onDisappear {
+            viewModel.cancelRecalculation()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            viewModel.setBackground(phase != .active)
         }
         .onChange(of: viewModel.selectedTab) { _, _ in
-            viewModel.calculatePaymentData(payments: viewModel.allPayments)
+            viewModel.recalculateData()
         }
         .onChange(of: viewModel.selectedMonth) { _, _ in
-            viewModel.calculatePaymentData(payments: viewModel.allPayments)
+            viewModel.recalculateData()
         }
         .onChange(of: sessionState.dataVersion) { _, _ in
             refreshData()
         }
         .navigationDestination(for: PersistentIdentifier.self) { paymentID in
             ScheduledPaymentDetailDestination(paymentID: paymentID, viewModel: viewModel)
+        }
+        // Peek first so we only drain intents this view handles —
+        // BudgetsListView shares the .planning consumer.
+        .routerConsumer(.planning) {
+            if case .autoOpenScheduledEditor = AppRouter.shared.peekNext(for: .planning) {
+                _ = AppRouter.shared.drainNext(for: .planning)
+                viewModel.editingPayment = nil
+                viewModel.showPaymentEditor = true
+            }
         }
     }
 
@@ -108,20 +118,14 @@ struct ScheduledPaymentsView: View {
             HStack {
                 Spacer()
 
-                Button {
+                CircularPlusFAB(
+                    tint: theme.accent,
+                    accessibilityLabel: L10n.Accessibility.newPayment,
+                    accessibilityIdentifier: "scheduled_payments_create_fab"
+                ) {
                     viewModel.createNewPayment()
-                } label: {
-                    Image(systemName: "plus")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.white)
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .background(theme.accent)
-                        .clipShape(Circle())
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Accessibility.newPayment)
-                .glassEffect(.regular.interactive())
-                .shadow(color: Color.black.opacity(0.20), radius: 20, x: 0, y: 10)
+                .dsFloatingShadow()
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
@@ -144,8 +148,7 @@ struct ScheduledPaymentsView: View {
     // MARK: - Data Management
 
     private func refreshData() {
-        viewModel.loadPayments()
-        viewModel.calculatePaymentData(payments: viewModel.allPayments)
+        viewModel.reloadAndRecalculate()
     }
 }
 

@@ -32,12 +32,12 @@ struct TransactionFormRow<Trailing: View>: View {
         HStack(spacing: DS.FormRow.iconSpacing) {
             Image(systemName: icon)
                 .font(DS.Typography.body)
-                .foregroundStyle(hasError ? .red : .secondary)
+                .foregroundStyle(hasError ? DS.Semantic.errorForeground : .secondary)
                 .frame(width: DS.FormRow.iconWidth)
 
             Text(title)
                 .font(DS.Typography.body)
-                .foregroundStyle(hasError ? .red : .primary)
+                .foregroundStyle(hasError ? DS.Semantic.errorForeground : .primary)
 
             Spacer()
 

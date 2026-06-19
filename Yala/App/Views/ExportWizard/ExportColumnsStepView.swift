@@ -31,19 +31,16 @@ struct ExportColumnsStepView: View {
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
+                headerSection
 
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    headerSection
-
-                    columnsListSection
-                }
-                .padding(.vertical, DS.Spacing.xxl)
-                .padding(.horizontal, DS.Spacing.lg)
+                columnsListSection
             }
+            .padding(.vertical, DS.Spacing.xxl)
+            .padding(.horizontal, DS.Spacing.lg)
         }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Export.selectColumns)
         .navigationBarTitleDisplayMode(.inline)
         // Botón "Atrás" estándar del NavigationStack
@@ -65,7 +62,7 @@ struct ExportColumnsStepView: View {
                     Text(L10n.Common.next)
                 }
                 .disabled(!isValid)
-                .accessibilityHint(!isValid ? "Selecciona al menos una columna" : "")
+                .accessibilityHint(!isValid ? L10n.Accessibility.selectAtLeastOneColumn : "")
             }
         }
     }
@@ -75,7 +72,7 @@ struct ExportColumnsStepView: View {
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Export.customizeFile)
-                .font(.title3.weight(.semibold))
+                .font(DS.Typography.title3)
                 .foregroundStyle(.primary)
 
             Text(L10n.Export.columnsDescription)

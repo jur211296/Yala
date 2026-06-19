@@ -13,6 +13,8 @@ import SwiftData
 @Model
 final class Tag {
     // CloudKit: defaults required
+    // Stable UUID for CSV mirror references (TransactionItem.tagIDs, Budget.tagIDs, etc.)
+    var id: UUID = UUID()
     var name: String = ""
     var colorHex: String = "#FF9F0A"
     var iconName: String = "tag.fill"
@@ -58,6 +60,13 @@ final class Tag {
         "#7EC8E3",  // Azul cielo
     ]
 
+    /// Lookup `[UUID: Tag]` desde una colección de Tags. Usa `uniquingKeysWith`
+    /// para tolerar duplicados de id (race CloudKit dedup documentado en
+    /// CLAUDE.md 2026-05-07 — Sprint extra TODO #10).
+    static func byIDLookup(_ tags: [Tag]) -> [UUID: Tag] {
+        Dictionary(tags.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+    }
+
     /// Devuelve el siguiente color disponible que no esté en uso
     static func nextAvailableColor(excluding usedColors: [String]) -> String {
         let usedSet = Set(usedColors.map { $0.uppercased() })
@@ -71,6 +80,7 @@ final class Tag {
     }
 
     init(
+        id: UUID = UUID(),
         name: String,
         colorHex: String = defaultColors[0],
         iconName: String = "tag.fill",
@@ -78,6 +88,7 @@ final class Tag {
         createdAt: Date = Date.now,
         transactions: [TransactionItem] = []
     ) {
+        self.id = id
         self.name = name
         self.colorHex = colorHex
         self.iconName = iconName

@@ -12,11 +12,17 @@ import SwiftUI
 struct BudgetDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen.rawValue
+    @Environment(AppPreferences.self) private var appPreferences
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     let budget: Budget
     @Bindable var viewModel: BudgetsViewModel
+
+    // Cached collections para resolver UUIDs del CSV mirror → name display.
+    // @Query reactivo: re-render automático tras cambios en SwiftData/CloudKit.
+    @Query(sort: \Subcategory.sortOrder) private var allSubcategories: [Subcategory]
+    @Query(sort: \Account.name) private var allAccounts: [Account]
+    @Query(sort: \Tag.name) private var allTags: [Tag]
 
     @State private var showEditor = false
     @State private var showCharts = false
@@ -28,7 +34,7 @@ struct BudgetDetailView: View {
 
     private func refreshSummary() {
         guard isBudgetValid else { return }
-        summary = viewModel.buildSummary(for: budget, defaultCurrencyCode: defaultCurrencyCode)
+        summary = viewModel.buildSummary(for: budget, defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue)
     }
 
     var body: some View {
@@ -42,9 +48,7 @@ struct BudgetDetailView: View {
 
     @ViewBuilder
     private var mainContent: some View {
-        ZStack {
-            PanelBackgroundView()
-
+        Group {
             if let summary {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
@@ -56,11 +60,14 @@ struct BudgetDetailView: View {
                             encouragementNote
                         }
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                 }
+                .scrollViewGlassEdges()
+            } else {
+                Color.clear
             }
         }
+        .yalaScreenBackground(.panel)
         .navigationTitle(budget.name)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
@@ -99,8 +106,8 @@ struct BudgetDetailView: View {
     // MARK: - Summary Card
 
     private func summaryCard(_ summary: BudgetSummary) -> some View {
-        let spentText = YalaFormatter.currency(value: summary.spent, currencyCode: budget.currencyCode)
-        let limitText = YalaFormatter.currency(value: budget.limitAmount, currencyCode: budget.currencyCode)
+        let spentText = appPreferences.currency(summary.spent, currencyCode: budget.currencyCode)
+        let limitText = appPreferences.currency(budget.limitAmount, currencyCode: budget.currencyCode)
 
         return VStack(spacing: DS.Spacing.lg) {
             // Icon
@@ -122,7 +129,7 @@ struct BudgetDetailView: View {
                     .foregroundStyle(.secondary)
 
                 Text(spentText)
-                    .font(.system(size: scaledAmountSize, weight: .bold))
+                    .font(DS.Typography.largeTitle)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
 
@@ -160,14 +167,7 @@ struct BudgetDetailView: View {
             .padding(.horizontal, DS.Spacing.sm)
         }
         .padding(DS.Spacing.xl)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(.thCard)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-        )
+        .solidCard(padding: 0, radius: DS.Panel.widgetRadius)
     }
 
     // MARK: - Info Section
@@ -179,7 +179,7 @@ struct BudgetDetailView: View {
                     .foregroundStyle(.thAccent)
                     .accessibilityHidden(true)
                 Text(L10n.BudgetDetail.infoTitle)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
             }
             .padding(.leading, DS.Spacing.xs)
@@ -219,14 +219,17 @@ struct BudgetDetailView: View {
                     value: subcategoriesDescription
                 )
 
-                if let tags = budget.tags, !tags.isEmpty {
-                    SubsectionDivider()
+                if let tagIDs = budget.resolvedTagIDs(), !tagIDs.isEmpty {
+                    let resolved = allTags.filter { tagIDs.contains($0.id) }
+                    if !resolved.isEmpty {
+                        SubsectionDivider()
 
-                    detailRow(
-                        icon: "number",
-                        label: L10n.BudgetDetail.tags,
-                        value: tags.map(\.name).joined(separator: ", ")
-                    )
+                        detailRow(
+                            icon: "number",
+                            label: L10n.BudgetDetail.tags,
+                            value: resolved.map(\.name).joined(separator: ", ")
+                        )
+                    }
                 }
 
                 if let naturesString = budget.natures, !naturesString.isEmpty {
@@ -239,14 +242,7 @@ struct BudgetDetailView: View {
                     )
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
+            .panelCard()
         }
     }
 
@@ -259,7 +255,7 @@ struct BudgetDetailView: View {
                     .foregroundStyle(.thAccent)
                     .accessibilityHidden(true)
                 Text(L10n.BudgetDetail.statusTitle)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
             }
             .padding(.leading, DS.Spacing.xs)
@@ -307,14 +303,7 @@ struct BudgetDetailView: View {
                     .padding(.vertical, DS.Spacing.md)
                 }
             }
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
+            .panelCard()
         }
     }
 
@@ -381,25 +370,29 @@ struct BudgetDetailView: View {
     }
 
     private var accountsDescription: String {
-        guard let accounts = budget.accounts, !accounts.isEmpty else {
+        // Display reader (scheduleBackfill: false) — hot path will auto-heal.
+        guard let ids = budget.resolvedAccountIDs(), !ids.isEmpty else {
             return L10n.BudgetDetail.allAccounts
         }
-        return accounts.map(\.name).joined(separator: ", ")
+        let resolved = allAccounts.filter { ids.contains($0.shortcutID) }
+        return resolved.map(\.name).joined(separator: ", ")
     }
 
     private var categoriesDescription: String {
-        guard let subcategories = budget.subcategories, !subcategories.isEmpty else {
+        guard let ids = budget.resolvedSubcategoryIDs(), !ids.isEmpty else {
             return L10n.BudgetDetail.allCategories
         }
-        let uniqueNames = Array(Set(subcategories.map { $0.safeCategory.name })).sorted()
+        let resolved = allSubcategories.filter { ids.contains($0.shortcutID) }
+        let uniqueNames = Array(Set(resolved.map { $0.safeCategory.name })).sorted()
         return uniqueNames.joined(separator: ", ")
     }
 
     private var subcategoriesDescription: String {
-        guard let subcategories = budget.subcategories, !subcategories.isEmpty else {
+        guard let ids = budget.resolvedSubcategoryIDs(), !ids.isEmpty else {
             return L10n.BudgetDetail.allSubcategories
         }
-        return subcategories.map(\.name).joined(separator: ", ")
+        let resolved = allSubcategories.filter { ids.contains($0.shortcutID) }
+        return resolved.map(\.name).joined(separator: ", ")
     }
 
     private var needsDescription: String {

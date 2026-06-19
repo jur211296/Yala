@@ -12,14 +12,12 @@ import SwiftUI
 struct ScheduledPaymentsSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = ScheduledPaymentsSettingsViewModel()
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            VStack(spacing: DS.Spacing.none) {
+        VStack(spacing: DS.Spacing.none) {
                 // Tab selector
                 Picker("Tab", selection: $viewModel.selectedTab) {
                     ForEach(ScheduledPaymentsTab.allCases) { tab in
@@ -37,8 +35,8 @@ struct ScheduledPaymentsSettingsView: View {
                 } else {
                     paymentsList
                 }
-            }
         }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(NSLocalizedString("settings.plannedPayments", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
@@ -52,6 +50,7 @@ struct ScheduledPaymentsSettingsView: View {
                 YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                     viewModel.openEditor(for: nil)
                 }
+                .accessibilityIdentifier("scheduled_add_button")
             }
         }
         .sheet(isPresented: $viewModel.showEditor, onDismiss: { viewModel.closeEditor() }) {
@@ -130,9 +129,13 @@ struct ScheduledPaymentsSettingsView: View {
 
                     HStack(spacing: DS.Spacing.sm) {
                         // Amount
-                        Text(YalaFormatter.currency(value: payment.amount, currencyCode: payment.currencyCode, isEstimate: payment.isVariableAmount))
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
+                        AmountText(
+                            value: payment.amount,
+                            currencyCode: payment.currencyCode,
+                            font: DS.Typography.caption,
+                            tint: .secondary,
+                            isEstimate: payment.isVariableAmount
+                        )
 
                         // Recurrence info
                         if payment.isRecurring {
@@ -165,16 +168,10 @@ struct ScheduledPaymentsSettingsView: View {
                     .foregroundStyle(.tertiary)
             }
             .padding(DS.Spacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
+            .solidCard()
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("scheduled_row_\(payment.name)")
     }
 
     // MARK: - Helpers

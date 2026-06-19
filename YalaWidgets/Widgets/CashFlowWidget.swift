@@ -145,26 +145,18 @@ struct SmallCashFlowView: View {
             // Small income/expense summary (vertical layout to avoid truncation)
             VStack(alignment: .leading, spacing: WDS.Spacing.xxs) {
                 if entry.totalIncome > 0 {
-                    Label {
-                        Text(formatAmount(entry.totalIncome))
-                            .font(WDS.Typography.tiny)
-                    } icon: {
-                        Image(systemName: "arrow.up")
-                            .font(WDS.Typography.barValue)
-                    }
-                    .foregroundStyle(WidgetColors.income)
-                    .widgetAccentable()
+                    summaryRow(
+                        icon: "arrow.up",
+                        amount: entry.totalIncome,
+                        color: WidgetColors.income
+                    )
                 }
 
-                Label {
-                    Text(formatAmount(entry.totalExpense))
-                        .font(WDS.Typography.tiny)
-                } icon: {
-                    Image(systemName: "arrow.down")
-                        .font(WDS.Typography.barValue)
-                }
-                .foregroundStyle(WidgetColors.expense)
-                .widgetAccentable()
+                summaryRow(
+                    icon: "arrow.down",
+                    amount: entry.totalExpense,
+                    color: WidgetColors.expense
+                )
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -173,14 +165,24 @@ struct SmallCashFlowView: View {
         .widgetURL(WidgetURLHelper.url(for: "panel"))
     }
 
-    private func formatAmount(_ value: Double) -> String {
-        let symbol = entry.currencyDisplayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: entry.currencyCode)
-            : entry.currencyCode
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return "\(symbol) \(formatter.string(from: NSNumber(value: value)) ?? "0")"
+    /// Compact income/expense summary row con icon + amount jerarquizado.
+    /// Reemplaza el Label nativo para tener control sobre los foregroundStyles
+    /// internos del WidgetAmountText (symbol/decimal subordinated).
+    private func summaryRow(icon: String, amount: Double, color: Color) -> some View {
+        HStack(spacing: WDS.Spacing.xs) {
+            Image(systemName: icon)
+                .font(WDS.Typography.barValue)
+                .foregroundStyle(color)
+            WidgetAmountText(
+                value: amount,
+                currencyCode: entry.currencyCode,
+                displayFormat: entry.currencyDisplayFormat,
+                font: WDS.Typography.tiny,
+                secondaryFont: WDS.Typography.tinySecondary,
+                tint: .color(color)
+            )
+        }
+        .widgetAccentable()
     }
 }
 
@@ -229,9 +231,14 @@ struct MediumCashFlowView: View {
                                 .font(WDS.Typography.label)
                                 .foregroundStyle(.secondary)
                             Spacer()
-                            Text(formatCurrency(entry.totalIncome))
-                                .font(WDS.Typography.value)
-                                .foregroundStyle(.primary)
+                            WidgetAmountText(
+                                value: entry.totalIncome,
+                                currencyCode: entry.currencyCode,
+                                displayFormat: entry.currencyDisplayFormat,
+                                font: WDS.Typography.value,
+                                secondaryFont: WDS.Typography.valueSecondary,
+                                tint: .primary
+                            )
                         }
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
@@ -257,9 +264,14 @@ struct MediumCashFlowView: View {
                             .font(WDS.Typography.label)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text(formatCurrency(entry.totalExpense))
-                            .font(WDS.Typography.value)
-                            .foregroundStyle(.primary)
+                        WidgetAmountText(
+                            value: entry.totalExpense,
+                            currencyCode: entry.currencyCode,
+                            displayFormat: entry.currencyDisplayFormat,
+                            font: WDS.Typography.value,
+                            secondaryFont: WDS.Typography.valueSecondary,
+                            tint: .primary
+                        )
                     }
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
@@ -281,16 +293,6 @@ struct MediumCashFlowView: View {
         .padding(WDS.Spacing.xs)
         .clipped()
         .widgetURL(WidgetURLHelper.url(for: "panel"))
-    }
-
-    private func formatCurrency(_ value: Double) -> String {
-        let symbol = entry.currencyDisplayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: entry.currencyCode)
-            : entry.currencyCode
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        return "\(symbol) \(formatter.string(from: NSNumber(value: value)) ?? "0")"
     }
 }
 
@@ -630,72 +632,76 @@ struct BidirectionalCashFlowChart: View {
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
             }
 
-            if isWaterfallMode {
-                // WATERFALL: cumulative bars — each starts where previous ended
-                ForEach(Array(waterfallBars.enumerated()), id: \.offset) { _, bar in
-                    BarMark(
-                        x: .value("Date", bar.date, unit: grouping.calendarUnit),
-                        yStart: .value("Start", bar.yStart),
-                        yEnd: .value("End", bar.yEnd)
+            // Mode-exclusive series rendered via empty-array ForEach guards
+            // (an if/else here emits _ConditionalContent, which only conforms
+            // to ChartContent on iOS 27+).
+
+            // WATERFALL: cumulative bars — each starts where previous ended
+            ForEach(isWaterfallMode ? Array(waterfallBars.enumerated()) : [], id: \.offset) { _, bar in
+                BarMark(
+                    x: .value("Date", bar.date, unit: grouping.calendarUnit),
+                    yStart: .value("Start", bar.yStart),
+                    yEnd: .value("End", bar.yEnd)
+                )
+                .foregroundStyle(
+                    bar.net >= 0 ? WidgetColors.income.gradient : WidgetColors.expense.gradient
+                )
+                .cornerRadius(WDS.Radius.xs)
+            }
+
+            // Income-only mode: bars upward (teal)
+            ForEach((!isWaterfallMode && hasOnlyIncome) ? Array(groupedPoints.enumerated()) : [], id: \.offset) { _, point in
+                BarMark(
+                    x: .value("Date", point.date, unit: grouping.calendarUnit),
+                    y: .value("Income", point.income)
+                )
+                .foregroundStyle(WidgetColors.income.gradient)
+                .cornerRadius(WDS.Radius.xs)
+            }
+
+            // Bidirectional mode (monthly)
+            ForEach((!isWaterfallMode && !hasOnlyIncome && !expensesOnly) ? Array(groupedPoints.enumerated()) : [], id: \.offset) { _, point in
+                BarMark(
+                    x: .value("Date", point.date, unit: grouping.calendarUnit),
+                    y: .value("Income", point.income)
+                )
+                .foregroundStyle(WidgetColors.income.gradient)
+                .cornerRadius(WDS.Radius.xs)
+
+                BarMark(
+                    x: .value("Date", point.date, unit: grouping.calendarUnit),
+                    y: .value("Expense", -point.expense)
+                )
+                .foregroundStyle(WidgetColors.expense.gradient)
+                .cornerRadius(WDS.Radius.xs)
+
+                // Net trend line only for monthly grouping
+                if grouping == .month {
+                    LineMark(
+                        x: .value("Date", point.date, unit: grouping.calendarUnit),
+                        y: .value("Net", point.net)
                     )
-                    .foregroundStyle(
-                        bar.net >= 0 ? WidgetColors.income.gradient : WidgetColors.expense.gradient
+                    .foregroundStyle(WidgetColors.electricIndigo)
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    .interpolationMethod(.monotone)
+
+                    PointMark(
+                        x: .value("Date", point.date, unit: grouping.calendarUnit),
+                        y: .value("Net", point.net)
                     )
-                    .cornerRadius(WDS.Radius.xs)
+                    .foregroundStyle(WidgetColors.electricIndigo)
+                    .symbolSize(20)
                 }
-            } else {
-                ForEach(Array(groupedPoints.enumerated()), id: \.offset) { _, point in
-                    if hasOnlyIncome {
-                        // Income-only mode: bars upward (teal)
-                        BarMark(
-                            x: .value("Date", point.date, unit: grouping.calendarUnit),
-                            y: .value("Income", point.income)
-                        )
-                        .foregroundStyle(WidgetColors.income.gradient)
-                        .cornerRadius(WDS.Radius.xs)
-                    } else if !expensesOnly {
-                        // Bidirectional mode (monthly)
-                        BarMark(
-                            x: .value("Date", point.date, unit: grouping.calendarUnit),
-                            y: .value("Income", point.income)
-                        )
-                        .foregroundStyle(WidgetColors.income.gradient)
-                        .cornerRadius(WDS.Radius.xs)
+            }
 
-                        BarMark(
-                            x: .value("Date", point.date, unit: grouping.calendarUnit),
-                            y: .value("Expense", -point.expense)
-                        )
-                        .foregroundStyle(WidgetColors.expense.gradient)
-                        .cornerRadius(WDS.Radius.xs)
-
-                        // Net trend line only for monthly grouping
-                        if grouping == .month {
-                            LineMark(
-                                x: .value("Date", point.date, unit: grouping.calendarUnit),
-                                y: .value("Net", point.net)
-                            )
-                            .foregroundStyle(WidgetColors.electricIndigo)
-                            .lineStyle(StrokeStyle(lineWidth: 2))
-                            .interpolationMethod(.monotone)
-
-                            PointMark(
-                                x: .value("Date", point.date, unit: grouping.calendarUnit),
-                                y: .value("Net", point.net)
-                            )
-                            .foregroundStyle(WidgetColors.electricIndigo)
-                            .symbolSize(20)
-                        }
-                    } else {
-                        // Expenses-only mode: bars upward
-                        BarMark(
-                            x: .value("Date", point.date, unit: grouping.calendarUnit),
-                            y: .value("Expense", point.expense)
-                        )
-                        .foregroundStyle(WidgetColors.expense.gradient)
-                        .cornerRadius(WDS.Radius.xs)
-                    }
-                }
+            // Expenses-only mode: bars upward
+            ForEach((!isWaterfallMode && !hasOnlyIncome && expensesOnly) ? Array(groupedPoints.enumerated()) : [], id: \.offset) { _, point in
+                BarMark(
+                    x: .value("Date", point.date, unit: grouping.calendarUnit),
+                    y: .value("Expense", point.expense)
+                )
+                .foregroundStyle(WidgetColors.expense.gradient)
+                .cornerRadius(WDS.Radius.xs)
             }
         }
         .widgetAccentable()

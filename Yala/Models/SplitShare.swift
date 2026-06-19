@@ -1,0 +1,36 @@
+//
+//  SplitShare.swift
+//  Yala
+//
+//  Porción de cada miembro en un gasto compartido.
+//  Vinculado a SplitExpense via expenseID y a SplitMember via memberID.
+//
+
+import Foundation
+import SwiftData
+
+@Model
+final class SplitShare {
+    var id: UUID = UUID()
+    var expenseID: UUID = UUID()
+    var memberID: String = ""
+    var amount: Double = 0
+    var isPaid: Bool = false
+    var groupZoneID: String = ""
+    var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
+
+    init(
+        expenseID: UUID = UUID(),
+        memberID: String = "",
+        amount: Double = 0,
+        isPaid: Bool = false,
+        groupZoneID: String = ""
+    ) {
+        self.id = UUID()
+        self.expenseID = expenseID
+        self.memberID = memberID
+        self.amount = amount
+        self.isPaid = isPaid
+        self.groupZoneID = groupZoneID
+    }
+}

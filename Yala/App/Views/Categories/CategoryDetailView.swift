@@ -56,21 +56,18 @@ struct CategoryDetailView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-                .dismissKeyboardOnTap()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    header
-                    detailsSection
-                    subcategoriesSection
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.xxl)
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
+                header
+                detailsSection
+                subcategoriesSection
             }
-            .scrollDismissesKeyboard(.interactively)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.xxl)
+            .dismissKeyboardOnTap()
         }
+        .scrollDismissesKeyboard(.interactively)
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Category.editTitle)
         .swipeBack()
         .toolbar {
@@ -195,7 +192,7 @@ struct CategoryDetailView: View {
                     // Pencil edit indicator
                     Circle()
                         .fill(.thCard)
-                        .frame(width: 24, height: 24)
+                        .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
                         .overlay(
                             Image(systemName: "pencil")
                                 .font(DS.Typography.labelSmall)
@@ -209,6 +206,7 @@ struct CategoryDetailView: View {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Action.edit)
 
             Text(viewModel.displayName)
                 .font(DS.Typography.headline)
@@ -237,6 +235,7 @@ struct CategoryDetailView: View {
                         TextField(L10n.Category.namePlaceholder, text: $viewModel.name)
                             .textContentType(.name)
                             .focused($isNameFieldFocused)
+                            .accessibilityIdentifier("category_name_field")
                     }
                     .padding()
 
@@ -318,7 +317,7 @@ struct CategoryDetailView: View {
                         VStack(spacing: DS.Spacing.none) {
                             ForEach(Array(visibles.enumerated()), id: \.element.id) { index, subcategory in
                                 HStack(spacing: DS.Spacing.none) {
-                                    if isEditingSubcategories && !subcategory.isSystemSubcategory {
+                                    if isEditingSubcategories && !subcategory.isAnySystem {
                                         Button {
                                             handleSubcategoryDelete(subcategory)
                                         } label: {
@@ -344,13 +343,13 @@ struct CategoryDetailView: View {
                                         }
                                     }
                                     .buttonStyle(.plain)
-                                    .padding(.horizontal, isEditingSubcategories && !subcategory.isSystemSubcategory ? DS.Spacing.sm : DS.Spacing.lg)
+                                    .padding(.horizontal, isEditingSubcategories && !subcategory.isAnySystem ? DS.Spacing.sm : DS.Spacing.lg)
                                     .padding(.vertical, DS.Spacing.sm)
                                 }
 
                                 if index < visibles.count - 1 {
                                     Divider()
-                                        .padding(.leading, isEditingSubcategories && !subcategory.isSystemSubcategory ? DS.Spacing.xxxxl + DS.Spacing.sm : DS.Spacing.lg)
+                                        .padding(.leading, isEditingSubcategories && !subcategory.isAnySystem ? DS.Spacing.xxxxl + DS.Spacing.sm : DS.Spacing.lg)
                                 }
                             }
                         }
@@ -373,6 +372,7 @@ struct CategoryDetailView: View {
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.FormRow.paddingV)
                     }
+                    .accessibilityIdentifier("category_add_subcategory")
                 }
                 .background(
                     RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -397,7 +397,7 @@ struct CategoryDetailView: View {
                     VStack(spacing: DS.Spacing.none) {
                         ForEach(Array(ocultas.enumerated()), id: \.element.id) { index, subcategory in
                             HStack(spacing: DS.Spacing.none) {
-                                if isEditingSubcategories && !subcategory.isSystemSubcategory {
+                                if isEditingSubcategories && !subcategory.isAnySystem {
                                     Button {
                                         handleSubcategoryDelete(subcategory)
                                     } label: {
@@ -423,13 +423,13 @@ struct CategoryDetailView: View {
                                     }
                                 }
                                 .buttonStyle(.plain)
-                                .padding(.horizontal, isEditingSubcategories && !subcategory.isSystemSubcategory ? DS.Spacing.sm : DS.Spacing.lg)
+                                .padding(.horizontal, isEditingSubcategories && !subcategory.isAnySystem ? DS.Spacing.sm : DS.Spacing.lg)
                                 .padding(.vertical, DS.Spacing.sm)
                             }
 
                             if index < ocultas.count - 1 {
                                 Divider()
-                                    .padding(.leading, isEditingSubcategories && !subcategory.isSystemSubcategory ? DS.Spacing.xxxxl + DS.Spacing.sm : DS.Spacing.lg)
+                                    .padding(.leading, isEditingSubcategories && !subcategory.isAnySystem ? DS.Spacing.xxxxl + DS.Spacing.sm : DS.Spacing.lg)
                             }
                         }
                     }

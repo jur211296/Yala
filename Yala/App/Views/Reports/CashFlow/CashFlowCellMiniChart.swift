@@ -6,6 +6,7 @@
 //  Works for current and past months. Hover tooltip on selection.
 //
 
+import Accessibility
 import Charts
 import SwiftUI
 
@@ -16,6 +17,7 @@ struct CashFlowCellMiniChart: View {
     let currencyCode: String
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var selectedDay: Int?
 
     private func chartYDomain(for data: [CumulativePoint]) -> ClosedRange<Double> {
@@ -84,10 +86,11 @@ struct CashFlowCellMiniChart: View {
                         alignment: tooltipAlignment(for: point.day, in: data)
                     ) {
                         VStack(spacing: DS.Spacing.xxs) {
-                            Text(YalaFormatter.currency(value: point.cumulative, currencyCode: currencyCode))
-                                .font(DS.Typography.label)
-                                .fontWeight(.semibold)
-                                .monospacedDigit()
+                            // `.annotation` no propaga environment objects — AmountText (lee
+                            // @Environment(AppPreferences.self)) dispara SIGTRAP aquí. Text pre-resuelto.
+                            Text(appPreferences.currency(point.cumulative, currencyCode: currencyCode))
+                                .font(DS.Typography.label.weight(.semibold).monospacedDigit())
+                                .foregroundStyle(.primary)
                             if point.daily > 0 {
                                 Text("+" + YalaFormatter.amountCompactTable(value: point.daily))
                                     .font(DS.Typography.captionSmall)
@@ -111,7 +114,7 @@ struct CashFlowCellMiniChart: View {
             .chartYAxis {
                 AxisMarks(position: .trailing, values: .automatic(desiredCount: 3)) { value in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                        .foregroundStyle(Color.gray.opacity(0.1))
+                        .foregroundStyle(theme.secondaryText.opacity(0.1))
                     AxisValueLabel {
                         if let v = value.as(Double.self) {
                             Text(YalaFormatter.amountCompactTable(value: v))
@@ -132,6 +135,9 @@ struct CashFlowCellMiniChart: View {
             }
             .chartXSelection(value: $selectedDay)
             .chartYScale(domain: yDomain)
+            .accessibilityChartDescriptor(CashFlowMiniChartDescriptor(
+                data: data, plannedAmount: plannedAmount, currencyCode: currencyCode
+            ))
             .frame(height: 160)
 
             // Legend
@@ -195,4 +201,47 @@ private struct CumulativePoint {
     let day: Int
     let daily: Double
     let cumulative: Double
+}
+
+// MARK: - Accessibility Chart Descriptor
+
+private struct CashFlowMiniChartDescriptor: AXChartDescriptorRepresentable {
+    let data: [CumulativePoint]
+    let plannedAmount: Double
+    let currencyCode: String
+
+    func makeChartDescriptor() -> AXChartDescriptor {
+        let minDay = Double(data.first?.day ?? 1)
+        let maxDay = Double(data.last?.day ?? 31)
+        let maxAmount = max(data.last?.cumulative ?? 0, plannedAmount) * 1.1 + 1
+
+        let xAxis = AXNumericDataAxisDescriptor(
+            title: "Day",
+            range: minDay...maxDay,
+            gridlinePositions: []
+        ) { value in "\(Int(value))" }
+
+        let yAxis = AXNumericDataAxisDescriptor(
+            title: "Amount",
+            range: 0...maxAmount,
+            gridlinePositions: []
+        ) { value in YalaFormatter.amountCompactTable(value: value) }
+
+        let series = AXDataSeriesDescriptor(
+            name: L10n.CashFlowPlan.cellDetailDailyProgress,
+            isContinuous: true,
+            dataPoints: data.map { point in
+                .init(x: Double(point.day), y: point.cumulative)
+            }
+        )
+
+        return AXChartDescriptor(
+            title: L10n.CashFlowPlan.cellDetailDailyProgress,
+            summary: nil,
+            xAxis: xAxis,
+            yAxis: yAxis,
+            additionalAxes: [],
+            series: [series]
+        )
+    }
 }

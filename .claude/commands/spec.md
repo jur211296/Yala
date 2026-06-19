@@ -73,7 +73,7 @@ Complejidad: [baja/media/alta]
 Archivos principales: [lista corta]
 
 El plan esta en ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/YalaWiki/Backlog/[archivo].md
-Siguiente paso: Plan Mode o /yolo para implementar
+Siguiente paso: Plan Mode para implementar
 ```
 
 ## REGLAS

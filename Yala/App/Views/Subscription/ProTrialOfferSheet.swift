@@ -76,7 +76,7 @@ struct ProTrialOfferSheet: View {
                     VStack(spacing: DS.Spacing.sm) {
                         Text(L10n.Subscription.errorTitle)
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.thSecondaryText)
                         Button(L10n.Action.retry) {
                             productLoadFailed = false
                             Task { await loadProductsWithTimeout() }
@@ -105,7 +105,15 @@ struct ProTrialOfferSheet: View {
                     } label: {
                         Text(L10n.TrialOffer.maybeLater)
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.thSecondaryText)
+                    }
+
+                    Button {
+                        Task { await store.restorePurchases() }
+                    } label: {
+                        Text(L10n.Subscription.restore)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.thPrimaryText)
                     }
 
                     VStack(spacing: DS.Spacing.xs) {
@@ -119,6 +127,7 @@ struct ProTrialOfferSheet: View {
                             Link(L10n.Subscription.privacyPolicyLink, destination: AppConstants.privacyURL)
                         }
                         .font(DS.Typography.caption)
+                        .tint(theme.accent)
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
@@ -127,7 +136,9 @@ struct ProTrialOfferSheet: View {
             }
         }
         .scrollBounceBehavior(.basedOnSize)
-        .background(theme.background.ignoresSafeArea())
+        // Excepción a la regla "sheets → .subtle": pantalla de venta Pro (oferta de
+        // trial) conserva el gradiente premium, igual que SubscriptionView.
+        .yalaScreenBackground(.panel)
         .task {
             await loadProductsWithTimeout()
         }
@@ -169,18 +180,14 @@ struct ProTrialOfferSheet: View {
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             featureRow(icon: "building.columns.fill", text: L10n.Subscription.featureUnlimitedAccounts, color: .blue)
             featureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
+            featureRow(icon: "sparkles", text: L10n.Subscription.featureAIAssistant, color: .electricIndigo)
             featureRow(icon: "waveform.badge.mic", text: L10n.Subscription.featureVoice, color: .hotPink)
             featureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .teal)
             featureRow(icon: "paintpalette.fill", text: L10n.Subscription.featureThemes, color: .orange)
             featureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
         }
         .padding(.vertical, DS.Spacing.sm)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl)
-                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-        )
+        .solidCard(radius: DS.Radius.xl)
         .padding(.horizontal, DS.Spacing.lg)
     }
 
@@ -191,7 +198,7 @@ struct ProTrialOfferSheet: View {
                 .foregroundStyle(.white)
                 .frame(width: 26, height: 26)
                 .background(
-                    RoundedRectangle(cornerRadius: 6)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(color)
                 )
                 .accessibilityHidden(true)
@@ -292,28 +299,20 @@ struct ProTrialOfferSheet: View {
                 ZStack {
                     Circle()
                         .stroke(
-                            isSelected ? Color.brandPrimary : theme.secondaryText.opacity(0.3),
+                            isSelected ? theme.accent : theme.secondaryText.opacity(0.3),
                             lineWidth: 2
                         )
                         .frame(width: 24, height: 24)
 
                     if isSelected {
                         Circle()
-                            .fill(Color.brandPrimary)
+                            .fill(theme.accent)
                             .frame(width: 16, height: 16)
                     }
                 }
             }
             .padding(DS.Spacing.lg)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(
-                        isSelected ? Color.brandPrimary : Color.primary.opacity(0.05),
-                        lineWidth: isSelected ? 2 : 1
-                    )
-            )
+            .selectableCard(isSelected: isSelected, radius: DS.Radius.lg)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -22,7 +22,7 @@ struct CashFlowSetupView: View {
     @State private var editingLine: SuggestedLine?
 
     // Tour
-    @AppStorage("hasSeenCashFlowSetupTour") private var hasSeenTour = false
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var showTour = false
     @State private var tourIndex = 0
     @State private var setupScrollProxy: ScrollViewProxy?
@@ -97,6 +97,7 @@ struct CashFlowSetupView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.sm)
                 .yalaSafeBottomPadding()
+                .dismissKeyboardOnTap()
             }
             .scrollDisabled(showTour)
             .onAppear { setupScrollProxy = scrollProxy }
@@ -122,11 +123,11 @@ struct CashFlowSetupView: View {
             currentIndex: $tourIndex,
             scrollProxy: setupScrollProxy
         ) {
-            hasSeenTour = true
+            appPreferences.hasSeenCashFlowSetupTour = true
         }
         .task {
             do { try await Task.sleep(for: .seconds(1)) } catch { return }
-            if !viewModel.suggestedLines.isEmpty && !hasSeenTour {
+            if !viewModel.suggestedLines.isEmpty && !appPreferences.hasSeenCashFlowSetupTour {
                 showTour = true
             }
         }
@@ -139,6 +140,7 @@ struct CashFlowSetupView: View {
             .font(DS.Typography.title2)
             .fontWeight(.bold)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityIdentifier("cashflow_setup_view")
     }
 
     // MARK: - Banner
@@ -247,7 +249,7 @@ struct CashFlowSetupView: View {
                     .foregroundStyle(.white)
             }
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(line.name)
                     .font(DS.Typography.body)
                     .foregroundStyle(.primary)
@@ -264,10 +266,12 @@ struct CashFlowSetupView: View {
 
             Spacer()
 
-            Text(YalaFormatter.currency(value: line.suggestedAmount, currencyCode: currencyCode))
-                .font(DS.Typography.body)
-                .foregroundStyle(line.isIncome ? Color.electricIndigo : .primary)
-                .monospacedDigit()
+            AmountText(
+                value: line.suggestedAmount,
+                currencyCode: currencyCode,
+                font: DS.Typography.body.monospacedDigit(),
+                tint: line.isIncome ? .color(Color.electricIndigo) : .primary
+            )
 
             Button {
                 editingLine = line
@@ -309,10 +313,12 @@ struct CashFlowSetupView: View {
             Text(label)
                 .font(isBold ? DS.Typography.headline : DS.Typography.body)
             Spacer()
-            Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode))
-                .font(isBold ? DS.Typography.headline : DS.Typography.body)
-                .foregroundStyle(color)
-                .monospacedDigit()
+            AmountText(
+                value: amount,
+                currencyCode: currencyCode,
+                font: (isBold ? DS.Typography.headline : DS.Typography.body).monospacedDigit(),
+                tint: .color(color)
+            )
         }
     }
 
@@ -362,9 +368,11 @@ struct CashFlowMethodPickerSheet: View {
     @State private var selectedMethod: EstimationMethod
     @State private var manualAmountText: String = ""
     @State private var previewAmount: Double
+    @State private var selectedDetent: PresentationDetent = .medium
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     init(line: SuggestedLine, currencyCode: String, viewModel: CashFlowPlanViewModel) {
         self.line = line
@@ -377,11 +385,11 @@ struct CashFlowMethodPickerSheet: View {
         }
     }
 
+    private var isLargeDetent: Bool { selectedDetent == .large }
+
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView().dismissKeyboardOnTap()
-
                 ScrollView {
                     VStack(spacing: DS.Spacing.xl) {
                         // Live amount preview
@@ -389,10 +397,11 @@ struct CashFlowMethodPickerSheet: View {
                             Text(line.name)
                                 .font(DS.Typography.subheadline)
                                 .foregroundStyle(.secondary)
-                            Text(YalaFormatter.currency(value: previewAmount, currencyCode: currencyCode))
-                                .font(DS.Typography.title)
-                                .fontWeight(.bold)
-                                .monospacedDigit()
+                            AmountText(
+                                value: previewAmount,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.title.weight(.bold).monospacedDigit()
+                            )
                                 .contentTransition(.numericText())
                                 .animation(.default, value: previewAmount)
                         }
@@ -430,9 +439,11 @@ struct CashFlowMethodPickerSheet: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                     .yalaSafeBottomPadding()
+                    .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(L10n.CashFlowPlan.calculationMethodTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -446,7 +457,7 @@ struct CashFlowMethodPickerSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
     }
 
     // MARK: - Helpers
@@ -469,7 +480,7 @@ struct CashFlowMethodPickerSheet: View {
                     .foregroundStyle(selectedMethod == method ? theme.accent : .secondary)
                     .font(DS.Typography.headline)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(methodDisplayName(method))
                         .font(DS.Typography.body)
                         .foregroundStyle(.primary)

@@ -19,7 +19,7 @@ struct InboxView: View {
     @Environment(DraftService.self) private var draftService
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
-    @AppStorage("defaultCurrencyCode") private var preferredCurrency: String = "PEN"
+    @Environment(AppPreferences.self) private var appPreferences
 
     /// Callback for navigating to Records tab (bulk approve success)
     var onNavigateToRecords: (() -> Void)?
@@ -59,16 +59,18 @@ struct InboxView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView()
-
                 VStack(spacing: DS.Spacing.none) {
+                    // Mini-hero (panel-aligned). Pending-global; oculto en selection mode.
+                    miniHero
+
                     // Filter chips
                     filterChips
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.top, DS.Spacing.sm)
                         .padding(.bottom, DS.Spacing.md)
 
-                    // Bulk action hint (shown when 2+ pending drafts and not in selection mode)
+                    // Bulk action hint (shown when 2+ pending drafts and not in selection mode).
+                    // Sin contador: el badge del mini-hero ya transmite la cantidad.
                     if !isSelectionMode && selectedFilter == .pending && filteredDrafts.count >= 2 {
                         HStack(spacing: DS.Spacing.xs) {
                             Image(systemName: "hand.tap")
@@ -95,6 +97,7 @@ struct InboxView: View {
                     }
                 }
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Inbox.title)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -146,23 +149,57 @@ struct InboxView: View {
                     viewModel.loadData()
                 }
             }) { draft in
-                InboxDraftEditSheet(
-                    draft: draft,
-                    onApproved: { shouldDismissAfterApproval = true },
-                    onApproveNext: { nextDraft in
-                        // Store the ID and close sheet - onChange will open the next
-                        pendingNextDraftID = nextDraft.persistentModelID
-                    },
-                    onEditTransaction: { transaction in
-                        // Open transaction editor after sheet dismiss
-                        Task {
-                            do {
-                                try await Task.sleep(for: .milliseconds(300))
-                            } catch { return }
-                            selectedTransaction = transaction
+                // A0-Bridge V2.0 (P1-4): drafts de grupo usan sheets dedicadas que solo permiten
+                // asignar lo que falta (subcat para groupExpense, cuenta para groupSettlement).
+                // Drafts personales mantienen el flujo edit-completo existente.
+                switch draft.sourceType {
+                case .groupExpense:
+                    // M6 + Enfoque B: route según qué falta. Account-only (sheet cuenta),
+                    // account+subcategory (sheet combinado, Enfoque B), o subcategory-only
+                    // (TX-puntero M5 heredado o fallback Caso A/B). El helper centraliza la
+                    // decisión y la mantiene en sync con la intención del bridge.
+                    let route = GroupDraftFinalizationLogic.route(
+                        targetTransactionIDIsNil: draft.targetTransactionID == nil,
+                        needsAccount: draft.needsUserInput.contains(DraftInputRequirement.account),
+                        needsSubcategory: draft.needsUserInput.contains(DraftInputRequirement.subcategory)
+                    )
+                    switch route {
+                    case .accountOnly:
+                        GroupExpenseAccountFinalizationSheet(draft: draft) {
+                            shouldDismissAfterApproval = true
+                        }
+                    case .accountAndSubcategory:
+                        GroupExpenseAccountAndSubcategoryFinalizationSheet(draft: draft) {
+                            shouldDismissAfterApproval = true
+                        }
+                    case .subcategoryOnly:
+                        GroupExpenseDraftFinalizationSheet(draft: draft) {
+                            shouldDismissAfterApproval = true
                         }
                     }
-                )
+                case .groupSettlement:
+                    GroupSettlementDraftFinalizationSheet(draft: draft) {
+                        shouldDismissAfterApproval = true
+                    }
+                default:
+                    InboxDraftEditSheet(
+                        draft: draft,
+                        onApproved: { shouldDismissAfterApproval = true },
+                        onApproveNext: { nextDraft in
+                            // Store the ID and close sheet - onChange will open the next
+                            pendingNextDraftID = nextDraft.persistentModelID
+                        },
+                        onEditTransaction: { transaction in
+                            // Open transaction editor after sheet dismiss
+                            Task {
+                                do {
+                                    try await Task.sleep(for: .milliseconds(300))
+                                } catch { return }
+                                selectedTransaction = transaction
+                            }
+                        }
+                    )
+                }
             }
             .onChange(of: selectedDraft) { oldValue, newValue in
                 // When sheet closes and we have a pending next draft, open it
@@ -306,6 +343,52 @@ struct InboxView: View {
         selectedDraftIDs.removeAll()
     }
 
+    // MARK: - Mini-hero (panel-aligned)
+
+    @ViewBuilder
+    private var miniHero: some View {
+        if !isSelectionMode {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                if pendingCount > 0 {
+                    Text(L10n.Inbox.pendingBadge(pendingCount))
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(theme.accent)
+                        .padding(.horizontal, DS.Chip.paddingH)
+                        .padding(.vertical, DS.Spacing.xxs)
+                        .background(Capsule().fill(theme.accent.opacity(0.15)))
+                }
+                Text(heroSubtitleText)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.md)
+            .padding(.bottom, DS.Spacing.sm)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(heroAccessibilityLabel)
+        }
+    }
+
+    private var pendingCount: Int {
+        viewModel.countForFilter(.pending)
+    }
+
+    private var heroSubtitleText: String {
+        switch InboxHeroSubtitleLogic.subtitle(pendingCount: pendingCount) {
+        case .allDone:                  return L10n.Inbox.subtitleAllDone
+        case .onePending:               return L10n.Inbox.subtitleOnePending
+        case .multiplePending(let n):   return L10n.Inbox.subtitleMultiplePending(n)
+        }
+    }
+
+    private var heroAccessibilityLabel: String {
+        if pendingCount > 0 {
+            return "\(L10n.Inbox.pendingBadge(pendingCount)). \(heroSubtitleText)"
+        }
+        return heroSubtitleText
+    }
+
     // MARK: - Filter Chips
 
     private var filterChips: some View {
@@ -371,7 +454,7 @@ struct InboxView: View {
                     }
                 } header: {
                     Text(formattedDate(group.date))
-                        .font(DS.Typography.labelSmall)
+                        .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.secondary)
                         .textCase(nil)
                 }
@@ -395,7 +478,7 @@ struct InboxView: View {
     private func draftRow(for draft: InboxDraft) -> some View {
         InboxDraftRowView(
             draft: draft,
-            currencyCode: draft.displayCurrencyCode ?? preferredCurrency,
+            currencyCode: draft.displayCurrencyCode ?? appPreferences.defaultCurrencyCode.rawValue,
             isSelectionMode: isSelectionMode,
             isSelected: selectedDraftIDs.contains(draft.persistentModelID),
             onTap: {
@@ -626,4 +709,5 @@ struct InboxView: View {
 #Preview {
     InboxView()
         .modelContainer(for: InboxDraft.self, inMemory: true)
+        .previewAppPreferences()
 }

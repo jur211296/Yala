@@ -40,11 +40,8 @@ struct CurrencyPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.lg) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.lg) {
                         // Recommended section
                         recommendedSection
 
@@ -65,10 +62,10 @@ struct CurrencyPickerSheet: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.lg)
-                }
             }
             .navigationTitle(L10n.Settings.preferredCurrency)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {

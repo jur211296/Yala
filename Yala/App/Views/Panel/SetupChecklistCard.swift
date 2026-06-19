@@ -149,13 +149,7 @@ struct SetupChecklistCard: View {
 
                 progressBar
             }
-            .padding(DS.Spacing.md)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.md)
-                    .strokeBorder(.thCardBorder, lineWidth: 1)
-            )
+            .solidCard(padding: DS.Spacing.md, radius: DS.Radius.md)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -182,7 +176,7 @@ struct SetupChecklistCard: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.thSecondaryText)
-                    .frame(width: 28, height: 28)
+                    .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
@@ -195,20 +189,21 @@ struct SetupChecklistCard: View {
 
     // MARK: - Progress Bar
 
-    private var progressBar: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: DS.Radius.xs)
-                    .fill(.thSecondaryText.opacity(DS.Opacity.subtle))
-                    .frame(height: 6)
+    @State private var progressBarWidth: CGFloat = 0
 
-                RoundedRectangle(cornerRadius: DS.Radius.xs)
-                    .fill(theme.accent)
-                    .frame(width: geo.size.width * manager.progress, height: 6)
-                    .animation(.easeInOut(duration: 0.4), value: manager.progress)
-            }
+    private var progressBar: some View {
+        ZStack(alignment: .leading) {
+            RoundedRectangle(cornerRadius: DS.Radius.xs)
+                .fill(.thSecondaryText.opacity(DS.Opacity.subtle))
+                .frame(height: 6)
+
+            RoundedRectangle(cornerRadius: DS.Radius.xs)
+                .fill(theme.accent)
+                .frame(width: progressBarWidth * manager.progress, height: 6)
+                .animation(.easeInOut(duration: 0.4), value: manager.progress)
         }
         .frame(height: 6)
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { progressBarWidth = $0 }
     }
 }
 

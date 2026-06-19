@@ -54,6 +54,10 @@ final class ScheduledPayment {
     @Relationship(deleteRule: .nullify, inverse: \Tag.scheduledPayments)
     var tags: [Tag]?
 
+    /// CSV mirror of `tags` (UUIDs). SSOT for reads — survives CloudKit lazy hydration.
+    /// Dual-written via `setTags(from:)`. See `ScheduledPayment+TagsCSVMirror.swift`.
+    var tagIDs: String?
+
     /// Inverse relationship: cash flow lines linked to this scheduled payment - CloudKit: must be optional
     @Relationship(deleteRule: .nullify)
     var cashFlowLines: [CashFlowLine]?
@@ -200,6 +204,7 @@ final class ScheduledPayment {
         self.account = account
         self.subcategory = subcategory
         self.tags = tags
+        self.tagIDs = CSVMirrorCodec.encode(tags.map(\.id))
         self.needOverride = needOverride
         self.isRecurring = isRecurring
         self.recurrenceType = recurrenceType

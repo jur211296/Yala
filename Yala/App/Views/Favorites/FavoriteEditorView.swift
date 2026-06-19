@@ -16,6 +16,7 @@ struct FavoriteEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
 
     @State private var viewModel = FavoriteEditorViewModel()
@@ -62,28 +63,24 @@ struct FavoriteEditorView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                theme.background
-                    .ignoresSafeArea()
-                    .dismissKeyboardOnTap()
+            VStack(spacing: DS.Spacing.none) {
+                // Transaction type selector (without transfer)
+                transactionTypeSelector
+                    .padding(.top, DS.Spacing.sm)
 
-                VStack(spacing: DS.Spacing.none) {
-                    // Transaction type selector (without transfer)
-                    transactionTypeSelector
-                        .padding(.top, DS.Spacing.sm)
+                Spacer()
 
-                    Spacer()
+                // Central content
+                centralContent
 
-                    // Central content
-                    centralContent
+                Spacer()
 
-                    Spacer()
-
-                    // Bottom selection chips
-                    bottomChips
-                        .padding(.bottom, DS.Spacing.lg)
-                }
+                // Bottom selection chips
+                bottomChips
+                    .padding(.bottom, DS.Spacing.lg)
             }
+            .dismissKeyboardOnTap()
+            .yalaScreenBackground(.subtle)
             .navigationTitle(favorite != nil ? L10n.Favorites.editTitle : L10n.Favorites.newTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -230,6 +227,7 @@ struct FavoriteEditorView: View {
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
+                .accessibilityIdentifier("favorite_name_field")
                 .focused($isNameFieldFocused)
                 .padding(.horizontal, DS.Spacing.xxxxl)
                 .tint(Color.primary)
@@ -292,7 +290,8 @@ struct FavoriteEditorView: View {
     }
 
     private var currencySymbol: String {
-        selectedAccount?.currencyCode ?? CurrencyDefaults.defaultCode
+        let code = selectedAccount?.currencyCode ?? CurrencyDefaults.defaultCode
+        return appPreferences.currencyIdentifier(for: code)
     }
 
     private var amountColor: Color {
@@ -391,7 +390,12 @@ struct FavoriteEditorView: View {
         note = favorite.note ?? ""
         selectedAccount = favorite.account
         selectedSubcategory = favorite.subcategory
-        selectedTags = favorite.tags ?? []
+        // CSV-mirror SSOT via resolver + TagResolver.
+        selectedTags = TagResolver.fetchOrEmpty(
+            ids: favorite.resolvedTagIDs(scheduleBackfill: true) ?? [],
+            in: modelContext,
+            errorContext: "FavoriteEditorView/load"
+        )
         if let needRaw = favorite.needOverride {
             selectedNeed = SubcategoryNeed(rawValue: needRaw)
         }

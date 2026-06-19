@@ -52,6 +52,9 @@ protocol Filterable: AnyObject {
     /// Selected transaction natures (income/expense chips)
     var selectedTransactionNatures: Set<TransactionNature> { get set }
 
+    /// Shared/personal expense filter
+    var sharedExpenseFilter: SharedExpenseFilter { get set }
+
     // MARK: - Actions
 
     /// Clear all filters
@@ -62,7 +65,14 @@ protocol Filterable: AnyObject {
 
 extension Filterable {
 
-    /// Build FilterCriteria from current Filterable state
+    /// Build FilterCriteria from current Filterable state.
+    ///
+    /// IMPORTANT: this default does NOT populate `selectedTagUUIDs` (no access to
+    /// `[Tag]` catalog from the protocol). Consumers that pass the result to
+    /// `FilterService.matchesCriteria` / `filterForTrends` MUST either:
+    ///   - call `criteria.populateTagUUIDs(from: allTags)` before use, or
+    ///   - use `filterCriteria(withTagCatalog:)` overload that does it for them.
+    /// Otherwise tag-filter matching is silently skipped (CSV-mirror SSOT).
     var filterCriteria: FilterCriteria {
         var c = FilterCriteria()
         c.selectedAccounts = selectedAccounts
@@ -75,6 +85,17 @@ extension Filterable {
         c.isExcludeMode = isExcludeMode
         c.amountCondition = amountCondition
         c.searchText = searchText
+        c.sharedExpenseFilter = sharedExpenseFilter
+        return c
+    }
+
+    /// Build FilterCriteria with `selectedTagUUIDs` populated from the given
+    /// catalog. Required when the result will be passed to `FilterService`.
+    func filterCriteria(withTagCatalog allTags: [Tag]) -> FilterCriteria {
+        var c = filterCriteria
+        c.populateTagUUIDs(
+            from: allTags.filter { selectedTags.contains($0.persistentModelID) }
+        )
         return c
     }
 
@@ -100,5 +121,6 @@ extension Filterable {
         amountCondition = .any
         searchText = ""
         isExcludeMode = false
+        sharedExpenseFilter = .all
     }
 }

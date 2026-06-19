@@ -53,6 +53,7 @@ struct BalanceCalculatorSheet: View {
     let onDismiss: () -> Void
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @FocusState private var focusedField: CalcField?
 
@@ -137,8 +138,10 @@ struct BalanceCalculatorSheet: View {
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.lg)
+                .dismissKeyboardOnTap()
             }
-            .background(.thBackground)
+            .scrollContentBackground(.hidden)
+            .yalaScreenBackground(.subtle)
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle(sheetTitle)
             .navigationBarTitleDisplayMode(.inline)
@@ -420,7 +423,7 @@ struct BalanceCalculatorSheet: View {
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
             Spacer()
-            Text("\(currencySymbol) \(YalaFormatter.number(value: amount, forceFullPrecision: true))")
+            Text("\(currencySymbol) \(appPreferences.number(amount, forceFullPrecision: true))")
                 .font(DS.Typography.title2)
                 .foregroundStyle(amount >= 0 ? Color.electricIndigo : DS.Semantic.errorForeground)
         }

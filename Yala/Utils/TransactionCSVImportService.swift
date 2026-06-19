@@ -143,8 +143,11 @@ enum TransactionCSVImportService {
         allowCreatingNewCategories: Bool = true
     ) async throws -> TransactionImportResult {
 
-        // Resolve preferred currency once
         let preferredCode = CurrencyDefaults.currentPreferred
+
+        // Timestamp para filtrar el heuristic de pairing a SOLO TXs de este import
+        // (evita falsos positivos con orphans históricos).
+        let importStart = Date.now
 
         // Reutilizamos la versión genérica basada en drafts y closure,
         // pero aquí concretamos la creación de `TransactionItem`.
@@ -193,7 +196,7 @@ enum TransactionCSVImportService {
             )
 
             // Mark transfers and adjustments so they're excluded from income/expense stats
-            if draft.subcategory.isSystemSubcategory {
+            if draft.subcategory.isAnySystem {
                 let subcategoryName = draft.subcategory.name
                 if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
@@ -225,6 +228,9 @@ enum TransactionCSVImportService {
                 context: context
             )
         }
+
+        let importedTransfers = allTransactions.filter { $0.createdAt >= importStart }
+        applyTransferPairingHeuristic(importedTransfers)
 
         return result
     }
@@ -1055,8 +1061,10 @@ enum TransactionCSVImportService {
         allowCreatingNewCategories: Bool = true
     ) async throws -> TransactionImportResult {
 
-        // Resolve preferred currency once
         let preferredCode = CurrencyDefaults.currentPreferred
+
+        // Timestamp para filtrar el heuristic de pairing a SOLO TXs de este import.
+        let importStart = Date.now
 
         // Usamos la versión genérica con closure que determina la cuenta por moneda
         let result = try await importCSVMultiCurrency(
@@ -1104,7 +1112,7 @@ enum TransactionCSVImportService {
             )
 
             // Mark transfers and adjustments so they're excluded from income/expense stats
-            if draft.subcategory.isSystemSubcategory {
+            if draft.subcategory.isAnySystem {
                 let subcategoryName = draft.subcategory.name
                 if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
@@ -1137,6 +1145,9 @@ enum TransactionCSVImportService {
                 )
             }
         }
+
+        let importedTransfers = allTransactions.filter { $0.createdAt >= importStart }
+        applyTransferPairingHeuristic(importedTransfers)
 
         return result
     }
@@ -1424,6 +1435,9 @@ enum TransactionCSVImportService {
         let preferredCode = CurrencyDefaults.currentPreferred
         let normalizedAccountCurrency = normalizeCurrencyCode(account.currencyCode)
 
+        // Timestamp para filtrar el heuristic de pairing a SOLO TXs de este import.
+        let importStart = Date.now
+
         // 1. Leer filas del archivo XLSX
         let rawRows = try XLSXReader.readRows(from: url)
 
@@ -1488,7 +1502,7 @@ enum TransactionCSVImportService {
                 isExchangeRateProvisional: !hasExactRate
             )
 
-            if draft.subcategory.isSystemSubcategory {
+            if draft.subcategory.isAnySystem {
                 let subcategoryName = draft.subcategory.name
                 if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
@@ -1518,6 +1532,9 @@ enum TransactionCSVImportService {
                 context: context
             )
         }
+
+        let importedTransfers = allTransactions.filter { $0.createdAt >= importStart }
+        applyTransferPairingHeuristic(importedTransfers)
 
         return TransactionImportResult(
             createdCount: validDrafts.count,
@@ -1565,6 +1582,9 @@ enum TransactionCSVImportService {
         }
 
         let preferredCode = CurrencyDefaults.currentPreferred
+
+        // Timestamp para filtrar el heuristic de pairing a SOLO TXs de este import.
+        let importStart = Date.now
 
         // 1. Leer filas del archivo XLSX
         let rawRows = try XLSXReader.readRows(from: url)
@@ -1639,7 +1659,7 @@ enum TransactionCSVImportService {
                 isExchangeRateProvisional: !hasExactRate
             )
 
-            if draft.subcategory.isSystemSubcategory {
+            if draft.subcategory.isAnySystem {
                 let subcategoryName = draft.subcategory.name
                 if subcategoryName == L10n.Subcategory.balanceAdjustment {
                     transaction.balanceAdjustmentType = InitialBalanceService.typeAdjustment
@@ -1672,10 +1692,47 @@ enum TransactionCSVImportService {
             }
         }
 
+        let importedTransfers = allTransactions.filter { $0.createdAt >= importStart }
+        applyTransferPairingHeuristic(importedTransfers)
+
         return TransactionImportResult(
             createdCount: validDrafts.count,
             drafts: validDrafts.map { $0.0 },
             ignoredFutureDatesCount: ignoredFutureDatesCount
         )
+    }
+
+    // MARK: - Transfer Pair Heuristic
+
+    /// Aplica heurística de pairing a TXs recién importadas marcadas como transfer pero sin
+    /// `transferPairID`. Empareja por (día, abs(amount), currency) cuando el grupo es balanced
+    /// (1 negativo + 1 positivo). Comparte la lógica con
+    /// `TransferPairReconcileService.computePairingPlan` (SSOT pure-logic). Orphans no emparejables
+    /// quedan con pairID=nil; el reconciler boot-time intentará repair posterior.
+    private static func applyTransferPairingHeuristic(_ transactions: [TransactionItem]) {
+        let orphans = transactions.filter {
+            $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer && $0.transferPairID == nil
+        }
+        guard !orphans.isEmpty else { return }
+
+        var idMap: [UUID: TransactionItem] = [:]
+        let infos = orphans.map { tx -> TransferPairReconcileService.TransferInfo in
+            let localID = UUID()
+            idMap[localID] = tx
+            return TransferPairReconcileService.TransferInfo(
+                id: localID,
+                date: tx.date,
+                amount: tx.amount,
+                currencyCode: tx.currencyCode,
+                transferPairID: nil,
+                isTransferType: true
+            )
+        }
+
+        let pairings = TransferPairReconcileService.computePairingPlan(orphans: infos)
+        for pairing in pairings {
+            idMap[pairing.txAID]?.transferPairID = pairing.pairID
+            idMap[pairing.txBID]?.transferPairID = pairing.pairID
+        }
     }
 }

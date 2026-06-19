@@ -54,11 +54,8 @@ struct SecondaryCurrencyPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.lg) {
+            ScrollView {
+                VStack(spacing: DS.Spacing.lg) {
                         // Selected section (only if there are selections)
                         if !selectedCurrencies.isEmpty {
                             selectedSection
@@ -86,15 +83,16 @@ struct SecondaryCurrencyPickerSheet: View {
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.lg)
-                }
             }
             .navigationTitle(L10n.Settings.secondaryCurrencies)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
+                    .accessibilityIdentifier("secondary_currency_done")
                 }
             }
         }
@@ -180,6 +178,7 @@ struct SecondaryCurrencyPickerSheet: View {
         .opacity(canSelect ? 1.0 : 0.5)
         .disabled(!canSelect)
         .accessibilityHint(!canSelect ? L10n.Accessibility.maxCurrenciesSelected : "")
+        .accessibilityIdentifier("secondary_currency_row_\(currency.rawValue)")
     }
 
     private func toggleCurrency(_ currency: CurrencyCode) {

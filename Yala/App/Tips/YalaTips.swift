@@ -2,7 +2,7 @@
 //  YalaTips.swift
 //  Yala
 //
-//  Coach mark step definitions (Groups A/B) and TipKit tips (Group C).
+//  Coach mark step definitions (Groups D-G) and TipKit tips.
 //
 
 import SwiftUI
@@ -125,26 +125,8 @@ enum CashFlowTableTourSteps {
 // MARK: - Grupo G: Pro Tour (post-subscription)
 
 enum ProTourSteps {
-    /// Phase 1: ProfileView — toggles, export, icons, themes
+    /// Phase 1: ProfileView — export, icons, themes.
     static let profileSteps: [CoachMarkStep] = [
-        CoachMarkStep(
-            id: "proVoiceInput",
-            title: L10n.TipKit.proVoiceInputTitle,
-            message: L10n.TipKit.proVoiceInputMessage,
-            spotlightPadding: DS.Spacing.xs
-        ),
-        CoachMarkStep(
-            id: "proImageInput",
-            title: L10n.TipKit.proImageInputTitle,
-            message: L10n.TipKit.proImageInputMessage,
-            spotlightPadding: DS.Spacing.xs
-        ),
-        CoachMarkStep(
-            id: "proSmartInsights",
-            title: L10n.TipKit.proSmartInsightsTitle,
-            message: L10n.TipKit.proSmartInsightsMessage,
-            spotlightPadding: DS.Spacing.xs
-        ),
         CoachMarkStep(
             id: "proExportExtended",
             title: L10n.TipKit.proExportExtendedTitle,
@@ -165,12 +147,17 @@ enum ProTourSteps {
         ),
     ]
 
-    /// Phase 2: PanelView — FAB with voice/image options
+    /// Phase 2: PanelView — FAB with voice/image options + chat assistant
     static let panelSteps: [CoachMarkStep] = [
         CoachMarkStep(
             id: "fab",
             title: L10n.TipKit.proFabTitle,
             message: L10n.TipKit.proFabMessage
+        ),
+        CoachMarkStep(
+            id: "proChatFab",
+            title: L10n.TipKit.proChatFabTitle,
+            message: L10n.TipKit.proChatFabMessage
         ),
     ]
 
@@ -180,6 +167,18 @@ enum ProTourSteps {
             id: "proAiSummary",
             title: L10n.TipKit.proAiSummaryTitle,
             message: L10n.TipKit.proAiSummaryMessage
+        ),
+    ]
+
+    /// Standalone (not Pro Tour): TrendChartView — "Today FX" hint.
+    /// 1 step independiente, mostrado primera vez en multi-currency.
+    /// La persistencia vive en `AppPreferences.hasSeenTodayFXCoachMark`,
+    /// no en `ProTourManager`. El enum se reutiliza por convención visual.
+    static let todayFXSteps: [CoachMarkStep] = [
+        CoachMarkStep(
+            id: "todayFXHint",
+            title: L10n.Panel.LiveAnchorEducation.coachTitle,
+            message: L10n.Panel.LiveAnchorEducation.coachMessage
         ),
     ]
 }
@@ -195,5 +194,29 @@ struct ComparisonTip: Tip {
 
     var rules: [Rule] {
         [#Rule(Self.$hasVisitedStatistics) { $0 == true }]
+    }
+}
+
+struct AIChartsProTip: Tip {
+    @Parameter
+    static var hasSeenCharts: Bool = false
+
+    var title: Text { Text(L10n.TipKit.aiChartsPro) }
+    var message: Text? { Text(L10n.TipKit.aiChartsProMessage) }
+
+    var rules: [Rule] {
+        [#Rule(Self.$hasSeenCharts) { $0 == true }]
+    }
+}
+
+struct AIChartsFreeUpsellTip: Tip {
+    @Parameter
+    static var hasSeenCharts: Bool = false
+
+    var title: Text { Text(L10n.TipKit.aiChartsFree) }
+    var message: Text? { Text(L10n.TipKit.aiChartsFreeMessage) }
+
+    var rules: [Rule] {
+        [#Rule(Self.$hasSeenCharts) { $0 == true }]
     }
 }

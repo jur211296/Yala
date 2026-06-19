@@ -12,6 +12,7 @@ import Testing
 @testable import Yala
 
 @MainActor
+@Suite(.serialized)
 struct DataWipeServiceTests {
 
     // MARK: - Preference Keys Coverage
@@ -23,7 +24,7 @@ struct DataWipeServiceTests {
         "decimalPlaces", "currencyDisplayFormat", "userName", "userAlias",
         "userProfileImageData", "userProfileIcon", "voiceInputEnabled",
         "voiceLanguage", "imageInputEnabled", "aiDataConsentAccepted",
-        "aiInsightsConsentAccepted", "financialMindset",
+        "aiInsightsConsentAccepted", "aiInsightsEnabled", "aiInsightsMigratedV1", "financialMindset",
         "accountsSortOrderNames", "tagsSortOrderNames",
         "panel_widget_configs_v1", "exchangeRate_lastHistoricalLoad",
         "exchangeRate_lastTodayUpdate", "budgets.hideInactive", "budgetAlertsEnabled",
@@ -51,9 +52,13 @@ struct DataWipeServiceTests {
         }
 
         for key in Self.expectedResetKeys {
+            // After removeObject, the user-set value must be gone.
+            // The host app may re-register defaults via @AppStorage, so nil
+            // is not guaranteed — verify the test sentinel was actually cleared.
+            let current = defaults.object(forKey: key)
             #expect(
-                defaults.object(forKey: key) == nil,
-                "Key '\(key)' should be nil after reset"
+                (current as? String) != "testValue",
+                "Key '\(key)' should be cleared after reset but still has testValue"
             )
         }
     }

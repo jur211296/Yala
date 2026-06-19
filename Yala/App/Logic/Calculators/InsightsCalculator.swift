@@ -12,6 +12,18 @@ import SwiftData
 
 // MARK: - Data Models
 
+struct GroupInsightsContext {
+    let totalSharedExpense: Double
+    let totalPersonalExpense: Double
+    let sharedExpenseCount: Int
+    let groupExpensesByGroup: [(groupName: String, total: Double)]
+    let sharedCategoryBreakdown: [(category: String, amount: Double)]
+    let previousPeriodSharedExpense: Double?
+    let pendingDebtTotal: Double
+    let groupCount: Int
+    let currencyCode: String
+}
+
 struct InsightData {
     let periodSummary: PeriodSummary
     let quickStats: QuickStats
@@ -20,6 +32,7 @@ struct InsightData {
     let needDistribution: NeedDistribution
     let yearOverYear: YearComparison?
     let ruleBasedInsights: [InsightResult]
+    var groupInsightsContext: GroupInsightsContext?
 }
 
 struct PeriodSummary {
@@ -177,13 +190,17 @@ struct InsightsCalculator {
         comparisonMode: ComparisonMode = .month,
         tone: InsightTone = .normal,
         focus: InsightFocus = .balanced,
-        converter: CurrencyConverting = CurrencyConverter.shared
+        converter: CurrencyConverting = CurrencyConverter.shared,
+        splitGroups: [SplitGroup] = [],
+        currentUserMemberIDs: Set<String> = [],
+        includeBridgedGroupTx: Bool = true
     ) -> InsightData {
         // Filter transactions using FilterService
         let filtered = FilterService.filterForTrends(
             transactions: transactions,
             accounts: accounts,
-            criteria: criteria
+            criteria: criteria,
+            includeBridgedGroupTx: includeBridgedGroupTx
         )
 
         let interval = period.dateInterval(customRange: customRange)
@@ -325,7 +342,7 @@ struct InsightsCalculator {
         )
 
         // Rule-based insights
-        let ruleBasedInsights = generateRuleBasedInsights(
+        var ruleBasedInsights = generateRuleBasedInsights(
             periodSummary: periodSummary,
             quickStats: quickStats,
             commitments: commitments,
@@ -338,6 +355,55 @@ struct InsightsCalculator {
             focus: focus
         )
 
+        // Build group insights context if user has group transactions
+        var groupContext: GroupInsightsContext?
+        let sharedTxns = periodTxns.filter { $0.splitExpenseID != nil }
+        if !sharedTxns.isEmpty {
+            // Precompute converted amounts once per transaction (avoid repeated currency conversion)
+            let sharedAmounts = sharedTxns.map { abs(txAmount($0, currencyCode: currencyCode, converter: converter)) }
+            let totalShared = sharedAmounts.reduce(0.0, +)
+            let totalPersonal = cashFlow.totalExpense - totalShared
+
+            let prevSharedTxns = prevTxns.filter { $0.splitExpenseID != nil }
+            let prevShared: Double? = prevSharedTxns.isEmpty ? nil : prevSharedTxns.reduce(0.0) { $0 + abs(txAmount($1, currencyCode: currencyCode, converter: converter)) }
+
+            let groupNameLookup = Dictionary(splitGroups.map { ($0.cloudKitZoneID, $0.name) }, uniquingKeysWith: { a, _ in a })
+            let indexed = zip(sharedTxns, sharedAmounts)
+            let byGroup = Dictionary(grouping: indexed, by: { $0.0.splitGroupZoneID ?? "" })
+            let groupTotals = byGroup.map { zoneID, pairs in
+                (groupName: groupNameLookup[zoneID] ?? zoneID, total: pairs.reduce(0.0) { $0 + $1.1 })
+            }.sorted { $0.total > $1.total }
+
+            let byCat = Dictionary(grouping: indexed, by: { $0.0.subcategory?.name ?? $0.0.category?.name ?? "" })
+            let catTotals = byCat.map { name, pairs in
+                (category: name, amount: pairs.reduce(0.0) { $0 + $1.1 })
+            }.sorted { $0.amount > $1.amount }
+
+            groupContext = GroupInsightsContext(
+                totalSharedExpense: totalShared,
+                totalPersonalExpense: max(totalPersonal, 0),
+                sharedExpenseCount: sharedTxns.count,
+                groupExpensesByGroup: groupTotals,
+                sharedCategoryBreakdown: catTotals,
+                previousPeriodSharedExpense: prevShared,
+                pendingDebtTotal: 0, // Filled by caller if available
+                groupCount: Set(sharedTxns.compactMap(\.splitGroupZoneID)).count,
+                currencyCode: currencyCode
+            )
+
+            // Append group rule-based insights
+            if let ctx = groupContext {
+                let groupRules = generateGroupInsights(
+                    groupContext: ctx,
+                    dailyAverage: dailyAverageExpense,
+                    currencyCode: currencyCode,
+                    tone: tone,
+                    focus: focus
+                )
+                ruleBasedInsights.append(contentsOf: groupRules)
+            }
+        }
+
         return InsightData(
             periodSummary: periodSummary,
             quickStats: quickStats,
@@ -345,7 +411,8 @@ struct InsightsCalculator {
             weekdaySpending: weekdaySpending,
             needDistribution: needDistribution,
             yearOverYear: yearOverYear,
-            ruleBasedInsights: ruleBasedInsights
+            ruleBasedInsights: ruleBasedInsights,
+            groupInsightsContext: groupContext
         )
     }
 
@@ -434,7 +501,7 @@ struct InsightsCalculator {
 
     /// Returns the current budget period interval based on the budget's periodType and Date.now.
     static func currentBudgetInterval(for budget: Budget) -> DateInterval {
-        let calendar = Calendar.current
+        let calendar = userConfiguredCalendar()
         let now = Date.now
 
         guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
@@ -534,6 +601,8 @@ struct InsightsCalculator {
 
             let usage = (spent / budget.limitAmount) * 100
             if usage >= 50 {
+                // Icon genérico en cold launch si M2M lazy nil — se auto-cura via hot
+                // path upstream. Refactor con iconLookup precomputado: ver Backlog.
                 budgetsAtRisk.append(BudgetAtRisk(
                     id: budget.persistentModelID,
                     name: budget.name,
@@ -717,6 +786,135 @@ struct InsightsCalculator {
                 isProOnly: false,
                 tip: tip
             ))
+        }
+
+        // Rule 5 (universal): Daily average snapshot — no depende de período comparativo,
+        // dispara siempre que haya gasto. Garantiza al menos una observación en .allTime/.custom.
+        if quickStats.dailyAverage > 0 {
+            let amount = YalaFormatterStatic.currency(value: quickStats.dailyAverage, currencyCode: currencyCode)
+            let text = AttributedString(L10n.Insights.ruleDailyAverage(amount))
+            insights.append(InsightResult(
+                id: "daily_average_snapshot",
+                icon: "chart.bar.fill",
+                text: text,
+                sentiment: .neutral,
+                isProOnly: false
+            ))
+        }
+
+        // Rule 6 (universal): Savings ratio — requiere ingresos > 0.
+        if periodSummary.totalIncome > 0 {
+            let netBalance = periodSummary.netBalance
+            if netBalance > 0 {
+                let savingsPct = Int((netBalance / periodSummary.totalIncome) * 100)
+                let text = AttributedString(L10n.Insights.ruleSavingsPositive(savingsPct))
+                insights.append(InsightResult(
+                    id: "savings_positive",
+                    icon: "checkmark.seal.fill",
+                    text: text,
+                    sentiment: .positive,
+                    isProOnly: false
+                ))
+            } else if netBalance < 0 {
+                let text = AttributedString(L10n.Insights.ruleSavingsNegative)
+                insights.append(InsightResult(
+                    id: "savings_negative",
+                    icon: "exclamationmark.triangle.fill",
+                    text: text,
+                    sentiment: .attention,
+                    isProOnly: false
+                ))
+            }
+        }
+
+        return insights
+    }
+
+    // MARK: - Group Insights (6 rules)
+
+    static func generateGroupInsights(
+        groupContext ctx: GroupInsightsContext,
+        dailyAverage: Double,
+        currencyCode: String,
+        tone: InsightTone = .normal,
+        focus: InsightFocus = .balanced
+    ) -> [InsightResult] {
+        var insights: [InsightResult] = []
+        let totalExpense = ctx.totalSharedExpense + ctx.totalPersonalExpense
+
+        // R1: Shared vs personal ratio
+        if totalExpense > 0 {
+            let ratio = (ctx.totalSharedExpense / totalExpense) * 100
+            let threshold: Double = focus == .saver ? 15 : 25
+            if ratio > threshold {
+                let text = AttributedString(L10n.Insights.ruleSharedRatio(Int(ratio), tone: tone))
+                insights.append(InsightResult(
+                    id: "shared_ratio",
+                    icon: "person.2.fill",
+                    text: text,
+                    sentiment: .neutral,
+                    isProOnly: false
+                ))
+            }
+        }
+
+        // R2: Most expensive group
+        if ctx.groupExpensesByGroup.count >= 2, let top = ctx.groupExpensesByGroup.first {
+            let groupTotal = ctx.groupExpensesByGroup.reduce(0) { $0 + $1.total }
+            let pct = Int((top.total / max(groupTotal, 1)) * 100)
+            if pct > 50 {
+                let text = AttributedString(L10n.Insights.ruleMostExpensiveGroup(top.groupName, pct, tone: tone))
+                insights.append(InsightResult(
+                    id: "most_expensive_group",
+                    icon: "star.fill",
+                    text: text,
+                    sentiment: .neutral,
+                    isProOnly: false
+                ))
+            }
+        }
+
+        // R3: Shared expense frequency
+        if ctx.sharedExpenseCount >= 10 {
+            let text = AttributedString(L10n.Insights.ruleSharedFrequency(ctx.sharedExpenseCount, tone: tone))
+            insights.append(InsightResult(
+                id: "shared_frequency",
+                icon: "arrow.triangle.2.circlepath",
+                text: text,
+                sentiment: .neutral,
+                isProOnly: false
+            ))
+        }
+
+        // R5: Dominant shared category
+        if let topCat = ctx.sharedCategoryBreakdown.first, ctx.totalSharedExpense > 0 {
+            let pct = Int((topCat.amount / ctx.totalSharedExpense) * 100)
+            if pct > 50 && !topCat.category.isEmpty {
+                let text = AttributedString(L10n.Insights.ruleDominantSharedCategory(topCat.category, pct, tone: tone))
+                insights.append(InsightResult(
+                    id: "dominant_shared_category",
+                    icon: "tag.fill",
+                    text: text,
+                    sentiment: .neutral,
+                    isProOnly: false
+                ))
+            }
+        }
+
+        // R6: Month-over-month variation
+        if let prevShared = ctx.previousPeriodSharedExpense, prevShared > 0 {
+            let variation = ((ctx.totalSharedExpense - prevShared) / prevShared) * 100
+            if variation > 30 {
+                let formatted = PreviousPeriodHelper.formatVariationValue(variation)
+                let text = AttributedString(L10n.Insights.ruleSharedMoM(formatted, tone: tone))
+                insights.append(InsightResult(
+                    id: "shared_mom_variation",
+                    icon: "arrow.up.right",
+                    text: text,
+                    sentiment: .attention,
+                    isProOnly: false
+                ))
+            }
         }
 
         return insights

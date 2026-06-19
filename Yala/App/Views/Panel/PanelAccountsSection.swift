@@ -2,9 +2,6 @@
 //  PanelAccountsSection.swift
 //  Yala
 //
-//  Extracted from PanelView to isolate accounts observation tracking.
-//  Uses pre-computed balance dictionaries instead of raw transactions array.
-//
 
 import SwiftData
 import SwiftUI
@@ -22,40 +19,35 @@ struct PanelAccountsSection: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            Text(L10n.Panel.accounts)
-                .font(DS.Typography.title)
-
-            if viewModel.accounts.isEmpty {
-                YalaEmptyState.noAccounts {
+        if viewModel.accounts.isEmpty {
+            YalaEmptyState.noAccounts {
+                if isAccountsLimitReached {
+                    showUpgradeForAccounts = true
+                } else {
+                    accountFormSheet = AccountFormSheet(account: nil)
+                }
+            }
+        } else {
+            AccountsCarouselView(
+                viewModel: viewModel,
+                orderedAccounts: viewModel.orderedActiveAccounts(
+                    from: viewModel.accounts,
+                    sortOrderNames: accountsSortOrderNames
+                ),
+                accountBalances: viewModel.accountBalances,
+                accountPeriodExpenses: viewModel.accountPeriodExpenses,
+                isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
+                onAddAccount: {
                     if isAccountsLimitReached {
                         showUpgradeForAccounts = true
                     } else {
                         accountFormSheet = AccountFormSheet(account: nil)
                     }
+                },
+                onEditAccount: { account in
+                    accountFormSheet = AccountFormSheet(account: account)
                 }
-            } else {
-                AccountsCarouselView(
-                    viewModel: viewModel,
-                    orderedAccounts: viewModel.orderedActiveAccounts(
-                        from: viewModel.accounts,
-                        sortOrderNames: accountsSortOrderNames
-                    ),
-                    accountBalances: viewModel.accountBalances,
-                    accountPeriodExpenses: viewModel.accountPeriodExpenses,
-                    isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
-                    onAddAccount: {
-                        if isAccountsLimitReached {
-                            showUpgradeForAccounts = true
-                        } else {
-                            accountFormSheet = AccountFormSheet(account: nil)
-                        }
-                    },
-                    onEditAccount: { account in
-                        accountFormSheet = AccountFormSheet(account: account)
-                    }
-                )
-            }
+            )
         }
     }
 }

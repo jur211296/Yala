@@ -1,13 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  NEVER change aps-environment=production in this file.
+  v1.2.6 shipped with "development" → silent push broken → CloudKit exports dropped for weeks.
+  See: YalaWiki/Bugs/icloud-sync-broken-1.2.6-production.md
+-->
 <plist version="1.0">
 <dict>
 	<key>aps-environment</key>
 	<string>production</string>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:yala-app.pe</string>
+	</array>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>iCloud.com.jurgenschmidt.yala</string>
 		<string>iCloud.com.jurgenschmidt.yala.dev</string>
+		<string>iCloud.com.jurgenschmidt.yala.groups</string>
+		<string>iCloud.com.jurgenschmidt.yala.groups.dev</string>
 	</array>
 	<key>com.apple.developer.icloud-services</key>
 	<array>

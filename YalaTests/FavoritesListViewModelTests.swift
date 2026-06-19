@@ -13,6 +13,7 @@ import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct FavoritesListViewModelTests {
 
     // MARK: - Initial State

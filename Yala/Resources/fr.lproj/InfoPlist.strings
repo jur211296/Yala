@@ -1,0 +1,3 @@
+"NSMicrophoneUsageDescription" = "Yala utilise le micro pour enregistrer ta voix et créer des dépenses. L'audio est envoyé à OpenAI pour transcription.";
+"NSPhotoLibraryUsageDescription" = "Yala utilise tes photos pour extraire les détails de dépenses depuis des captures et reçus. Les images sélectionnées sont envoyées à OpenAI.";
+"NSFaceIDUsageDescription" = "Yala utilise Face ID pour protéger tes informations financières.";

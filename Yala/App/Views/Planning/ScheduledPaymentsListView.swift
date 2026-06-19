@@ -11,8 +11,6 @@ import SwiftUI
 
 struct ScheduledPaymentsListView: View {
     @Environment(\.yalaTheme) private var theme
-    @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
-
     @Bindable var viewModel: ScheduledPaymentsViewModel
     let payments: [ScheduledPayment]
     let tab: ScheduledPaymentsTab
@@ -23,28 +21,43 @@ struct ScheduledPaymentsListView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var viewModeNamespace
 
-    /// First day of week from app settings (1 = Sunday, 2 = Monday, etc.)
-    @AppStorage("firstWeekday") private var appFirstWeekday: Int = 2
+    @Environment(AppPreferences.self) private var appPreferences
 
     /// Selected day in calendar (nil = show all for the month)
     @State private var selectedDay: Int? = nil
 
     var body: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            // Month navigation (visible in both list and calendar modes)
-            monthNavigationHeader
+        VStack(spacing: DS.Spacing.xs) {
+            // Hero centrado (total + chips paid/pending)
+            heroSection
+                .padding(.bottom, DS.Spacing.xs)
 
-            // Summary card
-            summaryCard
+            PeriodNavigationHeader(
+                currentLabel: viewModel.monthYearLabel,
+                onPrevious: {
+                    selectedDay = nil
+                    viewModel.previousMonth()
+                    onRefresh()
+                },
+                onNext: {
+                    selectedDay = nil
+                    viewModel.nextMonth()
+                    onRefresh()
+                },
+                onTapLabel: { viewModel.showPeriodSelector = true }
+            )
+            .padding(.horizontal, DS.Spacing.lg)
 
-            // View mode header with selector
+            // View mode header with selector (sin padding adicional — VStack .xs basta)
             viewModeHeader
 
             // Content based on view mode
             if viewModel.paymentsViewMode == .list {
                 listContent
+                    .padding(.top, DS.Spacing.xs)
             } else {
                 calendarContent
+                    .padding(.top, DS.Spacing.xs)
             }
         }
         .padding(.top, DS.Spacing.sm)
@@ -65,86 +78,101 @@ struct ScheduledPaymentsListView: View {
         payments.filter { $0.isActive }
     }
 
-    // MARK: - Summary Card
+    // MARK: - Hero Section
 
-    private var summaryCard: some View {
+    private var heroSection: some View {
         let monthlyTotal = viewModel.calculateMonthlyTotal(
             subscriptions: activePayments,
             for: viewModel.selectedMonth,
             preferredCurrencyCode: currencyCode
         )
+        let paidTotal = viewModel.monthlyTotalPaid(preferredCurrencyCode: currencyCode)
+        let pendingTotal = viewModel.monthlyTotalPending(preferredCurrencyCode: currencyCode)
 
-        return VStack(spacing: DS.Spacing.md) {
-            // Total amount
-            Text(YalaFormatter.currency(value: monthlyTotal, currencyCode: currencyCode))
-                .font(.system(size: scaledAmountSize, weight: .bold, design: .rounded))
-                .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                .foregroundStyle(.primary)
+        return VStack(alignment: .center, spacing: DS.Spacing.sm) {
+            // Total label + monto (centrado)
+            VStack(alignment: .center, spacing: DS.Spacing.xxs) {
+                Text("\(L10n.Planning.Scheduled.totalLabel) · \(viewModel.monthYearLabel)")
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                AmountText(
+                    value: monthlyTotal,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
+                )
+                .contentTransition(.numericText())
+            }
 
-            // Paid / Pending breakdown (clickable as filters)
+            // Paid / Pending chips (tap toggles filter)
             HStack(spacing: DS.Spacing.lg) {
-                Button {
-                    dsWithAnimation(reduceMotion) {
-                        viewModel.paymentStatusFilter = viewModel.paymentStatusFilter == .paid ? .all : .paid
-                    }
-                } label: {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Circle()
-                            .fill(theme.accent)
-                            .frame(width: 8, height: 8)
-                        Text(NSLocalizedString("scheduled.summary.paid", comment: ""))
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.secondary)
-                        Text(YalaFormatter.currency(value: viewModel.monthlyTotalPaid(preferredCurrencyCode: currencyCode), currencyCode: currencyCode))
-                            .font(DS.Typography.label)
-                            .foregroundStyle(theme.accent)
-                    }
-                    .padding(.horizontal, DS.Spacing.sm)
-                    .padding(.vertical, DS.Spacing.xxs)
-                    .background(
-                        Capsule().fill(viewModel.paymentStatusFilter == .paid ? theme.accent.opacity(0.12) : Color.clear)
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    dsWithAnimation(reduceMotion) {
-                        viewModel.paymentStatusFilter = viewModel.paymentStatusFilter == .pending ? .all : .pending
-                    }
-                } label: {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Circle()
-                            .fill(Color.hotPink)
-                            .frame(width: 8, height: 8)
-                        Text(NSLocalizedString("scheduled.summary.pending", comment: ""))
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.secondary)
-                        Text(YalaFormatter.currency(value: viewModel.monthlyTotalPending(preferredCurrencyCode: currencyCode), currencyCode: currencyCode))
-                            .font(DS.Typography.label)
-                            .foregroundStyle(Color.hotPink)
-                    }
-                    .padding(.horizontal, DS.Spacing.sm)
-                    .padding(.vertical, DS.Spacing.xxs)
-                    .background(
-                        Capsule().fill(viewModel.paymentStatusFilter == .pending ? Color.hotPink.opacity(0.12) : Color.clear)
-                    )
-                }
-                .buttonStyle(.plain)
+                paidPendingChip(
+                    status: .paid,
+                    dotColor: theme.accent,
+                    label: NSLocalizedString("scheduled.summary.paid", comment: ""),
+                    value: paidTotal
+                )
+                paidPendingChip(
+                    status: .pending,
+                    dotColor: Color.hotPink,
+                    label: NSLocalizedString("scheduled.summary.pending", comment: ""),
+                    value: pendingTotal
+                )
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, DS.Spacing.xl)
         .padding(.horizontal, DS.Spacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(.thCard)
-                .overlay(
-                    RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                        .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+        .padding(.top, DS.Spacing.md)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(heroAccessibilityLabel(
+            total: monthlyTotal,
+            paid: paidTotal,
+            pending: pendingTotal
+        ))
+    }
+
+    private func paidPendingChip(
+        status: PaymentStatusFilter,
+        dotColor: Color,
+        label: String,
+        value: Double
+    ) -> some View {
+        let isActive = viewModel.paymentStatusFilter == status
+        return Button {
+            dsWithAnimation(reduceMotion) {
+                viewModel.paymentStatusFilter = isActive ? .all : status
+            }
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                Circle().fill(dotColor).frame(width: 8, height: 8)
+                Text(label)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                AmountText(
+                    value: value,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.body, secondaryFont: DS.Typography.caption,
+                    tint: .color(dotColor)
                 )
-        )
-        .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
-        .padding(.horizontal, DS.Spacing.lg)
+            }
+            .padding(.horizontal, DS.Spacing.sm)
+            .padding(.vertical, DS.Spacing.xxs)
+            .background(
+                Capsule().fill(isActive ? dotColor.opacity(0.12) : Color.clear)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Agrupa hero en un único anuncio VoiceOver coherente (compensa eliminar el card).
+    private func heroAccessibilityLabel(
+        total: Double,
+        paid: Double,
+        pending: Double
+    ) -> String {
+        let totalLine = "\(L10n.Planning.Scheduled.totalLabel) \(viewModel.monthYearLabel): \(appPreferences.currency(total, currencyCode: currencyCode))"
+        let paidLine = "\(NSLocalizedString("scheduled.summary.paid", comment: "")) \(appPreferences.currency(paid, currencyCode: currencyCode))"
+        let pendingLine = "\(NSLocalizedString("scheduled.summary.pending", comment: "")) \(appPreferences.currency(pending, currencyCode: currencyCode))"
+        return [totalLine, paidLine, pendingLine].joined(separator: ". ")
     }
 
     // MARK: - View Mode Header
@@ -182,7 +210,7 @@ struct ScheduledPaymentsListView: View {
                 .font(DS.Typography.labelSmall)
                 .fontWeight(.semibold)
                 .foregroundStyle(isSelected ? .white : theme.secondaryText)
-                .frame(width: 32, height: 32)
+                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                 .background {
                     if isSelected {
                         Circle()
@@ -247,59 +275,6 @@ struct ScheduledPaymentsListView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
-    private var monthNavigationHeader: some View {
-        HStack {
-            Button {
-                dsWithAnimation(reduceMotion) {
-                    selectedDay = nil
-                    viewModel.previousMonth()
-                    onRefresh()
-                }
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 36, height: 36)
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            Button {
-                viewModel.showPeriodSelector = true
-            } label: {
-                HStack(spacing: DS.Spacing.xs) {
-                    Text(viewModel.monthYearLabel)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
-
-                    Image(systemName: "chevron.down")
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            Button {
-                dsWithAnimation(reduceMotion) {
-                    selectedDay = nil
-                    viewModel.nextMonth()
-                    onRefresh()
-                }
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 36, height: 36)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.vertical, DS.Spacing.sm)
-        .padding(.horizontal, DS.Spacing.lg)
-    }
-
     private var calendarGrid: some View {
         let calendar = Calendar.current
         let month = viewModel.selectedMonth
@@ -307,7 +282,7 @@ struct ScheduledPaymentsListView: View {
 
         let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: month)) ?? month
         let firstDayWeekday = calendar.component(.weekday, from: firstDayOfMonth)
-        let emptyCellsCount = (firstDayWeekday - appFirstWeekday + 7) % 7
+        let emptyCellsCount = (firstDayWeekday - appPreferences.firstWeekday.rawValue + 7) % 7
 
         // Build payment dates map
         var paymentsByDay: [Int: [ScheduledPayment]] = [:]
@@ -349,7 +324,7 @@ struct ScheduledPaymentsListView: View {
 
     private var weekdayHeaders: some View {
         let symbols = Calendar.current.veryShortWeekdaySymbols
-        let startIndex = appFirstWeekday - 1
+        let startIndex = appPreferences.firstWeekday.rawValue - 1
         let reorderedSymbols = Array(symbols[startIndex...]) + Array(symbols[..<startIndex])
 
         return HStack(spacing: DS.Spacing.xs) {

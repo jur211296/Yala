@@ -45,7 +45,7 @@ final class DataWipeService {
         let transactionDescriptor = FetchDescriptor<TransactionItem>()
         let allTransactions = try context.fetch(transactionDescriptor)
         for transaction in allTransactions {
-            transaction.tags = []
+            transaction.setTags(from: [])
         }
 
         let tagDescriptor = FetchDescriptor<Tag>()
@@ -61,7 +61,7 @@ final class DataWipeService {
         let inboxDraftDescriptor = FetchDescriptor<InboxDraft>()
         let allDrafts = try context.fetch(inboxDraftDescriptor)
         for draft in allDrafts {
-            draft.tags = []
+            draft.setTags(from: [])
             draft.account = nil
             draft.subcategory = nil
             draft.approvedTransaction = nil
@@ -97,9 +97,8 @@ final class DataWipeService {
         let budgetDescriptor = FetchDescriptor<Budget>()
         let allBudgets = try context.fetch(budgetDescriptor)
         for budget in allBudgets {
-            budget.accounts = []
-            budget.subcategories = []
-            budget.tags = []
+            // SSOT: usa el helper único que mantiene M2M + CSV sincronizados.
+            budget.setFilters(accounts: [], subcategories: [], tags: [])
         }
         try context.save()
         for budget in allBudgets {
@@ -111,7 +110,7 @@ final class DataWipeService {
         let favoriteDescriptor = FetchDescriptor<FavoritePayment>()
         let allFavorites = try context.fetch(favoriteDescriptor)
         for favorite in allFavorites {
-            favorite.tags = []
+            favorite.setTags(from: [])
         }
         try context.save()
         for favorite in allFavorites {
@@ -219,6 +218,12 @@ final class DataWipeService {
     private static func resetAllUserPreferences() {
         let defaults = UserDefaults.standard
 
+        // --- Routing state ---
+        // Clear both the in-memory AppRouter queue AND the persistent
+        // DeferredIntentBuffer. Without this, queued / deferred intents
+        // survive the wipe and replay against the reseeded data.
+        AppRouter.shared.resetAll()
+
         // --- Personalización ---
         defaults.removeObject(forKey: "defaultPeriod")          // Default: DetailPeriod.allTime.rawValue
         defaults.removeObject(forKey: "userTheme")              // Default: resolved by ThemeManager (liquidGlass for new users)
@@ -230,8 +235,8 @@ final class DataWipeService {
 
         // --- Visualización ---
         defaults.removeObject(forKey: "showVariations")         // Default: true
-        defaults.removeObject(forKey: "decimalPlaces")          // Default: 0
-        defaults.removeObject(forKey: "currencyDisplayFormat")  // Default: "code"
+        defaults.removeObject(forKey: "decimalPlaces")          // Default: 2
+        defaults.removeObject(forKey: "currencyDisplayFormat")  // Default: "symbol"
 
         // --- Perfil de usuario ---
         defaults.removeObject(forKey: "userName")               // Default: "Usuario"
@@ -245,6 +250,12 @@ final class DataWipeService {
         defaults.removeObject(forKey: "imageInputEnabled")      // Default: false
         defaults.removeObject(forKey: "aiDataConsentAccepted") // Default: false
         defaults.removeObject(forKey: "aiInsightsConsentAccepted") // Default: false
+        defaults.removeObject(forKey: "aiInsightsEnabled")         // Default: false
+        defaults.removeObject(forKey: "aiInsightsMigratedV1")      // Sentinel de migración one-shot
+        defaults.removeObject(forKey: "aiTogglesRemovedV2")        // Sentinel remove-ai-toggles refactor
+        defaults.removeObject(forKey: "aiChatConsentAccepted")  // Default: false
+        defaults.removeObject(forKey: "chatAssistantEnabled")   // Default: false
+        defaults.removeObject(forKey: "chatFABVisible")         // Default: true
         defaults.removeObject(forKey: "financialMindset")          // Default: "cashFlow"
 
         // --- Orden de listas ---
@@ -253,6 +264,7 @@ final class DataWipeService {
 
         // --- Configuración de widgets ---
         defaults.removeObject(forKey: "panel_widget_configs_v1") // Key real usada por WidgetConfigManager
+        defaults.removeObject(forKey: "panelHeroAIMessage_v1")   // Cache 24h del mensaje IA del hero
 
         // --- Estado del servicio de tipos de cambio ---
         defaults.removeObject(forKey: "exchangeRate_lastHistoricalLoad")
@@ -264,6 +276,10 @@ final class DataWipeService {
 
         // --- Onboarding ---
         defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
+        defaults.removeObject(forKey: "hasShownWelcomeChooser") // A4: tras wipe vuelve a mostrarse el chooser
+        defaults.removeObject(forKey: "hasShownYalaAIOnboarding") // Tras wipe vuelve a mostrarse el onboarding del chat
+        defaults.removeObject(forKey: "onboardingMode")         // Default: .full (normal onboarding)
+        defaults.removeObject(forKey: "sessionTimestamps")      // Default: [] (UserSegmentService sessions)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)
 
         // --- Cross-device wipe coordination ---
@@ -281,6 +297,14 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasSeenSettingsTour")      // Re-show settings tour
         defaults.removeObject(forKey: "hasSeenCashFlowSetupTour")  // Re-show cash flow setup tour
         defaults.removeObject(forKey: "hasSeenCashFlowTableTour")  // Re-show cash flow table tour
+        defaults.removeObject(forKey: "hasSeenChatContextHint")     // Re-show chat context hint
+
+        // Persistencia día calendario del chat + cache diario de sugerencias LLM
+        for key in defaults.dictionaryRepresentation().keys
+        where key.hasPrefix("chat_session_") || key.hasPrefix("chat_suggestions_") {
+            defaults.removeObject(forKey: key)
+        }
+
         ProTourManager.shared.reset()                                // Re-show pro tour
 
         // --- Setup Checklist ---
@@ -297,6 +321,15 @@ final class DataWipeService {
         // --- Seed guards ---
         defaults.removeObject(forKey: "seedCategoriesExecuted") // Allow re-seed after wipe
         defaults.removeObject(forKey: "notificationsSeeded")    // Allow re-seed after wipe
+
+        // --- AppEntity shortcutID / CSV mirror migration sentinels ---
+        // Re-correr migración contra entidades recién sembradas.
+        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsMigratedV3)
+        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsRegeneratedV3)
+        defaults.removeObject(forKey: AppPreferences.Keys.appEntityShortcutIDsBackfillAttemptsV3)
+        AppPreferences.Keys.LegacyKeys.v2MigrationSentinels.forEach {
+            defaults.removeObject(forKey: $0)
+        }
 
         // --- Legacy (compatibilidad) ---
         defaults.removeObject(forKey: "preferredCurrency")      // Reemplazado por defaultCurrencyCode

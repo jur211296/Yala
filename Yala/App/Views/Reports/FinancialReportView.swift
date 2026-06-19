@@ -15,7 +15,6 @@ struct FinancialReportView: View {
 
     @State private var viewModel = FinancialReportViewModel()
     @State private var cashFlowViewModel = CashFlowPlanViewModel()
-    @State private var selectedTab: ReportTab = .comparativa
     @State private var showCustomDatePicker = false
     @State private var isPresentingSettings = false
     @State private var showResetConfirmation = false
@@ -40,24 +39,25 @@ struct FinancialReportView: View {
     @Query private var tags: [Tag]
     @Query private var scheduledPayments: [ScheduledPayment]
 
-    // MARK: - Settings
+    // MARK: - Preferences
 
-    @AppStorage("defaultCurrencyCode") private var preferredCurrencyCode: String = "PEN"
-    @AppStorage("showVariations") private var showVariations: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
+
+    /// Alias for `appPreferences.defaultCurrencyCode.rawValue` — minimizes diff across 7 callsites.
+    private var preferredCurrencyCode: String { appPreferences.defaultCurrencyCode.rawValue }
+    private var showVariations: Bool { appPreferences.showVariations }
 
     // MARK: - Body
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-                VStack(spacing: DS.Spacing.none) {
-                    reportGuide
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.top, DS.Spacing.xs)
-                    tabContent
-                }
+            VStack(spacing: DS.Spacing.none) {
+                reportGuide
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.xs)
+                tabContent
             }
+            .yalaScreenBackground()
             .safeAreaInset(edge: .top) {
                 navigationChipsBar
                     .padding(.vertical, DS.Spacing.sm)
@@ -82,9 +82,9 @@ struct FinancialReportView: View {
             ProfileView()
         }
         .sheet(isPresented: $cashFlowViewModel.showChartsSheet) {
-            if let projection = cashFlowViewModel.projection {
+            if cashFlowViewModel.projection != nil {
                 CashFlowChartsSheet(
-                    projection: projection,
+                    viewModel: cashFlowViewModel,
                     currencyCode: preferredCurrencyCode
                 )
             }
@@ -98,6 +98,7 @@ struct FinancialReportView: View {
             onReset: { cashFlowViewModel.resetPlan() }
         )
         .onAppear {
+            TelemetryService.trackOnce(.reportViewed, key: "session")
             recalculate()
             cashFlowViewModel.setContext(modelContext)
         }
@@ -129,7 +130,7 @@ struct FinancialReportView: View {
         .onChange(of: sessionState.dataVersion) { _, _ in scheduleRecalculate() }
         .onChange(of: viewModel.groupingState.activeDimensions) { _, _ in scheduleRecalculate() }
         .onChange(of: transactions.count) { _, _ in scheduleRecalculate() }
-        .onChange(of: preferredCurrencyCode) { _, _ in scheduleRecalculate() }
+        .onChange(of: appPreferences.defaultCurrencyCode) { _, _ in scheduleRecalculate() }
         .onChange(of: sessionState.formattingVersion) { _, _ in scheduleRecalculate() }
     }
 
@@ -144,20 +145,22 @@ struct FinancialReportView: View {
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
+                .scrollTargetLayout()
             }
+            .scrollTargetBehavior(.viewAligned)
 
         }
     }
 
     @ViewBuilder
     private func navigationChipButton(for tab: ReportTab) -> some View {
-        let isSelected = selectedTab == tab
+        let isSelected = sessionState.selectedReportTab == tab
 
         Button {
             var transaction = Transaction()
             transaction.disablesAnimations = true
             withTransaction(transaction) {
-                selectedTab = tab
+                sessionState.selectedReportTab = tab
             }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
@@ -176,13 +179,14 @@ struct FinancialReportView: View {
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("report_chip_\(tab.rawValue)")
     }
 
     // MARK: - Report Guide
 
     @ViewBuilder
     private var reportGuide: some View {
-        switch selectedTab {
+        switch sessionState.selectedReportTab {
         case .comparativa:
             ContextualGuideBanner.comparative()
         case .flujoDeCaja:
@@ -194,7 +198,7 @@ struct FinancialReportView: View {
 
     @ViewBuilder
     private var tabContent: some View {
-        switch selectedTab {
+        switch sessionState.selectedReportTab {
         case .comparativa:
             comparativaContent
         case .flujoDeCaja:
@@ -224,10 +228,10 @@ struct FinancialReportView: View {
                         .padding(.top, DS.Spacing.xxl)
                 }
             }
-            .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.sm)
             .yalaSafeBottomPadding()
         }
+        .scrollViewGlassEdges()
     }
 
     private var pivotTable: some View {
@@ -281,37 +285,37 @@ struct FinancialReportView: View {
     @ToolbarContentBuilder
     private var reportToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: DS.Spacing.md) {
-                if selectedTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
-                    // Charts button hidden — deferred to future version (see Backlog/graficas-cashflow.md)
-                    // Button {
-                    //     cashFlowViewModel.showChartsSheet = true
-                    // } label: {
-                    //     Image(systemName: "chart.bar.xaxis")
-                    //         .font(DS.Typography.bodyBold)
-                    //         .foregroundStyle(.thToolbarIcon)
-                    // }
-
-                    Menu {
+            Group {
+                if sessionState.selectedReportTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
+                    HStack(spacing: DS.Spacing.md) {
                         Button {
-                            showHorizonConfig = true
+                            cashFlowViewModel.showChartsSheet = true
                         } label: {
-                            Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
+                            Image(systemName: "chart.bar.xaxis")
+                                .font(DS.Typography.bodyBold)
+                                .foregroundStyle(.thToolbarIcon)
                         }
-                        Divider()
-                        Button(role: .destructive) {
-                            showResetConfirmation = true
-                        } label: {
-                            Label(L10n.CashFlowPlan.resetPlan, systemImage: "arrow.counterclockwise")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .font(DS.Typography.bodyBold)
-                            .foregroundStyle(.thToolbarIcon)
-                    }
-                }
+                        .accessibilityLabel(L10n.Accessibility.cashFlowChart)
 
-                if selectedTab == .comparativa {
+                        Menu {
+                            Button {
+                                showHorizonConfig = true
+                            } label: {
+                                Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
+                            }
+                            Divider()
+                            Button(role: .destructive) {
+                                showResetConfirmation = true
+                            } label: {
+                                Label(L10n.CashFlowPlan.resetPlan, systemImage: "arrow.counterclockwise")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .font(DS.Typography.bodyBold)
+                                .foregroundStyle(.thToolbarIcon)
+                        }
+                    }
+                } else if sessionState.selectedReportTab == .comparativa {
                     Button {
                         viewModel.showFiltersSheet = true
                     } label: {
@@ -394,7 +398,8 @@ struct FinancialReportView: View {
         viewModel.calculateReport(
             transactions: transactions,
             accounts: accounts,
-            preferredCurrency: preferredCurrencyCode
+            preferredCurrency: preferredCurrencyCode,
+            allTags: tags
         )
     }
 }

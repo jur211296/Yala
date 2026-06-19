@@ -20,11 +20,7 @@ struct CategoriesTabView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
-
-
-    // MARK: - Settings
-
-    @AppStorage("showVariations") private var showVariations: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Data (passed from parent)
 
@@ -34,11 +30,33 @@ struct CategoriesTabView: View {
     let tags: [Tag]
     let allTransactions: [TransactionItem]
 
+    // MARK: - Scheduled Payments (for Sankey "Planificados" branch)
+
+    /// Loaded internally — the parent view doesn't pass these.
+    @Query private var scheduledPayments: [ScheduledPayment]
+    /// Tags catalog for `TagSpendingCalculator` to resolve UUIDs from CSV mirror.
+    @Query private var allTags: [Tag]
+
+    /// Compound signature that triggers Sankey recompute when any active SP changes
+    /// (create / delete / amount edit / nextDueDate edit / kind change / activation toggle / skip toggle).
+    private var scheduledPaymentsSignature: Int {
+        var hasher = Hasher()
+        for sp in scheduledPayments where sp.isActive {
+            hasher.combine(sp.id)
+            hasher.combine(sp.amount)
+            hasher.combine(sp.nextDueDate.timeIntervalSince1970)
+            hasher.combine(sp.paymentCategory)
+            hasher.combine(sp.transactionType)
+            hasher.combine(sp.skippedDatesRaw)
+        }
+        return hasher.finalize()
+    }
+
     // MARK: - External Dependencies
 
     @Bindable var viewModel: StatisticsViewModel
+    @Bindable var insightsViewModel: InsightsViewModel
     let defaultCurrencyCode: String
-    let onNavigateToRecords: () -> Void
 
     // MARK: - State
 
@@ -54,7 +72,6 @@ struct CategoriesTabView: View {
     @State private var showCustomPeriodPicker: Bool = false  // Custom period picker sheet
     @State private var isSyncingFilters: Bool = false  // Anti-loop flag for Need sync functions only
     @Namespace private var listSelectorNamespace
-    @Namespace private var comparisonSelectorNamespace
 
     // Period Comparison State (comparisonMode is in SessionState for sync across tabs)
     @State private var previousCategoryTotal: Double? = nil
@@ -63,8 +80,22 @@ struct CategoriesTabView: View {
     @State private var previousNeedTotal: Double? = nil
     @State private var previousNeedAmounts: [SubcategoryNeed: Double] = [:]
 
-    // Need Carousel State
-    @State private var needCarouselIndex: Int? = 0
+    /// Local pool-node selection for Sankey filtering. Single-select (tap toggles).
+    /// Not persisted in SessionState — lives only within the tab's render lifecycle.
+    @State private var selectedSankeyPoolNodeIDs: Set<String> = []
+
+    // Distribution Insight Card (F9b)
+    @State private var showUpgradeSheet: Bool = false
+    @State private var showInsightsConsentAlert: Bool = false
+
+    // Content mode pill — separa visualizaciones (Gráficas) de tablas (Detalle)
+    @State private var contentMode: DistributionContentMode = .charts
+
+    @ScaledMetric(relativeTo: .largeTitle) private var summaryVerticalPadding: CGFloat = 12
+
+    /// Total agregado del período (cache de `categorySpending.reduce`).
+    /// Se actualiza en `calculateData()` para evitar O(N) por render del hero.
+    @State private var totalAmount: Double = 0
 
     /// Effective category ID for subcategory filtering (uses first selected category or derives parent from subcategory)
     private var effectiveCategoryID: PersistentIdentifier? {
@@ -121,66 +152,81 @@ struct CategoriesTabView: View {
     }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: DS.Spacing.xl) {
-                controlBar
-                spendingAnalysisHeader
-                chartsCarousel
-                // Need carousel only shows for expenses (need classification doesn't apply to income)
-                if !isIncomeMode {
-                    needCarousel
-                }
-                categoriesListSection
-                recentRecordsSection
+        scrollBody
+            .sheet(isPresented: $showUpgradeSheet) {
+                UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
             }
-            .padding(.horizontal, DS.Spacing.lg)
+            .insightsConsentAlert(isPresented: $showInsightsConsentAlert) {
+                Task { await insightsViewModel.triggerAIGeneration() }
+            }
+    }
+
+    @ViewBuilder
+    private var scrollBody: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: DS.Spacing.md) {
+                heroSummary
+                filterBarPanel
+
+                if hasNoData {
+                    YalaEmptyState(
+                        icon: "chart.pie",
+                        title: L10n.Empty.noData
+                    )
+                    .padding(.top, DS.Spacing.xxxxl)
+                } else {
+                    LazyVStack(spacing: DS.Spacing.xl) {
+                        contentModePill
+
+                        switch contentMode {
+                        case .charts:
+                            chartsSection
+                            sankeyWidget
+                            // Need bars no aplican en income mode (need classification es expense-only)
+                            if !isIncomeMode {
+                                needsLargeSection
+                            }
+                        case .details:
+                            categoriesListSection
+                            if !isIncomeMode {
+                                needsCompactSection
+                            }
+                        }
+
+                        distributionInsightCard
+                    }
+                    .yalaSafeBottomPadding()
+                }
+            }
             .padding(.top, DS.Spacing.sm)
-            .yalaSafeBottomPadding()
         }
+        .scrollViewGlassEdges()
         .onAppear {
             calculateData()
+            recomputeSankey()
         }
-        .onChange(of: viewModel.detailPeriod) {
-            calculateData()
-        }
-        .onChange(of: viewModel.selectedAccounts) {
-            calculateData()
-        }
-        .onChange(of: viewModel.selectedCategories) {
-            calculateData()
-        }
-        .onChange(of: viewModel.selectedSubcategories) {
-            calculateData()
-        }
-        .onChange(of: viewModel.selectedTags) {
-            calculateData()
-        }
+        .onChange(of: viewModel.sankeyInputKey) { recomputeSankey() }
+        .onChange(of: allTransactions.count) { recomputeSankey() }
+        .onChange(of: scheduledPaymentsSignature) { recomputeSankey() }
+        // Filtros del VM que disparan recálculo, extraídos a un ViewModifier para no exceder el
+        // presupuesto del type-checker de Swift (cadena larga de .onChange en este body).
+        .modifier(CategoriesFilterRecalcObservers(viewModel: viewModel, onRecalc: { calculateData() }))
         .onChange(of: viewModel.selectedNeeds) {
             calculateData()
             syncNeedFilterToSelection()
         }
-        .onChange(of: viewModel.selectedTransactionNatures) {
-            calculateData()
-        }
-        .onChange(of: allSubcategories) {
-            calculateData()
-        }
+        .onChange(of: allSubcategories) { calculateData() }
         .onChange(of: selectedNeed) {
             syncSelectionToNeedFilter()
             calculateData()
         }
-        .onChange(of: sessionState.customDateRange) {
-            calculateData()
-        }
+        .onChange(of: sessionState.customDateRange) { calculateData() }
         .onChange(of: sessionState.comparisonMode) {
-            // Recalculate previous period data when comparison mode changes
             calculatePreviousPeriodTotals()
         }
         .onChange(of: sessionState.selectedTransactionNatures) {
-            // Sync transaction nature filter from SessionState and recalculate
             viewModel.selectedTransactionNatures = sessionState.selectedTransactionNatures
             enforceListViewLock()
-            // Reset carousel to first valid page when income mode changes
             chartsCarouselPosition = isIncomeMode ? "subcategory" : "category"
             calculateData()
         }
@@ -201,114 +247,145 @@ struct CategoriesTabView: View {
         return (start, end)
     }
 
-    // MARK: - Control Bar
+    // MARK: - Hero Summary (edge-to-edge, paralelo a InsightsTabView/TrendsTabView)
 
-    private var controlBar: some View {
+    @ViewBuilder
+    private var heroSummary: some View {
+        let hasRecords = totalAmount > 0
+
+        VStack(alignment: .center, spacing: DS.Spacing.xs) {
+            TrendsPeriodMenu(
+                selectedPeriod: viewModel.detailPeriod,
+                customDateRange: sessionState.customDateRange,
+                onSelect: { sessionState.selectedPeriod = $0 },
+                onCustomTapped: { showCustomPeriodPicker = true }
+            )
+            .equatable()
+
+            if hasRecords {
+                AmountText(
+                    value: totalAmount,
+                    currencyCode: defaultCurrencyCode,
+                    font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
+                )
+                .contentTransition(.numericText())
+            }
+
+            if hasRecords, let subtitle = heroDimensionalSubtitle() {
+                Text(subtitle)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, summaryVerticalPadding)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    /// Subtítulo dimensional dinámico. 3 variantes según qué dimensiones tienen data.
+    private func heroDimensionalSubtitle() -> String? {
+        let catCount = categorySpending.count
+        let subCount = subcategorySpending.count
+        let tagCount = tagSpending.count
+        let activeDims = [catCount > 0, subCount > 0, tagCount > 0].filter { $0 }.count
+        switch activeDims {
+        case 3: return L10n.Stats.Distribution.heroSubtitle3(catCount, subCount, tagCount)
+        case 2 where catCount > 0 && subCount > 0:
+            return L10n.Stats.Distribution.heroSubtitle2(catCount, subCount)
+        case 1 where catCount > 0:
+            return L10n.Stats.Distribution.heroSubtitle1(catCount)
+        default: return nil
+        }
+    }
+
+    // MARK: - Filter Bar (panel style)
+
+    private var filterBarPanel: some View {
         FilterControlBar(
-            periodSelector: periodSelector,
+            periodSelector: EmptyView(),
             viewModel: viewModel,
             accounts: accounts,
             categories: categories,
             allSubcategories: allSubcategories,
             tags: tags,
-            animationValue: viewModel.detailPeriod
+            animationValue: viewModel.detailPeriod,
+            panelStyle: true,
+            inlinePeriodSelector: false
         )
         .onChange(of: viewModel.hasActiveFilters) {
-            if !viewModel.hasActiveFilters {
-                selectedNeed = nil
-            }
+            if !viewModel.hasActiveFilters { selectedNeed = nil }
         }
     }
 
-    private var periodSelector: some View {
-        TrendsPeriodMenu(
-            selectedPeriod: viewModel.detailPeriod,
-            customDateRange: sessionState.customDateRange,
-            onSelect: { period in
-                sessionState.selectedPeriod = period
-            },
-            onCustomTapped: {
-                showCustomPeriodPicker = true
-            }
-        )
-        .equatable()
+    // MARK: - Empty Gating
+
+    /// Empty tab cuando no hay data en ninguna sub-sección.
+    private var hasNoData: Bool {
+        categorySpending.isEmpty
+            && subcategorySpending.isEmpty
+            && tagSpending.isEmpty
+            && !viewModel.sankeyData.hasFlow
+            && needTrendPoints.allSatisfy { $0.total == 0 }
     }
 
-    // MARK: - Spending Analysis Header
+    // MARK: - Analysis Header Section
 
-    /// Header with dynamic title based on income/expense mode
-    /// Placed outside carousel to avoid disappearing when no previous data
-    private var spendingAnalysisHeader: some View {
-        HStack {
+    /// Header con title dinámico (gasto/ingreso según FilterControlBar global) +
+    /// M/A selector. El (?) educativo vive dentro de cada pie via `headerInfoButton`.
+    private var analysisHeaderSection: some View {
+        HStack(spacing: DS.Spacing.sm) {
             Text(isIncomeMode ? L10n.Statistics.incomeAnalysis : L10n.Statistics.spendingAnalysis)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
-
-            InfoHintButton(
-                title: isIncomeMode ? L10n.Statistics.incomeAnalysis : L10n.Statistics.spendingAnalysis,
-                message: isIncomeMode ? L10n.Widget.Hint.incomeAnalysis : L10n.Widget.Hint.spendingAnalysis
-            )
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
 
             Spacer()
 
-            // M/A Selector (always visible for applicable periods)
             if showComparisonSelector {
-                comparisonModeSelector
+                ComparisonModeSelector()
             }
         }
     }
 
-    /// Determines if comparison selector should be visible (only when showVariations is ON)
+    /// Determines if comparison selector should be visible (only when appPreferences.showVariations is ON)
     private var showComparisonSelector: Bool {
-        showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod)
+        appPreferences.showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod)
     }
 
-    /// Comparison mode selector (M/A toggle)
-    private var comparisonModeSelector: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            ForEach(ComparisonMode.allCases) { mode in
-                comparisonSelectorButton(for: mode)
-            }
+    // MARK: - Content Mode Pill (Gráficas / Detalle)
+
+    private var contentModePill: some View {
+        GenericSegmentedPill(
+            options: DistributionContentMode.allCases,
+            selection: $contentMode,
+            labelProvider: { $0.label },
+            selectedFillColorProvider: { _ in theme.accent }
+        )
+    }
+
+    // MARK: - Charts Section (analysisHeader + chartsCarousel)
+
+    /// La sección Charts agrupa los 3 pies (carousel). El analysisHeaderSection
+    /// arriba sirve de título — "Análisis del gasto/ingreso" + InfoHint + M/A
+    /// selector que controla la comparativa de período mostrada en los pies.
+    @ViewBuilder
+    private var chartsSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            analysisHeaderSection
+            chartsCarousel
         }
     }
 
-    private func comparisonSelectorButton(for mode: ComparisonMode) -> some View {
-        let isSelected = sessionState.comparisonMode == mode
-
-        return Button {
-            dsWithAnimation(reduceMotion) {
-                sessionState.comparisonMode = mode
-            }
-        } label: {
-            Text(mode.shortName)
-                .font(DS.Typography.labelSmall)
-                .fontWeight(.semibold)
-                .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
-                .frame(width: 32, height: 32)
-                .background {
-                    if isSelected {
-                        Circle()
-                            .fill(theme.accent)
-                            .matchedGeometryEffect(id: "comparisonSelector", in: comparisonSelectorNamespace)
-                    } else {
-                        Circle()
-                            .fill(.thSecondaryText.opacity(0.08))
-                    }
-                }
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Charts Carousel
-
-    /// Number of pages in carousel (varies by income mode and iPad layout)
+    /// Number of pages in carousel (siempre 3 pages iPhone; iPad muestra cat+sub en 2-col)
     private var carouselPageCount: Int {
         let isWide = DS.Adaptive.isWideScreen(sizeClass)
-        if isWide {
-            // iPad: tags moved to need row, only category + subcategory (or just subcategory in income)
-            return isIncomeMode ? 1 : 2
-        }
-        return isIncomeMode ? 2 : 3
+        // En iPad: 2 pages (cat+sub side-by-side, luego tag con needs row).
+        // En iPhone: 3 pages (cat, sub, tag).
+        return isWide ? 2 : 3
     }
 
     @ViewBuilder
@@ -316,52 +393,44 @@ struct CategoriesTabView: View {
         let isWide = DS.Adaptive.isWideScreen(sizeClass)
 
         VStack(spacing: DS.Spacing.sm) {
-            GeometryReader { geo in
-                let totalWidth = geo.size.width
-                let spacing: CGFloat = DS.Spacing.md
-                let cardWidth = isWide ? (totalWidth - spacing) / 2 : totalWidth
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Spacing.md) {
+                    categoryChartCard
+                        .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
+                        .id("category")
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: spacing) {
-                        // Categories Chart - hidden in income mode
-                        if !isIncomeMode {
-                            categoryChartCard
-                                .frame(width: cardWidth)
-                                .id("category")
-                        }
+                    subcategoryChartCard
+                        .containerRelativeFrame(.horizontal, count: isWide ? 2 : 1, spacing: isWide ? DS.Spacing.md : 0)
+                        .id("subcategory")
 
-                        // Subcategories Chart
-                        subcategoryChartCard
-                            .frame(width: cardWidth)
-                            .id("subcategory")
-
-                        // Tags Chart - on iPad, tags moves next to need
-                        if !isWide {
-                            tagChartCard
-                                .frame(width: cardWidth)
-                                .id("tags")
-                        }
+                    // Tags Chart - on iPad, tags moves next to need (needsLargeSection HStack)
+                    if !isWide {
+                        tagChartCard
+                            .containerRelativeFrame(.horizontal)
+                            .id("tags")
                     }
-                    .scrollTargetLayout()
                 }
-                .scrollTargetBehavior(.viewAligned)
-                .scrollPosition(id: $chartsCarouselPosition)
-                .frame(width: totalWidth)
+                .scrollTargetLayout()
             }
+            .scrollTargetBehavior(.viewAligned)
+            .scrollPosition(id: $chartsCarouselPosition)
             .frame(height: 340)
 
-            // Page indicator - hide on iPad (multiple charts already visible)
+            // Page indicator capsule (TX-11) — hide on iPad (multiple charts already visible)
             if !isWide {
-                HStack(spacing: DS.Spacing.sm) {
+                HStack(spacing: DS.Spacing.xs) {
                     ForEach(0..<carouselPageCount, id: \.self) { page in
                         let pageId = carouselPageIds[page]
-                        Circle()
-                            .fill(
-                                chartsCarouselPosition == pageId
-                                    ? theme.primaryText.opacity(0.3)
-                                    : theme.secondaryText.opacity(0.2)
-                            )
-                            .frame(width: 6, height: 6)
+                        let isActive = chartsCarouselPosition == pageId
+                        Capsule()
+                            .fill(isActive ? theme.primaryText.opacity(0.6) : theme.secondaryText.opacity(0.25))
+                            .frame(width: isActive ? 18 : 6, height: 3)
+                            .contentShape(Rectangle().inset(by: -8))
+                            .onTapGesture {
+                                DS.Haptic.selection()
+                                dsWithAnimation(reduceMotion) { chartsCarouselPosition = pageId }
+                            }
+                            .accessibilityLabel(L10n.Accessibility.pageIndicator(page + 1, carouselPageCount))
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -369,13 +438,14 @@ struct CategoriesTabView: View {
         }
     }
 
-    /// IDs for carousel pages based on income mode and iPad layout
+    /// IDs for carousel pages. iPad muestra cat+sub side-by-side (page 1) y tag en
+    /// la HStack del needsLargeSection. iPhone tiene 3 pages independientes.
     private var carouselPageIds: [String] {
         let isWide = DS.Adaptive.isWideScreen(sizeClass)
         if isWide {
-            return isIncomeMode ? ["subcategory"] : ["category", "subcategory"]
+            return ["category", "subcategory"]
         }
-        return isIncomeMode ? ["subcategory", "tags"] : ["category", "subcategory", "tags"]
+        return ["category", "subcategory", "tags"]
     }
 
     // MARK: - Category Chart Card
@@ -406,21 +476,15 @@ struct CategoriesTabView: View {
                     },
                     isExcludeMode: viewModel.isExcludeMode,
                     size: .large,
+                    headerInfoButton: AnyView(WidgetInfoButton(kind: .categoriesPie)),
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousCategoryTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: showVariations && viewModel.detailPeriod != .allTime
+                    showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime
                 )
             }
         }
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
     // MARK: - Subcategory Chart Card
@@ -451,21 +515,15 @@ struct CategoriesTabView: View {
                     },
                     isExcludeMode: viewModel.isExcludeMode,
                     size: .large,
+                    headerInfoButton: AnyView(WidgetInfoButton(kind: .subcategoriesPie)),
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousSubcategoryTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: showVariations && viewModel.detailPeriod != .allTime
+                    showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime
                 )
             }
         }
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
     // MARK: - Tag Chart Card
@@ -493,105 +551,157 @@ struct CategoriesTabView: View {
                     },
                     isExcludeMode: viewModel.isExcludeMode,
                     size: .large,
+                    headerInfoButton: AnyView(WidgetInfoButton(kind: .tagsPie)),
                     period: viewModel.detailPeriod,
                     customRange: sessionState.customDateRange,
                     previousTotalAmount: previousTagTotal,
                     comparisonMode: sessionState.comparisonMode,
-                    showVariationHeader: showVariations && viewModel.detailPeriod != .allTime
+                    showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime
                 )
             }
         }
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
-    // MARK: - Need Carousel
+    // MARK: - Needs Sections (split en Gráficas/Detalle, sin carrusel)
 
-    /// Count of needs with data (for dynamic height calculation)
-    private var visibleNeedCount: Int {
-        guard !needTrendPoints.isEmpty else { return 3 }
-        let essentialTotal = needTrendPoints.reduce(0) { $0 + $1.essential }
-        let priorityTotal = needTrendPoints.reduce(0) { $0 + $1.priority }
-        let optionalTotal = needTrendPoints.reduce(0) { $0 + $1.optional }
-        let unclassifiedTotal = needTrendPoints.reduce(0) { $0 + $1.unclassified }
-
-        var count = 0
-        if essentialTotal > 0 { count += 1 }
-        if priorityTotal > 0 { count += 1 }
-        if optionalTotal > 0 { count += 1 }
-        if unclassifiedTotal > 0 { count += 1 }
-        return max(count, 3)  // Always show at least 3 bars
-    }
-
-    /// Dynamic height based on current carousel page and visible needs
-    private var needCarouselHeight: CGFloat {
-        if (needCarouselIndex ?? 0) == 0 {
-            return 340  // Large chart view
-        } else {
-            // Compact view: dynamic height based on number of visible needs
-            // Each bar ~52 points (row + progress + spacing) + container padding (~56)
-            let barHeight: CGFloat = 52
-            let containerPadding: CGFloat = 56
-            return CGFloat(visibleNeedCount) * barHeight + containerPadding
+    @ViewBuilder
+    private var sankeyWidget: some View {
+        if viewModel.sankeyData.hasFlow {
+            @Bindable var prefs = appPreferences
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                // Title fuera del card + label mode toggle a la derecha (patrón Trends cashFlowWidget)
+                HStack {
+                    Text(L10n.Statistics.Sankey.title)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    SankeyLabelModeToggle(mode: $prefs.sankeyLabelMode)
+                }
+                sankeyCardBody.panelCard()
+            }
         }
     }
 
     @ViewBuilder
-    private var needCarousel: some View {
-        let isWide = DS.Adaptive.isWideScreen(sizeClass)
+    private var sankeyCardBody: some View {
+        @Bindable var prefs = appPreferences
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(L10n.Stats.Sankey.subtitle)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.thPrimaryText)
 
-        if isWide {
-            // iPad: tags pie + need large side by side, no compact need
-            HStack(alignment: .top, spacing: DS.Spacing.lg) {
-                tagChartCard
-                    .frame(maxWidth: .infinity)
-                needWidgetLarge
-                    .frame(maxWidth: .infinity)
+                    WidgetInfoButton(kind: .sankey)
+                }
+                AmountText(
+                    value: viewModel.sankeyData.totalExpense,
+                    currencyCode: defaultCurrencyCode,
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption
+                )
             }
+
+            SankeyChartView(
+                data: viewModel.sankeyData,
+                currencyCode: defaultCurrencyCode,
+                labelMode: $prefs.sankeyLabelMode,
+                selectedCategoryIDs: viewModel.selectedCategories,
+                selectedSubcategoryIDs: viewModel.selectedSubcategories,
+                selectedPoolNodeIDs: selectedSankeyPoolNodeIDs,
+                onTapCategory: { catID in
+                    dsWithAnimation(reduceMotion) { toggleSankeyCategory(catID) }
+                },
+                onTapSubcategory: { subID in
+                    dsWithAnimation(reduceMotion) { toggleSankeySubcategory(subID) }
+                },
+                onTapPoolNode: { nodeID in
+                    dsWithAnimation(reduceMotion) { toggleSankeyPoolNode(nodeID) }
+                }
+            )
+
+            if viewModel.shouldShowPlannedHint && viewModel.sankeyData.hasPlannedBranch {
+                Text(L10n.Statistics.Sankey.plannedHint)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private func recomputeSankey() {
+        viewModel.calculateSankeyData(
+            allTransactions: allTransactions,
+            accounts: accounts,
+            scheduledPayments: scheduledPayments,
+            allTags: allTags,
+            defaultCurrencyCode: defaultCurrencyCode
+        )
+    }
+
+    private func toggleSankeyCategory(_ catID: PersistentIdentifier) {
+        if viewModel.selectedCategories.contains(catID) {
+            viewModel.selectedCategories.remove(catID)
         } else {
-            // iPhone: carousel with large/compact need slides
-            VStack(spacing: DS.Spacing.sm) {
-                GeometryReader { geo in
-                    let totalWidth = geo.size.width
-                    let spacing: CGFloat = DS.Spacing.md
+            viewModel.selectedCategories = [catID]
+            viewModel.selectedSubcategories.removeAll()
+        }
+    }
 
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHStack(alignment: .top, spacing: spacing) {
-                            needWidgetLarge
-                                .frame(width: totalWidth)
-                                .id(0)
+    private func toggleSankeySubcategory(_ subID: PersistentIdentifier) {
+        if viewModel.selectedSubcategories.contains(subID) {
+            viewModel.selectedSubcategories.remove(subID)
+        } else {
+            viewModel.selectedSubcategories = [subID]
+            viewModel.selectedCategories.removeAll()
+        }
+    }
 
-                            needWidgetCompact
-                                .frame(width: totalWidth)
-                                .id(1)
-                        }
-                        .scrollTargetLayout()
-                    }
-                    .scrollTargetBehavior(.viewAligned)
-                    .scrollPosition(id: $needCarouselIndex)
-                    .frame(width: totalWidth)
+    private func toggleSankeyPoolNode(_ nodeID: String) {
+        if selectedSankeyPoolNodeIDs.contains(nodeID) {
+            selectedSankeyPoolNodeIDs.remove(nodeID)
+        } else {
+            selectedSankeyPoolNodeIDs = [nodeID]
+        }
+    }
+
+    /// Título "Necesidades" fuera del card (patrón consistente entre Large/Compact).
+    private var needsHeader: some View {
+        HStack {
+            Text(L10n.WidgetType.expensesByNeed)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+            Spacer()
+        }
+    }
+
+    /// Sección "Necesidades" en pestaña Gráficas — versión large con barras.
+    /// iPad: tags pie + needLarge side-by-side (tag no entra al carousel iPad).
+    /// iPhone: solo needLarge (tag vive en carousel iPhone).
+    @ViewBuilder
+    private var needsLargeSection: some View {
+        let isWide = DS.Adaptive.isWideScreen(sizeClass)
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            needsHeader
+
+            if isWide {
+                HStack(alignment: .top, spacing: DS.Spacing.lg) {
+                    tagChartCard
+                        .frame(maxWidth: .infinity)
+                    needWidgetLarge
+                        .frame(maxWidth: .infinity)
                 }
-                .frame(height: needCarouselHeight)
-                .dsAnimation(.easeInOut(duration: 0.3), value: needCarouselIndex, reduceMotion: reduceMotion)
-
-                HStack(spacing: DS.Spacing.sm) {
-                    ForEach(0..<2, id: \.self) { page in
-                        Circle()
-                            .fill(
-                                page == (needCarouselIndex ?? 0)
-                                    ? theme.primaryText.opacity(0.3)
-                                    : theme.secondaryText.opacity(0.2)
-                            )
-                            .frame(width: 6, height: 6)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                needWidgetLarge
             }
+        }
+    }
+
+    /// Sección "Necesidades" en pestaña Detalle — versión compact con barras
+    /// listadas. Complementa la lista de categorías arriba.
+    private var needsCompactSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            needsHeader
+            needWidgetCompact
         }
     }
 
@@ -616,9 +726,10 @@ struct CategoriesTabView: View {
             period: viewModel.detailPeriod,
             previousTotalAmount: previousNeedTotal,
             previousAmountByNeed: previousNeedAmounts,
-            showVariationHeader: showVariations && viewModel.detailPeriod != .allTime,
+            showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
             comparisonMode: sessionState.comparisonMode,
-            isIncomeMode: viewModel.selectedTransactionNatures == [.income]
+            isIncomeMode: viewModel.selectedTransactionNatures == [.income],
+            headerInfoButton: AnyView(WidgetInfoButton(kind: .expensesByNeed))
         )
     }
 
@@ -643,9 +754,10 @@ struct CategoriesTabView: View {
             period: viewModel.detailPeriod,
             previousTotalAmount: previousNeedTotal,
             previousAmountByNeed: previousNeedAmounts,
-            showVariationHeader: showVariations && viewModel.detailPeriod != .allTime,
+            showVariationHeader: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
             comparisonMode: sessionState.comparisonMode,
-            isIncomeMode: viewModel.selectedTransactionNatures == [.income]
+            isIncomeMode: viewModel.selectedTransactionNatures == [.income],
+            headerInfoButton: AnyView(WidgetInfoButton(kind: .expensesByNeed))
         )
     }
 
@@ -665,8 +777,8 @@ struct CategoriesTabView: View {
     // MARK: - Categories List Section
 
     private var categoriesListSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.none) {
-            // Header with title and selector
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // Header fuera del card (patrón panel-aligned)
             HStack(alignment: .center) {
                 Text(
                     listViewType == .categories
@@ -679,78 +791,72 @@ struct CategoriesTabView: View {
 
                 listViewSelector
             }
-            .padding(.horizontal, DS.Spacing.xl)
-            .padding(.top, DS.Spacing.lg)
-            .padding(.bottom, DS.Spacing.md)
 
-            // Content based on selected view type
-            if listViewType == .categories {
-                if categorySpending.isEmpty {
-                    emptyState(
-                        icon: "chart.bar.xaxis",
-                        title: L10n.Empty.noCategories,
-                        subtitle: L10n.Statistics.noDataToShow
-                    )
-                    .frame(height: 200)
-                } else {
-                    AllCategoriesListContent(
-                        categories: categorySpending,
-                        currencyCode: defaultCurrencyCode,
-                        selectedCategoryIDs: effectiveCategoryIDsForDim,
-                        isExcludeMode: viewModel.isExcludeMode,
-                        isExpanded: isListExpanded,
-                        showVariation: showVariations && viewModel.detailPeriod != .allTime,
-                        onToggleExpanded: { isListExpanded.toggle() },
-                        onSelectCategory: { categoryID in
-                            if viewModel.selectedCategories.contains(categoryID) {
-                                viewModel.selectedCategories.remove(categoryID)
-                            } else {
-                                viewModel.selectedCategories = [categoryID]
-                            }
-                            viewModel.selectedSubcategories.removeAll()
-                        }
-                    )
-                }
+            listCardBody.panelCard()
+        }
+    }
+
+    @ViewBuilder
+    private var listCardBody: some View {
+        if listViewType == .categories {
+            if categorySpending.isEmpty {
+                emptyState(
+                    icon: "chart.bar.xaxis",
+                    title: L10n.Empty.noCategories,
+                    subtitle: L10n.Statistics.noDataToShow
+                )
+                .frame(maxWidth: .infinity, minHeight: 200)
             } else {
-                if subcategorySpending.isEmpty {
-                    emptyState(
-                        icon: "list.bullet.indent",
-                        title: L10n.Empty.noSubcategories,
-                        subtitle: L10n.Statistics.noDataToShow
-                    )
-                    .frame(height: 200)
-                } else {
-                    AllSubcategoriesListContent(
-                        subcategories: subcategorySpending,
-                        currencyCode: defaultCurrencyCode,
-                        selectedCategoryIDs: viewModel.isExcludeMode
-                            ? viewModel.selectedCategories
-                            : effectiveCategoryIDsForDim,
-                        selectedSubcategoryIDs: viewModel.selectedSubcategories,
-                        isExcludeMode: viewModel.isExcludeMode,
-                        isExpanded: isListExpanded,
-                        showVariation: showVariations && viewModel.detailPeriod != .allTime,
-                        onToggleExpanded: { isListExpanded.toggle() },
-                        onSelectSubcategory: { subcategoryID in
-                            if viewModel.selectedSubcategories.contains(subcategoryID) {
-                                viewModel.selectedSubcategories.remove(subcategoryID)
-                            } else {
-                                viewModel.selectedSubcategories = [subcategoryID]
-                            }
-                            // Clear category filter — subcategory selection is more specific
-                            viewModel.selectedCategories.removeAll()
+                AllCategoriesListContent(
+                    categories: categorySpending,
+                    currencyCode: defaultCurrencyCode,
+                    selectedCategoryIDs: effectiveCategoryIDsForDim,
+                    isExcludeMode: viewModel.isExcludeMode,
+                    isExpanded: isListExpanded,
+                    showVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
+                    onToggleExpanded: { isListExpanded.toggle() },
+                    onSelectCategory: { categoryID in
+                        if viewModel.selectedCategories.contains(categoryID) {
+                            viewModel.selectedCategories.remove(categoryID)
+                        } else {
+                            viewModel.selectedCategories = [categoryID]
                         }
-                    )
-                }
+                        viewModel.selectedSubcategories.removeAll()
+                    }
+                )
+            }
+        } else {
+            if subcategorySpending.isEmpty {
+                emptyState(
+                    icon: "list.bullet.indent",
+                    title: L10n.Empty.noSubcategories,
+                    subtitle: L10n.Statistics.noDataToShow
+                )
+                .frame(maxWidth: .infinity, minHeight: 200)
+            } else {
+                AllSubcategoriesListContent(
+                    subcategories: subcategorySpending,
+                    currencyCode: defaultCurrencyCode,
+                    selectedCategoryIDs: viewModel.isExcludeMode
+                        ? viewModel.selectedCategories
+                        : effectiveCategoryIDsForDim,
+                    selectedSubcategoryIDs: viewModel.selectedSubcategories,
+                    isExcludeMode: viewModel.isExcludeMode,
+                    isExpanded: isListExpanded,
+                    showVariation: appPreferences.showVariations && viewModel.detailPeriod != .allTime,
+                    onToggleExpanded: { isListExpanded.toggle() },
+                    onSelectSubcategory: { subcategoryID in
+                        if viewModel.selectedSubcategories.contains(subcategoryID) {
+                            viewModel.selectedSubcategories.remove(subcategoryID)
+                        } else {
+                            viewModel.selectedSubcategories = [subcategoryID]
+                        }
+                        // Clear category filter — subcategory selection is more specific
+                        viewModel.selectedCategories.removeAll()
+                    }
+                )
             }
         }
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
 
     private var listViewSelector: some View {
@@ -841,6 +947,244 @@ struct CategoriesTabView: View {
         )
     }
 
+    // MARK: - Distribution Insight Card (protagonista AL FINAL, paralelo Trends)
+    //
+    // V1 limitation documentada: aiInsights.heroText es shared con Trends + Insights
+    // (mismo InsightsViewModel.triggerAIGeneration agnóstico a tab). El usuario puede
+    // ver "el mismo análisis" cross-tab. V2 dedicará prompt específico de distribución.
+
+    private var isProUser: Bool {
+        FeatureGateService.shared.canAccess(.smartInsightsAI)
+    }
+
+    @ViewBuilder
+    private var distributionInsightCard: some View {
+        let txCount = insightsViewModel.insightData?.periodSummary.transactionCount ?? 0
+        // Gate: aparece SOLO si tx en período actual >= 5
+        if txCount >= 5 {
+            if isProUser {
+                proDistributionInsightCard
+            } else {
+                freeDistributionInsightCard
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var freeDistributionInsightCard: some View {
+        let finding = computeDistributionFinding()
+
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "chart.pie")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(theme.accent)
+                    .accessibilityHidden(true)
+                Text(L10n.Stats.Distribution.insightTitleFree(periodDisplayName))
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+            }
+
+            Text(findingText(finding))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(3)
+
+            Button { showUpgradeSheet = true } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "sparkles").font(DS.Typography.caption)
+                    Text(L10n.Stats.Trends.refineWithAI).font(DS.Typography.caption)
+                }
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .background(theme.accent.opacity(0.12))
+                .foregroundStyle(theme.accent)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard()
+    }
+
+    @ViewBuilder
+    private var proDistributionInsightCard: some View {
+        if insightsViewModel.aiActivated {
+            if insightsViewModel.isLoadingAI {
+                AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+            } else if let aiHero = insightsViewModel.aiInsights?.heroText {
+                proAIInsightCard(aiHero: aiHero)
+            } else if let error = insightsViewModel.aiError {
+                AIInsightCardComponents.errorCard(error)
+            }
+        } else {
+            proPreAIInsightCard
+        }
+    }
+
+    /// Header consistente entre pre-AI y post-AI (sparkles + título Pro).
+    @ViewBuilder
+    private var proInsightHeader: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "sparkles")
+                .font(DS.Typography.body)
+                .foregroundStyle(theme.accent)
+                .accessibilityHidden(true)
+            Text(L10n.Stats.Distribution.insightTitlePro)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.primary)
+        }
+    }
+
+    @ViewBuilder
+    private func proAIInsightCard(aiHero: String) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            proInsightHeader
+
+            Text(AIInsightCardComponents.markdownAttributed(aiHero))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Footer balanceado: tag identitario izq + chip Regenerar der.
+            HStack {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "sparkles")
+                        .font(DS.Typography.captionSmall)
+                    Text(L10n.Stats.Distribution.aiFootnote)
+                        .font(DS.Typography.captionSmall)
+                }
+                .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button {
+                    Task { await insightsViewModel.triggerAIGeneration() }
+                } label: {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(DS.Typography.caption)
+                        Text(L10n.Stats.Trends.regenerate)
+                            .font(DS.Typography.caption)
+                    }
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(theme.accent.opacity(0.12))
+                    .foregroundStyle(theme.accent)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard()
+    }
+
+    @ViewBuilder
+    private var proPreAIInsightCard: some View {
+        let finding = computeDistributionFinding()
+
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            proInsightHeader
+
+            Text(findingText(finding))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(3)
+
+            Button {
+                if appPreferences.aiInsightsConsentAccepted {
+                    Task { await insightsViewModel.triggerAIGeneration() }
+                } else {
+                    showInsightsConsentAlert = true
+                }
+            } label: {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "sparkles").font(DS.Typography.caption)
+                    Text(L10n.Stats.Trends.generateAI).font(DS.Typography.caption)
+                }
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .background(theme.accent.opacity(0.12))
+                .foregroundStyle(theme.accent)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard()
+    }
+
+    private var periodDisplayName: String {
+        viewModel.detailPeriod.displayName
+    }
+
+    /// Strip "vs " hardcoded por PreviousPeriodHelper.formatComparisonText.
+    private func strippedComparisonLabel(_ label: String) -> String {
+        label.hasPrefix("vs ") ? String(label.dropFirst(3)) : label
+    }
+
+    private func previousPeriodLabelForInsight() -> String? {
+        guard viewModel.detailPeriod != .allTime else { return nil }
+        let interval = PreviousPeriodHelper.previousInterval(
+            for: viewModel.detailPeriod,
+            mode: sessionState.comparisonMode,
+            customRange: sessionState.customDateRange
+        )
+        let raw = PreviousPeriodHelper.formatComparisonText(
+            previousInterval: interval,
+            period: viewModel.detailPeriod,
+            mode: sessionState.comparisonMode
+        )
+        return strippedComparisonLabel(raw)
+    }
+
+    private func computeDistributionFinding() -> DistributionInsightFinding {
+        let prevLabel = previousPeriodLabelForInsight()
+        let cats: [DistributionCategoryInput] = categorySpending.map {
+            DistributionCategoryInput(
+                name: $0.category.name,
+                amount: $0.amount,
+                percentage: $0.percentage,
+                previousAmount: $0.previousAmount,
+                variation: $0.variation
+            )
+        }
+        let topSub: DistributionTopSubInput? = subcategorySpending.first.map {
+            DistributionTopSubInput(
+                name: $0.subcategoryName,
+                parent: $0.category?.name ?? "",
+                percentageOfCategory: $0.percentageOfCategory
+            )
+        }
+        return DistributionInsightLogic.finding(
+            categories: cats,
+            topSub: topSub,
+            previousLabel: prevLabel,
+            period: periodDisplayName
+        )
+    }
+
+    private func findingText(_ finding: DistributionInsightFinding) -> String {
+        switch finding {
+        case .onset:
+            return L10n.Stats.Distribution.Insight.onset(periodDisplayName)
+        case .newCategory(let name, let period):
+            return L10n.Stats.Distribution.Insight.newCategory(name, period)
+        case .concentrated(let percent, let topCat):
+            return L10n.Stats.Distribution.Insight.concentrated(percent, topCat)
+        case .balanced(let maxPercent):
+            return L10n.Stats.Distribution.Insight.balanced(maxPercent)
+        case .shifted(let percent, let cat, .up, let prev):
+            return L10n.Stats.Distribution.Insight.shiftedUp(percent, cat, prev)
+        case .shifted(let percent, let cat, .down, let prev):
+            return L10n.Stats.Distribution.Insight.shiftedDown(percent, cat, prev)
+        case .topSubFallback(let percent, let sub, let parent):
+            return L10n.Stats.Distribution.Insight.topSub(percent, sub, parent)
+        }
+    }
+
     // MARK: - Data Calculation
 
     private func calculateData() {
@@ -849,7 +1193,7 @@ struct CategoriesTabView: View {
         // Build filter criteria for pie charts
         // Include mode: show all categories/subcategories with dim (no filter)
         // Exclude mode: actually exclude selected categories/subcategories from data
-        let pieChartCriteria = FilterCriteria(
+        var pieChartCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: viewModel.isExcludeMode ? viewModel.selectedCategories : [],
             selectedSubcategories: viewModel.isExcludeMode ? viewModel.selectedSubcategories : [],
@@ -863,6 +1207,9 @@ struct CategoriesTabView: View {
             searchText: viewModel.searchText,
             dateInterval: interval
         )
+        pieChartCriteria.populateTagUUIDs(
+            from: allTags.filter { pieChartCriteria.selectedTags.contains($0.persistentModelID) }
+        )
 
         // Filter transactions for pie charts (show all categories/subcategories)
         let pieFiltered = FilterService.filterForTrends(
@@ -872,7 +1219,7 @@ struct CategoriesTabView: View {
         )
 
         // Create criteria for need widget (respects cat/subcat filters, but NOT need filter - show all with dim)
-        let needCriteria = FilterCriteria(
+        var needCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: viewModel.selectedCategories,
             selectedSubcategories: viewModel.selectedSubcategories,
@@ -885,6 +1232,9 @@ struct CategoriesTabView: View {
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
             dateInterval: interval
+        )
+        needCriteria.populateTagUUIDs(
+            from: allTags.filter { needCriteria.selectedTags.contains($0.persistentModelID) }
         )
 
         // Filter transactions for need widget
@@ -908,6 +1258,8 @@ struct CategoriesTabView: View {
 
         )
         if newCategorySpending != categorySpending { categorySpending = newCategorySpending }
+        let newTotal = newCategorySpending.reduce(0) { $0 + $1.amount }
+        if newTotal != totalAmount { totalAmount = newTotal }
 
         // Calculate subcategory spending - filter by category if one is selected
         let subcategoryTransactions: [TransactionItem]
@@ -932,6 +1284,7 @@ struct CategoriesTabView: View {
         if newSubcategorySpending != subcategorySpending { subcategorySpending = newSubcategorySpending }
 
         // Calculate tag spending — respects category/subcategory filters but shows ALL tags
+        // selectedTags=[] intentional → tagCriteria.selectedTagUUIDs stays empty (no tag filter applied).
         let tagCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: viewModel.selectedCategories,
@@ -953,7 +1306,8 @@ struct CategoriesTabView: View {
             transactions: tagFiltered,
             interval: interval,
             currencyCode: defaultCurrencyCode,
-            transactionNatures: naturesFilter
+            transactionNatures: naturesFilter,
+            allTags: allTags
         )
         if newTagSpending != tagSpending { tagSpending = newTagSpending }
 
@@ -999,7 +1353,7 @@ struct CategoriesTabView: View {
         // Build filter criteria for previous period
         // Include mode: show all (no filter) for comparison
         // Exclude mode: exclude selected categories/subcategories for consistent comparison
-        let criteria = FilterCriteria(
+        var criteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: viewModel.isExcludeMode ? viewModel.selectedCategories : [],
             selectedSubcategories: viewModel.isExcludeMode ? viewModel.selectedSubcategories : [],
@@ -1012,6 +1366,9 @@ struct CategoriesTabView: View {
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
             dateInterval: previousInterval
+        )
+        criteria.populateTagUUIDs(
+            from: allTags.filter { criteria.selectedTags.contains($0.persistentModelID) }
         )
 
         // Filter transactions for previous period
@@ -1099,7 +1456,8 @@ struct CategoriesTabView: View {
             transactions: prevTagFiltered,
             interval: previousInterval,
             currencyCode: defaultCurrencyCode,
-            transactionNatures: naturesFilter
+            transactionNatures: naturesFilter,
+            allTags: allTags
         )
         previousTagTotal = previousTagSpending.reduce(0) { $0 + $1.amount }
 
@@ -1113,7 +1471,7 @@ struct CategoriesTabView: View {
 
         // Calculate previous period need trend data
         // Use separate criteria WITHOUT nature filter for consistent comparison
-        let prevNeedCriteria = FilterCriteria(
+        var prevNeedCriteria = FilterCriteria(
             selectedAccounts: viewModel.selectedAccounts,
             selectedCategories: [],
             selectedSubcategories: [],
@@ -1126,6 +1484,9 @@ struct CategoriesTabView: View {
             amountCondition: viewModel.amountCondition,
             searchText: viewModel.searchText,
             dateInterval: previousInterval
+        )
+        prevNeedCriteria.populateTagUUIDs(
+            from: allTags.filter { prevNeedCriteria.selectedTags.contains($0.persistentModelID) }
         )
         let prevNeedFiltered = FilterService.filterForTrends(
             transactions: allTransactions,
@@ -1189,65 +1550,22 @@ struct CategoriesTabView: View {
         }
     }
 
-    // MARK: - Recent Records Section
+}
 
-    private var recentRecordsSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text(L10n.Statistics.latestRecords)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thPrimaryText)
+// MARK: - DistributionContentMode
 
-            if viewModel.recentRecords.isEmpty {
-                emptyRecordsState
-            } else {
-                ForEach(viewModel.recentRecords.prefix(5), id: \.persistentModelID) { record in
-                    CompactRecordRow(record: record, currencyCode: defaultCurrencyCode)
-                }
-            }
+/// Pill selector entre visualizaciones (Gráficas) y tablas (Detalle).
+/// Reusa `L10n.Stats.Insights.modeDetail` para "Detalle" (idéntico concepto cross-tab).
+private enum DistributionContentMode: String, CaseIterable {
+    case charts
+    case details
 
-            Button {
-                onNavigateToRecords()
-            } label: {
-                HStack {
-                    Spacer()
-                    Text(L10n.Action.viewAll)
-                        .font(DS.Typography.headline)
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.caption)
-                        .accessibilityHidden(true)
-                    Spacer()
-                }
-                .padding(.vertical, DS.Spacing.md)
-                .foregroundStyle(theme.accent)
-                .background(theme.accent.opacity(DS.Opacity.subtle))
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
-            }
-            .buttonStyle(.plain)
+    var label: String {
+        switch self {
+        case .charts:  return L10n.Stats.Distribution.modeCharts
+        case .details: return L10n.Stats.Insights.modeDetail
         }
-        .padding(DS.Card.padding)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(DS.Colors.borderSubtle, lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
     }
-
-    private var emptyRecordsState: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "doc.text.magnifyingglass")
-                .font(DS.Typography.title)
-                .foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
-            Text(L10n.Statistics.noRecords)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, DS.Spacing.xl)
-    }
-
 }
 
 // MARK: - All Categories List Content
@@ -1326,8 +1644,7 @@ private struct AllCategoriesListContent: View {
                 }
             }
         }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.bottom, DS.Spacing.xl)
+        .padding(.bottom, DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
@@ -1420,8 +1737,7 @@ private struct AllSubcategoriesListContent: View {
                 }
             }
         }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.bottom, DS.Spacing.xl)
+        .padding(.bottom, DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
@@ -1435,6 +1751,8 @@ private struct CategoryRowView: View {
         f.maximumFractionDigits = 1
         return f
     }()
+
+    @Environment(AppPreferences.self) private var appPreferences
 
     let summary: CategorySpendingSummary
     let maxAmount: Double
@@ -1464,9 +1782,11 @@ private struct CategoryRowView: View {
 
                     Spacer()
 
-                    Text(YalaFormatter.currency(value: summary.amount, currencyCode: currencyCode))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
+                    AmountText(
+                        value: summary.amount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption
+                    )
                 }
 
                 // Bar and Percentage
@@ -1521,6 +1841,8 @@ private struct SubcategoryRowView: View {
         return f
     }()
 
+    @Environment(AppPreferences.self) private var appPreferences
+
     let summary: SubcategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
@@ -1556,9 +1878,11 @@ private struct SubcategoryRowView: View {
 
                     Spacer()
 
-                    Text(YalaFormatter.currency(value: summary.amount, currencyCode: currencyCode))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
+                    AmountText(
+                        value: summary.amount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.headline, secondaryFont: DS.Typography.caption
+                    )
                 }
 
                 // Bar and Percentage
@@ -1600,5 +1924,26 @@ private struct SubcategoryRowView: View {
 
     private func formattedPercentage(_ value: Double) -> String {
         Self.percentFormatter.string(from: NSNumber(value: value / 100.0)) ?? "0%"
+    }
+}
+
+/// Encapsula los onChange de filtros del VM que disparan recálculo, para mantener el body de
+/// CategoriesTabView dentro del presupuesto del type-checker de Swift (cadena larga de modifiers).
+private struct CategoriesFilterRecalcObservers: ViewModifier {
+    @Bindable var viewModel: StatisticsViewModel
+    let onRecalc: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: viewModel.detailPeriod) { onRecalc() }
+            .onChange(of: viewModel.selectedAccounts) { onRecalc() }
+            .onChange(of: viewModel.selectedCategories) { onRecalc() }
+            .onChange(of: viewModel.selectedSubcategories) { onRecalc() }
+            .onChange(of: viewModel.selectedTags) { onRecalc() }
+            .onChange(of: viewModel.selectedCurrencies) { onRecalc() }
+            .onChange(of: viewModel.amountCondition) { onRecalc() }
+            .onChange(of: viewModel.searchText) { onRecalc() }
+            .onChange(of: viewModel.isExcludeMode) { onRecalc() }
+            .onChange(of: viewModel.selectedTransactionNatures) { onRecalc() }
     }
 }

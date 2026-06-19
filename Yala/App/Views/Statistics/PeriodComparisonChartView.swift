@@ -153,10 +153,13 @@ struct PeriodComparisonChartView: View {
                 .symbolSize(100)
                 .foregroundStyle(.thCard)
 
-                // Invisible anchor point at top of chart for tooltip
+                // Invisible anchor para tooltip ~25% bajo el top — evita choque con
+                // el KPI del header del card (consistente con TrendChartView).
+                let tooltipAnchorY = yDomain.upperBound
+                    - (yDomain.upperBound - yDomain.lowerBound) * 0.25
                 PointMark(
                     x: .value("Selected Date", activeDate),
-                    y: .value("Top", yDomain.upperBound)
+                    y: .value("TooltipAnchor", tooltipAnchorY)
                 )
                 .symbolSize(0)
                 .annotation(
@@ -165,25 +168,34 @@ struct PeriodComparisonChartView: View {
                 ) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                         // Current period value with date
-                        HStack(spacing: DS.Spacing.xs) {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                             Circle()
                                 .fill(trendType.color)
                                 .frame(width: 6, height: 6)
-                            Text("\(periodLabel(for: selectedCurrentPoint.date)): \(formattedAmount(selectedCurrentPoint.value))")
+                            Text("\(periodLabel(for: selectedCurrentPoint.date)):")
                                 .font(DS.Typography.labelSmall)
                                 .foregroundStyle(.thPrimaryText)
+                            // `.annotation` no propaga environment objects — AmountText (lee
+                            // @Environment(AppPreferences.self)) dispara SIGTRAP aquí. Text pre-resuelto
+                            // con el formatter estático (esta vista no inyecta AppPreferences).
+                            Text(YalaFormatterStatic.currency(value: selectedCurrentPoint.value, currencyCode: currencyCode))
+                                .font(DS.Typography.labelSmall)
+                                .foregroundStyle(.primary)
                         }
 
                         // Previous period value with original date (if exists)
                         if let previousPoint = selectedPreviousPoint {
                             let originalPrevDate = getOriginalPreviousDate(for: previousPoint.date)
-                            HStack(spacing: DS.Spacing.xs) {
+                            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                                 Circle()
                                     .fill(.thSecondaryText.opacity(0.5))
                                     .frame(width: 6, height: 6)
-                                Text("\(periodLabel(for: originalPrevDate)): \(formattedAmount(previousPoint.value))")
+                                Text("\(periodLabel(for: originalPrevDate)):")
                                     .font(DS.Typography.caption)
                                     .foregroundStyle(.thSecondaryText)
+                                Text(YalaFormatterStatic.currency(value: previousPoint.value, currencyCode: currencyCode))
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -237,7 +249,7 @@ struct PeriodComparisonChartView: View {
         .accessibilityLabel(L10n.Accessibility.periodComparison)
         .accessibilityValue(currentPeriodPoints.isEmpty ? L10n.Accessibility.noData :
             L10n.Accessibility.periodComparisonValue(currentPeriodPoints.count))
-        .frame(height: 220)  // Match TrendChartView height
+        .frame(height: chartHeight)  // Respect prop (callsite controls height)
         .chartLegend(position: .top, alignment: .leading) {
             HStack(spacing: DS.Spacing.lg) {
                 // Current period legend
@@ -402,23 +414,11 @@ struct PeriodComparisonChartView: View {
             grouping: grouping.calendarComponent
         )
 
-        // Deduplicate: keep border labels (first/last), remove interior duplicates
         guard let firstDate = currentFirstDate,
-              let lastDate = currentLastDate,
-              rawDates.count > 1 else { return rawDates }
-
-        let formatLabel = { (date: Date) in
-            SmartAxisHelper.formatAxisLabel(
-                for: date, startDate: firstDate, endDate: lastDate, forceGrouping: self.grouping.forceAxisGrouping)
-        }
-        // Pre-seed with border labels so their interior duplicates are removed
-        guard let firstRaw = rawDates.first, let lastRaw = rawDates.last else { return rawDates }
-        var seen: Set<String> = [formatLabel(firstRaw), formatLabel(lastRaw)]
-        return rawDates.enumerated().filter { i, date in
-            if i == 0 || i == rawDates.count - 1 { return true }
-            return seen.insert(formatLabel(date)).inserted
-        }
-        .map(\.1)
+              let lastDate = currentLastDate else { return rawDates }
+        return SmartAxisHelper.deduplicatedAxisDates(
+            rawDates, firstDate: firstDate, lastDate: lastDate,
+            forceGrouping: grouping.forceAxisGrouping)
     }
 
     /// Format axis label based on data span

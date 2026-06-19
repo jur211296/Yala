@@ -72,6 +72,8 @@ final class FinancialReportViewModel: Filterable {
         set { SessionState.shared.isExcludeMode = newValue }
     }
 
+    var sharedExpenseFilter: SharedExpenseFilter = .all
+
     var detailPeriod: DetailPeriod {
         get { SessionState.shared.selectedPeriod }
         set { SessionState.shared.selectedPeriod = newValue }
@@ -118,7 +120,8 @@ final class FinancialReportViewModel: Filterable {
     func calculateReport(
         transactions: [TransactionItem],
         accounts: [Account],
-        preferredCurrency: String
+        preferredCurrency: String,
+        allTags: [Tag] = []
     ) {
         let interval = panelDateInterval
         let comparisonMode = SessionState.shared.comparisonMode
@@ -130,7 +133,7 @@ final class FinancialReportViewModel: Filterable {
 
         // Build filter criteria (shared base, only dateInterval differs)
         func makeCriteria(dateInterval: DateInterval) -> FilterCriteria {
-            FilterCriteria(
+            var criteria = FilterCriteria(
                 selectedAccounts: selectedAccounts,
                 selectedCategories: selectedCategories,
                 selectedSubcategories: selectedSubcategories,
@@ -144,6 +147,10 @@ final class FinancialReportViewModel: Filterable {
                 searchText: searchText,
                 dateInterval: dateInterval
             )
+            criteria.populateTagUUIDs(
+                from: allTags.filter { selectedTags.contains($0.persistentModelID) }
+            )
+            return criteria
         }
 
         let currentFiltered = FilterService.filterForTrends(
@@ -168,7 +175,8 @@ final class FinancialReportViewModel: Filterable {
             currentTransactions: currentTxns,
             previousTransactions: previousTxns,
             hierarchy: hierarchy,
-            preferredCurrency: preferredCurrency
+            preferredCurrency: preferredCurrency,
+            allTags: allTags
         )
 
         // Flatten for rendering

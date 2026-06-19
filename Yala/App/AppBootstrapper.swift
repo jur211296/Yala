@@ -6,7 +6,9 @@
 //  Resuelve ARCH-005: Inicialización dispersa en YalaApp.
 //
 
+import CloudKit
 import CoreData
+import OSLog
 import SwiftData
 import SwiftUI
 import UserNotifications
@@ -32,10 +34,11 @@ final class AppBootstrapper {
     let entityDeletionService = EntityDeletionService.shared
     let transactionService = TransactionService.shared
     let budgetAlertService = BudgetAlertService.shared
+    let appPreferences = AppPreferences()
 
-    // MARK: - Deferred Panel Action
+    // MARK: - Panel Action (Control Center / widgets)
 
-    enum DeferredPanelAction {
+    enum PanelAction {
         case newTransaction
         case voiceEntry
         case imageEntry
@@ -44,19 +47,24 @@ final class AppBootstrapper {
     // MARK: - State
 
     private(set) var isInitialized = false
-    var deferredInboxNotification: PendingInboxNotification?
-    var deferredSharedImageURL: URL?
-    var deferredPanelAction: DeferredPanelAction?
-    private var controlActionTask: Task<Void, Never>?
+    /// Guard runtime (NO persistido) contra procesamiento concurrente de un invite:
+    /// el re-emit (cold launch + foreground) y un `handleInviteLink` warm podrían
+    /// lanzar `acceptShareFromURL` en paralelo. Runtime-only — un re-launch debe
+    /// poder reintentar. El invite pendiente vive en `PendingInviteStore` (persistente).
+    private var isProcessingInvite = false
     private var subscriptionCheckTask: Task<Void, Never>?
     private var remoteChangeTask: Task<Void, Never>?
+    private var remoteChangeLeadingFired = false
     private var lastNotificationCheckDate = Date.distantPast
     private var lastProcessDuePaymentsDate = Date.distantPast
-
-    /// Whether a fullScreenCover (splash, Face ID, or InboxAlertModal) is blocking sheet presentation
-    private var isUIBlocked: Bool {
-        !sessionState.isSplashDismissed || BiometricAuthService.shared.isLocked || !sessionState.pendingInboxNotification.isEmpty
-    }
+    private let logger = Logger(subsystem: "com.yala", category: "Bootstrap")
+    /// Cached on the main actor so the `.transactionsImportedFromSync` observer
+    /// can resolve it without capturing a non-Sendable `ModelContext` in its
+    /// `@Sendable` callback closure.
+    private var raceCleanerModelContext: ModelContext?
+    /// Cached on the main actor so the `.NSPersistentStoreRemoteChange` observer
+    /// can run the subcategory dedup without capturing a non-Sendable `ModelContext`.
+    private var remoteChangeModelContext: ModelContext?
 
     // MARK: - Initialization
 
@@ -73,13 +81,24 @@ final class AppBootstrapper {
 
         let context = container.mainContext
 
+        let uiTestActive = UITestHooks.isActive
+        // Nota: applyUITestHooksEarly (reset/pro/skip-onboarding) se aplica en
+        // YalaApp.init(), ANTES del primer render — no aquí. En el .task de bootstrap
+        // competía con el .task de ContentView.checkInitialSyncState, que leía
+        // hasCompletedOnboarding=false y presentaba el Welcome Hero (cover sticky)
+        // antes de que el flag se seteara → la app quedaba atascada en Welcome.
+
         // 0.0. CRITICAL: One-shot wipe de Cash Flow (bug sync 1.2.6 — ver CashFlowWipeService)
         //      Debe ir PRIMERO para minimizar ventana con outbox CloudKit corrupta en juego.
         //      Pérdida acotada a config local de Cash Flow (feature Pro nueva que nunca sincronizó).
         CashFlowWipeService.wipeCashFlowDataIfNeeded(in: context)
 
         // 0. Sync preferences from iCloud (must be FIRST — other services read these)
-        PreferenceSyncService.shared.bootstrap()
+        if !uiTestActive { PreferenceSyncService.shared.bootstrap() }
+
+        // 0.1. Migración one-shot del override de idioma (UserDefaults.standard → App Group)
+        //      Idempotente vía sentinel; sólo corre la primera vez post-update.
+        LanguageManager.bootstrapMigrationIfNeeded()
 
         // 0.5. Configure analytics (no-op if API key missing)
         TelemetryService.configure()
@@ -97,14 +116,21 @@ final class AppBootstrapper {
         // 2. Load exchange rates (required for currency display)
         await loadExchangeRates(context: context)
 
+        // 2.5. Migración Live Balance multi-divisa diferida — bulk recalc
+        //      puede ser O(N) sobre miles de tx. Lanzamos en background tras
+        //      bootstrap para no bloquear UI en cold launch.
+        Task { @MainActor in
+            await migrateToLiveBalanceIfNeeded(context: context)
+        }
+
         // 3. Load subscription status
         await loadSubscriptionStatus()
 
         // 4. Process due scheduled payments (create inbox drafts)
-        processDueScheduledPayments(context: context)
+        if !uiTestActive { processDueScheduledPayments(context: context) }
 
         // 5. Check for pending inbox drafts and notify user
-        checkForPendingInboxDrafts(context: context)
+        if !uiTestActive { checkForPendingInboxDrafts(context: context) }
 
         // 6. Seed default notifications for existing users
         seedDefaultNotifications(context: context)
@@ -128,6 +154,43 @@ final class AppBootstrapper {
         // 8. Initialize services with context
         currencyConverter.setContext(context)
         budgetAlertService.setContext(context)
+        // DraftService se usa fuera del flujo del Inbox (opt-in de gastos/liquidaciones de
+        // grupo), por lo que necesita el contexto desde el arranque y no solo just-in-time
+        // como lo seteaban las vistas del Inbox.
+        draftService.setContext(context)
+
+        // 8.5. Migración V3: regen UUIDs + re-encode CSV mirrors en una sola save atómica.
+        // Gated al hook `iCloudFirstImportCompleted` para garantizar que M2M está
+        // hidratada antes de re-encodear (cierra el "flash vacío" causado por la
+        // ventana lazy de CloudKit en cold launch). Task no-blocking — UI renderiza
+        // antes de que la migración complete; mientras corre los readers usan el
+        // resolver con fallback M2M.
+        Task { @MainActor in
+            let started = Date.now
+            let decision = MigrationGateLogic.shouldWaitForCloudKit(
+                isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
+                hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
+            )
+            var waitedForSync = false
+            if decision == .waitForHook {
+                waitedForSync = true
+                _ = await iCloudSyncService.shared.forceFetchAndWait(timeout: 15)
+            }
+            let waitDuration = Date.now.timeIntervalSince(started)
+            migrateShortcutIDsAndRebuildCSVMirrors(
+                context: context,
+                waitedForSync: waitedForSync,
+                waitDuration: waitDuration
+            )
+            // Cleanup de subcategorías duplicadas (post-migración: el re-sync masivo que
+            // dispara la regen de shortcutID ya convergió aquí). Gateado por quiescencia.
+            // También reporta posibles duplicados de Account/Tag (telemetría detectora).
+            CategoryDeduplicationService.runDedupIfQuiescent(in: context)
+            // Seed diferido de defaults de Panel: en `AppPreferences.init` se difirió para no
+            // clobbear la config que el sync aún no había bajado. Aquí (post-hook, o sin cuenta
+            // iCloud vía el gate de arriba) la decisión sobre fresh-vs-existente ya es segura.
+            PanelPreferencesMigration.runIfNeeded(appPreferences: appPreferences)
+        }
 
         // 9. Update widget cache
         WidgetDataCache.updateCache(context: context)
@@ -142,13 +205,238 @@ final class AppBootstrapper {
         // 12. Check if any report notifications should be sent now (app launch case)
         await ReportNotificationService.shared.sendDueReports(context: context)
 
+        // 12.5. Observe exchange rate updates to invalidate the latest-rates cache
+        observeExchangeRateUpdates()
+
         // 13. Observe CloudKit remote changes to auto-refresh UI
-        observeRemoteStoreChanges()
+        observeRemoteStoreChanges(context: context)
 
         // 14. Observe iCloud account changes — detect mismatch if container was created without CloudKit
         observeICloudAccountChanges()
 
+        // 14.5 (M6). Observe TX imports from CKSync personal — autodelete drafts pendientes Caso A
+        // cuyo splitExpenseID ya tiene TX cuenta real (race resuelto por sync).
+        observeTransactionsImportedFromSync(context: context)
+
+        // 15. Initialize CKSyncEngine for shared group data (separate groups store)
+        SplitSyncManager.shared.setContext(context)
+        if !uiTestActive { SplitSyncManager.shared.initialize() }
+
+        // 16. Initialize Group Services (GC-03)
+        GroupService.shared.setContext(context)
+        GroupExpenseService.shared.setContext(context)
+        GroupTransactionBridge.shared.setContext(context)
+        BridgeModeResolver.shared.setAppPreferences(appPreferences)
+
+        // 16.4. Cleanup duplicate SplitGroups from CloudKit sync race.
+        // Runs sync (not Task) so consumers downstream see canonical groups only.
+        SplitGroupDeduplicationService.deduplicateSplitGroups(in: context)
+
+        // 16.4.1. Cleanup duplicate GroupBridgePreference records (CloudKit sync race
+        // entre devices que crean override simultáneamente). Sync — el resolver consulta
+        // el override desde el primer bridge call post-boot, mejor que no haya dups.
+        GroupBridgePreferenceDeduplicationService.deduplicate(in: context)
+
+        // 16.4.2. Cleanup overrides huérfanos (grupos abandonados o `isHiddenForAll==true`
+        // que el observer/leaveGroup pudo perder por crash). Defensivo idempotente.
+        Task { @MainActor in
+            do {
+                let descriptor = FetchDescriptor<SplitGroup>(
+                    predicate: #Predicate<SplitGroup> { $0.isHiddenForAll == false }
+                )
+                let activeGroups = try context.fetch(descriptor)
+                let activeZoneIDs = Set(activeGroups.map(\.cloudKitZoneID))
+                try BridgeModeResolver.shared.clearOrphanOverrides(
+                    activeZoneIDs: activeZoneIDs,
+                    in: context
+                )
+            } catch {
+                #if DEBUG
+                print("AppBootstrapper: clearOrphanOverrides failed: \(error)")
+                #endif
+            }
+        }
+
+        // 16.4.5. Safety net: hidden groups + removed-self cleanup que el observer pudo perder.
+        // Corre ANTES de retryPendingBridges para que el bridge guard `isHiddenForAll` aplique.
+        Task { @MainActor in
+            await freezeOrphanedGroupsAndRemovedSelves(context: context)
+        }
+
+        // 16.4.8. Reconciliar transfer pairs huérfanos (F1 legacy CSV imports + F3 collisions + F5 partner missing).
+        // Pure-logic + telemetría. Idempotente — re-launches sin orphans son no-op.
+        // Task-wrapped (no sync) para no bloquear cold launch en DBs grandes; downstream steps
+        // (16.5 retryPendingBridges, etc.) no dependen del resultado.
+        Task { @MainActor in
+            TransferPairReconcileService.reconcileTransferPairs(in: context)
+        }
+
+        // 16.5. Retry bridge operations that failed in a previous launch
+        Task { @MainActor in
+            await retryPendingBridges(context: context)
+        }
+
+        // 16.6. A13: Reconcile current user's displayName across groups.
+        // Covers kill-app between acceptShare and performSilentSetup (SplitMember
+        // would otherwise stay with the "Usuario" default forever). Idempotent.
+        Task { @MainActor in
+            await reconcileCurrentUserDisplayNameIfNeeded()
+        }
+
+        // 16.7. Retry persistente de `leaveShare` que falló por network en sesión previa.
+        Task { @MainActor in
+            await retryPendingLeaveShares()
+        }
+
+        // Seed current iCloud user identity for groups and refresh local membership flags.
+        Task { @MainActor in
+            _ = try? await GroupUserIdentityService.shared.currentUserRecordName()
+            await GroupService.shared.refreshCurrentUserFlags()
+        }
+
+        // 17. Initialize Group Notification Service (GC-06)
+        GroupNotificationService.shared.setContext(context)
+
+        // 17.5. One-time backfill of SplitShare.groupZoneID for existing shares
+        migrateShareGroupZoneIDs(context: context)
+
+        // 18. Initialize User Segment Service (GC-08)
+        UserSegmentService.shared.setContext(context)
+        UserSegmentService.shared.recalculate()
+
+        // 19. Initialize Nudge Service (GC-09)
+        NudgeService.shared.setContext(context)
+
         isInitialized = true
+
+        #if DEBUG
+        if uiTestActive { await applyUITestSeed(context: context) }
+        #endif
+
+        // 19. Re-emit pending invite (cold launch via universal link / native share).
+        // Reads PendingInviteStore (persistent) — covers invites that arrived
+        // pre-bootstrap AND invites dropped by resetTransients in a prior session.
+        reEmitPendingInviteIfNeeded(isPresenting: false)
+
+        // 20. Drain DeferredIntentBuffer: re-submit any RouterIntent that
+        // arrived during pre-bootstrap, biometric lock, or mid-onboarding.
+        RouterEntryGate.shared.drainDeferredBuffer()
+    }
+
+    #if DEBUG
+    // MARK: - UI Test Hooks
+
+    /// Aplicado desde `YalaApp.init()` cuando `-uitest`: reset / Pro / skip-onboarding.
+    /// Orden: reset (wipe) primero; skip-onboarding re-setea sus flags tras el wipe.
+    /// Se invoca antes del primer render para que `hasCompletedOnboarding` ya esté
+    /// resuelto cuando ContentView decide qué pantalla mostrar.
+    func applyUITestHooksEarly(context: ModelContext) {
+        if UITestHooks.shouldReset {
+            do {
+                try DataWipeService.wipeAllUserData(in: context, reseedInitialData: false, broadcastSignal: false)
+            } catch {
+                print("UITestHooks: reset error: \(error)")
+            }
+            // `wipeAllUserData` preserva los modelos de grupos a propósito (el wipe real de
+            // Settings no borra grupos compartidos — el usuario los abandona). En uitest sí
+            // los limpiamos para aislar corridas: si no, re-sembrar el perfil `.grupos`
+            // apilaría grupos duplicados ("Viaje a Cusco" x2) encima del residual.
+            DevSeedGroups.reset(in: context)
+            // Estado limpio entre tests: el wipe de SwiftData no toca UserDefaults, así que
+            // un test que reordena/oculta tabs (TabBarConfigView) contaminaría a los demás.
+            // Restaurar el tab bar al default (`[.panel, .statistics, .planning]`).
+            UserDefaults.standard.removeObject(forKey: TabBarConfiguration.storageKey)
+        }
+        // Estado Pro determinista según el launch arg, idempotente entre tests.
+        // `devForceProTier` se persiste en UserDefaults (`dev.forceProTier`) y el wipe
+        // de SwiftData no lo toca → sin esto, un test con `-uitest-pro` dejaría Pro
+        // "pegajoso" para los siguientes, rompiendo las verificaciones de gating free.
+        if StoreKitManager.shared.devForceProTier != UITestHooks.forcePro {
+            StoreKitManager.shared.toggleDevProTier()
+        }
+        if UITestHooks.skipOnboarding {
+            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+            UserDefaults.standard.set(true, forKey: "hasShownWelcomeChooser")
+        }
+        // Modo solo-grupos determinista: onboarding saltado + onboardingMode=.groupInvite
+        // + tab Grupos seleccionado. El init de SessionState no deriva el tab, así que se
+        // setea explícitamente (idempotente; no-op en release vía hasArg).
+        if UITestHooks.forceGroupInvite {
+            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+            UserDefaults.standard.set(true, forKey: "hasShownWelcomeChooser")
+            OnboardingMode.setCurrent(.groupInvite)
+            SessionState.shared.onboardingMode = .groupInvite
+            SessionState.shared.selectedMainTab = .groups
+        }
+        // El What's New de la versión corriente se marca visto en todo arranque
+        // uitest: con contenido publicado para la versión (WhatsNewConfig), el sheet
+        // intercepta el primer tap de cualquier XCUITest post-onboarding.
+        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+        UserDefaults.standard.set(currentVersion, forKey: "lastSeenAppVersion")
+    }
+
+    /// Seed de datos UI-test al final del bootstrap + señal `uitest_ready`.
+    private func applyUITestSeed(context: ModelContext) async {
+        defer { UITestHooks.shared.markReady() }
+        if let raw = UITestHooks.seedProfile {
+            let profile = DevSeedProfile(rawValue: raw) ?? .realista
+            await DevSeedService().seed(in: context, profile: profile)
+        }
+        // Deeplink simulado en uitest: encola la navegación al tab destino (el gate la
+        // drena cuando el routing esté listo). Ejercita el wiring de tabs ocultos.
+        if let dest = uitestDeeplinkDestination() {
+            RouterEntryGate.shared.submit(.navigate(dest))
+        }
+        // InboxAlertModal simulado en uitest: encola `.showInboxAlert` con un payload de
+        // muestra (mismo path que el sync real, ver checkInboxDraftsAndNotify) para poder
+        // testear el modal sin depender de un evento de CloudKit.
+        if UITestHooks.showInboxAlert {
+            RouterEntryGate.shared.submit(.showInboxAlert(
+                PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
+            ))
+        }
+        // UpdateAvailableBanner simulado en uitest: fuerza el estado sin red.
+        if UITestHooks.forceUpdateBanner {
+            AppUpdateService.shared.forceUpdateAvailableForUITest()
+        }
+        // Consentimiento IA en uitest: destraba la navegación a voz/imagen Pro sin el
+        // alert de consentimiento (no graba/transcribe; solo abre la vista).
+        if UITestHooks.aiConsent {
+            appPreferences.aiDataConsentAccepted = true
+        }
+    }
+
+    /// Mapea `-uitest-deeplink <target>` a un DeepLinkDestination (solo uitest/DEBUG).
+    private func uitestDeeplinkDestination() -> DeepLinkDestination? {
+        guard let target = UITestHooks.deeplinkTarget else { return nil }
+        switch target {
+        case "panel": return .panel
+        case "statistics": return .statistics
+        case "records": return .recordsStandalone
+        case "categories": return .categories
+        case "planning": return .planning
+        case "budgets": return .budgets
+        case "groups": return .groups
+        case "inbox": return .inbox
+        case "scheduledPayments": return .scheduledPayments
+        default: return nil
+        }
+    }
+    #endif
+
+    // MARK: - Exchange Rate Cache Invalidation
+
+    /// Subscribes to `.yalaExchangeRatesUpdated` posted by `ExchangeRateService`
+    /// after persisting fresh rates. Invalidates the in-memory cache so
+    /// subsequent `convertWithLatestRate` calls read updated data.
+    private func observeExchangeRateUpdates() {
+        NotificationCenter.default.addObserver(
+            forName: .yalaExchangeRatesUpdated,
+            object: nil,
+            queue: .main
+        ) { _ in
+            CurrencyConverter.shared.invalidateLatestRatesCache()
+        }
     }
 
     // MARK: - iCloud Mismatch Detection
@@ -161,6 +449,25 @@ final class AppBootstrapper {
         ) { _ in
             MainActor.assumeIsolated {
                 AppBootstrapper.shared.checkForICloudMismatch()
+            }
+        }
+    }
+
+    // MARK: - M6: Race Cleaner Hook
+
+    /// Subscribe a `.transactionsImportedFromSync` (cada import successful de CKSync personal).
+    /// Dispara `GroupBridgeRaceCleaner` para borrar drafts pendientes Caso A obsoletos —
+    /// su TX cuenta real ya llegó vía sync personal, el draft ya no aplica.
+    private func observeTransactionsImportedFromSync(context: ModelContext) {
+        raceCleanerModelContext = context
+        NotificationCenter.default.addObserver(
+            forName: .transactionsImportedFromSync,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                guard let context = AppBootstrapper.shared.raceCleanerModelContext else { return }
+                _ = GroupBridgeRaceCleaner.cleanupPendingDraftsWithMatchingTX(in: context)
             }
         }
     }
@@ -178,13 +485,19 @@ final class AppBootstrapper {
             #if DEBUG
             print("AppBootstrapper: iCloud mismatch — container was local, iCloud now available")
             #endif
-            NotificationCenter.default.post(name: .iCloudMismatchDetected, object: nil)
+            // Original guard preserved: don't surface the restart alert while
+            // the user is still mid-onboarding (the alert was originally gated
+            // by `hasCompletedOnboarding` in the ContentView observer).
+            if UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) {
+                RouterEntryGate.shared.submit(.iCloudMismatch)
+            }
         }
     }
 
     // MARK: - Remote Change Observation
 
-    private func observeRemoteStoreChanges() {
+    private func observeRemoteStoreChanges(context: ModelContext) {
+        remoteChangeModelContext = context
         NotificationCenter.default.addObserver(
             forName: .NSPersistentStoreRemoteChange,
             object: nil,
@@ -192,25 +505,230 @@ final class AppBootstrapper {
         ) { _ in
             MainActor.assumeIsolated {
                 let bootstrapper = AppBootstrapper.shared
-                // Trailing-edge debounce: coalesce rapid CloudKit notifications into a single refresh
+
+                // Leading edge: fire immediately on first notification in a burst
+                if !bootstrapper.remoteChangeLeadingFired {
+                    bootstrapper.remoteChangeLeadingFired = true
+                    bootstrapper.sessionState.markRemoteChangePending()
+                    #if DEBUG
+                    print("AppBootstrapper: Remote CloudKit change — leading edge")
+                    #endif
+                }
+
+                // Trailing edge: coalesce within 3-second window, then reset
                 bootstrapper.remoteChangeTask?.cancel()
                 bootstrapper.remoteChangeTask = Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(2))
+                    try? await Task.sleep(for: .seconds(3))
                     guard !Task.isCancelled else { return }
+                    bootstrapper.remoteChangeLeadingFired = false
                     bootstrapper.sessionState.markRemoteChangePending()
-
+                    // Dedup en oleadas: el burst de sync acabó. Gateado por feature flag +
+                    // quiescencia (runDedupIfQuiescent decide si la actividad cesó de verdad).
+                    if !UserDefaults.standard.bool(forKey: AppPreferences.Keys.subcatDedupRemoteHookDisabled),
+                       let ctx = bootstrapper.remoteChangeModelContext {
+                        CategoryDeduplicationService.runDedupIfQuiescent(in: ctx)
+                    }
                     #if DEBUG
-                    print("AppBootstrapper: Remote CloudKit change — queued for next view navigation")
+                    print("AppBootstrapper: Remote CloudKit change — trailing edge")
                     #endif
                 }
             }
         }
     }
 
+    // MARK: - One-Time Migrations
+
+    /// Backfill SplitShare.groupZoneID for shares created before the field was added.
+    private func migrateShareGroupZoneIDs(context: ModelContext) {
+        let migKey = "Yala_SplitShareGroupZoneID_v1"
+        guard !UserDefaults.standard.bool(forKey: migKey) else { return }
+        do {
+            let unsetZoneID = ""
+            let desc = FetchDescriptor<SplitShare>(predicate: #Predicate { $0.groupZoneID == unsetZoneID })
+            let orphans = try context.fetch(desc)
+            guard !orphans.isEmpty else {
+                UserDefaults.standard.set(true, forKey: migKey)
+                return
+            }
+            let expenses = try context.fetch(FetchDescriptor<SplitExpense>())
+            // `uniquingKeysWith` evita un trap fatal si CloudKit sync trae dos
+            // SplitExpense con el mismo `id` (UUID sin @Attribute(.unique) por compat).
+            let lookup = Dictionary(expenses.map { ($0.id, $0.groupZoneID) },
+                                    uniquingKeysWith: { first, _ in first })
+            for share in orphans {
+                if let zone = lookup[share.expenseID], !zone.isEmpty {
+                    share.groupZoneID = zone
+                }
+            }
+            try context.save()
+            UserDefaults.standard.set(true, forKey: migKey)
+            #if DEBUG
+            print("AppBootstrapper: Backfilled groupZoneID for \(orphans.count) SplitShare records")
+            #endif
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: SplitShare migration failed: \(error) — will retry next launch")
+            #endif
+        }
+    }
+
+    /// Retries pending bridge operations from previous launches.
+    /// Bound by `maxAttempts` per expense and `maxPerLaunch` total to keep cold-launch latency capped.
+    /// Silent on retry-fail (the user already saw an alert at the original failure);
+    /// flag stays true for the next launch until `maxAttempts` is exhausted.
+    @MainActor
+    func retryPendingBridges(context: ModelContext) async {
+        let descriptor = FetchDescriptor<SplitExpense>(
+            predicate: #Predicate { $0.bridgePending == true }
+        )
+        do {
+            let pending = try context.fetch(descriptor)
+            guard !pending.isEmpty else { return }
+            let maxAttempts = 3
+            let maxPerLaunch = 20
+            let batch = Array(pending.prefix(maxPerLaunch))
+            logger.info("Retrying bridge for \(batch.count, privacy: .public) of \(pending.count, privacy: .public) pending expenses")
+
+            for expense in batch {
+                guard expense.bridgeAttempts < maxAttempts else {
+                    logger.error("Bridge retry exhausted for expense \(expense.id, privacy: .public) after \(expense.bridgeAttempts, privacy: .public) attempts")
+                    continue
+                }
+
+                let zoneID = expense.groupZoneID
+                let groupDescriptor = FetchDescriptor<SplitGroup>(
+                    predicate: #Predicate { $0.cloudKitZoneID == zoneID }
+                )
+                guard let group = try context.fetch(groupDescriptor).first else {
+                    logger.error("Bridge retry: group not found for expense \(expense.id, privacy: .public)")
+                    continue
+                }
+
+                expense.bridgeAttempts += 1
+                do {
+                    // shouldSave:false — save once at the end of the loop instead of
+                    // per-expense to avoid N widget rebuilds + N budget checks on launch.
+                    // M6: isRemoteSync=true porque el retry no tiene cuenta del user en memoria.
+                    // Si Caso A `.full/.completed` y no hay TX real previa: crea draft con hint.
+                    try GroupTransactionBridge.shared.bridgeExpense(
+                        expense,
+                        in: group,
+                        accountForCurrentUser: nil,
+                        isRemoteSync: true,
+                        shouldSave: false
+                    )
+                    expense.bridgePending = false
+                    expense.bridgeAttempts = 0
+                } catch {
+                    logger.error("Bridge retry failed for \(expense.id, privacy: .public) (attempt \(expense.bridgeAttempts, privacy: .public)): \(error.localizedDescription, privacy: .public)")
+                }
+            }
+            try context.save()
+        } catch {
+            logger.error("retryPendingBridges fetch failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// Boot-time safety net para grupos hidden + removed-self que perdieron el observer
+    /// del sync engine (app cerrada al momento del fetch remoto). Idempotente:
+    /// `freezeForSoftDelete` y `performRemovedSelfCleanup` son no-op si ya están limpios.
+    @MainActor
+    func freezeOrphanedGroupsAndRemovedSelves(context: ModelContext) async {
+        // 1) Hidden groups: dispara freezeForSoftDelete para preservar rastro financiero.
+        do {
+            let hiddenGroups = try context.fetch(FetchDescriptor<SplitGroup>(
+                predicate: #Predicate { $0.isHiddenForAll == true }
+            ))
+            for group in hiddenGroups {
+                if GroupTransactionBridge.shared.isReady {
+                    do {
+                        try GroupTransactionBridge.shared.freezeForSoftDelete(group: group)
+                    } catch {
+                        #if DEBUG
+                        logger.error("freezeOrphanedGroups: freezeForSoftDelete failed for \(group.cloudKitZoneID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        #endif
+                    }
+                }
+            }
+        } catch {
+            #if DEBUG
+            logger.error("freezeOrphanedGroups: hidden fetch failed: \(error.localizedDescription, privacy: .public)")
+            #endif
+        }
+
+        // 2) Removed-self: current user con status=.removed → flow simétrico a leaveGroup.
+        do {
+            let removedRaw = SplitMemberStatus.removed.rawValue
+            let removedSelfMembers = try context.fetch(FetchDescriptor<SplitMember>(
+                predicate: #Predicate { $0.isCurrentUser == true && $0.status == removedRaw }
+            ))
+            for member in removedSelfMembers {
+                await GroupService.shared.performRemovedSelfCleanup(zoneName: member.groupZoneID)
+            }
+        } catch {
+            #if DEBUG
+            logger.error("freezeOrphanedGroups: removed-self fetch failed: \(error.localizedDescription, privacy: .public)")
+            #endif
+        }
+    }
+
+    /// Retry de `leaveShare` que falló en sesiones previas (network/offline). Itera
+    /// `PendingLeaveShareTracker.all()`; entries que succeden se quitan, las que vuelven a
+    /// fallar permanecen para el siguiente boot.
+    @MainActor
+    func retryPendingLeaveShares() async {
+        let entries = PendingLeaveShareTracker.all()
+        guard !entries.isEmpty else { return }
+        for entry in entries {
+            do {
+                try await SplitZoneManager(syncManager: .shared).leaveShareByZone(
+                    zoneName: entry.zoneName,
+                    ownerName: entry.zoneOwnerName
+                )
+                PendingLeaveShareTracker.remove(entry)
+                #if DEBUG
+                logger.info("retryPendingLeaveShares: succeeded for \(entry.zoneName, privacy: .public)")
+                #endif
+            } catch {
+                #if DEBUG
+                logger.error("retryPendingLeaveShares: failed for \(entry.zoneName, privacy: .public): \(error.localizedDescription, privacy: .public). Mantengo en tracker.")
+                #endif
+            }
+        }
+    }
+
+    /// A13: Reconcile current user's `displayName` across all SplitMembers if a real
+    /// name was already set (UserDefaults `userName`) but a previous onboarding flow
+    /// was interrupted (e.g. kill-app between `acceptShare` and `performSilentSetup`).
+    /// Idempotent — `updateCurrentUserDisplayName` is a no-op when nothing differs.
+    @MainActor
+    func reconcileCurrentUserDisplayNameIfNeeded() async {
+        let realName = (UserDefaults.standard.string(forKey: AppPreferences.Keys.userName) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !realName.isEmpty else { return }
+
+        do {
+            try await GroupService.shared.updateCurrentUserDisplayName(realName)
+        } catch {
+            logger.error("Reconcile displayName failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     // MARK: - Scene Phase Handlers
+
+    /// Skips the first `.active` (that's the cold launch, already covered by appLaunched);
+    /// subsequent ones are genuine warm resumes.
+    private var hasSeenInitialActive = false
 
     /// Llamar cuando la app se activa (scenePhase == .active)
     func handleBecameActive(context: ModelContext) {
+        // Warm-start telemetry
+        if hasSeenInitialActive {
+            TelemetryService.track(.appResumed)
+        } else {
+            hasSeenInitialActive = true
+        }
+
         // Apply any pending remote CloudKit changes on foreground resume
         sessionState.applyPendingChangesIfNeeded()
 
@@ -231,18 +749,11 @@ final class AppBootstrapper {
         }
         checkForPendingInboxDrafts(context: context)
 
-        // Delay control action check — inbox notification fires at 0.3s,
-        // so we wait 0.5s to know if UI will be blocked.
-        // Cancel previous task to avoid accumulation on rapid app switches.
-        controlActionTask?.cancel()
-        controlActionTask = Task {
-            do {
-                try await Task.sleep(for: .milliseconds(500))
-            } catch {
-                return
-            }
-            checkForPendingControlAction()
-        }
+        checkForPendingControlAction()
+
+        // Drain buffered intents (notif taps that arrived during lock /
+        // mid-onboarding while app was foregrounded but blocked).
+        RouterEntryGate.shared.drainDeferredBuffer()
 
         // Skip notification checks if bootstrap just ran (< 5 seconds ago)
         let shouldCheckNotifications = Date.now.timeIntervalSince(lastNotificationCheckDate) > 5.0
@@ -257,10 +768,8 @@ final class AppBootstrapper {
 
     // MARK: - Control Center Action Handling
 
-    /// App Group identifier from Info.plist
-    private var appGroupID: String {
-        Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String ?? "group.com.jurgenschmidt.yala"
-    }
+    /// App Group identifier from shared helper.
+    private var appGroupID: String { WidgetURLHelper.appGroupIdentifier }
 
     /// Checks for and processes pending Control Center widget actions
     private func checkForPendingControlAction() {
@@ -293,12 +802,10 @@ final class AppBootstrapper {
         switch action {
         case "panel":
             setOrDeferDeepLink(.panel)
-        case "new-transaction":
-            dispatchOrDefer(.newTransaction)
         case "voice-entry":
-            dispatchOrDefer(.voiceEntry)
+            executeAction(.voiceEntry)
         case "image-entry":
-            dispatchOrDefer(.imageEntry)
+            executeAction(.imageEntry)
         default:
             #if DEBUG
             print("AppBootstrapper: Unknown Control Center action: \(action)")
@@ -306,36 +813,32 @@ final class AppBootstrapper {
         }
     }
 
-    /// Defers action if UI is blocked, otherwise executes immediately.
-    private func dispatchOrDefer(_ action: DeferredPanelAction) {
-        if isUIBlocked {
-            deferredPanelAction = action
-            #if DEBUG
-            print("AppBootstrapper: Deferring \(action) — UI blocked")
-            #endif
-        } else {
-            executeAction(action)
-        }
-    }
-
-    /// Executes a panel action, respecting feature toggles and Pro gates.
-    private func executeAction(_ action: DeferredPanelAction) {
+    /// Enqueues a panel-action intent, respecting feature toggles and Pro gates.
+    /// Router handles readiness gating — intents queued while splash/lock/wipe
+    /// active drain automatically when consumers become ready.
+    private func executeAction(_ action: PanelAction) {
         switch action {
         case .newTransaction:
-            sessionState.shouldShowNewTransaction = true
+            RouterEntryGate.shared.submit(.presentNewTransaction)
         case .voiceEntry:
-            guard UserDefaults.standard.bool(forKey: "voiceInputEnabled") else { return }
-            if FeatureGateService.shared.canAccess(.voiceInput) {
-                sessionState.shouldShowVoiceEntry = true
+            guard FeatureGateService.shared.canAccess(.voiceInput) else {
+                RouterEntryGate.shared.submit(.presentUpgradeSheet(.voice))
+                return
+            }
+            if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
+                RouterEntryGate.shared.submit(.presentVoiceEntry)
             } else {
-                sessionState.shouldShowUpgradeForVoice = true
+                RouterEntryGate.shared.submit(.requestAIConsent(.voice))
             }
         case .imageEntry:
-            guard UserDefaults.standard.bool(forKey: "imageInputEnabled") else { return }
-            if FeatureGateService.shared.canAccess(.imageInput) {
-                sessionState.shouldShowImageEntry = true
+            guard FeatureGateService.shared.canAccess(.imageInput) else {
+                RouterEntryGate.shared.submit(.presentUpgradeSheet(.image))
+                return
+            }
+            if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
+                RouterEntryGate.shared.submit(.presentImageEntry)
             } else {
-                sessionState.shouldShowUpgradeForImage = true
+                RouterEntryGate.shared.submit(.requestAIConsent(.image))
             }
         }
     }
@@ -347,15 +850,193 @@ final class AppBootstrapper {
         sessionState.needsExchangeRateReload = false
     }
 
-    // MARK: - Deep Link Handling
+    // MARK: - Unified shortcutID + CSV Mirror Migration (V3)
 
-    /// URL Scheme read from Info.plist (set via Build Settings)
-    private var urlScheme: String {
-        Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String ?? "yala"
+    /// Regenera UUIDs en `Account.shortcutID`, `Subcategory.shortcutID` y `Tag.id`,
+    /// y rehidrata los CSV mirrors de Budget/TransactionItem/InboxDraft/FavoritePayment/
+    /// ScheduledPayment desde M2M — todo en una sola save atómica.
+    ///
+    /// Estrategia por field:
+    /// - `Tag.id` sin historia de persistencia confiable → regeneramos TODOS.
+    ///   La heurística por duplicados falla con count==1 (UUID volátil pero único).
+    /// - `Account.shortcutID` / `Subcategory.shortcutID` pueden tener UUIDs
+    ///   estables sincronizados cross-device → heurística por duplicados preserva
+    ///   los únicos (mantiene Atajos guardados).
+    ///
+    /// CSV mirrors:
+    /// - M2M no-nil → encode UUIDs y escribir CSV (fresh state).
+    /// - M2M nil (lazy hydration en curso) → nuke CSV stale + `sawRace=true`
+    ///   para que el sentinel NO se marque y el próximo launch reintente.
+    ///
+    /// Atomicidad: si `save()` throwea, sentinel no se toca → próximo launch
+    /// reintenta limpio. Si `sawRace=true`, sentinel tampoco se toca.
+    ///
+    /// Retry: el backfill CSV tiene cap `maxAttempts=5`; tras 5 launches con race
+    /// persistente, el sentinel principal se marca igual y el resto queda al
+    /// auto-heal lazy de `resolvedXIDs(scheduleBackfill: true)`. Esto evita el
+    /// caso patológico donde una M2M `nil` permanente forzaría a `regenerateAllUUIDs`
+    /// a reasignar Tag.id en cada cold launch indefinidamente (rompiendo Atajos
+    /// cross-device). La regen tiene su propio sentinel `appEntityShortcutIDsRegeneratedV3`
+    /// que se marca tras el primer save exitoso, independiente del race del backfill.
+    private func migrateShortcutIDsAndRebuildCSVMirrors(
+        context: ModelContext,
+        waitedForSync: Bool,
+        waitDuration: TimeInterval
+    ) {
+        let sentinelKey = AppPreferences.Keys.appEntityShortcutIDsMigratedV3
+        let regenKey = AppPreferences.Keys.appEntityShortcutIDsRegeneratedV3
+        let attemptsKey = AppPreferences.Keys.appEntityShortcutIDsBackfillAttemptsV3
+        let maxAttempts = 5
+        guard !UserDefaults.standard.bool(forKey: sentinelKey) else { return }
+
+        do {
+            let accounts = try context.fetch(FetchDescriptor<Account>())
+            let subcategories = try context.fetch(FetchDescriptor<Subcategory>())
+            let tags = try context.fetch(FetchDescriptor<Tag>())
+
+            // Regen sentinel: si ya corrió en un launch previo, NO re-regenerar
+            // (preserva Tag.id cross-device estable aunque el backfill aún no converge).
+            let regenAlreadyRan = UserDefaults.standard.bool(forKey: regenKey)
+            let accountsRegen: Int
+            let subsRegen: Int
+            let tagsRegen: Int
+            if regenAlreadyRan {
+                accountsRegen = 0
+                subsRegen = 0
+                tagsRegen = 0
+            } else {
+                accountsRegen = regenerateDuplicateUUIDs(accounts, keyPath: \.shortcutID)
+                subsRegen = regenerateDuplicateUUIDs(subcategories, keyPath: \.shortcutID)
+                tagsRegen = regenerateAllUUIDs(tags, keyPath: \.id)
+            }
+
+            var sawRace = false
+
+            // Budget: per-relation decision (M2M nil → nuke stale, M2M non-nil → encode).
+            let budgets = try context.fetch(FetchDescriptor<Budget>())
+            for budget in budgets {
+                let plan = MigrationBackfillLogic.planForBudget(
+                    accounts: budget.accounts,
+                    subcategories: budget.subcategories,
+                    tags: budget.tags
+                )
+                switch plan.accountIDsAction {
+                case .writeFromM2M: budget.setAccountIDs(from: budget.accounts ?? [])
+                case .nukeStale: budget.accountIDs = nil
+                }
+                switch plan.subcategoryIDsAction {
+                case .writeFromM2M: budget.setSubcategoryIDs(from: budget.subcategories ?? [])
+                case .nukeStale: budget.subcategoryIDs = nil
+                }
+                switch plan.tagIDsAction {
+                case .writeFromM2M: budget.setTagIDs(from: budget.tags ?? [])
+                case .nukeStale: budget.tagIDs = nil
+                }
+                if plan.sawRace { sawRace = true }
+            }
+
+            // TX/Draft/Favorite/Scheduled: escribir CSV directo SIN reasignar M2M
+            // (reasignar marcaría dirty cada record → sync storm en cuentas grandes).
+            let txs = try context.fetch(FetchDescriptor<TransactionItem>())
+            for tx in txs {
+                switch MigrationBackfillLogic.decideAction(m2m: tx.tags) {
+                case .writeFromM2M: tx.tagIDs = CSVMirrorCodec.encode((tx.tags ?? []).map(\.id))
+                case .nukeStale: tx.tagIDs = nil; sawRace = true
+                }
+            }
+            let drafts = try context.fetch(FetchDescriptor<InboxDraft>())
+            for draft in drafts {
+                switch MigrationBackfillLogic.decideAction(m2m: draft.tags) {
+                case .writeFromM2M: draft.tagIDs = CSVMirrorCodec.encode((draft.tags ?? []).map(\.id))
+                case .nukeStale: draft.tagIDs = nil; sawRace = true
+                }
+            }
+            let favorites = try context.fetch(FetchDescriptor<FavoritePayment>())
+            for favorite in favorites {
+                switch MigrationBackfillLogic.decideAction(m2m: favorite.tags) {
+                case .writeFromM2M: favorite.tagIDs = CSVMirrorCodec.encode((favorite.tags ?? []).map(\.id))
+                case .nukeStale: favorite.tagIDs = nil; sawRace = true
+                }
+            }
+            let scheduled = try context.fetch(FetchDescriptor<ScheduledPayment>())
+            for payment in scheduled {
+                switch MigrationBackfillLogic.decideAction(m2m: payment.tags) {
+                case .writeFromM2M: payment.tagIDs = CSVMirrorCodec.encode((payment.tags ?? []).map(\.id))
+                case .nukeStale: payment.tagIDs = nil; sawRace = true
+                }
+            }
+
+            try context.save()
+
+            // Regen sentinel se marca SIEMPRE tras save exitoso (idempotente desde
+            // segundo launch). Evita re-regenerar Tag.id si el backfill aún no converge.
+            UserDefaults.standard.set(true, forKey: regenKey)
+
+            // Sentinel principal: marca convergencia o cap de retries (whichever first).
+            // Tras maxAttempts, se acepta el estado actual y se cede al auto-heal lazy.
+            let attempts = UserDefaults.standard.integer(forKey: attemptsKey)
+            if !sawRace || attempts + 1 >= maxAttempts {
+                UserDefaults.standard.set(true, forKey: sentinelKey)
+                UserDefaults.standard.removeObject(forKey: attemptsKey)
+                AppPreferences.Keys.LegacyKeys.v2MigrationSentinels.forEach {
+                    UserDefaults.standard.removeObject(forKey: $0)
+                }
+            } else {
+                UserDefaults.standard.set(attempts + 1, forKey: attemptsKey)
+            }
+
+            TelemetryService.track(
+                .appEntityShortcutIDsRegenerated,
+                parameters: [
+                    "accounts": "\(accountsRegen)",
+                    "subcategories": "\(subsRegen)",
+                    "tags": "\(tagsRegen)",
+                    "budgets": "\(budgets.count)",
+                    "txs": "\(txs.count)",
+                    "drafts": "\(drafts.count)",
+                    "favorites": "\(favorites.count)",
+                    "scheduled": "\(scheduled.count)",
+                    "waitedForSync": "\(waitedForSync)",
+                    "waitDuration_bucket": migrationWaitBucket(waitDuration),
+                    "sawRace": "\(sawRace)",
+                ]
+            )
+
+            #if DEBUG
+            print("AppBootstrapper: migrateShortcutIDsAndRebuildCSVMirrors — regen accounts=\(accountsRegen)/\(accounts.count), subs=\(subsRegen)/\(subcategories.count), tags=\(tagsRegen)/\(tags.count); CSV \(budgets.count) budgets + \(txs.count) txs + \(drafts.count) drafts + \(favorites.count) favorites + \(scheduled.count) scheduled (sawRace=\(sawRace), sentinel=\(sawRace ? "deferred" : "set"))")
+            #endif
+        } catch {
+            #if DEBUG
+            print("AppBootstrapper: migrateShortcutIDsAndRebuildCSVMirrors error: \(error)")
+            #endif
+            // Do NOT mark sentinel — retry next launch.
+        }
     }
 
-    /// Procesa URLs entrantes (deep links)
+    /// Privacy-friendly wait-duration buckets — no exact timings.
+    private func migrationWaitBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<0.1: return "lt_100ms"  // .runNow path
+        case ..<1: return "lt_1s"
+        case ..<3: return "1_3s"
+        case ..<10: return "3_10s"
+        default: return "gt_10s"
+        }
+    }
+
+    // MARK: - Deep Link Handling
+
+    /// URL Scheme from shared helper.
+    private var urlScheme: String { WidgetURLHelper.urlScheme }
+
+    /// Procesa URLs entrantes (deep links y universal links)
     func handleIncomingURL(_ url: URL) {
+        // Universal link: https://yala-app.pe/invite?s=...
+        if InviteLinkService.isInviteLink(url) {
+            handleInviteLink(url)
+            return
+        }
+
         guard url.scheme == urlScheme else { return }
 
         #if DEBUG
@@ -364,32 +1045,18 @@ final class AppBootstrapper {
 
         switch url.host {
         case "shared-image":
-            // Delay to ensure PanelView is mounted and observing before flags are set
-            // Covers cold launch from Share Extension where onOpenURL fires before first render
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(500))
-                let imageURLs = SharedContainerService.pendingImageURLs()
-                guard let firstImageURL = imageURLs.first else { return }
-
-                if self.isUIBlocked {
-                    self.deferredSharedImageURL = firstImageURL
-                    #if DEBUG
-                    print("AppBootstrapper: Deferring shared image — UI blocked")
-                    #endif
-                } else {
-                    self.sessionState.pendingSharedImageURL = firstImageURL
-                    self.sessionState.shouldShowSharedImage = true
-                }
+            if let firstImageURL = SharedContainerService.pendingImageURLs().first {
+                enqueueSharedImage(firstImageURL)
             }
 
         case "voice-entry":
-            dispatchOrDefer(.voiceEntry)
+            executeAction(.voiceEntry)
 
         case "image-entry":
-            dispatchOrDefer(.imageEntry)
+            executeAction(.imageEntry)
 
         case "new-transaction":
-            dispatchOrDefer(.newTransaction)
+            executeAction(.newTransaction)
 
         case "panel":
             setOrDeferDeepLink(.panel)
@@ -412,6 +1079,13 @@ final class AppBootstrapper {
         case "records":
             setOrDeferDeepLink(.recordsStandalone)
 
+        case "groups":
+            if let groupID = url.pathComponents.last, groupID != "/" {
+                setOrDeferDeepLink(.groupDetail(groupID: groupID))
+            } else {
+                setOrDeferDeepLink(.groups)
+            }
+
         default:
             #if DEBUG
             print("AppBootstrapper: Unknown deep link host: \(url.host ?? "nil")")
@@ -419,15 +1093,189 @@ final class AppBootstrapper {
         }
     }
 
+    // MARK: - Invite Link Handling
+
+    /// Procesa un universal link de invitación de grupo.
+    /// Acceso internal para que YalaAppDelegate pueda llamarlo.
+    func handleInviteLink(_ url: URL) {
+        guard let shareURL = InviteLinkService.extractShareURL(from: url) else {
+            logger.error("Invalid invite link: \(url.absoluteString, privacy: .public)")
+            RouterEntryGate.shared.submit(.showInviteError(
+                String(localized: "groups.invite.linkInvalidDetail")
+            ))
+            return
+        }
+
+        let brandedMetadata = InviteLinkService.extractMetadata(from: url)
+
+        #if DEBUG
+        print("AppBootstrapper: Invite link received, CKShare URL: \(shareURL.absoluteString) brandedName=\(brandedMetadata.name ?? "nil")")
+        #endif
+
+        if !isInitialized {
+            // Persistente (no in-memory) → el invite sobrevive un kill antes de que
+            // bootstrap corra. El paso 19 lo procesa vía `reEmitPendingInviteIfNeeded`.
+            PendingInviteStore.save(PendingInviteEntry(shareURL: shareURL, branded: brandedMetadata))
+            #if DEBUG
+            print("AppBootstrapper: Deferring invite (persisted) — not yet initialized")
+            #endif
+            return
+        }
+
+        processInvite(shareURL: shareURL, branded: brandedMetadata)
+    }
+
+    /// A12: Decisión de routing para un share aceptado. Pure function — testeable.
+    /// Replica la lógica simétrica con `YalaAppDelegate.userDidAcceptCloudKitShareWith`.
+    enum InviteRouteDecision: Equatable {
+        /// Invitado nuevo (sin onboarding completo y NO mid-invite): acepta eagerly + muestra invite onboarding.
+        case acceptAndShowInviteOnboarding
+        /// Todos los demás casos: muestra reconnect con el mode apropiado.
+        case showReconnect(mode: ReconnectMode)
+    }
+
+    /// Decide el routing tras leer metadata del share + estado local del grupo.
+    /// Orden de evaluación: isHiddenForAll > isArchived > !hasCompletedOnboarding > member status > default.
+    ///
+    /// Fresh users (no completaron onboarding) priorizan el invite onboarding silencioso
+    /// — `detectFinalStep` cubre todos los memberStatus (pending → step 3, active → step 2,
+    /// rejected → reactivate via `ensureCurrentUserMemberExists`). Si memberStatus ganara,
+    /// el user quedaría en `GroupReconnectView` con CTA "Volver al inicio" → Chooser, sin
+    /// llegar nunca al tab Grupos.
+    static func inviteRouteDecision(
+        hasCompletedOnboarding: Bool,
+        onboardingMode: OnboardingMode,
+        isHiddenForAll: Bool = false,
+        isArchived: Bool = false,
+        currentMemberStatus: SplitMemberStatus? = nil
+    ) -> InviteRouteDecision {
+        if isHiddenForAll { return .showReconnect(mode: .deletedForAll) }
+        if isArchived { return .showReconnect(mode: .archived) }
+        if !hasCompletedOnboarding && onboardingMode != .groupInvite {
+            return .acceptAndShowInviteOnboarding
+        }
+        if let status = currentMemberStatus {
+            switch status {
+            case .active: return .showReconnect(mode: .alreadyMember)
+            case .pendingApproval: return .showReconnect(mode: .pendingDuplicate)
+            case .rejected: return .showReconnect(mode: .rejectedRetry)
+            case .left: return .showReconnect(mode: .leftRetry)
+            case .removed: return .showReconnect(mode: .removedRetry)
+            }
+        }
+        return .showReconnect(mode: .standardReconnect)
+    }
+
+    /// Re-emite el invite pendiente persistido si procede. Llamado en cold launch
+    /// (bootstrap paso 19, `isPresenting: false`) y en foreground
+    /// (`ContentView` `.active`, con el estado real de presentación).
+    func reEmitPendingInviteIfNeeded(isPresenting: Bool) {
+        // Simetría con el guard de `handleInviteLink`: no procesar pre-bootstrap
+        // (routing leería SessionState/onboardingMode aún sin inicializar). El paso
+        // 19 corre post-`isInitialized`; un `.active` temprano de ContentView se
+        // difiere hasta ese paso (o al siguiente foreground warm).
+        guard isInitialized else { return }
+        guard let entry = PendingInviteStore.current(),
+              let resolved = entry.resolved(),
+              Self.shouldReEmitInvite(
+                  storeHasEntry: true,
+                  isProcessing: isProcessingInvite,
+                  queueHasInviteIntent: AppRouter.shared.contains(where: Self.isInviteIntent),
+                  isPresenting: isPresenting
+              )
+        else { return }
+        TelemetryService.inviteReEmittedFromStore()
+        processInvite(shareURL: resolved.url, branded: resolved.branded)
+    }
+
+    /// Pure-logic del guard de re-emisión. Re-emite solo si hay un invite pendiente,
+    /// no hay otro procesamiento en vuelo, no hay ya un intent de invite encolado, y
+    /// no hay un invite presentándose (cover abierto) — esto último evita la
+    /// re-presentación espuria que el clear-on-complete causaría con el cover abierto.
+    nonisolated static func shouldReEmitInvite(
+        storeHasEntry: Bool,
+        isProcessing: Bool,
+        queueHasInviteIntent: Bool,
+        isPresenting: Bool
+    ) -> Bool {
+        storeHasEntry && !isProcessing && !queueHasInviteIntent && !isPresenting
+    }
+
+    /// `true` si el intent es uno de los de invite de grupo (guard del re-emit).
+    nonisolated static func isInviteIntent(_ intent: RouterIntent) -> Bool {
+        switch intent {
+        case .presentGroupInviteOnboarding, .presentGroupReconnect: return true
+        default: return false
+        }
+    }
+
+    /// Lanza `acceptShareFromURL` con guard de concurrencia. El `guard` es síncrono
+    /// en MainActor → un segundo llamador lo ve de inmediato y aborta. El flag se
+    /// libera siempre vía `defer`, aunque el fetch/accept lance.
+    private func processInvite(shareURL: URL, branded: InviteLinkService.BrandedMetadata) {
+        guard !isProcessingInvite else { return }
+        isProcessingInvite = true
+        Task { @MainActor in
+            defer { isProcessingInvite = false }
+            await acceptShareFromURL(shareURL, brandedMetadata: branded)
+        }
+    }
+
+    /// Acepta un CKShare a partir de su URL.
+    /// A12: Comportamiento simétrico con `YalaAppDelegate.userDidAcceptCloudKitShareWith`.
+    /// `brandedMetadata` lleva nombre/icono/color del grupo extraídos del URL
+    /// branded para personalizar el banner de invitación.
+    private func acceptShareFromURL(
+        _ shareURL: URL,
+        brandedMetadata: InviteLinkService.BrandedMetadata = .empty
+    ) async {
+        do {
+            let metadata = try await InviteLinkService.fetchShareMetadata(for: shareURL)
+
+            // CKShare acceptance + routing centralised in CKShareEntryHandler.
+            await CKShareEntryHandler.handle(
+                metadata: metadata,
+                branded: brandedMetadata,
+                source: .universalLink
+            )
+        } catch {
+            logger.error("Failed to accept share from URL: \(error.localizedDescription, privacy: .public)")
+            if Self.isRecoverableInviteFetchError(error) {
+                // Red transitoria: NO limpiar el store ni mostrar error — el re-emit
+                // reintentará en el próximo foreground (acotado por el TTL de 24h).
+                #if DEBUG
+                logger.debug("acceptShareFromURL: recoverable network error — will retry on next foreground")
+                #endif
+            } else {
+                // Permanente (share borrado, sin permiso, link inválido): limpia el
+                // store para no re-loopear y notifica al usuario.
+                PendingInviteStore.clear()
+                RouterEntryGate.shared.submit(.showInviteError(
+                    String(localized: "groups.invite.linkInvalidDetail")
+                ))
+            }
+        }
+    }
+
+    /// `true` si el error de fetch/accept del share es transitorio (red) y vale la
+    /// pena reintentar — vs permanente (share borrado, sin permiso, link inválido),
+    /// donde se limpia el store. Espejo de la filosofía de `PendingLeaveShareTracker`
+    /// (persistir para reintentar ante fallos de red).
+    nonisolated static func isRecoverableInviteFetchError(_ error: Error) -> Bool {
+        guard let ckError = error as? CKError else { return false }
+        switch ckError.code {
+        case .networkUnavailable, .networkFailure, .serviceUnavailable,
+             .requestRateLimited, .zoneBusy:
+            return true
+        default:
+            return false
+        }
+    }
+
     // MARK: - Deep Link Deferral
 
-    /// Sets deep link immediately if splash is dismissed, otherwise defers until splash ends.
     private func setOrDeferDeepLink(_ destination: DeepLinkDestination) {
-        if sessionState.isSplashDismissed {
-            sessionState.deepLinkDestination = destination
-        } else {
-            sessionState.deferredDeepLink = destination
-        }
+        RouterEntryGate.shared.submit(.navigate(destination))
     }
 
     // MARK: - Private Bootstrap Tasks
@@ -441,6 +1289,41 @@ final class AppBootstrapper {
 
         // Update transactions with provisional exchange rates
         await TransactionUpdateService.updateProvisionalTransactions(context: context)
+    }
+
+    /// Clave UserDefaults del flag idempotente de la migración Live Balance.
+    private static let liveBalanceMigrationKey = "hasMigratedToLiveBalance"
+
+    /// Migración v2.0 (épico Live Balance multi-divisa): recalcula
+    /// `amountInPreferredCurrency` para TODAS las transacciones existentes
+    /// para limpiar snapshots inconsistentes (en particular saldos iniciales
+    /// pre-fix B1). El flag `hasMigratedToLiveBalance` solo se setea tras
+    /// éxito — si falla por offline o error, próxima apertura reintenta.
+    private func migrateToLiveBalanceIfNeeded(context: ModelContext) async {
+        guard !UserDefaults.standard.bool(forKey: Self.liveBalanceMigrationKey) else { return }
+
+        do {
+            try await CurrencyChangeService.shared.updateAllTransactions(
+                to: CurrencyDefaults.currentPreferred,
+                context: context,
+                onProgress: { progress in
+                    #if DEBUG
+                    if Int(progress * 100) % 25 == 0 {
+                        print("[LiveBalance] migration: \(Int(progress * 100))%")
+                    }
+                    #endif
+                }
+            )
+            UserDefaults.standard.set(true, forKey: Self.liveBalanceMigrationKey)
+            #if DEBUG
+            print("[LiveBalance] migration completed successfully")
+            #endif
+        } catch {
+            #if DEBUG
+            print("[LiveBalance] migration failed: \(error). Will retry next launch.")
+            #endif
+            // NO setear flag → próxima apertura reintentará
+        }
     }
 
     private func loadSubscriptionStatus() async {
@@ -468,7 +1351,7 @@ final class AppBootstrapper {
 
         // Check for trial expired (shows sheet once)
         if ProUpsellService.shared.shouldShowTrialExpiredSheet() {
-            sessionState.shouldShowTrialExpired = true
+            RouterEntryGate.shared.submit(.presentTrialExpired)
         }
     }
 
@@ -488,7 +1371,7 @@ final class AppBootstrapper {
 
         // Mark that we need to show downgrade resolution
         // The actual resolution sheet is shown from ContentView which has access to data
-        sessionState.shouldShowDowngradeResolution = true
+        RouterEntryGate.shared.submit(.presentDowngradeResolution)
     }
 
     /// Reset Pro theme to System if user downgraded from Pro
@@ -530,63 +1413,78 @@ final class AppBootstrapper {
         lastProcessDuePaymentsDate = Date.now
     }
 
+    /// Signature key for processed inbox draft idempotency. Per-draft stable
+    /// across syncs: `createdAt.timeIntervalSince1970 + "-" + sourceTypeRaw`.
+    /// Capped at 500 entries (FIFO evict).
+    private static let processedSignaturesKey = "processedInboxDraftSignatures"
+    private static let processedSignaturesCap = 500
+
+    private func inboxDraftSignature(_ draft: InboxDraft) -> String {
+        "\(draft.createdAt.timeIntervalSince1970)-\(draft.sourceTypeRaw)"
+    }
+
+    private func loadProcessedInboxSignatures() -> [String] {
+        UserDefaults.standard.stringArray(forKey: Self.processedSignaturesKey) ?? []
+    }
+
+    private func saveProcessedInboxSignatures(_ signatures: [String]) {
+        var bounded = signatures
+        if bounded.count > Self.processedSignaturesCap {
+            bounded.removeFirst(bounded.count - Self.processedSignaturesCap)
+        }
+        UserDefaults.standard.set(bounded, forKey: Self.processedSignaturesKey)
+    }
+
     private func checkForPendingInboxDrafts(context: ModelContext) {
-        let lastCheck = UserDefaults.standard.object(forKey: "lastInboxDraftCheckDate") as? Date
-                        ?? Date.distantPast
+        // Idempotency via per-draft signatures (createdAt + sourceType).
+        // Legacy Date-based watermark is dropped on migration — the first
+        // post-upgrade check emits an alert for all real pending drafts
+        // (no silent suppression).
+        UserDefaults.standard.removeObject(forKey: "lastInboxDraftCheckDate")
+
+        var processed = Set(loadProcessedInboxSignatures())
+
+        let pendingDescriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate<InboxDraft> { $0.statusRaw == "pending" }
+        )
 
         var notification = PendingInboxNotification()
-
-        // Query 1: Scheduled payments
-        let scheduledDescriptor = FetchDescriptor<InboxDraft>(
-            predicate: #Predicate<InboxDraft> { draft in
-                draft.sourceTypeRaw == "scheduledPayment" &&
-                draft.statusRaw == "pending" &&
-                draft.createdAt > lastCheck
-            }
-        )
-
-        // Query 2: Subscriptions
-        let subscriptionDescriptor = FetchDescriptor<InboxDraft>(
-            predicate: #Predicate<InboxDraft> { draft in
-                draft.sourceTypeRaw == "subscription" &&
-                draft.statusRaw == "pending" &&
-                draft.createdAt > lastCheck
-            }
-        )
-
-        // Query 3: Automations (applePay + automation)
-        let automationDescriptor = FetchDescriptor<InboxDraft>(
-            predicate: #Predicate<InboxDraft> { draft in
-                (draft.sourceTypeRaw == "applePay" || draft.sourceTypeRaw == "automation") &&
-                draft.statusRaw == "pending" &&
-                draft.createdAt > lastCheck
-            }
-        )
+        var newSignatures: [String] = []
 
         do {
-            notification.scheduledPayments = try context.fetchCount(scheduledDescriptor)
-            notification.subscriptions = try context.fetchCount(subscriptionDescriptor)
-            notification.automations = try context.fetchCount(automationDescriptor)
+            let drafts = try context.fetch(pendingDescriptor)
+            for draft in drafts {
+                let sig = inboxDraftSignature(draft)
+                guard !processed.contains(sig) else { continue }
+                processed.insert(sig)
+                newSignatures.append(sig)
+                switch draft.sourceTypeRaw {
+                case "scheduledPayment":
+                    notification.scheduledPayments += 1
+                case "subscription":
+                    notification.subscriptions += 1
+                case "applePay", "automation":
+                    notification.automations += 1
+                default:
+                    break
+                }
+            }
         } catch {
             #if DEBUG
             print("AppBootstrapper: Error checking inbox drafts: \(error)")
             #endif
         }
 
-        if !notification.isEmpty {
-            let delay: Double = 0.3
-            Task { [weak self] in
-                try? await Task.sleep(for: .seconds(delay))
-                guard let self else { return }
-                if self.isUIBlocked {
-                    self.deferredInboxNotification = notification
-                } else {
-                    self.sessionState.pendingInboxNotification = notification
-                }
-            }
+        if !newSignatures.isEmpty {
+            var all = loadProcessedInboxSignatures()
+            all.append(contentsOf: newSignatures)
+            saveProcessedInboxSignatures(all)
         }
 
-        UserDefaults.standard.set(Date.now, forKey: "lastInboxDraftCheckDate")
+        if !notification.isEmpty {
+            // Enqueue — readiness gating handles splash/biometric timing.
+            RouterEntryGate.shared.submit(.showInboxAlert(notification))
+        }
     }
 
     private func seedDefaultNotifications(context: ModelContext) {
@@ -597,43 +1495,24 @@ final class AppBootstrapper {
 
     /// Only called from bootstrap() for cold launch without deep link.
     private func checkForPendingSharedImage() {
-        let imageURLs = SharedContainerService.pendingImageURLs()
-        guard let firstImageURL = imageURLs.first else { return }
-
-        // On cold launch, always defer — splash is still showing
-        if isUIBlocked {
-            deferredSharedImageURL = firstImageURL
-            #if DEBUG
-            print("AppBootstrapper: Deferring shared image (cold launch) — UI blocked")
-            #endif
-        } else {
-            sessionState.pendingSharedImageURL = firstImageURL
-            sessionState.shouldShowSharedImage = true
-        }
+        guard let firstImageURL = SharedContainerService.pendingImageURLs().first else { return }
+        enqueueSharedImage(firstImageURL)
     }
 
-    // MARK: - Deferred Action Resolution
-
-    /// Resolves deferred actions after UI blockers (Face ID / InboxAlertModal) dismiss.
-    /// Called from ContentView on unlock and inbox dismiss, and from PanelView on image dismiss.
-    func showDeferredActionsIfNeeded() {
-        // Shared image takes priority (explicit user action from Share Extension)
-        if let url = deferredSharedImageURL {
-            deferredSharedImageURL = nil
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(0.3))
-                sessionState.pendingSharedImageURL = url
-                sessionState.shouldShowSharedImage = true
-            }
-            // deferredPanelAction will resolve on ImageSelectionView dismiss
-            return
-        }
-
-        guard let action = deferredPanelAction else { return }
-        deferredPanelAction = nil
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(0.3))
-            self.executeAction(action)
+    /// Routes a shared-image URL through the router. Panel navigation and
+    /// sheet presentation are separate intents so the mainTab consumer can
+    /// switch tabs before the panel consumer presents the sheet (consumer
+    /// gate K prevents flicker). The URL also lands in SessionState because
+    /// ImageSelectionView reads it directly from there. If AI data consent is
+    /// not accepted, presentation is deferred until the user accepts via the
+    /// `aiConsentAlert` (whose callback opens the same image sheet).
+    private func enqueueSharedImage(_ url: URL) {
+        sessionState.pendingSharedImageURL = url
+        RouterEntryGate.shared.submit(.navigate(.panel))
+        if UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
+            RouterEntryGate.shared.submit(.presentSharedImage(url))
+        } else {
+            RouterEntryGate.shared.submit(.requestAIConsent(.image))
         }
     }
 

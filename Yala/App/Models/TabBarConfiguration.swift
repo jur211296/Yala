@@ -14,6 +14,7 @@ enum ConfigurableTab: String, Codable, CaseIterable, Identifiable {
     case planning
     case records
     case reports
+    case groups
 
     var id: String { rawValue }
 
@@ -24,6 +25,7 @@ enum ConfigurableTab: String, Codable, CaseIterable, Identifiable {
         case .planning: return L10n.Tab.planning
         case .records: return L10n.Tab.records
         case .reports: return L10n.Tab.reports
+        case .groups: return L10n.Tab.groups
         }
     }
 
@@ -34,6 +36,7 @@ enum ConfigurableTab: String, Codable, CaseIterable, Identifiable {
         case .planning: return "calendar"
         case .records: return "list.bullet.rectangle"
         case .reports: return "tablecells"
+        case .groups: return "person.2.fill"
         }
     }
 
@@ -45,6 +48,7 @@ enum ConfigurableTab: String, Codable, CaseIterable, Identifiable {
         case .planning: return .planning
         case .records: return .records
         case .reports: return .reports
+        case .groups: return .groups
         }
     }
 }
@@ -84,6 +88,23 @@ struct TabBarConfiguration: Codable, Equatable {
         guard activeTabs.count > 1 else { return false }
         activeTabs.removeAll { $0 == tab }
         return true
+    }
+
+    // MARK: - Mode-Aware Configurations (GC-08)
+
+    /// Fixed tab configuration for groupInvite users (only Groups tab).
+    /// Search and More are always shown by MainTabView independently.
+    static let groupInvite = TabBarConfiguration(activeTabs: [.groups])
+
+    /// Returns the appropriate tab configuration for the given onboarding mode.
+    /// For groupInvite: fixed config (ignores stored JSON). For full/completed: stored config.
+    static func forMode(_ mode: OnboardingMode, stored: TabBarConfiguration) -> TabBarConfiguration {
+        switch mode {
+        case .groupInvite:
+            return .groupInvite
+        case .full, .completed:
+            return stored
+        }
     }
 
     /// Valida y corrige la configuración para asegurar que .panel esté siempre primero
@@ -143,5 +164,31 @@ extension TabBarConfiguration {
         // Ensure panel is always first
         config.ensurePanelFirst()
         return config
+    }
+
+    /// Reads the stored configuration from `UserDefaults.standard`. Use only
+    /// outside SwiftUI views; views should bind via `@AppStorage(storageKey)`
+    /// to stay reactive.
+    static func loadFromStandardDefaults() -> TabBarConfiguration {
+        let json = UserDefaults.standard.string(forKey: storageKey) ?? Self.default.toJSON()
+        return fromJSON(json)
+    }
+}
+
+// MARK: - AppTab → ConfigurableTab Mapping
+
+extension AppTab {
+    /// Inverse of `ConfigurableTab.appTab`. Returns nil for `.more` and `.search`,
+    /// which are always-visible system tabs without a configurable equivalent.
+    var asConfigurable: ConfigurableTab? {
+        switch self {
+        case .panel: return .panel
+        case .statistics: return .statistics
+        case .planning: return .planning
+        case .records: return .records
+        case .reports: return .reports
+        case .groups: return .groups
+        case .more, .search: return nil
+        }
     }
 }

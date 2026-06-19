@@ -15,30 +15,57 @@ import SwiftData
 typealias YalaCategory = Yala.Category
 typealias YalaTag = Yala.Tag
 
+// MARK: - Isolated UserDefaults
+
+/// Crea un `UserDefaults` con suite name único por test (UUID), totalmente aislado
+/// de `UserDefaults.standard` y de otros tests corriendo en el mismo proceso.
+///
+/// Úsalo cuando el SUT acepta `UserDefaults` inyectable. Si el SUT toca
+/// `UserDefaults.standard` directamente, este helper no aísla — usa
+/// `@Suite(.serialized)` y limpia con `defer { remove }`.
+///
+/// Ver TESTING-STRATEGY.md (sección "Anti-patrones detectados") para detalles.
+func makeIsolatedDefaults(prefix: String = "test") -> UserDefaults {
+    let suiteName = "\(prefix).\(UUID().uuidString)"
+    guard let defaults = UserDefaults(suiteName: suiteName) else {
+        fatalError("Failed to create isolated UserDefaults suite: \(suiteName)")
+    }
+    return defaults
+}
+
 // MARK: - In-Memory SwiftData Context
 
-/// Creates an in-memory ModelContext for testing
-/// Each test should call this to get a fresh, isolated context
+/// Creates an in-memory ModelContext for testing with dual config (mirrors production).
+/// Each test should call this to get a fresh, isolated context.
+///
+/// **Importante:** usa un suffix UUID en `databaseName` para que el container del test
+/// no comparta nombre con el container del host (Yala.app inicializa su propio
+/// `ModelContainer` durante boot del test runner). Sin este aislamiento, dos containers
+/// con el mismo `databaseName` causan race en metadata SwiftData → `EXC_BREAKPOINT`
+/// en suite mode (4 restarts del proceso de test observados en `/test-ios`).
 @MainActor
 func makeTestContext() throws -> ModelContext {
-    // Use Schema like the main app does
-    let schema = Schema([
-        Yala.Category.self,
-        Subcategory.self,
-        Tag.self,
-        Account.self,
-        TransactionItem.self,
-        Budget.self,
-        ExchangeRate.self,
-        FavoritePayment.self,
-        ScheduledPayment.self,
-        InboxDraft.self,
-        MerchantMemory.self,
-        NotificationItem.self,
-    ])
-
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try ModelContainer(for: schema, configurations: config)
+    let suffix = UUID().uuidString.prefix(8)
+    // `cloudKitDatabase: .none` evita que SwiftData adjunte NSPersistentCloudKitContainer
+    // (el default `.automatic` lo adjunta por entitlement + schema con relaciones, aun
+    // in-memory) → sin loops de CloudKit recovery en sims sin cuenta iCloud (CI).
+    // Mantiene el split personal/groups de producción (paridad de comportamiento).
+    let personalConfig = ModelConfiguration(
+        "YalaPersonal_test_\(suffix)",
+        schema: SwiftDataConfiguration.personalSchema,
+        isStoredInMemoryOnly: true,
+        cloudKitDatabase: .none
+    )
+    let groupsConfig = ModelConfiguration(
+        "YalaGroups_test_\(suffix)",
+        schema: SwiftDataConfiguration.groupsSchema,
+        isStoredInMemoryOnly: true,
+        cloudKitDatabase: .none
+    )
+    let container = try ModelContainer(
+        for: SwiftDataConfiguration.schema,
+        configurations: personalConfig, groupsConfig
+    )
     return container.mainContext
 }
 
@@ -115,7 +142,10 @@ func makeTestBudget(
     subcategories: [Subcategory] = [],
     tags: [Tag] = [],
     startDate: Date? = nil,
-    endDate: Date? = nil
+    endDate: Date? = nil,
+    subcategoryIDs: String? = nil,
+    accountIDs: String? = nil,
+    tagIDs: String? = nil
 ) -> Budget {
     let budget = Budget(
         currencyCode: "PEN",
@@ -127,7 +157,10 @@ func makeTestBudget(
         accounts: accounts,
         subcategories: subcategories,
         tags: tags,
-        isActive: isActive
+        isActive: isActive,
+        subcategoryIDs: subcategoryIDs,
+        accountIDs: accountIDs,
+        tagIDs: tagIDs
     )
     context.insert(budget)
     return budget

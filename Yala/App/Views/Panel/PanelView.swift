@@ -24,24 +24,32 @@ struct PanelView: View {
 
     let viewModel: PanelViewModel
     @Binding var sheets: PanelSheetState
-    @Binding var showFABMenu: Bool
 
     /// Periodic banner visibility
     @State private var showPeriodicBanner = false
 
-    @AppStorage("userName") private var userName: String = "Usuario"
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCodeRaw: String = CurrencyCode.pen.rawValue
-    @AppStorage("showVariations") private var showVariations: Bool = true
-    @AppStorage("accountsSortOrderNames") private var accountsSortOrderNamesRaw: String = ""
-    @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
-    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
-    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
-    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
-    @AppStorage("showSiriTip") private var showSiriTip: Bool = true
+    /// Nudge banner visibility (dormant/sporadic users)
+    @State private var showNudgeBanner = false
+
+    @Environment(AppPreferences.self) private var appPreferences
 
     /// Coach mark: Pro tour (Phase 2)
     @State private var showProFabTour = false
     @State private var proFabTourIndex = 0
+    @State private var showTodayFXCoachMark = false
+    @State private var todayFXCoachMarkIndex = 0
+
+    /// Controla si el título del navigation bar es visible. Solo aparece tras
+    /// hacer scroll lo suficiente para que el saludo del hero desaparezca,
+    /// evitando duplicar identidad ("Panel de X" arriba + "Hola, X" en hero).
+    @State private var showInlineTitle = false
+
+    /// Umbrales con histéresis para el título en el toolbar. El título
+    /// aparece apenas el usuario scrollea por encima del `show`, y solo
+    /// desaparece al volver al borde superior — evita oscilación con
+    /// scroll inertial cerca del límite.
+    private static let inlineTitleShowAt: CGFloat = 8
+    private static let inlineTitleHideAt: CGFloat = 0
 
     /// Check if voice input is locked (Pro feature)
     private var isVoiceLocked: Bool {
@@ -51,6 +59,21 @@ struct PanelView: View {
     /// Check if image input is locked (Pro feature)
     private var isImageLocked: Bool {
         !FeatureGateService.shared.canAccess(.imageInput)
+    }
+
+    /// Gate del coach mark "Today FX": primera vez en multi-currency con la
+    /// métrica balance cubriendo hoy. Bloqueado mientras el Pro Tour esté
+    /// activo para evitar overlays simultáneos. Vive en PanelView para que
+    /// el spotlight no se clipe al frame del card de Tendencias.
+    private var shouldShowTodayFXCoachMark: Bool {
+        guard !UITestHooks.isActive else { return false }
+        guard viewModel.dataTrendType == .balance else { return false }
+        guard viewModel.trendLiveAnchor != nil else { return false }
+        guard (viewModel.trendLiveAnchorBreakdown?.count ?? 0) > 1 else { return false }
+        guard !appPreferences.hasSeenTodayFXCoachMark else { return false }
+        let proTourActive = ProTourManager.shared.triggered
+            && !ProTourManager.shared.hasCompleted
+        return !proTourActive
     }
 
     // MARK: - Practice Cleanup
@@ -70,11 +93,11 @@ struct PanelView: View {
         case .firstExpense:
             sheets.showNewTransaction = true
         case .firstBudget:
-            sessionState.shouldAutoOpenBudgetEditor = true
-            sessionState.navigateToBudgets()
+            RouterEntryGate.shared.submit(.navigate(.budgets))
+            RouterEntryGate.shared.submit(.autoOpenBudgetEditor)
         case .scheduledPayment:
-            sessionState.shouldAutoOpenScheduledEditor = true
-            sessionState.navigateToScheduledPayments()
+            RouterEntryGate.shared.submit(.navigate(.scheduledPayments))
+            RouterEntryGate.shared.submit(.autoOpenScheduledEditor)
         case .exploreSettings:
             sheets.isPresentingSettings = true
             SetupChecklistManager.shared.markCompleted(.exploreSettings)
@@ -89,14 +112,22 @@ struct PanelView: View {
         case .tryVoiceInput:
             FeatureGateService.shared.enableSetupTrial(for: .voiceInput)
             sheets.isVoiceSetupTrial = true
-            if !voiceInputEnabled { voiceInputEnabled = true }
-            sheets.showVoiceRecording = true
+            if appPreferences.aiDataConsentAccepted {
+                sheets.showVoiceRecording = true
+            } else {
+                sheets.pendingAIInput = .voice
+                sheets.showAIConsentAlert = true
+            }
         case .tryImageInput:
             FeatureGateService.shared.enableSetupTrial(for: .imageInput)
             sheets.isImageSetupTrial = true
-            if !imageInputEnabled { imageInputEnabled = true }
             sheets.setupTrialExampleImages = loadExampleImages()
-            sheets.showImageSelection = true
+            if appPreferences.aiDataConsentAccepted {
+                sheets.showImageSelection = true
+            } else {
+                sheets.pendingAIInput = .image
+                sheets.showAIConsentAlert = true
+            }
         }
     }
 
@@ -112,7 +143,33 @@ struct PanelView: View {
         return images.isEmpty ? nil : images
     }
 
+    // MARK: - Nudge CTA Routing
+
+    private func handleNudgeAction(_ nudge: NudgeType) {
+        switch nudge.actionType {
+        case .activateFullMode:
+            RouterEntryGate.shared.submit(.presentFullModeActivation)
+        case .openGroupDetail:
+            SessionState.shared.navigateToGroups()
+        case .openPanel, .dismiss:
+            break
+        }
+    }
+
     // MARK: - Toolbar Buttons
+
+    private var sectionsConfigButton: some View {
+        Button {
+            DS.Haptic.light()
+            sheets.showSectionsConfig = true
+        } label: {
+            Image(systemName: "square.grid.2x2")
+                .font(DS.Typography.body).fontWeight(.medium)
+                .foregroundStyle(.thToolbarIcon)
+        }
+        .accessibilityLabel(L10n.Accessibility.sectionsConfig)
+        .accessibilityIdentifier("panel_sections_config")
+    }
 
     private var inboxToolbarButton: some View {
         Button {
@@ -139,6 +196,7 @@ struct PanelView: View {
             }
         }
         .accessibilityLabel(L10n.Accessibility.inbox)
+        .accessibilityIdentifier("panel_inbox_button")
     }
 
 
@@ -146,11 +204,16 @@ struct PanelView: View {
         NavigationStack {
             mainContent
                 .yalaSkeleton(!viewModel.isReady)
-                .navigationTitle(L10n.Panel.title(userName))
-                .navigationBarTitleDisplayMode(.large)
+                // Title aparece solo tras scrollear (ver `showInlineTitle`),
+                // evitando duplicación con el saludo del hero al inicio.
+                .navigationTitle(showInlineTitle ? L10n.Panel.title(appPreferences.userName) : "")
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         inboxToolbarButton
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        sectionsConfigButton
                     }
                     ProfileToolbarItem {
                         sheets.isPresentingSettings = true
@@ -166,6 +229,7 @@ struct PanelView: View {
             }
         )
         .task(id: ProTourManager.shared.currentPhase) {
+            guard !UITestHooks.isActive else { return }
             guard !ProTourManager.shared.hasCompleted,
                   ProTourManager.shared.currentPhase == .panel else { return }
             do { try await Task.sleep(for: .seconds(0.8)) } catch { return }
@@ -173,25 +237,36 @@ struct PanelView: View {
                   !showProFabTour else { return }
             showProFabTour = true
         }
+        .coachMarkOverlay(
+            steps: ProTourSteps.todayFXSteps,
+            isPresented: $showTodayFXCoachMark,
+            currentIndex: $todayFXCoachMarkIndex,
+            onComplete: { appPreferences.hasSeenTodayFXCoachMark = true }
+        )
+        .task(id: shouldShowTodayFXCoachMark) {
+            guard shouldShowTodayFXCoachMark, !showTodayFXCoachMark else { return }
+            do { try await Task.sleep(for: .seconds(1.5)) } catch { return }
+            guard !Task.isCancelled, shouldShowTodayFXCoachMark else { return }
+            withAnimation { showTodayFXCoachMark = true }
+        }
         .appliesPendingRemoteChanges(sessionState)
         .onAppear {
-            viewModel.widgetConfig.columns = DS.Adaptive.columns(sizeClass)
+            // Inject AppPreferences BEFORE setContext so the first performCalculation
+            // sees per-widget visibility state (P20-03 guards).
+            viewModel.setAppPreferences(appPreferences)
             viewModel.setContext(
                 modelContext,
                 exchangeRateService: exchangeRateService,
                 currencyConverter: currencyConverter,
-                defaultCurrencyCode: defaultCurrencyCodeRaw,
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 sessionState: sessionState
             )
+            // Seed BEFORE the first calculation so hidden sections don't do
+            // work on app launch.
+            viewModel.hiddenSections = Self.parseHiddenSections(appPreferences.panelSectionsHidden)
             Task { TransferMigrationService.migratePositiveTransfersIfNeeded(in: modelContext) }
             viewModel.syncFromSessionState(sessionState)
-            let newOrder = viewModel.ensureAccountsSortOrderConsistency(
-                accounts: viewModel.accounts,
-                currentOrderRaw: accountsSortOrderNamesRaw
-            )
-            if newOrder != accountsSortOrderNamesRaw {
-                accountsSortOrderNamesRaw = newOrder
-            }
+            reconcileAccountsSortOrder()
             viewModel.reloadAndRecalculate()
         }
         .onDisappear {
@@ -209,12 +284,63 @@ struct PanelView: View {
                 break
             }
         }
-        .onChange(of: sizeClass) { _, newValue in
-            viewModel.widgetConfig.columns = DS.Adaptive.columns(newValue)
-        }
-        .onChange(of: defaultCurrencyCodeRaw) { _, newValue in
-            viewModel.updateDefaultCurrencyCode(newValue)
+        .onChange(of: appPreferences.defaultCurrencyCode) { _, newValue in
+            viewModel.updateDefaultCurrencyCode(newValue.rawValue)
             viewModel.recalculateData()
+        }
+        .onChange(of: appPreferences.includeGroupsInPanelTotal) { _, _ in
+            // El toggle vive en un sheet del tab Grupos, desacoplado del Panel.
+            // Recalcular al volver para reflejar inclusión/exclusión de grupos
+            // en el saldo total agregado.
+            viewModel.recalculateData()
+        }
+        .onChange(of: appPreferences.includeGroupTransactionsInStats) { _, _ in
+            // Mismo sheet del tab Grupos: el Financial Score (calculateHealthWidget)
+            // incluye/excluye TX bridgeadas según esta preferencia. Recalcular
+            // in-place para que "Salud Financiera" no quede stale al volver o vía
+            // sync cross-device con el Panel ya montado.
+            viewModel.recalculateData()
+        }
+        .onChange(of: appPreferences.panelSectionsHidden) { oldValue, newValue in
+            let next = Self.parseHiddenSections(newValue)
+            guard viewModel.hiddenSections != next else { return }
+            let previous = viewModel.hiddenSections
+            viewModel.hiddenSections = next
+            // Only recompute when a section became visible — hiding alone
+            // doesn't need fresh data (cached values simply stop rendering).
+            if !next.isSuperset(of: previous) {
+                viewModel.recalculateData()
+            }
+        }
+        .onChange(of: viewModel.accounts.count) { _, _ in
+            reconcileAccountsSortOrder()
+        }
+        // Regenera mensaje IA al togglear feature o cambiar estado Pro.
+        .onChange(of: appPreferences.aiInsightsConsentAccepted) { _, _ in
+            viewModel.retriggerHeroAI()
+        }
+        .onChange(of: StoreKitManager.shared.isProUser) { _, _ in
+            viewModel.retriggerHeroAI()
+        }
+    }
+
+    /// Drops unknown raw values so a legacy/future preference string doesn't
+    /// pollute the typed set.
+    private static func parseHiddenSections(_ raw: [String]) -> Set<PanelSectionKind> {
+        Set(raw.compactMap(PanelSectionKind.init(rawValue:)))
+    }
+
+    /// Sincroniza `appPreferences.accountsSortOrderNames` con las cuentas activas:
+    /// agrega nombres nuevos al final y remueve los de cuentas eliminadas/archivadas.
+    /// El guard evita writes no-op (que dispararían didSet + observer async redundante).
+    private func reconcileAccountsSortOrder() {
+        let currentOrder = appPreferences.accountsSortOrderNames
+        let newOrder = viewModel.ensureAccountsSortOrderConsistency(
+            accounts: viewModel.accounts,
+            currentOrder: currentOrder
+        )
+        if newOrder != currentOrder {
+            appPreferences.accountsSortOrderNames = newOrder
         }
     }
 
@@ -225,8 +351,20 @@ struct PanelView: View {
             ScrollViewReader { scrollProxy in
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                        if showSiriTip, viewModel.transactions.count >= 5 {
-                            SiriTipCard(isVisible: $showSiriTip)
+                        // Gated on `heroWidget.data != nil` inside the section
+                        // itself so the skeleton doesn't flash an empty card
+                        // before the first `performCalculation()` lands.
+                        PanelHeroSection(
+                            viewModel: viewModel,
+                            sessionState: sessionState,
+                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker
+                        )
+
+                        if !UITestHooks.isActive, appPreferences.showSiriTip, viewModel.transactions.count >= 5 {
+                            SiriTipCard(isVisible: Binding(
+                                get: { appPreferences.showSiriTip },
+                                set: { appPreferences.showSiriTip = $0 }
+                            ))
                         }
 
                         // Update available banner (all users)
@@ -275,42 +413,81 @@ struct PanelView: View {
                             }
                         }
 
+                        // Nudge banner (dormant/sporadic users — only if no Pro upsell showing)
+                        if !UITestHooks.isActive, let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
+                            GroupNudgeBanner(
+                                nudge: nudge,
+                                message: NudgeService.shared.currentNudgeMessage ?? "",
+                                onAction: {
+                                    NudgeService.shared.recordInteracted(nudge)
+                                    withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                    handleNudgeAction(nudge)
+                                },
+                                onDismiss: {
+                                    NudgeService.shared.recordDismissed(nudge)
+                                    withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                },
+                                onAutoDismiss: {
+                                    NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
+                                    withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                                }
+                            )
+                        }
+
                         // Setup Checklist (persistent for new users)
-                        SetupChecklistCard(
-                            manager: SetupChecklistManager.shared,
-                            onStepTapped: { step in handleSetupStep(step) }
-                        )
+                        if !UITestHooks.isActive {
+                            SetupChecklistCard(
+                                manager: SetupChecklistManager.shared,
+                                onStepTapped: { step in handleSetupStep(step) }
+                            )
+                        }
 
                         // Contextual guide for panel (first visit)
                         ContextualGuideBanner.panel()
 
-                        PanelAccountsSection(
-                            viewModel: viewModel,
-                            sessionState: sessionState,
-                            accountsSortOrderNames: accountsSortOrderNamesRaw.split(separator: "|").map(String.init),
-                            accountFormSheet: $sheets.accountFormSheet,
-                            showUpgradeForAccounts: $sheets.showUpgradeForAccounts
-                        )
-
+                        // Thematic sections wrapper renders: Tu panorama
+                        // (accounts + health), then the filter bar (period + chips),
+                        // then each thematic section. Auto-hide uses
+                        // `viewModel.hasAnyVisibleWidget(in:)`.
                         PanelFilterAndWidgetsSection(
                             viewModel: viewModel,
                             sessionState: sessionState,
-                            defaultCurrencyCodeRaw: defaultCurrencyCodeRaw,
-                            showVariations: showVariations,
-                            showWidgetPreferences: $sheets.showWidgetPreferences,
-                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker,
-                            showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings
+                            defaultCurrencyCodeRaw: appPreferences.defaultCurrencyCode.rawValue,
+                            showVariations: appPreferences.showVariations,
+                            accountsSortOrderNames: appPreferences.accountsSortOrderNames,
+                            sectionPrefsPresentation: $sheets.sectionPrefsPresentation,
+                            showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings,
+                            accountFormSheet: $sheets.accountFormSheet,
+                            showUpgradeForAccounts: $sheets.showUpgradeForAccounts,
+                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker
                         )
                     }
-                    .padding(.horizontal, DS.Adaptive.horizontalPadding(sizeClass))
                     .padding(.top, DS.Spacing.lg)
                     .padding(.bottom, DS.Spacing.xxxl)
+                }
+                .scrollViewGlassEdges(horizontalMargin: DS.Adaptive.horizontalPadding(sizeClass))
+                .onScrollGeometryChange(for: CGFloat.self) { geom in
+                    geom.contentOffset.y
+                } action: { _, offsetY in
+                    let shouldShow = showInlineTitle
+                        ? offsetY > Self.inlineTitleHideAt
+                        : offsetY >= Self.inlineTitleShowAt
+                    guard showInlineTitle != shouldShow else { return }
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showInlineTitle = shouldShow
+                    }
                 }
                 .refreshable {
                     await refreshData()
                 }
                 .onAppear {
                     showPeriodicBanner = ProUpsellService.shared.shouldShowPeriodicBanner()
+
+                    // Evaluate nudge only if no Pro upsell showing
+                    if !showPeriodicBanner {
+                        NudgeService.shared.evaluate()
+                        showNudgeBanner = NudgeService.shared.currentNudge != nil
+                    }
 
                     // Setup checklist: auto-detect completed steps & manage collapse state
                     let mgr = SetupChecklistManager.shared
@@ -329,176 +506,40 @@ struct PanelView: View {
                 }
             }
 
-            // Botón flotante de nuevo registro
+            // Botón flotante de nuevo registro + Chat FAB
             VStack {
                 Spacer()
                 HStack {
                     Spacer()
-                    newRecordFAB
+                    FABStackView(
+                        canUseVoiceInput: viewModel.canUseVoiceInput,
+                        isVoiceLocked: isVoiceLocked,
+                        isImageLocked: isImageLocked,
+                        isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+                        chatConsentAccepted: appPreferences.aiChatConsentAccepted,
+                        chatFABVisible: appPreferences.chatFABVisible,
+                        onVoiceTap: { sheets.showVoiceRecording = true },
+                        onImageTap: { sheets.showImageSelection = true },
+                        onManualTap: { sheets.showNewTransaction = true },
+                        onUpgradeVoice: { sheets.showUpgradeForVoice = true },
+                        onUpgradeImage: { sheets.showUpgradeForImage = true },
+                        onChatTap: {
+                            // Helper compartido: si onboarding pendiente, mostrarlo ANTES del chat.
+                            // Reusa pure-logic (consent ya aceptado, sino onChatConsentNeeded gatea antes).
+                            switch YalaAIOnboardingLogic.nextScreen(
+                                consentAccepted: appPreferences.aiChatConsentAccepted,
+                                onboardingShown: appPreferences.hasShownYalaAIOnboarding
+                            ) {
+                            case .onboarding: sheets.showYalaAIOnboarding = true
+                            case .chat:       sheets.showChatSheet = true
+                            case .consent:    sheets.showChatConsentAlert = true
+                            }
+                        },
+                        onUpgradeChat: { sheets.showUpgradeForChat = true },
+                        onChatConsentNeeded: { sheets.showChatConsentAlert = true }
+                    )
                 }
             }
-        }
-    }
-
-    // MARK: - New Record FAB
-
-    @ViewBuilder
-    private var newRecordFAB: some View {
-        let fabBackground = viewModel.canUseVoiceInput ? theme.accent : DS.Semantic.disabledForeground.opacity(0.5)
-
-        if viewModel.canUseVoiceInput {
-            // Custom FAB with popup menu above (always 3 options)
-            VStack(alignment: .trailing, spacing: DS.Spacing.md) {
-                // Menu options (shown when expanded)
-                if showFABMenu {
-                    VStack(spacing: DS.Spacing.sm) {
-                        // Voice option
-                        fabMenuButton(
-                            icon: "waveform",
-                            text: L10n.Panel.fabVoice,
-                            color: .hotPink,
-                            isLocked: isVoiceLocked
-                        ) {
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
-                            }
-                            if isVoiceLocked {
-                                sheets.showUpgradeForVoice = true
-                            } else if !aiDataConsentAccepted {
-                                sheets.pendingAIInput = .voice
-                                sheets.showAIConsentAlert = true
-                            } else {
-                                if !voiceInputEnabled { voiceInputEnabled = true }
-                                sheets.showVoiceRecording = true
-                            }
-                        }
-
-                        // Image option
-                        fabMenuButton(
-                            icon: "photo",
-                            text: L10n.Panel.fabImage,
-                            color: .teal,
-                            isLocked: isImageLocked
-                        ) {
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
-                            }
-                            if isImageLocked {
-                                sheets.showUpgradeForImage = true
-                            } else if !aiDataConsentAccepted {
-                                sheets.pendingAIInput = .image
-                                sheets.showAIConsentAlert = true
-                            } else {
-                                if !imageInputEnabled { imageInputEnabled = true }
-                                sheets.showImageSelection = true
-                            }
-                        }
-
-                        // Manual option (always shown)
-                        fabMenuButton(
-                            icon: "square.and.pencil",
-                            text: L10n.Panel.fabManual,
-                            color: .electricIndigo
-                        ) {
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
-                            }
-                            sheets.showNewTransaction = true
-                        }
-                    }
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity),
-                        removal: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
-                    ))
-                }
-
-                // FAB button
-                Button {
-                    DS.Haptic.medium()
-                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                        showFABMenu.toggle()
-                    }
-                } label: {
-                    Image(systemName: showFABMenu ? "xmark" : "plus")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(Color.contrastingText(for: theme.accent))
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
-                        .clipShape(Circle())
-                        .rotationEffect(.degrees(showFABMenu ? 90 : 0))
-                }
-                .buttonStyle(.plain)
-                .glassEffect(.regular.interactive())
-                .dsFloatingShadow()
-                .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
-                .accessibilityIdentifier("fab_new_transaction")
-                .coachMarkAnchor("fab")
-            }
-            .padding(.trailing, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxl)
-        } else {
-            // Simple FAB (no accounts/subcategories — disabled)
-            Button {
-                // No-op: disabled state
-            } label: {
-                Image(systemName: "plus")
-                    .font(DS.Typography.title)
-                    .foregroundStyle(Color.contrastingText(for: theme.accent))
-                    .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                    .background(fabBackground)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive())
-            .dsFloatingShadow()
-            .coachMarkAnchor("fab")
-            .padding(.trailing, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxl)
-            .disabled(true)
-            .accessibilityLabel(L10n.Accessibility.newRecord)
-            .accessibilityHint(L10n.Accessibility.createAccountFirst)
-        }
-    }
-
-    private func fabMenuButton(
-        icon: String,
-        text: String,
-        color: Color,
-        isLocked: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
-            DS.Haptic.selection()
-            action()
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: icon)
-                    .font(DS.Typography.headline)
-                    .frame(width: DS.Button.fabMenuIconSize)
-
-                Text(text)
-                    .font(DS.Typography.headline)
-
-                Spacer(minLength: 0)
-
-                if isLocked {
-                    ProBadge(size: .small)
-                }
-            }
-            .foregroundStyle(.white)
-            .frame(width: DS.Button.fabMenuWidth)
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .background(isLocked ? DS.Semantic.disabledForeground : color)
-            .clipShape(Capsule())
-            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
-        }
-        .buttonStyle(.plain)
-        .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
-            content
-                .scaleEffect(phase ? 1.03 : 1.0)
-        } animation: { _ in
-            .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
         }
     }
 

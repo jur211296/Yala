@@ -14,6 +14,10 @@ struct CashFlowOthersSheet: View {
     var isIncome: Bool = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
+    @State private var selectedDetent: PresentationDetent = .medium
+
+    private var isLargeDetent: Bool { selectedDetent == .large }
 
     private var otherResult: CashFlowOtherResult? {
         if isIncome {
@@ -38,6 +42,7 @@ struct CashFlowOthersSheet: View {
                 .padding(.top, DS.Spacing.md)
                 .yalaSafeBottomPadding()
             }
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(isIncome ? L10n.CashFlowPlan.othersIncomeTitle : L10n.CashFlowPlan.othersTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -48,7 +53,7 @@ struct CashFlowOthersSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
     }
 
     // MARK: - Description
@@ -69,16 +74,18 @@ struct CashFlowOthersSheet: View {
                     Image(systemName: item.iconName)
                         .font(DS.Typography.body)
                         .foregroundStyle(Color(hex: item.colorHex))
-                        .frame(width: 24)
+                        .frame(width: DS.Icon.badgeSmall)
 
                     Text(item.categoryName)
                         .font(DS.Typography.body)
 
                     Spacer()
 
-                    Text(YalaFormatter.currency(value: item.amount, currencyCode: currencyCode))
-                        .font(DS.Typography.amountSmall)
-                        .monospacedDigit()
+                    AmountText(
+                        value: item.amount,
+                        currencyCode: currencyCode,
+                        font: DS.Typography.amountSmall.monospacedDigit()
+                    )
 
                     Button {
                         promoteCategory(named: item.categoryName)

@@ -10,599 +10,26 @@ import Foundation
 import SwiftData
 import SwiftUI
 
-// MARK: - Transaction Type Enum
-
-enum TransactionTypeAppEnum: String, AppEnum {
-    case expense = "expense"
-    case income = "income"
-
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "shortcut.entity.transactionType"
-
-    static var caseDisplayRepresentations: [TransactionTypeAppEnum: DisplayRepresentation] = [
-        .expense: DisplayRepresentation(title: "shortcut.type.expense"),
-        .income: DisplayRepresentation(title: "shortcut.type.income")
-    ]
-}
-
 // MARK: - Quick Entry Intent
 
+/// Atajo "Nuevo registro": abre la app con la pantalla de Nueva Transacción.
+/// Reusa el mismo deep-link que el HomeScreen widget Yala — la UI del sheet
+/// gestiona los defaults (cuenta, tipo, etc.) igual que cuando se abre desde el FAB.
 struct QuickExpenseIntent: AppIntent {
 
     static var title: LocalizedStringResource = "shortcut.quickExpense.title"
     static var description = IntentDescription("shortcut.quickExpense.description")
 
-    static var openAppWhenRun: Bool = false
-
-    // MARK: - Parameters
-
-    @Parameter(
-        title: "shortcut.param.type",
-        description: "shortcut.param.type.description",
-        requestValueDialog: "shortcut.dialog.askType"
-    )
-    var transactionType: TransactionTypeAppEnum?
-
-    @Parameter(
-        title: "shortcut.param.amount",
-        description: "shortcut.param.amount.description",
-        requestValueDialog: "shortcut.dialog.askAmount"
-    )
-    var amount: Double?
-
-    @Parameter(
-        title: "shortcut.param.note",
-        description: "shortcut.param.note.description",
-        requestValueDialog: "shortcut.dialog.askNote"
-    )
-    var note: String?
-
-    @Parameter(
-        title: "shortcut.param.account",
-        description: "shortcut.param.account.description",
-        requestValueDialog: "shortcut.dialog.askAccount"
-    )
-    var account: AccountAppEntity?
-
-    @Parameter(
-        title: "shortcut.param.subcategory",
-        description: "shortcut.param.subcategory.description",
-        requestValueDialog: "shortcut.dialog.askSubcategory"
-    )
-    var expenseSubcategory: ExpenseSubcategoryAppEntity?
-
-    @Parameter(
-        title: "shortcut.param.subcategory",
-        description: "shortcut.param.subcategory.description",
-        requestValueDialog: "shortcut.dialog.askSubcategory"
-    )
-    var incomeSubcategory: IncomeSubcategoryAppEntity?
-
-    @Parameter(
-        title: "shortcut.param.tag",
-        description: "shortcut.param.tag.description",
-        requestValueDialog: "shortcut.dialog.askTag"
-    )
-    var tagName: String?
-
-    // MARK: - Perform
+    static var openAppWhenRun: Bool = true
 
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        // Gather all user input
-        let input = try await resolveInput()
-
-        // Setup database
-        guard let context = setupModelContext() else {
-            return .result(dialog: "shortcut.error.database")
+    func perform() async throws -> some IntentResult {
+        TelemetryService.track(.intentInvoked, parameters: ["intent_type": "quickExpense"])
+        if let url = WidgetURLHelper.url(for: "new-transaction") {
+            await UIApplication.shared.open(url)
         }
-
-        // Resolve entities from database
-        guard let resolvedAccount = fetchAccount(name: input.accountName, context: context) else {
-            return .result(dialog: "shortcut.error.noAccount")
-        }
-        guard let resolvedSubcategory = fetchSubcategory(name: input.subcategoryName, categoryName: input.subcategoryCategoryName, context: context) else {
-            return .result(dialog: "shortcut.error.noSubcategory")
-        }
-        var resolvedTag: Tag?
-        if let name = input.tagName, !name.isEmpty {
-            resolvedTag = fetchTag(name: name, context: context)
-        }
-
-        // Create and save transaction
-        let result = createTransaction(
-            amount: input.amount,
-            note: input.note,
-            account: resolvedAccount,
-            subcategory: resolvedSubcategory,
-            tag: resolvedTag,
-            context: context
-        )
-
-        guard let transaction = result.transaction else {
-            return .result(dialog: "shortcut.error.save")
-        }
-
-        // Format success message
-        let formattedAmount = formatIntentCurrency(amount: input.amount, currencyCode: transaction.currencyCode)
-        let noteText = (input.note?.isEmpty == false) ? (input.note ?? "-") : "-"
-        let tagText = resolvedTag?.name ?? String(localized: "shortcut.result.noTag")
-        let successMessage = String(localized: "shortcut.success.expenseDetail \(resolvedAccount.name) \(formattedAmount) \(noteText) \(resolvedSubcategory.name) \(tagText)")
-
-        return .result(dialog: IntentDialog(stringLiteral: successMessage))
-    }
-
-    // MARK: - Input Resolution
-
-    private struct ResolvedInput {
-        let amount: Double
-        let note: String?
-        let accountName: String
-        let subcategoryName: String
-        let subcategoryCategoryName: String
-        let tagName: String?
-    }
-
-    private func resolveInput() async throws -> ResolvedInput {
-        let finalType = try await getTransactionType()
-        let isIncome = (finalType == .income)
-        let finalAmount = try await getAmount()
-        let finalNote = try await getNote()
-        let accountEntity = try await getAccount()
-
-        let subcategoryName: String
-        let subcategoryCategoryName: String
-        if isIncome {
-            let entity = try await getIncomeSubcategory()
-            subcategoryName = entity.name
-            subcategoryCategoryName = entity.categoryName
-        } else {
-            let entity = try await getExpenseSubcategory()
-            subcategoryName = entity.name
-            subcategoryCategoryName = entity.categoryName
-        }
-
-        let finalTagName = try await getTagName()
-
-        return ResolvedInput(
-            amount: finalAmount,
-            note: finalNote,
-            accountName: accountEntity.name,
-            subcategoryName: subcategoryName,
-            subcategoryCategoryName: subcategoryCategoryName,
-            tagName: finalTagName
-        )
-    }
-
-    // MARK: - Model Container
-
-    @MainActor
-    private func setupModelContext() -> ModelContext? {
-        do {
-            let container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
-            )
-            return container.mainContext
-        } catch {
-            #if DEBUG
-            print("QuickExpenseIntent: Error creating ModelContainer: \(error)")
-            #endif
-            return nil
-        }
-    }
-
-    // MARK: - Transaction Creation
-
-    private struct TransactionResult {
-        let transaction: TransactionItem?
-    }
-
-    @MainActor
-    private func createTransaction(
-        amount: Double,
-        note: String?,
-        account: Account,
-        subcategory: Subcategory,
-        tag: Tag?,
-        context: ModelContext
-    ) -> TransactionResult {
-        let preferredCurrency = CurrencyDefaults.currentPreferred
-        let transactionCurrency = account.currencyCode
-
-        var exchangeRate = 1.0
-        var amountInPreferred = amount
-        var isProvisional = false
-
-        if transactionCurrency != preferredCurrency {
-            let converter = CurrencyConverter.shared
-            let convertedDecimal = converter.convert(
-                Decimal(amount),
-                from: transactionCurrency,
-                to: preferredCurrency,
-                on: Date.now,
-                context: context
-            )
-            amountInPreferred = NSDecimalNumber(decimal: convertedDecimal).doubleValue
-            if amount > 0 {
-                exchangeRate = amountInPreferred / amount
-            }
-            isProvisional = !converter.hasExactRate(for: Date.now, context: context)
-        }
-
-        let transaction = TransactionItem(
-            date: Date.now,
-            amount: amount,
-            currencyCode: transactionCurrency,
-            note: note,
-            category: subcategory.safeCategory,
-            subcategory: subcategory,
-            account: account,
-            tags: tag.map { [$0] } ?? [],
-            exchangeRate: exchangeRate,
-            amountInPreferredCurrency: amountInPreferred,
-            preferredCurrencyCode: preferredCurrency,
-            isExchangeRateProvisional: isProvisional
-        )
-
-        context.insert(transaction)
-
-        do {
-            try context.save()
-            WidgetDataCache.updateCache(context: context)
-            SessionState.shared.incrementDataVersion()
-            return TransactionResult(transaction: transaction)
-        } catch {
-            return TransactionResult(transaction: nil)
-        }
-    }
-
-    // MARK: - Parameter Resolution
-
-    private func getTransactionType() async throws -> TransactionTypeAppEnum {
-        // In expenses-only mode, always use expense
-        let appGroupID = Bundle.main.object(forInfoDictionaryKey: "APP_GROUP_IDENTIFIER") as? String
-            ?? "group.com.jurgenschmidt.yala"
-        if UserDefaults(suiteName: appGroupID)?.bool(forKey: "expensesOnlyMode") == true {
-            return .expense
-        }
-        if let existingType = transactionType {
-            return existingType
-        }
-        let requestedType: TransactionTypeAppEnum = try await $transactionType.requestValue("shortcut.dialog.askType")
-        return requestedType
-    }
-
-    private func getAmount() async throws -> Double {
-        if let existingAmount = amount, existingAmount > 0 {
-            return existingAmount
-        }
-        let requestedAmount: Double = try await $amount.requestValue("shortcut.dialog.askAmount")
-        return abs(requestedAmount)
-    }
-
-    private func getNote() async throws -> String? {
-        if let existingNote = note {
-            return existingNote
-        }
-        let requestedNote = try await $note.requestValue("shortcut.dialog.askNote")
-        return requestedNote
-    }
-
-    private func getAccount() async throws -> AccountAppEntity {
-        if let existingAccount = account {
-            return existingAccount
-        }
-        let requestedAccount: AccountAppEntity = try await $account.requestValue("shortcut.dialog.askAccount")
-        return requestedAccount
-    }
-
-    private func getExpenseSubcategory() async throws -> ExpenseSubcategoryAppEntity {
-        if let existing = expenseSubcategory {
-            return existing
-        }
-        let requested: ExpenseSubcategoryAppEntity = try await $expenseSubcategory.requestValue("shortcut.dialog.askSubcategory")
-        return requested
-    }
-
-    private func getIncomeSubcategory() async throws -> IncomeSubcategoryAppEntity {
-        if let existing = incomeSubcategory {
-            return existing
-        }
-        let requested: IncomeSubcategoryAppEntity = try await $incomeSubcategory.requestValue("shortcut.dialog.askSubcategory")
-        return requested
-    }
-
-    private func getTagName() async throws -> String? {
-        if let existingTagName = tagName {
-            return existingTagName
-        }
-        let requestedTagName = try await $tagName.requestValue("shortcut.dialog.askTag")
-        return requestedTagName
-    }
-
-    // MARK: - Helpers
-
-    private func fetchAccount(name: String, context: ModelContext) -> Account? {
-        let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate { $0.name == name }
-        )
-        do {
-            return try context.fetch(descriptor).first
-        } catch {
-            #if DEBUG
-            print("QuickExpenseIntent: Error fetching account '\(name)': \(error)")
-            #endif
-            return nil
-        }
-    }
-
-    private func fetchSubcategory(name: String, categoryName: String, context: ModelContext) -> Subcategory? {
-        let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == name }
-        )
-        let subcategories: [Subcategory]
-        do {
-            subcategories = try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("QuickExpenseIntent: Error fetching subcategory '\(name)': \(error)")
-            #endif
-            return nil
-        }
-        return subcategories.first { $0.safeCategory.name == categoryName }
-    }
-
-    private func fetchTag(name: String, context: ModelContext) -> Tag? {
-        let descriptor = FetchDescriptor<Tag>()
-        let tags: [Tag]
-        do {
-            tags = try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("QuickExpenseIntent: Error fetching tags: \(error)")
-            #endif
-            return nil
-        }
-
-        // Case-insensitive and diacritic-insensitive matching
-        let normalizedInput = name.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
-
-        return tags.first { tag in
-            let normalizedTagName = tag.name.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
-            return normalizedTagName == normalizedInput
-        }
-    }
-
-}
-
-// MARK: - Intent Errors
-
-enum IntentError: Swift.Error, CustomLocalizedStringResourceConvertible {
-    case noAccount
-    case noSubcategory
-
-    var localizedStringResource: LocalizedStringResource {
-        switch self {
-        case .noAccount:
-            return "shortcut.error.noAccount"
-        case .noSubcategory:
-            return "shortcut.error.noSubcategory"
-        }
-    }
-}
-
-// MARK: - Account App Entity
-
-struct AccountAppEntity: AppEntity {
-
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "shortcut.entity.account"
-    static var defaultQuery = AccountQuery()
-
-    var id: String
-    var name: String
-    var currencyCode: String
-
-    var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(name) (\(currencyCode))")
-    }
-}
-
-struct AccountQuery: EntityQuery {
-
-    @MainActor
-    func entities(for identifiers: [String]) async throws -> [AccountAppEntity] {
-        let allEntities = try await suggestedEntities()
-        return allEntities.filter { identifiers.contains($0.id) }
-    }
-
-    @MainActor
-    func suggestedEntities() async throws -> [AccountAppEntity] {
-        let container: ModelContainer
-        do {
-            container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
-            )
-        } catch {
-            #if DEBUG
-            print("AccountQuery: Error creating ModelContainer: \(error)")
-            #endif
-            return []
-        }
-
-        let context = container.mainContext
-        let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate { !$0.isArchived },
-            sortBy: [SortDescriptor(\Account.name)]
-        )
-
-        let accounts: [Account]
-        do {
-            accounts = try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("AccountQuery: Error fetching accounts: \(error)")
-            #endif
-            return []
-        }
-
-        return accounts.map { account in
-            AccountAppEntity(
-                id: account.name,
-                name: account.name,
-                currencyCode: account.currencyCode
-            )
-        }
-    }
-}
-
-// MARK: - Expense Subcategory App Entity (isIncome = false)
-
-struct ExpenseSubcategoryAppEntity: AppEntity {
-
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "shortcut.entity.subcategory"
-    static var defaultQuery = ExpenseSubcategoryQuery()
-
-    var id: String
-    var name: String
-    var categoryName: String
-
-    var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(categoryName) > \(name)")
-    }
-}
-
-struct ExpenseSubcategoryQuery: EntityQuery {
-
-    @MainActor
-    func entities(for identifiers: [String]) async throws -> [ExpenseSubcategoryAppEntity] {
-        let allEntities = try await suggestedEntities()
-        return allEntities.filter { identifiers.contains($0.id) }
-    }
-
-    @MainActor
-    func suggestedEntities() async throws -> [ExpenseSubcategoryAppEntity] {
-        let container: ModelContainer
-        do {
-            container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
-            )
-        } catch {
-            #if DEBUG
-            print("ExpenseSubcategoryQuery: Error creating ModelContainer: \(error)")
-            #endif
-            return []
-        }
-
-        let context = container.mainContext
-        let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.isVisible },
-            sortBy: [SortDescriptor(\Subcategory.name)]
-        )
-
-        let subcategories: [Subcategory]
-        do {
-            subcategories = try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("ExpenseSubcategoryQuery: Error fetching subcategories: \(error)")
-            #endif
-            return []
-        }
-
-        // Filter ONLY expense subcategories (isIncome = false)
-        // Sort by category A-Z, then subcategory A-Z
-        return subcategories
-            .filter { $0.safeCategory.isIncome == false }
-            .sorted { first, second in
-                if first.safeCategory.name != second.safeCategory.name {
-                    return first.safeCategory.name < second.safeCategory.name
-                }
-                return first.name < second.name
-            }
-            .map { subcategory in
-                ExpenseSubcategoryAppEntity(
-                    id: "\(subcategory.safeCategory.name):\(subcategory.name)",
-                    name: subcategory.name,
-                    categoryName: subcategory.safeCategory.name
-                )
-            }
-    }
-}
-
-// MARK: - Income Subcategory App Entity (isIncome = true)
-
-struct IncomeSubcategoryAppEntity: AppEntity {
-
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "shortcut.entity.subcategory"
-    static var defaultQuery = IncomeSubcategoryQuery()
-
-    var id: String
-    var name: String
-    var categoryName: String
-
-    var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(categoryName) > \(name)")
-    }
-}
-
-struct IncomeSubcategoryQuery: EntityQuery {
-
-    @MainActor
-    func entities(for identifiers: [String]) async throws -> [IncomeSubcategoryAppEntity] {
-        let allEntities = try await suggestedEntities()
-        return allEntities.filter { identifiers.contains($0.id) }
-    }
-
-    @MainActor
-    func suggestedEntities() async throws -> [IncomeSubcategoryAppEntity] {
-        let container: ModelContainer
-        do {
-            container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
-            )
-        } catch {
-            #if DEBUG
-            print("IncomeSubcategoryQuery: Error creating ModelContainer: \(error)")
-            #endif
-            return []
-        }
-
-        let context = container.mainContext
-        let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.isVisible },
-            sortBy: [SortDescriptor(\Subcategory.name)]
-        )
-
-        let subcategories: [Subcategory]
-        do {
-            subcategories = try context.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("IncomeSubcategoryQuery: Error fetching subcategories: \(error)")
-            #endif
-            return []
-        }
-
-        // Filter ONLY income subcategories (isIncome = true)
-        // Sort by category A-Z, then subcategory A-Z
-        return subcategories
-            .filter { $0.safeCategory.isIncome == true }
-            .sorted { first, second in
-                if first.safeCategory.name != second.safeCategory.name {
-                    return first.safeCategory.name < second.safeCategory.name
-                }
-                return first.name < second.name
-            }
-            .map { subcategory in
-                IncomeSubcategoryAppEntity(
-                    id: "\(subcategory.safeCategory.name):\(subcategory.name)",
-                    name: subcategory.name,
-                    categoryName: subcategory.safeCategory.name
-                )
-            }
+        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "quickExpense", "outcome": "app_opened"])
+        return .result()
     }
 }
 
@@ -617,18 +44,11 @@ struct VoiceEntryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        let isEnabled = UserDefaults.standard.bool(forKey: "voiceInputEnabled")
-
-        guard isEnabled else {
-            throw VoiceImageIntentError.voiceNotEnabled
-        }
-
-        // Open the app with voice-entry URL (dynamic scheme for Yala vs Yala Dev)
-        let urlScheme = Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String ?? "yala"
-        if let url = URL(string: "\(urlScheme)://voice-entry") {
+        TelemetryService.track(.intentInvoked, parameters: ["intent_type": "voiceEntry"])
+        if let url = WidgetURLHelper.url(for: "voice-entry") {
             await UIApplication.shared.open(url)
         }
-
+        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "voiceEntry", "outcome": "app_opened"])
         return .result()
     }
 }
@@ -644,35 +64,12 @@ struct ImageEntryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        let isEnabled = UserDefaults.standard.bool(forKey: "imageInputEnabled")
-
-        guard isEnabled else {
-            throw VoiceImageIntentError.imageNotEnabled
-        }
-
-        // Open the app with image-entry URL (dynamic scheme for Yala vs Yala Dev)
-        let urlScheme = Bundle.main.object(forInfoDictionaryKey: "URL_SCHEME") as? String ?? "yala"
-        if let url = URL(string: "\(urlScheme)://image-entry") {
+        TelemetryService.track(.intentInvoked, parameters: ["intent_type": "imageEntry"])
+        if let url = WidgetURLHelper.url(for: "image-entry") {
             await UIApplication.shared.open(url)
         }
-
+        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "imageEntry", "outcome": "app_opened"])
         return .result()
-    }
-}
-
-// MARK: - Voice/Image Intent Errors
-
-enum VoiceImageIntentError: Swift.Error, CustomLocalizedStringResourceConvertible {
-    case voiceNotEnabled
-    case imageNotEnabled
-
-    var localizedStringResource: LocalizedStringResource {
-        switch self {
-        case .voiceNotEnabled:
-            return "shortcut.error.voiceNotEnabled"
-        case .imageNotEnabled:
-            return "shortcut.error.imageNotEnabled"
-        }
     }
 }
 
@@ -688,24 +85,16 @@ struct ApplePayTransactionIntent: AppIntent {
     // MARK: - Parameter Summary (shows configurable fields in Shortcuts)
 
     static var parameterSummary: some ParameterSummary {
-        Summary("shortcut.applePay.summaryTitle") {
-            \.$amount
-            \.$name
-            \.$merchant
-        }
+        Summary("Record from Apple Pay the fields amount: \(\.$amount) and merchant: \(\.$merchant)")
     }
 
     init() {}
 
-    init(amount: String?, merchant: String?, name: String? = nil) {
-        self.amount = amount
-        self.merchant = merchant
-        self.name = name
-    }
-
     // MARK: - Parameters
-    // Parameters match Wallet Transaction output fields
-    // Using inputConnectionBehavior to allow connection to Wallet transaction outputs
+    // Solo `amount` lleva inputConnectionBehavior — iOS auto-conecta el primer
+    // String? con ese trait al primer output del trigger Wallet. Aplicarlo a
+    // varios parameters hace que el matching falle silenciosamente, así que
+    // `merchant` se conecta manualmente desde el editor de Atajos.
 
     @Parameter(
         title: "shortcut.applePay.param.amount",
@@ -716,64 +105,56 @@ struct ApplePayTransactionIntent: AppIntent {
 
     @Parameter(
         title: "shortcut.applePay.param.merchant",
-        description: "shortcut.applePay.param.merchant.description",
-        inputConnectionBehavior: .connectToPreviousIntentResult
+        description: "shortcut.applePay.param.merchant.description"
     )
     var merchant: String?
-
-    @Parameter(
-        title: "shortcut.applePay.param.name",
-        description: "shortcut.applePay.param.name.description",
-        inputConnectionBehavior: .connectToPreviousIntentResult
-    )
-    var name: String?
 
     // MARK: - Perform
 
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        // Parse amount and currency from Wallet text (e.g., "$32.04", "S/ 25.90")
-        guard let amountString = amount,
-              let parsedResult = parseAmountAndCurrency(from: amountString) else {
-            return .result(dialog: "shortcut.applePay.error.noAmount")
+    func perform() async throws -> some IntentResult {
+        TelemetryService.track(.intentInvoked, parameters: ["intent_type": "applePay"])
+
+        guard let amountString = amount else {
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_amount"])
+            await notifyFailure()
+            return .result()
         }
 
-        let finalAmount = parsedResult.amount
-        let detectedCurrency = parsedResult.currency
-
-        // Use "name" if available (cleaner), otherwise "merchant"
-        let finalNote: String
-        if let nameValue = name, !nameValue.trimmingCharacters(in: .whitespaces).isEmpty {
-            finalNote = nameValue
-        } else if let merchantValue = merchant, !merchantValue.trimmingCharacters(in: .whitespaces).isEmpty {
-            finalNote = merchantValue
-        } else {
-            finalNote = ""
-        }
-
-        // Use current date (when automation runs)
-        let effectiveDate = Date.now
-
-        // Create ModelContainer
         let container: ModelContainer
         do {
             container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
+                for: SwiftDataConfiguration.personalSchema,
+                configurations: SwiftDataConfiguration.personalConfiguration
             )
         } catch {
             #if DEBUG
             print("ApplePayTransactionIntent: Error creating ModelContainer: \(error)")
             #endif
-            return .result(dialog: "shortcut.error.database")
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "database"])
+            await notifyFailure()
+            return .result()
         }
 
         let context = container.mainContext
 
-        // Guard: no accounts configured yet
+        guard let parsedResult = parseAmountAndCurrency(from: amountString, context: context) else {
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_amount"])
+            await notifyFailure()
+            return .result()
+        }
+
+        let finalAmount = parsedResult.amount
+        let detectedCurrency = parsedResult.currency
+        let finalNote = merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let effectiveDate = Date.now
+
+        // Guard: no accounts configured yet (system accounts excluded — only the bridge assigns them)
         let accountCount: Int
         do {
-            accountCount = try context.fetchCount(FetchDescriptor<Account>())
+            accountCount = try context.fetchCount(
+                FetchDescriptor<Account>(predicate: #Predicate<Account> { $0.isSystemAccount == false })
+            )
         } catch {
             #if DEBUG
             print("QuickExpenseIntent: Error fetching account count: \(error)")
@@ -781,7 +162,9 @@ struct ApplePayTransactionIntent: AppIntent {
             accountCount = 0
         }
         guard accountCount > 0 else {
-            return .result(dialog: "shortcut.error.noAccount")
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_account"])
+            await notifyFailure()
+            return .result()
         }
 
         // Try to find account by detected currency (if unique match)
@@ -796,27 +179,27 @@ struct ApplePayTransactionIntent: AppIntent {
             needsUserInput.insert("account", at: 0)
         }
 
-        // Try to auto-categorize using MerchantMemory
+        // Confidence routing: autoAssign (≥5 aprobs, ≤10% error) → 0.95; suggest → 0.8.
         var matchedSubcategory: Subcategory?
+        var subcategoryConfidence: Double?
         if !finalNote.isEmpty {
             let merchantService = MerchantMemoryService(modelContext: context)
             let suggestion = merchantService.suggest(for: finalNote)
 
             switch suggestion {
             case .autoAssign(let sub):
-                // High confidence - auto-assign
                 matchedSubcategory = sub
+                subcategoryConfidence = 0.95
                 needsUserInput.removeAll { $0 == "subcategory" }
             case .suggest(let sub):
-                // Medium confidence - suggest but still needs confirmation
                 matchedSubcategory = sub
-                // Keep subcategory in needsUserInput so user confirms
+                subcategoryConfidence = 0.8
             case .none:
                 break
             }
         }
 
-        // Create InboxDraft
+        // Create InboxDraft (Apple Pay siempre crea draft → user revisa en Inbox)
         let draft = InboxDraft(
             note: finalNote,
             amount: -abs(finalAmount), // Apple Pay is always expense (negative)
@@ -826,10 +209,10 @@ struct ApplePayTransactionIntent: AppIntent {
             sourceType: .applePay,
             rawText: amount, // Store original amount string for reference
             evidence: finalNote.isEmpty ? nil : finalNote,
-            confidenceAmount: 1.0, // Amount from Apple Pay is always accurate
-            confidenceDate: 1.0, // Date is when automation runs
+            confidenceAmount: 1.0,
+            confidenceDate: 1.0,
             confidenceMerchant: finalNote.isEmpty ? nil : 1.0,
-            confidenceSubcategory: matchedSubcategory != nil ? 0.8 : nil,
+            confidenceSubcategory: subcategoryConfidence,
             needsUserInput: needsUserInput
         )
 
@@ -838,60 +221,90 @@ struct ApplePayTransactionIntent: AppIntent {
         do {
             try context.save()
         } catch {
-            return .result(dialog: "shortcut.error.save")
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "save_failed"])
+            await notifyFailure()
+            return .result()
         }
 
-        // Send push notification for automatic record (Apple Pay is always expense)
-        let notifAmount = YalaFormatter.currency(value: finalAmount, currencyCode: detectedCurrency ?? "USD", forceFullPrecision: true)
+        let fallbackCurrency = detectedCurrency ?? "USD"
+        let notifAmount = YalaFormatterStatic.currency(value: finalAmount, currencyCode: fallbackCurrency, forceFullPrecision: true)
         let noteText = finalNote.isEmpty ? "" : " — \(finalNote)"
         let notifBody = L10n.Shortcut.Notification.body(L10n.Shortcut.Notification.expense, notifAmount, noteText)
+
+        // Sin ProvidesDialog/ShowsSnippetView: la automation Wallet corre con la pantalla
+        // bloqueada, donde iOS no puede presentar UI → reportaría "no se pudo ejecutar el
+        // atajo" aunque el draft ya esté guardado. El único feedback es la notificación
+        // local (sí llega bloqueada). Se envía con `await` (no Task.detached): sendNotification
+        // solo consulta permisos + notificationCenter.add() (~ms), muy por debajo del budget,
+        // y await garantiza el envío antes de que el proceso del intent termine.
         await NotificationService.shared.sendNotification(
             title: L10n.Shortcut.Notification.title,
             body: notifBody,
             deepLink: "inbox"
         )
 
-        // Format success message
-        let formattedAmount = formatIntentCurrency(amount: finalAmount, currencyCode: detectedCurrency ?? "USD")
-        let noteDisplay = finalNote.isEmpty ? "Apple Pay" : finalNote
-        return .result(dialog: "shortcut.applePay.success \(formattedAmount) \(noteDisplay)")
+        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "applePay", "outcome": "draft_created"])
+        return .result()
     }
 
     // MARK: - Helpers
 
+    /// Notificación de fallo. Sin dialog ni throw: la automation Wallet corre con la
+    /// pantalla bloqueada y cualquier UI haría que iOS reporte "no se pudo ejecutar el
+    /// atajo". La notif local sí llega bloqueada, así el usuario sabe que su pago no se
+    /// registró. `deepLink: nil` porque en los paths de fallo no hay draft que abrir.
+    @MainActor
+    private func notifyFailure() async {
+        await NotificationService.shared.sendNotification(
+            title: L10n.Shortcut.Notification.errorTitle,
+            body: L10n.Shortcut.Notification.errorBody,
+            deepLink: nil
+        )
+    }
+
     /// Parses amount and currency from Wallet text format
     /// Examples: "$32.04" -> (32.04, "USD"), "S/ 25.90" -> (25.90, "PEN"), "€25,50" -> (25.50, "EUR")
-    private func parseAmountAndCurrency(from text: String) -> (amount: Double, currency: String?)? {
-        // Currency symbol to code mapping
-        let currencyMap: [String: String] = [
-            "$": "USD",
-            "€": "EUR",
-            "£": "GBP",
-            "¥": "JPY",
-            "S/": "PEN",
-            "S/.": "PEN",
-            "R$": "BRL",
-            "MX$": "MXN",
-            "COP$": "COP",
-            "COP": "COP",
+    /// Símbolos ambiguos (`$` para USD/ARS/CLP/MXN, `kr` para NOK/SEK/DKK) se resuelven
+    /// con la currency del lastUsedAccount cuando existe; sin él, fallback al símbolo default.
+    @MainActor
+    private func parseAmountAndCurrency(from text: String, context: ModelContext) -> (amount: Double, currency: String?)? {
+        // Symbols ordered by priority (más específicos primero — "MX$" antes de "$")
+        let prefixedSymbols: [(symbol: String, code: String)] = [
+            ("MX$", "MXN"), ("COP$", "COP"), ("R$", "BRL"),
+            ("A$", "AUD"), ("C$", "CAD"), ("NZ$", "NZD"), ("HK$", "HKD"),
+            ("S/.", "PEN"), ("S/", "PEN"),
+            ("€", "EUR"), ("£", "GBP"), ("¥", "JPY"),
+            ("Fr", "CHF"), ("₣", "CHF"),
+            ("kr", "NOK"),  // Ambiguo (NOK/SEK/DKK) — resolver por account
+            ("$", "USD")     // Ambiguo (USD/ARS/CLP/MXN/etc) — resolver por account
         ]
 
         var detectedCurrency: String?
+        var detectedSymbol: String?
 
-        // Try to detect currency from symbol
-        for (symbol, code) in currencyMap {
-            if text.contains(symbol) {
-                detectedCurrency = code
+        for entry in prefixedSymbols {
+            if text.contains(entry.symbol) {
+                detectedCurrency = entry.code
+                detectedSymbol = entry.symbol
                 break
             }
         }
 
-        // Also check for currency code at end (e.g., "25.00 USD")
+        // Trailing currency code: "25.00 ARS" → ARS (override de símbolo ambiguo).
         let words = text.components(separatedBy: .whitespaces)
         if let lastWord = words.last,
            lastWord.count == 3,
            lastWord.uppercased() == lastWord {
             detectedCurrency = lastWord
+            detectedSymbol = nil
+        }
+
+        // Ambiguous symbols ($ y kr): override con currency del lastUsedAccount si existe.
+        if detectedSymbol == "$" || detectedSymbol == "kr" {
+            if let lastUsedID = LastUsedAccountStore.read(),
+               let accountCurrency = Self.currencyOfAccount(shortcutID: lastUsedID, context: context) {
+                detectedCurrency = accountCurrency
+            }
         }
 
         // Extract numeric value
@@ -921,211 +334,18 @@ struct ApplePayTransactionIntent: AppIntent {
         return (amount, detectedCurrency)
     }
 
-}
-
-// MARK: - Automation Entry Intent
-
-/// Data structure for parsing JSON from external automations
-private struct AutomationTransactionData: Codable {
-    let amount: Double
-    let currency: String
-    let merchant: String?
-    let date: String? // ISO format: YYYY-MM-DD
-}
-
-struct AutomationEntryIntent: AppIntent {
-
-    private static let isoDateFormatter: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withFullDate]
-        return f
-    }()
-
-    static var title: LocalizedStringResource = "shortcut.automation.title"
-    static var description = IntentDescription("shortcut.automation.description")
-
-    static var openAppWhenRun: Bool = false
-
-    // MARK: - Parameter Summary
-
-    static var parameterSummary: some ParameterSummary {
-        Summary("shortcut.automation.summaryTitle") {
-            \.$transactionJSON
-        }
-    }
-
-    // MARK: - Parameters
-
-    @Parameter(
-        title: "shortcut.automation.param.json",
-        description: "shortcut.automation.param.json.description",
-        inputConnectionBehavior: .connectToPreviousIntentResult
-    )
-    var transactionJSON: String?
-
-    // MARK: - Perform
-
+    /// Lookup de currencyCode por shortcutID. Usado para desambiguar `$` y `kr`.
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        // Validate JSON parameter
-        guard let jsonString = transactionJSON, !jsonString.isEmpty else {
-            return .result(dialog: "shortcut.automation.error.noJSON")
-        }
-
-        // Parse JSON
-        guard let jsonData = jsonString.data(using: .utf8) else {
-            return .result(dialog: IntentDialog(stringLiteral:
-                String(localized: "shortcut.automation.error.invalidJSON") + " (encoding error)"))
-        }
-
-        let transaction: AutomationTransactionData
+    fileprivate static func currencyOfAccount(shortcutID: String, context: ModelContext) -> String? {
+        guard UUID(uuidString: shortcutID) != nil else { return nil }
+        let descriptor = FetchDescriptor<Account>()
         do {
-            transaction = try JSONDecoder().decode(AutomationTransactionData.self, from: jsonData)
-        } catch let decodingError as DecodingError {
-            let errorDetail: String
-            switch decodingError {
-            case .keyNotFound(let key, _):
-                errorDetail = "Missing: \(key.stringValue)"
-            case .typeMismatch(_, let context):
-                errorDetail = "Type error: \(context.codingPath.last?.stringValue ?? "?")"
-            case .valueNotFound(_, let context):
-                errorDetail = "Null: \(context.codingPath.last?.stringValue ?? "?")"
-            case .dataCorrupted(let context):
-                errorDetail = context.debugDescription
-            @unknown default:
-                errorDetail = decodingError.localizedDescription
-            }
-            return .result(dialog: IntentDialog(stringLiteral:
-                String(localized: "shortcut.automation.error.invalidJSON") + " (\(errorDetail))"))
+            let all = try context.fetch(descriptor)
+            return all.first { $0.shortcutID.uuidString == shortcutID }?.currencyCode
         } catch {
-            return .result(dialog: IntentDialog(stringLiteral:
-                String(localized: "shortcut.automation.error.invalidJSON") + " (\(error.localizedDescription))"))
+            return nil
         }
-
-        // Validate amount
-        guard transaction.amount > 0 else {
-            return .result(dialog: "shortcut.automation.error.noAmount")
-        }
-
-        // Normalize currency to uppercase
-        let normalizedCurrency = transaction.currency.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !normalizedCurrency.isEmpty else {
-            return .result(dialog: "shortcut.automation.error.noCurrency")
-        }
-
-        // Parse date if provided (ISO format: YYYY-MM-DD)
-        var effectiveDate = Date.now
-        if let dateString = transaction.date, !dateString.isEmpty {
-            if let parsed = Self.isoDateFormatter.date(from: dateString) {
-                effectiveDate = parsed
-            }
-        }
-
-        // Use merchant as note
-        let finalNote = transaction.merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-
-        // Create ModelContainer
-        let container: ModelContainer
-        do {
-            container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
-            )
-        } catch {
-            #if DEBUG
-            print("AutomationEntryIntent: Error creating ModelContainer: \(error)")
-            #endif
-            return .result(dialog: "shortcut.error.database")
-        }
-
-        let context = container.mainContext
-
-        // Guard: no accounts configured yet
-        let accountCount: Int
-        do {
-            accountCount = try context.fetchCount(FetchDescriptor<Account>())
-        } catch {
-            #if DEBUG
-            print("QuickExpenseIntent: Error fetching account count: \(error)")
-            #endif
-            accountCount = 0
-        }
-        guard accountCount > 0 else {
-            return .result(dialog: "shortcut.error.noAccount")
-        }
-
-        // Try to find account by currency (only if unique match)
-        var matchedAccount: Account?
-        var needsUserInput: [String] = ["subcategory"]
-
-        matchedAccount = findIntentAccount(byCurrency: normalizedCurrency, context: context)
-
-        if matchedAccount == nil {
-            needsUserInput.insert("account", at: 0)
-        }
-
-        // Try to auto-categorize using MerchantMemory
-        var matchedSubcategory: Subcategory?
-        if !finalNote.isEmpty {
-            let merchantService = MerchantMemoryService(modelContext: context)
-            let suggestion = merchantService.suggest(for: finalNote)
-
-            switch suggestion {
-            case .autoAssign(let sub):
-                // High confidence - auto-assign
-                matchedSubcategory = sub
-                needsUserInput.removeAll { $0 == "subcategory" }
-            case .suggest(let sub):
-                // Medium confidence - suggest but still needs confirmation
-                matchedSubcategory = sub
-                // Keep subcategory in needsUserInput so user confirms
-            case .none:
-                break
-            }
-        }
-
-        // Create InboxDraft (always expense = negative amount)
-        let draft = InboxDraft(
-            note: finalNote,
-            amount: -abs(transaction.amount),
-            date: effectiveDate,
-            account: matchedAccount,
-            subcategory: matchedSubcategory,
-            sourceType: .automation,
-            rawText: jsonString,
-            evidence: finalNote.isEmpty ? nil : finalNote,
-            confidenceAmount: 1.0,
-            confidenceDate: transaction.date != nil ? 1.0 : 0.5,
-            confidenceMerchant: finalNote.isEmpty ? nil : 1.0,
-            confidenceSubcategory: matchedSubcategory != nil ? 0.8 : nil,
-            needsUserInput: needsUserInput
-        )
-
-        context.insert(draft)
-
-        do {
-            try context.save()
-        } catch {
-            return .result(dialog: "shortcut.error.save")
-        }
-
-        // Send push notification for automatic record (guard above ensures amount > 0, always expense)
-        let automNotifAmount = YalaFormatter.currency(value: transaction.amount, currencyCode: normalizedCurrency, forceFullPrecision: true)
-        let automNoteText = finalNote.isEmpty ? "" : " — \(finalNote)"
-        let automNotifBody = L10n.Shortcut.Notification.body(L10n.Shortcut.Notification.expense, automNotifAmount, automNoteText)
-        await NotificationService.shared.sendNotification(
-            title: L10n.Shortcut.Notification.title,
-            body: automNotifBody,
-            deepLink: "inbox"
-        )
-
-        // Format success message
-        let formattedAmount = formatIntentCurrency(amount: transaction.amount, currencyCode: normalizedCurrency)
-        let noteDisplay = finalNote.isEmpty ? String(localized: "shortcut.automation.defaultNote") : finalNote
-        return .result(dialog: "shortcut.automation.success \(formattedAmount) \(noteDisplay)")
     }
-
 }
 
 // MARK: - Siri Natural Language Entry Intent
@@ -1144,7 +364,8 @@ struct SiriNaturalEntryIntent: AppIntent {
     // MARK: - Perform
 
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
+    func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
+        TelemetryService.track(.intentInvoked, parameters: ["intent_type": "siriNatural"])
         // Step 1: Get text (request if not provided via Siri phrase)
         let finalText: String
         if let existingText = text, !existingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -1152,38 +373,41 @@ struct SiriNaturalEntryIntent: AppIntent {
         } else {
             let requested = try await $text.requestValue("shortcut.siriNatural.dialog.askText")
             guard !requested.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                return .result(dialog: "shortcut.siriNatural.error.noText")
+                return .result(dialog: "shortcut.siriNatural.error.noText", view: EmptyView())
             }
             finalText = requested.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         // Step 2: Pro gate — LLM parsing requires Pro subscription
-        let isProUser = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier)?.bool(forKey: "isProUser") ?? false
+        let isProUser = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: AppPreferences.Keys.isProUser) ?? false
 
         guard isProUser else {
-            return .result(dialog: "shortcut.siriNatural.error.proRequired")
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "siriNatural", "error": "pro_required"])
+            return .result(dialog: "shortcut.siriNatural.error.proRequired", view: EmptyView())
         }
 
         // Step 3: Create ModelContainer
         let container: ModelContainer
         do {
             container = try ModelContainer(
-                for: SwiftDataConfiguration.schema,
-                configurations: SwiftDataConfiguration.configuration
+                for: SwiftDataConfiguration.personalSchema,
+                configurations: SwiftDataConfiguration.personalConfiguration
             )
         } catch {
             #if DEBUG
             print("SiriNaturalEntryIntent: Error creating ModelContainer: \(error)")
             #endif
-            return .result(dialog: "shortcut.error.database")
+            return .result(dialog: "shortcut.error.database", view: EmptyView())
         }
 
         let context = container.mainContext
 
-        // Step 4: Guard — at least 1 account configured
+        // Step 4: Guard — at least 1 real account configured (system accounts excluded — only the bridge assigns them)
         let accountCount: Int
         do {
-            accountCount = try context.fetchCount(FetchDescriptor<Account>())
+            accountCount = try context.fetchCount(
+                FetchDescriptor<Account>(predicate: #Predicate<Account> { $0.isSystemAccount == false })
+            )
         } catch {
             #if DEBUG
             print("SiriNaturalEntryIntent: Error fetching account count: \(error)")
@@ -1191,7 +415,7 @@ struct SiriNaturalEntryIntent: AppIntent {
             accountCount = 0
         }
         guard accountCount > 0 else {
-            return .result(dialog: "shortcut.error.noAccount")
+            return .result(dialog: "shortcut.error.noAccount", view: EmptyView())
         }
 
         // Step 5: Fetch subcategory lists for LLM context
@@ -1254,10 +478,16 @@ struct SiriNaturalEntryIntent: AppIntent {
             }
         }
 
-        // Guard: at least one parsed result
-        guard !parsedTransactions.isEmpty else {
-            return .result(dialog: "shortcut.siriNatural.error.parsingFailed")
+        // Pre-flight quality gate: descarta transactions sin amount.
+        // Si TODAS fallan → error explicativo (mejor que crear drafts basura).
+        let validParsed = parsedTransactions.filter { $0.amount != nil }
+        guard !validParsed.isEmpty else {
+            TelemetryService.track(.intentFailed, parameters: ["intent_type": "siriNatural", "error": "parsing_failed"])
+            return .result(dialog: "shortcut.siriNatural.error.parsingFailedHelp", view: EmptyView())
         }
+        // Si parcial: trabajamos con las válidas (informamos en speak-back final).
+        let partialFailures = parsedTransactions.count - validParsed.count
+        let workingParsed = validParsed
 
         // Step 7: Fetch existing pending drafts for deduplication
         let pendingDescriptor = FetchDescriptor<InboxDraft>(
@@ -1277,7 +507,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         let merchantService = MerchantMemoryService(modelContext: context)
         var newDrafts: [InboxDraft] = []
 
-        for parsed in parsedTransactions {
+        for parsed in workingParsed {
             var needsUserInput: [String] = []
 
             // Match account by currency hint
@@ -1314,11 +544,15 @@ struct SiriNaturalEntryIntent: AppIntent {
                 needsUserInput.append("subcategory")
             }
 
-            // Calculate signed amount
+            // Respeta expensesOnlyMode: si activo, fuerza isExpense=true ignorando
+            // lo que el LLM haya inferido (consistente con QuickExpense + ApplePay).
+            let expensesOnlyMode = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: AppPreferences.Keys.expensesOnlyMode) ?? false
+            let isExpense = expensesOnlyMode ? true : parsed.isExpense
+
             let signedAmount: Double?
             if let amount = parsed.amount {
                 let absValue = abs(NSDecimalNumber(decimal: amount).doubleValue)
-                signedAmount = parsed.isExpense ? -absValue : absValue
+                signedAmount = isExpense ? -absValue : absValue
             } else {
                 signedAmount = nil
                 needsUserInput.append("amount")
@@ -1350,7 +584,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         )
 
         guard !uniqueDrafts.isEmpty else {
-            return .result(dialog: "shortcut.siriNatural.error.parsingFailed")
+            return .result(dialog: "shortcut.siriNatural.error.parsingFailed", view: EmptyView())
         }
 
         // Step 10: Insert and save
@@ -1364,11 +598,12 @@ struct SiriNaturalEntryIntent: AppIntent {
             #if DEBUG
             print("SiriNaturalEntryIntent: Error saving drafts: \(error)")
             #endif
-            return .result(dialog: "shortcut.error.save")
+            return .result(dialog: "shortcut.error.save", view: EmptyView())
         }
 
         // Step 11: Send notification
-        let firstNote = uniqueDrafts.first?.note ?? finalText
+        let firstDraft = uniqueDrafts.first
+        let firstNote = firstDraft?.note ?? finalText
         let notifTitle = String(localized: "shortcut.siriNatural.notification.title")
         let notifBody: String
         if isOfflineFallback {
@@ -1382,17 +617,51 @@ struct SiriNaturalEntryIntent: AppIntent {
             deepLink: "inbox"
         )
 
-        // Step 12: Return confirmation dialog
+        // Speak-back TTS-friendly + snippet visual del primer draft.
+        let dialogText: String
         if isOfflineFallback {
-            return .result(dialog: IntentDialog(stringLiteral:
-                String(localized: "shortcut.siriNatural.success.offline \(firstNote)")))
+            dialogText = String(localized: "shortcut.siriNatural.success.offline \(firstNote)")
+        } else if partialFailures > 0 {
+            dialogText = L10n.Shortcut.successPartial(uniqueDrafts.count, parsedTransactions.count)
         } else if uniqueDrafts.count == 1 {
-            return .result(dialog: IntentDialog(stringLiteral:
-                String(localized: "shortcut.siriNatural.success.single \(firstNote)")))
+            dialogText = String(localized: "shortcut.siriNatural.success.single \(firstNote)")
         } else {
-            return .result(dialog: IntentDialog(stringLiteral:
-                String(localized: "shortcut.siriNatural.success.multiple \(uniqueDrafts.count)")))
+            dialogText = String(localized: "shortcut.siriNatural.success.multiple \(uniqueDrafts.count)")
         }
+
+        let snippet = TransactionSnippetView(
+            amount: abs(firstDraft?.amount ?? 0),
+            currencyCode: firstDraft?.account?.currencyCode ?? "USD",
+            accountName: firstDraft?.account?.name ?? "—",
+            subcategoryName: firstDraft?.subcategory?.name ?? firstNote,
+            subcategoryIcon: firstDraft?.subcategory?.safeCategory.iconName ?? "text.bubble",
+            date: firstDraft?.date ?? Date.now,
+            isExpense: (firstDraft?.amount ?? 0) < 0,
+            isDraft: true
+        )
+        let outcome = isOfflineFallback ? "draft_offline" : (partialFailures > 0 ? "draft_partial" : "draft_created")
+        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "siriNatural", "outcome": outcome])
+        return .result(dialog: IntentDialog(stringLiteral: dialogText), view: snippet)
+    }
+}
+
+// MARK: - Last Used Account Store (F5)
+
+/// Memoria per-device (App Group) de la última cuenta usada al registrar una transacción.
+/// Permite a QuickExpenseIntent saltarse la pregunta de cuenta cuando el atajo no la fija.
+/// NO se sincroniza vía iCloud KV — la "última cuenta usada" es contextual al device.
+enum LastUsedAccountStore {
+    /// Lee el UUID-string de la última cuenta usada (o nil si no existe).
+    nonisolated static func read() -> String? {
+        UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?
+            .string(forKey: AppPreferences.Keys.lastUsedAccountID)
+    }
+
+    /// Persiste el UUID-string de la cuenta. No-op si el valor ya está escrito (evita flush inútil de UserDefaults).
+    nonisolated static func write(_ shortcutID: String) {
+        guard read() != shortcutID else { return }
+        UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?
+            .set(shortcutID, forKey: AppPreferences.Keys.lastUsedAccountID)
     }
 }
 
@@ -1416,7 +685,7 @@ private func findIntentAccount(byCurrency currencyCode: String, context: ModelCo
 
     let descriptor = FetchDescriptor<Account>(
         predicate: #Predicate<Account> { account in
-            account.isArchived == false
+            account.isArchived == false && account.isSystemAccount == false
         }
     )
 

@@ -12,21 +12,31 @@ struct NotificationsSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = NotificationsSettingsViewModel()
-    @AppStorage("budgetAlertsEnabled") private var budgetAlertsEnabled: Bool = false
+
+    private var isGroupInviteMode: Bool { SessionState.shared.isGroupInviteMode }
+
+    /// En solo-grupos solo la notificación de grupos (event-driven); el resto son
+    /// recordatorios/reportes/pagos personales. Regla en `GroupInviteVisibilityPolicy`.
+    private var visibleNotifications: [NotificationItem] {
+        let visibleTypes = Set(GroupInviteVisibilityPolicy.visibleNotificationTypes(
+            NotificationType.allCases, isGroupInvite: isGroupInviteMode))
+        return viewModel.notifications.filter { visibleTypes.contains($0.notificationType) }
+    }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    // Notificaciones configurables con budgetAlerts integrado
-                    if viewModel.isEmpty {
-                        // Solo mostrar budgetAlertsSection cuando no hay otras notificaciones
-                        budgetAlertsSection
-                        emptyState
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
+                    // Notificaciones configurables con budgetAlerts integrado.
+                    // En solo-grupos se filtra a la notif de grupos (sin budgetAlerts ni "+").
+                    if visibleNotifications.isEmpty {
+                        if !isGroupInviteMode {
+                            // Solo mostrar budgetAlertsSection cuando no hay otras notificaciones
+                            budgetAlertsSection
+                            emptyState
+                        }
                     } else {
                         notificationsListWithBudgetAlerts
                     }
@@ -35,7 +45,7 @@ struct NotificationsSettingsView: View {
                 .padding(.vertical, DS.Spacing.xxxl)
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Notifications.title)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
@@ -45,9 +55,12 @@ struct NotificationsSettingsView: View {
                     dismiss()
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
-                    viewModel.isCreatingNew = true
+            if !isGroupInviteMode {
+                ToolbarItem(placement: .topBarTrailing) {
+                    YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
+                        viewModel.isCreatingNew = true
+                    }
+                    .accessibilityIdentifier("notifications_add")
                 }
             }
         }
@@ -84,12 +97,17 @@ struct NotificationsSettingsView: View {
             viewModel.setContext(modelContext)
         }
         .task {
+            // En UI tests no se solicita el permiso de notificaciones del sistema:
+            // el prompt nativo no es determinista y bloquearía la automatización (estilo F1c).
+            guard !UITestHooks.isActive else { return }
+
             viewModel.permissionStatus = await NotificationService.shared.checkPermissionStatus()
 
             // Request permission on first visit if not determined
             if viewModel.permissionStatus == .notDetermined {
                 let granted = await NotificationService.shared.requestPermission()
                 viewModel.permissionStatus = granted ? .authorized : .denied
+                TelemetryService.track(.notificationsPermission, parameters: ["resultado": granted ? "concedido" : "denegado"])
 
                 // If granted, schedule all active notifications
                 if granted {
@@ -124,11 +142,14 @@ struct NotificationsSettingsView: View {
     /// Notifications list with budgetAlertsSection at the end
     private var notificationsListWithBudgetAlerts: some View {
         VStack(spacing: DS.Spacing.md) {
-            ForEach(viewModel.notifications) { notification in
+            ForEach(visibleNotifications) { notification in
                 notificationCard(for: notification)
             }
 
-            budgetAlertsSection
+            // Alertas de presupuesto: finanzas personales — ocultas en solo-grupos.
+            if !isGroupInviteMode {
+                budgetAlertsSection
+            }
         }
     }
 
@@ -172,9 +193,9 @@ struct NotificationsSettingsView: View {
                     }
                 }
             },
-            onTap: {
+            onTap: notification.notificationType.isEditable ? {
                 viewModel.selectedNotification = notification
-            },
+            } : {},
             onDelete: notification.notificationType.isDeletable ? {
                 deleteNotification(notification)
             } : nil
@@ -193,7 +214,8 @@ struct NotificationsSettingsView: View {
     // MARK: - Budget Alerts Section
 
     private var budgetAlertsSection: some View {
-        HStack(spacing: DS.Spacing.md) {
+        @Bindable var prefs = appPreferences
+        return HStack(spacing: DS.Spacing.md) {
             // Icon (estilo NotificationCard)
             ZStack {
                 Circle()
@@ -220,7 +242,7 @@ struct NotificationsSettingsView: View {
             Spacer()
 
             // Toggle
-            Toggle(L10n.Notifications.budgetAlertsTitle, isOn: $budgetAlertsEnabled)
+            Toggle(L10n.Notifications.budgetAlertsTitle, isOn: $prefs.budgetAlertsEnabled)
                 .labelsHidden()
 
         }
@@ -282,9 +304,11 @@ struct NotificationCard: View {
 
                         Spacer()
 
-                        Text(notification.formattedTime)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.secondary)
+                        if !notification.notificationType.isEventDriven {
+                            Text(notification.formattedTime)
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
 
                     Text(notification.displayText)
@@ -308,9 +332,10 @@ struct NotificationCard: View {
                     } label: {
                         Image(systemName: "trash")
                             .font(DS.Typography.subheadline)
-                            .foregroundStyle(.red.opacity(0.7))
+                            .foregroundStyle(DS.Semantic.errorForeground.opacity(0.7))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Action.delete)
                 }
             }
             .padding(DS.Spacing.lg)
@@ -334,4 +359,5 @@ struct NotificationCard: View {
     NavigationStack {
         NotificationsSettingsView()
     }
+    .previewAppPreferences()
 }

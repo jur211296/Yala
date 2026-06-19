@@ -28,21 +28,18 @@ struct SubcategoryTransferSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    // Header con información
+                    headerSection
 
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        // Header con información
-                        headerSection
-
-                        // Opciones de acción
-                        actionsSection
-                    }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.xxl)
+                    // Opciones de acción
+                    actionsSection
                 }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.xxl)
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Subcategory.transferTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -107,6 +104,7 @@ struct SubcategoryTransferSheet: View {
 
     // MARK: - Actions Section
 
+    // A11Y-DM: colores decorativos por acción (.blue/.purple de sistema, adaptan a Dark Mode)
     private var actionsSection: some View {
         VStack(spacing: DS.Spacing.md) {
             // Opción 1: Transferir a subcategoría específica
@@ -134,7 +132,7 @@ struct SubcategoryTransferSheet: View {
                 icon: "trash.fill",
                 title: L10n.Subcategory.deleteTransactions,
                 description: L10n.Subcategory.deleteTransactionsDesc,
-                color: .red
+                color: DS.Semantic.errorForeground
             ) {
                 showingDeleteConfirmation = true
             }
@@ -154,7 +152,7 @@ struct SubcategoryTransferSheet: View {
                     ZStack {
                         Circle()
                             .fill(color.opacity(0.15))
-                            .frame(width: 44, height: 44)
+                            .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
 
                         Image(systemName: icon)
                             .font(DS.Typography.title)
@@ -188,10 +186,7 @@ struct SubcategoryTransferSheet: View {
 
     private var destinationPickerSheet: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
+            ScrollView {
                     VStack(spacing: DS.Spacing.lg) {
                         ForEach(viewModel.availableDestinations(excluding: subcategoryToDelete), id: \.category.persistentModelID) { group in
                             SectionBox(title: group.category.name) {
@@ -210,7 +205,7 @@ struct SubcategoryTransferSheet: View {
                                                             hex: subcategory.colorHex
                                                                 ?? group.category.colorHex)
                                                     )
-                                                    .frame(width: 32, height: 32)
+                                                    .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
                                                     .overlay(
                                                         Image(
                                                             systemName: subcategory.iconName
@@ -240,7 +235,7 @@ struct SubcategoryTransferSheet: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xl)
                 }
-            }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Subcategory.selectDestination)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

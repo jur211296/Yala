@@ -19,6 +19,7 @@ struct DetailContainerView: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.scenePhase) private var scenePhase
 
     // MARK: - ViewModels
 
@@ -38,15 +39,15 @@ struct DetailContainerView: View {
     @State private var isPresentingSettings = false
     @State private var recalculateTask: Task<Void, Never>?
     @State private var pendingReload = false
+    @State private var isInBackground = false
+    /// Gate para `calculateFinancialScore`: el score depende solo de
+    /// dataVersion + mes en curso, no de filtros/periodo. Evita los 2 fetches
+    /// de SwiftData (`loadPaidAmounts`) en cada cambio de chip.
+    @State private var lastScoreSignature: Int = 0
     private let isFromSearch: Bool  // Skip session sync when coming from global search
 
-    @AppStorage("defaultCurrencyCode") private var defaultCurrencyCode: String = CurrencyCode.pen
-        .rawValue
-    @AppStorage("voiceInputEnabled") private var voiceInputEnabled: Bool = false
-    @AppStorage("imageInputEnabled") private var imageInputEnabled: Bool = false
-    @AppStorage("aiDataConsentAccepted") private var aiDataConsentAccepted: Bool = false
-    @AppStorage(InsightTone.storageKey) private var toneSetting: String = InsightTone.normal.rawValue
-    @AppStorage(InsightFocus.storageKey) private var focusSetting: String = InsightFocus.balanced.rawValue
+    @Environment(AppPreferences.self) private var appPreferences
+
     @State private var showAIConsentAlert = false
     @State private var pendingAIInput: PendingAIInput = .voice
 
@@ -56,12 +57,16 @@ struct DetailContainerView: View {
     /// Image selection sheet
     @State private var showImageSelection = false
 
-    /// FAB menu expanded state
-    @State private var showFABMenu = false
-
     /// Upgrade prompt sheets for Pro features
     @State private var showUpgradeForVoice = false
     @State private var showUpgradeForImage = false
+
+    /// Chat Assistant
+    @State private var showChatSheet = false
+    @State private var showUpgradeForChat = false
+    @State private var showChatConsentAlert = false
+    @State private var showYalaAIOnboarding = false
+    @State private var pendingOpenChatAfterOnboarding = false
 
     // MARK: - Pro Feature Gates
 
@@ -131,6 +136,11 @@ struct DetailContainerView: View {
                     showImageSelection: $showImageSelection,
                     showUpgradeForVoice: $showUpgradeForVoice,
                     showUpgradeForImage: $showUpgradeForImage,
+                    showChatSheet: $showChatSheet,
+                    showUpgradeForChat: $showUpgradeForChat,
+                    showChatConsentAlert: $showChatConsentAlert,
+                    showYalaAIOnboarding: $showYalaAIOnboarding,
+                    pendingOpenChatAfterOnboarding: $pendingOpenChatAfterOnboarding,
                     modelContext: modelContext,
                     recalculateData: recalculateData,
                     reloadAndRecalculate: reloadAndRecalculate
@@ -141,12 +151,47 @@ struct DetailContainerView: View {
                 dataViewModel.setContext(modelContext)
                 performRecalculation()
             }
-            .onDisappear { recalculateTask?.cancel() }
-            .onChange(of: selectedTab) { _, _ in
-                calculateInsightsData()
+            .onDisappear {
+                recalculateTask?.cancel()
+                recordsViewModel.exitDuplicateMode()   // modo efímero
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                switch newPhase {
+                case .background, .inactive:
+                    isInBackground = true
+                    recalculateTask?.cancel()
+                case .active:
+                    guard UIApplication.shared.applicationState == .active else { return }
+                    isInBackground = false
+                    reloadAndRecalculate()
+                @unknown default:
+                    break
+                }
+            }
+            .task {
+                if selectedTab != sessionState.selectedDetailTab {
+                    selectedTab = sessionState.selectedDetailTab
+                }
+            }
+            .onChange(of: sessionState.selectedDetailTab) { _, newValue in
+                if selectedTab != newValue { selectedTab = newValue }
+            }
+            .onChange(of: selectedTab) { _, newTab in
+                TelemetryService.track(.statsTabViewed, parameters: ["tab": newTab.rawValue])
+                if newTab != .records {
+                    recordsViewModel.exitDuplicateMode()   // modo efímero: se apaga al salir del tab Registros
+                }
+                if sessionState.selectedDetailTab != newTab {
+                    sessionState.selectedDetailTab = newTab
+                }
+                // .categories también consume insightData.periodSummary (gate >=5 tx
+                // del Distribution Insight Card) — disparar recalculation también ahí.
+                if newTab == .insights || newTab == .categories {
+                    scheduleRecalculation(reload: false)
+                }
             }
             .onChange(of: sessionState.selectedMainTab) { _, newTab in
-                if showFABMenu { showFABMenu = false }
+                // Sync filters when navigating to Statistics tab (view may already be mounted)
                 if newTab == .statistics && !isFromSearch {
                     recalculateData()
                 }
@@ -157,15 +202,21 @@ struct DetailContainerView: View {
             .onChange(of: sessionState.dataVersion) { _, _ in
                 reloadAndRecalculate()
             }
-            .onChange(of: sessionState.comparisonMode) {
-                if selectedTab == .insights { calculateInsightsData() }
-            }
-            .onChange(of: toneSetting) { calculateInsightsData() }
-            .onChange(of: focusSetting) { calculateInsightsData() }
+            .onChange(of: sessionState.comparisonMode) { recalculateData() }
+            .onChange(of: appPreferences.insightsTone) { recalculateData() }
+            .onChange(of: appPreferences.insightsFocus) { recalculateData() }
+            // Toggles globales de grupos (sheet del tab Grupos). Refrescan in-place
+            // sin esperar a cambiar de período: includeGroupTransactionsInStats afecta
+            // insightData + Financial Score + Tendencias/Distribución;
+            // includeGroupTransactionsInFeed afecta la sub-pestaña Registros. También
+            // cubre cambios que llegan vía sync cross-device con la vista ya montada.
+            .onChange(of: appPreferences.includeGroupTransactionsInStats) { recalculateData() }
+            .onChange(of: appPreferences.includeGroupTransactionsInFeed) { recalculateData() }
             .modifier(
                 DetailContainerObservers(
                     sessionState: sessionState,
                     trendsViewModel: trendsViewModel,
+                    recordsViewModel: recordsViewModel,
                     categories: dataViewModel.categories,
                     subcategories: dataViewModel.allSubcategories,
                     recalculateData: recalculateData
@@ -182,8 +233,6 @@ struct DetailContainerView: View {
 
     private var mainContent: some View {
         ZStack {
-            PanelBackgroundView()
-
             VStack(spacing: DS.Spacing.none) {
                 // Contextual guide for current statistics tab
                 statisticsGuide
@@ -198,13 +247,44 @@ struct DetailContainerView: View {
             }
 
             if selectedTab == .records && !recordsViewModel.isSelectionMode {
-                newRecordFAB
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        FABStackView(
+                            canUseVoiceInput: canUseVoiceInput,
+                            isVoiceLocked: isVoiceLocked,
+                            isImageLocked: isImageLocked,
+                            isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
+                            chatConsentAccepted: appPreferences.aiChatConsentAccepted,
+                            chatFABVisible: appPreferences.chatFABVisible,
+                            onVoiceTap: { showVoiceRecording = true },
+                            onImageTap: { showImageSelection = true },
+                            onManualTap: { recordsViewModel.showNewTransaction = true },
+                            onUpgradeVoice: { showUpgradeForVoice = true },
+                            onUpgradeImage: { showUpgradeForImage = true },
+                            onChatTap: {
+                                switch YalaAIOnboardingLogic.nextScreen(
+                                    consentAccepted: appPreferences.aiChatConsentAccepted,
+                                    onboardingShown: appPreferences.hasShownYalaAIOnboarding
+                                ) {
+                                case .onboarding: showYalaAIOnboarding = true
+                                case .chat:       showChatSheet = true
+                                case .consent:    showChatConsentAlert = true
+                                }
+                            },
+                            onUpgradeChat: { showUpgradeForChat = true },
+                            onChatConsentNeeded: { showChatConsentAlert = true }
+                        )
+                    }
+                }
             }
 
             if recordsViewModel.isSelectionMode && !recordsViewModel.selectedRecordIDs.isEmpty {
                 selectionActionBar
             }
         }
+        .yalaScreenBackground()
     }
 
     @ViewBuilder
@@ -233,10 +313,11 @@ struct DetailContainerView: View {
                 allTransactions: dataViewModel.allTransactions,
                 budgets: dataViewModel.budgets,
                 scheduledPayments: dataViewModel.scheduledPayments,
-                defaultCurrencyCode: defaultCurrencyCode,
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 viewModel: insightsViewModel,
                 trendsViewModel: trendsViewModel
             )
+            .accessibilityIdentifier("stats_tab_insights")
         case .trends:
             TrendsTabView(
                 accounts: dataViewModel.accounts,
@@ -245,9 +326,10 @@ struct DetailContainerView: View {
                 tags: dataViewModel.tags,
                 allTransactions: dataViewModel.allTransactions,
                 trendsViewModel: trendsViewModel,
-                defaultCurrencyCode: defaultCurrencyCode,
-                onNavigateToRecords: { selectedTab = .records }
+                insightsViewModel: insightsViewModel,
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
+            .accessibilityIdentifier("stats_tab_trends")
         case .categories:
             CategoriesTabView(
                 accounts: dataViewModel.accounts,
@@ -256,9 +338,10 @@ struct DetailContainerView: View {
                 tags: dataViewModel.tags,
                 allTransactions: dataViewModel.allTransactions,
                 viewModel: trendsViewModel,
-                defaultCurrencyCode: defaultCurrencyCode,
-                onNavigateToRecords: { selectedTab = .records }
+                insightsViewModel: insightsViewModel,
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
             )
+            .accessibilityIdentifier("stats_tab_categories")
         case .records:
             RecordsTabView(
                 viewModel: recordsViewModel,
@@ -267,9 +350,10 @@ struct DetailContainerView: View {
                 tags: dataViewModel.tags,
                 subcategories: dataViewModel.allSubcategories,
                 transactionDateRange: dataViewModel.computeTransactionDateRange(),
-                defaultCurrencyCode: defaultCurrencyCode,
+                defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue,
                 onFilterChange: { recalculateData() }
             )
+            .accessibilityIdentifier("stats_tab_records")
         }
     }
 
@@ -315,6 +399,7 @@ struct DetailContainerView: View {
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("detail_chip_\(tab.rawValue.lowercased())")
     }
 
     // MARK: - Normal Mode Toolbar
@@ -322,39 +407,23 @@ struct DetailContainerView: View {
     @ToolbarContentBuilder
     private var normalModeToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            HStack(spacing: DS.Spacing.md) {
-                // Selection button (only for Records)
-                if selectedTab == .records {
-                    Button {
-                        recordsViewModel.enterSelectionMode()
-                    } label: {
-                        Image(systemName: "checklist")
-                            .font(DS.Typography.body).fontWeight(.medium)
-                            .foregroundStyle(.thToolbarIcon)
-                    }
-                    .accessibilityLabel(L10n.Action.select)
-                }
-
-                // Filters button
+            if selectedTab == .records {
+                // Tab Registros: menú (···) con Seleccionar + Filtrar + Identificar duplicados.
+                RecordsOverflowMenu(viewModel: recordsViewModel)
+                    .accessibilityIdentifier("records_overflow_menu")
+            } else {
+                // Tendencias / Categorías / Insights: solo botón Filtrar (→ trendsViewModel).
                 Button {
-                    if selectedTab == .records {
-                        recordsViewModel.showFiltersSheet = true
-                    } else {
-                        trendsViewModel.showFiltersSheet = true
-                    }
+                    trendsViewModel.showFiltersSheet = true
                 } label: {
                     Image(systemName: "line.3.horizontal.decrease")
                         .font(DS.Typography.body).fontWeight(.medium)
                         .foregroundStyle(.thToolbarIcon)
                 }
                 .accessibilityLabel(L10n.Accessibility.filters)
+                .accessibilityIdentifier("filters_toolbar_button")
                 .overlay(alignment: .topTrailing) {
-                    let showIndicator = (selectedTab == .records && recordsViewModel.activeFilterCount > 0) ||
-                                       (selectedTab == .trends && trendsViewModel.activeFilterCount > 0) ||
-                                       (selectedTab == .categories && trendsViewModel.activeFilterCount > 0) ||
-                                       (selectedTab == .insights && trendsViewModel.activeFilterCount > 0)
-
-                    if showIndicator {
+                    if trendsViewModel.activeFilterCount > 0 {
                         Circle()
                             .fill(Color.hotPink)
                             .frame(width: 8, height: 8)
@@ -399,174 +468,6 @@ struct DetailContainerView: View {
     // MARK: - New Record FAB
 
     @ViewBuilder
-    private var newRecordFAB: some View {
-        let fabBackground = canUseVoiceInput ? theme.accent : DS.Semantic.disabledForeground.opacity(0.5)
-
-        if canUseVoiceInput {
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-            // Custom FAB with popup menu above (always 3 options)
-            VStack(alignment: .trailing, spacing: DS.Spacing.md) {
-                // Menu options (shown when expanded)
-                if showFABMenu {
-                    VStack(spacing: DS.Spacing.sm) {
-                        // Voice option
-                        fabMenuButton(
-                            icon: "waveform",
-                            text: L10n.Panel.fabVoice,
-                            color: .hotPink,
-                            isLocked: isVoiceLocked
-                        ) {
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
-                            }
-                            if isVoiceLocked {
-                                showUpgradeForVoice = true
-                            } else if !aiDataConsentAccepted {
-                                pendingAIInput = .voice
-                                showAIConsentAlert = true
-                            } else {
-                                if !voiceInputEnabled { voiceInputEnabled = true }
-                                showVoiceRecording = true
-                            }
-                        }
-
-                        // Image option
-                        fabMenuButton(
-                            icon: "photo",
-                            text: L10n.Panel.fabImage,
-                            color: .teal,
-                            isLocked: isImageLocked
-                        ) {
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
-                            }
-                            if isImageLocked {
-                                showUpgradeForImage = true
-                            } else if !aiDataConsentAccepted {
-                                pendingAIInput = .image
-                                showAIConsentAlert = true
-                            } else {
-                                if !imageInputEnabled { imageInputEnabled = true }
-                                showImageSelection = true
-                            }
-                        }
-
-                        // Manual option (always shown)
-                        fabMenuButton(
-                            icon: "square.and.pencil",
-                            text: L10n.Panel.fabManual,
-                            color: .electricIndigo
-                        ) {
-                            dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                                showFABMenu = false
-                            }
-                            recordsViewModel.showNewTransaction = true
-                        }
-                    }
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity),
-                        removal: .scale(scale: 0.8, anchor: .bottomTrailing).combined(with: .opacity)
-                    ))
-                }
-
-                // FAB button
-                Button {
-                    DS.Haptic.medium()
-                    dsWithAnimation(reduceMotion, .spring(response: 0.25, dampingFraction: 0.8)) {
-                        showFABMenu.toggle()
-                    }
-                } label: {
-                    Image(systemName: showFABMenu ? "xmark" : "plus")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(.white)
-                        .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                        .background(showFABMenu ? DS.Semantic.disabledForeground : fabBackground)
-                        .clipShape(Circle())
-                        .rotationEffect(.degrees(showFABMenu ? 90 : 0))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(showFABMenu ? L10n.Accessibility.closeMenu : L10n.Accessibility.newRecord)
-                .glassEffect(.regular.interactive())
-                .dsFloatingShadow()
-            }
-            .padding(.trailing, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxl)
-                }
-            }
-        } else {
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-            // Simple FAB (no accounts/subcategories — disabled)
-            Button {
-                // No-op: disabled state
-            } label: {
-                Image(systemName: "plus")
-                    .font(DS.Typography.title)
-                    .foregroundStyle(.white)
-                    .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
-                    .background(fabBackground)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.Accessibility.newRecord)
-            .glassEffect(.regular.interactive())
-            .dsFloatingShadow()
-            .padding(.trailing, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxl)
-            .disabled(true)
-            .accessibilityHint(L10n.Accessibility.createAccountFirst)
-                }
-            }
-        }
-    }
-
-    private func fabMenuButton(
-        icon: String,
-        text: String,
-        color: Color,
-        isLocked: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button {
-            DS.Haptic.selection()
-            action()
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                Image(systemName: icon)
-                    .font(DS.Typography.headline)
-                    .frame(width: DS.Button.fabMenuIconSize)
-                    .accessibilityHidden(true)
-
-                Text(text)
-                    .font(DS.Typography.headline)
-
-                Spacer(minLength: 0)
-
-                if isLocked {
-                    ProBadge(size: .small)
-                }
-            }
-            .foregroundStyle(.white)
-            .frame(width: DS.Button.fabMenuWidth)
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .background(isLocked ? DS.Semantic.disabledForeground : color)
-            .clipShape(Capsule())
-            .shadow(color: (isLocked ? DS.Semantic.disabledForeground : color).opacity(0.3), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
-        }
-        .buttonStyle(.plain)
-        .phaseAnimator(reduceMotion ? [false] : [false, true]) { content, phase in
-            content
-                .scaleEffect(phase ? 1.03 : 1.0)
-        } animation: { _ in
-            .easeInOut(duration: 0.6).repeatForever(autoreverses: true)
-        }
-    }
 
     // MARK: - Selection Action Bar
 
@@ -606,10 +507,11 @@ struct DetailContainerView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(L10n.Action.edit)
+                .accessibilityIdentifier("bulk_edit_button")
             }
             .padding(.vertical, DS.Spacing.sm)
             .padding(.horizontal, DS.Spacing.lg)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+            .solidCard(radius: DS.Radius.lg)
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.md)
         }
@@ -629,8 +531,12 @@ struct DetailContainerView: View {
 
     /// Debounced recalculation (150ms). `pendingReload` ensures a reload request isn't lost
     /// if a subsequent calculate-only call arrives within the debounce window.
+    /// Background guard: skip scheduling while scenePhase is background/inactive — pendingReload
+    /// is preserved so the next foreground reloadAndRecalculate picks it up. The
+    /// `applicationState` check mirrors PanelView and prevents work during snapshot time.
     private func scheduleRecalculation(reload: Bool) {
         if reload { pendingReload = true }
+        guard !isInBackground, UIApplication.shared.applicationState == .active else { return }
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
@@ -643,9 +549,10 @@ struct DetailContainerView: View {
         }
     }
 
-    /// Synchronous full reload — used only for the initial onAppear where data is needed immediately.
+    /// Initial onAppear calculation. `setContext` already fetched if the context was new,
+    /// so this only runs the synchronous calc pass. Subsequent reloads go through
+    /// `reloadAndRecalculate` (dataVersion / scene foreground).
     private func performRecalculation() {
-        dataViewModel.loadData()
         performCalculation()
     }
 
@@ -660,13 +567,18 @@ struct DetailContainerView: View {
         trendsViewModel.calculateTrendData(
             accounts: dataViewModel.accounts,
             transactions: dataViewModel.allTransactions,
-            defaultCurrencyCode: defaultCurrencyCode
+            allTags: dataViewModel.tags,
+            defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
-        if selectedTab == .insights { calculateInsightsData() }
+        // Distribution Insight Card también requiere insightData.periodSummary
+        // para el gate >=5 tx — calcular cuando estamos en cualquiera de las 2 tabs.
+        if selectedTab == .insights || selectedTab == .categories {
+            calculateInsightsData()
+        }
     }
 
     private func calculateInsightsData() {
-        guard selectedTab == .insights else { return }
+        guard selectedTab == .insights || selectedTab == .categories else { return }
         insightsViewModel.calculateInsightsData(
             transactions: dataViewModel.allTransactions,
             accounts: dataViewModel.accounts,
@@ -674,22 +586,59 @@ struct DetailContainerView: View {
             budgets: dataViewModel.budgets,
             scheduledPayments: dataViewModel.scheduledPayments,
             period: sessionState.selectedPeriod,
-            criteria: trendsViewModel.filterCriteria,
-            currencyCode: defaultCurrencyCode,
+            criteria: trendsViewModel.filterCriteria(withTagCatalog: dataViewModel.tags),
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
             customRange: sessionState.customDateRange,
             comparisonMode: sessionState.comparisonMode
         )
+
+        // Salud Financiera period-aware. El score depende de dataVersion +
+        // período seleccionado (interval). Cambios de filtros (cuenta/categoría/
+        // etiqueta) NO afectan al score — solo el dataset y el interval lo hacen.
+        // El gate evita re-fetches SwiftData de `loadPaidAmounts` en cada cambio
+        // de chip de filtro.
+        let scoreInterval = trendsViewModel.detailPeriod.dateInterval(
+            customRange: trendsViewModel.customDateRange
+        )
+        var scoreHasher = Hasher()
+        scoreHasher.combine(sessionState.dataVersion)
+        scoreHasher.combine(scoreInterval.start)
+        scoreHasher.combine(scoreInterval.end)
+        // El toggle de grupos altera el dataset del score (incluye/excluye TX
+        // bridgeadas) — sin esto, cambiarlo no invalidaría el gate y "Salud
+        // Financiera" quedaría stale hasta cambiar de período.
+        scoreHasher.combine(appPreferences.includeGroupTransactionsInStats)
+        let scoreSignature = scoreHasher.finalize()
+        if scoreSignature != lastScoreSignature {
+            lastScoreSignature = scoreSignature
+            let activePayments = dataViewModel.scheduledPayments.filter(\.isActive)
+            let paidAmounts = ScheduledPaymentPaidStatusHelper.loadPaidAmounts(
+                for: activePayments,
+                interval: scoreInterval,
+                context: modelContext
+            )
+            insightsViewModel.calculateFinancialScore(
+                transactions: dataViewModel.allTransactions,
+                budgets: dataViewModel.budgets,
+                scheduledPayments: dataViewModel.scheduledPayments,
+                accounts: dataViewModel.accounts,
+                paidAmounts: paidAmounts,
+                period: trendsViewModel.detailPeriod,
+                customRange: trendsViewModel.customDateRange,
+                preferredCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
+            )
+        }
 
         // Reset AI state on context change (button must be pressed again)
         insightsViewModel.resetAIState()
 
         // Store context for on-demand AI generation via button
-        let criteria = trendsViewModel.filterCriteria
+        let criteria = trendsViewModel.filterCriteria(withTagCatalog: dataViewModel.tags)
         insightsViewModel.storeGenerationContext(
             period: sessionState.selectedPeriod,
             filterHash: criteria.hashValue,
             txnCount: dataViewModel.allTransactions.count,
-            currencyCode: defaultCurrencyCode,
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
             comparisonMode: sessionState.comparisonMode,
             criteria: criteria,
             accounts: dataViewModel.accounts,
@@ -721,6 +670,7 @@ struct DetailContainerView: View {
     NavigationStack {
         DetailContainerView()
     }
+    .previewAppPreferences()
 }
 
 // MARK: - View Helpers
@@ -729,6 +679,7 @@ struct DetailContainerView: View {
 
 /// Encapsulates sheet presentations to reduce body complexity
 private struct DetailContainerSheets: ViewModifier {
+    @Environment(AppPreferences.self) private var appPreferences
     @Bindable var recordsViewModel: RecordsViewModel
     @Bindable var trendsViewModel: StatisticsViewModel
     @Binding var showDeleteConfirmation: Bool
@@ -738,6 +689,11 @@ private struct DetailContainerSheets: ViewModifier {
     @Binding var showImageSelection: Bool
     @Binding var showUpgradeForVoice: Bool
     @Binding var showUpgradeForImage: Bool
+    @Binding var showChatSheet: Bool
+    @Binding var showUpgradeForChat: Bool
+    @Binding var showChatConsentAlert: Bool
+    @Binding var showYalaAIOnboarding: Bool
+    @Binding var pendingOpenChatAfterOnboarding: Bool
     let modelContext: ModelContext
     let recalculateData: () -> Void
     let reloadAndRecalculate: () -> Void
@@ -765,6 +721,29 @@ private struct DetailContainerSheets: ViewModifier {
             .sheet(isPresented: $showUpgradeForImage) {
                 UpgradePromptSheet(feature: .imageInput, context: .proFeature)
             }
+            .sheet(isPresented: $showChatSheet) {
+                ChatSheetView()
+            }
+            .yalaAIOnboardingSheet(
+                isPresented: $showYalaAIOnboarding,
+                pendingOpenChat: $pendingOpenChatAfterOnboarding,
+                showChatSheet: $showChatSheet,
+                launcher: .stats,
+                onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
+            )
+            .sheet(isPresented: $showUpgradeForChat) {
+                UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
+            }
+            .chatConsentAlert(isPresented: $showChatConsentAlert) {
+                switch YalaAIOnboardingLogic.nextScreen(
+                    consentAccepted: true,
+                    onboardingShown: appPreferences.hasShownYalaAIOnboarding
+                ) {
+                case .onboarding: showYalaAIOnboarding = true
+                case .chat:       showChatSheet = true
+                case .consent:    break
+                }
+            }
             .sheet(isPresented: $recordsViewModel.showEditTransaction) {
                 if let transaction = recordsViewModel.editingTransaction {
                     NewTransactionView(transactionToEdit: transaction)
@@ -773,6 +752,25 @@ private struct DetailContainerSheets: ViewModifier {
                             recordsViewModel.editingTransaction = nil
                             reloadAndRecalculate()
                         }
+                }
+            }
+            .sheet(
+                isPresented: $recordsViewModel.showTransactionDetail,
+                onDismiss: {
+                    // Reemplazo de sheet: si se pidió editar, presenta el editor
+                    // (conserva la TX); si no, cierre normal (limpia + recalcula).
+                    if recordsViewModel.consumePendingEditAfterDetail() {
+                        recordsViewModel.showEditTransaction = true
+                    } else {
+                        recordsViewModel.editingTransaction = nil
+                        reloadAndRecalculate()
+                    }
+                }
+            ) {
+                if let transaction = recordsViewModel.editingTransaction {
+                    TransactionDetailSheet(transaction: transaction) {
+                        recordsViewModel.requestEditFromDetail()
+                    }
                 }
             }
             .sheet(isPresented: $trendsViewModel.showFiltersSheet) {
@@ -809,6 +807,7 @@ private struct DetailContainerSheets: ViewModifier {
 private struct DetailContainerObservers: ViewModifier {
     let sessionState: SessionState
     @Bindable var trendsViewModel: StatisticsViewModel
+    @Bindable var recordsViewModel: RecordsViewModel
     let categories: [Category]
     let subcategories: [Subcategory]
     let recalculateData: () -> Void
@@ -823,6 +822,21 @@ private struct DetailContainerObservers: ViewModifier {
             ))
             // isAggregatedView is local to StatisticsViewModel (not a SessionState proxy)
             .onChange(of: trendsViewModel.isAggregatedView) { _, _ in recalculateData() }
+            // "Identificar duplicados": recompute al togglear modo/criterios + telemetría al activar.
+            .onChange(of: recordsViewModel.duplicateModeActive) { _, isActive in
+                recalculateData()
+                if isActive {
+                    TelemetryService.track(.recordsDuplicateModeActivated, parameters: [
+                        "byAmount": String(recordsViewModel.duplicateCriteria.amount),
+                        "byNote": String(recordsViewModel.duplicateCriteria.note),
+                        "bySubcategory": String(recordsViewModel.duplicateCriteria.subcategory),
+                        "byDate": String(recordsViewModel.duplicateCriteria.date),
+                    ])
+                }
+            }
+            .onChange(of: recordsViewModel.duplicateCriteria) { _, _ in
+                recalculateData()
+            }
     }
 }
 

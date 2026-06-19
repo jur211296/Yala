@@ -1,0 +1,67 @@
+# Yala Gateway — Cloudflare Worker (Workers Paid)
+# Proxy seguro a OpenAI + tasas de cambio. Las API keys reales viven SOLO aquí (wrangler secret).
+#
+# ⚠️ OWNER (task #7): tras crear la cuenta y los recursos, completar los <PLACEHOLDER>.
+#   - account_id:    Cloudflare dashboard → Workers → account ID
+#   - database_id:   `npx wrangler d1 create yala-gateway-staging`
+#   - kv id:         `npx wrangler kv namespace create KV`
+#   - APPLE_TEAM_ID: Apple Developer → Membership → Team ID
+# Secrets (NO van aquí): `npx wrangler secret put OPENAI_API_KEY` (y EXCHANGE_RATE_API_KEY,
+#   JWT_SIGNING_SECRET, DEV_SHARED_SECRET, APP_STORE_API_KEY). Ver README.
+
+name = "yala-gateway-staging"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+compatibility_flags = ["nodejs_compat"]
+account_id = "86c270a7776be98639700bd5959b303b"
+
+# ---------- STAGING (default) — acepta env App Attest "development" + DEV_SHARED_SECRET ----------
+[vars]
+ENVIRONMENT = "staging"
+ENFORCE = "observe"                         # "observe" (cuenta, no bloquea) | "enforce"
+APPLE_TEAM_ID = "3WKFFVD66J"
+APPLE_BUNDLE_IDS = "com.jurgenschmidt.yala.dev"
+ATTEST_ENV = "development"
+TRUST_ATTESTED_AS_PRO = "true"   # SOLO staging — QA del chat sin suscripción real. Prod NO lo setea.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "yala-gateway-staging"
+database_id = "6f76834b-62b4-4ec4-bb4f-db974b60f2ee"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "66bcbb46d628488d97a309f212df3e72"
+
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RateLimiter"]
+
+# ---------- PRODUCTION — acepta SOLO env App Attest "production", nunca DEV_SHARED_SECRET ----------
+[env.production]
+name = "yala-gateway-production"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+ENFORCE = "enforce"                         # enforce activo (rate-limit por device); rollback → "observe" + redeploy
+APPLE_TEAM_ID = "3WKFFVD66J"
+APPLE_BUNDLE_IDS = "com.jurgenschmidt.yala"
+ATTEST_ENV = "production"
+TRUST_ATTESTED_AS_PRO = "false"   # EXPLÍCITO: jamás Pro-trust en prod (cierra el trap; prod exige suscripción real)
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "yala-gateway-production"
+database_id = "60cdd68d-cc37-4a11-8d1a-bcc5f4354118"
+
+[[env.production.kv_namespaces]]
+binding = "KV"
+id = "af4bd87867f043f99db280a6ca30231d"
+
+[[env.production.durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"

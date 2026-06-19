@@ -29,4 +29,5 @@ enum ProfileDestination: Hashable {
     case faq
     case iCloudSync
     case siriShortcuts
+    case aiPrivacy
 }

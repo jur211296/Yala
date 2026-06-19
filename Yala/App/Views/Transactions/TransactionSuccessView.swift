@@ -52,6 +52,7 @@ struct TransactionSuccessView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
     @State private var showHero = false
     @State private var showCheckmark = false
     @State private var showAmount = false
@@ -152,13 +153,11 @@ struct TransactionSuccessView: View {
                        destCurrency != data.currencyCode
                     {
                         Text(
-                            YalaFormatter.currency(
-                                value: Double(truncating: data.amount as NSDecimalNumber),
+                            appPreferences.currency(Double(truncating: data.amount as NSDecimalNumber),
                                 currencyCode: data.currencyCode,
                                 forceFullPrecision: true)
                             + " → "
-                            + YalaFormatter.currency(
-                                value: Double(truncating: destAmount as NSDecimalNumber),
+                            + appPreferences.currency(Double(truncating: destAmount as NSDecimalNumber),
                                 currencyCode: destCurrency,
                                 forceFullPrecision: true)
                         )
@@ -167,14 +166,13 @@ struct TransactionSuccessView: View {
                         .scaleEffect(showAmount ? 1.0 : 0.8)
                         .opacity(showAmount ? 1.0 : 0.0)
                     } else {
-                        Text(
-                            YalaFormatter.currency(
-                                value: Double(truncating: data.amount as NSDecimalNumber),
-                                currencyCode: data.currencyCode,
-                                forceFullPrecision: true)
+                        AmountText(
+                            value: Double(truncating: data.amount as NSDecimalNumber),
+                            currencyCode: data.currencyCode,
+                            font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary,
+                            tint: .color(typeColor),
+                            forceFullPrecision: true
                         )
-                        .font(DS.Typography.largeTitle)
-                        .foregroundStyle(typeColor)
                         .scaleEffect(showAmount ? 1.0 : 0.8)
                         .opacity(showAmount ? 1.0 : 0.0)
                     }
@@ -192,13 +190,7 @@ struct TransactionSuccessView: View {
                 // Action buttons - native iOS style
                 VStack(spacing: DS.Spacing.md) {
                     // Primary: Accept
-                    Button(action: onAccept) {
-                        Text(L10n.Common.accept)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-
-                    .controlSize(.large)
+                    YalaPrimaryButton(L10n.Common.accept, action: onAccept)
 
                     // Secondary: Create another
                     Button(action: onCreateAnother) {
@@ -318,7 +310,7 @@ struct TransactionSuccessView: View {
             Image(systemName: data.transactionType.iconName)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(data.transactionType.color)
-                .frame(width: 20)
+                .frame(width: DS.Icon.sizeLarge)
                 .accessibilityHidden(true)
 
             Text(L10n.Transaction.type)
@@ -447,7 +439,7 @@ struct TransactionSuccessView: View {
                             destCurrency != data.currencyCode
                         {
                             Text(
-                                "(\(YalaFormatter.currency(value: Double(truncating: destAmount as NSDecimalNumber), currencyCode: destCurrency, forceFullPrecision: true)))"
+                                "(\(appPreferences.currency(Double(truncating: destAmount as NSDecimalNumber), currencyCode: destCurrency, forceFullPrecision: true)))"
                             )
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)

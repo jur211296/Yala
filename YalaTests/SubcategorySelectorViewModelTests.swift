@@ -70,6 +70,24 @@ struct SubcategorySelectorViewModelTests {
         #expect(vm.isEmpty == true)
         #expect(vm.groupedSubcategories.isEmpty)
     }
+
+    // MARK: - Approach J: empty state CTA "Crear categorías" (Bug #21)
+    //
+    // El flow J requiere `makeTestContext()` para verificar el path completo
+    // (seed + loadData + groupedSubcategories repobladas), lo cual hits el
+    // flake R8 conocido en suite paralela. La verificación del flow se hace
+    // vía Device QA escenario A3-05-bis (QA-SCENARIOS.md).
+    //
+    // Lo que SÍ podemos testear pure-logic: el callback del CTA invoca
+    // `viewModel.loadData()` que es referencialmente accesible (internal).
+    @MainActor @Test func loadData_canBeInvoked_safelyWithoutContext() {
+        // El callback del empty state CTA invoca loadData() después del seed.
+        // Sin context, loadData() es un no-op silencioso (gateado por modelContext != nil).
+        let vm = SubcategorySelectorViewModel()
+        vm.loadData()  // no debería crashear
+        #expect(vm.allSubcategories.isEmpty)
+        #expect(vm.recentTransactions.isEmpty)
+    }
 }
 
 /*

@@ -100,7 +100,7 @@ struct SubcategoriesPieWidgetProvider: AppIntentTimelineProvider {
             subcategories = top12 + [
                 WidgetSubcategory(
                     id: "others",
-                    name: "Otros",
+                    name: String(localized: "widget.ui.others", bundle: .main),
                     categoryName: "",
                     iconName: nil,
                     colorHex: "6B7280",
@@ -143,9 +143,14 @@ struct SubcategoriesPieWidgetView: View {
                     Text("widget.ui.total", bundle: .main)
                         .font(WDS.Typography.tiny)
                         .foregroundStyle(.secondary)
-                    Text(formattedTotal)
-                        .font(WDS.Typography.kpiSmall)
-                        .foregroundStyle(WidgetColors.expense)
+                    WidgetAmountText(
+                        value: entry.totalExpense,
+                        currencyCode: entry.currencyCode,
+                        displayFormat: entry.currencyDisplayFormat,
+                        font: WDS.Typography.kpiSmall,
+                        secondaryFont: WDS.Typography.kpiSmallSecondary,
+                        tint: .color(WidgetColors.expense)
+                    )
                 }
             }
 
@@ -187,18 +192,6 @@ struct SubcategoriesPieWidgetView: View {
         .widgetURL(WidgetURLHelper.url(for: "statistics/categories"))
     }
 
-    private var formattedTotal: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-
-        let formatted = formatter.string(from: NSNumber(value: entry.totalExpense)) ?? "0"
-        let currency = entry.currencyDisplayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: entry.currencyCode)
-            : entry.currencyCode
-
-        return "\(currency) \(formatted)"
-    }
 }
 
 // MARK: - Widget Definition

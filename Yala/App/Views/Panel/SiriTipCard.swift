@@ -41,8 +41,7 @@ struct SiriTipCard: View {
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.Tips.Siri.close)
         }
-        .padding(DS.Spacing.lg)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.lg)
         .transition(.asymmetric(
             insertion: .scale(scale: 0.95).combined(with: .opacity),
             removal: .scale(scale: 0.95).combined(with: .opacity)

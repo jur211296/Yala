@@ -16,6 +16,11 @@ final class Subcategory {
     var name: String = ""
     var colorHex: String?
 
+    /// Stable identifier for App Intents (Siri/Shortcuts). Unaffected by name/category renames.
+    /// CloudKit: must have default value, no `@Attribute(.unique)`. Migration: legacy entities
+    /// receive a UUID at first save via AppBootstrapper.persistAppEntityShortcutIDsIfNeeded.
+    var shortcutID: UUID = UUID()
+
     /// Indica si esta subcategoría proviene de la semilla inicial
     var isDefaultSeed: Bool = false
     /// Control de visibilidad dentro de la app
@@ -26,6 +31,12 @@ final class Subcategory {
     var natureRawValue: String?
     /// Nombre del icono SF Symbol (opcional)
     var iconName: String?
+
+    /// True para subcategorías sistema persistentes (creadas por seed para flujos como bridge de grupos).
+    /// CloudKit: must have default value. Excluidas de pickers manuales, presupuestos y "Top categorías".
+    /// NOTA: coexiste con `isSystemSubcategory` (computed legacy basado en nombre para "Ajuste de saldo"/"Transferencia").
+    /// Usar `isAnySystem` cuando se quiera filtrar AMBOS tipos de subcategoría sistema.
+    var isSystem: Bool = false
 
     /// Relación inversa con la categoría padre (optional for CloudKit compatibility)
     @Relationship(deleteRule: .nullify)
@@ -67,6 +78,7 @@ final class Subcategory {
         sortOrder: Int = 0,
         natureRawValue: String? = nil,
         iconName: String? = nil,
+        isSystem: Bool = false,
         category: Category?
     ) {
         self.name = name
@@ -76,6 +88,7 @@ final class Subcategory {
         self.sortOrder = sortOrder
         self.natureRawValue = natureRawValue
         self.iconName = iconName
+        self.isSystem = isSystem
         self.category = category
     }
 
@@ -110,6 +123,12 @@ extension Subcategory {
     /// Whether this subcategory is a system subcategory that cannot be deleted
     var isSystemSubcategory: Bool {
         Self.systemSubcategoryNames.contains(name)
+    }
+
+    /// True si es subcategoría sistema legacy (computed por nombre) O nuevo flag persistente `isSystem`.
+    /// Usar este helper en filtros UI/stats que deben ocultar TODA subcat sistema.
+    var isAnySystem: Bool {
+        isSystemSubcategory || isSystem
     }
 }
 

@@ -30,20 +30,18 @@ struct UserDataResetView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: L10n.Settings.resetData) {
                         VStack(alignment: .leading, spacing: DS.Spacing.md) {
                             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                                 Text(L10n.Settings.resetAllData)
                                     .font(DS.Typography.title)
-                                    .fontWeight(.semibold)
 
                                 Text(
-                                    L10n.Settings.resetDataDescription
+                                    sessionState.isGroupInviteMode
+                                        ? L10n.Settings.resetDataDescriptionGroupsOnly
+                                        : L10n.Settings.resetDataDescription
                                 )
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
@@ -70,14 +68,14 @@ struct UserDataResetView: View {
                                 .padding(DS.Spacing.lg)
                             }
                             .disabled(isProcessing)
-                            .accessibilityHint(isProcessing ? "Procesando" : "")
+                            .accessibilityHint(isProcessing ? L10n.Accessibility.processing : "")
                         }
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.resetData)
         .navigationBarTitleDisplayMode(.inline)
 
@@ -97,7 +95,11 @@ struct UserDataResetView: View {
             }
         } message: {
             Text(
-                L10n.Settings.deleteDataWarning + "\n\n" + L10n.Settings.wipeICloudWarning
+                (sessionState.isGroupInviteMode
+                    ? L10n.Settings.deleteDataWarningGroupsOnly
+                    : L10n.Settings.deleteDataWarning) + "\n\n"
+                + L10n.Settings.wipeICloudWarning + "\n\n"
+                + L10n.Settings.wipeGroupsExclusionNote
             )
         }
 

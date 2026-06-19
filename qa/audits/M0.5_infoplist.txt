@@ -1,0 +1,41 @@
+# M0.5 — Auditoría InfoPlist.strings
+
+Fecha: 2026-04-27
+
+## Resultado
+
+Yala/Resources/Info.plist tiene 3 NSUsageDescription hardcoded en INGLÉS:
+
+1. NSMicrophoneUsageDescription:
+   "Yala uses the microphone to record voice input for creating transactions. Your audio is sent to OpenAI for transcription."
+
+2. NSPhotoLibraryUsageDescription:
+   "Yala uses your photos to extract transaction details from screenshots and receipts. Selected images are sent to OpenAI for processing."
+
+3. NSFaceIDUsageDescription:
+   "Yala uses Face ID to protect your financial information."
+
+## Estado actual
+
+NO existe `InfoPlist.strings` en NINGÚN locale (`find /Users/jur/Yala -name InfoPlist.strings` retorna vacío).
+
+→ Todos los usuarios actuales (es/en/de/fr/it/pt) ven los prompts del sistema en INGLÉS al pedir permisos. **Bug pre-existente** que arreglaremos en M7+ creando InfoPlist.strings localizado en cada .lproj.
+
+## Acción requerida en cada milestone que crea .lproj
+
+Crear `InfoPlist.strings` con las 3 keys traducidas:
+- M7 (pt-BR/pt-PT)
+- M9 (es-419/es-ES)
+- M10 (es-AR)
+- M11 (en-GB)
+- M12 (nl)
+- M13 (pl)
+- M14 (ja)
+- M15 (zh-Hans)
+
+Y también retroactivamente para los 5 idiomas actuales que no lo tienen (es/de/fr/it + en como base).
+Decisión: incluir creación retroactiva en M5 (junto con tests/doc) — los idiomas actuales también necesitan localización del prompt.
+
+## Settings.bundle
+
+NO existe → skip

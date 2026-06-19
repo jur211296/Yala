@@ -4,11 +4,12 @@ import SwiftUI
 
 // MARK: - User Calendar Preferences
 
-/// Returns a Calendar configured with the user's preferred first day of week
-func userConfiguredCalendar() -> Calendar {
+/// Returns a Calendar configured with the user's preferred first day of week.
+/// `defaults` is injectable for tests; production callers use the default `.standard`.
+func userConfiguredCalendar(defaults: UserDefaults = .standard) -> Calendar {
     var calendar = Calendar.current
     // 1 = Sunday, 2 = Monday (default to Monday if not set)
-    let firstWeekday = UserDefaults.standard.integer(forKey: "firstWeekday")
+    let firstWeekday = defaults.integer(forKey: "firstWeekday")
     calendar.firstWeekday = firstWeekday > 0 ? firstWeekday : 2  // Default to Monday
     return calendar
 }
@@ -24,6 +25,23 @@ enum FirstWeekday: Int, CaseIterable, Identifiable {
         switch self {
         case .sunday: return L10n.Settings.sunday
         case .monday: return L10n.Settings.monday
+        }
+    }
+}
+
+/// Auto-focus target when opening a new transaction form.
+enum AutoFocusField: String, CaseIterable, Identifiable {
+    case none
+    case amount
+    case description
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .none: return L10n.Settings.autoFocusNone
+        case .amount: return L10n.Settings.autoFocusAmount
+        case .description: return L10n.Settings.autoFocusNote
         }
     }
 }
@@ -175,10 +193,11 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
     var iconName: String { "calendar" }
 
     /// Get the date interval for this period
-    /// - Parameter customRange: Optional custom date range for .custom period
-    func dateInterval(customRange: DateInterval? = nil) -> DateInterval {
+    /// - Parameters:
+    ///   - customRange: Optional custom date range for .custom period
+    ///   - now: Fecha de referencia (por defecto `.now`); inyectable para tests.
+    func dateInterval(customRange: DateInterval? = nil, now: Date = .now) -> DateInterval {
         let calendar = userConfiguredCalendar()
-        let now = Date.now
         let startOfToday = calendar.startOfDay(for: now)
 
         // End of today (start of tomorrow) to include all transactions from today
@@ -244,6 +263,58 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
             return .day
         case .thisYear, .lastYear, .allTime, .custom:
             return .day  // Use day for data, but smooth visually
+        }
+    }
+
+    /// Interval used to project pending scheduled payments in the Sankey "Planificados" branch.
+    /// Returns nil for closed/retrospective periods (no planned branch shown).
+    /// For active periods, extends from the period start to min(period_end, end_of_current_month).
+    /// `now` is injectable for deterministic tests.
+    func plannedInterval(
+        customRange: DateInterval? = nil,
+        calendar: Calendar = userConfiguredCalendar(),
+        now: Date = .now
+    ) -> DateInterval? {
+        let endOfMonth = calendar.endOfMonth(for: now)
+
+        switch self {
+        case .thisWeek:
+            let startOfWeek = calendar.startOfWeek(for: now)
+            let endOfWeek = calendar.date(byAdding: .weekOfYear, value: 1, to: startOfWeek) ?? endOfMonth
+            return DateInterval(start: startOfWeek, end: min(endOfWeek, endOfMonth))
+
+        case .thisMonth:
+            return DateInterval(start: calendar.startOfMonth(for: now), end: endOfMonth)
+
+        case .thisYear:
+            return DateInterval(start: calendar.startOfYear(for: now), end: endOfMonth)
+
+        case .custom:
+            let startOfToday = calendar.startOfDay(for: now)
+            guard let range = customRange, range.end > startOfToday else { return nil }
+            return DateInterval(start: range.start, end: min(range.end, endOfMonth))
+
+        case .last7Days, .last30Days, .lastMonth, .lastYear, .allTime:
+            return nil
+        }
+    }
+
+    /// True when the planned interval is truncated to end-of-current-month
+    /// (i.e. the period extends beyond the current month). Drives the hint shown
+    /// below the Sankey to clarify why we don't project further.
+    func shouldShowPlannedHint(
+        customRange: DateInterval? = nil,
+        calendar: Calendar = userConfiguredCalendar(),
+        now: Date = .now
+    ) -> Bool {
+        switch self {
+        case .thisYear:
+            return true
+        case .custom:
+            guard let range = customRange else { return false }
+            return range.end > calendar.endOfMonth(for: now)
+        default:
+            return false
         }
     }
 }

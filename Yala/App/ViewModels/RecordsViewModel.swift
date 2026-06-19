@@ -95,6 +95,8 @@ final class RecordsViewModel: Filterable {
         set { SessionState.shared.isExcludeMode = newValue }
     }
 
+    var sharedExpenseFilter: SharedExpenseFilter = .all
+
     // MARK: - UI State
 
     /// Whether search bar is expanded
@@ -106,11 +108,29 @@ final class RecordsViewModel: Filterable {
     /// Selected record IDs for bulk actions
     var selectedRecordIDs: Set<PersistentIdentifier> = []
 
+    /// Whether "identify duplicates" mode is active (ephemeral, per-view — resets on view/tab change)
+    var duplicateModeActive: Bool = false
+
+    /// Which fields must match for two records to count as duplicates (default: all 4)
+    var duplicateCriteria = RecordsDuplicateLogic.Criteria(
+        amount: true, note: true, subcategory: true, date: true
+    )
+
     /// Sheet states
     var showFiltersSheet: Bool = false
     var showNewTransaction: Bool = false
     var showEditTransaction: Bool = false
+    var showTransactionDetail: Bool = false
     var editingTransaction: TransactionItem?
+
+    /// Difiere la limpieza de `editingTransaction` cuando el detalle cede el paso
+    /// al editor (botón Editar): el detalle se cierra y el padre, en su `onDismiss`,
+    /// consume este flag para presentar NewTransactionView con la misma TX.
+    private var pendingEditAfterDetail = false
+
+    /// Mensaje de error surfaceado por `BulkEditSheet` cuando una operación bulk rechaza
+    /// la mutación (e.g., subcategoría sobre transferencias).
+    var bulkUpdateError: String?
 
     // MARK: - Computed Data
 
@@ -184,7 +204,7 @@ final class RecordsViewModel: Filterable {
             SessionState.shared.isExpensesOnlyMode ? [.expense] : selectedTransactionNatures
 
         // Build FilterCriteria from current state
-        let criteria = FilterCriteria(
+        var criteria = FilterCriteria(
             selectedAccounts: selectedAccounts,
             selectedCategories: selectedCategories,
             selectedSubcategories: selectedSubcategories,
@@ -198,11 +218,25 @@ final class RecordsViewModel: Filterable {
             searchText: searchText,
             dateInterval: effectiveDateInterval()
         )
+        criteria.populateTagUUIDs(
+            from: tags.filter { selectedTags.contains($0.persistentModelID) }
+        )
+
+        // A0-Bridge: respeta toggle global "incluir transacciones de grupos en feed".
+        // Si OFF, oculta TX bridgeadas (splitExpenseID/splitSettlementID != nil).
+        // Default true; user lo desactiva en RecordsFiltersView (F10).
+        let includeGroupTxs = UserDefaults.standard.object(
+            forKey: AppPreferences.Keys.includeGroupTransactionsInFeed
+        ) as? Bool ?? true
 
         // Pre-filter: hide transactions from accounts excluded from statistics
         let eligibleTransactions = transactions.filter { tx in
             guard let account = tx.account else { return true }
-            return !account.excludeFromStatistics
+            if account.excludeFromStatistics { return false }
+            if !includeGroupTxs && (tx.splitExpenseID != nil || tx.splitSettlementID != nil) {
+                return false
+            }
+            return true
         }
 
         // Use FilterService for filtering and grouping
@@ -210,6 +244,30 @@ final class RecordsViewModel: Filterable {
             transactions: eligibleTransactions,
             criteria: criteria
         )
+
+        // "Identify duplicates" mode: post-filter the result to keep only records with
+        // at least one potential duplicate (exact match over selected criteria). Runs on
+        // the already-filtered set ("duplicates within what you're filtering"). Excludes
+        // transfers/adjustments — their pair is legitimate, not a duplicate to delete.
+        if duplicateModeActive && !duplicateCriteria.isEmpty {
+            let candidates = groupedRecords.flatMap(\.records).compactMap {
+                tx -> RecordsDuplicateLogic.Candidate<PersistentIdentifier>? in
+                guard tx.balanceAdjustmentType == nil else { return nil }
+                return .init(
+                    id: tx.persistentModelID,
+                    amount: tx.amount,
+                    currencyCode: tx.currencyCode,
+                    note: tx.note,
+                    subcategoryID: tx.subcategory?.shortcutID.uuidString,
+                    date: tx.date
+                )
+            }
+            let dupIDs = RecordsDuplicateLogic.duplicateIDs(in: candidates, criteria: duplicateCriteria)
+            groupedRecords = groupedRecords.compactMap { group in
+                let kept = group.records.filter { dupIDs.contains($0.persistentModelID) }
+                return kept.isEmpty ? nil : (group.date, kept)
+            }
+        }
 
         // Update cached summary (calculated once per filter change, not per render)
         calculateSummary()
@@ -285,6 +343,11 @@ final class RecordsViewModel: Filterable {
     func exitSelectionMode() {
         isSelectionMode = false
         selectedRecordIDs.removeAll()
+    }
+
+    /// Exit "identify duplicates" mode (ephemeral — also called on view/tab change)
+    func exitDuplicateMode() {
+        duplicateModeActive = false
     }
 
     /// Delete selected records (including transfer pairs)
@@ -371,10 +434,25 @@ final class RecordsViewModel: Filterable {
 
     // MARK: - Edit Actions
 
-    /// Prepare to edit a single record
-    func editRecord(_ record: TransactionItem) {
+    /// Tap de una row: abre el detalle read-only (TransactionDetailSheet);
+    /// la edición se alcanza desde ahí con el botón Editar.
+    func showRecordDetail(_ record: TransactionItem) {
         editingTransaction = record
-        showEditTransaction = true
+        showTransactionDetail = true
+    }
+
+    /// Botón Editar del detalle: cierra el detalle (slide-down) sin perder la TX.
+    /// El padre presenta NewTransactionView al recibir el `onDismiss` del detalle.
+    func requestEditFromDetail() {
+        pendingEditAfterDetail = true
+        showTransactionDetail = false
+    }
+
+    /// Consume el flag en el `onDismiss` del detalle. `true` → presentar el editor
+    /// (conservar la TX, sin recalcular); `false` → cierre normal del detalle.
+    func consumePendingEditAfterDetail() -> Bool {
+        defer { pendingEditAfterDetail = false }
+        return pendingEditAfterDetail
     }
 
     /// Handle edit action for selected records
@@ -399,9 +477,17 @@ final class RecordsViewModel: Filterable {
 
     // MARK: - Bulk Edit Operations
 
-    /// Update account for all selected transactions
+    /// Update account for all selected transactions.
+    /// Bloqueado si la selección contiene transferencias — una transferencia tiene dos cuentas
+    /// inherentes (origen y destino) ligadas por `transferPairID`; colapsarlas a una sola cuenta
+    /// partiría el par entre cuentas no relacionadas y descuadraría ambos balances (y el exchange
+    /// rate en cross-currency). Editar la cuenta de un transfer debe hacerse desde su editor dedicado.
     func bulkUpdateAccount(_ account: Account, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
+            bulkUpdateError = L10n.BulkEdit.cannotEditTransferAccount
+            return
+        }
         for transaction in transactions {
             transaction.account = account
             transaction.currencyCode = account.currencyCode
@@ -417,9 +503,14 @@ final class RecordsViewModel: Filterable {
         }
     }
 
-    /// Update subcategory for all selected transactions
+    /// Update subcategory for all selected transactions.
+    /// Bloqueado si la selección contiene transferencias — usan subcat sistema obligatoria.
     func bulkUpdateSubcategory(_ subcategory: Subcategory, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
+            bulkUpdateError = L10n.BulkEdit.cannotEditTransferSubcategory
+            return
+        }
         for transaction in transactions {
             transaction.subcategory = subcategory
             transaction.category = subcategory.safeCategory
@@ -434,19 +525,34 @@ final class RecordsViewModel: Filterable {
         }
     }
 
-    /// Add tags to all selected transactions
+    /// Add tags to all selected transactions.
+    /// Propaga al partner para transferencias — MERGE con tags propios del partner (no clobber).
+    /// Usa `partnerSkipIfAmbiguous` para no propagar en collisions 3+ (evita widening desync).
+    /// CSV-first read (resolvedTagIDs) — fixes lazy nil → tag loss bug.
     func bulkAddTags(_ tags: [Tag], context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
-        for transaction in transactions {
-            var currentTags = transaction.tags ?? []
-            for tag in tags {
-                if !currentTags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
-                    currentTags.append(tag)
+        let toAddIDs = Set(tags.map(\.id))
+        var processedPairIDs: Set<String> = []
+
+        // Si el fetch lanza, abortamos toda la operación (no clobber con `setTags(from: [])`).
+        // El old code asignaba un currentTags-derived array sin fetch — no perdía tags ante errors.
+        func applyAdd(to tx: TransactionItem) throws {
+            let currentIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+            let newIDs = currentIDs.union(toAddIDs)
+            guard newIDs != currentIDs else { return }   // idempotent
+            let resolved = try TagResolver.fetch(ids: newIDs, in: context)
+            tx.setTags(from: resolved)
+        }
+
+        do {
+            for transaction in transactions {
+                try applyAdd(to: transaction)
+                if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+                   let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                    processedPairIDs.insert(pairID)
+                    try applyAdd(to: partner)
                 }
             }
-            transaction.tags = currentTags
-        }
-        do {
             try context.save()
             SessionState.shared.incrementDataVersion()
         } catch {
@@ -456,14 +562,36 @@ final class RecordsViewModel: Filterable {
         }
     }
 
-    /// Remove tags from all selected transactions
+    /// Remove tags from all selected transactions.
+    /// Propaga al partner para transferencias. Skip si collision (3+).
+    /// CSV-first read (resolvedTagIDs).
     func bulkRemoveTags(_ tags: [Tag], context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
-        let tagIDsToRemove = Set(tags.map { $0.persistentModelID })
-        for transaction in transactions {
-            var currentTags = transaction.tags ?? []
-            currentTags.removeAll { tagIDsToRemove.contains($0.persistentModelID) }
-            transaction.tags = currentTags
+        let toRemoveIDs = Set(tags.map(\.id))
+        var processedPairIDs: Set<String> = []
+
+        func applyRemove(from tx: TransactionItem) throws {
+            let currentIDs = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+            let newIDs = currentIDs.subtracting(toRemoveIDs)
+            guard newIDs != currentIDs else { return }   // idempotent
+            let resolved = try TagResolver.fetch(ids: newIDs, in: context)
+            tx.setTags(from: resolved)
+        }
+
+        do {
+            for transaction in transactions {
+                try applyRemove(from: transaction)
+                if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+                   let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                    processedPairIDs.insert(pairID)
+                    try applyRemove(from: partner)
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("RecordsViewModel: Error applying bulk remove: \(error)")
+            #endif
+            return  // abort early — no save (preserva tags previos)
         }
         do {
             try context.save()
@@ -475,11 +603,26 @@ final class RecordsViewModel: Filterable {
         }
     }
 
-    /// Update note for all selected transactions
+    /// Update note for all selected transactions.
+    /// Propaga al partner SOLO si su nota actual ya coincide con la de tx (sincronizadas).
+    /// Si las notas divergían intencionalmente, preserva la divergencia. Empty→nil para evitar
+    /// schema noise en CloudKit.
     func bulkUpdateNote(_ note: String, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        let finalNote = note.isEmpty ? nil : note
+        var processedPairIDs: Set<String> = []
         for transaction in transactions {
-            transaction.note = note
+            let originalNote = transaction.note
+            transaction.note = finalNote
+
+            if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+               let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                processedPairIDs.insert(pairID)
+                // Solo propagar si las notas estaban sincronizadas — preserva divergencia legacy.
+                if (originalNote ?? "") == (partner.note ?? "") {
+                    partner.note = finalNote
+                }
+            }
         }
         do {
             try context.save()
@@ -491,13 +634,32 @@ final class RecordsViewModel: Filterable {
         }
     }
 
-    /// Update amount for all selected transactions
+    /// Update amount for all selected transactions.
+    /// Propaga al partner con signo opuesto preservado para mantener balance del transfer.
+    /// Bloquea si la selección contiene transferencias cross-currency (cambiar el amount destruiría
+    /// el exchange rate). Skip si collision (3+).
     func bulkUpdateAmount(_ amount: Double, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        // Preserve exchange rate: bloquear bulk-edit en transfers cross-currency.
+        for tx in transactions {
+            if let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: tx, in: context),
+               tx.currencyCode != partner.currencyCode {
+                bulkUpdateError = L10n.BulkEdit.cannotEditTransferAmountCrossCurrency
+                return
+            }
+        }
+        var processedPairIDs: Set<String> = []
         for transaction in transactions {
             // Preserve sign: expenses are negative, income positive
             transaction.amount = transaction.amount < 0 ? -abs(amount) : abs(amount)
             transaction.recalculatePreferredCurrency(context: context)
+
+            if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
+               let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
+                processedPairIDs.insert(pairID)
+                partner.amount = partner.amount < 0 ? -abs(amount) : abs(amount)
+                partner.recalculatePreferredCurrency(context: context)
+            }
         }
         do {
             try context.save()
@@ -509,11 +671,25 @@ final class RecordsViewModel: Filterable {
         }
     }
 
-    /// Get tags for all selected transactions (for bulk tag editing UI)
-    func getSelectedTransactionTags() -> [[Tag]] {
+    /// Get tags for all selected transactions (for bulk tag editing UI).
+    /// CSV-mirror SSOT: lee UUIDs vía `resolvedTagIDs(scheduleBackfill: true)` y los
+    /// resuelve a Tag objects via `TagResolver.fetch(ids:in:)`. Sobrevive lazy
+    /// hydration de la M2M `tx.tags`.
+    func getSelectedTransactionTags(context: ModelContext) -> [[Tag]] {
         let flatTransactions = groupedRecords.flatMap { $0.records }
-        return selectedRecordIDs.compactMap { id in
-            flatTransactions.first { $0.persistentModelID == id }?.tags
+        return selectedRecordIDs.compactMap { id -> [Tag]? in
+            guard let tx = flatTransactions.first(where: { $0.persistentModelID == id }) else {
+                return nil
+            }
+            let ids = tx.resolvedTagIDs(scheduleBackfill: true) ?? []
+            do {
+                return try TagResolver.fetch(ids: ids, in: context)
+            } catch {
+                #if DEBUG
+                print("RecordsViewModel: getSelectedTransactionTags fetch error: \(error)")
+                #endif
+                return []
+            }
         }
     }
 
@@ -530,7 +706,7 @@ final class RecordsViewModel: Filterable {
         for transaction in selected {
             // Skip transactions without subcategory and transfers (system subcategory)
             guard let subcategory = transaction.subcategory else { continue }
-            if subcategory.isSystemSubcategory { continue }
+            if subcategory.isAnySystem { continue }
 
             if subcategory.safeCategory.isIncome {
                 hasIncome = true

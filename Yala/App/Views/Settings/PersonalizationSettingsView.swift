@@ -12,38 +12,28 @@ struct PersonalizationSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
-    @AppStorage("defaultPeriod") private var defaultPeriodRaw: String = DetailPeriod.allTime
-        .rawValue
-    @AppStorage("colorfulIcons") private var colorfulIcons: Bool = true
-
     private var forcesMonochromeIcons: Bool { theme.forcesMonochromeIcons }
-    @AppStorage("firstWeekday") private var firstWeekdayRaw: Int = 2  // Default to Monday
-    @AppStorage("showWidgetHints") private var showWidgetHints: Bool = true
-    @AppStorage("showVariations") private var showVariations: Bool = true
-    @AppStorage("averageLineMode") private var averageLineMode: Int = 1
-    @AppStorage("decimalPlaces") private var decimalPlaces: Int = 0
-    @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"  // "code" or "symbol"
-    @AppStorage("autoFocusField") private var autoFocusField: String = "none"
+    private var decimalPlaces: Int { appPreferences.decimalPlaces }
     @State private var showingPeriodPicker = false
     @State private var showingAutoFocusPicker = false
     @State private var showingDecimalsPicker = false
     @State private var showingCurrencyFormatPicker = false
-    @State private var showingTabBarConfig = false
     @State private var showingAverageLinePicker = false
     @State private var showingWeekdayPicker = false
     @State private var showingLanguagePicker = false
     @State private var showingExpensesOnlyConfirmation = false
     @State private var showingSmartInsightsSettings = false
 
-    private var selectedPeriod: DetailPeriod {
-        DetailPeriod(rawValue: defaultPeriodRaw) ?? .thisMonth
+    private var isProUser: Bool {
+        FeatureGateService.shared.canAccess(.chatAssistant)
     }
 
     private var selectedWeekday: FirstWeekday {
-        FirstWeekday(rawValue: firstWeekdayRaw) ?? .monday
+        appPreferences.firstWeekday
     }
 
     private var decimalPlacesDisplayName: String {
@@ -55,7 +45,7 @@ struct PersonalizationSettingsView: View {
     }
 
     private var averageLineDisplayName: String {
-        switch averageLineMode {
+        switch appPreferences.averageLineMode {
         case 1: return L10n.Settings.averageLineTotal
         case 2: return L10n.Settings.averageLineSegmented
         default: return L10n.Settings.averageLineOff
@@ -63,15 +53,7 @@ struct PersonalizationSettingsView: View {
     }
 
     private var currencyFormatDisplayName: String {
-        currencyDisplayFormat == "symbol" ? L10n.Settings.currencySymbol : L10n.Settings.currencyCode
-    }
-
-    private var autoFocusDisplayName: String {
-        switch autoFocusField {
-        case "amount": return L10n.Settings.autoFocusAmount
-        case "description": return L10n.Settings.autoFocusNote
-        default: return L10n.Settings.autoFocusNone
-        }
+        appPreferences.currencyDisplayFormat == .symbol ? L10n.Settings.currencySymbol : L10n.Settings.currencyCode
     }
 
     private var currentLanguageDisplayName: String {
@@ -79,12 +61,11 @@ struct PersonalizationSettingsView: View {
         return LanguageManager.supportedLanguages.first { $0.code == code }?.nativeName ?? code
     }
 
-    var body: some View {
-        ZStack {
-            PanelBackgroundView()
 
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+    var body: some View {
+        @Bindable var prefs = appPreferences
+        return ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "slider.horizontal.3")
@@ -182,19 +163,36 @@ struct PersonalizationSettingsView: View {
                             }
                         }
 
-                        // Tab Bar Configuration
+                        // Voice Language
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Button {
-                                showingTabBarConfig = true
+                            Menu {
+                                ForEach(VoiceLanguage.allCases) { language in
+                                    Button {
+                                        appPreferences.voiceLanguage = language
+                                    } label: {
+                                        HStack {
+                                            Text(language.displayName)
+                                            if appPreferences.voiceLanguage == language {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+                                    .accessibilityIdentifier("voice_language_option_\(language.rawValue)")
+                                    .accessibilityAddTraits(appPreferences.voiceLanguage == language ? [.isSelected] : [])
+                                }
                             } label: {
                                 HStack {
-                                    Text(L10n.Settings.tabBarConfig)
+                                    Text(L10n.Settings.voiceLanguage)
                                         .font(DS.Typography.body)
                                         .foregroundStyle(.thPrimaryText)
 
                                     Spacer()
 
-                                    Image(systemName: "chevron.right")
+                                    Text(appPreferences.voiceLanguage.displayName)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.secondary)
+
+                                    Image(systemName: "chevron.up.chevron.down")
                                         .font(DS.Typography.labelSmall.weight(.medium))
                                         .foregroundStyle(.tertiary)
                                 }
@@ -208,11 +206,7 @@ struct PersonalizationSettingsView: View {
                                 )
                             }
                             .buttonStyle(.plain)
-
-                            Text(L10n.Settings.tabBarConfigInfo)
-                                .font(DS.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, DS.Spacing.xxs)
+                            .accessibilityIdentifier("voice_language_menu")
                         }
 
                         // Customize AI Summary
@@ -248,6 +242,37 @@ struct PersonalizationSettingsView: View {
                                 .padding(.horizontal, DS.Spacing.xxs)
                         }
 
+                        // Chat FAB visibility (Free users only — Pro users manage it via per-section Panel preferences)
+                        if !isProUser {
+                            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                                HStack {
+                                    Text(L10n.Widget.chatFabToggle)
+                                        .font(DS.Typography.body)
+                                        .foregroundStyle(.thPrimaryText)
+
+                                    ProBadge(size: .small)
+
+                                    Spacer()
+
+                                    Toggle(L10n.Widget.chatFabToggle, isOn: $prefs.chatFABVisible)
+                                        .labelsHidden()
+                                }
+                                .padding(.horizontal, DS.FormRow.paddingH)
+                                .padding(.vertical, DS.FormRow.paddingV)
+                                .background(.thCard)
+                                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                                )
+
+                                Text(L10n.Widget.chatFabHint)
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, DS.Spacing.xxs)
+                            }
+                        }
+
                         // Colorful Icons Toggle
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                             HStack {
@@ -257,13 +282,10 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle(L10n.Settings.colorfulIcons, isOn: $colorfulIcons)
+                                Toggle(L10n.Settings.colorfulIcons, isOn: $prefs.colorfulIcons)
                                     .labelsHidden()
                                     .disabled(forcesMonochromeIcons)
                                     .accessibilityHint(forcesMonochromeIcons ? L10n.Accessibility.systemMonochromeIcons : "")
-                                    .onChange(of: colorfulIcons) { _, newValue in
-                                        PreferenceSyncService.shared.set(bool: newValue, forKey: "colorfulIcons")
-                                    }
 
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
@@ -300,7 +322,7 @@ struct PersonalizationSettingsView: View {
 
                                     Spacer()
 
-                                    Text(selectedPeriod.displayName)
+                                    Text(appPreferences.defaultPeriod.displayName)
                                         .font(DS.Typography.body)
                                         .foregroundStyle(.secondary)
 
@@ -376,7 +398,7 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle(L10n.Settings.widgetHints, isOn: $showWidgetHints)
+                                Toggle(L10n.Settings.widgetHints, isOn: $prefs.showWidgetHints)
                                     .labelsHidden()
 
                             }
@@ -404,11 +426,8 @@ struct PersonalizationSettingsView: View {
 
                                 Spacer()
 
-                                Toggle(L10n.Settings.showVariations, isOn: $showVariations)
+                                Toggle(L10n.Settings.showVariations, isOn: $prefs.showVariations)
                                     .labelsHidden()
-                                    .onChange(of: showVariations) { _, newValue in
-                                        PreferenceSyncService.shared.set(bool: newValue, forKey: "showVariations")
-                                    }
 
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)
@@ -554,7 +573,7 @@ struct PersonalizationSettingsView: View {
 
                                     Spacer()
 
-                                    Text(autoFocusDisplayName)
+                                    Text(appPreferences.autoFocusField.displayName)
                                         .font(DS.Typography.body)
                                         .foregroundStyle(.secondary)
 
@@ -583,10 +602,10 @@ struct PersonalizationSettingsView: View {
                     Spacer()
                 }
                 .padding(DS.Spacing.lg)
-            }
         }
         .navigationTitle(L10n.Settings.personalization)
         .navigationBarTitleDisplayMode(.inline)
+        .yalaScreenBackground(.subtle)
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -597,24 +616,20 @@ struct PersonalizationSettingsView: View {
         }
         .sheet(isPresented: $showingPeriodPicker) {
             PeriodPickerSheet(
-                selectedPeriod: selectedPeriod,
+                selectedPeriod: appPreferences.defaultPeriod,
                 onSelect: { period in
-                    defaultPeriodRaw = period.rawValue
+                    appPreferences.defaultPeriod = period
                     sessionState.selectedPeriod = period
                     showingPeriodPicker = false
                 }
             )
             .presentationDetents([.large])
         }
-        .sheet(isPresented: $showingTabBarConfig) {
-            TabBarConfigView()
-        }
         .sheet(isPresented: $showingWeekdayPicker) {
             WeekdayPickerSheet(
                 selectedWeekday: selectedWeekday,
                 onSelect: { weekday in
-                    firstWeekdayRaw = weekday.rawValue
-                    PreferenceSyncService.shared.set(int: weekday.rawValue, forKey: "firstWeekday")
+                    appPreferences.firstWeekday = weekday
                     // Force recalculation of dateInterval with new firstWeekday
                     let currentPeriod = sessionState.selectedPeriod
                     sessionState.selectedPeriod = currentPeriod
@@ -634,10 +649,7 @@ struct PersonalizationSettingsView: View {
             DecimalsPickerSheet(
                 selectedDecimals: decimalPlaces,
                 onSelect: { decimals in
-                    decimalPlaces = decimals
-                    PreferenceSyncService.shared.set(int: decimals, forKey: "decimalPlaces")
-                    // Trigger UI refresh for all views showing formatted amounts
-                    sessionState.formattingVersion += 1
+                    appPreferences.decimalPlaces = decimals
                     showingDecimalsPicker = false
                 }
             )
@@ -645,12 +657,11 @@ struct PersonalizationSettingsView: View {
         }
         .sheet(isPresented: $showingCurrencyFormatPicker) {
             CurrencyFormatPickerSheet(
-                selectedFormat: currencyDisplayFormat,
+                selectedFormat: appPreferences.currencyDisplayFormat.rawValue,
                 onSelect: { format in
-                    currencyDisplayFormat = format
-                    PreferenceSyncService.shared.set(string: format, forKey: "currencyDisplayFormat")
-                    // Trigger UI refresh for all views showing formatted amounts
-                    sessionState.formattingVersion += 1
+                    if let parsed = CurrencyDisplayFormat(rawValue: format) {
+                        appPreferences.currencyDisplayFormat = parsed
+                    }
                     showingCurrencyFormatPicker = false
                 }
             )
@@ -658,10 +669,9 @@ struct PersonalizationSettingsView: View {
         }
         .sheet(isPresented: $showingAutoFocusPicker) {
             AutoFocusPickerSheet(
-                selectedField: autoFocusField,
+                selectedField: appPreferences.autoFocusField,
                 onSelect: { field in
-                    autoFocusField = field
-                    PreferenceSyncService.shared.set(string: field, forKey: "autoFocusField")
+                    appPreferences.autoFocusField = field
                     showingAutoFocusPicker = false
                 }
             )
@@ -669,10 +679,9 @@ struct PersonalizationSettingsView: View {
         }
         .sheet(isPresented: $showingAverageLinePicker) {
             AverageLinePickerSheet(
-                selectedMode: averageLineMode,
+                selectedMode: appPreferences.averageLineMode,
                 onSelect: { mode in
-                    averageLineMode = mode
-                    PreferenceSyncService.shared.set(int: mode, forKey: "averageLineMode")
+                    appPreferences.averageLineMode = mode
                     showingAverageLinePicker = false
                 }
             )
@@ -733,26 +742,23 @@ private struct PeriodPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(availablePeriods) { period in
-                            periodRow(for: period)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(availablePeriods) { period in
+                        periodRow(for: period)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.defaultPeriod)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -806,26 +812,23 @@ private struct WeekdayPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(FirstWeekday.allCases) { weekday in
-                            weekdayRow(for: weekday)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(FirstWeekday.allCases) { weekday in
+                        weekdayRow(for: weekday)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.firstWeekday)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -885,26 +888,23 @@ private struct DecimalsPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(options, id: \.value) { option in
-                            decimalsRow(for: option)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(options, id: \.value) { option in
+                        decimalsRow(for: option)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.decimalPlaces)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -969,26 +969,23 @@ private struct CurrencyFormatPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(options, id: \.value) { option in
-                            formatRow(for: option)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(options, id: \.value) { option in
+                        formatRow(for: option)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.currencyFormat)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -1048,26 +1045,23 @@ private struct LanguagePickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(LanguageManager.supportedLanguages, id: \.code) { lang in
-                            languageRow(lang: lang)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(LanguageManager.supportedLanguages) { lang in
+                        languageRow(lang: lang)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.appLanguage)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(L10n.Action.cancel) { dismiss() }
@@ -1076,7 +1070,7 @@ private struct LanguagePickerSheet: View {
         }
     }
 
-    private func languageRow(lang: (code: String, nativeName: String, flag: String)) -> some View {
+    private func languageRow(lang: SupportedLocale) -> some View {
         let isSelected = selectedLanguage == lang.code
 
         return VStack(spacing: DS.Spacing.none) {
@@ -1129,26 +1123,23 @@ private struct AverageLinePickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(options, id: \.value) { option in
-                            averageLineRow(for: option)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(options, id: \.value) { option in
+                        averageLineRow(for: option)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.averageLine)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -1201,39 +1192,32 @@ private struct AverageLinePickerSheet: View {
 // MARK: - Auto-Focus Picker Sheet
 
 private struct AutoFocusPickerSheet: View {
-    let selectedField: String
-    let onSelect: (String) -> Void
+    let selectedField: AutoFocusField
+    let onSelect: (AutoFocusField) -> Void
 
     @Environment(\.dismiss) private var dismiss
 
-    private let options: [(value: String, label: String)] = [
-        ("none", L10n.Settings.autoFocusNone),
-        ("amount", L10n.Settings.autoFocusAmount),
-        ("description", L10n.Settings.autoFocusNote),
-    ]
+    private let options: [AutoFocusField] = AutoFocusField.allCases
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
-                    VStack(spacing: DS.Spacing.none) {
-                        ForEach(options, id: \.value) { option in
-                            autoFocusRow(for: option)
-                        }
+            ScrollView {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(options) { option in
+                        autoFocusRow(for: option)
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
-                    .padding(DS.Spacing.lg)
                 }
+                .background(.thCard)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg)
+                        .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+                )
+                .padding(DS.Spacing.lg)
             }
             .navigationTitle(L10n.Settings.autoFocusField)
             .navigationBarTitleDisplayMode(.inline)
+            .yalaScreenBackground(DS.Adaptive.usesLargeSheets ? .subtle : .transparent)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
@@ -1245,14 +1229,14 @@ private struct AutoFocusPickerSheet: View {
     }
 
     @ViewBuilder
-    private func autoFocusRow(for option: (value: String, label: String)) -> some View {
-        let isSelected = selectedField == option.value
+    private func autoFocusRow(for option: AutoFocusField) -> some View {
+        let isSelected = selectedField == option
 
         Button {
-            onSelect(option.value)
+            onSelect(option)
         } label: {
             HStack {
-                Text(option.label)
+                Text(option.displayName)
                     .font(DS.Typography.body)
                     .foregroundStyle(.thPrimaryText)
 
@@ -1270,7 +1254,7 @@ private struct AutoFocusPickerSheet: View {
         }
         .buttonStyle(.plain)
 
-        if option.value != "description" {
+        if option != .description {
             Divider()
                 .padding(.leading, DS.Spacing.lg)
         }
@@ -1281,5 +1265,6 @@ private struct AutoFocusPickerSheet: View {
     NavigationStack {
         PersonalizationSettingsView()
             .environment(SessionState())
+            .previewAppPreferences()
     }
 }

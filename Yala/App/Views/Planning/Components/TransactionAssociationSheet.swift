@@ -11,26 +11,29 @@ import SwiftUI
 struct TransactionAssociationSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppPreferences.self) private var appPreferences
 
     let payment: ScheduledPayment
-    let selectedMonth: Date
+    let referenceDate: Date
     @Bindable var viewModel: ScheduledPaymentsViewModel
 
     @State private var candidates: [TransactionItem] = []
     @State private var showConfirmation: Bool = false
     @State private var selectedTransaction: TransactionItem?
+    @State private var selectedDetent: PresentationDetent = .medium
+
+    private var isLargeDetent: Bool { selectedDetent == .large }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView()
-
                 if candidates.isEmpty {
                     emptyState
                 } else {
                     candidatesList
                 }
             }
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(NSLocalizedString("scheduled.associate.title", comment: ""))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -41,7 +44,7 @@ struct TransactionAssociationSheet: View {
                 }
             }
             .onAppear {
-                candidates = viewModel.fetchCandidateTransactions(for: payment, month: selectedMonth)
+                candidates = viewModel.fetchCandidateTransactions(for: payment, referenceDate: referenceDate)
             }
             .alert(
                 NSLocalizedString("scheduled.associate.confirm", comment: ""),
@@ -58,6 +61,7 @@ struct TransactionAssociationSheet: View {
                 }
             }
         }
+        .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]), selection: $selectedDetent)
     }
 
     // MARK: - Empty State
@@ -116,9 +120,14 @@ struct TransactionAssociationSheet: View {
                 Text(payment.name)
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
-                Text(YalaFormatter.currency(value: payment.amount, currencyCode: payment.currencyCode, forceFullPrecision: true, isEstimate: payment.isVariableAmount))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
+                AmountText(
+                    value: payment.amount,
+                    currencyCode: payment.currencyCode,
+                    font: DS.Typography.caption,
+                    tint: .secondary,
+                    isEstimate: payment.isVariableAmount,
+                    forceFullPrecision: true
+                )
             }
 
             Spacer()
@@ -201,9 +210,12 @@ struct TransactionAssociationSheet: View {
                         )
                 }
 
-                Text(YalaFormatter.currency(value: transaction.amount, currencyCode: transaction.currencyCode, forceFullPrecision: true))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
+                AmountText(
+                    value: transaction.amount,
+                    currencyCode: transaction.currencyCode,
+                    font: DS.Typography.headline,
+                    forceFullPrecision: true
+                )
             }
             .padding(DS.Spacing.md)
             .background(.thCard)

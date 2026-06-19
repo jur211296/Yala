@@ -9,62 +9,173 @@ import Foundation
 
 // MARK: - Language Manager
 
+extension Notification.Name {
+    /// Fired when the user's language override changes (locally or via iCloud KV sync).
+    /// Observers should invalidate cached strings/locale and force re-render.
+    static let languageDidChange = Notification.Name("LanguageDidChange")
+}
+
+/// Single point of truth para bundle Y locale juntos. Evita divergencia entre
+/// formatters (que leen `AppLocale.current`) y strings (que leen `LanguageManager.bundle`).
+struct LocaleResolution {
+    let bundle: Bundle
+    let parentBundle: Bundle?
+    let locale: Locale
+}
+
 /// Manages in-app language override for users whose device language is not supported.
+/// Consume `SupportedLocale` como single source of truth — añadir un idioma se hace
+/// agregando case en `SupportedLocale.swift`, no aquí.
+///
+/// **Storage:** App Group suite (compartido con widgets) + iCloud KV (sync cross-device).
+/// Migración one-shot desde `UserDefaults.standard` ejecutada en `bootstrapMigrationIfNeeded`.
 enum LanguageManager {
-    private static let overrideKey = "appLanguageOverride"
+    static let overrideKey = "appLanguageOverride"
+    private static let migrationSentinelKey = "appLanguageOverrideMigratedV1"
 
-    /// Supported languages with native names and flags
-    static let supportedLanguages: [(code: String, nativeName: String, flag: String)] = [
-        ("es", "Español", "🇪🇸"),
-        ("en", "English", "🇺🇸"),
-        ("de", "Deutsch", "🇩🇪"),
-        ("fr", "Français", "🇫🇷"),
-        ("it", "Italiano", "🇮🇹"),
-        ("pt", "Português", "🇧🇷")
-    ]
-
-    /// Whether the device's preferred language is one of our supported languages
-    static var deviceLanguageIsSupported: Bool {
-        let deviceLang = String(Locale.preferredLanguages.first?.prefix(2) ?? "en")
-        return supportedLanguages.contains { $0.code == deviceLang }
+    /// App Group suite — compartido con widgets, share extension y procesos hermanos.
+    /// Si por alguna razón el suite no está disponible, fallback a `UserDefaults.standard`.
+    static var sharedDefaults: UserDefaults {
+        UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) ?? .standard
     }
 
-    /// User's language override (nil = use system language)
+    /// Supported locales as the typed enum. Use `.code/.nativeName/.flag` properties.
+    static var supportedLanguages: [SupportedLocale] { SupportedLocale.selectableCases }
+
+    /// Whether the device's preferred language is one of our supported locales.
+    static var deviceLanguageIsSupported: Bool {
+        let preferred = Locale.preferredLanguages.first ?? "en"
+        return SupportedLocale.from(preferred) != nil
+    }
+
+    /// User's language override (nil = use system language).
+    /// Setter persiste en App Group + iCloud KV y emite `.languageDidChange`.
+    /// No-op si `newValue == oldValue` (evita iKV.synchronize() bloqueante + notif spam).
     static var overrideLanguage: String? {
-        get { UserDefaults.standard.string(forKey: overrideKey) }
-        set { UserDefaults.standard.set(newValue, forKey: overrideKey) }
+        get { sharedDefaults.string(forKey: overrideKey) }
+        set {
+            guard newValue != sharedDefaults.string(forKey: overrideKey) else { return }
+            sharedDefaults.set(newValue, forKey: overrideKey)
+            let iKV = NSUbiquitousKeyValueStore.default
+            if let value = newValue {
+                iKV.set(value, forKey: overrideKey)
+            } else {
+                iKV.removeObject(forKey: overrideKey)
+            }
+            iKV.synchronize()
+            NotificationCenter.default.post(name: .languageDidChange, object: nil)
+        }
     }
 
     /// Best guess for pre-selecting a language when the device language is not supported.
     /// Falls back to English if no match found.
     static var closestSupportedLanguage: String {
-        let deviceLang = String(Locale.preferredLanguages.first?.prefix(2) ?? "en")
-        // Check if the device language base matches any supported language
-        if supportedLanguages.contains(where: { $0.code == deviceLang }) {
-            return deviceLang
-        }
-        // Check region-based hints (e.g. pt-BR user → Portuguese, Latin American → Spanish)
-        let region = Locale.current.region?.identifier ?? ""
-        let latinAmericanCountries = ["MX", "AR", "CO", "CL", "PE", "VE", "EC", "GT", "CU", "BO", "DO", "HN", "PY", "SV", "NI", "CR", "PA", "UY"]
-        if latinAmericanCountries.contains(region) { return "es" }
-        if region == "BR" { return "pt" }
-        return "en"
+        SupportedLocale.bestMatch(
+            forPreferredLanguages: Locale.preferredLanguages,
+            region: Locale.current.region?.identifier
+        ).code
     }
 
     /// Bundle for loading localized strings (override or main)
     static var bundle: Bundle {
-        guard let override = overrideLanguage,
-              let path = Bundle.main.path(forResource: override, ofType: "lproj"),
-              let bundle = Bundle(path: path) else {
-            return .main
+        resolved.bundle
+    }
+
+    /// Resolución completa de bundle + parentBundle + locale para el override actual.
+    /// `parentBundle` se usa en `ls()` para fallback variante→padre cuando una key
+    /// no existe en la variante (iOS NO hace este fallback automáticamente al cargar
+    /// `Bundle(path:)` directamente).
+    static var resolved: LocaleResolution {
+        if let override = overrideLanguage,
+           let overrideLocale = SupportedLocale(rawValue: override),
+           let overrideBundle = bundleFor(overrideLocale) {
+            let parentBundle = overrideLocale.parent.flatMap { bundleFor($0) }
+            return LocaleResolution(
+                bundle: overrideBundle,
+                parentBundle: parentBundle,
+                locale: Locale(identifier: override)
+            )
         }
+        let systemLocale: Locale = {
+            if let preferred = Locale.preferredLanguages.first,
+               SupportedLocale.from(preferred) != nil {
+                return Locale(identifier: preferred)
+            }
+            return Locale(identifier: "en_US")
+        }()
+        return LocaleResolution(bundle: .main, parentBundle: nil, locale: systemLocale)
+    }
+
+    private static func bundleFor(_ locale: SupportedLocale) -> Bundle? {
+        guard let path = Bundle.main.path(forResource: locale.bundleResourceName, ofType: "lproj"),
+              let bundle = Bundle(path: path) else { return nil }
         return bundle
+    }
+
+    // MARK: - Migration (one-shot)
+
+    /// Aliases legacy a remappear a su variante canónica cuando ya existen.
+    /// Tipo enum-to-enum (no raw strings) para que un rename del case detecte el drift.
+    private static let aliasRemap: [SupportedLocale: SupportedLocale] = [
+        .pt: .ptBR,
+        .es: .es419
+    ]
+
+    /// Migra el override desde `UserDefaults.standard` al App Group suite y remappea
+    /// aliases legacy (`pt` → `pt-BR`, `es` → `es-419`) a su variante canónica.
+    /// Llamar al inicio del app launch, después de `PreferenceSyncService.bootstrap()`.
+    /// Idempotente vía `migrationSentinelKey`.
+    static func bootstrapMigrationIfNeeded() {
+        let suite = sharedDefaults
+
+        // Step 1: standard → App Group (corre solo la primera vez).
+        if !suite.bool(forKey: migrationSentinelKey) {
+            let legacy = UserDefaults.standard.string(forKey: overrideKey)
+            if let legacy {
+                suite.set(legacy, forKey: overrideKey)
+                UserDefaults.standard.removeObject(forKey: overrideKey)
+            }
+            suite.set(true, forKey: migrationSentinelKey)
+
+            #if DEBUG
+            print("LanguageManager: Migrated legacy override '\(legacy ?? "nil")' from standard → App Group")
+            #endif
+        }
+
+        // Step 2: alias remap. Idempotente — si el valor ya es canónico, no hace nada.
+        if let current = suite.string(forKey: overrideKey),
+           let alias = SupportedLocale(rawValue: current),
+           let canonical = aliasRemap[alias] {
+            suite.set(canonical.code, forKey: overrideKey)
+            NSUbiquitousKeyValueStore.default.set(canonical.code, forKey: overrideKey)
+            NSUbiquitousKeyValueStore.default.synchronize()
+
+            #if DEBUG
+            print("LanguageManager: Remapped legacy alias '\(current)' → '\(canonical.code)'")
+            #endif
+        }
     }
 }
 
-/// Shorthand for localized string with language override support
+/// Localized string lookup con fallback chain manual: variante → padre → main → key.
+/// iOS NO hace este fallback automáticamente cuando se carga `Bundle(path:)` para
+/// una variante regional, así que componemos cada nivel manualmente.
 private func ls(_ key: String, comment: String = "") -> String {
-    NSLocalizedString(key, bundle: LanguageManager.bundle, comment: comment)
+    let resolution = LanguageManager.resolved
+    let sentinel = "__YALA_MISSING__"
+
+    let variantValue = NSLocalizedString(key, bundle: resolution.bundle, value: sentinel, comment: comment)
+    if variantValue != sentinel { return variantValue }
+
+    if let parent = resolution.parentBundle {
+        let parentValue = NSLocalizedString(key, bundle: parent, value: sentinel, comment: comment)
+        if parentValue != sentinel { return parentValue }
+    }
+
+    let mainValue = NSLocalizedString(key, bundle: .main, value: sentinel, comment: comment)
+    if mainValue != sentinel { return mainValue }
+
+    return key
 }
 
 // MARK: - Localized Strings
@@ -81,6 +192,620 @@ enum L10n {
         }
         static var widgets: String {
             ls("panel.widgets", comment: "Widgets section title")
+        }
+        static var sectionHealth: String {
+            ls("panel.section.health", comment: "Panel 2.0 Salud financiera section title")
+        }
+        static var sectionTendencias: String {
+            ls("panel.section.tendencias", comment: "Panel 2.0 Tendencias section title")
+        }
+        static var sectionDistribucion: String {
+            ls("panel.section.distribucion", comment: "Panel 2.0 Distribución section title")
+        }
+        static var sectionPlanificacion: String {
+            ls("panel.section.planificacion", comment: "Panel 2.0 Planificación section title")
+        }
+        static var sectionLatestRecords: String {
+            ls("panel.section.latestRecords", comment: "Panel 2.0 Últimos registros section title")
+        }
+        static var sectionTools: String {
+            ls("panel.section.tools", comment: "Panel 2.0 Herramientas section title")
+        }
+
+        // MARK: - P20-11 Section footer CTAs
+
+        static var seeMoreInTrends: String {
+            ls("panel.seeMoreInTrends", comment: "P20-11 CTA at the bottom of the Tendencias section — navigates to Statistics")
+        }
+        static var seeMoreInDistribution: String {
+            ls("panel.seeMoreInDistribution", comment: "P20-11 CTA at the bottom of the Distribución section — navigates to Statistics")
+        }
+        static var seeAllRecords: String {
+            ls("panel.seeAllRecords", comment: "P20-11 CTA at the bottom of the Últimos registros section — navigates to Records")
+        }
+        static var seeBudgets: String {
+            ls("panel.seeBudgets", comment: "P20-11 per-widget CTA below Budgets in Planificación — navigates to Budgets")
+        }
+        static var seeScheduledPayments: String {
+            ls("panel.seeScheduledPayments", comment: "P20-11 per-widget CTA below Scheduled Payments in Planificación")
+        }
+        static var seeMoreHintTrends: String {
+            ls("panel.seeMoreHint.trends", comment: "P20-11 VoiceOver hint for Tendencias CTA")
+        }
+        static var seeMoreHintDistribution: String {
+            ls("panel.seeMoreHint.distribution", comment: "P20-11 VoiceOver hint for Distribución CTA")
+        }
+        static var seeMoreHintRecords: String {
+            ls("panel.seeMoreHint.records", comment: "P20-11 VoiceOver hint for Últimos registros CTA")
+        }
+        static var seeMoreHintBudgets: String {
+            ls("panel.seeMoreHint.budgets", comment: "P20-11 VoiceOver hint for Budgets CTA")
+        }
+        static var seeMoreHintScheduled: String {
+            ls("panel.seeMoreHint.scheduled", comment: "P20-11 VoiceOver hint for Scheduled Payments CTA")
+        }
+
+        // MARK: - P20-11 Widget size picker
+
+        enum WidgetSize {
+            static var small: String {
+                ls("panel.widgetSize.small", comment: "Widget size picker — small label")
+            }
+            static var medium: String {
+                ls("panel.widgetSize.medium", comment: "P20-11 M/L size picker — medium label")
+            }
+            static var large: String {
+                ls("panel.widgetSize.large", comment: "P20-11 M/L size picker — large label")
+            }
+        }
+
+        // MARK: - Panel Polish #2 — Widget Info Sheets (sheet pedagógica)
+
+        enum WidgetInfo {
+            static var addToPanel: String {
+                ls("panel.widgetInfo.addToPanel", comment: "Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto")
+            }
+
+            enum CashFlow {
+                static var title: String {
+                    ls("panel.widgetInfo.cashFlow.title", comment: "Panel Polish #2 — Title sheet pedagógico CashFlow")
+                }
+                static var chip1: String {
+                    ls("panel.widgetInfo.cashFlow.chip1", comment: "Panel Polish #2 — Chip 1 CashFlow")
+                }
+                static var chip2: String {
+                    ls("panel.widgetInfo.cashFlow.chip2", comment: "Panel Polish #2 — Chip 2 CashFlow")
+                }
+                static var chip3: String {
+                    ls("panel.widgetInfo.cashFlow.chip3", comment: "Panel Polish #2 — Chip 3 CashFlow")
+                }
+                static var chip4: String {
+                    ls("panel.widgetInfo.cashFlow.chip4", comment: "Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large)")
+                }
+                // Q&A — small (sin interacción)
+                static var smallWhatQ: String {
+                    ls("panel.widgetInfo.cashFlow.smallWhatQ", comment: "Panel Polish #2 — CashFlow S: pregunta '¿Qué estás viendo?'")
+                }
+                static var smallWhatA: String {
+                    ls("panel.widgetInfo.cashFlow.smallWhatA", comment: "Panel Polish #2 — CashFlow S: respuesta a '¿Qué estás viendo?'")
+                }
+                // Q&A — medium (sin interacción, mismo contenido más espacioso)
+                static var mediumWhatQ: String {
+                    ls("panel.widgetInfo.cashFlow.mediumWhatQ", comment: "Panel Polish #2 — CashFlow M: pregunta '¿Qué estás viendo?'")
+                }
+                static var mediumWhatA: String {
+                    ls("panel.widgetInfo.cashFlow.mediumWhatA", comment: "Panel Polish #2 — CashFlow M: respuesta a '¿Qué estás viendo?'")
+                }
+                // Q&A — large (chart con scrubbing)
+                static var largeWhatQ: String {
+                    ls("panel.widgetInfo.cashFlow.largeWhatQ", comment: "Panel Polish #2 — CashFlow L: pregunta '¿Qué estás viendo?'")
+                }
+                static var largeWhatA: String {
+                    ls("panel.widgetInfo.cashFlow.largeWhatA", comment: "Panel Polish #2 — CashFlow L: respuesta a '¿Qué estás viendo?'")
+                }
+                static var largeHowQ: String {
+                    ls("panel.widgetInfo.cashFlow.largeHowQ", comment: "Panel Polish #2 — CashFlow L: pregunta '¿Cómo interactúo con la gráfica?'")
+                }
+                static var largeHowA: String {
+                    ls("panel.widgetInfo.cashFlow.largeHowA", comment: "Panel Polish #2 — CashFlow L: respuesta a '¿Cómo interactúo con la gráfica?'")
+                }
+                // Q&A — común a las 3 sizes
+                static var balanceQ: String {
+                    ls("panel.widgetInfo.cashFlow.balanceQ", comment: "Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L)")
+                }
+                static var balanceA: String {
+                    ls("panel.widgetInfo.cashFlow.balanceA", comment: "Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?'")
+                }
+            }
+
+            enum Trend {
+                static var title: String {
+                    ls("panel.widgetInfo.trend.title", comment: "Panel Polish #2 — Title sheet pedagógico Trend")
+                }
+                static var chip1: String {
+                    ls("panel.widgetInfo.trend.chip1", comment: "Panel Polish #2 — Chip 1 Trend")
+                }
+                static var chip2: String {
+                    ls("panel.widgetInfo.trend.chip2", comment: "Panel Polish #2 — Chip 2 Trend")
+                }
+                // Q&A — small (sin interacción)
+                static var smallWhatQ: String {
+                    ls("panel.widgetInfo.trend.smallWhatQ", comment: "Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?'")
+                }
+                static var smallWhatA: String {
+                    ls("panel.widgetInfo.trend.smallWhatA", comment: "Panel Polish #2 — Trend S: respuesta a '¿Qué estás viendo?'")
+                }
+                // Q&A — large (chart con scrubbing + selector métrica)
+                static var largeWhatQ: String {
+                    ls("panel.widgetInfo.trend.largeWhatQ", comment: "Panel Polish #2 — Trend L: pregunta '¿Qué estás viendo?'")
+                }
+                static var largeWhatA: String {
+                    ls("panel.widgetInfo.trend.largeWhatA", comment: "Panel Polish #2 — Trend L: respuesta a '¿Qué estás viendo?'")
+                }
+                static var largeHowQ: String {
+                    ls("panel.widgetInfo.trend.largeHowQ", comment: "Panel Polish #2 — Trend L: pregunta '¿Cómo interactúo con la gráfica?'")
+                }
+                static var largeHowA: String {
+                    ls("panel.widgetInfo.trend.largeHowA", comment: "Panel Polish #2 — Trend L: respuesta a '¿Cómo interactúo con la gráfica?'")
+                }
+                // Q&A — FX coherence (live balance multi-currency fix)
+                static var fxMatchQ: String {
+                    ls("panel.widgetInfo.trend.fxMatchQ", comment: "Live Balance — Trend M/L: pregunta sobre por qué el último punto puede no coincidir con el saldo total")
+                }
+                static var fxMatchA: String {
+                    ls("panel.widgetInfo.trend.fxMatchA", comment: "Live Balance — Trend M/L: respuesta sobre fluctuación cambiaria")
+                }
+            }
+
+            // MARK: - Bloque 1 (Pies + Need)
+
+            enum CategoriesPie {
+                static var title: String { ls("panel.widgetInfo.categoriesPie.title", comment: "Panel Polish #2 — Title sheet pedagógico CategoriesPie") }
+                static var chip1: String { ls("panel.widgetInfo.categoriesPie.chip1", comment: "Panel Polish #2 — Chip 1 CategoriesPie (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.categoriesPie.chip2", comment: "Panel Polish #2 — Chip 2 CategoriesPie (período)") }
+                static var chip3: String { ls("panel.widgetInfo.categoriesPie.chip3", comment: "Panel Polish #2 — Chip 3 CategoriesPie (Interactiva)") }
+                static var smallWhatQ: String { ls("panel.widgetInfo.categoriesPie.smallWhatQ", comment: "Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?'") }
+                static var smallWhatA: String { ls("panel.widgetInfo.categoriesPie.smallWhatA", comment: "Panel Polish #2 — CategoriesPie S: respuesta") }
+                static var smallHowQ: String { ls("panel.widgetInfo.categoriesPie.smallHowQ", comment: "Panel Polish #2 — CategoriesPie S: pregunta '¿Cómo interactúo?'") }
+                static var smallHowA: String { ls("panel.widgetInfo.categoriesPie.smallHowA", comment: "Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo'") }
+                static var largeWhatQ: String { ls("panel.widgetInfo.categoriesPie.largeWhatQ", comment: "Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?'") }
+                static var largeWhatA: String { ls("panel.widgetInfo.categoriesPie.largeWhatA", comment: "Panel Polish #2 — CategoriesPie L: respuesta") }
+                static var largeHowQ: String { ls("panel.widgetInfo.categoriesPie.largeHowQ", comment: "Panel Polish #2 — CategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?'") }
+                static var largeHowA: String { ls("panel.widgetInfo.categoriesPie.largeHowA", comment: "Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo'") }
+            }
+
+            enum SubcategoriesPie {
+                static var title: String { ls("panel.widgetInfo.subcategoriesPie.title", comment: "Panel Polish #2 — Title sheet pedagógico SubcategoriesPie") }
+                static var chip1: String { ls("panel.widgetInfo.subcategoriesPie.chip1", comment: "Panel Polish #2 — Chip 1 SubcategoriesPie (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.subcategoriesPie.chip2", comment: "Panel Polish #2 — Chip 2 SubcategoriesPie (período)") }
+                static var chip3: String { ls("panel.widgetInfo.subcategoriesPie.chip3", comment: "Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva)") }
+                static var smallWhatQ: String { ls("panel.widgetInfo.subcategoriesPie.smallWhatQ", comment: "Panel Polish #2 — SubcategoriesPie S: pregunta") }
+                static var smallWhatA: String { ls("panel.widgetInfo.subcategoriesPie.smallWhatA", comment: "Panel Polish #2 — SubcategoriesPie S: respuesta") }
+                static var smallHowQ: String { ls("panel.widgetInfo.subcategoriesPie.smallHowQ", comment: "Panel Polish #2 — SubcategoriesPie S: pregunta") }
+                static var smallHowA: String { ls("panel.widgetInfo.subcategoriesPie.smallHowA", comment: "Panel Polish #2 — SubcategoriesPie S: respuesta") }
+                static var largeWhatQ: String { ls("panel.widgetInfo.subcategoriesPie.largeWhatQ", comment: "Panel Polish #2 — SubcategoriesPie L: pregunta") }
+                static var largeWhatA: String { ls("panel.widgetInfo.subcategoriesPie.largeWhatA", comment: "Panel Polish #2 — SubcategoriesPie L: respuesta") }
+                static var largeHowQ: String { ls("panel.widgetInfo.subcategoriesPie.largeHowQ", comment: "Panel Polish #2 — SubcategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?'") }
+                static var largeHowA: String { ls("panel.widgetInfo.subcategoriesPie.largeHowA", comment: "Panel Polish #2 — SubcategoriesPie L: respuesta") }
+            }
+
+            enum TagsPie {
+                static var title: String { ls("panel.widgetInfo.tagsPie.title", comment: "Panel Polish #2 — Title sheet pedagógico TagsPie") }
+                static var chip1: String { ls("panel.widgetInfo.tagsPie.chip1", comment: "Panel Polish #2 — Chip 1 TagsPie (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.tagsPie.chip2", comment: "Panel Polish #2 — Chip 2 TagsPie (período)") }
+                static var chip3: String { ls("panel.widgetInfo.tagsPie.chip3", comment: "Panel Polish #2 — Chip 3 TagsPie (Interactiva)") }
+                static var smallWhatQ: String { ls("panel.widgetInfo.tagsPie.smallWhatQ", comment: "Panel Polish #2 — TagsPie S: pregunta") }
+                static var smallWhatA: String { ls("panel.widgetInfo.tagsPie.smallWhatA", comment: "Panel Polish #2 — TagsPie S: respuesta") }
+                static var smallHowQ: String { ls("panel.widgetInfo.tagsPie.smallHowQ", comment: "Panel Polish #2 — TagsPie S: pregunta") }
+                static var smallHowA: String { ls("panel.widgetInfo.tagsPie.smallHowA", comment: "Panel Polish #2 — TagsPie S: respuesta") }
+                static var largeWhatQ: String { ls("panel.widgetInfo.tagsPie.largeWhatQ", comment: "Panel Polish #2 — TagsPie L: pregunta") }
+                static var largeWhatA: String { ls("panel.widgetInfo.tagsPie.largeWhatA", comment: "Panel Polish #2 — TagsPie L: respuesta") }
+                static var largeHowQ: String { ls("panel.widgetInfo.tagsPie.largeHowQ", comment: "Panel Polish #2 — TagsPie L: pregunta") }
+                static var largeHowA: String { ls("panel.widgetInfo.tagsPie.largeHowA", comment: "Panel Polish #2 — TagsPie L: respuesta") }
+            }
+
+            // MARK: - Bloque 2 (Tops)
+
+            enum TopCategories {
+                static var title: String { ls("panel.widgetInfo.topCategories.title", comment: "Panel Polish #2 — Title sheet pedagógico TopCategories") }
+                static var chip1: String { ls("panel.widgetInfo.topCategories.chip1", comment: "Panel Polish #2 — Chip 1 TopCategories (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.topCategories.chip2", comment: "Panel Polish #2 — Chip 2 TopCategories (período)") }
+                static var chip3: String { ls("panel.widgetInfo.topCategories.chip3", comment: "Panel Polish #2 — Chip 3 TopCategories (Interactiva)") }
+                static var smallWhatQ: String { ls("panel.widgetInfo.topCategories.smallWhatQ", comment: "Panel Polish #2 — TopCategories S: pregunta") }
+                static var smallWhatA: String { ls("panel.widgetInfo.topCategories.smallWhatA", comment: "Panel Polish #2 — TopCategories S: respuesta") }
+                static var regularWhatQ: String { ls("panel.widgetInfo.topCategories.regularWhatQ", comment: "Panel Polish #2 — TopCategories M/L: pregunta (compartida)") }
+                static var regularWhatA: String { ls("panel.widgetInfo.topCategories.regularWhatA", comment: "Panel Polish #2 — TopCategories M/L: respuesta (compartida)") }
+                static var howQ: String { ls("panel.widgetInfo.topCategories.howQ", comment: "Panel Polish #2 — TopCategories: pregunta '¿Cómo interactúo?' (compartida S/M/L)") }
+                static var howA: String { ls("panel.widgetInfo.topCategories.howA", comment: "Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L)") }
+            }
+
+            enum TopSubcategories {
+                static var title: String { ls("panel.widgetInfo.topSubcategories.title", comment: "Panel Polish #2 — Title sheet pedagógico TopSubcategories") }
+                static var chip1: String { ls("panel.widgetInfo.topSubcategories.chip1", comment: "Panel Polish #2 — Chip 1 TopSubcategories (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.topSubcategories.chip2", comment: "Panel Polish #2 — Chip 2 TopSubcategories (período)") }
+                static var chip3: String { ls("panel.widgetInfo.topSubcategories.chip3", comment: "Panel Polish #2 — Chip 3 TopSubcategories (Interactiva)") }
+                static var smallWhatQ: String { ls("panel.widgetInfo.topSubcategories.smallWhatQ", comment: "Panel Polish #2 — TopSubcategories S: pregunta") }
+                static var smallWhatA: String { ls("panel.widgetInfo.topSubcategories.smallWhatA", comment: "Panel Polish #2 — TopSubcategories S: respuesta") }
+                static var regularWhatQ: String { ls("panel.widgetInfo.topSubcategories.regularWhatQ", comment: "Panel Polish #2 — TopSubcategories M/L: pregunta (compartida)") }
+                static var regularWhatA: String { ls("panel.widgetInfo.topSubcategories.regularWhatA", comment: "Panel Polish #2 — TopSubcategories M/L: respuesta (compartida)") }
+                static var howQ: String { ls("panel.widgetInfo.topSubcategories.howQ", comment: "Panel Polish #2 — TopSubcategories: pregunta '¿Cómo interactúo?' (compartida S/M/L)") }
+                static var smallHowA: String { ls("panel.widgetInfo.topSubcategories.smallHowA", comment: "Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector)") }
+                static var regularHowA: String { ls("panel.widgetInfo.topSubcategories.regularHowA", comment: "Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector)") }
+            }
+
+            // MARK: - Bloque 3 (Listas)
+
+            enum RecentRecords {
+                static var title: String { ls("panel.widgetInfo.recentRecords.title", comment: "Panel Polish #2 — Title sheet pedagógico RecentRecords") }
+                static var chip1: String { ls("panel.widgetInfo.recentRecords.chip1", comment: "Panel Polish #2 — Chip 1 RecentRecords (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.recentRecords.chip2", comment: "Panel Polish #2 — Chip 2 RecentRecords (período)") }
+                static var whatQ: String { ls("panel.widgetInfo.recentRecords.whatQ", comment: "Panel Polish #2 — RecentRecords: pregunta") }
+                static var whatA: String { ls("panel.widgetInfo.recentRecords.whatA", comment: "Panel Polish #2 — RecentRecords: respuesta") }
+            }
+
+            enum ScheduledPayments {
+                static var title: String { ls("panel.widgetInfo.scheduledPayments.title", comment: "Panel Polish #2 — Title sheet pedagógico ScheduledPayments") }
+                static var chip1: String { ls("panel.widgetInfo.scheduledPayments.chip1", comment: "Panel Polish #2 — Chip 1 ScheduledPayments (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.scheduledPayments.chip2", comment: "Panel Polish #2 — Chip 2 ScheduledPayments (mes en curso)") }
+                static var chip3: String { ls("panel.widgetInfo.scheduledPayments.chip3", comment: "Panel Polish #2 — Chip 3 ScheduledPayments (Interactiva)") }
+                static var whatQ: String { ls("panel.widgetInfo.scheduledPayments.whatQ", comment: "Panel Polish #2 — ScheduledPayments: pregunta '¿Qué estás viendo?' (compartida S/M)") }
+                static var smallWhatA: String { ls("panel.widgetInfo.scheduledPayments.smallWhatA", comment: "Panel Polish #2 — ScheduledPayments S: respuesta") }
+                static var mediumWhatA: String { ls("panel.widgetInfo.scheduledPayments.mediumWhatA", comment: "Panel Polish #2 — ScheduledPayments M: respuesta") }
+                static var howQ: String { ls("panel.widgetInfo.scheduledPayments.howQ", comment: "Panel Polish #2 — ScheduledPayments: pregunta '¿Cómo interactúo?' (compartida S/M)") }
+                static var smallHowA: String { ls("panel.widgetInfo.scheduledPayments.smallHowA", comment: "Panel Polish #2 — ScheduledPayments S: respuesta a 'cómo interactúo'") }
+                static var mediumHowA: String { ls("panel.widgetInfo.scheduledPayments.mediumHowA", comment: "Panel Polish #2 — ScheduledPayments M: respuesta a 'cómo interactúo'") }
+            }
+
+            enum Budgets {
+                static var title: String { ls("panel.widgetInfo.budgets.title", comment: "Panel Polish #2 — Title sheet pedagógico Budgets") }
+                static var chip1: String { ls("panel.widgetInfo.budgets.chip1", comment: "Panel Polish #2 — Chip 1 Budgets (Favoritos)") }
+                static var chip2: String { ls("panel.widgetInfo.budgets.chip2", comment: "Panel Polish #2 — Chip 2 Budgets (período)") }
+                static var chip3: String { ls("panel.widgetInfo.budgets.chip3", comment: "Panel Polish #2 — Chip 3 Budgets (Interactiva)") }
+                static var smallWhatQ: String { ls("panel.widgetInfo.budgets.smallWhatQ", comment: "Panel Polish #2 — Budgets S: pregunta") }
+                static var smallWhatA: String { ls("panel.widgetInfo.budgets.smallWhatA", comment: "Panel Polish #2 — Budgets S: respuesta") }
+                static var regularWhatQ: String { ls("panel.widgetInfo.budgets.regularWhatQ", comment: "Panel Polish #2 — Budgets M/L: pregunta (compartida)") }
+                static var regularWhatA: String { ls("panel.widgetInfo.budgets.regularWhatA", comment: "Panel Polish #2 — Budgets M/L: respuesta (compartida)") }
+                static var howQ: String { ls("panel.widgetInfo.budgets.howQ", comment: "Panel Polish #2 — Budgets: pregunta '¿Cómo interactúo?' (compartida S/M/L)") }
+                static var howA: String { ls("panel.widgetInfo.budgets.howA", comment: "Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L)") }
+            }
+
+            // MARK: - Bloque 4 (Misc)
+
+            enum ExchangeRate {
+                static var title: String { ls("panel.widgetInfo.exchangeRate.title", comment: "Panel Polish #2 — Title sheet pedagógico ExchangeRate") }
+                static var chip1: String { ls("panel.widgetInfo.exchangeRate.chip1", comment: "Panel Polish #2 — Chip 1 ExchangeRate (multi-divisa)") }
+                static var chip2: String { ls("panel.widgetInfo.exchangeRate.chip2", comment: "Panel Polish #2 — Chip 2 ExchangeRate (tasas actuales)") }
+                static var chip3: String { ls("panel.widgetInfo.exchangeRate.chip3", comment: "Panel Polish #2 — Chip 3 ExchangeRate (Interactiva)") }
+                static var whatQ: String { ls("panel.widgetInfo.exchangeRate.whatQ", comment: "Panel Polish #2 — ExchangeRate: pregunta") }
+                static var whatA: String { ls("panel.widgetInfo.exchangeRate.whatA", comment: "Panel Polish #2 — ExchangeRate: respuesta") }
+                static var howQ: String { ls("panel.widgetInfo.exchangeRate.howQ", comment: "Panel Polish #2 — ExchangeRate: pregunta '¿Cómo interactúo con la gráfica?'") }
+                static var howA: String { ls("panel.widgetInfo.exchangeRate.howA", comment: "Panel Polish #2 — ExchangeRate: respuesta a 'cómo interactúo'") }
+                // Q&A — balance impact (live balance multi-currency fix)
+                static var balanceImpactQ: String { ls("panel.widgetInfo.exchangeRate.balanceImpactQ", comment: "Live Balance — ExchangeRate: pregunta sobre cómo el TC afecta al balance") }
+                static var balanceImpactA: String { ls("panel.widgetInfo.exchangeRate.balanceImpactA", comment: "Live Balance — ExchangeRate: respuesta sobre cómo el TC afecta al balance") }
+            }
+
+            enum WeekdayBar {
+                static var title: String { ls("panel.widgetInfo.weekdayBar.title", comment: "Panel Polish #2 — Title sheet pedagógico WeekdayBar") }
+                static var chip1: String { ls("panel.widgetInfo.weekdayBar.chip1", comment: "Panel Polish #2 — Chip 1 WeekdayBar (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.weekdayBar.chip2", comment: "Panel Polish #2 — Chip 2 WeekdayBar (período)") }
+                static var whatQ: String { ls("panel.widgetInfo.weekdayBar.whatQ", comment: "Panel Polish #2 — WeekdayBar: pregunta '¿Qué estás viendo?' (compartida S/L)") }
+                static var smallWhatA: String { ls("panel.widgetInfo.weekdayBar.smallWhatA", comment: "Panel Polish #2 — WeekdayBar S: respuesta") }
+                static var largeWhatA: String { ls("panel.widgetInfo.weekdayBar.largeWhatA", comment: "Panel Polish #2 — WeekdayBar L: respuesta") }
+            }
+
+            enum ExpensesByNeed {
+                static var title: String { ls("panel.widgetInfo.expensesByNeed.title", comment: "Panel Polish #2 — Title sheet pedagógico ExpensesByNeed") }
+                static var chip1: String { ls("panel.widgetInfo.expensesByNeed.chip1", comment: "Panel Polish #2 — Chip 1 ExpensesByNeed (entidad)") }
+                static var chip2: String { ls("panel.widgetInfo.expensesByNeed.chip2", comment: "Panel Polish #2 — Chip 2 ExpensesByNeed (período)") }
+                static var chip3: String { ls("panel.widgetInfo.expensesByNeed.chip3", comment: "Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva)") }
+                static var smallWhatQ: String { ls("panel.widgetInfo.expensesByNeed.smallWhatQ", comment: "Panel Polish #2 — ExpensesByNeed S: pregunta") }
+                static var smallWhatA: String { ls("panel.widgetInfo.expensesByNeed.smallWhatA", comment: "Panel Polish #2 — ExpensesByNeed S: respuesta") }
+                static var smallHowQ: String { ls("panel.widgetInfo.expensesByNeed.smallHowQ", comment: "Panel Polish #2 — ExpensesByNeed S: pregunta") }
+                static var smallHowA: String { ls("panel.widgetInfo.expensesByNeed.smallHowA", comment: "Panel Polish #2 — ExpensesByNeed S: respuesta") }
+                static var mediumWhatQ: String { ls("panel.widgetInfo.expensesByNeed.mediumWhatQ", comment: "Panel Polish #2 — ExpensesByNeed M: pregunta") }
+                static var mediumWhatA: String { ls("panel.widgetInfo.expensesByNeed.mediumWhatA", comment: "Panel Polish #2 — ExpensesByNeed M: respuesta") }
+                static var mediumHowQ: String { ls("panel.widgetInfo.expensesByNeed.mediumHowQ", comment: "Panel Polish #2 — ExpensesByNeed M: pregunta") }
+                static var mediumHowA: String { ls("panel.widgetInfo.expensesByNeed.mediumHowA", comment: "Panel Polish #2 — ExpensesByNeed M: respuesta") }
+                static var largeWhatQ: String { ls("panel.widgetInfo.expensesByNeed.largeWhatQ", comment: "Panel Polish #2 — ExpensesByNeed L: pregunta") }
+                static var largeWhatA: String { ls("panel.widgetInfo.expensesByNeed.largeWhatA", comment: "Panel Polish #2 — ExpensesByNeed L: respuesta") }
+                static var largeHowQ: String { ls("panel.widgetInfo.expensesByNeed.largeHowQ", comment: "Panel Polish #2 — ExpensesByNeed L: pregunta '¿Cómo interactúo con la gráfica?'") }
+                static var largeHowA: String { ls("panel.widgetInfo.expensesByNeed.largeHowA", comment: "Panel Polish #2 — ExpensesByNeed L: respuesta") }
+            }
+
+            enum PeriodComparison {
+                static var title: String { ls("panel.widgetInfo.periodComparison.title", comment: "Stats Trends — Title sheet pedagógico Comparativa de período") }
+                static var chip1: String { ls("panel.widgetInfo.periodComparison.chip1", comment: "Stats Trends — Chip 1 Comparativa (Comparación)") }
+                static var chip2: String { ls("panel.widgetInfo.periodComparison.chip2", comment: "Stats Trends — Chip 2 Comparativa (Por período)") }
+                static var whatQ: String { ls("panel.widgetInfo.periodComparison.whatQ", comment: "Stats Trends — Comparativa: pregunta '¿Qué estás viendo?'") }
+                static var whatA: String { ls("panel.widgetInfo.periodComparison.whatA", comment: "Stats Trends — Comparativa: respuesta") }
+                static var howQ: String { ls("panel.widgetInfo.periodComparison.howQ", comment: "Stats Trends — Comparativa: pregunta '¿Con qué comparo?'") }
+                static var howA: String { ls("panel.widgetInfo.periodComparison.howA", comment: "Stats Trends — Comparativa: respuesta") }
+            }
+
+            enum Sankey {
+                static var title: String { ls("panel.widgetInfo.sankey.title", comment: "Stats Categories — Title sheet pedagógico Sankey (Flujo del dinero)") }
+                static var chip1: String { ls("panel.widgetInfo.sankey.chip1", comment: "Stats Categories — Chip 1 Sankey (Flujo)") }
+                static var chip2: String { ls("panel.widgetInfo.sankey.chip2", comment: "Stats Categories — Chip 2 Sankey (Por necesidad)") }
+                static var chip3: String { ls("panel.widgetInfo.sankey.chip3", comment: "Stats Categories — Chip 3 Sankey (Interactiva)") }
+                static var whatQ: String { ls("panel.widgetInfo.sankey.whatQ", comment: "Stats Categories — Sankey: pregunta '¿Qué estás viendo?'") }
+                static var whatA: String { ls("panel.widgetInfo.sankey.whatA", comment: "Stats Categories — Sankey: respuesta") }
+                static var howQ: String { ls("panel.widgetInfo.sankey.howQ", comment: "Stats Categories — Sankey: pregunta '¿Cómo interactúo?'") }
+                static var howA: String { ls("panel.widgetInfo.sankey.howA", comment: "Stats Categories — Sankey: respuesta") }
+            }
+        }
+
+        // MARK: - Panorama group (Cuentas + Salud financiera)
+
+        static var panoramaTitle: String {
+            ls("panel.panorama.title", comment: "Collapsible group title that wraps Accounts + Financial Health")
+        }
+        static var panoramaExpand: String {
+            ls("panel.panorama.expand", comment: "VoiceOver action — expand Tu panorama")
+        }
+        static var panoramaCollapse: String {
+            ls("panel.panorama.collapse", comment: "VoiceOver action — collapse Tu panorama")
+        }
+        static var panoramaCollapsedValue: String {
+            ls("panel.panorama.collapsedValue", comment: "Accessibility value when Tu panorama is collapsed")
+        }
+        static var panoramaExpandedValue: String {
+            ls("panel.panorama.expandedValue", comment: "Accessibility value when Tu panorama is expanded")
+        }
+        /// Resumen mostrado bajo el título de Tus finanzas cuando la sección
+        /// está colapsada. Pluraliza por número de cuentas activas.
+        static func panoramaCollapsedSummary(_ totalBalance: String, accounts: Int) -> String {
+            String.localizedStringWithFormat(
+                ls("panel.panorama.collapsedSummary", comment: "Subtitle under panorama title when collapsed: balance + active account count"),
+                totalBalance,
+                accounts
+            )
+        }
+
+        static var weekdaySubtitle: String {
+            ls("panel.weekdaySubtitle", comment: "Panel weekday widget subtitle — follows selected period")
+        }
+
+        enum WeekdayBar {
+            /// Title shown in `.small` variant of the weekday bar widget.
+            static var smallTitle: String {
+                ls("panel.weekdayBar.smallTitle", comment: "Weekday bar widget title shown in the .small size — 'Day of the week'")
+            }
+            /// Title shown in `.large` / full-width variant of the weekday bar widget.
+            static var largeTitle: String {
+                ls("panel.weekdayBar.largeTitle", comment: "Weekday bar widget full-width title — 'Average spend by weekday'")
+            }
+            /// Inline suffix after the weekly KPI amount (e.g. "PEN 1,234 /semana").
+            static var perWeekSuffix: String {
+                ls("panel.weekdayBar.perWeekSuffix", comment: "Inline suffix after the weekly average amount in .small")
+            }
+        }
+
+        enum FilterBar {
+            /// Section title shown above the active-filter chips when at least
+            /// one filter is applied. Hidden entirely when there are no chips.
+            static var sectionTitle: String {
+                ls("panel.filterBar.sectionTitle", comment: "Section title for the Panel's active-filter chips strip — 'Applied filters'")
+            }
+        }
+
+        enum PeriodComparison {
+            static func vs(_ month: String) -> String {
+                String(format: ls("panel.periodComparison.vs %@", comment: "Delta chip 'vs [month]' when current and previous share year"), month)
+            }
+            static func vsWithYear(_ month: String, _ year: String) -> String {
+                String(format: ls("panel.periodComparison.vsWithYear %@ %@", comment: "Delta chip 'vs [month] [yy]' when previous is from a different year"), month, year)
+            }
+            static var requiresPeriod: String {
+                ls("panel.periodComparison.requiresPeriod", comment: "Empty state shown when period is all-time — no bounded previous interval")
+            }
+        }
+
+        enum SectionsConfig {
+            static var title: String { ls("panel.sectionsConfig.title", comment: "Panel sections config sheet title") }
+            static var footer: String { ls("panel.sectionsConfig.footer", comment: "Footer hint in Panel sections config") }
+            static var emptySection: String { ls("panel.sectionsConfig.emptySection", comment: "Subtitle shown when every widget in a section is individually hidden") }
+            static func restoreWidgets(_ name: String) -> String {
+                String(format: ls("panel.sectionsConfig.restoreWidgets %@", comment: "Button/accessibility label to restore all widgets of a section"), name)
+            }
+        }
+
+        enum SectionPrefs {
+            static var title: String {
+                ls("panel.sectionPrefs.title", comment: "Per-section preferences sheet title (P20-03)")
+            }
+        }
+
+        /// Salud financiera (P20-06 — Financial Score).
+        enum Health {
+            // Section title inside the card header.
+            static var cardTitle: String {
+                ls("panel.health.cardTitle", comment: "Salud financiera card header title")
+            }
+
+            // Em-dash placeholder used whenever a sub-score is N/A.
+            static var emptyBadge: String {
+                ls("panel.health.emptyBadge", comment: "Em-dash placeholder for a mini-ring with no data")
+            }
+
+            // Sub-score labels shown under each mini ring.
+            static var subScoreBudget: String {
+                ls("panel.health.subScore.budget", comment: "Budget sub-score label")
+            }
+            static var subScoreActivity: String {
+                ls("panel.health.subScore.activity", comment: "Activity sub-score label")
+            }
+            static var subScoreBills: String {
+                ls("panel.health.subScore.bills", comment: "Bills sub-score label")
+            }
+
+            // MARK: Detail sheet — Total (ring principal).
+            static var totalSheetTitle: String {
+                ls("panel.health.total.sheet.title", comment: "Total score detail sheet title")
+            }
+            static var totalSheetExplanation: String {
+                ls("panel.health.total.sheet.explanation", comment: "Total score explanation — how the composite is built")
+            }
+            static var totalHeadlineHigh: String {
+                ls("panel.health.total.headline.high", comment: "Encouraging headline for total score ≥ 90")
+            }
+            static var totalHeadlineMid: String {
+                ls("panel.health.total.headline.mid", comment: "Encouraging headline for total score 70-89")
+            }
+            static var totalHeadlineLow: String {
+                ls("panel.health.total.headline.low", comment: "Encouraging headline for total score < 70")
+            }
+            static var totalHeadlineEmpty: String {
+                ls("panel.health.total.headline.empty", comment: "Warm headline when there's no data yet")
+            }
+
+            // MARK: Detail sheet — Budget.
+            static var budgetSheetTitle: String {
+                ls("panel.health.budget.sheet.title", comment: "Budget detail sheet title")
+            }
+            static var budgetSheetExplanation: String {
+                ls("panel.health.budget.sheet.explanation", comment: "Budget explanation — how it is calculated")
+            }
+            static var budgetHeadlineHigh: String {
+                ls("panel.health.budget.headline.high", comment: "Encouraging headline for budget sub-score ≥ 90")
+            }
+            static var budgetHeadlineMid: String {
+                ls("panel.health.budget.headline.mid", comment: "Encouraging headline for budget sub-score 70-89")
+            }
+            static var budgetHeadlineLow: String {
+                ls("panel.health.budget.headline.low", comment: "Encouraging headline for budget sub-score < 70")
+            }
+            static var budgetHeadlineEmpty: String {
+                ls("panel.health.budget.headline.empty", comment: "Warm headline when the user has no budgets yet")
+            }
+            static var budgetCTAView: String {
+                ls("panel.health.budget.cta.view", comment: "CTA label: Go to budgets tab")
+            }
+            static var budgetCTACreate: String {
+                ls("panel.health.budget.cta.create", comment: "CTA label: Create first budget")
+            }
+
+            // MARK: Detail sheet — Activity.
+            static var activitySheetTitle: String {
+                ls("panel.health.activity.sheet.title", comment: "Activity detail sheet title")
+            }
+            static var activitySheetExplanation: String {
+                ls("panel.health.activity.sheet.explanation", comment: "Activity explanation — how it is calculated")
+            }
+            static var activityHeadlineHigh: String {
+                ls("panel.health.activity.headline.high", comment: "Encouraging headline for activity sub-score ≥ 90")
+            }
+            static var activityHeadlineMid: String {
+                ls("panel.health.activity.headline.mid", comment: "Encouraging headline for activity sub-score 70-89")
+            }
+            static var activityHeadlineLow: String {
+                ls("panel.health.activity.headline.low", comment: "Encouraging headline for activity sub-score < 70")
+            }
+            static var activityHeadlineEmpty: String {
+                ls("panel.health.activity.headline.empty", comment: "Warm headline when the user has no transactions yet")
+            }
+            static var activityCTAView: String {
+                ls("panel.health.activity.cta.view", comment: "CTA label: Go to records")
+            }
+            static var activityCTACreate: String {
+                ls("panel.health.activity.cta.create", comment: "CTA label: Register first transaction")
+            }
+
+            // MARK: Detail sheet — Bills.
+            static var billsSheetTitle: String {
+                ls("panel.health.bills.sheet.title", comment: "Bills detail sheet title")
+            }
+            static var billsSheetExplanation: String {
+                ls("panel.health.bills.sheet.explanation", comment: "Bills explanation — how it is calculated")
+            }
+            static var billsHeadlineHigh: String {
+                ls("panel.health.bills.headline.high", comment: "Encouraging headline for bills sub-score ≥ 90")
+            }
+            static var billsHeadlineMid: String {
+                ls("panel.health.bills.headline.mid", comment: "Encouraging headline for bills sub-score 70-89")
+            }
+            static var billsHeadlineLow: String {
+                ls("panel.health.bills.headline.low", comment: "Encouraging headline for bills sub-score < 70")
+            }
+            static var billsHeadlineEmpty: String {
+                ls("panel.health.bills.headline.empty", comment: "Warm headline when the user has no scheduled payments yet")
+            }
+            static var billsCTAView: String {
+                ls("panel.health.bills.cta.view", comment: "CTA label: Go to scheduled payments")
+            }
+            static var billsCTACreate: String {
+                ls("panel.health.bills.cta.create", comment: "CTA label: Create first scheduled payment")
+            }
+
+            /// VoiceOver summary for the whole Salud Financiera card.
+            /// Placeholders receive strings so they can carry em-dashes or numbers.
+            static func voiceoverSummary(
+                total: String, budget: String, activity: String, bills: String
+            ) -> String {
+                String(
+                    format: ls("panel.health.voiceover.summary", comment: "VoiceOver summary for the Salud Financiera card"),
+                    total, budget, activity, bills
+                )
+            }
+
+            /// VoiceOver snippet for a single sub-score bar ("94 out of 100").
+            static func scoreVoiceover(score: Int) -> String {
+                String(
+                    format: ls("panel.health.voiceover.score", comment: "VoiceOver — sub-score value + out of 100"),
+                    score
+                )
+            }
+
+            /// VoiceOver fallback read when a sub-score is nil (no data yet).
+            static var noData: String {
+                ls("panel.health.voiceover.noData", comment: "VoiceOver fallback when a sub-score has no data")
+            }
+        }
+
+        /// Hero del Panel (PP2-01). El `aiSubtitle` LLM es el KPI protagonista
+        /// cuando está disponible (Pro + consent); si no, el fallback rule-based
+        /// con cifras concretas sube al protagonista. El chip conserva el sufijo
+        /// de mes sólo durante la primera semana.
+        enum Hero {
+            // MARK: Chip (greeting line)
+            static func chipMonthStart(userName: String, month: String) -> String {
+                String(format: ls("panel.hero.chip.monthStart %@ %@", comment: "Hero chip — first week, greets user + empezamos <mes>"), userName, month)
+            }
+            static func chipDefault(userName: String) -> String {
+                String(format: ls("panel.hero.chip.default %@", comment: "Hero chip — default greeting, greets user"), userName)
+            }
+
+            // MARK: Rule-based KPI fallback (aiSubtitle nil — Free / sin consent / offline / cache miss).
+            // Los montos llegan con `**` para render bold via `AttributedString(markdown:)`.
+            static func kpiMonthStart(income: String, daysRemaining: Int) -> String {
+                String(format: ls("panel.hero.kpi.monthStart %@ %d", comment: "Hero KPI fallback — month just started, markdown bold"), income, daysRemaining)
+            }
+            static func kpiOnTrack(income: String, spent: String, available: String, daysRemaining: Int) -> String {
+                String(format: ls("panel.hero.kpi.onTrack %@ %@ %@ %d", comment: "Hero KPI fallback — on track, markdown bold"), income, spent, available, daysRemaining)
+            }
+            static func kpiNeutral(income: String, spent: String, available: String, daysRemaining: Int) -> String {
+                String(format: ls("panel.hero.kpi.neutral %@ %@ %@ %d", comment: "Hero KPI fallback — neutral, markdown bold"), income, spent, available, daysRemaining)
+            }
+            static func kpiTight(spent: String, available: String, daysRemaining: Int) -> String {
+                String(format: ls("panel.hero.kpi.tight %@ %@ %d", comment: "Hero KPI fallback — budget tight, markdown bold"), spent, available, daysRemaining)
+            }
+            static func kpiOverBudget(spent: String, income: String) -> String {
+                String(format: ls("panel.hero.kpi.overBudget %@ %@", comment: "Hero KPI fallback — over budget, markdown bold"), spent, income)
+            }
+
+            // MARK: AI Hero
+            /// CTA inline visible cuando no hay aiSubtitle disponible y el user
+            /// aún puede "desbloquearlo" (Free → upgrade; Pro sin consent →
+            /// activar el toggle de Insights IA en Perfil).
+            static var upsellCTA: String {
+                ls("panel.hero.upsellCTA", comment: "Hero inline CTA — appears for Free and for Pro users without AI consent")
+            }
+            /// Label inline arriba del monto disponible — desambigua qué
+            /// representa el monto. Se compone con el `displayName` del
+            /// período actual ("Disponible · Este mes", "Available · This year").
+            static var availableLabel: String {
+                ls("panel.hero.availableLabel", comment: "Hero — available amount label, composed with period display name")
+            }
         }
         static var totalBalance: String {
             ls("panel.totalBalance", comment: "Total balance label")
@@ -129,6 +854,47 @@ enum L10n {
         }
         static var insightMenuHideToday: String {
             ls("panel.insightMenuHideToday", comment: "Hide for today menu option")
+        }
+
+        // MARK: - Live Anchor Education ("Tu saldo hoy" sheet)
+
+        enum LiveAnchorEducation {
+            static var title: String {
+                ls("panel.liveAnchorEducation.title", comment: "Sheet title: educative sheet about today's balance at current FX rate")
+            }
+            static func heroFormat(_ amount: String) -> String {
+                String(format: ls("panel.liveAnchorEducation.heroFormat", comment: "Hero of the sheet, e.g. 'Hoy tienes S/ 28,594'"), amount)
+            }
+            static func bodyLineOneFormat(_ currency: String) -> String {
+                String(format: ls("panel.liveAnchorEducation.bodyLineOneFormat", comment: "Explanation line 1, %@ is preferred currency code or symbol"), currency)
+            }
+            static func bodyLineTwoFormat(_ historical: String) -> String {
+                String(format: ls("panel.liveAnchorEducation.bodyLineTwoFormat", comment: "Explanation line 2, %@ is historical balance formatted"), historical)
+            }
+            static var bodyLineThree: String {
+                ls("panel.liveAnchorEducation.bodyLineThree", comment: "Explanation line 3: why the difference exists")
+            }
+            static var todayQuestion: String {
+                ls("panel.liveAnchorEducation.todayQuestion", comment: "Section title above the hero amount: 'How much you have today'")
+            }
+            static var whyQuestion: String {
+                ls("panel.liveAnchorEducation.whyQuestion", comment: "Section title above the explanation paragraph: 'Why this amount?'")
+            }
+            static var breakdownToggle: String {
+                ls("panel.liveAnchorEducation.breakdownToggle", comment: "Section header above the per-currency rows: 'By currency'")
+            }
+            static func breakdownRowConvertedFormat(_ converted: String) -> String {
+                String(format: ls("panel.liveAnchorEducation.breakdownRowConvertedFormat", comment: "Per-row conversion suffix, e.g. '≈ S/ 1,140 hoy'"), converted)
+            }
+            static var coachTitle: String {
+                ls("panel.liveAnchorEducation.coachTitle", comment: "Coach mark title shown first time on multi-currency users")
+            }
+            static var coachMessage: String {
+                ls("panel.liveAnchorEducation.coachMessage", comment: "Coach mark body shown first time on multi-currency users")
+            }
+            static var dotA11yLabel: String {
+                ls("panel.liveAnchorEducation.dotA11yLabel", comment: "VoiceOver label for the today dot in the trend chart")
+            }
         }
     }
 
@@ -223,6 +989,7 @@ enum L10n {
         static var bannerBody: String { ls("cashFlowPlan.bannerBody", comment: "") }
         static var selectAll: String { ls("cashFlowPlan.selectAll", comment: "") }
         static var total: String { ls("cashFlowPlan.total", comment: "") }
+        static var aiChipLabel: String { ls("cashFlowPlan.aiChipLabel", comment: "AI chip toggle — IA/AI/KI per locale") }
         static var lineNameLabel: String { ls("cashFlowPlan.lineNameLabel", comment: "") }
         static var lineNameHint: String { ls("cashFlowPlan.lineNameHint", comment: "") }
 
@@ -242,6 +1009,7 @@ enum L10n {
         static var configureHorizon: String { ls("cashFlowPlan.configureHorizon", comment: "") }
         static var monthsAhead: String { ls("cashFlowPlan.monthsAhead", comment: "") }
         static var monthsBack: String { ls("cashFlowPlan.monthsBack", comment: "") }
+        static var showAccumulatedBalance: String { ls("cashFlowPlan.showAccumulatedBalance", comment: "") }
 
         // Month summary
         static func monthSummaryOnTrack(_ percent: Int) -> String {
@@ -317,6 +1085,7 @@ enum L10n {
 
         // Charts
         static var chartsTitle: String { ls("cashFlowPlan.chartsTitle", comment: "") }
+        static var chartsSectionTitle: String { ls("cashFlowPlan.chartsSectionTitle", comment: "") }
         static var accumulatedBalance: String { ls("cashFlowPlan.accumulatedBalance", comment: "") }
         static var incomeVsExpense: String { ls("cashFlowPlan.incomeVsExpense", comment: "") }
         static var composition: String { ls("cashFlowPlan.composition", comment: "") }
@@ -367,13 +1136,46 @@ enum L10n {
         // Charts redesign (Inc 7)
         static var chartProjection: String { ls("cashFlowPlan.chartProjection", comment: "") }
         static var chartDeviation: String { ls("cashFlowPlan.chartDeviation", comment: "") }
+        static var chartDeviationSubtitle: String { ls("cashFlowPlan.chartDeviationSubtitle", comment: "") }
         static var chartSavings: String { ls("cashFlowPlan.chartSavings", comment: "") }
-        static var chartAccuracy: String { ls("cashFlowPlan.chartAccuracy", comment: "") }
+        static var chartProjectionSubtitle: String { ls("cashFlowPlan.chartProjectionSubtitle", comment: "") }
         static var chartDeviationOver: String { ls("cashFlowPlan.chartDeviationOver", comment: "") }
         static var chartDeviationUnder: String { ls("cashFlowPlan.chartDeviationUnder", comment: "") }
         static var chartDangerZone: String { ls("cashFlowPlan.chartDangerZone", comment: "") }
         static var chartRollingAvg: String { ls("cashFlowPlan.chartRollingAvg", comment: "") }
         static var chartNeedMoreData: String { ls("cashFlowPlan.chartNeedMoreData", comment: "") }
+        static var analyzingProjection: String { ls("cashFlowPlan.analyzingProjection", comment: "") }
+        static var enableAIObservations: String { ls("cashFlowPlan.enableAIObservations", comment: "") }
+        static func commentNegative(_ month: String) -> String {
+            String(format: ls("cashFlowPlan.commentNegative", comment: ""), month)
+        }
+        static func commentTight(_ margin: String) -> String {
+            String(format: ls("cashFlowPlan.commentTight", comment: ""), margin)
+        }
+        static func commentHealthy(_ balance: String) -> String {
+            String(format: ls("cashFlowPlan.commentHealthy", comment: ""), balance)
+        }
+        static func commentDefault(_ count: Int) -> String {
+            String(format: ls("cashFlowPlan.commentDefault", comment: ""), count)
+        }
+        static var chartAllWithinPlan: String { ls("cashFlowPlan.chartAllWithinPlan", comment: "") }
+        static func deviationCommentSingle(_ name: String, _ amount: String) -> String {
+            String(format: ls("cashFlowPlan.deviationCommentSingle", comment: ""), name, amount)
+        }
+        static func deviationCommentMultiple(_ name: String, _ amount: String, _ total: String) -> String {
+            String(format: ls("cashFlowPlan.deviationCommentMultiple", comment: ""), name, amount, total)
+        }
+        static var chartSavingsSubtitle: String { ls("cashFlowPlan.chartSavingsSubtitle", comment: "") }
+        static var chartPlanned: String { ls("cashFlowPlan.chartPlanned", comment: "") }
+        static func commentSavingsBelow(_ diff: String) -> String {
+            String(format: ls("cashFlowPlan.commentSavingsBelow", comment: ""), diff)
+        }
+        static func commentSavingsAbove(_ diff: String, _ balance: String) -> String {
+            String(format: ls("cashFlowPlan.commentSavingsAbove", comment: ""), diff, balance)
+        }
+        static func commentHealthyWithSavings(_ avg: String, _ balance: String) -> String {
+            String(format: ls("cashFlowPlan.commentHealthyWithSavings", comment: ""), avg, balance)
+        }
     }
 
     // MARK: - Groupings
@@ -394,6 +1196,7 @@ enum L10n {
         static var search: String { ls("tab.search", comment: "") }
         static var records: String { ls("tab.records", comment: "") }
         static var reports: String { ls("tab.reports", comment: "") }
+        static var groups: String { ls("tab.groups", comment: "") }
     }
 
     // MARK: - Period
@@ -512,6 +1315,34 @@ enum L10n {
         }
         static var tipOptionalHigh: String { ls("insights.tipOptionalHigh", comment: "") }
 
+        // Universal rules (sin tonos, válidas para todos los períodos)
+        static func ruleDailyAverage(_ amount: String) -> String {
+            String(format: ls("insights.ruleDailyAverage %@", comment: "Universal daily average snapshot"), amount)
+        }
+        static func ruleSavingsPositive(_ pct: Int) -> String {
+            String(format: ls("insights.ruleSavingsPositive %d", comment: "Savings ratio positive — income exceeds expenses by N%%"), pct)
+        }
+        static var ruleSavingsNegative: String {
+            ls("insights.ruleSavingsNegative", comment: "Savings ratio negative — expenses exceed income in period")
+        }
+
+        // Group insight rules
+        static func ruleSharedRatio(_ pct: Int, tone: InsightTone = .normal) -> String {
+            String(format: ls("insights.ruleSharedRatio.\(tone.rawValue)", comment: ""), pct)
+        }
+        static func ruleMostExpensiveGroup(_ name: String, _ pct: Int, tone: InsightTone = .normal) -> String {
+            String(format: ls("insights.ruleMostExpensiveGroup.\(tone.rawValue)", comment: ""), name, pct)
+        }
+        static func ruleSharedFrequency(_ count: Int, tone: InsightTone = .normal) -> String {
+            String(format: ls("insights.ruleSharedFrequency.\(tone.rawValue)", comment: ""), count)
+        }
+        static func ruleDominantSharedCategory(_ name: String, _ pct: Int, tone: InsightTone = .normal) -> String {
+            String(format: ls("insights.ruleDominantSharedCategory.\(tone.rawValue)", comment: ""), name, pct)
+        }
+        static func ruleSharedMoM(_ variation: String, tone: InsightTone = .normal) -> String {
+            String(format: ls("insights.ruleSharedMoM.\(tone.rawValue)", comment: ""), variation)
+        }
+
         // Tone/Focus display names
         static func toneName(_ tone: InsightTone) -> String {
             ls("insights.tone.\(tone.rawValue)", comment: "")
@@ -600,6 +1431,20 @@ enum L10n {
         static var incomeAnalysis: String {
             ls("statistics.incomeAnalysis", comment: "")
         }
+
+        enum Sankey {
+            static var title: String { ls("statistics.sankey.title", comment: "") }
+            static var expenses: String { ls("statistics.sankey.expenses", comment: "") }
+            static var available: String { ls("statistics.sankey.available", comment: "") }
+            static var others: String { ls("statistics.sankey.others", comment: "") }
+            static var planned: String { ls("statistics.sankey.planned", comment: "") }
+            static var plannedRecurring: String { ls("statistics.sankey.plannedRecurring", comment: "") }
+            static var plannedSubscription: String { ls("statistics.sankey.plannedSubscription", comment: "") }
+            static var otherFunds: String { ls("statistics.sankey.otherFunds", comment: "") }
+            static var plannedHint: String { ls("statistics.sankey.plannedHint", comment: "") }
+            static var toggleAmount: String { ls("statistics.sankey.toggleAmount", comment: "") }
+            static var togglePercentage: String { ls("statistics.sankey.togglePercentage", comment: "") }
+        }
     }
 
     // MARK: - Report
@@ -677,8 +1522,20 @@ enum L10n {
         static var title: String { ls("records.title", comment: "") }
         static var latest: String { ls("records.latest", comment: "") }
         static var noRecords: String { ls("records.noRecords", comment: "") }
+        static var noRecordsThisDay: String { ls("records.noRecordsThisDay", comment: "Calendario: día seleccionado sin registros") }
+        static var viewModeListA11y: String { ls("records.viewModeListA11y", comment: "A11y: botón vista lista") }
+        static var viewModeCalendarA11y: String { ls("records.viewModeCalendarA11y", comment: "A11y: botón vista calendario") }
         static func deleteConfirmTitle(_ count: Int) -> String {
             String(format: ls("records.deleteConfirmTitle", comment: ""), count)
+        }
+
+        enum Duplicates {
+            static var menuTitle: String { ls("records.duplicates.menuTitle", comment: "") }
+            static var matchBy: String { ls("records.duplicates.matchBy", comment: "") }
+            static var deactivate: String { ls("records.duplicates.deactivate", comment: "") }
+            static var emptyTitle: String { ls("records.duplicates.emptyTitle", comment: "") }
+            static var emptyMessage: String { ls("records.duplicates.emptyMessage", comment: "") }
+            static var bannerTitle: String { ls("records.duplicates.bannerTitle", comment: "") }
         }
     }
 
@@ -781,6 +1638,8 @@ enum L10n {
         static var reorder: String { ls("action.reorder", comment: "") }
         static var clearAll: String { ls("action.clearAll", comment: "") }
         static var calculate: String { ls("action.calculate", comment: "") }
+        // Naming `continueAction` para evitar choque con keyword `continue` de Swift.
+        static var continueAction: String { ls("action.continue", comment: "") }
     }
 
     // MARK: - Split Calculator
@@ -794,6 +1653,11 @@ enum L10n {
         static var typeEqual: String { ls("split.typeEqual", comment: "") }
         static var typeExact: String { ls("split.typeExact", comment: "") }
         static var typeShares: String { ls("split.typeShares", comment: "") }
+        // Short labels for the segmented selector (full names stay in the chip below the amount).
+        static var typePercentageShort: String { ls("split.typePercentageShort", comment: "") }
+        static var typeEqualShort: String { ls("split.typeEqualShort", comment: "") }
+        static var typeExactShort: String { ls("split.typeExactShort", comment: "") }
+        static var typeSharesShort: String { ls("split.typeSharesShort", comment: "") }
         static var percentage: String { ls("split.percentage", comment: "") }
         static var people: String { ls("split.people", comment: "") }
         static var yourPart: String { ls("split.yourPart", comment: "") }
@@ -812,9 +1676,494 @@ enum L10n {
         static var sharesYouPay: String { ls("split.sharesYouPay", comment: "") }
         static var sharesOf: String { ls("split.sharesOf", comment: "") }
         static var sharesParts: String { ls("split.sharesParts", comment: "") }
+        // Chip detail labels (renderiza "Tu: X · Resto: Y" debajo del monto en GroupExpenseFormView)
+        static var totalLabel: String { ls("split.totalLabel", comment: "") }
+        static var youLabel: String { ls("split.you", comment: "") }
+        static var restLabel: String { ls("split.rest", comment: "") }
+        /// "Pagaste todo" — chip cuando current user paga pero NO participa en la división.
+        static var youPaidAll: String { ls("split.youPaidAll", comment: "") }
+        /// "(50%)" — suffix percentual del chip-detalle. `pct` ya viene como string trimmed (ej. "50" o "33.3").
+        static func percentSuffix(_ pct: String) -> String {
+            String(format: ls("split.percentSuffix %@", comment: ""), pct)
+        }
+        /// "(1/3 partes)" — suffix de proporciones del chip-detalle.
+        static func sharesSuffix(_ n: Int, _ total: Int) -> String {
+            String(format: ls("split.sharesSuffix %d %d", comment: ""), n, total)
+        }
+    }
+
+    // MARK: - Groups
+
+    enum Groups {
+        static var title: String { ls("groups.title", comment: "") }
+        static var newGroup: String { ls("groups.new", comment: "") }
+        static var editGroup: String { ls("groups.edit", comment: "") }
+
+        enum Empty {
+            static var title: String { ls("groups.empty.title", comment: "") }
+            static var message: String { ls("groups.empty.message", comment: "") }
+            static var action: String { ls("groups.empty.action", comment: "") }
+        }
+
+        enum Summary {
+            static var owedToMe: String { ls("groups.summary.owedToMe", comment: "") }
+            static var iOwe: String { ls("groups.summary.iOwe", comment: "") }
+            static var pendingSettlements: String { ls("groups.summary.pendingSettlements", comment: "") }
+            static var allSettled: String { ls("groups.summary.allSettled", comment: "") }
+        }
+
+        enum Detail {
+            static var records: String { ls("groups.detail.records", comment: "") }
+            static var balances: String { ls("groups.detail.balances", comment: "") }
+            static var stats: String { ls("groups.detail.stats", comment: "") }
+            static var comingSoon: String { ls("groups.detail.comingSoon", comment: "") }
+            // A0-Bridge V2.0 (P1-3): CTA desde TX bridgeada read-only
+            static var openGroup: String { ls("groups.detail.openGroup", comment: "") }
+        }
+
+        enum Stats {
+            static var totalSpent: String { ls("groups.stats.totalSpent", comment: "") }
+            static var myPortion: String { ls("groups.stats.myPortion", comment: "") }
+            static var whoPaysMost: String { ls("groups.stats.whoPaysMost", comment: "") }
+            static var categories: String { ls("groups.stats.categories", comment: "") }
+            static var monthlyTrend: String { ls("groups.stats.monthlyTrend", comment: "") }
+            static var noExpenses: String { ls("groups.stats.noExpenses", comment: "") }
+            static var uncategorized: String { ls("groups.stats.uncategorized", comment: "") }
+            static var thisMonth: String { ls("groups.stats.thisMonth", comment: "") }
+            static var last3Months: String { ls("groups.stats.last3Months", comment: "") }
+            static var last6Months: String { ls("groups.stats.last6Months", comment: "") }
+            static var thisYear: String { ls("groups.stats.thisYear", comment: "") }
+            static var allTime: String { ls("groups.stats.allTime", comment: "") }
+            static var assignCategoriesHint: String {
+                ls("groups.stats.assignCategoriesHint", comment: "")
+            }
+        }
+
+        // MARK: - Bridge (A0-Bridge)
+
+        enum Bridge {
+            // Delete guards
+            static var deleteExpenseBlocked: String { ls("groups.bridge.deleteExpenseBlocked", comment: "") }
+            // Read-only TX edit
+            static var editFromGroup: String { ls("groups.bridge.editFromGroup", comment: "") }
+            static var assignFromInbox: String { ls("groups.bridge.assignFromInbox", comment: "") }
+            static var editSettlementInGroup: String { ls("groups.bridge.editSettlementInGroup", comment: "") }
+            // M6: Caso A edit parcial banner + draft hint reasons
+            static var editPartialBanner: String { ls("groups.bridge.editPartialBanner", comment: "") }
+            static var draftReasonRemoteCreate: String { ls("groups.bridge.draftReasonRemoteCreate", comment: "") }
+            static var draftReasonCurrencyChanged: String { ls("groups.bridge.draftReasonCurrencyChanged", comment: "") }
+            // Activation/deactivation modals (F12)
+            static var activateTitle: String { ls("groups.bridge.activateTitle", comment: "") }
+            static func activateBody(_ count: Int) -> String {
+                String(format: ls("groups.bridge.activateBody", comment: ""), count)
+            }
+            static var activateOptionFromNow: String { ls("groups.bridge.activateOptionFromNow", comment: "") }
+            static var activateOptionFromNowHint: String { ls("groups.bridge.activateOptionFromNowHint", comment: "") }
+            static var activateOptionImportAll: String { ls("groups.bridge.activateOptionImportAll", comment: "") }
+            static func activateOptionImportAllHint(_ count: Int) -> String {
+                String(format: ls("groups.bridge.activateOptionImportAllHint", comment: ""), count)
+            }
+            static var activateImportRegenerationNote: String { ls("groups.bridge.activateImportRegenerationNote", comment: "") }
+            static var deactivateTitle: String { ls("groups.bridge.deactivateTitle", comment: "") }
+            static var deactivateBody: String { ls("groups.bridge.deactivateBody", comment: "") }
+            static var deactivateOptionDelete: String { ls("groups.bridge.deactivateOptionDelete", comment: "") }
+            static var deactivateOptionKeep: String { ls("groups.bridge.deactivateOptionKeep", comment: "") }
+            // Deactivation sheet (F5)
+            static var deactivationSheetTitle: String { ls("groups.bridge.deactivationSheetTitle", comment: "") }
+            static var deactivationSheetBody: String { ls("groups.bridge.deactivationSheetBody", comment: "") }
+            static var deactivationOptionFreeze: String { ls("groups.bridge.deactivationOptionFreeze", comment: "") }
+            static var deactivationOptionDelete: String { ls("groups.bridge.deactivationOptionDelete", comment: "") }
+            static var importing: String { ls("groups.bridge.importing", comment: "") }
+            static var importError: String { ls("groups.bridge.importError", comment: "") }
+            // Upsell para .groupInvite users
+            static var upsellGroupInviteSettlement: String { ls("groups.bridge.upsellGroupInviteSettlement", comment: "") }
+            // Opt-out alert (F2c)
+            static var optoutAlertTitle: String { ls("groups.bridge.optoutAlertTitle", comment: "") }
+            static var optoutAlertBody: String { ls("groups.bridge.optoutAlertBody", comment: "") }
+            static var optoutAlertYes: String { ls("groups.bridge.optoutAlertYes", comment: "") }
+            static var optoutAlertNo: String { ls("groups.bridge.optoutAlertNo", comment: "") }
+        }
+
+        enum GlobalSettings {
+            static var title: String { ls("groups.globalSettings.title", comment: "") }
+            static var bridgeSectionTitle: String { ls("groups.globalSettings.bridgeSectionTitle", comment: "") }
+            static var bridgeToggleLabel: String { ls("groups.globalSettings.bridgeToggleLabel", comment: "") }
+            static var bridgeCaption: String { ls("groups.globalSettings.bridgeCaption", comment: "") }
+            static var visibilitySectionTitle: String { ls("groups.globalSettings.visibilitySectionTitle", comment: "") }
+            static var visibilityCaption: String { ls("groups.globalSettings.visibilityCaption", comment: "") }
+            static var includeGroupTransactionsInFeedLabel: String { ls("groups.globalSettings.includeGroupTransactionsInFeedLabel", comment: "") }
+        }
+
+        enum Form {
+            static var name: String { ls("groups.form.name", comment: "") }
+            static var namePlaceholder: String { ls("groups.form.namePlaceholder", comment: "") }
+            static var currency: String { ls("groups.form.currency", comment: "") }
+            static var icon: String { ls("groups.form.icon", comment: "") }
+            static var simplifyDebts: String { ls("groups.form.simplifyDebts", comment: "") }
+            static var simplifyDebtsHint: String { ls("groups.form.simplifyDebtsHint", comment: "") }
+            static var showDebtsInSingleCurrency: String { ls("groups.form.showDebtsInSingleCurrency", comment: "") }
+            static var showDebtsInSingleCurrencyHint: String { ls("groups.form.showDebtsInSingleCurrencyHint", comment: "") }
+            static var defaultSplitType: String { ls("groups.form.defaultSplitType", comment: "") }
+            static var membersCanInvite: String { ls("groups.form.membersCanInvite", comment: "") }
+            static var membersCanInviteHint: String { ls("groups.form.membersCanInviteHint", comment: "") }
+        }
+
+        enum Settings {
+            static var title: String { ls("groups.settings.title", comment: "") }
+            static var members: String { ls("groups.settings.members", comment: "") }
+            static var addMember: String { ls("groups.settings.addMember", comment: "") }
+            static var addMemberPrompt: String { ls("groups.settings.addMemberPrompt", comment: "") }
+            static var invite: String { ls("groups.settings.invite", comment: "") }
+            static var inviteLinkHint: String { ls("groups.settings.inviteLinkHint", comment: "") }
+            static var leaveGroup: String { ls("groups.settings.leaveGroup", comment: "") }
+            static var leaveGroupConfirm: String { ls("groups.settings.leaveGroupConfirm", comment: "") }
+            static var leaveGroupWithDebtWarning: String { ls("groups.settings.leaveGroupWithDebtWarning", comment: "") }
+            static var deleteGroup: String { ls("groups.settings.deleteGroup", comment: "") }
+            static var deleteGroupConfirm: String { ls("groups.settings.deleteGroupConfirm", comment: "") }
+            static var deleteGroupFinalConfirm: String { ls("groups.settings.deleteGroupFinalConfirm", comment: "") }
+            static var deleteGroupDisabledHint: String { ls("groups.settings.deleteGroupDisabledHint", comment: "") }
+            static var archive: String { ls("groups.settings.archive", comment: "") }
+            static var unarchive: String { ls("groups.settings.unarchive", comment: "") }
+            static var archiveHint: String { ls("groups.settings.archiveHint", comment: "") }
+            static var archiveConfirm: String { ls("groups.settings.archiveConfirm", comment: "") }
+            static var archiveWithDebtWarning: String { ls("groups.settings.archiveWithDebtWarning", comment: "") }
+            static var generatingInvite: String { ls("groups.settings.generatingInvite", comment: "") }
+            static var options: String { ls("groups.settings.options", comment: "") }
+            static var info: String { ls("groups.settings.info", comment: "") }
+            static var showArchived: String { ls("groups.settings.showArchived", comment: "") }
+            static func showArchivedCount(_ count: Int) -> String { String(format: ls("groups.settings.showArchivedCount", comment: ""), count) }
+            static var hideArchived: String { ls("groups.settings.hideArchived", comment: "") }
+            // Personal integration (Bridge override per-grupo, F4)
+            static var personalIntegrationSectionTitle: String { ls("groups.settings.personalIntegrationSectionTitle", comment: "") }
+            static var personalIntegrationToggleLabel: String { ls("groups.settings.personalIntegrationToggleLabel", comment: "") }
+            static var personalIntegrationHintInheritOn: String { ls("groups.settings.personalIntegrationHintInheritOn", comment: "") }
+            static var personalIntegrationHintLocalOff: String { ls("groups.settings.personalIntegrationHintLocalOff", comment: "") }
+            static var personalIntegrationHintBlockedByGlobal: String { ls("groups.settings.personalIntegrationHintBlockedByGlobal", comment: "") }
+        }
+
+        enum Errors {
+            /// surfaced cuando el current user pending intenta una acción que requiere active.
+            static var pendingApproval: String { ls("groups.errors.pendingApproval", comment: "") }
+        }
+
+        /// #26: chips mostrados en GroupCardView cuando el current user está
+        /// en estado pendingApproval o rejected (en lugar del balance trailing).
+        enum Card {
+            static var pendingApprovalChip: String { ls("groups.card.pendingApprovalChip", comment: "") }
+            static var rejectedChip: String { ls("groups.card.rejectedChip", comment: "") }
+            static var leaveGroupAlertTitle: String { ls("groups.card.leaveGroupAlertTitle", comment: "") }
+            static var leaveGroupAlertBody: String { ls("groups.card.leaveGroupAlertBody", comment: "") }
+            // M6 D3: chip overflow cuando hay más de 3 deudas en la card.
+            static func moreDebts(_ count: Int) -> String {
+                String(format: ls("groups.card.moreDebts", comment: ""), count)
+            }
+            /// "%@ te debe" — otro miembro le debe al usuario actual (perspectiva theyOweMe).
+            static func theyOweYou(_ name: String) -> String {
+                String(format: ls("groups.card.theyOweYou", comment: ""), name)
+            }
+            /// "Le debes a %@" — el usuario actual le debe a otro miembro (perspectiva iOwe).
+            static func youOwe(_ name: String) -> String {
+                String(format: ls("groups.card.youOwe", comment: ""), name)
+            }
+        }
+
+        enum Member {
+            static var admin: String { ls("groups.member.admin", comment: "") }
+            static var member: String { ls("groups.member.member", comment: "") }
+            static var you: String { ls("groups.member.you", comment: "") }
+            static var left: String { ls("groups.member.left", comment: "") }
+            static var removed: String { ls("groups.member.removed", comment: "") }
+            static var changeRole: String { ls("groups.member.changeRole", comment: "") }
+            static var remove: String { ls("groups.member.remove", comment: "") }
+            static var removeConfirm: String { ls("groups.member.removeConfirm", comment: "") }
+            static var removeWithDebtWarning: String { ls("groups.member.removeWithDebtWarning", comment: "") }
+            static var actions: String { ls("groups.member.actions", comment: "") }
+            static func activeCount(_ count: Int) -> String { String(format: ls("groups.member.activeCount", comment: ""), count) }
+            static func pendingCount(_ count: Int) -> String { String(format: ls("groups.member.pendingCount", comment: ""), count) }
+            static var statusPending: String { ls("groups.member.statusPending", comment: "") }
+            static var statusRejected: String { ls("groups.member.statusRejected", comment: "") }
+            static var approve: String { ls("groups.member.approve", comment: "") }
+            static var reject: String { ls("groups.member.reject", comment: "") }
+            static func approveConfirm(_ name: String) -> String {
+                String(format: ls("groups.member.approveConfirm", comment: ""), name)
+            }
+            static func rejectConfirm(_ name: String) -> String {
+                String(format: ls("groups.member.rejectConfirm", comment: ""), name)
+            }
+            static var pendingRequestsSection: String { ls("groups.member.pendingRequestsSection", comment: "") }
+            static func pendingRequestsCount(_ count: Int) -> String {
+                String(format: ls("groups.member.pendingRequestsCount", comment: ""), count)
+            }
+        }
+
+        enum Balance {
+            static var title: String { ls("groups.balance.title", comment: "") }
+            static var noDebts: String { ls("groups.balance.noDebts", comment: "") }
+            static var pendingDebts: String { ls("groups.balance.pendingDebts", comment: "") }
+            static var settlements: String { ls("groups.balance.settlements", comment: "") }
+            static var confirmed: String { ls("groups.balance.confirmed", comment: "") }
+            static var pending: String { ls("groups.balance.pending", comment: "") }
+        }
+
+        enum Expense {
+            static var noExpenses: String { ls("groups.expense.noExpenses", comment: "") }
+            static var newExpense: String { ls("groups.expense.newExpense", comment: "") }
+            static var paidByTitle: String { ls("groups.expense.paidByTitle", comment: "") }
+            /// "Pagaste %@" — when current user is the payer.
+            static func youPaid(_ amount: String) -> String {
+                String(format: ls("groups.expense.youPaid", comment: ""), amount)
+            }
+            /// "%@ pagó %@" — when another member is the payer.
+            static func memberPaid(_ name: String, _ amount: String) -> String {
+                String(format: ls("groups.expense.memberPaid", comment: ""), name, amount)
+            }
+            /// Caption: "Prestaste" — current user paid, others owe.
+            static var youAreOwed: String { ls("groups.expense.youAreOwed", comment: "") }
+            /// Caption: "Te prestaron" — current user owes their share.
+            static var youOwe: String { ls("groups.expense.youOwe", comment: "") }
+            /// Caption: "No participaste" — current user not in the split.
+            static var notIncluded: String { ls("groups.expense.notIncluded", comment: "") }
+            static var divideBetween: String { ls("groups.expense.divideBetween", comment: "") }
+            static var selectAll: String { ls("groups.expense.selectAll", comment: "") }
+            static var deselectAll: String { ls("groups.expense.deselectAll", comment: "") }
+            static func membersSelected(_ count: Int, _ total: Int) -> String {
+                String(format: ls("groups.expense.membersSelected %d %d", comment: ""), count, total)
+            }
+            static var title: String { ls("groups.expense.title", comment: "") }
+            static var editTitle: String { ls("groups.expense.editTitle", comment: "") }
+            static var descriptionLabel: String { ls("groups.expense.description", comment: "") }
+            static var descriptionPlaceholder: String { ls("groups.expense.descriptionPlaceholder", comment: "") }
+            static var noteLabel: String { ls("groups.expense.note", comment: "") }
+            static var notePlaceholder: String { ls("groups.expense.notePlaceholder", comment: "") }
+            static var category: String { ls("groups.expense.category", comment: "") }
+            static var currency: String { ls("groups.expense.currency", comment: "") }
+            static var date: String { ls("groups.expense.date", comment: "") }
+            static var splitType: String { ls("groups.expense.splitType", comment: "") }
+            static var remaining: String { ls("groups.expense.remaining", comment: "") }
+            static func remainingAmount(_ amount: String) -> String { String(format: ls("groups.expense.remainingAmount", comment: ""), amount) }
+            static var balanced: String { ls("groups.expense.balanced", comment: "") }
+            static var eachPays: String { ls("groups.expense.eachPays", comment: "") }
+        }
+
+        enum Settlement {
+            static var title: String { ls("groups.settlement.title", comment: "") }
+            static var payTo: String { ls("groups.settlement.payTo", comment: "") }
+            static var registerPayment: String { ls("groups.settlement.registerPayment", comment: "") }
+            static var confirm: String { ls("groups.settlement.confirm", comment: "") }
+            static var reject: String { ls("groups.settlement.reject", comment: "") }
+            static var settle: String { ls("groups.settlement.settle", comment: "") }
+            static var settleHint: String { ls("groups.settlement.settleHint", comment: "") }
+            static var confirmQuestion: String { ls("groups.settlement.confirmQuestion", comment: "") }
+            static var rejectQuestion: String { ls("groups.settlement.rejectQuestion", comment: "") }
+            // A0-Bridge Caso C proactivo
+            static var fromAccount: String { ls("groups.settlement.fromAccount", comment: "") }
+            static var fromAccountNone: String { ls("groups.settlement.fromAccountNone", comment: "") }
+        }
+
+        enum Notifications {
+            static var promptTitle: String { ls("groups.notifications.prompt.title", comment: "") }
+            static var promptMessage: String { ls("groups.notifications.prompt.message", comment: "") }
+            static var promptEnable: String { ls("groups.notifications.prompt.enable", comment: "") }
+            /// title de la notif "👋 %@ quiere unirse a %@" — solo recibida por admins.
+            static func newPendingRequest(_ name: String, _ groupName: String) -> String {
+                String(format: ls("groups.notifications.newPendingRequest", comment: ""), name, groupName)
+            }
+            /// body de la notif: "Aprueba o rechaza desde Yala."
+            static var newPendingRequestBody: String {
+                ls("groups.notifications.newPendingRequestBody", comment: "")
+            }
+        }
+
+        enum Invite {
+            static var welcome: String { ls("groups.invite.welcome", comment: "") }
+            static func welcomeWithGroup(_ name: String) -> String { String(format: ls("groups.invite.welcomeWithGroup", comment: ""), name) }
+            static var subtitle: String { ls("groups.invite.subtitle", comment: "") }
+            static var namePlaceholder: String { ls("groups.invite.namePlaceholder", comment: "") }
+            static var joinButton: String { ls("groups.invite.joinButton", comment: "") }
+            static var ready: String { ls("groups.invite.ready", comment: "") }
+            static var goToGroup: String { ls("groups.invite.goToGroup", comment: "") }
+            static var waitingApprovalTitle: String { ls("groups.invite.waitingApproval.title", comment: "") }
+            static var waitingApprovalBody: String { ls("groups.invite.waitingApproval.body", comment: "") }
+            static var waitingApprovalBanner: String { ls("groups.invite.waitingApproval.banner", comment: "") }
+            static var rejectedTitle: String { ls("groups.invite.rejected.title", comment: "") }
+            static var rejectedBody: String { ls("groups.invite.rejected.body", comment: "") }
+        }
+
+        enum Reconnect {
+            static var title: String { ls("groups.reconnect.title", comment: "") }
+            static var subtitle: String { ls("groups.reconnect.subtitle", comment: "") }
+            static func subtitleWithGroup(_ name: String) -> String { String(format: ls("groups.reconnect.subtitleWithGroup", comment: ""), name) }
+            /// Fallback nombre genérico cuando el invite link no trae `n=` (ej. CKShare nativo).
+            static var fallbackGroupName: String { ls("groups.reconnect.fallbackGroupName", comment: "") }
+
+            // E1 — archived
+            static func archivedTitle(_ name: String) -> String { String(format: ls("groups.reconnect.archived.title", comment: ""), name) }
+            static var archivedBody: String { ls("groups.reconnect.archived.body", comment: "") }
+            static var archivedCta: String { ls("groups.reconnect.archived.cta", comment: "") }
+
+            // E2 — alreadyMember
+            static func alreadyMemberTitle(_ name: String) -> String { String(format: ls("groups.reconnect.alreadyMember.title", comment: ""), name) }
+            static var alreadyMemberBody: String { ls("groups.reconnect.alreadyMember.body", comment: "") }
+            static var alreadyMemberCta: String { ls("groups.reconnect.alreadyMember.cta", comment: "") }
+
+            // E3 — pendingDuplicate
+            static func pendingDuplicateTitle(_ name: String) -> String { String(format: ls("groups.reconnect.pendingDuplicate.title", comment: ""), name) }
+            static var pendingDuplicateBody: String { ls("groups.reconnect.pendingDuplicate.body", comment: "") }
+            static var pendingDuplicateCta: String { ls("groups.reconnect.pendingDuplicate.cta", comment: "") }
+
+            // E4 — rejectedRetry
+            static var rejectedRetryTitle: String { ls("groups.reconnect.rejectedRetry.title", comment: "") }
+            static var rejectedRetryBody: String { ls("groups.reconnect.rejectedRetry.body", comment: "") }
+
+            // E5 — leftRetry
+            static func leftRetryTitle(_ name: String) -> String { String(format: ls("groups.reconnect.leftRetry.title", comment: ""), name) }
+            static var leftRetryBody: String { ls("groups.reconnect.leftRetry.body", comment: "") }
+
+            // E6 — removedRetry
+            static func removedRetryTitle(_ name: String) -> String { String(format: ls("groups.reconnect.removedRetry.title", comment: ""), name) }
+            static var removedRetryBody: String { ls("groups.reconnect.removedRetry.body", comment: "") }
+
+            /// CTA compartido por rejectedRetry / leftRetry / removedRetry: "Volver a pedir".
+            static var retryCta: String { ls("groups.reconnect.retryCta", comment: "") }
+
+            // B-16 — override CTA cuando user pre-onboarded llega a modes que normalmente
+            // navegan (alreadyMember/pendingDuplicate). MainTabView no está montado en
+            // pre-onboarding → CTA dismissea + vuelve al Chooser.
+            static var backToStart: String { ls("groups.reconnect.backToStart", comment: "") }
+
+            // FU-02 — deletedForAll (grupo eliminado por owner, irreversible)
+            static func deletedForAllTitle(_ name: String) -> String { String(format: ls("groups.reconnect.deletedForAll.title", comment: ""), name) }
+            static var deletedForAllBody: String { ls("groups.reconnect.deletedForAll.body", comment: "") }
+            static var deletedForAllCta: String { ls("groups.reconnect.deletedForAll.cta", comment: "") }
+        }
+
+        enum Activate {
+            static var title: String { ls("groups.activate.title", comment: "") }
+            static var subtitle: String { ls("groups.activate.subtitle", comment: "") }
+            static var accountStep: String { ls("groups.activate.accountStep", comment: "") }
+            static var accountName: String { ls("groups.activate.accountName", comment: "") }
+            static var notificationStep: String { ls("groups.activate.notificationStep", comment: "") }
+            static var notificationMessage: String { ls("groups.activate.notificationMessage", comment: "") }
+            static var enableNotifications: String { ls("groups.activate.enableNotifications", comment: "") }
+            static var skipNotifications: String { ls("groups.activate.skipNotifications", comment: "") }
+            static var done: String { ls("groups.activate.done", comment: "") }
+        }
+
+        // MARK: Nudge (GC-09)
+
+        enum Nudge {
+            // Titles (static)
+            static func title(for nudge: NudgeType) -> String {
+                ls("groups.nudge.\(nudge.rawValue).title", comment: "")
+            }
+
+            // CTA labels (static)
+            static func cta(for nudge: NudgeType) -> String {
+                ls("groups.nudge.\(nudge.rawValue).cta", comment: "")
+            }
+
+            // Messages (dynamic — some have placeholders)
+            static func message(for nudge: NudgeType, context: NudgeTriggerContext) -> String {
+                let template = ls("groups.nudge.\(nudge.rawValue).message", comment: "")
+                switch nudge {
+                case .invitedSpendingInsight:
+                    return String(format: template, formattedAmount(context.totalSharedAmount))
+                case .invitedPostSettlement:
+                    return template
+                case .invitedMonthTwo:
+                    let pct = context.personalTransactionCount > 0
+                        ? Int(Double(context.sharedExpenseCount) / Double(context.sharedExpenseCount + context.personalTransactionCount) * 100)
+                        : 100
+                    return String(format: template, pct)
+                case .invitedSocialProof:
+                    return String(format: template, context.groupMemberCount)
+                case .dormantNewExpenses:
+                    return String(format: template, context.sharedExpenseCount)
+                case .sporadicImbalance:
+                    return String(format: template, context.sharedExpenseCount, context.personalTransactionCount)
+                case .sporadicTrendAlert:
+                    return String(format: template, Int(context.monthOverMonthVariation * 100))
+                default:
+                    return template
+                }
+            }
+
+            /// Quick format for amounts in nudge messages (no currency symbol — too complex per-user).
+            private static func formattedAmount(_ amount: Double) -> String {
+                let formatter = NumberFormatter()
+                formatter.numberStyle = .decimal
+                formatter.maximumFractionDigits = 0
+                return formatter.string(from: NSNumber(value: amount)) ?? "\(Int(amount))"
+            }
+        }
+
+        // MARK: - Groups Onboarding (3 steps informativo, primer tap del tab)
+
+        enum Onboarding {
+            // Common
+            static var progressLabel: String { ls("groups.onboarding.progressLabel", comment: "") }
+
+            // Step 1 — Hero animado
+            static var step1Title: String { ls("groups.onboarding.step1.title", comment: "") }
+            static var step1Subtitle: String { ls("groups.onboarding.step1.subtitle", comment: "") }
+            static var step1DemoMemberName: String { ls("groups.onboarding.step1.demoMemberName", comment: "") }
+            static var step1DemoGroupName: String { ls("groups.onboarding.step1.demoGroupName", comment: "") }
+            /// "%1$@ agregó %2$@ al grupo %3$@" — positional para reorder por locale.
+            static var step1DemoNotifTemplate: String { ls("groups.onboarding.step1.demoNotifTemplate", comment: "") }
+            /// "Saldo: %@" — label inicial del balance demo.
+            static var step1DemoBalanceLabelInitial: String { ls("groups.onboarding.step1.demoBalanceLabelInitial", comment: "") }
+            /// "Debes %@" — label tras transición (monto positivo abs(value)).
+            static var step1DemoBalanceLabelDebt: String { ls("groups.onboarding.step1.demoBalanceLabelDebt", comment: "") }
+            /// "%1$@ agregó %2$@ al grupo %3$@. Ahora debes %4$@." — 4 placeholders positional.
+            static var step1A11yLabelTemplate: String { ls("groups.onboarding.step1.a11yLabelTemplate", comment: "") }
+
+            // Step 2 — Capabilities
+            static var step2Title: String { ls("groups.onboarding.step2.title", comment: "") }
+            static var step2Subtitle: String { ls("groups.onboarding.step2.subtitle", comment: "") }
+            static var step2Card1Title: String { ls("groups.onboarding.step2.card1.title", comment: "") }
+            static var step2Card1Body: String { ls("groups.onboarding.step2.card1.body", comment: "") }
+            static var step2Card2Title: String { ls("groups.onboarding.step2.card2.title", comment: "") }
+            static var step2Card2Body: String { ls("groups.onboarding.step2.card2.body", comment: "") }
+            static var step2Card3Title: String { ls("groups.onboarding.step2.card3.title", comment: "") }
+            static var step2Card3Body: String { ls("groups.onboarding.step2.card3.body", comment: "") }
+            /// F6 awareness Perfil A: bridge crea TX real automáticamente.
+            static var step2BridgeAwareness: String { ls("groups.onboarding.step2.bridgeAwareness", comment: "") }
+
+            // Step 3 — Privacy + CTA
+            static var step3Title: String { ls("groups.onboarding.step3.title", comment: "") }
+            static var step3Subtitle: String { ls("groups.onboarding.step3.subtitle", comment: "") }
+            static var step3Point1: String { ls("groups.onboarding.step3.point1", comment: "") }
+            static var step3Point2: String { ls("groups.onboarding.step3.point2", comment: "") }
+            static var step3CTA: String { ls("groups.onboarding.step3.cta", comment: "") }
+            /// F6 awareness: hint que el bridge es configurable en Ajustes de Grupos.
+            static var step3BridgeAwareness: String { ls("groups.onboarding.step3.bridgeAwareness", comment: "") }
+        }
     }
 
     // MARK: - AI Consent
+
+    // MARK: - AI Settings (Personalization Sheet from Chat)
+
+    enum AISettings {
+        static var title: String { ls("aiSettings.title", comment: "") }
+        static var toneSection: String { ls("aiSettings.toneSection", comment: "") }
+        static var styleSection: String { ls("aiSettings.styleSection", comment: "") }
+        static var appliesHint: String { ls("aiSettings.appliesHint", comment: "") }
+    }
+
+    // MARK: - AI Privacy (sub-view from Profile > Security)
+
+    enum AIPrivacy {
+        static var title: String { ls("aiPrivacy.title", comment: "") }
+        static var processingRow: String { ls("aiPrivacy.processingRow", comment: "") }
+        static var chatRow: String { ls("aiPrivacy.chatRow", comment: "") }
+        static var insightsRow: String { ls("aiPrivacy.insightsRow", comment: "") }
+        static var revokeConfirmTitle: String { ls("aiPrivacy.revokeConfirmTitle", comment: "") }
+        static var revokeConfirmMessage: String { ls("aiPrivacy.revokeConfirmMessage", comment: "") }
+        static var revokeConfirmAction: String { ls("aiPrivacy.revokeConfirmAction", comment: "") }
+        static var footerHint: String { ls("aiPrivacy.footerHint", comment: "") }
+        static var policyLink: String { ls("aiPrivacy.policyLink", comment: "") }
+    }
 
     enum AIConsent {
         static var processingTitle: String { ls("aiConsent.processingTitle", comment: "") }
@@ -826,6 +2175,90 @@ enum L10n {
         static var inlineHintProcessing: String { ls("aiConsent.inlineHintProcessing", comment: "") }
         static var inlineHintInsights: String { ls("aiConsent.inlineHintInsights", comment: "") }
         static var inlineHintBoth: String { ls("aiConsent.inlineHintBoth", comment: "") }
+        static var chatTitle: String { ls("aiConsent.chatTitle", comment: "") }
+        static var chatMessage: String { ls("aiConsent.chatMessage", comment: "") }
+        static var inlineHintChat: String { ls("aiConsent.inlineHintChat", comment: "") }
+        static var inlineHintMultiple: String { ls("aiConsent.inlineHintMultiple", comment: "") }
+    }
+
+    // MARK: - Chat Assistant
+
+    enum Chat {
+        static var title: String { ls("chat.title", comment: "") }
+        static var inputPlaceholder: String { ls("chat.inputPlaceholder", comment: "") }
+        static var send: String { ls("chat.send", comment: "") }
+        static var emptySubtitle: String { ls("chat.emptySubtitle", comment: "") }
+        static var errorTimeout: String { ls("chat.errorTimeout", comment: "") }
+        static var errorOffline: String { ls("chat.errorOffline", comment: "") }
+        static var errorGeneric: String { ls("chat.errorGeneric", comment: "") }
+        static var errorNoData: String { ls("chat.errorNoData", comment: "") }
+        static var dailyLimitReached: String { ls("chat.dailyLimitReached", comment: "") }
+        static func questionsRemaining(_ count: Int) -> String {
+            String(format: ls("chat.questionsRemaining", comment: ""), count)
+        }
+        static var loading: String { ls("chat.loading", comment: "") }
+        static var questionTooLong: String { ls("chat.questionTooLong", comment: "") }
+        static var contextHint: String { ls("chat.contextHint", comment: "") }
+
+        // MARK: - Yala IA Redesign (Fases 3 & 5)
+        static var assistantName: String { ls("chat.assistantName", comment: "") }
+        static var greeting: String { ls("chat.greeting", comment: "") }
+        static var dailyResetSubtitle: String { ls("chat.dailyResetSubtitle", comment: "") }
+        static var disclaimer: String { ls("chat.disclaimer", comment: "") }
+        static var daySeparatorToday: String { ls("chat.daySeparatorToday", comment: "") }
+        static var topicsButton: String { ls("chat.topicsButton", comment: "") }
+        static var errorTranscription: String { ls("chat.errorTranscription", comment: "") }
+        static var errorMicPermission: String { ls("chat.errorMicPermission", comment: "") }
+        static var resetContext: String { ls("chat.resetContext", comment: "") }
+        static var listening: String { ls("chat.listening", comment: "") }
+        static var transcribing: String { ls("chat.transcribing", comment: "") }
+        static var preparingAI: String { ls("chat.preparingAI", comment: "") }
+        static var noVoiceDetected: String { ls("chat.noVoiceDetected", comment: "") }
+        static var unavailable: String { ls("chat.unavailable", comment: "") }
+        static var retry: String { ls("chat.retry", comment: "") }
+        static func contextMemory(_ count: Int) -> String {
+            String(format: ls("chat.contextMemory", comment: ""), count)
+        }
+
+        enum Topics {
+            static var title: String { ls("chat.topics.title", comment: "") }
+        }
+
+        // Chat → Registrar transacciones (incremento Yala IA Registrar)
+        enum Draft {
+            static var chipExpense: String { ls("chat.draft.chipExpense", comment: "") }
+            static var chipIncome: String { ls("chat.draft.chipIncome", comment: "") }
+            static var amountPlaceholder: String { ls("chat.draft.amountPlaceholder", comment: "") }
+            static var accountLabel: String { ls("chat.draft.accountLabel", comment: "") }
+            static var subcategoryLabel: String { ls("chat.draft.subcategoryLabel", comment: "") }
+            static var dateLabel: String { ls("chat.draft.dateLabel", comment: "") }
+            static var noteLabel: String { ls("chat.draft.noteLabel", comment: "") }
+            static var tagsLabel: String { ls("chat.draft.tagsLabel", comment: "") }
+            static var tagsNone: String { ls("chat.draft.tagsNone", comment: "") }
+            static var savedBadge: String { ls("chat.draft.savedBadge", comment: "") }
+            static var discardedBadge: String { ls("chat.draft.discardedBadge", comment: "") }
+            static var discardButton: String { ls("chat.draft.discardButton", comment: "") }
+            static var saveFailedGeneric: String { ls("chat.draft.saveFailedGeneric", comment: "") }
+            static var saveFailedAccount: String { ls("chat.draft.saveFailedAccount", comment: "") }
+            static var saveFailedSubcategory: String { ls("chat.draft.saveFailedSubcategory", comment: "") }
+            static var saveFailedAmount: String { ls("chat.draft.saveFailedAmount", comment: "") }
+            static var viewRecordsButton: String { ls("chat.draft.viewRecordsButton", comment: "") }
+            static var selectAccount: String { ls("chat.draft.selectAccount", comment: "") }
+            static var selectSubcategory: String { ls("chat.draft.selectSubcategory", comment: "") }
+            static var saveButton: String { ls("chat.draft.saveButton", comment: "") }
+            static var editButton: String { ls("chat.draft.editButton", comment: "") }
+            static var failedSavingLine: String { ls("chat.draft.failedSavingLine", comment: "") }
+            static var retryButton: String { ls("chat.draft.retryButton", comment: "") }
+            static var noAccountsBlocking: String { ls("chat.draft.noAccountsBlocking", comment: "") }
+            static var ambiguousCanned: String { ls("chat.draft.ambiguousCanned", comment: "") }
+            static var ambiguousChipRegister: String { ls("chat.draft.ambiguousChipRegister", comment: "") }
+            static var ambiguousChipAsk: String { ls("chat.draft.ambiguousChipAsk", comment: "") }
+            static var confirmRegisterSingular: String { ls("chat.draft.confirmRegisterSingular", comment: "") }
+            static var confirmRegisterPlural: String { ls("chat.draft.confirmRegisterPlural", comment: "") }
+            static func overflowFormat(_ detected: Int, _ kept: Int) -> String {
+                String(format: ls("chat.draft.overflowFormat", comment: ""), detected, kept)
+            }
+        }
     }
 
     // MARK: - Accessibility
@@ -848,7 +2281,14 @@ enum L10n {
         static var favoriteTemplates: String { ls("accessibility.favoriteTemplates", comment: "") }
         static var exceeded: String { ls("accessibility.exceeded", comment: "") }
         static var inbox: String { ls("accessibility.inbox", comment: "") }
+        static var previousPeriod: String { ls("accessibility.previousPeriod", comment: "") }
+        static var nextPeriod: String { ls("accessibility.nextPeriod", comment: "") }
+        static var expand: String { ls("accessibility.expand", comment: "") }
+        static var collapse: String { ls("accessibility.collapse", comment: "") }
         static var widgetPreferences: String { ls("accessibility.widgetPreferences", comment: "") }
+        static var sectionsConfig: String { ls("accessibility.sectionsConfig", comment: "Opens the Panel sections config sheet") }
+        static func toggleSection(_ name: String) -> String { String(format: ls("accessibility.toggleSection %@", comment: "Accessibility label for the per-section visibility toggle"), name) }
+        static func sectionPrefsButton(_ name: String) -> String { String(format: ls("accessibility.sectionPrefsButton %@", comment: "Accessibility label for the per-section preferences gear button (P20-03)"), name) }
         static var createAccountFirst: String { ls("accessibility.createAccountFirst", comment: "") }
         static var removeFilter: String { ls("accessibility.removeFilter", comment: "") }
         static var viewDetails: String { ls("accessibility.viewDetails", comment: "") }
@@ -916,6 +2356,14 @@ enum L10n {
         static var newBudget: String { ls("accessibility.newBudget", comment: "") }
         static var newPayment: String { ls("accessibility.newPayment", comment: "") }
         static var importingHint: String { ls("accessibility.importingHint", comment: "") }
+        static func variationIncrease(_ value: String) -> String { String(format: ls("accessibility.variationIncrease %@", comment: ""), value) }
+        static func variationDecrease(_ value: String) -> String { String(format: ls("accessibility.variationDecrease %@", comment: ""), value) }
+        static var processing: String { ls("accessibility.processing", comment: "") }
+        static func removeTab(_ name: String) -> String { String(format: ls("accessibility.removeTab %@", comment: ""), name) }
+        static var selectAtLeastOneColumn: String { ls("accessibility.selectAtLeastOneColumn", comment: "") }
+        static var completeRequiredFilters: String { ls("accessibility.completeRequiredFilters", comment: "") }
+        static var exportingHint: String { ls("accessibility.exportingHint", comment: "") }
+        static var assignAllCurrencies: String { ls("accessibility.assignAllCurrencies", comment: "") }
         static var fillRequiredFields: String { ls("accessibility.fillRequiredFields", comment: "") }
         static var noTransactions: String { ls("accessibility.noTransactions", comment: "") }
         static var selectDraftsFirst: String { ls("accessibility.selectDraftsFirst", comment: "") }
@@ -1133,6 +2581,15 @@ enum L10n {
         static var accountsDescription: String {
             ls("empty.accountsDescription", comment: "")
         }
+        static var activateCategoriesTitle: String {
+            ls("empty.activateCategoriesTitle", comment: "")
+        }
+        static var activateCategoriesMessage: String {
+            ls("empty.activateCategoriesMessage", comment: "")
+        }
+        static var activateCategoriesAction: String {
+            ls("empty.activateCategoriesAction", comment: "")
+        }
     }
 
     // MARK: - Transaction
@@ -1175,6 +2632,10 @@ enum L10n {
             ls("transaction.destinationAccount", comment: "")
         }
         static var account: String { ls("transaction.account", comment: "") }
+        /// Caption abreviado del tipo de cambio bajo el monto convertido ("TC: 3.7500")
+        static func exchangeRateShort(_ rate: String) -> String {
+            String(format: ls("transaction.exchangeRateShort %@", comment: ""), rate)
+        }
         static var exchangeRate: String {
             ls("transaction.exchangeRate", comment: "")
         }
@@ -1223,6 +2684,16 @@ enum L10n {
         enum Sign {
             static var inFavor: String { ls("account.sign.inFavor", comment: "") }
             static var consumed: String { ls("account.sign.consumed", comment: "") }
+        }
+
+        // MARK: - System Account (A0-Bridge)
+
+        enum System {
+            /// "Grupos %@" — nombre de cuenta virtual sistema con currency code (ej: "Grupos PEN").
+            /// Format string para String(format:_:).
+            static var groups: String { ls("account.system.groups", comment: "") }
+            /// "Sistema" — badge/etiqueta para distinguir cuentas sistema.
+            static var badge: String { ls("account.system.badge", comment: "") }
         }
         static var selected: String { ls("account.selected", comment: "") }
         static var selectAccount: String { ls("account.selectAccount", comment: "") }
@@ -1393,6 +2864,15 @@ enum L10n {
         static var vehicle: String { ls("category.vehicle", comment: "") }
         static var incomeCategory: String { ls("category.income", comment: "") }
         static var other: String { ls("category.other", comment: "") }
+
+        // MARK: - System Categories (A0-Bridge)
+
+        enum System {
+            /// "Grupos" — categoría sistema expense para subcategorías sistema del bridge.
+            static var groups: String { ls("category.system.groups", comment: "") }
+            /// "Cobros de grupos" — categoría sistema income para subcategorías sistema del bridge.
+            static var groupCollections: String { ls("category.system.groupCollections", comment: "") }
+        }
     }
 
     // MARK: - Subcategory
@@ -1549,6 +3029,21 @@ enum L10n {
         // Seed names - Otros
         static var balanceAdjustment: String { ls("subcategory.balanceAdjustment", comment: "") }
         static var accountTransferOther: String { ls("subcategory.accountTransferOther", comment: "") }
+
+        // MARK: - System Subcategories (A0-Bridge)
+
+        enum System {
+            /// "Préstamo a grupos" — Caso A TX2 (income, virtual): pagué un gasto del grupo, me deben el total.
+            static var loanToGroups: String { ls("subcategory.system.loanToGroups", comment: "") }
+            /// "Cobro de préstamo" — Caso D TX1 (expense, virtual): mi crédito virtual se redujo (alguien me liquidó).
+            static var loanCollection: String { ls("subcategory.system.loanCollection", comment: "") }
+            /// "Pago de liquidación" — Caso C TX1 (income, virtual): pagué a otro, mi deuda virtual se canceló.
+            static var settlementPayment: String { ls("subcategory.system.settlementPayment", comment: "") }
+            /// "Liquidación enviada" — Caso C TX2 (expense, cuenta real): salida a cuenta real para liquidar.
+            static var settlementSent: String { ls("subcategory.system.settlementSent", comment: "") }
+            /// "Liquidación recibida" — Caso D TX2 (income, cuenta real): entrada a cuenta real desde otro miembro.
+            static var settlementReceived: String { ls("subcategory.system.settlementReceived", comment: "") }
+        }
     }
 
     // MARK: - Tag
@@ -1890,6 +3385,12 @@ enum L10n {
             static var daysAgo: String { ls("scheduled.widget.daysAgo", comment: "") }
             static var tomorrow: String { ls("scheduled.widget.tomorrow", comment: "") }
             static var inDays: String { ls("scheduled.widget.inDays", comment: "") }
+            static var smallTitle: String { ls("scheduled.widget.smallTitle", comment: "") }
+            static var smallToPay: String { ls("scheduled.widget.smallToPay", comment: "") }
+            static var smallPaidAmount: String { ls("scheduled.widget.smallPaidAmount", comment: "") }
+            static var smallActivePending: String { ls("scheduled.widget.smallActivePending", comment: "") }
+            static var smallAllPaid: String { ls("scheduled.widget.smallAllPaid", comment: "") }
+            static var largeTitleRecurring: String { ls("scheduled.widget.largeTitle.recurring", comment: "PP2-07 large-mode dynamic title when filter = recurring") }
         }
 
         enum Help {
@@ -2085,6 +3586,7 @@ enum L10n {
         static var organization: String { ls("settings.organization", comment: "") }
         static var preferences: String { ls("settings.preferences", comment: "") }
         static var aiFeatures: String { ls("settings.aiFeatures", comment: "") }
+        static var chatAssistant: String { ls("settings.chatAssistant", comment: "") }
         static var data: String { ls("settings.data", comment: "") }
         static var security: String { ls("settings.security", comment: "") }
         static var help: String { ls("settings.help", comment: "") }
@@ -2096,6 +3598,7 @@ enum L10n {
         static var wipeData: String { ls("settings.wipeData", comment: "") }
         static var faceId: String { ls("settings.faceId", comment: "") }
         static var permissions: String { ls("settings.permissions", comment: "") }
+        static var aiPrivacy: String { ls("settings.aiPrivacy", comment: "") }
         static var subscriptions: String {
             ls("settings.subscriptions", comment: "")
         }
@@ -2227,6 +3730,18 @@ enum L10n {
         static var wipeICloudWarning: String {
             ls("settings.wipeICloudWarning", comment: "")
         }
+        /// Aclaración: el wipe NO toca grupos (separación A0-Bridge V2.0).
+        static var wipeGroupsExclusionNote: String {
+            ls("settings.wipeGroupsExclusionNote", comment: "")
+        }
+        /// Descripción de "Borrar datos" en modo solo-grupos (sin finanzas personales).
+        static var resetDataDescriptionGroupsOnly: String {
+            ls("settings.resetDataDescriptionGroupsOnly", comment: "")
+        }
+        /// Advertencia de la alerta de borrado en modo solo-grupos.
+        static var deleteDataWarningGroupsOnly: String {
+            ls("settings.deleteDataWarningGroupsOnly", comment: "")
+        }
         static var delete: String { ls("settings.delete", comment: "") }
         static var cancel: String { ls("settings.cancel", comment: "") }
         static var iconOriginal: String { ls("settings.iconOriginal", comment: "") }
@@ -2258,6 +3773,11 @@ enum L10n {
         // Expenses Only Mode
         static var sectionUsageMode: String { ls("settings.sectionUsageMode", comment: "") }
         static var expensesOnlyMode: String { ls("settings.expensesOnlyMode", comment: "") }
+        // A0-Bridge: Group visibility settings
+        static var sectionGroups: String { ls("settings.sectionGroups", comment: "") }
+        static var sectionGroupsHint: String { ls("settings.sectionGroupsHint", comment: "") }
+        static var includeGroupsInPanelTotal: String { ls("settings.includeGroupsInPanelTotal", comment: "") }
+        static var includeGroupTransactionsInStats: String { ls("settings.includeGroupTransactionsInStats", comment: "") }
         static var expensesOnlyModeDescription: String { ls("settings.expensesOnlyModeDescription", comment: "") }
         static var expensesOnlyActivateTitle: String { ls("settings.expensesOnlyActivateTitle", comment: "") }
         static var expensesOnlyActivateMessage: String { ls("settings.expensesOnlyActivateMessage", comment: "") }
@@ -2351,6 +3871,7 @@ enum L10n {
             ls("common.recalculatingConversions", comment: "")
         }
         static var next: String { ls("common.next", comment: "") }
+        static var vs: String { ls("common.vs", comment: "Separator between current and previous amount in chart comparisons") }
         static var moreOptions: String { ls("common.moreOptions", comment: "") }
         static var comingSoon: String { ls("common.comingSoon", comment: "") }
         static var all: String { ls("common.all", comment: "") }
@@ -2387,13 +3908,7 @@ enum L10n {
         static var today: String { ls("widget.today", comment: "") }
         static var noData: String { ls("widget.noData", comment: "") }
         static var loading: String { ls("widget.loading", comment: "") }
-        static var preferences: String { ls("widget.preferences", comment: "") }
         static var visible: String { ls("widget.visible", comment: "") }
-        static var size: String { ls("widget.size", comment: "") }
-        static var compact: String { ls("widget.compact", comment: "") }
-        static var expanded: String { ls("widget.expanded", comment: "") }
-        static var top3: String { ls("widget.top3", comment: "") }
-        static var top5: String { ls("widget.top5", comment: "") }
         static var summary: String { ls("widget.summary", comment: "") }
         static var list: String { ls("widget.list", comment: "") }
         static var calendar: String { ls("widget.calendar", comment: "") }
@@ -2404,6 +3919,10 @@ enum L10n {
         static var alwaysVisible: String { ls("widget.alwaysVisible", comment: "") }
         static var fixedPosition: String { ls("widget.fixedPosition", comment: "") }
         static var sizeLabel: String { ls("widget.sizeLabel", comment: "") }
+        static var chatFabToggle: String { ls("widget.chatFab.toggle", comment: "") }
+        static var chatFabDescription: String { ls("widget.chatFab.description", comment: "") }
+        static var chatFabHint: String { ls("widget.chatFab.hint", comment: "") }
+        static var aiCapabilitiesHeader: String { ls("widget.aiCapabilities.header", comment: "") }
         static var main: String { ls("widget.main", comment: "") }
         static var topCategories: String { ls("widget.topCategories", comment: "") }
         static var topSubcategories: String {
@@ -2541,6 +4060,9 @@ enum L10n {
         static var scheduledPayments: String {
             ls("widgetType.scheduledPayments", comment: "")
         }
+        static var weekdayBar: String {
+            ls("widgetType.weekdayBar", comment: "")
+        }
     }
 
     // MARK: - Budgets
@@ -2560,6 +4082,10 @@ enum L10n {
 
         static var emptyTitle: String { ls("budgets.empty.title", comment: "") }
         static var emptyMessage: String { ls("budgets.empty.message", comment: "") }
+
+        // Shared expenses
+        static var includeSharedExpenses: String { ls("budgets.includeSharedExpenses", comment: "") }
+        static var includeSharedExpensesHint: String { ls("budgets.includeSharedExpensesHint", comment: "") }
 
         // Alert notifications
         static var alertsTitle: String {
@@ -2593,6 +4119,11 @@ enum L10n {
 
         /// Hint when budget alerts are globally disabled
         static var alertsGlobalDisabledHint: String { ls("budgets.alerts.globalDisabledHint", comment: "") }
+
+        /// Accessibility label for the period type segmented picker
+        static var periodTypeLabel: String { ls("budgets.period.typeLabel", comment: "") }
+        /// Placeholder for the custom alert threshold field (1–100)
+        static var thresholdPlaceholder: String { ls("budgets.alerts.thresholdPlaceholder", comment: "") }
     }
 
     // MARK: - Budget Detail
@@ -2627,6 +4158,22 @@ enum L10n {
         static var comingSoon: String { ls("planning.comingSoon", comment: "") }
         static var scheduledPayments: String {
             ls("planning.scheduledPayments", comment: "")
+        }
+
+        enum Scheduled {
+            static var totalLabel: String { ls("planning.scheduled.totalLabel", comment: "") }
+        }
+
+        enum BudgetCharts {
+            static var historyTitle: String { ls("planning.budgetCharts.historyTitle", comment: "") }
+            static var historyHint: String { ls("planning.budgetCharts.historyHint", comment: "") }
+            static var spendingTitle: String { ls("planning.budgetCharts.spendingTitle", comment: "") }
+            static var spendingHint: String { ls("planning.budgetCharts.spendingHint", comment: "") }
+            static var byCategoryTitle: String { ls("planning.budgetCharts.byCategoryTitle", comment: "") }
+            static var byCategoryHint: String { ls("planning.budgetCharts.byCategoryHint", comment: "") }
+            static func spentOf(_ spent: String, _ limit: String) -> String {
+                String(format: ls("planning.budgetCharts.spentOf", comment: ""), spent, limit)
+            }
         }
     }
 
@@ -2749,8 +4296,135 @@ enum L10n {
     }
 
     enum More {
-        static var sections: String {
-            ls("more.sections", comment: "")
+        static var toolsSection: String { ls("more.toolsSection", comment: "") }
+
+        /// Enunciados cortos de las cards del dashboard "Más" (brand-voice).
+        enum Subtitle {
+            static var panel: String { ls("more.subtitle.panel", comment: "") }
+            static var insights: String { ls("more.subtitle.insights", comment: "") }
+            static var trends: String { ls("more.subtitle.trends", comment: "") }
+            static var distribution: String { ls("more.subtitle.distribution", comment: "") }
+            static var budgets: String { ls("more.subtitle.budgets", comment: "") }
+            static var scheduledPayments: String { ls("more.subtitle.scheduledPayments", comment: "") }
+            static var comparative: String { ls("more.subtitle.comparative", comment: "") }
+            static var cashFlow: String { ls("more.subtitle.cashFlow", comment: "") }
+            static var records: String { ls("more.subtitle.records", comment: "") }
+            static var groups: String { ls("more.subtitle.groups", comment: "") }
+            static var profile: String { ls("more.subtitle.profile", comment: "") }
+        }
+
+        /// Editor del dashboard "Más" (toolbar): reordenar secciones + tab bar.
+        enum Editor {
+            static var title: String { ls("more.editor.title", comment: "") }
+            static var sectionsHeader: String { ls("more.editor.sectionsHeader", comment: "") }
+            static var tabBarHint: String { ls("more.editor.tabBarHint", comment: "") }
+        }
+    }
+
+    // MARK: - Welcome (Chooser pre-onboarding A4)
+
+    enum Welcome {
+        enum Chooser {
+            static var title: String { ls("welcome.chooser.title", comment: "") }
+            static var subtitle: String { ls("welcome.chooser.subtitle", comment: "") }
+            static var optionNewTitle: String { ls("welcome.chooser.optionNew.title", comment: "") }
+            static var optionNewBody: String { ls("welcome.chooser.optionNew.body", comment: "") }
+            static var optionExistingTitle: String { ls("welcome.chooser.optionExisting.title", comment: "") }
+            static var optionExistingBody: String { ls("welcome.chooser.optionExisting.body", comment: "") }
+            static var optionInviteTitle: String { ls("welcome.chooser.optionInvite.title", comment: "") }
+            static var optionInviteBody: String { ls("welcome.chooser.optionInvite.body", comment: "") }
+        }
+
+        enum Restore {
+            static var searching: String { ls("welcome.restore.searching", comment: "") }
+            static var searchingTip: String { ls("welcome.restore.searchingTip", comment: "") }
+            static func foundTitle(_ name: String) -> String {
+                String(format: ls("welcome.restore.foundTitle", comment: ""), name)
+            }
+            static var foundTitleAnonymous: String { ls("welcome.restore.foundTitleAnonymous", comment: "") }
+            static var foundBody: String { ls("welcome.restore.foundBody", comment: "") }
+            static func foundAccounts(_ count: Int) -> String {
+                String(format: ls("welcome.restore.foundAccounts", comment: ""), count)
+            }
+            static func foundTransactions(_ count: Int) -> String {
+                String(format: ls("welcome.restore.foundTransactions", comment: ""), count)
+            }
+            static func foundBudgets(_ count: Int) -> String {
+                String(format: ls("welcome.restore.foundBudgets", comment: ""), count)
+            }
+            static func foundGroups(_ count: Int) -> String {
+                String(format: ls("welcome.restore.foundGroups", comment: ""), count)
+            }
+            static var continueAction: String { ls("welcome.restore.continue", comment: "") }
+            static var notFoundTitle: String { ls("welcome.restore.notFoundTitle", comment: "") }
+            static var notFoundBody: String { ls("welcome.restore.notFoundBody", comment: "") }
+            static var startFresh: String { ls("welcome.restore.startFresh", comment: "") }
+            static var retry: String { ls("welcome.restore.retry", comment: "") }
+            static var errorTitle: String { ls("welcome.restore.errorTitle", comment: "") }
+            static var errorBody: String { ls("welcome.restore.errorBody", comment: "") }
+            static var iCloudDisabledTitle: String { ls("welcome.restore.iCloudDisabledTitle", comment: "") }
+            static var iCloudDisabledBody: String { ls("welcome.restore.iCloudDisabledBody", comment: "") }
+            static var openSettings: String { ls("welcome.restore.openSettings", comment: "") }
+            static var startFreshConfirmTitle: String { ls("welcome.restore.startFreshConfirm.title", comment: "") }
+            static var startFreshConfirmBody: String { ls("welcome.restore.startFreshConfirm.body", comment: "") }
+            static var startFreshConfirmConfirm: String { ls("welcome.restore.startFreshConfirm.confirm", comment: "") }
+            static var startFreshConfirmCancel: String { ls("welcome.restore.startFreshConfirm.cancel", comment: "") }
+        }
+
+        enum Invite {
+            static var title: String { ls("welcome.invite.title", comment: "") }
+            static var body: String { ls("welcome.invite.body", comment: "") }
+            static var placeholder: String { ls("welcome.invite.placeholder", comment: "") }
+            static var invalidLink: String { ls("welcome.invite.invalidLink", comment: "") }
+            static var join: String { ls("welcome.invite.join", comment: "") }
+            static var back: String { ls("welcome.invite.back", comment: "") }
+        }
+
+        // MARK: - Hero (A4 v3.1: pantalla de presentación pre-Chooser)
+
+        enum Hero {
+            static var title: String { ls("welcome.hero.title", comment: "") }
+            static var titleAccent: String { ls("welcome.hero.titleAccent", comment: "") }
+            static var subtitle: String { ls("welcome.hero.subtitle", comment: "") }
+            static var cta: String { ls("welcome.hero.cta", comment: "") }
+            static var trust: String { ls("welcome.hero.trust", comment: "") }
+
+            // 8 cards animadas (Sprint 2): capture/assistant/groups/budgets/multiAndCurrencies/import/icloud/more.
+            static var captureTitle: String { ls("welcome.hero.cards.capture.title", comment: "") }
+            static var captureBody: String { ls("welcome.hero.cards.capture.body", comment: "") }
+            static var assistantTitle: String { ls("welcome.hero.cards.assistant.title", comment: "") }
+            static var assistantBody: String { ls("welcome.hero.cards.assistant.body", comment: "") }
+            static var groupsTitle: String { ls("welcome.hero.cards.groups.title", comment: "") }
+            static var groupsBody: String { ls("welcome.hero.cards.groups.body", comment: "") }
+            static var budgetsTitle: String { ls("welcome.hero.cards.budgets.title", comment: "") }
+            static var budgetsBody: String { ls("welcome.hero.cards.budgets.body", comment: "") }
+            static var multiAndCurrenciesTitle: String { ls("welcome.hero.cards.multiAndCurrencies.title", comment: "") }
+            static var multiAndCurrenciesBody: String { ls("welcome.hero.cards.multiAndCurrencies.body", comment: "") }
+            static var importTitle: String { ls("welcome.hero.cards.import.title", comment: "") }
+            static var importBody: String { ls("welcome.hero.cards.import.body", comment: "") }
+            static var icloudTitle: String { ls("welcome.hero.cards.icloud.title", comment: "") }
+            static var icloudBody: String { ls("welcome.hero.cards.icloud.body", comment: "") }
+            static var moreTitle: String { ls("welcome.hero.cards.more.title", comment: "") }
+            static var moreBody: String { ls("welcome.hero.cards.more.body", comment: "") }
+        }
+
+        // MARK: - DetectedData (A4 v3.1: alert post-Hero cuando iCloud tiene data residual)
+
+        enum DetectedData {
+            static var title: String { ls("welcome.detectedData.title", comment: "") }
+            static func message(_ accounts: Int, _ transactions: Int, _ categories: Int) -> String {
+                String(format: ls("welcome.detectedData.message", comment: ""), accounts, transactions, categories)
+            }
+            static var loadMyData: String { ls("welcome.detectedData.loadMyData", comment: "") }
+            static var startFresh: String { ls("welcome.detectedData.startFresh", comment: "") }
+        }
+
+        // MARK: - FreshStart (segunda barrera: alert al tap "Soy nuevo" si hay data residual)
+
+        enum FreshStart {
+            static var alertTitle: String { ls("welcome.freshStart.alertTitle", comment: "") }
+            static var alertMessage: String { ls("welcome.freshStart.alertMessage", comment: "") }
+            static var alertConfirm: String { ls("welcome.freshStart.alertConfirm", comment: "") }
         }
     }
 
@@ -2792,6 +4466,9 @@ enum L10n {
         }
         static var finish: String {
             ls("onboarding.finish", comment: "")
+        }
+        static var startUsingYala: String {
+            ls("onboarding.startUsingYala", comment: "")
         }
         static var categoriesTitle: String {
             ls("onboarding.categoriesTitle", comment: "")
@@ -2893,6 +4570,14 @@ enum L10n {
         static var accountBalanceHintChecking: String { ls("onboarding.accountBalanceHintChecking", comment: "") }
         static var accountBalanceHintSavings: String { ls("onboarding.accountBalanceHintSavings", comment: "") }
         static var accountBalanceLearnMore: String { ls("onboarding.accountBalanceLearnMore", comment: "") }
+        static var balanceGuideHint: String { ls("onboarding.balanceGuideHint", comment: "") }
+        static var balanceManualOption: String { ls("onboarding.balanceManualOption", comment: "") }
+        static var balanceManualHint: String { ls("onboarding.balanceManualHint", comment: "") }
+        static var balanceGuidedIncompleteHint: String { ls("onboarding.balanceGuidedIncompleteHint", comment: "") }
+        static var privacyLocalShort: String { ls("onboarding.privacyLocalShort", comment: "") }
+        static var privacyNoTrackingShort: String { ls("onboarding.privacyNoTrackingShort", comment: "") }
+        static var privacyIcloudShort: String { ls("onboarding.privacyIcloudShort", comment: "") }
+        static var privacyNoSharingShort: String { ls("onboarding.privacyNoSharingShort", comment: "") }
         static var accountBalanceGuideTitle: String { ls("onboarding.accountBalanceGuideTitle", comment: "") }
         static var accountBalanceGuideIntro: String { ls("onboarding.accountBalanceGuideIntro", comment: "") }
         static var accountBalanceGuideGeneral: String { ls("onboarding.accountBalanceGuideGeneral", comment: "") }
@@ -3024,6 +4709,15 @@ enum L10n {
         static var availableTags: String {
             ls("bulkEdit.availableTags", comment: "")
         }
+        static var cannotEditTransferSubcategory: String {
+            ls("bulkEdit.cannotEditTransferSubcategory", comment: "")
+        }
+        static var cannotEditTransferAmountCrossCurrency: String {
+            ls("bulkEdit.cannotEditTransferAmountCrossCurrency", comment: "")
+        }
+        static var cannotEditTransferAccount: String {
+            ls("bulkEdit.cannotEditTransferAccount", comment: "")
+        }
     }
 
     // MARK: - Voice Language
@@ -3045,6 +4739,43 @@ enum L10n {
     enum Inbox {
         static var title: String {
             ls("inbox.title", comment: "")
+        }
+        // A0-Bridge V2.0 (P1-3): CTA desde TX bridgeada read-only con draft pendiente
+        static var openInbox: String { ls("inbox.openInbox", comment: "") }
+
+        // A0-Bridge V2.0 (P1-4): sheets finalización drafts especializados
+        enum GroupExpenseDraft {
+            static var title: String { ls("inbox.groupExpenseDraft.title", comment: "") }
+            static var assignSubcategory: String { ls("inbox.groupExpenseDraft.assignSubcategory", comment: "") }
+            /// Banner explicativo (asignar categoría). Formato: %@ = nombre del grupo.
+            static var banner: String { ls("inbox.groupExpenseDraft.banner", comment: "") }
+        }
+
+        enum GroupSettlementDraft {
+            static var title: String { ls("inbox.groupSettlementDraft.title", comment: "") }
+            static var assignAccount: String { ls("inbox.groupSettlementDraft.assignAccount", comment: "") }
+            /// Banner explicativo (liquidación). Formato: %@ = nombre del grupo.
+            static var banner: String { ls("inbox.groupSettlementDraft.banner", comment: "") }
+        }
+
+        // M6: sheet finalización Caso A pendiente cuenta.
+        enum GroupExpenseAccountDraft {
+            static var title: String { ls("inbox.groupExpenseAccountDraft.title", comment: "") }
+            static var assignAccount: String { ls("inbox.groupExpenseAccountDraft.assignAccount", comment: "") }
+            /// Banner explicativo (asignar cuenta). Formato: %@ = nombre del grupo.
+            static var banner: String { ls("inbox.groupExpenseAccountDraft.banner", comment: "") }
+        }
+
+        // Enfoque B: sheet finalización Caso A cuando faltan cuenta + subcategoría (match falla).
+        enum GroupExpenseAccountSubcategoryDraft {
+            static var title: String { ls("inbox.groupExpenseAccountSubcategoryDraft.title", comment: "") }
+            /// Banner explicativo (asignar cuenta + subcategoría). Formato: %@ = nombre del grupo.
+            static var banner: String { ls("inbox.groupExpenseAccountSubcategoryDraft.banner", comment: "") }
+        }
+
+        enum GroupDraft {
+            static var finalize: String { ls("inbox.groupDraft.finalize", comment: "") }
+            static var fromGroup: String { ls("inbox.groupDraft.fromGroup", comment: "") }
         }
         static var pending: String {
             ls("inbox.pending", comment: "")
@@ -3130,6 +4861,19 @@ enum L10n {
         static var sourceSiri: String {
             ls("inbox.sourceSiri", comment: "")
         }
+        static var sourceGroupExpense: String {
+            ls("inbox.sourceGroupExpense", comment: "")
+        }
+        static var sourceGroupSettlement: String {
+            ls("inbox.sourceGroupSettlement", comment: "")
+        }
+        static var sourceManual: String {
+            ls("inbox.sourceManual", comment: "")
+        }
+        /// "Esta transacción se elimina solo desde el grupo origen."
+        static var groupDraftCannotDelete: String {
+            ls("inbox.groupDraftCannotDelete", comment: "")
+        }
         static var errorNoAccount: String {
             ls("inbox.errorNoAccount", comment: "")
         }
@@ -3144,6 +4888,9 @@ enum L10n {
         }
         static var errorFutureDate: String {
             ls("inbox.errorFutureDate", comment: "")
+        }
+        static var errorGroupExpenseGone: String {
+            ls("inbox.errorGroupExpenseGone", comment: "")
         }
         static var duplicateWarningTitle: String {
             ls("inbox.duplicateWarningTitle", comment: "")
@@ -3253,6 +5000,19 @@ enum L10n {
                     }
                 }
             }
+        }
+
+        static func pendingBadge(_ count: Int) -> String {
+            String(format: ls("inbox.pendingBadge", comment: ""), count)
+        }
+        static var subtitleAllDone: String {
+            ls("inbox.subtitleAllDone", comment: "")
+        }
+        static var subtitleOnePending: String {
+            ls("inbox.subtitleOnePending", comment: "")
+        }
+        static func subtitleMultiplePending(_ count: Int) -> String {
+            String(format: ls("inbox.subtitleMultiplePending", comment: ""), count)
         }
     }
 
@@ -3515,6 +5275,7 @@ enum L10n {
         static var featureCurrencies: String { ls("subscription.feature.currencies", comment: "") }
         static var featureThemes: String { ls("subscription.feature.themes", comment: "") }
         static var featureExport: String { ls("subscription.feature.export", comment: "") }
+        static var featureAIAssistant: String { ls("subscription.feature.aiAssistant", comment: "") }
         static var legalFooter: String { ls("subscription.legalFooter", comment: "") }
         static var termsOfUseLink: String { ls("subscription.termsOfUseLink", comment: "") }
         static var privacyPolicyLink: String { ls("subscription.privacyPolicyLink", comment: "") }
@@ -3813,6 +5574,33 @@ enum L10n {
         static var scheduledPaymentsName: String { ls("notifications.scheduledPayments.name", comment: "") }
         static var scheduledPaymentsHint: String { ls("notifications.scheduledPayments.hint", comment: "") }
 
+        // Groups
+        static var groupsName: String { ls("notifications.groups.name", comment: "") }
+        static var groupsHint: String { ls("notifications.groups.hint", comment: "") }
+
+        enum Group {
+            static func newExpense(_ member: String, _ amount: String, _ desc: String) -> String {
+                String(format: ls("notifications.groups.newExpense", comment: ""), member, amount, desc)
+            }
+            static func newExpenseNoDesc(_ member: String, _ amount: String) -> String {
+                String(format: ls("notifications.groups.newExpenseNoDesc", comment: ""), member, amount)
+            }
+            static func modifiedExpense(_ member: String, _ desc: String) -> String {
+                String(format: ls("notifications.groups.modifiedExpense", comment: ""), member, desc)
+            }
+            static func settlement(_ member: String, _ amount: String) -> String {
+                String(format: ls("notifications.groups.settlement", comment: ""), member, amount)
+            }
+            static func newMember(_ member: String) -> String {
+                String(format: ls("notifications.groups.newMember", comment: ""), member)
+            }
+            static func multipleChanges(_ count: Int) -> String {
+                String(format: ls("notifications.groups.multipleChanges", comment: ""), count)
+            }
+            static var fallbackGroup: String { ls("notifications.groups.fallbackGroup", comment: "") }
+            static var fallbackMember: String { ls("notifications.groups.fallbackMember", comment: "") }
+        }
+
 
         // Empty state
         static var emptyTitle: String { ls("notifications.empty.title", comment: "") }
@@ -3935,6 +5723,14 @@ enum L10n {
         static var v12ScheduledDescription: String { ls("whatsNew.v12.scheduled.description", comment: "") }
         static var v12MoreForYouTitle: String { ls("whatsNew.v12.moreForYou.title", comment: "") }
         static var v12MoreForYouDescription: String { ls("whatsNew.v12.moreForYou.description", comment: "") }
+
+        // v2.0 features
+        static var v20GroupsTitle: String { ls("whatsNew.v20.groups.title", comment: "") }
+        static var v20GroupsDescription: String { ls("whatsNew.v20.groups.description", comment: "") }
+        static var v20AITitle: String { ls("whatsNew.v20.ai.title", comment: "") }
+        static var v20AIDescription: String { ls("whatsNew.v20.ai.description", comment: "") }
+        static var v20RedesignTitle: String { ls("whatsNew.v20.redesign.title", comment: "") }
+        static var v20RedesignDescription: String { ls("whatsNew.v20.redesign.description", comment: "") }
     }
 
     // MARK: - App Update
@@ -3980,13 +5776,41 @@ enum L10n {
         static var dataFoundTitle: String { ls("icloud.dataFoundTitle", comment: "") }
         static var dataFoundMessage: String { ls("icloud.dataFoundMessage", comment: "") }
         static var dataFoundAction: String { ls("icloud.dataFoundAction", comment: "") }
-        static var syncingBanner: String { ls("icloud.syncingBanner", comment: "") }
+        static var remoteOnboardingCompleted: String { ls("icloud.remoteOnboardingCompleted", comment: "") }
+        static var remoteRestoreCompleted: String { ls("icloud.remoteRestoreCompleted", comment: "") }
+        enum SyncIndicator {
+            static var failed: String { ls("icloud.syncIndicator.failed", comment: "") }
+            static func stalled(_ days: Int) -> String {
+                String(format: ls("icloud.syncIndicator.stalled", comment: ""), days)
+            }
+            static var hint: String { ls("icloud.syncIndicator.hint", comment: "") }
+        }
+        enum Detail {
+            static func upToDate(_ relative: String) -> String {
+                String(format: ls("icloud.detail.upToDate", comment: ""), relative)
+            }
+            static var errorTitle: String { ls("icloud.detail.errorTitle", comment: "") }
+            static var errorMessage: String { ls("icloud.detail.errorMessage", comment: "") }
+            static func stalledTitle(_ days: Int) -> String {
+                String(format: ls("icloud.detail.stalledTitle", comment: ""), days)
+            }
+            static var stalledMessage: String { ls("icloud.detail.stalledMessage", comment: "") }
+            static func technicalCode(_ code: String) -> String {
+                String(format: ls("icloud.detail.technicalCode", comment: ""), code)
+            }
+            enum CTA {
+                static var retry: String { ls("icloud.detail.cta.retry", comment: "") }
+                static var diagnose: String { ls("icloud.detail.cta.diagnose", comment: "") }
+                static var viewTechnical: String { ls("icloud.detail.cta.viewTechnical", comment: "") }
+            }
+        }
         static var remoteWipeTitle: String { ls("icloud.remoteWipe.title", comment: "") }
         static var remoteWipeMessage: String { ls("icloud.remoteWipe.message", comment: "") }
         static var remoteWipeConfirm: String { ls("icloud.remoteWipe.confirm", comment: "") }
         static var remoteWipeCancel: String { ls("icloud.remoteWipe.cancel", comment: "") }
         static var forceSyncButton: String { ls("icloud.forceSync.button", comment: "") }
         static var forceSyncDescription: String { ls("icloud.forceSync.description", comment: "") }
+        static var forceSyncOfflineNote: String { ls("icloud.forceSync.offlineNote", comment: "") }
         static var mismatchTitle: String { ls("icloud.mismatch.title", comment: "") }
         static var mismatchMessage: String { ls("icloud.mismatch.message", comment: "") }
         static var mismatchAction: String { ls("icloud.mismatch.action", comment: "") }
@@ -3995,10 +5819,19 @@ enum L10n {
     // MARK: - Shortcut Notifications
 
     enum Shortcut {
+        /// Dialog del intent Siri cuando algunos items no se entendieron.
+        /// La key lleva los placeholders en el CONTENIDO (`%1$lld de %2$lld`), no en el
+        /// nombre — por eso requiere `String(format:)` con `Int64` y no `String(localized:)`.
+        static func successPartial(_ recorded: Int, _ total: Int) -> String {
+            String(format: ls("shortcut.siriNatural.success.partial", comment: ""), Int64(recorded), Int64(total))
+        }
+
         enum Notification {
             static var title: String { ls("shortcut.notification.title", comment: "") }
             static var expense: String { ls("shortcut.notification.expense", comment: "") }
             static var income: String { ls("shortcut.notification.income", comment: "") }
+            static var errorTitle: String { ls("shortcut.notification.errorTitle", comment: "") }
+            static var errorBody: String { ls("shortcut.notification.errorBody", comment: "") }
             static func body(_ type: String, _ amount: String, _ note: String) -> String {
                 String(format: ls("shortcut.notification.body", comment: ""), type, amount, note)
             }
@@ -4062,6 +5895,11 @@ enum L10n {
         // TipKit standalone tips
         static var comparison: String { ls("tipkit.comparison.title", comment: "") }
         static var comparisonMessage: String { ls("tipkit.comparison.message", comment: "") }
+        // AI Charts tips
+        static var aiChartsPro: String { ls("tipkit.aiCharts.pro.title", comment: "") }
+        static var aiChartsProMessage: String { ls("tipkit.aiCharts.pro.message", comment: "") }
+        static var aiChartsFree: String { ls("tipkit.aiCharts.free.title", comment: "") }
+        static var aiChartsFreeMessage: String { ls("tipkit.aiCharts.free.message", comment: "") }
         // Grupo D: Settings
         static var settingsAccounts: String { ls("tipkit.settings.accounts.title", comment: "") }
         static var settingsAccountsMessage: String { ls("tipkit.settings.accounts.message", comment: "") }
@@ -4113,6 +5951,8 @@ enum L10n {
         static var proProThemesMessage: String { ls("tipkit.pro.proThemes.message", comment: "") }
         static var proFabTitle: String { ls("tipkit.pro.fab.title", comment: "") }
         static var proFabMessage: String { ls("tipkit.pro.fab.message", comment: "") }
+        static var proChatFabTitle: String { ls("tipkit.pro.chatFab.title", comment: "") }
+        static var proChatFabMessage: String { ls("tipkit.pro.chatFab.message", comment: "") }
         static var proAiSummaryTitle: String { ls("tipkit.pro.aiSummary.title", comment: "") }
         static var proAiSummaryMessage: String { ls("tipkit.pro.aiSummary.message", comment: "") }
     }
@@ -4211,31 +6051,239 @@ enum L10n {
         static var stepReloading: String { ls("devseed.stepReloading", comment: "") }
     }
 
+    // MARK: - Yala AI Onboarding
+
+    enum YalaAI {
+        enum Onboarding {
+            // Common (shared across steps)
+            static var continueAction: String { ls("yalaAI.onboarding.continue", comment: "") }
+            static var back: String { ls("yalaAI.onboarding.back", comment: "") }
+            static var close: String { ls("yalaAI.onboarding.close", comment: "") }
+            static var previewLabel: String { ls("yalaAI.onboarding.previewLabel", comment: "") }
+            static func progressLabel(_ current: Int, _ total: Int) -> String {
+                String(format: ls("yalaAI.onboarding.progressLabel", comment: ""), current, total)
+            }
+
+            // Step 1 — Hero with chat preview animation (3 scenarios)
+            static var step1Title: String { ls("yalaAI.onboarding.step1.title", comment: "") }
+            static var step1Subtitle: String { ls("yalaAI.onboarding.step1.subtitle", comment: "") }
+            static var step1DemoScenario1User: String { ls("yalaAI.onboarding.step1.demoScenario1User", comment: "") }
+            static var step1DemoScenario1Bot: String { ls("yalaAI.onboarding.step1.demoScenario1Bot", comment: "") }
+            static var step1DemoScenario2User: String { ls("yalaAI.onboarding.step1.demoScenario2User", comment: "") }
+            static var step1DemoScenario2Bot: String { ls("yalaAI.onboarding.step1.demoScenario2Bot", comment: "") }
+            static var step1DemoScenario3User: String { ls("yalaAI.onboarding.step1.demoScenario3User", comment: "") }
+            static var step1DemoScenario3Bot: String { ls("yalaAI.onboarding.step1.demoScenario3Bot", comment: "") }
+            static var step1DemoAmountLabel: String { ls("yalaAI.onboarding.step1.demoAmountLabel", comment: "") }
+            static var step1A11yLabel: String { ls("yalaAI.onboarding.step1.a11yLabel", comment: "") }
+
+            // Step 2 — What you can do (3 cards)
+            static var step2Title: String { ls("yalaAI.onboarding.step2.title", comment: "") }
+            static var step2Subtitle: String { ls("yalaAI.onboarding.step2.subtitle", comment: "") }
+            static var step2Card1Badge: String { ls("yalaAI.onboarding.step2.card1.badge", comment: "") }
+            static var step2Card1Title: String { ls("yalaAI.onboarding.step2.card1.title", comment: "") }
+            static var step2Card1Body: String { ls("yalaAI.onboarding.step2.card1.body", comment: "") }
+            static var step2Card2Title: String { ls("yalaAI.onboarding.step2.card2.title", comment: "") }
+            static var step2Card2Body: String { ls("yalaAI.onboarding.step2.card2.body", comment: "") }
+            static var step2Card3Title: String { ls("yalaAI.onboarding.step2.card3.title", comment: "") }
+            static var step2Card3Body: String { ls("yalaAI.onboarding.step2.card3.body", comment: "") }
+
+            // Step 3 — Tone (3 options + quote in preview)
+            static var step3Title: String { ls("yalaAI.onboarding.step3.title", comment: "") }
+            static var step3Subtitle: String { ls("yalaAI.onboarding.step3.subtitle", comment: "") }
+            static var step3ToneNormalDescription: String { ls("yalaAI.onboarding.step3.toneNormalDescription", comment: "") }
+            static var step3ToneConsiderateDescription: String { ls("yalaAI.onboarding.step3.toneConsiderateDescription", comment: "") }
+            static var step3ToneSarcasticDescription: String { ls("yalaAI.onboarding.step3.toneSarcasticDescription", comment: "") }
+            static var step3ToneNormalQuote: String { ls("yalaAI.onboarding.step3.toneNormalQuote", comment: "") }
+            static var step3ToneConsiderateQuote: String { ls("yalaAI.onboarding.step3.toneConsiderateQuote", comment: "") }
+            static var step3ToneSarcasticQuote: String { ls("yalaAI.onboarding.step3.toneSarcasticQuote", comment: "") }
+
+            // Step 4 — Focus / style (3 options + quote in preview)
+            static var step4Title: String { ls("yalaAI.onboarding.step4.title", comment: "") }
+            static var step4Subtitle: String { ls("yalaAI.onboarding.step4.subtitle", comment: "") }
+            static var step4FocusBalancedDescription: String { ls("yalaAI.onboarding.step4.focusBalancedDescription", comment: "") }
+            static var step4FocusSaverDescription: String { ls("yalaAI.onboarding.step4.focusSaverDescription", comment: "") }
+            static var step4FocusCautiousDescription: String { ls("yalaAI.onboarding.step4.focusCautiousDescription", comment: "") }
+            static var step4FocusBalancedQuote: String { ls("yalaAI.onboarding.step4.focusBalancedQuote", comment: "") }
+            static var step4FocusSaverQuote: String { ls("yalaAI.onboarding.step4.focusSaverQuote", comment: "") }
+            static var step4FocusCautiousQuote: String { ls("yalaAI.onboarding.step4.focusCautiousQuote", comment: "") }
+
+            // Step 5 — Done
+            static var step5Title: String { ls("yalaAI.onboarding.step5.title", comment: "") }
+            static var step5Subtitle: String { ls("yalaAI.onboarding.step5.subtitle", comment: "") }
+            static var step5Tip: String { ls("yalaAI.onboarding.step5.tip", comment: "") }
+            static var step5CTA: String { ls("yalaAI.onboarding.step5.cta", comment: "") }
+        }
+    }
+
+    // MARK: - Stats Records polish (stats-polish-panel-alignment)
+
+    enum Stats {
+        enum Records {
+            static var motivationalOne: String {
+                ls("stats.records.motivationalOne", comment: "Records hero motivational subtitle when filteredCount == 1")
+            }
+            static func motivationalMany(_ count: Int) -> String {
+                String(format: ls("stats.records.motivationalMany %d", comment: "Records hero motivational subtitle when filteredCount >= 2 (use %d placeholder)"), count)
+            }
+        }
+        enum Insights {
+            static var motivationalOne: String {
+                ls("stats.insights.motivationalOne", comment: "Insights hero motivational subtitle when transactionCount == 1")
+            }
+            static func motivationalMany(_ count: Int) -> String {
+                String(format: ls("stats.insights.motivationalMany %d", comment: "Insights hero motivational subtitle when transactionCount >= 2 (use %d placeholder)"), count)
+            }
+            static var detailHeader: String {
+                ls("stats.insights.detailHeader", comment: "Detail mode section header — generic 'Your numbers' (period shown as subtitle)")
+            }
+            static var aiCardTitle: String {
+                ls("stats.insights.aiCardTitle", comment: "Pro Insights AI tappable card title")
+            }
+            static var aiCardSubtitle: String {
+                ls("stats.insights.aiCardSubtitle", comment: "Pro Insights AI tappable card subtitle")
+            }
+            static func dailyAvgIn(_ period: String) -> String {
+                String(format: ls("stats.insights.dailyAvgIn %@", comment: "Daily average context label (e.g., 'per day in this month')"), period)
+            }
+            static func needDailyFormat(_ amount: String) -> String {
+                String(format: ls("stats.insights.need.dailyFormat %@", comment: "Need bucket daily average label (e.g., '≈ S/12/day')"), amount)
+            }
+            static var modeDetail: String {
+                ls("stats.insights.modeDetail", comment: "Content mode pill label: detailed monthly figures view")
+            }
+        }
+        enum Trends {
+            static var comparisonTitle: String {
+                ls("stats.trends.comparisonTitle", comment: "Title for the period comparison section (M/A selector to the right)")
+            }
+            static func insightTitleFree(_ period: String) -> String {
+                String(format: ls("stats.trends.insightTitleFree %@", comment: "Trend Insight Card title for Free users (param: period name, e.g., 'mes')"), period)
+            }
+            static var insightTitlePro: String {
+                ls("stats.trends.insightTitlePro", comment: "Trend Insight Card title for Pro users")
+            }
+            static var refineWithAI: String {
+                ls("stats.trends.refineWithAI", comment: "CTA chip in Free trend insight card — opens upsell sheet")
+            }
+            static var generateAI: String {
+                ls("stats.trends.generateAI", comment: "CTA in Pro pre-AI trend insight card — triggers AI generation")
+            }
+            static var regenerate: String {
+                ls("stats.trends.regenerate", comment: "CTA in Pro post-AI trend insight card — regenerates AI analysis")
+            }
+            static var aiFootnote: String {
+                ls("stats.trends.aiFootnote", comment: "Footer label in Pro post-AI trend insight card balancing the Regenerate chip — identitarian tag")
+            }
+            static var heroOnset: String {
+                ls("stats.trends.heroOnset", comment: "Hero subtitle when no previous period comparable (first month / .allTime)")
+            }
+            static var heroStable: String {
+                ls("stats.trends.heroStable", comment: "Hero subtitle when |balance variation| < 5% (no significant change)")
+            }
+            static func heroVarUp(_ percent: Int, _ previousPeriod: String) -> String {
+                String(format: ls("stats.trends.heroVarUp %d %@", comment: "Hero subtitle when balance variation positive ≥5% (params: percent, previousPeriod label e.g. 'Abr 26')"), percent, previousPeriod)
+            }
+            static func heroVarDown(_ percent: Int, _ previousPeriod: String) -> String {
+                String(format: ls("stats.trends.heroVarDown %d %@", comment: "Hero subtitle when balance variation negative ≥5% (params: percent, previousPeriod label e.g. 'Abr 26')"), percent, previousPeriod)
+            }
+            enum Insight {
+                static func onset(_ period: String) -> String {
+                    String(format: ls("stats.trends.insight.onset %@", comment: "Trend Insight: user has no previous period (first %@: period name)"), period)
+                }
+                static func varUpExpense(_ percent: Int, _ previousPeriod: String) -> String {
+                    String(format: ls("stats.trends.insight.varUpExpense %d %@", comment: "Trend Insight: expense rose %d%% vs %@ (previous period label)"), percent, previousPeriod)
+                }
+                static func varDownExpense(_ percent: Int, _ previousPeriod: String) -> String {
+                    String(format: ls("stats.trends.insight.varDownExpense %d %@", comment: "Trend Insight: expense fell %d%% vs %@ (previous period label)"), percent, previousPeriod)
+                }
+                static func varUpIncome(_ percent: Int, _ previousPeriod: String) -> String {
+                    String(format: ls("stats.trends.insight.varUpIncome %d %@", comment: "Trend Insight: income rose %d%% vs %@ (previous period label)"), percent, previousPeriod)
+                }
+                static func varDownIncome(_ percent: Int, _ previousPeriod: String) -> String {
+                    String(format: ls("stats.trends.insight.varDownIncome %d %@", comment: "Trend Insight: income fell %d%% vs %@ (previous period label)"), percent, previousPeriod)
+                }
+                static func varUpBalance(_ percent: Int, _ previousPeriod: String) -> String {
+                    String(format: ls("stats.trends.insight.varUpBalance %d %@", comment: "Trend Insight: balance rose %d%% vs %@ (previous period label)"), percent, previousPeriod)
+                }
+                static func varDownBalance(_ percent: Int, _ previousPeriod: String) -> String {
+                    String(format: ls("stats.trends.insight.varDownBalance %d %@", comment: "Trend Insight: balance fell %d%% vs %@ (previous period label)"), percent, previousPeriod)
+                }
+                static var stableExpense: String {
+                    ls("stats.trends.insight.stableExpense", comment: "Trend Insight: expense holds stable (variation < 5%)")
+                }
+                static var stableIncome: String {
+                    ls("stats.trends.insight.stableIncome", comment: "Trend Insight: income holds stable (variation < 5%)")
+                }
+                static var stableBalance: String {
+                    ls("stats.trends.insight.stableBalance", comment: "Trend Insight: balance holds stable (variation < 5%)")
+                }
+            }
+        }
+        enum Distribution {
+            static func heroSubtitle1(_ count: Int) -> String {
+                String(format: ls("stats.distribution.heroSubtitle1 %d", comment: "Hero subtitle 1 dimension active (only categories)"), count)
+            }
+            static func heroSubtitle2(_ cats: Int, _ subs: Int) -> String {
+                String(format: ls("stats.distribution.heroSubtitle2 %d %d", comment: "Hero subtitle 2 dimensions (categories + subcategories)"), cats, subs)
+            }
+            static func heroSubtitle3(_ cats: Int, _ subs: Int, _ tags: Int) -> String {
+                String(format: ls("stats.distribution.heroSubtitle3 %d %d %d", comment: "Hero subtitle 3 dimensions (categories + subcategories + tags)"), cats, subs, tags)
+            }
+            static func insightTitleFree(_ period: String) -> String {
+                String(format: ls("stats.distribution.insightTitleFree %@", comment: "Distribution Insight Card title for Free users (param: period name)"), period)
+            }
+            static var insightTitlePro: String {
+                ls("stats.distribution.insightTitlePro", comment: "Distribution Insight Card title for Pro users")
+            }
+            static var aiFootnote: String {
+                ls("stats.distribution.aiFootnote", comment: "Footer label in Pro post-AI distribution insight card")
+            }
+            static var modeCharts: String {
+                ls("stats.distribution.modeCharts", comment: "Content mode pill label: charts view (pies + sankey + need bars)")
+            }
+            enum Insight {
+                static func onset(_ period: String) -> String {
+                    String(format: ls("stats.distribution.insight.onset %@", comment: "Distribution Insight: empty or no comparable data"), period)
+                }
+                static func newCategory(_ name: String, _ period: String) -> String {
+                    String(format: ls("stats.distribution.insight.newCategory %@ %@", comment: "Distribution Insight: user tried a new category this period"), name, period)
+                }
+                static func concentrated(_ percent: Int, _ topCategory: String) -> String {
+                    String(format: ls("stats.distribution.insight.concentrated %d %@", comment: "Distribution Insight: spending concentrated in top category (>=40%)"), percent, topCategory)
+                }
+                static func balanced(_ maxPercent: Int) -> String {
+                    String(format: ls("stats.distribution.insight.balanced %d", comment: "Distribution Insight: spending balanced across categories"), maxPercent)
+                }
+                static func shiftedUp(_ percent: Int, _ category: String, _ previousLabel: String) -> String {
+                    String(format: ls("stats.distribution.insight.shiftedUp %d %@ %@", comment: "Distribution Insight: top category rose %d%% vs %@"), percent, category, previousLabel)
+                }
+                static func shiftedDown(_ percent: Int, _ category: String, _ previousLabel: String) -> String {
+                    String(format: ls("stats.distribution.insight.shiftedDown %d %@ %@", comment: "Distribution Insight: top category fell %d%% vs %@"), percent, category, previousLabel)
+                }
+                static func topSub(_ percent: Int, _ sub: String, _ parent: String) -> String {
+                    String(format: ls("stats.distribution.insight.topSub %d %@ %@", comment: "Distribution Insight: top subcategory dominates within parent"), percent, sub, parent)
+                }
+            }
+        }
+        enum Sankey {
+            static var subtitle: String {
+                ls("stats.sankey.subtitle", comment: "Sankey widget internal subtitle (above the KPI total amount)")
+            }
+        }
+    }
+
 }
 
 // MARK: - App Locale
 
 /// Centralized locale configuration for date formatters and charts.
-/// This makes it easy to change the app's locale in one place.
+/// Lee de `LanguageManager.resolved.locale` para mantener un único punto de verdad
+/// — evita divergencia entre formatters y strings.
 enum AppLocale {
-    /// Supported language codes (must match available .lproj localizations)
-    private static let supportedLanguages = ["es", "en", "de", "fr", "it", "pt"]
-
     /// The app's current locale for date formatting.
     /// Respects language override if set, otherwise uses system locale.
     static var current: Locale {
-        // User override takes priority
-        if let override = LanguageManager.overrideLanguage {
-            return Locale(identifier: override)
-        }
-        // System locale
-        let preferredLanguage = Locale.preferredLanguages.first ?? "en"
-        let languageCode = String(preferredLanguage.prefix(2))
-
-        if supportedLanguages.contains(languageCode) {
-            return Locale(identifier: preferredLanguage)
-        }
-        return Locale(identifier: "en_US")  // Default fallback
+        LanguageManager.resolved.locale
     }
 
     /// Short identifier for SwiftUI .locale() modifiers

@@ -13,18 +13,13 @@ struct TagsSettingsListView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = TagsSettingsListViewModel()
 
-    // Persisted order for tags (synced bidirectionally with ViewModel)
-    @AppStorage("tagsSortOrderNames") private var tagsSortOrderNamesRaw: String = ""
-
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     if viewModel.isEmpty {
                         emptyState
                     } else {
@@ -41,7 +36,7 @@ struct TagsSettingsListView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxxl)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.tags)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
@@ -63,6 +58,7 @@ struct TagsSettingsListView: View {
                     YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                         viewModel.isPresentingCreateTag = true
                     }
+                    .accessibilityIdentifier("tags_add_button")
                 }
             }
         }
@@ -78,30 +74,15 @@ struct TagsSettingsListView: View {
         }
         .onAppear {
             viewModel.setContext(modelContext)
-            viewModel.tagsSortOrderNamesRaw = tagsSortOrderNamesRaw
+            viewModel.tagsSortOrderNames = appPreferences.tagsSortOrderNames
         }
-        .onChange(of: tagsSortOrderNamesRaw) { _, newValue in
-            viewModel.tagsSortOrderNamesRaw = newValue
+        .onChange(of: appPreferences.tagsSortOrderNames) { _, newValue in
+            viewModel.tagsSortOrderNames = newValue
         }
     }
 
     private var emptyState: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            Image(systemName: "tag")
-                .font(DS.Typography.amountLarge)
-                .foregroundStyle(.tertiary)
-
-            Text(L10n.Empty.noTags)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.secondary)
-
-            Text(L10n.Empty.tagsDescription)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.xxxl)
-        }
-        .padding(.top, DS.Spacing.sheetTop)
+        YalaEmptyState.noTags()
     }
 
     // MARK: - Active Tags Section (List with Drag and Drop)
@@ -123,8 +104,9 @@ struct TagsSettingsListView: View {
                         tagRow(tag)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("tags_row_\(tag.name)")
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                    .listRowBackground(theme.card)
+                    .listRowBackground(Color.clear)
                     .listRowSeparator(
                         index == 0 || index == viewModel.orderedActiveTags.count - 1 ? .hidden : .visible,
                         edges: index == 0 ? .top : .bottom)
@@ -134,17 +116,8 @@ struct TagsSettingsListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(viewModel.orderedActiveTags.count) * 52)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
-            .dsSubtleShadow()
+            .frame(height: CGFloat(viewModel.orderedActiveTags.count) * DS.FormRow.minHeight)
+            .solidCard()
             .environment(\.editMode, .constant(viewModel.isEditMode ? .active : .inactive))
         }
     }
@@ -167,7 +140,7 @@ struct TagsSettingsListView: View {
                     }
                     .buttonStyle(.plain)
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                    .listRowBackground(theme.card)
+                    .listRowBackground(Color.clear)
                     .listRowSeparator(
                         index == 0 || index == viewModel.inactiveTags.count - 1 ? .hidden : .visible,
                         edges: index == 0 ? .top : .bottom)
@@ -176,17 +149,8 @@ struct TagsSettingsListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(viewModel.inactiveTags.count) * 52)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
-            .dsSubtleShadow()
+            .frame(height: CGFloat(viewModel.inactiveTags.count) * DS.FormRow.minHeight)
+            .solidCard()
         }
     }
 
@@ -222,7 +186,7 @@ struct TagsSettingsListView: View {
     // MARK: - Reorder Logic
 
     private func moveTag(from source: IndexSet, to destination: Int) {
-        let newRaw = viewModel.moveTag(from: source, to: destination)
-        tagsSortOrderNamesRaw = newRaw
+        let newOrder = viewModel.moveTag(from: source, to: destination)
+        appPreferences.tagsSortOrderNames = newOrder
     }
 }

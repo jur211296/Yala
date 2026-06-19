@@ -34,10 +34,10 @@ Si hay items con status `backlog` sin spec:
 > Hay N features sin spec. Usa `/spec [nombre]` para desarrollar uno.
 
 Si hay items con status `spec-ready`:
-> Hay N features listos para implementar. Usa Plan Mode o `/yolo` con el spec.
+> Hay N features listos para implementar. Usa Plan Mode con el spec.
 
 Si hay items con status `in-progress`:
-> Hay N features en progreso. Continua con `/next`.
+> Hay N features en progreso. Continua desde donde quedaste (revisa STATE.md).
 
 ## REGLAS
 - Si el Backlog esta vacio, sugerir crear un feature: "Crea un archivo en Backlog/ desde Obsidian o dime una idea y la creo yo."

@@ -15,9 +15,15 @@ private let sharedPercentFormatter: NumberFormatter = {
     return formatter
 }()
 
+/// Umbral para descartar invocaciones de `onGeometryChange` con micro-cambios
+/// sub-pt. Sin este guard, asignar `@State` en cada layout pass dispara un
+/// loop infinito (watchdog 0x8BADF00D, 2026-04-30).
+private let geometryChangeThreshold: CGFloat = 0.5
+
 struct TopSubcategoriesWidget: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = TopSubcategoriesWidgetViewModel()
 
@@ -44,11 +50,15 @@ struct TopSubcategoriesWidget: View {
     // Size config
     var size: TopCategoriesWidget.CardSize = .large
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
+
     // MARK: - Period Comparison
 
     var period: DetailPeriod = .thisMonth
     var previousTotalAmount: Double? = nil
     var showVariationHeader: Bool = false
+    var variationDisplay: VariationDisplayConfig = .full
 
     private var totalAmount: Double {
         subcategories.reduce(0) { $0 + $1.amount }
@@ -75,24 +85,28 @@ struct TopSubcategoriesWidget: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: size == .small ? DS.Spacing.md : DS.Spacing.lg) {
-            headerSection
-
-            if subcategories.isEmpty {
-                emptyState
+        Group {
+            if size == .small {
+                smallCardContent
             } else {
-                contentForSize
+                VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    headerSection
+
+                    if subcategories.isEmpty {
+                        emptyState
+                    } else {
+                        contentForSize
+                    }
+                }
             }
         }
-        .padding(size == .small ? DS.Spacing.lg : DS.Spacing.xl)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .topLeading
         )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .panelCard(small: size == .small)
+        .frame(height: size == .small ? WidgetSize.smallHeight : nil)
         .id(subcategories.isEmpty ? "empty" : "content-\(subcategories.count)")
         .onAppear {
             viewModel.setContext(modelContext)
@@ -107,43 +121,38 @@ struct TopSubcategoriesWidget: View {
             HStack(alignment: .top) {
                 // Left: Title and total amount
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    if size == .small {
-                        Text(L10n.Widget.subcategories)
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                    } else {
-                        Text(L10n.Widget.topSubcategories)
-                            .font(DS.Typography.headline)
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                        Text(size == .small ? L10n.Widget.subcategories : L10n.Widget.topSubcategories)
+                            .font(DS.Typography.subheadlineEmphasized)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
-                        // Total amount with vs comparison (only with variation header)
-                        if showVariationHeader && !subcategories.isEmpty {
-                            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                                Text(YalaFormatter.currency(value: totalAmount, currencyCode: currencyCode))
-                                    .font(DS.Typography.headline)
-                                    .foregroundStyle(.primary)
+                        if size != .small {
+                            WidgetHeaderInfoSlot(
+                                injected: headerInfoButton,
+                                legacyTitle: L10n.WidgetType.topSubcategories,
+                                legacyMessage: L10n.Widget.Hint.topSubcategories
+                            )
+                        }
+                    }
+
+                    if size != .small && showVariationHeader && !subcategories.isEmpty {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                            AmountText(
+                                value: totalAmount,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.headline, secondaryFont: DS.Typography.caption
+                            )
+
+                            if variationDisplay.showsPreviousAmountLabel, let prevAmount = previousTotalAmount {
+                                Text("vs \(appPreferences.number(prevAmount))")
+                                    .font(DS.Typography.caption)
+                                    .foregroundStyle(.thSecondaryText)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
-
-                                if let prevAmount = previousTotalAmount {
-                                    Text("vs \(YalaFormatter.number(value: prevAmount))")
-                                        .font(DS.Typography.caption)
-                                        .foregroundStyle(.thSecondaryText)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.7)
-                                }
                             }
                         }
                     }
-                }
-
-                if size != .small {
-                    InfoHintButton(
-                        title: L10n.WidgetType.topSubcategories,
-                        message: L10n.Widget.Hint.topSubcategories
-                    )
                 }
 
                 Spacer()
@@ -153,7 +162,7 @@ struct TopSubcategoriesWidget: View {
                     VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
                         VariationChip(variation: variation, size: .medium)
 
-                        if !comparisonText.isEmpty {
+                        if variationDisplay.showsComparisonPeriodLabel && !comparisonText.isEmpty {
                             Text(comparisonText)
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.secondary)
@@ -163,19 +172,6 @@ struct TopSubcategoriesWidget: View {
                     }
                 }
 
-                // Chevron (conditionally shown)
-                if onShowMore != nil {
-                    Button {
-                        onShowMore?()
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.secondary)
-                            .padding(.leading, DS.Spacing.xs)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(L10n.Accessibility.showMoreSubcategories)
-                }
             }
 
             // Row 2: Selector (Only Medium/Large)
@@ -315,101 +311,169 @@ struct TopSubcategoriesWidget: View {
                     // In exclude mode, excluded items are hidden — no dimming needed
                     let isDimmed = !isExcludeMode && !selectedSubcategoryIDs.isEmpty && !isSelected
 
-                    SubcategoryRow(
-                        summary: summary,
-                        maxAmount: maxAmount,
-                        currencyCode: currencyCode,
-                        showNAWhenNil: showVariationHeader
-                    )
-                    .opacity(isDimmed ? 0.3 : 1.0)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    Button {
                         if let persistentID = summary.persistentID {
                             onSelectSubcategory?(persistentID)
                         }
+                    } label: {
+                        SubcategoryRow(
+                            summary: summary,
+                            maxAmount: maxAmount,
+                            currencyCode: currencyCode,
+                            showNAWhenNil: showVariationHeader
+                        )
                     }
+                    .buttonStyle(.plain)
+                    .opacity(isDimmed ? 0.3 : 1.0)
+                    .contentShape(Rectangle())
                 }
             }
         }
     }
 
-    // MARK: - Small Content
+    // MARK: - Small Card Content (PP2-06)
 
     private var smallCardContent: some View {
         Group {
-            if let top = subcategories.first {
-                VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                    // Icon
-                    ZStack {
-                        Circle()
-                            .fill(Color(hex: top.colorHex ?? AppConstants.defaultSubcategoryColorHex))
-                            .frame(width: 48, height: 48)
+            if visibleSubcategoriesForSmall.isEmpty {
+                smallEmptyState
+            } else {
+                VStack(alignment: .leading, spacing: DS.Spacing.lg) {
+                    PanelSmallWidgetHeader(
+                        title: L10n.Widget.topSubcategories,
+                        accessibilityLabel: L10n.Panel.seeMoreInDistribution,
+                        action: onShowMore,
+                        headerInfoButton: headerInfoButton
+                    )
 
-                        Image(
-                            systemName: top.subcategory?.iconName ?? top.category?.iconName
-                                ?? "tag.fill"
-                        )
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.white)
-                        .accessibilityHidden(true)
-                    }
-
-                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        Text(top.subcategoryName)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-
-                        Text(formattedAmount(top.amount))
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-                            .minimumScaleFactor(0.8)
-                            .lineLimit(1)
-
-                        // % of Category (Most relevant context for subcats)
-                        HStack(spacing: DS.Spacing.xs) {
-                            Text(
-                                "\(formattedPercentage(top.percentageOfCategory)) \(String(format: L10n.Widget.of, top.category?.name ?? L10n.Widget.categoryAbbr))"
-                            )
-                            .font(DS.Typography.labelTiny)
-                            .foregroundStyle(Color(hex: top.colorHex ?? AppConstants.defaultSubcategoryColorHex))
+                    VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                        ForEach(Array(visibleSubcategoriesForSmall.prefix(2))) { summary in
+                            smallSubcategoryRow(for: summary)
                         }
-                        .padding(.horizontal, DS.Chip.paddingV)
-                        .padding(.vertical, DS.Spacing.xxs)
-                        .background(Color(hex: top.colorHex ?? AppConstants.defaultSubcategoryColorHex).opacity(0.1))
-                        .clipShape(Capsule())
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    if let persistentID = top.persistentID {
-                        onSelectSubcategory?(persistentID)
+            }
+        }
+    }
+
+    /// PP2-06: aplica el filtro global de categoría (consistencia con medium/large)
+    /// y esconde los excluidos en exclude mode. No aplica `localCategoryFilterID`
+    /// porque el picker no está disponible en `.small`.
+    private var visibleSubcategoriesForSmall: [SubcategorySpendingSummary] {
+        let globallyFiltered: [SubcategorySpendingSummary] = {
+            if let globalID = globalCategoryFilterID {
+                return subcategories.filter { $0.category?.persistentModelID == globalID }
+            }
+            return subcategories
+        }()
+
+        if isExcludeMode, !selectedSubcategoryIDs.isEmpty {
+            return globallyFiltered.filter {
+                guard let id = $0.persistentID else { return true }
+                return !selectedSubcategoryIDs.contains(id)
+            }
+        }
+        return globallyFiltered
+    }
+
+    @ViewBuilder
+    private func smallSubcategoryRow(for summary: SubcategorySpendingSummary) -> some View {
+        let color = Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex)
+        let clampedPercentage = max(0, min(100, summary.percentageOfTotal))
+        let isSelected = summary.persistentID.map { selectedSubcategoryIDs.contains($0) } ?? false
+        let shouldDim = !isExcludeMode && !selectedSubcategoryIDs.isEmpty && !isSelected
+
+        Button {
+            if let persistentID = summary.persistentID {
+                onSelectSubcategory?(persistentID)
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                // Línea 1: ícono + nombre
+                HStack(spacing: DS.Spacing.sm) {
+                    ZStack {
+                        Circle()
+                            .fill(color)
+                            .frame(width: 28, height: 28)
+
+                        Image(systemName: summary.subcategory?.iconName ?? summary.category?.iconName ?? "tag.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .accessibilityHidden(true)
                     }
+
+                    Text(summary.subcategoryName)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+
+                    Spacer(minLength: 0)
+                }
+
+                // Línea 2: barra de progreso + monto + %
+                HStack(spacing: DS.Spacing.sm) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(color.opacity(0.15))
+
+                            Capsule()
+                                .fill(color)
+                                .frame(width: max(0, geo.size.width * CGFloat(clampedPercentage / 100.0)))
+                        }
+                    }
+                    .frame(height: 6)
+
+                    Text(formattedAmount(summary.amount))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 0)
                 }
             }
         }
+        .buttonStyle(.plain)
+        .opacity(shouldDim ? 0.3 : 1.0)
+        .contentShape(Rectangle())
+    }
+
+    /// PP2-06: empty state compacto para `.small` — evita `YalaEmptyState(style:.widget)`
+    /// que desborda el alto fijo del card.
+    private var smallEmptyState: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Spacer(minLength: 0)
+
+            Image(systemName: "list.bullet.indent")
+                .font(.system(size: 24))
+                .foregroundStyle(.secondary)
+
+            Text("—")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
-        if size == .small {
-            YalaEmptyState(icon: "list.bullet.indent", title: L10n.Empty.noExpenses, style: .widget)
-        } else {
-            YalaEmptyState(
-                icon: "list.bullet.indent",
-                title: L10n.Widget.noExpensesPeriod,
-                message: L10n.Widget.noExpensesDescriptionSubcategories,
-                style: .widget
-            )
-        }
+        YalaEmptyState(
+            icon: "list.bullet.indent",
+            title: L10n.Widget.noExpensesPeriod,
+            message: L10n.Widget.noExpensesDescriptionSubcategories,
+            style: .widget
+        )
     }
 
     // MARK: - Formatters
 
     private func formattedAmount(_ value: Double) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
+        appPreferences.currency(value, currencyCode: currencyCode)
     }
 
     private func formattedPercentage(_ value: Double) -> String {
@@ -420,10 +484,14 @@ struct TopSubcategoriesWidget: View {
 // MARK: - Subcategory Row
 
 private struct SubcategoryRow: View {
+    @Environment(AppPreferences.self) private var appPreferences
     let summary: SubcategorySpendingSummary
     let maxAmount: Double
     let currencyCode: String
     var showNAWhenNil: Bool = false
+
+    /// Ancho medido de la barra — reemplaza GeometryReader para soportar halfWidthPair.
+    @State private var barWidth: CGFloat = 0
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -453,8 +521,7 @@ private struct SubcategoryRow: View {
                                 .foregroundStyle(.primary)
                             Spacer()
                             Text(
-                                YalaFormatter.currency(
-                                    value: summary.amount, currencyCode: currencyCode)
+                                appPreferences.currency(summary.amount, currencyCode: currencyCode)
                             )
                             .font(DS.Typography.headline)
                             .foregroundStyle(.primary)
@@ -485,16 +552,18 @@ private struct SubcategoryRow: View {
                         }
 
                         // Bar
-                        GeometryReader { geo in
-                            let width =
-                                maxAmount > 0 ? (summary.amount / maxAmount) * geo.size.width : 0
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(DS.Semantic.neutralBackground).frame(height: 6)
-                                Capsule().fill(Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex)).frame(
-                                    width: width, height: 6)
-                            }
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(DS.Semantic.neutralBackground)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 6)
+                            let width = maxAmount > 0 ? (summary.amount / maxAmount) * barWidth : 0
+                            Capsule().fill(Color(hex: summary.colorHex ?? AppConstants.defaultSubcategoryColorHex))
+                                .frame(width: width, height: 6)
                         }
-                        .frame(height: 6)
+                        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+                            guard abs(newWidth - barWidth) > geometryChangeThreshold else { return }
+                            barWidth = newWidth
+                        }
                     }
                 }
             }

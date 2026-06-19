@@ -57,6 +57,9 @@ struct GroupingChipsBar: View {
                     .font(DS.Typography.caption)
             }
             .foregroundStyle(.primary)
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.xs)
+            .glassEffect(.regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(dimension.displayName)
@@ -78,6 +81,7 @@ struct GroupingChipsBar: View {
             .foregroundStyle(.white)
             .padding(.horizontal, DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
+            // A11Y-DM: índigo decorativo del chip de drill-down (acento fijo intencional, adapta a Dark Mode)
             .background(Capsule().fill(.indigo))
         }
         .buttonStyle(.plain)

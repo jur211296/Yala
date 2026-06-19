@@ -16,6 +16,7 @@ struct CashFlowLineConfigSheet: View {
     var transactions: [TransactionItem] = []
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var selectedMethod: EstimationMethod
     @State private var manualAmount: String
@@ -24,6 +25,7 @@ struct CashFlowLineConfigSheet: View {
     @State private var newOverrideMonth: Date = .now
     @State private var newOverrideAmount: String = ""
     @State private var newOverrideNote: String = ""
+    @State private var selectedDetent: PresentationDetent = .medium
 
     init(viewModel: CashFlowPlanViewModel, line: CashFlowLine, currencyCode: String, transactions: [TransactionItem] = []) {
         self.viewModel = viewModel
@@ -38,11 +40,11 @@ struct CashFlowLineConfigSheet: View {
         FeatureGateService.shared.canAccess(.cashFlowAdvanced)
     }
 
+    private var isLargeDetent: Bool { selectedDetent == .large }
+
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView().dismissKeyboardOnTap()
-
                 ScrollView {
                     VStack(spacing: DS.Spacing.xl) {
                         categorySection
@@ -56,9 +58,11 @@ struct CashFlowLineConfigSheet: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                     .yalaSafeBottomPadding()
+                    .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
+            .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
             .navigationTitle(line.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -75,7 +79,7 @@ struct CashFlowLineConfigSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $selectedDetent)
         .confirmationDialog(
             L10n.CashFlowPlan.deleteLineConfirmation,
             isPresented: $showDeleteConfirmation,
@@ -216,7 +220,7 @@ struct CashFlowLineConfigSheet: View {
             HStack {
                 Image(systemName: selectedMethod == method ? "circle.inset.filled" : "circle")
                     .foregroundStyle(selectedMethod == method ? theme.accent : .secondary)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(label)
                         .font(DS.Typography.body)
                         .foregroundStyle(enabled ? .primary : .secondary)
@@ -298,9 +302,11 @@ struct CashFlowLineConfigSheet: View {
                             Text(formatMonthKey(override.monthKey))
                                 .font(DS.Typography.body)
                             Spacer()
-                            Text(YalaFormatter.currency(value: override.amount, currencyCode: currencyCode))
-                                .font(DS.Typography.amountSmall)
-                                .monospacedDigit()
+                            AmountText(
+                                value: override.amount,
+                                currencyCode: currencyCode,
+                                font: DS.Typography.amountSmall.monospacedDigit()
+                            )
                             if !override.note.isEmpty {
                                 Text("(\(override.note))")
                                     .font(DS.Typography.caption)
@@ -313,6 +319,7 @@ struct CashFlowLineConfigSheet: View {
                                     .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel(L10n.Action.delete)
                         }
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)

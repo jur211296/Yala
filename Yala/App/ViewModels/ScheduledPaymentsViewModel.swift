@@ -23,6 +23,22 @@ final class ScheduledPaymentsViewModel {
 
     private var modelContext: ModelContext?
 
+    // MARK: - Debounce state
+
+    private var recalculateTask: Task<Void, Never>?
+    private var pendingReload = false
+    private(set) var isInBackground = false
+
+    // MARK: - Monthly totals cache
+
+    private struct MonthlyTotalsCache {
+        let monthAnchor: Date
+        let preferredCurrency: String
+        let paid: Double
+        let pending: Double
+    }
+    private var cachedMonthlyTotals: MonthlyTotalsCache?
+
     // MARK: - Data
 
     private(set) var allPayments: [ScheduledPayment] = []
@@ -114,22 +130,33 @@ final class ScheduledPaymentsViewModel {
 
     /// Monthly total of paid payments (excluding income and skipped), converted to preferred currency
     func monthlyTotalPaid(preferredCurrencyCode: String) -> Double {
-        let summaries = allSummaries.filter { $0.isPaidForMonth && !$0.isSkippedForMonth && $0.payment.transactionType != "income" }
-        return convertedTotal(for: summaries, preferredCurrencyCode: preferredCurrencyCode)
+        ensureMonthlyTotalsCached(preferredCurrencyCode: preferredCurrencyCode).paid
     }
 
     /// Monthly total of pending (unpaid, non-skipped) payments (excluding income), converted to preferred currency
     func monthlyTotalPending(preferredCurrencyCode: String) -> Double {
-        let summaries = allSummaries.filter { !$0.isPaidForMonth && !$0.isSkippedForMonth && $0.payment.transactionType != "income" }
-        return convertedTotal(for: summaries, preferredCurrencyCode: preferredCurrencyCode)
+        ensureMonthlyTotalsCached(preferredCurrencyCode: preferredCurrencyCode).pending
     }
 
-    private func convertedTotal(for summaries: [ScheduledPaymentSummary], preferredCurrencyCode: String) -> Double {
+    /// Returns cached totals if valid; otherwise computes paid+pending in a single pass and caches.
+    @discardableResult
+    private func ensureMonthlyTotalsCached(preferredCurrencyCode: String) -> (paid: Double, pending: Double) {
+        let anchor = Calendar.current.startOfMonth(for: selectedMonth)
+        if let cache = cachedMonthlyTotals,
+           cache.preferredCurrency == preferredCurrencyCode,
+           Calendar.current.isDate(cache.monthAnchor, equalTo: selectedMonth, toGranularity: .month) {
+            return (cache.paid, cache.pending)
+        }
+
         let converter = CurrencyConverter.shared
-        var total: Double = 0
-        for summary in summaries {
+        var paid: Double = 0
+        var pending: Double = 0
+        for summary in allSummaries {
+            guard !summary.isSkippedForMonth,
+                  summary.payment.transactionType != "income" else { continue }
             let amount = summary.displayAmount
             let sourceCurrency = summary.displayCurrencyCode
+            let contribution: Double
             if sourceCurrency != preferredCurrencyCode, amount > 0 {
                 let decimal = Decimal(amount)
                 let converted: Decimal
@@ -138,13 +165,27 @@ final class ScheduledPaymentsViewModel {
                 } else {
                     converted = converter.convertWithFallback(decimal, from: sourceCurrency, to: preferredCurrencyCode)
                 }
-                total += NSDecimalNumber(decimal: converted).doubleValue
+                contribution = NSDecimalNumber(decimal: converted).doubleValue
             } else {
-                total += amount
+                contribution = amount
+            }
+            if summary.isPaidForMonth {
+                paid += contribution
+            } else {
+                pending += contribution
             }
         }
-        return total
+
+        cachedMonthlyTotals = MonthlyTotalsCache(
+            monthAnchor: anchor,
+            preferredCurrency: preferredCurrencyCode,
+            paid: paid,
+            pending: pending
+        )
+        return (paid, pending)
     }
+
+    private func invalidateMonthlyTotals() { cachedMonthlyTotals = nil }
 
     /// Grouped payments filtered by paymentStatusFilter
     var filteredGroupedPayments: [(status: DueStatus, payments: [ScheduledPaymentSummary])] {
@@ -303,9 +344,25 @@ final class ScheduledPaymentsViewModel {
             }
         }
         if !selectedTags.isEmpty {
-            filtered = filtered.filter { payment in
-                let paymentTagIDs = Set((payment.tags ?? []).map { $0.persistentModelID })
-                return !paymentTagIDs.isDisjoint(with: selectedTags)
+            // CSV-mirror SSOT: map selectedTags (PersistentIdentifier) → Set<UUID> via local Tag fetch,
+            // then compare against payment.resolvedTagIDs (CSV-first with M2M fallback).
+            let selectedTagUUIDs: Set<UUID>
+            do {
+                let allTags = try (modelContext?.fetch(FetchDescriptor<Tag>())) ?? []
+                selectedTagUUIDs = Set(
+                    allTags.filter { selectedTags.contains($0.persistentModelID) }.map(\.id)
+                )
+            } catch {
+                #if DEBUG
+                print("ScheduledPaymentsViewModel: applyPaymentFilters tag fetch error: \(error)")
+                #endif
+                selectedTagUUIDs = []
+            }
+            if !selectedTagUUIDs.isEmpty {
+                filtered = filtered.filter { payment in
+                    let paymentTagIDs = payment.resolvedTagIDs(scheduleBackfill: true) ?? []
+                    return !paymentTagIDs.isDisjoint(with: selectedTagUUIDs)
+                }
             }
         }
 
@@ -416,6 +473,8 @@ final class ScheduledPaymentsViewModel {
                 return (status: status, payments: sortedPayments)
             }
             .sorted { $0.status.sortOrder < $1.status.sortOrder }
+
+        invalidateMonthlyTotals()
     }
 
     // MARK: - Display Properties
@@ -459,24 +518,25 @@ final class ScheduledPaymentsViewModel {
     // MARK: - Transaction Association (M3)
 
     /// Fetch candidate transactions for manual association with a scheduled payment.
-    /// Filters: same month, same type (income/expense), same account (if set), no existing association.
+    /// Filters: within ±15 days of the occurrence date, same type (income/expense), no existing association.
+    /// The window spans adjacent months so a payment registered just before/after the due date is still found.
     /// Sorted by amount proximity to payment amount.
-    func fetchCandidateTransactions(for payment: ScheduledPayment, month: Date) -> [TransactionItem] {
+    func fetchCandidateTransactions(for payment: ScheduledPayment, referenceDate: Date) -> [TransactionItem] {
         guard let context = modelContext else { return [] }
         let calendar = Calendar.current
-        guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [] }
+        let referenceDay = calendar.startOfDay(for: referenceDate)
+        guard let windowStart = calendar.date(byAdding: .day, value: -15, to: referenceDay),
+              let windowEnd = calendar.date(byAdding: .day, value: 16, to: referenceDay) else { return [] }
 
-        let monthStart = monthInterval.start
-        let monthEnd = monthInterval.end
         do {
             var descriptor = FetchDescriptor<TransactionItem>(
                 predicate: #Predicate<TransactionItem> { tx in
-                    tx.date >= monthStart && tx.date < monthEnd &&
+                    tx.date >= windowStart && tx.date < windowEnd &&
                     tx.scheduledPaymentID == nil
                 },
                 sortBy: [SortDescriptor(\.date, order: .reverse)]
             )
-            descriptor.fetchLimit = 100 // Perf: candidate picker — month-bounded + unlinked
+            descriptor.fetchLimit = 100 // Perf: candidate picker — window-bounded + unlinked
             var transactions = try context.fetch(descriptor)
 
             // Filter by transaction type (income matches income, expense matches expense)
@@ -741,6 +801,52 @@ final class ScheduledPaymentsViewModel {
         let calendar = Calendar.current
         if let newMonth = calendar.date(byAdding: .month, value: 1, to: selectedMonth) {
             selectedMonth = newMonth
+        }
+    }
+
+    // MARK: - Debounced Recalculation
+
+    /// Suppresses recalculation when the app leaves active state — prevents 0x8BADF00D.
+    func setBackground(_ value: Bool) {
+        isInBackground = value
+        if value {
+            recalculateTask?.cancel()
+            recalculateTask = nil
+            pendingReload = false
+        }
+    }
+
+    /// Cancel any pending recalculation (call from `.onDisappear`).
+    func cancelRecalculation() {
+        recalculateTask?.cancel()
+    }
+
+    /// Compute-only debounced (150ms). Use when a filter/UI input changed
+    /// but the underlying DB hasn't mutated (tab switch, selectedMonth change).
+    func recalculateData() {
+        scheduleRecalculation(reload: false)
+    }
+
+    /// Reload + compute debounced (150ms). Use when DB mutations could have
+    /// occurred (editor dismiss, `dataVersion` bump).
+    func reloadAndRecalculate() {
+        scheduleRecalculation(reload: true)
+    }
+
+    /// Shared debounce (150ms). `pendingReload` ensures a reload request isn't lost
+    /// if a subsequent compute-only call arrives within the debounce window.
+    private func scheduleRecalculation(reload: Bool) {
+        guard !isInBackground else { return }
+        guard UIApplication.shared.applicationState == .active else { return }
+        if reload { pendingReload = true }
+        recalculateTask?.cancel()
+        recalculateTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            guard !Task.isCancelled else { return }
+            let shouldReload = pendingReload
+            pendingReload = false
+            if shouldReload { loadPayments() }
+            calculatePaymentData(payments: allPayments)
         }
     }
 }

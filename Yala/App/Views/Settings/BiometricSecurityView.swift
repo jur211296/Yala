@@ -17,13 +17,11 @@ struct BiometricSecurityView: View {
     @State private var selectedTimeout: LockTimeout = .tenSeconds
     @State private var showAuthError: Bool = false
     @State private var isProcessingToggle: Bool = false
+    @State private var didLoadInitialState: Bool = false
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     // Header
                     VStack(spacing: DS.Spacing.sm) {
                         Image(systemName: authService.biometricType.icon)
@@ -57,12 +55,7 @@ struct BiometricSecurityView: View {
                         }
                         .padding(.horizontal, DS.FormRow.paddingH)
                         .padding(.vertical, DS.Spacing.sm)
-                        .background(.thCard)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                        )
+                        .solidCard(radius: DS.Radius.lg)
 
                         Text(L10n.Biometric.enableLockHint)
                             .font(DS.Typography.caption)
@@ -83,12 +76,7 @@ struct BiometricSecurityView: View {
                                     }
                                 }
                             }
-                            .background(.thCard)
-                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: DS.Radius.lg)
-                                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                            )
+                            .solidCard(radius: DS.Radius.lg)
 
                             Text(L10n.Biometric.lockAfterHint)
                                 .font(DS.Typography.caption)
@@ -102,7 +90,7 @@ struct BiometricSecurityView: View {
                 }
                 .padding(DS.Spacing.lg)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Biometric.title)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
@@ -116,10 +104,16 @@ struct BiometricSecurityView: View {
         .onAppear {
             isEnabled = authService.isEnabled
             selectedTimeout = authService.lockTimeout
+            // Diferir el flag a un ciclo posterior: si lo seteáramos síncrono aquí, el onChange
+            // disparado por la asignación de `isEnabled` de arriba ya lo vería en true y no
+            // quedaría bloqueado → prompt biométrico espurio al abrir con el bloqueo ya activo.
+            Task { @MainActor in didLoadInitialState = true }
         }
         .onChange(of: isEnabled) { _, newValue in
+            guard didLoadInitialState else { return }
             guard !isProcessingToggle else { return }
             isProcessingToggle = true
+            TelemetryService.track(.biometricLockToggled, parameters: ["accion": newValue ? "activado" : "desactivado"])
 
             if newValue {
                 Task {

@@ -40,6 +40,7 @@ struct LatestRecordsEntry: TimelineEntry {
                     categoryName: "Alimentación",
                     categoryColor: "#FF6B6B",
                     categoryIcon: "fork.knife",
+                    subcategoryIcon: "fork.knife",
                     subcategoryName: "Restaurantes",
                     isIncome: false,
                     amountInPreferredCurrency: 45.50
@@ -53,6 +54,7 @@ struct LatestRecordsEntry: TimelineEntry {
                     categoryName: "Transporte",
                     categoryColor: "#4ECDC4",
                     categoryIcon: "car.fill",
+                    subcategoryIcon: "car.fill",
                     subcategoryName: "Taxi",
                     isIncome: false,
                     amountInPreferredCurrency: 150.00
@@ -66,6 +68,7 @@ struct LatestRecordsEntry: TimelineEntry {
                     categoryName: "Ingresos",
                     categoryColor: "#00C2CB",
                     categoryIcon: "banknote",
+                    subcategoryIcon: "banknote",
                     subcategoryName: "Salario",
                     isIncome: true,
                     amountInPreferredCurrency: 2500.00
@@ -174,7 +177,7 @@ struct TransactionRowView: View {
                     .frame(width: WDS.ListItem.iconSizeCompact,
                            height: WDS.ListItem.iconSizeCompact)
 
-                Image(systemName: transaction.categoryIcon ?? "questionmark")
+                Image(systemName: transaction.subcategoryIcon ?? transaction.categoryIcon ?? "questionmark")
                     .font(.system(size: WDS.Icon.sm)) // A11Y-DT: widget fixed layout
                     .foregroundStyle(categoryColor)
                     .widgetAccentable()
@@ -197,10 +200,17 @@ struct TransactionRowView: View {
             Spacer()
 
             // Amount (show in original currency)
-            Text(formattedAmount)
-                .font(WDS.Typography.value)
-                .foregroundStyle(transaction.isIncome ? WidgetColors.income : WidgetColors.expense)
-                .widgetAccentable()
+            WidgetAmountText(
+                value: transaction.isIncome ? abs(transaction.amount) : -abs(transaction.amount),
+                currencyCode: transaction.currencyCode,
+                displayFormat: displayFormat,
+                font: WDS.Typography.value,
+                secondaryFont: WDS.Typography.valueSecondary,
+                tint: .color(transaction.isIncome ? WidgetColors.income : WidgetColors.expense),
+                forceSign: true,
+                fractionDigits: 2
+            )
+            .widgetAccentable()
         }
     }
 
@@ -209,24 +219,6 @@ struct TransactionRowView: View {
             return Color(hex: hex)
         }
         return .gray
-    }
-
-    private var formattedAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-
-        // Use original currency amount
-        let amount = transaction.amount
-        let formatted = formatter.string(from: NSNumber(value: amount)) ?? "0.00"
-
-        let prefix = transaction.isIncome ? "+" : "-"
-        let currency = displayFormat == "symbol"
-            ? CurrencySymbols.symbol(for: transaction.currencyCode)
-            : transaction.currencyCode
-
-        return "\(prefix)\(currency) \(formatted)"
     }
 }
 

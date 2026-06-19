@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>panel.panorama.collapsedSummary</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%2$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Je hebt %1$@ op 1 rekening</string>
+			<key>other</key>
+			<string>Je hebt %1$@ op %2$d rekeningen</string>
+		</dict>
+	</dict>
+	<key>records.deleteConfirmTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Verwijder %d boekingen?</string>
+			<key>other</key>
+			<string>Verwijder %d boekingen?</string>
+		</dict>
+	</dict>
+	<key>filters.subcategoriesSelectedCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d subcategoriey geselecteerd</string>
+			<key>other</key>
+			<string>%d subcategorieies geselecteerd</string>
+		</dict>
+	</dict>
+	<key>import.recordsImported</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d boekingen succesvol geïmporteerd.</string>
+			<key>other</key>
+			<string>%d boekingen succesvol geïmporteerd.</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.automations</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d automatische boekingen toegevoegd aan je inbox.</string>
+			<key>other</key>
+			<string>%d automatische boekingen toegevoegd aan je inbox.</string>
+		</dict>
+	</dict>
+	<key>export.subcategoriesSelected</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d subcategoriey geselecteerd</string>
+			<key>other</key>
+			<string>%d subcategorieies geselecteerd</string>
+		</dict>
+	</dict>
+	<key>scheduled.widget.daysAgo</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d dagen geleden</string>
+			<key>other</key>
+			<string>%d dagen geleden</string>
+		</dict>
+	</dict>
+	<key>scheduled.widget.inDays</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Over %d dagen</string>
+			<key>other</key>
+			<string>Over %d dagen</string>
+		</dict>
+	</dict>
+	<key>scheduled.widget.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d actieve betalingen</string>
+			<key>other</key>
+			<string>%d actieve betalingen</string>
+		</dict>
+	</dict>
+	<key>scheduled.due.days.ago</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d dagen geleden</string>
+			<key>other</key>
+			<string>%d dagen geleden</string>
+		</dict>
+	</dict>
+	<key>scheduled.due.in.days</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Over %d dagen</string>
+			<key>other</key>
+			<string>Over %d dagen</string>
+		</dict>
+	</dict>
+	<key>icloud.syncIndicator.stalled</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d dagen niet opgeslagen in iCloud</string>
+			<key>other</key>
+			<string>%d dagen niet opgeslagen in iCloud</string>
+		</dict>
+	</dict>
+	<key>icloud.detail.stalledTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d dagen sinds laatste synchronisatie</string>
+			<key>other</key>
+			<string>%d dagen sinds laatste synchronisatie</string>
+		</dict>
+	</dict>
+	<key>subscription.trial.daysRemaining</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Nog %d dagen</string>
+			<key>other</key>
+			<string>Nog %d dagen</string>
+		</dict>
+	</dict>
+	<key>subscription.downgrade.selectAccounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Selecteer %d rekeningen om te behouden</string>
+			<key>other</key>
+			<string>Selecteer %d rekeningen om te behouden</string>
+		</dict>
+	</dict>
+	<key>subscription.downgrade.selectBudgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Selecteer %d budgets om te behouden</string>
+			<key>other</key>
+			<string>Selecteer %d budgets om te behouden</string>
+		</dict>
+	</dict>
+	<key>insights.ruleSharedFrequency.normal</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Je hebt deze periode %d gedeelde uitgaven</string>
+			<key>other</key>
+			<string>Je hebt deze periode %d gedeelde uitgaven</string>
+		</dict>
+	</dict>
+	<key>insights.ruleSharedFrequency.considerate</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d gedeelde uitgave — je deelt met je groep</string>
+			<key>other</key>
+			<string>%d gedeelde uitgaven — je deelt veel met je groep</string>
+		</dict>
+	</dict>
+	<key>insights.ruleSharedFrequency.sarcastic</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d gedeelde uitgaven. Doen jullie ALLES samen?</string>
+			<key>other</key>
+			<string>%d gedeelde uitgaven. Doen jullie ALLES samen?</string>
+		</dict>
+	</dict>
+	<key>milestone.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d uitgaven geregistreerd!</string>
+			<key>other</key>
+			<string>%d uitgaven geregistreerd!</string>
+		</dict>
+	</dict>
+	<key>groups.activate.importPrompt</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Je hebt %d gedeelde uitgave. Toevoegen aan je boekingen?</string>
+			<key>other</key>
+			<string>Je hebt %d gedeelde uitgaven. Toevoegen aan je boekingen?</string>
+		</dict>
+	</dict>
+	<key>groups.nudge.dormantNewExpenses.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Je groep heeft %d nieuwe uitgaven sinds je laatste bezoek.</string>
+			<key>other</key>
+			<string>Je groep heeft %d nieuwe uitgaven sinds je laatste bezoek.</string>
+		</dict>
+	</dict>
+	<key>tutorials.stepsCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d stappen</string>
+			<key>other</key>
+			<string>%d stappen</string>
+		</dict>
+	</dict>
+	<key>groups.member.pendingRequestsCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d verzoek</string>
+			<key>other</key>
+			<string>%d verzoeken</string>
+		</dict>
+	</dict>
+	<key>groups.member.activeCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d actieve persoon</string>
+			<key>other</key>
+			<string>%d actieve personen</string>
+		</dict>
+	</dict>
+	<key>groups.member.pendingCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d openstaand verzoek</string>
+			<key>other</key>
+			<string>%d openstaande verzoeken</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

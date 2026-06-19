@@ -15,7 +15,120 @@
 
 "panel.accounts" = "Konten";
 "panel.widgets" = "Widgets";
+"panel.section.health" = "Finanzielle Gesundheit";
+"panel.section.tendencias" = "Trends";
+"panel.section.distribucion" = "Verteilung";
+"panel.section.planificacion" = "Planung";
+"panel.section.latestRecords" = "Letzte Einträge";
+"panel.section.tools" = "Werkzeuge";
+
+// P20-11: Section footer CTAs
+"panel.seeMoreInTrends" = "Mehr bei Trends anzeigen";
+"panel.seeMoreInDistribution" = "Mehr bei Verteilung anzeigen";
+"panel.seeAllRecords" = "Alle anzeigen";
+"panel.seeBudgets" = "Budgets anzeigen";
+"panel.seeScheduledPayments" = "Geplante Zahlungen anzeigen";
+"panel.seeMoreHint.trends" = "Öffnet den Trends-Bildschirm";
+"panel.seeMoreHint.distribution" = "Öffnet den Verteilungs-Bildschirm";
+"panel.seeMoreHint.records" = "Öffnet alle Einträge";
+"panel.seeMoreHint.budgets" = "Öffnet den Budgets-Bildschirm";
+"panel.seeMoreHint.scheduled" = "Öffnet den Bildschirm für geplante Zahlungen";
+
+// P20-11: Widget size picker
+"panel.widgetSize.small" = "Klein";
+"panel.widgetSize.medium" = "Mittel";
+"panel.widgetSize.large" = "Groß";
+
+// P20-11: Accounts collapse
+// Einklappbare Gruppe Konten + Finanzielle Gesundheit
+"panel.panorama.title" = "Deine Finanzen";
+"panel.panorama.expand" = "Finanzen einblenden";
+"panel.panorama.collapse" = "Finanzen ausblenden";
+"panel.panorama.collapsedValue" = "Ausgeblendet";
+"panel.panorama.expandedValue" = "Eingeblendet";
+
+"panel.weekdaySubtitle" = "Durchschnitt pro Wochentag";
+"panel.weekdayBar.smallTitle" = "Täglicher Durchschnitt";
+"panel.weekdayBar.largeTitle" = "Durchschnittsausgabe pro Wochentag";
+"panel.weekdayBar.perWeekSuffix" = "/Woche";
+"panel.filterBar.sectionTitle" = "Angewendete Filter";
+"panel.periodComparison.vs %@" = "vs %@";
+"panel.periodComparison.vsWithYear %@ %@" = "vs %@ %@";
+"panel.periodComparison.requiresPeriod" = "Wähle einen Monat oder Zeitraum für den Vergleich";
+"panel.sectionsConfig.title" = "Panel einrichten";
+"panel.sectionsConfig.footer" = "Blende Bereiche aus, die du nicht brauchst. Du kannst sie jederzeit wieder aktivieren.";
+"panel.sectionsConfig.emptySection" = "Alle Widgets ausgeblendet";
+"panel.sectionsConfig.restoreWidgets %@" = "%@-Widgets wiederherstellen";
+"panel.sectionPrefs.title" = "Einstellungen";
 "panel.totalBalance" = "Gesamtsaldo";
+
+// Finanzielle Gesundheit (P20-06)
+"panel.health.cardTitle" = "Deine finanzielle Gesundheit";
+"panel.health.emptyBadge" = "—";
+"panel.health.subScore.budget" = "Budgets";
+"panel.health.subScore.activity" = "Rhythmus";
+"panel.health.subScore.bills" = "Verpflichtungen";
+// Detail sheet — Gesamt
+"panel.health.total.sheet.title" = "Deine finanzielle Gesundheit";
+"panel.health.total.sheet.explanation" = "Kombiniert drei Dinge: deine Budgets, deinen Erfassungsrhythmus und deine Verpflichtungen im Zeitraum. Jeder gewichtet anders und gleicht sich aus, wenn einer nicht zutrifft.";
+"panel.health.total.headline.high" = "Du machst das super!";
+"panel.health.total.headline.mid" = "Guter Rhythmus";
+"panel.health.total.headline.low" = "Kleine Schritte, große Wirkung";
+"panel.health.total.headline.empty" = "Starte mit deinem ersten Eintrag";
+
+// Detail sheet — Budget
+"panel.health.budget.sheet.title" = "Dein Budget";
+"panel.health.budget.sheet.explanation" = "Wir schauen, wie du diesen Monat mit deinen Budgets läufst. Noch Luft? Bonus. Übers Limit? Kleiner Abzug. Nichts Dramatisches — nur ein Kompass.";
+"panel.health.budget.headline.high" = "Deine Budgets atmen locker!";
+"panel.health.budget.headline.mid" = "Du hältst deine Grenzen gut ein";
+"panel.health.budget.headline.low" = "Eine kleine Feineinstellung und es passt";
+"panel.health.budget.headline.empty" = "Budgets helfen dir, entspannt zu bleiben";
+"panel.health.budget.cta.view" = "Meine Budgets ansehen";
+"panel.health.budget.cta.create" = "Mein erstes Budget anlegen";
+
+// Detail sheet — Aktivität
+"panel.health.activity.sheet.title" = "Dein Rhythmus";
+"panel.health.activity.sheet.explanation" = "Misst die längste Serie von Tagen ohne erfasste Ausgaben in diesem Zeitraum. Bis zu 2 Tage ohne Eintrag sind normal — darüber hinaus spürt man deinen Rhythmus.";
+"panel.health.activity.headline.high" = "Du bist in tollem Rhythmus! 🎉";
+"panel.health.activity.headline.mid" = "Dein Rhythmus passt";
+"panel.health.activity.headline.low" = "Dein Rhythmus ist etwas gesunken";
+"panel.health.activity.headline.empty" = "Noch nichts erfasst — wir starten, wann du willst";
+"panel.health.activity.cta.view" = "Meine Einträge ansehen";
+"panel.health.activity.cta.create" = "Erste Ausgabe erfassen";
+
+// Detail sheet — Zahlungen
+"panel.health.bills.sheet.title" = "Deine Verpflichtungen";
+"panel.health.bills.sheet.explanation" = "Kombiniert zwei Dinge: ob dein Kontostand die ausstehenden Zahlungen des Zeitraums deckt, und welcher Anteil deines Einkommens in Abos und wiederkehrende Zahlungen fließt.";
+"panel.health.bills.headline.high" = "Deine Verpflichtungen sind im Griff 💪";
+"panel.health.bills.headline.mid" = "Deine Verpflichtungen sind machbar";
+"panel.health.bills.headline.low" = "Deine Verpflichtungen belasten deinen Fluss";
+"panel.health.bills.headline.empty" = "Du hast noch keine geplanten Zahlungen";
+"panel.health.bills.cta.view" = "Meine Zahlungen ansehen";
+"panel.health.bills.cta.create" = "Erste Zahlung anlegen";
+
+// VoiceOver komplette Karte
+"panel.health.voiceover.summary" = "Finanzielle Gesundheit: %1$@. Budget %2$@. Aktivität %3$@. Zahlungen %4$@.";
+// VoiceOver — Wert eines einzelnen Sub-Scores (PP2-02)
+"panel.health.voiceover.score" = "%d von 100";
+// VoiceOver — Fallback, wenn ein Sub-Score keine Daten hat
+"panel.health.voiceover.noData" = "keine Daten";
+
+// MARK: - Panel Hero (PP2-01)
+
+// Chip — grüßt mit Namen; das goldene Emoji lebt im SF-Symbol-Icon
+"panel.hero.chip.monthStart %@ %@" = "Hallo %1$@ — %2$@ geht los";
+"panel.hero.chip.default %@" = "Hallo %@";
+
+// KPI fallback (aiSubtitle übernimmt den KPI-Slot, wenn verfügbar)
+// Markdown bold (**Betrag**) rendert via AttributedString(markdown:)
+"panel.hero.kpi.monthStart %@ %d" = "Wir starten den Monat, Schritt für Schritt.";
+"panel.hero.kpi.onTrack %@ %@ %@ %d" = "Du hast einen guten Rhythmus, weiter so.";
+"panel.hero.kpi.neutral %@ %@ %@ %d" = "Dein Monat läuft — alles im Lot.";
+"panel.hero.kpi.tight %@ %@ %d" = "Knapper Monat, aber machbar — Schritt für Schritt.";
+"panel.hero.kpi.overBudget %@ %@" = "Morgen starten wir frisch, alles im Lot.";
+
+"panel.hero.upsellCTA" = "Personalisiere deine Nachricht mit KI";
+"panel.hero.availableLabel" = "Verfügbar";
 
 // MARK: - Trend Widget
 
@@ -81,7 +194,9 @@
 "records.title" = "Einträge";
 "records.latest" = "Neueste Einträge";
 "records.noRecords" = "Keine Einträge";
-"records.deleteConfirmTitle" = "%d Eintrag/Einträge löschen?";
+"records.viewModeListA11y" = "Listenansicht";
+"records.viewModeCalendarA11y" = "Kalenderansicht";
+"records.noRecordsThisDay" = "Keine Einträge an diesem Tag";
 
 // MARK: - Filters
 
@@ -106,7 +221,6 @@
 "filters.allCurrencies" = "Alle verfügbaren";
 "filters.allNeeds" = "Alle Bedarfe";
 "filters.selectedCount" = "%d ausgewählt";
-"filters.subcategoriesSelectedCount" = "%d Unterkategorien ausgewählt";
 "filters.categories" = "Kategorien";
 "filters.type" = "Typ";
 "filters.need" = "Bedarf";
@@ -174,6 +288,9 @@
 "empty.noAccounts" = "Noch keine Konten";
 "empty.noCategories" = "Noch keine Kategorien";
 "empty.noSubcategories" = "Noch keine Unterkategorien";
+"empty.activateCategoriesTitle" = "Noch keine Kategorien";
+"empty.activateCategoriesMessage" = "Erstellen Sie sie jetzt, um Ihre Gruppenausgaben zu organisieren und Statistiken zu sehen. Verwalten können Sie sie über Ihr Profil.";
+"empty.activateCategoriesAction" = "Kategorien erstellen";
 
 // MARK: - Transaction
 
@@ -190,8 +307,8 @@
 "transaction.subcategory" = "Unterkategorie";
 "transaction.select" = "Auswählen";
 "transaction.total" = "Gesamt";
-"transaction.income" = "Einnahme";
-"transaction.expense" = "Ausgabe";
+"transaction.income" = "Einnahmen";
+"transaction.expense" = "Ausgaben";
 "transaction.transfer" = "Überweisung";
 "transaction.origin" = "Quelle";
 "transaction.destination" = "Ziel";
@@ -273,7 +390,6 @@
 "import.assignAccountPerCurrency" = "Weise jeder in der Datei gefundenen Währung ein Konto zu.";
 "import.selectAccountForCurrency" = "Konto auswählen";
 "import.currenciesDetected" = "%d Währungen erkannt";
-"import.recordsImported" = "%d Einträge erfolgreich importiert.";
 "import.recordsImportedMultiCurrency" = "%d Datensätze in %d Währungen importiert.";
 "import.noAccountsForCurrency" = "Keine Konten in %@. Erstelle zuerst ein Konto in dieser Währung.";
 "import.noCurrenciesDetected" = "Keine gültigen Währungen in der Datei erkannt.";
@@ -330,7 +446,6 @@
 "inbox.alert.title.mixed" = "Neue Einträge in deinem Posteingang!";
 "inbox.alert.message.scheduled" = "%d geplante Zahlungen wurden hinzugefügt.";
 "inbox.alert.message.subscriptions" = "%d Abonnements wurden hinzugefügt.";
-"inbox.alert.message.automations" = "%d automatische Einträge wurden hinzugefügt.";
 "inbox.alert.message.mixed.scheduled" = "%d Zahlungen";
 "inbox.alert.message.mixed.subscriptions" = "%d Abonnements";
 "inbox.alert.message.mixed.automations" = "%d automatische Einträge";
@@ -339,7 +454,7 @@
 // MARK: - Settings
 
 "settings.title" = "Einstellungen";
-"settings.theme" = "Design";
+"settings.theme" = "Designs";
 "settings.currency" = "Währung";
 "settings.appIcon" = "App-Symbol";
 "settings.personalization" = "Personalisierung";
@@ -403,13 +518,7 @@
 
 // MARK: - Widgets
 
-"widget.preferences" = "Widget-Einstellungen";
 "widget.visible" = "Sichtbar";
-"widget.size" = "Größe";
-"widget.compact" = "Kompakt";
-"widget.expanded" = "Erweitert";
-"widget.top3" = "Top 3";
-"widget.top5" = "Top 5";
 
 // MARK: - Planning
 
@@ -418,12 +527,22 @@
 "planning.goals" = "Ziele";
 "planning.comingSoon" = "Demnächst";
 "planning.scheduledPayments" = "Geplante Zahlungen";
+"planning.scheduled.totalLabel" = "Gesamt für Monat";
+"planning.budgetCharts.spentOf" = "%@ von %@ ausgegeben";
+"planning.budgetCharts.byCategoryHint" = "Tippen Sie auf eine Kategorie, um Unterkategorien zu sehen.";
+"planning.budgetCharts.byCategoryTitle" = "Nach Kategorie";
+"planning.budgetCharts.spendingHint" = "Ihre kumulierten Ausgaben Tag für Tag.";
+"planning.budgetCharts.spendingTitle" = "Ausgaben im Zeitraum";
+"planning.budgetCharts.historyHint" = "Ihre Leistung in den letzten 6 Zeiträumen.";
+"planning.budgetCharts.historyTitle" = "Verlauf";
 
 // MARK: - Budgets
 
 "budgets.title" = "Budgets";
 "budgets.empty.title" = "Keine Budgets";
 "budgets.empty.message" = "Erstelle Budgets, um deine Ausgaben zu kontrollieren.";
+"budgets.includeSharedExpenses" = "Geteilte Ausgaben einbeziehen";
+"budgets.includeSharedExpensesHint" = "Wenn deaktiviert, zahlen nur personliche Ausgaben";
 "budgets.widget.noFavorites.title" = "Keine Favoriten";
 "budgets.widget.noFavorites.message" = "Markiere Budgets in Einstellungen > Budgets als Favoriten, um sie hier anzuzeigen.";
 "budgets.widget.selectFavorites" = "Favoriten auswählen";
@@ -514,7 +633,6 @@
 "profile.dataManagement" = "Datenverwaltung";
 "profile.appearance" = "Erscheinungsbild";
 "empty.noExpenses" = "Noch keine Ausgaben erfasst";
-"empty.noSubcategories" = "Noch keine Unterkategorien";
 "common.recent" = "Neueste";
 "tag.new" = "Neuer Tag";
 "tag.edit" = "Tag bearbeiten";
@@ -550,7 +668,6 @@
 "export.noneSelected" = "Keine";
 "export.accountsSelected" = "%d ausgewählt";
 "export.allCategories" = "Alle Kategorien";
-"export.subcategoriesSelected" = "%d Unterkategorien ausgewählt";
 "export.allTags" = "Alle Tags";
 "export.allCurrencies" = "Alle";
 "export.column.date" = "Datum";
@@ -578,6 +695,7 @@
 "tab.search" = "Suchen";
 "tab.records" = "Datensätze";
 "tab.reports" = "Berichte";
+"tab.groups" = "Gruppen";
 "report.title" = "Finanzberichte";
 "report.tab.comparative" = "Vergleich";
 "report.tab.cashFlow" = "Cashflow";
@@ -619,20 +737,27 @@
 "panel.insightMenuHideHour" = "Eine Stunde ausblenden";
 "panel.insightMenuHideToday" = "Heute ausblenden";
 
+
+// Panel — Live Anchor Education (sheet "Tu saldo hoy")
+"panel.liveAnchorEducation.title" = "Ihr Saldo heute";
+"panel.liveAnchorEducation.heroFormat" = "Sie haben heute %@";
+"panel.liveAnchorEducation.bodyLineOneFormat" = "Das ist, was Ihr Geld gerade wert ist, wenn Sie alles in %@ umtauschen würden.";
+"panel.liveAnchorEducation.bodyLineTwoFormat" = "Wenn wir stattdessen jede Bewegung zum Wert des Tages addieren würden, an dem sie geschah, wären es %@.";
+"panel.liveAnchorEducation.bodyLineThree" = "Warum der Unterschied? Sie haben Geld in anderen Währungen, und diese Währungen sind heute unterschiedlich viel wert.";
+"panel.liveAnchorEducation.todayQuestion" = "Ihr Saldo heute";
+"panel.liveAnchorEducation.whyQuestion" = "Warum dieser Betrag?";
+"panel.liveAnchorEducation.breakdownToggle" = "Nach Währung anzeigen";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "≈ %@ heute";
+"panel.liveAnchorEducation.coachTitle" = "Ihr Saldo bewegt sich von selbst";
+"panel.liveAnchorEducation.coachMessage" = "Wenn Sie Geld in anderen Währungen haben, ändert sich dessen Wert von Tag zu Tag. Tippen Sie, um zu verstehen, was passiert.";
+"panel.liveAnchorEducation.dotA11yLabel" = "Heutiger Saldo zum aktuellen Wechselkurs. Tippen, um Details zu sehen.";
 "widget.today" = "Heute";
 
 // Widget Preferences
-"widget.preferences" = "Übersicht-Einstellungen";
 "widget.preferences.description" = "Wähle, was du in deiner Hauptübersicht sehen möchtest und in welcher Reihenfolge.";
 "widget.resetLayout" = "Ursprüngliche Anordnung wiederherstellen";
 "widget.alwaysVisible" = "Immer sichtbar";
 "widget.fixedPosition" = "Feste Position";
-"widget.visible" = "Sichtbar";
-"widget.size" = "Größe: %@";
-"widget.compact" = "Kompakt";
-"widget.expanded" = "Erweitert";
-"widget.top3" = "Top 3";
-"widget.top5" = "Top 5";
 "widget.summary" = "Zusammenfassung";
 "widget.list" = "Liste";
 "widget.calendar" = "Kalender";
@@ -642,28 +767,37 @@
 "widgetType.topSpending" = "Top Kategorien";
 "widgetType.topSubcategories" = "Top Unterkategorien";
 "widgetType.cashFlow" = "Cashflow";
-"widgetType.categoriesPie" = "Kategorienverteilung";
-"widgetType.subcategoriesPie" = "Unterkategorienverteilung";
+"widgetType.categoriesPie" = "Kategorien";
+"widgetType.subcategoriesPie" = "Unterkategorien";
 "widgetType.latestRecords" = "Neueste Einträge";
-"widgetType.expensesByNeed" = "Ausgaben nach Bedarf";
-"widgetType.expensesByTag" = "Ausgaben nach Etikett";
+"widgetType.expensesByNeed" = "Bedürfnisse";
+"widgetType.expensesByTag" = "Etiketten";
 "widgetType.exchangeRate" = "Wechselkurs";
 "widgetType.budgets" = "Budgets";
 "widgetType.scheduledPayments" = "Geplante Zahlungen";
+"widgetType.weekdayBar" = "Tagesdurchschnitt";
+"widgetType.periodComparison" = "Dieser Monat vs Vormonat";
 
 // MARK: - Scheduled Payments Widget
-"scheduled.widget.count" = "%d aktive Zahlungen";
 "scheduled.widget.empty.title" = "Keine Zahlungen";
 "scheduled.widget.empty.message" = "Füge geplante Zahlungen hinzu um sie hier zu sehen";
-"scheduled.widget.daysAgo" = "Vor %d Tagen";
 "scheduled.widget.tomorrow" = "Morgen";
-"scheduled.widget.inDays" = "In %d Tagen";
+"scheduled.widget.smallTitle" = "Geplant";
+"scheduled.widget.largeTitle.recurring" = "Wiederkehrende Zahlungen";
+"scheduled.widget.smallToPay" = "zu zahlen";
+"scheduled.widget.smallPaidAmount" = "Du hast %@ bezahlt";
+"scheduled.widget.smallActivePending" = "%1$d diesen Monat · %2$d offen";
+"scheduled.widget.smallAllPaid" = "Alles bezahlt!";
 "scheduled.payments.count" = "%d aktive Zahlungen";
 "scheduled.calendar.show.all" = "Alle anzeigen";
 "scheduled.calendar.day.empty" = "Keine Zahlungen an diesem Tag";
 "scheduled.calendar.month.empty" = "Keine Zahlungen in diesem Monat";
 
 "widget.sizeLabel" = "Größe";
+"widget.chatFab.toggle" = "Frag Yala";
+"widget.chatFab.description" = "Zeigt den KI-Finanzassistent-Button an.";
+"widget.chatFab.hint" = "Steuert, ob der Chat-Button auf den Hauptbildschirmen angezeigt wird.";
+"widget.aiCapabilities.header" = "KI-Funktionen";
 
 "common.all" = "Alle";
 "widget.main" = "Haupt";
@@ -677,7 +811,6 @@
 "widget.ofTotal" = "vom Gesamt";
 "widget.ofExpense" = "der Ausgaben";
 "widget.categoryAbbr" = "Kat.";
-
 
 "common.others" = "Sonstige";
 "common.remaining" = "Verbleibend";
@@ -694,7 +827,6 @@
 "widget.recordsWillAppear" = "Wenn du Transaktionen erfasst, erscheinen sie hier.";
 "widget.total" = "Gesamt";
 "widget.average" = "Durchschnitt";
-
 
 "common.uncategorized" = "Nicht kategorisiert";
 "cashFlow.netFlow" = "Netto-Cashflow";
@@ -757,6 +889,7 @@
 "cashFlowPlan.deleteLineConfirmation" = "Diese Zeile aus deinem Plan löschen? Diese Aktion kann nicht rückgängig gemacht werden.";
 "cashFlowPlan.suggestPayment" = "Neue Zahlung: %@. Zum Plan hinzufügen?";
 "cashFlowPlan.chartsTitle" = "Diagramme";
+"cashFlowPlan.chartsSectionTitle" = "Dein Cashflow";
 "cashFlowPlan.accumulatedBalance" = "Kumulierter Saldo";
 "cashFlowPlan.incomeVsExpense" = "Einnahmen vs Ausgaben";
 "cashFlowPlan.composition" = "Ausgabenzusammensetzung";
@@ -786,6 +919,7 @@
 "cashFlowPlan.configureHorizon" = "Horizont konfigurieren";
 "cashFlowPlan.monthsAhead" = "Monate voraus";
 "cashFlowPlan.monthsBack" = "Monate zurück";
+"cashFlowPlan.showAccumulatedBalance" = "Kumulierten Saldo anzeigen";
 "cashFlowPlan.startingBalanceDateLabel" = "Datum des Saldos";
 "cashFlowPlan.startingBalanceDateHelper" = "Wann hatten Sie diesen Saldo? Ohne Datum wird heute angenommen.";
 
@@ -828,23 +962,36 @@
 
 // Charts redesign (Inc 7)
 "cashFlowPlan.chartProjection" = "Saldoprojektion";
-"cashFlowPlan.chartDeviation" = "Wo du den Plan überschreitest";
+"cashFlowPlan.chartDeviation" = "Ausgaben zum Überprüfen";
+"cashFlowPlan.chartDeviationSubtitle" = "Unterkategorien, in denen du mehr als geplant ausgegeben hast";
 "cashFlowPlan.chartSavings" = "Monatliche Ersparnisse";
-"cashFlowPlan.chartAccuracy" = "Plangenauigkeit";
+"cashFlowPlan.chartProjectionSubtitle" = "Kumulierter Saldo im Zeitverlauf";
 "cashFlowPlan.chartDeviationOver" = "Über Budget";
 "cashFlowPlan.chartDeviationUnder" = "Gespart";
 "cashFlowPlan.chartDangerZone" = "Gefahrenzone";
 "cashFlowPlan.chartRollingAvg" = "Gleitender Durchschnitt";
 "cashFlowPlan.chartNeedMoreData" = "Du brauchst mindestens 2 Monate Daten";
+"cashFlowPlan.analyzingProjection" = "Deine Prognose wird analysiert...";
+"cashFlowPlan.enableAIObservations" = "KI für Beobachtungen nutzen";
+"cashFlowPlan.commentNegative" = "Ab %@ wird dein Saldo negativ — prüfe, ob du etwas anpassen kannst";
+"cashFlowPlan.commentTight" = "Dieser Monat ist knapp — dir bleiben %@ Spielraum";
+"cashFlowPlan.commentHealthy" = "Dein Plan sieht gesund aus — am Ende des Zeitraums hättest du %@ angespart";
+"cashFlowPlan.commentDefault" = "Deine Prognose umfasst %d Monate";
+"cashFlowPlan.chartAllWithinPlan" = "Alle Ausgabenposten liegen im Plan";
+"cashFlowPlan.deviationCommentSingle" = "Bei %@ hast du %@ mehr als geplant ausgegeben";
+"cashFlowPlan.deviationCommentMultiple" = "%@ ist dort, wo du den Plan am meisten überschritten hast, mit %@ extra — insgesamt hast du %@ zu viel ausgegeben";
+"cashFlowPlan.chartSavingsSubtitle" = "Wie viel du pro Monat sparst vs. dein Plan";
+"cashFlowPlan.chartPlanned" = "Geplant";
+"cashFlowPlan.commentSavingsBelow" = "Du sparst %@ weniger pro Monat als geplant — kannst du irgendwo kürzen?";
+"cashFlowPlan.commentSavingsAbove" = "Du liegst %@ über deinem Sparplan — dein Saldo würde %@ erreichen";
+"cashFlowPlan.commentHealthyWithSavings" = "Dein Plan sieht gut aus — du sparst etwa %@/Monat und würdest mit %@ enden";
 
 "common.unknownError" = "Unbekannter Fehler";
 "common.saveError" = "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.";
 "common.deleteError" = "Löschen nicht möglich. Bitte erneut versuchen.";
 "widget.noExpensesNeedPeriod" = "Keine Ausgaben nach Bedarf für diesen Zeitraum erfasst.";
 
-
 "account.addAccount" = "Konto hinzufügen";
-
 
 "common.date" = "Datum";
 "common.amount" = "Betrag";
@@ -855,21 +1002,12 @@
 "common.details" = "Details";
 "common.select" = "Auswählen";
 
-
 "statistics.title" = "Statistiken";
 "statistics.trends" = "Trends";
-"statistics.categories" = "Kategorien";
+"statistics.categories" = "Verteilung";
 "statistics.records" = "Einträge";
 
-
-"period.thisWeek" = "Diese Woche";
 "period.last7Days" = "Letzte 7 Tage";
-"period.last30Days" = "Letzte 30 Tage";
-"period.thisMonth" = "Dieser Monat";
-"period.lastMonth" = "Letzter Monat";
-"period.thisYear" = "Dieses Jahr";
-"period.lastYear" = "Letztes Jahr";
-"period.allTime" = "Gesamter Zeitraum";
 
 "need.essential" = "Wesentlich";
 "need.priority" = "Priorität";
@@ -880,15 +1018,10 @@
 "need.optional.desc" = "Ermessensausgaben oder Freizeit.";
 "need.unclassified.desc" = "Keine spezifische Art festgelegt.";
 
-"trendType.balance" = "Saldo";
-"trendType.income" = "Einnahmen";
-"trendType.expense" = "Ausgaben";
-
 
 "cashFlowViewType.total" = "Gesamt";
 "cashFlowViewType.byAccount" = "Nach Konto";
 "cashFlowViewType.byCurrency" = "Nach Währung";
-
 
 "listViewType.categories" = "Kategorien";
 "listViewType.subcategories" = "Unterkategorien";
@@ -960,7 +1093,6 @@
 "trend.filterBlockedTitle" = "Option nicht verfügbar";
 "need.incomeNotApplicable" = "Die Bedarfsklassifizierung gilt nur für Ausgaben";
 
-
 "settings.organization" = "Organisation";
 "settings.preferences" = "Einstellungen";
 "settings.aiFeatures" = "KI-Funktionen";
@@ -976,6 +1108,7 @@
 "settings.wipeData" = "Daten löschen";
 "settings.faceId" = "Face ID";
 "settings.permissions" = "Berechtigungen";
+"settings.aiPrivacy" = "KI-Datenschutz und Daten";
 "settings.subscriptions" = "Abonnements verwalten";
 "settings.rateApp" = "Bewerten und empfehlen";
 "settings.tutorials" = "Tutorials";
@@ -1014,13 +1147,10 @@
 "biometric.enableLockHint" = "Sie werden bei jedem Öffnen der App aufgefordert, Ihre Identität zu bestätigen.";
 "biometric.lockAfterHint" = "Wählen Sie, wie lange die App im Hintergrund bleiben kann, bevor sie gesperrt wird.";
 
-"profile.title" = "Profil";
 "profile.edit" = "Profil bearbeiten";
 "profile.importSuccess" = "Import abgeschlossen";
 "profile.importError" = "Importfehler";
 
-
-"profile.personalDetails" = "Persönliche Daten";
 "profile.changePhoto" = "Foto ändern";
 "profile.addPhoto" = "Foto hinzufügen";
 "profile.yourName" = "Dein Name";
@@ -1049,24 +1179,13 @@
 "settings.recommendedCurrencies" = "Empfohlen";
 "common.lastUpdate" = "Letzte Aktualisierung:";
 
-
-"common.inactive" = "Inaktiv";
-"common.hidden" = "Ausgeblendet";
 "common.archived" = "Archiviert";
 "empty.tagsDescription" = "Erstelle Tags, um deine Transaktionen flexibel zu organisieren.";
 "empty.categoriesDescription" = "Erstelle Kategorien, um deine Einnahmen und Ausgaben zu klassifizieren.";
 "empty.accountsDescription" = "Erstelle Konten, um deine Finanzen nach Bank, Bargeld oder anderem zu organisieren.";
 
-
-"profile.appearance" = "Erscheinungsbild";
-"settings.theme" = "Designs";
 "settings.themeDescription" = "Wähle, wie Yala aussehen soll.";
-"settings.system" = "System";
-"settings.light" = "Hell";
-"settings.dark" = "Dunkel";
-"settings.appIcon" = "App-Symbol";
 "settings.appIconDescription" = "Wähle das Symbol, das am besten zu deinem Stil passt.";
-"settings.personalization" = "Personalisierung";
 "settings.personalizationDescription" = "Passe an, wie Yala nach deinen Vorlieben funktioniert.";
 "settings.sectionInterface" = "Oberflache";
 "settings.sectionCalendar" = "Kalender";
@@ -1081,12 +1200,11 @@
 "settings.firstWeekdayDescription" = "Lege fest, welcher Tag als Wochenbeginn gilt für Filter wie 'Diese Woche'.";
 "settings.sunday" = "Sonntag";
 "settings.monday" = "Montag";
-"settings.resetData" = "Daten löschen";
 "settings.resetDataDescription" = "Dieser Vorgang löscht dauerhaft deine Konten, Transaktionen, Budgets, Wechselkurse, Kategorien und alle anderen mit deinem Yala-Profil verbundenen Daten. Nach dem Löschen kehrt die App in einen Anfangszustand zurück.";
-"settings.deleteAllData" = "Alle deine Daten löschen";
 "settings.deleteDataConfirmation" = "Alle deine Daten löschen?";
 "settings.deleteDataWarning" = "Diese Aktion ist unwiderruflich. Alle deine Konten, Transaktionen, Budgets, Wechselkurse und Kategorien werden gelöscht. Danach wird Yala auf einen Anfangszustand zurückgesetzt und du kannst deine Daten nicht wiederherstellen.";
 "settings.wipeICloudWarning" = "Dies löscht auch deine iCloud-Daten. Andere synchronisierte Geräte verlieren diese Daten.";
+"settings.wipeGroupsExclusionNote" = "Ihre Gruppen sind nicht eingeschlossen. Um sie zu verlassen, gehen Sie zu Gruppen, begleichen Sie offene Posten und verlassen Sie jede.";
 "settings.delete" = "Löschen";
 "settings.cancel" = "Abbrechen";
 "settings.iconOriginal" = "Original";
@@ -1100,7 +1218,6 @@
 "settings.iconChangeFailed" = "Symbol konnte nicht geändert werden: %@";
 "settings.deleteDataError" = "Fehler beim Löschen der Daten";
 "settings.deleteDataUnknownError" = "Beim Löschen der Daten ist ein unbekannter Fehler aufgetreten.";
-
 
 "transaction.newTransaction" = "Neuer Eintrag";
 "transaction.editTransaction" = "Eintrag bearbeiten";
@@ -1306,7 +1423,6 @@
 "subcategory.unassigned" = "Nicht zugewiesen";
 "subcategory.deleteTransactionsConfirmMessage" = "%d Transaktionen werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
 
-
 "account.deleteBalanceError" = "Du kannst dieses Konto nicht löschen, da es einen Saldo ungleich null hat. Passe den Saldo auf 0 an, bevor du es löschst.";
 "account.type.general" = "Allgemein";
 "account.type.cash" = "Bargeld";
@@ -1316,8 +1432,6 @@
 "account.type.investment" = "Investition";
 "account.type.loan" = "Kredit";
 "account.type.other" = "Sonstige";
-
-
 
 "iconPicker.title" = "Anpassen";
 "iconPicker.preview" = "Vorschau";
@@ -1344,7 +1458,6 @@
 "iconPicker.direction" = "Richtung";
 "iconPicker.other" = "Sonstige";
 
-
 "need.title" = "Ausgabenbedarf";
 
 // MARK: - Balance Adjustments
@@ -1367,7 +1480,7 @@
 "account.creditCard.paymentDay" = "Zahlungstag";
 "account.creditCard.paymentNotification" = "Heute ist Zahltag für deine Kreditkarte %@ 💳";
 "category.others" = "Sonstige";
-"subcategory.balanceAdjustment" = "Saldoanpassungen";
+"subcategory.balanceAdjustment" = "Saldoanpassung";
 
 // MARK: - Validation
 
@@ -1388,7 +1501,6 @@
 "transfer.categoryName" = "Überweisung zwischen Konten";
 
 // MARK: - More
-"more.sections" = "Bereiche";
 
 // MARK: - Scheduled Payments
 
@@ -1419,8 +1531,6 @@
 "scheduled.due.yesterday" = "Gestern";
 "scheduled.due.today" = "Heute";
 "scheduled.due.tomorrow" = "Morgen";
-"scheduled.due.days.ago" = "Vor %d Tagen";
-"scheduled.due.in.days" = "In %d Tagen";
 
 // Actions
 "scheduled.new" = "Neue geplante Zahlung";
@@ -1521,12 +1631,9 @@
 "weekday.short.saturday" = "S";
 
 // Common (if not already present)
-"common.select" = "Auswählen";
 "common.disabled" = "Deaktiviert";
-"common.none" = "Keine";
 "filters.none" = "Keine";
 "filters.transaction.type" = "Transaktionstyp";
-"filters.title" = "Filter";
 "filters.clear" = "Löschen";
 "action.close" = "Schließen";
 
@@ -1548,7 +1655,12 @@
 "accessibility.favoriteTemplates" = "Favoritenvorlagen";
 "accessibility.exceeded" = "Überschritten";
 "accessibility.inbox" = "Posteingang";
+"accessibility.nextPeriod" = "Nächster Zeitraum";
+"accessibility.previousPeriod" = "Vorheriger Zeitraum";
 "accessibility.widgetPreferences" = "Widget-Einstellungen";
+"accessibility.sectionsConfig" = "Panel einrichten";
+"accessibility.toggleSection %@" = "%@ anzeigen";
+"accessibility.sectionPrefsButton %@" = "Einstellungen für %@";
 "accessibility.createAccountFirst" = "Erstelle mindestens ein Konto und eine Kategorie";
 "accessibility.removeFilter" = "Filter entfernen";
 "balance.status.good" = "Gut";
@@ -1697,6 +1809,7 @@
 "onboarding.periodTitle" = "Standardzeitraum";
 "onboarding.periodSubtitle" = "Welchen Zeitraum möchten Sie beim Öffnen der App sehen?";
 "onboarding.finish" = "Los geht's";
+"onboarding.startUsingYala" = "Yala starten";
 "onboarding.categoriesTitle" = "Kategorien zum Starten";
 "onboarding.categoriesSubtitle" = "Wir haben gängige Kategorien vorbereitet, um Ihre Ausgaben von Anfang an zu organisieren.";
 "onboarding.categoriesYes" = "Mit diesen Kategorien starten";
@@ -1751,6 +1864,14 @@
 "onboarding.accountBalanceHintChecking" = "Dein verfügbares Bankguthaben heute. Muss nicht exakt sein — du kannst es später anpassen.";
 "onboarding.accountBalanceHintSavings" = "Der Gesamtbetrag, den du auf diesem Konto gespart hast. Muss nicht exakt sein — du kannst ihn später anpassen.";
 "onboarding.accountBalanceLearnMore" = "Lass uns deinen Saldo zusammen berechnen";
+"onboarding.balanceGuideHint" = "Wir führen dich Schritt für Schritt";
+"onboarding.balanceManualOption" = "Ich kenne meinen Saldo";
+"onboarding.balanceManualHint" = "Du gibst ihn selbst ein";
+"onboarding.balanceGuidedIncompleteHint" = "Du hast die Berechnung noch nicht abgeschlossen. Tippe, um fortzufahren.";
+"onboarding.privacyLocalShort" = "Daten auf deinem Gerät";
+"onboarding.privacyNoTrackingShort" = "Kein Tracking, keine Werbung";
+"onboarding.privacyIcloudShort" = "Nur du hast Zugriff";
+"onboarding.privacyNoSharingShort" = "Sichere KI";
 "onboarding.accountBalanceGuideTitle" = "Wie berechne ich meinen Saldo?";
 "onboarding.accountBalanceGuideIntro" = "Dein Anfangssaldo zeigt Yala, mit wie viel Geld du startest. Es muss nicht auf den Cent genau sein — eine Schätzung reicht völlig. Hier erfährst du, wie du es je nach gewähltem Kontotyp berechnen kannst.";
 "onboarding.accountBalanceGuideGeneral" = "Wenn du ein allgemeines Konto verwendest, um alle Zahlungsmittel in einer Währung zusammenzufassen, zeigt dein Saldo, wie viel Geld du verfügbar hast.\n\nUm ihn zu berechnen, addiere alles: Girokonten, Sparguthaben, Bargeld. Wenn du ausstehende Kreditkartenausgaben hast, kannst du sie abziehen für ein genaueres Bild — oder jede Karte später als eigenes Konto führen.\n\nDiese Endsumme ist dein Anfangssaldo.";
@@ -1860,6 +1981,9 @@
 "bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Transaktionen aktualisiert.";
 "bulkEdit.editCount" = "%d Transaktionen bearbeiten";
 "bulkEdit.successMessage" = "Transaktionen erfolgreich aktualisiert";
+"bulkEdit.cannotEditTransferSubcategory" = "Die Unterkategorie von Überweisungen kann nicht geändert werden. Bearbeite jede einzeln.";
+"bulkEdit.cannotEditTransferAccount" = "Das Konto von Überweisungen kann nicht geändert werden. Bearbeite jede einzeln.";
+"bulkEdit.cannotEditTransferAmountCrossCurrency" = "Beträge von Überweisungen zwischen verschiedenen Währungen können nicht gemeinsam bearbeitet werden. Bearbeite sie einzeln, um den Wechselkurs zu erhalten.";
 "bulkEdit.commonTags" = "In allen ausgewählten";
 "bulkEdit.partialTags" = "In einigen ausgewählten";
 "bulkEdit.availableTags" = "Verfügbar zum Hinzufügen";
@@ -1912,6 +2036,10 @@
 "inbox.noPending" = "Keine ausstehenden Entwürfe";
 "inbox.noPendingDescription" = "Neue Sprach- und Bildentwürfe werden hier angezeigt.";
 "inbox.bulkHint" = "Tippen Sie auf Auswählen für Massenaktionen";
+"inbox.subtitleMultiplePending" = "%d Transaktionen warten, Schritt für Schritt.";
+"inbox.subtitleOnePending" = "Eine Transaktion wartet, prüfen Sie sie, wenn Sie können.";
+"inbox.subtitleAllDone" = "Posteingang leer, super gemacht.";
+"inbox.pendingBadge" = "%d ausstehend";
 "inbox.newTag" = "Neu";
 "inbox.noArchived" = "Keine archivierten Entwürfe";
 "inbox.noArchivedDescription" = "Genehmigte oder abgelehnte Entwürfe werden hier angezeigt.";
@@ -2043,8 +2171,8 @@
 "tips.export.detail" = "Lade deine Ausgaben als CSV oder Excel unter Einstellungen > Exportieren herunter. Ideal für Tabellenanalysen oder deine Unterlagen.";
 "tips.faceID.title" = "Schütze mit Face ID";
 "tips.faceID.detail" = "Aktiviere die biometrische Sperre unter Einstellungen > Sicherheit. Du kannst wählen, ob sie beim Verlassen der App oder nach einer Zeit aktiviert wird.";
-"tips.siri.title" = "Neu: Eintrag mit Siri";
-"tips.siri.detail" = "Sage: \"Erstelle einen Eintrag in Yala\"";
+"tips.siri.title" = "Ausgaben per Sprache notieren";
+"tips.siri.detail" = "Sage: \"Notiere eine Ausgabe in Yala\" und diktiere dann den Betrag";
 "tips.siri.close" = "Siri-Vorschlag schließen";
 
 // MARK: - TipKit (kontextuelle Anleitungen)
@@ -2088,7 +2216,6 @@
 "tipkit.cfTable.add.title" = "Zeilen hinzufügen";
 "tipkit.cfTable.add.message" = "Falls eine Einnahme oder Ausgabe fehlt, füge sie hier hinzu.";
 
-
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Spracheingabe";
 "tipkit.pro.voiceInput.message" = "Jetzt kannst du deine Ausgaben diktieren. Sprich einfach und Yala erfasst sie für dich.";
@@ -2104,8 +2231,14 @@
 "tipkit.pro.proThemes.message" = "Entdecke exklusive Farbthemen, die Yala deinen persönlichen Touch verleihen.";
 "tipkit.pro.fab.title" = "Neue Wege zum Erfassen";
 "tipkit.pro.fab.message" = "Tippe hier, um per Sprache, Bild oder manuell zu erfassen. Jetzt hast du alle drei Optionen.";
+"tipkit.pro.chatFab.title" = "Dein Finanzassistent";
+"tipkit.pro.chatFab.message" = "Frag Yala nach deinen Ausgaben, Budgets und mehr.";
 "tipkit.pro.aiSummary.title" = "Deine KI-Zusammenfassung";
 "tipkit.pro.aiSummary.message" = "Erstelle mit einem Tipp eine intelligente Zusammenfassung deiner Finanzen. Nützliche Einblicke, sofort.";
+"tipkit.aiCharts.pro.title" = "KI-Beobachtungen";
+"tipkit.aiCharts.pro.message" = "Tippe hier, um intelligente Beobachtungen zu deinem Cashflow zu erhalten.";
+"tipkit.aiCharts.free.title" = "Intelligente Beobachtungen";
+"tipkit.aiCharts.free.message" = "Werde Pro, um KI-gestützte Analysen deiner Finanzen zu erhalten.";
 
 // MARK: - FAQ
 "faq.subtitle" = "Antworten auf die häufigsten Fragen";
@@ -2132,98 +2265,47 @@
 "faq.cancelSub.a" = "Du kannst dein Abonnement jederzeit unter Einstellungen > Abonnement > Im App Store verwalten kündigen. Dein Pro-Zugang bleibt bis zum Ende des bezahlten Zeitraums bestehen.";
 
 // MARK: - Shortcuts (App Intents)
-"shortcut.quickExpense.title" = "Schneller Eintrag";
+"shortcut.quickExpense.title" = "Neuer Eintrag";
 "shortcut.quickExpense.description" = "Erstelle einen neuen Eintrag in Yala mit Betrag, Konto, Kategorie und Tag.";
-"shortcut.quickExpense.shortTitle" = "Schneller Eintrag";
-
-// Parameters
-"shortcut.param.type" = "Typ";
-"shortcut.param.type.description" = "Ausgabe oder Einnahme";
-"shortcut.param.amount" = "Betrag";
-"shortcut.param.amount.description" = "Der zu erfassende Betrag";
-"shortcut.param.note" = "Beschreibung";
-"shortcut.param.note.description" = "Eine Notiz oder Beschreibung";
-"shortcut.param.account" = "Konto";
-"shortcut.param.account.description" = "Das Konto zum Erfassen";
-"shortcut.param.subcategory" = "Unterkategorie";
-"shortcut.param.subcategory.description" = "Die Unterkategorie";
-"shortcut.param.tag" = "Tag";
-"shortcut.param.tag.description" = "Ein optionales Tag";
-
-// Dialogs
-"shortcut.dialog.askType" = "Ausgabe oder Einnahme?";
-"shortcut.dialog.askAmount" = "Wie viel?";
-"shortcut.dialog.askNote" = "Beschreibung (optional)";
-"shortcut.dialog.askAccount" = "Welches Konto?";
-"shortcut.dialog.askSubcategory" = "Welche Kategorie?";
-"shortcut.dialog.askTag" = "Tag (optional)";
-
-// Entities
-"shortcut.entity.transactionType" = "Typ";
-"shortcut.type.expense" = "Ausgabe";
-"shortcut.type.income" = "Einnahme";
-"shortcut.entity.account" = "Konto";
-"shortcut.entity.subcategory" = "Unterkategorie";
+"shortcut.quickExpense.shortTitle" = "Neuer Eintrag";
 
 // Errors
 "shortcut.error.database" = "Datenbankzugriff fehlgeschlagen";
 "shortcut.error.noAccount" = "Keine Konten verfügbar. Erstelle zuerst ein Konto.";
-"shortcut.error.noSubcategory" = "Unterkategorie nicht gefunden";
 "shortcut.error.save" = "Eintrag konnte nicht gespeichert werden";
-"shortcut.error.voiceNotEnabled" = "Spracheingabe ist nicht aktiviert. Aktiviere sie unter Einstellungen > Personalisierung.";
-"shortcut.error.imageNotEnabled" = "Bildeingabe ist nicht aktiviert. Aktiviere sie unter Einstellungen > Personalisierung.";
-
-// Results
-"shortcut.result.noTag" = "Kein Tag";
-"shortcut.success.expenseDetail %@ %@ %@ %@ %@" = "In %@ erfasst: %@ - %@ - %@ - %@";
+"shortcut.error.consentRequired" = "Akzeptiere die KI-Einwilligung in der App, bevor du dieses Shortcut nutzt.";
 
 // Voice Entry Shortcut
-"shortcut.voiceEntry.title" = "Spracheingabe";
+"shortcut.voiceEntry.title" = "Per Sprache aufzeichnen";
 "shortcut.voiceEntry.description" = "Öffnet die Sprachaufnahme zum Diktieren von Ausgaben";
-"shortcut.voiceEntry.shortTitle" = "Spracheingabe";
+"shortcut.voiceEntry.shortTitle" = "Per Sprache aufzeichnen";
 "shortcut.voiceEntry.opening" = "Spracheingabe wird geöffnet...";
 
 // Image Entry Shortcut
-"shortcut.imageEntry.title" = "Bildeingabe";
+"shortcut.imageEntry.title" = "Per Bild aufzeichnen";
 "shortcut.imageEntry.description" = "Öffnet die Bildauswahl zum Erfassen von Ausgaben aus Fotos";
-"shortcut.imageEntry.shortTitle" = "Bildeingabe";
+"shortcut.imageEntry.shortTitle" = "Per Bild aufzeichnen";
 "shortcut.imageEntry.opening" = "Bildeingabe wird geöffnet...";
 
 // MARK: - Apple Pay Intent
 
-"shortcut.applePay.title" = "Apple Pay Eintrag";
-"shortcut.applePay.description" = "Erstellt einen Entwurf im Posteingang aus einer Apple Pay Transaktion";
-"shortcut.applePay.shortTitle" = "Apple Pay";
+"shortcut.applePay.title" = "Apple-Pay-Zahlung erfassen";
+"shortcut.applePay.description" = "Erstellt einen Entwurf im Posteingang aus einer Apple Pay Transaktion. Nach dem Wallet-Trigger verbinde Betrag → Betrag und Händler → Händler.";
+"shortcut.applePay.shortTitle" = "Apple-Pay-Zahlung erfassen";
 "shortcut.applePay.param.amount" = "Betrag";
 "shortcut.applePay.param.amount.description" = "Der Transaktionsbetrag (aus Wallet)";
 "shortcut.applePay.param.merchant" = "Händler";
 "shortcut.applePay.param.merchant.description" = "Der Händlername";
-"shortcut.applePay.param.name" = "Name";
-"shortcut.applePay.param.name.description" = "Sauberer Händlername (aus Wallet)";
-"shortcut.applePay.summaryTitle" = "Wallet-Zahlung erfassen";
-"shortcut.applePay.dialog.amount" = "Wie hoch ist der Betrag?";
-"shortcut.applePay.dialog.merchant" = "Wie heißt der Händler?";
-"shortcut.applePay.error.noAmount" = "Betrag erforderlich. Weisen Sie den Transaktionsbetrag aus Wallet zu.";
-"shortcut.applePay.success %@ %@" = "Entwurf erstellt: %@ bei %@. Überprüfen Sie Ihren Posteingang.";
+
+// Summary localizado: la key es el literal inglés del macro Summary("...") con \(\.$var) → ${var}.
+"Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}" = "Apple Pay Felder erfassen — Betrag: ${amount}, Händler: ${merchant}";
 
 // Automation Shortcut
-"shortcut.automation.title" = "Automatisierungseintrag";
-"shortcut.automation.description" = "Erstellt einen Entwurf aus externen Automatisierungs-JSON-Daten";
-"shortcut.automation.shortTitle" = "Automatisierung";
-"shortcut.automation.summaryTitle" = "Aus Automatisierung erfassen";
-"shortcut.automation.param.json" = "JSON-Daten";
-"shortcut.automation.param.json.description" = "JSON mit amount, currency, merchant (optional), date (optional)";
-"shortcut.automation.error.invalidJSON" = "Ungültiges JSON-Format. Erwartet: {\"amount\": 100, \"currency\": \"USD\"}";
-"shortcut.automation.error.noAmount" = "Ein Betrag größer als Null ist erforderlich.";
-"shortcut.automation.error.noCurrency" = "Eine Währung ist erforderlich (z.B. USD, PEN, EUR).";
-"shortcut.automation.error.noJSON" = "Transaktions-JSON-Daten sind erforderlich.";
-"shortcut.automation.success %@ %@" = "Entwurf erstellt: %@ bei %@. Überprüfe deinen Posteingang.";
-"shortcut.automation.defaultNote" = "Automatisierung";
 
 // MARK: - Siri Natural Language Entry
-"shortcut.siriNatural.title" = "Siri-Eintrag";
+"shortcut.siriNatural.title" = "Mit Siri notieren";
 "shortcut.siriNatural.description" = "Ausgaben mit natürlicher Sprache über Siri erfassen";
-"shortcut.siriNatural.shortTitle" = "Siri-Eintrag";
+"shortcut.siriNatural.shortTitle" = "Mit Siri notieren";
 "shortcut.siriNatural.param.text" = "Text";
 "shortcut.siriNatural.dialog.askText" = "Was möchtest du erfassen?";
 "shortcut.siriNatural.error.noText" = "Es wurde kein Text zum Erfassen angegeben.";
@@ -2314,6 +2396,18 @@
 // System
 "notifications.scheduledPayments.hint" = "Wir informieren dich über anstehende Zahlungen";
 
+// Groups
+"notifications.groups.name" = "Gruppen";
+"notifications.groups.hint" = "Benachrichtigungen wenn andere Mitglieder Ausgaben hinzufügen oder dich bezahlen";
+"notifications.groups.newExpense" = "%@ hat eine Ausgabe von %@ hinzugefügt: %@";
+"notifications.groups.newExpenseNoDesc" = "%@ hat eine Ausgabe von %@ hinzugefügt";
+"notifications.groups.modifiedExpense" = "%@ hat '%@' bearbeitet";
+"notifications.groups.settlement" = "%@ hat dir %@ bezahlt";
+"notifications.groups.newMember" = "%@ ist der Gruppe beigetreten";
+"notifications.groups.multipleChanges" = "%d neue Änderungen";
+"notifications.groups.fallbackGroup" = "Gruppe";
+"notifications.groups.fallbackMember" = "Jemand";
+
 // Section headers
 "notifications.section.reminders" = "Erinnerungen";
 "notifications.section.reports" = "Berichte";
@@ -2382,7 +2476,18 @@
 "icloud.dataFoundTitle" = "Daten gefunden!";
 "icloud.dataFoundMessage" = "Wir haben deine Daten in iCloud gefunden. Du musst nichts erneut einrichten.";
 "icloud.dataFoundAction" = "Weiter";
-"icloud.syncingBanner" = "Daten aus iCloud werden synchronisiert…";
+"icloud.syncIndicator.failed" = "Etwas klemmt bei iCloud";
+"icloud.syncIndicator.hint" = "Tippe, um zu sehen, was passiert ist";
+"icloud.detail.upToDate" = "Alles aktuell — zuletzt synchronisiert %@";
+"icloud.detail.errorTitle" = "Wir speichern gerade nicht in iCloud";
+"icloud.detail.errorMessage" = "Du bist offline oder iCloud ist nicht verfügbar. Deine Daten sind auf diesem Gerät sicher und werden synchronisiert, sobald es geht.";
+"icloud.detail.stalledMessage" = "Deine letzten Änderungen liegen noch auf diesem Gerät. Schauen wir, wie wir sie in iCloud bekommen.";
+"icloud.detail.technicalCode" = "Technisches Detail: %@";
+"icloud.detail.cta.retry" = "Jetzt erneut versuchen";
+"icloud.detail.cta.diagnose" = "Prüfen und reparieren";
+"icloud.detail.cta.viewTechnical" = "Technisches Detail anzeigen";
+"icloud.remoteOnboardingCompleted" = "✓ Fertig, deine Daten sind hier";
+"icloud.remoteRestoreCompleted" = "✓ Daten wiederhergestellt";
 "icloud.remoteWipe.title" = "Daten nicht mehr verfügbar";
 "icloud.remoteWipe.message" = "Deine Daten wurden aus iCloud entfernt. Du kannst neu starten oder warten, bis sie wieder synchronisiert werden.";
 "icloud.remoteWipe.confirm" = "Neu starten";
@@ -2440,15 +2545,12 @@
 "subscription.trial.title" = "Kostenlose Testversion";
 "subscription.trial.endsToday" = "Endet heute";
 "subscription.trial.endsTomorrow" = "Endet morgen";
-"subscription.trial.daysRemaining" = "Noch %d Tage";
 "subscription.trial.subscribe" = "Abonnieren";
 
 // MARK: - Downgrade Resolution
 
 "subscription.downgrade.title" = "Dein Abo ist beendet";
 "subscription.downgrade.subtitle" = "Wähle, welche Konten und Budgets du behalten möchtest";
-"subscription.downgrade.selectAccounts" = "Wähle %d Konten zum Behalten";
-"subscription.downgrade.selectBudgets" = "Wähle %d Budgets zum Behalten";
 "subscription.downgrade.confirm" = "Auswahl bestätigen";
 "subscription.downgrade.reactivate" = "Pro reaktivieren";
 
@@ -2536,7 +2638,6 @@
 // MARK: - Tips & Tricks
 // MARK: - Tutorials
 "tutorials.subtitle" = "Lerne, wie du das Beste aus Yala herausholst";
-"tutorials.stepsCount" = "%d Schritte";
 "tutorials.next" = "Weiter";
 "tutorials.previous" = "Zurück";
 "tutorials.done" = "Fertig";
@@ -2735,7 +2836,6 @@
 "subcategory.salary" = "Gehalt";
 "subcategory.sales" = "Verkäufe";
 "subcategory.accountTransfer" = "Kontoüberweisung";
-"subcategory.balanceAdjustment" = "Saldoanpassung";
 "subcategory.accountTransferOther" = "Kontoüberweisung";
 
 // MARK: - Scheduled Payments UX (M1-M7)
@@ -2750,7 +2850,7 @@
 "scheduled.associate.success" = "Ausgabe verknüpft";
 "scheduled.associate.empty" = "Keine ähnlichen Ausgaben in diesem Monat gefunden";
 "scheduled.associate.paymentHeader" = "Geplante Zahlung";
-"scheduled.associate.candidatesHeader" = "Ausgaben dieses Monats";
+"scheduled.associate.candidatesHeader" = "Zeitnahe Ausgaben";
 "scheduled.associate.already" = "Diese Ausgabe ist bereits verknüpft";
 "scheduled.advance" = "Zahlung vorziehen";
 "scheduled.view.record" = "Eintrag anzeigen";
@@ -2789,15 +2889,34 @@
 "siriShortcuts.faq.offlineQ" = "Funktioniert es offline?";
 "siriShortcuts.faq.offlineA" = "Ja, Kurzbefehle funktionieren im Basismodus ohne Internetverbindung.";
 
+// MARK: - AI Settings (Personalization Sheet from Chat)
+
+"aiSettings.title" = "KI personalisieren";
+"aiSettings.toneSection" = "Tonfall";
+"aiSettings.styleSection" = "Stil";
+"aiSettings.appliesHint" = "Diese Einstellungen gelten für Insights, Assistent und Panel-Hero.";
+
+// MARK: - AI Privacy (sub-view from Profile > Security)
+
+"aiPrivacy.title" = "KI-Datenschutz und Daten";
+"aiPrivacy.processingRow" = "Verarbeitung (Sprache & Bild)";
+"aiPrivacy.chatRow" = "Pro-Assistent";
+"aiPrivacy.insightsRow" = "Intelligente Insights";
+"aiPrivacy.revokeConfirmTitle" = "Diese Funktion deaktivieren?";
+"aiPrivacy.revokeConfirmMessage" = "Wir verarbeiten deine KI-Daten für diese Funktion nicht mehr. Du kannst sie jederzeit wieder aktivieren.";
+"aiPrivacy.revokeConfirmAction" = "Deaktivieren";
+"aiPrivacy.footerHint" = "Deine Daten werden nur verarbeitet, wenn du Insights, Assistent oder Sprach-/Bildeinträge nutzt. Wir teilen deine persönlichen Informationen nie.";
+"aiPrivacy.policyLink" = "Datenschutzrichtlinie";
+
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Sprach- und Bildverarbeitung";
-"aiConsent.processingMessage" = "Diese Funktionen nutzen OpenAI, um deine Daten zu verarbeiten:\n\n• Sprache: deine Audioaufnahme wird transkribiert\n• Bilder: das Foto wird analysiert, um Daten zu extrahieren\n\nDeine einzelnen Ausgaben und persönlichen Daten werden nie geteilt. OpenAI verwendet diese Daten nicht zum Training.";
+"aiConsent.processingMessage" = "Diese Funktionen nutzen OpenAI, um deine Daten zu verarbeiten:\n\n• Sprache: deine Audioaufnahme wird transkribiert\n• Bilder: das Foto (Beleg oder Screenshot) wird analysiert, um die Ausgabendaten zu extrahieren\n\nVerarbeitet wird nur, was du in diesem Moment sendest. OpenAI verwendet diese Daten nicht zum Trainieren seiner Modelle.";
 "aiConsent.insightsTitle" = "Intelligenter Überblick";
-"aiConsent.insightsMessage" = "Diese Funktion sendet Summen, Prozentsätze und Trends an OpenAI, um eine Zusammenfassung deiner Finanzen zu erstellen.\n\nDeine einzelnen Ausgaben, Transaktionsverläufe und persönlichen Daten werden nie geteilt. OpenAI verwendet diese Daten nicht zum Training.";
+"aiConsent.insightsMessage" = "Diese Funktion sendet eine Zusammenfassung deiner Finanzen an OpenAI – Summen und Trends nach Kategorie, Budgets und wiederkehrende Zahlungen –, um deine Analyse zu erstellen.\n\nDein vollständiger Transaktionsverlauf wird nicht gesendet. OpenAI verwendet diese Daten nicht zum Trainieren seiner Modelle.";
 "aiConsent.accept" = "Akzeptieren und aktivieren";
 "aiConsent.privacyPolicy" = "Datenschutzrichtlinie";
 "aiConsent.inlineHintProcessing" = "Deine Sprach- und Bilddaten werden mit OpenAI verarbeitet. Sie werden nicht dauerhaft gespeichert.";
-"aiConsent.inlineHintInsights" = "Nur Summen und Trends werden für den Überblick an OpenAI gesendet. Sie werden nicht dauerhaft gespeichert.";
+"aiConsent.inlineHintInsights" = "Deine Finanzzusammenfassung wird für die Analyse an OpenAI gesendet. Sie wird nicht dauerhaft gespeichert.";
 "aiConsent.inlineHintBoth" = "Deine Sprach-, Bild- und Zusammenfassungsdaten werden mit OpenAI verarbeitet. Sie werden nicht dauerhaft gespeichert.";
 
 // MARK: - Insights Settings
@@ -2831,6 +2950,22 @@
 "insights.tipExpenseUp" = "Vergleiche mit deinem sparsamsten Monat, um Unterschiede zu sehen";
 "insights.tipBudgetRisk" = "Es sind noch Tage übrig — versuche bei %@ den Rest zu bremsen";
 "insights.tipOptionalHigh" = "Schau dir deine optionalen Ausgaben an und überlege, was verschiebbar ist";
+
+"insights.ruleDailyAverage %@" = "Sie geben durchschnittlich %@ pro Tag aus.";
+"insights.ruleSavingsPositive %d" = "Sie sparen %d%% Ihres Einkommens.";
+"insights.ruleSavingsNegative" = "Ihre Ausgaben übersteigen Ihr Einkommen in diesem Zeitraum.";
+"insights.ruleSharedRatio.normal" = "%d%% deiner Ausgaben in diesem Zeitraum sind geteilt";
+"insights.ruleSharedRatio.considerate" = "%d%% deiner Ausgaben waren geteilt — Teilen ist gut";
+"insights.ruleSharedRatio.sarcastic" = "%d%% deiner Ausgaben sind geteilt. Wer zahlt als Nachstes?";
+"insights.ruleMostExpensiveGroup.normal" = "%@ ist deine teuerste Gruppe mit %d%% der geteilten Ausgaben";
+"insights.ruleMostExpensiveGroup.considerate" = "%@ macht %d%% der geteilten Ausgaben aus — deine Hauptgruppe";
+"insights.ruleMostExpensiveGroup.sarcastic" = "%@ nimmt %d%% der geteilten Ausgaben. Dominant.";
+"insights.ruleDominantSharedCategory.normal" = "%@ dominiert deine geteilten Ausgaben (%d%%)";
+"insights.ruleDominantSharedCategory.considerate" = "Die meisten geteilten Ausgaben (%2$d%%) sind in %1$@";
+"insights.ruleDominantSharedCategory.sarcastic" = "%@ ist %d%% der geteilten Ausgaben. Esst ihr nur zusammen?";
+"insights.ruleSharedMoM.normal" = "Deine geteilten Ausgaben stiegen um %@ gegenuber dem vorherigen Zeitraum";
+"insights.ruleSharedMoM.considerate" = "Geteilte Ausgaben um %@ gestiegen — pruf ob es Extras gab";
+"insights.ruleSharedMoM.sarcastic" = "Geteilte Ausgaben +%@. Was habt ihr gefeiert?";
 // Tone & Focus settings
 "insights.tone.normal" = "Normal";
 "insights.tone.considerate" = "Behutsam";
@@ -2920,6 +3055,95 @@
 "split.sharesYouPay" = "Du zahlst";
 "split.sharesOf" = "von";
 "split.sharesParts" = "Anteilen";
+
+// MARK: - Groups
+"groups.title" = "Gruppen";
+"groups.new" = "Neue Gruppe";
+"groups.edit" = "Gruppe bearbeiten";
+"groups.empty.title" = "Keine Gruppen";
+"groups.empty.message" = "Erstelle eine Gruppe, um Ausgaben mit anderen zu teilen";
+"groups.empty.action" = "Gruppe erstellen";
+"groups.summary.owedToMe" = "Dir geschuldet";
+"groups.summary.iOwe" = "Du schuldest";
+"groups.summary.pendingSettlements" = "%d ausstehende Abrechnungen";
+"groups.summary.allSettled" = "Alles ausgeglichen!";
+"groups.detail.records" = "Ausgaben";
+"groups.detail.balances" = "Salden";
+"groups.detail.stats" = "Statistiken";
+"groups.detail.comingSoon" = "Demnächst verfügbar";
+"groups.stats.totalSpent" = "Gesamtausgaben";
+"groups.stats.myPortion" = "Mein Anteil";
+"groups.stats.whoPaysMost" = "Wer zahlt am meisten";
+"groups.stats.categories" = "Kategorien";
+"groups.stats.monthlyTrend" = "Monatstrend";
+"groups.stats.noExpenses" = "Noch keine Ausgaben";
+"groups.stats.uncategorized" = "Ohne Kategorie";
+"groups.stats.thisMonth" = "Dieser Monat";
+"groups.stats.last3Months" = "3 Monate";
+"groups.stats.last6Months" = "6 Monate";
+"groups.stats.thisYear" = "Dieses Jahr";
+"groups.stats.allTime" = "Alles";
+"groups.stats.assignCategoriesHint" = "Weisen Sie Ihren Ausgaben Kategorien zu, um die Aufschlüsselung nach Typ zu sehen.";
+"groups.form.name" = "Name";
+"groups.form.namePlaceholder" = "Gruppenname";
+"groups.form.currency" = "Währung";
+"groups.form.icon" = "Symbol";
+"groups.form.simplifyDebts" = "Schulden vereinfachen";
+"groups.form.simplifyDebtsHint" = "Reduziert die Anzahl der Zahlungen zwischen Mitgliedern";
+"groups.form.showDebtsInSingleCurrency" = "Einheitliche Währung für Schulden";
+"groups.form.showDebtsInSingleCurrencyHint" = "Rechnet Ausgaben in anderen Währungen zum aktuellen Wechselkurs um.";
+"groups.form.defaultSplitType" = "Standard-Aufteilung";
+"groups.form.membersCanInvite" = "Mitglieder können einladen";
+"groups.form.membersCanInviteHint" = "Erlaubt jedem Mitglied, Personen zur Gruppe hinzuzufügen";
+"groups.settings.title" = "Gruppeneinstellungen";
+"groups.settings.members" = "Mitglieder";
+"groups.settings.addMember" = "Mitglied hinzufügen";
+"groups.settings.addMemberPrompt" = "Name des Mitglieds";
+"groups.settings.invite" = "Per Link einladen";
+"groups.settings.inviteLinkHint" = "Jede Person mit diesem Link kann der Gruppe beitreten, solange der Linkzugriff aktiv ist. Teile ihn nur mit Personen, denen du vertraust.";
+"groups.settings.leaveGroup" = "Gruppe verlassen";
+"groups.settings.leaveGroupConfirm" = "Bist du sicher? Deine persönlichen Ausgaben bleiben erhalten.";
+"groups.settings.leaveGroupWithDebtWarning" = "Du verlässt die Gruppe mit einem offenen Saldo. Die andere Partei sieht diese Schuld weiterhin als ausstehend. Fortfahren?";
+"groups.settings.deleteGroup" = "Gruppe löschen";
+"groups.settings.deleteGroupConfirm" = "Diese Gruppe löschen?";
+"groups.settings.deleteGroupFinalConfirm" = "Die Gruppe verschwindet für alle Mitglieder. Diese Aktion ist unwiderruflich.";
+"groups.settings.deleteGroupDisabledHint" = "Bitte gleichen Sie ausstehende Salden vor dem Löschen aus";
+"groups.settings.archive" = "Gruppe archivieren";
+"groups.settings.archiveWithDebtWarning" = "Es gibt offene Salden zwischen Mitgliedern. Wenn Sie archivieren, bleiben die Schulden bestehen. Fortfahren?";
+"groups.settings.archiveConfirm" = "Diese Gruppe archivieren? Ausgaben und Salden bleiben erhalten.";
+"groups.settings.generatingInvite" = "Link wird erstellt …";
+"groups.settings.unarchive" = "Gruppe wiederherstellen";
+"groups.settings.archiveHint" = "Ausgaben und Salden bleiben erhalten. Du kannst jederzeit wiederherstellen.";
+"groups.settings.showArchived" = "Archivierte anzeigen";
+"groups.settings.showArchivedCount" = "Archivierte anzeigen (%d)";
+"groups.settings.hideArchived" = "Archivierte ausblenden";
+"groups.settings.options" = "Optionen";
+"groups.settings.info" = "Information";
+"groups.settings.dangerZone" = "Gefahrenzone";
+"groups.member.admin" = "Admin";
+"groups.member.member" = "Mitglied";
+"groups.member.you" = "(Du)";
+"groups.member.left" = "Ausgetreten";
+"groups.member.removed" = "Entfernt";
+"groups.member.changeRole" = "Rolle ändern";
+"groups.member.remove" = "Mitglied entfernen";
+"groups.member.removeConfirm" = "Dieses Mitglied aus der Gruppe entfernen?";
+"groups.member.removeWithDebtWarning" = "Diese Person hat einen offenen Saldo in der Gruppe. Wenn du sie entfernst, bleibt die Schuld offen. Fortfahren?";
+"groups.member.actions" = "Mitglied-Aktionen";
+"groups.balance.title" = "Salden";
+"groups.balance.noDebts" = "Alles ausgeglichen!";
+"groups.balance.pendingDebts" = "Ausstehende Schulden";
+"groups.balance.settlements" = "Abrechnungen";
+"groups.balance.confirmed" = "Bestätigt";
+"groups.balance.pending" = "Ausstehend";
+"groups.expense.noExpenses" = "Keine Ausgaben";
+"groups.expense.youPaid" = "Sie haben %@ bezahlt";
+"groups.expense.memberPaid" = "%@ hat %@ bezahlt";
+"groups.expense.youAreOwed" = "Verliehen";
+"groups.expense.youOwe" = "Geliehen";
+"groups.expense.notIncluded" = "Nicht beteiligt";
+"groups.expense.newExpense" = "Neue Ausgabe";
+
 "export.column.splitTotal" = "Ursprünglicher Gesamtbetrag";
 "export.column.splitPortion" = "Anteil";
 "export.column.splitTotal.description" = "Gesamtbetrag vor der Aufteilung";
@@ -2932,7 +3156,6 @@
 
 // MARK: - Milestone Upgrade
 
-"milestone.title" = "%d Ausgaben erfasst!";
 "milestone.message10" = "Du baust eine tolle Gewohnheit auf. Mit Yala Pro kannst du Ausgaben per Sprache diktieren.";
 "milestone.message50" = "Beeindruckend! Mit KI-Einblicken kannst du verborgene Muster in deinen Ausgaben entdecken.";
 "milestone.message100" = "Du bist ein Finanzprofi. Schalte das volle Erlebnis mit Yala Pro frei.";
@@ -3150,3 +3373,1103 @@
 "guide.tagsSettings.message" = "Tags sind übergreifend: Du kannst jede Ausgabe als 'fix', 'geteilt' oder was du brauchst markieren. Eine Ausgabe kann mehrere Tags haben.";
 "guide.favoritesManage.title" = "Deine häufigsten Zahlungen";
 "guide.favoritesManage.message" = "Speichere hier deine häufigen Ausgaben. Beim Erfassen tippst du einfach auf den Favoriten und alles wird automatisch ausgefüllt.";
+
+// MARK: - Chat Assistant
+"chat.title" = "Frag Yala";
+"chat.inputPlaceholder" = "Schreib deine Frage...";
+"chat.send" = "Senden";
+"chat.emptySubtitle" = "Erkunde deine Finanzen mit Fragen";
+"chat.errorTimeout" = "Die Antwort hat zu lange gedauert. Versuch es nochmal.";
+"chat.errorOffline" = "Du brauchst eine Internetverbindung, um den Assistenten zu nutzen.";
+"chat.errorGeneric" = "Etwas ist schiefgelaufen. Versuch es nochmal.";
+"chat.errorNoData" = "Keine Daten für diese Abfrage gefunden. Kannst du genauer sein?";
+"chat.dailyLimitReached" = "Du hast deine Fragen für heute aufgebraucht. Komm morgen wieder!";
+"chat.questionsRemaining" = "Du hast noch %d Fragen heute";
+"chat.loading" = "Wird abgefragt...";
+"chat.questionTooLong" = "Deine Frage ist zu lang. Versuch es kürzer.";
+"chat.contextHint" = "Ich kann mich an deine letzte Frage erinnern, um weiterzuhelfen";
+
+/* Yala KI Redesign */
+"chat.assistantName" = "Yala KI";
+"chat.greeting" = "Hi, ich bin Yala KI. Erzähl mir, was möchtest du über deine Finanzen wissen?";
+"chat.dailyResetSubtitle" = "Diese Unterhaltung wird beim Tageswechsel gelöscht.";
+"chat.disclaimer" = "Yala KI kann Fehler machen.";
+"chat.daySeparatorToday" = "HEUTE";
+"chat.topicsButton" = "Themen";
+"chat.errorTranscription" = "Audio konnte nicht transkribiert werden. Versuche es erneut.";
+"chat.errorMicPermission" = "Ich benötige die Erlaubnis, das Mikrofon zu verwenden.";
+"chat.topics.title" = "Gesprächsthemen";
+"chat.resetContext" = "Gesprächskontext zurücksetzen";
+"chat.listening" = "Höre zu…";
+"chat.transcribing" = "Transkribiere…";
+"chat.preparingAI" = "KI wird vorbereitet…";
+"chat.unavailable" = "Yala KI ist gerade nicht verfügbar. Versuche es in ein paar Minuten erneut.";
+"chat.retry" = "Erneut versuchen";
+"chat.noVoiceDetected" = "Kein Audio erkannt. Versuche es erneut.";
+"chat.contextMemory" = "Yala KI erinnert sich an %d Nachrichten";
+
+// MARK: - Chat Draft (Yala IA Registrar)
+"chat.draft.chipExpense" = "Ausgabe";
+"chat.draft.chipIncome" = "Einnahme";
+"chat.draft.amountPlaceholder" = "Betrag";
+"chat.draft.accountLabel" = "Konto";
+"chat.draft.subcategoryLabel" = "Unterkategorie";
+"chat.draft.dateLabel" = "Datum";
+"chat.draft.noteLabel" = "Notiz";
+"chat.draft.tagsLabel" = "Tags";
+"chat.draft.tagsNone" = "Keine";
+"chat.draft.savedBadge" = "Gespeichert";
+"chat.draft.discardedBadge" = "Verworfen";
+"chat.draft.saveFailedGeneric" = "Speichern fehlgeschlagen. Bitte erneut versuchen.";
+"chat.draft.saveFailedAccount" = "Speichern fehlgeschlagen: Das Konto existiert nicht mehr. Bearbeite den Eintrag.";
+"chat.draft.saveFailedSubcategory" = "Speichern fehlgeschlagen: Die Unterkategorie existiert nicht mehr. Bearbeite den Eintrag.";
+"chat.draft.saveFailedAmount" = "Speichern fehlgeschlagen: Der Betrag ist ungültig.";
+"chat.draft.viewRecordsButton" = "Gespeicherte Einträge anzeigen";
+"chat.draft.discardButton" = "Verwerfen";
+"chat.draft.selectAccount" = "Konto auswählen";
+"chat.draft.selectSubcategory" = "Unterkategorie auswählen";
+"chat.draft.saveButton" = "Speichern";
+"chat.draft.editButton" = "Bearbeiten";
+"chat.draft.failedSavingLine" = "Speichern fehlgeschlagen.";
+"chat.draft.retryButton" = "Erneut versuchen";
+"chat.draft.noAccountsBlocking" = "Erstelle zuerst ein Konto im Profil, bevor du Einträge hinzufügst.";
+"chat.draft.ambiguousCanned" = "Möchtest du eine Ausgabe erfassen oder fragst du nach deinen Ausgaben?";
+"chat.draft.ambiguousChipRegister" = "Erfassen";
+"chat.draft.ambiguousChipAsk" = "Nur fragen";
+"chat.draft.confirmRegisterSingular" = "Eintrag bestätigen:";
+"chat.draft.confirmRegisterPlural" = "Einträge bestätigen:";
+"chat.draft.overflowFormat" = "Ich habe %d Einträge erkannt. Ich erfasse die ersten %d; sende den Rest in einer weiteren Nachricht.";
+
+// MARK: - Chat Assistant Consent
+"aiConsent.chatTitle" = "Finanzassistent";
+"aiConsent.chatMessage" = "Um deine Fragen zu beantworten, sendet diese Funktion eine Zusammenfassung deiner finanziellen Situation an OpenAI: Salden und Namen deiner Konten, Summen nach Kategorie, häufige Händler, Budgets und wiederkehrende Zahlungen.\n\nDie Daten werden nur zur Erstellung der Antwort verwendet. OpenAI verwendet sie nicht zum Trainieren seiner Modelle.";
+"aiConsent.inlineHintChat" = "Deine Finanzzusammenfassung wird von OpenAI verarbeitet, um zu antworten. Sie wird nicht dauerhaft gespeichert.";
+"aiConsent.inlineHintMultiple" = "Mehrere KI-Funktionen nutzen OpenAI zur Datenverarbeitung. Daten werden nicht dauerhaft gespeichert.";
+
+// MARK: - Chat Assistant Feature Gate & Settings
+"featureGate.chatAssistant" = "Chat-Assistent";
+"settings.chatAssistant" = "Frag Yala";
+"subscription.feature.aiAssistant" = "KI-Finanzassistent";
+
+// GC-05: Expense Form
+"groups.expense.paidByTitle" = "Bezahlt von";
+"groups.expense.divideBetween" = "Aufteilen zwischen";
+"groups.expense.selectAll" = "Alle auswählen";
+"groups.expense.deselectAll" = "Keine";
+"groups.expense.membersSelected %d %d" = "%d von %d ausgewählt";
+"groups.expense.title" = "Neue Ausgabe";
+"groups.expense.editTitle" = "Ausgabe bearbeiten";
+"groups.expense.description" = "Beschreibung";
+"groups.expense.descriptionPlaceholder" = "Wofür war das?";
+"groups.expense.note" = "Notiz";
+"groups.expense.notePlaceholder" = "Notiz hinzufügen...";
+"groups.expense.category" = "Kategorie";
+"groups.expense.currency" = "Währung";
+"groups.expense.date" = "Datum";
+"groups.expense.splitType" = "Aufteilungsart";
+"groups.expense.remaining" = "Verbleibend";
+"groups.expense.remainingAmount" = "Verbleibend: %@";
+"groups.expense.balanced" = "Ausgeglichen";
+"groups.expense.eachPays" = "Jeder zahlt";
+
+// GC-05: Settlements
+"groups.settlement.title" = "Zahlung erfassen";
+"groups.settlement.payTo" = "zahlt an";
+"groups.settlement.registerPayment" = "Zahlung erfassen";
+"groups.settlement.confirm" = "Bestätigen";
+"groups.settlement.reject" = "Ablehnen";
+"groups.settlement.settle" = "Begleichen";
+"groups.settlement.settleHint" = "Öffnet das Formular zur Erfassung dieser Zahlung";
+"groups.settlement.confirmQuestion" = "Diese Zahlung als bestätigt markieren?";
+"groups.settlement.rejectQuestion" = "Diese Zahlung ablehnen?";
+
+// Groups Notifications
+"groups.notifications.prompt.title" = "Gruppenbenachrichtigungen";
+"groups.notifications.prompt.message" = "Erhalte Benachrichtigungen wenn jemand eine Ausgabe hinzufügt oder dich bezahlt";
+"groups.notifications.prompt.enable" = "Aktivieren";
+
+// Groups — Invite Onboarding (GC-08)
+"groups.invite.welcome" = "Du wurdest in eine Gruppe eingeladen";
+"groups.invite.welcomeWithGroup" = "Du wurdest in die Gruppe %@ eingeladen";
+"groups.invite.subtitle" = "Yala hilft dir, Ausgaben zu teilen und zu wissen, wer wem was schuldet";
+"groups.invite.namePlaceholder" = "Dein Name";
+"groups.invite.joinButton" = "Gruppe beitreten";
+"groups.invite.ready" = "Alles bereit!";
+"groups.invite.goToGroup" = "Zur Gruppe";
+"groups.invite.linkInvalidTitle" = "Ungültiger Link";
+"groups.invite.linkInvalidDetail" = "Dieser Link ist nicht mehr gültig oder abgelaufen. Bitte den Admin, einen neuen zu erstellen.";
+
+// Groups — Bridge / Sync errors
+"groups.bridge.alertTitle" = "Problem mit der Gruppe";
+"groups.bridge.errorTransaction" = "Dein persönlicher Eintrag wird automatisch wiederholt.";
+"groups.bridge.errorTransactionUpdate" = "Die Änderung wurde nicht in deinem persönlichen Eintrag übernommen. Wir versuchen es erneut.";
+"groups.bridge.errorDelete" = "Der persönliche Eintrag der Ausgabe konnte nicht gelöscht werden.";
+"groups.bridge.errorNoAccounts" = "Du hast noch keine Konten eingerichtet. Erstelle zuerst eines.";
+"groups.sync.errorAcceptShare" = "Wir konnten den Beitritt nicht abschließen. Versuche es erneut.";
+"groups.sync.errorMemberSetup" = "Du bist beigetreten, aber es gab ein Problem mit deiner Identität in der Gruppe. Öffne die App neu.";
+
+// Groups — Reconnect (GC-08)
+"groups.reconnect.title" = "Gruppe beitreten";
+"groups.reconnect.subtitle" = "Du wurdest in eine gemeinsame Gruppe eingeladen";
+"groups.reconnect.fallbackGroupName" = "diese Gruppe";
+"groups.reconnect.archived.title" = "%@ wurde archiviert";
+"groups.reconnect.archived.body" = "Der Admin hat sie archiviert und sie nimmt keine Änderungen mehr an.";
+"groups.reconnect.archived.cta" = "Verstanden";
+"groups.reconnect.alreadyMember.title" = "Sie sind bereits in %@";
+"groups.reconnect.alreadyMember.body" = "Wir bringen Sie zur Gruppe.";
+"groups.reconnect.alreadyMember.cta" = "Gruppe öffnen";
+"groups.reconnect.pendingDuplicate.title" = "Anfrage für %@ ausstehend";
+"groups.reconnect.pendingDuplicate.body" = "Der Admin hat Ihre Anfrage noch nicht genehmigt.";
+"groups.reconnect.pendingDuplicate.cta" = "Gruppen anzeigen";
+"groups.reconnect.rejectedRetry.title" = "Ihre Anfrage wurde abgelehnt";
+"groups.reconnect.rejectedRetry.body" = "Bitten Sie erneut, dann sieht der Admin Ihre neue Anfrage.";
+"groups.reconnect.leftRetry.title" = "Sie haben %@ verlassen";
+"groups.reconnect.leftRetry.body" = "Bitten Sie erneut, wenn Sie zurückkommen möchten.";
+"groups.reconnect.removedRetry.title" = "Sie wurden aus %@ entfernt";
+"groups.reconnect.removedRetry.body" = "Bitten Sie erneut, wenn Sie zurückkommen möchten.";
+"groups.reconnect.retryCta" = "Erneut anfragen";
+"groups.reconnect.subtitleWithGroup" = "Du wurdest in %@ eingeladen";
+
+// Groups — Activate Full Mode (GC-08)
+"groups.activate.title" = "Volles Yala aktivieren";
+"groups.activate.subtitle" = "Ausgaben, Budgets und mehr verfolgen";
+"groups.activate.accountStep" = "Was ist dein Hauptkonto?";
+"groups.activate.accountName" = "Kontoname";
+"groups.activate.notificationStep" = "Möchtest du benachrichtigt werden?";
+"groups.activate.notificationMessage" = "Erhalte Erinnerungen an Ausgaben und Budget-Warnungen";
+"groups.activate.enableNotifications" = "Benachrichtigungen aktivieren";
+"groups.activate.skipNotifications" = "Jetzt nicht";
+"groups.activate.done" = "Loslegen";
+
+// Groups — Nudges (GC-09)
+"groups.nudge.invitedSpendingInsight.title" = "Deine geteilten Ausgaben wachsen";
+"groups.nudge.invitedSpendingInsight.message" = "Du hast %@ an geteilten Ausgaben. Willst du sehen, wofür du sonst noch Geld ausgibst?";
+"groups.nudge.invitedSpendingInsight.cta" = "Yala entdecken";
+"groups.nudge.invitedPostSettlement.title" = "Zahlung registriert";
+"groups.nudge.invitedPostSettlement.message" = "Du hast gerade eine Schuld beglichen. Willst du festhalten, woher das Geld kam?";
+"groups.nudge.invitedPostSettlement.cta" = "Yala aktivieren";
+"groups.nudge.invitedMonthTwo.title" = "Du siehst nur einen Teil";
+"groups.nudge.invitedMonthTwo.message" = "Deine Gruppen machen %d%% deiner Ausgaben aus. Der Rest wird nicht erfasst.";
+"groups.nudge.invitedMonthTwo.cta" = "Alles sehen";
+"groups.nudge.invitedSocialProof.title" = "Deine Freunde nutzen Yala bereits";
+"groups.nudge.invitedSocialProof.message" = "%d Personen in deiner Gruppe nutzen bereits Yala vollständig.";
+"groups.nudge.invitedSocialProof.cta" = "Yala aktivieren";
+"groups.nudge.dormantGroupsAsMain.title" = "Deine Gruppen warten";
+"groups.nudge.dormantGroupsAsMain.message" = "Du hast ausstehende geteilte Ausgaben. Schau mal rein.";
+"groups.nudge.dormantGroupsAsMain.cta" = "Gruppen ansehen";
+"groups.nudge.dormantNewExpenses.title" = "Neuigkeiten";
+"groups.nudge.dormantNewExpenses.cta" = "Ausgaben ansehen";
+"groups.nudge.dormantSpendingGap.title" = "Nicht erfasste Ausgaben";
+"groups.nudge.dormantSpendingGap.message" = "Du hast mehrere geteilte Ausgaben, aber deine anderen Ausgaben werden nicht erfasst.";
+"groups.nudge.dormantSpendingGap.cta" = "Ausgabe erfassen";
+"groups.nudge.dormantQuickEntry.title" = "Schnelleingabe";
+"groups.nudge.dormantQuickEntry.message" = "Erfasse eine persönliche Ausgabe in 5 Sekunden.";
+"groups.nudge.dormantQuickEntry.cta" = "Erfassen";
+"groups.nudge.sporadicImbalance.title" = "Ungleichgewicht erkannt";
+"groups.nudge.sporadicImbalance.message" = "Du hast %d geteilte Ausgaben erfasst, aber nur %d persönliche diese Woche.";
+"groups.nudge.sporadicImbalance.cta" = "Verstanden";
+"groups.nudge.sporadicBudgetSuggestion.title" = "Budget für geteilte Ausgaben?";
+"groups.nudge.sporadicBudgetSuggestion.message" = "Du hast diesen Monat viele geteilte Ausgaben. Ein Budget könnte helfen.";
+"groups.nudge.sporadicBudgetSuggestion.cta" = "Verstanden";
+"groups.nudge.sporadicTrendAlert.title" = "Aufwärtstrend";
+"groups.nudge.sporadicTrendAlert.message" = "Deine geteilten Ausgaben sind %d%% höher als letzten Monat.";
+"groups.nudge.sporadicTrendAlert.cta" = "Verstanden";
+
+"statistics.sankey.title" = "Geldfluss";
+"statistics.sankey.expenses" = "Ausgaben";
+"statistics.sankey.available" = "Verfügbar";
+"statistics.sankey.others" = "Andere";
+"statistics.sankey.planned" = "Geplant"; // TODO l10n review
+"statistics.sankey.plannedRecurring" = "Wiederkehrend"; // TODO l10n review
+"statistics.sankey.plannedSubscription" = "Abos"; // TODO l10n review
+"statistics.sankey.otherFunds" = "Andere Mittel"; // TODO l10n review
+"statistics.sankey.plannedHint" = "Es werden nur wiederkehrende Zahlungen und Abonnements bis zum Ende des aktuellen Monats berücksichtigt."; // TODO l10n review
+"statistics.sankey.toggleAmount" = "Beträge anzeigen";
+"statistics.sankey.togglePercentage" = "Prozentsätze anzeigen";
+"stats.sankey.subtitle" = "Aufschlüsselung des Geldflusses";
+
+// MARK: - Shortcut Snippet (F5/F6/F7)
+"shortcut.snippet.account" = "Konto";
+"shortcut.snippet.category" = "Kategorie";
+"shortcut.snippet.date" = "Datum";
+"shortcut.snippet.draftBadge" = "Entwurf — Überprüfe in deinem Posteingang";
+"shortcut.siriNatural.error.parsingFailedHelp" = "Ich habe nicht verstanden. Versuche: 'Notiere 50 Euro für Kaffee' oder 'Erfasse 25 Euro für Mittagessen'";
+"shortcut.siriNatural.success.partial" = "%1$lld von %2$lld erfasst (einige nicht verstanden). Überprüfe deinen Posteingang.";
+
+/* Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto */
+"panel.widgetInfo.addToPanel" = "Zum Panel hinzufügen";
+
+/* Panel Polish #2 — Title sheet pedagógico CashFlow */
+"panel.widgetInfo.cashFlow.title" = "Cashflow";
+
+/* Panel Polish #2 — Chip 1 CashFlow */
+"panel.widgetInfo.cashFlow.chip1" = "Einnahmen";
+
+/* Panel Polish #2 — Chip 2 CashFlow */
+"panel.widgetInfo.cashFlow.chip2" = "Ausgaben";
+
+/* Panel Polish #2 — Chip 3 CashFlow */
+"panel.widgetInfo.cashFlow.chip3" = "Pro Zeitraum";
+
+/* Panel Polish #2 — Title sheet pedagógico Trend */
+"panel.widgetInfo.trend.title" = "Saldoentwicklung";
+
+/* Panel Polish #2 — Chip 1 Trend */
+"panel.widgetInfo.trend.chip1" = "Interaktiv";
+
+/* Panel Polish #2 — Chip 2 Trend */
+"panel.widgetInfo.trend.chip2" = "Pro Zeitraum";
+
+// MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
+
+/* Panel Polish #2 — CashFlow S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — CashFlow S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.smallWhatA" = "Dein Saldo für den Zeitraum: die Differenz zwischen Einnahmen und Ausgaben, mit zwei Balken, die beide Summen vergleichen.";
+
+/* Panel Polish #2 — CashFlow M: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — CashFlow M: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.mediumWhatA" = "Dasselbe wie die kompakte Größe (Einnahmen, Ausgaben und Saldo), mit mehr Platz für detaillierte Beträge.";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.cashFlow.largeWhatA" = "Die Entwicklung deiner Einnahmen und Ausgaben über den Zeitraum, gruppiert nach Tag, Woche oder Monat je nach gewähltem Intervall.";
+
+/* Panel Polish #2 — CashFlow L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
+
+/* Panel Polish #2 — CashFlow L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.cashFlow.largeHowA" = "Halte den Finger auf einem Balken, um den genauen Wert an einem bestimmten Punkt zu sehen.";
+
+/* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
+"panel.widgetInfo.cashFlow.balanceQ" = "Warum stimmt der Gesamtfluss nicht mit meinem Kontostand überein?";
+/* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
+"panel.widgetInfo.cashFlow.balanceA" = "Jede Bewegung im Cashflow wird zum Wechselkurs des Tages erfasst, an dem sie erfolgte. Dein Kontostand zeigt, was du heute zum aktuellen Kurs hast. Wenn du Konten in verschiedenen Währungen hast, ist die Differenz ein nicht realisierter Wechselkursgewinn oder -verlust.";
+/* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — Trend S: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.smallWhatA" = "Dein Saldo, deine Einnahmen oder Ausgaben für den Zeitraum je nach aktivem Filter, mit einem Mini-Verlaufsdiagramm.";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Qué estás viendo?' */
+"panel.widgetInfo.trend.largeWhatA" = "Die tägliche Entwicklung deines Saldos, deiner Einnahmen oder Ausgaben im Zeitraum.";
+
+/* Panel Polish #2 — Trend L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
+
+/* Panel Polish #2 — Trend L: respuesta a '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.trend.largeHowA" = "Halte den Finger auf dem Diagramm, um den Wert an jedem Punkt zu sehen. Wechsle zwischen Saldo, Einnahmen und Ausgaben mit den Schaltflächen in der Kopfzeile.";
+
+/* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
+"panel.widgetInfo.cashFlow.chip4" = "Interaktiv";
+
+/* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
+"panel.widgetInfo.categoriesPie.title" = "Verteilung nach Kategorie";
+
+/* Panel Polish #2 — Chip 1 CategoriesPie (entidad) */
+"panel.widgetInfo.categoriesPie.chip1" = "Kategorien";
+
+/* Panel Polish #2 — Chip 2 CategoriesPie (período) */
+"panel.widgetInfo.categoriesPie.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 CategoriesPie (Interactiva) */
+"panel.widgetInfo.categoriesPie.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta */
+"panel.widgetInfo.categoriesPie.smallWhatA" = "Wie sich deine Ausgaben im aktuellen Zeitraum auf die Kategorien verteilen. Die Blasen markieren die Kategorien mit dem größten Anteil.";
+
+/* Panel Polish #2 — CategoriesPie S: pregunta '¿Cómo interactúo?' */
+"panel.widgetInfo.categoriesPie.smallHowQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — CategoriesPie S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.smallHowA" = "Tippe auf eine Blase, um den Rest des Panels nach dieser Kategorie zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Qué estás viendo?' */
+"panel.widgetInfo.categoriesPie.largeWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta */
+"panel.widgetInfo.categoriesPie.largeWhatA" = "Der Donut zeigt die Ausgabenverteilung nach Kategorie im aktuellen Zeitraum. Die Legende rechts listet jede Kategorie mit ihrem Anteil, vom größten zum kleinsten.";
+
+/* Panel Polish #2 — CategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.categoriesPie.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
+
+/* Panel Polish #2 — CategoriesPie L: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.categoriesPie.largeHowA" = "Tippe auf einen Donut-Abschnitt, eine Blase oder eine Zeile der Legende, um den Rest des Panels nach dieser Kategorie zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+
+/* Panel Polish #2 — Title sheet pedagógico SubcategoriesPie */
+"panel.widgetInfo.subcategoriesPie.title" = "Verteilung nach Unterkategorie";
+
+/* Panel Polish #2 — Chip 1 SubcategoriesPie (entidad) */
+"panel.widgetInfo.subcategoriesPie.chip1" = "Unterkategorien";
+
+/* Panel Polish #2 — Chip 2 SubcategoriesPie (período) */
+"panel.widgetInfo.subcategoriesPie.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva) */
+"panel.widgetInfo.subcategoriesPie.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallWhatA" = "Wie sich deine Ausgaben im aktuellen Zeitraum auf die Unterkategorien verteilen. Wenn oben eine Kategorie gefiltert ist, siehst du nur ihre Unterkategorien.";
+
+/* Panel Polish #2 — SubcategoriesPie S: pregunta */
+"panel.widgetInfo.subcategoriesPie.smallHowQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — SubcategoriesPie S: respuesta */
+"panel.widgetInfo.subcategoriesPie.smallHowA" = "Tippe auf eine Blase, um den Rest des Panels nach dieser Unterkategorie zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta */
+"panel.widgetInfo.subcategoriesPie.largeWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeWhatA" = "Der Donut zeigt die Ausgabenverteilung nach Unterkategorie im aktuellen Zeitraum, bis zu neun plus eine Gruppe „Rest“, wenn es mehr gibt. Die Legende rechts listet jede mit ihrem Anteil.";
+
+/* Panel Polish #2 — SubcategoriesPie L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.subcategoriesPie.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
+
+/* Panel Polish #2 — SubcategoriesPie L: respuesta */
+"panel.widgetInfo.subcategoriesPie.largeHowA" = "Tippe auf einen Donut-Abschnitt, eine Blase oder eine Zeile der Legende, um den Rest des Panels nach dieser Unterkategorie zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+
+/* Panel Polish #2 — Title sheet pedagógico TagsPie */
+"panel.widgetInfo.tagsPie.title" = "Verteilung nach Tag";
+
+/* Panel Polish #2 — Chip 1 TagsPie (entidad) */
+"panel.widgetInfo.tagsPie.chip1" = "Tags";
+
+/* Panel Polish #2 — Chip 2 TagsPie (período) */
+"panel.widgetInfo.tagsPie.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 TagsPie (Interactiva) */
+"panel.widgetInfo.tagsPie.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallWhatA" = "Wie sich deine Ausgaben im aktuellen Zeitraum auf die Tags verteilen. Die Blasen markieren die Tags mit dem größten Anteil.";
+
+/* Panel Polish #2 — TagsPie S: pregunta */
+"panel.widgetInfo.tagsPie.smallHowQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — TagsPie S: respuesta */
+"panel.widgetInfo.tagsPie.smallHowA" = "Tippe auf eine Blase, um den Rest des Panels nach diesem Tag zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeWhatA" = "Der Donut zeigt die Ausgabenverteilung nach Tag im aktuellen Zeitraum. Die Legende rechts listet jeden Tag mit seinem Anteil, vom größten zum kleinsten.";
+
+/* Panel Polish #2 — TagsPie L: pregunta */
+"panel.widgetInfo.tagsPie.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
+
+/* Panel Polish #2 — TagsPie L: respuesta */
+"panel.widgetInfo.tagsPie.largeHowA" = "Tippe auf einen Donut-Abschnitt, eine Blase oder eine Zeile der Legende, um den Rest des Panels nach diesem Tag zu filtern. Halte eine Blase gedrückt, um den vollständigen Namen zu sehen.";
+
+/* Panel Polish #2 — Title sheet pedagógico ExpensesByNeed */
+"panel.widgetInfo.expensesByNeed.title" = "Verteilung nach Bedarf";
+
+/* Panel Polish #2 — Chip 1 ExpensesByNeed (entidad) */
+"panel.widgetInfo.expensesByNeed.chip1" = "Bedarfe";
+
+/* Panel Polish #2 — Chip 2 ExpensesByNeed (período) */
+"panel.widgetInfo.expensesByNeed.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva) */
+"panel.widgetInfo.expensesByNeed.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallWhatA" = "Die Aufteilung deiner Ausgaben im aktuellen Zeitraum nach Bedarfsart: essenziell (das Unverzichtbare), prioritär (das Wichtige) und optional (das Überflüssige). „Nicht klassifiziert\" erscheint nur, wenn du nicht kategorisierte Ausgaben hast.";
+
+/* Panel Polish #2 — ExpensesByNeed S: pregunta */
+"panel.widgetInfo.expensesByNeed.smallHowQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — ExpensesByNeed S: respuesta */
+"panel.widgetInfo.expensesByNeed.smallHowA" = "Tippe auf eine Zeile, um den Rest des Panels nach dieser Bedarfsart zu filtern. Tippe erneut, um den Filter zu entfernen.";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumWhatA" = "Ein Balken pro Bedarfsart. Die Länge zeigt das relative Gewicht im Vergleich zur höchsten Ausgabe im aktuellen Zeitraum, sodass du auf einen Blick siehst, welche Art überwiegt.";
+
+/* Panel Polish #2 — ExpensesByNeed M: pregunta */
+"panel.widgetInfo.expensesByNeed.mediumHowQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — ExpensesByNeed M: respuesta */
+"panel.widgetInfo.expensesByNeed.mediumHowA" = "Tippe auf einen Balken, um den Rest des Panels nach dieser Bedarfsart zu filtern. Tippe erneut, um den Filter zu entfernen.";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta */
+"panel.widgetInfo.expensesByNeed.largeWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeWhatA" = "Die Ausgaben des aktuellen Zeitraums gestapelt nach Bedarfsart: essenziell, prioritär, optional und nicht klassifiziert. Jeder Balken auf der horizontalen Achse steht für einen Tag, eine Woche oder einen Monat (je nach Gruppierung), und die Legende unten zeigt das Gesamtgewicht jedes Typs.";
+
+/* Panel Polish #2 — ExpensesByNeed L: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.expensesByNeed.largeHowQ" = "Wie interagiere ich mit dem Diagramm?";
+
+/* Panel Polish #2 — ExpensesByNeed L: respuesta */
+"panel.widgetInfo.expensesByNeed.largeHowA" = "Wische mit dem Finger über die Balken, um die Aufschlüsselung eines Zeitpunkts zu sehen — wie viel essenziell, prioritär usw., zusammen mit dem Gesamtbetrag. Tippe auf einen Chip in der Legende, um nur diese Bedarfsart anzuzeigen und das Panel zu filtern.";
+
+/* Panel Polish #2 — Title sheet pedagógico TopCategories */
+"panel.widgetInfo.topCategories.title" = "Wichtigste Kategorien";
+
+/* Panel Polish #2 — Chip 1 TopCategories (entidad) */
+"panel.widgetInfo.topCategories.chip1" = "Kategorien";
+
+/* Panel Polish #2 — Chip 2 TopCategories (período) */
+"panel.widgetInfo.topCategories.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
+"panel.widgetInfo.topCategories.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — TopCategories S: pregunta */
+"panel.widgetInfo.topCategories.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — TopCategories S: respuesta */
+"panel.widgetInfo.topCategories.smallWhatA" = "Die beiden Kategorien, in denen du im aktuellen Zeitraum am meisten ausgegeben hast. Der Balken zeigt das Gewicht jeder Kategorie im Vergleich zur ersten.";
+
+/* Panel Polish #2 — TopCategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — TopCategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topCategories.regularWhatA" = "Deine Kategorien mit den höchsten Ausgaben im aktuellen Zeitraum, vom größten zum kleinsten geordnet. Jede Zeile zeigt den Betrag, den Anteil am Gesamten und einen Balken, der sie mit der Top-Kategorie vergleicht.";
+
+/* Panel Polish #2 — TopCategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — TopCategories: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.topCategories.howA" = "Tippe auf eine Zeile, um den Rest des Panels nach dieser Kategorie zu filtern. Tippe erneut, um den Filter zu entfernen.";
+
+/* Panel Polish #2 — Title sheet pedagógico TopSubcategories */
+"panel.widgetInfo.topSubcategories.title" = "Wichtigste Unterkategorien";
+
+/* Panel Polish #2 — Chip 1 TopSubcategories (entidad) */
+"panel.widgetInfo.topSubcategories.chip1" = "Unterkategorien";
+
+/* Panel Polish #2 — Chip 2 TopSubcategories (período) */
+"panel.widgetInfo.topSubcategories.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
+"panel.widgetInfo.topSubcategories.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — TopSubcategories S: pregunta */
+"panel.widgetInfo.topSubcategories.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta */
+"panel.widgetInfo.topSubcategories.smallWhatA" = "Die beiden Unterkategorien, in denen du im aktuellen Zeitraum am meisten ausgegeben hast. Wenn in einem anderen Widget eine Kategorie gefiltert ist, siehst du nur ihre Unterkategorien.";
+
+/* Panel Polish #2 — TopSubcategories M/L: pregunta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta (compartida) */
+"panel.widgetInfo.topSubcategories.regularWhatA" = "Deine Unterkategorien mit den höchsten Ausgaben im aktuellen Zeitraum, vom größten zum kleinsten geordnet. Jede Zeile zeigt den Betrag, den Anteil an ihrer Kategorie und am Gesamten sowie einen Balken, der sie mit der ersten vergleicht.";
+
+/* Panel Polish #2 — TopSubcategories: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.topSubcategories.howQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — TopSubcategories S: respuesta a 'cómo interactúo' (sin selector) */
+"panel.widgetInfo.topSubcategories.smallHowA" = "Tippe auf eine Zeile, um den Rest des Panels nach dieser Unterkategorie zu filtern.";
+
+/* Panel Polish #2 — TopSubcategories M/L: respuesta a 'cómo interactúo' (con selector) */
+"panel.widgetInfo.topSubcategories.regularHowA" = "Tippe auf eine Zeile, um den Rest des Panels nach dieser Unterkategorie zu filtern. Verwende die Chips oben, um die Liste auf eine Kategorie einzugrenzen — oder, wenn in einem anderen Widget bereits eine Kategorie gefiltert ist, bleibt der Selektor auf dieser fixiert.";
+
+/* Panel Polish #2 — Title sheet pedagógico RecentRecords */
+"panel.widgetInfo.recentRecords.title" = "Letzte Einträge";
+
+/* Panel Polish #2 — Chip 1 RecentRecords (entidad) */
+"panel.widgetInfo.recentRecords.chip1" = "Bewegungen";
+
+/* Panel Polish #2 — Chip 2 RecentRecords (período) */
+"panel.widgetInfo.recentRecords.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — RecentRecords: pregunta */
+"panel.widgetInfo.recentRecords.whatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — RecentRecords: respuesta */
+"panel.widgetInfo.recentRecords.whatA" = "Die fünf neuesten Buchungen des aktuellen Zeitraums: Einnahmen, Ausgaben oder Umbuchungen. Jede Zeile zeigt den Betrag (Einnahmen und Ausgaben in unterschiedlichen Farben), die zugeordnete Kategorie oder Unterkategorie und, falls vorhanden, die Bedarfsklassifizierung (essenziell, prioritär oder optional).";
+
+/* Panel Polish #2 — Title sheet pedagógico ScheduledPayments */
+"panel.widgetInfo.scheduledPayments.title" = "Geplante Zahlungen";
+
+/* Panel Polish #2 — Chip 1 ScheduledPayments (entidad) */
+"panel.widgetInfo.scheduledPayments.chip1" = "Anstehende Zahlungen";
+
+/* Panel Polish #2 — Chip 2 ScheduledPayments (mes en curso) */
+"panel.widgetInfo.scheduledPayments.chip2" = "Aktueller Monat";
+
+/* Panel Polish #2 — Chip 3 ScheduledPayments (Interactiva) */
+"panel.widgetInfo.scheduledPayments.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — ScheduledPayments: pregunta '¿Qué estás viendo?' (compartida S/M) */
+"panel.widgetInfo.scheduledPayments.whatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — ScheduledPayments S: respuesta */
+"panel.widgetInfo.scheduledPayments.smallWhatA" = "Was du diesen Monat noch an geplanten Zahlungen offen hast, mit einem Fortschrittsring des bereits bezahlten Anteils und den Zählungen aktiver und ausstehender Zahlungen. Der Filter unten wechselt zwischen alle, wiederkehrend und Abos.";
+
+/* Panel Polish #2 — ScheduledPayments M: respuesta */
+"panel.widgetInfo.scheduledPayments.mediumWhatA" = "Die Liste deiner anstehenden Zahlungen des Monats, jede mit Datum, Betrag und Status: ausstehend, bezahlt oder übersprungen. Der Filter rechts neben dem Titel grenzt auf alle, wiederkehrend oder Abos ein.";
+
+/* Panel Polish #2 — ScheduledPayments: pregunta '¿Cómo interactúo?' (compartida S/M) */
+"panel.widgetInfo.scheduledPayments.howQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — ScheduledPayments S: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.scheduledPayments.smallHowA" = "Tippe auf eines der Symbole im unteren Filter, um auf alle Zahlungen, nur wiederkehrende oder nur Abos einzugrenzen.";
+
+/* Panel Polish #2 — ScheduledPayments M: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.scheduledPayments.mediumHowA" = "Tippe auf eines der Symbole im Filter über dem Widget, um zwischen alle, wiederkehrend oder Abos zu wechseln.";
+
+/* Panel Polish #2 — Title sheet pedagógico Budgets */
+"panel.widgetInfo.budgets.title" = "Bevorzugte Budgets";
+
+/* Panel Polish #2 — Chip 1 Budgets (Favoritos) */
+"panel.widgetInfo.budgets.chip1" = "Favoriten";
+
+/* Panel Polish #2 — Chip 2 Budgets (período) */
+"panel.widgetInfo.budgets.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — Chip 3 Budgets (Interactiva) */
+"panel.widgetInfo.budgets.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — Budgets S: pregunta */
+"panel.widgetInfo.budgets.smallWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — Budgets S: respuesta */
+"panel.widgetInfo.budgets.smallWhatA" = "Deine beiden bevorzugten Budgets mit dem im Zeitraum ausgegebenen Betrag und dem Prozentsatz vom Limit.";
+
+/* Panel Polish #2 — Budgets M/L: pregunta (compartida) */
+"panel.widgetInfo.budgets.regularWhatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — Budgets M/L: respuesta (compartida) */
+"panel.widgetInfo.budgets.regularWhatA" = "Deine bevorzugten Budgets mit dem Fortschritt des Zeitraums: wie viel du bereits ausgegeben hast, wie viel vom Limit übrig ist und der Status (im Plan, knapp oder überschritten). Der Stern im Header öffnet den Bildschirm, in dem du auswählst, welche als Favoriten markiert werden sollen.";
+
+/* Panel Polish #2 — Budgets: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
+"panel.widgetInfo.budgets.howQ" = "Wie interagiere ich?";
+
+/* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
+"panel.widgetInfo.budgets.howA" = "Tippe auf ein Budget, um den Rest des Panels nach den Transaktionen seiner Kategorie oder seines Tags zu filtern. Tippe erneut, um den Filter zu entfernen.";
+
+/* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
+"panel.widgetInfo.exchangeRate.title" = "Wechselkurs";
+
+/* Panel Polish #2 — Chip 1 ExchangeRate (multi-divisa) */
+"panel.widgetInfo.exchangeRate.chip1" = "Mehrere Währungen";
+
+/* Panel Polish #2 — Chip 2 ExchangeRate (tasas actuales) */
+"panel.widgetInfo.exchangeRate.chip2" = "Aktuelle Kurse";
+
+/* Panel Polish #2 — Chip 3 ExchangeRate (Interactiva) */
+"panel.widgetInfo.exchangeRate.chip3" = "Interaktiv";
+
+/* Panel Polish #2 — ExchangeRate: pregunta */
+"panel.widgetInfo.exchangeRate.whatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta */
+"panel.widgetInfo.exchangeRate.whatA" = "Die Entwicklung des Wechselkurses zwischen deiner bevorzugten Währung und bis zu zwei Sekundärwährungen, die du zum Vergleich ausgewählt hast. Jede Linie steht für eine Währung, und unter dem Titel siehst du den jeweils letzten Kurs samt Aktualisierungszeitpunkt.";
+
+/* Panel Polish #2 — ExchangeRate: pregunta '¿Cómo interactúo con la gráfica?' */
+"panel.widgetInfo.exchangeRate.howQ" = "Wie interagiere ich mit dem Diagramm?";
+
+/* Panel Polish #2 — ExchangeRate: respuesta a 'cómo interactúo' */
+"panel.widgetInfo.exchangeRate.howA" = "Wische mit dem Finger über die Linien, um die exakten Kurse zu einem bestimmten Datum zu sehen, mit einem Tooltip pro Währung. Tippe auf einen Chip in der unteren Legende, um eine einzelne Währung zu isolieren; tippe erneut, um wieder alle anzuzeigen.";
+
+/* Panel Polish #2 — Title sheet pedagógico WeekdayBar */
+"panel.widgetInfo.weekdayBar.title" = "Ausgaben pro Wochentag";
+
+/* Panel Polish #2 — Chip 1 WeekdayBar (entidad) */
+"panel.widgetInfo.weekdayBar.chip1" = "Wochentage";
+
+/* Panel Polish #2 — Chip 2 WeekdayBar (período) */
+"panel.widgetInfo.weekdayBar.chip2" = "Aktueller Zeitraum";
+
+/* Panel Polish #2 — WeekdayBar: pregunta '¿Qué estás viendo?' (compartida S/L) */
+"panel.widgetInfo.weekdayBar.whatQ" = "Was siehst du?";
+
+/* Panel Polish #2 — WeekdayBar S: respuesta */
+"panel.widgetInfo.weekdayBar.smallWhatA" = "Wie viel du im aktuellen Zeitraum durchschnittlich pro Woche ausgibst, zusammen mit einem Mini-Balkendiagramm — eines pro Wochentag — bei dem die beiden höchsten Balken den Betrag oben anzeigen.";
+
+/* Panel Polish #2 — WeekdayBar L: respuesta */
+"panel.widgetInfo.weekdayBar.largeWhatA" = "Wie viel du im aktuellen Zeitraum an jedem Wochentag durchschnittlich ausgibst. Über jedem Balken mit Ausgaben siehst du den genauen Betrag.";
+"panel.widgetInfo.trend.fxMatchQ" = "Warum stimmt der letzte Punkt eventuell nicht mit meinem Gesamtkontostand überein?";
+"panel.widgetInfo.trend.fxMatchA" = "Der letzte Punkt spiegelt deinen Kontostand zum aktuellen Wechselkurs wider. Vorhergehende Punkte verwenden den Kurs vom jeweiligen Tag der Bewegung. Die Differenz ist ein Wechselkursgewinn oder -verlust — nur sichtbar bei Konten in verschiedenen Währungen.";
+"panel.widgetInfo.exchangeRate.balanceImpactQ" = "Wie wirkt sich der Wechselkurs auf meinen Kontostand aus?";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala berechnet deinen Kontostand in der bevorzugten Währung mit dem aktuellen Wechselkurs auf den Saldo jedes Kontos. Wenn sich der Kurs ändert und du keine Bewegungen machst, kann dein Kontostand trotzdem steigen oder fallen.";
+
+// MARK: - A0-Bridge Settings & Filters
+"settings.sectionGroups" = "Gruppen";
+"settings.sectionGroupsHint" = "Legen Sie fest, wie Yala Ihre Gruppenkonten und -transaktionen mit Ihren persönlichen Daten kombiniert.";
+"settings.includeGroupsInPanelTotal" = "Gruppen im Gesamtsaldo einbeziehen";
+"settings.includeGroupTransactionsInStats" = "Gruppentransaktionen in Statistiken einbeziehen";
+"filters.sectionShared" = "Geteilt";
+"filters.includeGroupTransactions" = "Gruppentransaktionen einbeziehen";
+"filters.includeGroupTransactionsHint" = "Wenn aktiviert, erscheinen die durch geteilte Ausgaben generierten Bewegungen in Ihrer Liste.";
+
+// MARK: - A0-Bridge Bridge messages
+"groups.bridge.deleteExpenseBlocked" = "Diese Ausgabe hat spätere Abrechnungen. Löschen oder bereinigen Sie zuerst die Abrechnungen, bevor Sie sie entfernen.";
+"groups.bridge.editFromGroup" = "Diese Transaktion synchronisiert mit einer Gruppe. Bearbeiten Sie sie in der geteilten Ausgabe.";
+"groups.bridge.assignFromInbox" = "Weisen Sie eine Unterkategorie aus dem Inbox zu, um sie abzuschließen.";
+"groups.bridge.editSettlementInGroup" = "Diese Transaktion stammt aus einer Abrechnung. Bearbeiten Sie das Settlement in der Gruppe.";
+"groups.bridge.editPartialBanner" = "Diese Ausgabe stammt aus der Gruppe. Sie können Konto, Kategorie und Tags bearbeiten. Betrag und Datum werden mit der Gruppe synchronisiert.";
+"groups.bridge.draftReasonRemoteCreate" = "%1$@ hat diese Ausgabe in %2$@ erfasst. Wählen Sie ein Konto, um sie in Ihren Aufzeichnungen zu führen.";
+"groups.bridge.draftReasonCurrencyChanged" = "Die Währung der Ausgabe in %@ wurde geändert. Wählen Sie ein Konto, um Ihren Anteil zu erfassen.";
+"groups.card.moreDebts" = "+%d weitere";
+"inbox.groupExpenseAccountDraft.title" = "Konto zuweisen";
+"inbox.groupExpenseAccountDraft.assignAccount" = "Quellkonto";
+"groups.bridge.activateTitle" = "Automatische Transaktionen aktivieren";
+"groups.bridge.activateBody" = "Ab jetzt werden geteilte Ausgaben in Ihrem Gruppenkonto reflektiert. Sie haben %d frühere Ausgaben in dieser Gruppe. Was tun wir mit ihnen?";
+"groups.bridge.activateOptionFromNow" = "Ab jetzt starten";
+"groups.bridge.activateOptionFromNowHint" = "Nur neue Ausgaben werden reflektiert.";
+"groups.bridge.activateOptionImportAll" = "Gesamten Verlauf importieren";
+"groups.bridge.activateOptionImportAllHint" = "Es werden Transaktionen für die %d früheren Ausgaben und ihre Abrechnungen erstellt.";
+"groups.bridge.activateImportRegenerationNote" = "Vorhandene generierte Transaktionen werden gemäß den aktuellen Regeln neu erstellt.";
+"groups.bridge.deactivateTitle" = "Automatische Transaktionen deaktivieren";
+"groups.bridge.deactivateBody" = "Sie haben %d von dieser Gruppe generierte Transaktionen. Wenn Sie sie löschen, wird Ihr Gruppensaldo angepasst.";
+"groups.bridge.deactivateOptionDelete" = "Löschen";
+"groups.bridge.deactivateOptionKeep" = "Als Historie behalten";
+"groups.bridge.importing" = "Importiere %d Ausgaben…";
+"groups.bridge.importError" = "Beim Importieren ist ein Problem aufgetreten. Versuchen Sie es erneut.";
+"groups.bridge.upsellGroupInviteSettlement" = "Aktivieren Sie Yala vollständig, um diese Zahlung mit Ihrem echten Konto abzustimmen.";
+
+// MARK: - A0-Bridge System Categories & Subcategories (Gruppen)
+"account.system.groups" = "Gruppen %@";
+"account.system.badge" = "System";
+"category.system.groups" = "Gruppen";
+"category.system.groupCollections" = "Gruppeneinnahmen";
+"subcategory.system.loanToGroups" = "Darlehen an Gruppen";
+"subcategory.system.loanCollection" = "Darlehensrückzahlung";
+"subcategory.system.settlementPayment" = "Abrechnungszahlung";
+"subcategory.system.settlementSent" = "Abrechnung gesendet";
+"subcategory.system.settlementReceived" = "Abrechnung erhalten";
+"inbox.sourceGroupExpense" = "Geteilte Ausgabe";
+"inbox.sourceGroupSettlement" = "Abrechnung";
+"inbox.sourceManual" = "Manuell";
+"inbox.groupDraftCannotDelete" = "Diese Transaktion kann nur aus der Quellgruppe entfernt werden.";
+
+/* A0-Bridge V2.0 — P0+P1 Sheets + Read-only-Banner (Sie) */
+"groups.settlement.fromAccount" = "Von welchem Konto?";
+"groups.settlement.fromAccountNone" = "Keines — später abschließen";
+"inbox.openInbox" = "Posteingang öffnen";
+"groups.detail.openGroup" = "Gruppe öffnen";
+"inbox.groupExpenseDraft.title" = "Unterkategorie zuweisen";
+"inbox.groupExpenseDraft.assignSubcategory" = "Unterkategorie";
+"inbox.groupSettlementDraft.title" = "Konto zuweisen";
+"inbox.groupSettlementDraft.assignAccount" = "Zielkonto";
+"inbox.groupDraft.finalize" = "Abschließen";
+"inbox.groupDraft.fromGroup" = "Gruppe: %@";
+"action.continue" = "Weiter";
+
+// MARK: - A3: Pending approval flow
+"groups.member.statusPending" = "Wartet auf Genehmigung";
+"groups.member.statusRejected" = "Abgelehnt";
+"groups.member.approve" = "Genehmigen";
+"groups.member.reject" = "Ablehnen";
+"groups.member.approveConfirm" = "%@ als Gruppenmitglied genehmigen?";
+"groups.member.rejectConfirm" = "Anfrage von %@ ablehnen? Über einen neuen Link kann erneut Zugang angefragt werden.";
+"groups.member.pendingRequestsSection" = "Offene Anfragen";
+"groups.invite.waitingApproval.title" = "Anfrage gesendet";
+"groups.invite.waitingApproval.body" = "Der Gruppen-Admin muss Sie freigeben, bevor Sie teilnehmen können. Sie werden benachrichtigt, sobald es so weit ist.";
+"groups.invite.waitingApproval.banner" = "Warten auf Admin-Freigabe";
+"groups.invite.rejected.title" = "Anfrage abgelehnt";
+"groups.invite.rejected.body" = "Der Admin hat Ihre Anfrage nicht freigegeben. Bitten Sie um einen neuen Link, falls Sie es erneut versuchen möchten.";
+"groups.notifications.newPendingRequest" = "👋 %@ möchte %@ beitreten";
+"groups.notifications.newPendingRequestBody" = "In Yala annehmen oder ablehnen.";
+"groups.errors.pendingApproval" = "Diese Aktion ist noch nicht möglich. Der Admin muss Ihre Anfrage zuerst genehmigen.";
+
+// MARK: - Welcome (A4 — Chooser pre-onboarding)
+"welcome.chooser.title" = "Hallo! Wie sind Sie zu Yala gekommen?";
+"welcome.chooser.subtitle" = "Erzählen Sie es uns, damit wir Ihre Erfahrung anpassen können.";
+"welcome.chooser.optionNew.title" = "Ich bin neu hier";
+"welcome.chooser.optionNew.body" = "Beginnen Sie mit mir bei null. Ich helfe Ihnen, alles Schritt für Schritt einzurichten.";
+"welcome.chooser.optionExisting.title" = "Ich habe bereits ein Konto";
+"welcome.chooser.optionExisting.body" = "Ich habe Yala neu installiert und möchte meine Daten aus iCloud wiederherstellen.";
+"welcome.chooser.optionInvite.title" = "Ich wurde zu einer Gruppe eingeladen";
+"welcome.chooser.optionInvite.body" = "Ich habe einen Einladungslink und möchte beitreten.";
+
+"welcome.restore.searching" = "Ihre Daten werden in iCloud gesucht…";
+"welcome.restore.searchingTip" = "Das kann ein paar Sekunden dauern.";
+"welcome.restore.foundTitle" = "Hallo %@! Schön, Sie wiederzusehen.";
+"welcome.restore.foundTitleAnonymous" = "Schön, Sie wiederzusehen!";
+"welcome.restore.foundBody" = "Wir haben Ihre Daten in iCloud gefunden:";
+"welcome.restore.foundAccounts" = "%d Konten";
+"welcome.restore.foundTransactions" = "%d Einträge";
+"welcome.restore.foundBudgets" = "%d Budgets";
+"welcome.restore.foundGroups" = "%d geteilte Gruppen";
+"welcome.restore.continue" = "Fortfahren";
+"welcome.restore.notFoundTitle" = "Keine Daten gefunden";
+"welcome.restore.notFoundBody" = "Es sind keine Daten mit Ihrem iCloud-Konto verknüpft. Möchten Sie neu starten?";
+"welcome.restore.startFresh" = "Neu beginnen";
+"welcome.restore.retry" = "Suche wiederholen";
+"welcome.restore.errorTitle" = "Es gab ein Problem";
+"welcome.restore.errorBody" = "Ihre iCloud-Daten konnten nicht gesucht werden. Versuchen Sie es erneut oder richten Sie alles neu ein.";
+"welcome.restore.iCloudDisabledTitle" = "Aktivieren Sie iCloud, um fortzufahren";
+"welcome.restore.iCloudDisabledBody" = "Sie benötigen iCloud, um Ihre Daten wiederherzustellen. Aktivieren Sie es in den Einstellungen und versuchen Sie es erneut.";
+"welcome.restore.openSettings" = "Einstellungen öffnen";
+"welcome.restore.startFreshConfirm.title" = "Neu starten?";
+"welcome.restore.startFreshConfirm.body" = "Dadurch wird ein neues Konto ohne Ihre vorherigen Daten erstellt. Fortfahren?";
+"welcome.restore.startFreshConfirm.confirm" = "Ja, neu starten";
+"welcome.restore.startFreshConfirm.cancel" = "Abbrechen";
+
+"welcome.invite.title" = "Fügen Sie Ihren Einladungslink ein";
+"welcome.invite.body" = "Wenn Sie zu einer Gruppe in Yala eingeladen wurden, fügen Sie hier den erhaltenen Link ein.";
+"welcome.invite.placeholder" = "https://yala-app.pe/invite?...";
+"welcome.invite.invalidLink" = "Das sieht nicht wie ein Yala-Link aus. Prüfen Sie, ob Sie den vollständigen Link kopiert haben.";
+"welcome.invite.join" = "Gruppe beitreten";
+"welcome.invite.back" = "Zurück";
+
+// MARK: - Welcome Hero (A4 v3.1: pantalla de presentación pre-Chooser)
+"welcome.hero.title" = "Ihre persönlichen Finanzen,";
+"welcome.hero.titleAccent" = "mühelos.";
+"welcome.hero.subtitle" = "Sie erfassen. Yala kümmert sich.";
+"welcome.hero.cta" = "Loslegen";
+"welcome.hero.trust" = "100% privat · Ihre Daten bleiben bei Ihnen";
+
+"welcome.hero.cards.capture.title" = "Quittungs-Foto";
+"welcome.hero.cards.capture.body" = "Quittung knipsen. Yala liest sie.";
+"welcome.hero.cards.assistant.title" = "Sprache und KI-Assistent";
+"welcome.hero.cards.assistant.body" = "Erzählen oder fragen. Yala antwortet.";
+"welcome.hero.cards.groups.title" = "Gemeinsame Ausgaben";
+"welcome.hero.cards.groups.body" = "Mit jedem teilen.";
+"welcome.hero.cards.budgets.title" = "Budgets und Ziele";
+"welcome.hero.cards.budgets.body" = "Grenzen setzen. Einhalten.";
+"welcome.hero.cards.multiAndCurrencies.title" = "Konten und Währungen";
+"welcome.hero.cards.multiAndCurrencies.body" = "Karten, Bargeld, 48+ Währungen.";
+"welcome.hero.cards.import.title" = "Historie importieren";
+"welcome.hero.cards.import.body" = "PDF, CSV, Excel. Fertig.";
+"welcome.hero.cards.icloud.title" = "Privates iCloud";
+"welcome.hero.cards.icloud.body" = "Ihre Daten, in Ihrem iCloud. Keine Server.";
+"welcome.hero.cards.more.title" = "Und vieles mehr";
+"welcome.hero.cards.more.body" = "Lassen Sie es uns gemeinsam entdecken.";
+
+// MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
+"welcome.detectedData.title" = "Willkommen zurück! Wir haben Ihr Konto gefunden";
+"welcome.detectedData.message" = "Wir haben %d Konten, %d Ausgaben und %d Kategorien in Ihrem iCloud gefunden. Was sollen wir tun?";
+"welcome.detectedData.loadMyData" = "Meine Daten laden";
+"welcome.detectedData.startFresh" = "Neu beginnen";
+
+
+// MARK: FreshStart (segunda barrera)
+"welcome.freshStart.alertTitle" = "Neu beginnen";
+"welcome.freshStart.alertMessage" = "Wir haben vorhandene Daten auf diesem Gerät gefunden. Alles löschen und neu beginnen?";
+"welcome.freshStart.alertConfirm" = "Alles löschen und fortfahren";
+"groups.card.pendingApprovalChip" = "Warte auf Freigabe";
+"groups.card.rejectedChip" = "Anfrage abgelehnt";
+"groups.card.leaveGroupAlertTitle" = "Gruppe verlassen?";
+"groups.card.leaveGroupAlertBody" = "Ihre Anfrage wurde abgelehnt. Beim Verlassen wird diese Gruppe aus Ihrer Liste entfernt. Ihre persönlichen Einträge bleiben.";
+
+// MARK: - Yala AI Onboarding (5-step tutorial first-use post-consent)
+"yalaAI.onboarding.continue" = "Weiter";
+"yalaAI.onboarding.back" = "Zurück";
+"yalaAI.onboarding.close" = "Schließen";
+"yalaAI.onboarding.previewLabel" = "Vorschau";
+"yalaAI.onboarding.progressLabel" = "Schritt %1$d von %2$d";
+"yalaAI.onboarding.step1.title" = "Das ist Yala AI";
+"yalaAI.onboarding.step1.subtitle" = "Ihre rechte Hand bei den Finanzen.";
+"yalaAI.onboarding.step1.demoScenario1User" = "12 € fürs Mittagessen ausgegeben.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Erledigt! Ihr Mittagessen über 12 € ist gespeichert.";
+"yalaAI.onboarding.step1.demoScenario2User" = "Wie viel für Kaffee diesen Monat?";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Bisher 35 € für Kaffee diesen Monat ☕ — 12 % weniger als im April, aber 6 € über Ihrem Durchschnitt.";
+"yalaAI.onboarding.step1.demoScenario3User" = "Ein Tipp?";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Ihr Lieferdienst liegt 20 % über dem Vormonat. Zurück zum üblichen Tempo: 60 € Ersparnis pro Monat — fast 720 € im Jahr.";
+"yalaAI.onboarding.step1.demoAmountLabel" = "Mittagessen";
+"yalaAI.onboarding.step1.a11yLabel" = "Beispielchat mit Yala AI: Eine Ausgabe wird erfasst";
+"yalaAI.onboarding.step2.title" = "Das können Sie hier tun";
+"yalaAI.onboarding.step2.subtitle" = "Drei Wege, Yala AI optimal zu nutzen.";
+"yalaAI.onboarding.step2.card1.badge" = "Neu";
+"yalaAI.onboarding.step2.card1.title" = "Ausgaben sofort erfassen";
+"yalaAI.onboarding.step2.card1.body" = "Per Text oder Stimme, ohne Formulare. Einfach sagen.";
+"yalaAI.onboarding.step2.card2.title" = "Fragen Sie zu Ihren Finanzen";
+"yalaAI.onboarding.step2.card2.body" = "Wie viel für Kaffee? Mein teuerster Monat?";
+"yalaAI.onboarding.step2.card3.title" = "Vorschläge erhalten";
+"yalaAI.onboarding.step2.card3.body" = "Muster, Anomalien, Ideen zum Sparen.";
+"yalaAI.onboarding.step3.title" = "Wählen Sie den Tonfall";
+"yalaAI.onboarding.step3.subtitle" = "So spricht Yala mit Ihnen in jeder Antwort.";
+"yalaAI.onboarding.step3.toneNormalDescription" = "Ausgewogen und klar. Fakten ohne Schnörkel.";
+"yalaAI.onboarding.step3.toneConsiderateDescription" = "Sanft und einfühlsam. Achtet auf Ihre Stimmung und feiert Erfolge.";
+"yalaAI.onboarding.step3.toneSarcasticDescription" = "Direkt mit Humor. Sagt es Ihnen mit einem Augenzwinkern.";
+"yalaAI.onboarding.step3.toneNormalQuote" = "Sie hatten 3 Kaffees diese Woche. Ihr Budget liegt im Plan.";
+"yalaAI.onboarding.step3.toneConsiderateQuote" = "Ein Kaffee tut gut. Er passt ins Budget, alles in Ordnung.";
+"yalaAI.onboarding.step3.toneSarcasticQuote" = "Noch drei Kaffees und wir brechen den Rekord. Passt aber noch ins Budget.";
+"yalaAI.onboarding.step4.title" = "Wählen Sie den Stil";
+"yalaAI.onboarding.step4.subtitle" = "Worauf Yala bei Ihren Finanzen achtet.";
+"yalaAI.onboarding.step4.focusBalancedDescription" = "Behält Ausgaben und Einnahmen gleichermaßen im Blick.";
+"yalaAI.onboarding.step4.focusSaverDescription" = "Hilft Ihnen, jeden Monat mehr zurückzulegen.";
+"yalaAI.onboarding.step4.focusCautiousDescription" = "Warnt bei jeder Abweichung, damit nichts schiefgeht.";
+"yalaAI.onboarding.step4.focusBalancedQuote" = "Ihre Einnahmen decken die Ausgaben des Monats. Guter Rhythmus.";
+"yalaAI.onboarding.step4.focusSaverQuote" = "10% weniger im Restaurant: 30 € Ersparnis pro Monat.";
+"yalaAI.onboarding.step4.focusCautiousQuote" = "Achtung: Sie sind beim Lieferdienst schneller als letzten Monat.";
+"yalaAI.onboarding.step5.title" = "Alles bereit!";
+"yalaAI.onboarding.step5.subtitle" = "Sagen Sie Yala jederzeit, was Sie brauchen.";
+"yalaAI.onboarding.step5.tip" = "💡 Versuchen Sie: \"Erfasse einen Kaffee für 5 Euro\" oder \"Wie viel habe ich heute ausgegeben?\"";
+"yalaAI.onboarding.step5.cta" = "Chat starten";
+
+// MARK: - Stats Records polish
+
+"stats.records.motivationalOne" = "1 Eintrag · Guter Anfang";
+"stats.records.motivationalMany %d" = "%d Einträge · Weiter so";
+
+"stats.insights.motivationalOne" = "1 Eintrag · Guter Anfang";
+"stats.insights.motivationalMany %d" = "%d Einträge · Weiter so";
+"stats.insights.detailHeader" = "Ihre Zahlen";
+"stats.insights.aiCardTitle" = "Intelligente Zusammenfassung";
+"stats.insights.aiCardSubtitle" = "Personalisiert mit KI";
+"stats.insights.dailyAvgIn %@" = "pro Tag in %@";
+
+"stats.insights.need.dailyFormat %@" = "≈ %@/Tag";
+
+"stats.insights.modeDetail" = "Details";
+
+// MARK: - Stats Trends polish (stats-polish-panel-alignment)
+
+"stats.trends.comparisonTitle" = "Vergleich";
+"stats.trends.insightTitleFree %@" = "Ihr %@ in Kürze";
+"stats.trends.insightTitlePro" = "Periodenanalyse";
+"stats.trends.refineWithAI" = "Mit KI verfeinern";
+"stats.trends.generateAI" = "KI-Analyse erstellen";
+"stats.trends.regenerate" = "Neu erstellen";
+"stats.trends.aiFootnote" = "KI-Analyse";
+"stats.trends.heroOnset" = "Ihre erste Periode mit Yala";
+"stats.trends.heroStable" = "Ihr Saldo bleibt stabil";
+"stats.trends.heroVarUp %d %@" = "%d%% über vs %@ · Weiter so";
+"stats.trends.heroVarDown %d %@" = "%d%% unter vs %@ · Bleiben Sie dran, Schritt für Schritt";
+// MARK: Distribution
+"stats.distribution.heroSubtitle1 %d" = "%d Kategorien";
+"stats.distribution.heroSubtitle2 %d %d" = "%d Kategorien · %d Unterkategorien";
+"stats.distribution.heroSubtitle3 %d %d %d" = "%d Kategorien · %d Unterkategorien · %d Tags";
+"stats.distribution.insightTitleFree %@" = "Ihr %@ auf einen Blick";
+"stats.distribution.insightTitlePro" = "Verteilung des Zeitraums";
+"stats.distribution.aiFootnote" = "KI-Analyse";
+"stats.distribution.modeCharts" = "Grafiken";
+"stats.distribution.insight.onset %@" = "Ihr %@ nimmt Gestalt an. Bald werden Sie klarere Muster erkennen.";
+"stats.distribution.insight.newCategory %@ %@" = "Sie haben %@ in diesem %@ ausprobiert.";
+"stats.distribution.insight.concentrated %d %@" = "%d%% Ihrer Ausgaben entfallen auf %@. Passt das zu Ihren Prioritäten?";
+"stats.distribution.insight.balanced %d" = "Ihre Ausgaben verteilen sich: keine Kategorie überschreitet %d%%. Ausgewogene Verteilung.";
+"stats.distribution.insight.shiftedUp %d %@ %@" = "%2$@ stieg um %1$d%% vs %3$@. Schauen wir, was sich in diesem Zeitraum geändert hat.";
+"stats.distribution.insight.shiftedDown %d %@ %@" = "%2$@ sank um %1$d%% vs %3$@. Gute Anpassung.";
+"stats.distribution.insight.topSub %d %@ %@" = "%2$@ macht %1$d%% innerhalb von %3$@ aus. Ihr größter spezifischer Posten.";
+
+"stats.trends.insight.onset %@" = "Dies ist Ihr erster %@ mit Yala";
+"stats.trends.insight.varUpExpense %d %@" = "Ihre Ausgaben stiegen um %d%% vs %@. Lassen Sie uns gemeinsam anpassen.";
+"stats.trends.insight.varDownExpense %d %@" = "Ihre Ausgaben fielen um %d%% vs %@. Halten Sie das Tempo.";
+"stats.trends.insight.varUpIncome %d %@" = "Ihre Einnahmen stiegen um %d%% vs %@. Gute Arbeit.";
+"stats.trends.insight.varDownIncome %d %@" = "Ihre Einnahmen fielen um %d%% vs %@.";
+"stats.trends.insight.varUpBalance %d %@" = "Ihr Saldo stieg um %d%% vs %@.";
+"stats.trends.insight.varDownBalance %d %@" = "Ihr Saldo fiel um %d%% vs %@.";
+"stats.trends.insight.stableExpense" = "Ihre Ausgaben bleiben stabil.";
+"stats.trends.insight.stableIncome" = "Ihre Einnahmen bleiben stabil.";
+"stats.trends.insight.stableBalance" = "Ihr Saldo bleibt stabil.";
+
+// MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
+"panel.widgetInfo.periodComparison.title" = "Zeitraum-Vergleich";
+"panel.widgetInfo.periodComparison.chip1" = "Vergleich";
+"panel.widgetInfo.periodComparison.chip2" = "Nach Zeitraum";
+"panel.widgetInfo.periodComparison.whatQ" = "Was sehen Sie hier?";
+"panel.widgetInfo.periodComparison.whatA" = "Saldo, Einnahmen oder Ausgaben Ihres aktuellen Zeitraums neben dem vorherigen Zeitraum. So erkennen Sie auf einen Blick, ob sich Ihr Trend verbessert.";
+"panel.widgetInfo.periodComparison.howQ" = "Womit wird verglichen?";
+"panel.widgetInfo.periodComparison.howA" = "Tippen Sie M, um mit dem Vormonat zu vergleichen, oder J für das Vorjahr. Ihre Auswahl gilt auch für die Abweichungen im restlichen Panel.";
+"panel.widgetInfo.sankey.title" = "Geldfluss";
+"panel.widgetInfo.sankey.chip1" = "Fluss";
+"panel.widgetInfo.sankey.chip2" = "Nach Bedarf";
+"panel.widgetInfo.sankey.chip3" = "Interaktiv";
+"panel.widgetInfo.sankey.whatQ" = "Was sehen Sie hier?";
+"panel.widgetInfo.sankey.whatA" = "Der Weg Ihres Geldes im Zeitraum: woher es kommt (Einnahmen) und wohin es geht, gruppiert nach Bedarfsart. Je breiter das Band, desto größer die Bewegung.";
+"panel.widgetInfo.sankey.howQ" = "Wie interagiere ich?";
+"panel.widgetInfo.sankey.howA" = "Tippen Sie auf eine Kategorie, Unterkategorie oder einen Zweig, um das restliche Panel danach zu filtern. Erneut tippen, um den Filter zu entfernen.";
+
+// MARK: GroupsOnboarding-keys
+"groups.onboarding.progressLabel" = "Schritt %1$d von %2$d";
+"groups.onboarding.step1.title" = "Ausgaben teilen, ohne den Überblick zu verlieren";
+"groups.onboarding.step1.subtitle" = "Yala benachrichtigt Sie sofort, wenn jemand eine Ausgabe zur Gruppe hinzufügt.";
+"groups.onboarding.step1.demoMemberName" = "Sophie";
+"groups.onboarding.step1.demoGroupName" = "Freunde";
+"groups.onboarding.step1.demoNotifTemplate" = "%1$@ hat %2$@ zur Gruppe %3$@ hinzugefügt";
+"groups.onboarding.step1.demoBalanceLabelInitial" = "Saldo: %@";
+"groups.onboarding.step1.demoBalanceLabelDebt" = "Sie schulden %@";
+"groups.onboarding.step1.a11yLabelTemplate" = "%1$@ hat %2$@ zur Gruppe %3$@ hinzugefügt. Sie schulden jetzt %4$@.";
+"groups.onboarding.step2.title" = "Drei Schritte, keine Tabellen";
+"groups.onboarding.step2.subtitle" = "Yala teilt auf, erfasst und gleicht für Sie aus.";
+"groups.onboarding.step2.card1.title" = "Erstellen Sie Gruppen mit Ihrem Kreis";
+"groups.onboarding.step2.card1.body" = "Familie, Freunde, Reisen oder Arbeit. So viele Gruppen, wie Sie brauchen.";
+"groups.onboarding.step2.card2.title" = "Ausgaben erfassen, Yala teilt sie auf";
+"groups.onboarding.step2.card2.body" = "Wählen Sie, wie jede Ausgabe geteilt wird. Yala berechnet, wer was schuldet.";
+"groups.onboarding.step2.card3.title" = "Schulden mit wenigen Taps begleichen";
+"groups.onboarding.step2.card3.body" = "Zahlungen abschließen und auf Null setzen. Keine Diskussionen, kein Excel.";
+"groups.onboarding.step3.title" = "Ihre Privatsphäre zuerst";
+"groups.onboarding.step3.subtitle" = "Sie teilen nur das Nötige, nichts weiter.";
+"groups.onboarding.step3.point1" = "Jedes Mitglied benötigt ein iCloud-Konto.";
+"groups.onboarding.step3.point2" = "Ihre persönlichen Daten werden nicht mit der Gruppe synchronisiert, nur geteilte Ausgaben.";
+"groups.onboarding.step3.cta" = "Zu Gruppen";
+
+// MARK: FU-02-reconnect
+"groups.reconnect.deletedForAll.title" = "%@ wurde gelöscht";
+"groups.reconnect.deletedForAll.body" = "Diese Gruppe wurde vom Ersteller gelöscht.";
+"groups.reconnect.deletedForAll.cta" = "Verstanden";
+
+// MARK: Bridge opt-out (F7 consolidation)
+"groups.bridge.optoutAlertTitle" = "Auch in dein persönliches Yala eintragen?";
+"groups.bridge.optoutAlertBody" = "Sie können eine persönliche Buchung in Ihrem Konto erstellen, um diese Ausgabe widerzuspiegeln, oder sie nur in der Gruppe behalten.";
+"groups.bridge.optoutAlertYes" = "Ja, eintragen";
+"groups.bridge.optoutAlertNo" = "Nur in der Gruppe";
+"groups.bridge.deactivationSheetTitle" = "Persönliche Integration deaktivieren";
+"groups.bridge.deactivationSheetBody" = "Es gibt bereits automatisch erstellte Buchungen in Ihren Konten. Entscheiden Sie, was damit geschehen soll.";
+"groups.bridge.deactivationOptionFreeze" = "Als Historie behalten";
+"groups.bridge.deactivationOptionDelete" = "Aus meinen Konten löschen";
+"groups.globalSettings.title" = "Gruppeneinstellungen";
+"groups.globalSettings.bridgeSectionTitle" = "Persönliche Yala-Integration";
+"groups.globalSettings.bridgeToggleLabel" = "Gruppenausgaben in meinen persönlichen Konten erfassen";
+"groups.globalSettings.bridgeCaption" = "Wenn aktiviert, wird jede Ausgabe, die Sie bezahlen oder begleichen, auch im gewählten persönlichen Konto erfasst. Ihr Saldo spiegelt die Realität wider.";
+"groups.globalSettings.visibilitySectionTitle" = "Sichtbarkeit";
+"groups.globalSettings.visibilityCaption" = "Steuern Sie, ob Gruppenbuchungen in Ihrem Panel, in Statistiken und im Bewegungsfeed angezeigt werden.";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Gruppenbuchungen im Bewegungsfeed anzeigen";
+"groups.settings.personalIntegrationSectionTitle" = "Persönliche Integration";
+"groups.settings.personalIntegrationToggleLabel" = "Ausgaben dieser Gruppe in meinen persönlichen Konten erfassen";
+"groups.settings.personalIntegrationHintInheritOn" = "Übernimmt Ihre allgemeine Einstellung (Aktiviert).";
+"groups.settings.personalIntegrationHintLocalOff" = "Nur in dieser Gruppe: deaktiviert.";
+"groups.settings.personalIntegrationHintBlockedByGlobal" = "Um es hier zu aktivieren, aktivieren Sie es zuerst in den Gruppeneinstellungen.";
+"groups.onboarding.step2.bridgeAwareness" = "Wenn Sie eine Ausgabe bezahlen, wird sie auch automatisch in Ihrem persönlichen Konto erfasst — damit Ihr Saldo immer die Realität widerspiegelt.";
+"groups.onboarding.step3.bridgeAwareness" = "Sie können dieses Verhalten in den Gruppeneinstellungen ändern.";
+
+// MARK: B-16 — groups.reconnect.backToStart
+"groups.reconnect.backToStart" = "Zum Anfang";
+
+/* MARK: SplitChipDetail-keys (split-chip-detail refactor) */
+"split.totalLabel" = "Gesamt";
+"split.you" = "Du";
+"split.rest" = "Rest";
+"split.percentSuffix %@" = "(%@%%)";
+"split.sharesSuffix %d %d" = "(%d/%d Anteile)";
+
+/* MARK: SplitChipDetail-keys-v2 (split-chip-detail refactor) */
+"split.youPaidAll" = "Du hast alles bezahlt";
+
+
+/* MARK: MoreDashboard-keys (more redesign) */
+"more.subtitle.panel" = "Dein Überblick für jeden Tag";
+"more.subtitle.insights" = "Das Wichtigste deines Zeitraums";
+"more.subtitle.trends" = "Sieh, wie sich dein Geld entwickelt";
+"more.subtitle.distribution" = "Entdecke, wofür dein Geld draufgeht";
+"more.subtitle.budgets" = "Setz Grenzen und behalte dein Tempo im Blick";
+"more.subtitle.scheduledPayments" = "Was ansteht: Rechnungen und Abos";
+"more.subtitle.comparative" = "Vergleiche deine Zeiträume nebeneinander";
+"more.subtitle.cashFlow" = "Was reinkommt und was rausgeht";
+"more.subtitle.records" = "Alle deine Bewegungen an einem Ort";
+"more.subtitle.groups" = "Teile Ausgaben ganz unkompliziert";
+"more.subtitle.profile" = "Dein Konto und deine Einstellungen";
+"more.toolsSection" = "Weitere Funktionen";
+
+
+/* MARK: MoreEditor-keys (more redesign Fase 2) */
+"more.editor.title" = "Anpassen";
+"more.editor.sectionsHeader" = "Reihenfolge der Bereiche";
+"more.editor.tabBarHint" = "Wähle und ordne die Tableiste unten";
+
+/* VoiceOver: expand a collapsible row */
+"accessibility.expand" = "Erweitern";
+
+/* VoiceOver: collapse a collapsible row */
+"accessibility.collapse" = "Reduzieren";
+
+/* Split type short label (segmented control) */
+"split.typeEqualShort" = "Gleich";
+
+/* Split type short label (segmented control) */
+"split.typePercentageShort" = "Prozent";
+
+/* Split type short label (segmented control) */
+"split.typeExactShort" = "Betrag";
+
+/* Split type short label (segmented control) */
+"split.typeSharesShort" = "Anteile";
+
+/* Reset-data screen description — groups-only mode */
+"settings.resetDataDescriptionGroupsOnly" = "Dieser Vorgang setzt dein Yala-Profil und deine Einstellungen auf einen Anfangszustand zurück. Deine Gruppen werden nicht gelöscht: Verwalte sie im Tab „Gruppen“.";
+
+/* Delete-data confirmation warning — groups-only mode */
+"settings.deleteDataWarningGroupsOnly" = "Diese Aktion ist unwiderruflich. Dein Yala-Profil und deine Einstellungen werden zurückgesetzt.";
+
+/* Apple Pay automation: failure notification title */
+"shortcut.notification.errorTitle" = "Zahlung nicht erfasst";
+
+/* Apple Pay automation: failure notification body */
+"shortcut.notification.errorBody" = "Wir konnten deine Apple-Pay-Zahlung nicht speichern. Öffne Yala, um sie manuell zu erfassen.";
+
+/* Card del grupo: otro miembro le debe al usuario actual (perspectiva theyOweMe) */
+"groups.card.theyOweYou" = "%@ schuldet Ihnen";
+
+/* Card del grupo: el usuario actual le debe a otro miembro (perspectiva iOwe) */
+"groups.card.youOwe" = "Sie schulden %@";
+
+/* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
+"inbox.groupExpenseAccountDraft.banner" = "Ausgabe aus der Gruppe %@. Weisen Sie nur das Konto zu, von dem das Geld stammt; Betrag und Datum verwaltet die Gruppe.";
+
+/* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
+"inbox.groupExpenseDraft.banner" = "Ausgabe aus der Gruppe %@. Wählen Sie nur eine Unterkategorie zum Einordnen; Betrag und Datum verwaltet die Gruppe.";
+
+/* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
+"inbox.groupSettlementDraft.banner" = "Abrechnung aus der Gruppe %@. Weisen Sie nur ein Konto zu; Betrag und Datum verwaltet die Gruppe.";
+
+/* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "Konto und Unterkategorie zuweisen";
+
+/* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "Ausgabe aus der Gruppe %@. Weisen Sie das Konto zu, von dem das Geld stammt, und wählen Sie eine Unterkategorie zum Einordnen; Betrag und Datum verwaltet die Gruppe.";
+
+/* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
+"inbox.errorGroupExpenseGone" = "Diese geteilte Ausgabe existiert nicht mehr in der Gruppe.";
+"whatsNew.v20.groups.title" = "Gruppen (Beta)";
+"whatsNew.v20.groups.description" = "Erstelle Gruppen, um Ausgaben zu teilen, und Yala berechnet, wer wem was schuldet. Keine Sorge: Alles läuft über deine private iCloud, niemals über unsere Server.";
+"whatsNew.v20.ai.title" = "Lerne Yala KI kennen";
+"whatsNew.v20.ai.description" = "Dein Finanzassistent mit künstlicher Intelligenz. Stelle ihm Fragen zu deinem Geld, lass ihn deine Ausgaben erfassen und erhalte klare Auswertungen deines Monats. Wie ein Freund, der sich mit Finanzen auskennt – nur eine Nachricht entfernt.";
+"whatsNew.v20.redesign.title" = "Komplett neu gestaltet";
+"whatsNew.v20.redesign.description" = "Wir haben Yala von Grund auf neu gestaltet: neue Widgets, übersichtlichere Zusammenfassungen in jedem Bereich und das neue Liquid-Glass-Design von iOS in der ganzen App. Außerdem haben wir viele Fehler behoben, damit sich alles flüssiger anfühlt.";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"common.vs" = "vs.";
+"transaction.exchangeRateShort %@" = "Kurs: %@";
+"cashFlowPlan.aiChipLabel" = "KI";
+"budgets.period.typeLabel" = "Zeitraumtyp";
+"budgets.alerts.thresholdPlaceholder" = "1–100";
+"accessibility.variationIncrease %@" = "Anstieg %@";
+"accessibility.variationDecrease %@" = "Rückgang %@";
+"accessibility.processing" = "Wird verarbeitet";
+"accessibility.removeTab %@" = "%@ entfernen";
+"accessibility.selectAtLeastOneColumn" = "Wählen Sie mindestens eine Spalte aus";
+"accessibility.completeRequiredFilters" = "Füllen Sie die erforderlichen Filter aus";
+"accessibility.exportingHint" = "Export läuft";
+"accessibility.assignAllCurrencies" = "Weisen Sie alle Währungen zu";
+
+/* Records: toggle to identify potential duplicates */
+"records.duplicates.menuTitle" = "Duplikate erkennen";
+
+/* Records: duplicate match criteria submenu */
+"records.duplicates.matchBy" = "Abgleichen nach";
+
+/* Records: turn off duplicate identification */
+"records.duplicates.deactivate" = "Deaktivieren";
+
+/* Records: empty state title when no duplicates found */
+"records.duplicates.emptyTitle" = "Keine Duplikate";
+
+/* Records: empty state message when no duplicates found */
+"records.duplicates.emptyMessage" = "Keine Einträge stimmen mit den gewählten Kriterien überein.";
+
+/* Records: banner title shown while duplicate mode active */
+"records.duplicates.bannerTitle" = "Mögliche Duplikate";
+
+/* Contextual note when a manual 'Sync now' tap can't reach iCloud (transient/offline). Non-alarming; reassures data is safe on device. */
+"icloud.forceSync.offlineNote" = "Wir konnten iCloud gerade nicht erreichen. Deine Daten sind sicher und werden synchronisiert, sobald wieder eine Verbindung besteht.";

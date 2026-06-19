@@ -117,41 +117,40 @@ struct ExportFiltersStepView: View {
 
     private var mainContent: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
+            ScrollView {
+                VStack(spacing: DS.Spacing.xxl) {
+                    Picker("", selection: $isExcludeMode) {
+                        Text(L10n.Filters.includeMode).tag(false)
+                        Text(L10n.Filters.excludeMode).tag(true)
+                    }
+                    .pickerStyle(.segmented)
 
-                ScrollView {
-                    VStack(spacing: DS.Spacing.xxl) {
-                        Picker("", selection: $isExcludeMode) {
-                            Text(L10n.Filters.includeMode).tag(false)
-                            Text(L10n.Filters.excludeMode).tag(true)
-                        }
-                        .pickerStyle(.segmented)
-
-                        SectionBox(title: L10n.Filters.filterOptions) {
-                            VStack(spacing: DS.Spacing.none) {
-                                periodRow
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                accountsContent
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                categoriesContent
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                tagsContent
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                needsContent
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                currencyContent
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                amountContent
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                noteContent
-                            }
+                    SectionBox(title: L10n.Filters.filterOptions) {
+                        VStack(spacing: DS.Spacing.none) {
+                            periodRow
+                            Divider().padding(.leading, DS.Spacing.lg)
+                            accountsContent
+                            Divider().padding(.leading, DS.Spacing.lg)
+                            categoriesContent
+                            Divider().padding(.leading, DS.Spacing.lg)
+                            tagsContent
+                            Divider().padding(.leading, DS.Spacing.lg)
+                            needsContent
+                            Divider().padding(.leading, DS.Spacing.lg)
+                            currencyContent
+                            Divider().padding(.leading, DS.Spacing.lg)
+                            amountContent
+                            Divider().padding(.leading, DS.Spacing.lg)
+                            noteContent
                         }
                     }
-                    .padding(.vertical, DS.Spacing.xxl)
-                    .padding(.horizontal, DS.Spacing.lg)
                 }
+                .padding(.vertical, DS.Spacing.xxl)
+                .padding(.horizontal, DS.Spacing.lg)
+                .dismissKeyboardOnTap()
             }
+            .scrollDismissesKeyboard(.interactively)
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Export.exportData)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -171,7 +170,7 @@ struct ExportFiltersStepView: View {
                         Text(L10n.Common.next)
                     }
                     .disabled(!isValid)
-                    .accessibilityHint(!isValid ? "Completa los filtros requeridos" : "")
+                    .accessibilityHint(!isValid ? L10n.Accessibility.completeRequiredFilters : "")
                 }
             }
         }
@@ -543,8 +542,6 @@ private struct ExportPeriodPickerSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PanelBackgroundView()
-
                 ScrollView {
                     VStack(spacing: DS.Spacing.none) {
                         // Standard periods
@@ -556,15 +553,11 @@ private struct ExportPeriodPickerSheet: View {
                         // Custom period section
                         customPeriodRow
                     }
-                    .background(.thCard)
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DS.Radius.lg)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 1)
-                    )
+                    .solidCard(radius: DS.Radius.lg)
                     .padding()
                 }
             }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Export.period)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

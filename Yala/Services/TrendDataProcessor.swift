@@ -36,12 +36,27 @@ struct TrendDataProcessor {
         /// The actual final balance before any smoothing is applied.
         /// Use this for KPI display instead of the last smoothed point.
         let finalBalance: Double
+        /// Dot suelto "hoy" con saldo vivo. No-nil solo cuando metric==.balance
+        /// y el período cubre hoy. La curva conserva sus puntos históricos
+        /// intactos; este anchor se renderiza separado en `TrendChartView`.
+        let liveAnchor: PanelViewModel.BarPoint?
+        /// Desglose por moneda nativa del saldo vivo (`liveAnchor`). Habilita
+        /// UX educativa multi-currency. Nil cuando `liveAnchor` es nil.
+        let liveAnchorNativeBalances: [String: Decimal]?
     }
 
     // MARK: - Main Processing Entry Point
 
     /// Process transactions into chart-ready data points.
     /// Both PanelViewModel and TrendsDetailViewModel should use this method.
+    ///
+    /// - Parameter liveBalanceOverride: Si se pasa y `metric == .balance`,
+    ///   construye un `liveAnchor` separado (dot suelto en `Date.now`) con
+    ///   el valor. La curva mantiene sus puntos históricos intactos — el
+    ///   dot lo renderiza `TrendChartView` aparte. `finalBalance` deriva de
+    ///   este valor cuando aplica para que el KPI siga reflejando el saldo
+    ///   al TC actual. El breakdown por moneda nativa se propaga vía
+    ///   `liveAnchorNativeBalances` para UX educativa multi-currency.
     static func processTrendData(
         transactions: [TransactionItem],
         accounts: [Account],
@@ -49,7 +64,8 @@ struct TrendDataProcessor {
         period: DetailPeriod,
         grouping: TrendGrouping,
         interval: DateInterval,
-        currencyCode: String
+        currencyCode: String,
+        liveBalanceOverride: LiveBalanceCalculator.LiveAnchorInfo? = nil
     ) -> TrendProcessingResult {
         let calendar = Calendar.current
 
@@ -93,7 +109,9 @@ struct TrendDataProcessor {
                 yDomain: 0...100,
                 totalIncome: 0,
                 totalExpense: 0,
-                finalBalance: 0
+                finalBalance: 0,
+                liveAnchor: nil,
+                liveAnchorNativeBalances: nil
             )
         }
 
@@ -114,7 +132,9 @@ struct TrendDataProcessor {
                 yDomain: 0...100,
                 totalIncome: totalIncome,
                 totalExpense: totalExpense,
-                finalBalance: 0
+                finalBalance: 0,
+                liveAnchor: nil,
+                liveAnchorNativeBalances: nil
             )
         }
 
@@ -182,9 +202,6 @@ struct TrendDataProcessor {
             rawPoints = Array(rawPoints[firstNonZeroIndex...])
         }
 
-        // Capture the actual final balance BEFORE smoothing for accurate KPI display
-        let finalBalance = rawPoints.last?.value ?? 0
-
         // 5. Apply smoothing only for balance on long periods (visual only)
         let shouldSmooth =
             smoothingPeriods.contains(period)
@@ -202,11 +219,32 @@ struct TrendDataProcessor {
             chartPoints = rawPoints
         }
 
-        // 6. Calculate Y domain based on raw points (not smoothed)
-        let yDomain = TrendProcessingHelper.calculateYDomain(
+        // 5.5. Construye el liveAnchor (dot suelto "hoy") cuando aplica.
+        //      `startOfDay` estabiliza el `BarPoint` para que `PanelTrendData`
+        //      Equatable mantenga su cache (sin esto, cada render cambia la
+        //      fecha por microsegundos e invalida toda la struct observable).
+        let liveAnchor: PanelViewModel.BarPoint?
+        let liveAnchorNativeBalances: [String: Decimal]?
+        if let info = liveBalanceOverride, metric == .balance, !rawPoints.isEmpty {
+            let anchorDate = calendar.startOfDay(for: Date.now)
+            liveAnchor = PanelViewModel.BarPoint(date: anchorDate, value: info.value)
+            liveAnchorNativeBalances = info.nativeBalances
+        } else {
+            liveAnchor = nil
+            liveAnchorNativeBalances = nil
+        }
+
+        let finalBalance = liveAnchor?.value ?? rawPoints.last?.value ?? 0
+
+        // 6. yDomain: extiende para incluir el liveAnchor si cae fuera del
+        //    rango histórico (sino quedaría clipped al renderizarse).
+        var yDomain = TrendProcessingHelper.calculateYDomain(
             for: rawPoints,
             isExpense: metric == .expense
         )
+        if let anchorValue = liveAnchor?.value {
+            yDomain = expand(yDomain, toInclude: anchorValue)
+        }
 
         return TrendProcessingResult(
             points: chartPoints,
@@ -214,11 +252,19 @@ struct TrendDataProcessor {
             yDomain: yDomain,
             totalIncome: totalIncome,
             totalExpense: totalExpense,
-            finalBalance: finalBalance
+            finalBalance: finalBalance,
+            liveAnchor: liveAnchor,
+            liveAnchorNativeBalances: liveAnchorNativeBalances
         )
     }
 
     // MARK: - Private Helpers
+
+    private static func expand(
+        _ range: ClosedRange<Double>, toInclude value: Double
+    ) -> ClosedRange<Double> {
+        min(range.lowerBound, value)...max(range.upperBound, value)
+    }
 
     /// Fill balance buckets with running balance calculation
     private static func fillBalanceBuckets(

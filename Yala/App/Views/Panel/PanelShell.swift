@@ -14,23 +14,17 @@ import SwiftUI
 struct PanelShell: View {
     @State private var viewModel = PanelViewModel()
     @State private var sheets = PanelSheetState()
-    @State private var showFABMenu = false
     @Environment(SessionState.self) private var sessionState
 
     var body: some View {
-        PanelView(viewModel: viewModel, sheets: $sheets, showFABMenu: $showFABMenu)
+        PanelView(viewModel: viewModel, sheets: $sheets)
             .modifier(PanelSheetsModifier(
                 sheets: $sheets,
                 viewModel: viewModel
             ))
             .modifier(PanelDataObservers(
                 viewModel: viewModel,
-                sessionState: sessionState,
-                showFABMenu: $showFABMenu
-            ))
-            .modifier(PanelSheetTriggers(
-                sessionState: sessionState,
-                sheets: $sheets
+                sessionState: sessionState
             ))
             .modifier(PanelSessionObservers(
                 viewModel: viewModel,
@@ -41,5 +35,66 @@ struct PanelShell: View {
                     SubscriptionView(source: sheets.subscriptionBannerSource)
                 }
             }
+            // Consumer gate: drain only when Panel is the active tab, so
+            // intents don't present behind a hidden view.
+            .routerConsumer(.panel) {
+                drainPanelIfActive()
+            }
+            .onChange(of: sessionState.selectedMainTab) { _, _ in
+                drainPanelIfActive()
+            }
+            // Gate .panel intents while ChatSheet is open: prevents draining
+            // sheet-presenting intents before ChatSheet's dismiss animation completes.
+            .onChange(of: sheets.showChatSheet) { _, isOpen in
+                if isOpen {
+                    AppRouter.shared.markUnready(.panel)
+                } else {
+                    AppRouter.shared.markReady(.panel)
+                    drainPanelIfActive()
+                }
+            }
+    }
+
+    private func drainPanelIfActive() {
+        guard sessionState.selectedMainTab == .panel else { return }
+        guard !sheets.showChatSheet else { return }
+        guard let intent = AppRouter.shared.drainNext(for: .panel) else { return }
+        handlePanelIntent(intent)
+    }
+
+    /// Drain handler for `.panel` intents. Mutates `sheets` which drive the
+    /// `.sheet(isPresented:)` bindings in PanelSheetsModifier.
+    private func handlePanelIntent(_ intent: RouterIntent) {
+        switch intent {
+        case .presentInboxSheet:
+            sheets.showInbox = true
+        case .presentSharedImage:
+            sheets.showImageSelection = true
+        case .presentNewTransaction:
+            sheets.showNewTransaction = true
+        case .presentNewTransactionFromChatDraft(let prefill):
+            sessionState.pendingChatDraftPrefill = prefill
+            sessionState.showNewTransactionFromChat = true
+        case .presentVoiceEntry:
+            sheets.showVoiceRecording = true
+        case .presentImageEntry:
+            sheets.showImageSelection = true
+        case .presentUpgradeSheet(let feature):
+            switch feature {
+            case .voice:
+                sheets.showUpgradeForVoice = true
+            case .image:
+                sheets.showUpgradeForImage = true
+            case .accounts:
+                sheets.showUpgradeForAccounts = true
+            case .chat:
+                sheets.showUpgradeForChat = true
+            }
+        case .requestAIConsent(let input):
+            sheets.pendingAIInput = input
+            sheets.showAIConsentAlert = true
+        default:
+            break  // Non-panel intents ignored (router shouldn't route them here).
+        }
     }
 }

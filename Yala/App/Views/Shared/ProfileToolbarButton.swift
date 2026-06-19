@@ -13,7 +13,7 @@ import UIKit
 struct ProfileToolbarButton: View {
     // MARK: - Data Access
 
-    @AppStorage("userProfileIcon") private var userProfileIcon: String = ""
+    @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.yalaTheme) private var theme
 
     private var profileStorage: ProfileImageStorage { .shared }
@@ -24,7 +24,7 @@ struct ProfileToolbarButton: View {
 
     /// The icon to display (custom or default)
     private var displayIcon: String {
-        userProfileIcon.isEmpty ? "person.fill" : userProfileIcon
+        appPreferences.userProfileIcon.isEmpty ? "person.fill" : appPreferences.userProfileIcon
     }
 
     // MARK: - Properties
@@ -33,7 +33,7 @@ struct ProfileToolbarButton: View {
 
     // MARK: - Constants
 
-    private let size: CGFloat = 40
+    private let size: CGFloat = DS.Icon.badgeLarge
     private let ringWidth: CGFloat = 2
     private let sparkBadgeSize: CGFloat = 14
 
@@ -91,7 +91,7 @@ struct ProfileToolbarButton: View {
     private var ringGradient: LinearGradient {
         isProUser
             ? LinearGradient(
-                colors: [.yellow, .orange],
+                colors: DS.Gradients.proBadge,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
               )
@@ -147,4 +147,5 @@ struct ProfileToolbarItem: ToolbarContent {
     }
     .padding()
     .background(.thBackground)
+    .previewAppPreferences()
 }

@@ -11,6 +11,7 @@ import SwiftUI
 
 struct AccountCardView: View {
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     let account: Account
     /// Saldo actual de la cuenta en su moneda nativa, ya calculado externamente.
@@ -44,9 +45,12 @@ struct AccountCardView: View {
         let isExcluded = isSelected && isExcludeMode
         let isHighlighted = isSelected && !isExcludeMode
 
+        // Las cuentas de sistema (`Grupos [moneda]`) usan un gris neutro adaptativo en vez
+        // del color de la paleta: no son cuentas reales del usuario y no deben competir
+        // visualmente con sus cuentas propias. `Color(.systemGray)` es dark-mode safe.
         let backgroundColor: Color =
             isHighlighted
-            ? Color(hex: account.colorHex)
+            ? (account.isSystemAccount ? Color(.systemGray) : Color(hex: account.colorHex))
             : theme.card.opacity(0.95)
 
         let foregroundColor: Color =
@@ -82,11 +86,12 @@ struct AccountCardView: View {
 
                 Spacer(minLength: 0)
 
-                Text(
-                    formattedAmount(currentBalance)
+                AmountText(
+                    value: currentBalance,
+                    currencyCode: normalizeCurrencyCode(account.currencyCode),
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
+                    tint: .color(foregroundColor)
                 )
-                .font(DS.Typography.headline)
-                .foregroundStyle(foregroundColor)
             }
             .padding(DS.Spacing.md)
             .frame(maxWidth: .infinity, minHeight: 96, alignment: .leading)
@@ -99,7 +104,9 @@ struct AccountCardView: View {
                     .stroke(DS.Colors.borderDark, lineWidth: 1)
             )
 
-            if let onEditTapped {
+            // Las cuentas de sistema no son editables → nunca mostramos el botón de edición
+            // (además evita que quede oculto detrás del badge "Sistema" en la misma esquina).
+            if let onEditTapped, !account.isSystemAccount {
                 Button {
                     onEditTapped()
                 } label: {
@@ -107,7 +114,7 @@ struct AccountCardView: View {
                         .font(DS.Typography.labelTiny)
                         .foregroundStyle(isHighlighted ? Color.white : theme.primaryText)
                         .padding(DS.Spacing.xs)
-                        .background(.ultraThinMaterial, in: Circle())
+                        .glassEffect(.regular.interactive(), in: Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(L10n.Accessibility.editAccount)
@@ -122,6 +129,18 @@ struct AccountCardView: View {
                     .padding(DS.Spacing.sm)
                     .accessibilityHidden(true)
             }
+
+            // A0-Bridge: badge "Sistema" para cuentas virtuales `Grupos [moneda]`.
+            if account.isSystemAccount {
+                Text(L10n.Account.System.badge)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(theme.secondaryText)
+                    .padding(.horizontal, DS.Spacing.xs)
+                    .padding(.vertical, DS.Spacing.xxs)
+                    .glassEffect(.regular, in: Capsule())
+                    .padding(DS.Spacing.sm)
+                    .accessibilityLabel(L10n.Account.System.badge)
+            }
         }
         .opacity(isExcluded ? 0.5 : 1.0)
         .accessibilityElement(children: .combine)
@@ -133,8 +152,7 @@ struct AccountCardView: View {
     }
 
     private func formattedAmount(_ value: Double) -> String {
-        YalaFormatter.currency(
-            value: value, currencyCode: normalizeCurrencyCode(account.currencyCode))
+        appPreferences.currency(value, currencyCode: normalizeCurrencyCode(account.currencyCode))
     }
 
 }

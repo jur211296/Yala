@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OSLog
 import SwiftData
 import WidgetKit
 
@@ -91,6 +92,126 @@ final class DraftService {
     ) throws -> TransactionItem {
         let context = try requireContext()
 
+        // Draft opt-in de settlement (bridge OFF): crea TX manual independiente SIN bridge —
+        // el virtual del settlement ya es de signo opuesto al real, compensa sin doble conteo.
+        // (Los opt-in de groupExpense NO se bifurcan aquí: caen al path de cuenta de abajo —
+        // crea la TX real Y reconcilia el virtual vía el bridge (+lent, sin doble conteo
+        // B6-25). El flag opt-in no altera ese flujo, así que comparten función.)
+        if draft.optInPersonalOnly, draft.sourceType == .groupSettlement {
+            return try approveGroupSettlementOptInPersonalDraft(draft, currencyConverter: currencyConverter, context: context)
+        }
+
+        // M6: drafts groupExpense Caso A pendiente cuenta (incluye opt-in personal). Crea TX
+        // cuenta real con splitExpenseID + invoca el bridge → regenera/reconcilia la TX virtual.
+        // Detección: groupExpense + targetTransactionID==nil + needsUserInput contains "account".
+        if draft.sourceType == .groupExpense,
+           draft.targetTransactionID == nil,
+           draft.needsUserInput.contains(DraftInputRequirement.account) {
+            return try approveGroupExpenseAccountDraft(draft, currencyConverter: currencyConverter, context: context)
+        }
+
+        // Drafts groupExpense apuntan a una TX virtual con subcategory=nil creada por
+        // GroupTransactionBridge. Aprobar = asignar subcat a la TX existente, no crear una nueva.
+        if draft.sourceType == .groupExpense, let subcategory = draft.subcategory,
+           let splitID = draft.splitExpenseID {
+            let descriptor = FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID == splitID && $0.subcategory == nil }
+            )
+            if let targetTx = try context.fetch(descriptor).first {
+                targetTx.subcategory = subcategory
+                targetTx.category = subcategory.safeCategory
+                cacheDisplayValues(draft)
+                context.delete(draft)
+                try context.save()
+                SessionState.shared.incrementDataVersion()
+                TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
+                return targetTx
+            }
+            // Target con subcategory==nil ausente: o el gasto ya se clasificó en otro device (y
+            // sincronizó), o el expense se borró remotamente. NO caer al path genérico de abajo
+            // — insertaría una TransactionItem nueva SIN splitExpenseID (fantasma duplicada, ya
+            // que account/amount/subcategory no-nil pasarían los guard let). Resolver según
+            // exista CUALQUIER TX para este splitExpenseID.
+            let logger = Logger(subsystem: "com.yala", category: "GroupBridge")
+            let anyTxDescriptor = FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID == splitID }
+            )
+            // Caso A puede tener 2 TX con el mismo splitExpenseID (la real en cuenta del usuario
+            // + la virtual "Préstamo a grupos" en cuenta sistema). Preferir la real para el
+            // retorno idempotente; .first como fallback determinista si solo hubiera virtuales.
+            let candidateTxs = try context.fetch(anyTxDescriptor)
+            let existingTx = candidateTxs.first { $0.account?.isSystemAccount == false } ?? candidateTxs.first
+            cacheDisplayValues(draft)
+            context.delete(draft)
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+
+            if case .discardRedundant = GroupDraftFinalizationLogic.resolveMissingPointerTarget(
+                existsAnyTxForSplitID: existingTx != nil
+            ), let existingTx {
+                // Idempotente: el draft era redundante (la TX ya existía, clasificada en otro device).
+                logger.error(
+                    "groupExpense draft for splitExpenseID=\(splitID, privacy: .public) already classified elsewhere; discarded redundant draft."
+                )
+                TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
+                return existingTx
+            }
+            // No existe ninguna TX → el expense desapareció. El draft stale ya se limpió arriba;
+            // propagar error claro (la sheet de finalización lo muestra en su catch).
+            logger.error(
+                "groupExpense draft target TX missing and no TX exists for splitExpenseID=\(splitID, privacy: .public); deleted stale draft."
+            )
+            throw DraftServiceError.groupExpenseTargetMissing
+        }
+
+        // A0-Bridge V2.0 (D7): drafts groupSettlement crean TX nueva en cuenta real
+        // (subcat sistema "Liquidación enviada/recibida" ya asignada por el bridge).
+        // La TX queda como TX MANUAL INDEPENDIENTE — NO setear splitSettlementID/splitGroupZoneID.
+        // Razón: el bridge hace delete+recreate sobre TX con splitSettlementID al editar el
+        // settlement. Mantener esos campos haría que una edición posterior del settlement
+        // borre la TX manual del user (ej: transferiste vía Yape, después editas el monto del
+        // settlement → tu TX en Yape desaparece). La TX virtual (lado bridge) sigue ligada
+        // al settlement y se regenera correctamente.
+        if draft.sourceType == .groupSettlement, let account = draft.account,
+           let amount = draft.amount, let subcategory = draft.subcategory {
+            let preferredCode = CurrencyDefaults.currentPreferred
+            let amountInPreferred = currencyConverter.convert(
+                Decimal(amount),
+                from: account.currencyCode,
+                to: preferredCode,
+                on: draft.effectiveDate,
+                context: context
+            )
+
+            let exchangeRate: Double = abs(amount) > 0.0001
+                ? (amountInPreferred as NSDecimalNumber).doubleValue / amount
+                : 1.0
+
+            let tx = TransactionItem(
+                date: draft.effectiveDate,
+                amount: amount,
+                currencyCode: account.currencyCode
+            )
+            tx.note = draft.note.isEmpty ? nil : draft.note
+            tx.account = account
+            tx.subcategory = subcategory
+            tx.category = subcategory.safeCategory
+            tx.exchangeRate = abs(exchangeRate)
+            tx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
+            tx.preferredCurrencyCode = preferredCode
+            // D7: NO setear tx.splitSettlementID ni tx.splitGroupZoneID — TX queda manual independiente.
+
+            context.insert(tx)
+            cacheDisplayValues(draft)
+            context.delete(draft)
+            try context.save()
+
+            SessionState.shared.incrementDataVersion()
+            WidgetDataCache.updateCache(context: context)
+            TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
+            return tx
+        }
+
         // Validate: block future dates
         guard draft.effectiveDate <= Date.now else {
             throw DraftServiceError.futureDateNotAllowed
@@ -133,7 +254,18 @@ final class DraftService {
         transaction.account = account
         transaction.subcategory = subcategory
         transaction.category = subcategory.safeCategory
-        transaction.tags = draft.tags
+        // Read draft tags via CSV mirror — evita perder tags si la M2M del draft
+        // está lazy nil tras CloudKit sync (mismo bug que motivó el CSV mirror).
+        if let draftTagIDs = draft.resolvedTagIDs(scheduleBackfill: true), !draftTagIDs.isEmpty {
+            do {
+                let resolved = try TagResolver.fetch(ids: draftTagIDs, in: context)
+                transaction.setTags(from: resolved)
+            } catch {
+                #if DEBUG
+                print("DraftService: approveDraft tag fetch error: \(error)")
+                #endif
+            }
+        }
         transaction.exchangeRate = abs(exchangeRate)
         transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
         transaction.preferredCurrencyCode = preferredCode
@@ -170,14 +302,14 @@ final class DraftService {
         UserDefaults.standard.set(txCount, forKey: "transactionsSavedCount")
 
         if ReviewPromptService.shouldPrompt(transactionCount: txCount) {
-            SessionState.shared.shouldRequestReview = true
+            RouterEntryGate.shared.submit(.requestAppStoreReview)
         }
 
         // Check milestone upgrade for Free users
         if !FeatureGateService.shared.isProUser,
            ProUpsellService.shared.shouldShowMilestone(transactionCount: txCount),
            let milestone = ProUpsellService.shared.nextMilestone(for: txCount) {
-            SessionState.shared.pendingMilestoneUpgrade = milestone
+            RouterEntryGate.shared.submit(.presentMilestoneUpgrade(milestone))
             ProUpsellService.shared.markMilestoneShown(milestone)
         }
 
@@ -199,10 +331,28 @@ final class DraftService {
     ) throws -> [TransactionItem] {
         let context = try requireContext()
         var transactions: [TransactionItem] = []
+        var genericApprovedCount = 0
         let preferredCode = CurrencyDefaults.currentPreferred
 
         for draft in drafts where draft.isReadyToApprove {
-            // Skip drafts with future dates
+            // Drafts de grupo → delegar a approveDraft (SSOT del ruteo de grupo). El path
+            // genérico de abajo insertaría una TransactionItem NUEVA sin splitExpenseID →
+            // doble conteo del gasto + la TX virtual del bridge quedaría sin subcategoría.
+            // (Un draft Caso A pendiente-cuenta cae al branch TX-puntero de approveDraft —no
+            // al que crea TX real— porque bulkUpdateAccount ya vació needsUserInput.)
+            if BulkApproveRoutingLogic.destination(isFromGroup: draft.isFromGroup) == .delegateToIndividual {
+                do {
+                    transactions.append(try approveDraft(draft, currencyConverter: currencyConverter))
+                } catch {
+                    #if DEBUG
+                    print("DraftService.bulkApprove: group draft delegation failed: \(error)")
+                    #endif
+                    // Resiliente: el draft queda pendiente para finalizar individual; sigue el resto.
+                }
+                continue
+            }
+
+            // Skip drafts with future dates (solo path genérico personal).
             guard draft.effectiveDate <= Date.now else { continue }
 
             guard let account = draft.account,
@@ -235,7 +385,18 @@ final class DraftService {
             transaction.account = account
             transaction.subcategory = subcategory
             transaction.category = subcategory.safeCategory
-            transaction.tags = draft.tags
+            // Read draft tags via CSV mirror — evita perder tags si la M2M del draft
+            // está lazy nil tras CloudKit sync.
+            if let draftTagIDs = draft.resolvedTagIDs(scheduleBackfill: true), !draftTagIDs.isEmpty {
+                do {
+                    let resolved = try TagResolver.fetch(ids: draftTagIDs, in: context)
+                    transaction.setTags(from: resolved)
+                } catch {
+                    #if DEBUG
+                    print("DraftService: approveDraft tag fetch error: \(error)")
+                    #endif
+                }
+            }
             transaction.exchangeRate = abs(exchangeRate)
             transaction.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
             transaction.preferredCurrencyCode = preferredCode
@@ -264,17 +425,20 @@ final class DraftService {
             }
 
             transactions.append(transaction)
+            genericApprovedCount += 1
         }
 
         try context.save()
 
-        // Count all approved drafts toward transaction total
-        if !transactions.isEmpty {
-            let txCount = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + transactions.count
+        // Count approved drafts toward transaction total — SOLO los personales inline.
+        // Los drafts de grupo delegados a approveDraft NO cuentan (sus branches de grupo no
+        // tocan el counter ni el review prompt), consistente con el flujo individual.
+        if genericApprovedCount > 0 {
+            let txCount = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + genericApprovedCount
             UserDefaults.standard.set(txCount, forKey: "transactionsSavedCount")
 
             if ReviewPromptService.shouldPrompt(transactionCount: txCount) {
-                SessionState.shared.shouldRequestReview = true
+                RouterEntryGate.shared.submit(.requestAppStoreReview)
             }
         }
 
@@ -293,6 +457,12 @@ final class DraftService {
     // MARK: - Reject Operations
 
     func rejectDraft(_ draft: InboxDraft) throws {
+        // A0-Bridge: drafts de grupos no se rechazan desde Inbox.
+        // Solo se eliminan desde el grupo (delete del expense/settlement origen).
+        if draft.isFromGroup {
+            throw DraftServiceError.cannotRejectGroupDraft
+        }
+
         let context = try requireContext()
 
         // Cache values for display in archived list
@@ -310,6 +480,8 @@ final class DraftService {
         let context = try requireContext()
 
         for draft in drafts {
+            // A0-Bridge: skip drafts de grupos (silent skip en bulk).
+            if draft.isFromGroup { continue }
             cacheDisplayValues(draft)
             draft.status = .rejected
             draft.updatedAt = Date.now
@@ -321,6 +493,11 @@ final class DraftService {
     // MARK: - Delete Operations
 
     func deleteDraft(_ draft: InboxDraft) throws {
+        // A0-Bridge: drafts de grupos no se eliminan desde Inbox.
+        // Solo se eliminan al borrar el expense/settlement origen en el grupo.
+        if draft.isFromGroup {
+            throw DraftServiceError.cannotDeleteGroupDraft
+        }
         let context = try requireContext()
         context.delete(draft)
         try context.save()
@@ -329,6 +506,8 @@ final class DraftService {
     func bulkDelete(_ drafts: [InboxDraft]) throws {
         let context = try requireContext()
         for draft in drafts {
+            // A0-Bridge: skip drafts de grupos (silent skip en bulk).
+            if draft.isFromGroup { continue }
             context.delete(draft)
         }
         try context.save()
@@ -394,6 +573,301 @@ final class DraftService {
 
         try context.save()
     }
+
+    // MARK: - M6: Approve groupExpense Caso A pendiente cuenta
+
+    /// Crea TX cuenta real con `splitExpenseID` setteado e invoca el bridge para regenerar/
+    /// reconciliar la TX virtual. La TX cuenta real recién creada activa el path preserve+update
+    /// del bridge (no se duplica). Cubre tanto drafts auto (pending-account) como opt-in personal
+    /// (bridge OFF) — el flag `optInPersonalOnly` no altera este flujo: con bridge OFF el bridge
+    /// reconcilia el virtual a `+lent` (sin doble conteo B6-25), con bridge ON regenera el par.
+    ///
+    /// **Orden de operaciones**:
+    /// 1. Guard: campos requeridos del draft.
+    /// 2. Fetch SplitExpense + SplitGroup origen.
+    /// 3. Crear TX cuenta real con todos los fields del expense.
+    /// 4. Set bridge.skipDraftCleanup=true (defer reset) para que el bridge no borre el draft activo.
+    /// 5. Invocar bridge.bridgeExpense(...) → preserve+update detecta TX recién creada,
+    ///    regenera virtual lent.
+    /// 6. Cache display + delete draft + save.
+    private func approveGroupExpenseAccountDraft(
+        _ draft: InboxDraft,
+        currencyConverter: CurrencyConverter,
+        context: ModelContext
+    ) throws -> TransactionItem {
+        // 1. Guards.
+        guard let account = draft.account else {
+            throw DraftServiceError.missingAccount
+        }
+        guard let amount = draft.amount else {
+            throw DraftServiceError.missingAmount
+        }
+        guard let splitID = draft.splitExpenseID,
+              let zoneID = draft.splitGroupZoneID else {
+            // Inválido: draft groupExpense sin splitExpenseID/zoneID — no pertenece al M6 path.
+            throw DraftServiceError.missingAccount  // reuse error code; UX displays generic message.
+        }
+        // SwiftData no soporta `$0.id.uuidString == String` con tipos valor — convertir antes.
+        guard let splitUUID = UUID(uuidString: splitID) else {
+            // splitExpenseID malformado: no se puede resolver SplitExpense origen.
+            throw DraftServiceError.missingAccount
+        }
+
+        // 2. Fetch SplitExpense + SplitGroup.
+        let expenseDescriptor = FetchDescriptor<SplitExpense>(
+            predicate: #Predicate { $0.id == splitUUID }
+        )
+        guard let expense = try context.fetch(expenseDescriptor).first else {
+            // Expense origen ya no existe (sync race con remote delete) — limpia draft y aborta.
+            context.delete(draft)
+            try context.save()
+            throw DraftServiceError.missingAccount
+        }
+        let groupDescriptor = FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { $0.cloudKitZoneID == zoneID }
+        )
+        guard let group = try context.fetch(groupDescriptor).first else {
+            throw DraftServiceError.missingAccount
+        }
+
+        // 3. Crear TX cuenta real. Currency desde el expense (fuente de verdad del grupo).
+        // Enfoque B: si el user asignó subcategoría (sheet "cuenta + categoría"), usarla
+        // (override del auto-match). Si no, fallback al auto-match por nombre desde el grupo.
+        let realSubcat: Subcategory?
+        if let userAssigned = draft.subcategory {
+            realSubcat = userAssigned
+        } else {
+            let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
+            realSubcat = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
+        }
+        let preferredCode = CurrencyDefaults.currentPreferred
+        let amountInPreferred = currencyConverter.convert(
+            Decimal(amount),
+            from: expense.currencyCode,
+            to: preferredCode,
+            on: draft.effectiveDate,
+            context: context
+        )
+        let exchangeRate: Double = abs(amount) > 0.0001
+            ? (amountInPreferred as NSDecimalNumber).doubleValue / amount
+            : 1.0
+
+        let realTx = TransactionItem(
+            date: expense.date,
+            amount: amount,  // -totalAmount (draft fue creado con -expense.amount).
+            currencyCode: expense.currencyCode,
+            note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
+            category: realSubcat?.safeCategory,
+            subcategory: realSubcat,
+            account: account
+        )
+        realTx.splitExpenseID = splitID
+        realTx.splitGroupZoneID = expense.groupZoneID
+        realTx.splitTotalAmount = expense.amount
+        realTx.splitType = expense.splitType
+        realTx.exchangeRate = abs(exchangeRate)
+        realTx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
+        realTx.preferredCurrencyCode = preferredCode
+        context.insert(realTx)
+
+        // 4 + 5. Invocar bridge con flag para no borrar este draft activo.
+        // Bridge detecta realTx existente → preserve+update path → regenera virtual lent.
+        // El closure `withSkippedDraftCleanup` garantiza reset del flag aunque body lance.
+        do {
+            try GroupTransactionBridge.shared.withSkippedDraftCleanup {
+                try GroupTransactionBridge.shared.bridgeExpense(
+                    expense,
+                    in: group,
+                    accountForCurrentUser: account,
+                    isRemoteSync: false,
+                    shouldSave: false  // save abajo en step 6.
+                )
+            }
+        } catch {
+            #if DEBUG
+            print("DraftService.approveGroupExpenseAccountDraft: bridge failed: \(error)")
+            #endif
+            // Bridge falló — TX real ya creada, draft permanece para retry.
+            throw error
+        }
+
+        // 6. Cura de punteros residuales (B6-26): si la TX real quedó clasificada, tras la
+        // reconciliación ninguna TX del gasto queda con subcat nil — cualquier puntero
+        // [.subcategory] hermano (creado por un re-bridge mientras este draft esperaba)
+        // apunta a nada y quedaría huérfano en el Inbox. Si realSubcat es nil, se preserva:
+        // sigue siendo la vía para clasificar la TX real recién creada.
+        if realSubcat != nil {
+            let siblings = try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitExpenseID == splitID }
+            ))
+            for pointer in siblings where pointer.persistentModelID != draft.persistentModelID
+                && !pointer.optInPersonalOnly
+                && pointer.targetTransactionID == nil
+                && pointer.needsUserInput.contains(DraftInputRequirement.subcategory)
+                && !pointer.needsUserInput.contains(DraftInputRequirement.account) {
+                context.delete(pointer)
+            }
+        }
+
+        // Cache + delete draft + save.
+        cacheDisplayValues(draft)
+        context.delete(draft)
+        try context.save()
+
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
+        return realTx
+    }
+
+    // MARK: - Opt-In Personal Draft (bridge effective OFF flow)
+
+    /// Crea un draft `groupExpense` con `optInPersonalOnly=true` para que el user pueda
+    /// aprobar más tarde la creación de TX real en cuenta personal. La TX virtual del
+    /// expense ya fue creada por el bridge en el save original (branch `optoutVirtualOnly`).
+    ///
+    /// Enfoque B (B6-26): si el gasto no hereda subcategoría del grupo, el draft pide cuenta
+    /// **y** subcategoría juntas (sheet combinado) en vez de solo cuenta — alineado con el draft
+    /// del path auto-bridge (`createDraftCaseA`). Así el Inbox no muestra dos drafts (cuenta +
+    /// subcategoría) ni deja un puntero `[.subcategory]` huérfano cuando el virtual se reconcilia.
+    func createGroupExpenseOptInDraft(
+        splitExpenseID: String,
+        groupZoneID: String
+    ) throws {
+        let context = try requireContext()
+        guard let splitUUID = UUID(uuidString: splitExpenseID) else {
+            throw DraftServiceError.missingAccount
+        }
+        let descriptor = FetchDescriptor<SplitExpense>(
+            predicate: #Predicate { $0.id == splitUUID }
+        )
+        guard let expense = try context.fetch(descriptor).first else {
+            throw DraftServiceError.missingAccount
+        }
+
+        // Espeja la resolución de subcategoría del bridge (`bridgeExpense`): un match a una
+        // subcat de SISTEMA no cuenta como clasificado. Si no se resuelve → pedir subcategoría.
+        let matchedSubcat = GroupTransactionBridge.matchSubcategory(name: expense.subcategoryName, context: context)
+        let resolvedSubcat: Subcategory? = (matchedSubcat?.isAnySystem == true) ? nil : matchedSubcat
+        let needsSubcategory = resolvedSubcat == nil
+
+        // El bridge ya creó (en el save del gasto) un draft TX-puntero `[.subcategory]` para el
+        // virtual `-myShare` cuando la subcat no se resolvió. El draft opt-in combinado ya pide
+        // la subcategoría, así que ese puntero queda redundante — y su virtual se borra al
+        // aprobar (reconciliación B6-25), dejándolo huérfano. Borrarlo aquí evita el doble draft
+        // y el huérfano (B6-26). Solo el puntero solo-subcategoría del mismo gasto; el resto de
+        // drafts se preserva.
+        if needsSubcategory {
+            let siblings = try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitExpenseID == splitExpenseID }
+            ))
+            for pointer in siblings where !pointer.optInPersonalOnly
+                && pointer.targetTransactionID == nil
+                && pointer.needsUserInput.contains(DraftInputRequirement.subcategory)
+                && !pointer.needsUserInput.contains(DraftInputRequirement.account) {
+                context.delete(pointer)
+            }
+        }
+
+        let draft = InboxDraft(
+            note: expense.expenseDescription,
+            amount: -expense.amount,
+            date: expense.date,
+            sourceType: .groupExpense,
+            confidenceAmount: 1.0,
+            confidenceDate: 1.0,
+            confidenceMerchant: 1.0,
+            confidenceSubcategory: needsSubcategory ? nil : 1.0,
+            needsUserInput: GroupDraftFinalizationLogic.caseADraftNeedsUserInput(needsSubcategory: needsSubcategory),
+            splitExpenseID: splitExpenseID,
+            splitGroupZoneID: groupZoneID,
+            targetTransactionID: nil,
+            optInPersonalOnly: true
+        )
+        context.insert(draft)
+        try context.save()
+    }
+
+    /// Crea un draft `groupSettlement` con `optInPersonalOnly=true` para opt-in Caso C.
+    func createGroupSettlementOptInDraft(
+        splitSettlementID: String,
+        groupZoneID: String
+    ) throws {
+        let context = try requireContext()
+        guard let settlementUUID = UUID(uuidString: splitSettlementID) else {
+            throw DraftServiceError.missingAccount
+        }
+        let descriptor = FetchDescriptor<SplitSettlement>(
+            predicate: #Predicate { $0.id == settlementUUID }
+        )
+        guard let settlement = try context.fetch(descriptor).first else {
+            throw DraftServiceError.missingAccount
+        }
+        let draft = InboxDraft(
+            note: settlement.note ?? "",
+            amount: -settlement.amount,
+            date: settlement.date,
+            sourceType: .groupSettlement,
+            confidenceAmount: 1.0,
+            confidenceDate: 1.0,
+            confidenceMerchant: 1.0,
+            confidenceSubcategory: 1.0,
+            needsUserInput: [DraftInputRequirement.account],
+            splitExpenseID: nil,
+            splitGroupZoneID: groupZoneID,
+            splitSettlementID: splitSettlementID,
+            targetTransactionID: nil,
+            optInPersonalOnly: true
+        )
+        context.insert(draft)
+        try context.save()
+    }
+
+    /// Aprueba un draft `groupSettlement` opt-in: crea TX manual ligada al settlement
+    /// SIN invocar el bridge (TX virtual ya existe). NO setea `splitSettlementID` en la
+    /// TX (mismo patrón M6/D7 — preserva edición independiente).
+    private func approveGroupSettlementOptInPersonalDraft(
+        _ draft: InboxDraft,
+        currencyConverter: CurrencyConverter,
+        context: ModelContext
+    ) throws -> TransactionItem {
+        guard let account = draft.account else { throw DraftServiceError.missingAccount }
+        guard let amount = draft.amount else { throw DraftServiceError.missingAmount }
+
+        let preferredCode = CurrencyDefaults.currentPreferred
+        let amountInPreferred = currencyConverter.convert(
+            Decimal(amount), from: account.currencyCode, to: preferredCode,
+            on: draft.effectiveDate, context: context
+        )
+        let exchangeRate: Double = abs(amount) > 0.0001
+            ? (amountInPreferred as NSDecimalNumber).doubleValue / amount
+            : 1.0
+
+        let tx = TransactionItem(
+            date: draft.effectiveDate,
+            amount: amount,
+            currencyCode: account.currencyCode
+        )
+        tx.note = draft.note.isEmpty ? nil : draft.note
+        tx.account = account
+        if let subcategory = draft.subcategory {
+            tx.subcategory = subcategory
+            tx.category = subcategory.safeCategory
+        }
+        tx.exchangeRate = abs(exchangeRate)
+        tx.amountInPreferredCurrency = (amountInPreferred as NSDecimalNumber).doubleValue
+        tx.preferredCurrencyCode = preferredCode
+        // NO setear splitSettlementID / splitGroupZoneID — preserva edición independiente.
+
+        context.insert(tx)
+        cacheDisplayValues(draft)
+        context.delete(draft)
+        try context.save()
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
+        return tx
+    }
 }
 
 // MARK: - Errors
@@ -405,6 +879,13 @@ enum DraftServiceError: LocalizedError {
     case missingSubcategory
     case futureDateNotAllowed
     case saveFailed(Error)
+    /// A0-Bridge: drafts de grupos (groupExpense/groupSettlement) no permiten eliminar/rechazar.
+    /// Solo se borran al eliminar el expense/settlement origen en el grupo.
+    case cannotDeleteGroupDraft
+    case cannotRejectGroupDraft
+    /// Draft-puntero `.groupExpense` cuyo expense origen se borró remotamente (no existe TX).
+    /// El draft stale ya se limpió; este error informa al usuario en la sheet de finalización.
+    case groupExpenseTargetMissing
 
     var errorDescription: String? {
         switch self {
@@ -420,6 +901,10 @@ enum DraftServiceError: LocalizedError {
             return L10n.Inbox.errorFutureDate
         case .saveFailed(let error):
             return "DraftService: Save failed - \(error.localizedDescription)"
+        case .cannotDeleteGroupDraft, .cannotRejectGroupDraft:
+            return L10n.Inbox.groupDraftCannotDelete
+        case .groupExpenseTargetMissing:
+            return L10n.Inbox.errorGroupExpenseGone
         }
     }
 }

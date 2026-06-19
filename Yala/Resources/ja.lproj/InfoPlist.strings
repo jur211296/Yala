@@ -1,0 +1,3 @@
+"NSMicrophoneUsageDescription" = "Yalaは、音声入力で支出を作成するためにマイクを使用します。音声は文字起こしのためにOpenAIに送信されます。";
+"NSPhotoLibraryUsageDescription" = "Yalaは、スクリーンショットや領収書から支出の詳細を抽出するために写真を使用します。選択した画像はOpenAIに送信されます。";
+"NSFaceIDUsageDescription" = "Yalaは、財務情報を保護するためにFace IDを使用します。";

@@ -12,6 +12,7 @@ struct SaveAsFavoriteSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = SaveAsFavoriteViewModel()
 
@@ -99,16 +100,15 @@ struct SaveAsFavoriteSheet: View {
                     ) {
                         saveFavorite()
                     }
+                    .accessibilityIdentifier("save_favorite_save_button")
                     .padding(.top, DS.Spacing.md)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxl)
+                .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(
-                PanelBackgroundView()
-                    .dismissKeyboardOnTap()
-            )
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Action.saveAsFavorite)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -147,11 +147,12 @@ struct SaveAsFavoriteSheet: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "star")
                     .foregroundStyle(.secondary)
-                    .frame(width: 24)
+                    .frame(width: DS.Icon.badgeSmall)
                     .accessibilityHidden(true)
 
                 TextField(L10n.Favorites.namePlaceholder, text: $name)
                     .focused($isNameFocused)
+                    .accessibilityIdentifier("save_favorite_name_field")
             }
             .padding()
         }
@@ -301,8 +302,12 @@ struct SaveAsFavoriteSheet: View {
             Spacer()
 
             if includeAmount && amount > 0 {
-                Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode, forceFullPrecision: true))
-                    .foregroundStyle(.secondary)
+                AmountText(
+                    value: amount,
+                    currencyCode: currencyCode,
+                    tint: .secondary,
+                    forceFullPrecision: true
+                )
 
                 Button { includeAmount = false } label: {
                     Image(systemName: "xmark.circle.fill")
@@ -349,10 +354,7 @@ struct SaveAsFavoriteSheet: View {
 
     private var tagSelectorSheet: some View {
         NavigationStack {
-            ZStack {
-                PanelBackgroundView()
-
-                ScrollView {
+            ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         if viewModel.activeTags.isEmpty {
                             YalaEmptyState(
@@ -409,7 +411,7 @@ struct SaveAsFavoriteSheet: View {
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
                 }
-            }
+            .yalaScreenBackground(.subtle)
             .navigationTitle(L10n.Settings.tags)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

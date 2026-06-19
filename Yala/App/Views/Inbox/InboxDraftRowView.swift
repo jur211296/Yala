@@ -17,6 +17,8 @@ struct InboxDraftRowView: View {
     let onTap: () -> Void
 
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.tagCatalog) private var tagCatalog
 
     var body: some View {
         Button(action: onTap) {
@@ -30,7 +32,7 @@ struct InboxDraftRowView: View {
                 leadingIcon
 
                 // Text content - different layout based on completeness
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                VStack(alignment: .leading, spacing: 3) { // DS: intentional non-token value
                     if draft.hasAllRequiredFields {
                         // Complete draft: show like RecordRowView
                         completeContentView
@@ -58,7 +60,8 @@ struct InboxDraftRowView: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { YalaFormatter.currency(value: $0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, draft.status.rawValue))
+        .accessibilityLabel(L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, draft.status.rawValue))
+        .accessibilityIdentifier("inbox_draft_row_\(draft.note)")
     }
 
     // MARK: - Complete Content View (like RecordRowView)
@@ -98,8 +101,11 @@ struct InboxDraftRowView: View {
         }
 
         // Line 3: Tags (if any) - only for pending drafts (archived may have invalid tag references)
-        if draft.status == .pending && !(draft.tags ?? []).isEmpty {
-            tagsRow
+        if draft.status == .pending {
+            let resolvedTags = TagDisplayResolver.tags(for: draft, catalog: tagCatalog)
+            if !resolvedTags.isEmpty {
+                tagsRow(resolvedTags)
+            }
         }
     }
 
@@ -129,9 +135,13 @@ struct InboxDraftRowView: View {
     private var amountColumn: some View {
         VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
             if let amount = draft.amount {
-                Text(YalaFormatter.currency(value: amount, currencyCode: currencyCode, forceFullPrecision: true))
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(amount >= 0 ? Color.electricIndigo : Color.hotPink)
+                AmountText(
+                    value: amount,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
+                    tint: .color(amount >= 0 ? Color.electricIndigo : Color.hotPink),
+                    forceFullPrecision: true
+                )
             } else {
                 Text(L10n.Inbox.noAmount)
                     .font(DS.Typography.label)
@@ -158,9 +168,9 @@ struct InboxDraftRowView: View {
 
     // MARK: - Tags Row
 
-    private var tagsRow: some View {
+    private func tagsRow(_ tags: [Tag]) -> some View {
         HStack(spacing: DS.Spacing.xs) {
-            ForEach(Array((draft.tags ?? []).prefix(3)), id: \.persistentModelID) { tag in
+            ForEach(Array(tags.prefix(3)), id: \.persistentModelID) { tag in
                 Text(tag.name)
                     .font(DS.Typography.labelTiny)
                     .foregroundStyle(Color.contrastingText(for: Color(hex: tag.colorHex)))
@@ -172,8 +182,8 @@ struct InboxDraftRowView: View {
                     )
             }
 
-            if (draft.tags ?? []).count > 3 {
-                Text("+\((draft.tags ?? []).count - 3)")
+            if tags.count > 3 {
+                Text("+\(tags.count - 3)")
                     .font(DS.Typography.labelTiny)
                     .foregroundStyle(.secondary)
             }
@@ -289,21 +299,23 @@ struct InboxDraftRowView: View {
     private var sourceColor: Color {
         switch draft.sourceType {
         case .voice:
-            return .hotPink
+            return Color.essentialNeed       // amber #F59E0B — input rápido
         case .receiptPhoto, .screenshotList, .screenshotSingle:
-            return .teal
+            return Color.priorityNeedNew     // purple #8B5CF6 — análisis OCR/foto
         case .emailAlert:
-            return .blue
-        case .scheduledPayment:
-            return .purple
-        case .subscription:
-            return .indigo
+            return theme.accent              // tema — datos externos parseados
+        case .scheduledPayment, .subscription:
+            return Color.electricIndigo      // indigo brand — recurring
         case .applePay:
-            return .pink
+            return theme.priorityNeed        // tema — Apple Pay
         case .automation:
-            return .gray
+            return theme.secondaryText       // neutro
         case .siri:
-            return .blue
+            return theme.accent              // tema — Siri AI parsed
+        case .groupExpense, .groupSettlement:
+            return Color.hotPink             // brand pink — grupos
+        case .manual:
+            return theme.secondaryText       // neutro — draft convertido (FU-02 cleanup)
         }
     }
 
@@ -318,12 +330,12 @@ struct InboxDraftRowView: View {
             ForEach(draft.needsUserInput.prefix(2), id: \.self) { field in
                 Text(localizedFieldName(field))
                     .font(DS.Typography.labelTiny)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.thPrimaryText)
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, DS.Spacing.xxs)
                     .background(
                         Capsule()
-                            .fill(Color.hotPink.opacity(0.8))
+                            .fill(Color.essentialNeed.opacity(0.25))
                     )
             }
 

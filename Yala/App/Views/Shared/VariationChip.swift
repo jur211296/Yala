@@ -12,7 +12,7 @@ struct VariationChip: View {
 
     // MARK: - Settings
 
-    @AppStorage("showVariations") private var showVariations: Bool = true
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Properties
 
@@ -86,11 +86,11 @@ struct VariationChip: View {
     @ViewBuilder
     var body: some View {
         // Hide entirely when showVariations is OFF
-        if !showVariations {
+        if !appPreferences.showVariations {
             EmptyView()
         } else if let variation = variation {
             // Show formatted variation percentage
-            HStack(spacing: 2) {
+            HStack(spacing: DS.Spacing.xxs) {
                 if abs(variation) < 0.05 {
                     Image(systemName: "equal")
                         .font(size.font)
@@ -106,7 +106,11 @@ struct VariationChip: View {
                     Capsule()
                         .fill(variationColor.opacity(0.1))
                 )
-                .accessibilityLabel(variation >= 0 ? "Aumento \(PreviousPeriodHelper.formatVariationValue(variation))" : "Disminución \(PreviousPeriodHelper.formatVariationValue(variation))")
+                .accessibilityLabel(
+                    variation >= 0
+                        ? L10n.Accessibility.variationIncrease(PreviousPeriodHelper.formatVariationValue(variation))
+                        : L10n.Accessibility.variationDecrease(PreviousPeriodHelper.formatVariationValue(variation))
+                )
         } else if showNAWhenNil {
             // Show "N/A" for items without previous data (when comparison is active)
             Text("N/A")
@@ -171,4 +175,5 @@ extension VariationChip {
     }
     .padding()
     .background(.thBackground)
+    .previewAppPreferences()
 }

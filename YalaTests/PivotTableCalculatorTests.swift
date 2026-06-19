@@ -68,7 +68,8 @@ struct PivotTableCalculatorTests {
             currentTransactions: txns,
             previousTransactions: [],
             hierarchy: [.tipo],
-            preferredCurrency: "USD"
+            preferredCurrency: "USD",
+            allTags: []
         )
 
         #expect(result.count == 2)
@@ -96,7 +97,8 @@ struct PivotTableCalculatorTests {
             currentTransactions: txns,
             previousTransactions: [],
             hierarchy: [.categoria],
-            preferredCurrency: "USD"
+            preferredCurrency: "USD",
+            allTags: []
         )
 
         #expect(result.count == 2)
@@ -122,7 +124,8 @@ struct PivotTableCalculatorTests {
             currentTransactions: txns,
             previousTransactions: [],
             hierarchy: [.tipo, .categoria],
-            preferredCurrency: "USD"
+            preferredCurrency: "USD",
+            allTags: []
         )
 
         #expect(result.count == 2)  // Income + Expense groups
@@ -149,7 +152,8 @@ struct PivotTableCalculatorTests {
             currentTransactions: txns,
             previousTransactions: [],
             hierarchy: [.etiqueta],
-            preferredCurrency: "USD"
+            preferredCurrency: "USD",
+            allTags: [tag1, tag2]
         )
 
         #expect(result.count == 2)  // Work + Personal
@@ -176,7 +180,8 @@ struct PivotTableCalculatorTests {
             currentTransactions: currentTxns,
             previousTransactions: previousTxns,
             hierarchy: [.categoria],
-            preferredCurrency: "USD"
+            preferredCurrency: "USD",
+            allTags: []
         )
 
         #expect(result.count == 1)
@@ -200,7 +205,8 @@ struct PivotTableCalculatorTests {
             currentTransactions: txns,
             previousTransactions: [],
             hierarchy: [.categoria],
-            preferredCurrency: "USD"
+            preferredCurrency: "USD",
+            allTags: []
         )
 
         let foodNode = try #require(result.first)
@@ -216,7 +222,8 @@ struct PivotTableCalculatorTests {
             currentTransactions: [],
             previousTransactions: [],
             hierarchy: [.tipo],
-            preferredCurrency: "USD"
+            preferredCurrency: "USD",
+            allTags: []
         )
 
         #expect(result.isEmpty)
@@ -235,7 +242,8 @@ struct PivotTableCalculatorTests {
             currentTransactions: txns,
             previousTransactions: [],
             hierarchy: [.divisa],
-            preferredCurrency: "PEN"
+            preferredCurrency: "PEN",
+            allTags: []
         )
 
         #expect(result.count == 2)

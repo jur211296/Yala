@@ -84,4 +84,4 @@ REGLAS:
 - Archivos en Tests/ modificados se ejecutan directamente
 - DesignTokens.swift, L10n.swift, Assets no requieren tests
 - Si el mapeo dinámico no encuentra nada, buscar con nombre parcial (ej: "Budget" en archivo → BudgetEditorViewModelTests)
-- Si no hay NINGÚN test relevante, informar claramente y sugerir /generate-tests
+- Si no hay NINGÚN test relevante, informar claramente

@@ -5,6 +5,7 @@
 //  Created by Yala Refactoring.
 //
 
+import CloudKit
 import SwiftData
 import SwiftUI
 import WidgetKit
@@ -12,7 +13,7 @@ import WidgetKit
 // MARK: - Inbox Notification Types
 
 /// Types of drafts pending notification
-struct PendingInboxNotification {
+struct PendingInboxNotification: Equatable {
     var scheduledPayments: Int = 0
     var subscriptions: Int = 0
     var automations: Int = 0  // applePay + automation
@@ -57,7 +58,7 @@ enum InboxNotificationType {
 }
 
 /// Deep link destinations from widgets
-enum DeepLinkDestination {
+enum DeepLinkDestination: Equatable, Hashable {
     case panel
     case statistics
     case records
@@ -67,6 +68,8 @@ enum DeepLinkDestination {
     case inbox
     case scheduledPayments  // Planning > Pagos Planificados
     case recordsStandalone  // Tab Records (standalone)
+    case groups             // Grupos (gastos compartidos)
+    case groupDetail(groupID: String)  // Grupo especifico
 }
 
 /// Global session state to manage synchronization between views
@@ -122,9 +125,10 @@ class SessionState {
 
     /// User's financial mindset chosen during onboarding: "cashFlow" (Día a día) or "patrimonial" (Control total).
     /// Affects educational UI (balance calculator variants, tips) but NOT features or calculations.
-    var financialMindset: String = UserDefaults.standard.string(forKey: "financialMindset") ?? "cashFlow" {
+    var financialMindset: String = UserDefaults.standard.string(forKey: AppPreferences.Keys.financialMindset) ?? "cashFlow" {
         didSet {
-            UserDefaults.standard.set(financialMindset, forKey: "financialMindset")
+            guard oldValue != financialMindset else { return }
+            UserDefaults.standard.set(financialMindset, forKey: AppPreferences.Keys.financialMindset)
         }
     }
 
@@ -132,11 +136,14 @@ class SessionState {
 
     /// When true, hides income/transfer UI throughout the app. Data is NOT deleted, only hidden.
     /// Uses stored property (NOT computed) so @Observable tracks changes.
-    var isExpensesOnlyMode: Bool = UserDefaults.standard.bool(forKey: "expensesOnlyMode") {
+    var isExpensesOnlyMode: Bool = UserDefaults.standard.bool(forKey: AppPreferences.Keys.expensesOnlyMode) {
         didSet {
-            UserDefaults.standard.set(isExpensesOnlyMode, forKey: "expensesOnlyMode")
+            // No-op guard avoids spurious UserDefaults writes (which materialize the key
+            // on fresh installs) and WidgetCenter reloads when callers reassign the same value.
+            guard oldValue != isExpensesOnlyMode else { return }
+            UserDefaults.standard.set(isExpensesOnlyMode, forKey: AppPreferences.Keys.expensesOnlyMode)
             if let appGroup = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) {
-                appGroup.set(isExpensesOnlyMode, forKey: "expensesOnlyMode")
+                appGroup.set(isExpensesOnlyMode, forKey: AppPreferences.Keys.expensesOnlyMode)
             }
             WidgetCenter.shared.reloadAllTimelines()
             // Clean incompatible state when toggling
@@ -363,10 +370,24 @@ class SessionState {
         globalFilters.dateInterval = selectedPeriod.dateInterval()
 
         // Reset navigation to initial state (important after data wipe)
-        selectedMainTab = .panel
+        // Mode-aware: groupInvite users default to .groups tab
+        selectedMainTab = isGroupInviteMode ? .groups : .panel
         selectedDetailTab = .insights
         selectedPlanningTab = .budgets
     }
+
+    // MARK: - Onboarding Mode
+
+    /// Current onboarding mode — determines tab layout, bridge behavior, and UI gating.
+    /// Persisted in UserDefaults, synced via PreferenceSyncService with never-downgrade rule.
+    var onboardingMode: OnboardingMode = OnboardingMode.current() {
+        didSet {
+            OnboardingMode.setCurrent(onboardingMode)
+        }
+    }
+
+    /// Convenience: true when user arrived via group invitation and hasn't activated full mode
+    var isGroupInviteMode: Bool { onboardingMode == .groupInvite }
 
     // MARK: - Subscription State
 
@@ -390,6 +411,16 @@ class SessionState {
     /// Flag to trigger budgets widget recalculation
     /// Set to true after favorites are modified (toggled, reordered)
     var needsBudgetsWidgetRefresh: Bool = false
+
+    /// True when user entered via a group notification deep link (reset on next evaluate cycle)
+    var enteredViaGroupNotification: Bool = false
+
+    /// Mirrors PanelShell `sheets.showInbox` so the RouterEntryGate can drop
+    /// incoming `.showInboxAlert` while the Inbox sheet is already presenting.
+    /// Without this, the original bug (notif arrives → fullScreenCover queued
+    /// behind the open sheet → surfaces "tardío") could resurrect via a fresh
+    /// `.showInboxAlert` raised AFTER the sheet opened.
+    var isInboxSheetVisible: Bool = false
 
     /// Version counter for formatting settings (rounded amounts, etc.)
     /// Increment this to force views to re-render with new formatting
@@ -417,88 +448,74 @@ class SessionState {
         incrementDataVersion()
     }
 
-    // MARK: - Share Extension State
-
-    /// Flag to trigger shared image processing (one-shot pattern)
-    /// When true, PanelView opens ImageSelectionView and immediately resets to false
-    var shouldShowSharedImage: Bool = false
-
-    /// URL of shared image to process (from Share Extension)
-    /// When set, PanelView will open ImageSelectionView with this image
-    var pendingSharedImageURL: URL?
-
-    /// Flag to trigger Inbox sheet from anywhere in the app
-    /// Set by SharedImageProcessor after creating drafts
-    var shouldShowInbox: Bool = false
-
-    /// Pending inbox drafts notification info
-    /// When not empty, shows an alert modal to notify the user
-    var pendingInboxNotification: PendingInboxNotification = .init()
-
-    /// Flag to trigger voice entry from App Shortcut
-    /// When true, PanelView will open VoiceRecordingSheet
-    var shouldShowVoiceEntry: Bool = false
-
-    /// Flag to trigger image entry from App Shortcut
-    /// When true, PanelView will open ImageSelectionView
-    var shouldShowImageEntry: Bool = false
-
-    /// Flag to trigger new transaction form from widget deep link
-    /// When true, PanelView will open NewTransactionView
-    var shouldShowNewTransaction: Bool = false
-
-    /// Flag to trigger upgrade sheet for voice feature from deep link
-    var shouldShowUpgradeForVoice: Bool = false
-
-    /// Flag to trigger upgrade sheet for image feature from deep link
-    var shouldShowUpgradeForImage: Bool = false
-
-    /// Flag to show subscription success celebration
-    var shouldShowSubscriptionSuccess: Bool = false
-
-    /// Flag to show downgrade resolution sheet
-    var shouldShowDowngradeResolution: Bool = false
-
-    /// Flag to show trial expired sheet
-    var shouldShowTrialExpired: Bool = false
-
-    /// Pending milestone upgrade (transaction count milestone)
-    var pendingMilestoneUpgrade: Int?
-
-    /// Flag to auto-open Profile from Insights banner redirect
-    var shouldOpenProfile: Bool = false
-
-    /// Flag to trigger App Store review prompt
-    var shouldRequestReview: Bool = false
-
-    // MARK: - Setup Checklist Navigation
-
-    /// When set, ProfileView navigates to this destination on appear (e.g. categories, accounts).
-    var pendingProfileDestination: ProfileDestination?
-
-    /// When true, BudgetsView auto-opens the budget editor on appear.
-    var shouldAutoOpenBudgetEditor: Bool = false
-
-    /// When true, ScheduledPaymentsView auto-opens the editor on appear.
-    var shouldAutoOpenScheduledEditor: Bool = false
+    // MARK: - Router-migrated state
+    //
+    // Previously this section held ~25 transient flags (shouldShow*,
+    // pending*, deferred*) coordinated via Task.sleep / onChange observers.
+    // All UI routing now flows through AppRouter (see RouterIntent.swift).
 
     /// Flag set by OnboardingView completion to trigger trial offer after fullScreenCover dismisses.
     /// Persisted in UserDefaults so it survives app kill during the dismiss animation window.
+    /// Consumption routed via AppRouter.enqueue(.presentTrialOffer); the flag itself remains here.
     var needsPostOnboardingTrial: Bool = UserDefaults.standard.bool(forKey: "needsPostOnboardingTrial") {
         didSet { UserDefaults.standard.set(needsPostOnboardingTrial, forKey: "needsPostOnboardingTrial") }
     }
 
     // MARK: - Splash State
 
-    /// Whether the splash screen has been dismissed (safe to navigate deep links)
+    /// Whether the splash screen has been dismissed (gate for router readiness).
     var isSplashDismissed: Bool = false
 
-    /// Deep link deferred until splash dismisses (avoids sheet-under-splash race condition)
-    var deferredDeepLink: DeepLinkDestination?
+    /// Pending group ID for deep link navigation to specific group.
+    /// Set by AppRouter.navigate(.groupDetail) handler, read by GroupsContainerView.
+    var pendingGroupID: String?
 
-    /// Deep link destination from widgets
-    /// When set, app navigates to specified destination and clears this
-    var deepLinkDestination: DeepLinkDestination?
+    /// URL of a shared image captured from the Share Extension. Not a flag —
+    /// it's the payload that ImageSelectionView consumes once opened. The
+    /// .presentSharedImage router intent sets this alongside the sheet.
+    var pendingSharedImageURL: URL?
+
+    /// Prefill payload del chat para abrir NewTransactionView con datos pre-llenados.
+    /// El `.presentNewTransactionFromChatDraft(...)` router intent setea este payload
+    /// junto con `showNewTransactionFromChat = true`.
+    var pendingChatDraftPrefill: ChatDraftPrefill?
+
+    /// Flag transient que el PanelShell observa para presentar NewTransactionView
+    /// con prefill desde chat. La vista lo limpia tras consumir el payload.
+    var showNewTransactionFromChat: Bool = false
+
+    /// Broadcast: cuando NewTransactionView persiste una transacción que vino de un
+    /// chat draft, setea esta tupla para que el ChatAssistantViewModel observe y
+    /// marque el card original como `.saved`. Si NTV se cancela, NO se setea.
+    /// El ChatVM lee, marca el card y limpia (también el espejo en UserDefaults).
+    struct ChatDraftSavedSignal: Codable, Equatable {
+        let messageID: UUID
+        let draftID: UUID
+        let transactionID: PersistentIdentifier
+    }
+    var chatDraftSavedSignal: ChatDraftSavedSignal? {
+        didSet {
+            // Espejo en UserDefaults para que sobreviva crash/kill de la app entre
+            // NTV-save y reapertura del chat (sin esto, el card queda .pending y un
+            // segundo tap [Save] crearía duplicado).
+            let key = "chat_draft_saved_signal"
+            if let signal = chatDraftSavedSignal,
+               let data = try? JSONEncoder().encode(signal) {
+                UserDefaults.standard.set(data, forKey: key)
+            } else {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+    }
+
+    /// Restaura el signal desde UserDefaults si existe — llamado por ChatVM en setContext.
+    func restoreChatDraftSavedSignalIfNeeded() {
+        guard chatDraftSavedSignal == nil else { return }
+        guard let data = UserDefaults.standard.data(forKey: "chat_draft_saved_signal"),
+              let signal = try? JSONDecoder().decode(ChatDraftSavedSignal.self, from: data)
+        else { return }
+        chatDraftSavedSignal = signal  // re-publica → ChatSheetView observa via .onChange si está abierto
+    }
 
     // MARK: - Navigation State
 
@@ -521,26 +538,94 @@ class SessionState {
     /// Currently selected tab within Planning (Budgets, Scheduled Payments)
     var selectedPlanningTab: PlanningTab = .budgets
 
+    /// Currently selected tab within Reports (Comparativa, Flujo de caja).
+    /// Global SSOT so the dashboard "Más" can deep-link into a report sub-tab.
+    var selectedReportTab: ReportTab = .comparativa
+
+    /// Pending Task that finalizes a deferred main tab selection (when the
+    /// destination tab is hidden in "More" and we need to mount it via
+    /// `temporaryTab` first). Cancelled if a new selection comes in while a
+    /// previous one is still waiting for the runloop tick — prevents the
+    /// `didSet` of a concurrent mutation from clearing `temporaryTab` before
+    /// the deferred selection lands.
+    private var pendingTabSelectionTask: Task<Void, Never>?
+
+    /// Single entry point to change `selectedMainTab` safely. Centralizes the
+    /// "mount-then-select" rule required by iOS 18+ TabView when the target
+    /// tab is hidden in "More": adding it via `temporaryTab` and waiting one
+    /// runloop tick (50 ms) before assigning `selectedMainTab`. If the tab is
+    /// already visible, assigns directly with no latency.
+    ///
+    /// Honors GC-08 invariant: in `groupInvite` mode, only `.groups`, `.more`
+    /// and `.search` are reachable; other tabs are silently rejected.
+    func selectMainTab(_ tab: AppTab) {
+        if isGroupInviteMode {
+            let allowed: Set<AppTab> = [.groups, .more, .search]
+            guard allowed.contains(tab) else { return }
+        }
+
+        let stored = TabBarConfiguration.loadFromStandardDefaults()
+        let config = TabBarConfiguration.forMode(onboardingMode, stored: stored)
+        let decision = MainTabSelectionLogic.decide(requested: tab, config: config)
+
+        pendingTabSelectionTask?.cancel()
+        if decision.requiresDelay, let temp = decision.temporaryTab {
+            temporaryTab = temp
+            pendingTabSelectionTask = Task {
+                try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled else { return }
+                selectedMainTab = decision.selectedTab
+            }
+        } else {
+            selectedMainTab = decision.selectedTab
+        }
+    }
+
     /// Navigate to a specific detail view from any tab
     func navigateToDetail(_ tab: DetailViewTab) {
         selectedDetailTab = tab
-        selectedMainTab = .statistics
+        selectMainTab(.statistics)
     }
 
     /// Navigate to Scheduled Payments in Planning
     func navigateToScheduledPayments() {
         selectedPlanningTab = .scheduledPayments
-        selectedMainTab = .planning
+        selectMainTab(.planning)
     }
 
     /// Navigate to Budgets in Planning
     func navigateToBudgets() {
         selectedPlanningTab = .budgets
-        selectedMainTab = .planning
+        selectMainTab(.planning)
     }
 
-    /// Toggle budget filters - if same budget is tapped again, clear filters
-    func applyBudgetFilters(_ budget: Budget) {
+    /// Navigate to a specific Reports sub-tab (Comparativa / Flujo de caja).
+    func navigateToReport(_ tab: ReportTab) {
+        selectedReportTab = tab
+        selectMainTab(.reports)
+    }
+
+    /// Navigate to the standalone Records tab (`RecordsStandaloneView`). When
+    /// the tab isn't enabled in the configurable tab bar, we use the same
+    /// deep-link trick as `AppBootstrapper.setOrDeferDeepLink(.recordsStandalone)`:
+    /// set `temporaryTab = .records` so it renders, then switch to it on the
+    /// next runloop so SwiftUI picks up the change in the right order.
+    func navigateToRecordsStandalone() {
+        RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
+    }
+
+    /// Navigate to Groups tab
+    func navigateToGroups() {
+        selectMainTab(.groups)
+    }
+
+    /// Toggle budget filters - if same budget is tapped again, clear filters.
+    ///
+    /// Reads filters from the CSV mirror (SSOT) and resolves UUIDs to
+    /// `PersistentIdentifier` (consumed by the FilterControlBar chips) via
+    /// targeted fetches by `shortcutID`/`id`. `context` is required to do these
+    /// fetches; pass `modelContext` from the calling View/Environment.
+    func applyBudgetFilters(_ budget: Budget, context: ModelContext) {
         let budgetID = budget.persistentModelID
 
         // Toggle: if same budget selected, clear all
@@ -554,19 +639,43 @@ class SessionState {
         clearFilters()
         selectedBudgetID = budgetID
 
-        // Apply account filters
-        if let accounts = budget.accounts, !accounts.isEmpty {
-            selectedAccountIDs = Set(accounts.map { $0.persistentModelID })
+        // Apply account filters (resolve via shortcutID UUID)
+        if let accountUUIDs = budget.resolvedAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
+            let descriptor = FetchDescriptor<Account>(predicate: #Predicate { accountUUIDs.contains($0.shortcutID) })
+            do {
+                let resolved = try context.fetch(descriptor)
+                selectedAccountIDs = Set(resolved.map(\.persistentModelID))
+            } catch {
+                #if DEBUG
+                print("SessionState: applyBudgetFilters account fetch error: \(error)")
+                #endif
+            }
         }
 
-        // Apply subcategory filters (use IDs to handle duplicate names across categories)
-        if let subcategories = budget.subcategories, !subcategories.isEmpty {
-            selectedSubcategoryIDs = Set(subcategories.map { $0.persistentModelID })
+        // Apply subcategory filters (resolve via shortcutID UUID)
+        if let subUUIDs = budget.resolvedSubcategoryIDs(scheduleBackfill: true), !subUUIDs.isEmpty {
+            let descriptor = FetchDescriptor<Subcategory>(predicate: #Predicate { subUUIDs.contains($0.shortcutID) })
+            do {
+                let resolved = try context.fetch(descriptor)
+                selectedSubcategoryIDs = Set(resolved.map(\.persistentModelID))
+            } catch {
+                #if DEBUG
+                print("SessionState: applyBudgetFilters subcategory fetch error: \(error)")
+                #endif
+            }
         }
 
-        // Apply tag filters
-        if let tags = budget.tags, !tags.isEmpty {
-            selectedTags = Set(tags.map { $0.persistentModelID })
+        // Apply tag filters (resolve via id UUID)
+        if let tagUUIDs = budget.resolvedTagIDs(scheduleBackfill: true), !tagUUIDs.isEmpty {
+            let descriptor = FetchDescriptor<Tag>(predicate: #Predicate { tagUUIDs.contains($0.id) })
+            do {
+                let resolved = try context.fetch(descriptor)
+                selectedTags = Set(resolved.map(\.persistentModelID))
+            } catch {
+                #if DEBUG
+                print("SessionState: applyBudgetFilters tag fetch error: \(error)")
+                #endif
+            }
         }
 
         // Apply need filters (parse comma-separated string)

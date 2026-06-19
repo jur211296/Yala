@@ -1,0 +1,146 @@
+/*
+  Localizable.strings (English)
+  YalaWidgets
+
+  English localization for widget texts.
+*/
+
+// MARK: - Gallery (widget gallery names and descriptions)
+"widget.gallery.scheduledPayments" = "即将到期付款";
+"widget.gallery.scheduledPayments.desc" = "你即将到期的付款和订阅";
+"widget.gallery.quickManual" = "新建记录";
+"widget.gallery.quickManual.desc" = "手动记录支出或收入";
+"widget.gallery.quickVoice" = "语音记录";
+"widget.gallery.quickVoice.desc" = "口述你的支出或收入";
+"widget.gallery.quickImage" = "扫描收据";
+"widget.gallery.quickImage.desc" = "从照片或收据记录";
+"widget.gallery.cashFlow" = "现金流";
+"widget.gallery.cashFlow.desc" = "你的净现金流";
+"widget.gallery.balance" = "余额";
+"widget.gallery.balance.desc" = "你的总余额及趋势";
+"widget.gallery.budgets" = "预算";
+"widget.gallery.budgets.desc" = "你的预算进度";
+"widget.gallery.latestRecords" = "最新记录";
+"widget.gallery.latestRecords.desc" = "你最近的交易";
+"widget.gallery.expense" = "支出";
+"widget.gallery.expense.desc" = "你本时段的总支出";
+"widget.gallery.categoriesPie" = "类别(饼图)";
+"widget.gallery.categoriesPie.desc" = "按类别的支出分布";
+"widget.gallery.subcategoriesPie" = "子类别(饼图)";
+"widget.gallery.subcategoriesPie.desc" = "按子类别的支出分布";
+"widget.gallery.topCategories" = "热门类别";
+"widget.gallery.topCategories.desc" = "你支出最多的类别";
+"widget.gallery.topSubcategories" = "热门子类别";
+"widget.gallery.topSubcategories.desc" = "你支出最多的子类别";
+
+// MARK: - Gallery (Lock Screen accessory widgets)
+"widget.gallery.accessoryBalance" = "余额";
+"widget.gallery.accessoryBalance.desc" = "锁屏上的余额";
+"widget.gallery.accessoryExpense" = "支出";
+"widget.gallery.accessoryExpense.desc" = "锁屏上的支出";
+"widget.gallery.accessoryBudget" = "预算";
+"widget.gallery.accessoryBudget.desc" = "你最常用的预算";
+"widget.gallery.accessoryPayment" = "下一笔付款";
+"widget.gallery.accessoryPayment.desc" = "你的下一笔计划付款";
+
+// MARK: - Intent titles and descriptions
+"widget.intent.cashFlow.title" = "现金流";
+"widget.intent.cashFlow.desc" = "显示你的净现金流";
+"widget.intent.balance.title" = "余额";
+"widget.intent.balance.desc" = "显示你的总余额";
+"widget.intent.expense.title" = "支出";
+"widget.intent.expense.desc" = "显示你的总支出";
+"widget.intent.categoriesPie.title" = "类别(饼图)";
+"widget.intent.categoriesPie.desc" = "按类别的支出分布";
+"widget.intent.subcategoriesPie.title" = "子类别(饼图)";
+"widget.intent.subcategoriesPie.desc" = "按子类别的支出分布";
+"widget.intent.topCategories.title" = "热门类别";
+"widget.intent.topCategories.desc" = "显示你支出最多的类别";
+"widget.intent.topSubcategories.title" = "热门子类别";
+"widget.intent.topSubcategories.desc" = "显示你支出最多的子类别";
+"widget.intent.budgets.title" = "预算";
+"widget.intent.budgets.desc" = "显示你的预算进度";
+"widget.intent.scheduledPayments.title" = "即将到期付款";
+"widget.intent.scheduledPayments.desc" = "显示你即将到期的计划付款";
+"widget.intent.latestRecords.title" = "最新记录";
+"widget.intent.latestRecords.desc" = "显示你最近的交易";
+"widget.intent.accessoryBalance.title" = "余额";
+"widget.intent.accessoryBalance.desc" = "时段余额";
+"widget.intent.accessoryExpense.title" = "支出";
+"widget.intent.accessoryExpense.desc" = "时段支出";
+"widget.intent.accessoryBudget.title" = "预算";
+"widget.intent.accessoryBudget.desc" = "最常用预算";
+"widget.intent.accessoryPayment.title" = "下一笔付款";
+"widget.intent.accessoryPayment.desc" = "下一笔计划付款";
+"widget.intent.quickEntry.title" = "快速记录";
+"widget.intent.quickEntry.desc" = "配置快速操作小组件以添加记录";
+
+// MARK: - Selection Mode
+"widget.selection.mode.type" = "显示";
+"widget.selection.automatic" = "自动";
+"widget.selection.custom" = "自定义";
+
+// MARK: - Selection Parameters
+"widget.select.budgets" = "预算";
+"widget.select.payments" = "付款";
+
+// MARK: - Entities
+"widget.entity.budget" = "预算";
+"widget.entity.payment" = "计划付款";
+
+// MARK: - UI (texts in widget views)
+"widget.ui.noPayments" = "没有待处理付款";
+"widget.ui.noBudgets" = "无预算";
+"widget.ui.noRecords" = "无记录";
+"widget.ui.noExpenses" = "无支出";
+"widget.ui.noData" = "无数据";
+"widget.ui.notEnoughData" = "数据不足";
+"widget.ui.income" = "收入";
+"widget.ui.expenses" = "支出";
+"widget.ui.balance" = "余额";
+"widget.ui.netFlow" = "净流量";
+"widget.ui.cashFlow" = "现金流";
+"widget.ui.total" = "总计";
+"widget.ui.ofLimit" = "/ %@";
+"widget.ui.newRecord" = "快速记录";
+"widget.ui.voiceRecord" = "语音记录";
+"widget.ui.scanReceipt" = "图片记录";
+"widget.ui.upcomingPayments" = "即将到期付款";
+"widget.ui.budgets" = "预算";
+"widget.ui.latestRecords" = "最新记录";
+"widget.ui.categories" = "类别";
+"widget.ui.subcategories" = "子类别";
+"widget.ui.topCategories" = "热门类别";
+"widget.ui.topSubcategories" = "热门子类别";
+"widget.ui.noNote" = "无备注";
+
+// MARK: - Date labels
+"widget.ui.overdue" = "已逾期";
+"widget.ui.today" = "今天";
+"widget.ui.tomorrow" = "明天";
+
+// MARK: - Period (period selector)
+"widget.period.type" = "时段";
+"widget.period.sameAsApp" = "与应用一致";
+"widget.period.thisWeek" = "本周";
+"widget.period.last7Days" = "最近 7 天";
+"widget.period.last30Days" = "最近 30 天";
+"widget.period.thisMonth" = "本月";
+"widget.period.lastMonth" = "上月";
+"widget.period.thisYear" = "今年";
+"widget.period.lastYear" = "去年";
+"widget.period.allTime" = "全部时间";
+
+// MARK: - Payment Category
+"widget.paymentCategory.all" = "全部";
+"widget.paymentCategory.recurring" = "周期";
+"widget.paymentCategory.subscription" = "订阅";
+
+// MARK: - Control Widgets
+"widget.control.voiceExpense" = "语音记录";
+"widget.control.voiceExpense.desc" = "向 Yala 口述你的记录";
+"widget.control.photoExpense" = "图片记录";
+"widget.control.photoExpense.desc" = "在 Yala 中用图片记录";
+
+/* MARK: Release 2.0 — a11y & UI keys */
+"widget.ui.others" = "其他";

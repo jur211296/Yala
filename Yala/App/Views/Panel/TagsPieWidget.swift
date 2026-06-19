@@ -11,6 +11,7 @@ import SwiftUI
 
 struct TagsPieWidget: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppPreferences.self) private var appPreferences
     let tags: [TagSpendingSummary]
     let currencyCode: String
 
@@ -22,17 +23,17 @@ struct TagsPieWidget: View {
 
     var size: WidgetSize = .medium
 
+    /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
+    var headerInfoButton: AnyView? = nil
+
     // Period Comparison (optional - for use in CategoriesTabView)
     var period: DetailPeriod = .thisMonth
     var customRange: DateInterval? = nil
     var previousTotalAmount: Double? = nil
     var comparisonMode: ComparisonMode = .month
-    var showVariationHeader: Bool = false  // Always show variation header (with N/A if no data)
-
-    // Check if variation header should be shown
-    private var showComparison: Bool {
-        showVariationHeader  // Show header even when previousAmount is nil (displays N/A)
-    }
+    /// Show header even when `previousAmount` is nil (renders N/A).
+    var showVariationHeader: Bool = false
+    var variationDisplay: VariationDisplayConfig = .full
 
     // Computed Properties
     private var totalExpense: Double {
@@ -54,42 +55,51 @@ struct TagsPieWidget: View {
     @State private var selectedAngle: Double?
     @State private var hoveredItem: PieChartData?
 
+    /// Ancho medido de la barra segmentada — observado con onGeometryChange (no causa reflow).
+    /// Reemplaza GeometryReader para permitir el widget tanto en fullWidth como halfWidthPair.
+    @State private var segmentedBarWidth: CGFloat = 0
+
     private let innerRadiusRatio: CGFloat = 0.50
 
     var body: some View {
         let chartData = processChartData()
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             if chartData.isEmpty {
-                emptyState
+                if size == .small {
+                    smallEmptyState
+                } else {
+                    emptyState
+                }
             } else {
                 contentForSize(chartData)
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.bottom, DS.Spacing.xxl)
+                    .padding(.horizontal, size == .small ? DS.Spacing.md : DS.Spacing.lg)
+                    .padding(.bottom, size == .small ? DS.Spacing.md : DS.Spacing.xxl)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 320, maxHeight: .infinity, alignment: .topLeading)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(Color.white.opacity(DS.Card.borderOpacity), lineWidth: 1)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: size == .small ? 0 : 320,
+            maxHeight: .infinity,
+            alignment: .topLeading
         )
-        .shadow(color: Color.black.opacity(DS.Opacity.faint), radius: 10, x: 0, y: 5)
+        .solidCard(radius: size == .small ? DS.Panel.smallWidgetRadius : DS.Panel.widgetRadius)
+        .frame(height: size == .small ? WidgetSize.smallHeight : nil)
     }
 
     // MARK: - Empty State
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
-            HStack {
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
                 Text(L10n.Widget.distributionByTag)
-                    .font(DS.Typography.headline)
+                    .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
-                InfoHintButton(
-                    title: L10n.WidgetType.expensesByTag,
-                    message: L10n.Widget.Hint.tagsPie
+                WidgetHeaderInfoSlot(
+                    injected: headerInfoButton,
+                    legacyTitle: L10n.WidgetType.expensesByTag,
+                    legacyMessage: L10n.Widget.Hint.tagsPie
                 )
 
                 Spacer()
@@ -101,11 +111,42 @@ struct TagsPieWidget: View {
         }
     }
 
+    /// PP2-06: empty state compacto para `.small`. Evita `YalaEmptyState(style: .widget)`
+    /// que desborda el alto fijo del card.
+    private var smallEmptyState: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(L10n.Settings.tags)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Spacer()
+            }
+
+            Spacer(minLength: 0)
+
+            HStack {
+                Spacer()
+                Image(systemName: "tag.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.md)
+    }
+
     // MARK: - Content Switcher
 
     @ViewBuilder
     private func contentForSize(_ chartData: [PieChartData]) -> some View {
         switch size {
+        case .small:
+            smallLayout(chartData)
         case .medium:
             mediumLayout(chartData)
         case .large:
@@ -114,6 +155,43 @@ struct TagsPieWidget: View {
     }
 
     // MARK: - Layouts
+
+    /// PP2-06: layout compacto para el tamaño `.small`. Clon del piloto
+    /// `CategoriesPieWidget.smallLayout`. El donut central es decorativo
+    /// (`.allowsHitTesting(false)`); las bubbles conservan su tap y filtran
+    /// por etiqueta. Chevron → Estadísticas → Distribución.
+    private func smallLayout(_ chartData: [PieChartData]) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            PanelSmallWidgetHeader(
+                title: L10n.Settings.tags,
+                accessibilityLabel: L10n.Panel.seeMoreInDistribution,
+                action: onShowDetail,
+                headerInfoButton: headerInfoButton
+            )
+
+            GeometryReader { geo in
+                let width = geo.size.width
+                let height = geo.size.height
+                let diameter = min(width, height)
+                let radius = diameter / 2
+                let center = CGPoint(x: width / 2, y: height / 2)
+                let chartRadius = radius * 0.55
+
+                ZStack {
+                    connectorLines(chartData, center: center, chartRadius: chartRadius)
+
+                    chartView(chartData, innerRadiusRatio: innerRadiusRatio)
+                        .frame(width: chartRadius * 2, height: chartRadius * 2)
+                        .position(center)
+                        .allowsHitTesting(false)
+
+                    bubblesLayer(chartData, center: center, chartRadius: chartRadius)
+                }
+            }
+        }
+        .padding(.top, DS.Spacing.lg)
+    }
+
 
     private func largeLayout(_ chartData: [PieChartData]) -> some View {
         VStack(spacing: DS.Spacing.sm) {
@@ -298,87 +376,74 @@ struct TagsPieWidget: View {
                     let selectedItem = chartData.first(where: { guard let id = $0.id else { return false }; return selectedTagIDs.contains(id) })
                 {
                     Spacer()
-                    VStack(alignment: .center, spacing: DS.Spacing.xs) {
-                        Text(selectedItem.name)
-                            .font(DS.Typography.labelTiny)
-                            .foregroundStyle(Color(hex: selectedItem.colorHex))
-                            .lineLimit(1)
-
-                        ZStack {
-                            Circle()
-                                .fill(Color(hex: selectedItem.colorHex).opacity(0.15))
-                            Image(systemName: selectedItem.iconName)
-                                .font(DS.Typography.labelTiny).fontWeight(.bold)
-                                .foregroundStyle(Color(hex: selectedItem.colorHex))
-                                .accessibilityHidden(true)
-                        }
-                        .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
-
-                        Text(
-                            "\(formattedPercentage(selectedItem.percentage)) (\(formattedCurrency(selectedItem.amount)))"
-                        )
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    Button {
                         if let id = selectedItem.id {
                             onSelectTag?(id)
                         }
-                    }
-                    Spacer()
-                } else {
-                    ForEach(Array(chartData.prefix(3).enumerated()), id: \.element.identity) {
-                        _, item in
+                    } label: {
                         VStack(alignment: .center, spacing: DS.Spacing.xs) {
-                            Text(item.name)
+                            Text(selectedItem.name)
                                 .font(DS.Typography.labelTiny)
-                                .foregroundStyle(Color(hex: item.colorHex))
+                                .foregroundStyle(Color(hex: selectedItem.colorHex))
                                 .lineLimit(1)
 
                             ZStack {
                                 Circle()
-                                    .fill(Color(hex: item.colorHex).opacity(0.15))
-                                Image(systemName: item.iconName)
-                                    .font(DS.Typography.captionSmall).fontWeight(.bold)
-                                    .foregroundStyle(Color(hex: item.colorHex))
+                                    .fill(Color(hex: selectedItem.colorHex).opacity(0.15))
+                                Image(systemName: selectedItem.iconName)
+                                    .font(DS.Typography.labelTiny).fontWeight(.bold)
+                                    .foregroundStyle(Color(hex: selectedItem.colorHex))
                                     .accessibilityHidden(true)
                             }
-                            .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
+                            .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
 
-                            Text(formattedPercentage(item.percentage))
-                                .font(DS.Typography.label)
-                                .foregroundStyle(.primary)
+                            Text(
+                                "\(formattedPercentage(selectedItem.percentage)) (\(formattedCurrency(selectedItem.amount)))"
+                            )
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(.primary)
                         }
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    Spacer()
+                } else {
+                    ForEach(Array(chartData.prefix(3).enumerated()), id: \.element.identity) {
+                        _, item in
+                        Button {
                             if let id = item.id {
                                 onSelectTag?(id)
                             }
-                        }
-                    }
-                }
-            }
+                        } label: {
+                            VStack(alignment: .center, spacing: DS.Spacing.xs) {
+                                Text(item.name)
+                                    .font(DS.Typography.labelTiny)
+                                    .foregroundStyle(Color(hex: item.colorHex))
+                                    .lineLimit(1)
 
-            GeometryReader { geo in
-                let segmentSpacing: CGFloat = DS.Spacing.xxs
-                let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
-                let availableWidth = geo.size.width - totalSpacing
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(hex: item.colorHex).opacity(0.15))
+                                    Image(systemName: item.iconName)
+                                        .font(DS.Typography.captionSmall).fontWeight(.bold)
+                                        .foregroundStyle(Color(hex: item.colorHex))
+                                        .accessibilityHidden(true)
+                                }
+                                .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
 
-                HStack(spacing: segmentSpacing) {
-                    ForEach(chartData) { item in
-                        RoundedRectangle(cornerRadius: DS.Radius.xs)
-                            .fill(Color(hex: item.colorHex))
-                            .frame(width: availableWidth * CGFloat(item.percentage / 100))
-                            .opacity(isDimmed(item) ? 0.3 : 1.0)
-                            .onTapGesture {
-                                handleTap(item)
+                                Text(formattedPercentage(item.percentage))
+                                    .font(DS.Typography.label)
+                                    .foregroundStyle(.primary)
                             }
+                        }
+                        .buttonStyle(.plain)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
                     }
                 }
             }
-            .frame(height: 28)
+
+            segmentedBar(chartData: chartData)
         }
         .padding(.top, DS.Spacing.lg)
     }
@@ -387,33 +452,42 @@ struct TagsPieWidget: View {
 
     private var headerView: some View {
         Group {
-            if showComparison {
-                HStack(alignment: .top) {
-                    PieChartVariationHeader(
-                        title: L10n.Widget.distributionByTag,
-                        totalAmount: filteredTotalExpense,
-                        previousAmount: previousTotalAmount,
-                        currencyCode: currencyCode,
-                        period: period,
-                        customRange: customRange,
-                        comparisonMode: comparisonMode,
-                        onShowDetail: onShowDetail
+            if showVariationHeader {
+                PieChartVariationHeader(
+                    title: L10n.Widget.distributionByTag,
+                    totalAmount: filteredTotalExpense,
+                    previousAmount: previousTotalAmount,
+                    currencyCode: currencyCode,
+                    period: period,
+                    customRange: customRange,
+                    comparisonMode: comparisonMode,
+                    variationDisplay: variationDisplay,
+                    onShowDetail: onShowDetail,
+                    titleAccessory: AnyView(
+                        WidgetHeaderInfoSlot(
+                            injected: headerInfoButton,
+                            legacyTitle: L10n.WidgetType.expensesByTag,
+                            legacyMessage: L10n.Widget.Hint.tagsPie
+                        )
                     )
-
-                    InfoHintButton(
-                        title: L10n.WidgetType.expensesByTag,
-                        message: L10n.Widget.Hint.tagsPie
-                    )
-                }
+                )
             } else {
                 // Original header without comparison
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                        Text(L10n.Widget.distributionByTag)
-                            .font(DS.Typography.headline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .padding(.bottom, DS.Spacing.xxs)
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text(L10n.Widget.distributionByTag)
+                                .font(DS.Typography.subheadlineEmphasized)
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+
+                            WidgetHeaderInfoSlot(
+                                injected: headerInfoButton,
+                                legacyTitle: L10n.WidgetType.expensesByTag,
+                                legacyMessage: L10n.Widget.Hint.tagsPie
+                            )
+                        }
+                        .padding(.bottom, DS.Spacing.xxs)
 
                         Text(formattedCurrency(filteredTotalExpense))
                             .font(DS.Typography.headline)
@@ -422,23 +496,7 @@ struct TagsPieWidget: View {
                             .minimumScaleFactor(0.7)
                     }
 
-                    InfoHintButton(
-                        title: L10n.WidgetType.expensesByTag,
-                        message: L10n.Widget.Hint.tagsPie
-                    )
-
                     Spacer()
-                    if onShowDetail != nil {
-                        Button {
-                            onShowDetail?()
-                        } label: {
-                            Image(systemName: "chevron.right")
-                                .font(DS.Typography.headline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(L10n.Accessibility.viewDetails)
-                    }
                 }
             }
         }
@@ -487,7 +545,7 @@ struct TagsPieWidget: View {
     // MARK: - Helpers
 
     private func formattedCurrency(_ value: Double) -> String {
-        YalaFormatter.currency(value: value, currencyCode: currencyCode)
+        appPreferences.currency(value, currencyCode: currencyCode)
     }
 
     private static let percentFormatter: NumberFormatter = {
@@ -623,5 +681,30 @@ struct TagsPieWidget: View {
         }
 
         return result
+    }
+
+    /// Barra segmentada con ancho medido vía `onGeometryChange` — reemplaza `GeometryReader`
+    /// para evitar reflow loops durante scroll vertical y permitir el widget en halfWidthPair.
+    @ViewBuilder
+    private func segmentedBar(chartData: [PieChartData]) -> some View {
+        let segmentSpacing: CGFloat = DS.Spacing.xxs
+        let totalSpacing = segmentSpacing * CGFloat(max(0, chartData.count - 1))
+        let availableWidth = max(0, segmentedBarWidth - totalSpacing)
+
+        HStack(spacing: segmentSpacing) {
+            ForEach(chartData) { item in
+                RoundedRectangle(cornerRadius: DS.Radius.xs)
+                    .fill(Color(hex: item.colorHex))
+                    .frame(width: availableWidth * CGFloat(item.percentage / 100))
+                    .opacity(isDimmed(item) ? 0.3 : 1.0)
+                    .onTapGesture {
+                        handleTap(item)
+                    }
+            }
+        }
+        .frame(height: 28)
+        .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { newWidth in
+            segmentedBarWidth = newWidth
+        }
     }
 }

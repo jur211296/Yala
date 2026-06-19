@@ -32,8 +32,19 @@ final class NewTransactionViewModel {
 
     // MARK: - Form State
 
-    /// Tipo de transacción seleccionado
-    var transactionType: TransactionType = .expense
+    /// Tipo de transacción seleccionado.
+    /// didSet limpia state propio de transfer SOLO al SALIR de `.transfer` (not en toggles
+    /// .expense ↔ .income). Esto preserva `exchangeRate` para TXs foreign-currency no-transfer.
+    var transactionType: TransactionType = .expense {
+        didSet {
+            guard oldValue == .transfer, transactionType != .transfer else { return }
+            editingTransferPair = nil
+            destinationAccount = nil
+            exchangeRate = 1.0
+            destinationAmount = 0.0
+            isExchangeRateManual = false
+        }
+    }
 
     /// Monto como string para el teclado numérico
     var amountString: String = "0.00" {
@@ -356,6 +367,53 @@ final class NewTransactionViewModel {
         }
     }
 
+    /// Overload para prefill desde el chat (`Edit` en `ChatTransactionDraftCard`).
+    /// Acepta IDs directos (no busca por name), monto, fecha, nota, tags e isExpense.
+    /// Si los IDs están stale, los campos quedan vacíos y el user puede corregirlos.
+    func prefill(
+        fromChatDraft draft: ChatDraftPrefill,
+        accounts: [Account],
+        subcategories: [Subcategory]
+    ) {
+        if let accountID = draft.accountID,
+            let account = accounts.first(where: { $0.persistentModelID == accountID })
+        {
+            selectedAccount = account
+            sourceAccount = account
+            currencyCode = account.currencyCode
+        } else {
+            currencyCode = draft.currencyCode
+        }
+
+        if let subcategoryID = draft.subcategoryID,
+            let subcategory = subcategories.first(where: { $0.persistentModelID == subcategoryID })
+        {
+            selectedSubcategory = subcategory
+        }
+
+        transactionType = draft.isExpense ? .expense : .income
+
+        if let amount = draft.amount {
+            let amountDouble = NSDecimalNumber(decimal: amount).doubleValue
+            amountString = String(format: "%.2f", amountDouble)
+        }
+
+        transactionDate = draft.date
+
+        if !draft.note.isEmpty {
+            note = draft.note
+        }
+
+        // Tags: matchear por ID contra los tags fetcheados al setContext.
+        // Si los tagIDs están stale, simplemente se ignoran.
+        if !draft.tagIDs.isEmpty, !tags.isEmpty {
+            let matched = tags.filter { draft.tagIDs.contains($0.persistentModelID) }
+            if !matched.isEmpty {
+                selectedTags = matched
+            }
+        }
+    }
+
     // MARK: - Numeric Keypad
 
     /// Añade un dígito al monto
@@ -491,6 +549,11 @@ final class NewTransactionViewModel {
             try context.save()
             SessionState.shared.incrementDataVersion()
 
+            // Memoria per-device (App Group) para fallback de QuickExpenseIntent.
+            if let savedAccount = result.first?.account {
+                LastUsedAccountStore.write(savedAccount.shortcutID.uuidString)
+            }
+
             // Update widget cache deferred — don't block save UI
             Task {
                 WidgetDataCache.updateCache(context: context)
@@ -501,16 +564,20 @@ final class NewTransactionViewModel {
                 let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
                 UserDefaults.standard.set(count, forKey: "transactionsSavedCount")
 
+                if count == 1 {
+                    TelemetryService.track(.firstTransaction, parameters: ["origen": "manual"])
+                }
+
                 // Check if we should prompt for App Store review
                 if ReviewPromptService.shouldPrompt(transactionCount: count) {
-                    SessionState.shared.shouldRequestReview = true
+                    RouterEntryGate.shared.submit(.requestAppStoreReview)
                 }
 
                 // Check milestone upgrade for Free users
                 if !FeatureGateService.shared.isProUser,
                    ProUpsellService.shared.shouldShowMilestone(transactionCount: count),
                    let milestone = ProUpsellService.shared.nextMilestone(for: count) {
-                    SessionState.shared.pendingMilestoneUpgrade = milestone
+                    RouterEntryGate.shared.submit(.presentMilestoneUpgrade(milestone))
                     ProUpsellService.shared.markMilestoneShown(milestone)
                 }
             }
@@ -560,6 +627,19 @@ final class NewTransactionViewModel {
 
         let transaction: TransactionItem
         if let existing = editingTransaction {
+            // Si esta TX venía de una transferencia y el usuario cambió el tipo a gasto/ingreso,
+            // el partner (inflow) quedaría huérfano con balanceAdjustmentType == transfer y el mismo
+            // transferPairID, inflando el saldo de la cuenta destino sin posibilidad de auto-cura
+            // (el reconciler solo empareja N=2 con signos opuestos). Borramos el partner y limpiamos
+            // los campos de transfer en la TX editada para convertirla en un movimiento normal.
+            if existing.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer {
+                if let partner = TransferPartnerLookup.partner(of: existing, in: context) {
+                    context.delete(partner)
+                }
+                existing.transferPairID = nil
+                existing.balanceAdjustmentType = nil
+            }
+
             transaction = existing
             transaction.date = transactionDate
             transaction.amount = finalAmount
@@ -568,7 +648,7 @@ final class NewTransactionViewModel {
             transaction.category = subcategory.safeCategory
             transaction.subcategory = subcategory
             transaction.account = account
-            transaction.tags = selectedTags
+            transaction.setTags(from: selectedTags)
             transaction.exchangeRate = abs(effectiveRate)
             transaction.amountInPreferredCurrency =
                 (amountInPreferred as NSDecimalNumber).doubleValue
@@ -653,7 +733,7 @@ final class NewTransactionViewModel {
             outTransaction.category = outflowSubcategory.safeCategory
             outTransaction.subcategory = outflowSubcategory
             outTransaction.account = source
-            outTransaction.tags = selectedTags
+            outTransaction.setTags(from: selectedTags)
             outTransaction.exchangeRate = abs(outRate)
             outTransaction.amountInPreferredCurrency =
                 (outAmountInPreferred as NSDecimalNumber).doubleValue
@@ -668,7 +748,7 @@ final class NewTransactionViewModel {
             inTransaction.category = inflowSubcategory.safeCategory
             inTransaction.subcategory = inflowSubcategory
             inTransaction.account = dest
-            inTransaction.tags = selectedTags
+            inTransaction.setTags(from: selectedTags)
             inTransaction.exchangeRate = abs(inRate)
             inTransaction.amountInPreferredCurrency =
                 (inAmountInPreferred as NSDecimalNumber).doubleValue
@@ -712,12 +792,37 @@ final class NewTransactionViewModel {
             context.insert(inTransaction)
         }
 
-        // Link both sides with a shared transfer pair ID
-        let pairID = UUID().uuidString
+        // Preserve existing pairID when editing — regenerating breaks the link
+        // and can produce orphan TXs if a later fetch by pairID fails.
+        // Symmetric fallback: try out then in; uses `candidates` para no perder un pairID
+        // válido en `in` cuando `out` es empty-string (corrupción asimétrica).
+        let pairID = Self.resolveTransferPairID(candidates: [
+            editingTransferPair?.out.transferPairID,
+            editingTransferPair?.in.transferPairID
+        ])
         outTransaction.transferPairID = pairID
         inTransaction.transferPairID = pairID
 
         return (outTransaction, inTransaction)
+    }
+
+    /// Returns the first candidate that's a valid UUID after trimming, canonicalized to
+    /// uppercase. Otherwise generates a fresh UUID. Canonicalization previene case-mismatch
+    /// que rompería groupings case-sensitive (Dictionary, fetch predicate) en downstream code.
+    nonisolated static func resolveTransferPairID(candidates: [String?]) -> String {
+        for candidate in candidates {
+            guard let raw = candidate else { continue }
+            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty, let uuid = UUID(uuidString: trimmed) {
+                return uuid.uuidString  // canonical uppercase
+            }
+        }
+        return UUID().uuidString
+    }
+
+    /// Backward-compat overload — usado por tests existentes.
+    nonisolated static func resolveTransferPairID(existingPairID: String?) -> String {
+        resolveTransferPairID(candidates: [existingPairID])
     }
 
     private func ensureTransferCategory(context: ModelContext) throws -> Subcategory {
@@ -764,7 +869,7 @@ final class NewTransactionViewModel {
         } else {
             // Fallback: create expense category if somehow missing
             category = Category(
-                name: "Otros",
+                name: L10n.Category.other,
                 colorHex: "#64748B",
                 isIncome: false
             )
@@ -828,7 +933,7 @@ final class NewTransactionViewModel {
         } else {
             // Fallback: create income category if somehow missing
             category = Category(
-                name: "Ingresos",
+                name: L10n.Category.incomeCategory,
                 colorHex: "#14B8A6",
                 isIncome: true
             )
@@ -873,9 +978,11 @@ final class NewTransactionViewModel {
         splitTotalAmount != nil && splitType != nil
     }
 
+    /// Snapshot intencional: `forceFullPrecision: true` ignora `decimalPlaces` (siempre 2),
+    /// así que este callsite es inmune al bug de reactividad. YalaFormatter deprecated permitido.
     var splitDescription: String? {
         guard let type = splitType, let total = splitTotalAmount else { return nil }
-        let formattedTotal = YalaFormatter.number(value: total, forceFullPrecision: true)
+        let formattedTotal = YalaFormatterStatic.number(value: total, forceFullPrecision: true)
         switch type {
         case .percentage:
             if let pct = splitMyValue {
@@ -892,7 +999,7 @@ final class NewTransactionViewModel {
             }
         case .exact:
             if let exact = splitMyValue {
-                return L10n.Split.descExact(YalaFormatter.number(value: exact, forceFullPrecision: true))
+                return L10n.Split.descExact(YalaFormatterStatic.number(value: exact, forceFullPrecision: true))
             }
         }
         return nil

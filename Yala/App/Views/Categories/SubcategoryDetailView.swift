@@ -19,6 +19,10 @@ struct SubcategoryDetailView: View {
 
     private var isEditing: Bool { subcategoryToEdit != nil }
 
+    /// Las subcategorías sistema (bridge de grupos + legacy "Ajuste de saldo"/
+    /// "Transferencia") son read-only: no se pueden eliminar.
+    private var isSystemSubcategory: Bool { subcategoryToEdit?.isAnySystem ?? false }
+
     @State private var name: String
     @State private var selectedNeed: SubcategoryNeed
     @State private var isVisible: Bool
@@ -98,20 +102,17 @@ struct SubcategoryDetailView: View {
     }
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-                .dismissKeyboardOnTap()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    header
-                    detailsSection
-                }
-                .padding(.horizontal, DS.Spacing.lg)
-                .padding(.vertical, DS.Spacing.xxl)
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
+                header
+                detailsSection
             }
-            .scrollDismissesKeyboard(.interactively)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.xxl)
+            .dismissKeyboardOnTap()
         }
+        .scrollDismissesKeyboard(.interactively)
+        .yalaScreenBackground(.subtle)
         .navigationTitle(isEditing ? L10n.Subcategory.editTitle : L10n.Subcategory.newTitle)
         .swipeBack()
         .navigationBarTitleDisplayMode(.inline)
@@ -210,7 +211,7 @@ struct SubcategoryDetailView: View {
                     // Pencil edit indicator
                     Circle()
                         .fill(.thCard)
-                        .frame(width: 24, height: 24)
+                        .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
                         .overlay(
                             Image(systemName: "pencil")
                                 .font(DS.Typography.labelSmall)
@@ -224,6 +225,7 @@ struct SubcategoryDetailView: View {
                 }
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Action.edit)
 
             Text(parentCategory.name)
                 .font(DS.Typography.subheadline)
@@ -253,6 +255,7 @@ struct SubcategoryDetailView: View {
                         TextField(L10n.Subcategory.namePlaceholder, text: $name)
                             .textContentType(.name)
                             .focused($isNameFieldFocused)
+                            .accessibilityIdentifier("subcategory_name_field")
                     }
                     .padding()
 
@@ -294,8 +297,8 @@ struct SubcategoryDetailView: View {
                 }
             }
 
-            // Delete button (only when editing an existing subcategory)
-            if isEditing {
+            // Delete button (only when editing an existing, non-system subcategory)
+            if isEditing && !isSystemSubcategory {
                 SectionBox(title: "") {
                     Button {
                         transactionCount = countTransactions()

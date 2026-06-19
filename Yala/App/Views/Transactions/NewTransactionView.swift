@@ -16,11 +16,7 @@ struct NewTransactionView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
-    @Environment(\.yalaTheme) private var theme
-
-    @AppStorage("defaultCurrencyCode") private var preferredCurrencyCode: String = CurrencyCode.pen.rawValue
-    @AppStorage("currencyDisplayFormat") private var currencyDisplayFormat: String = "code"
-    @AppStorage("autoFocusField") private var autoFocusField: String = "none"
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = NewTransactionViewModel()
     @FocusState private var isNoteFieldFocused: Bool
@@ -41,6 +37,9 @@ struct NewTransactionView: View {
     // Split calculator state
     @State private var splitFieldState = SplitCalculatorFieldState()
 
+    // A0-Bridge V2.0: cached fetch del draft pendiente (evita re-fetch en hot path).
+    @State private var cachedPendingGroupDraft: InboxDraft?
+
     // Quick action states
     @State private var showSavedToast = false
     @State private var savedToastMessage = ""
@@ -53,6 +52,7 @@ struct NewTransactionView: View {
     let prefillAccountID: PersistentIdentifier?
     let prefillCategoryID: PersistentIdentifier?
     let prefillSubcategoryName: String?
+    let prefillFromChatDraft: ChatDraftPrefill?
 
     // Transaction being edited (if any)
     let transactionToEdit: TransactionItem?
@@ -61,12 +61,113 @@ struct NewTransactionView: View {
         prefillAccountID: PersistentIdentifier? = nil,
         prefillCategoryID: PersistentIdentifier? = nil,
         prefillSubcategoryName: String? = nil,
+        prefillFromChatDraft: ChatDraftPrefill? = nil,
         transactionToEdit: TransactionItem? = nil
     ) {
         self.prefillAccountID = prefillAccountID
         self.prefillCategoryID = prefillCategoryID
         self.prefillSubcategoryName = prefillSubcategoryName
+        self.prefillFromChatDraft = prefillFromChatDraft
         self.transactionToEdit = transactionToEdit
+    }
+
+    // MARK: - A0-Bridge V2.0 Read-Only Mode (P1-3)
+
+    /// True si la TX en edición viene del bridge de grupos (no editable manualmente).
+    private var isBridgedReadOnly: Bool {
+        guard let tx = transactionToEdit else { return false }
+        return tx.splitExpenseID != nil || tx.splitSettlementID != nil
+    }
+
+    /// M6: True si la TX bridgeada es Caso A (cuenta personal real, no virtual).
+    /// En este caso el form permite **edit parcial** — campos personales editables
+    /// (cuenta/note/subcat/tags), campos del grupo read-only (monto/fecha/moneda/tipo).
+    private var isBridgedCasoA: Bool {
+        guard let tx = transactionToEdit,
+              tx.splitExpenseID != nil,
+              let account = tx.account,
+              !account.isSystemAccount
+        else { return false }
+        return true
+    }
+
+    /// Hidrata `cachedPendingGroupDraft` una vez al aparecer (evita fetch en hot path del body).
+    private func loadPendingGroupDraftIfNeeded() {
+        guard isBridgedReadOnly,
+              let splitID = transactionToEdit?.splitExpenseID,
+              cachedPendingGroupDraft == nil else { return }
+        let descriptor = FetchDescriptor<InboxDraft>(
+            predicate: #Predicate { $0.splitExpenseID == splitID && $0.subcategory == nil }
+        )
+        do {
+            cachedPendingGroupDraft = try modelContext.fetch(descriptor).first
+        } catch {
+            #if DEBUG
+            print("NewTransactionView: pending group draft fetch failed: \(error)")
+            #endif
+            cachedPendingGroupDraft = nil
+        }
+    }
+
+    @ViewBuilder
+    private var bridgedTxReadOnlyBanner: some View {
+        if let tx = transactionToEdit, isBridgedReadOnly {
+            let pendingDraft = cachedPendingGroupDraft
+            let message: String = {
+                if pendingDraft != nil {
+                    return L10n.Groups.Bridge.assignFromInbox
+                } else if tx.splitSettlementID != nil {
+                    return L10n.Groups.Bridge.editSettlementInGroup
+                } else if isBridgedCasoA {
+                    // M6: Caso A — edit parcial habilitado para campos personales.
+                    return L10n.Groups.Bridge.editPartialBanner
+                } else {
+                    return L10n.Groups.Bridge.editFromGroup
+                }
+            }()
+            let ctaLabel: String = pendingDraft != nil
+                ? L10n.Inbox.openInbox
+                : L10n.Groups.Detail.openGroup
+
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                    Image(systemName: "info.circle.fill")
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.thAccent)
+                    Text(message)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                }
+                Button {
+                    handleBridgedCTA(hasPendingDraft: pendingDraft != nil)
+                } label: {
+                    Text(ctaLabel)
+                        .font(DS.Typography.body)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.thAccent)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(DS.Spacing.lg)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: DS.Radius.lg).fill(.thCard))
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.top, DS.Spacing.sm)
+        }
+    }
+
+    private func handleBridgedCTA(hasPendingDraft: Bool) {
+        dismiss()
+        if hasPendingDraft {
+            RouterEntryGate.shared.submit(.navigate(.inbox))
+        } else if let zoneID = transactionToEdit?.splitGroupZoneID {
+            // Si tenemos zoneID, intentar deeplink directo al grupo.
+            RouterEntryGate.shared.submit(.navigate(.groupDetail(groupID: zoneID)))
+        } else {
+            // Fallback: lista genérica de grupos.
+            RouterEntryGate.shared.submit(.navigate(.groups))
+        }
     }
 
     var body: some View {
@@ -123,42 +224,55 @@ struct NewTransactionView: View {
 
     private var transactionFormView: some View {
         NavigationStack {
-            ZStack {
-                theme.background
-                    .ignoresSafeArea()
-                    .dismissKeyboardOnTap()
+            VStack(spacing: DS.Spacing.none) {
+                    // P1-3: oculto en read-only (no se cambia el tipo de TX bridgeada).
+                    if !isBridgedReadOnly {
+                        transactionTypeSelector
+                            .padding(.top, DS.Spacing.sm)
+                    }
 
-                VStack(spacing: DS.Spacing.none) {
-                    // Transaction type selector
-                    transactionTypeSelector
-                        .padding(.top, DS.Spacing.sm)
+                    // P1-3: banner CTA contextual cuando la TX es bridgeada.
+                    bridgedTxReadOnlyBanner
 
-                    // Contextual guide for new users
-                    ContextualGuideBanner.transaction()
-                        .padding(.horizontal, DS.Spacing.md)
-                        .padding(.top, DS.Spacing.xs)
+                    // Contextual guide for new users (oculto en read-only).
+                    if !isBridgedReadOnly {
+                        ContextualGuideBanner.transaction()
+                            .padding(.horizontal, DS.Spacing.md)
+                            .padding(.top, DS.Spacing.xs)
+                    }
 
-                    Spacer()
+                    // Resto del form: disabled granular según tipo bridged (M5 vs M6 Caso A).
+                    Group {
+                        Spacer()
 
-                    // Central content area
-                    centralContent
+                        // Central content area: campos del grupo (monto/fecha/tipo) — always
+                        // disabled si bridged (M5 + M6 Caso A: el grupo es la fuente de verdad).
+                        centralContent
+                            .disabled(isBridgedReadOnly)
+                            .opacity(isBridgedReadOnly ? 0.5 : 1.0)
 
-                    Spacer()
+                        Spacer()
 
-                    // Bottom selection chips
-                    bottomChips
-                        .padding(.bottom, DS.Spacing.lg)
+                        // Bottom selection chips: campos personales (cuenta/subcat/tags) —
+                        // M6 Caso A los habilita. M5 puro (Caso B/settlements) sigue disabled.
+                        bottomChips
+                            .disabled(isBridgedReadOnly && !isBridgedCasoA)
+                            .opacity(isBridgedReadOnly && !isBridgedCasoA ? 0.5 : 1.0)
+                            .padding(.bottom, DS.Spacing.lg)
 
-                    // Exchange rate section removed - integrated into centralContent
-
-                    // Register button
-                    registerButton
-                        .padding(.horizontal, DS.Spacing.xl)
-                        .padding(.bottom, DS.Spacing.xxl)
+                        // Register button: M6 Caso A puede guardar cambios personales (solo
+                        // toca campos personales en SwiftData, no invoca service del grupo).
+                        registerButton
+                            .disabled(isBridgedReadOnly && !isBridgedCasoA)
+                            .opacity(isBridgedReadOnly && !isBridgedCasoA ? 0.5 : 1.0)
+                            .padding(.horizontal, DS.Spacing.xl)
+                            .padding(.bottom, DS.Spacing.xxl)
+                    }
                 }
-                .scaleEffect(duplicateAnimationVisible ? 1.0 : 0.92)
-                .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
-            }
+            .scaleEffect(duplicateAnimationVisible ? 1.0 : 0.92)
+            .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
+            .dismissKeyboardOnTap()
+            .yalaScreenBackground(.subtle)
             .navigationTitle(
                 (transactionToEdit != nil && !isDuplicating)
                     ? L10n.Transaction.editTransaction : L10n.Transaction.newTransaction
@@ -171,23 +285,28 @@ struct NewTransactionView: View {
                     }
                 }
 
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        viewModel.showFavoritesSheet = true
-                    } label: {
-                        Image(systemName: "star.fill")
-                            .font(DS.Typography.body)
-                            .foregroundStyle(Color.primary)
+                if !isBridgedReadOnly {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            viewModel.showFavoritesSheet = true
+                        } label: {
+                            Image(systemName: "star.fill")
+                                .font(DS.Typography.body)
+                                .foregroundStyle(Color.primary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.Accessibility.favoriteTemplates)
+                        .tint(Color.primary)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(L10n.Accessibility.favoriteTemplates)
-                    .tint(Color.primary)
                 }
             }
             .sheet(isPresented: $viewModel.showAccountSelector) {
+                // M6: en edit Caso A bridgeado, limitar a cuentas de la misma moneda del expense
+                // (la moneda viene del grupo y no es editable desde aquí — read-only).
                 AccountSelectorSheet(
                     selectedAccount: $viewModel.selectedAccount,
-                    title: L10n.Transaction.account
+                    title: L10n.Transaction.account,
+                    currencyFilter: isBridgedCasoA ? transactionToEdit?.currencyCode : nil
                 )
                 .onChange(of: viewModel.selectedAccount) { _, newAccount in
                     if let account = newAccount {
@@ -225,7 +344,6 @@ struct NewTransactionView: View {
             }
             .sheet(isPresented: $viewModel.showDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.transactionDate)
-                    .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
                     .onChange(of: viewModel.transactionDate) { _, _ in
                         Task {
                             await viewModel.loadExchangeRate(context: modelContext)
@@ -348,18 +466,19 @@ struct NewTransactionView: View {
         .onAppear {
             viewModel.setContext(modelContext)
             prefillFromContext()
+            loadPendingGroupDraftIfNeeded()
             // Force expense type in expenses-only mode
             if sessionState.isExpensesOnlyMode {
                 viewModel.transactionType = .expense
             }
             // Auto-focus field based on user preference (only for new transactions)
-            if transactionToEdit == nil && autoFocusField != "none" {
+            if transactionToEdit == nil, appPreferences.autoFocusField != .none {
                 Task {
                     try? await Task.sleep(for: .milliseconds(50))
-                    if autoFocusField == "amount" {
-                        isAmountFieldFocused = true
-                    } else {
-                        isNoteFieldFocused = true
+                    switch appPreferences.autoFocusField {
+                    case .none: break
+                    case .amount: isAmountFieldFocused = true
+                    case .description: isNoteFieldFocused = true
                     }
                 }
             }
@@ -463,7 +582,7 @@ struct NewTransactionView: View {
             // Use viewModel.currencyCode (transaction's currency), NOT effectiveCurrencyCode (account's currency)
             // This handles cases where transaction is in USD but account is in PEN
             if !viewModel.isTransfer,
-               viewModel.currencyCode != preferredCurrencyCode,
+               viewModel.currencyCode != appPreferences.defaultCurrencyCode.rawValue,
                viewModel.exchangeRate != 1.0 {
                 exchangeRateChip
             }
@@ -485,6 +604,7 @@ struct NewTransactionView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.top, DS.Spacing.sm)
+                .accessibilityIdentifier("new_transaction_split_chip")
             }
 
             // Category chip + Nature chip (visible when subcategory is selected, not for transfers)
@@ -613,11 +733,7 @@ struct NewTransactionView: View {
     /// Currency display for amount field - respects user preference (code vs symbol)
     private var currencySymbol: String? {
         guard viewModel.effectiveAccount != nil else { return nil }
-        let code = viewModel.effectiveCurrencyCode
-        if let currency = CurrencyCode(rawValue: code) {
-            return currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
-        }
-        return code
+        return appPreferences.currencyIdentifier(for: viewModel.effectiveCurrencyCode)
     }
 
     /// Exchange rate chip showing the converted amount and rate
@@ -627,13 +743,7 @@ struct NewTransactionView: View {
         let amount = viewModel.amount
         let convertedAmount = amount * rate
 
-        // Get preferred currency display based on user setting
-        let currencyDisplay: String
-        if let currency = CurrencyCode(rawValue: preferredCurrencyCode) {
-            currencyDisplay = currencyDisplayFormat == "symbol" ? currency.symbol : currency.rawValue
-        } else {
-            currencyDisplay = preferredCurrencyCode
-        }
+        let currencyDisplay = appPreferences.currencyIdentifier(for: appPreferences.defaultCurrencyCode.rawValue)
 
         // Format converted amount (no decimals if whole number, otherwise 2 decimals)
         let formattedAmount: String
@@ -668,6 +778,8 @@ struct NewTransactionView: View {
                 ) {
                     duplicateTransaction()
                 }
+                .disabled(isBridgedCasoA)  // M6: duplicar TX bridgeada generaría TX huérfana sin splitExpenseID
+                .opacity(isBridgedCasoA ? 0.4 : 1.0)
             }
 
             // Delete (only in edit mode)
@@ -678,6 +790,8 @@ struct NewTransactionView: View {
                 ) {
                     viewModel.showDeleteConfirmation = true
                 }
+                .disabled(isBridgedCasoA)  // M6: delete reaparece como draft via próximo sync. Bloqueamos.
+                .opacity(isBridgedCasoA ? 0.4 : 1.0)
             }
 
             // Split calculator (only for expenses)
@@ -688,6 +802,7 @@ struct NewTransactionView: View {
                 ) {
                     viewModel.showSplitCalculator = true
                 }
+                .accessibilityIdentifier("new_transaction_split_action")
             }
 
             // Save as favorite
@@ -697,6 +812,7 @@ struct NewTransactionView: View {
             ) {
                 viewModel.showSaveAsFavoriteSheet = true
             }
+            .accessibilityIdentifier("new_transaction_favorite_action")
 
             // Save as recurring
             quickActionButton(
@@ -870,6 +986,7 @@ struct NewTransactionView: View {
                         dismissKeyboard()
                         viewModel.showAccountSelector = true
                     }
+                    .accessibilityIdentifier("new_transaction_account_chip")
                 }
 
                 // Subcategory chip (not for transfers) - uses category color when selected
@@ -883,6 +1000,7 @@ struct NewTransactionView: View {
                         dismissKeyboard()
                         viewModel.showSubcategorySelector = true
                     }
+                    .accessibilityIdentifier("new_transaction_subcategory_chip")
                 }
 
                 // Tags - individual chip per tag or default chip (not for transfers)
@@ -1134,27 +1252,15 @@ struct NewTransactionView: View {
     // MARK: - Register Button
 
     private var registerButton: some View {
-        Button {
+        YalaPrimaryButton(
+            L10n.Action.save,
+            icon: "checkmark.circle.fill",
+            isDisabled: !viewModel.canSave || viewModel.isSaving,
+            isLoading: viewModel.isSaving,
+            disabledHint: !viewModel.canSave ? L10n.Accessibility.completeFormHint : nil
+        ) {
             saveTransaction()
-        } label: {
-            HStack {
-                if viewModel.isSaving {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                } else {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(DS.Typography.headline)
-                    Text(L10n.Action.save)
-                        .font(DS.Typography.headline)
-                }
-            }
-            .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(viewModel.canSave ? theme.accent : DS.Semantic.disabledForeground.opacity(0.4))
-        .controlSize(.large)
-        .disabled(!viewModel.canSave || viewModel.isSaving)
-        .accessibilityHint(!viewModel.canSave ? L10n.Accessibility.completeFormHint : "")
         .accessibilityIdentifier("new_transaction_save")
         .dsAnimation(.easeInOut(duration: 0.2), value: viewModel.canSave, reduceMotion: reduceMotion)
     }
@@ -1182,6 +1288,18 @@ struct NewTransactionView: View {
             } else {
                 SetupChecklistManager.shared.markCompleted(.firstExpense)
             }
+
+            // Si la NTV se abrió desde un draft del chat, broadcastear el
+            // signal para que ChatAssistantViewModel marque el card como
+            // `.saved` con el ID de la transacción real.
+            if let chatDraft = prefillFromChatDraft, transactionToEdit == nil {
+                SessionState.shared.chatDraftSavedSignal = SessionState.ChatDraftSavedSignal(
+                    messageID: chatDraft.originMessageID,
+                    draftID: chatDraft.originDraftID,
+                    transactionID: first.persistentModelID
+                )
+            }
+
             showTransactionSuccess()
         }
     }
@@ -1275,42 +1393,56 @@ struct NewTransactionView: View {
             // Load date
             viewModel.transactionDate = tx.date
 
-            // Load tags
-            viewModel.selectedTags = tx.tags ?? []
+            // Load tags — CSV-mirror SSOT via resolver + TagResolver.
+            viewModel.selectedTags = TagResolver.fetchOrEmpty(
+                ids: tx.resolvedTagIDs(scheduleBackfill: true) ?? [],
+                in: modelContext,
+                errorContext: "NewTransactionView/edit"
+            )
 
             // Load note
             viewModel.note = tx.note ?? ""
 
             // If this is a transfer, load the paired transaction
-            if tx.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, let pairID = tx.transferPairID {
-                let fetchPairID = pairID
-                let descriptor = FetchDescriptor<TransactionItem>(
-                    predicate: #Predicate { $0.transferPairID == fetchPairID }
-                )
-                do {
-                    let pairs = try modelContext.fetch(descriptor)
-                    let pair = pairs.first { $0.persistentModelID != tx.persistentModelID }
-                    if let pair {
-                        viewModel.transactionType = .transfer
-                        // Determine which is out (negative) and which is in (positive)
-                        let outTx = tx.amount < 0 ? tx : pair
-                        let inTx = tx.amount < 0 ? pair : tx
-                        viewModel.sourceAccount = outTx.account
-                        viewModel.destinationAccount = inTx.account
-                        viewModel.editingTransferPair = (out: outTx, in: inTx)
-                        // Use absolute amount from the outflow side
-                        viewModel.amountString = AmountInputHelper.formatWithGrouping(abs(outTx.amount))
-                    }
-                } catch {
+            if let pair = TransferPartnerLookup.partner(of: tx, in: modelContext) {
+                viewModel.transactionType = .transfer
+                // Defensive sign assignment — si ambos amounts >= 0 (corrupción), outTx default
+                // a tx; el invariante out<0/in>0 puede estar violado pero el form sigue funcional.
+                let outTx: TransactionItem
+                let inTx: TransactionItem
+                if tx.amount < 0 {
+                    outTx = tx
+                    inTx = pair
+                } else if pair.amount < 0 {
+                    outTx = pair
+                    inTx = tx
+                } else {
+                    // Caso degenerado: ningún amount negativo.
+                    outTx = tx
+                    inTx = pair
                     #if DEBUG
-                    print("NewTransactionView: Error fetching transfer pairs: \(error)")
+                    print("prefillFromContext: sign invariant violated for pairID \(tx.transferPairID ?? "?") — both amounts >= 0")
                     #endif
                 }
+                viewModel.sourceAccount = outTx.account
+                viewModel.destinationAccount = inTx.account
+                viewModel.editingTransferPair = (out: outTx, in: inTx)
+                // Use absolute amount from the outflow side
+                viewModel.amountString = AmountInputHelper.formatWithGrouping(abs(outTx.amount))
+            } else if tx.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, tx.transferPairID != nil {
+                // Partner no local. Puede ser CloudKit sync pendiente (partner llegará pronto) o
+                // genuinely orphan. NO mutar/save destructivamente aquí: clear durante sync race
+                // haría que CKSyncEngine resuelva conflicto contra el partner remoto recién subido,
+                // destruyendo un pair legítimo. El reconciler boot-time decide post-sync con todos
+                // los datos. Dejamos el form como TX normal (transactionType asignado por sign).
+                #if DEBUG
+                print("prefillFromContext: transfer partner not found locally for \(tx.persistentModelID) — deferring to boot reconciler")
+                #endif
             }
 
             // Load exchange rate (for display chip when currency differs from preferred)
             // For non-transfers: shows rate from transaction currency to preferred currency
-            if tx.currencyCode != preferredCurrencyCode {
+            if tx.currencyCode != appPreferences.defaultCurrencyCode.rawValue {
                 if tx.exchangeRate != 1.0 {
                     // Use stored rate
                     viewModel.exchangeRate = tx.exchangeRate
@@ -1318,7 +1450,7 @@ struct NewTransactionView: View {
                     // Stored rate is 1.0 but currencies differ - load from CurrencyConverter
                     if let rate = CurrencyConverter.shared.getDisplayRate(
                         from: tx.currencyCode,
-                        to: preferredCurrencyCode,
+                        to: appPreferences.defaultCurrencyCode.rawValue,
                         date: tx.date,
                         context: modelContext
                     ) {
@@ -1326,7 +1458,7 @@ struct NewTransactionView: View {
                     } else {
                         // Fallback: use static rates from CurrencyCode enum
                         if let fromCurrency = CurrencyCode(rawValue: tx.currencyCode),
-                           let toCurrency = CurrencyCode(rawValue: preferredCurrencyCode) {
+                           let toCurrency = CurrencyCode(rawValue: appPreferences.defaultCurrencyCode.rawValue) {
                             let fromRate = fromCurrency.fallbackRateToUSD
                             let toRate = toCurrency.fallbackRateToUSD
                             if fromRate > 0 {
@@ -1348,6 +1480,16 @@ struct NewTransactionView: View {
             return
         }
 
+        // Chat draft prefill takes precedence (carries amount, date, note, IDs)
+        if let chatDraft = prefillFromChatDraft {
+            viewModel.prefill(
+                fromChatDraft: chatDraft,
+                accounts: viewModel.accounts,
+                subcategories: allSubcategories
+            )
+            return
+        }
+
         // Only use explicitly provided prefill account (no fallback to last transaction)
         viewModel.prefill(
             accountID: prefillAccountID,
@@ -1360,6 +1502,7 @@ struct NewTransactionView: View {
 
     private func duplicateTransaction() {
         guard transactionToEdit != nil else { return }
+        TelemetryService.track(.transactionDuplicated, parameters: ["type": viewModel.transactionType.rawValue])
 
         // Animate form out
         dsWithAnimation(reduceMotion) {
@@ -1373,6 +1516,7 @@ struct NewTransactionView: View {
             // This turns the form into "create new" mode with prefilled data
             viewModel.editingTransaction = nil
             viewModel.editingTransferPair = nil
+            viewModel.transactionDate = Date.now
 
             // Mark as duplicating to update title
             isDuplicating = true
@@ -1414,6 +1558,7 @@ struct NewTransactionView: View {
 
             modelContext.delete(transaction)
             try modelContext.save()
+            TelemetryService.track(.transactionDeleted, parameters: ["type": viewModel.transactionType.rawValue])
             WidgetDataCache.updateCache(context: modelContext)
             SessionState.shared.incrementDataVersion()
             dismiss()
@@ -1498,8 +1643,12 @@ struct NewTransactionView: View {
             viewModel.selectedNeed = favorite.subcategory?.need
         }
 
-        // Set tags
-        viewModel.selectedTags = favorite.tags ?? []
+        // Set tags — CSV-mirror SSOT via resolver + TagResolver.
+        viewModel.selectedTags = TagResolver.fetchOrEmpty(
+            ids: favorite.resolvedTagIDs(scheduleBackfill: true) ?? [],
+            in: modelContext,
+            errorContext: "NewTransactionView/clone-favorite"
+        )
 
         // Set note if available
         if let note = favorite.note, !note.isEmpty {
@@ -1510,4 +1659,5 @@ struct NewTransactionView: View {
 
 #Preview {
     NewTransactionView()
+        .previewAppPreferences()
 }

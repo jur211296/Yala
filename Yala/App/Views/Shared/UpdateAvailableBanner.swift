@@ -53,6 +53,7 @@ struct UpdateAvailableBanner: View {
                     .background(theme.accent)
                     .clipShape(Capsule())
             }
+            .accessibilityIdentifier("update_banner_action")
 
             Button {
                 onDismiss()
@@ -63,6 +64,7 @@ struct UpdateAvailableBanner: View {
                     .padding(DS.Spacing.xs)
             }
             .accessibilityLabel(L10n.Action.close)
+            .accessibilityIdentifier("update_banner_dismiss")
         }
         .padding(DS.Spacing.md)
         .glassEffect(.regular)

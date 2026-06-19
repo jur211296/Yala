@@ -89,11 +89,17 @@
 
   /* Yala Brand Buttons */
   .btn-primary {
-    @apply px-6 py-3 rounded-xl font-semibold;
-    @apply bg-yala-indigo;
-    @apply hover:shadow-yala transition-all duration-300;
+    @apply px-6 py-3 font-semibold relative overflow-hidden;
+    @apply transition-all duration-300;
     @apply hover:scale-[1.02] active:scale-[0.98];
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 55%, #FF0080 130%);
+    box-shadow: 0 8px 24px -6px rgba(99, 102, 241, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
     color: #FFFFFF !important;
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 12px 34px -6px rgba(255, 0, 128, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
 
   /* Step numbers - always white */
@@ -121,20 +127,52 @@
     @apply text-neutral-400 hover:text-yala-cyan transition-colors;
   }
 
-  /* Cards */
+  /* Cards — liquid glass */
   .card {
-    @apply rounded-2xl border transition-all duration-300;
+    @apply border transition-all duration-300 relative;
+    border-radius: 1.5rem;
     background: var(--bg-card);
     border-color: var(--border-color);
+    backdrop-filter: blur(18px) saturate(135%);
+    -webkit-backdrop-filter: blur(18px) saturate(135%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 30px -12px rgba(0, 0, 0, 0.45);
+  }
+
+  body.light .card {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 10px 28px -14px rgba(99, 102, 241, 0.25);
   }
 
   .card:hover {
     border-color: var(--border-hover);
+    transform: translateY(-2px);
   }
 
   .card-glow {
     @apply card;
-    @apply hover:shadow-yala;
+  }
+
+  .card-glow:hover {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 40px -12px rgba(99, 102, 241, 0.35);
+  }
+
+  /* Standalone glass surfaces (sheen on hover) */
+  .glass-card {
+    @apply card overflow-hidden;
+  }
+
+  .glass-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.10) 48%, transparent 60%);
+    transform: translateX(-120%);
+    transition: transform 0.8s ease;
+    pointer-events: none;
+  }
+
+  .glass-card:hover::after {
+    transform: translateX(120%);
   }
 
   /* Bento Grid */
@@ -187,13 +225,15 @@
 @layer utilities {
   .animate-on-scroll {
     opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    transform: translateY(24px);
+    filter: blur(6px);
+    transition: opacity 0.7s ease-out, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), filter 0.7s ease-out;
   }
 
   .animate-on-scroll.is-visible {
     opacity: 1;
     transform: translateY(0);
+    filter: blur(0);
   }
 
   /* Stagger delays for children */
@@ -270,14 +310,14 @@
 
 body.light {
   --bg-primary: #FAFAFC;
-  --bg-secondary: #F1F5F9;
-  --bg-card: #FFFFFF;
-  --border-color: #E2E8F0;
+  --bg-secondary: rgba(241, 245, 249, 0.55);
+  --bg-card: rgba(255, 255, 255, 0.72);
+  --border-color: rgba(226, 232, 240, 0.9);
   --border-hover: #CBD5E1;
   --text-primary: #0F172A;
   --text-secondary: #334155;
   --text-muted: #475569;
-  --header-bg: rgba(250, 250, 252, 0.85);
+  --header-bg: rgba(250, 250, 252, 0.75);
 }
 
 /* Light mode specific overrides for better contrast */
@@ -368,3 +408,145 @@ body.light .bg-yala-cyan\/5 {
 
 body.light .screenshot-dark { display: none !important; }
 body.light .screenshot-light { display: block !important; }
+
+/* ============================================================
+   Liquid Glass 2.0 — aurora background, glass surfaces, motion
+   ============================================================ */
+
+/* Aurora background layer — fixed, behind all content (z-index:-1 paints
+   above the body base color but below in-flow content). Injected once in
+   Layout.astro as <div class="aurora-bg">. */
+.aurora-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(40% 50% at 18% 12%, rgba(99, 102, 241, 0.28), transparent 70%),
+    radial-gradient(36% 44% at 85% 18%, rgba(0, 243, 255, 0.16), transparent 70%),
+    radial-gradient(45% 55% at 78% 88%, rgba(255, 0, 128, 0.18), transparent 72%);
+}
+
+.aurora-bg::before,
+.aurora-bg::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.6;
+}
+
+.aurora-bg::before {
+  width: 46vw;
+  height: 46vw;
+  top: -12vw;
+  left: -6vw;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.30), transparent 65%);
+  animation: aurora-drift-a 24s ease-in-out infinite;
+}
+
+.aurora-bg::after {
+  width: 42vw;
+  height: 42vw;
+  bottom: -14vw;
+  right: -8vw;
+  background: radial-gradient(circle, rgba(0, 194, 203, 0.22), transparent 65%);
+  animation: aurora-drift-b 30s ease-in-out infinite;
+}
+
+body.light .aurora-bg {
+  background:
+    radial-gradient(40% 50% at 18% 12%, rgba(99, 102, 241, 0.14), transparent 70%),
+    radial-gradient(36% 44% at 85% 18%, rgba(0, 194, 203, 0.10), transparent 70%),
+    radial-gradient(45% 55% at 78% 88%, rgba(255, 0, 128, 0.10), transparent 72%);
+}
+
+body.light .aurora-bg::before,
+body.light .aurora-bg::after { opacity: 0.4; }
+
+@keyframes aurora-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(8vw, 6vh) scale(1.12); }
+}
+
+@keyframes aurora-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-7vw, -5vh) scale(1.1); }
+}
+
+/* Glass utility (for floating bars / pills / chips) */
+.glass {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--border-color);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Hero device glow */
+.device-glow { position: relative; }
+.device-glow::before {
+  content: '';
+  position: absolute;
+  inset: -12% -18%;
+  z-index: -1;
+  background: radial-gradient(circle at 50% 40%, rgba(99, 102, 241, 0.45), rgba(255, 0, 128, 0.18) 45%, transparent 70%);
+  filter: blur(48px);
+  opacity: 0.75;
+}
+
+/* Hero parallax/tilt target (driven by tiny JS, capped) */
+.hero-tilt {
+  transition: transform 0.2s ease-out;
+  transform: perspective(1200px) rotateX(var(--tiltX, 0deg)) rotateY(var(--tiltY, 0deg)) translateY(var(--floatY, 0px));
+  will-change: transform;
+}
+
+/* Stagger for scroll-reveal children */
+.animate-on-scroll.stagger-1 { transition-delay: 0.08s; }
+.animate-on-scroll.stagger-2 { transition-delay: 0.16s; }
+.animate-on-scroll.stagger-3 { transition-delay: 0.24s; }
+.animate-on-scroll.stagger-4 { transition-delay: 0.32s; }
+.animate-on-scroll.stagger-5 { transition-delay: 0.40s; }
+
+/* Gallery marquee (auto-scroll, pauses on hover/focus) */
+.gallery-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.gallery-track {
+  display: flex;
+  gap: 1.25rem;
+  width: max-content;
+  animation: gallery-scroll 60s linear infinite;
+}
+.gallery-marquee:hover .gallery-track,
+.gallery-marquee:focus-within .gallery-track { animation-play-state: paused; }
+
+@keyframes gallery-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* Reduced motion — disable all decorative animation, restore manual scroll */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-bg::before,
+  .aurora-bg::after { animation: none; }
+  .animate-on-scroll {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+  .hero-tilt { transform: none !important; }
+  .animate-float, .animate-pulse-glow { animation: none !important; }
+  .gallery-track { animation: none; }
+  .gallery-marquee {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .glass-card::after { display: none; }
+}

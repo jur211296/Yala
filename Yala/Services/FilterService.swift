@@ -10,6 +10,14 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+// MARK: - Shared Expense Filter
+
+enum SharedExpenseFilter: String, CaseIterable, Hashable, Sendable {
+    case all        // No filter
+    case personal   // splitExpenseID == nil
+    case shared     // splitExpenseID != nil
+}
+
 // MARK: - Filter Criteria
 
 /// Unified filter criteria used across all views that filter transactions.
@@ -29,6 +37,13 @@ struct FilterCriteria: Hashable, Sendable {
 
     /// Selected tags for filtering (empty = all tags)
     var selectedTags: Set<PersistentIdentifier> = []
+
+    /// CSV mirror equivalent of `selectedTags` — `Set<UUID>` of Tag.id values.
+    /// Cuando está poblado, matchesCriteria lo compara contra `transaction.resolvedTagIDs()`
+    /// (CSV-first), evitando el race CloudKit lazy nil donde la M2M `transaction.tags`
+    /// está vacía pero el CSV está hidratado.
+    /// Caller debe poblar SÓLO si tiene acceso al catálogo `[Tag]` para mapear.
+    var selectedTagUUIDs: Set<UUID> = []
 
     /// Selected natures for filtering (empty = all natures)
     var selectedNeeds: Set<SubcategoryNeed> = []
@@ -56,6 +71,9 @@ struct FilterCriteria: Hashable, Sendable {
     /// Search text for note filtering
     var searchText: String = ""
 
+    /// Shared/personal expense filter
+    var sharedExpenseFilter: SharedExpenseFilter = .all
+
     // MARK: - Date Filters
 
     /// Optional date interval for filtering (nil = no date filter)
@@ -80,6 +98,7 @@ struct FilterCriteria: Hashable, Sendable {
             || !selectedCurrencies.isEmpty
             || !searchText.isEmpty
             || hasTransactionNatureFilter
+            || sharedExpenseFilter != .all
     }
 
     /// Number of active filter types (for badge)
@@ -94,6 +113,7 @@ struct FilterCriteria: Hashable, Sendable {
         if !selectedCurrencies.isEmpty { count += 1 }
         if hasTransactionNatureFilter { count += 1 }
         if !searchText.isEmpty { count += 1 }
+        if sharedExpenseFilter != .all { count += 1 }
         return count
     }
 
@@ -104,6 +124,14 @@ struct FilterCriteria: Hashable, Sendable {
 
     // MARK: - Mutation
 
+    /// Populate `selectedTagUUIDs` from the resolved Tag objects.
+    /// SSOT for tag matching — readers prefer this CSV-aware set over the M2M-bound
+    /// `selectedTags` (PersistentIdentifier) which can race with CloudKit lazy hydration.
+    /// Callers que construyan FilterCriteria con tags MUST llamar esto.
+    mutating func populateTagUUIDs(from tags: [Tag]) {
+        selectedTagUUIDs = Set(tags.map(\.id))
+    }
+
     /// Clear all filters
     mutating func clearAll() {
         selectedAccounts.removeAll()
@@ -112,11 +140,13 @@ struct FilterCriteria: Hashable, Sendable {
         selectedNeeds.removeAll()
         selectedTransactionNatures.removeAll()
         selectedTags.removeAll()
+        selectedTagUUIDs.removeAll()
         selectedCurrencies.removeAll()
         transactionTypeFilter = .all
         isExcludeMode = false
         amountCondition = .any
         searchText = ""
+        sharedExpenseFilter = .all
         // Note: dateInterval is NOT cleared as it's typically controlled by period selector
     }
 }
@@ -205,10 +235,11 @@ struct FilterService {
         // Transactions without subcategory are treated as .unclassified (consistent with PanelVM behavior)
         if !matchesEntityFilter(transaction.subcategory?.need ?? .unclassified, selected: criteria.selectedNeeds, isExclude: isExclude) { return false }
 
-        // Tags filter (ANY match semantics)
-        if !criteria.selectedTags.isEmpty {
-            let transactionTagIDs = Set((transaction.tags ?? []).map { $0.persistentModelID })
-            let hasOverlap = !transactionTagIDs.isDisjoint(with: criteria.selectedTags)
+        // Tags filter (ANY match semantics). CSV-mirror SSOT vía `selectedTagUUIDs`
+        // (poblado por `FilterCriteria.populateTagUUIDs(from:)` en cada builder).
+        if !criteria.selectedTagUUIDs.isEmpty {
+            let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
+            let hasOverlap = !txTagUUIDs.isDisjoint(with: criteria.selectedTagUUIDs)
             if isExclude {
                 if hasOverlap { return false }
             } else {
@@ -254,6 +285,15 @@ struct FilterService {
             }
         }
 
+        // Shared expense filter
+        switch criteria.sharedExpenseFilter {
+        case .all: break
+        case .personal:
+            guard transaction.splitExpenseID == nil else { return false }
+        case .shared:
+            guard transaction.splitExpenseID != nil else { return false }
+        }
+
         return true
     }
 
@@ -286,8 +326,15 @@ struct FilterService {
     static func filterForTrends(
         transactions: [TransactionItem],
         accounts: [Account],
-        criteria: FilterCriteria
+        criteria: FilterCriteria,
+        includeBridgedGroupTx: Bool? = nil
     ) -> [TransactionItem] {
+        // Si caller no pasa flag explícito, lee toggle global desde UserDefaults
+        // (default true cuando key ausente). Esto evita cablear 15 callsites stats
+        // manualmente; cada VM recibe la decisión correcta sin cambios.
+        let includeFlag = includeBridgedGroupTx
+            ?? (UserDefaults.standard.object(forKey: AppPreferences.Keys.includeGroupTransactionsInStats) as? Bool)
+            ?? true
         // Determine eligible accounts (not excluded from statistics; archived accounts still count)
         let eligibleAccounts = accounts.filter { account in
             guard !account.excludeFromStatistics else { return false }
@@ -305,6 +352,13 @@ struct FilterService {
             guard let account = transaction.account,
                 eligibleAccountIDs.contains(account.persistentModelID)
             else { return false }
+
+            // Opt-out: cuando bridged group TX excluidas, filtrar antes de criteria.
+            guard BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: transaction.splitExpenseID,
+                splitSettlementID: transaction.splitSettlementID,
+                includeGroupsToggle: includeFlag
+            ) else { return false }
 
             // Then apply remaining filters
             return matchesCriteria(transaction, criteria: criteria)

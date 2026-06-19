@@ -56,7 +56,7 @@ struct FavoritesListView: View {
                 favoritesList
             }
         }
-        .background(PanelBackgroundView())
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Favorites.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -95,6 +95,7 @@ struct FavoritesListView: View {
                         YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                             viewModel.openEditor(for: nil)
                         }
+                        .accessibilityIdentifier("favorites_add_button")
                     }
                 }
             }
@@ -144,6 +145,7 @@ struct FavoritesListView: View {
                 FavoriteRowView(favorite: favorite) {
                     handleFavoriteTap(favorite)
                 }
+                .accessibilityIdentifier("favorites_row_\(favorite.name)")
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))

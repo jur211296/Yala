@@ -10,25 +10,8 @@ import Foundation
 
 enum APIKeyService {
 
-    // MARK: - OpenAI
-
-    /// OpenAI API key for voice transcription and LLM parsing.
-    /// Injected from Secrets.xcconfig via Info.plist at build time.
-    static var openAIAPIKey: String? {
-        guard let key = Bundle.main.object(forInfoDictionaryKey: "OPENAI_API_KEY") as? String,
-              !key.isEmpty,
-              key != "$(OPENAI_API_KEY)",  // Not substituted
-              !key.hasPrefix("sk-REPLACE")  // Placeholder
-        else {
-            return nil
-        }
-        return key
-    }
-
-    /// Returns true if a valid OpenAI API key is configured.
-    static var hasOpenAIAPIKey: Bool {
-        openAIAPIKey != nil
-    }
+    // La OpenAI API key se RETIRÓ del cliente: ahora vive solo en el gateway (Worker).
+    // El cliente va al proxy vía ProxyClientFactory + App Attest. Ver DESIGN-secure-proxy-gateway.md.
 
     // MARK: - TelemetryDeck
 

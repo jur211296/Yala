@@ -28,7 +28,6 @@ struct RecordDateSectionView: View {
 
             Spacer()
         }
-        .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.xs)
     }
 

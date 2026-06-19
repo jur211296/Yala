@@ -63,6 +63,8 @@ struct GroupingReorderSheet: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .yalaScreenBackground(.subtle)
             .environment(\.editMode, .constant(.active))
             .navigationTitle(L10n.Report.Grouping.drillDown)
             .navigationBarTitleDisplayMode(.inline)
@@ -91,6 +93,9 @@ struct GroupingReorderSheet: View {
                         state.toggle(dimension)
                     }
                 }
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(L10n.Accessibility.remove)
+                .accessibilityHidden(dimension.isMandatory)
 
             Image(systemName: dimension.iconName)
                 .font(.body)

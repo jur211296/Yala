@@ -19,11 +19,8 @@ struct CategoriesSettingsListView: View {
     @State private var viewModel = CategoriesSettingsListViewModel()
 
     var body: some View {
-        ZStack {
-            PanelBackgroundView()
-
-            ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+        ScrollView {
+            VStack(spacing: DS.Spacing.xxl) {
                     if viewModel.isEmpty {
                         emptyState
                     } else {
@@ -35,12 +32,16 @@ struct CategoriesSettingsListView: View {
                         if !viewModel.hiddenCategories.isEmpty {
                             hiddenCategoriesSection
                         }
+
+                        if !viewModel.systemCategories.isEmpty {
+                            systemCategoriesSection
+                        }
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.xxxl)
             }
-        }
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.categories)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
@@ -54,6 +55,7 @@ struct CategoriesSettingsListView: View {
                 YalaToolbarButton(systemName: "plus", label: L10n.Action.add) {
                     viewModel.createAndOpenNewCategory()
                 }
+                .accessibilityIdentifier("categories_add_button")
             }
         }
         .navigationDestination(isPresented: $viewModel.isNavigatingToNewCategory) {
@@ -144,6 +146,7 @@ struct CategoriesSettingsListView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("categories_row_\(category.name)")
                         .padding(.horizontal, viewModel.isEditing ? DS.Spacing.sm : DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
                     }
@@ -155,16 +158,7 @@ struct CategoriesSettingsListView: View {
                 }
             }
             .padding(.vertical, DS.Chip.paddingV)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
-            .dsSubtleShadow()
+            .solidCard()
         }
     }
 
@@ -204,6 +198,7 @@ struct CategoriesSettingsListView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("categories_row_\(category.name)")
                         .padding(.horizontal, viewModel.isEditing ? DS.Spacing.sm : DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.sm)
                     }
@@ -215,16 +210,38 @@ struct CategoriesSettingsListView: View {
                 }
             }
             .padding(.vertical, DS.Chip.paddingV)
-            .background(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .fill(.thCard)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(DS.Colors.borderDark, lineWidth: 0.8)
-            )
-            .dsSubtleShadow()
+            .solidCard()
+        }
+    }
+
+    // MARK: - System Categories Section (read-only)
+
+    /// Categorías sistema del bridge de grupos. Espejo de la sección "Sistema" de
+    /// Cuentas: filas sin Button, sin chevron y sin botón de borrado — read-only.
+    private var systemCategoriesSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // Reusa el string "Sistema" de Account.System (misma palabra) para no
+            // duplicar la key en los 16 locales.
+            Text(L10n.Account.System.badge)
+                .font(DS.Typography.headline)
+                .foregroundStyle(Color.primary.opacity(0.6))
+                .padding(.leading, DS.Chip.paddingV)
+
+            VStack(spacing: DS.Spacing.none) {
+                ForEach(Array(viewModel.systemCategories.enumerated()), id: \.element.id) { index, category in
+                    categoryRow(category)
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .accessibilityElement(children: .combine)
+
+                    if index < viewModel.systemCategories.count - 1 {
+                        Divider()
+                            .padding(.leading, DS.Spacing.lg)
+                    }
+                }
+            }
+            .padding(.vertical, DS.Chip.paddingV)
+            .solidCard()
         }
     }
 
