@@ -59,3 +59,20 @@ func regenerateAllUUIDs<Item: AnyObject>(
     }
     return items.count
 }
+
+/// Devuelve los items cuyo UUID en `keyPath` colisiona con el de otro item
+/// (el valor aparece 2+ veces). Read-only — para acotar una reparación dirigida:
+/// snapshotear los colisionados, regenerar solo sus UUIDs, y reconstruir los CSV
+/// mirrors que referenciaban el valor viejo (colapsado). Los items con UUID único
+/// (incluido el caso de 1 solo item) NO se devuelven — están bien tal cual.
+@MainActor
+func collidedUUIDItems<Item: AnyObject>(
+    _ items: [Item],
+    keyPath: KeyPath<Item, UUID>
+) -> [Item] {
+    var counts: [UUID: Int] = [:]
+    for item in items {
+        counts[item[keyPath: keyPath], default: 0] += 1
+    }
+    return items.filter { (counts[$0[keyPath: keyPath]] ?? 0) > 1 }
+}

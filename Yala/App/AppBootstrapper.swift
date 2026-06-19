@@ -172,14 +172,16 @@ final class AppBootstrapper {
                 hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
             )
             var waitedForSync = false
+            var importSettled = true
             if decision == .waitForHook {
                 waitedForSync = true
-                _ = await iCloudSyncService.shared.forceFetchAndWait(timeout: 15)
+                importSettled = await iCloudSyncService.shared.forceFetchAndWait(timeout: 15)
             }
             let waitDuration = Date.now.timeIntervalSince(started)
             migrateShortcutIDsAndRebuildCSVMirrors(
                 context: context,
                 waitedForSync: waitedForSync,
+                importSettled: importSettled,
                 waitDuration: waitDuration
             )
             // Cleanup de subcategorías duplicadas (post-migración: el re-sync masivo que
@@ -881,6 +883,7 @@ final class AppBootstrapper {
     private func migrateShortcutIDsAndRebuildCSVMirrors(
         context: ModelContext,
         waitedForSync: Bool,
+        importSettled: Bool,
         waitDuration: TimeInterval
     ) {
         let sentinelKey = AppPreferences.Keys.appEntityShortcutIDsMigratedV3
@@ -888,6 +891,18 @@ final class AppBootstrapper {
         let attemptsKey = AppPreferences.Keys.appEntityShortcutIDsBackfillAttemptsV3
         let maxAttempts = 5
         guard !UserDefaults.standard.bool(forKey: sentinelKey) else { return }
+        // Si esperamos el primer import de CloudKit pero hizo timeout, los records pueden
+        // estar incompletos → diferir (retry next launch). Regenerar sobre datos parciales y
+        // marcar el sentinel es irrecuperable: el sentinel bloquea re-runs, y los records que
+        // lleguen después quedan con el UUID colapsado sin sanar. Backstop repetible:
+        // `CategoryDeduplicationService.repairCollapsedIdentityUUIDs`; el backfill diferido lo
+        // cubre el auto-heal lazy de CSV.
+        guard !MigrationGateLogic.shouldDeferMigration(waitedForSync: waitedForSync, importSettled: importSettled) else {
+            #if DEBUG
+            print("AppBootstrapper: migrateShortcutIDsAndRebuildCSVMirrors deferred — CloudKit import didn't settle within timeout")
+            #endif
+            return
+        }
 
         do {
             let accounts = try context.fetch(FetchDescriptor<Account>())

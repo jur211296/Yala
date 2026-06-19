@@ -181,7 +181,10 @@ enum CategoryDeduplicationService {
     static func runAllDeduplication(in context: ModelContext) -> Int {
         let categories = deduplicateSeedCategories(in: context)
         let subcategories = deduplicateSeedSubcategories(in: context)
-        return categories + subcategories
+        // Después de asentar los merges de entidad: reparar UUIDs de identidad
+        // colapsados (Tag.id / Account.shortcutID / Subcategory.shortcutID).
+        let identityRepairs = repairCollapsedIdentityUUIDs(in: context)
+        return categories + subcategories + identityRepairs
     }
 
     // MARK: - Gating (quiescencia + retry diferido + throttle)
@@ -247,6 +250,126 @@ enum CategoryDeduplicationService {
         } catch {
             #if DEBUG
             print("AccountTagDupDetect: fetch failed: \(error)")
+            #endif
+        }
+    }
+
+    // MARK: - Identity UUID collision repair (Tag.id / Account.shortcutID / Subcategory.shortcutID)
+
+    /// Repara UUIDs de identidad colapsados al mismo valor — el caso donde CloudKit
+    /// entrega records sin el campo persistido y SwiftData comparte el default `UUID()`
+    /// entre todos (chips/filtros de tags colapsados, presupuestos sumando todas las
+    /// subcategorías). Repetible, a diferencia del one-shot
+    /// `migrateShortcutIDsAndRebuildCSVMirrors`, que queda bloqueado por su sentinel si
+    /// corrió con datos incompletos en un restore lento.
+    ///
+    /// Solo regenera los UUIDs colisionados (preserva los únicos sincronizados de otros
+    /// devices) y reconstruye SOLO los CSV mirrors que referenciaban el valor viejo
+    /// (sweep con guard de intersección → completo sin sync storm). Debe correr bajo
+    /// quiescencia (ver `runDedupIfQuiescent`) para que la M2M esté hidratada: si una
+    /// M2M forward viene `nil` se salta — nunca se nukea, para no perder tags.
+    ///
+    /// - Returns: número de entidades cuyo UUID fue regenerado.
+    @discardableResult
+    static func repairCollapsedIdentityUUIDs(in context: ModelContext) -> Int {
+        do {
+            let accounts = try context.fetch(FetchDescriptor<Account>())
+            let subcategories = try context.fetch(FetchDescriptor<Subcategory>())
+            let tags = try context.fetch(FetchDescriptor<Tag>())
+
+            let collidedAccounts = collidedUUIDItems(accounts, keyPath: \.shortcutID)
+            let collidedSubs = collidedUUIDItems(subcategories, keyPath: \.shortcutID)
+            let collidedTags = collidedUUIDItems(tags, keyPath: \.id)
+
+            guard !collidedAccounts.isEmpty || !collidedSubs.isEmpty || !collidedTags.isEmpty else {
+                return 0
+            }
+
+            // Snapshot de los valores colapsados ANTES de regenerar — el sweep re-encodea
+            // solo los CSV que referencian estos ids (mínimo de escrituras dirty).
+            let oldAccIDs = Set(collidedAccounts.map(\.shortcutID))
+            let oldSubIDs = Set(collidedSubs.map(\.shortcutID))
+            let oldTagIDs = Set(collidedTags.map(\.id))
+
+            for account in collidedAccounts { account.shortcutID = UUID() }
+            for sub in collidedSubs { sub.shortcutID = UUID() }
+            for tag in collidedTags { tag.id = UUID() }
+
+            // Budget: 3 CSV mirrors. Re-encodear desde la M2M forward si el CSV intersecta un
+            // id viejo. `?? []` cubre el caso M2M lazy-nil (en paths sin gate de quiescencia:
+            // force-sync/botón DEBUG): re-encodear con [] NUKEA el CSV → fuerza el fallback a
+            // M2M en lectura (auto-heal), en vez de dejar el CSV stale, que orfanaría permanente
+            // (el resolver lee CSV-first y NO cae a M2M si el CSV no es nil). Coherente con el
+            // nuke-on-nil del one-shot (`MigrationBackfillLogic.decideAction`). El guard
+            // `!old*.isEmpty` evita decodear CSV de relaciones sin colisión (común: solo tags).
+            let budgets = try context.fetch(FetchDescriptor<Budget>())
+            for budget in budgets {
+                if !oldAccIDs.isEmpty, let csv = budget.accountIDsSet, !csv.isDisjoint(with: oldAccIDs) {
+                    budget.setAccountIDs(from: budget.accounts ?? [])
+                }
+                if !oldSubIDs.isEmpty, let csv = budget.subcategoryIDsSet, !csv.isDisjoint(with: oldSubIDs) {
+                    budget.setSubcategoryIDs(from: budget.subcategories ?? [])
+                }
+                if !oldTagIDs.isEmpty, let csv = budget.tagIDsSet, !csv.isDisjoint(with: oldTagIDs) {
+                    budget.setTagIDs(from: budget.tags ?? [])
+                }
+            }
+
+            // TX/Draft/Favorite/Scheduled: solo mirror de tags.
+            if !oldTagIDs.isEmpty {
+                rebuildTagCSVMirrors(in: context, oldTagIDs: oldTagIDs)
+            }
+
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+
+            // Telemetría por modelo (keySuffix distingue de la detección por contenido
+            // de `reportPotentialAccountTagDuplicates`). El count cae tras el rollout.
+            for (model, count) in [("Tag", collidedTags.count), ("Account", collidedAccounts.count), ("Subcategory", collidedSubs.count)] where count > 0 {
+                TelemetryService.cloudkitDuplicateDetected(model: model, count: count, context: .bootCleanup, keySuffix: "id-collision")
+            }
+            #if DEBUG
+            print("CategoryDeduplicationService: repairCollapsedIdentityUUIDs — tags=\(collidedTags.count) accounts=\(collidedAccounts.count) subs=\(collidedSubs.count)")
+            #endif
+            return collidedAccounts.count + collidedSubs.count + collidedTags.count
+        } catch {
+            #if DEBUG
+            print("CategoryDeduplicationService: repairCollapsedIdentityUUIDs error: \(error)")
+            #endif
+            return 0
+        }
+    }
+
+    /// Re-encodea los CSV `tagIDs` de TX/Draft/Favorite/Scheduled cuyo CSV referencia
+    /// un id de tag viejo (colapsado) y cuya M2M esté hidratada. Necesario tras regenerar
+    /// `Tag.id`: el resolver lee CSV-first y NO cae a M2M si el CSV está stale-pero-presente
+    /// (`resolvedTagIDs` solo hace fallback cuando el CSV es nil) → sin esto, esos records
+    /// quedarían con la etiqueta huérfana de forma permanente.
+    private static func rebuildTagCSVMirrors(in context: ModelContext, oldTagIDs: Set<UUID>) {
+        func intersectsOld(_ csv: Set<UUID>?) -> Bool {
+            guard let csv else { return false }
+            return !csv.isDisjoint(with: oldTagIDs)
+        }
+        // El `#Predicate { tagIDs != nil }` salta los records sin etiquetas en el store
+        // (no los trae a memoria). `(record.tags ?? []).map(\.id)` re-encodea desde M2M, o
+        // NUKEA (→ nil) si la M2M viene lazy-nil → auto-heal en lectura (mismo razonamiento
+        // que el sweep de Budget; evita huérfanos permanentes por CSV stale).
+        do {
+            for tx in try context.fetch(FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.tagIDs != nil })) where intersectsOld(tx.tagIDsSet) {
+                tx.tagIDs = CSVMirrorCodec.encode((tx.tags ?? []).map(\.id))
+            }
+            for draft in try context.fetch(FetchDescriptor<InboxDraft>(predicate: #Predicate { $0.tagIDs != nil })) where intersectsOld(draft.tagIDsSet) {
+                draft.tagIDs = CSVMirrorCodec.encode((draft.tags ?? []).map(\.id))
+            }
+            for favorite in try context.fetch(FetchDescriptor<FavoritePayment>(predicate: #Predicate { $0.tagIDs != nil })) where intersectsOld(favorite.tagIDsSet) {
+                favorite.tagIDs = CSVMirrorCodec.encode((favorite.tags ?? []).map(\.id))
+            }
+            for payment in try context.fetch(FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.tagIDs != nil })) where intersectsOld(payment.tagIDsSet) {
+                payment.tagIDs = CSVMirrorCodec.encode((payment.tags ?? []).map(\.id))
+            }
+        } catch {
+            #if DEBUG
+            print("CategoryDeduplicationService: rebuildTagCSVMirrors error: \(error)")
             #endif
         }
     }
