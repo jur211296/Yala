@@ -129,6 +129,7 @@ enum AnalyticsEvent: String {
     case cloudkitTransferOrphanRepaired = "Diagnóstico · Transferencia huérfana reparada"
     case cloudkitTransferCollisionDetected = "Diagnóstico · Colisión de transferencia"
     case cloudkitBudgetCSVMirrorRebuilt = "Diagnóstico · Espejo de presupuesto reconstruido"  // params: count
+    case cloudkitGroupSyncGateHardCap = "Diagnóstico · Gate de grupos llegó al tope"  // params: isSyncing — el sync de grupos arrancó por tope sin import personal asentado
 
     // Routing observability (F9 — privacy-first: only intent IDs, no payloads)
     case routingIntentSuperseded = "Diagnóstico · Routing supersedido"  // a queued intent was dropped by an incoming one

@@ -48,6 +48,16 @@ final class SplitSyncManager {
     // Delegate must be kept alive
     private var delegate: SplitSyncDelegate?
 
+    // MARK: - Start Gate (crash-loop fix on iCloud restore)
+    // The engines are deferred until the personal first import settles, so the group
+    // `save()` never lands on a half-imported personal graph in the shared mainContext.
+    // See `SplitSyncStartGate`.
+    private var enginesStarted = false
+    private var firstImportObserver: NSObjectProtocol?
+    private var gateWaitTask: Task<Void, Never>?
+    private static let hardCapSeconds: TimeInterval = 300  // absolute last-resort cap
+    private static let pollInterval: TimeInterval = 15
+
     // Pending record IDs — internal tracking, not observed by views
     private var pendingRecordSaves: Set<CKRecord.ID> = []
 
@@ -94,10 +104,37 @@ final class SplitSyncManager {
     private init() {}
 
     /// Call from AppBootstrapper after services with context are set up.
+    ///
+    /// Sets up the container + delegate, then either starts the engines now or defers
+    /// their creation until the personal CloudKit first import settles. Deferring avoids
+    /// a `save()` on the half-imported personal graph (shared mainContext) that crashes
+    /// SwiftData with an internal `_assertionFailure` on an iCloud-restored device.
+    /// Called once per cold launch (warm resume does not re-initialize).
     func initialize() {
+        setupContainerAndDelegate()
+
+        let decision = SplitSyncStartGate.decideStart(
+            isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
+            hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
+        )
+        // Diagnóstico INTENCIONALMENTE fuera de `#if DEBUG`: este crash solo reproduce en
+        // CloudKit Production (device restaurado de iCloud), verificable solo vía TestFlight
+        // Release en Console.app. Sin PII — solo bools de estado, counts y "private"/"shared".
+        // Eventos puntuales (1× por cold launch), no hot path.
+        logger.notice("SplitSync gate: decision=\(String(describing: decision), privacy: .public) account=\(iCloudSyncService.shared.isAccountAvailable, privacy: .public) firstImport=\(iCloudSyncService.shared.hasCompletedFirstImport, privacy: .public)")
+
+        switch decision {
+        case .startNow:         startEngines()
+        case .deferUntilImport: observeFirstImportThenStart()
+        }
+    }
+
+    /// Cheap, no-network setup: CKContainer, one-time state migration, delegate.
+    /// Kept separate from engine creation so `container`/`delegate` exist while the
+    /// engines are deferred (e.g. `acceptShare` needs `container`).
+    private func setupContainerAndDelegate() {
         let containerID = CKConstants.containerID
-        let ckContainer = CKContainer(identifier: containerID)
-        self.container = ckContainer
+        self.container = CKContainer(identifier: containerID)
 
         // One-time: clear stale state from old container after migration
         let migrationKey = "SplitSync_ContainerMigrated_v1"
@@ -111,12 +148,20 @@ final class SplitSyncManager {
         }
 
         delegate = SplitSyncDelegate(manager: self)
-        guard let delegate else { return }
+    }
+
+    /// Creates both CKSyncEngines. Idempotent — single-flight via `enginesStarted`, so the
+    /// observer and the poll task can race and only the first creates the engines.
+    private func startEngines() {
+        guard !enginesStarted else { return }
+        guard let container, let delegate else { return }
+        enginesStarted = true
+        cancelGate()
 
         // Private engine — zones for groups I created
         let privateState = loadState(name: "private")
         var privateConfig = CKSyncEngine.Configuration(
-            database: ckContainer.privateCloudDatabase,
+            database: container.privateCloudDatabase,
             stateSerialization: privateState,
             delegate: delegate
         )
@@ -127,16 +172,65 @@ final class SplitSyncManager {
         // Shared engine — zones for groups I was invited to
         let sharedState = loadState(name: "shared")
         var sharedConfig = CKSyncEngine.Configuration(
-            database: ckContainer.sharedCloudDatabase,
+            database: container.sharedCloudDatabase,
             stateSerialization: sharedState,
             delegate: delegate
         )
         sharedConfig.automaticallySync = true
         sharedEngine = CKSyncEngine(sharedConfig)
 
-        #if DEBUG
-        logger.info("SplitSyncManager initialized — private: \(privateState != nil ? "resumed" : "fresh"), shared: \(sharedState != nil ? "resumed" : "fresh")")
-        #endif
+        logger.notice("SplitSync engines created — firstImport=\(iCloudSyncService.shared.hasCompletedFirstImport, privacy: .public), private=\(privateState != nil ? "resumed" : "fresh", privacy: .public), shared=\(sharedState != nil ? "resumed" : "fresh", privacy: .public)")
+    }
+
+    /// Defers engine creation until the personal first import settles.
+    /// Fast path: the `.iCloudFirstImportCompleted` observer. Safety net: a periodic poll
+    /// that starts the engines at the absolute hard cap (so group sync never hangs forever).
+    private func observeFirstImportThenStart() {
+        // Defensive: the import may have completed between decideStart and here.
+        if iCloudSyncService.shared.hasCompletedFirstImport { startEngines(); return }
+
+        logger.notice("SplitSync deferred — awaiting personal first import before starting engines")
+
+        firstImportObserver = NotificationCenter.default.addObserver(
+            forName: .iCloudFirstImportCompleted, object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in self.startEngines() }
+        }
+
+        gateWaitTask = Task { @MainActor [weak self] in
+            var elapsed: TimeInterval = 0
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(Self.pollInterval))
+                guard !Task.isCancelled, let self, !self.enginesStarted else { return }
+                elapsed += Self.pollInterval
+                let resolution = SplitSyncStartGate.resolveWait(
+                    hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport,
+                    reachedHardCap: elapsed >= Self.hardCapSeconds
+                )
+                guard resolution == .start else { continue }
+                if SplitSyncStartGate.startedOnIncompleteImport(
+                    hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
+                ) {
+                    self.logger.warning("SplitSync gate HARD CAP \(Int(Self.hardCapSeconds))s — starting engines with firstImport=false, isSyncing=\(iCloudSyncService.shared.status.isSyncing, privacy: .public)")
+                    TelemetryService.track(.cloudkitGroupSyncGateHardCap, parameters: [
+                        "isSyncing": String(iCloudSyncService.shared.status.isSyncing)
+                    ])
+                }
+                self.startEngines()
+                return
+            }
+        }
+    }
+
+    /// Removes the gate observer + cancels the poll task. Called by whichever start path wins.
+    private func cancelGate() {
+        if let firstImportObserver {
+            NotificationCenter.default.removeObserver(firstImportObserver)
+            self.firstImportObserver = nil
+        }
+        gateWaitTask?.cancel()
+        gateWaitTask = nil
     }
 
     func setContext(_ ctx: ModelContext) {
@@ -673,6 +767,14 @@ final class SplitSyncManager {
             applyRemoteDeletion(recordID: deletion.recordID, recordType: deletion.recordType, context: modelContext)
         }
 
+        // DIAGNÓSTICO (temporal): breadcrumb antes del save que crasheaba en restore de iCloud.
+        // Gateado a la ventana de riesgo (import personal sin asentar) → cero costo en el hot
+        // path durante operación normal (firstImport=true). Si el crash en este save reaparece
+        // con este breadcrumb presente → Teoría A (grafo personal a medio importar); si reaparece
+        // SIN él (firstImport=true) → Teoría B (store de grupos). Quitar tras confirmar la hipótesis.
+        if !iCloudSyncService.shared.hasCompletedFirstImport {
+            logger.notice("SplitSync pre-save [\(engineName, privacy: .public)] mods=\(fetched.modifications.count, privacy: .public) dels=\(fetched.deletions.count, privacy: .public) firstImport=false syncing=\(iCloudSyncService.shared.status.isSyncing, privacy: .public)")
+        }
         do {
             // Persist remote records before deferred bridge. Auto-sync overhead is
             // mitigated by state persistence limiting CKSyncEngine to incremental fetches.

@@ -1391,6 +1391,7 @@
       "area": "groups-cross-device-sync",
       "codeGlobs": [
         "Yala/Services/Groups/SplitSyncManager.swift",
+        "Yala/App/Logic/SplitSyncStartGate.swift",
         "Yala/Services/Groups/SplitZoneManager.swift",
         "Yala/Services/Groups/CKRecordTranslator.swift",
         "Yala/Services/Groups/CloudKitConstants.swift",
@@ -1405,7 +1406,8 @@
         "F-S4-08",
         "F-S4-09",
         "F-S4-10",
-        "F-S5-01"
+        "F-S5-01",
+        "F-GRP-GATE-01"
       ],
       "classification": "manual",
       "coverage": "manual",
