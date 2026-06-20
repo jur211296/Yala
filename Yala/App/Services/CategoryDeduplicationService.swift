@@ -184,7 +184,11 @@ enum CategoryDeduplicationService {
         // Después de asentar los merges de entidad: reparar UUIDs de identidad
         // colapsados (Tag.id / Account.shortcutID / Subcategory.shortcutID).
         let identityRepairs = repairCollapsedIdentityUUIDs(in: context)
-        return categories + subcategories + identityRepairs
+        // Backfill eager del CSV mirror de presupuestos cuya M2M ya está hidratada pero
+        // cuyo espejo CSV quedó vacío/desincronizado (filtro perdido tras un restore lento
+        // de iCloud → el cálculo lo lee como "sin filtros" y cuenta todo el periodo).
+        let csvBackfills = backfillBudgetCSVMirrorsFromM2M(in: context)
+        return categories + subcategories + identityRepairs + csvBackfills
     }
 
     // MARK: - Gating (quiescencia + retry diferido + throttle)
@@ -371,6 +375,74 @@ enum CategoryDeduplicationService {
             #if DEBUG
             print("CategoryDeduplicationService: rebuildTagCSVMirrors error: \(error)")
             #endif
+        }
+    }
+
+    // MARK: - Eager Budget CSV mirror backfill (sin colisión de UUIDs)
+
+    /// Pase EAGER REPETIBLE: reconstruye el CSV mirror de cada Budget cuya relación M2M
+    /// esté hidratada (no vacía) pero cuyo espejo CSV difiera de ella. Cierra el hueco que
+    /// ni el one-shot (rendido tras su sentinel), ni `repairCollapsedIdentityUUIDs` (exige
+    /// colisión de UUIDs), ni el auto-heal lazy (solo cura si un reader lee con el M2M ya
+    /// hidratado) capturan: un Budget cuyo filtro llega lazy desde CloudKit y queda con el
+    /// espejo CSV vacío → el cálculo lo lee como "sin filtros" → cuenta todo el periodo.
+    ///
+    /// NUNCA nukea (solo escribe desde un M2M no-vacío). `shouldRebuildCSVMirror` solo
+    /// reconstruye cuando el M2M aporta ids nuevos (nunca desde un subconjunto), así un M2M
+    /// a medio hidratar JAMÁS degrada un CSV correcto — por eso el pase es seguro aunque
+    /// corra sin gate de quiescencia (ej. desde `forceSync`); converge en oleadas. El gate
+    /// de `runDedupIfQuiescent` es optimización (evita trabajo redundante), no requisito de
+    /// correctness. `shouldRebuildCSVMirror` es genérico — extensible a otros modelos con
+    /// CSV mirror si lo necesitan (hoy solo Budget tiene el síntoma de número erróneo).
+    /// - Returns: número de Budgets cuyo CSV mirror fue reconstruido.
+    @discardableResult
+    static func backfillBudgetCSVMirrorsFromM2M(in context: ModelContext) -> Int {
+        do {
+            let budgets = try context.fetch(FetchDescriptor<Budget>())
+            var touched = 0
+            for budget in budgets {
+                var changed = false
+                if MigrationBackfillLogic.shouldRebuildCSVMirror(
+                    csvIDs: budget.subcategoryIDsSet,
+                    m2mIDs: Set((budget.subcategories ?? []).map(\.shortcutID))
+                ) {
+                    budget.setSubcategoryIDs(from: budget.subcategories ?? [])
+                    changed = true
+                }
+                if MigrationBackfillLogic.shouldRebuildCSVMirror(
+                    csvIDs: budget.accountIDsSet,
+                    m2mIDs: Set((budget.accounts ?? []).map(\.shortcutID))
+                ) {
+                    budget.setAccountIDs(from: budget.accounts ?? [])
+                    changed = true
+                }
+                if MigrationBackfillLogic.shouldRebuildCSVMirror(
+                    csvIDs: budget.tagIDsSet,
+                    m2mIDs: Set((budget.tags ?? []).map(\.id))
+                ) {
+                    budget.setTagIDs(from: budget.tags ?? [])
+                    changed = true
+                }
+                if changed { touched += 1 }
+            }
+
+            guard touched > 0 else { return 0 }
+
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+            TelemetryService.track(
+                .cloudkitBudgetCSVMirrorRebuilt,
+                parameters: ["count": String(touched)]
+            )
+            #if DEBUG
+            print("CategoryDeduplicationService: backfillBudgetCSVMirrorsFromM2M — rebuilt \(touched) budget CSV mirror(s)")
+            #endif
+            return touched
+        } catch {
+            #if DEBUG
+            print("CategoryDeduplicationService: backfillBudgetCSVMirrorsFromM2M error: \(error)")
+            #endif
+            return 0
         }
     }
 

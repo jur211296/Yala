@@ -55,4 +55,22 @@ enum MigrationBackfillLogic {
             sawRace: race
         )
     }
+
+    // MARK: - Eager CSV-mirror backfill (repetible, sin colisión)
+
+    /// Decide si reconstruir el CSV mirror desde el M2M. Reconstruye cuando el M2M
+    /// APORTA ids que el CSV no tiene (CSV nil, o M2M ⊄ CSV) y NUNCA cuando el M2M es
+    /// subconjunto del CSV: ese caso es indistinguible de una hidratación lazy PARCIAL de
+    /// CloudKit (el M2M entrega un subconjunto mientras llegan los demás records) y
+    /// reconstruir ahí DEGRADARÍA un CSV correcto y completo (el CSV viaja eager en el
+    /// record; el M2M se materializa lazy). Tampoco nukea: M2M vacío (vacío legítimo o aún
+    /// no hidratado) → false, no hay fuente y no resucitamos un filtro quitado. Esta regla
+    /// hace el pase seguro AUNQUE corra sin gate de quiescencia (ej. `forceSync`): un M2M a
+    /// medio hidratar nunca empeora el CSV; a lo sumo no repara en esa pasada y converge en
+    /// la siguiente oleada (cuando el M2M aporte los ids que faltan).
+    static func shouldRebuildCSVMirror(csvIDs: Set<UUID>?, m2mIDs: Set<UUID>) -> Bool {
+        guard !m2mIDs.isEmpty else { return false }
+        guard let csvIDs else { return true }
+        return !m2mIDs.isSubset(of: csvIDs)
+    }
 }

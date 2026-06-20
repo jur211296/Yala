@@ -128,6 +128,7 @@ enum AnalyticsEvent: String {
     case cloudkitDuplicateDetected = "Diagnóstico · Duplicado detectado"
     case cloudkitTransferOrphanRepaired = "Diagnóstico · Transferencia huérfana reparada"
     case cloudkitTransferCollisionDetected = "Diagnóstico · Colisión de transferencia"
+    case cloudkitBudgetCSVMirrorRebuilt = "Diagnóstico · Espejo de presupuesto reconstruido"  // params: count
 
     // Routing observability (F9 — privacy-first: only intent IDs, no payloads)
     case routingIntentSuperseded = "Diagnóstico · Routing supersedido"  // a queued intent was dropped by an incoming one
