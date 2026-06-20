@@ -101,6 +101,12 @@ final class iCloudSyncService {
 
     private var observerToken: NSObjectProtocol?
     private var pendingFailedTransition: Task<Void, Never>?
+    /// Watchdog para "Forzar sincronización": si el container no emite ningún
+    /// evento (caso "nada que exportar"), el observer nunca apaga el
+    /// `.syncing(.exporting)` que pone `forceSync` → spinner colgado. Este Task lo
+    /// resetea a `.idle` tras una ventana si seguimos en `.syncing`. Se cancela en
+    /// cuanto el observer emite cualquier evento (`apply`) — entonces él manda.
+    private var pendingForceSyncReset: Task<Void, Never>?
 
     private static let stalledThresholdDays = 7
 
@@ -206,6 +212,9 @@ final class iCloudSyncService {
     /// Testable core. Flat parameters — tests call this directly without
     /// constructing NSPersistentCloudKitContainer.Event (which has private init).
     func apply(eventType: RawEventType, error: CKError?, endDate: Date?) {
+        // Cualquier evento del container significa que el observer está vivo y
+        // gobernará el status → el watchdog de force-sync ya no hace falta.
+        pendingForceSyncReset?.cancel()
         // Not-authenticated overrides everything → no account.
         if let error, error.code == .notAuthenticated {
             pendingFailedTransition?.cancel()
@@ -306,6 +315,27 @@ final class iCloudSyncService {
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled, let self else { return }
             self.setStatus(.failed(code: code, endDate: .now, retriable: retriable))
+        }
+    }
+
+    /// Si "Forzar sincronización" no produce cambios, el NSPersistentCloudKitContainer
+    /// no emite eventos y el observer nunca apaga el `.syncing(.exporting)` que puso
+    /// `forceSync` → spinner colgado (mismo razonamiento que el reset a `.idle` del
+    /// `catch` Non-CKError de `forceSync`). Tras la ventana, si seguimos en `.syncing`
+    /// (el observer no tomó el control), reseteamos a `.idle`. `apply` lo cancela en
+    /// cuanto el observer despierta, así que un export real lento nunca se corta.
+    /// Cubre el caso "el container no emite NINGÚN evento". Si emitiera un evento inicial y
+    /// luego se colgara sin el terminal (raro, fallo del propio container), el watchdog ya
+    /// estaría cancelado — ese caso no empeora respecto al comportamiento previo al fix.
+    private func scheduleForceSyncWatchdog() {
+        pendingForceSyncReset?.cancel()
+        pendingForceSyncReset = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(8))
+            guard !Task.isCancelled, let self, self.status.isSyncing else { return }
+            #if DEBUG
+            print("iCloudSync: force-sync watchdog cleared a stuck spinner (no container event)")
+            #endif
+            self.setStatus(.idle)
         }
     }
 
@@ -449,6 +479,10 @@ final class iCloudSyncService {
             CategoryDeduplicationService.runAllDeduplication(in: modelContext)
             SessionState.shared.incrementDataVersion()
             // Don't set status here — the observer will surface the real result.
+            // Pero si no había nada que exportar, el container no emite ningún
+            // evento y el `.syncing(.exporting)` de arriba quedaría colgado: el
+            // watchdog lo resetea si el observer no responde dentro de la ventana.
+            scheduleForceSyncWatchdog()
             return .ok
         } catch {
             #if DEBUG
@@ -490,6 +524,8 @@ final class iCloudSyncService {
     func _testReset() {
         pendingFailedTransition?.cancel()
         pendingFailedTransition = nil
+        pendingForceSyncReset?.cancel()
+        pendingForceSyncReset = nil
         status = .idle
         lastSuccessfulExportDate = nil
         lastSuccessfulImportDate = nil
