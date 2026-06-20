@@ -767,14 +767,6 @@ final class SplitSyncManager {
             applyRemoteDeletion(recordID: deletion.recordID, recordType: deletion.recordType, context: modelContext)
         }
 
-        // DIAGNÓSTICO (temporal): breadcrumb antes del save que crasheaba en restore de iCloud.
-        // Gateado a la ventana de riesgo (import personal sin asentar) → cero costo en el hot
-        // path durante operación normal (firstImport=true). Si el crash en este save reaparece
-        // con este breadcrumb presente → Teoría A (grafo personal a medio importar); si reaparece
-        // SIN él (firstImport=true) → Teoría B (store de grupos). Quitar tras confirmar la hipótesis.
-        if !iCloudSyncService.shared.hasCompletedFirstImport {
-            logger.notice("SplitSync pre-save [\(engineName, privacy: .public)] mods=\(fetched.modifications.count, privacy: .public) dels=\(fetched.deletions.count, privacy: .public) firstImport=false syncing=\(iCloudSyncService.shared.status.isSyncing, privacy: .public)")
-        }
         do {
             // Persist remote records before deferred bridge. Auto-sync overhead is
             // mitigated by state persistence limiting CKSyncEngine to incremental fetches.
