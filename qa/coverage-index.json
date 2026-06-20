@@ -1407,7 +1407,11 @@
         "F-S4-09",
         "F-S4-10",
         "F-S5-01",
-        "F-GRP-GATE-01"
+        "F-GRP-GATE-01",
+        "F-GRP-EXPORT-01",
+        "F-GRP-EXPORT-02",
+        "F-GRP-EXPORT-03",
+        "F-GRP-EXPORT-04"
       ],
       "classification": "manual",
       "coverage": "manual",

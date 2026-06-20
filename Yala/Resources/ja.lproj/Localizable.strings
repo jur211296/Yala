@@ -4485,3 +4485,10 @@
 
 /* Contextual note when a manual 'Sync now' tap can't reach iCloud (transient/offline). Non-alarming; reassures data is safe on device. */
 "icloud.forceSync.offlineNote" = "現在 iCloud に接続できませんでした。データは安全に保存されており、接続が戻り次第同期されます。";
+
+/* Shown when a group action needs the sync engine but the personal iCloud import has not settled yet */
+"groups.errors.syncPreparing" = "iCloudアカウントの同期を完了しています。数秒後にもう一度お試しください。";
+/* Shown when generating a group invite link fails */
+"groups.errors.inviteFailed" = "招待リンクを作成できませんでした。接続を確認してもう一度お試しください。";
+/* Generic group action failure (delete expense, settle, approve/reject member) */
+"groups.errors.actionFailed" = "操作を完了できませんでした。もう一度お試しください。";

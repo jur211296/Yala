@@ -652,7 +652,12 @@ final class GroupTransactionBridge {
         let descriptor = FetchDescriptor<SplitMember>(
             predicate: #Predicate { $0.groupZoneID == zoneID && $0.id == memberUUID }
         )
-        return try? context.fetch(descriptor).first?.displayName
+        do {
+            return try context.fetch(descriptor).first?.displayName
+        } catch {
+            Self.logger.error("resolveMemberDisplayName: fetch failed for \(memberID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
     }
 
     private func saveIfNeeded(shouldSave: Bool, context: ModelContext) throws {
@@ -804,13 +809,21 @@ final class GroupTransactionBridge {
                     tx2.recalculatePreferredCurrency(context: context)
                     // M6: NO defaults — eliminada persistencia de defaultSettlementAccount.
                 } else {
-                    // Sin cuenta proveída: draft pendiente.
+                    // Sin cuenta proveída: draft pendiente. La subcat sistema es opcional (el user
+                    // la completa en Inbox); do/catch para no tragar un error real con try?.
+                    let sentSubcat: Subcategory?
+                    do {
+                        sentSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .settlementSent, context: context)
+                    } catch {
+                        Self.logger.error("bridgeSettlement: systemSubcategory(settlementSent) failed: \(error.localizedDescription, privacy: .public)")
+                        sentSubcat = nil
+                    }
                     let draft = InboxDraft(
                         note: settlement.note ?? "",
                         amount: -amount,
                         date: settlement.date,
                         account: nil,
-                        subcategory: try? GroupBridgeSystemEntities.systemSubcategory(role: .settlementSent, context: context),
+                        subcategory: sentSubcat,
                         sourceType: .groupSettlement,
                         confidenceAmount: 1.0,
                         confidenceDate: 1.0,
@@ -845,7 +858,13 @@ final class GroupTransactionBridge {
             // Para .full/.completed: draft groupSettlement para asignar cuenta real.
             // M6: NO defaults universales — sin preselect, user siempre elige cuenta.
             if userType != .groupInvite {
-                let receivedSubcat = try? GroupBridgeSystemEntities.systemSubcategory(role: .settlementReceived, context: context)
+                let receivedSubcat: Subcategory?
+                do {
+                    receivedSubcat = try GroupBridgeSystemEntities.systemSubcategory(role: .settlementReceived, context: context)
+                } catch {
+                    Self.logger.error("bridgeSettlement: systemSubcategory(settlementReceived) failed: \(error.localizedDescription, privacy: .public)")
+                    receivedSubcat = nil
+                }
                 let draft = InboxDraft(
                     note: settlement.note ?? "",
                     amount: amount,
@@ -1063,10 +1082,11 @@ final class GroupTransactionBridge {
         guard let name, !name.isEmpty else { return nil }
 
         let descriptor = FetchDescriptor<Subcategory>()
-        guard let all = (try? context.fetch(descriptor)) else {
-            #if DEBUG
-            print("GroupTransactionBridge: Subcategory fetch failed")
-            #endif
+        let all: [Subcategory]
+        do {
+            all = try context.fetch(descriptor)
+        } catch {
+            logger.error("matchSubcategory: Subcategory fetch failed: \(error.localizedDescription, privacy: .public)")
             return nil
         }
 

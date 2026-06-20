@@ -190,6 +190,7 @@ final class GroupDetailViewModel {
             #if DEBUG
             print("GroupDetailViewModel: Error deleting expense: \(error)")
             #endif
+            surfaceActionError(L10n.Groups.Errors.actionFailed)
         }
     }
 
@@ -208,6 +209,7 @@ final class GroupDetailViewModel {
             #if DEBUG
             print("GroupDetailViewModel: Error confirming settlement: \(error)")
             #endif
+            surfaceActionError(L10n.Groups.Errors.actionFailed)
         }
     }
 
@@ -221,6 +223,7 @@ final class GroupDetailViewModel {
             #if DEBUG
             print("GroupDetailViewModel: Error rejecting settlement: \(error)")
             #endif
+            surfaceActionError(L10n.Groups.Errors.actionFailed)
         }
     }
 
@@ -232,6 +235,20 @@ final class GroupDetailViewModel {
 
     private(set) var shareURL: URL?
     var isCreatingShare = false
+
+    // MARK: - Error feedback
+
+    /// Mensaje de error de una acción del usuario (eliminar gasto, liquidar, invitar). La vista lo
+    /// muestra en un alert — antes estos fallos solo se logueaban en DEBUG y en Release el botón
+    /// "no hacía nada".
+    var actionErrorMessage: String?
+    var showActionError = false
+
+    private func surfaceActionError(_ message: String) {
+        actionErrorMessage = message
+        showActionError = true
+        DS.Haptic.warning()
+    }
 
     func createShareLink() async {
         guard !isCreatingShare else { return }
@@ -247,6 +264,11 @@ final class GroupDetailViewModel {
             #if DEBUG
             print("GroupDetailViewModel: Error creating share: \(error)")
             #endif
+            // SplitZoneError carries localized copy (e.g. "sync preparing"); any other error
+            // (raw CKError — network/quota) maps to the branded inviteFailed copy instead of
+            // leaking a technical system string into the alert.
+            let message = (error as? SplitZoneError)?.errorDescription ?? L10n.Groups.Errors.inviteFailed
+            surfaceActionError(message)
         }
         isCreatingShare = false
     }

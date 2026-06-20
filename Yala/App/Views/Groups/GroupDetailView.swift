@@ -159,6 +159,11 @@ struct GroupDetailView: View {
                     ActivityView(activityItems: [url])
                     }
             }
+            .alert(L10n.Common.error, isPresented: $viewModel.showActionError) {
+                Button(L10n.Common.ok) {}
+            } message: {
+                Text(viewModel.actionErrorMessage ?? L10n.Groups.Errors.actionFailed)
+            }
             .appliesPendingRemoteChanges(sessionState)
             .onAppear {
                 wasArchivedOnAppear = group.isArchived

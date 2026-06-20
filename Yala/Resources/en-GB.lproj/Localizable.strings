@@ -3735,3 +3735,10 @@
 
 /* Contextual note when a manual 'Sync now' tap can't reach iCloud (transient/offline). Non-alarming; reassures data is safe on device. */
 "icloud.forceSync.offlineNote" = "We couldn't reach iCloud just now. Your data is safe and will sync as soon as you're back online.";
+
+/* Shown when a group action needs the sync engine but the personal iCloud import has not settled yet */
+"groups.errors.syncPreparing" = "We're finishing syncing your iCloud account. Please try again in a few seconds.";
+/* Shown when generating a group invite link fails */
+"groups.errors.inviteFailed" = "Couldn't create the invite link. Check your connection and try again.";
+/* Generic group action failure (delete expense, settle, approve/reject member) */
+"groups.errors.actionFailed" = "Couldn't complete the action. Please try again.";

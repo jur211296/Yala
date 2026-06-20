@@ -491,7 +491,14 @@ final class GroupService {
     func performRemovedSelfCleanup(zoneName: String) async {
         guard let context = modelContext else { return }
         let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneName })
-        guard let group = try? context.fetch(descriptor).first else { return }
+        let group: SplitGroup
+        do {
+            guard let fetched = try context.fetch(descriptor).first else { return }  // already deleted — idempotent
+            group = fetched
+        } catch {
+            logger.error("performRemovedSelfCleanup: fetch failed for \(zoneName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return
+        }
 
         let leaveShareZoneName = group.cloudKitZoneID
         let leaveShareOwnerName = SplitZoneManager(syncManager: .shared).ownerName(for: group)
@@ -706,10 +713,15 @@ final class GroupService {
         let recordName: String
         if let cached = GroupUserIdentityService.shared.cachedRecordName, !cached.isEmpty {
             recordName = cached
-        } else if let fetched = try? await GroupUserIdentityService.shared.currentUserRecordName(), !fetched.isEmpty {
-            recordName = fetched
         } else {
-            return
+            do {
+                let fetched = try await GroupUserIdentityService.shared.currentUserRecordName()
+                guard !fetched.isEmpty else { return }
+                recordName = fetched
+            } catch {
+                logger.error("refreshCurrentUserFlags: currentUserRecordName failed: \(error.localizedDescription, privacy: .public)")
+                return
+            }
         }
 
         do {

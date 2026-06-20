@@ -894,7 +894,9 @@ struct GroupSettingsView: View {
             }
         } catch {
             isCreatingShare = false
-            shareErrorMessage = error.localizedDescription
+            // SplitZoneError carries localized copy; map any other error (raw CKError) to the
+            // branded inviteFailed copy instead of leaking a technical system string.
+            shareErrorMessage = (error as? SplitZoneError)?.errorDescription ?? L10n.Groups.Errors.inviteFailed
             showShareError = true
         }
     }

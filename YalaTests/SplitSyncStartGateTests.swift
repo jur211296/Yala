@@ -84,4 +84,34 @@ struct SplitSyncStartGateTests {
     @Test func startedOnIncompleteImport_falseWhenImportComplete() {
         #expect(SplitSyncStartGate.startedOnIncompleteImport(hasCompletedFirstImport: true) == false)
     }
+
+    // MARK: - shouldDeferDelegateSave
+
+    @Test func deferDelegateSave_whenNotAutoSync() {
+        // Export-only window (import pending): every delegate save() must be deferred.
+        #expect(SplitSyncStartGate.shouldDeferDelegateSave(autoSyncActive: false) == true)
+    }
+
+    @Test func deferDelegateSave_allowedAfterPromotion() {
+        // After promotion to auto-sync the personal import has settled → saves are safe.
+        #expect(SplitSyncStartGate.shouldDeferDelegateSave(autoSyncActive: true) == false)
+    }
+
+    // MARK: - needsZoneRecovery
+
+    @Test func zoneRecovery_ownerWithoutSystemFields_needsRecovery() {
+        // Group created while engines were deferred → zone never uploaded.
+        #expect(SplitSyncStartGate.needsZoneRecovery(isOwner: true, hasSystemFields: false) == true)
+    }
+
+    @Test func zoneRecovery_ownerWithSystemFields_skipped() {
+        // Already synced (GroupMeta uploaded) → no re-enqueue (avoids sync storm).
+        #expect(SplitSyncStartGate.needsZoneRecovery(isOwner: true, hasSystemFields: true) == false)
+    }
+
+    @Test func zoneRecovery_nonOwner_skipped() {
+        // Shared zones are owned by someone else — never re-enqueue their zone.
+        #expect(SplitSyncStartGate.needsZoneRecovery(isOwner: false, hasSystemFields: false) == false)
+        #expect(SplitSyncStartGate.needsZoneRecovery(isOwner: false, hasSystemFields: true) == false)
+    }
 }

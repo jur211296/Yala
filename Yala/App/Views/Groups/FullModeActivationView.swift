@@ -36,9 +36,17 @@ struct FullModeActivationView: View {
 
     /// `fetchCount` para Category es <10ms — invocado una vez en `.onAppear`.
     private func buildPrefilledSummary() -> ICloudAccountSummary {
-        let categoriesCount = (try? modelContext.fetchCount(
-            FetchDescriptor<Category>(predicate: #Predicate { !$0.isSystem })
-        )) ?? 0
+        let categoriesCount: Int
+        do {
+            categoriesCount = try modelContext.fetchCount(
+                FetchDescriptor<Category>(predicate: #Predicate { !$0.isSystem })
+            )
+        } catch {
+            #if DEBUG
+            print("FullModeActivationView: category fetchCount failed: \(error)")
+            #endif
+            categoriesCount = 0
+        }
         return FullModeActivationLogic.buildSummary(
             userName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
             groupCurrency: SplitSyncManager.shared.mostRecentGroup()?.currencyCode,

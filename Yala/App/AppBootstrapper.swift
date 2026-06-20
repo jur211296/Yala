@@ -299,8 +299,15 @@ final class AppBootstrapper {
         // 17. Initialize Group Notification Service (GC-06)
         GroupNotificationService.shared.setContext(context)
 
-        // 17.5. One-time backfill of SplitShare.groupZoneID for existing shares
-        migrateShareGroupZoneIDs(context: context)
+        // 17.5. One-time backfill of SplitShare.groupZoneID for existing shares.
+        // D2: gated on the personal first import (same mechanism as the V3 migration / group sync
+        // gate) — this save touches the personal mainContext and must not land on a half-imported
+        // graph. Idempotent: if the import doesn't settle in time, the sentinel stays unset and it
+        // retries next launch.
+        Task { @MainActor in
+            guard await awaitPersonalImportForBootSave() else { return }
+            migrateShareGroupZoneIDs(context: context)
+        }
 
         // 18. Initialize User Segment Service (GC-08)
         UserSegmentService.shared.setContext(context)
@@ -541,6 +548,23 @@ final class AppBootstrapper {
     // MARK: - One-Time Migrations
 
     /// Backfill SplitShare.groupZoneID for shares created before the field was added.
+    /// D2 — gate for early-boot mainContext saves (retryPendingBridges, migrateShareGroupZoneIDs).
+    /// Mirrors the V3 migration / group-sync gate: a `save()` on the personal mainContext while the
+    /// CloudKit first import is half-applied can trip SwiftData's `_assertionFailure`. Returns true
+    /// when it's safe (no iCloud, or the import settled after awaiting up to 15s); false on timeout
+    /// → the caller defers (these steps are idempotent and retry next launch).
+    private func awaitPersonalImportForBootSave() async -> Bool {
+        switch MigrationGateLogic.shouldWaitForCloudKit(
+            isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
+            hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
+        ) {
+        case .runNow:
+            return true
+        case .waitForHook:
+            return await iCloudSyncService.shared.forceFetchAndWait(timeout: 15)
+        }
+    }
+
     private func migrateShareGroupZoneIDs(context: ModelContext) {
         let migKey = "Yala_SplitShareGroupZoneID_v1"
         guard !UserDefaults.standard.bool(forKey: migKey) else { return }
@@ -580,6 +604,13 @@ final class AppBootstrapper {
     /// flag stays true for the next launch until `maxAttempts` is exhausted.
     @MainActor
     func retryPendingBridges(context: ModelContext) async {
+        // D2: the bridge creates personal TransactionItems and saves the mainContext — defer until
+        // the personal import settles so it can't land on a half-imported graph. Idempotent:
+        // bridgePending stays true and retries next launch if the import didn't settle.
+        guard await awaitPersonalImportForBootSave() else {
+            logger.notice("retryPendingBridges deferred — personal import not settled")
+            return
+        }
         let descriptor = FetchDescriptor<SplitExpense>(
             predicate: #Predicate { $0.bridgePending == true }
         )

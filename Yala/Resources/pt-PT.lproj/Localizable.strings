@@ -3740,3 +3740,10 @@
 
 /* Contextual note when a manual 'Sync now' tap can't reach iCloud (transient/offline). Non-alarming; reassures data is safe on device. */
 "icloud.forceSync.offlineNote" = "Não foi possível conectar ao iCloud agora. Seus dados estão seguros e serão sincronizados quando a conexão voltar.";
+
+/* Shown when a group action needs the sync engine but the personal iCloud import has not settled yet */
+"groups.errors.syncPreparing" = "Estamos a terminar de sincronizar a tua conta iCloud. Tenta novamente dentro de alguns segundos.";
+/* Shown when generating a group invite link fails */
+"groups.errors.inviteFailed" = "Não foi possível criar a ligação de convite. Verifica a tua ligação e tenta novamente.";
+/* Generic group action failure (delete expense, settle, approve/reject member) */
+"groups.errors.actionFailed" = "Não foi possível concluir a ação. Tenta novamente.";

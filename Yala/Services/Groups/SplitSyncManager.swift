@@ -36,8 +36,11 @@ final class SplitSyncManager {
     private(set) var privateEngine: CKSyncEngine?
     private(set) var sharedEngine: CKSyncEngine?
 
-    // nonisolated reference for identity check from delegate (set once during init)
+    // nonisolated references for identity check from delegate. Updated whenever an engine is
+    // created OR recreated (promotion to auto-sync). The delegate discards events from an engine
+    // that is neither — a stale callback from a recreated engine must not persist state nor route.
     @ObservationIgnored nonisolated(unsafe) private var _privateEngineRef: CKSyncEngine?
+    @ObservationIgnored nonisolated(unsafe) private var _sharedEngineRef: CKSyncEngine?
 
     // MARK: - Dependencies
 
@@ -53,6 +56,11 @@ final class SplitSyncManager {
     // `save()` never lands on a half-imported personal graph in the shared mainContext.
     // See `SplitSyncStartGate`.
     private var enginesStarted = false
+    /// `true` once the engines run with `automaticallySync = true` (personal import settled, or
+    /// no iCloud, or hard cap). While `false` the engines are in "export-only" mode: they exist
+    /// (so create/invite/enqueue work) but never fetch automatically, and the delegate defers
+    /// every `modelContext.save()` so it can't persist the half-imported personal graph.
+    private(set) var autoSyncActive = false
     private var firstImportObserver: NSObjectProtocol?
     private var gateWaitTask: Task<Void, Never>?
     private static let hardCapSeconds: TimeInterval = 300  // absolute last-resort cap
@@ -124,8 +132,13 @@ final class SplitSyncManager {
         logger.notice("SplitSync gate: decision=\(String(describing: decision), privacy: .public) account=\(iCloudSyncService.shared.isAccountAvailable, privacy: .public) firstImport=\(iCloudSyncService.shared.hasCompletedFirstImport, privacy: .public)")
 
         switch decision {
-        case .startNow:         startEngines()
-        case .deferUntilImport: observeFirstImportThenStart()
+        case .startNow:
+            startEngines(autoSync: true)
+        case .deferUntilImport:
+            // Create the engines in export-only mode (so create/invite/enqueue work) and observe
+            // the personal import to promote them to auto-sync once the graph is safe to save on.
+            startEngines(autoSync: false)
+            observeFirstImportThenStart()
         }
     }
 
@@ -150,59 +163,178 @@ final class SplitSyncManager {
         delegate = SplitSyncDelegate(manager: self)
     }
 
-    /// Creates both CKSyncEngines. Idempotent — single-flight via `enginesStarted`, so the
-    /// observer and the poll task can race and only the first creates the engines.
-    private func startEngines() {
+    /// Builds one CKSyncEngine from a loaded state serialization. Shared by `startEngines` (initial,
+    /// either mode) and `enableAutoSync` (recreate in auto mode) so engine config lives in one place.
+    private func makeEngine(database: CKDatabase, state: CKSyncEngine.State.Serialization?, autoSync: Bool, delegate: SplitSyncDelegate) -> CKSyncEngine {
+        var config = CKSyncEngine.Configuration(database: database, stateSerialization: state, delegate: delegate)
+        config.automaticallySync = autoSync
+        return CKSyncEngine(config)
+    }
+
+    /// Creates both CKSyncEngines. Idempotent — single-flight via `enginesStarted`.
+    ///
+    /// `autoSync = true` → normal mode (the engine fetches/sends automatically; safe when the
+    /// personal import has settled or there's no iCloud). `autoSync = false` → "export-only" mode:
+    /// the engines exist (so create/invite/enqueue work) but never fetch on their own, and the
+    /// delegate defers every `save()`. `enableAutoSync()` later recreates them with `autoSync = true`.
+    private func startEngines(autoSync: Bool) {
         guard !enginesStarted else { return }
         guard let container, let delegate else { return }
         enginesStarted = true
-        cancelGate()
+        autoSyncActive = autoSync
+        // Only cancel the gate when starting in auto mode. In export-only mode the gate
+        // (observer + poll) must stay alive to drive `enableAutoSync()` once the import settles.
+        if autoSync { cancelGate() }
 
-        // Private engine — zones for groups I created
         let privateState = loadState(name: "private")
-        var privateConfig = CKSyncEngine.Configuration(
-            database: container.privateCloudDatabase,
-            stateSerialization: privateState,
-            delegate: delegate
-        )
-        privateConfig.automaticallySync = true
-        privateEngine = CKSyncEngine(privateConfig)
+        privateEngine = makeEngine(database: container.privateCloudDatabase, state: privateState, autoSync: autoSync, delegate: delegate)
         _privateEngineRef = privateEngine
 
-        // Shared engine — zones for groups I was invited to
         let sharedState = loadState(name: "shared")
-        var sharedConfig = CKSyncEngine.Configuration(
-            database: container.sharedCloudDatabase,
-            stateSerialization: sharedState,
-            delegate: delegate
-        )
-        sharedConfig.automaticallySync = true
-        sharedEngine = CKSyncEngine(sharedConfig)
+        sharedEngine = makeEngine(database: container.sharedCloudDatabase, state: sharedState, autoSync: autoSync, delegate: delegate)
+        _sharedEngineRef = sharedEngine
 
-        logger.notice("SplitSync engines created — firstImport=\(iCloudSyncService.shared.hasCompletedFirstImport, privacy: .public), private=\(privateState != nil ? "resumed" : "fresh", privacy: .public), shared=\(sharedState != nil ? "resumed" : "fresh", privacy: .public)")
+        // Export-only window: surface `.syncing` so the indicator doesn't read as "up to date"
+        // while the engines are still waiting to fetch.
+        syncStatus = autoSync ? .idle : .syncing
+
+        logger.notice("SplitSync engines created — autoSync=\(autoSync, privacy: .public), firstImport=\(iCloudSyncService.shared.hasCompletedFirstImport, privacy: .public), private=\(privateState != nil ? "resumed" : "fresh", privacy: .public), shared=\(sharedState != nil ? "resumed" : "fresh", privacy: .public)")
+
+        // Recover owned groups whose zone never reached CloudKit (created while a previous launch's
+        // engines were deferred → createZone no-op'd). Idempotent; gated by the heuristic.
+        recoverOwnedGroupZonesIfNeeded()
     }
 
-    /// Defers engine creation until the personal first import settles.
-    /// Fast path: the `.iCloudFirstImportCompleted` observer. Safety net: a periodic poll
-    /// that starts the engines at the absolute hard cap (so group sync never hangs forever).
+    /// Promotes the engines from export-only to auto-sync once the personal import has settled
+    /// (or the hard cap fired). Recreates both engines with `automaticallySync = true` from the
+    /// persisted state (which already holds anything enqueued during the export-only window), so
+    /// the proven automatic mode — push, coalescing, retry — resumes. Idempotent.
+    private func enableAutoSync() {
+        guard !autoSyncActive else { return }
+        guard let container, let delegate else { return }
+
+        let importSettled = iCloudSyncService.shared.hasCompletedFirstImport
+        autoSyncActive = true
+        cancelGate()
+
+        // Capture the OLD engines' in-memory pending changes BEFORE rebuilding. `state.add(...)`
+        // persists to disk asynchronously (via the `.stateUpdate` delegate callback), so an enqueue
+        // made moments ago during the export-only window (zone recovery, or a user create/invite)
+        // may not be in `loadState(...)` yet. Transferring them directly makes the promotion
+        // independent of that flush — nothing enqueued is lost on the fast path.
+        let oldPrivateRecordChanges = privateEngine?.state.pendingRecordZoneChanges ?? []
+        let oldPrivateDBChanges = privateEngine?.state.pendingDatabaseChanges ?? []
+        let oldSharedRecordChanges = sharedEngine?.state.pendingRecordZoneChanges ?? []
+        let oldSharedDBChanges = sharedEngine?.state.pendingDatabaseChanges ?? []
+
+        // Recreate both engines in auto mode. The persisted stateSerialization carries the change
+        // tokens (same mechanism as resume between cold launches).
+        let newPrivate = makeEngine(database: container.privateCloudDatabase, state: loadState(name: "private"), autoSync: true, delegate: delegate)
+        let newShared = makeEngine(database: container.sharedCloudDatabase, state: loadState(name: "shared"), autoSync: true, delegate: delegate)
+
+        // Assign engines + identity refs together to minimise the window where an old-engine
+        // callback could be misrouted. Refs first so events from the new engines route correctly.
+        _privateEngineRef = newPrivate
+        _sharedEngineRef = newShared
+        privateEngine = newPrivate
+        sharedEngine = newShared
+
+        // Re-enqueue the captured pending changes onto the new engines (idempotent — duplicates of
+        // changes already in the loaded state are coalesced). Now safe to send (auto-sync on).
+        if !oldPrivateDBChanges.isEmpty { newPrivate.state.add(pendingDatabaseChanges: oldPrivateDBChanges) }
+        if !oldPrivateRecordChanges.isEmpty { newPrivate.state.add(pendingRecordZoneChanges: oldPrivateRecordChanges) }
+        if !oldSharedDBChanges.isEmpty { newShared.state.add(pendingDatabaseChanges: oldSharedDBChanges) }
+        if !oldSharedRecordChanges.isEmpty { newShared.state.add(pendingRecordZoneChanges: oldSharedRecordChanges) }
+        syncStatus = .idle
+
+        logger.notice("SplitSync promoted to auto-sync — importSettled=\(importSettled, privacy: .public)")
+        TelemetryService.track(.cloudkitGroupSyncPromotedToAuto, parameters: [
+            "importSettled": String(importSettled)
+        ])
+    }
+
+    // MARK: - Owned Zone Recovery
+
+    /// Re-enqueues the zone + records of owned groups whose GroupMeta never reached CloudKit
+    /// (created while a previous launch's engines were deferred → `createZone` no-op'd, leaving the
+    /// group un-invitable — e.g. the owner's "Jurpi"). **Read-only on the mainContext** (fetch +
+    /// `engine.state.add`); never saves, so it's safe during the export-only window. Idempotent —
+    /// `.saveZone`/`.saveRecord` are ignored by CloudKit's change tag if already present. Gated by
+    /// `needsZoneRecovery` (owner + no system fields) so synced groups are skipped (no sync storm).
+    private func recoverOwnedGroupZonesIfNeeded() {
+        guard let modelContext, privateEngine != nil else { return }
+        // Fetch owned groups; the recovery heuristic (no uploaded GroupMeta) lives in the tested
+        // pure-logic `needsZoneRecovery`, applied as the in-memory filter (single source of truth).
+        let descriptor = FetchDescriptor<SplitGroup>(
+            predicate: #Predicate { $0.isOwner == true }
+        )
+        let toRecover: [SplitGroup]
+        do {
+            toRecover = try modelContext.fetch(descriptor).filter {
+                SplitSyncStartGate.needsZoneRecovery(isOwner: $0.isOwner, hasSystemFields: $0.ckSystemFieldsData != nil)
+            }
+        } catch {
+            logger.error("SplitSync zone recovery fetch failed: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+        guard !toRecover.isEmpty else { return }
+
+        let zoneManager = SplitZoneManager(syncManager: self)
+        for group in toRecover {
+            zoneManager.createZone(for: group)  // re-enqueue zone + GroupMeta (no mainContext save)
+            reEnqueueOwnedGroupRecords(group: group, context: modelContext)
+        }
+
+        logger.notice("SplitSync recovered \(toRecover.count, privacy: .public) owned group zone(s) with no uploaded GroupMeta")
+        TelemetryService.track(.cloudkitGroupZoneRecovered, parameters: ["count": String(toRecover.count)])
+    }
+
+    /// Re-enqueues a group's member/expense/share/settlement records to the private engine WITHOUT
+    /// touching the mainContext (fetch + `engine.state.add` via `enqueueSave`). Used by zone
+    /// recovery so the recovered group syncs complete (incl. the admin member) once changes flush.
+    private func reEnqueueOwnedGroupRecords(group: SplitGroup, context: ModelContext) {
+        let zoneName = group.cloudKitZoneID
+        do {
+            for m in try context.fetch(FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zoneName })) {
+                enqueueSave(modelID: m.id, group: group)
+            }
+            for e in try context.fetch(FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneName })) {
+                enqueueSave(modelID: e.id, group: group)
+            }
+            for s in try context.fetch(FetchDescriptor<SplitShare>(predicate: #Predicate { $0.groupZoneID == zoneName })) {
+                enqueueSave(modelID: s.id, group: group)
+            }
+            for st in try context.fetch(FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.groupZoneID == zoneName })) {
+                enqueueSave(modelID: st.id, group: group)
+            }
+        } catch {
+            logger.error("SplitSync re-enqueue records failed for \(zoneName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// Waits for the personal first import to settle, then PROMOTES the export-only engines to
+    /// auto-sync (`enableAutoSync()`). The engines already exist (created in export-only mode by
+    /// `startEngines(autoSync: false)`); this only flips them to automatic once the graph is safe.
+    /// Fast path: the `.iCloudFirstImportCompleted` observer. Safety net: a periodic poll that
+    /// promotes at the absolute hard cap (so group sync never stays export-only forever).
     private func observeFirstImportThenStart() {
         // Defensive: the import may have completed between decideStart and here.
-        if iCloudSyncService.shared.hasCompletedFirstImport { startEngines(); return }
+        if iCloudSyncService.shared.hasCompletedFirstImport { enableAutoSync(); return }
 
-        logger.notice("SplitSync deferred — awaiting personal first import before starting engines")
+        logger.notice("SplitSync export-only — awaiting personal first import before enabling auto-sync")
 
         firstImportObserver = NotificationCenter.default.addObserver(
             forName: .iCloudFirstImportCompleted, object: nil, queue: .main
         ) { [weak self] _ in
             guard let self else { return }
-            Task { @MainActor in self.startEngines() }
+            Task { @MainActor in self.enableAutoSync() }
         }
 
         gateWaitTask = Task { @MainActor [weak self] in
             var elapsed: TimeInterval = 0
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(Self.pollInterval))
-                guard !Task.isCancelled, let self, !self.enginesStarted else { return }
+                guard !Task.isCancelled, let self, !self.autoSyncActive else { return }
                 elapsed += Self.pollInterval
                 let resolution = SplitSyncStartGate.resolveWait(
                     hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport,
@@ -212,12 +344,12 @@ final class SplitSyncManager {
                 if SplitSyncStartGate.startedOnIncompleteImport(
                     hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
                 ) {
-                    self.logger.warning("SplitSync gate HARD CAP \(Int(Self.hardCapSeconds))s — starting engines with firstImport=false, isSyncing=\(iCloudSyncService.shared.status.isSyncing, privacy: .public)")
+                    self.logger.warning("SplitSync gate HARD CAP \(Int(Self.hardCapSeconds))s — enabling auto-sync with firstImport=false, isSyncing=\(iCloudSyncService.shared.status.isSyncing, privacy: .public)")
                     TelemetryService.track(.cloudkitGroupSyncGateHardCap, parameters: [
                         "isSyncing": String(iCloudSyncService.shared.status.isSyncing)
                     ])
                 }
-                self.startEngines()
+                self.enableAutoSync()
                 return
             }
         }
@@ -242,6 +374,14 @@ final class SplitSyncManager {
     // nonisolated: Called from CKSyncEngine delegate (off MainActor)
     nonisolated func isPrivateEngine(_ engine: CKSyncEngine) -> Bool {
         engine === _privateEngineRef
+    }
+
+    /// `true` if `engine` is one of the live engines. After `enableAutoSync()` recreates the
+    /// engines, a stale callback from a discarded engine must be ignored — otherwise its
+    /// `.stateUpdate` would be saved under the wrong file name (corrupting the other engine's
+    /// state) and its events would route incorrectly.
+    nonisolated func isCurrentEngine(_ engine: CKSyncEngine) -> Bool {
+        engine === _privateEngineRef || engine === _sharedEngineRef
     }
 
     nonisolated func engineName(for engine: CKSyncEngine) -> String {
@@ -318,9 +458,16 @@ final class SplitSyncManager {
             logger.info("Share accepted — shared engine will fetch zone data automatically")
             #endif
 
-            // Force immediate fetch so the group appears quickly
-            if let sharedEngine {
-                try? await sharedEngine.fetchChanges()
+            // Force immediate fetch so the group appears quickly — but only once auto-sync is on.
+            // During the export-only window a fetch would run the fetch handler (a save on the
+            // half-imported personal graph). The shared engine recreated by enableAutoSync()
+            // auto-fetches the joined zone, so the group still appears, just slightly later.
+            if autoSyncActive, let sharedEngine {
+                do {
+                    try await sharedEngine.fetchChanges()
+                } catch {
+                    logger.error("acceptShare: immediate fetch failed (engine will retry on auto-sync): \(error.localizedDescription, privacy: .public)")
+                }
             }
 
             // Ensure the current iCloud user has a member record in the joined group.
@@ -359,7 +506,12 @@ final class SplitSyncManager {
         let descriptor = FetchDescriptor<SplitGroup>(
             predicate: #Predicate { $0.cloudKitZoneID == zoneID }
         )
-        return (try? context.fetch(descriptor))?.first?.name
+        do {
+            return try context.fetch(descriptor).first?.name
+        } catch {
+            logger.error("groupName(for:) fetch failed for zone \(zoneID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
     }
 
     /// Fetch the local SplitGroup for a given zone ID (resolved after sync).
@@ -371,7 +523,13 @@ final class SplitSyncManager {
             predicate: #Predicate { $0.cloudKitZoneID == zoneID },
             sortBy: [SortDescriptor(\.createdAt, order: .forward)]
         )
-        let results = (try? context.fetch(descriptor)) ?? []
+        let results: [SplitGroup]
+        do {
+            results = try context.fetch(descriptor)
+        } catch {
+            logger.error("group(for:) fetch failed for zone \(zoneID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
         if results.count > 1 {
             #if DEBUG
             logger.error("SplitSyncManager.group(for:): \(results.count) duplicate SplitGroups for zone \(zoneID)")
@@ -395,7 +553,12 @@ final class SplitSyncManager {
             sortBy: [SortDescriptor(\.joinedAt, order: .forward)]
         )
         descriptor.fetchLimit = 1
-        return try? context.fetch(descriptor).first
+        do {
+            return try context.fetch(descriptor).first
+        } catch {
+            logger.error("currentUserMember(zoneID:) fetch failed for \(zoneID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
     }
 
     /// Estado local del current user en una zone. Nil si no soy miembro local.
@@ -412,7 +575,12 @@ final class SplitSyncManager {
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
         descriptor.fetchLimit = 1
-        return (try? context.fetch(descriptor))?.first
+        do {
+            return try context.fetch(descriptor).first
+        } catch {
+            logger.error("mostRecentGroup() fetch failed: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
     }
 
     // MARK: - Access Requests (iOS 26)
@@ -566,6 +734,20 @@ final class SplitSyncManager {
         }
     }
 
+    // MARK: - Delegate save gate
+
+    /// Guard for every delegate handler that would touch the shared `mainContext`. During the
+    /// export-only window (`autoSyncActive == false`, personal import not settled) persisting the
+    /// half-imported personal graph can trip SwiftData's internal `_assertionFailure`. Returns
+    /// `true` (and logs) when the handler must defer; the fetch after `enableAutoSync()` reconciles
+    /// anything skipped. With `automaticallySync = false` the fetch handlers don't run on their own
+    /// — this is defence-in-depth plus the real gate for the sent/conflict handlers (export path).
+    private func deferMainContextWork(_ reason: String) -> Bool {
+        guard SplitSyncStartGate.shouldDeferDelegateSave(autoSyncActive: autoSyncActive) else { return false }
+        logger.notice("SplitSync deferring delegate work [\(reason, privacy: .public)] — export-only window, reconciled after auto-sync")
+        return true
+    }
+
     // MARK: - Event Handlers
 
     private func handleFetchedDatabaseChanges(_ fetched: CKSyncEngine.Event.FetchedDatabaseChanges, engineName: String, engine: CKSyncEngine) {
@@ -573,6 +755,7 @@ final class SplitSyncManager {
         logger.info("[\(engineName)] fetchedDatabaseChanges: \(fetched.modifications.count) mods, \(fetched.deletions.count) dels")
         #endif
 
+        if deferMainContextWork("fetchedDatabaseChanges") { return }
         guard !fetched.deletions.isEmpty, let modelContext else { return }
 
         for deletion in fetched.deletions {
@@ -651,6 +834,10 @@ final class SplitSyncManager {
 
     /// Delete all local group data (used on sign-out and account switch for privacy).
     private func clearAllLocalGroupData() {
+        // Edge case only: a sign-out/switch during the initial restore window (the user just signed
+        // in) is near-impossible. Defer the save to stay crash-safe; a normal sign-out (after the
+        // import settled, autoSyncActive == true) clears immediately.
+        if deferMainContextWork("clearAllLocalGroupData") { return }
         guard let modelContext else { return }
 
         do {
@@ -689,6 +876,7 @@ final class SplitSyncManager {
     }
 
     private func handleFetchedRecordZoneChanges(_ fetched: CKSyncEngine.Event.FetchedRecordZoneChanges, engineName: String) {
+        if deferMainContextWork("fetchedRecordZoneChanges") { return }
         guard let modelContext else { return }
 
         var changeSet = RemoteChangeSet()
@@ -875,7 +1063,13 @@ final class SplitSyncManager {
         let descriptor = FetchDescriptor<SplitMember>(
             predicate: #Predicate { $0.groupZoneID == zoneName && $0.isCurrentUser == true }
         )
-        let result = (try? context.fetch(descriptor).first?.isAdmin) ?? false
+        let result: Bool
+        do {
+            result = try context.fetch(descriptor).first?.isAdmin ?? false
+        } catch {
+            logger.error("isCurrentUserAdminOfGroup fetch failed for \(zoneName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            result = false
+        }
         cache[zoneName] = result
         return result
     }
@@ -894,8 +1088,12 @@ final class SplitSyncManager {
             pendingRecordSaves.remove(record.recordID)
         }
 
-        // Store system fields from successfully saved records (for conflict-free future uploads)
-        if !sent.savedRecords.isEmpty, let modelContext {
+        // Store system fields from successfully saved records (for conflict-free future uploads).
+        // Deferred during the export-only window: don't mutate/save the mainContext (the early
+        // return is BEFORE storeSystemFields so the context isn't left dirty). System fields are a
+        // conflict-resolution cache — a later upload re-captures them via serverRecordChanged. No
+        // data loss; this is what lets the user invite/create during the window without crashing.
+        if !sent.savedRecords.isEmpty, let modelContext, !deferMainContextWork("sentRecordZoneChanges.systemFields") {
             for record in sent.savedRecords {
                 storeSystemFields(of: record, context: modelContext)
             }
@@ -943,6 +1141,9 @@ final class SplitSyncManager {
     // MARK: - Conflict Resolution (Server Wins)
 
     private func handleConflict(failure: CKSyncEngine.Event.SentRecordZoneChanges.FailedRecordSave, engineName: String) {
+        // Defer during the export-only window — the fetch after promotion re-applies the server
+        // record (handleFetchedRecordZoneChanges) and reconciles the conflict safely.
+        if deferMainContextWork("conflict") { return }
         guard let modelContext,
               let serverRecord = failure.error.serverRecord else {
             #if DEBUG
@@ -961,7 +1162,14 @@ final class SplitSyncManager {
         if serverRecord.recordType == CKConstants.RecordType.groupMeta,
            let modelID = CKConstants.modelID(from: serverRecord.recordID) {
             let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == modelID })
-            if let existing = try? modelContext.fetch(descriptor).first {
+            let existingGroup: SplitGroup?
+            do {
+                existingGroup = try modelContext.fetch(descriptor).first
+            } catch {
+                logger.error("handleConflict: pre-state fetch failed: \(error.localizedDescription, privacy: .public)")
+                existingGroup = nil
+            }
+            if let existing = existingGroup {
                 preIsHiddenForAll = existing.isHiddenForAll
                 preIsArchived = existing.isArchived
                 splitGroupZoneID = existing.cloudKitZoneID
@@ -1019,6 +1227,9 @@ final class SplitSyncManager {
     // MARK: - Zone Not Found Handling
 
     private func handleZoneNotFound(recordID: CKRecord.ID, engineName: String) {
+        // Defer during the export-only window — the fetched database change (zone deletion) after
+        // promotion cleans up the local cache safely.
+        if deferMainContextWork("zoneNotFound") { return }
         guard let modelContext else { return }
 
         let zoneName = recordID.zoneID.zoneName
@@ -1397,7 +1608,8 @@ enum SplitSyncError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .engineNotInitialized:
-            return "CKSyncEngine not initialized. Ensure iCloud is available."
+            // Clear, actionable copy (was the opaque "CKSyncEngine not initialized").
+            return L10n.Groups.Errors.syncPreparing
         }
     }
 }
@@ -1416,6 +1628,11 @@ private final class SplitSyncDelegate: CKSyncEngineDelegate {
     }
 
     func handleEvent(_ event: CKSyncEngine.Event, syncEngine: CKSyncEngine) async {
+        // Discard callbacks from an engine that was recreated by `enableAutoSync()`. Crucial for
+        // the `.stateUpdate` path below: a stale event would be saved under the wrong file name
+        // (its identity no longer matches) and corrupt the live engine's serialized state.
+        guard manager?.isCurrentEngine(syncEngine) == true else { return }
+
         // State updates: persist synchronously (file I/O, nonisolated-safe)
         if case .stateUpdate(let update) = event {
             let name = manager?.isPrivateEngine(syncEngine) == true ? "private" : "shared"

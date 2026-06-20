@@ -4473,3 +4473,10 @@
 
 /* Contextual note when a manual 'Sync now' tap can't reach iCloud (transient/offline). Non-alarming; reassures data is safe on device. */
 "icloud.forceSync.offlineNote" = "Wir konnten iCloud gerade nicht erreichen. Deine Daten sind sicher und werden synchronisiert, sobald wieder eine Verbindung besteht.";
+
+/* Shown when a group action needs the sync engine but the personal iCloud import has not settled yet */
+"groups.errors.syncPreparing" = "Wir synchronisieren gerade Ihren iCloud-Account. Bitte versuchen Sie es in ein paar Sekunden erneut.";
+/* Shown when generating a group invite link fails */
+"groups.errors.inviteFailed" = "Der Einladungslink konnte nicht erstellt werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.";
+/* Generic group action failure (delete expense, settle, approve/reject member) */
+"groups.errors.actionFailed" = "Die Aktion konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.";

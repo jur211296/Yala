@@ -70,4 +70,30 @@ enum SplitSyncStartGate {
     static func startedOnIncompleteImport(hasCompletedFirstImport: Bool) -> Bool {
         !hasCompletedFirstImport
     }
+
+    // MARK: - Delegate save gate
+
+    /// Whether a `modelContext.save()` from the group sync delegate must be **deferred**.
+    ///
+    /// While the engines run in "export-only" mode (`automaticallySync = false`, set before the
+    /// personal first import settles), any `save()` of the shared `mainContext` could persist the
+    /// half-imported personal graph and trip SwiftData's internal `_assertionFailure`. The delegate
+    /// gates every save on this: defer (in-memory cleanup only) until the engines are promoted to
+    /// auto-sync (`autoSyncActive == true`). The fetch after promotion reconciles anything skipped.
+    static func shouldDeferDelegateSave(autoSyncActive: Bool) -> Bool {
+        !autoSyncActive
+    }
+
+    // MARK: - Zone recovery
+
+    /// Whether an owned group needs its CloudKit zone re-enqueued on engine startup.
+    ///
+    /// A group created while the engines were deferred (old gate) had its `createZone` no-op'd →
+    /// the zone + GroupMeta never reached CloudKit (it can't be invited). `ckSystemFieldsData` is
+    /// only populated after a successful GroupMeta upload (`storeSystemFields`), so an owned group
+    /// with no system fields never uploaded → re-enqueue its zone (idempotent). Groups already
+    /// synced (system fields present) are skipped — no sync storm.
+    static func needsZoneRecovery(isOwner: Bool, hasSystemFields: Bool) -> Bool {
+        isOwner && !hasSystemFields
+    }
 }

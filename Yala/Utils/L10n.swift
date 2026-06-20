@@ -1844,6 +1844,12 @@ enum L10n {
         enum Errors {
             /// surfaced cuando el current user pending intenta una acción que requiere active.
             static var pendingApproval: String { ls("groups.errors.pendingApproval", comment: "") }
+            /// Acción de grupo que necesita el sync pero el primer import de iCloud no se asentó.
+            static var syncPreparing: String { ls("groups.errors.syncPreparing", comment: "") }
+            /// Falló la generación del enlace de invitación.
+            static var inviteFailed: String { ls("groups.errors.inviteFailed", comment: "") }
+            /// Fallo genérico de una acción de grupo (eliminar gasto, liquidar, aprobar/rechazar).
+            static var actionFailed: String { ls("groups.errors.actionFailed", comment: "") }
         }
 
         /// #26: chips mostrados en GroupCardView cuando el current user está
