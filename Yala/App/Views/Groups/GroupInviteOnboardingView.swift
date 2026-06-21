@@ -157,6 +157,9 @@ struct GroupInviteOnboardingView: View {
     /// tras setup, detecta si el SplitMember quedó en `.pendingApproval` (step 3)
     /// o `.active` (step 2). Defensive: cualquier error → step 2 para no bloquear al user.
     private func detectFinalStep() async -> Int {
+        // `mostRecentGroup()` lo fetchea el `groupSyncContext` dedicado; `ensureCurrentUserMemberExists`
+        // (mainContext) SOLO lo lee (cross-context benigno — Split* no usa @Relationship). No mutar+guardar
+        // este `group` aquí: pertenece a otro contexto.
         guard let group = SplitSyncManager.shared.mostRecentGroup() else { return 2 }
         do {
             let member = try await GroupService.shared.ensureCurrentUserMemberExists(

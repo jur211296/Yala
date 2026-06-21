@@ -965,6 +965,10 @@ private struct GroupInviteModifier: ViewModifier {
 
         case .rejectedRetry, .leftRetry, .removedRetry:
             await acceptAndSettle(metadata: metadata)
+            // `group(for:)` lo fetchea el `groupSyncContext` dedicado del manager; `ensureCurrentUserMemberExists`
+            // (sin `context:` → mainContext) SOLO lo lee (`isOwner` Bool + `cloudKitZoneID` String vía `fetchMembers`)
+            // y muta `SplitMember` re-fetcheados en el mainContext → cross-context benigno (Split* no usa @Relationship).
+            // ⚠️ No mutar+guardar este `group` aquí: pertenece a otro contexto.
             if let group = SplitSyncManager.shared.group(for: zoneName) {
                 do {
                     _ = try await GroupService.shared.ensureCurrentUserMemberExists(in: group, reactivateInactive: true)

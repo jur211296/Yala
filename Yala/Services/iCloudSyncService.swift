@@ -46,6 +46,9 @@ final class iCloudSyncService {
         // Helpers — associated values break `==` comparisons with bare cases.
         var isIdle: Bool { if case .idle = self { return true }; return false }
         var isSyncing: Bool { if case .syncing = self { return true }; return false }
+        /// Solo el import personal (no export/setup). El crash del grafo a medio importar es por
+        /// IMPORT; gatear el bridge por esto (no por `isSyncing`) evita bloquearlo durante exports.
+        var isImporting: Bool { if case .syncing(.importing) = self { return true }; return false }
         var isSuccess: Bool { if case .success = self { return true }; return false }
         var isFailed: Bool { if case .failed = self { return true }; return false }
         var isStalled: Bool { if case .stalled = self { return true }; return false }

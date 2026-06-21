@@ -283,6 +283,22 @@ struct iCloudSyncServiceTests {
         }
     }
 
+    /// Regresión: el bridge personal (y `retryPendingBridges`) se gatea por `isImporting`, NO por
+    /// `isSyncing`. Solo un IMPORT a medio aplicar crashea el save del grafo personal; un export no.
+    /// Si `isImporting` se "simplificara" a aliasear `isSyncing`, el bridge se bloquearía durante los
+    /// exports normales del usuario (bloqueo indefinido). Este test fija que discrimina por kind.
+    @Test func isImporting_isTrueOnlyForImporting_notExportOrSetupOrIdle() {
+        #expect(iCloudSyncService.SyncStatus.syncing(kind: .importing).isImporting == true)
+        #expect(iCloudSyncService.SyncStatus.syncing(kind: .exporting).isImporting == false)
+        #expect(iCloudSyncService.SyncStatus.syncing(kind: .setup).isImporting == false)
+        #expect(iCloudSyncService.SyncStatus.idle.isImporting == false)
+        #expect(iCloudSyncService.SyncStatus.success(.now).isImporting == false)
+        #expect(iCloudSyncService.SyncStatus.noAccount.isImporting == false)
+        // `isSyncing` sigue siendo true para los tres kinds — el gate del bridge usa `isImporting`,
+        // que es estrictamente más estrecho.
+        #expect(iCloudSyncService.SyncStatus.syncing(kind: .exporting).isSyncing == true)
+    }
+
     // MARK: - forceFetchAndWait (A4 Welcome Restore)
 
     @MainActor @Test func forceFetchAndWait_returnsTrueImmediatelyWhenAlreadyImported() async {

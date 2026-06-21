@@ -611,6 +611,23 @@ final class AppBootstrapper {
             logger.notice("retryPendingBridges deferred — personal import not settled")
             return
         }
+        // El primer importEvent NO garantiza que el restore terminó: NSPersistentCloudKitContainer
+        // importa en muchos lotes y `awaitPersonalImportForBootSave` solo espera el primero. El bridge
+        // escribe el store personal (`YalaModel`, el mismo que se importa), así que un `save()` aquí
+        // sobre un grafo a medio hidratar dispara el `_assertionFailure` interno. Gatear por
+        // QUIESCENCIA del import (mismo patrón que `SplitSyncManager.processPendingRemoteChanges`): no
+        // bridgear mientras siga importando ni dentro de la ventana de quietud tras el último lote. Si
+        // no quiescente, los expenses quedan `bridgePending == true` y el próximo arranque reintenta.
+        let quiescence = SubcategoryDedupGate.decide(
+            now: .now,
+            lastImportDate: iCloudSyncService.shared.lastSuccessfulImportDate,
+            isSyncing: iCloudSyncService.shared.status.isImporting,
+            lastDedupRunAt: nil
+        )
+        guard quiescence == .run else {
+            logger.notice("retryPendingBridges deferred — import not quiescent (\(String(describing: quiescence), privacy: .public))")
+            return
+        }
         let descriptor = FetchDescriptor<SplitExpense>(
             predicate: #Predicate { $0.bridgePending == true }
         )

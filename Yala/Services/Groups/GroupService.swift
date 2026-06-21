@@ -488,8 +488,8 @@ final class GroupService {
     /// cuando el current user pasa a `.removed` vía admin remoto). Idempotente: si el
     /// SplitGroup local ya fue borrado (e.g. leaveGroup previo en otro device del mismo
     /// user), no-op.
-    func performRemovedSelfCleanup(zoneName: String) async {
-        guard let context = modelContext else { return }
+    func performRemovedSelfCleanup(zoneName: String, context providedContext: ModelContext? = nil) async {
+        guard let context = providedContext ?? modelContext else { return }
         let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneName })
         let group: SplitGroup
         do {
@@ -558,11 +558,11 @@ final class GroupService {
 
     /// Ensures there is a SplitMember for the current iCloud user in the given group.
     /// Returns the member representing the current user.
-    func ensureCurrentUserMemberExists(in group: SplitGroup, reactivateInactive: Bool = true) async throws -> SplitMember {
-        let context = try requireContext()
+    func ensureCurrentUserMemberExists(in group: SplitGroup, reactivateInactive: Bool = true, context providedContext: ModelContext? = nil) async throws -> SplitMember {
+        let context = try providedContext ?? requireContext()
         let recordName = try await GroupUserIdentityService.shared.currentUserRecordName()
 
-        let members = try fetchMembers(for: group)
+        let members = try fetchMembers(for: group, context: context)
         if let existing = members.first(where: { !$0.cloudKitUserRecordID.isEmpty && $0.cloudKitUserRecordID == recordName }) {
             var changed = false
             if !existing.isCurrentUser {
@@ -708,8 +708,11 @@ final class GroupService {
     }
 
     /// Recomputes `SplitMember.isCurrentUser` across all groups from `cloudKitUserRecordID`.
-    func refreshCurrentUserFlags() async {
-        guard let context = modelContext else { return }
+    /// `context` override: el delegate del sync pasa su `groupSyncContext` (escribe SplitMember →
+    /// store de grupos) para no hacer `save()` sobre el mainContext durante un restore. UI/boot usan
+    /// el default (mainContext).
+    func refreshCurrentUserFlags(context providedContext: ModelContext? = nil) async {
+        guard let context = providedContext ?? modelContext else { return }
         let recordName: String
         if let cached = GroupUserIdentityService.shared.cachedRecordName, !cached.isEmpty {
             recordName = cached
@@ -870,8 +873,8 @@ final class GroupService {
     }
 
     /// Fetch members for a group.
-    func fetchMembers(for group: SplitGroup) throws -> [SplitMember] {
-        let context = try requireContext()
+    func fetchMembers(for group: SplitGroup, context providedContext: ModelContext? = nil) throws -> [SplitMember] {
+        let context = try providedContext ?? requireContext()
         let zoneID = group.cloudKitZoneID
         let descriptor = FetchDescriptor<SplitMember>(
             predicate: #Predicate { $0.groupZoneID == zoneID },

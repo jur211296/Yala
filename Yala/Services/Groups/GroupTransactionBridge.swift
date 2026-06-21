@@ -669,8 +669,13 @@ final class GroupTransactionBridge {
     }
 
     /// Bridge remote expenses received in a sync batch. Called after context.save().
-    func bridgeRemoteExpenses(_ expenses: [SplitExpense]) throws {
+    /// `ids`: re-fetch en ESTE context (mainContext) — los expenses vienen del delegate del sync,
+    /// que ahora corre en su propio `groupSyncContext`; pasar objetos sería cross-context (stale).
+    func bridgeRemoteExpenses(ids: [UUID]) throws {
         let context = try requireContext()
+        guard !ids.isEmpty else { return }
+        let idSet = Set(ids)
+        let expenses = try context.fetch(FetchDescriptor<SplitExpense>()).filter { idSet.contains($0.id) }
 
         for expense in expenses {
             // Find the group for this expense
@@ -895,8 +900,12 @@ final class GroupTransactionBridge {
 
     /// Bridge remote settlements received via sync. Llamado desde SplitSyncManager.
     /// Solo procesa settlements confirmed (skipea unconfirmed).
-    func bridgeRemoteSettlements(_ settlements: [SplitSettlement]) throws {
+    /// `ids`: re-fetch en ESTE context (mainContext) — ver `bridgeRemoteExpenses(ids:)`.
+    func bridgeRemoteSettlements(ids: [UUID]) throws {
         let context = try requireContext()
+        guard !ids.isEmpty else { return }
+        let idSet = Set(ids)
+        let settlements = try context.fetch(FetchDescriptor<SplitSettlement>()).filter { idSet.contains($0.id) }
 
         for settlement in settlements {
             let zoneID = settlement.groupZoneID
