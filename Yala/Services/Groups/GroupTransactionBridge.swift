@@ -669,8 +669,8 @@ final class GroupTransactionBridge {
     }
 
     /// Bridge remote expenses received in a sync batch. Called after context.save().
-    /// `ids`: re-fetch en ESTE context (mainContext) — los expenses vienen del delegate del sync,
-    /// que ahora corre en su propio `groupSyncContext`; pasar objetos sería cross-context (stale).
+    /// `ids`: re-fetch en ESTE context (mainContext) en lugar de pasar objetos `SplitExpense` —
+    /// el sync persiste los expenses y luego invoca esto con sus IDs; re-fetchear evita objetos stale.
     func bridgeRemoteExpenses(ids: [UUID]) throws {
         let context = try requireContext()
         guard !ids.isEmpty else { return }

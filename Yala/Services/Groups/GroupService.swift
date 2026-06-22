@@ -708,9 +708,10 @@ final class GroupService {
     }
 
     /// Recomputes `SplitMember.isCurrentUser` across all groups from `cloudKitUserRecordID`.
-    /// `context` override: el delegate del sync pasa su `groupSyncContext` (escribe SplitMember →
-    /// store de grupos) para no hacer `save()` sobre el mainContext durante un restore. UI/boot usan
-    /// el default (mainContext).
+    /// `context` override opcional (default mainContext). Todos los callers actuales (delegate del
+    /// sync, UI, boot) resuelven al mainContext; la protección contra `save()` durante un restore
+    /// vive en el gate de QUIESCENCIA del sync (export-only + `deferMainContextWork`), no en aislar
+    /// el contexto.
     func refreshCurrentUserFlags(context providedContext: ModelContext? = nil) async {
         guard let context = providedContext ?? modelContext else { return }
         let recordName: String

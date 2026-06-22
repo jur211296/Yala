@@ -44,14 +44,14 @@ final class SplitSyncManager {
 
     // MARK: - Dependencies
 
-    /// The shared `mainContext` (set via `setContext`). Kept for the bridge / GroupService calls
-    /// and to propagate the dedicated context's changes back to the UI (see `groupSyncContext`).
+    /// The shared `mainContext` (set via `setContext`). The group-sync delegate reads + saves here.
+    /// Saving the half-imported personal graph mid-restore is prevented NOT by isolating the context
+    /// (a dedicated `ModelContext(container)` made `#Predicate` keypaths fail to resolve → crashed
+    /// record export in `buildRecord`) but by the QUIESCENCE gate: the engines stay export-only and
+    /// `deferMainContextWork` defers every delegate save until the personal first import has settled
+    /// AND gone quiet (`evaluateQuiescentPromotion`). After promotion the store is quiescent, so
+    /// delegate saves are safe — same as the last-known-good mainContext builds (≤28).
     private var modelContext: ModelContext?
-    /// Dedicated context for the group-sync delegate. Its `save()` persists only group-store models
-    /// (`YalaGroups`), so it never carries the half-imported personal graph (`YalaModel`) that
-    /// crashes `mainContext` saves during an iCloud restore. Used from `@MainActor` only (like the
-    /// rest of the delegate). Derived from the same `ModelContainer` as the mainContext.
-    private var groupSyncContext: ModelContext?
     private var container: CKContainer?
     private let logger = Logger(subsystem: "com.yala", category: "SplitSync")
 
@@ -75,9 +75,6 @@ final class SplitSyncManager {
 
     // Pending record IDs — internal tracking, not observed by views
     private var pendingRecordSaves: Set<CKRecord.ID> = []
-
-    // P1: observes the dedicated context's saves to signal a UI refresh (see `setContext`).
-    private var groupSyncSaveObserver: NSObjectProtocol?
 
     // Coalescing task for deferred bridge/notifications after remote changes
     private var deferredBridgeTask: Task<Void, Never>?
@@ -276,7 +273,7 @@ final class SplitSyncManager {
     /// `.saveZone`/`.saveRecord` are ignored by CloudKit's change tag if already present. Gated by
     /// `needsZoneRecovery` (owner + no system fields) so synced groups are skipped (no sync storm).
     private func recoverOwnedGroupZonesIfNeeded() {
-        guard let groupSyncContext, privateEngine != nil else { return }
+        guard let modelContext, privateEngine != nil else { return }
         // Fetch owned groups; the recovery heuristic (no uploaded GroupMeta) lives in the tested
         // pure-logic `needsZoneRecovery`, applied as the in-memory filter (single source of truth).
         let descriptor = FetchDescriptor<SplitGroup>(
@@ -284,7 +281,7 @@ final class SplitSyncManager {
         )
         let toRecover: [SplitGroup]
         do {
-            toRecover = try groupSyncContext.fetch(descriptor).filter {
+            toRecover = try modelContext.fetch(descriptor).filter {
                 SplitSyncStartGate.needsZoneRecovery(isOwner: $0.isOwner, hasSystemFields: $0.ckSystemFieldsData != nil)
             }
         } catch {
@@ -296,7 +293,7 @@ final class SplitSyncManager {
         let zoneManager = SplitZoneManager(syncManager: self)
         for group in toRecover {
             zoneManager.createZone(for: group)  // re-enqueue zone + GroupMeta (no mainContext save)
-            reEnqueueOwnedGroupRecords(group: group, context: groupSyncContext)
+            reEnqueueOwnedGroupRecords(group: group, context: modelContext)
         }
 
         logger.notice("SplitSync recovered \(toRecover.count, privacy: .public) owned group zone(s) with no uploaded GroupMeta")
@@ -392,28 +389,11 @@ final class SplitSyncManager {
     }
 
     func setContext(_ ctx: ModelContext) {
+        // The delegate uses the shared mainContext directly. The user-visible save paths
+        // (`handleFetchedDatabaseChanges`, `clearAllLocalGroupData`, `processPendingRemoteChanges`)
+        // signal a UI refresh via `markRemoteChangePending()`; the internal-only saves (system
+        // fields, conflict, zone recovery) don't need one — matching the last-known-good builds (≤28).
         modelContext = ctx
-        // Dedicated context for the delegate, on the SAME container/coordinator as the mainContext
-        // but a separate context → its save() carries only group-store models, not the personal
-        // graph being imported. autosaveEnabled=false: all delegate saves are explicit `try save()`.
-        let dedicated = ModelContext(ctx.container)
-        dedicated.autosaveEnabled = false
-        groupSyncContext = dedicated
-
-        // P1: the dedicated context's saves don't auto-merge into the mainContext (same coordinator,
-        // not parent-child). Signal a UI refresh on every dedicated save so the group ViewModels
-        // re-fetch (their `loadData` reads fresh from the store). Covers the saves that don't go
-        // through `processPendingRemoteChanges` (system fields, conflict, zone recovery).
-        if let observer = groupSyncSaveObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-        groupSyncSaveObserver = NotificationCenter.default.addObserver(
-            forName: ModelContext.didSave, object: dedicated, queue: .main
-        ) { _ in
-            MainActor.assumeIsolated {
-                SessionState.shared.markRemoteChangePending()
-            }
-        }
     }
 
     // MARK: - Engine Identity
@@ -521,7 +501,7 @@ final class SplitSyncManager {
             let zoneName = metadata.share.recordID.zoneID.zoneName
             if let group = group(for: zoneName) {
                 do {
-                    _ = try await GroupService.shared.ensureCurrentUserMemberExists(in: group, context: groupSyncContext)
+                    _ = try await GroupService.shared.ensureCurrentUserMemberExists(in: group, context: modelContext)
                 } catch {
                     logger.error("Failed to ensure current user member after share acceptance: \(error.localizedDescription, privacy: .public)")
                     RouterEntryGate.shared.submit(.showGroupSyncError(
@@ -531,7 +511,7 @@ final class SplitSyncManager {
             }
 
             // Recompute local isCurrentUser flags (device-specific; not synced).
-            await GroupService.shared.refreshCurrentUserFlags(context: groupSyncContext)
+            await GroupService.shared.refreshCurrentUserFlags(context: modelContext)
 
             await MainActor.run { TelemetryService.track(.groupInviteAccepted) }
 
@@ -549,7 +529,7 @@ final class SplitSyncManager {
 
     /// Query the local SplitGroup name for a given zone ID (resolved after sync).
     func groupName(for zoneID: String) -> String? {
-        guard let context = groupSyncContext else { return nil }
+        guard let context = modelContext else { return nil }
         let descriptor = FetchDescriptor<SplitGroup>(
             predicate: #Predicate { $0.cloudKitZoneID == zoneID }
         )
@@ -565,7 +545,7 @@ final class SplitSyncManager {
     /// Sorted by `createdAt asc` so the canonical (oldest) group wins consistently
     /// if a CloudKit sync race produced duplicates sharing the same `cloudKitZoneID`.
     func group(for zoneID: String) -> SplitGroup? {
-        guard let context = groupSyncContext else { return nil }
+        guard let context = modelContext else { return nil }
         let descriptor = FetchDescriptor<SplitGroup>(
             predicate: #Predicate { $0.cloudKitZoneID == zoneID },
             sortBy: [SortDescriptor(\.createdAt, order: .forward)]
@@ -594,7 +574,7 @@ final class SplitSyncManager {
     /// Current user's `SplitMember` en una zone (canonical: oldest `joinedAt` si hubiera duplicados).
     /// Reusado por `currentMemberStatus(zoneName:)` y por callsites del bridge.
     func currentUserMember(zoneID: String) -> SplitMember? {
-        guard let context = groupSyncContext else { return nil }
+        guard let context = modelContext else { return nil }
         var descriptor = FetchDescriptor<SplitMember>(
             predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true },
             sortBy: [SortDescriptor(\.joinedAt, order: .forward)]
@@ -617,7 +597,7 @@ final class SplitSyncManager {
 
     /// Find the most recently synced group (useful after accepting a share).
     func mostRecentGroup() -> SplitGroup? {
-        guard let context = groupSyncContext else { return nil }
+        guard let context = modelContext else { return nil }
         var descriptor = FetchDescriptor<SplitGroup>(
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
@@ -803,7 +783,7 @@ final class SplitSyncManager {
         #endif
 
         if deferMainContextWork("fetchedDatabaseChanges") { return }
-        guard !fetched.deletions.isEmpty, let groupSyncContext else { return }
+        guard !fetched.deletions.isEmpty, let modelContext else { return }
 
         for deletion in fetched.deletions {
             let zoneName = deletion.zoneID.zoneName
@@ -814,14 +794,14 @@ final class SplitSyncManager {
                 #if DEBUG
                 logger.info("[\(engineName)] Zone deleted: \(zoneName) — cleaning up local data")
                 #endif
-                deleteGroupCache(groupID: groupID, context: groupSyncContext)
+                deleteGroupCache(groupID: groupID, context: modelContext)
                 purgePendingChanges(for: deletion.zoneID, engine: engine)
 
             case .purged:
                 #if DEBUG
                 logger.info("[\(engineName)] Zone purged: \(zoneName) — clearing data + state")
                 #endif
-                deleteGroupCache(groupID: groupID, context: groupSyncContext)
+                deleteGroupCache(groupID: groupID, context: modelContext)
                 purgePendingChanges(for: deletion.zoneID, engine: engine)
                 clearState(name: engineName)
 
@@ -830,17 +810,17 @@ final class SplitSyncManager {
                 logger.info("[\(engineName)] Encrypted data reset: \(zoneName) — clearing system fields + re-uploading")
                 #endif
                 clearState(name: engineName)
-                reuploadGroupRecords(groupID: groupID, zoneID: deletion.zoneID, engine: engine, context: groupSyncContext)
+                reuploadGroupRecords(groupID: groupID, zoneID: deletion.zoneID, engine: engine, context: modelContext)
 
             @unknown default:
-                deleteGroupCache(groupID: groupID, context: groupSyncContext)
+                deleteGroupCache(groupID: groupID, context: modelContext)
                 purgePendingChanges(for: deletion.zoneID, engine: engine)
             }
         }
 
         do {
             SaveBreadcrumb.willSave("SplitSync.fetchedDatabaseChanges")
-            try groupSyncContext.save()
+            try modelContext.save()
             SaveBreadcrumb.didSave("SplitSync.fetchedDatabaseChanges")
             SessionState.shared.markRemoteChangePending()
         } catch {
@@ -887,15 +867,15 @@ final class SplitSyncManager {
         // in) is near-impossible. Defer the save to stay crash-safe; a normal sign-out (after the
         // import settled, autoSyncActive == true) clears immediately.
         if deferMainContextWork("clearAllLocalGroupData") { return }
-        guard let groupSyncContext else { return }
+        guard let modelContext else { return }
 
         do {
-            let groups = try groupSyncContext.fetch(FetchDescriptor<SplitGroup>())
+            let groups = try modelContext.fetch(FetchDescriptor<SplitGroup>())
             for group in groups {
-                deleteGroupCache(groupID: group.id, context: groupSyncContext)
+                deleteGroupCache(groupID: group.id, context: modelContext)
             }
             SaveBreadcrumb.willSave("SplitSync.clearAllLocalGroupData")
-            try groupSyncContext.save()
+            try modelContext.save()
             SaveBreadcrumb.didSave("SplitSync.clearAllLocalGroupData")
             SessionState.shared.markRemoteChangePending()
         } catch {
@@ -928,7 +908,7 @@ final class SplitSyncManager {
 
     private func handleFetchedRecordZoneChanges(_ fetched: CKSyncEngine.Event.FetchedRecordZoneChanges, engineName: String) {
         if deferMainContextWork("fetchedRecordZoneChanges") { return }
-        guard let groupSyncContext else { return }
+        guard let modelContext else { return }
 
         var changeSet = RemoteChangeSet()
 
@@ -941,11 +921,11 @@ final class SplitSyncManager {
             for zoneName in batchZoneNames {
                 let zName = zoneName
                 let expDesc = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zName })
-                existingExpenseIDs.formUnion(try groupSyncContext.fetch(expDesc).map(\.id))
+                existingExpenseIDs.formUnion(try modelContext.fetch(expDesc).map(\.id))
                 let setDesc = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.groupZoneID == zName })
-                existingSettlementIDs.formUnion(try groupSyncContext.fetch(setDesc).map(\.id))
+                existingSettlementIDs.formUnion(try modelContext.fetch(setDesc).map(\.id))
                 let memDesc = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zName })
-                existingMemberIDs.formUnion(try groupSyncContext.fetch(memDesc).map(\.id))
+                existingMemberIDs.formUnion(try modelContext.fetch(memDesc).map(\.id))
             }
         } catch {
             #if DEBUG
@@ -982,7 +962,7 @@ final class SplitSyncManager {
                         let rawStatus = record[CKConstants.MemberField.status] as? String
                         // admin solo importa para pending — compútalo lazy para no fetchear de más.
                         let isPending = rawStatus == SplitMemberStatus.pendingApproval.rawValue
-                        let isAdmin = isPending && isCurrentUserAdminOfGroup(zoneName: zoneName, context: groupSyncContext, cache: &adminCache)
+                        let isAdmin = isPending && isCurrentUserAdminOfGroup(zoneName: zoneName, context: modelContext, cache: &adminCache)
                         #if DEBUG
                         print("SplitSync[#16-debug]: splitMember zone=\(zoneName) modelID=\(modelID) status=\(rawStatus ?? "nil") isPending=\(isPending) isAdmin=\(isAdmin)")
                         #endif
@@ -999,18 +979,18 @@ final class SplitSyncManager {
                 }
             }
 
-            applyRemoteRecord(record, context: groupSyncContext, engineName: engineName)
+            applyRemoteRecord(record, context: modelContext, engineName: engineName)
         }
 
         for deletion in fetched.deletions {
-            applyRemoteDeletion(recordID: deletion.recordID, recordType: deletion.recordType, context: groupSyncContext)
+            applyRemoteDeletion(recordID: deletion.recordID, recordType: deletion.recordType, context: modelContext)
         }
 
         do {
             // Persist remote records before deferred bridge. Auto-sync overhead is
             // mitigated by state persistence limiting CKSyncEngine to incremental fetches.
             SaveBreadcrumb.willSave("SplitSync.fetchedRecordZoneChanges")
-            try groupSyncContext.save()
+            try modelContext.save()
             SaveBreadcrumb.didSave("SplitSync.fetchedRecordZoneChanges")
         } catch {
             #if DEBUG
@@ -1036,7 +1016,7 @@ final class SplitSyncManager {
             }
         }
 
-        let removedSelfCtx = groupSyncContext
+        let removedSelfCtx = modelContext
         for zoneName in removedSelfZones {
             Task { @MainActor in
                 await GroupService.shared.performRemovedSelfCleanup(zoneName: zoneName, context: removedSelfCtx)
@@ -1069,10 +1049,10 @@ final class SplitSyncManager {
     /// by import QUIESCENCE (not the first importEvent, which is premature): if the import isn't
     /// quiescent the bridge is deferred (pending IDs kept) and retried after the quiet window.
     private func processPendingRemoteChanges() async {
-        guard let groupSyncContext else { return }
+        guard let modelContext else { return }
 
         // Membership flags + notifications: group store / no personal save → always safe; process & clear.
-        await GroupService.shared.refreshCurrentUserFlags(context: groupSyncContext)
+        await GroupService.shared.refreshCurrentUserFlags(context: modelContext)
         let accumulated = pendingBridgeChangeSet
         pendingBridgeChangeSet = RemoteChangeSet()
         if !accumulated.isEmpty {
@@ -1094,11 +1074,14 @@ final class SplitSyncManager {
             lastDedupRunAt: nil
         )
         guard decision == .run else {
-            // Import not quiescent → defer the bridge. Mark the expenses `bridgePending` (group store,
-            // safe save) so `retryPendingBridges` recovers them if the app is killed before the retry;
-            // also schedule an in-session retry after the quiet window. (Settlements have no pending
-            // flag — covered only by the in-session retry; documented residual.)
-            markExpensesPendingBridge(expenseIDs)
+            // Import not quiescent → defer the bridge. The pending IDs stay in memory
+            // (`pendingBridgeExpenseIDs`/`pendingBridgeSettlementIDs` are cleared only on the success
+            // path below), and `scheduleBridgeRetry` re-runs this after the quiet window. We do NOT
+            // persist `bridgePending` here: that `save()` would flush the half-imported personal graph
+            // on the shared mainContext and trip SwiftData's `_assertionFailure`. (The dedicated group
+            // context that once made it safe was removed — its `#Predicate` keypaths crashed record
+            // export.) Accepted residual: killing the app during the rare incremental-import window
+            // before the retry loses in-session recovery; CKSyncEngine re-delivers the change later.
             let retryAfter: TimeInterval
             if case .waitQuiescence(let t) = decision { retryAfter = max(t, 1) } else { retryAfter = 8 }
             logger.notice("SplitSync bridge deferred (import not quiescent: \(String(describing: decision), privacy: .public)) — retry in \(Int(retryAfter), privacy: .public)s")
@@ -1123,29 +1106,6 @@ final class SplitSyncManager {
                 logger.error("Failed to bridge remote settlements: \(error)")
                 #endif
             }
-        }
-    }
-
-    /// Marks remote expenses `bridgePending` in the GROUP store (safe save on `groupSyncContext`) so
-    /// `retryPendingBridges` recovers them on next launch if the app is killed while the bridge is
-    /// deferred for import quiescence — otherwise the in-memory pending set is lost and the expense
-    /// never bridges to a personal TransactionItem.
-    private func markExpensesPendingBridge(_ ids: Set<UUID>) {
-        guard let groupSyncContext, !ids.isEmpty else { return }
-        do {
-            let expenses = try groupSyncContext.fetch(FetchDescriptor<SplitExpense>()).filter { ids.contains($0.id) }
-            var changed = false
-            for expense in expenses where !expense.bridgePending {
-                expense.bridgePending = true
-                changed = true
-            }
-            if changed {
-                SaveBreadcrumb.willSave("SplitSync.markExpensesPendingBridge")
-                try groupSyncContext.save()
-                SaveBreadcrumb.didSave("SplitSync.markExpensesPendingBridge")
-            }
-        } catch {
-            logger.error("markExpensesPendingBridge failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -1197,13 +1157,13 @@ final class SplitSyncManager {
         // return is BEFORE storeSystemFields so the context isn't left dirty). System fields are a
         // conflict-resolution cache — a later upload re-captures them via serverRecordChanged. No
         // data loss; this is what lets the user invite/create during the window without crashing.
-        if !sent.savedRecords.isEmpty, let groupSyncContext, !deferMainContextWork("sentRecordZoneChanges.systemFields") {
+        if !sent.savedRecords.isEmpty, let modelContext, !deferMainContextWork("sentRecordZoneChanges.systemFields") {
             for record in sent.savedRecords {
-                storeSystemFields(of: record, context: groupSyncContext)
+                storeSystemFields(of: record, context: modelContext)
             }
             do {
                 SaveBreadcrumb.willSave("SplitSync.sentRecordZoneChanges.systemFields")
-                try groupSyncContext.save()
+                try modelContext.save()
                 SaveBreadcrumb.didSave("SplitSync.sentRecordZoneChanges.systemFields")
             } catch {
                 #if DEBUG
@@ -1250,7 +1210,7 @@ final class SplitSyncManager {
         // Defer during the export-only window — the fetch after promotion re-applies the server
         // record (handleFetchedRecordZoneChanges) and reconciles the conflict safely.
         if deferMainContextWork("conflict") { return }
-        guard let groupSyncContext,
+        guard let modelContext,
               let serverRecord = failure.error.serverRecord else {
             #if DEBUG
             logger.error("[\(engineName)] Conflict but no server record available")
@@ -1270,7 +1230,7 @@ final class SplitSyncManager {
             let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == modelID })
             let existingGroup: SplitGroup?
             do {
-                existingGroup = try groupSyncContext.fetch(descriptor).first
+                existingGroup = try modelContext.fetch(descriptor).first
             } catch {
                 logger.error("handleConflict: pre-state fetch failed: \(error.localizedDescription, privacy: .public)")
                 existingGroup = nil
@@ -1283,10 +1243,10 @@ final class SplitSyncManager {
         }
 
         // Accept server version: update local model from server record
-        applyRemoteRecord(serverRecord, context: groupSyncContext, engineName: engineName)
+        applyRemoteRecord(serverRecord, context: modelContext, engineName: engineName)
         do {
             SaveBreadcrumb.willSave("SplitSync.conflict")
-            try groupSyncContext.save()
+            try modelContext.save()
             SaveBreadcrumb.didSave("SplitSync.conflict")
         } catch {
             #if DEBUG
@@ -1313,7 +1273,7 @@ final class SplitSyncManager {
             if needsReSave {
                 do {
                     SaveBreadcrumb.willSave("SplitSync.conflict.raceReapply")
-                    try groupSyncContext.save()
+                    try modelContext.save()
                     SaveBreadcrumb.didSave("SplitSync.conflict.raceReapply")
                     #if DEBUG
                     logger.info("[\(engineName)] Conflict race fix: re-applied transition for zone \(zoneID, privacy: .public)")
@@ -1340,16 +1300,16 @@ final class SplitSyncManager {
         // Defer during the export-only window — the fetched database change (zone deletion) after
         // promotion cleans up the local cache safely.
         if deferMainContextWork("zoneNotFound") { return }
-        guard let groupSyncContext else { return }
+        guard let modelContext else { return }
 
         let zoneName = recordID.zoneID.zoneName
         guard let groupID = CKConstants.groupID(from: zoneName) else { return }
 
         // Delete all local data for this group
-        deleteGroupCache(groupID: groupID, context: groupSyncContext)
+        deleteGroupCache(groupID: groupID, context: modelContext)
         do {
             SaveBreadcrumb.willSave("SplitSync.zoneNotFound")
-            try groupSyncContext.save()
+            try modelContext.save()
             SaveBreadcrumb.didSave("SplitSync.zoneNotFound")
         } catch {
             #if DEBUG
@@ -1665,25 +1625,25 @@ final class SplitSyncManager {
     // MARK: - Record Building (for nextRecordZoneChangeBatch)
 
     func buildRecord(for recordID: CKRecord.ID) -> CKRecord? {
-        guard let groupSyncContext,
+        guard let modelContext,
               let modelID = CKConstants.modelID(from: recordID) else { return nil }
 
         let zoneID = recordID.zoneID
 
         // Try each model type to find the one matching this recordID
-        if let group = fetchByID(SplitGroup.self, id: modelID, context: groupSyncContext) {
+        if let group = fetchByID(SplitGroup.self, id: modelID, context: modelContext) {
             return CKRecordTranslator.record(from: group, in: zoneID)
         }
-        if let expense = fetchByID(SplitExpense.self, id: modelID, context: groupSyncContext) {
+        if let expense = fetchByID(SplitExpense.self, id: modelID, context: modelContext) {
             return CKRecordTranslator.record(from: expense, in: zoneID)
         }
-        if let member = fetchByID(SplitMember.self, id: modelID, context: groupSyncContext) {
+        if let member = fetchByID(SplitMember.self, id: modelID, context: modelContext) {
             return CKRecordTranslator.record(from: member, in: zoneID)
         }
-        if let share = fetchByID(SplitShare.self, id: modelID, context: groupSyncContext) {
+        if let share = fetchByID(SplitShare.self, id: modelID, context: modelContext) {
             return CKRecordTranslator.record(from: share, in: zoneID)
         }
-        if let settlement = fetchByID(SplitSettlement.self, id: modelID, context: groupSyncContext) {
+        if let settlement = fetchByID(SplitSettlement.self, id: modelID, context: modelContext) {
             return CKRecordTranslator.record(from: settlement, in: zoneID)
         }
 
