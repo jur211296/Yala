@@ -1172,6 +1172,11 @@ final class AppPreferences {
         static let hasShownYalaAIOnboarding = "hasShownYalaAIOnboarding"
         static let hasShownGroupsOnboarding = "hasShownGroupsOnboarding"
         static let hasSeenTodayFXCoachMark = "hasSeenTodayFXCoachMark"
+        /// Gate TEMPORAL de código beta para el tab Grupos (validación v2.0.1).
+        /// Per-device, no sincronizado, NO se resetea en wipe. Leído vía @AppStorage
+        /// directo en las views del gate; escrito vía UserDefaults desde el código
+        /// correcto o desde `CKShareEntryHandler` (invitados). Remover al estabilizar.
+        static let groupsBetaUnlocked = "groupsBetaUnlocked"
         static let lastSeenAppVersion = "lastSeenAppVersion"
         nonisolated static let expensesOnlyMode = "expensesOnlyMode"  // accedida cross-process desde intents
         static let financialMindset = "financialMindset"

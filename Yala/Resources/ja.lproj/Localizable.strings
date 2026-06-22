@@ -4492,3 +4492,20 @@
 "groups.errors.inviteFailed" = "招待リンクを作成できませんでした。接続を確認してもう一度お試しください。";
 /* Generic group action failure (delete expense, settle, approve/reject member) */
 "groups.errors.actionFailed" = "操作を完了できませんでした。もう一度お試しください。";
+/* Beta gate (Groups): screen/alert title */
+"groups.beta.gate.title" = "ベータ機能";
+
+/* Beta gate (Groups): explanation message */
+"groups.beta.gate.message" = "この機能はベータ版で、一部のユーザーのみが利用できます";
+
+/* Beta gate (Groups): button to enter the beta code */
+"groups.beta.gate.haveCode" = "ベータコードを持っています";
+
+/* Beta gate (Groups): code entry alert title */
+"groups.beta.gate.codePrompt" = "ベータコードを入力してください";
+
+/* Beta gate (Groups): code field placeholder */
+"groups.beta.gate.placeholder" = "コード";
+
+/* Beta gate (Groups): wrong code error */
+"groups.beta.gate.wrongCode" = "コードが正しくありません";

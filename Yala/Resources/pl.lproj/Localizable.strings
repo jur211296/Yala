@@ -4492,3 +4492,20 @@
 "groups.errors.inviteFailed" = "Nie udało się utworzyć linku z zaproszeniem. Sprawdź połączenie i spróbuj ponownie.";
 /* Generic group action failure (delete expense, settle, approve/reject member) */
 "groups.errors.actionFailed" = "Nie udało się ukończyć czynności. Spróbuj ponownie.";
+/* Beta gate (Groups): screen/alert title */
+"groups.beta.gate.title" = "Funkcja w wersji beta";
+
+/* Beta gate (Groups): explanation message */
+"groups.beta.gate.message" = "Ta funkcja jest w wersji beta, dostępna tylko dla wybranych użytkowników";
+
+/* Beta gate (Groups): button to enter the beta code */
+"groups.beta.gate.haveCode" = "Mam kod beta";
+
+/* Beta gate (Groups): code entry alert title */
+"groups.beta.gate.codePrompt" = "Wprowadź swój kod beta";
+
+/* Beta gate (Groups): code field placeholder */
+"groups.beta.gate.placeholder" = "Kod";
+
+/* Beta gate (Groups): wrong code error */
+"groups.beta.gate.wrongCode" = "Nieprawidłowy kod";

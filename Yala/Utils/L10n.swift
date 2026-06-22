@@ -2055,6 +2055,17 @@ enum L10n {
             static var done: String { ls("groups.activate.done", comment: "") }
         }
 
+        // MARK: Beta Gate (validación v2.0.1 — gate TEMPORAL, remover al estabilizar)
+
+        enum Beta {
+            static var title: String { ls("groups.beta.gate.title", comment: "") }
+            static var message: String { ls("groups.beta.gate.message", comment: "") }
+            static var haveCode: String { ls("groups.beta.gate.haveCode", comment: "") }
+            static var codePrompt: String { ls("groups.beta.gate.codePrompt", comment: "") }
+            static var placeholder: String { ls("groups.beta.gate.placeholder", comment: "") }
+            static var wrongCode: String { ls("groups.beta.gate.wrongCode", comment: "") }
+        }
+
         // MARK: Nudge (GC-09)
 
         enum Nudge {

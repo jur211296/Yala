@@ -51,6 +51,11 @@ struct MoreView: View {
     @Environment(AppPreferences.self) private var appPreferences
     @State private var showProfile = false
     @State private var showEditor = false
+    /// Gate beta de Grupos (validación v2.0.1, TEMPORAL). Si no está desbloqueado,
+    /// la card "Grupos" muestra el alert intro en lugar de navegar.
+    @AppStorage(AppPreferences.Keys.groupsBetaUnlocked) private var groupsBetaUnlocked = false
+    @State private var showBetaIntro = false
+    @State private var showBetaCode = false
 
     /// GC-08: en modo groupInvite solo Grupos es accesible; el dashboard se oculta.
     private var isGroupInviteMode: Bool { SessionState.shared.isGroupInviteMode }
@@ -100,6 +105,18 @@ struct MoreView: View {
         }
         .sheet(isPresented: $showEditor) {
             MoreEditorSheet()
+        }
+        .alert(L10n.Groups.Beta.title, isPresented: $showBetaIntro) {
+            Button(L10n.Groups.Beta.haveCode) {
+                // Difiere al próximo runloop: encadenar alerts en la misma acción es frágil.
+                Task { @MainActor in showBetaCode = true }
+            }
+            Button(L10n.Action.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Groups.Beta.message)
+        }
+        .betaCodeEntry(isPresented: $showBetaCode) {
+            RouterEntryGate.shared.submit(.navigate(.groups))
         }
     }
 
@@ -215,7 +232,11 @@ struct MoreView: View {
                     RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
                 },
                 NavItem(id: "groups", icon: ConfigurableTab.groups.iconName, title: ConfigurableTab.groups.displayName, subtitle: L10n.More.Subtitle.groups, badge: "Beta") {
-                    RouterEntryGate.shared.submit(.navigate(.groups))
+                    if groupsBetaUnlocked {
+                        RouterEntryGate.shared.submit(.navigate(.groups))
+                    } else {
+                        showBetaIntro = true
+                    }
                 },
                 NavItem(id: "profile", icon: "person.crop.circle.fill", title: L10n.Profile.title, subtitle: L10n.More.Subtitle.profile) {
                     showProfile = true

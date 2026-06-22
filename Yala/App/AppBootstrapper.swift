@@ -382,6 +382,13 @@ final class AppBootstrapper {
         // intercepta el primer tap de cualquier XCUITest post-onboarding.
         let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
         UserDefaults.standard.set(currentVersion, forKey: "lastSeenAppVersion")
+
+        // Gate beta de Grupos (validación v2.0.1, TEMPORAL): los XCUITests prueban la
+        // funcionalidad de Grupos, no el gate del código beta. Desbloquear en uitest
+        // evita que GroupsBetaGateView intercepte DeeplinkRoutingUITests / GroupsSmokeUITests.
+        if UITestHooks.isActive {
+            UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
+        }
     }
 
     /// Seed de datos UI-test al final del bootstrap + señal `uitest_ready`.

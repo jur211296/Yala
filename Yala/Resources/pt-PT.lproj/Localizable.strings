@@ -3747,3 +3747,20 @@
 "groups.errors.inviteFailed" = "Não foi possível criar a ligação de convite. Verifica a tua ligação e tenta novamente.";
 /* Generic group action failure (delete expense, settle, approve/reject member) */
 "groups.errors.actionFailed" = "Não foi possível concluir a ação. Tenta novamente.";
+/* Beta gate (Groups): screen/alert title */
+"groups.beta.gate.title" = "Funcionalidade em beta";
+
+/* Beta gate (Groups): explanation message */
+"groups.beta.gate.message" = "Esta funcionalidade está em beta, disponível apenas para alguns utilizadores";
+
+/* Beta gate (Groups): button to enter the beta code */
+"groups.beta.gate.haveCode" = "Tenho um código beta";
+
+/* Beta gate (Groups): code entry alert title */
+"groups.beta.gate.codePrompt" = "Introduz o teu código beta";
+
+/* Beta gate (Groups): code field placeholder */
+"groups.beta.gate.placeholder" = "Código";
+
+/* Beta gate (Groups): wrong code error */
+"groups.beta.gate.wrongCode" = "Código incorreto";
