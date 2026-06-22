@@ -31,6 +31,13 @@ enum GroupBridgeRaceCleaner {
     /// - Returns: Cantidad de drafts eliminados (para logging/telemetría).
     @discardableResult
     static func cleanupPendingDraftsWithMatchingTX(in context: ModelContext) -> Int {
+        // Gate de quiescencia: borra `InboxDraft` (store personal) + `save()`; corre desde el observer
+        // `.NSPersistentStoreRemoteChange`, que dispara DURANTE el import del restore. Diferir
+        // (idempotente: re-corre en el próximo cambio remoto, ya quiescente).
+        guard iCloudSyncService.shared.isImportQuiescent else {
+            SaveBreadcrumb.deferred("GroupBridgeRaceCleaner.cleanup", "import not quiescent")
+            return 0
+        }
         let drafts: [InboxDraft]
         do {
             drafts = try context.fetch(FetchDescriptor<InboxDraft>(
@@ -64,7 +71,9 @@ enum GroupBridgeRaceCleaner {
 
         if deleted > 0 {
             do {
+                SaveBreadcrumb.willSave("GroupBridgeRaceCleaner.cleanup")
                 try context.save()
+                SaveBreadcrumb.didSave("GroupBridgeRaceCleaner.cleanup")
                 #if DEBUG
                 print("GroupBridgeRaceCleaner: removed \(deleted) stale draft(s)")
                 #endif

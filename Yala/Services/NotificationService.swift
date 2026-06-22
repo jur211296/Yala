@@ -341,6 +341,14 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     /// Create default notifications if none exist (verified by type to avoid duplicates)
     @MainActor
     func seedDefaultNotificationsIfNeeded(context: ModelContext) {
+        // Gate de quiescencia: este `save()` toca el store personal; durante el import del restore
+        // de iCloud dispararía el `_assertionFailure` interno de SwiftData. Si no está quieto, salta
+        // (idempotente: re-corre en el próximo arranque/quiescencia) y NO deja inserts pendientes.
+        guard iCloudSyncService.shared.isImportQuiescent else {
+            SaveBreadcrumb.deferred("NotificationService.seedDefaults", "import not quiescent")
+            return
+        }
+
         // Fetch existing notifications to check by type
         let descriptor = FetchDescriptor<NotificationItem>()
 
@@ -375,7 +383,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         guard inserted > 0 else { return }
 
         do {
+            SaveBreadcrumb.willSave("NotificationService.seedDefaults")
             try context.save()
+            SaveBreadcrumb.didSave("NotificationService.seedDefaults")
             #if DEBUG
             print("NotificationService: Seeded \(inserted) missing notification types")
             #endif
@@ -390,6 +400,12 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     /// R9: Guards against CloudKit delivering synced notifications between fetch and save in onboarding.
     @MainActor
     func deduplicateNotifications(context: ModelContext) {
+        // Gate de quiescencia: save del store personal — diferir durante el import del restore.
+        // Dedupe tras la quiescencia ve el estado final del import (mejor que a mitad de camino).
+        guard iCloudSyncService.shared.isImportQuiescent else {
+            SaveBreadcrumb.deferred("NotificationService.dedupe", "import not quiescent")
+            return
+        }
         let descriptor = FetchDescriptor<NotificationItem>()
         let all: [NotificationItem]
         do {
@@ -413,7 +429,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         }
         if removed > 0 {
             do {
+                SaveBreadcrumb.willSave("NotificationService.dedupe")
                 try context.save()
+                SaveBreadcrumb.didSave("NotificationService.dedupe")
                 #if DEBUG
                 print("NotificationService: Deduplicated \(removed) notification(s)")
                 #endif

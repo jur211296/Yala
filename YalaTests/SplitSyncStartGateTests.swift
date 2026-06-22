@@ -51,38 +51,59 @@ struct SplitSyncStartGateTests {
         #expect(decision == .deferUntilImport)
     }
 
-    // MARK: - resolveWait
+    // MARK: - resolveWaitByQuiescence (promote on QUIESCENCE, not first import)
 
-    @Test func resolveWait_importCompleted_starts() {
-        let r = SplitSyncStartGate.resolveWait(hasCompletedFirstImport: true, reachedHardCap: false)
+    @Test func resolveByQuiescence_settledAndQuiet_starts() {
+        let r = SplitSyncStartGate.resolveWaitByQuiescence(
+            hasCompletedFirstImport: true, isQuiescent: true, reachedHardCap: false
+        )
         #expect(r == .start)
     }
 
-    @Test func resolveWait_hardCapReached_starts() {
-        let r = SplitSyncStartGate.resolveWait(hasCompletedFirstImport: false, reachedHardCap: true)
-        #expect(r == .start)
-    }
-
-    @Test func resolveWait_completedAndHardCap_starts() {
-        let r = SplitSyncStartGate.resolveWait(hasCompletedFirstImport: true, reachedHardCap: true)
-        #expect(r == .start)
-    }
-
-    @Test func resolveWait_pendingAndNoCap_keepsWaiting() {
-        // The normal "slow restore in progress" case: do not start, wait for the import
-        // (the .iCloudFirstImportCompleted observer is the fast path).
-        let r = SplitSyncStartGate.resolveWait(hasCompletedFirstImport: false, reachedHardCap: false)
+    @Test func resolveByQuiescence_firstImportButNotQuiet_keepsWaiting() {
+        // The KEY case: first import fired but the multi-batch restore is still active →
+        // must NOT promote (promoting on the first event, before quiescence, is what re-crashed).
+        let r = SplitSyncStartGate.resolveWaitByQuiescence(
+            hasCompletedFirstImport: true, isQuiescent: false, reachedHardCap: false
+        )
         #expect(r == .keepWaiting)
     }
 
-    // MARK: - startedOnIncompleteImport
-
-    @Test func startedOnIncompleteImport_trueWhenImportPending() {
-        #expect(SplitSyncStartGate.startedOnIncompleteImport(hasCompletedFirstImport: false) == true)
+    @Test func resolveByQuiescence_quietButNoImportYet_keepsWaiting() {
+        // `isQuiescent` is true BEFORE any import starts (lastImportDate == nil). Promoting there
+        // would be premature on a restore where the import is still pending → keep waiting.
+        let r = SplitSyncStartGate.resolveWaitByQuiescence(
+            hasCompletedFirstImport: false, isQuiescent: true, reachedHardCap: false
+        )
+        #expect(r == .keepWaiting)
     }
 
-    @Test func startedOnIncompleteImport_falseWhenImportComplete() {
-        #expect(SplitSyncStartGate.startedOnIncompleteImport(hasCompletedFirstImport: true) == false)
+    @Test func resolveByQuiescence_hardCap_startsRegardless() {
+        let r = SplitSyncStartGate.resolveWaitByQuiescence(
+            hasCompletedFirstImport: false, isQuiescent: false, reachedHardCap: true
+        )
+        #expect(r == .start)
+    }
+
+    @Test func resolveByQuiescence_pendingNoCap_keepsWaiting() {
+        let r = SplitSyncStartGate.resolveWaitByQuiescence(
+            hasCompletedFirstImport: false, isQuiescent: false, reachedHardCap: false
+        )
+        #expect(r == .keepWaiting)
+    }
+
+    // MARK: - promotedWhileNotQuiescent
+
+    @Test func promotedWhileNotQuiescent_falseWhenSettledAndQuiet() {
+        #expect(SplitSyncStartGate.promotedWhileNotQuiescent(hasCompletedFirstImport: true, isQuiescent: true) == false)
+    }
+
+    @Test func promotedWhileNotQuiescent_trueWhenNotQuiet() {
+        #expect(SplitSyncStartGate.promotedWhileNotQuiescent(hasCompletedFirstImport: true, isQuiescent: false) == true)
+    }
+
+    @Test func promotedWhileNotQuiescent_trueWhenImportNotDone() {
+        #expect(SplitSyncStartGate.promotedWhileNotQuiescent(hasCompletedFirstImport: false, isQuiescent: true) == true)
     }
 
     // MARK: - shouldDeferDelegateSave

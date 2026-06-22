@@ -332,16 +332,18 @@ final class SplitSyncManager {
     /// Fast path: the `.iCloudFirstImportCompleted` observer. Safety net: a periodic poll that
     /// promotes at the absolute hard cap (so group sync never stays export-only forever).
     private func observeFirstImportThenStart() {
-        // Defensive: the import may have completed between decideStart and here.
-        if iCloudSyncService.shared.hasCompletedFirstImport { enableAutoSync(); return }
+        // Defensive: the import may have already settled+quieted between decideStart and here.
+        if evaluateQuiescentPromotion(reachedHardCap: false) { return }
 
-        logger.notice("SplitSync export-only — awaiting personal first import before enabling auto-sync")
+        logger.notice("SplitSync export-only — awaiting personal import QUIESCENCE before enabling auto-sync")
 
+        // Fast re-eval when the first import completes — but promotion still needs the quiet window,
+        // so this usually just hands off to the poll (which fires once the store goes quiescent).
         firstImportObserver = NotificationCenter.default.addObserver(
             forName: .iCloudFirstImportCompleted, object: nil, queue: .main
         ) { [weak self] _ in
             guard let self else { return }
-            Task { @MainActor in self.enableAutoSync() }
+            Task { @MainActor in _ = self.evaluateQuiescentPromotion(reachedHardCap: false) }
         }
 
         gateWaitTask = Task { @MainActor [weak self] in
@@ -350,23 +352,33 @@ final class SplitSyncManager {
                 try? await Task.sleep(for: .seconds(Self.pollInterval))
                 guard !Task.isCancelled, let self, !self.autoSyncActive else { return }
                 elapsed += Self.pollInterval
-                let resolution = SplitSyncStartGate.resolveWait(
-                    hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport,
-                    reachedHardCap: elapsed >= Self.hardCapSeconds
-                )
-                guard resolution == .start else { continue }
-                if SplitSyncStartGate.startedOnIncompleteImport(
-                    hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
-                ) {
-                    self.logger.warning("SplitSync gate HARD CAP \(Int(Self.hardCapSeconds))s — enabling auto-sync with firstImport=false, isSyncing=\(iCloudSyncService.shared.status.isSyncing, privacy: .public)")
-                    TelemetryService.track(.cloudkitGroupSyncGateHardCap, parameters: [
-                        "isSyncing": String(iCloudSyncService.shared.status.isSyncing)
-                    ])
-                }
-                self.enableAutoSync()
-                return
+                if self.evaluateQuiescentPromotion(reachedHardCap: elapsed >= Self.hardCapSeconds) { return }
             }
         }
+    }
+
+    /// Promote the engines to auto-sync IFF the personal import has settled AND gone quiet
+    /// (or the hard cap fired). Shared by the `.iCloudFirstImportCompleted` observer and the poll.
+    /// Returns `true` once promoted (or already promoted) so the poll loop can exit.
+    @discardableResult
+    private func evaluateQuiescentPromotion(reachedHardCap: Bool) -> Bool {
+        guard !autoSyncActive else { return true }
+        let firstImport = iCloudSyncService.shared.hasCompletedFirstImport
+        let isQuiescent = iCloudSyncService.shared.isImportQuiescent
+        let resolution = SplitSyncStartGate.resolveWaitByQuiescence(
+            hasCompletedFirstImport: firstImport,
+            isQuiescent: isQuiescent,
+            reachedHardCap: reachedHardCap
+        )
+        guard resolution == .start else { return false }
+        if SplitSyncStartGate.promotedWhileNotQuiescent(hasCompletedFirstImport: firstImport, isQuiescent: isQuiescent) {
+            logger.warning("SplitSync gate HARD CAP \(Int(Self.hardCapSeconds))s — promoting to auto-sync while NOT quiescent (firstImport=\(firstImport, privacy: .public), isSyncing=\(iCloudSyncService.shared.status.isSyncing, privacy: .public))")
+            TelemetryService.track(.cloudkitGroupSyncGateHardCap, parameters: [
+                "isSyncing": String(iCloudSyncService.shared.status.isSyncing)
+            ])
+        }
+        enableAutoSync()
+        return true
     }
 
     /// Removes the gate observer + cancels the poll task. Called by whichever start path wins.
@@ -827,7 +839,9 @@ final class SplitSyncManager {
         }
 
         do {
+            SaveBreadcrumb.willSave("SplitSync.fetchedDatabaseChanges")
             try groupSyncContext.save()
+            SaveBreadcrumb.didSave("SplitSync.fetchedDatabaseChanges")
             SessionState.shared.markRemoteChangePending()
         } catch {
             #if DEBUG
@@ -880,7 +894,9 @@ final class SplitSyncManager {
             for group in groups {
                 deleteGroupCache(groupID: group.id, context: groupSyncContext)
             }
+            SaveBreadcrumb.willSave("SplitSync.clearAllLocalGroupData")
             try groupSyncContext.save()
+            SaveBreadcrumb.didSave("SplitSync.clearAllLocalGroupData")
             SessionState.shared.markRemoteChangePending()
         } catch {
             #if DEBUG
@@ -993,7 +1009,9 @@ final class SplitSyncManager {
         do {
             // Persist remote records before deferred bridge. Auto-sync overhead is
             // mitigated by state persistence limiting CKSyncEngine to incremental fetches.
+            SaveBreadcrumb.willSave("SplitSync.fetchedRecordZoneChanges")
             try groupSyncContext.save()
+            SaveBreadcrumb.didSave("SplitSync.fetchedRecordZoneChanges")
         } catch {
             #if DEBUG
             logger.error("[\(engineName)] Failed to save after remote changes: \(error)")
@@ -1121,7 +1139,11 @@ final class SplitSyncManager {
                 expense.bridgePending = true
                 changed = true
             }
-            if changed { try groupSyncContext.save() }
+            if changed {
+                SaveBreadcrumb.willSave("SplitSync.markExpensesPendingBridge")
+                try groupSyncContext.save()
+                SaveBreadcrumb.didSave("SplitSync.markExpensesPendingBridge")
+            }
         } catch {
             logger.error("markExpensesPendingBridge failed: \(error.localizedDescription, privacy: .public)")
         }
@@ -1180,7 +1202,9 @@ final class SplitSyncManager {
                 storeSystemFields(of: record, context: groupSyncContext)
             }
             do {
+                SaveBreadcrumb.willSave("SplitSync.sentRecordZoneChanges.systemFields")
                 try groupSyncContext.save()
+                SaveBreadcrumb.didSave("SplitSync.sentRecordZoneChanges.systemFields")
             } catch {
                 #if DEBUG
                 logger.error("[\(engineName)] Failed to save system fields after successful upload: \(error)")
@@ -1261,7 +1285,9 @@ final class SplitSyncManager {
         // Accept server version: update local model from server record
         applyRemoteRecord(serverRecord, context: groupSyncContext, engineName: engineName)
         do {
+            SaveBreadcrumb.willSave("SplitSync.conflict")
             try groupSyncContext.save()
+            SaveBreadcrumb.didSave("SplitSync.conflict")
         } catch {
             #if DEBUG
             logger.error("[\(engineName)] Failed to save after conflict resolution: \(error)")
@@ -1286,7 +1312,9 @@ final class SplitSyncManager {
             }
             if needsReSave {
                 do {
+                    SaveBreadcrumb.willSave("SplitSync.conflict.raceReapply")
                     try groupSyncContext.save()
+                    SaveBreadcrumb.didSave("SplitSync.conflict.raceReapply")
                     #if DEBUG
                     logger.info("[\(engineName)] Conflict race fix: re-applied transition for zone \(zoneID, privacy: .public)")
                     #endif
@@ -1320,7 +1348,9 @@ final class SplitSyncManager {
         // Delete all local data for this group
         deleteGroupCache(groupID: groupID, context: groupSyncContext)
         do {
+            SaveBreadcrumb.willSave("SplitSync.zoneNotFound")
             try groupSyncContext.save()
+            SaveBreadcrumb.didSave("SplitSync.zoneNotFound")
         } catch {
             #if DEBUG
             logger.error("[\(engineName)] Failed to clean up group \(groupID) after zone not found: \(error)")
@@ -1434,7 +1464,9 @@ final class SplitSyncManager {
                 engine.state.add(pendingRecordZoneChanges: [.saveRecord(recordID)])
             }
 
+            SaveBreadcrumb.willSave("SplitSync.reuploadGroupRecords")
             try context.save()
+            SaveBreadcrumb.didSave("SplitSync.reuploadGroupRecords")
         } catch {
             #if DEBUG
             logger.error("reuploadGroupRecords: Failed for group \(groupID): \(error)")

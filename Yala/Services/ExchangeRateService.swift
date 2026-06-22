@@ -385,6 +385,13 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
     private func persistRate(
         dateKey: String, rates: [String: Double], timestamp: Date? = nil, context: ModelContext
     ) throws {
+        // Gate de quiescencia: `ExchangeRate` vive en el store personal (CloudKit private) → su `save()`
+        // durante el import del restore dispararía el `_assertionFailure`. Diferir (cache best-effort:
+        // se re-cachea tras la quiescencia). Guard antes de fetch/insert para no dejar inserts pendientes.
+        guard iCloudSyncService.shared.isImportQuiescent else {
+            SaveBreadcrumb.deferred("ExchangeRateService.persistRate", "import not quiescent")
+            return
+        }
         // Check if rate already exists for this date
         if let existing = fetchExchangeRate(for: dateKey, context: context) {
             // Update existing rate
@@ -402,7 +409,9 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
             context.insert(newRate)
         }
 
+        SaveBreadcrumb.willSave("ExchangeRateService.persistRate")
         try context.save()
+        SaveBreadcrumb.didSave("ExchangeRateService.persistRate")
     }
 
     private func fetchExchangeRate(for dateKey: String, context: ModelContext) -> ExchangeRate? {

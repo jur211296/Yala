@@ -51,6 +51,12 @@ enum GroupBridgePreferenceDeduplicationService {
     /// - Returns: number of duplicate records removed.
     @discardableResult
     static func deduplicate(in context: ModelContext) -> Int {
+        // Gate de quiescencia: `GroupBridgePreference` vive en el store personal (CloudKit private) →
+        // su `save()` durante el import del restore dispara el `_assertionFailure`. Diferir (idempotente).
+        guard iCloudSyncService.shared.isImportQuiescent else {
+            SaveBreadcrumb.deferred("GroupBridgePrefDedup.deduplicate", "import not quiescent")
+            return 0
+        }
         let records: [GroupBridgePreference]
         do {
             records = try context.fetch(FetchDescriptor<GroupBridgePreference>())
@@ -70,7 +76,9 @@ enum GroupBridgePreferenceDeduplicationService {
         }
 
         do {
+            SaveBreadcrumb.willSave("GroupBridgePrefDedup.deduplicate")
             try context.save()
+            SaveBreadcrumb.didSave("GroupBridgePrefDedup.deduplicate")
             #if DEBUG
             print("GroupBridgePrefDedup: removed \(plan.toDeleteIDs.count) duplicates across \(plan.duplicateZoneCounts.count) zones")
             #endif

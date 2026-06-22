@@ -262,6 +262,10 @@ final class AppBootstrapper {
         // 16.4.5. Safety net: hidden groups + removed-self cleanup que el observer pudo perder.
         // Corre ANTES de retryPendingBridges para que el bridge guard `isHiddenForAll` aplique.
         Task { @MainActor in
+            guard await awaitPersonalImportForBootSave() else {
+                SaveBreadcrumb.deferred("AppBootstrapper.freezeOrphanedGroups", "import not quiescent")
+                return
+            }
             await freezeOrphanedGroupsAndRemovedSelves(context: context)
         }
 
@@ -270,6 +274,10 @@ final class AppBootstrapper {
         // Task-wrapped (no sync) para no bloquear cold launch en DBs grandes; downstream steps
         // (16.5 retryPendingBridges, etc.) no dependen del resultado.
         Task { @MainActor in
+            guard await awaitPersonalImportForBootSave() else {
+                SaveBreadcrumb.deferred("AppBootstrapper.reconcileTransferPairs", "import not quiescent")
+                return
+            }
             TransferPairReconcileService.reconcileTransferPairs(in: context)
         }
 
@@ -282,6 +290,10 @@ final class AppBootstrapper {
         // Covers kill-app between acceptShare and performSilentSetup (SplitMember
         // would otherwise stay with the "Usuario" default forever). Idempotent.
         Task { @MainActor in
+            guard await awaitPersonalImportForBootSave() else {
+                SaveBreadcrumb.deferred("AppBootstrapper.reconcileCurrentUserDisplayName", "import not quiescent")
+                return
+            }
             await reconcileCurrentUserDisplayNameIfNeeded()
         }
 
@@ -293,6 +305,10 @@ final class AppBootstrapper {
         // Seed current iCloud user identity for groups and refresh local membership flags.
         Task { @MainActor in
             _ = try? await GroupUserIdentityService.shared.currentUserRecordName()
+            guard await awaitPersonalImportForBootSave() else {
+                SaveBreadcrumb.deferred("AppBootstrapper.refreshCurrentUserFlags", "import not quiescent")
+                return
+            }
             await GroupService.shared.refreshCurrentUserFlags()
         }
 
@@ -554,22 +570,39 @@ final class AppBootstrapper {
 
     // MARK: - One-Time Migrations
 
-    /// Backfill SplitShare.groupZoneID for shares created before the field was added.
-    /// D2 — gate for early-boot mainContext saves (retryPendingBridges, migrateShareGroupZoneIDs).
-    /// Mirrors the V3 migration / group-sync gate: a `save()` on the personal mainContext while the
-    /// CloudKit first import is half-applied can trip SwiftData's `_assertionFailure`. Returns true
-    /// when it's safe (no iCloud, or the import settled after awaiting up to 15s); false on timeout
-    /// → the caller defers (these steps are idempotent and retry next launch).
+    /// Gate for early-boot mainContext saves (retryPendingBridges, migrateShareGroupZoneIDs).
+    /// Un `save()` del mainContext personal mientras el import de CloudKit está en curso puede disparar
+    /// el `_assertionFailure` interno de SwiftData. Devuelve true cuando es seguro: (1) espera el primer
+    /// import si está pendiente, y (2) ADEMÁS espera la **quiescencia** del store (sin import en curso +
+    /// ventana de quietud) — porque el primer importEvent es una señal PREMATURA en un restore
+    /// multi-lote (NSPersistentCloudKitContainer sigue importando después). Devuelve false si no se
+    /// asienta dentro del tope → el caller difiere (idempotente, reintenta al próximo arranque).
     private func awaitPersonalImportForBootSave() async -> Bool {
-        switch MigrationGateLogic.shouldWaitForCloudKit(
+        // "Seguro para boot-save" = no hay cuenta (sin CloudKit), O el primer import YA ocurrió Y el
+        // store está quieto. Exigir `hasCompletedFirstImport` es clave: `isImportQuiescent` por sí solo
+        // es `true` ANTES de que el import arranque (`lastImportDate==nil`) → proceder ahí sería
+        // prematuro en un restore donde el import aún no empezó (mismo invariante que
+        // `resolveWaitByQuiescence`). Sin cuenta no hay grafo a medio importar → seguro de inmediato.
+        func safeToBootSave() -> Bool {
+            !iCloudSyncService.shared.isAccountAvailable
+                || (iCloudSyncService.shared.hasCompletedFirstImport && iCloudSyncService.shared.isImportQuiescent)
+        }
+        // 1) Esperar el primer import (restore lento).
+        if MigrationGateLogic.shouldWaitForCloudKit(
             isAccountAvailable: iCloudSyncService.shared.isAccountAvailable,
             hasCompletedFirstImport: iCloudSyncService.shared.hasCompletedFirstImport
-        ) {
-        case .runNow:
-            return true
-        case .waitForHook:
-            return await iCloudSyncService.shared.forceFetchAndWait(timeout: 15)
+        ) == .waitForHook {
+            _ = await iCloudSyncService.shared.forceFetchAndWait(timeout: 15)
         }
+        // 2) Esperar la quiescencia (no por el primer evento — por el final del import multi-lote).
+        var waited: TimeInterval = 0
+        let pollInterval: TimeInterval = 2
+        let quiescenceHardCap: TimeInterval = 120
+        while !safeToBootSave() && waited < quiescenceHardCap {
+            try? await Task.sleep(for: .seconds(pollInterval))
+            waited += pollInterval
+        }
+        return safeToBootSave()
     }
 
     private func migrateShareGroupZoneIDs(context: ModelContext) {
@@ -593,7 +626,9 @@ final class AppBootstrapper {
                     share.groupZoneID = zone
                 }
             }
+            SaveBreadcrumb.willSave("AppBootstrapper.migrateShareGroupZoneIDs")
             try context.save()
+            SaveBreadcrumb.didSave("AppBootstrapper.migrateShareGroupZoneIDs")
             UserDefaults.standard.set(true, forKey: migKey)
             #if DEBUG
             print("AppBootstrapper: Backfilled groupZoneID for \(orphans.count) SplitShare records")
@@ -611,28 +646,13 @@ final class AppBootstrapper {
     /// flag stays true for the next launch until `maxAttempts` is exhausted.
     @MainActor
     func retryPendingBridges(context: ModelContext) async {
-        // D2: the bridge creates personal TransactionItems and saves the mainContext — defer until
-        // the personal import settles so it can't land on a half-imported graph. Idempotent:
-        // bridgePending stays true and retries next launch if the import didn't settle.
+        // El bridge crea TransactionItems personales y guarda el mainContext — diferir hasta que el
+        // import personal esté QUIESCENTE (`awaitPersonalImportForBootSave` espera el primer import + la
+        // ventana de quietud, no solo el primer evento), para que el `save()` no caiga sobre un grafo a
+        // medio importar (`_assertionFailure`). Idempotente: `bridgePending` queda true y reintenta al
+        // próximo arranque si el import no se asentó.
         guard await awaitPersonalImportForBootSave() else {
-            logger.notice("retryPendingBridges deferred — personal import not settled")
-            return
-        }
-        // El primer importEvent NO garantiza que el restore terminó: NSPersistentCloudKitContainer
-        // importa en muchos lotes y `awaitPersonalImportForBootSave` solo espera el primero. El bridge
-        // escribe el store personal (`YalaModel`, el mismo que se importa), así que un `save()` aquí
-        // sobre un grafo a medio hidratar dispara el `_assertionFailure` interno. Gatear por
-        // QUIESCENCIA del import (mismo patrón que `SplitSyncManager.processPendingRemoteChanges`): no
-        // bridgear mientras siga importando ni dentro de la ventana de quietud tras el último lote. Si
-        // no quiescente, los expenses quedan `bridgePending == true` y el próximo arranque reintenta.
-        let quiescence = SubcategoryDedupGate.decide(
-            now: .now,
-            lastImportDate: iCloudSyncService.shared.lastSuccessfulImportDate,
-            isSyncing: iCloudSyncService.shared.status.isImporting,
-            lastDedupRunAt: nil
-        )
-        guard quiescence == .run else {
-            logger.notice("retryPendingBridges deferred — import not quiescent (\(String(describing: quiescence), privacy: .public))")
+            logger.notice("retryPendingBridges deferred — personal import not quiescent")
             return
         }
         let descriptor = FetchDescriptor<SplitExpense>(
@@ -680,7 +700,9 @@ final class AppBootstrapper {
                     logger.error("Bridge retry failed for \(expense.id, privacy: .public) (attempt \(expense.bridgeAttempts, privacy: .public)): \(error.localizedDescription, privacy: .public)")
                 }
             }
+            SaveBreadcrumb.willSave("AppBootstrapper.retryPendingBridges")
             try context.save()
+            SaveBreadcrumb.didSave("AppBootstrapper.retryPendingBridges")
         } catch {
             logger.error("retryPendingBridges fetch failed: \(error.localizedDescription, privacy: .public)")
         }
@@ -1036,7 +1058,9 @@ final class AppBootstrapper {
                 }
             }
 
+            SaveBreadcrumb.willSave("AppBootstrapper.migrateShortcutIDsAndRebuildCSVMirrors")
             try context.save()
+            SaveBreadcrumb.didSave("AppBootstrapper.migrateShortcutIDsAndRebuildCSVMirrors")
 
             // Regen sentinel se marca SIEMPRE tras save exitoso (idempotente desde
             // segundo launch). Evita re-regenerar Tag.id si el backfill aún no converge.
@@ -1372,7 +1396,16 @@ final class AppBootstrapper {
     private func migrateToLiveBalanceIfNeeded(context: ModelContext) async {
         guard !UserDefaults.standard.bool(forKey: Self.liveBalanceMigrationKey) else { return }
 
+        // Gate de quiescencia: el bulk recalc (`CurrencyChangeService.updateAllTransactions`) guarda
+        // `TransactionItem` (store personal); durante el import del restore dispararía el assert.
+        // Espera a que el import asiente y corre esta sesión; si no asienta, NO setea el flag → reintenta.
+        guard await awaitPersonalImportForBootSave() else {
+            SaveBreadcrumb.deferred("AppBootstrapper.migrateToLiveBalance", "import not quiescent")
+            return
+        }
+
         do {
+            SaveBreadcrumb.willSave("AppBootstrapper.migrateToLiveBalance")
             try await CurrencyChangeService.shared.updateAllTransactions(
                 to: CurrencyDefaults.currentPreferred,
                 context: context,
@@ -1384,6 +1417,14 @@ final class AppBootstrapper {
                     #endif
                 }
             )
+            SaveBreadcrumb.didSave("AppBootstrapper.migrateToLiveBalance")
+            // Solo marca completo si el store siguió quieto durante TODO el recalc. Si un lote del
+            // import llegó a mitad, `ExchangeRateService.persistRate` pudo diferir tasas (cache
+            // incompleta) → NO marcar el flag, reintentar al próximo arranque (evita conversiones stale).
+            guard iCloudSyncService.shared.isImportQuiescent else {
+                SaveBreadcrumb.deferred("AppBootstrapper.migrateToLiveBalance", "import resumed mid-migration — will retry")
+                return
+            }
             UserDefaults.standard.set(true, forKey: Self.liveBalanceMigrationKey)
             #if DEBUG
             print("[LiveBalance] migration completed successfully")

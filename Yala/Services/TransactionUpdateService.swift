@@ -26,6 +26,12 @@ enum TransactionUpdateService {
     ///
     /// - Parameter context: SwiftData ModelContext
     static func updateProvisionalTransactions(context: ModelContext) async {
+        // Gate de quiescencia: actualiza `TransactionItem` (store personal) + `save()`; diferir durante
+        // el import del restore (idempotente: las provisionales se re-procesan en el próximo arranque).
+        guard iCloudSyncService.shared.isImportQuiescent else {
+            SaveBreadcrumb.deferred("TransactionUpdateService.updateProvisional", "import not quiescent")
+            return
+        }
         // 1. Find transactions with provisional exchange rates
         let descriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.isExchangeRateProvisional == true }
@@ -94,7 +100,9 @@ enum TransactionUpdateService {
         // 5. Save all updates at once
         if updatedCount > 0 {
             do {
+                SaveBreadcrumb.willSave("TransactionUpdateService.updateProvisional")
                 try context.save()
+                SaveBreadcrumb.didSave("TransactionUpdateService.updateProvisional")
                 #if DEBUG
                 print(
                     "TransactionUpdateService: Updated \(updatedCount) transactions with official exchange rates"

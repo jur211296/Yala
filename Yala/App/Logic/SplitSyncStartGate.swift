@@ -47,28 +47,42 @@ enum SplitSyncStartGate {
         case keepWaiting
     }
 
-    /// Decides, on each periodic poll while deferred, whether to start the engines.
+    // MARK: - Promote by QUIESCENCE (not first import)
+
+    /// Decides, on each periodic poll while deferred, whether to PROMOTE the engines to auto-sync —
+    /// gating on **import quiescence** instead of the first `importEvent`.
     ///
-    /// - `hasCompletedFirstImport=true` → import settled → start. This is the normal path:
-    ///   a slow restore is respected because we only start once the import actually completes
-    ///   (resolves the "fixed timeout cuts a slow restore" risk).
-    /// - `reachedHardCap=true` → absolute last-resort cap reached → start anyway (a warning is
-    ///   logged at the call site so a re-crash is diagnosable). The cap MUST start regardless of
-    ///   sync state, otherwise a stuck-`.syncing` import would hang group sync forever.
-    /// - otherwise → keep waiting (the `.iCloudFirstImportCompleted` observer is the fast path).
-    static func resolveWait(
+    /// The first import is a PREMATURE signal on a multi-batch restore: NSPersistentCloudKitContainer
+    /// keeps importing after the first event fires, so promoting there turns off the delegate-save gate
+    /// (`shouldDeferDelegateSave`) while the personal graph is still half-imported → the next delegate
+    /// `save()` trips SwiftData's `_assertionFailure`. Waiting for quiescence (no import in flight AND
+    /// past a quiet window — `iCloudSyncService.isImportQuiescent`, itself `SubcategoryDedupGate.decide`)
+    /// keeps the engines export-only through the WHOLE active import. In export-only there's no
+    /// auto-fetch, so deferring loses nothing: fetched changes only arrive after promotion = after the
+    /// store is quiet.
+    ///
+    /// - `reachedHardCap=true` → absolute last-resort cap reached → promote anyway (a warning is logged;
+    ///   a stuck-`.syncing` import must not hang group sync forever). The per-save breadcrumb + the
+    ///   delegate's own gating remain as the last line of defense in that rare case.
+    /// - `hasCompletedFirstImport && isQuiescent` → the import actually started, finished, and went
+    ///   quiet → promote. Both are required: `isQuiescent` alone is `true` BEFORE any import starts
+    ///   (`lastImportDate == nil`), which would promote prematurely on a restore where the import is
+    ///   still pending; gating also on `hasCompletedFirstImport` ensures we waited for it to happen.
+    /// - otherwise → keep waiting.
+    static func resolveWaitByQuiescence(
         hasCompletedFirstImport: Bool,
+        isQuiescent: Bool,
         reachedHardCap: Bool
     ) -> WaitResolution {
-        if hasCompletedFirstImport { return .start }
         if reachedHardCap { return .start }
+        if hasCompletedFirstImport && isQuiescent { return .start }
         return .keepWaiting
     }
 
-    /// `true` when the engines are about to start without a confirmed personal import
-    /// (i.e. via the hard cap). The call site logs a diagnostic warning in that case.
-    static func startedOnIncompleteImport(hasCompletedFirstImport: Bool) -> Bool {
-        !hasCompletedFirstImport
+    /// `true` when the engines are promoted without a settled+quiet import (i.e. via the hard cap).
+    /// The call site logs a diagnostic warning + telemetry in that case.
+    static func promotedWhileNotQuiescent(hasCompletedFirstImport: Bool, isQuiescent: Bool) -> Bool {
+        !(hasCompletedFirstImport && isQuiescent)
     }
 
     // MARK: - Delegate save gate

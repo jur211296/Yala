@@ -77,6 +77,21 @@ final class iCloudSyncService {
     /// remota (e.g. UserSegmentService) para decidir si su estado es confiable.
     private(set) var hasCompletedFirstImport: Bool = false
 
+    /// ¿es seguro hacer `save()` del store personal AHORA? Verdadero solo si NO hay un import
+    /// en curso y pasó la ventana de quietud desde el último import (quiescencia). Un `save()`
+    /// sobre el coordinator del store personal mientras NSPersistentCloudKitContainer importa
+    /// dispara el `_assertionFailure` interno de SwiftData (SIGTRAP). Adaptador runtime sobre
+    /// `SubcategoryDedupGate.decide` (la lógica pura testeada); mismo gate que usan
+    /// `retryPendingBridges` y `SplitSyncManager.processPendingRemoteChanges`.
+    var isImportQuiescent: Bool {
+        SubcategoryDedupGate.decide(
+            now: .now,
+            lastImportDate: lastSuccessfulImportDate,
+            isSyncing: status.isImporting,
+            lastDedupRunAt: nil
+        ) == .run
+    }
+
     /// Whether iCloud account is available (sync is automatic when true).
     var isAccountAvailable: Bool {
         #if DEBUG

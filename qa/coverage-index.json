@@ -1411,7 +1411,11 @@
         "F-GRP-EXPORT-01",
         "F-GRP-EXPORT-02",
         "F-GRP-EXPORT-03",
-        "F-GRP-EXPORT-04"
+        "F-GRP-EXPORT-04",
+        "F-GRP-CTX-01",
+        "F-GRP-CTX-02",
+        "F-GRP-CTX-03",
+        "F-GRP-CTX-04"
       ],
       "classification": "manual",
       "coverage": "manual",
