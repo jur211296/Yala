@@ -1562,30 +1562,17 @@ final class SplitSyncManager {
 
         switch recordType {
         case CKConstants.RecordType.groupMeta:
-            deleteModel(SplitGroup.self, id: modelID, context: context)
+            if let model = splitGroup(byID: modelID, in: context) { context.delete(model) }
         case CKConstants.RecordType.splitExpense:
-            deleteModel(SplitExpense.self, id: modelID, context: context)
+            if let model = splitExpense(byID: modelID, in: context) { context.delete(model) }
         case CKConstants.RecordType.splitMember:
-            deleteModel(SplitMember.self, id: modelID, context: context)
+            if let model = splitMember(byID: modelID, in: context) { context.delete(model) }
         case CKConstants.RecordType.splitShare:
-            deleteModel(SplitShare.self, id: modelID, context: context)
+            if let model = splitShare(byID: modelID, in: context) { context.delete(model) }
         case CKConstants.RecordType.splitSettlement:
-            deleteModel(SplitSettlement.self, id: modelID, context: context)
+            if let model = splitSettlement(byID: modelID, in: context) { context.delete(model) }
         default:
             break
-        }
-    }
-
-    private func deleteModel<T: PersistentModel>(_ type: T.Type, id: UUID, context: ModelContext) where T: HasUUID {
-        do {
-            let descriptor = FetchDescriptor<T>(predicate: #Predicate { $0.id == id })
-            if let model = try context.fetch(descriptor).first {
-                context.delete(model)
-            }
-        } catch {
-            #if DEBUG
-            logger.error("Delete fetch failed for \(String(describing: T.self)) \(id): \(error)")
-            #endif
         }
     }
 
@@ -1598,23 +1585,23 @@ final class SplitSyncManager {
 
         switch record.recordType {
         case CKConstants.RecordType.groupMeta:
-            if let model = fetchByID(SplitGroup.self, id: modelID, context: context) {
+            if let model = splitGroup(byID: modelID, in: context) {
                 model.ckSystemFieldsData = data
             }
         case CKConstants.RecordType.splitExpense:
-            if let model = fetchByID(SplitExpense.self, id: modelID, context: context) {
+            if let model = splitExpense(byID: modelID, in: context) {
                 model.ckSystemFieldsData = data
             }
         case CKConstants.RecordType.splitMember:
-            if let model = fetchByID(SplitMember.self, id: modelID, context: context) {
+            if let model = splitMember(byID: modelID, in: context) {
                 model.ckSystemFieldsData = data
             }
         case CKConstants.RecordType.splitShare:
-            if let model = fetchByID(SplitShare.self, id: modelID, context: context) {
+            if let model = splitShare(byID: modelID, in: context) {
                 model.ckSystemFieldsData = data
             }
         case CKConstants.RecordType.splitSettlement:
-            if let model = fetchByID(SplitSettlement.self, id: modelID, context: context) {
+            if let model = splitSettlement(byID: modelID, in: context) {
                 model.ckSystemFieldsData = data
             }
         default:
@@ -1631,50 +1618,63 @@ final class SplitSyncManager {
         let zoneID = recordID.zoneID
 
         // Try each model type to find the one matching this recordID
-        if let group = fetchByID(SplitGroup.self, id: modelID, context: modelContext) {
+        if let group = splitGroup(byID: modelID, in: modelContext) {
             return CKRecordTranslator.record(from: group, in: zoneID)
         }
-        if let expense = fetchByID(SplitExpense.self, id: modelID, context: modelContext) {
+        if let expense = splitExpense(byID: modelID, in: modelContext) {
             return CKRecordTranslator.record(from: expense, in: zoneID)
         }
-        if let member = fetchByID(SplitMember.self, id: modelID, context: modelContext) {
+        if let member = splitMember(byID: modelID, in: modelContext) {
             return CKRecordTranslator.record(from: member, in: zoneID)
         }
-        if let share = fetchByID(SplitShare.self, id: modelID, context: modelContext) {
+        if let share = splitShare(byID: modelID, in: modelContext) {
             return CKRecordTranslator.record(from: share, in: zoneID)
         }
-        if let settlement = fetchByID(SplitSettlement.self, id: modelID, context: modelContext) {
+        if let settlement = splitSettlement(byID: modelID, in: modelContext) {
             return CKRecordTranslator.record(from: settlement, in: zoneID)
         }
 
         return nil
     }
 
-    private func fetchByID<T: PersistentModel>(_ type: T.Type, id: UUID, context: ModelContext) -> T? where T: HasUUID {
-        let descriptor = FetchDescriptor<T>(predicate: #Predicate { $0.id == id })
+    // MARK: - By-ID fetch (CONCRETE predicates — do NOT genericize)
+    //
+    // These MUST use a concrete `#Predicate<ConcreteType> { $0.id == id }`. A generic,
+    // protocol-constrained `#Predicate<T> { $0.id == id }` (e.g. a `where T: SomeProtocol { var id }`
+    // helper — there used to be a `HasUUID` one here, now removed) resolves `$0.id` to the
+    // protocol-witness keypath, which SwiftData CANNOT match to the concrete `\SplitGroup.id`
+    // registered in the Schema → `DataUtilities.swift:85 Fatal error: Couldn't find \SplitGroup.<…>`
+    // when the fetch runs (crashed `buildRecord` during `sendChanges` = generar enlace / forzar
+    // sync). Concrete predicates — like every other fetch in this file (`group(for:)`,
+    // `handleConflict`, …) — resolve fine on any `ModelContext`.
+
+    private func splitGroup(byID id: UUID, in context: ModelContext) -> SplitGroup? {
+        fetchFirst(FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.id == id }), in: context)
+    }
+    private func splitExpense(byID id: UUID, in context: ModelContext) -> SplitExpense? {
+        fetchFirst(FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == id }), in: context)
+    }
+    private func splitMember(byID id: UUID, in context: ModelContext) -> SplitMember? {
+        fetchFirst(FetchDescriptor<SplitMember>(predicate: #Predicate { $0.id == id }), in: context)
+    }
+    private func splitShare(byID id: UUID, in context: ModelContext) -> SplitShare? {
+        fetchFirst(FetchDescriptor<SplitShare>(predicate: #Predicate { $0.id == id }), in: context)
+    }
+    private func splitSettlement(byID id: UUID, in context: ModelContext) -> SplitSettlement? {
+        fetchFirst(FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == id }), in: context)
+    }
+
+    /// Executes a CONCRETE `FetchDescriptor` and returns the first result. The descriptor's
+    /// predicate is built per-type at the call site, so no protocol-witness keypath is involved.
+    private func fetchFirst<T: PersistentModel>(_ descriptor: FetchDescriptor<T>, in context: ModelContext) -> T? {
         do {
             return try context.fetch(descriptor).first
         } catch {
-            #if DEBUG
-            logger.error("fetchByID(\(String(describing: T.self)), \(id)) failed: \(error)")
-            #endif
+            logger.error("fetchFirst(\(String(describing: T.self))) failed: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }
 }
-
-// MARK: - HasUUID Protocol
-
-/// Enables generic fetch by UUID across Split models.
-protocol HasUUID: PersistentModel {
-    var id: UUID { get }
-}
-
-extension SplitGroup: HasUUID {}
-extension SplitMember: HasUUID {}
-extension SplitExpense: HasUUID {}
-extension SplitShare: HasUUID {}
-extension SplitSettlement: HasUUID {}
 
 enum SplitSyncError: LocalizedError {
     case engineNotInitialized

@@ -106,37 +106,6 @@ struct StatePersistenceTests {
     }
 }
 
-// MARK: - HasUUID Protocol
-
-@Suite("HasUUID Protocol")
-struct HasUUIDTests {
-
-    @Test func splitGroupConformsToHasUUID() {
-        let group = SplitGroup(name: "Test")
-        let hasUUID: any HasUUID = group
-        #expect(hasUUID.id == group.id)
-    }
-
-    @Test func splitExpenseConformsToHasUUID() {
-        let expense = SplitExpense(amount: 100)
-        let hasUUID: any HasUUID = expense
-        #expect(hasUUID.id == expense.id)
-    }
-
-    @Test func allSplitModelsConformToHasUUID() {
-        let models: [any HasUUID] = [
-            SplitGroup(name: "G"),
-            SplitMember(displayName: "M"),
-            SplitExpense(amount: 1),
-            SplitShare(amount: 1),
-            SplitSettlement(amount: 1),
-        ]
-        // All should have unique UUIDs
-        let ids = models.map(\.id)
-        #expect(Set(ids).count == 5)
-    }
-}
-
 // MARK: - Error Type Tests
 
 @Suite("SplitZoneError")
