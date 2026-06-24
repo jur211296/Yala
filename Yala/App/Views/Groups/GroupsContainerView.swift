@@ -138,12 +138,13 @@ struct GroupsContainerView: View {
             }) {
                 GroupFormView(group: nil)
             }
-            .fullScreenCover(isPresented: $viewModel.showGroupDetail, onDismiss: {
-                viewModel.loadData()
-            }) {
-                if let group = viewModel.selectedGroup {
-                    GroupDetailView(group: group)
-                }
+            .navigationDestination(item: $viewModel.selectedGroup) { group in
+                GroupDetailView(group: group)
+            }
+            .onChange(of: viewModel.selectedGroup) { _, newValue in
+                // Al volver del detalle (pop → nil) refrescamos la lista, igual que el
+                // antiguo onDismiss del fullScreenCover.
+                if newValue == nil { viewModel.loadData() }
             }
             .appliesPendingRemoteChanges(sessionState)
             .onAppear {

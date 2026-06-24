@@ -68,127 +68,130 @@ struct GroupDetailView: View {
     // MARK: - Body
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                VStack(spacing: 0) {
-                    if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
-                        GroupNudgeBanner(
-                            nudge: nudge,
-                            message: NudgeService.shared.currentNudgeMessage ?? "",
-                            onAction: {
-                                NudgeService.shared.recordInteracted(nudge)
-                                withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                                handleNudgeAction(nudge)
-                            },
-                            onDismiss: {
-                                NudgeService.shared.recordDismissed(nudge)
-                                withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                            },
-                            onAutoDismiss: {
-                                NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
-                                withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                            }
-                        )
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.top, DS.Spacing.sm)
-                    }
-
-                    // banner pending/rejected. Refresh ya cubierto por onChange(dataVersion) abajo.
-                    if viewModel.currentUserMember?.isPendingApproval == true {
-                        PendingApprovalBanner(state: .pending, onLeave: nil)
-                    } else if viewModel.currentUserMember?.isRejected == true {
-                        PendingApprovalBanner(state: .rejected, onLeave: {
-                            viewModel.activeSheet = .settings
-                        })
-                    }
-
-                    tabContent
+        ZStack {
+            VStack(spacing: 0) {
+                if let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
+                    GroupNudgeBanner(
+                        nudge: nudge,
+                        message: NudgeService.shared.currentNudgeMessage ?? "",
+                        onAction: {
+                            NudgeService.shared.recordInteracted(nudge)
+                            withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                            handleNudgeAction(nudge)
+                        },
+                        onDismiss: {
+                            NudgeService.shared.recordDismissed(nudge)
+                            withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                        },
+                        onAutoDismiss: {
+                            NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
+                            withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                        }
+                    )
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.sm)
                 }
 
-                // FAB — new expense (only on records tab)
-                if selectedTab == .records && viewModel.canCurrentUserParticipate {
-                    newExpenseFAB
-                }
-            }
-            .yalaScreenBackground(.panel)
-            .safeAreaInset(edge: .top) {
-                navigationChipsBar
-                    .padding(.vertical, DS.Spacing.sm)
-            }
-            .navigationTitle(group.name)
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
-                        dismiss()
-                    }
-                }
-
-                ToolbarSpacer(.fixed, placement: .topBarTrailing)
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+                // banner pending/rejected. Refresh ya cubierto por onChange(dataVersion) abajo.
+                if viewModel.currentUserMember?.isPendingApproval == true {
+                    PendingApprovalBanner(state: .pending, onLeave: nil)
+                } else if viewModel.currentUserMember?.isRejected == true {
+                    PendingApprovalBanner(state: .rejected, onLeave: {
                         viewModel.activeSheet = .settings
-                    } label: {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "gearshape")
-                                .fontWeight(.medium)
-                                .foregroundStyle(Color.primary)
+                    })
+                }
 
-                            if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
-                                Circle()
-                                    .fill(DS.Semantic.errorForeground)
-                                    .frame(width: 8, height: 8)
-                                    .offset(x: DS.Spacing.xxs, y: -DS.Spacing.xxs)
-                            }
+                tabContent
+            }
+
+            // FAB — new expense (only on records tab)
+            if selectedTab == .records && viewModel.canCurrentUserParticipate {
+                newExpenseFAB
+            }
+        }
+        .yalaScreenBackground(.panel)
+        .safeAreaInset(edge: .top) {
+            navigationChipsBar
+                .padding(.vertical, DS.Spacing.sm)
+        }
+        .navigationTitle(group.name)
+        .navigationBarTitleDisplayMode(.large)
+        // Push nativo (como el resto de detalles de la app): swipe-back desde el borde
+        // izquierdo + chevron custom. Tab bar oculto para conservar el look inmersivo
+        // que tenía como fullScreenCover (Grupos se navega desde "Más").
+        .swipeBack()
+        .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
+                    dismiss()
+                }
+            }
+
+            ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    viewModel.activeSheet = .settings
+                } label: {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "gearshape")
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color.primary)
+
+                        if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
+                            Circle()
+                                .fill(DS.Semantic.errorForeground)
+                                .frame(width: 8, height: 8)
+                                .offset(x: DS.Spacing.xxs, y: -DS.Spacing.xxs)
                         }
                     }
-                    .accessibilityLabel(viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty
-                        ? "\(L10n.Groups.Settings.title), \(L10n.Groups.Member.pendingRequestsCount(viewModel.pendingApprovalMembers.count))"
-                        : L10n.Groups.Settings.title)
-                    .buttonBorderShape(.circle)
                 }
+                .accessibilityLabel(viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty
+                    ? "\(L10n.Groups.Settings.title), \(L10n.Groups.Member.pendingRequestsCount(viewModel.pendingApprovalMembers.count))"
+                    : L10n.Groups.Settings.title)
+                .buttonBorderShape(.circle)
             }
-            .sheet(item: $viewModel.activeSheet, onDismiss: {
-                viewModel.loadData()
-            }) { sheet in
-                sheetContent(for: sheet)
-            }
-            .sheet(isPresented: $showShareSheet) {
-                if let url = viewModel.shareURL {
-                    ActivityView(activityItems: [url])
-                    }
-            }
-            .alert(L10n.Common.error, isPresented: $viewModel.showActionError) {
-                Button(L10n.Common.ok) {}
-            } message: {
-                Text(viewModel.actionErrorMessage ?? L10n.Groups.Errors.actionFailed)
-            }
-            .appliesPendingRemoteChanges(sessionState)
-            .onAppear {
-                wasArchivedOnAppear = group.isArchived
-                viewModel.setContext(modelContext)
-                // Only evaluate if no nudge is already showing (avoid overriding GroupsContainer nudge)
-                if NudgeService.shared.currentNudge == nil {
-                    NudgeService.shared.evaluate()
+        }
+        .sheet(item: $viewModel.activeSheet, onDismiss: {
+            viewModel.loadData()
+        }) { sheet in
+            sheetContent(for: sheet)
+        }
+        .sheet(isPresented: $showShareSheet) {
+            if let url = viewModel.shareURL {
+                ActivityView(activityItems: [url])
                 }
-                if NudgeService.shared.currentNudge != nil {
-                    withAnimation(.easeOut(duration: 0.3)) { showNudgeBanner = true }
-                }
+        }
+        .alert(L10n.Common.error, isPresented: $viewModel.showActionError) {
+            Button(L10n.Common.ok) {}
+        } message: {
+            Text(viewModel.actionErrorMessage ?? L10n.Groups.Errors.actionFailed)
+        }
+        .appliesPendingRemoteChanges(sessionState)
+        .onAppear {
+            wasArchivedOnAppear = group.isArchived
+            viewModel.setContext(modelContext)
+            // Only evaluate if no nudge is already showing (avoid overriding GroupsContainer nudge)
+            if NudgeService.shared.currentNudge == nil {
+                NudgeService.shared.evaluate()
             }
-            .onDisappear {
-                showNudgeBanner = false
+            if NudgeService.shared.currentNudge != nil {
+                withAnimation(.easeOut(duration: 0.3)) { showNudgeBanner = true }
             }
-            .onChange(of: sessionState.dataVersion) {
-                viewModel.loadData()
-                if group.modelContext == nil || group.isDeleted {
-                    dismiss()
-                    return
-                }
-                // Only dismiss if group BECAME archived during this session
-                if group.isArchived && !wasArchivedOnAppear {
-                    dismiss()
-                }
+        }
+        .onDisappear {
+            showNudgeBanner = false
+        }
+        .onChange(of: sessionState.dataVersion) {
+            viewModel.loadData()
+            if group.modelContext == nil || group.isDeleted {
+                dismiss()
+                return
+            }
+            // Only dismiss if group BECAME archived during this session
+            if group.isArchived && !wasArchivedOnAppear {
+                dismiss()
             }
         }
     }

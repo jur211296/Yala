@@ -50,8 +50,8 @@ final class GroupsViewModel {
     // MARK: - UI State
 
     var showCreateGroup: Bool = false
+    /// Detalle pusheado vía `navigationDestination(item:)` en GroupsContainerView.
     var selectedGroup: SplitGroup?
-    var showGroupDetail: Bool = false
     var searchText: String = ""
 
     // MARK: - Computed
@@ -285,9 +285,8 @@ final class GroupsViewModel {
         }
     }
 
-    /// Open group detail via isPresented binding.
+    /// Push del detalle vía `navigationDestination(item:)`: setear `selectedGroup` empuja.
     func openDetail(for group: SplitGroup) {
         selectedGroup = group
-        showGroupDetail = true
     }
 }
