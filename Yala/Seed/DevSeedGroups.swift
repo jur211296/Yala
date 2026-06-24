@@ -43,17 +43,21 @@ enum DevSeedGroups {
         for m in members { context.insert(m) }
         let memberIDs = members.map { $0.id.uuidString }
 
-        // 3. Gastos + shares (split equal entre los 3)
-        let expenses: [(desc: String, amount: Double, payer: SplitMember)] = [
-            ("Hospedaje", 600, me),
-            ("Cena grupal", 240, ana),
-            ("Transporte", 90, beto),
+        // 3. Gastos + shares (split equal entre los 3). Mezcla PEN + USD y subcategorías
+        //    reales para ejercitar balances/stats multi-moneda y el donut por subcategoría.
+        let expenses: [(desc: String, amount: Double, currency: String, payer: SplitMember, subcat: String?)] = [
+            ("Hospedaje", 600, "PEN", me, "Alojamiento"),
+            ("Cena grupal", 240, "PEN", ana, "Restaurantes"),
+            ("Transporte", 90, "PEN", beto, "Transporte"),
+            ("Tour guiado", 150, "USD", ana, "Entretenimiento"),
+            ("Souvenirs", 80, "USD", me, "Compras"),
         ]
         for e in expenses {
             let expense = SplitExpense(
-                groupZoneID: zoneID, amount: e.amount, currencyCode: "PEN",
+                groupZoneID: zoneID, amount: e.amount, currencyCode: e.currency,
                 expenseDescription: e.desc, paidByMemberID: e.payer.id.uuidString,
-                splitType: "equal"
+                splitType: "equal",
+                subcategoryName: e.subcat
             )
             context.insert(expense)
             let perHead = ((e.amount / Double(memberIDs.count)) * 100).rounded() / 100
