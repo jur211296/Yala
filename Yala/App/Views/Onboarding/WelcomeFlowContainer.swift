@@ -24,10 +24,9 @@ struct WelcomeFlowContainer: View {
     let initialStep: WelcomeFlowStep
 
     var onSelectBranch: (WelcomeChooserView.Branch) -> Void
-    var onLoadMyData: (ICloudAccountSummary) -> Void
+    var onLoadMyData: () -> Void
 
     @State private var step: WelcomeFlowStep = .hero
-    @State private var detectedSummary: ICloudAccountSummary?
     @State private var showDetectedDataAlert: Bool = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -35,7 +34,7 @@ struct WelcomeFlowContainer: View {
     init(
         initialStep: WelcomeFlowStep = .hero,
         onSelectBranch: @escaping (WelcomeChooserView.Branch) -> Void,
-        onLoadMyData: @escaping (ICloudAccountSummary) -> Void
+        onLoadMyData: @escaping () -> Void
     ) {
         self.initialStep = initialStep
         self.onSelectBranch = onSelectBranch
@@ -61,11 +60,10 @@ struct WelcomeFlowContainer: View {
         }
         .alert(
             L10n.Welcome.DetectedData.title,
-            isPresented: $showDetectedDataAlert,
-            presenting: detectedSummary
-        ) { summary in
+            isPresented: $showDetectedDataAlert
+        ) {
             Button(L10n.Welcome.DetectedData.loadMyData) {
-                onLoadMyData(summary)
+                onLoadMyData()
             }
             Button(L10n.Welcome.DetectedData.startFresh) {
                 goTo(.chooser)
@@ -75,15 +73,10 @@ struct WelcomeFlowContainer: View {
             // sin posibilidad de re-tap. Si el user ignora el aviso, lo llevamos al Chooser
             // donde decidirá entre "Soy nuevo" / "Tengo cuenta".
             Button(L10n.Action.cancel, role: .cancel) {
-                detectedSummary = nil
                 goTo(.chooser)
             }
-        } message: { summary in
-            Text(L10n.Welcome.DetectedData.message(
-                summary.accountsCount,
-                summary.transactionsCount,
-                summary.categoriesCount
-            ))
+        } message: {
+            Text(L10n.Welcome.DetectedData.message)
         }
     }
 
@@ -91,8 +84,7 @@ struct WelcomeFlowContainer: View {
         switch decision {
         case .proceedNoData:
             goTo(.chooser)
-        case .proceedWithData(let summary):
-            detectedSummary = summary
+        case .proceedWithData:
             showDetectedDataAlert = true
         }
     }

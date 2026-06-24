@@ -4190,7 +4190,7 @@
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
 "welcome.detectedData.title" = "おかえりなさい！アカウントを見つけました";
-"welcome.detectedData.message" = "iCloudに%d件のアカウント、%d件の支出、%d件のカテゴリが保存されています。どうしますか?";
+"welcome.detectedData.message" = "iCloudにデータが保存されています。この端末に読み込みますか？";
 "welcome.detectedData.loadMyData" = "データを読み込む";
 "welcome.detectedData.startFresh" = "ゼロから始める";
 

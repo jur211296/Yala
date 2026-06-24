@@ -881,34 +881,25 @@ private struct WelcomeFlowModifier: ViewModifier {
                             showInviteRecovery = true
                         }
                     },
-                    onLoadMyData: { summary in
+                    onLoadMyData: {
                         // Alert "Detectamos tu cuenta" → "Cargar mis datos":
-                        // decisión consciente equivalente a tap card del Chooser.
+                        // decisión consciente equivalente a "Ya tengo cuenta" del Chooser.
+                        // El RestoreView hace el fetch completo (con quiescencia) y decide
+                        // el destino; no usamos un summary prematuro del Hero.
                         hasShownWelcomeChooser = true
                         showWelcomeFlow = false
-                        consumeDetectedSummary(summary)
+                        showWelcomeRestore = true
                     }
                 )
                 .environment(SessionState.shared)
             }
     }
-
-    /// Replica logic de `WelcomeRestoreView` callbacks SIN re-fetch (alert ya tiene summary).
-    private func consumeDetectedSummary(_ summary: ICloudAccountSummary) {
-        if summary.isFullyPrefilled {
-            completeOnboardingAsRestoreSkip()
-        } else {
-            prefilledOnboardingData = summary
-            showOnboarding = true
-        }
-    }
 }
 
 // MARK: - Helpers (file-private SSOT)
 
-/// Side-effect compartido entre `WelcomeRestoreView.onCompleteSkipAll` (callback en
-/// ContentView body) y `WelcomeFlowModifier.consumeDetectedSummary` (rama
-/// fullyPrefilled). Setea trial pendiente, completion flag y new-install marker.
+/// Side-effect de `WelcomeRestoreView.onCompleteSkipAll` (rama fullyPrefilled):
+/// setea trial pendiente, completion flag y new-install marker.
 fileprivate func completeOnboardingAsRestoreSkip() {
     if !FeatureGateService.shared.isProUser {
         SessionState.shared.needsPostOnboardingTrial = true

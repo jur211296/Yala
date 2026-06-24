@@ -4190,7 +4190,7 @@
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
 "welcome.detectedData.title" = "Welkom terug! We hebben je account gevonden";
-"welcome.detectedData.message" = "We hebben %d accounts, %d uitgaven en %d categorieën in je iCloud gevonden. Wat doen we?";
+"welcome.detectedData.message" = "Je hebt gegevens in je iCloud. Op dit apparaat laden?";
 "welcome.detectedData.loadMyData" = "Mijn gegevens laden";
 "welcome.detectedData.startFresh" = "Opnieuw beginnen";
 

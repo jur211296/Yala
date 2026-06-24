@@ -4159,7 +4159,7 @@
 
 // MARK: - Welcome Detected Data (alert post-Hero cuando iCloud tiene data residual)
 "welcome.detectedData.title" = "Bon retour ! Nous avons trouvé votre compte";
-"welcome.detectedData.message" = "Nous avons trouvé %d comptes, %d dépenses et %d catégories dans votre iCloud. Que faisons-nous ?";
+"welcome.detectedData.message" = "Vous avez des données dans votre iCloud. Les charger sur cet appareil ?";
 "welcome.detectedData.loadMyData" = "Charger mes données";
 "welcome.detectedData.startFresh" = "Repartir de zéro";
 

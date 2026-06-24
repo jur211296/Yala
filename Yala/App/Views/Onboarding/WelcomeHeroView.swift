@@ -13,10 +13,11 @@ import SwiftUI
 // MARK: - Hero Decision
 
 enum HeroDecision {
-    /// Sin data en iCloud (o fetch no completó tras timeout). ContentView abre Chooser.
+    /// Sin data en iCloud (o la señal no llegó tras el timeout). ContentView abre Chooser.
     case proceedNoData
-    /// Data detectada. ContentView muestra alert "Detectamos tu cuenta".
-    case proceedWithData(ICloudAccountSummary)
+    /// Returning user detectado por señal rápida (KV-store). ContentView muestra
+    /// el alert genérico "Detectamos tu cuenta".
+    case proceedWithData
 }
 
 // MARK: - WelcomeHeroView
@@ -57,7 +58,7 @@ struct WelcomeHeroView: View {
     @State private var rotationTask: Task<Void, Never>?
     @State private var iCloudFetchTask: Task<Void, Never>?
     @State private var cards: [HeroCard] = []
-    @State private var detectedSummary: ICloudAccountSummary?
+    @State private var hasReturningData: Bool = false
     @State private var fetchCompleted: Bool = false
     /// Continuations parqueadas mientras `fetchCompleted == false`. Se reanudan
     /// todas en `markFetchCompleted()` — reemplaza el polling busy-loop.
@@ -65,10 +66,8 @@ struct WelcomeHeroView: View {
     @State private var isCheckingFetch: Bool = false
     @State private var hasTappedEmpezar: Bool = false
 
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: Cards data
 
@@ -133,7 +132,7 @@ struct WelcomeHeroView: View {
             if cards.isEmpty {
                 cards = Self.makeCards()
             }
-            startICloudFetch()
+            startReturningSignalCheck()
             startCardRotation()
         }
         .onDisappear {
@@ -385,36 +384,43 @@ struct WelcomeHeroView: View {
 
     @MainActor
     private func dispatchDecision() {
-        if let summary = detectedSummary, summary.hasAnyData {
-            onContinue(.proceedWithData(summary))
-        } else {
-            onContinue(.proceedNoData)
-        }
+        onContinue(hasReturningData ? .proceedWithData : .proceedNoData)
     }
 
     // MARK: Tasks
 
-    private func startICloudFetch() {
+    /// Detección rápida de "returning user" vía señal del KV-store
+    /// (`lastOnboardingTimestamp > lastWipeTimestamp`), que sincroniza mucho antes
+    /// que el mirror de CloudKit. Poll corto hasta que el KV baje o venza el timeout.
+    /// NO construye el `ICloudAccountSummary` (eso lo hace el RestoreView tras
+    /// consentir, con quiescencia). El edge "datos en iCloud sin timestamp de
+    /// onboarding" (usuarios pre-señal) cae al Chooser → "Ya tengo cuenta" hace el
+    /// fetch completo (red de seguridad universal).
+    private func startReturningSignalCheck() {
         iCloudFetchTask = Task {
             guard iCloudSyncService.shared.isAccountAvailable else {
                 await MainActor.run { markFetchCompleted() }
                 return
             }
-            _ = await iCloudSyncService.shared.forceFetchAndWait(timeout: Self.iCloudFetchTimeout)
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                do {
-                    detectedSummary = try modelContext.iCloudAccountSummary(appPreferences: appPreferences)
-                } catch {
-                    // Sin summary el flujo sigue como cuenta vacía (sin alert de datos
-                    // detectados); markFetchCompleted corre igual para no colgar el Hero.
-                    #if DEBUG
-                    print("WelcomeHeroView: iCloudAccountSummary falló: \(error)")
-                    #endif
-                    detectedSummary = nil
+            let deadline = Date.now.addingTimeInterval(Self.iCloudFetchTimeout)
+            while Date.now < deadline {
+                let returning = await MainActor.run {
+                    RestoreOfferGate.hasReturningSignal(
+                        lastOnboarding: PreferenceSyncService.shared.lastOnboardingTimestamp,
+                        lastWipe: PreferenceSyncService.shared.lastWipeTimestamp
+                    )
                 }
-                markFetchCompleted()
+                if returning {
+                    await MainActor.run {
+                        hasReturningData = true
+                        markFetchCompleted()
+                    }
+                    return
+                }
+                if Task.isCancelled { return }
+                try? await Task.sleep(for: .seconds(1))
             }
+            await MainActor.run { markFetchCompleted() }
         }
     }
 

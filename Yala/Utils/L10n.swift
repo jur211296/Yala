@@ -4429,9 +4429,7 @@ enum L10n {
 
         enum DetectedData {
             static var title: String { ls("welcome.detectedData.title", comment: "") }
-            static func message(_ accounts: Int, _ transactions: Int, _ categories: Int) -> String {
-                String(format: ls("welcome.detectedData.message", comment: ""), accounts, transactions, categories)
-            }
+            static var message: String { ls("welcome.detectedData.message", comment: "") }
             static var loadMyData: String { ls("welcome.detectedData.loadMyData", comment: "") }
             static var startFresh: String { ls("welcome.detectedData.startFresh", comment: "") }
         }
