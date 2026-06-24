@@ -4124,6 +4124,12 @@
 "welcome.restore.startFreshConfirm.body" = "Isso criará uma conta nova sem seus dados anteriores. Continuar?";
 "welcome.restore.startFreshConfirm.confirm" = "Sim, começar do zero";
 "welcome.restore.startFreshConfirm.cancel" = "Cancelar";
+"welcome.restore.progress.connecting" = "Conectando ao iCloud…";
+"welcome.restore.progress.importing" = "Carregando seus dados…";
+"welcome.restore.progress.completed" = "Sincronização concluída";
+"welcome.restore.progress.partial" = "O essencial está pronto. Continuaremos sincronizando enquanto você usa o app.";
+"welcome.restore.wiped.title" = "Você apagou seus dados";
+"welcome.restore.wiped.body" = "Você excluiu seus dados neste dispositivo. Comece de novo quando quiser.";
 
 "welcome.invite.title" = "Cole seu link de convite";
 "welcome.invite.body" = "Se te convidaram para um grupo no Yala, cole aqui o link que você recebeu.";

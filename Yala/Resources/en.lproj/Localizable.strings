@@ -4128,6 +4128,12 @@
 "welcome.restore.startFreshConfirm.body" = "This will create a new account without your previous data. Continue?";
 "welcome.restore.startFreshConfirm.confirm" = "Yes, start fresh";
 "welcome.restore.startFreshConfirm.cancel" = "Cancel";
+"welcome.restore.progress.connecting" = "Connecting to iCloud…";
+"welcome.restore.progress.importing" = "Loading your data…";
+"welcome.restore.progress.completed" = "Sync complete";
+"welcome.restore.progress.partial" = "The essentials are ready. We’ll keep syncing while you use the app.";
+"welcome.restore.wiped.title" = "You erased your data";
+"welcome.restore.wiped.body" = "You deleted your data on this device. Start fresh whenever you like.";
 
 // Welcome Invite Recovery (branch C)
 "welcome.invite.title" = "Paste your invitation link";

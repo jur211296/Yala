@@ -4156,6 +4156,12 @@
 "welcome.restore.startFreshConfirm.body" = "Hiermee maak je een nieuwe account zonder je vorige gegevens. Doorgaan?";
 "welcome.restore.startFreshConfirm.confirm" = "Ja, opnieuw beginnen";
 "welcome.restore.startFreshConfirm.cancel" = "Annuleren";
+"welcome.restore.progress.connecting" = "Verbinden met iCloud…";
+"welcome.restore.progress.importing" = "Je gegevens worden geladen…";
+"welcome.restore.progress.completed" = "Synchronisatie voltooid";
+"welcome.restore.progress.partial" = "Het belangrijkste staat klaar. We synchroniseren verder terwijl je de app gebruikt.";
+"welcome.restore.wiped.title" = "Je hebt je gegevens gewist";
+"welcome.restore.wiped.body" = "Je hebt je gegevens op dit apparaat verwijderd. Begin opnieuw wanneer je wilt.";
 
 "welcome.invite.title" = "Plak je uitnodigingslink";
 "welcome.invite.body" = "Als je bent uitgenodigd voor een groep op Yala, plak hier de link die je hebt ontvangen.";

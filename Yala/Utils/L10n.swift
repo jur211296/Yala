@@ -4355,6 +4355,16 @@ enum L10n {
         enum Restore {
             static var searching: String { ls("welcome.restore.searching", comment: "") }
             static var searchingTip: String { ls("welcome.restore.searchingTip", comment: "") }
+            enum Progress {
+                static var connecting: String { ls("welcome.restore.progress.connecting", comment: "") }
+                static var importing: String { ls("welcome.restore.progress.importing", comment: "") }
+                static var completed: String { ls("welcome.restore.progress.completed", comment: "") }
+                static var partial: String { ls("welcome.restore.progress.partial", comment: "") }
+            }
+            enum Wiped {
+                static var title: String { ls("welcome.restore.wiped.title", comment: "") }
+                static var body: String { ls("welcome.restore.wiped.body", comment: "") }
+            }
             static func foundTitle(_ name: String) -> String {
                 String(format: ls("welcome.restore.foundTitle", comment: ""), name)
             }

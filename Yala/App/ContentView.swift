@@ -240,13 +240,25 @@ struct ContentView: View {
         .fullScreenCover(isPresented: $showWelcomeRestore) {
             WelcomeRestoreView(
                 onContinueWithSummary: { summary in
-                    prefilledOnboardingData = summary
                     showWelcomeRestore = false
-                    showOnboarding = true
-                },
-                onCompleteSkipAll: {
-                    completeOnboardingAsRestoreSkip()
-                    showWelcomeRestore = false
+                    // Destino por onboardingMode restaurado (synced) — RestoreRouter.
+                    switch RestoreRouter.decide(
+                        onboardingMode: OnboardingMode.current(),
+                        isFullyPrefilled: summary.isFullyPrefilled
+                    ) {
+                    case .groupsOnly:
+                        // El usuario era "solo grupos": no forzar onboarding personal.
+                        OnboardingMode.setCurrent(.groupInvite)
+                        SessionState.shared.onboardingMode = .groupInvite
+                        completeOnboardingAsRestoreSkip()
+                        hasCompletedOnboarding = true
+                    case .directToApp:
+                        completeOnboardingAsRestoreSkip()
+                        hasCompletedOnboarding = true
+                    case .onboarding:
+                        prefilledOnboardingData = summary
+                        showOnboarding = true
+                    }
                 },
                 onStartFresh: {
                     // A4 v3.2 (#9b): clean slate también desde WelcomeRestoreView.

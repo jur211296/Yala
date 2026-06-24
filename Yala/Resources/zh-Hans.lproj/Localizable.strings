@@ -4156,6 +4156,12 @@
 "welcome.restore.startFreshConfirm.body" = "这将创建一个新账户，不会保留你之前的数据。继续吗？";
 "welcome.restore.startFreshConfirm.confirm" = "是，重新开始";
 "welcome.restore.startFreshConfirm.cancel" = "取消";
+"welcome.restore.progress.connecting" = "正在连接 iCloud…";
+"welcome.restore.progress.importing" = "正在加载你的数据…";
+"welcome.restore.progress.completed" = "同步完成";
+"welcome.restore.progress.partial" = "核心数据已就绪。你使用应用时我们会继续同步。";
+"welcome.restore.wiped.title" = "你已删除数据";
+"welcome.restore.wiped.body" = "你已删除此设备上的数据。随时可以重新开始。";
 
 "welcome.invite.title" = "粘贴你的邀请链接";
 "welcome.invite.body" = "如果有人邀请你加入 Yala 群组，请在这里粘贴你收到的链接。";

@@ -4156,6 +4156,12 @@
 "welcome.restore.startFreshConfirm.body" = "以前のデータなしで新しいアカウントが作成されます。続行しますか？";
 "welcome.restore.startFreshConfirm.confirm" = "はい、最初から";
 "welcome.restore.startFreshConfirm.cancel" = "キャンセル";
+"welcome.restore.progress.connecting" = "iCloudに接続中…";
+"welcome.restore.progress.importing" = "データを読み込み中…";
+"welcome.restore.progress.completed" = "同期が完了しました";
+"welcome.restore.progress.partial" = "主要なデータの準備ができました。アプリの使用中も同期を続けます。";
+"welcome.restore.wiped.title" = "データを削除しました";
+"welcome.restore.wiped.body" = "この端末のデータを削除しました。いつでも最初から始められます。";
 
 "welcome.invite.title" = "招待リンクを貼り付けてください";
 "welcome.invite.body" = "Yalaのグループに招待された場合は、受け取ったリンクをここに貼り付けてください。";

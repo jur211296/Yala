@@ -18,6 +18,7 @@ struct WelcomeRestoreView: View {
         case searching
         case found(ICloudAccountSummary)
         case notFound
+        case wiped
         case iCloudDisabled
         case error
     }
@@ -28,12 +29,10 @@ struct WelcomeRestoreView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var state: ViewState = .searching
-    @State private var searchTask: Task<Void, Never>?
     @State private var showStartFreshConfirm: Bool = false
     @State private var refreshRotation: Double = 0
 
     var onContinueWithSummary: (ICloudAccountSummary) -> Void
-    var onCompleteSkipAll: () -> Void
     var onStartFresh: () -> Void
     var onOpenSettings: () -> Void
     var onBack: () -> Void
@@ -53,11 +52,15 @@ struct WelcomeRestoreView: View {
 
                 switch state {
                 case .searching:
-                    searchingView
+                    RestoreProgressView { summary in
+                        state = summary.hasAnyData ? .found(summary) : .notFound
+                    }
                 case .found(let summary):
                     foundView(summary: summary)
                 case .notFound:
                     notFoundView
+                case .wiped:
+                    wipedView
                 case .iCloudDisabled:
                     iCloudDisabledView
                 case .error:
@@ -87,10 +90,6 @@ struct WelcomeRestoreView: View {
                 }
             }
             .task { startSearch() }
-            .onDisappear {
-                searchTask?.cancel()
-                searchTask = nil
-            }
             .confirmationDialog(
                 L10n.Welcome.Restore.startFreshConfirmTitle,
                 isPresented: $showStartFreshConfirm,
@@ -108,49 +107,25 @@ struct WelcomeRestoreView: View {
 
     // MARK: - Search
 
+    /// Decide el estado inicial; la espera con quiescencia + el progreso en vivo
+    /// los hace `RestoreProgressView` (estado `.searching`). Respeta el wipe: si el
+    /// último acto del usuario fue un wipe, no ofrecemos restaurar (estado `.wiped`).
     private func startSearch() {
-        searchTask?.cancel()
-        searchTask = Task { @MainActor in
-            // Distingue iCloud-disabled (state dedicado con CTA Ajustes) de timeout/error
-            // antes de invocar `forceFetchAndWait`, que devuelve `false` en ambos casos.
-            guard iCloudSyncService.shared.isAccountAvailable else {
-                if !Task.isCancelled { state = .iCloudDisabled }
-                return
-            }
-            let success = await iCloudSyncService.shared.forceFetchAndWait(timeout: 15)
-            guard !Task.isCancelled else { return }
-            guard success else { state = .error; return }
-            do {
-                let summary = try modelContext.iCloudAccountSummary(appPreferences: appPreferences)
-                guard !Task.isCancelled else { return }
-                state = summary.hasAnyData ? .found(summary) : .notFound
-            } catch {
-                if !Task.isCancelled { state = .error }
-            }
+        guard iCloudSyncService.shared.isAccountAvailable else {
+            state = .iCloudDisabled
+            return
         }
+        if RestoreOfferGate.wasWiped(
+            lastOnboarding: PreferenceSyncService.shared.lastOnboardingTimestamp,
+            lastWipe: PreferenceSyncService.shared.lastWipeTimestamp
+        ) {
+            state = .wiped
+            return
+        }
+        state = .searching
     }
 
     // MARK: - State views
-
-    private var searchingView: some View {
-        VStack(spacing: DS.Spacing.xl) {
-            Spacer()
-            ProgressView()
-                .scaleEffect(1.4)
-            VStack(spacing: DS.Spacing.sm) {
-                Text(L10n.Welcome.Restore.searching)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-                Text(L10n.Welcome.Restore.searchingTip)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, DS.Spacing.xxl)
-            Spacer()
-        }
-    }
 
     private func foundView(summary: ICloudAccountSummary) -> some View {
         VStack(spacing: DS.Spacing.xl) {
@@ -186,11 +161,9 @@ struct WelcomeRestoreView: View {
             VStack(spacing: DS.Spacing.sm) {
                 YalaPrimaryButton(L10n.Welcome.Restore.continueAction) {
                     DS.Haptic.success()
-                    if isAllPrefilled(summary) {
-                        onCompleteSkipAll()
-                    } else {
-                        onContinueWithSummary(summary)
-                    }
+                    // El destino (directo / solo-grupos / onboarding) lo decide el
+                    // caller con RestoreRouter según el onboardingMode restaurado.
+                    onContinueWithSummary(summary)
                 }
 
                 Button {
@@ -204,12 +177,6 @@ struct WelcomeRestoreView: View {
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.bottom, DS.Spacing.lg)
         }
-    }
-
-    /// Si los 3 inputs que el user introduciría manualmente ya están en iCloud, salta a home.
-    /// SSOT: `ICloudAccountSummary.isFullyPrefilled` en `iCloudSyncService.swift` (reusado por WelcomeHero alert).
-    private func isAllPrefilled(_ s: ICloudAccountSummary) -> Bool {
-        s.isFullyPrefilled
     }
 
     /// Items visibles del resumen `.found` (count > 0), cada uno renderizado
@@ -338,6 +305,20 @@ struct WelcomeRestoreView: View {
             body: L10n.Welcome.Restore.errorBody,
             primaryTitle: L10n.Welcome.Restore.retry,
             primaryAction: { state = .searching; startSearch() }
+        )
+    }
+
+    /// Respeto al wipe: el usuario borró sus datos en este dispositivo → no
+    /// ofrecemos recargar, solo empezar de nuevo.
+    private var wipedView: some View {
+        emptyStateView(
+            // A11Y-DM: gris neutro de estado vacío (sistema, adapta a Dark Mode)
+            icon: "trash.slash",
+            tint: .gray,
+            title: L10n.Welcome.Restore.Wiped.title,
+            body: L10n.Welcome.Restore.Wiped.body,
+            primaryTitle: L10n.Welcome.Restore.startFresh,
+            primaryAction: onStartFresh
         )
     }
 
