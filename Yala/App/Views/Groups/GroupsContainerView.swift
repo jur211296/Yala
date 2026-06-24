@@ -97,6 +97,11 @@ struct GroupsContainerView: View {
                         placement: .navigationBarDrawer(displayMode: .automatic),
                         prompt: L10n.Common.search
                     )
+                    // Pull-to-refresh SOLO en el ScrollView de la lista (no en el
+                    // ZStack/NavigationStack): así su RefreshAction no se hereda por
+                    // environment al detalle ni a los sheets — iOS 26 la captaba en el
+                    // ScrollView horizontal de los chips del form de gasto (pull espurio).
+                    .refreshable { viewModel.loadData() }
                 }
 
                 // FAB — new group
@@ -140,7 +145,6 @@ struct GroupsContainerView: View {
                     GroupDetailView(group: group)
                 }
             }
-            .refreshable { viewModel.loadData() }
             .appliesPendingRemoteChanges(sessionState)
             .onAppear {
                 viewModel.setContext(modelContext)
