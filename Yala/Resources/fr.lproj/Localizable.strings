@@ -4508,3 +4508,6 @@
 
 /* Beta gate (Groups): wrong code error */
 "groups.beta.gate.wrongCode" = "Code incorrect";
+
+/* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
+"groups.expense.allMembers" = "Tous";

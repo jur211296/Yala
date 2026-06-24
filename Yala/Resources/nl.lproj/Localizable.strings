@@ -4519,3 +4519,6 @@
 
 /* Beta gate (Groups): wrong code error */
 "groups.beta.gate.wrongCode" = "Onjuiste code";
+
+/* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
+"groups.expense.allMembers" = "Iedereen";

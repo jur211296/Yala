@@ -57,7 +57,7 @@ struct SplitTypeSegmentedSelector: View {
             .minimumScaleFactor(0.8)
             .foregroundStyle(selectedType == type ? .white : .secondary)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, DS.Chip.paddingV)
+            .padding(.vertical, DS.Spacing.sm)
             .background(
                 Capsule()
                     .fill(selectedType == type ? DS.Semantic.splitMethodForeground : Color.clear)

@@ -347,9 +347,10 @@ struct GroupExpenseFormView: View {
     private var splitTypeSegmentedSelector: some View {
         SplitTypeSegmentedSelector(selectedType: $viewModel.splitType) { newType in
             // Guard: solo abre el sheet cuando el cambio fue por tap del user
-            // (post-prefill / mount), requiere input (≠ .equal) y hay más de un
-            // participante (con uno solo no hay nada que repartir).
-            guard didCompleteInitialPrefill, newType != .equal, viewModel.isSplitConfigurable else { return }
+            // (post-prefill / mount), requiere input (≠ .equal), hay más de un
+            // participante (con uno solo no hay nada que repartir) y el monto es > 0
+            // (sin monto, abrir el sheet de división es en vano).
+            guard didCompleteInitialPrefill, newType != .equal, viewModel.isSplitConfigurable, viewModel.amount > 0 else { return }
             dismissKeyboard()
             showSplitDetail = true
         }
@@ -529,16 +530,6 @@ struct GroupExpenseFormView: View {
                 }
 
                 SelectionChip(
-                    icon: "tag",
-                    text: viewModel.selectedSubcategory?.name ?? L10n.Transaction.subcategory,
-                    isSelected: viewModel.selectedSubcategory != nil,
-                    color: subcategoryChipColor
-                ) {
-                    dismissKeyboard()
-                    showSubcategorySelector = true
-                }
-
-                SelectionChip(
                     icon: "person.fill",
                     text: paidByChipText,
                     isSelected: !viewModel.paidByMemberID.isEmpty,
@@ -550,12 +541,25 @@ struct GroupExpenseFormView: View {
 
                 SelectionChip(
                     icon: "person.2",
-                    text: L10n.Groups.Expense.membersSelected(viewModel.selectedMemberIDs.count, members.count),
+                    text: viewModel.selectedMemberIDs.count == members.count
+                        ? L10n.Groups.Expense.allMembers
+                        : L10n.Groups.Expense.membersSelected(viewModel.selectedMemberIDs.count, members.count),
                     isSelected: !viewModel.selectedMemberIDs.isEmpty,
                     color: !viewModel.selectedMemberIDs.isEmpty ? Color(hex: group.colorHex) : nil
                 ) {
                     dismissKeyboard()
                     showMemberSelector = true
+                }
+
+                // Subcategoría AL FINAL: es opcional, va después de los chips esenciales.
+                SelectionChip(
+                    icon: "tag",
+                    text: viewModel.selectedSubcategory?.name ?? L10n.Transaction.subcategory,
+                    isSelected: viewModel.selectedSubcategory != nil,
+                    color: subcategoryChipColor
+                ) {
+                    dismissKeyboard()
+                    showSubcategorySelector = true
                 }
             }
             .padding(.horizontal, DS.Spacing.xl)

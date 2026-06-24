@@ -1935,6 +1935,8 @@ enum L10n {
             static func membersSelected(_ count: Int, _ total: Int) -> String {
                 String(format: ls("groups.expense.membersSelected %d %d", comment: ""), count, total)
             }
+            /// Chip "Dividir entre" cuando TODOS los miembros están seleccionados.
+            static var allMembers: String { ls("groups.expense.allMembers", comment: "") }
             static var title: String { ls("groups.expense.title", comment: "") }
             static var editTitle: String { ls("groups.expense.editTitle", comment: "") }
             static var descriptionLabel: String { ls("groups.expense.description", comment: "") }
