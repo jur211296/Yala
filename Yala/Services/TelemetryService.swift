@@ -132,6 +132,7 @@ enum AnalyticsEvent: String {
     case cloudkitGroupSyncGateHardCap = "Diagnóstico · Gate de grupos llegó al tope"  // params: isSyncing — el sync de grupos arrancó por tope sin import personal asentado
     case cloudkitGroupSyncPromotedToAuto = "Diagnóstico · Sync de grupos promovido a auto"  // params: importSettled (false = promovido por hard cap sin import asentado) — los engines pasaron de export-only a automaticallySync
     case cloudkitGroupZoneRecovered = "Diagnóstico · Zona de grupo recuperada"  // params: count — zonas owner sin GroupMeta subido re-encoladas al arrancar
+    case iCloudRestoreOutcome = "Diagnóstico · Resultado de restore"  // params: phase (completed|partial), destination (groupsOnly|directToApp|onboarding)
 
     // Routing observability (F9 — privacy-first: only intent IDs, no payloads)
     case routingIntentSuperseded = "Diagnóstico · Routing supersedido"  // a queued intent was dropped by an incoming one

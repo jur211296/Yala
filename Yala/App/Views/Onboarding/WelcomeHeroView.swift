@@ -384,6 +384,7 @@ struct WelcomeHeroView: View {
 
     @MainActor
     private func dispatchDecision() {
+        RestoreBreadcrumb.heroSignal(returning: hasReturningData)
         onContinue(hasReturningData ? .proceedWithData : .proceedNoData)
     }
 

@@ -161,6 +161,7 @@ struct RestoreProgressView: View {
             // Mínimo de exhibición para que se vea el estado final.
             try? await Task.sleep(for: .seconds(0.8))
             guard !Task.isCancelled else { return }
+            RestoreBreadcrumb.settled(phase: settled ? "completed" : "partial")
             onSettled(counts ?? ICloudAccountSummary(
                 userName: nil, accountsCount: 0, transactionsCount: 0,
                 budgetsCount: 0, groupsCount: 0, primaryCurrencyCode: nil, categoriesCount: 0))

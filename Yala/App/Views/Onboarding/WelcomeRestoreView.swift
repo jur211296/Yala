@@ -119,6 +119,7 @@ struct WelcomeRestoreView: View {
             lastOnboarding: PreferenceSyncService.shared.lastOnboardingTimestamp,
             lastWipe: PreferenceSyncService.shared.lastWipeTimestamp
         ) {
+            RestoreBreadcrumb.wiped()
             state = .wiped
             return
         }

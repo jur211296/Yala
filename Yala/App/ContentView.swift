@@ -242,10 +242,14 @@ struct ContentView: View {
                 onContinueWithSummary: { summary in
                     showWelcomeRestore = false
                     // Destino por onboardingMode restaurado (synced) — RestoreRouter.
-                    switch RestoreRouter.decide(
+                    let destination = RestoreRouter.decide(
                         onboardingMode: OnboardingMode.current(),
                         isFullyPrefilled: summary.isFullyPrefilled
-                    ) {
+                    )
+                    RestoreBreadcrumb.destination(String(describing: destination))
+                    TelemetryService.track(.iCloudRestoreOutcome,
+                                           parameters: ["destination": String(describing: destination)])
+                    switch destination {
                     case .groupsOnly:
                         // El usuario era "solo grupos": no forzar onboarding personal.
                         OnboardingMode.setCurrent(.groupInvite)
