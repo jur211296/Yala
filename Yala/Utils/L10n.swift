@@ -4444,6 +4444,15 @@ enum L10n {
             static var startFresh: String { ls("welcome.detectedData.startFresh", comment: "") }
         }
 
+        // MARK: - OfferRestore (Parte F: oferta cargar-datos al abrir un link siendo returning)
+
+        enum OfferRestore {
+            static var title: String { ls("welcome.offerRestore.title", comment: "") }
+            static var message: String { ls("welcome.offerRestore.message", comment: "") }
+            static var loadData: String { ls("welcome.offerRestore.loadData", comment: "") }
+            static var startFresh: String { ls("welcome.offerRestore.startFresh", comment: "") }
+        }
+
         // MARK: - FreshStart (segunda barrera: alert al tap "Soy nuevo" si hay data residual)
 
         enum FreshStart {

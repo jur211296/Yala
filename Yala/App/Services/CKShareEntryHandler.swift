@@ -60,12 +60,21 @@ enum CKShareEntryHandler {
         let zoneName = metadata.share.recordID.zoneID.zoneName
         let currentMemberStatus = SplitSyncManager.shared.currentMemberStatus(zoneName: zoneName)
 
+        // Parte F: solo evaluamos la señal de returning user (KV, con espera corta)
+        // cuando aplica — fresh-install sin modo grupo, grupo no archivado/oculto.
+        // Evita retrasar el routing en los casos comunes (returning con onboarding hecho).
+        let needsReturningCheck = !hasCompletedOnboarding
+            && sessionState.onboardingMode != .groupInvite
+            && !isHiddenForAll && !isArchived
+        let hasReturningSignal = needsReturningCheck ? await awaitReturningSignal() : false
+
         let decision = AppBootstrapper.inviteRouteDecision(
             hasCompletedOnboarding: hasCompletedOnboarding,
             onboardingMode: sessionState.onboardingMode,
             isHiddenForAll: isHiddenForAll,
             isArchived: isArchived,
-            currentMemberStatus: currentMemberStatus
+            currentMemberStatus: currentMemberStatus,
+            hasReturningSignal: hasReturningSignal
         )
 
         #if DEBUG
@@ -97,6 +106,46 @@ enum CKShareEntryHandler {
                 mode: mode
             )
             RouterEntryGate.shared.submit(.presentGroupReconnect(invite))
+
+        case .offerRestoreThenInvite:
+            // Parte F: NO acceptShare aún. El invite ya quedó en PendingInviteStore
+            // (arriba) y se re-emite tras restaurar / empezar de cero; el accept ocurre
+            // en el reconnect resultante. Aquí solo presentamos la oferta.
+            let invite = InviteMetadata(
+                groupName: branded.name,
+                groupIcon: branded.icon,
+                groupColor: branded.color,
+                groupMembers: branded.members,
+                shareMetadata: metadata,
+                mode: .standardReconnect
+            )
+            RouterEntryGate.shared.submit(.offerRestoreBeforeInvite(invite))
         }
+    }
+
+    /// Espera corta a que el KV-store baje la señal de returning user (mismo enfoque
+    /// que el Welcome Hero). Si no baja en `timeout`, devuelve la última lectura; la
+    /// re-emisión del invite desde `PendingInviteStore` la re-evalúa más tarde
+    /// (foreground/bootstrap), de modo que el gap no queda fijado en `false`.
+    private static func awaitReturningSignal(timeout: TimeInterval = 5) async -> Bool {
+        let deadline = Date.now.addingTimeInterval(timeout)
+        func signal() -> Bool {
+            RestoreOfferGate.hasReturningSignal(
+                lastOnboarding: PreferenceSyncService.shared.lastOnboardingTimestamp,
+                lastWipe: PreferenceSyncService.shared.lastWipeTimestamp
+            )
+        }
+        func wiped() -> Bool {
+            RestoreOfferGate.wasWiped(
+                lastOnboarding: PreferenceSyncService.shared.lastOnboardingTimestamp,
+                lastWipe: PreferenceSyncService.shared.lastWipeTimestamp
+            )
+        }
+        while Date.now < deadline {
+            if signal() { return true }
+            if wiped() { return false }  // wipe presente → no tiene sentido esperar más
+            try? await Task.sleep(for: .seconds(1))
+        }
+        return signal()
     }
 }

@@ -4199,6 +4199,10 @@
 "welcome.detectedData.message" = "你的 iCloud 中有已保存的数据。要加载到此设备上吗？";
 "welcome.detectedData.loadMyData" = "加载我的数据";
 "welcome.detectedData.startFresh" = "从零开始";
+"welcome.offerRestore.title" = "我们找到了你的账户";
+"welcome.offerRestore.message" = "你的 iCloud 中有数据。加入群组前先加载吗？";
+"welcome.offerRestore.loadData" = "加载我的数据";
+"welcome.offerRestore.startFresh" = "从头开始";
 
 
 // MARK: FreshStart (segunda barrera)

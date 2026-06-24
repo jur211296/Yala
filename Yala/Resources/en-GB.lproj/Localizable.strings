@@ -259,6 +259,10 @@
 "welcome.detectedData.message" = "You have data saved in your iCloud. Load it on this device?";
 "welcome.detectedData.loadMyData" = "Load my data";
 "welcome.detectedData.startFresh" = "Start fresh";
+"welcome.offerRestore.title" = "We found your account";
+"welcome.offerRestore.message" = "You have data in iCloud. Load it before joining the group?";
+"welcome.offerRestore.loadData" = "Load my data";
+"welcome.offerRestore.startFresh" = "Start fresh";
 "groups.member.activeCount" = "%d active people";
 "groups.member.pendingCount" = "%d pending requests";
 "groups.member.pendingRequestsCount" = "%d requests";

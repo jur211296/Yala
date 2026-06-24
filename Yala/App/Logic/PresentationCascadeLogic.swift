@@ -87,6 +87,8 @@ enum PresentationCascadeLogic {
             return .present(.groupInviteOnboarding(invite))
         case .presentGroupReconnect(let invite):
             return .present(.groupReconnect(invite))
+        case .offerRestoreBeforeInvite(let invite):
+            return .present(.offerRestoreBeforeInvite(invite))
         case .showInviteError(let msg):
             return .present(.inviteError(msg))
         case .showGroupSyncError(let msg):

@@ -4199,6 +4199,10 @@
 "welcome.detectedData.message" = "Je hebt gegevens in je iCloud. Op dit apparaat laden?";
 "welcome.detectedData.loadMyData" = "Mijn gegevens laden";
 "welcome.detectedData.startFresh" = "Opnieuw beginnen";
+"welcome.offerRestore.title" = "We hebben je account gevonden";
+"welcome.offerRestore.message" = "Je hebt gegevens in iCloud. Laden voordat je lid wordt van de groep?";
+"welcome.offerRestore.loadData" = "Mijn gegevens laden";
+"welcome.offerRestore.startFresh" = "Opnieuw beginnen";
 
 
 // MARK: FreshStart (segunda barrera)

@@ -188,6 +188,10 @@
 "welcome.detectedData.message" = "Tens dados guardados no teu iCloud. Carregar neste dispositivo?";
 "welcome.detectedData.loadMyData" = "Carregar os meus dados";
 "welcome.detectedData.startFresh" = "Começar do zero";
+"welcome.offerRestore.title" = "Encontrámos a tua conta";
+"welcome.offerRestore.message" = "Tens dados no iCloud. Carregar antes de entrares no grupo?";
+"welcome.offerRestore.loadData" = "Carregar os meus dados";
+"welcome.offerRestore.startFresh" = "Começar do zero";
 "groups.member.activeCount" = "%d pessoas ativas";
 "groups.member.pendingCount" = "%d pedidos pendentes";
 "groups.member.pendingRequestsCount" = "%d pedidos";

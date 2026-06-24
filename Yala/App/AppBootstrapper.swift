@@ -1226,6 +1226,9 @@ final class AppBootstrapper {
         case acceptAndShowInviteOnboarding
         /// Todos los demás casos: muestra reconnect con el mode apropiado.
         case showReconnect(mode: ReconnectMode)
+        /// Parte F: returning user con datos en iCloud (sin wipe) → ofrecer cargar
+        /// sus datos antes de unirse al grupo. El invite queda en PendingInviteStore.
+        case offerRestoreThenInvite
     }
 
     /// Decide el routing tras leer metadata del share + estado local del grupo.
@@ -1241,11 +1244,15 @@ final class AppBootstrapper {
         onboardingMode: OnboardingMode,
         isHiddenForAll: Bool = false,
         isArchived: Bool = false,
-        currentMemberStatus: SplitMemberStatus? = nil
+        currentMemberStatus: SplitMemberStatus? = nil,
+        hasReturningSignal: Bool = false
     ) -> InviteRouteDecision {
         if isHiddenForAll { return .showReconnect(mode: .deletedForAll) }
         if isArchived { return .showReconnect(mode: .archived) }
         if !hasCompletedOnboarding && onboardingMode != .groupInvite {
+            // Parte F: returning user con datos en iCloud (sin wipe) → ofrecer cargar
+            // antes de unirse. Sin señal → invite onboarding directo (modo solo-grupos).
+            if hasReturningSignal { return .offerRestoreThenInvite }
             return .acceptAndShowInviteOnboarding
         }
         if let status = currentMemberStatus {
@@ -1298,7 +1305,7 @@ final class AppBootstrapper {
     /// `true` si el intent es uno de los de invite de grupo (guard del re-emit).
     nonisolated static func isInviteIntent(_ intent: RouterIntent) -> Bool {
         switch intent {
-        case .presentGroupInviteOnboarding, .presentGroupReconnect: return true
+        case .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite: return true
         default: return false
         }
     }

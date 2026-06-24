@@ -104,6 +104,10 @@ enum RouterIntent: Identifiable, Equatable {
     // C) Groups & invites
     case presentGroupInviteOnboarding(InviteMetadata)
     case presentGroupReconnect(InviteMetadata)
+    /// Returning user con datos en iCloud (sin wipe) que abre un link de invitación →
+    /// ofrecer cargar sus datos antes de unirse al grupo (Parte F). El invite queda
+    /// retenido en `PendingInviteStore` y se re-emite tras restaurar / empezar de cero.
+    case offerRestoreBeforeInvite(InviteMetadata)
     case showInviteError(String)
     case showGroupSyncError(String)
     case presentFullModeActivation
@@ -135,7 +139,8 @@ extension RouterIntent {
     var handler: AppRouter.ConsumerID {
         switch self {
         case .showInboxAlert, .presentTrialOffer, .presentWhatsNew,
-             .presentGroupInviteOnboarding, .presentGroupReconnect, .showInviteError,
+             .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite,
+             .showInviteError,
              .showGroupSyncError,
              .iCloudMismatch, .remoteWipe, .remoteOnboardingCompleted,
              .presentFullModeActivation:
@@ -171,7 +176,7 @@ extension RouterIntent {
              .presentVoiceEntry, .presentImageEntry, .presentUpgradeSheet,
              .presentMilestoneUpgrade,
              .presentFullModeActivation, .navigate,
-             .presentGroupInviteOnboarding, .presentGroupReconnect,
+             .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite,
              .presentTrialOffer, .autoOpenBudgetEditor, .autoOpenScheduledEditor:
             return .normal
         case .requestAppStoreReview, .presentWhatsNew:
@@ -215,6 +220,8 @@ extension RouterIntent {
             return "groupInviteOnboarding"
         case .presentGroupReconnect:
             return "groupReconnect"
+        case .offerRestoreBeforeInvite:
+            return "offerRestoreBeforeInvite"
         case .showInviteError(let detail):
             return "inviteError:\(detail.hashValue)"
         case .showGroupSyncError(let detail):
@@ -257,7 +264,7 @@ extension RouterIntent {
     /// reemplazaría (deadlock B4-04).
     var supersedesWelcomeChain: Bool {
         switch self {
-        case .presentGroupInviteOnboarding, .presentGroupReconnect:
+        case .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite:
             return true
         default:
             return false

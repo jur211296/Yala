@@ -355,6 +355,10 @@
 "welcome.detectedData.message" = "Tenés datos guardados en tu iCloud. ¿Querés cargarlos en este dispositivo?";
 "welcome.detectedData.loadMyData" = "Cargá mis datos";
 "welcome.detectedData.startFresh" = "Empezar desde cero";
+"welcome.offerRestore.title" = "Detectamos tu cuenta";
+"welcome.offerRestore.message" = "Tenés datos en iCloud. ¿Querés cargarlos antes de unirte al grupo?";
+"welcome.offerRestore.loadData" = "Cargar mis datos";
+"welcome.offerRestore.startFresh" = "Empezar de cero";
 
 
 // MARK: FreshStart (segunda barrera)

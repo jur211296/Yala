@@ -262,6 +262,61 @@ struct AppBootstrapperTests {
         #expect(decision == .showReconnect(mode: .pendingDuplicate))
     }
 
+    // MARK: - Parte F: returning user con datos → oferta cargar antes de unirse
+
+    @Test func inviteRouteDecision_freshUserWithReturningSignal_offersRestore() {
+        // Returning user con datos en iCloud (sin wipe) que abre un link → ofrecer
+        // cargar antes de unirse (en vez del invite onboarding directo).
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: false,
+            onboardingMode: .full,
+            hasReturningSignal: true
+        )
+        #expect(decision == .offerRestoreThenInvite)
+    }
+
+    @Test func inviteRouteDecision_freshUserNoReturningSignal_acceptsAndShowsInviteOnboarding() {
+        // Sin señal de returning (fresh real o post-wipe) → invite onboarding directo.
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: false,
+            onboardingMode: .full,
+            hasReturningSignal: false
+        )
+        #expect(decision == .acceptAndShowInviteOnboarding)
+    }
+
+    @Test func inviteRouteDecision_returningSignalIgnoredWhenOnboarded() {
+        // hasCompletedOnboarding=true → la oferta no aplica; reconnect estándar
+        // (la señal solo importa pre-onboarding).
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: true,
+            onboardingMode: .full,
+            hasReturningSignal: true
+        )
+        #expect(decision == .showReconnect(mode: .standardReconnect))
+    }
+
+    @Test func inviteRouteDecision_returningSignalIgnoredMidGroupInvite() {
+        // mode=.groupInvite (mid invite onboarding) → no ofrecer restore aunque haya señal.
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: false,
+            onboardingMode: .groupInvite,
+            hasReturningSignal: true
+        )
+        #expect(decision == .showReconnect(mode: .standardReconnect))
+    }
+
+    @Test func inviteRouteDecision_hiddenForAllOverridesReturningSignal() {
+        // isHiddenForAll gana sobre la oferta de restore (orden de evaluación).
+        let decision = AppBootstrapper.inviteRouteDecision(
+            hasCompletedOnboarding: false,
+            onboardingMode: .full,
+            isHiddenForAll: true,
+            hasReturningSignal: true
+        )
+        #expect(decision == .showReconnect(mode: .deletedForAll))
+    }
+
     // MARK: - shouldReEmitInvite (pure guard del re-emit de invites pendientes)
 
     @Test func shouldReEmitInvite_allConditionsMet_returnsTrue() {

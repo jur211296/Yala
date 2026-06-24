@@ -28,6 +28,7 @@ enum ShellPresentation: Equatable {
     // Groups & invites
     case groupInviteOnboarding(InviteMetadata)
     case groupReconnect(InviteMetadata)
+    case offerRestoreBeforeInvite(InviteMetadata)
     case inviteError(String)
     case groupSyncError(String)
 
@@ -50,6 +51,7 @@ enum ShellPresentation: Equatable {
         case .downgradeResolution: return "downgradeResolution"
         case .groupInviteOnboarding: return "groupInviteOnboarding"
         case .groupReconnect: return "groupReconnect"
+        case .offerRestoreBeforeInvite: return "offerRestoreBeforeInvite"
         case .inviteError: return "inviteError"
         case .groupSyncError: return "groupSyncError"
         case .fullModeActivation: return "fullModeActivation"

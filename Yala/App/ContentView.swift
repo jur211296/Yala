@@ -51,6 +51,10 @@ struct ContentView: View {
     @State private var pendingInviteMetadata: InviteMetadata?
     @State private var showGroupReconnect: Bool = false
     @State private var showFullModeActivation: Bool = false
+    /// Parte F: oferta "cargar tus datos antes de unirte" cuando un returning user
+    /// con datos en iCloud (sin wipe) abre un link de invitación.
+    @State private var showRestoreOffer: Bool = false
+    @State private var pendingOfferInvite: InviteMetadata?
     /// Inbox alert payload, driven by .contentView drain of .showInboxAlert.
     @State private var activeInboxNotification: PendingInboxNotification = .init()
     /// Group reconnect invite (metadata + mode), carried by .presentGroupReconnect intent.
@@ -215,6 +219,39 @@ struct ContentView: View {
         } message: {
             Text(L10n.Welcome.FreshStart.alertMessage)
         }
+        // Parte F: oferta para un returning user con datos al abrir un link de invitación.
+        .alert(L10n.Welcome.OfferRestore.title, isPresented: $showRestoreOffer) {
+            Button(L10n.Welcome.OfferRestore.loadData) {
+                // Cargar datos: el invite queda retenido en PendingInviteStore; tras
+                // restaurar se re-emite (reEmitInviteAfterRestore en onContinue/onComplete).
+                showRestoreOffer = false
+                showWelcomeRestore = true
+            }
+            Button(L10n.Welcome.OfferRestore.startFresh, role: .destructive) {
+                // Empezar de cero: wipe CON señal (lastWipeTimestamp) para que el re-emit
+                // vea wipe>onboarding → mini-onboarding de grupos (no vuelve a ofrecer).
+                showRestoreOffer = false
+                do {
+                    try DataWipeService.wipeAllUserData(in: modelContext)
+                    hasExistingData = false
+                } catch {
+                    #if DEBUG
+                    print("ContentView: offer-restore fresh-start wipe failed: \(error)")
+                    #endif
+                }
+                reEmitInviteAfterRestore()
+            }
+            Button(L10n.Action.cancel, role: .cancel) {
+                showRestoreOffer = false
+                // Decisión consciente: volver al Chooser (el invite sigue en el store).
+                if !hasCompletedOnboarding {
+                    welcomeFlowInitialStep = .chooser
+                    showWelcomeFlow = true
+                }
+            }
+        } message: {
+            Text(L10n.Welcome.OfferRestore.message)
+        }
         .fullScreenCover(isPresented: $showLanguageSelection) {
             LanguageSelectionView {
                 showLanguageSelection = false
@@ -256,12 +293,16 @@ struct ContentView: View {
                         SessionState.shared.onboardingMode = .groupInvite
                         completeOnboardingAsRestoreSkip()
                         hasCompletedOnboarding = true
+                        reEmitInviteAfterRestore()
                     case .directToApp:
                         completeOnboardingAsRestoreSkip()
                         hasCompletedOnboarding = true
+                        reEmitInviteAfterRestore()
                     case .onboarding:
                         prefilledOnboardingData = summary
                         showOnboarding = true
+                        // Parte F: el re-emit ocurre en el onComplete del OnboardingView
+                        // (hasCompletedOnboarding=true ahí → reconnect, no re-oferta).
                     }
                 },
                 onStartFresh: {
@@ -304,6 +345,7 @@ struct ContentView: View {
                 SetupChecklistManager.shared.markAsNewInstall()
                 showOnboarding = false
                 prefilledOnboardingData = nil
+                reEmitInviteAfterRestore()
             }
             .environment(SessionState.shared)
         }
@@ -418,7 +460,7 @@ struct ContentView: View {
                 // dropeado por resetTransients en background. `isPresenting` evita
                 // re-presentar cuando el cover de invite/reconnect ya está abierto.
                 AppBootstrapper.shared.reEmitPendingInviteIfNeeded(
-                    isPresenting: showGroupInviteOnboarding || showGroupReconnect
+                    isPresenting: showGroupInviteOnboarding || showGroupReconnect || showRestoreOffer
                 )
             default:
                 break
@@ -578,6 +620,9 @@ struct ContentView: View {
         case .presentGroupReconnect(let invite):
             pendingReconnectInvite = invite
             showGroupReconnect = true
+        case .offerRestoreBeforeInvite(let invite):
+            pendingOfferInvite = invite
+            showRestoreOffer = true
         case .showInviteError(let detail):
             activeInviteError = detail
         case .showGroupSyncError(let message):
@@ -806,6 +851,16 @@ struct ContentView: View {
         Task { await AppUpdateService.shared.checkForUpdate() }
         if needsLanguageSelection {
             showLanguageSelection = true
+        }
+    }
+
+    /// Parte F: tras restaurar/onboarding desde la oferta de invitación, re-emite el
+    /// invite retenido en `PendingInviteStore` (si lo hay). Idempotente — no-op si no
+    /// hay invite pendiente. Con `hasCompletedOnboarding=true` ya, `inviteRouteDecision`
+    /// da `.standardReconnect` (no re-oferta); tras wipe da el mini-onboarding de grupos.
+    private func reEmitInviteAfterRestore() {
+        Task { @MainActor in
+            AppBootstrapper.shared.reEmitPendingInviteIfNeeded(isPresenting: false)
         }
     }
 
