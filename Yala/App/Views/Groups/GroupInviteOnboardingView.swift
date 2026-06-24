@@ -157,6 +157,8 @@ struct GroupInviteOnboardingView: View {
     /// tras setup, detecta si el SplitMember quedó en `.pendingApproval` (step 3)
     /// o `.active` (step 2). Defensive: cualquier error → step 2 para no bloquear al user.
     private func detectFinalStep() async -> Int {
+        // `mostRecentGroup()` y `ensureCurrentUserMemberExists` operan ambos sobre el mainContext
+        // compartido (el sync ya no usa un contexto dedicado) → mismo contexto, sin riesgo cross-context.
         guard let group = SplitSyncManager.shared.mostRecentGroup() else { return 2 }
         do {
             let member = try await GroupService.shared.ensureCurrentUserMemberExists(
@@ -217,20 +219,30 @@ struct GroupInviteOnboardingView: View {
         sync.set(string: DetailPeriod.thisMonth.rawValue, forKey: "defaultPeriod")
         sessionState.selectedPeriod = .thisMonth
 
-        // 4. Seed categories (idempotent — safe even if iCloud data arrives)
-        seedCategoriesIfNeeded(in: modelContext)
-        seedSystemGroupCategoriesIfNeeded(in: modelContext)
+        // 4-6. Seeds + save del store personal. Si el invite se acepta DURANTE el import del restore,
+        // este `save()` dispararía el `_assertionFailure`. Gatear por quiescencia: las prefs de arriba
+        // (UserDefaults, seguras) ya quedaron; los seeds son idempotentes y corren en el próximo
+        // bootstrap quiescente (y el import trae las categorías/notificaciones reales igual).
+        if iCloudSyncService.shared.isImportQuiescent {
+            // 4. Seed categories (idempotent — safe even if iCloud data arrives)
+            seedCategoriesIfNeeded(in: modelContext)
+            seedSystemGroupCategoriesIfNeeded(in: modelContext)
 
-        // 5. Create default notifications (uses existing service — idempotent)
-        NotificationService.shared.seedDefaultNotificationsIfNeeded(context: modelContext)
+            // 5. Create default notifications (uses existing service — idempotent)
+            NotificationService.shared.seedDefaultNotificationsIfNeeded(context: modelContext)
 
-        // 6. Save
-        do {
-            try modelContext.save()
-        } catch {
-            #if DEBUG
-            print("GroupInviteOnboardingView: Error saving setup: \(error)")
-            #endif
+            // 6. Save
+            do {
+                SaveBreadcrumb.willSave("GroupInviteOnboarding.performSilentSetup")
+                try modelContext.save()
+                SaveBreadcrumb.didSave("GroupInviteOnboarding.performSilentSetup")
+            } catch {
+                #if DEBUG
+                print("GroupInviteOnboardingView: Error saving setup: \(error)")
+                #endif
+            }
+        } else {
+            SaveBreadcrumb.deferred("GroupInviteOnboarding.performSilentSetup", "import not quiescent")
         }
 
         // 7. Signal other devices

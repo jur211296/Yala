@@ -36,6 +36,13 @@ final class ReportNotificationService {
         defer { isSendingReports = false }
         guard await NotificationService.shared.isAuthorized() else { return }
 
+        // Gate de quiescencia: persiste `NotificationItem.lastNotifiedDate` (store personal); diferir
+        // durante el import del restore (idempotente: se reevalúa al asentar / próximo arranque).
+        guard iCloudSyncService.shared.isImportQuiescent else {
+            SaveBreadcrumb.deferred("ReportNotificationService.sendDueReports", "import not quiescent")
+            return
+        }
+
         let reports = fetchActiveReportNotifications(context: context)
         var sentCount = 0
 
@@ -58,7 +65,9 @@ final class ReportNotificationService {
         // Save changes if any notifications were sent
         if sentCount > 0 {
             do {
+                SaveBreadcrumb.willSave("ReportNotificationService.sendDueReports")
                 try context.save()
+                SaveBreadcrumb.didSave("ReportNotificationService.sendDueReports")
                 #if DEBUG
                 print("ReportNotificationService: Sent \(sentCount) report notifications")
                 #endif

@@ -59,6 +59,13 @@ enum SplitGroupDeduplicationService {
     /// - Returns: number of duplicate SplitGroup records removed.
     @discardableResult
     static func deduplicateSplitGroups(in context: ModelContext) -> Int {
+        // Gate de quiescencia: aunque borra `SplitGroup` (store de grupos), comparte el MISMO
+        // `NSPersistentStoreCoordinator` que el store personal → un `save()` durante el import del
+        // restore dispara el `_assertionFailure`. Diferir (idempotente: re-corre en bootstrap/quiescencia).
+        guard iCloudSyncService.shared.isImportQuiescent else {
+            SaveBreadcrumb.deferred("SplitGroupDedup.deduplicate", "import not quiescent")
+            return 0
+        }
         let groups: [SplitGroup]
         do {
             groups = try context.fetch(FetchDescriptor<SplitGroup>())
@@ -78,7 +85,9 @@ enum SplitGroupDeduplicationService {
         }
 
         do {
+            SaveBreadcrumb.willSave("SplitGroupDedup.deduplicate")
             try context.save()
+            SaveBreadcrumb.didSave("SplitGroupDedup.deduplicate")
             #if DEBUG
             print("SplitGroupDedup: removed \(plan.toDeleteIDs.count) duplicates across \(plan.duplicateZoneCounts.count) zones")
             #endif

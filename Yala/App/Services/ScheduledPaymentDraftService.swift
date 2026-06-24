@@ -19,6 +19,12 @@ struct ScheduledPaymentDraftService {
     /// Returns the number of drafts created
     @discardableResult
     static func processDuePayments(context: ModelContext) -> Int {
+        // Gate de quiescencia: crea InboxDrafts + `save()` del store personal; diferir durante el
+        // import del restore de iCloud (idempotente: re-evalúa los vencimientos en el próximo arranque).
+        guard iCloudSyncService.shared.isImportQuiescent else {
+            SaveBreadcrumb.deferred("ScheduledPaymentDraftService.processDuePayments", "import not quiescent")
+            return 0
+        }
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date.now)
         let endOfToday = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: today) ?? today
@@ -81,7 +87,9 @@ struct ScheduledPaymentDraftService {
         // Save changes (includes advances from skipped/paid dates, not just new drafts)
         if hasChanges {
             do {
+                SaveBreadcrumb.willSave("ScheduledPaymentDraftService.processDuePayments")
                 try context.save()
+                SaveBreadcrumb.didSave("ScheduledPaymentDraftService.processDuePayments")
             } catch {
                 #if DEBUG
                 print("ScheduledPaymentDraftService: Error saving drafts: \(error)")

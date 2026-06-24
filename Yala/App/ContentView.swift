@@ -965,6 +965,8 @@ private struct GroupInviteModifier: ViewModifier {
 
         case .rejectedRetry, .leftRetry, .removedRetry:
             await acceptAndSettle(metadata: metadata)
+            // `group(for:)` y `ensureCurrentUserMemberExists` operan ambos sobre el mainContext
+            // compartido (el sync ya no usa un contexto dedicado) → mismo contexto, sin riesgo cross-context.
             if let group = SplitSyncManager.shared.group(for: zoneName) {
                 do {
                     _ = try await GroupService.shared.ensureCurrentUserMemberExists(in: group, reactivateInactive: true)
@@ -1077,6 +1079,9 @@ struct MainTabView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var searchText: String = ""
     @AppStorage(TabBarConfiguration.storageKey) private var tabConfigJSON: String = TabBarConfiguration.default.toJSON()
+    /// Gate beta de Grupos (validación v2.0.1). @AppStorage directo: reacciona al
+    /// desbloqueo desde la card de "Más", el gate o `CKShareEntryHandler` (invitados).
+    @AppStorage(AppPreferences.Keys.groupsBetaUnlocked) private var groupsBetaUnlocked = false
 
     // On-demand data for downgrade resolution (replaces @Query to prevent 0x8BADF00D)
     @State private var downgradeAccounts: [Account] = []
@@ -1262,7 +1267,12 @@ struct MainTabView: View {
         case .reports:
             FinancialReportView()
         case .groups:
-            GroupsContainerView()
+            if GroupsBetaGateLogic.shouldShowGate(isUnlocked: groupsBetaUnlocked,
+                                                  isGroupInviteMode: sessionState.isGroupInviteMode) {
+                GroupsBetaGateView()
+            } else {
+                GroupsContainerView()
+            }
         }
     }
 

@@ -36,6 +36,12 @@ enum CKShareEntryHandler {
         branded: InviteLinkService.BrandedMetadata = .empty,
         source: Source
     ) async {
+        // Gate beta de Grupos (validación v2.0.1): quien llega por enlace de invitación
+        // queda desbloqueado sin código (decisión owner — los invitados pasan). Este es
+        // el SSOT de aceptación de TODO link → cubre todos los sub-modos (invite
+        // onboarding, reconnect, alreadyMember, etc.), incl. los que no llaman acceptShare.
+        UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
+
         // SSOT de persistencia para AMBOS entry points (universal link +
         // `userDidAcceptCloudKitShareWith` nativo): los intents de invite son
         // transient y `AppRouter.resetTransients()` los dropea en `.background`.

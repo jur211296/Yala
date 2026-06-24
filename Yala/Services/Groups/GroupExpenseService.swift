@@ -373,7 +373,11 @@ final class GroupExpenseService {
         // A0-Bridge: unbridge antes de borrar para que el contexto siga siendo válido.
         let settlementIDStr = settlement.id.uuidString
         if GroupTransactionBridge.shared.isReady {
-            try? GroupTransactionBridge.shared.unbridgeSettlement(settlementID: settlementIDStr)
+            do {
+                try GroupTransactionBridge.shared.unbridgeSettlement(settlementID: settlementIDStr)
+            } catch {
+                logger.error("deleteSettlement: unbridge failed for \(settlementIDStr, privacy: .public); deleting anyway (bridged TX/drafts may be orphaned): \(error.localizedDescription, privacy: .public)")
+            }
         }
 
         SplitSyncManager.shared.enqueueDeletion(modelID: settlement.id, group: group)

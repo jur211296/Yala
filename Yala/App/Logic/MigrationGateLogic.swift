@@ -30,4 +30,20 @@ enum MigrationGateLogic {
         guard isAccountAvailable else { return .runNow }
         return hasCompletedFirstImport ? .runNow : .waitForHook
     }
+
+    /// Decides whether the one-shot migration must be deferred because we waited
+    /// for CloudKit's first import but it didn't settle within the timeout.
+    ///
+    /// Running the regen on a half-imported store is unrecoverable: it regenerates only
+    /// the records present, marks its sentinel (which blocks re-runs), and the rest arrive
+    /// collapsed and never heal. Deferring retries next launch. The repeatable self-healing
+    /// in `CategoryDeduplicationService.repairCollapsedIdentityUUIDs` is the backstop, and
+    /// the lazy CSV auto-heal covers the deferred backfill — so no cap is needed.
+    ///
+    /// - `waitedForSync=false` → ran now (offline or import already settled) → don't defer.
+    /// - `waitedForSync=true && importSettled=true` → import completed → don't defer.
+    /// - `waitedForSync=true && importSettled=false` → timed out on incomplete data → defer.
+    static func shouldDeferMigration(waitedForSync: Bool, importSettled: Bool) -> Bool {
+        waitedForSync && !importSettled
+    }
 }

@@ -21,6 +21,7 @@ struct iCloudSyncSettingsView: View {
     @State private var manualSyncUnreachable = false
     #if DEBUG
     @State private var dedupHookDisabled = UserDefaults.standard.bool(forKey: AppPreferences.Keys.subcatDedupRemoteHookDisabled)
+    @State private var lastRepairMessage: String?
     #endif
 
     /// Auto-recovery CTAs (Retry / Diagnose) are gated on a future feature.
@@ -359,6 +360,26 @@ struct iCloudSyncSettingsView: View {
             Text("Debug: desactiva SOLO el hook que deduplica en cada oleada de CloudKit. El pase de arranque y “Forzar sincronización” siguen activos.")
                 .font(DS.Typography.caption)
                 .foregroundStyle(.tertiary)
+
+            Divider()
+
+            Button("Reparar IDs colapsados ahora") {
+                let count = CategoryDeduplicationService.repairCollapsedIdentityUUIDs(in: modelContext)
+                lastRepairMessage = count > 0
+                    ? "Reparados \(count) UUIDs de identidad colapsados."
+                    : "Nada que reparar (0 colisiones)."
+            }
+            .font(DS.Typography.caption.weight(.semibold))
+
+            Text("Debug: regenera Tag.id / shortcutID colapsados (mismo valor entre records distintos) y reconstruye los CSV mirrors. Idempotente.")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
+
+            if let lastRepairMessage {
+                Text(lastRepairMessage)
+                    .font(DS.Typography.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.lg)

@@ -142,10 +142,16 @@ final class SplitZoneManager {
         let shareRecordID = CKRecord.ID(recordName: CKRecordNameZoneWideShare, zoneID: zoneID)
 
         // Flush pending zone/GroupMeta saves so inviting immediately after creating a group works.
-        try? await engine.sendChanges()
+        // do/catch (not try?) so a real failure is logged instead of swallowed; we still continue —
+        // the share create below surfaces a clear error if the zone truly didn't upload.
+        do {
+            try await engine.sendChanges()
+        } catch {
+            logger.error("createShare: flush sendChanges failed (continuing): \(error.localizedDescription, privacy: .public)")
+        }
 
         // Return existing zone-wide share if one already exists
-        if let existing = try? await database.record(for: shareRecordID),
+        if let existing = await fetchRecordIfExists(shareRecordID, from: database),
            let ckShare = existing as? CKShare
         {
             #if DEBUG
@@ -156,9 +162,9 @@ final class SplitZoneManager {
 
         // Backward compatibility: older builds created a hierarchical share attached to GroupMeta
         let recordID = CKConstants.recordID(for: group.id, in: zoneID)
-        if let record = try? await database.record(for: recordID),
+        if let record = await fetchRecordIfExists(recordID, from: database),
            let shareRef = record.share,
-           let existingShare = try? await database.record(for: shareRef.recordID),
+           let existingShare = await fetchRecordIfExists(shareRef.recordID, from: database),
            let ckShare = existingShare as? CKShare
         {
             #if DEBUG
@@ -185,6 +191,20 @@ final class SplitZoneManager {
                 }
             }
             database.add(modifyOperation)
+        }
+    }
+
+    /// Fetches a record if it exists. Returns nil for "not found" (`CKError.unknownItem`, expected
+    /// during share lookup); logs and returns nil for any other error — so the caller falls through
+    /// to creating a new share instead of silently swallowing a real failure with `try?`.
+    private func fetchRecordIfExists(_ recordID: CKRecord.ID, from database: CKDatabase) async -> CKRecord? {
+        do {
+            return try await database.record(for: recordID)
+        } catch let ckError as CKError where ckError.code == .unknownItem {
+            return nil
+        } catch {
+            logger.error("createShare lookup failed for \(recordID.recordName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
         }
     }
 
@@ -259,9 +279,12 @@ enum SplitZoneError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .engineNotInitialized:
-            return "CKSyncEngine not initialized. Ensure iCloud is available."
+            // Clear, actionable copy (was the opaque "CKSyncEngine not initialized"). With the
+            // export-only engines this is rarely reached, but if it is, it tells the user what to do.
+            return L10n.Groups.Errors.syncPreparing
         case .notOwner:
-            return "Only the group owner can manage invite links."
+            // Defensive — a non-owner never sees the invite button; reuse the generic copy.
+            return L10n.Groups.Errors.actionFailed
         }
     }
 }

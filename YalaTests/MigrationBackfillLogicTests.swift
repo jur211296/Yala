@@ -83,4 +83,44 @@ struct MigrationBackfillLogicTests {
         #expect(plan.sawRace == false)
         #expect(plan.accountIDsAction == .writeFromM2M)
     }
+
+    // MARK: - shouldRebuildCSVMirror (eager backfill, repetible)
+
+    @Test func rebuild_m2mEmpty_csvNil_false() {
+        // Sin fuente (M2M vacío o no hidratado) y sin CSV → nada que reconstruir.
+        #expect(MigrationBackfillLogic.shouldRebuildCSVMirror(csvIDs: nil, m2mIDs: []) == false)
+    }
+
+    @Test func rebuild_m2mEmpty_csvPopulated_false() {
+        // M2M vacío con CSV poblado → NUNCA nukear (no resucitar/borrar un filtro).
+        #expect(MigrationBackfillLogic.shouldRebuildCSVMirror(csvIDs: [UUID()], m2mIDs: []) == false)
+    }
+
+    @Test func rebuild_m2mPopulated_csvNil_true() {
+        // El bug: filtro en M2M hidratado pero espejo CSV vacío → reconstruir.
+        #expect(MigrationBackfillLogic.shouldRebuildCSVMirror(csvIDs: nil, m2mIDs: [UUID()]) == true)
+    }
+
+    @Test func rebuild_m2mPopulated_csvEqual_false() {
+        // Idempotencia: CSV ya refleja el M2M → no-op.
+        let ids: Set<UUID> = [UUID(), UUID()]
+        #expect(MigrationBackfillLogic.shouldRebuildCSVMirror(csvIDs: ids, m2mIDs: ids) == false)
+    }
+
+    @Test func rebuild_m2mPopulated_csvSubset_true() {
+        // Convergencia: hidratación parcial previa dejó un CSV incompleto → corregir.
+        let a = UUID(), b = UUID()
+        #expect(MigrationBackfillLogic.shouldRebuildCSVMirror(csvIDs: [a], m2mIDs: [a, b]) == true)
+    }
+
+    @Test func rebuild_m2mPopulated_csvDisjoint_true() {
+        #expect(MigrationBackfillLogic.shouldRebuildCSVMirror(csvIDs: [UUID()], m2mIDs: [UUID()]) == true)
+    }
+
+    @Test func rebuild_m2mStrictSubsetOfCsv_false() {
+        // CRÍTICO: M2M es subconjunto del CSV = hidratación lazy a medias → NO reconstruir
+        // (degradaría el CSV completo). Hace el pase seguro sin gate de quiescencia (force-sync).
+        let a = UUID(), b = UUID()
+        #expect(MigrationBackfillLogic.shouldRebuildCSVMirror(csvIDs: [a, b], m2mIDs: [a]) == false)
+    }
 }

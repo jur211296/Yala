@@ -4474,3 +4474,27 @@
 
 /* Contextual note when a manual 'Sync now' tap can't reach iCloud (transient/offline). Non-alarming; reassures data is safe on device. */
 "icloud.forceSync.offlineNote" = "Nous n'avons pas pu joindre iCloud pour l'instant. Tes données sont à l'abri et se synchroniseront dès le retour de la connexion.";
+
+/* Shown when a group action needs the sync engine but the personal iCloud import has not settled yet */
+"groups.errors.syncPreparing" = "Nous terminons la synchronisation de votre compte iCloud. Réessayez dans quelques secondes.";
+/* Shown when generating a group invite link fails */
+"groups.errors.inviteFailed" = "Impossible de créer le lien d'invitation. Vérifiez votre connexion et réessayez.";
+/* Generic group action failure (delete expense, settle, approve/reject member) */
+"groups.errors.actionFailed" = "Impossible de terminer l'action. Veuillez réessayer.";
+/* Beta gate (Groups): screen/alert title */
+"groups.beta.gate.title" = "Fonctionnalité en bêta";
+
+/* Beta gate (Groups): explanation message */
+"groups.beta.gate.message" = "Cette fonctionnalité est en version bêta, réservée à certains utilisateurs";
+
+/* Beta gate (Groups): button to enter the beta code */
+"groups.beta.gate.haveCode" = "J'ai un code bêta";
+
+/* Beta gate (Groups): code entry alert title */
+"groups.beta.gate.codePrompt" = "Saisissez votre code bêta";
+
+/* Beta gate (Groups): code field placeholder */
+"groups.beta.gate.placeholder" = "Code";
+
+/* Beta gate (Groups): wrong code error */
+"groups.beta.gate.wrongCode" = "Code incorrect";

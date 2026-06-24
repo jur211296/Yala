@@ -1844,6 +1844,12 @@ enum L10n {
         enum Errors {
             /// surfaced cuando el current user pending intenta una acción que requiere active.
             static var pendingApproval: String { ls("groups.errors.pendingApproval", comment: "") }
+            /// Acción de grupo que necesita el sync pero el primer import de iCloud no se asentó.
+            static var syncPreparing: String { ls("groups.errors.syncPreparing", comment: "") }
+            /// Falló la generación del enlace de invitación.
+            static var inviteFailed: String { ls("groups.errors.inviteFailed", comment: "") }
+            /// Fallo genérico de una acción de grupo (eliminar gasto, liquidar, aprobar/rechazar).
+            static var actionFailed: String { ls("groups.errors.actionFailed", comment: "") }
         }
 
         /// #26: chips mostrados en GroupCardView cuando el current user está
@@ -2047,6 +2053,17 @@ enum L10n {
             static var enableNotifications: String { ls("groups.activate.enableNotifications", comment: "") }
             static var skipNotifications: String { ls("groups.activate.skipNotifications", comment: "") }
             static var done: String { ls("groups.activate.done", comment: "") }
+        }
+
+        // MARK: Beta Gate (validación v2.0.1 — gate TEMPORAL, remover al estabilizar)
+
+        enum Beta {
+            static var title: String { ls("groups.beta.gate.title", comment: "") }
+            static var message: String { ls("groups.beta.gate.message", comment: "") }
+            static var haveCode: String { ls("groups.beta.gate.haveCode", comment: "") }
+            static var codePrompt: String { ls("groups.beta.gate.codePrompt", comment: "") }
+            static var placeholder: String { ls("groups.beta.gate.placeholder", comment: "") }
+            static var wrongCode: String { ls("groups.beta.gate.wrongCode", comment: "") }
         }
 
         // MARK: Nudge (GC-09)
