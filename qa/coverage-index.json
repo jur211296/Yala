@@ -399,18 +399,20 @@
         "Yala/Services/Groups/GroupService.swift",
         "Yala/Services/Groups/GroupExpenseService.swift",
         "Yala/Services/Groups/GroupBalanceService.swift",
-        "Yala/Services/Groups/DebtSimplificationService.swift"
+        "Yala/Services/Groups/DebtSimplificationService.swift",
+        "Yala/App/Logic/GroupBalanceRowGrouping.swift"
       ],
       "scenarioIDs": [
         "F-S1-04",
         "F-S1-05",
         "F-S4-03",
-        "F-S4-04"
+        "F-S4-04",
+        "F-S5-06"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
       "owner": "",
-      "lastVerified": "2026-06-08"
+      "lastVerified": "2026-06-24"
     },
     {
       "area": "groups-expense-form",
@@ -420,15 +422,32 @@
         "Yala/App/Views/Groups/GroupSplitSelectorView.swift",
         "Yala/App/Logic/Formatters/GroupSplitChipFormatter.swift",
         "Yala/App/Logic/Formatters/GroupSplitPlaceholderLogic.swift",
-        "Yala/App/Logic/Calculators/GroupSplitCalculator.swift"
+        "Yala/App/Logic/Calculators/GroupSplitCalculator.swift",
+        "Yala/App/Logic/GroupSplitConversion.swift"
       ],
       "scenarioIDs": [
-        "F-S1-05"
+        "F-S1-05",
+        "F-S5-07"
       ],
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
       "owner": "",
-      "lastVerified": "2026-06-08"
+      "lastVerified": "2026-06-24"
+    },
+    {
+      "area": "groups-stats-multicurrency",
+      "codeGlobs": [
+        "Yala/App/Views/Groups/GroupStatsView.swift",
+        "Yala/App/ViewModels/GroupStatsViewModel.swift",
+        "Yala/App/Views/Shared/DonutChartView.swift"
+      ],
+      "scenarioIDs": [
+        "F-S5-07"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-24"
     },
     {
       "area": "groups-form",
