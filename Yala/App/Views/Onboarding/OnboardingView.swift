@@ -105,34 +105,31 @@ struct OnboardingView: View {
         self.onCancel = onCancel
         self.onCancelFromStep1 = onCancelFromStep1
         self.onComplete = onComplete
+
+        // Reconciliar el paso inicial con los pasos saltados por prefill: si el
+        // primer paso (`.name`) está saltado porque iCloud ya trae el nombre,
+        // arrancar en el primer paso efectivo. Sin esto, `currentStep` queda en
+        // `.name` (fuera de `effectiveSteps`) y `advance()` no encuentra el
+        // siguiente paso → botón "Siguiente" muerto. usageMode aún es el default
+        // aquí y no afecta el primer paso; el `.task` afina userName/currency.
+        let initialSkip = OnboardingStepPlan.skippedSteps(
+            prefilledUserName: prefilledData?.userName,
+            prefilledAccountsCount: prefilledData?.accountsCount ?? 0,
+            prefilledCurrencyCode: prefilledData?.primaryCurrencyCode,
+            prefilledCategoriesCount: prefilledData?.categoriesCount ?? 0,
+            hasPrefill: prefilledData != nil,
+            expensesOnly: false,
+            dayToDay: false
+        )
+        _currentStep = State(initialValue: OnboardingStepPlan.firstStep(skipping: initialSkip))
     }
 
     // MARK: - Step Definition
 
-    private enum Step: Int, CaseIterable {
-        case name = 0
-        case purpose = 1       // "¿Qué te gustaría hacer?" (binary)
-        case accounts = 2      // "¿Cómo organizas?" (binary) — skip if expensesOnly
-        case accountType = 3   // "¿Cuál es tu primera cuenta?" — skip if not fullControl
-        case currencyName = 4
-        case balance = 5       // skip if expensesOnly
-        case categories = 6
-        case confirmation = 7  // Resumen + privacidad (último paso)
-
-        /// String estable para telemetría — desacoplado del rawValue Int.
-        var trackingName: String {
-            switch self {
-            case .name:         return "name"
-            case .purpose:      return "purpose"
-            case .accounts:     return "accounts"
-            case .accountType:  return "accountType"
-            case .currencyName: return "currencyName"
-            case .balance:      return "balance"
-            case .categories:   return "categories"
-            case .confirmation: return "confirmation"
-            }
-        }
-    }
+    /// Definición movida a `OnboardingStep` (pure-logic en
+    /// `Yala/App/Logic/OnboardingStepPlan.swift`) para reconciliar `currentStep`
+    /// con `effectiveSteps` desde el `init`. `Step` queda como alias local.
+    typealias Step = OnboardingStep
 
     /// Account types for fullControl picker (no .general — separate accounts have real types)
     private let fullControlAccountTypes: [AccountType] = [.checking, .savings, .creditCard, .cash]
@@ -152,39 +149,23 @@ struct OnboardingView: View {
 
     // MARK: - Step Navigation
 
-    /// Steps a saltar derivados del flow interno (binary decisions del user).
-    private var usageModeSkippedSteps: Set<Step> {
-        if expensesOnlyMode {
-            return [.accounts, .accountType, .balance]
-        } else if selectedUsageMode == .dayToDay {
-            return [.accountType]
-        }
-        return []
-    }
-
-    /// Steps a saltar derivados de prefilled iCloud data (A4 rama B).
-    /// Si el user ya tiene cuentas en iCloud, no preguntamos por crear una; etc.
-    private var prefilledSkippedSteps: Set<Step> {
-        guard let summary = prefilledData else { return [] }
-        var skip: Set<Step> = []
-        if summary.userName != nil { skip.insert(.name) }
-        if summary.accountsCount > 0 {
-            skip.insert(.accounts)
-            skip.insert(.accountType)
-            skip.insert(.balance)
-        }
-        if summary.primaryCurrencyCode != nil { skip.insert(.currencyName) }
-        if summary.categoriesCount > 0 { skip.insert(.categories) }
-        // .purpose y .confirmation siempre visibles (tracking + resumen final).
-        return skip
-    }
-
+    /// SSOT en `OnboardingStepPlan` (pure-logic, testeable): combina prefill de
+    /// iCloud (rama B) + modo de uso. El mismo cálculo alimenta el `currentStep`
+    /// inicial en el `init`.
     private var skippedSteps: Set<Step> {
-        usageModeSkippedSteps.union(prefilledSkippedSteps)
+        OnboardingStepPlan.skippedSteps(
+            prefilledUserName: prefilledData?.userName,
+            prefilledAccountsCount: prefilledData?.accountsCount ?? 0,
+            prefilledCurrencyCode: prefilledData?.primaryCurrencyCode,
+            prefilledCategoriesCount: prefilledData?.categoriesCount ?? 0,
+            hasPrefill: prefilledData != nil,
+            expensesOnly: expensesOnlyMode,
+            dayToDay: selectedUsageMode == .dayToDay
+        )
     }
 
     private var effectiveSteps: [Step] {
-        Step.allCases.filter { !skippedSteps.contains($0) }
+        OnboardingStepPlan.effectiveSteps(skipping: skippedSteps)
     }
 
     private var effectiveTotalSteps: Int { effectiveSteps.count }
@@ -1702,6 +1683,17 @@ struct OnboardingView: View {
             // Sync currency before completing
             selectedCurrency = accountCurrency
             completeOnboarding()
+            return
+        }
+
+        // Defensa: si `currentStep` quedó fuera de `effectiveSteps` (p.ej. un
+        // cambio de modo de uso lo saltó), avanzar al primer paso efectivo en
+        // lugar de quedar muerto. El `init` ya cubre el caso del prefill.
+        if !effectiveSteps.contains(currentStep), let first = effectiveSteps.first {
+            navigatingForward = true
+            dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
+                currentStep = first
+            }
             return
         }
 
