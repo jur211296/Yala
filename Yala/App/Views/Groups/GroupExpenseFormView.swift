@@ -47,6 +47,10 @@ struct GroupExpenseFormView: View {
     /// Se setea a `true` al final de `onAppear`.
     @State private var didCompleteInitialPrefill = false
 
+    /// Tipo de división previo, para conocer el SALIENTE en el callback del segmented
+    /// (que solo recibe el nuevo). Inicializado en `onAppear` tras el prefill.
+    @State private var lastSplitType: SplitType = .equal
+
     // Opt-out: alert post-save cuando bridge effective OFF + Caso A.
     @State private var pendingOptInExpenseID: String?
     @State private var showOptInAlert: Bool = false
@@ -138,6 +142,7 @@ struct GroupExpenseFormView: View {
                 // El guard se setea AL FINAL para que cualquier hidratación
                 // programática del splitType desde prefill / init NO dispare el
                 // auto-open del sheet via `onTypeChange`.
+                lastSplitType = viewModel.splitType
                 didCompleteInitialPrefill = true
             }
             .sheet(isPresented: $showDatePicker) {
@@ -193,9 +198,13 @@ struct GroupExpenseFormView: View {
                 )
                 .presentationDetents(DS.Adaptive.sheetDetents([.large]))
             }
-            .sheet(isPresented: $showSplitDetail) {
+            .sheet(isPresented: $showSplitDetail, onDismiss: {
+                // Al cerrar: quien quedó sin valor en el tipo activo se deselecciona
+                // del pago (no participa si no se le asignó porcentaje/monto/partes).
+                viewModel.purgeEmptyParticipants()
+            }) {
                 splitDetailSheet
-                }
+            }
             // M6: si user cambia moneda y la cuenta seleccionada deja de ser compatible,
             // se limpia. El form vuelve a pedir cuenta antes de guardar (canSave bloquea).
             .onChange(of: viewModel.currencyCode) { _, _ in
@@ -345,14 +354,13 @@ struct GroupExpenseFormView: View {
     // MARK: - Split Type Segmented Selector (TOP anchor)
 
     private var splitTypeSegmentedSelector: some View {
+        // El callback solo se dispara por TAP del usuario, NO por la hidratación
+        // programática del prefill (que sí dispararía un `.onChange(of:)`, pisando el
+        // ajuste guardado al editar un gasto). `lastSplitType` aporta el tipo saliente
+        // para la conversión inteligente del ajuste.
         SplitTypeSegmentedSelector(selectedType: $viewModel.splitType) { newType in
-            // Guard: solo abre el sheet cuando el cambio fue por tap del user
-            // (post-prefill / mount), requiere input (≠ .equal), hay más de un
-            // participante (con uno solo no hay nada que repartir) y el monto es > 0
-            // (sin monto, abrir el sheet de división es en vano).
-            guard didCompleteInitialPrefill, newType != .equal, viewModel.isSplitConfigurable, viewModel.amount > 0 else { return }
-            dismissKeyboard()
-            showSplitDetail = true
+            handleSplitTypeChange(from: lastSplitType, to: newType)
+            lastSplitType = newType
         }
     }
 
@@ -590,7 +598,7 @@ struct GroupExpenseFormView: View {
                 .padding(.top, DS.Spacing.md)
             }
             .yalaScreenBackground()
-            .navigationTitle(L10n.Groups.Expense.divideBetween)
+            .navigationTitle(L10n.Groups.Expense.dividePayment)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -677,6 +685,19 @@ struct GroupExpenseFormView: View {
         pendingOptInExpenseID = nil
         onSave()
         dismiss()
+    }
+
+    /// Cambio de tipo de división: convierte el ajuste previo y, si procede, abre el sheet.
+    private func handleSplitTypeChange(from oldType: SplitType, to newType: SplitType) {
+        // No disparar durante la hidratación del prefill / mount inicial.
+        guard didCompleteInitialPrefill else { return }
+        // Convierte el ajuste del tipo saliente al entrante (60/40 % → 60/40 monto → 3/2 partes).
+        viewModel.convertSplitValues(from: oldType, to: newType)
+        // Auto-open del sheet solo si hay algo que repartir: tipo ≠ Iguales, más de un
+        // participante y monto > 0 (sin monto, abrir el sheet de división es en vano).
+        guard newType != .equal, viewModel.isSplitConfigurable, viewModel.amount > 0 else { return }
+        dismissKeyboard()
+        showSplitDetail = true
     }
 
     private func dismissKeyboard() {

@@ -4522,3 +4522,27 @@
 
 /* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
 "groups.expense.allMembers" = "全員";
+
+/* Título del sheet de división del gasto */
+"groups.expense.dividePayment" = "支払いを分ける";
+
+/* Banner cuando lo asignado supera el total */
+"groups.expense.overAllocated %@" = "%@ 超過";
+
+/* Título sheet división por porcentaje */
+"groups.expense.splitSheet.percentageTitle" = "割合（％）で";
+
+/* Explicación división por porcentaje */
+"groups.expense.splitSheet.percentageHint" = "各メンバーが支払う割合を入力します。合計が100%になるようにします。";
+
+/* Título sheet división por monto */
+"groups.expense.splitSheet.exactTitle" = "金額で";
+
+/* Explicación división por monto */
+"groups.expense.splitSheet.exactHint" = "各メンバーが支払う金額を入力します。合計が総額と一致するようにします。";
+
+/* Título sheet división por proporción */
+"groups.expense.splitSheet.sharesTitle" = "比率で";
+
+/* Explicación división por proporción */
+"groups.expense.splitSheet.sharesHint" = "各メンバーに比率を割り当てると、総額が比例配分されます。";

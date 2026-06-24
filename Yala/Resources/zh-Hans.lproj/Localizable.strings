@@ -4522,3 +4522,27 @@
 
 /* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
 "groups.expense.allMembers" = "所有人";
+
+/* Título del sheet de división del gasto */
+"groups.expense.dividePayment" = "拆分付款";
+
+/* Banner cuando lo asignado supera el total */
+"groups.expense.overAllocated %@" = "超出 %@";
+
+/* Título sheet división por porcentaje */
+"groups.expense.splitSheet.percentageTitle" = "按百分比";
+
+/* Explicación división por porcentaje */
+"groups.expense.splitSheet.percentageHint" = "输入每个人支付的百分比，总和需为100%。";
+
+/* Título sheet división por monto */
+"groups.expense.splitSheet.exactTitle" = "按金额";
+
+/* Explicación división por monto */
+"groups.expense.splitSheet.exactHint" = "输入每个人支付的金额，总和需等于总额。";
+
+/* Título sheet división por proporción */
+"groups.expense.splitSheet.sharesTitle" = "按份额";
+
+/* Explicación división por proporción */
+"groups.expense.splitSheet.sharesHint" = "为每个人分配份额，总额按比例分摊。";

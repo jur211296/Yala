@@ -4511,3 +4511,27 @@
 
 /* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
 "groups.expense.allMembers" = "Tous";
+
+/* Título del sheet de división del gasto */
+"groups.expense.dividePayment" = "Diviser le paiement";
+
+/* Banner cuando lo asignado supera el total */
+"groups.expense.overAllocated %@" = "Dépassé de %@";
+
+/* Título sheet división por porcentaje */
+"groups.expense.splitSheet.percentageTitle" = "Par pourcentage";
+
+/* Explicación división por porcentaje */
+"groups.expense.splitSheet.percentageHint" = "Indiquez le pourcentage payé par chaque personne. Le total doit faire 100%.";
+
+/* Título sheet división por monto */
+"groups.expense.splitSheet.exactTitle" = "Par montant";
+
+/* Explicación división por monto */
+"groups.expense.splitSheet.exactHint" = "Saisissez combien paie chaque personne. Le total doit correspondre au montant.";
+
+/* Título sheet división por proporción */
+"groups.expense.splitSheet.sharesTitle" = "Par parts";
+
+/* Explicación división por proporción */
+"groups.expense.splitSheet.sharesHint" = "Attribuez des parts à chaque personne; le total est réparti proportionnellement.";

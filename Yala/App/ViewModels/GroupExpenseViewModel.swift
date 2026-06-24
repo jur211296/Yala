@@ -83,12 +83,31 @@ final class GroupExpenseViewModel {
         )
     }
 
-    var sharesTotal: Double {
-        calculatedShares?.reduce(0.0) { $0 + $1.amount } ?? 0
+    /// Valores brutos (string) del tipo de división activo, por memberID.
+    private var currentRawValues: [String: String] {
+        switch splitType {
+        case .exact: return exactAmounts
+        case .percentage: return percentages
+        case .shares: return sharesCounts
+        case .equal: return [:]
+        }
     }
 
+    /// Monto ya asignado por los valores INGRESADOS (los vacíos no cuentan). Base del
+    /// "Restante" incremental — baja en tiempo real con cada dato. `.equal`/`.shares`
+    /// reparten siempre todo el total → asignado = total (no hay restante).
+    var assignedToAllocate: Double {
+        let entered: [Double] = selectedMembers.compactMap { member in
+            let raw = (currentRawValues[member.id.uuidString] ?? "").trimmingCharacters(in: .whitespaces)
+            guard !raw.isEmpty else { return nil }
+            return AmountInputHelper.parseDecimal(raw)
+        }
+        return GroupSplitConversion.assignedAmount(splitType: splitType, total: amount, enteredValues: entered)
+    }
+
+    /// Restante por asignar (incremental). > 0 = falta; < 0 = se pasó del total.
     var remainingToAllocate: Double {
-        amount - sharesTotal
+        amount - assignedToAllocate
     }
 
     /// `true` solo cuando hay más de un participante: únicamente entonces tiene sentido
@@ -337,6 +356,60 @@ final class GroupExpenseViewModel {
         }
     }
 
+    // MARK: - Split Type Conversion / Cleanup
+
+    /// Convierte el ajuste del tipo SALIENTE al ENTRANTE preservando los montos efectivos:
+    /// 60/40 % → 60/40 monto → 3/2 partes. Si no hay base (sin monto o sin participantes)
+    /// limpia el dict entrante. Llamado al cambiar de tipo (post-prefill).
+    func convertSplitValues(from oldType: SplitType, to newType: SplitType) {
+        guard oldType != newType else { return }
+        guard amount > 0, !selectedMembers.isEmpty else {
+            clearValues(for: newType)
+            return
+        }
+        let participants: [(id: String, rawValue: Double)] = selectedMembers.map { member in
+            (id: member.id.uuidString, rawValue: participantRawValue(member.id.uuidString, type: oldType))
+        }
+        let amounts = GroupSplitConversion.effectiveAmounts(splitType: oldType, total: amount, participants: participants)
+        switch newType {
+        case .exact:
+            for entry in amounts { exactAmounts[entry.id] = AmountInputHelper.formatWithGrouping(entry.amount) }
+        case .percentage:
+            for entry in amounts {
+                let pct = amount > 0 ? entry.amount / amount * 100 : 0
+                percentages[entry.id] = String(format: "%.1f", pct)
+            }
+        case .shares:
+            for entry in GroupSplitConversion.deriveCounts(amounts: amounts) {
+                sharesCounts[entry.id] = String(entry.count)
+            }
+        case .equal:
+            break
+        }
+    }
+
+    private func clearValues(for type: SplitType) {
+        switch type {
+        case .exact: exactAmounts.removeAll()
+        case .percentage: percentages.removeAll()
+        case .shares: sharesCounts.removeAll()
+        case .equal: break
+        }
+    }
+
+    /// Deselecciona del pago a los miembros sin valor ingresado en el tipo activo (≠ `.equal`).
+    /// Llamado al cerrar el sheet de división: quien no recibió monto/porcentaje/partes no participa.
+    func purgeEmptyParticipants() {
+        guard splitType != .equal else { return }
+        let dict = currentRawValues
+        for member in selectedMembers {
+            let id = member.id.uuidString
+            if (dict[id] ?? "").trimmingCharacters(in: .whitespaces).isEmpty {
+                selectedMemberIDs.remove(id)
+            }
+        }
+    }
+
     // MARK: - Private
 
     /// Reconstruye conteos enteros de partes a partir de los montos persistidos en `SplitShare`
@@ -385,20 +458,24 @@ final class GroupExpenseViewModel {
     }
 
     private func buildParticipants() -> [GroupSplitCalculator.Participant] {
-        let selected = members.filter { selectedMemberIDs.contains($0.id.uuidString) && selectableMemberIDs.contains($0.id.uuidString) }
-        return selected.map { member in
+        selectedMembers.map { member in
             let id = member.id.uuidString
-            let value: Double = switch splitType {
-            case .equal:
-                1.0
-            case .exact:
-                AmountInputHelper.parseDecimal(exactAmounts[id] ?? "0")
-            case .percentage:
-                Double(percentages[id] ?? "0") ?? 0
-            case .shares:
-                Double(sharesCounts[id] ?? "1") ?? 1
-            }
-            return GroupSplitCalculator.Participant(memberID: id, value: value)
+            return GroupSplitCalculator.Participant(memberID: id, value: participantRawValue(id, type: splitType))
+        }
+    }
+
+    /// Valor numérico de un miembro en el tipo dado, con parseo/default UNIFICADOS para
+    /// todos los consumidores (cálculo del split, conversión y restante). `.exact`/`.percentage`
+    /// usan `parseDecimal` para respetar el separador decimal de la locale — el field inserta
+    /// "," en es-ES/fr/de/it (`AmountInputHelper.filterAmountInput`), donde `Double(_:)` daría 0.
+    private func participantRawValue(_ memberID: String, type: SplitType) -> Double {
+        switch type {
+        case .equal: return 1
+        case .exact: return AmountInputHelper.parseDecimal(exactAmounts[memberID] ?? "")
+        case .percentage: return AmountInputHelper.parseDecimal(percentages[memberID] ?? "")
+        case .shares:
+            let raw = sharesCounts[memberID] ?? ""
+            return raw.isEmpty ? 1 : AmountInputHelper.parseDecimal(raw)
         }
     }
 

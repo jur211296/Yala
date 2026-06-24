@@ -4522,3 +4522,27 @@
 
 /* Chip 'Dividir entre' cuando todos los miembros del grupo están seleccionados */
 "groups.expense.allMembers" = "Iedereen";
+
+/* Título del sheet de división del gasto */
+"groups.expense.dividePayment" = "Betaling splitsen";
+
+/* Banner cuando lo asignado supera el total */
+"groups.expense.overAllocated %@" = "%@ te veel";
+
+/* Título sheet división por porcentaje */
+"groups.expense.splitSheet.percentageTitle" = "Op percentage";
+
+/* Explicación división por porcentaje */
+"groups.expense.splitSheet.percentageHint" = "Geef aan welk percentage iedereen betaalt. Samen moet het 100% zijn.";
+
+/* Título sheet división por monto */
+"groups.expense.splitSheet.exactTitle" = "Op bedrag";
+
+/* Explicación división por monto */
+"groups.expense.splitSheet.exactHint" = "Voer in hoeveel iedereen betaalt. De som moet gelijk zijn aan het totaal.";
+
+/* Título sheet división por proporción */
+"groups.expense.splitSheet.sharesTitle" = "Op delen";
+
+/* Explicación división por proporción */
+"groups.expense.splitSheet.sharesHint" = "Wijs delen toe aan iedereen; het totaal wordt naar verhouding verdeeld.";

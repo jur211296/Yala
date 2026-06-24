@@ -20,15 +20,17 @@ struct GroupSplitSelectorView: View {
     }
 
     var body: some View {
-        // El segmented control del SplitType vive ahora en el form (top-anchored).
-        // Aquí solo mostramos los inputs por miembro + resultado + tip.
-        VStack(spacing: DS.Spacing.xxl) {
-            if !viewModel.selectedMemberIDs.isEmpty && viewModel.amount > 0 {
-                memberSharesCard
-                resultRow
-            }
+        // El segmented control del SplitType vive en el form (top-anchored). Aquí van
+        // el encabezado explicativo del tipo + los inputs por miembro + el resultado.
+        VStack(alignment: .leading, spacing: DS.Spacing.xxl) {
+            sheetHeader
 
-            tipView
+            if !viewModel.selectedMemberIDs.isEmpty && viewModel.amount > 0 {
+                VStack(spacing: DS.Spacing.xxl) {
+                    memberSharesCard
+                    resultRow
+                }
+            }
         }
     }
 
@@ -190,6 +192,14 @@ struct GroupSplitSelectorView: View {
                 Label(L10n.Groups.Expense.balanced, systemImage: "checkmark.circle.fill")
                     .font(DS.Typography.headline)
                     .foregroundStyle(DS.Semantic.successForeground)
+            } else if viewModel.remainingToAllocate < -0.005 {
+                // Se asignó MÁS que el total.
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                    Text(L10n.Groups.Expense.overAllocated(appPreferences.currency(abs(viewModel.remainingToAllocate), currencyCode: viewModel.currencyCode)))
+                }
+                .font(DS.Typography.headline)
+                .foregroundStyle(Color.hotPink)
             } else {
                 HStack(spacing: DS.Spacing.xs) {
                     Image(systemName: "exclamationmark.circle.fill")
@@ -202,7 +212,7 @@ struct GroupSplitSelectorView: View {
             Spacer()
 
             AmountText(
-                value: viewModel.sharesTotal,
+                value: viewModel.assignedToAllocate,
                 currencyCode: viewModel.currencyCode,
                 font: DS.Typography.title2,
                 tint: .color(resultAccentColor)
@@ -220,22 +230,40 @@ struct GroupSplitSelectorView: View {
         return Color.hotPink
     }
 
-    // MARK: - Tip View
+    // MARK: - Sheet Header (título + explicación por tipo)
 
-    private var tipView: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.sm) {
-            Image(systemName: "lightbulb.fill")
-                .font(DS.Typography.body)
-                .foregroundStyle(Color.hotPink)
-                .accessibilityHidden(true)
-            Text(viewModel.splitType.hintText)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
+    @ViewBuilder
+    private var sheetHeader: some View {
+        if viewModel.splitType != .equal {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text(sheetTitle)
+                    .font(DS.Typography.title3)
+                    .foregroundStyle(.primary)
+                Text(sheetHint)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(DS.Spacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.hotPink.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+
+    private var sheetTitle: String {
+        switch viewModel.splitType {
+        case .percentage: return L10n.Groups.Expense.SplitSheet.percentageTitle
+        case .exact: return L10n.Groups.Expense.SplitSheet.exactTitle
+        case .shares: return L10n.Groups.Expense.SplitSheet.sharesTitle
+        case .equal: return ""
+        }
+    }
+
+    private var sheetHint: String {
+        switch viewModel.splitType {
+        case .percentage: return L10n.Groups.Expense.SplitSheet.percentageHint
+        case .exact: return L10n.Groups.Expense.SplitSheet.exactHint
+        case .shares: return L10n.Groups.Expense.SplitSheet.sharesHint
+        case .equal: return ""
+        }
     }
 
     // MARK: - Binding Helper

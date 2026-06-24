@@ -1937,6 +1937,21 @@ enum L10n {
             }
             /// Chip "Dividir entre" cuando TODOS los miembros están seleccionados.
             static var allMembers: String { ls("groups.expense.allMembers", comment: "") }
+            /// Título (toolbar) del sheet de división del gasto.
+            static var dividePayment: String { ls("groups.expense.dividePayment", comment: "") }
+            /// Banner cuando lo asignado supera el total.
+            static func overAllocated(_ amount: String) -> String {
+                String(format: ls("groups.expense.overAllocated %@", comment: ""), amount)
+            }
+            /// Título + explicación del sheet de división, por tipo.
+            enum SplitSheet {
+                static var percentageTitle: String { ls("groups.expense.splitSheet.percentageTitle", comment: "") }
+                static var percentageHint: String { ls("groups.expense.splitSheet.percentageHint", comment: "") }
+                static var exactTitle: String { ls("groups.expense.splitSheet.exactTitle", comment: "") }
+                static var exactHint: String { ls("groups.expense.splitSheet.exactHint", comment: "") }
+                static var sharesTitle: String { ls("groups.expense.splitSheet.sharesTitle", comment: "") }
+                static var sharesHint: String { ls("groups.expense.splitSheet.sharesHint", comment: "") }
+            }
             static var title: String { ls("groups.expense.title", comment: "") }
             static var editTitle: String { ls("groups.expense.editTitle", comment: "") }
             static var descriptionLabel: String { ls("groups.expense.description", comment: "") }
