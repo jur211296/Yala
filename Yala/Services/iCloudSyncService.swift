@@ -470,6 +470,31 @@ final class iCloudSyncService {
         }
     }
 
+    /// Espera a que el import de CloudKit se asiente: primero el primer importEvent
+    /// (`hasCompletedFirstImport`), luego la ventana de quiescencia
+    /// (`isImportQuiescent`). NO basta la quiescencia sola — es `true` ANTES del
+    /// primer import y devolvería datos vacíos. Espejo de
+    /// `SplitSyncStartGate.resolveWaitByQuiescence`.
+    /// - Parameter timeout: tope total (primer import + quietud).
+    /// - Returns: `true` si quedó quiescente; `false` si se agotó el timeout
+    ///   (el caller procede con los datos parciales que haya).
+    func waitForImportQuiescence(timeout: TimeInterval = 90) async -> Bool {
+        guard isAccountAvailable else { return false }
+        let deadline = Date.now.addingTimeInterval(timeout)
+        // 1) Primer importEvent (con el tiempo restante del tope).
+        if !hasCompletedFirstImport {
+            let remaining = deadline.timeIntervalSinceNow
+            guard remaining > 0, await forceFetchAndWait(timeout: remaining) else { return false }
+        }
+        // 2) Ventana de quiescencia (poll ligero hasta asentarse o agotar el tope).
+        while Date.now < deadline {
+            if isImportQuiescent { return true }
+            if Task.isCancelled { return isImportQuiescent }
+            try? await Task.sleep(for: .seconds(1))
+        }
+        return isImportQuiescent
+    }
+
     /// Outcome of an explicit "Sync now" tap, used to show contextual,
     /// non-alarming feedback in the Sync Settings screen only — never the
     /// global banner. `.unreachable` means the manual attempt couldn't reach

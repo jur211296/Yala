@@ -93,6 +93,15 @@ final class PreferenceSyncService {
 
     private init() {}
 
+    // MARK: - Timestamps de coordinación (lectura para detección de returning user)
+
+    /// Último timestamp de onboarding completado (KV-store, per-Apple-ID). `0` si
+    /// nunca se completó. Sobrevive al uninstall → señal rápida de returning user.
+    var lastOnboardingTimestamp: Double { iKV.double(forKey: WipeKey.remoteOnboarding) }
+
+    /// Último timestamp de wipe (KV-store). `0` si nunca hubo wipe.
+    var lastWipeTimestamp: Double { iKV.double(forKey: WipeKey.remoteWipe) }
+
     // MARK: - Bootstrap
 
     /// Call early in app launch (before services read preferences).
