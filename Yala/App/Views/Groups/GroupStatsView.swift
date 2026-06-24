@@ -19,6 +19,7 @@ struct GroupStatsView: View {
 
     @State private var viewModel = GroupStatsViewModel()
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.modelContext) private var modelContext
     @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
@@ -178,21 +179,23 @@ struct GroupStatsView: View {
                 .font(DS.Typography.headline)
                 .padding(.leading, DS.Spacing.sm)
 
-            VStack(spacing: DS.Spacing.lg) {
-                Chart(viewModel.categoryBreakdown) { cat in
-                    SectorMark(
-                        angle: .value("amount", cat.amount),
-                        innerRadius: .ratio(0.5),
-                        angularInset: 1
-                    )
-                    .foregroundStyle(by: .value("category", cat.subcategoryName))
-                    .cornerRadius(DS.Radius.xs)
-                    .accessibilityLabel("\(cat.subcategoryName): \(appPreferences.currency(cat.amount, currencyCode: currencyCode))")
-                }
-                .chartLegend(position: .bottom, alignment: .leading, spacing: DS.Spacing.sm)
-                .frame(height: 200) // A11Y-DT: fixed chart height for consistent layout
-            }
-            .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+            DonutChartView(slices: categorySlices)
+                .frame(height: 260) // A11Y-DT: fixed chart height for consistent layout
+                .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+        }
+    }
+
+    /// Mapea el desglose por subcategoría al slice genérico del donut compartido.
+    private var categorySlices: [DonutSlice] {
+        viewModel.categoryBreakdown.map { cat in
+            DonutSlice(
+                id: cat.subcategoryName,
+                name: cat.subcategoryName,
+                iconName: cat.iconName,
+                colorHex: cat.colorHex,
+                amount: cat.amount,
+                percentage: cat.percentage
+            )
         }
     }
 
@@ -242,6 +245,7 @@ struct GroupStatsView: View {
     // MARK: - Helpers
 
     private func loadStats() {
+        viewModel.setContext(modelContext)
         viewModel.loadStats(
             expenses: expenses,
             shares: shares,

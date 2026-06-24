@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 
 // MARK: - Data Models
 
@@ -20,6 +21,8 @@ struct GroupCategoryBreakdown: Identifiable {
     let subcategoryName: String
     let amount: Double
     let percentage: Double
+    let iconName: String
+    let colorHex: String
 }
 
 struct GroupMonthlyTrend: Identifiable {
@@ -99,8 +102,13 @@ final class GroupStatsViewModel {
     private var allMembers: [SplitMember] = []
     private var currentUserMemberID: String?
     private var currencyCode: String = ""
+    private var modelContext: ModelContext?
 
     // MARK: - Load
+
+    func setContext(_ ctx: ModelContext) {
+        modelContext = ctx
+    }
 
     func loadStats(
         expenses: [SplitExpense],
@@ -149,9 +157,20 @@ final class GroupStatsViewModel {
         let catGrouped = Dictionary(grouping: filtered, by: { $0.subcategoryName ?? L10n.Groups.Stats.uncategorized })
         let catTotals = catGrouped.map { (name: $0.key, total: $0.value.reduce(0) { $0 + $1.amount }) }
         let grandTotal = max(totalSpent, 0.01)
+        let lookup = subcategoryLookup()
+        var fallbackColors: [String: String] = [:]
         categoryBreakdown = catTotals
             .sorted { $0.total > $1.total }
-            .map { GroupCategoryBreakdown(subcategoryName: $0.name, amount: $0.total, percentage: ($0.total / grandTotal) * 100) }
+            .map { entry in
+                let resolved = lookup[entry.name]
+                return GroupCategoryBreakdown(
+                    subcategoryName: entry.name,
+                    amount: entry.total,
+                    percentage: (entry.total / grandTotal) * 100,
+                    iconName: resolved?.icon ?? "tag.fill",
+                    colorHex: resolved?.colorHex ?? fallbackColor(for: entry.name, assigned: &fallbackColors)
+                )
+            }
 
         let calendar = Calendar.current
         let monthGrouped = Dictionary(grouping: filtered, by: { calendar.startOfMonth(for: $0.date) })
@@ -172,6 +191,36 @@ final class GroupStatsViewModel {
         }
 
         return result
+    }
+
+    /// Lookup `[nombre de subcategoría: (icono, colorHex)]` desde las subcategorías locales,
+    /// para colorear el donut con los mismos iconos/colores que el resto de la app.
+    private func subcategoryLookup() -> [String: (icon: String, colorHex: String)] {
+        guard let ctx = modelContext else { return [:] }
+        do {
+            let subs = try ctx.fetch(FetchDescriptor<Subcategory>())
+            var dict: [String: (icon: String, colorHex: String)] = [:]
+            for sub in subs where dict[sub.name] == nil {
+                let icon = sub.iconName ?? sub.safeCategory.iconName ?? "tag.fill"
+                dict[sub.name] = (icon, sub.colorHex ?? sub.safeCategory.colorHex)
+            }
+            return dict
+        } catch {
+            #if DEBUG
+            print("GroupStatsViewModel: error fetching subcategories: \(error)")
+            #endif
+            return [:]
+        }
+    }
+
+    /// Color de fallback determinístico para nombres sin subcategoría local (p. ej. del
+    /// creador del gasto, que el usuario no tiene): paleta estable por orden de aparición.
+    private static let fallbackPalette = ["#6366F1", "#EC4899", "#06B6D4", "#F59E0B", "#10B981", "#8B5CF6", "#EF4444", "#14B8A6"]
+    private func fallbackColor(for name: String, assigned: inout [String: String]) -> String {
+        if let existing = assigned[name] { return existing }
+        let color = Self.fallbackPalette[assigned.count % Self.fallbackPalette.count]
+        assigned[name] = color
+        return color
     }
 }
 
