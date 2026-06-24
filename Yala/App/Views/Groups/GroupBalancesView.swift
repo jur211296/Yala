@@ -61,16 +61,17 @@ struct GroupBalancesView: View {
     // MARK: - Balances Section
 
     private var balancesSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+        let groups = GroupBalanceRowGrouping.groupByMember(balances)
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Groups.Balance.title)
                 .font(DS.Typography.headline)
                 .padding(.leading, DS.Spacing.sm)
 
             VStack(spacing: DS.Spacing.none) {
-                ForEach(balances.indices, id: \.self) { index in
-                    balanceRow(balances[index])
+                ForEach(groups) { group in
+                    balanceRow(group)
 
-                    if index < balances.count - 1 {
+                    if group.id != groups.last?.id {
                         Divider()
                             .padding(.leading, DS.FormRow.paddingH)
                     }
@@ -80,21 +81,27 @@ struct GroupBalancesView: View {
         }
     }
 
-    private func balanceRow(_ balance: MemberBalance) -> some View {
-        HStack {
-            Text(balance.displayName)
+    /// Una fila por miembro; si tiene saldo en varias monedas, los montos van apilados
+    /// a la derecha (uno por moneda) en vez de repetir el nombre.
+    private func balanceRow(_ group: GroupBalanceRowGrouping.MemberBalanceGroup) -> some View {
+        HStack(alignment: .top) {
+            Text(group.displayName)
                 .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
             Spacer()
 
-            AmountText(
-                value: abs(balance.netBalance),
-                currencyCode: balance.currencyCode,
-                font: DS.Typography.headline,
-                tint: .color(balanceColor(balance.netBalance)),
-                isEstimate: balancesWereConverted
-            )
+            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                ForEach(group.amounts, id: \.currencyCode) { entry in
+                    AmountText(
+                        value: abs(entry.net),
+                        currencyCode: entry.currencyCode,
+                        font: DS.Typography.headline,
+                        tint: .color(balanceColor(entry.net)),
+                        isEstimate: balancesWereConverted
+                    )
+                }
+            }
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
@@ -103,16 +110,17 @@ struct GroupBalancesView: View {
     // MARK: - Debts Section
 
     private var debtsSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+        let groups = GroupBalanceRowGrouping.groupByPair(debts)
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Groups.Balance.pendingDebts)
                 .font(DS.Typography.headline)
                 .padding(.leading, DS.Spacing.sm)
 
             VStack(spacing: DS.Spacing.none) {
-                ForEach(debts) { debt in
-                    debtRow(debt)
+                ForEach(groups) { group in
+                    debtRow(group)
 
-                    if debt.id != debts.last?.id {
+                    if group.id != groups.last?.id {
                         Divider()
                             .padding(.leading, DS.FormRow.paddingH)
                     }
@@ -122,52 +130,56 @@ struct GroupBalancesView: View {
         }
     }
 
-    private func debtRow(_ debt: Debt) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(memberNameLookup[debt.fromMemberID] ?? debt.fromMemberID)
+    /// Una fila por par `from→to` (encabezado una sola vez); si deben en varias monedas,
+    /// cada moneda es una sub-fila con su monto y su propio botón Saldar — la liquidación
+    /// sigue siendo independiente por moneda (nunca se mezclan).
+    private func debtRow(_ group: GroupBalanceRowGrouping.DebtPairGroup) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(memberNameLookup[group.fromMemberID] ?? group.fromMemberID)
                     .font(DS.Typography.body)
                     .foregroundStyle(.primary)
 
-                HStack(spacing: DS.Spacing.xs) {
-                    Image(systemName: "arrow.right")
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
+                Image(systemName: "arrow.right")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
 
-                    Text(memberNameLookup[debt.toMemberID] ?? debt.toMemberID)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text(memberNameLookup[group.toMemberID] ?? group.toMemberID)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.secondary)
             }
 
-            Spacer()
+            ForEach(group.debts) { debt in
+                HStack {
+                    AmountText(
+                        value: debt.amount,
+                        currencyCode: debt.currencyCode,
+                        font: DS.Typography.headline,
+                        tint: .color(Color.hotPink),
+                        isEstimate: debtsWereConverted
+                    )
 
-            AmountText(
-                value: debt.amount,
-                currencyCode: debt.currencyCode,
-                font: DS.Typography.headline,
-                tint: .color(Color.hotPink),
-                isEstimate: debtsWereConverted
-            )
+                    Spacer()
 
-            if onSettleDebt != nil {
-                Button {
-                    onSettleDebt?(debt)
-                } label: {
-                    Text(L10n.Groups.Settlement.settle)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.thAccent)
-                        .padding(.horizontal, DS.Spacing.sm)
-                        .padding(.vertical, DS.Spacing.xxs)
-                        .background(Capsule().fill(.thAccent.opacity(0.12)))
+                    if onSettleDebt != nil {
+                        Button {
+                            onSettleDebt?(debt)
+                        } label: {
+                            Text(L10n.Groups.Settlement.settle)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.thAccent)
+                                .padding(.horizontal, DS.Spacing.sm)
+                                .padding(.vertical, DS.Spacing.xxs)
+                                .background(Capsule().fill(.thAccent.opacity(0.12)))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint(L10n.Groups.Settlement.settleHint)
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityHint(L10n.Groups.Settlement.settleHint)
             }
         }
         .padding(.horizontal, DS.FormRow.paddingH)
         .padding(.vertical, DS.FormRow.paddingV)
-        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Settlements Section
