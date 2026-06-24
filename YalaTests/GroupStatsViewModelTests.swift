@@ -88,6 +88,54 @@ struct GroupStatsViewModelTests {
         #expect(vm.totalSpent == 100)
     }
 
+    // MARK: - Multi-currency
+
+    @Test func availableCurrencies_listsAllWithMainFirst() {
+        let e1 = makeExpense(amount: 100, currencyCode: "USD", paidByMemberID: "A")
+        let e2 = makeExpense(amount: 50, currencyCode: "PEN", paidByMemberID: "A")
+        let vm = makeVM(expenses: [e1, e2], shares: [], members: [], currencyCode: "PEN")
+        #expect(vm.availableCurrencies == ["PEN", "USD"])  // principal primero
+    }
+
+    @Test func selectedCurrency_defaultsToMain() {
+        let e1 = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "A")
+        let e2 = makeExpense(amount: 50, currencyCode: "USD", paidByMemberID: "A")
+        let vm = makeVM(expenses: [e1, e2], shares: [], members: [], currencyCode: "PEN")
+        #expect(vm.selectedCurrency == "PEN")
+    }
+
+    @Test func totalsByCurrency_includesAllCurrencies() {
+        let e1 = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "A")
+        let e2 = makeExpense(amount: 50, currencyCode: "USD", paidByMemberID: "A")
+        let vm = makeVM(expenses: [e1, e2], shares: [], members: [], currencyCode: "PEN")
+        let dict = Dictionary(vm.totalsByCurrency.map { ($0.currencyCode, $0.total) }, uniquingKeysWith: { a, _ in a })
+        #expect(dict["PEN"] == 100)
+        #expect(dict["USD"] == 50)
+    }
+
+    @Test func selectedCurrency_filtersGraphs() {
+        let e1 = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "A")
+        let e2 = makeExpense(amount: 50, currencyCode: "USD", paidByMemberID: "A")
+        let vm = makeVM(expenses: [e1, e2], shares: [], members: [], currencyCode: "PEN")
+        #expect(vm.totalSpent == 100)  // arranca en PEN (principal)
+        vm.selectedCurrency = "USD"
+        vm.recalculate()
+        #expect(vm.totalSpent == 50)   // ahora filtra USD
+    }
+
+    @Test func myPortionsByCurrency_perCurrency() {
+        let e1ID = UUID()
+        let e2ID = UUID()
+        let e1 = makeExpense(id: e1ID, amount: 100, currencyCode: "PEN", paidByMemberID: "A")
+        let e2 = makeExpense(id: e2ID, amount: 50, currencyCode: "USD", paidByMemberID: "A")
+        let s1 = makeShare(expenseID: e1ID, memberID: "me", amount: 40)
+        let s2 = makeShare(expenseID: e2ID, memberID: "me", amount: 20)
+        let vm = makeVM(expenses: [e1, e2], shares: [s1, s2], members: [], currentUserMemberID: "me", currencyCode: "PEN")
+        let dict = Dictionary(vm.myPortionsByCurrency.map { ($0.currencyCode, $0.amount) }, uniquingKeysWith: { a, _ in a })
+        #expect(dict["PEN"] == 40)
+        #expect(dict["USD"] == 20)
+    }
+
     // MARK: - My Portion
 
     @Test func myPortion_sumsSharesForCurrentUser() {

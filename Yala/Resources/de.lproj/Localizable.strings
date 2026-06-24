@@ -3073,7 +3073,6 @@
 "groups.detail.comingSoon" = "Demnächst verfügbar";
 "groups.stats.totalSpent" = "Gesamtausgaben";
 "groups.stats.myPortion" = "Mein Anteil";
-"groups.stats.whoPaysMost" = "Wer zahlt am meisten";
 "groups.stats.categories" = "Kategorien";
 "groups.stats.monthlyTrend" = "Monatstrend";
 "groups.stats.noExpenses" = "Noch keine Ausgaben";
@@ -4534,3 +4533,6 @@
 
 /* Explicación división por proporción */
 "groups.expense.splitSheet.sharesHint" = "Weise jeder Person Anteile zu; der Betrag wird proportional aufgeteilt.";
+
+/* Header del gráfico de quién pagó más en el grupo */
+"groups.stats.whoMadeMostPayments" = "Wer hat am meisten gezahlt?";

@@ -487,7 +487,6 @@
 "groups.stats.thisYear" = "Este ano";
 "groups.stats.totalSpent" = "Total gasto";
 "groups.stats.uncategorized" = "Sem categoria";
-"groups.stats.whoPaysMost" = "Quem paga mais";
 "groups.summary.allSettled" = "Tudo em dia!";
 "groups.summary.iOwe" = "Você deve";
 "groups.summary.owedToMe" = "Te devem";
@@ -3801,3 +3800,6 @@
 
 /* Explicación división por proporción */
 "groups.expense.splitSheet.sharesHint" = "Atribua partes a cada pessoa; o total é dividido proporcionalmente.";
+
+/* Header del gráfico de quién pagó más en el grupo */
+"groups.stats.whoMadeMostPayments" = "Quem pagou mais?";

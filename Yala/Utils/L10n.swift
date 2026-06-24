@@ -1724,7 +1724,7 @@ enum L10n {
         enum Stats {
             static var totalSpent: String { ls("groups.stats.totalSpent", comment: "") }
             static var myPortion: String { ls("groups.stats.myPortion", comment: "") }
-            static var whoPaysMost: String { ls("groups.stats.whoPaysMost", comment: "") }
+            static var whoMadeMostPayments: String { ls("groups.stats.whoMadeMostPayments", comment: "") }
             static var categories: String { ls("groups.stats.categories", comment: "") }
             static var monthlyTrend: String { ls("groups.stats.monthlyTrend", comment: "") }
             static var noExpenses: String { ls("groups.stats.noExpenses", comment: "") }

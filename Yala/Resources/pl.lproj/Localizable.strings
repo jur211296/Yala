@@ -3077,7 +3077,6 @@
 "groups.detail.comingSoon" = "Już wkrótce";
 "groups.stats.totalSpent" = "Wydano łącznie";
 "groups.stats.myPortion" = "Moja część";
-"groups.stats.whoPaysMost" = "Kto płaci najwięcej";
 "groups.stats.categories" = "Kategorie";
 "groups.stats.monthlyTrend" = "Trend miesięczny";
 "groups.stats.noExpenses" = "Brak wydatków";
@@ -4546,3 +4545,6 @@
 
 /* Explicación división por proporción */
 "groups.expense.splitSheet.sharesHint" = "Przypisz udziały każdej osobie; całość dzieli się proporcjonalnie.";
+
+/* Header del gráfico de quién pagó más en el grupo */
+"groups.stats.whoMadeMostPayments" = "Kto zapłacił najwięcej?";

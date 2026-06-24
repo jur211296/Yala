@@ -3077,7 +3077,6 @@
 "groups.detail.comingSoon" = "Binnenkort";
 "groups.stats.totalSpent" = "Totaal uitgegeven";
 "groups.stats.myPortion" = "Mijn deel";
-"groups.stats.whoPaysMost" = "Wie betaalt het meest";
 "groups.stats.categories" = "Categorieën";
 "groups.stats.monthlyTrend" = "Maandtrend";
 "groups.stats.noExpenses" = "Nog geen uitgaven";
@@ -4546,3 +4545,6 @@
 
 /* Explicación división por proporción */
 "groups.expense.splitSheet.sharesHint" = "Wijs delen toe aan iedereen; het totaal wordt naar verhouding verdeeld.";
+
+/* Header del gráfico de quién pagó más en el grupo */
+"groups.stats.whoMadeMostPayments" = "Wie heeft het meest betaald?";

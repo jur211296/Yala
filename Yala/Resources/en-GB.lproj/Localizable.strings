@@ -580,7 +580,6 @@
 "groups.stats.thisYear" = "This year";
 "groups.stats.totalSpent" = "Total spent";
 "groups.stats.uncategorized" = "Uncategorized";
-"groups.stats.whoPaysMost" = "Who pays most";
 "groups.summary.allSettled" = "All settled up!";
 "groups.summary.iOwe" = "You owe";
 "groups.summary.owedToMe" = "Owed to you";
@@ -3796,3 +3795,6 @@
 
 /* Explicación división por proporción */
 "groups.expense.splitSheet.sharesHint" = "Assign shares to each person; the total splits proportionally.";
+
+/* Header del gráfico de quién pagó más en el grupo */
+"groups.stats.whoMadeMostPayments" = "Who's paid the most?";

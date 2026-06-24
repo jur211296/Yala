@@ -3077,7 +3077,6 @@
 "groups.detail.comingSoon" = "近日公開";
 "groups.stats.totalSpent" = "合計支出";
 "groups.stats.myPortion" = "自分の負担分";
-"groups.stats.whoPaysMost" = "支払いが多い人";
 "groups.stats.categories" = "カテゴリー";
 "groups.stats.monthlyTrend" = "月次推移";
 "groups.stats.noExpenses" = "支出がまだありません";
@@ -4546,3 +4545,6 @@
 
 /* Explicación división por proporción */
 "groups.expense.splitSheet.sharesHint" = "各メンバーに比率を割り当てると、総額が比例配分されます。";
+
+/* Header del gráfico de quién pagó más en el grupo */
+"groups.stats.whoMadeMostPayments" = "最も多く支払ったのは？";

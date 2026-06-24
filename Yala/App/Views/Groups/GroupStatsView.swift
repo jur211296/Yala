@@ -31,7 +31,7 @@ struct GroupStatsView: View {
         } else {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    periodSelector
+                    statsSelectors
                     summaryCards
                     if !viewModel.memberSpending.isEmpty {
                         memberBarChart
@@ -53,61 +53,125 @@ struct GroupStatsView: View {
             .onChange(of: viewModel.selectedPeriod) { _, _ in
                 viewModel.recalculate()
             }
+            .onChange(of: viewModel.selectedCurrency) { _, _ in
+                viewModel.recalculate()
+            }
         }
     }
 
     // MARK: - Period Selector
 
-    private var periodSelector: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Spacing.sm) {
-                ForEach(GroupStatsPeriod.allCases) { period in
-                    Button {
-                        viewModel.selectedPeriod = period
-                    } label: {
-                        Text(period.displayName)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(viewModel.selectedPeriod == period ? .white : .primary)
-                            .padding(.horizontal, DS.Spacing.md)
-                            .padding(.vertical, DS.Spacing.xs)
-                            .background(
-                                Capsule()
-                                    .fill(viewModel.selectedPeriod == period ? theme.accent : Color.secondary.opacity(0.12))
-                            )
+    // MARK: - Selectors (moneda + período, estilo menú)
+
+    private var statsSelectors: some View {
+        HStack(spacing: DS.Spacing.sm) {
+            if viewModel.availableCurrencies.count > 1 {
+                currencyMenu
+            }
+            periodMenu
+            Spacer()
+        }
+        .padding(.horizontal, DS.Spacing.sm)
+    }
+
+    private var currencyMenu: some View {
+        Menu {
+            ForEach(viewModel.availableCurrencies, id: \.self) { code in
+                Button {
+                    viewModel.selectedCurrency = code
+                } label: {
+                    HStack {
+                        Text(currencyLabel(code))
+                        if viewModel.selectedCurrency == code {
+                            Image(systemName: "checkmark").accessibilityHidden(true)
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
             }
+        } label: {
+            statsMenuLabel(icon: nil, text: currencyLabel(viewModel.selectedCurrency))
+        }
+    }
+
+    private var periodMenu: some View {
+        Menu {
+            ForEach(GroupStatsPeriod.allCases) { period in
+                Button {
+                    viewModel.selectedPeriod = period
+                } label: {
+                    HStack {
+                        Text(period.displayName)
+                        if viewModel.selectedPeriod == period {
+                            Image(systemName: "checkmark").accessibilityHidden(true)
+                        }
+                    }
+                }
+            }
+        } label: {
+            statsMenuLabel(icon: "calendar", text: viewModel.selectedPeriod.displayName)
+        }
+    }
+
+    private func statsMenuLabel(icon: String?, text: String) -> some View {
+        HStack(spacing: DS.Spacing.xs) {
+            if let icon {
+                Image(systemName: icon).font(DS.Typography.labelSmall)
+            }
+            Text(text).font(DS.Typography.labelSmall)
+            Image(systemName: "chevron.down").font(DS.Typography.labelTiny)
+        }
+        .foregroundStyle(.thPrimaryText)
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.vertical, DS.Spacing.sm)
+        .glassEffect(.regular.interactive(), in: .capsule)
+        .contentShape(Capsule())
+        .fixedSize()
+    }
+
+    /// Símbolo o código de la moneda según la preferencia del usuario.
+    private func currencyLabel(_ code: String) -> String {
+        switch appPreferences.currencyDisplayFormat {
+        case .symbol: return CurrencyCode.symbol(for: code)
+        case .code: return code
         }
     }
 
     // MARK: - Summary Cards
 
     private var summaryCards: some View {
-        HStack(spacing: DS.Spacing.md) {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
             summaryCard(
                 title: L10n.Groups.Stats.totalSpent,
-                value: appPreferences.currency(viewModel.totalSpent, currencyCode: currencyCode),
+                amounts: viewModel.totalsByCurrency,
                 color: .primary
             )
 
             summaryCard(
                 title: L10n.Groups.Stats.myPortion,
-                value: appPreferences.currency(viewModel.myPortion, currencyCode: currencyCode),
+                amounts: viewModel.myPortionsByCurrency.map { (currencyCode: $0.currencyCode, total: $0.amount) },
                 color: theme.accent
             )
         }
     }
 
-    private func summaryCard(title: String, value: String, color: Color) -> some View {
+    /// Tarjeta de resumen: un monto por moneda apilado (todas las monedas del período).
+    private func summaryCard(title: String, amounts: [(currencyCode: String, total: Double)], color: Color) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
             Text(title)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
 
-            Text(value)
-                .font(DS.Typography.headline)
-                .foregroundStyle(color)
+            if amounts.isEmpty {
+                Text(appPreferences.currency(0, currencyCode: viewModel.selectedCurrency))
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(color)
+            } else {
+                ForEach(amounts, id: \.currencyCode) { entry in
+                    Text(appPreferences.currency(entry.total, currencyCode: entry.currencyCode))
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(color)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
@@ -117,7 +181,7 @@ struct GroupStatsView: View {
 
     private var memberBarChart: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.Groups.Stats.whoPaysMost)
+            Text(L10n.Groups.Stats.whoMadeMostPayments)
                 .font(DS.Typography.headline)
                 .padding(.leading, DS.Spacing.sm)
 
@@ -135,11 +199,11 @@ struct GroupStatsView: View {
                     // `@Environment(AppPreferences.self)`). Se formatea con el
                     // `appPreferences` ya resuelto de la vista — mismo patrón que
                     // el resto de annotations de charts en la app.
-                    Text(appPreferences.currency(member.totalPaid, currencyCode: currencyCode))
+                    Text(appPreferences.currency(member.totalPaid, currencyCode: viewModel.selectedCurrency))
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                 }
-                .accessibilityLabel("\(member.displayName): \(appPreferences.currency(member.totalPaid, currencyCode: currencyCode))")
+                .accessibilityLabel("\(member.displayName): \(appPreferences.currency(member.totalPaid, currencyCode: viewModel.selectedCurrency))")
             }
             .chartXAxis(.hidden)
             .chartYAxis {

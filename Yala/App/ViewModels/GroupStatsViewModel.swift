@@ -87,6 +87,14 @@ final class GroupStatsViewModel {
     private(set) var monthlyTrend: [GroupMonthlyTrend] = []
     var selectedPeriod: GroupStatsPeriod = .thisMonth
 
+    /// Monedas con gastos en el grupo (principal primero). Con ≤1 no se muestra el selector.
+    private(set) var availableCurrencies: [String] = []
+    /// Moneda activa para donut / quién paga / tendencia. Default: la principal del grupo.
+    var selectedCurrency: String = ""
+    /// Total gastado y "mi parte" POR moneda (período actual, todas las monedas) — tarjetas duales.
+    private(set) var totalsByCurrency: [(currencyCode: String, total: Double)] = []
+    private(set) var myPortionsByCurrency: [(currencyCode: String, amount: Double)] = []
+
     /// True cuando el desglose tiene un único bucket "Sin categoría" (todos los
     /// gastos sin clasificar). El view muestra un hint explicativo en vez del
     /// pie chart de un solo segmento.
@@ -123,6 +131,12 @@ final class GroupStatsViewModel {
         self.allMembers = members
         self.currentUserMemberID = currentUserMemberID
         self.currencyCode = currencyCode
+        availableCurrencies = orderedCurrencies(Set(expenses.map(\.currencyCode)))
+        // Preserva la selección del usuario si sigue siendo válida; si no, la principal
+        // (o la primera con gastos si la principal no tiene movimientos).
+        if selectedCurrency.isEmpty || !availableCurrencies.contains(selectedCurrency) {
+            selectedCurrency = availableCurrencies.first ?? currencyCode
+        }
         recalculate()
     }
 
@@ -177,20 +191,50 @@ final class GroupStatsViewModel {
         monthlyTrend = monthGrouped
             .map { GroupMonthlyTrend(month: $0.key, totalSpent: $0.value.reduce(0) { $0 + $1.amount }) }
             .sorted { $0.month < $1.month }
+
+        recalculateDualTotals()
+    }
+
+    /// Total gastado y "mi parte" por moneda (período actual, TODAS las monedas) → tarjetas duales.
+    private func recalculateDualTotals() {
+        let period = periodExpenses()
+        let totalsGrouped = Dictionary(grouping: period, by: \.currencyCode)
+        totalsByCurrency = orderedCurrencies(Set(totalsGrouped.keys)).map { code in
+            (currencyCode: code, total: totalsGrouped[code]?.reduce(0) { $0 + $1.amount } ?? 0)
+        }
+
+        guard let myID = currentUserMemberID else {
+            myPortionsByCurrency = []
+            return
+        }
+        let currencyByExpense = Dictionary(period.map { ($0.id, $0.currencyCode) }, uniquingKeysWith: { first, _ in first })
+        let myShares = allShares.filter { $0.memberID == myID && currencyByExpense[$0.expenseID] != nil }
+        let sharesGrouped = Dictionary(grouping: myShares, by: { currencyByExpense[$0.expenseID] ?? "" })
+        myPortionsByCurrency = orderedCurrencies(Set(sharesGrouped.keys)).map { code in
+            (currencyCode: code, amount: sharesGrouped[code]?.reduce(0) { $0 + $1.amount } ?? 0)
+        }
     }
 
     // MARK: - Helpers
 
+    /// Gastos del período (todas las monedas).
+    private func periodExpenses() -> [SplitExpense] {
+        guard let interval = selectedPeriod.dateInterval() else { return allExpenses }
+        return allExpenses.filter { interval.contains($0.date) }
+    }
+
+    /// Gastos del período en la moneda seleccionada (alimenta donut / quién paga / tendencia).
     private func filteredExpenses() -> [SplitExpense] {
-        // Filter by group currency
-        var result = allExpenses.filter { $0.currencyCode == currencyCode }
+        periodExpenses().filter { $0.currencyCode == selectedCurrency }
+    }
 
-        // Filter by period
-        if let interval = selectedPeriod.dateInterval() {
-            result = result.filter { interval.contains($0.date) }
+    /// Ordena monedas con la principal del grupo primero, luego alfabético.
+    private func orderedCurrencies(_ codes: Set<String>) -> [String] {
+        codes.sorted { lhs, rhs in
+            if lhs == currencyCode { return true }
+            if rhs == currencyCode { return false }
+            return lhs < rhs
         }
-
-        return result
     }
 
     /// Lookup `[nombre de subcategoría: (icono, colorHex)]` desde las subcategorías locales,

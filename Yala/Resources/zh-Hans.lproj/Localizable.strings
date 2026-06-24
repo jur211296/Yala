@@ -3077,7 +3077,6 @@
 "groups.detail.comingSoon" = "即将推出";
 "groups.stats.totalSpent" = "总支出";
 "groups.stats.myPortion" = "我的部分";
-"groups.stats.whoPaysMost" = "谁付得最多";
 "groups.stats.categories" = "类别";
 "groups.stats.monthlyTrend" = "月度趋势";
 "groups.stats.noExpenses" = "还没有支出";
@@ -4546,3 +4545,6 @@
 
 /* Explicación división por proporción */
 "groups.expense.splitSheet.sharesHint" = "为每个人分配份额，总额按比例分摊。";
+
+/* Header del gráfico de quién pagó más en el grupo */
+"groups.stats.whoMadeMostPayments" = "谁付得最多？";

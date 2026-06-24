@@ -680,7 +680,6 @@
 "groups.stats.thisYear" = "Este año";
 "groups.stats.totalSpent" = "Total gastado";
 "groups.stats.uncategorized" = "Sin categoría";
-"groups.stats.whoPaysMost" = "Quién paga más";
 "groups.summary.allSettled" = "¡Están al día!";
 "groups.summary.iOwe" = "Debes";
 "groups.summary.owedToMe" = "Te deben";
@@ -3796,3 +3795,6 @@
 
 /* Explicación división por proporción */
 "groups.expense.splitSheet.sharesHint" = "Asigná partes a cada persona y se reparte proporcionalmente.";
+
+/* Header del gráfico de quién pagó más en el grupo */
+"groups.stats.whoMadeMostPayments" = "¿Quién ha hecho más pagos?";
