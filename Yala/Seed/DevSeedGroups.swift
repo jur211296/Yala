@@ -43,14 +43,31 @@ enum DevSeedGroups {
         for m in members { context.insert(m) }
         let memberIDs = members.map { $0.id.uuidString }
 
-        // 3. Gastos + shares (split equal entre los 3). Mezcla PEN + USD y subcategorías
-        //    reales para ejercitar balances/stats multi-moneda y el donut por subcategoría.
-        let expenses: [(desc: String, amount: Double, currency: String, payer: SplitMember, subcat: String?)] = [
-            ("Hospedaje", 600, "PEN", me, "Alojamiento"),
-            ("Cena grupal", 240, "PEN", ana, "Restaurantes"),
-            ("Transporte", 90, "PEN", beto, "Transporte"),
-            ("Tour guiado", 150, "USD", ana, "Entretenimiento"),
-            ("Souvenirs", 80, "USD", me, "Compras"),
+        // 3. Gastos + shares (split equal entre los 3). Distribuidos en 4 meses (día 15 de
+        //    cada mes) y mezclando PEN + USD + subcategorías reales para ejercitar
+        //    balances/stats multi-moneda, el donut por subcategoría y la TENDENCIA mensual
+        //    del carrusel del modo "Todas" (≥2 puntos por moneda → el chart de tendencia
+        //    se renderiza en ambas páginas).
+        let cal = Calendar.current
+        func monthsAgo(_ n: Int) -> Date {
+            let base = cal.date(byAdding: .month, value: -n, to: Date.now) ?? Date.now
+            let comps = cal.dateComponents([.year, .month], from: base)
+            return cal.date(from: DateComponents(year: comps.year, month: comps.month, day: 15)) ?? base
+        }
+        let expenses: [(desc: String, amount: Double, currency: String, payer: SplitMember, subcat: String?, monthsAgo: Int)] = [
+            // Hace 3 meses
+            ("Hospedaje", 600, "PEN", me, "Alojamiento", 3),
+            ("Tour guiado", 150, "USD", ana, "Entretenimiento", 3),
+            // Hace 2 meses
+            ("Cena grupal", 240, "PEN", ana, "Restaurantes", 2),
+            ("Taxi aeropuerto", 50, "USD", beto, "Transporte", 2),
+            // Hace 1 mes
+            ("Almuerzo criollo", 180, "PEN", beto, "Restaurantes", 1),
+            ("Entradas museo", 90, "USD", me, "Entretenimiento", 1),
+            // Este mes
+            ("Transporte", 90, "PEN", beto, "Transporte", 0),
+            ("Mercado", 120, "PEN", ana, "Compras", 0),
+            ("Souvenirs", 80, "USD", me, "Compras", 0),
         ]
         for e in expenses {
             let expense = SplitExpense(
@@ -59,6 +76,7 @@ enum DevSeedGroups {
                 splitType: "equal",
                 subcategoryName: e.subcat
             )
+            expense.date = monthsAgo(e.monthsAgo)
             context.insert(expense)
             let perHead = ((e.amount / Double(memberIDs.count)) * 100).rounded() / 100
             for mid in memberIDs {
