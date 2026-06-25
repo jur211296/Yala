@@ -30,6 +30,9 @@ struct GroupsContainerView: View {
     /// Drives el alert "¿Salir del grupo?" cuando un current user `.rejected`
     /// toca su card. Single-modal global vs N alerts montados por card.
     @State private var rejectedGroupPendingLeave: SplitGroup?
+    /// Payload del composer "Nuevo gasto": captura los grupos elegibles AL MOMENTO del tap.
+    /// Evita que un `loadData()` remoto entre el tap y la presentación deje el sheet en blanco.
+    @State private var expenseComposerPayload: ExpenseComposerPayload?
 
     // MARK: - Body
 
@@ -137,6 +140,17 @@ struct GroupsContainerView: View {
                 viewModel.loadData()
             }) {
                 GroupFormView(group: nil)
+            }
+            .sheet(item: $expenseComposerPayload) { payload in
+                GroupExpenseComposerView(
+                    groups: payload.groups,
+                    initialGroup: payload.initialGroup,
+                    activeMembers: { viewModel.activeMembers(for: $0) },
+                    memberNameLookup: { viewModel.memberNameLookup(for: $0) },
+                    memberCount: { viewModel.memberCount(for: $0) },
+                    onSave: { viewModel.loadData() }
+                )
+                .presentationDetents(DS.Adaptive.sheetDetents([.large]))
             }
             .navigationDestination(item: $viewModel.selectedGroup) { group in
                 GroupDetailView(group: group)
@@ -363,17 +377,65 @@ struct GroupsContainerView: View {
             Spacer()
             HStack {
                 Spacer()
-                CircularPlusFAB(
-                    tint: theme.accent,
-                    accessibilityLabel: L10n.Groups.newGroup,
-                    accessibilityIdentifier: "groups_fab_new"
-                ) {
-                    viewModel.showCreateGroup = true
-                }
-                .dsFloatingShadow()
+                fabControl
             }
             .padding(.trailing, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)
         }
     }
+
+    /// Si no hay grupo donde el current user pueda crear un gasto, el FAB es el simple
+    /// de "Nuevo grupo". Si hay ≥1 elegible, despliega menú (Nuevo grupo / Nuevo gasto).
+    @ViewBuilder
+    private var fabControl: some View {
+        if viewModel.eligibleGroupsForExpense().isEmpty {
+            CircularPlusFAB(
+                tint: theme.accent,
+                accessibilityLabel: L10n.Groups.newGroup,
+                accessibilityIdentifier: "groups_fab_new"
+            ) {
+                viewModel.showCreateGroup = true
+            }
+            .dsFloatingShadow()
+        } else {
+            ExpandableFAB(
+                mainTint: theme.accent,
+                actions: [
+                    ExpandableFABAction(
+                        id: "newGroup",
+                        icon: "person.2.fill",
+                        text: L10n.Groups.newGroup,
+                        color: .electricIndigo,
+                        accessibilityIdentifier: "groups_fab_new_group"
+                    ) {
+                        viewModel.showCreateGroup = true
+                    },
+                    ExpandableFABAction(
+                        id: "newExpense",
+                        icon: "square.and.pencil",
+                        text: L10n.Groups.Expense.newExpense,
+                        color: .hotPink,
+                        accessibilityIdentifier: "groups_fab_new_expense"
+                    ) {
+                        let eligibles = viewModel.eligibleGroupsForExpense()
+                        if let first = eligibles.first {
+                            expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: first)
+                        }
+                    }
+                ],
+                mainAccessibilityLabel: L10n.Action.add,
+                closeAccessibilityLabel: L10n.Accessibility.closeMenu,
+                mainAccessibilityIdentifier: "groups_fab_new"
+            )
+        }
+    }
+}
+
+/// Snapshot inmutable de los grupos elegibles + el inicial, capturado al tocar "Nuevo gasto".
+/// Presentar el composer vía `.sheet(item:)` con este payload evita recomputar la lista en el
+/// closure del sheet (donde un `loadData()` concurrente podría vaciarla → sheet en blanco).
+private struct ExpenseComposerPayload: Identifiable {
+    let id = UUID()
+    let groups: [SplitGroup]
+    let initialGroup: SplitGroup
 }

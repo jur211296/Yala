@@ -65,18 +65,46 @@ final class GroupsSmokeUITests: XCTestCase {
         )
     }
 
-    /// groups-form: el FAB abre el formulario de crear grupo.
+    /// groups-form: el FAB despliega el menú y "Nuevo grupo" abre el formulario de crear grupo.
+    /// (Con ≥1 grupo elegible el FAB es expandible; el seed `grupos` cumple esa condición.)
     func test_groupFormOpens() {
         let app = launch()
         openGroups(app)
 
         let fab = app.buttons["groups_fab_new"]
-        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de crear grupo.")
+        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de Grupos.")
         fab.tap()
+
+        let newGroup = app.buttons["groups_fab_new_group"]
+        XCTAssertTrue(newGroup.waitForExistence(timeout: 5), "No apareció la opción 'Nuevo grupo' del FAB.")
+        newGroup.tap()
 
         XCTAssertTrue(
             app.textFields["group_form_name_input"].waitForExistence(timeout: 5),
             "GroupFormView no montó (group_form_name_input)."
+        )
+    }
+
+    /// groups-expense-form: desde el tab, FAB → "Nuevo gasto" abre el composer con el chip de grupo.
+    func test_groupExpenseFromTabFAB() {
+        let app = launch()
+        openGroups(app)
+
+        let fab = app.buttons["groups_fab_new"]
+        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB de Grupos.")
+        fab.tap()
+
+        let newExpense = app.buttons["groups_fab_new_expense"]
+        XCTAssertTrue(newExpense.waitForExistence(timeout: 5), "No apareció la opción 'Nuevo gasto' del FAB.")
+        newExpense.tap()
+
+        XCTAssertTrue(
+            app.textFields["group_expense_amount"].waitForExistence(timeout: 5),
+            "El composer de gasto no montó (group_expense_amount)."
+        )
+        XCTAssertTrue(
+            app.descendants(matching: .any).matching(identifier: "group_expense_group_chip").firstMatch.waitForExistence(timeout: 5),
+            "No apareció el chip de grupo en el composer."
         )
     }
 

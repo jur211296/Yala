@@ -401,7 +401,8 @@
         "Yala/Services/Groups/GroupExpenseService.swift",
         "Yala/Services/Groups/GroupBalanceService.swift",
         "Yala/Services/Groups/DebtSimplificationService.swift",
-        "Yala/App/Logic/GroupBalanceRowGrouping.swift"
+        "Yala/App/Logic/GroupBalanceRowGrouping.swift",
+        "Yala/App/Views/Shared/ExpandableFAB.swift"
       ],
       "scenarioIDs": [
         "F-S1-04",
@@ -424,7 +425,10 @@
         "Yala/App/Logic/Formatters/GroupSplitChipFormatter.swift",
         "Yala/App/Logic/Formatters/GroupSplitPlaceholderLogic.swift",
         "Yala/App/Logic/Calculators/GroupSplitCalculator.swift",
-        "Yala/App/Logic/GroupSplitConversion.swift"
+        "Yala/App/Logic/GroupSplitConversion.swift",
+        "Yala/App/Views/Groups/GroupExpenseComposerView.swift",
+        "Yala/App/Views/Groups/GroupPickerSheet.swift",
+        "Yala/App/Logic/GroupExpenseEligibilityLogic.swift"
       ],
       "scenarioIDs": [
         "F-S1-05",
@@ -466,7 +470,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
       "owner": "",
-      "lastVerified": "2026-06-08"
+      "lastVerified": "2026-06-25"
     },
     {
       "area": "groups-pending-approval-reconnect",

@@ -4551,3 +4551,9 @@
 
 /* Stats de grupo (modo Todas): nota bajo el donut indicando la moneda a la que se convirtió */
 "groups.stats.convertedToNote" = "≈ 换算为 %@";
+
+/* Title of the group picker sheet (choose which group a new expense belongs to) */
+"groups.selectGroup" = "选择群组";
+
+/* Singular label for a group (used in the group context chip on the expense form) */
+"groups.groupLabel" = "群组";

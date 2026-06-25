@@ -272,6 +272,34 @@ final class GroupsViewModel {
             .memberStatus
     }
 
+    /// Grupos donde el current user puede crear un gasto USABLE (activo + miembro `.active`
+    /// presente). Usado por el FAB del tab para decidir si ofrecer "Nuevo gasto" y poblar el
+    /// composer. Filtra `groups` crudo (no `activeGroups`) para que el guard archived/hidden
+    /// del helper sea load-bearing en un solo sitio.
+    func eligibleGroupsForExpense() -> [SplitGroup] {
+        groups.filter {
+            GroupExpenseEligibilityLogic.canCreateExpense(
+                currentMemberStatus: currentMemberStatus(for: $0),
+                isArchived: $0.isArchived,
+                isHiddenForAll: $0.isHiddenForAll
+            )
+        }
+    }
+
+    /// Miembros activos de un grupo desde el cache (para el form de gasto desde el composer).
+    func activeMembers(for group: SplitGroup) -> [SplitMember] {
+        (membersByGroup[group.cloudKitZoneID] ?? []).filter(\.isActive)
+    }
+
+    /// memberID.uuidString → displayName (todos los miembros) desde el cache. Espeja el
+    /// lookup de `GroupDetailViewModel` para resolver nombres en el form de gasto.
+    func memberNameLookup(for group: SplitGroup) -> [String: String] {
+        Dictionary(
+            (membersByGroup[group.cloudKitZoneID] ?? []).map { ($0.id.uuidString, $0.displayName) },
+            uniquingKeysWith: { first, _ in first }
+        )
+    }
+
     // MARK: - Actions
 
     func archiveGroup(_ group: SplitGroup) {

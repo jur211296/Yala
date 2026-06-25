@@ -9,6 +9,16 @@
 import SwiftUI
 import SwiftData
 
+/// Cómo se muestra el chip de contexto de grupo (debajo del segmented control).
+/// `.hidden` (default) preserva el form original; `.readOnly` muestra el grupo sin
+/// permitir cambiarlo (dentro del detalle de un grupo); `.editable` permite tocarlo
+/// para cambiar de grupo (al crear un gasto desde el FAB del tab Grupos).
+enum GroupContextChipMode {
+    case hidden
+    case readOnly
+    case editable(() -> Void)
+}
+
 struct GroupExpenseFormView: View {
 
     // MARK: - Environment
@@ -24,6 +34,8 @@ struct GroupExpenseFormView: View {
     let group: SplitGroup
     let members: [SplitMember]
     let memberNameLookup: [String: String]
+    /// Chip de contexto de grupo debajo del segmented control. Default `.hidden`.
+    let groupChip: GroupContextChipMode
     let expenseToEdit: SplitExpense?
     let existingShares: [SplitShare]
     let onSave: () -> Void
@@ -71,6 +83,7 @@ struct GroupExpenseFormView: View {
         group: SplitGroup,
         members: [SplitMember],
         memberNameLookup: [String: String],
+        groupChip: GroupContextChipMode = .hidden,
         expenseToEdit: SplitExpense? = nil,
         existingShares: [SplitShare] = [],
         onSave: @escaping () -> Void,
@@ -79,6 +92,7 @@ struct GroupExpenseFormView: View {
         self.group = group
         self.members = members
         self.memberNameLookup = memberNameLookup
+        self.groupChip = groupChip
         self.expenseToEdit = expenseToEdit
         self.existingShares = existingShares
         self.onSave = onSave
@@ -100,6 +114,9 @@ struct GroupExpenseFormView: View {
                     splitTypeSegmentedSelector
                         .padding(.top, DS.Spacing.sm)
                         .padding(.horizontal, DS.Spacing.lg)
+
+                    groupContextChip
+                        .padding(.top, DS.Spacing.sm)
 
                     Group {
                         Spacer()
@@ -398,6 +415,53 @@ struct GroupExpenseFormView: View {
             handleSplitTypeChange(from: lastSplitType, to: newType)
             lastSplitType = newType
         }
+    }
+
+    // MARK: - Group Context Chip
+
+    /// Chip debajo del segmented control que muestra (y opcionalmente cambia) el grupo
+    /// del gasto. Editable al crear desde el FAB del tab; solo lectura dentro del detalle.
+    @ViewBuilder
+    private var groupContextChip: some View {
+        switch groupChip {
+        case .hidden:
+            EmptyView()
+        case .readOnly:
+            groupChipLabel(showsChevron: false)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("group_expense_group_chip")
+                .accessibilityLabel("\(L10n.Groups.groupLabel): \(group.name)")
+        case .editable(let onTap):
+            Button {
+                dismissKeyboard()
+                onTap()
+            } label: {
+                groupChipLabel(showsChevron: true)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("group_expense_group_chip")
+            .accessibilityLabel("\(L10n.Groups.groupLabel): \(group.name)")
+        }
+    }
+
+    private func groupChipLabel(showsChevron: Bool) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: group.iconName)
+                .font(DS.Typography.label)
+                .foregroundStyle(Color(hex: group.colorHex))
+            Text(group.name)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            if showsChevron {
+                Image(systemName: "chevron.down")
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.sm)
+        .background(Capsule().fill(.thCard))
     }
 
     // MARK: - Split Chip Detail (debajo del monto)

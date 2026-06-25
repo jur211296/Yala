@@ -1721,6 +1721,10 @@ enum L10n {
         static var title: String { ls("groups.title", comment: "") }
         static var newGroup: String { ls("groups.new", comment: "") }
         static var editGroup: String { ls("groups.edit", comment: "") }
+        /// Título del sheet selector de grupo (al crear un gasto desde el FAB del tab).
+        static var selectGroup: String { ls("groups.selectGroup", comment: "") }
+        /// Etiqueta singular "Grupo" — chip de contexto de grupo en el form de gasto.
+        static var groupLabel: String { ls("groups.groupLabel", comment: "") }
 
         enum Empty {
             static var title: String { ls("groups.empty.title", comment: "") }

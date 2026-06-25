@@ -211,6 +211,7 @@ struct GroupDetailView: View {
                 group: group,
                 members: viewModel.activeMembers,
                 memberNameLookup: viewModel.memberNameLookup,
+                groupChip: .readOnly,
                 onSave: {}
             )
             .presentationDetents(DS.Adaptive.sheetDetents([.large]))
@@ -221,6 +222,7 @@ struct GroupDetailView: View {
                 group: group,
                 members: membersForExpenseForm(expense),
                 memberNameLookup: viewModel.memberNameLookup,
+                groupChip: .readOnly,
                 expenseToEdit: expense,
                 existingShares: viewModel.sharesForExpense(expense),
                 onSave: {},
