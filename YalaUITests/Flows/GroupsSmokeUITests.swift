@@ -177,6 +177,38 @@ final class GroupsSmokeUITests: XCTestCase {
         )
     }
 
+    /// groups-crud-balances-settlements: tocar un gasto del feed abre el detalle
+    /// read-only (detent medium) — NO el editor; el botón Editar lo reemplaza por
+    /// el editor en large. Cubre el flujo de dos fases (commit 233544fa).
+    func test_groupExpenseDetailThenEdit() {
+        let app = launch()
+        openGroups(app)
+
+        let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
+        card.tap()
+
+        // Fase 1: el tap abre el detalle read-only. Su botón Editar debe montar y
+        // el campo editable de monto NO debe existir todavía (es read-only).
+        let expenseRow = app.buttons["group_expense_row_Mercado"]
+        XCTAssertTrue(expenseRow.waitForExistence(timeout: 10), "No apareció la fila del gasto 'Mercado'.")
+        expenseRow.tap()
+
+        let editButton = app.buttons["group_expense_detail_edit"]
+        XCTAssertTrue(editButton.waitForExistence(timeout: 5), "No montó el detalle del gasto (group_expense_detail_edit).")
+        XCTAssertFalse(
+            app.textFields["group_expense_amount"].exists,
+            "El detalle read-only no debería exponer el campo editable de monto."
+        )
+
+        // Fase 2: Editar baja el detalle y sube el editor (large) con el campo de monto.
+        editButton.tap()
+        XCTAssertTrue(
+            app.textFields["group_expense_amount"].waitForExistence(timeout: 5),
+            "El editor no montó tras tocar Editar en el detalle."
+        )
+    }
+
     /// groups-expense-form: editar un gasto del feed → botón papelera del toolbar →
     /// confirmar en el confirmationDialog → el gasto se borra de la lista y el sheet
     /// cierra. Cubre el botón de eliminar añadido al toolbar del form (commit 22774f8e),
@@ -192,10 +224,15 @@ final class GroupsSmokeUITests: XCTestCase {
         XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
         card.tap()
 
-        // Toca un gasto del feed → abre el form en modo edición (con onDelete).
+        // Toca un gasto del feed → abre el detalle read-only (medium); "Editar"
+        // sube el editor en large (flujo de dos fases, commit 233544fa).
         let expenseRow = app.buttons["group_expense_row_Mercado"]
         XCTAssertTrue(expenseRow.waitForExistence(timeout: 10), "No apareció la fila del gasto 'Mercado' en el feed.")
         expenseRow.tap()
+
+        let editButton = app.buttons["group_expense_detail_edit"]
+        XCTAssertTrue(editButton.waitForExistence(timeout: 5), "No apareció el botón Editar del detalle del gasto.")
+        editButton.tap()
 
         // El form de edición monta (mismo campo de monto que el smoke de creación).
         let amountField = app.textFields["group_expense_amount"]
