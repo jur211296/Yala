@@ -190,7 +190,18 @@ final class GroupDetailViewModel {
             #if DEBUG
             print("GroupDetailViewModel: Error deleting expense: \(error)")
             #endif
-            surfaceActionError(L10n.Groups.Errors.actionFailed)
+            // Solo los errores con copy localizado de usuario se propagan; el resto
+            // (mensajes técnicos del servicio) caen al genérico.
+            let message: String
+            switch error {
+            case GroupExpenseServiceError.expenseHasAssociatedSettlements:
+                message = L10n.Groups.Bridge.deleteExpenseBlocked
+            case GroupExpenseServiceError.pendingApproval:
+                message = L10n.Groups.Errors.pendingApproval
+            default:
+                message = L10n.Groups.Errors.actionFailed
+            }
+            surfaceActionError(message)
         }
     }
 

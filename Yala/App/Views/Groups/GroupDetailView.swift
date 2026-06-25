@@ -223,7 +223,8 @@ struct GroupDetailView: View {
                 memberNameLookup: viewModel.memberNameLookup,
                 expenseToEdit: expense,
                 existingShares: viewModel.sharesForExpense(expense),
-                onSave: {}
+                onSave: {},
+                onDelete: viewModel.canCurrentUserParticipate ? { viewModel.deleteExpense($0) } : nil
             )
             .presentationDetents(DS.Adaptive.sheetDetents([.large]))
             .presentationDragIndicator(.visible)

@@ -27,6 +27,10 @@ struct GroupExpenseFormView: View {
     let expenseToEdit: SplitExpense?
     let existingShares: [SplitShare]
     let onSave: () -> Void
+    /// Borra el gasto en edición. `nil` cuando el usuario no puede borrar (no se
+    /// muestra el botón). El sheet cierra siempre tras confirmar — el resultado
+    /// (éxito o alert de error) lo maneja la vista padre.
+    let onDelete: ((SplitExpense) -> Void)?
 
     // MARK: - State
 
@@ -55,6 +59,9 @@ struct GroupExpenseFormView: View {
     @State private var pendingOptInExpenseID: String?
     @State private var showOptInAlert: Bool = false
 
+    // Borrado del gasto desde el toolbar (solo en modo edición).
+    @State private var showDeleteConfirmation = false
+
     // Amount scaling
     @ScaledMetric(relativeTo: .largeTitle) private var baseAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
 
@@ -66,7 +73,8 @@ struct GroupExpenseFormView: View {
         memberNameLookup: [String: String],
         expenseToEdit: SplitExpense? = nil,
         existingShares: [SplitShare] = [],
-        onSave: @escaping () -> Void
+        onSave: @escaping () -> Void,
+        onDelete: ((SplitExpense) -> Void)? = nil
     ) {
         self.group = group
         self.members = members
@@ -74,6 +82,7 @@ struct GroupExpenseFormView: View {
         self.expenseToEdit = expenseToEdit
         self.existingShares = existingShares
         self.onSave = onSave
+        self.onDelete = onDelete
 
         let vm = GroupExpenseViewModel(group: group, members: members, memberNameLookup: memberNameLookup)
         self._viewModel = State(initialValue: vm)
@@ -118,12 +127,37 @@ struct GroupExpenseFormView: View {
                         dismiss()
                     }
                 }
+                if viewModel.isEditMode, onDelete != nil {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showDeleteConfirmation = true
+                        } label: {
+                            Image(systemName: "trash")
+                                .fontWeight(.medium)
+                                .foregroundStyle(DS.Semantic.errorForeground)
+                        }
+                        .accessibilityLabel(L10n.Action.delete)
+                        .buttonBorderShape(.circle)
+                    }
+                }
             }
             .alert(L10n.Groups.Bridge.optoutAlertTitle, isPresented: $showOptInAlert) {
                 Button(L10n.Groups.Bridge.optoutAlertYes) { confirmOptIn() }
                 Button(L10n.Groups.Bridge.optoutAlertNo, role: .cancel) { declineOptIn() }
             } message: {
                 Text(L10n.Groups.Bridge.optoutAlertBody)
+            }
+            .confirmationDialog(
+                L10n.Action.delete,
+                isPresented: $showDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Action.delete, role: .destructive) {
+                    if let expense = expenseToEdit {
+                        onDelete?(expense)
+                        dismiss()
+                    }
+                }
             }
             .onAppear {
                 viewModel.setContext(modelContext)
