@@ -52,6 +52,7 @@ struct GroupRecordsView: View {
                                     }
                                     .buttonStyle(.plain)
                                     .contentShape(Rectangle())
+                                    .accessibilityIdentifier("group_expense_row_\(expense.expenseDescription)")
                                     .contextMenu {
                                         Button {
                                             onTapExpense?(expense)

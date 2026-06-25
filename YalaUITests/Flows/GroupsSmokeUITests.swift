@@ -99,6 +99,47 @@ final class GroupsSmokeUITests: XCTestCase {
         )
     }
 
+    /// groups-expense-form: editar un gasto del feed → botón papelera del toolbar →
+    /// confirmar en el confirmationDialog → el gasto se borra de la lista y el sheet
+    /// cierra. Cubre el botón de eliminar añadido al toolbar del form (commit 22774f8e),
+    /// que el resto del smoke no ejercita. El seed `grupos` crea "Viaje a Cusco" con
+    /// 9 gastos donde el usuario es owner → puede participar → onDelete cableado.
+    /// "Mercado" es un gasto de ESTE mes (sección superior, visible sin scroll) y su
+    /// descripción es única en el seed → identifier de fila estable.
+    func test_groupExpenseDeleteFromFormToolbar() {
+        let app = launch()
+        openGroups(app)
+
+        let card = app.descendants(matching: .any).matching(identifier: "group_card").firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 10), "No apareció la tarjeta del grupo.")
+        card.tap()
+
+        // Toca un gasto del feed → abre el form en modo edición (con onDelete).
+        let expenseRow = app.buttons["group_expense_row_Mercado"]
+        XCTAssertTrue(expenseRow.waitForExistence(timeout: 10), "No apareció la fila del gasto 'Mercado' en el feed.")
+        expenseRow.tap()
+
+        // El form de edición monta (mismo campo de monto que el smoke de creación).
+        let amountField = app.textFields["group_expense_amount"]
+        XCTAssertTrue(amountField.waitForExistence(timeout: 5), "GroupExpenseFormView no montó en modo edición.")
+
+        // Botón de papelera del toolbar (solo en modo edición con onDelete != nil).
+        let deleteButton = app.buttons["group_expense_delete"]
+        XCTAssertTrue(deleteButton.waitForExistence(timeout: 5), "No apareció el botón de eliminar en el toolbar del form.")
+        deleteButton.tap()
+
+        // Confirma en el confirmationDialog. Se desambigua por `app.sheets` (gotcha:
+        // GroupRecordsView monta otro confirmationDialog con el mismo título "Eliminar").
+        let confirm = app.sheets.buttons["group_expense_delete_confirm"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "No apareció el botón destructivo del confirmationDialog.")
+        confirm.tap()
+
+        // El sheet del form cierra → el campo de monto desaparece.
+        XCTAssertTrue(amountField.waitForNonExistence(timeout: 10), "El form no se cerró tras eliminar el gasto.")
+        // Y el gasto desaparece del feed.
+        XCTAssertTrue(expenseRow.waitForNonExistence(timeout: 10), "El gasto eliminado sigue en el feed.")
+    }
+
     /// groups-bridge-settings-optout: el botón de ajustes globales abre la vista
     /// con el toggle del bridge.
     func test_groupsGlobalSettingsOpens() {

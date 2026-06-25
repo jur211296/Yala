@@ -391,6 +391,7 @@
         "Yala/App/Views/Groups/GroupsContainerView.swift",
         "Yala/App/Views/Groups/GroupFormView.swift",
         "Yala/App/Views/Groups/GroupDetailView.swift",
+        "Yala/App/Views/Groups/GroupRecordsView.swift",
         "Yala/App/Views/Groups/GroupBalancesView.swift",
         "Yala/App/Views/Groups/GroupSettingsView.swift",
         "Yala/App/Views/Groups/GroupCardView.swift",

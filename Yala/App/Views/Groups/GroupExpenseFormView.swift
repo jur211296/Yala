@@ -137,6 +137,7 @@ struct GroupExpenseFormView: View {
                                 .foregroundStyle(DS.Semantic.errorForeground)
                         }
                         .accessibilityLabel(L10n.Action.delete)
+                        .accessibilityIdentifier("group_expense_delete")
                         .buttonBorderShape(.circle)
                     }
                 }
@@ -158,6 +159,7 @@ struct GroupExpenseFormView: View {
                         dismiss()
                     }
                 }
+                .accessibilityIdentifier("group_expense_delete_confirm")
             }
             .onAppear {
                 viewModel.setContext(modelContext)
