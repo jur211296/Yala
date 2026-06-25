@@ -56,6 +56,22 @@ enum GroupBridgeSystemEntities {
             case .settlementReceived: return L10n.Subcategory.System.settlementReceived
             }
         }
+
+        /// Key cruda de localización (patrón regular `subcategory.system.<roleString>`).
+        /// Permite barrer el nombre en TODOS los idiomas para resolver por rol, no por
+        /// el idioma actual de la app.
+        var localizationKey: String { "subcategory.system.\(roleString)" }
+
+        /// Rol de la categoría padre (según `systemGroupCategoryDefinitions()`): las income
+        /// cuelgan de "groupCollections", las expense de "groups".
+        var parentCategoryRole: String {
+            switch self {
+            case .loanToGroups, .settlementPayment, .settlementReceived:
+                return GroupBridgeSystemRole.categoryGroupCollections  // income
+            case .loanCollection, .settlementSent:
+                return GroupBridgeSystemRole.categoryGroups            // expense
+            }
+        }
     }
 
     // MARK: - Errors
@@ -220,33 +236,156 @@ enum GroupBridgeSystemEntities {
         #endif
     }
 
+    // MARK: - Resolución por rol (multi-idioma)
+
+    /// Candidato para la selección determinística de una entidad de sistema.
+    struct SystemEntityCandidate: Sendable {
+        let name: String
+        let isSystem: Bool
+        let isDefaultSeed: Bool
+        /// Clave de desempate estable (Subcategory: `shortcutID.uuidString`; Category: `name`).
+        let tiebreak: String
+    }
+
+    /// PURE: índice del candidato que matchea por nombre multi-idioma.
+    /// Adopta SOLO entidades de sistema o sembradas (`isSystem || isDefaultSeed`) — nunca una
+    /// entidad PERSONAL homónima del usuario. Ante varios (UUIDs colapsados / duplicados
+    /// cross-device) desempata determinísticamente por `tiebreak` y luego por orden de aparición.
+    nonisolated static func selectSystemEntityIndex(
+        _ candidates: [SystemEntityCandidate],
+        matching names: Set<String>
+    ) -> Int? {
+        let matches = candidates.enumerated().filter {
+            ($0.element.isSystem || $0.element.isDefaultSeed) && names.contains($0.element.name)
+        }
+        guard !matches.isEmpty else { return nil }
+        return matches.min {
+            $0.element.tiebreak != $1.element.tiebreak
+                ? $0.element.tiebreak < $1.element.tiebreak
+                : $0.offset < $1.offset
+        }?.offset
+    }
+
+    /// Cache del barrido de nombres por key (independiente del idioma actual; los `.strings`
+    /// no mutan en runtime). `@MainActor` (el enum lo es) → acceso serializado, sin data race.
+    private static var localizedNamesCache: [String: Set<String>] = [:]
+
+    private static func localizedNames(forKey key: String) -> Set<String> {
+        if let cached = localizedNamesCache[key] { return cached }
+        let names = L10n.allLocalizedValues(forKey: key)
+        localizedNamesCache[key] = names
+        return names
+    }
+
+    /// Mapea entidades a candidatos para `selectSystemEntityIndex`. Desempate: Subcategory por
+    /// `shortcutID` (estable cross-device), Category por `name` (no tiene shortcutID).
+    private static func candidates(from subs: [Subcategory]) -> [SystemEntityCandidate] {
+        subs.map { SystemEntityCandidate(name: $0.name, isSystem: $0.isSystem,
+                                         isDefaultSeed: $0.isDefaultSeed, tiebreak: $0.shortcutID.uuidString) }
+    }
+
+    private static func candidates(from cats: [Category]) -> [SystemEntityCandidate] {
+        cats.map { SystemEntityCandidate(name: $0.name, isSystem: $0.isSystem,
+                                         isDefaultSeed: $0.isDefaultSeed, tiebreak: $0.name) }
+    }
+
     // MARK: - System Subcategory
 
-    /// Devuelve la subcategoría sistema correspondiente al role.
-    /// Si no existe (race con seed): trigger seed + re-fetch. Si tras re-fetch sigue faltando: error.
+    /// Devuelve la subcategoría de sistema del rol, robusta al idioma:
+    /// 1. Find multi-idioma — resuelve aunque la app cambió de idioma tras sembrar (self-heal `isSystem`).
+    /// 2. Seed defensivo (idempotent) + re-find — para DB sin entidades de sistema.
+    /// 3. Create-if-missing — SOLO si no existe en NINGÚN idioma (cero riesgo de duplicado).
+    ///    Garantiza la subcategoría: omitirla descuadraría las estadísticas income/expense.
+    /// El `throw` solo sobrevive a fallo catastrófico de fetch (DB rota); ya NO se dispara por idioma.
+    /// No persiste: el self-heal/inserts se guardan con el `save()` del caller (precedente del archivo).
     static func systemSubcategory(
         role: SystemSubcategoryRole,
         context: ModelContext
     ) throws -> Subcategory {
-        let name = role.localizedName
-
-        // 1. Fetch por nombre + isSystem=true.
-        let descriptor = FetchDescriptor<Subcategory>(
-            predicate: #Predicate { $0.name == name && $0.isSystem == true }
-        )
-        let existing = try context.fetch(descriptor)
-        if let sub = existing.first {
-            return sub
+        // 1. Find multi-idioma.
+        if let found = try findSystemSubcategory(role: role, context: context) {
+            return found
         }
 
-        // 2. No encontrada — trigger seed defensivo (idempotent) y re-fetch.
+        // 2. Seed defensivo + re-find.
         seedSystemGroupCategoriesIfNeeded(in: context)
-        let retry = try context.fetch(descriptor)
-        if let sub = retry.first {
-            return sub
+        if let afterSeed = try findSystemSubcategory(role: role, context: context) {
+            return afterSeed
         }
 
-        // 3. Aún no — error.
-        throw Error.systemSubcategoryMissing(role)
+        // 3. Create-if-missing bajo su categoría de sistema.
+        let parent = try findOrCreateSystemCategory(forSubcategoryRole: role, context: context)
+        // Re-find GLOBAL una última vez (más fuerte que mirar `parent.subcategories`, que puede
+        // llegar lazy/nil desde CloudKit) para minimizar la ventana de duplicado durante un import.
+        if let found = try findSystemSubcategory(role: role, context: context) {
+            return found
+        }
+        let sub = Subcategory(
+            name: role.localizedName,
+            colorHex: nil,
+            isDefaultSeed: true,
+            isVisible: true,
+            sortOrder: 0,
+            natureRawValue: "sin_clasificacion",
+            iconName: nil,
+            isSystem: true,
+            category: parent
+        )
+        context.insert(sub)
+        return sub
+    }
+
+    /// Find multi-idioma de la subcategoría de sistema del rol. Self-heal `isSystem` si la
+    /// encuentra con el flag en false (CloudKit no hidratado). No persiste (el caller guarda).
+    private static func findSystemSubcategory(
+        role: SystemSubcategoryRole,
+        context: ModelContext
+    ) throws -> Subcategory? {
+        let names = localizedNames(forKey: role.localizationKey)
+        // Acota a candidatas de sistema/sembradas (evita deserializar todo el catálogo del
+        // usuario); el nombre se filtra en Swift porque #Predicate no maneja `Set.contains`.
+        let all = try context.fetch(FetchDescriptor<Subcategory>(
+            predicate: #Predicate { $0.isSystem || $0.isDefaultSeed }
+        ))
+        guard let idx = selectSystemEntityIndex(candidates(from: all), matching: names) else { return nil }
+        let match = all[idx]
+        if !match.isSystem { match.isSystem = true }  // self-heal
+        return match
+    }
+
+    /// Find-or-create de la categoría de sistema padre del rol (multi-idioma + `isIncome`).
+    /// Reutiliza `systemGroupCategoryDefinitions()` como fuente única de nombre/icono/color.
+    private static func findOrCreateSystemCategory(
+        forSubcategoryRole role: SystemSubcategoryRole,
+        context: ModelContext
+    ) throws -> Category {
+        guard let def = systemGroupCategoryDefinitions().first(where: { $0.role == role.parentCategoryRole }) else {
+            // Imposible salvo bug de programación (los roles son estáticos).
+            throw Error.systemSubcategoryMissing(role)
+        }
+        let names = localizedNames(forKey: "category.system.\(role.parentCategoryRole)")
+        // Acota a categorías de sistema/sembradas del tipo (income/expense) correcto.
+        let isIncome = def.isIncome
+        let scoped = try context.fetch(FetchDescriptor<Category>(
+            predicate: #Predicate { ($0.isSystem || $0.isDefaultSeed) && $0.isIncome == isIncome }
+        ))
+        if let idx = selectSystemEntityIndex(candidates(from: scoped), matching: names) {
+            let match = scoped[idx]
+            if !match.isSystem { match.isSystem = true }  // self-heal
+            return match
+        }
+        // Crear (idéntico al seed).
+        let category = Category(
+            name: def.name,
+            colorHex: def.colorHex,
+            isIncome: def.isIncome,
+            isDefaultSeed: true,
+            isVisible: true,
+            sortOrder: 100,
+            iconName: def.iconName,
+            isSystem: true
+        )
+        context.insert(category)
+        return category
     }
 }

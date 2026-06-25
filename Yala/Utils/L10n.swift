@@ -178,6 +178,29 @@ private func ls(_ key: String, comment: String = "") -> String {
     return key
 }
 
+// MARK: - Multi-locale lookup
+
+extension L10n {
+    /// Conjunto de TODOS los valores de `key` a través de los locales soportados.
+    ///
+    /// Barre cada `.lproj` directamente (no la cadena `ls()` del idioma actual), así que
+    /// captura el nombre persistido aunque la app haya cambiado de idioma desde que se sembró
+    /// una entidad. Cubre además los padres de variantes regionales porque esos también
+    /// están en `SupportedLocale.allCases`. Usado para resolver entidades de sistema (que se
+    /// persisten con su nombre localizado) por identidad de rol en vez de por idioma actual.
+    static func allLocalizedValues(forKey key: String) -> Set<String> {
+        let sentinel = "__YALA_MISSING__"
+        var values: Set<String> = []
+        for locale in SupportedLocale.allCases {
+            guard let path = Bundle.main.path(forResource: locale.bundleResourceName, ofType: "lproj"),
+                  let bundle = Bundle(path: path) else { continue }
+            let value = bundle.localizedString(forKey: key, value: sentinel, table: nil)
+            if value != sentinel { values.insert(value) }
+        }
+        return values
+    }
+}
+
 // MARK: - Localized Strings
 
 /// Namespace for localized strings.

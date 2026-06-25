@@ -661,6 +661,19 @@ final class AppBootstrapper {
         do {
             let pending = try context.fetch(descriptor)
             guard !pending.isEmpty else { return }
+
+            // Reset one-time de bridgeAttempts para los gastos ya marcados pendientes ANTES del
+            // fix de resolución de subcategorías de sistema por idioma: un usuario pudo agotar
+            // los 3 intentos reabriendo la app, dejando el gasto sin reintentar pese a que ahora
+            // sí se puede resolver. El flag se persiste SOLO tras el `save()` exitoso (abajo), para
+            // que un fallo de save no consuma el reset sin haberlo aplicado.
+            let attemptsResetFlagKey = "didResetBridgeAttemptsForLocaleFixV1"
+            let didResetAttempts = !UserDefaults.standard.bool(forKey: attemptsResetFlagKey)
+            if didResetAttempts {
+                for expense in pending { expense.bridgeAttempts = 0 }
+                logger.info("One-time bridgeAttempts reset (locale-fix) for \(pending.count, privacy: .public) pending expenses")
+            }
+
             let maxAttempts = 3
             let maxPerLaunch = 20
             let batch = Array(pending.prefix(maxPerLaunch))
@@ -703,6 +716,10 @@ final class AppBootstrapper {
             SaveBreadcrumb.willSave("AppBootstrapper.retryPendingBridges")
             try context.save()
             SaveBreadcrumb.didSave("AppBootstrapper.retryPendingBridges")
+            // Marca el reset one-time como hecho solo tras persistir (save exitoso arriba).
+            if didResetAttempts {
+                UserDefaults.standard.set(true, forKey: attemptsResetFlagKey)
+            }
         } catch {
             logger.error("retryPendingBridges fetch failed: \(error.localizedDescription, privacy: .public)")
         }

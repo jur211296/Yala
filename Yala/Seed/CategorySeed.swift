@@ -432,12 +432,14 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
 // cuenta virtual `Grupos [moneda]` con subcategorías que respetan la
 // dicotomía income/expense de Yala.
 
-private struct SystemSubcategoryDefinition {
+// `internal` (no `private`): GroupBridgeSystemEntities reutiliza estas definiciones como
+// fuente única de nombre/icono/color/isIncome al crear entidades de sistema on-demand.
+struct SystemSubcategoryDefinition {
     let name: String
     let role: String  // identificador estable independiente del nombre L10n
 }
 
-private struct SystemCategoryDefinition {
+struct SystemCategoryDefinition {
     let name: String
     let colorHex: String
     let isIncome: Bool
@@ -458,7 +460,7 @@ enum GroupBridgeSystemRole {
     static let subcategorySettlementReceived = "settlementReceived"
 }
 
-private func systemGroupCategoryDefinitions() -> [SystemCategoryDefinition] {
+func systemGroupCategoryDefinitions() -> [SystemCategoryDefinition] {
     [
         // Categoría sistema EXPENSE
         SystemCategoryDefinition(

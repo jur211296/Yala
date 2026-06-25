@@ -82,4 +82,99 @@ struct GroupBridgeSystemEntitiesTests {
         #expect(error.errorDescription != nil)
         #expect(error.errorDescription?.contains("test reason") == true)
     }
+
+    // MARK: - localizationKey / parentCategoryRole (PURE)
+
+    @Test func subcategoryRole_localizationKey_matchesPattern() {
+        #expect(GroupBridgeSystemEntities.SystemSubcategoryRole.loanToGroups.localizationKey
+                == "subcategory.system.loanToGroups")
+        #expect(GroupBridgeSystemEntities.SystemSubcategoryRole.settlementReceived.localizationKey
+                == "subcategory.system.settlementReceived")
+    }
+
+    @Test func subcategoryRole_parentCategoryRole_incomeVsExpense() {
+        // Income → groupCollections
+        #expect(GroupBridgeSystemEntities.SystemSubcategoryRole.loanToGroups.parentCategoryRole
+                == GroupBridgeSystemRole.categoryGroupCollections)
+        #expect(GroupBridgeSystemEntities.SystemSubcategoryRole.settlementPayment.parentCategoryRole
+                == GroupBridgeSystemRole.categoryGroupCollections)
+        #expect(GroupBridgeSystemEntities.SystemSubcategoryRole.settlementReceived.parentCategoryRole
+                == GroupBridgeSystemRole.categoryGroupCollections)
+        // Expense → groups
+        #expect(GroupBridgeSystemEntities.SystemSubcategoryRole.loanCollection.parentCategoryRole
+                == GroupBridgeSystemRole.categoryGroups)
+        #expect(GroupBridgeSystemEntities.SystemSubcategoryRole.settlementSent.parentCategoryRole
+                == GroupBridgeSystemRole.categoryGroups)
+    }
+
+    // MARK: - allLocalizedValues — multi-locale (reproduce el bug del idioma)
+
+    @Test func allLocalizedValues_loanToGroups_containsSpanishAndEnglish() {
+        let names = L10n.allLocalizedValues(forKey: "subcategory.system.loanToGroups")
+        // El bug: con la app en inglés se busca "Loan to groups", pero la subcat se sembró en
+        // español. El fix barre TODOS los idiomas → el set debe contener AMBOS.
+        #expect(names.contains("Préstamo a grupos"))
+        #expect(names.contains("Loan to groups"))
+    }
+
+    @Test func allLocalizedValues_perRole_nonEmpty_andIncludesCurrent() {
+        let roles: [GroupBridgeSystemEntities.SystemSubcategoryRole] =
+            [.loanToGroups, .loanCollection, .settlementPayment, .settlementSent, .settlementReceived]
+        for role in roles {
+            let names = L10n.allLocalizedValues(forKey: role.localizationKey)
+            #expect(names.count >= 2, "rol \(role.roleString) debe tener nombres en varios idiomas")
+            #expect(names.contains(role.localizedName), "debe incluir el nombre del idioma actual")
+        }
+    }
+
+    @Test func allLocalizedValues_unknownKey_isEmpty() {
+        #expect(L10n.allLocalizedValues(forKey: "subcategory.system.__does_not_exist__").isEmpty)
+    }
+
+    // MARK: - selectSystemEntityIndex (PURE)
+
+    @Test func select_matchesSystemEntityByMultiLocaleName() {
+        let names: Set<String> = ["Préstamo a grupos", "Loan to groups"]
+        let candidates = [
+            GroupBridgeSystemEntities.SystemEntityCandidate(name: "Comida", isSystem: false, isDefaultSeed: true, tiebreak: "a"),
+            GroupBridgeSystemEntities.SystemEntityCandidate(name: "Préstamo a grupos", isSystem: true, isDefaultSeed: true, tiebreak: "b"),
+        ]
+        #expect(GroupBridgeSystemEntities.selectSystemEntityIndex(candidates, matching: names) == 1)
+    }
+
+    @Test func select_ignoresPersonalHomonym() {
+        // Una entidad PERSONAL homónima (isSystem=false, isDefaultSeed=false) NO debe adoptarse.
+        let names: Set<String> = ["Préstamo a grupos"]
+        let candidates = [
+            GroupBridgeSystemEntities.SystemEntityCandidate(name: "Préstamo a grupos", isSystem: false, isDefaultSeed: false, tiebreak: "a"),
+        ]
+        #expect(GroupBridgeSystemEntities.selectSystemEntityIndex(candidates, matching: names) == nil)
+    }
+
+    @Test func select_adoptsSeededWithIsSystemFalse() {
+        // isDefaultSeed=true, isSystem=false (CloudKit no hidratado) → SÍ se adopta (self-heal luego).
+        let names: Set<String> = ["Préstamo a grupos"]
+        let candidates = [
+            GroupBridgeSystemEntities.SystemEntityCandidate(name: "Préstamo a grupos", isSystem: false, isDefaultSeed: true, tiebreak: "a"),
+        ]
+        #expect(GroupBridgeSystemEntities.selectSystemEntityIndex(candidates, matching: names) == 0)
+    }
+
+    @Test func select_tiebreaksByTiebreakThenOrder() {
+        // Duplicados (UUIDs colapsados): elige el de menor tiebreak.
+        let names: Set<String> = ["X"]
+        let candidates = [
+            GroupBridgeSystemEntities.SystemEntityCandidate(name: "X", isSystem: true, isDefaultSeed: true, tiebreak: "zzz"),
+            GroupBridgeSystemEntities.SystemEntityCandidate(name: "X", isSystem: true, isDefaultSeed: true, tiebreak: "aaa"),
+        ]
+        #expect(GroupBridgeSystemEntities.selectSystemEntityIndex(candidates, matching: names) == 1)
+    }
+
+    @Test func select_noMatch_returnsNil() {
+        let names: Set<String> = ["No existe"]
+        let candidates = [
+            GroupBridgeSystemEntities.SystemEntityCandidate(name: "Otra", isSystem: true, isDefaultSeed: true, tiebreak: "a"),
+        ]
+        #expect(GroupBridgeSystemEntities.selectSystemEntityIndex(candidates, matching: names) == nil)
+    }
 }
