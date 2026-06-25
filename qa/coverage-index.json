@@ -442,7 +442,8 @@
         "Yala/App/Views/Shared/DonutChartView.swift"
       ],
       "scenarioIDs": [
-        "F-S5-07"
+        "F-S5-07",
+        "F-S5-08"
       ],
       "classification": "agentic",
       "coverage": "device-qa",

@@ -19,7 +19,10 @@ struct GroupStatsView: View {
     let currencyCode: String
 
     @State private var viewModel = GroupStatsViewModel()
+    /// Moneda activa del carrusel del modo "Todas" (currencyCode de la página visible).
+    @State private var allCurrenciesPage: String = ""
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     @Environment(AppPreferences.self) private var appPreferences
 
@@ -34,16 +37,10 @@ struct GroupStatsView: View {
                 VStack(spacing: DS.Spacing.xxl) {
                     statsSelectors
                     summaryCards
-                    if !viewModel.memberSpending.isEmpty {
-                        memberBarChart
-                    }
-                    if viewModel.allUncategorized {
-                        uncategorizedHint
-                    } else if !viewModel.categoryBreakdown.isEmpty {
-                        categoryPieChart
-                    }
-                    if viewModel.monthlyTrend.count >= 2 {
-                        monthlyTrendChart
+                    if viewModel.isAllCurrencies {
+                        allCurrenciesContent
+                    } else {
+                        singleCurrencyContent
                     }
                 }
                 .padding(.top, DS.Spacing.sm)
@@ -53,14 +50,47 @@ struct GroupStatsView: View {
             .onAppear { loadStats() }
             .onChange(of: viewModel.selectedPeriod) { _, _ in
                 viewModel.recalculate()
+                syncCarouselPage()
             }
-            .onChange(of: viewModel.selectedCurrency) { _, _ in
+            .onChange(of: viewModel.currencySelection) { _, _ in
                 viewModel.recalculate()
+                syncCarouselPage()
             }
         }
     }
 
-    // MARK: - Period Selector
+    // MARK: - Content (moneda única vs "Todas")
+
+    /// Modo `.currency`: layout clásico de una sola moneda.
+    @ViewBuilder
+    private var singleCurrencyContent: some View {
+        if !viewModel.memberSpending.isEmpty {
+            memberBarChart(spending: viewModel.memberSpending, currencyCode: viewModel.activeCurrencyCode)
+        }
+        categorySection
+        if viewModel.monthlyTrend.count >= 2 {
+            monthlyTrendChart(trend: viewModel.monthlyTrend)
+        }
+    }
+
+    /// Modo `.all`: donut convertido (arriba) + carrusel con una página por moneda.
+    @ViewBuilder
+    private var allCurrenciesContent: some View {
+        categorySection
+        if !viewModel.perCurrencyStats.isEmpty {
+            allCurrenciesCarousel
+        }
+    }
+
+    /// Donut de categorías o, si todo está sin clasificar, el hint. Compartido por ambos modos.
+    @ViewBuilder
+    private var categorySection: some View {
+        if viewModel.allUncategorized {
+            uncategorizedHint
+        } else if !viewModel.categoryBreakdown.isEmpty {
+            categoryPieChart
+        }
+    }
 
     // MARK: - Selectors (moneda + período, estilo menú)
 
@@ -77,21 +107,37 @@ struct GroupStatsView: View {
 
     private var currencyMenu: some View {
         Menu {
+            Button {
+                viewModel.currencySelection = .all
+            } label: {
+                HStack {
+                    Text(L10n.Common.all)
+                    if viewModel.isAllCurrencies {
+                        Image(systemName: "checkmark").accessibilityHidden(true)
+                    }
+                }
+            }
             ForEach(viewModel.availableCurrencies, id: \.self) { code in
                 Button {
-                    viewModel.selectedCurrency = code
+                    viewModel.currencySelection = .currency(code)
                 } label: {
                     HStack {
                         Text(currencyLabel(code))
-                        if viewModel.selectedCurrency == code {
+                        if viewModel.selectedCurrencyCode == code {
                             Image(systemName: "checkmark").accessibilityHidden(true)
                         }
                     }
                 }
             }
         } label: {
-            statsMenuLabel(icon: nil, text: currencyLabel(viewModel.selectedCurrency))
+            statsMenuLabel(icon: nil, text: currencyMenuLabelText)
         }
+    }
+
+    /// Texto del botón del menú de moneda ("Todas" o el símbolo/código de la seleccionada).
+    private var currencyMenuLabelText: String {
+        guard let code = viewModel.selectedCurrencyCode else { return L10n.Common.all }
+        return currencyLabel(code)
     }
 
     private var periodMenu: some View {
@@ -163,7 +209,7 @@ struct GroupStatsView: View {
                 .foregroundStyle(.secondary)
 
             if amounts.isEmpty {
-                Text(appPreferences.currency(0, currencyCode: viewModel.selectedCurrency))
+                Text(appPreferences.currency(0, currencyCode: viewModel.activeCurrencyCode))
                     .font(DS.Typography.headline)
                     .foregroundStyle(color)
             } else {
@@ -180,13 +226,13 @@ struct GroupStatsView: View {
 
     // MARK: - Member Bar Chart (Who Pays Most)
 
-    private var memberBarChart: some View {
+    private func memberBarChart(spending: [MemberSpending], currencyCode: String) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Groups.Stats.whoMadeMostPayments)
                 .font(DS.Typography.headline)
                 .padding(.leading, DS.Spacing.sm)
 
-            Chart(viewModel.memberSpending) { member in
+            Chart(spending) { member in
                 BarMark(
                     x: .value("amount", member.totalPaid),
                     y: .value("member", member.displayName)
@@ -198,13 +244,13 @@ struct GroupStatsView: View {
                     // la vista y no propaga environment objects @Observable, así
                     // que aquí NO se puede usar `AmountText` (lee
                     // `@Environment(AppPreferences.self)`). Se formatea con el
-                    // `appPreferences` ya resuelto de la vista — mismo patrón que
-                    // el resto de annotations de charts en la app.
-                    Text(appPreferences.currency(member.totalPaid, currencyCode: viewModel.selectedCurrency))
+                    // `appPreferences` ya resuelto de la vista y el `currencyCode`
+                    // recibido como parámetro — mismo patrón que el resto de la app.
+                    Text(appPreferences.currency(member.totalPaid, currencyCode: currencyCode))
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                 }
-                .accessibilityLabel("\(member.displayName): \(appPreferences.currency(member.totalPaid, currencyCode: viewModel.selectedCurrency))")
+                .accessibilityLabel("\(member.displayName): \(appPreferences.currency(member.totalPaid, currencyCode: currencyCode))")
             }
             .chartXAxis(.hidden)
             .chartYAxis {
@@ -213,7 +259,7 @@ struct GroupStatsView: View {
                         .font(DS.Typography.caption)
                 }
             }
-            .frame(height: CGFloat(max(viewModel.memberSpending.count, 1)) * 44)
+            .frame(height: CGFloat(max(spending.count, 1)) * 44)
             .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
         }
     }
@@ -244,6 +290,15 @@ struct GroupStatsView: View {
                 .font(DS.Typography.headline)
                 .padding(.leading, DS.Spacing.sm)
 
+            // Modo "Todas": el donut convierte todas las monedas a la preferida del
+            // usuario (es porcentual, no puede mezclar). La nota lo comunica con "≈".
+            if viewModel.categoriesWereConverted {
+                Text(L10n.Groups.Stats.convertedToNote(currencyLabel(viewModel.targetCurrency)))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, DS.Spacing.sm)
+            }
+
             DonutChartView(slices: categorySlices)
                 .frame(height: 260) // A11Y-DT: fixed chart height for consistent layout
                 .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
@@ -266,13 +321,13 @@ struct GroupStatsView: View {
 
     // MARK: - Monthly Trend
 
-    private var monthlyTrendChart: some View {
+    private func monthlyTrendChart(trend: [GroupMonthlyTrend]) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.Groups.Stats.monthlyTrend)
                 .font(DS.Typography.headline)
                 .padding(.leading, DS.Spacing.sm)
 
-            Chart(viewModel.monthlyTrend) { point in
+            Chart(trend) { point in
                 LineMark(
                     x: .value("month", point.month, unit: .month),
                     y: .value("amount", point.totalSpent)
@@ -307,6 +362,69 @@ struct GroupStatsView: View {
         }
     }
 
+    // MARK: - All Currencies Carousel
+
+    /// Carrusel del modo "Todas": una página por moneda con su "quién paga" + su tendencia.
+    /// Ambos gráficos viven en la misma página → la moneda nunca se desincroniza.
+    private var allCurrenciesCarousel: some View {
+        VStack(spacing: DS.Spacing.md) {
+            TabView(selection: $allCurrenciesPage) {
+                ForEach(viewModel.perCurrencyStats) { stat in
+                    VStack(spacing: DS.Spacing.xxl) {
+                        memberBarChart(spending: stat.memberSpending, currencyCode: stat.currencyCode)
+                        if stat.monthlyTrend.count >= 2 {
+                            monthlyTrendChart(trend: stat.monthlyTrend)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, DS.Spacing.xxs)
+                    .tag(stat.currencyCode)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(height: carouselHeight)
+
+            if viewModel.perCurrencyStats.count > 1 {
+                currencyPageDots
+            }
+        }
+    }
+
+    /// Indicadores de página (una cápsula por moneda). Patrón de `CategoriesTabView`.
+    private var currencyPageDots: some View {
+        HStack(spacing: DS.Spacing.xs) {
+            ForEach(viewModel.perCurrencyStats) { stat in
+                let isActive = allCurrenciesPage == stat.currencyCode
+                Capsule()
+                    .fill(isActive ? theme.primaryText.opacity(0.6) : theme.secondaryText.opacity(0.25))
+                    .frame(width: isActive ? 18 : 6, height: 3)
+                    .contentShape(Rectangle().inset(by: -8))
+                    .onTapGesture {
+                        DS.Haptic.selection()
+                        dsWithAnimation(reduceMotion) { allCurrenciesPage = stat.currencyCode }
+                    }
+                    .accessibilityLabel(currencyLabel(stat.currencyCode))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    /// Altura del carrusel = la página más alta (cada página alinea su contenido
+    /// arriba con un `Spacer`), para que deslizar no cause saltos verticales.
+    /// Estimación holgada: cada chart tiene altura fija (filas×44 / 180) + `chartChrome`
+    /// para el título `headline`, el padding del `solidCard` y el `spacing` del VStack,
+    /// con colchón para Dynamic Type. `.page` no scrollea si se queda corto → validar AX5
+    /// en device-QA.
+    private var carouselHeight: CGFloat {
+        let chartChrome: CGFloat = 110
+        let heights = viewModel.perCurrencyStats.map { stat -> CGFloat in
+            let memberBlock = CGFloat(max(stat.memberSpending.count, 1)) * 44 + chartChrome
+            let trendBlock: CGFloat = stat.monthlyTrend.count >= 2 ? (180 + chartChrome) : 0
+            return memberBlock + trendBlock
+        }
+        return heights.max() ?? 300
+    }
+
     // MARK: - Helpers
 
     private func loadStats() {
@@ -317,7 +435,17 @@ struct GroupStatsView: View {
             members: members,
             settlements: settlements,
             currentUserMemberID: currentUserMemberID,
-            currencyCode: currencyCode
+            currencyCode: currencyCode,
+            preferredCurrency: appPreferences.defaultCurrencyCode.rawValue
         )
+        syncCarouselPage()
+    }
+
+    /// Mantiene la página del carrusel en una moneda válida tras cambiar período/moneda.
+    private func syncCarouselPage() {
+        let codes = viewModel.perCurrencyStats.map(\.currencyCode)
+        if !codes.contains(allCurrenciesPage) {
+            allCurrenciesPage = codes.first ?? ""
+        }
     }
 }

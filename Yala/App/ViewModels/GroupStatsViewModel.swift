@@ -31,6 +31,15 @@ struct GroupMonthlyTrend: Identifiable {
     let totalSpent: Double
 }
 
+/// Estadísticas de UNA moneda (alimenta el carrusel del modo "Todas":
+/// una página por moneda con su "quién paga" + su tendencia, sin mezclar montos).
+struct GroupStatsByCurrency: Identifiable {
+    var id: String { currencyCode }
+    let currencyCode: String
+    let memberSpending: [MemberSpending]
+    let monthlyTrend: [GroupMonthlyTrend]
+}
+
 enum GroupStatsPeriod: String, CaseIterable, Identifiable {
     case thisMonth
     case last3Months
@@ -72,6 +81,13 @@ enum GroupStatsPeriod: String, CaseIterable, Identifiable {
     }
 }
 
+/// Filtro de moneda de las estadísticas. `.all` agrega todas las monedas
+/// (donut convertido + carrusel por moneda); `.currency` filtra a una sola.
+enum GroupStatsCurrencySelection: Hashable {
+    case all
+    case currency(String)
+}
+
 // MARK: - ViewModel
 
 @MainActor
@@ -85,12 +101,31 @@ final class GroupStatsViewModel {
     private(set) var memberSpending: [MemberSpending] = []
     private(set) var categoryBreakdown: [GroupCategoryBreakdown] = []
     private(set) var monthlyTrend: [GroupMonthlyTrend] = []
+    /// Stats por moneda para el carrusel del modo "Todas" (vacío en `.currency`).
+    private(set) var perCurrencyStats: [GroupStatsByCurrency] = []
+    /// True cuando el donut del modo "Todas" convirtió montos de otra moneda (prefijo "≈").
+    private(set) var categoriesWereConverted = false
     var selectedPeriod: GroupStatsPeriod = .thisMonth
 
     /// Monedas con gastos en el grupo (principal primero). Con ≤1 no se muestra el selector.
     private(set) var availableCurrencies: [String] = []
-    /// Moneda activa para donut / quién paga / tendencia. Default: la principal del grupo.
-    var selectedCurrency: String = ""
+    /// Filtro de moneda activo. Default: la principal del grupo (`.currency`).
+    var currencySelection: GroupStatsCurrencySelection = .currency("")
+
+    /// Código de la moneda seleccionada, o `nil` cuando el filtro es `.all`.
+    var selectedCurrencyCode: String? {
+        if case .currency(let code) = currencySelection { return code }
+        return nil
+    }
+
+    /// True cuando el filtro es "Todas" (modo agregado multi-moneda).
+    var isAllCurrencies: Bool { selectedCurrencyCode == nil }
+
+    /// Código de moneda para formatear las secciones de moneda única.
+    /// En `.all` esas secciones no se renderizan; cae a la principal como fallback.
+    var activeCurrencyCode: String {
+        selectedCurrencyCode ?? availableCurrencies.first ?? currencyCode
+    }
     /// Total gastado y "mi parte" POR moneda (período actual, todas las monedas) — tarjetas duales.
     private(set) var totalsByCurrency: [(currencyCode: String, total: Double)] = []
     private(set) var myPortionsByCurrency: [(currencyCode: String, amount: Double)] = []
@@ -110,7 +145,13 @@ final class GroupStatsViewModel {
     private var allMembers: [SplitMember] = []
     private var currentUserMemberID: String?
     private var currencyCode: String = ""
+    /// Moneda destino del donut convertido en modo "Todas" (la preferida del usuario).
+    private(set) var targetCurrency: String = ""
     private var modelContext: ModelContext?
+
+    /// Conversor de tasas para el donut del modo "Todas". Inyectable en tests.
+    @ObservationIgnored
+    var converter: CurrencyConverting = CurrencyConverter.shared
 
     // MARK: - Load
 
@@ -124,80 +165,77 @@ final class GroupStatsViewModel {
         members: [SplitMember],
         settlements: [SplitSettlement],
         currentUserMemberID: String?,
-        currencyCode: String
+        currencyCode: String,
+        preferredCurrency: String? = nil
     ) {
         self.allExpenses = expenses
         self.allShares = shares
         self.allMembers = members
         self.currentUserMemberID = currentUserMemberID
         self.currencyCode = currencyCode
+        // Moneda destino del donut convertido (modo "Todas"): la preferida del usuario,
+        // con la principal del grupo como fallback.
+        self.targetCurrency = preferredCurrency.flatMap { $0.isEmpty ? nil : $0 } ?? currencyCode
         availableCurrencies = orderedCurrencies(Set(expenses.map(\.currencyCode)))
-        // Preserva la selección del usuario si sigue siendo válida; si no, la principal
-        // (o la primera con gastos si la principal no tiene movimientos).
-        if selectedCurrency.isEmpty || !availableCurrencies.contains(selectedCurrency) {
-            selectedCurrency = availableCurrencies.first ?? currencyCode
-        }
+        // Default: "Todas" cuando hay >1 moneda; con una sola, esa moneda.
+        // Preserva la selección previa del usuario si sigue siendo válida.
+        currencySelection = resolvedSelection(from: currencySelection)
         recalculate()
     }
 
     func recalculate() {
-        let filtered = filteredExpenses()
-
-        totalSpent = filtered.reduce(0) { $0 + $1.amount }
-
-        if let myID = currentUserMemberID {
-            let expenseIDs = Set(filtered.map(\.id))
-            myPortion = allShares
-                .filter { $0.memberID == myID && expenseIDs.contains($0.expenseID) }
-                .reduce(0) { $0 + $1.amount }
+        // Filtra por período UNA sola vez y reparte a las sub-rutinas (evita re-filtrar
+        // `allExpenses` por fecha 2× en cada cambio de filtro — hot path de UI).
+        let period = periodExpenses()
+        if isAllCurrencies {
+            recalculateAllCurrencies(period: period)
         } else {
-            myPortion = 0
+            recalculateSingleCurrency(period: period)
         }
+        recalculateDualTotals(period: period)
+    }
 
-        let memberNameLookup = Dictionary(
-            allMembers.map { ($0.id.uuidString, $0.displayName) },
-            uniquingKeysWith: { first, _ in first }
-        )
-        let grouped = Dictionary(grouping: filtered, by: \.paidByMemberID)
-        memberSpending = grouped.map { memberID, expenses in
-            MemberSpending(
-                id: memberID,
-                displayName: memberNameLookup[memberID] ?? memberID,
-                totalPaid: expenses.reduce(0) { $0 + $1.amount }
+    /// Modo `.currency`: una sola moneda (comportamiento clásico).
+    private func recalculateSingleCurrency(period: [SplitExpense]) {
+        let code = selectedCurrencyCode ?? currencyCode
+        let filtered = period.filter { $0.currencyCode == code }
+        totalSpent = filtered.reduce(0) { $0 + $1.amount }
+        myPortion = computeMyPortion(in: filtered)
+        memberSpending = computeMemberSpending(from: filtered)
+        monthlyTrend = computeMonthlyTrend(from: filtered)
+        // En moneda única todos los gastos comparten `code` → sin conversión real.
+        categoryBreakdown = convertedCategoryBreakdown(filtered, target: code).breakdown
+        categoriesWereConverted = false
+        perCurrencyStats = []
+    }
+
+    /// Modo `.all`: donut convertido a la moneda preferida + carrusel por moneda.
+    private func recalculateAllCurrencies(period: [SplitExpense]) {
+        // Las secciones de moneda única no se renderizan en `.all`.
+        totalSpent = 0
+        myPortion = 0
+        memberSpending = []
+        monthlyTrend = []
+
+        // Donut: convierte TODOS los gastos del período a la moneda preferida.
+        let result = convertedCategoryBreakdown(period, target: targetCurrency)
+        categoryBreakdown = result.breakdown
+        categoriesWereConverted = result.wasConverted
+
+        // Carrusel: una entrada por moneda del período, cada una con sus propios stats.
+        let byCurrency = Dictionary(grouping: period, by: \.currencyCode)
+        perCurrencyStats = orderedCurrencies(Set(byCurrency.keys)).map { code in
+            let expensesInCurrency = byCurrency[code] ?? []
+            return GroupStatsByCurrency(
+                currencyCode: code,
+                memberSpending: computeMemberSpending(from: expensesInCurrency),
+                monthlyTrend: computeMonthlyTrend(from: expensesInCurrency)
             )
         }
-        .sorted { $0.totalPaid > $1.totalPaid }
-
-        let catGrouped = Dictionary(grouping: filtered, by: { $0.subcategoryName ?? L10n.Groups.Stats.uncategorized })
-        let catTotals = catGrouped.map { (name: $0.key, total: $0.value.reduce(0) { $0 + $1.amount }) }
-        let grandTotal = max(totalSpent, 0.01)
-        let lookup = subcategoryLookup()
-        var fallbackColors: [String: String] = [:]
-        categoryBreakdown = catTotals
-            .sorted { $0.total > $1.total }
-            .map { entry in
-                let resolved = lookup[entry.name]
-                return GroupCategoryBreakdown(
-                    subcategoryName: entry.name,
-                    amount: entry.total,
-                    percentage: (entry.total / grandTotal) * 100,
-                    iconName: resolved?.icon ?? "tag.fill",
-                    colorHex: resolved?.colorHex ?? fallbackColor(for: entry.name, assigned: &fallbackColors)
-                )
-            }
-
-        let calendar = Calendar.current
-        let monthGrouped = Dictionary(grouping: filtered, by: { calendar.startOfMonth(for: $0.date) })
-        monthlyTrend = monthGrouped
-            .map { GroupMonthlyTrend(month: $0.key, totalSpent: $0.value.reduce(0) { $0 + $1.amount }) }
-            .sorted { $0.month < $1.month }
-
-        recalculateDualTotals()
     }
 
     /// Total gastado y "mi parte" por moneda (período actual, TODAS las monedas) → tarjetas duales.
-    private func recalculateDualTotals() {
-        let period = periodExpenses()
+    private func recalculateDualTotals(period: [SplitExpense]) {
         let totalsGrouped = Dictionary(grouping: period, by: \.currencyCode)
         totalsByCurrency = orderedCurrencies(Set(totalsGrouped.keys)).map { code in
             (currencyCode: code, total: totalsGrouped[code]?.reduce(0) { $0 + $1.amount } ?? 0)
@@ -223,9 +261,97 @@ final class GroupStatsViewModel {
         return allExpenses.filter { interval.contains($0.date) }
     }
 
-    /// Gastos del período en la moneda seleccionada (alimenta donut / quién paga / tendencia).
-    private func filteredExpenses() -> [SplitExpense] {
-        periodExpenses().filter { $0.currencyCode == selectedCurrency }
+    /// "Mi parte" sumada sobre un conjunto de gastos.
+    private func computeMyPortion(in expenses: [SplitExpense]) -> Double {
+        guard let myID = currentUserMemberID else { return 0 }
+        let expenseIDs = Set(expenses.map(\.id))
+        return allShares
+            .filter { $0.memberID == myID && expenseIDs.contains($0.expenseID) }
+            .reduce(0) { $0 + $1.amount }
+    }
+
+    /// Gasto total pagado por cada miembro, descendente.
+    private func computeMemberSpending(from expenses: [SplitExpense]) -> [MemberSpending] {
+        let memberNameLookup = Dictionary(
+            allMembers.map { ($0.id.uuidString, $0.displayName) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let grouped = Dictionary(grouping: expenses, by: \.paidByMemberID)
+        return grouped.map { memberID, expenses in
+            MemberSpending(
+                id: memberID,
+                displayName: memberNameLookup[memberID] ?? memberID,
+                totalPaid: expenses.reduce(0) { $0 + $1.amount }
+            )
+        }
+        .sorted { $0.totalPaid > $1.totalPaid }
+    }
+
+    /// Gasto agregado por mes, ascendente.
+    private func computeMonthlyTrend(from expenses: [SplitExpense]) -> [GroupMonthlyTrend] {
+        let calendar = Calendar.current
+        let monthGrouped = Dictionary(grouping: expenses, by: { calendar.startOfMonth(for: $0.date) })
+        return monthGrouped
+            .map { GroupMonthlyTrend(month: $0.key, totalSpent: $0.value.reduce(0) { $0 + $1.amount }) }
+            .sorted { $0.month < $1.month }
+    }
+
+    /// Desglose por subcategoría con los montos convertidos a `target`.
+    /// En moneda única (todos los gastos ya en `target`) no convierte nada y
+    /// `wasConverted` es `false`; en modo "Todas" convierte cada gasto al TC actual
+    /// (igual que `GroupBalanceService.consolidatedBalances`).
+    private func convertedCategoryBreakdown(
+        _ expenses: [SplitExpense],
+        target: String
+    ) -> (breakdown: [GroupCategoryBreakdown], wasConverted: Bool) {
+        let wasConverted = expenses.contains { $0.currencyCode != target }
+        var totalsByCategory: [String: Double] = [:]
+        var grandTotal: Double = 0
+        for expense in expenses {
+            let name = expense.subcategoryName ?? L10n.Groups.Stats.uncategorized
+            let converted = convertedAmount(expense.amount, from: expense.currencyCode, to: target)
+            totalsByCategory[name, default: 0] += converted
+            grandTotal += converted
+        }
+        let safeGrandTotal = max(grandTotal, 0.01)
+        let lookup = subcategoryLookup()
+        var fallbackColors: [String: String] = [:]
+        let breakdown = totalsByCategory
+            .map { (name: $0.key, total: $0.value) }
+            .sorted { $0.total > $1.total }
+            .map { entry -> GroupCategoryBreakdown in
+                let resolved = lookup[entry.name]
+                return GroupCategoryBreakdown(
+                    subcategoryName: entry.name,
+                    amount: entry.total,
+                    percentage: (entry.total / safeGrandTotal) * 100,
+                    iconName: resolved?.icon ?? "tag.fill",
+                    colorHex: resolved?.colorHex ?? fallbackColor(for: entry.name, assigned: &fallbackColors)
+                )
+            }
+        return (breakdown, wasConverted)
+    }
+
+    /// Convierte un monto entre monedas con el TC actual (defensa contra no-finitos,
+    /// igual que `GroupBalanceService`).
+    private func convertedAmount(_ amount: Double, from: String, to: String) -> Double {
+        if from == to { return amount }
+        let safe = Decimal(amount.isFinite ? amount : 0)
+        let result = converter.convertWithLatestRate(safe, from: from, to: to)
+        return NSDecimalNumber(decimal: result).doubleValue
+    }
+
+    /// Resuelve el filtro de moneda al cargar: preserva la selección previa si es
+    /// válida; si no, default a "Todas" con multi-moneda o a la única disponible.
+    private func resolvedSelection(from current: GroupStatsCurrencySelection) -> GroupStatsCurrencySelection {
+        switch current {
+        case .all where availableCurrencies.count > 1:
+            return .all
+        case .currency(let code) where !code.isEmpty && availableCurrencies.contains(code):
+            return .currency(code)
+        default:
+            return availableCurrencies.count > 1 ? .all : .currency(availableCurrencies.first ?? currencyCode)
+        }
     }
 
     /// Ordena monedas con la principal del grupo primero, luego alfabético.

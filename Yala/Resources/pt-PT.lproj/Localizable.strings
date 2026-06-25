@@ -3803,3 +3803,6 @@
 
 /* Header del gráfico de quién pagó más en el grupo */
 "groups.stats.whoMadeMostPayments" = "Quem pagou mais?";
+
+/* Stats de grupo (modo Todas): nota bajo el donut indicando la moneda a la que se convirtió */
+"groups.stats.convertedToNote" = "≈ convertido para %@";

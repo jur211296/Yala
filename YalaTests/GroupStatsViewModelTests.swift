@@ -55,9 +55,13 @@ struct GroupStatsViewModelTests {
         members: [SplitMember],
         currentUserMemberID: String? = nil,
         currencyCode: String = "PEN",
-        period: GroupStatsPeriod = .allTime
+        period: GroupStatsPeriod = .allTime,
+        selection: GroupStatsCurrencySelection? = nil,
+        preferredCurrency: String? = nil,
+        converter: CurrencyConverting? = nil
     ) -> GroupStatsViewModel {
         let vm = GroupStatsViewModel()
+        if let converter { vm.converter = converter }
         vm.selectedPeriod = period
         vm.loadStats(
             expenses: expenses,
@@ -65,8 +69,15 @@ struct GroupStatsViewModelTests {
             members: members,
             settlements: [],
             currentUserMemberID: currentUserMemberID,
-            currencyCode: currencyCode
+            currencyCode: currencyCode,
+            preferredCurrency: preferredCurrency
         )
+        // Aplica la selección DESPUÉS de loadStats para poder forzar `.all` o una
+        // moneda específica (loadStats reescribiría una selección no válida).
+        if let selection {
+            vm.currencySelection = selection
+            vm.recalculate()
+        }
         return vm
     }
 
@@ -84,7 +95,7 @@ struct GroupStatsViewModelTests {
         let e1 = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "A")
         let e2 = makeExpense(amount: 50, currencyCode: "USD", paidByMemberID: "A")
 
-        let vm = makeVM(expenses: [e1, e2], shares: [], members: [], currencyCode: "PEN")
+        let vm = makeVM(expenses: [e1, e2], shares: [], members: [], currencyCode: "PEN", selection: .currency("PEN"))
         #expect(vm.totalSpent == 100)
     }
 
@@ -97,11 +108,18 @@ struct GroupStatsViewModelTests {
         #expect(vm.availableCurrencies == ["PEN", "USD"])  // principal primero
     }
 
-    @Test func selectedCurrency_defaultsToMain() {
+    @Test func defaultSelection_isAll_whenMultiCurrency() {
         let e1 = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "A")
         let e2 = makeExpense(amount: 50, currencyCode: "USD", paidByMemberID: "A")
         let vm = makeVM(expenses: [e1, e2], shares: [], members: [], currencyCode: "PEN")
-        #expect(vm.selectedCurrency == "PEN")
+        #expect(vm.currencySelection == .all)
+        #expect(vm.selectedCurrencyCode == nil)
+    }
+
+    @Test func defaultSelection_isSingle_whenOneCurrency() {
+        let e1 = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "A")
+        let vm = makeVM(expenses: [e1], shares: [], members: [], currencyCode: "PEN")
+        #expect(vm.selectedCurrencyCode == "PEN")
     }
 
     @Test func totalsByCurrency_includesAllCurrencies() {
@@ -116,9 +134,9 @@ struct GroupStatsViewModelTests {
     @Test func selectedCurrency_filtersGraphs() {
         let e1 = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "A")
         let e2 = makeExpense(amount: 50, currencyCode: "USD", paidByMemberID: "A")
-        let vm = makeVM(expenses: [e1, e2], shares: [], members: [], currencyCode: "PEN")
-        #expect(vm.totalSpent == 100)  // arranca en PEN (principal)
-        vm.selectedCurrency = "USD"
+        let vm = makeVM(expenses: [e1, e2], shares: [], members: [], currencyCode: "PEN", selection: .currency("PEN"))
+        #expect(vm.totalSpent == 100)  // PEN
+        vm.currencySelection = .currency("USD")
         vm.recalculate()
         #expect(vm.totalSpent == 50)   // ahora filtra USD
     }
@@ -258,5 +276,75 @@ struct GroupStatsViewModelTests {
         )
 
         #expect(vm.totalSpent == 100)
+    }
+
+    // MARK: - All Currencies Mode
+
+    @Test func allMode_perCurrencyStats_groupsByCurrency() {
+        let pen1 = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "A")
+        let pen2 = makeExpense(amount: 50, currencyCode: "PEN", paidByMemberID: "B")
+        let usd1 = makeExpense(amount: 30, currencyCode: "USD", paidByMemberID: "A")
+        let vm = makeVM(
+            expenses: [pen1, pen2, usd1], shares: [], members: [],
+            currencyCode: "PEN", selection: .all
+        )
+        #expect(vm.perCurrencyStats.count == 2)
+        let pen = vm.perCurrencyStats.first { $0.currencyCode == "PEN" }
+        let usd = vm.perCurrencyStats.first { $0.currencyCode == "USD" }
+        #expect(pen?.memberSpending.reduce(0) { $0 + $1.totalPaid } == 150)
+        #expect(usd?.memberSpending.reduce(0) { $0 + $1.totalPaid } == 30)
+    }
+
+    @Test func allMode_donutConverted_sumsConvertedAmounts() {
+        // PEN es el target (preferida); USD se convierte ×2 vía el mock.
+        let pen = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "A", subcategoryName: "Comida")
+        let usd = makeExpense(amount: 50, currencyCode: "USD", paidByMemberID: "A", subcategoryName: "Comida")
+        let vm = makeVM(
+            expenses: [pen, usd], shares: [], members: [],
+            currencyCode: "PEN", selection: .all,
+            preferredCurrency: "PEN",
+            converter: MockCurrencyConverter(fixedRate: 2)
+        )
+        // Comida = 100 (PEN) + 50×2 (USD→PEN) = 200, único bucket → 100%.
+        #expect(vm.categoryBreakdown.count == 1)
+        #expect(vm.categoryBreakdown[0].subcategoryName == "Comida")
+        #expect(vm.categoryBreakdown[0].amount == 200)
+        #expect(vm.categoryBreakdown[0].percentage == 100)
+        #expect(vm.categoriesWereConverted == true)
+    }
+
+    @Test func allMode_categoriesWereConverted_falseWhenAllInTarget() {
+        let pen1 = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "A", subcategoryName: "Comida")
+        let pen2 = makeExpense(amount: 40, currencyCode: "PEN", paidByMemberID: "A", subcategoryName: "Transporte")
+        let vm = makeVM(
+            expenses: [pen1, pen2], shares: [], members: [],
+            currencyCode: "PEN", selection: .all, preferredCurrency: "PEN"
+        )
+        #expect(vm.categoriesWereConverted == false)
+    }
+
+    @Test func allMode_singleStatsAreEmpty() {
+        let pen = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "A")
+        let usd = makeExpense(amount: 50, currencyCode: "USD", paidByMemberID: "A")
+        let vm = makeVM(
+            expenses: [pen, usd], shares: [], members: [],
+            currencyCode: "PEN", selection: .all, preferredCurrency: "PEN",
+            converter: MockCurrencyConverter(fixedRate: 1)
+        )
+        #expect(vm.totalSpent == 0)
+        #expect(vm.myPortion == 0)
+        #expect(vm.memberSpending.isEmpty)
+        #expect(vm.monthlyTrend.isEmpty)
+    }
+
+    @Test func singleMode_perCurrencyStatsEmpty_notConverted() {
+        let pen = makeExpense(amount: 100, currencyCode: "PEN", paidByMemberID: "A")
+        let usd = makeExpense(amount: 50, currencyCode: "USD", paidByMemberID: "A")
+        let vm = makeVM(
+            expenses: [pen, usd], shares: [], members: [],
+            currencyCode: "PEN", selection: .currency("PEN")
+        )
+        #expect(vm.perCurrencyStats.isEmpty)
+        #expect(vm.categoriesWereConverted == false)
     }
 }

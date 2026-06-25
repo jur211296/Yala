@@ -4548,3 +4548,6 @@
 
 /* Header del gráfico de quién pagó más en el grupo */
 "groups.stats.whoMadeMostPayments" = "最も多く支払ったのは？";
+
+/* Stats de grupo (modo Todas): nota bajo el donut indicando la moneda a la que se convirtió */
+"groups.stats.convertedToNote" = "≈ %@ に換算";

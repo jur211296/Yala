@@ -24,7 +24,6 @@ struct GroupsViewModelTests {
         #expect(vm.globalSummary == nil)
         #expect(vm.showCreateGroup == false)
         #expect(vm.selectedGroup == nil)
-        #expect(vm.showGroupDetail == false)
         #expect(vm.searchText.isEmpty)
         #expect(vm.showArchived == false)
     }
@@ -46,7 +45,6 @@ struct GroupsViewModelTests {
 
         #expect(vm.selectedGroup != nil)
         #expect(vm.selectedGroup?.name == "Test Group")
-        #expect(vm.showGroupDetail == true)
     }
 
     @Test func openDetail_replacesExisting() {

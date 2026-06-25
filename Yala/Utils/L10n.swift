@@ -1737,6 +1737,9 @@ enum L10n {
             static var assignCategoriesHint: String {
                 ls("groups.stats.assignCategoriesHint", comment: "")
             }
+            static func convertedToNote(_ currency: String) -> String {
+                String(format: ls("groups.stats.convertedToNote", comment: "Nota bajo el donut (modo Todas): moneda destino de la conversión"), currency)
+            }
         }
 
         // MARK: - Bridge (A0-Bridge)

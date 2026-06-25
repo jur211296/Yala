@@ -4548,3 +4548,6 @@
 
 /* Header del gráfico de quién pagó más en el grupo */
 "groups.stats.whoMadeMostPayments" = "谁付得最多？";
+
+/* Stats de grupo (modo Todas): nota bajo el donut indicando la moneda a la que se convirtió */
+"groups.stats.convertedToNote" = "≈ 换算为 %@";
