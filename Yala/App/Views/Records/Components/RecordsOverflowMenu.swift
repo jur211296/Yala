@@ -48,6 +48,9 @@ struct RecordsOverflowMenu: View {
                 .font(DS.Typography.bodyBold)
                 .foregroundStyle(.thToolbarIcon)
         }
+        // Iconos de los items del menú en color primary (el ellipsis conserva
+        // su color por el foregroundStyle explícito del label).
+        .tint(.primary)
         .filterBadge(isActive: viewModel.activeFilterCount > 0)
         .accessibilityLabel(L10n.Common.moreOptions)
     }
