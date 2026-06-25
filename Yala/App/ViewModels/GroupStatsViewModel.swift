@@ -105,7 +105,7 @@ final class GroupStatsViewModel {
     private(set) var perCurrencyStats: [GroupStatsByCurrency] = []
     /// True cuando el donut del modo "Todas" convirtió montos de otra moneda (prefijo "≈").
     private(set) var categoriesWereConverted = false
-    var selectedPeriod: GroupStatsPeriod = .thisMonth
+    var selectedPeriod: GroupStatsPeriod = .allTime
 
     /// Monedas con gastos en el grupo (principal primero). Con ≤1 no se muestra el selector.
     private(set) var availableCurrencies: [String] = []

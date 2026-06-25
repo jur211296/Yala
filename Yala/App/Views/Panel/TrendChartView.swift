@@ -31,6 +31,13 @@ struct TrendChartView: View {
     /// `true` (Panel/Tendencias). Se pasa `false` en históricos sin saldo vivo
     /// (p. ej. la tendencia de un grupo) donde esos indicadores no aplican.
     var showTodayIndicators: Bool = true
+    /// Dibuja un `PointMark` visible en cada punto de la serie sólida. Default
+    /// `false` (Panel/Tendencias). Útil en series con pocos puntos (meses).
+    var showPointMarks: Bool = false
+    /// Fechas en las que mostrar la etiqueta de valor sobre el punto (subconjunto
+    /// inteligente para no saturar). Default vacío. Usa el formatter puro (sin
+    /// `@Environment` → seguro dentro de `.annotation`).
+    var dataLabelDates: Set<Date> = []
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -106,6 +113,30 @@ struct TrendChartView: View {
 
                 // DATA ANNOTATIONS FOR WEEK VIEW
                 if period == .thisWeek || period == .last7Days {
+                    PointMark(
+                        x: .value(L10n.Common.date, point.date),
+                        y: .value(L10n.Common.amount, point.value)
+                    )
+                    .symbolSize(0)  // Invisible point just for annotation context
+                    .annotation(position: .top, spacing: DS.Spacing.xs) {
+                        Text(formattedAmountShort(point.value))
+                            .font(DS.Typography.labelTiny)
+                            .foregroundStyle(.thSecondaryText)
+                    }
+                }
+
+                // Visible markers per point (short series, e.g. group months)
+                if showPointMarks {
+                    PointMark(
+                        x: .value(L10n.Common.date, point.date),
+                        y: .value(L10n.Common.amount, point.value)
+                    )
+                    .symbolSize(30)
+                    .foregroundStyle(primaryLineColor.opacity(dimOpacity))
+                }
+
+                // Value labels on selected dates (smart subset to avoid clutter)
+                if dataLabelDates.contains(point.date) {
                     PointMark(
                         x: .value(L10n.Common.date, point.date),
                         y: .value(L10n.Common.amount, point.value)

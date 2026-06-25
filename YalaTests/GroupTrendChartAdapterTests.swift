@@ -71,4 +71,27 @@ struct GroupTrendChartAdapterTests {
         #expect(input?.interval.start == month(2025, 1))
         #expect(input?.interval.end == month(2025, 3))
     }
+
+    // MARK: - smartLabelDates
+
+    @Test func smartLabels_returnsAll_whenFewMonths() {
+        let points = (1...4).map { BarPoint(date: month(2025, $0), value: Double($0 * 100)) }
+        let labels = GroupTrendChartAdapter.smartLabelDates(points: points, maxLabels: 6)
+        #expect(labels == Set(points.map(\.date)))
+    }
+
+    @Test func smartLabels_subsets_whenManyMonths() {
+        // 12 meses, máx 6 → subconjunto, nunca los 12.
+        let points = (1...12).map { BarPoint(date: month(2025, $0), value: Double($0 * 100)) }
+        let labels = GroupTrendChartAdapter.smartLabelDates(points: points, maxLabels: 6)
+        #expect(labels.count < points.count)
+        #expect(labels.count <= 7) // ~maxLabels + el último forzado
+        // siempre el primero y el último (más reciente)
+        #expect(labels.contains(points.first!.date))
+        #expect(labels.contains(points.last!.date))
+    }
+
+    @Test func smartLabels_empty_whenNoPoints() {
+        #expect(GroupTrendChartAdapter.smartLabelDates(points: [], maxLabels: 6).isEmpty)
+    }
 }

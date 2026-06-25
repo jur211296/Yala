@@ -17,6 +17,8 @@ enum GroupTrendChartAdapter {
         let points: [BarPoint]
         let yDomain: ClosedRange<Double>
         let interval: DateInterval
+        /// Fechas en las que mostrar la etiqueta de valor (subconjunto inteligente).
+        let dataLabelDates: Set<Date>
     }
 
     /// Convierte la tendencia mensual del grupo en los inputs del chart.
@@ -47,6 +49,27 @@ enum GroupTrendChartAdapter {
         guard let firstDate = points.first?.date, let lastDate = points.last?.date else { return nil }
         let interval = DateInterval(start: firstDate, end: lastDate)
 
-        return Input(points: points, yDomain: yDomain, interval: interval)
+        return Input(
+            points: points,
+            yDomain: yDomain,
+            interval: interval,
+            dataLabelDates: smartLabelDates(points: points)
+        )
+    }
+
+    /// Fechas en las que mostrar la etiqueta de valor sobre el punto. Con pocos
+    /// meses se etiquetan todos; con muchos, un subconjunto distribuido
+    /// uniformemente que SIEMPRE incluye el primero y el último (el más reciente),
+    /// para no saturar el chart.
+    static func smartLabelDates(points: [BarPoint], maxLabels: Int = 6) -> Set<Date> {
+        guard !points.isEmpty else { return [] }
+        if points.count <= maxLabels {
+            return Set(points.map(\.date))
+        }
+        let lastIndex = points.count - 1
+        let step = max(1, Int((Double(points.count) / Double(maxLabels)).rounded(.up)))
+        var indices = Set(Swift.stride(from: 0, through: lastIndex, by: step))
+        indices.insert(lastIndex) // el más reciente siempre etiquetado
+        return Set(indices.map { points[$0].date })
     }
 }

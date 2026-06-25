@@ -68,6 +68,7 @@ struct GroupStatsView: View {
     /// Modo `.currency`: una sola moneda. Orden: quién paga → tendencia → distribución.
     @ViewBuilder
     private var singleCurrencyContent: some View {
+        currencyPeriodHeader(currencyCode: viewModel.activeCurrencyCode)
         if !viewModel.memberSpending.isEmpty {
             memberBarChart(spending: viewModel.memberSpending, currencyCode: viewModel.activeCurrencyCode)
         }
@@ -239,6 +240,23 @@ struct GroupStatsView: View {
         }
     }
 
+    /// Encabezado de contexto: identifica la moneda y el período activos. Da
+    /// claridad en moneda única y, sobre todo, en cada página del carrusel del
+    /// modo "Todas" (saber qué moneda es cada página). El nombre usa el mismo
+    /// patrón que el carrusel multimoneda de `TrendsTabView`.
+    private func currencyPeriodHeader(currencyCode: String) -> some View {
+        let name = Locale.current.localizedString(forCurrencyCode: currencyCode)?.capitalized ?? currencyCode
+        return VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            Text("\(name) (\(currencyLabel(currencyCode)))")
+                .font(DS.Typography.title3)
+                .foregroundStyle(.thPrimaryText)
+            Text(viewModel.selectedPeriod.displayName)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     // MARK: - Member Bar Chart (Who Pays Most)
 
     private func memberBarChart(spending: [MemberSpending], currencyCode: String) -> some View {
@@ -338,10 +356,14 @@ struct GroupStatsView: View {
     /// idénticos al resto de la app. `showTodayIndicators: false` porque un
     /// histórico de grupo no tiene saldo vivo. En el carrusel multimoneda
     /// `focusedDate` es `.constant(nil)` (el scrub chocaría con el swipe de página).
+    /// `scrubbable: false` (carrusel) desactiva el hit-testing del chart para que
+    /// el `chartXSelection` no capture el swipe horizontal del `TabView .page`
+    /// (no hay scrub en el carrusel — `focusedDate` es `.constant(nil)`).
     private func monthlyTrendChart(
         input: GroupTrendChartAdapter.Input,
         currencyCode: String,
-        focusedDate: Binding<Date?>
+        focusedDate: Binding<Date?>,
+        scrubbable: Bool = true
     ) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             sectionHeader(L10n.Groups.Stats.monthlyTrend)
@@ -357,8 +379,11 @@ struct GroupStatsView: View {
                 focusedDate: focusedDate,
                 period: .allTime,
                 chartHeight: 170,
-                showTodayIndicators: false
+                showTodayIndicators: false,
+                showPointMarks: true,
+                dataLabelDates: input.dataLabelDates
             )
+            .allowsHitTesting(scrubbable)
             .panelCard()
         }
     }
@@ -372,9 +397,10 @@ struct GroupStatsView: View {
             TabView(selection: $allCurrenciesPage) {
                 ForEach(viewModel.perCurrencyStats) { stat in
                     VStack(spacing: DS.Spacing.lg) {
+                        currencyPeriodHeader(currencyCode: stat.currencyCode)
                         memberBarChart(spending: stat.memberSpending, currencyCode: stat.currencyCode)
                         if let trendInput = GroupTrendChartAdapter.makeInput(from: stat.monthlyTrend) {
-                            monthlyTrendChart(input: trendInput, currencyCode: stat.currencyCode, focusedDate: .constant(nil))
+                            monthlyTrendChart(input: trendInput, currencyCode: stat.currencyCode, focusedDate: .constant(nil), scrubbable: false)
                         }
                         Spacer(minLength: 0)
                     }
@@ -412,18 +438,23 @@ struct GroupStatsView: View {
 
     /// Altura del carrusel = la página más alta (cada página alinea su contenido
     /// arriba con un `Spacer`), para que deslizar no cause saltos verticales.
-    /// Estimación holgada: cada chart tiene altura fija (filas×44 / 170) + `chartChrome`
-    /// para el título `headline`, el padding del `panelCard` y el `spacing` del VStack,
-    /// con colchón para Dynamic Type. `.page` no scrollea si se queda corto → validar AX5
-    /// en device-QA.
+    /// Desglose realista por bloque (evita el hueco que dejaba la estimación
+    /// holgada anterior): header de sección (~22) + `spacing.sm` + padding del
+    /// `panelCard` (lg×2); más el header de moneda y el margen de las etiquetas
+    /// de datos de la tendencia. `.page` no scrollea si se queda corto → validar
+    /// AX5 en device-QA.
     private var carouselHeight: CGFloat {
-        let chartChrome: CGFloat = 110
+        let sectionChrome: CGFloat = 22 + DS.Spacing.sm + DS.Spacing.lg * 2
+        let currencyHeader: CGFloat = 46
+        let dataLabelPad: CGFloat = 18
+        let interBlock = DS.Spacing.lg
         let heights = viewModel.perCurrencyStats.map { stat -> CGFloat in
-            let memberBlock = CGFloat(max(stat.memberSpending.count, 1)) * 44 + chartChrome
-            let trendBlock: CGFloat = stat.monthlyTrend.count >= 2 ? (170 + chartChrome) : 0
-            return memberBlock + trendBlock
+            let memberBlock = CGFloat(max(stat.memberSpending.count, 1)) * 44 + sectionChrome
+            let hasTrend = GroupTrendChartAdapter.makeInput(from: stat.monthlyTrend) != nil
+            let trendBlock: CGFloat = hasTrend ? (170 + sectionChrome + dataLabelPad) : 0
+            return currencyHeader + interBlock + memberBlock + (hasTrend ? interBlock + trendBlock : 0)
         }
-        return heights.max() ?? 300
+        return heights.max() ?? 360
     }
 
     // MARK: - Helpers
