@@ -97,4 +97,29 @@ struct GroupDetailViewModelTests {
         // shareURL should remain nil — call was rejected by guard
         #expect(vm.shareURL == nil)
     }
+
+    // MARK: - Expense Detail → Edit Transition
+
+    @Test func activeSheet_expenseDetailID() {
+        let vm = GroupDetailViewModel(group: makeGroup())
+        let expense = SplitExpense(groupZoneID: "z", amount: 10, paidByMemberID: "a")
+        vm.activeSheet = .expenseDetail(expense)
+        #expect(vm.activeSheet?.id == "expenseDetail-\(expense.id)")
+    }
+
+    @Test func requestEditFromDetail_closesDetailAndConsumesExpenseOnce() {
+        // Given: el detalle de un gasto está presentado
+        let vm = GroupDetailViewModel(group: makeGroup())
+        let expense = SplitExpense(groupZoneID: "z", amount: 10, paidByMemberID: "a")
+        vm.activeSheet = .expenseDetail(expense)
+
+        // When: el usuario toca Editar en el detalle
+        vm.requestEditFromDetail(expense)
+
+        // Then: el detalle se cierra y el gasto queda pendiente para que el
+        // onDismiss del padre presente el editor (consumo one-shot)
+        #expect(vm.activeSheet == nil)
+        #expect(vm.consumePendingEditFromDetail()?.id == expense.id)
+        #expect(vm.consumePendingEditFromDetail() == nil)
+    }
 }

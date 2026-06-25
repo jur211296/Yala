@@ -154,7 +154,13 @@ struct GroupDetailView: View {
             }
         }
         .sheet(item: $viewModel.activeSheet, onDismiss: {
-            viewModel.loadData()
+            // Reemplazo de sheet: si el detalle pidió editar, sube el editor
+            // (conserva el gasto); si no, cierre normal (recarga datos).
+            if let expense = viewModel.consumePendingEditFromDetail() {
+                viewModel.activeSheet = .editExpense(expense)
+            } else {
+                viewModel.loadData()
+            }
         }) { sheet in
             sheetContent(for: sheet)
         }
@@ -216,6 +222,18 @@ struct GroupDetailView: View {
             )
             .presentationDetents(DS.Adaptive.sheetDetents([.large]))
             .presentationDragIndicator(.visible)
+
+        case .expenseDetail(let expense):
+            // Fase 1: detalle read-only en medium. El botón Editar sube el editor
+            // en large (vía pendingEdit consumido en el onDismiss del sheet).
+            GroupExpenseDetailSheet(
+                expense: expense,
+                share: viewModel.mySharesByExpense[expense.id],
+                bridgeTransaction: viewModel.txBridgeMap[expense.id.uuidString],
+                memberNameLookup: viewModel.memberNameLookup,
+                currentMemberID: viewModel.currentMemberID,
+                onEdit: { viewModel.requestEditFromDetail(expense) }
+            )
 
         case .editExpense(let expense):
             GroupExpenseFormView(
@@ -306,7 +324,8 @@ struct GroupDetailView: View {
                 txBridgeMap: viewModel.txBridgeMap,
                 mySharesByExpense: viewModel.mySharesByExpense,
                 currentMemberID: viewModel.currentMemberID,
-                onTapExpense: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .editExpense($0) } : nil,
+                onTapExpense: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .expenseDetail($0) } : nil,
+                onEditExpense: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .editExpense($0) } : nil,
                 onDeleteExpense: viewModel.canCurrentUserParticipate ? { viewModel.deleteExpense($0) } : nil,
                 onInvite: group.isOwner && viewModel.isCurrentUserAdmin ? {
                     guard !viewModel.isCreatingShare else { return }

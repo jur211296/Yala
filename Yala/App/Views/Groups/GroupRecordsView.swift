@@ -23,6 +23,8 @@ struct GroupRecordsView: View {
 
     // Callbacks (optional for backwards compatibility)
     var onTapExpense: ((SplitExpense) -> Void)?
+    /// Edición directa (menú contextual "Editar"); salta la fase de detalle.
+    var onEditExpense: ((SplitExpense) -> Void)?
     var onDeleteExpense: ((SplitExpense) -> Void)?
     var onInvite: (() -> Void)?
 
@@ -55,7 +57,7 @@ struct GroupRecordsView: View {
                                     .accessibilityIdentifier("group_expense_row_\(expense.expenseDescription)")
                                     .contextMenu {
                                         Button {
-                                            onTapExpense?(expense)
+                                            onEditExpense?(expense)
                                         } label: {
                                             Label(L10n.Action.edit, systemImage: "pencil")
                                         }
@@ -197,9 +199,14 @@ struct GroupRecordsView: View {
             Self.dateFormatter.string(from: expense.date)
         }
 
-        return grouped.sorted { lhs, rhs in
-            guard let lDate = lhs.value.first?.date, let rDate = rhs.value.first?.date else { return false }
-            return lDate > rDate
-        }
+        // Días en orden descendente; dentro de cada día el más reciente arriba y
+        // el más antiguo abajo (createdAt desc), igual que Records
+        // (FilterService.groupByDate).
+        return grouped
+            .map { (key: $0.key, value: $0.value.sorted { $0.createdAt > $1.createdAt }) }
+            .sorted { lhs, rhs in
+                guard let lDate = lhs.value.first?.date, let rDate = rhs.value.first?.date else { return false }
+                return lDate > rDate
+            }
     }
 }

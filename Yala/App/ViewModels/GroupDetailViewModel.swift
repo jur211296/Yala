@@ -78,6 +78,10 @@ final class GroupDetailViewModel {
 
     var activeSheet: GroupSheet?
 
+    /// Gasto pendiente de editar tras cerrar el detalle (reemplazo de sheet: el
+    /// detalle baja en medium, el editor sube en large). Espejo de RecordsViewModel.
+    private var pendingEditExpense: SplitExpense?
+
     // MARK: - Init
 
     init(group: SplitGroup) {
@@ -181,6 +185,20 @@ final class GroupDetailViewModel {
     }
 
     // MARK: - Actions
+
+    /// Botón Editar del detalle: marca el gasto pendiente y cierra el sheet de
+    /// detalle. El padre, en `onDismiss`, presenta `.editExpense`.
+    func requestEditFromDetail(_ expense: SplitExpense) {
+        pendingEditExpense = expense
+        activeSheet = nil
+    }
+
+    /// Consume (one-shot) el gasto pendiente de edición. Lo invoca el padre en el
+    /// `onDismiss` del sheet para decidir entre presentar el editor o recargar.
+    func consumePendingEditFromDetail() -> SplitExpense? {
+        defer { pendingEditExpense = nil }
+        return pendingEditExpense
+    }
 
     func deleteExpense(_ expense: SplitExpense) {
         do {
@@ -301,6 +319,7 @@ final class GroupDetailViewModel {
 enum GroupSheet: Identifiable {
     case settings
     case addExpense
+    case expenseDetail(SplitExpense)
     case editExpense(SplitExpense)
     case settlement(Debt)
 
@@ -308,6 +327,7 @@ enum GroupSheet: Identifiable {
         switch self {
         case .settings: "settings"
         case .addExpense: "addExpense"
+        case .expenseDetail(let e): "expenseDetail-\(e.id)"
         case .editExpense(let e): "editExpense-\(e.id)"
         case .settlement(let d): "settlement-\(d.id)"
         }
