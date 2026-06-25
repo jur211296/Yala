@@ -21,6 +21,8 @@ struct GroupStatsView: View {
     @State private var viewModel = GroupStatsViewModel()
     /// Moneda activa del carrusel del modo "Todas" (currencyCode de la página visible).
     @State private var allCurrenciesPage: String = ""
+    /// Fecha enfocada (scrub) de la gráfica de tendencia en modo moneda única.
+    @State private var trendFocusedDate: Date?
     @Environment(\.yalaTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
@@ -34,7 +36,7 @@ struct GroupStatsView: View {
             )
         } else {
             ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
+                VStack(spacing: DS.Spacing.lg) {
                     statsSelectors
                     summaryCards
                     if viewModel.isAllCurrencies {
@@ -51,35 +53,37 @@ struct GroupStatsView: View {
             .onChange(of: viewModel.selectedPeriod) { _, _ in
                 viewModel.recalculate()
                 syncCarouselPage()
+                trendFocusedDate = nil
             }
             .onChange(of: viewModel.currencySelection) { _, _ in
                 viewModel.recalculate()
                 syncCarouselPage()
+                trendFocusedDate = nil
             }
         }
     }
 
     // MARK: - Content (moneda única vs "Todas")
 
-    /// Modo `.currency`: layout clásico de una sola moneda.
+    /// Modo `.currency`: una sola moneda. Orden: quién paga → tendencia → distribución.
     @ViewBuilder
     private var singleCurrencyContent: some View {
         if !viewModel.memberSpending.isEmpty {
             memberBarChart(spending: viewModel.memberSpending, currencyCode: viewModel.activeCurrencyCode)
         }
-        categorySection
-        if viewModel.monthlyTrend.count >= 2 {
-            monthlyTrendChart(trend: viewModel.monthlyTrend)
+        if let trendInput = GroupTrendChartAdapter.makeInput(from: viewModel.monthlyTrend) {
+            monthlyTrendChart(input: trendInput, currencyCode: viewModel.activeCurrencyCode, focusedDate: $trendFocusedDate)
         }
+        categorySection
     }
 
-    /// Modo `.all`: donut convertido (arriba) + carrusel con una página por moneda.
+    /// Modo `.all`: carrusel por moneda (quién paga → tendencia) + donut convertido al final.
     @ViewBuilder
     private var allCurrenciesContent: some View {
-        categorySection
         if !viewModel.perCurrencyStats.isEmpty {
             allCurrenciesCarousel
         }
+        categorySection
     }
 
     /// Donut de categorías o, si todo está sin clasificar, el hint. Compartido por ambos modos.
@@ -221,16 +225,25 @@ struct GroupStatsView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+        .panelCard()
+    }
+
+    // MARK: - Section header (patrón del resto de la app: título externo al card)
+
+    /// Header externo de sección (título sobre el card), igual que `TrendsTabView`.
+    private func sectionHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(DS.Typography.headline)
+            Spacer()
+        }
     }
 
     // MARK: - Member Bar Chart (Who Pays Most)
 
     private func memberBarChart(spending: [MemberSpending], currencyCode: String) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.Groups.Stats.whoMadeMostPayments)
-                .font(DS.Typography.headline)
-                .padding(.leading, DS.Spacing.sm)
+            sectionHeader(L10n.Groups.Stats.whoMadeMostPayments)
 
             Chart(spending) { member in
                 BarMark(
@@ -260,7 +273,7 @@ struct GroupStatsView: View {
                 }
             }
             .frame(height: CGFloat(max(spending.count, 1)) * 44)
-            .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+            .panelCard()
         }
     }
 
@@ -279,29 +292,28 @@ struct GroupStatsView: View {
         }
         .padding(.vertical, DS.Spacing.xl)
         .frame(maxWidth: .infinity)
-        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+        .panelCard()
     }
 
     // MARK: - Category Pie Chart
 
     private var categoryPieChart: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.Groups.Stats.categories)
-                .font(DS.Typography.headline)
-                .padding(.leading, DS.Spacing.sm)
+            sectionHeader(L10n.Groups.Stats.categories)
 
-            // Modo "Todas": el donut convierte todas las monedas a la preferida del
-            // usuario (es porcentual, no puede mezclar). La nota lo comunica con "≈".
-            if viewModel.categoriesWereConverted {
-                Text(L10n.Groups.Stats.convertedToNote(currencyLabel(viewModel.targetCurrency)))
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .padding(.leading, DS.Spacing.sm)
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                // Modo "Todas": el donut convierte todas las monedas a la preferida del
+                // usuario (es porcentual, no puede mezclar). La nota lo comunica con "≈".
+                if viewModel.categoriesWereConverted {
+                    Text(L10n.Groups.Stats.convertedToNote(currencyLabel(viewModel.targetCurrency)))
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(.secondary)
+                }
+
+                DonutChartView(slices: categorySlices)
+                    .frame(height: 260) // A11Y-DT: fixed chart height for consistent layout
             }
-
-            DonutChartView(slices: categorySlices)
-                .frame(height: 260) // A11Y-DT: fixed chart height for consistent layout
-                .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+            .panelCard()
         }
     }
 
@@ -319,46 +331,35 @@ struct GroupStatsView: View {
         }
     }
 
-    // MARK: - Monthly Trend
+    // MARK: - Monthly Trend (TrendChartView compartido — diseño y hover idénticos)
 
-    private func monthlyTrendChart(trend: [GroupMonthlyTrend]) -> some View {
+    /// Tendencia mensual de gastos. Reutiliza `TrendChartView` (el de la pestaña
+    /// Tendencias) para que la línea, el área, los ejes y el hover/tooltip sean
+    /// idénticos al resto de la app. `showTodayIndicators: false` porque un
+    /// histórico de grupo no tiene saldo vivo. En el carrusel multimoneda
+    /// `focusedDate` es `.constant(nil)` (el scrub chocaría con el swipe de página).
+    private func monthlyTrendChart(
+        input: GroupTrendChartAdapter.Input,
+        currencyCode: String,
+        focusedDate: Binding<Date?>
+    ) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Text(L10n.Groups.Stats.monthlyTrend)
-                .font(DS.Typography.headline)
-                .padding(.leading, DS.Spacing.sm)
+            sectionHeader(L10n.Groups.Stats.monthlyTrend)
 
-            Chart(trend) { point in
-                LineMark(
-                    x: .value("month", point.month, unit: .month),
-                    y: .value("amount", point.totalSpent)
-                )
-                .foregroundStyle(theme.accent)
-                .interpolationMethod(.catmullRom)
-
-                AreaMark(
-                    x: .value("month", point.month, unit: .month),
-                    y: .value("amount", point.totalSpent)
-                )
-                .foregroundStyle(theme.accent.opacity(0.15))
-                .interpolationMethod(.catmullRom)
-                .accessibilityHidden(true)
-            }
-            .accessibilityElement(children: .combine)
-            .chartXAxis {
-                AxisMarks(values: .stride(by: .month)) { _ in
-                    AxisValueLabel(format: .dateTime.month(.abbreviated))
-                        .font(DS.Typography.captionSmall)
-                }
-            }
-            .chartYAxis {
-                AxisMarks { _ in
-                    AxisGridLine()
-                    AxisValueLabel()
-                        .font(DS.Typography.captionSmall)
-                }
-            }
-            .frame(height: 180) // A11Y-DT: fixed chart height for consistent layout
-            .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+            TrendChartView(
+                trendPoints: input.points,
+                rawPoints: input.points,
+                yDomain: input.yDomain,
+                grouping: .month,
+                interval: input.interval,
+                currencyCode: currencyCode,
+                trendType: .expense,
+                focusedDate: focusedDate,
+                period: .allTime,
+                chartHeight: 170,
+                showTodayIndicators: false
+            )
+            .panelCard()
         }
     }
 
@@ -370,10 +371,10 @@ struct GroupStatsView: View {
         VStack(spacing: DS.Spacing.md) {
             TabView(selection: $allCurrenciesPage) {
                 ForEach(viewModel.perCurrencyStats) { stat in
-                    VStack(spacing: DS.Spacing.xxl) {
+                    VStack(spacing: DS.Spacing.lg) {
                         memberBarChart(spending: stat.memberSpending, currencyCode: stat.currencyCode)
-                        if stat.monthlyTrend.count >= 2 {
-                            monthlyTrendChart(trend: stat.monthlyTrend)
+                        if let trendInput = GroupTrendChartAdapter.makeInput(from: stat.monthlyTrend) {
+                            monthlyTrendChart(input: trendInput, currencyCode: stat.currencyCode, focusedDate: .constant(nil))
                         }
                         Spacer(minLength: 0)
                     }
@@ -411,15 +412,15 @@ struct GroupStatsView: View {
 
     /// Altura del carrusel = la página más alta (cada página alinea su contenido
     /// arriba con un `Spacer`), para que deslizar no cause saltos verticales.
-    /// Estimación holgada: cada chart tiene altura fija (filas×44 / 180) + `chartChrome`
-    /// para el título `headline`, el padding del `solidCard` y el `spacing` del VStack,
+    /// Estimación holgada: cada chart tiene altura fija (filas×44 / 170) + `chartChrome`
+    /// para el título `headline`, el padding del `panelCard` y el `spacing` del VStack,
     /// con colchón para Dynamic Type. `.page` no scrollea si se queda corto → validar AX5
     /// en device-QA.
     private var carouselHeight: CGFloat {
         let chartChrome: CGFloat = 110
         let heights = viewModel.perCurrencyStats.map { stat -> CGFloat in
             let memberBlock = CGFloat(max(stat.memberSpending.count, 1)) * 44 + chartChrome
-            let trendBlock: CGFloat = stat.monthlyTrend.count >= 2 ? (180 + chartChrome) : 0
+            let trendBlock: CGFloat = stat.monthlyTrend.count >= 2 ? (170 + chartChrome) : 0
             return memberBlock + trendBlock
         }
         return heights.max() ?? 300

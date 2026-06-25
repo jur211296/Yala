@@ -440,7 +440,8 @@
       "codeGlobs": [
         "Yala/App/Views/Groups/GroupStatsView.swift",
         "Yala/App/ViewModels/GroupStatsViewModel.swift",
-        "Yala/App/Views/Shared/DonutChartView.swift"
+        "Yala/App/Views/Shared/DonutChartView.swift",
+        "Yala/App/Logic/GroupTrendChartAdapter.swift"
       ],
       "scenarioIDs": [
         "F-S5-07",
@@ -449,7 +450,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-24"
+      "lastVerified": "2026-06-25"
     },
     {
       "area": "groups-form",

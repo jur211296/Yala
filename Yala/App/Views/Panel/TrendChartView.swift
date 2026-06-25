@@ -27,6 +27,10 @@ struct TrendChartView: View {
     /// Desglose por moneda nativa del `liveAnchor`. Habilita el sheet
     /// educativo "Tu saldo hoy" en multi-currency. Nil → tap no abre sheet.
     var liveAnchorBreakdown: [String: Decimal]? = nil
+    /// Muestra el marcador "Hoy" (línea vertical) y la pill "Hoy ⓘ". Default
+    /// `true` (Panel/Tendencias). Se pasa `false` en históricos sin saldo vivo
+    /// (p. ej. la tendencia de un grupo) donde esos indicadores no aplican.
+    var showTodayIndicators: Bool = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -300,7 +304,8 @@ struct TrendChartView: View {
     private func todayHintPillOverlay(proxy: ChartProxy) -> some View {
         let today = Calendar.current.startOfDay(for: Date.now)
         GeometryReader { geo in
-            if !compact,
+            if showTodayIndicators,
+               !compact,
                paddedXDomain.contains(today),
                let plotFrame = proxy.plotFrame,
                let xPos = proxy.position(forX: today)
@@ -401,7 +406,7 @@ struct TrendChartView: View {
     /// en una capa por encima del selection gesture.
     @ChartContentBuilder
     private func todayMarker(today: Date) -> some ChartContent {
-        if !compact && paddedXDomain.contains(today) {
+        if showTodayIndicators && !compact && paddedXDomain.contains(today) {
             RuleMark(x: .value(L10n.Widget.today, today))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
                 .foregroundStyle(.thSecondaryText.opacity(0.5))
