@@ -88,6 +88,52 @@ enum DevSeedGroups {
             }
         }
 
+        // ── 2º grupo "Viaje a Lima" (yo owner/activo). Habilita el chip EDITABLE del
+        //    composer "Nuevo gasto" (>1 grupo elegible) y el cambio de grupo en el picker.
+        //    Ordena DESPUÉS de "Viaje a Cusco" (Cusco < Lima) → no altera el primer
+        //    `group_card` que tapean los smoke tests de gasto/borrado.
+        let group2 = SplitGroup(
+            name: "Viaje a Lima",
+            iconName: "airplane",
+            currencyCode: "PEN",
+            isOwner: true
+        )
+        context.insert(group2)
+        let zone2 = group2.cloudKitZoneID
+        let me2 = SplitMember(
+            groupZoneID: zone2, displayName: "Tú",
+            cloudKitUserRecordID: "uitest-current-user",
+            role: "admin", status: .active, isGroupOwner: true, isCurrentUser: true
+        )
+        let caro = SplitMember(
+            groupZoneID: zone2, displayName: "Caro",
+            cloudKitUserRecordID: "uitest-member-caro", status: .active
+        )
+        for m in [me2, caro] { context.insert(m) }
+        let member2IDs = [me2, caro].map { $0.id.uuidString }
+        let expenses2: [(desc: String, amount: Double, payer: SplitMember, subcat: String?, monthsAgo: Int)] = [
+            ("Hotel Miraflores", 400, me2, "Alojamiento", 1),
+            ("Ceviche", 120, caro, "Restaurantes", 0),
+        ]
+        for e in expenses2 {
+            let expense = SplitExpense(
+                groupZoneID: zone2, amount: e.amount, currencyCode: "PEN",
+                expenseDescription: e.desc, paidByMemberID: e.payer.id.uuidString,
+                splitType: "equal",
+                subcategoryName: e.subcat
+            )
+            expense.date = monthsAgo(e.monthsAgo)
+            context.insert(expense)
+            let perHead = ((e.amount / Double(member2IDs.count)) * 100).rounded() / 100
+            for mid in member2IDs {
+                let share = SplitShare(
+                    expenseID: expense.id, memberID: mid, amount: perHead,
+                    isPaid: mid == e.payer.id.uuidString, groupZoneID: zone2
+                )
+                context.insert(share)
+            }
+        }
+
         do {
             try context.save()
         } catch {

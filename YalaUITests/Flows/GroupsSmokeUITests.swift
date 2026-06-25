@@ -85,7 +85,8 @@ final class GroupsSmokeUITests: XCTestCase {
         )
     }
 
-    /// groups-expense-form: desde el tab, FAB → "Nuevo gasto" abre el composer con el chip de grupo.
+    /// groups-expense-form: desde el tab, FAB → "Nuevo gasto" abre el composer con el chip de
+    /// grupo editable (2 grupos en el seed) y el cambio de grupo desde el selector.
     func test_groupExpenseFromTabFAB() {
         let app = launch()
         openGroups(app)
@@ -102,9 +103,35 @@ final class GroupsSmokeUITests: XCTestCase {
             app.textFields["group_expense_amount"].waitForExistence(timeout: 5),
             "El composer de gasto no montó (group_expense_amount)."
         )
+
+        // El chip arranca con el primer grupo elegible ("Viaje a Cusco"). Con 2 grupos en el
+        // seed es EDITABLE (Button), su a11y label es "Grupo: <nombre>".
+        let chip = app.descendants(matching: .any).matching(identifier: "group_expense_group_chip").firstMatch
+        XCTAssertTrue(chip.waitForExistence(timeout: 5), "No apareció el chip de grupo en el composer.")
+        XCTAssertTrue(chip.label.contains("Viaje a Cusco"), "El chip no mostró el grupo inicial. label=\(chip.label)")
+        chip.tap()
+
+        // El selector de grupo lista las opciones (filas con id prefijo group_picker_row_).
+        // Targeteamos la fila por identifier para no chocar con el group_card de la lista de fondo.
+        let limaRow = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'group_picker_row_' AND label CONTAINS[c] 'Viaje a Lima'")
+        ).firstMatch
+        XCTAssertTrue(limaRow.waitForExistence(timeout: 5), "El selector de grupo no listó 'Viaje a Lima'.")
+        limaRow.tap()
+
+        // El composer se remonta con el grupo nuevo: el chip pasa a reflejar "Viaje a Lima".
+        let switched = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label CONTAINS[c] 'Viaje a Lima'"),
+            object: chip
+        )
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [switched], timeout: 8),
+            .completed,
+            "El chip no reflejó el cambio a 'Viaje a Lima' tras elegirlo en el selector."
+        )
         XCTAssertTrue(
-            app.descendants(matching: .any).matching(identifier: "group_expense_group_chip").firstMatch.waitForExistence(timeout: 5),
-            "No apareció el chip de grupo en el composer."
+            app.textFields["group_expense_amount"].waitForExistence(timeout: 5),
+            "El composer no se remontó tras cambiar de grupo."
         )
     }
 
