@@ -428,7 +428,8 @@
         "Yala/App/Logic/GroupSplitConversion.swift",
         "Yala/App/Views/Groups/GroupExpenseComposerView.swift",
         "Yala/App/Views/Groups/GroupPickerSheet.swift",
-        "Yala/App/Logic/GroupExpenseEligibilityLogic.swift"
+        "Yala/App/Logic/GroupExpenseEligibilityLogic.swift",
+        "Yala/App/Views/Shared/FABStackView.swift"
       ],
       "scenarioIDs": [
         "F-S1-05",

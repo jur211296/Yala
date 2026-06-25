@@ -470,6 +470,11 @@ class SessionState {
     /// Set by AppRouter.navigate(.groupDetail) handler, read by GroupsContainerView.
     var pendingGroupID: String?
 
+    /// Set por el FAB del Panel ("Grupo") para abrir el composer "Nuevo gasto" al
+    /// llegar al tab Grupos. Consumido por GroupsContainerView cuando haya un grupo
+    /// elegible (espeja el patrón de `pendingGroupID`).
+    var pendingNewGroupExpense: Bool = false
+
     /// URL of a shared image captured from the Share Extension. Not a flag —
     /// it's the payload that ImageSelectionView consumes once opened. The
     /// .presentSharedImage router intent sets this alongside the sheet.
@@ -616,6 +621,13 @@ class SessionState {
 
     /// Navigate to Groups tab
     func navigateToGroups() {
+        selectMainTab(.groups)
+    }
+
+    /// Atajo desde el FAB del Panel: navega al tab Grupos y pide abrir el composer
+    /// "Nuevo gasto" al montar (GroupsContainerView observa `pendingNewGroupExpense`).
+    func navigateToGroupsAndComposeExpense() {
+        pendingNewGroupExpense = true
         selectMainTab(.groups)
     }
 

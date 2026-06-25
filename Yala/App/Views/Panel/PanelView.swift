@@ -33,6 +33,9 @@ struct PanelView: View {
 
     @Environment(AppPreferences.self) private var appPreferences
 
+    /// Disponibilidad de Grupos (gate beta temporal v2.0.1) — gatea la opción "Grupo" del FAB.
+    @AppStorage(AppPreferences.Keys.groupsBetaUnlocked) private var groupsBetaUnlocked = false
+
     /// Coach mark: Pro tour (Phase 2)
     @State private var showProFabTour = false
     @State private var proFabTourIndex = 0
@@ -518,6 +521,7 @@ struct PanelView: View {
                         isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                         chatConsentAccepted: appPreferences.aiChatConsentAccepted,
                         chatFABVisible: appPreferences.chatFABVisible,
+                        showGroupOption: groupsBetaUnlocked,
                         onVoiceTap: { sheets.showVoiceRecording = true },
                         onImageTap: { sheets.showImageSelection = true },
                         onManualTap: { sheets.showNewTransaction = true },

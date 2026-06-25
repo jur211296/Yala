@@ -141,7 +141,12 @@ struct GroupsContainerView: View {
             }) {
                 GroupFormView(group: nil)
             }
-            .sheet(item: $expenseComposerPayload) { payload in
+            .sheet(item: $expenseComposerPayload, onDismiss: {
+                // El prompt de notificaciones se difirió para no colisionar con este
+                // composer (dos modales simultáneos → el sheet no llega a presentarse).
+                // Reevaluarlo ahora que el composer cerró.
+                maybeShowGroupsNotificationPrompt()
+            }) { payload in
                 GroupExpenseComposerView(
                     groups: payload.groups,
                     initialGroup: payload.initialGroup,
@@ -179,17 +184,20 @@ struct GroupsContainerView: View {
             .onChange(of: sessionState.dataVersion) {
                 viewModel.loadData()
             }
-            .onChange(of: viewModel.activeGroups.count) { _, newCount in
-                if !appPreferences.hasSeenGroupsNotificationPrompt && newCount > 0 {
-                    showNotificationPrompt = true
-                }
+            .onChange(of: viewModel.activeGroups.count) { _, _ in
+                maybeShowGroupsNotificationPrompt()
             }
             // Deep link: open a specific group detail once the group list is available.
             .onChange(of: sessionState.pendingGroupID, initial: true) { _, _ in
                 openPendingGroupIfAvailable()
             }
+            // FAB del Panel ("Grupo"): abre el composer "Nuevo gasto" al llegar al tab.
+            .onChange(of: sessionState.pendingNewGroupExpense, initial: true) { _, _ in
+                openExpenseComposerIfRequested()
+            }
             .onChange(of: viewModel.groups.count, initial: true) { _, _ in
                 openPendingGroupIfAvailable()
+                openExpenseComposerIfRequested()
             }
             .alert(L10n.Groups.Notifications.promptTitle, isPresented: $showNotificationPrompt) {
                 Button(L10n.Groups.Notifications.promptEnable) {
@@ -292,6 +300,33 @@ struct GroupsContainerView: View {
 
         sessionState.pendingGroupID = nil
         viewModel.openDetail(for: group)
+    }
+
+    /// Abre el composer "Nuevo gasto" pedido desde el FAB del Panel. Solo consume el
+    /// flag cuando hay un grupo elegible: si los grupos aún no cargaron (o el usuario
+    /// no tiene ninguno), el flag persiste y el `.onChange(of: groups.count)` reintenta
+    /// al llegar el primero — abriendo el composer tras crear el primer grupo.
+    private func openExpenseComposerIfRequested() {
+        guard sessionState.pendingNewGroupExpense else { return }
+        let eligibles = viewModel.eligibleGroupsForExpense()
+        guard let first = eligibles.first else { return }
+
+        sessionState.pendingNewGroupExpense = false
+        expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: first)
+    }
+
+    /// Presenta el prompt de notificaciones de grupos, SALVO que un composer del FAB del
+    /// Panel esté pendiente o presentándose: SwiftUI no presenta dos modales a la vez, y el
+    /// alert ganaría dejando el sheet del composer sin mostrarse. En ese caso el prompt
+    /// espera al `onDismiss` del composer. La guarda doble (`pendingNewGroupExpense` +
+    /// `expenseComposerPayload`) cubre cualquier orden entre los `onChange`.
+    private func maybeShowGroupsNotificationPrompt() {
+        guard !appPreferences.hasSeenGroupsNotificationPrompt,
+              !viewModel.activeGroups.isEmpty,
+              !sessionState.pendingNewGroupExpense,
+              expenseComposerPayload == nil
+        else { return }
+        showNotificationPrompt = true
     }
 
     private func handleNudgeAction(_ nudge: NudgeType) {

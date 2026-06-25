@@ -135,6 +135,29 @@ final class GroupsSmokeUITests: XCTestCase {
         )
     }
 
+    /// groups-expense-form: desde el FAB del PANEL, la opción "Grupo" navega al tab Grupos y
+    /// abre el composer "Nuevo gasto" allí (integración Panel → Grupos). El gate beta se
+    /// desbloquea en uitest (la opción aparece) y el seed `grupos` siembra cuentas personales
+    /// (FAB del Panel habilitado) + 2 grupos elegibles.
+    func test_groupExpenseFromPanelFAB() {
+        let app = launch()
+
+        // Arranca en el tab Panel (default). El FAB del Panel despliega su menú de opciones.
+        let fab = app.buttons["fab_new_transaction"]
+        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció el FAB del Panel.")
+        fab.tap()
+
+        let groupOption = app.buttons["panel_fab_group"]
+        XCTAssertTrue(groupOption.waitForExistence(timeout: 5), "No apareció la opción 'Grupo' del FAB del Panel.")
+        groupOption.tap()
+
+        // El tap navega al tab Grupos y abre el composer allí: su textField de monto debe montar.
+        XCTAssertTrue(
+            app.textFields["group_expense_amount"].waitForExistence(timeout: 10),
+            "El composer de gasto no montó tras tocar 'Grupo' en el FAB del Panel."
+        )
+    }
+
     /// groups-expense-form: grupo → detalle → FAB nuevo gasto → formulario de gasto.
     func test_groupExpenseFormOpens() {
         let app = launch()

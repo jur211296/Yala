@@ -3812,3 +3812,6 @@
 
 /* Singular label for a group (used in the group context chip on the expense form) */
 "groups.groupLabel" = "Grupo";
+
+/* FAB del Panel: opción para registrar un gasto de grupo */
+"panel.fabGroup" = "Grupo";

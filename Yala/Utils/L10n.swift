@@ -848,6 +848,9 @@ enum L10n {
         static var fabManual: String {
             ls("panel.fabManual", comment: "")
         }
+        static var fabGroup: String {
+            ls("panel.fabGroup", comment: "")
+        }
         static var spent: String {
             ls("panel.spent", comment: "Spent label for expenses-only mode account cards")
         }
