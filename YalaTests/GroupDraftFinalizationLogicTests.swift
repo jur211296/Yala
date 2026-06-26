@@ -161,4 +161,31 @@ struct GroupDraftFinalizationLogicTests {
             existsAnyTxForSplitID: false
         ) == .deleteStaleAndThrow)
     }
+
+    // MARK: - shouldFillPreservedSubcategory
+
+    @Test
+    func fillSubcategory_nilAndResolved_true() {
+        // TX creada sin clasificar + el gasto ahora resuelve una subcat → rellenar
+        // (refleja el chip de subcategoría elegido al editar el gasto).
+        #expect(GroupDraftFinalizationLogic.shouldFillPreservedSubcategory(
+            currentSubcatIsNil: true, resolvedSubcatAvailable: true
+        ) == true)
+    }
+
+    @Test
+    func fillSubcategory_alreadyClassified_false() {
+        // La TX ya tiene subcat puesta → NO pisar (contrato preserve respeta lo manual).
+        #expect(GroupDraftFinalizationLogic.shouldFillPreservedSubcategory(
+            currentSubcatIsNil: false, resolvedSubcatAvailable: true
+        ) == false)
+    }
+
+    @Test
+    func fillSubcategory_noResolvedMatch_false() {
+        // El gasto sigue sin subcat resuelta (auto-match falló) → nada que rellenar.
+        #expect(GroupDraftFinalizationLogic.shouldFillPreservedSubcategory(
+            currentSubcatIsNil: true, resolvedSubcatAvailable: false
+        ) == false)
+    }
 }

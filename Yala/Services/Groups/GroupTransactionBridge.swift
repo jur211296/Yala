@@ -253,7 +253,17 @@ final class GroupTransactionBridge {
                 realTx.date = expense.date
                 realTx.splitTotalAmount = totalAmount
                 realTx.splitType = expense.splitType
-                // NUNCA tocar: account, subcategory, category, note, tags, currencyCode.
+                // NUNCA pisar account/note/tags/currencyCode ni una subcat ya puesta.
+                // Excepción: rellenar subcat+category SOLO si la TX nunca tuvo (creada sin
+                // clasificar) y el gasto ahora resuelve una — refleja el chip elegido al
+                // editar el gasto, sin sobrescribir una clasificación manual del usuario.
+                if GroupDraftFinalizationLogic.shouldFillPreservedSubcategory(
+                    currentSubcatIsNil: realTx.subcategory == nil,
+                    resolvedSubcatAvailable: realSubcat != nil
+                ), let realSubcat {
+                    realTx.subcategory = realSubcat
+                    realTx.category = realSubcat.safeCategory
+                }
                 // Recalcular conversión a moneda preferida: amount/date cambiaron.
                 realTx.recalculatePreferredCurrency(context: context)
             } else {
@@ -381,12 +391,22 @@ final class GroupTransactionBridge {
         }
 
         // Preserve+update del real superviviente: SOLO monto/fecha/grupo (jamás cuenta/
-        // subcat/note/tags). Gateado por currency compatible para no corromper data del user.
+        // note/tags ni una subcat ya puesta). Gateado por currency compatible para no
+        // corromper data del user.
         if let realTx, realTx.currencyCode == expense.currencyCode {
             realTx.amount = -totalAmount
             realTx.date = expense.date
             realTx.splitTotalAmount = totalAmount
             realTx.splitType = expense.splitType
+            // Excepción (igual que bridgeExpense): rellenar subcat+category solo si la TX
+            // nunca tuvo una y el gasto ahora resuelve una.
+            if GroupDraftFinalizationLogic.shouldFillPreservedSubcategory(
+                currentSubcatIsNil: realTx.subcategory == nil,
+                resolvedSubcatAvailable: realSubcat != nil
+            ), let realSubcat {
+                realTx.subcategory = realSubcat
+                realTx.category = realSubcat.safeCategory
+            }
             realTx.recalculatePreferredCurrency(context: context)
         }
 

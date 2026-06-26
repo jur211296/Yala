@@ -42,6 +42,17 @@ enum GroupDraftFinalizationLogic {
         !skipDraftCleanup && hasRealTx && realTxSubcategoryIsNil && autoMatchFailed
     }
 
+    /// ¿Rellenar la subcategoría de una TX real existente durante preserve+update?
+    /// True solo si la TX nunca tuvo subcategoría (creada sin clasificar) y ahora el gasto
+    /// resuelve una. Refleja el chip de subcategoría elegido al editar el gasto, SIN pisar
+    /// una subcat ya puesta (account/note/tags/currency siguen intactos — contrato preserve).
+    static func shouldFillPreservedSubcategory(
+        currentSubcatIsNil: Bool,
+        resolvedSubcatAvailable: Bool
+    ) -> Bool {
+        currentSubcatIsNil && resolvedSubcatAvailable
+    }
+
     /// ¿(Re)crear el draft TX-puntero `[.subcategory]` del virtual `-myShare` en los paths
     /// virtual-only (Caso B, Caso A bridge-OFF, Caso A `.groupInvite`)?
     /// False si la subcat resolvió — o si un draft opt-in pendiente ya pide subcategoría
