@@ -121,6 +121,16 @@ final class GroupTransactionBridge {
               currentMember.isActive else { return }
         let currentMemberID = currentMember.id.uuidString
 
+        // Saldo inicial (deuda de apertura): bridge virtual-only, independiente del modo
+        // del bridge / `.groupInvite` / toggle ON-OFF. Va ANTES del `guard let myShare`
+        // porque el acreedor (es `paidByMemberID` pero NO tiene share propio) también debe
+        // reflejar su +Z en la cuenta virtual.
+        if expense.isOpeningBalance {
+            try bridgeOpeningBalance(expense, in: group, currentMemberID: currentMemberID, context: context)
+            try saveIfNeeded(shouldSave: shouldSave, context: context)
+            return
+        }
+
         // Find current user's share in this expense.
         let expenseID = expense.id
         let shareDescriptor = FetchDescriptor<SplitShare>(
@@ -439,6 +449,64 @@ final class GroupTransactionBridge {
     /// Crea la TX virtual `+lent` (sistema "Préstamo a grupos") que compensa una TX real
     /// `-total`: net (real `-total` + virtual `+lent`) = `-myShare`. No-op si `lent <= 0`.
     /// Reusada por bridge-ON Caso A (`bridgeExpense`) y por `bridgeVirtualOnly`.
+    /// Saldo inicial (deuda de apertura): crea SOLO una TX virtual en la cuenta "Grupos"
+    /// reflejando la obligación heredada (+ si me deben, − si debo), con una subcategoría
+    /// de sistema dedicada. NUNCA toca cuenta real ni crea drafts — no hubo movimiento de
+    /// dinero real hoy. Idempotente: delete+recreate de las TX por `splitExpenseID`.
+    private func bridgeOpeningBalance(
+        _ expense: SplitExpense,
+        in group: SplitGroup,
+        currentMemberID: String,
+        context: ModelContext
+    ) throws {
+        let expenseIDStr = expense.id.uuidString
+
+        // Cleanup idempotente: borrar TODAS las TX previas de este saldo inicial (son
+        // derivadas). No hay drafts asociados (un saldo inicial nunca los crea).
+        let existing = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID == expenseIDStr }
+        ))
+        for tx in existing { context.delete(tx) }
+
+        // Mi share en esta arista (0 si soy el acreedor, que no tiene share propio).
+        let expenseID = expense.id
+        let myShare = try context.fetch(FetchDescriptor<SplitShare>(
+            predicate: #Predicate { $0.expenseID == expenseID && $0.memberID == currentMemberID }
+        )).first?.amount ?? 0
+
+        let isCreditor = expense.paidByMemberID == currentMemberID
+        guard let plan = OpeningBalanceBridgeLogic.plan(
+            isCreditor: isCreditor, myShare: myShare, amount: expense.amount
+        ) else {
+            // No involucrado en esta arista → ninguna TX personal.
+            return
+        }
+
+        let role: GroupBridgeSystemEntities.SystemSubcategoryRole = plan.role == .owed ? .openingBalanceOwed : .openingBalanceDebt
+        let subcat = try GroupBridgeSystemEntities.systemSubcategory(role: role, context: context)
+        let virtualAccount = try GroupBridgeSystemEntities.ensureSystemAccount(
+            currencyCode: expense.currencyCode,
+            colorHint: group.colorHex,
+            context: context
+        )
+
+        let tx = TransactionItem(
+            date: expense.date,
+            amount: plan.txAmount,
+            currencyCode: expense.currencyCode,
+            note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
+            category: subcat.safeCategory,
+            subcategory: subcat,
+            account: virtualAccount
+        )
+        tx.splitExpenseID = expenseIDStr
+        tx.splitGroupZoneID = expense.groupZoneID
+        tx.splitTotalAmount = expense.amount
+        tx.splitType = expense.splitType
+        context.insert(tx)
+        tx.recalculatePreferredCurrency(context: context)
+    }
+
     private func createVirtualLent(
         expense: SplitExpense,
         lentAmount: Double,

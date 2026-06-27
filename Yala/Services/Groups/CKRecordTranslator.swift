@@ -164,6 +164,7 @@ enum CKRecordTranslator {
         record[F.paidByMemberID] = expense.paidByMemberID as CKRecordValue
         record[F.splitType] = expense.splitType as CKRecordValue
         record[F.isSettled] = ckBool(expense.isSettled)
+        record[F.isOpeningBalance] = ckBool(expense.isOpeningBalance)
         record[F.currencyCode] = expense.currencyCode as CKRecordValue
         if let sub = expense.subcategoryName {
             record[F.subcategoryName] = sub as CKRecordValue
@@ -184,6 +185,7 @@ enum CKRecordTranslator {
         expense.paidByMemberID = record[F.paidByMemberID] as? String ?? ""
         expense.splitType = record[F.splitType] as? String ?? "equal"
         expense.isSettled = readBool(record, key: F.isSettled)
+        expense.isOpeningBalance = readBool(record, key: F.isOpeningBalance, default: false)
         expense.currencyCode = record[F.currencyCode] as? String ?? "USD"
         expense.subcategoryName = record[F.subcategoryName] as? String
         expense.createdAt = record[F.createdAt] as? Date ?? Date.now
@@ -200,6 +202,7 @@ enum CKRecordTranslator {
         expense.paidByMemberID = record[F.paidByMemberID] as? String ?? expense.paidByMemberID
         expense.splitType = record[F.splitType] as? String ?? expense.splitType
         expense.isSettled = readBool(record, key: F.isSettled)
+        expense.isOpeningBalance = readBool(record, key: F.isOpeningBalance)
         expense.currencyCode = record[F.currencyCode] as? String ?? expense.currencyCode
         expense.subcategoryName = record[F.subcategoryName] as? String
         expense.createdAt = record[F.createdAt] as? Date ?? expense.createdAt

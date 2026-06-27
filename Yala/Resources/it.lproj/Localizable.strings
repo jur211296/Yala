@@ -4558,3 +4558,24 @@
 
 /* FAB del Panel: opción para registrar un gasto de grupo */
 "panel.fabGroup" = "Gruppo";
+
+// MARK: OpeningBalance-keys (saldo inicial)
+"subcategory.system.openingBalanceOwed" = "Saldo iniziale (ti devono)";
+"subcategory.system.openingBalanceDebt" = "Saldo iniziale (devi)";
+"groups.openingBalance.entryDescription" = "Saldo iniziale";
+"groups.openingBalance.feedRow" = "%1$@ deve a %2$@";
+"groups.openingBalance.editorTitle" = "Saldo iniziale";
+"groups.openingBalance.debtorLabel" = "Chi deve";
+"groups.openingBalance.creditorLabel" = "A chi";
+"groups.openingBalance.dateLabel" = "Data";
+"groups.openingBalance.sectionTitle" = "Saldi iniziali";
+"groups.openingBalance.addButton" = "Aggiungi saldo iniziale";
+"groups.openingBalance.emptyState" = "Ancora nessun saldo iniziale.";
+"groups.openingBalance.rollupOwes" = "deve";
+"groups.openingBalance.rollupOwed" = "ha un credito";
+"groups.openingBalance.approvalPromptTitle" = "%@ inizia con un saldo?";
+"groups.openingBalance.approvalPromptBody" = "Registra ciò che deve o che gli devono da prima.";
+"groups.openingBalance.approvalPromptAdd" = "Aggiungi saldo iniziale";
+"groups.openingBalance.approvalPromptSkip" = "Non ora";
+"groups.openingBalance.errorNotOwner" = "Solo chi ha creato il gruppo può gestire i saldi iniziali.";
+"groups.openingBalance.errorSameMember" = "Scegli due membri diversi.";

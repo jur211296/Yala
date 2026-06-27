@@ -4560,3 +4560,24 @@
 
 /* FAB del Panel: opción para registrar un gasto de grupo */
 "panel.fabGroup" = "Grupa";
+
+// MARK: OpeningBalance-keys (saldo inicial)
+"subcategory.system.openingBalanceOwed" = "Saldo początkowe (należność)";
+"subcategory.system.openingBalanceDebt" = "Saldo początkowe (zadłużenie)";
+"groups.openingBalance.entryDescription" = "Saldo początkowe";
+"groups.openingBalance.feedRow" = "%1$@ jest winien %2$@";
+"groups.openingBalance.editorTitle" = "Saldo początkowe";
+"groups.openingBalance.debtorLabel" = "Kto jest winien";
+"groups.openingBalance.creditorLabel" = "Komu";
+"groups.openingBalance.dateLabel" = "Data";
+"groups.openingBalance.sectionTitle" = "Salda początkowe";
+"groups.openingBalance.addButton" = "Dodaj saldo początkowe";
+"groups.openingBalance.emptyState" = "Brak sald początkowych.";
+"groups.openingBalance.rollupOwes" = "jest winien";
+"groups.openingBalance.rollupOwed" = "ma do otrzymania";
+"groups.openingBalance.approvalPromptTitle" = "Czy %@ zaczyna z saldem?";
+"groups.openingBalance.approvalPromptBody" = "Zapisz, ile ktoś jest winien lub ma do otrzymania.";
+"groups.openingBalance.approvalPromptAdd" = "Dodaj saldo początkowe";
+"groups.openingBalance.approvalPromptSkip" = "Nie teraz";
+"groups.openingBalance.errorNotOwner" = "Tylko twórca grupy może zarządzać saldami początkowymi.";
+"groups.openingBalance.errorSameMember" = "Wybierz dwóch różnych członków.";

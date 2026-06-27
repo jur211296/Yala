@@ -20,7 +20,8 @@ struct GroupBalanceServiceTests {
         amount: Double,
         currencyCode: String = "PEN",
         paidByMemberID: String,
-        isSettled: Bool = false
+        isSettled: Bool = false,
+        isOpeningBalance: Bool = false
     ) -> SplitExpense {
         let e = SplitExpense(
             groupZoneID: "test-zone",
@@ -32,6 +33,7 @@ struct GroupBalanceServiceTests {
         // Override the auto-generated id
         e.id = id
         e.isSettled = isSettled
+        e.isOpeningBalance = isOpeningBalance
         return e
     }
 
@@ -543,6 +545,32 @@ struct GroupBalanceServiceTests {
         #expect(balB?.totalPaid == 0)
         #expect(balB?.totalOwes == 100)
         #expect(balB?.netBalance == -100)
+    }
+
+    /// Regresión: un saldo inicial (`isOpeningBalance=true`) debe contribuir al balance/deuda
+    /// EXACTAMENTE igual que un gasto normal — el motor no debe special-casearlo. Modelado
+    /// como "B le debe a A 80": paidBy = A (acreedor, sin share propio), share = [B: 80].
+    @Test func balances_openingBalanceExpense_contributesLikeNormalExpense() {
+        let aID = UUID(), bID = UUID()
+        let members = [makeMember(id: aID, displayName: "A"), makeMember(id: bID, displayName: "B")]
+
+        let eID = UUID()
+        let opening = makeExpense(id: eID, amount: 80, paidByMemberID: aID.uuidString, isOpeningBalance: true)
+        let shares = [makeShare(expenseID: eID, memberID: bID.uuidString, amount: 80)]
+
+        let balances = GroupBalanceService.calculateBalances(
+            expenses: [opening], shares: shares, members: members, settlements: []
+        )
+        #expect(balances.first { $0.memberID == aID.uuidString }?.netBalance == 80)
+        #expect(balances.first { $0.memberID == bID.uuidString }?.netBalance == -80)
+
+        let debts = GroupBalanceService.calculateDebts(
+            expenses: [opening], shares: shares, settlements: [], simplifyDebts: false
+        )
+        #expect(debts.count == 1)
+        #expect(debts.first?.fromMemberID == bID.uuidString)
+        #expect(debts.first?.toMemberID == aID.uuidString)
+        #expect(debts.first?.amount == 80)
     }
 
     @Test func debts_selfPayment_noDebtGenerated() {

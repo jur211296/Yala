@@ -4560,3 +4560,24 @@
 
 /* FAB del Panel: opción para registrar un gasto de grupo */
 "panel.fabGroup" = "グループ";
+
+// MARK: OpeningBalance-keys (saldo inicial)
+"subcategory.system.openingBalanceOwed" = "開始残高（受け取り）";
+"subcategory.system.openingBalanceDebt" = "開始残高（支払い）";
+"groups.openingBalance.entryDescription" = "開始残高";
+"groups.openingBalance.feedRow" = "%1$@さんは%2$@さんに借りています";
+"groups.openingBalance.editorTitle" = "開始残高";
+"groups.openingBalance.debtorLabel" = "借りている人";
+"groups.openingBalance.creditorLabel" = "相手";
+"groups.openingBalance.dateLabel" = "日付";
+"groups.openingBalance.sectionTitle" = "開始残高";
+"groups.openingBalance.addButton" = "開始残高を追加";
+"groups.openingBalance.emptyState" = "まだ開始残高はありません。";
+"groups.openingBalance.rollupOwes" = "借りています";
+"groups.openingBalance.rollupOwed" = "受け取ります";
+"groups.openingBalance.approvalPromptTitle" = "%@さんは残高ありで参加しますか？";
+"groups.openingBalance.approvalPromptBody" = "以前からの貸し借りを記録します。";
+"groups.openingBalance.approvalPromptAdd" = "開始残高を追加";
+"groups.openingBalance.approvalPromptSkip" = "後で";
+"groups.openingBalance.errorNotOwner" = "グループの作成者のみが開始残高を管理できます。";
+"groups.openingBalance.errorSameMember" = "異なるメンバーを2人選んでください。";

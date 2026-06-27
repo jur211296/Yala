@@ -4560,3 +4560,24 @@
 
 /* FAB del Panel: opción para registrar un gasto de grupo */
 "panel.fabGroup" = "群组";
+
+// MARK: OpeningBalance-keys (saldo inicial)
+"subcategory.system.openingBalanceOwed" = "初始余额（应收）";
+"subcategory.system.openingBalanceDebt" = "初始余额（应付）";
+"groups.openingBalance.entryDescription" = "初始余额";
+"groups.openingBalance.feedRow" = "%1$@ 欠 %2$@";
+"groups.openingBalance.editorTitle" = "初始余额";
+"groups.openingBalance.debtorLabel" = "谁欠款";
+"groups.openingBalance.creditorLabel" = "欠给谁";
+"groups.openingBalance.dateLabel" = "日期";
+"groups.openingBalance.sectionTitle" = "初始余额";
+"groups.openingBalance.addButton" = "添加初始余额";
+"groups.openingBalance.emptyState" = "暂无初始余额。";
+"groups.openingBalance.rollupOwes" = "欠";
+"groups.openingBalance.rollupOwed" = "应收";
+"groups.openingBalance.approvalPromptTitle" = "%@ 加入时是否有余额？";
+"groups.openingBalance.approvalPromptBody" = "记录之前的欠款或应收款。";
+"groups.openingBalance.approvalPromptAdd" = "添加初始余额";
+"groups.openingBalance.approvalPromptSkip" = "暂不";
+"groups.openingBalance.errorNotOwner" = "只有群组创建者可以管理初始余额。";
+"groups.openingBalance.errorSameMember" = "请选择两位不同的成员。";

@@ -62,6 +62,13 @@ struct GroupSettingsView: View {
     @State private var showApproveConfirm: Bool = false
     @State private var showRejectConfirm: Bool = false
 
+    // Saldos iniciales (owner-only).
+    @State private var showOpeningBalanceEditor = false
+    @State private var openingBalanceToEdit: SplitExpense?
+    @State private var openingBalancePrefillDebtor: String?
+    @State private var showOpeningBalanceApprovalPrompt = false
+    @State private var approvedMemberName: String = ""
+
     // FU-02: soft-delete owner-only.
     @State private var showDeleteConfirm: Bool = false
     @State private var isDeleting: Bool = false
@@ -79,6 +86,11 @@ struct GroupSettingsView: View {
 
                     // Members section
                     membersSection
+
+                    // Saldos iniciales (deuda de apertura) — owner-only.
+                    if group.isOwner {
+                        openingBalanceSection
+                    }
 
                     // Group options section — admin-only
                     // (toggles disparan updateGroup que requiere admin; ver B-19)
@@ -143,6 +155,34 @@ struct GroupSettingsView: View {
                         }
                     }
                 }
+            }
+            .sheet(isPresented: $showOpeningBalanceEditor, onDismiss: { viewModel.loadData() }) {
+                GroupOpeningBalanceFormView(
+                    group: group,
+                    members: viewModel.activeMembers,
+                    memberNameLookup: viewModel.memberNameLookup,
+                    expenseToEdit: openingBalanceToEdit,
+                    existingDebtorMemberID: openingBalanceToEdit.flatMap { debtorID(for: $0) },
+                    prefillDebtorMemberID: openingBalanceToEdit == nil ? openingBalancePrefillDebtor : nil,
+                    onSave: { viewModel.loadData() }
+                )
+                .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+                .presentationDragIndicator(.visible)
+            }
+            .confirmationDialog(
+                L10n.Groups.OpeningBalance.approvalPromptTitle(approvedMemberName),
+                isPresented: $showOpeningBalanceApprovalPrompt,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Groups.OpeningBalance.approvalPromptAdd) {
+                    openingBalanceToEdit = nil
+                    showOpeningBalanceEditor = true
+                }
+                Button(L10n.Groups.OpeningBalance.approvalPromptSkip, role: .cancel) {
+                    openingBalancePrefillDebtor = nil
+                }
+            } message: {
+                Text(L10n.Groups.OpeningBalance.approvalPromptBody)
             }
             .confirmationDialog(
                 L10n.Groups.Member.remove,
@@ -384,7 +424,27 @@ struct GroupSettingsView: View {
     // MARK: - A3: Pending Approval Actions
 
     private func performApprove() {
-        runPendingMemberAction(label: "approveMember", GroupService.shared.approveMember)
+        guard let member = pendingActionMember else { return }
+        let memberID = member.id.uuidString
+        let memberName = member.displayName
+        do {
+            try GroupService.shared.approveMember(member, in: group)
+            viewModel.loadData()
+            pendingActionMember = nil
+            // Atajo (owner-only): ofrecer crear un saldo inicial para el miembro recién aprobado.
+            if group.isOwner {
+                openingBalancePrefillDebtor = memberID
+                approvedMemberName = memberName
+                showOpeningBalanceApprovalPrompt = true
+            }
+        } catch {
+            pendingErrorMessage = error.localizedDescription
+            showPendingError = true
+            pendingActionMember = nil
+            #if DEBUG
+            print("GroupSettingsView: approveMember failed: \(error)")
+            #endif
+        }
     }
 
     private func performReject() {
@@ -407,6 +467,132 @@ struct GroupSettingsView: View {
             #endif
         }
         pendingActionMember = nil
+    }
+
+    // MARK: - Opening Balance Section
+
+    private var openingExpenses: [SplitExpense] {
+        viewModel.expenses.filter(\.isOpeningBalance).sorted { $0.createdAt < $1.createdAt }
+    }
+
+    private func debtorID(for expense: SplitExpense) -> String? {
+        viewModel.sharesForExpense(expense).first?.memberID
+    }
+
+    private struct RollupRow: Identifiable {
+        let memberID: String
+        let currencyCode: String
+        let net: Double
+        var id: String { "\(memberID)-\(currencyCode)" }
+    }
+
+    private var rollupRows: [RollupRow] {
+        let edges = openingExpenses.compactMap { e -> OpeningBalanceRollup.Edge? in
+            guard let d = debtorID(for: e) else { return nil }
+            return OpeningBalanceRollup.Edge(
+                debtorMemberID: d, creditorMemberID: e.paidByMemberID,
+                amount: e.amount, currencyCode: e.currencyCode
+            )
+        }
+        return OpeningBalanceRollup.netByMember(edges: edges)
+            .flatMap { memberID, byCurrency in
+                byCurrency.map { RollupRow(memberID: memberID, currencyCode: $0.key, net: $0.value) }
+            }
+            .sorted { lhs, rhs in
+                let ln = viewModel.memberNameLookup[lhs.memberID] ?? lhs.memberID
+                let rn = viewModel.memberNameLookup[rhs.memberID] ?? rhs.memberID
+                if ln != rn { return ln < rn }
+                return lhs.currencyCode < rhs.currencyCode
+            }
+    }
+
+    private var openingBalanceSection: some View {
+        SectionBox(title: L10n.Groups.OpeningBalance.sectionTitle) {
+            VStack(spacing: DS.Spacing.md) {
+                let rows = rollupRows
+                if !rows.isEmpty {
+                    VStack(spacing: DS.Spacing.xs) {
+                        ForEach(rows) { row in
+                            rollupRow(memberID: row.memberID, net: row.net, currencyCode: row.currencyCode)
+                        }
+                    }
+                }
+
+                if openingExpenses.isEmpty {
+                    Text(L10n.Groups.OpeningBalance.emptyState)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    VStack(spacing: DS.Spacing.none) {
+                        ForEach(openingExpenses, id: \.id) { expense in
+                            edgeRow(expense)
+                            if expense.id != openingExpenses.last?.id {
+                                Divider()
+                            }
+                        }
+                    }
+                }
+
+                Button {
+                    openingBalanceToEdit = nil
+                    openingBalancePrefillDebtor = nil
+                    showOpeningBalanceEditor = true
+                } label: {
+                    Label(L10n.Groups.OpeningBalance.addButton, systemImage: "plus.circle.fill")
+                        .font(DS.Typography.label)
+                        .foregroundStyle(theme.accent)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("opening_balance_add")
+            }
+            .padding(DS.Spacing.lg)
+        }
+    }
+
+    private func rollupRow(memberID: String, net: Double, currencyCode: String) -> some View {
+        let name = viewModel.memberNameLookup[memberID] ?? "?"
+        let word = net > 0 ? L10n.Groups.OpeningBalance.rollupOwed : L10n.Groups.OpeningBalance.rollupOwes
+        let amountStr = appPreferences.currency(abs(net), currencyCode: currencyCode)
+        return HStack {
+            Text(name)
+                .font(DS.Typography.label)
+                .foregroundStyle(.primary)
+            Spacer()
+            Text("\(word) \(amountStr)")
+                .font(DS.Typography.caption)
+                .foregroundStyle(net > 0 ? DS.Semantic.successForeground : DS.Semantic.errorForeground)
+        }
+    }
+
+    private func edgeRow(_ expense: SplitExpense) -> some View {
+        let debtorName = debtorID(for: expense).flatMap { viewModel.memberNameLookup[$0] } ?? "?"
+        let creditorName = viewModel.memberNameLookup[expense.paidByMemberID] ?? "?"
+        let amountStr = appPreferences.currency(expense.amount, currencyCode: expense.currencyCode)
+        return Button {
+            openingBalanceToEdit = expense
+            showOpeningBalanceEditor = true
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Text(L10n.Groups.OpeningBalance.feedRow(debtorName, creditorName))
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Spacer()
+                Text(amountStr)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.secondary)
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.vertical, DS.FormRow.paddingV)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("opening_balance_edge_\(expense.id)")
     }
 
     // MARK: - Options Section

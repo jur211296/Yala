@@ -21,6 +21,7 @@ final class SplitExpense {
     var paidByMemberID: String = ""
     var splitType: String = "equal"        // "equal" | "exact" | "percentage" | "shares"
     var isSettled: Bool = false
+    var isOpeningBalance: Bool = false     // Saldo inicial / deuda de apertura (migración Splitwise). Bridge virtual-only, excluido de stats de gasto.
     var subcategoryName: String?           // Nombre subcategoría del creador (para matching)
     var createdAt: Date = Date.now
     var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
@@ -39,7 +40,8 @@ final class SplitExpense {
         date: Date = Date.now,
         paidByMemberID: String = "",
         splitType: String = "equal",
-        subcategoryName: String? = nil
+        subcategoryName: String? = nil,
+        isOpeningBalance: Bool = false
     ) {
         self.id = UUID()
         self.groupZoneID = groupZoneID
@@ -51,6 +53,7 @@ final class SplitExpense {
         self.paidByMemberID = paidByMemberID
         self.splitType = splitType
         self.subcategoryName = subcategoryName
+        self.isOpeningBalance = isOpeningBalance
         self.createdAt = Date.now
     }
 }

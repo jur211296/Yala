@@ -4548,3 +4548,24 @@
 
 /* FAB del Panel: opción para registrar un gasto de grupo */
 "panel.fabGroup" = "Gruppe";
+
+// MARK: OpeningBalance-keys (saldo inicial)
+"subcategory.system.openingBalanceOwed" = "Anfangssaldo (Guthaben)";
+"subcategory.system.openingBalanceDebt" = "Anfangssaldo (Schuld)";
+"groups.openingBalance.entryDescription" = "Anfangssaldo";
+"groups.openingBalance.feedRow" = "%1$@ schuldet %2$@";
+"groups.openingBalance.editorTitle" = "Anfangssaldo";
+"groups.openingBalance.debtorLabel" = "Wer schuldet";
+"groups.openingBalance.creditorLabel" = "An wen";
+"groups.openingBalance.dateLabel" = "Datum";
+"groups.openingBalance.sectionTitle" = "Anfangssalden";
+"groups.openingBalance.addButton" = "Anfangssaldo hinzufügen";
+"groups.openingBalance.emptyState" = "Noch keine Anfangssalden.";
+"groups.openingBalance.rollupOwes" = "schuldet";
+"groups.openingBalance.rollupOwed" = "hat Guthaben";
+"groups.openingBalance.approvalPromptTitle" = "Startet %@ mit einem Saldo?";
+"groups.openingBalance.approvalPromptBody" = "Erfassen Sie, was er oder sie schuldet oder zugute hat.";
+"groups.openingBalance.approvalPromptAdd" = "Anfangssaldo hinzufügen";
+"groups.openingBalance.approvalPromptSkip" = "Jetzt nicht";
+"groups.openingBalance.errorNotOwner" = "Nur der Ersteller der Gruppe kann Anfangssalden verwalten.";
+"groups.openingBalance.errorSameMember" = "Wählen Sie zwei verschiedene Mitglieder.";

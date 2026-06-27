@@ -458,6 +458,8 @@ enum GroupBridgeSystemRole {
     static let subcategorySettlementPayment = "settlementPayment"
     static let subcategorySettlementSent = "settlementSent"
     static let subcategorySettlementReceived = "settlementReceived"
+    static let subcategoryOpeningBalanceOwed = "openingBalanceOwed"   // "me deben" (income)
+    static let subcategoryOpeningBalanceDebt = "openingBalanceDebt"   // "debo" (expense)
 }
 
 func systemGroupCategoryDefinitions() -> [SystemCategoryDefinition] {
@@ -477,6 +479,10 @@ func systemGroupCategoryDefinitions() -> [SystemCategoryDefinition] {
                 SystemSubcategoryDefinition(
                     name: L10n.Subcategory.System.settlementSent,
                     role: GroupBridgeSystemRole.subcategorySettlementSent
+                ),
+                SystemSubcategoryDefinition(
+                    name: L10n.Subcategory.System.openingBalanceDebt,
+                    role: GroupBridgeSystemRole.subcategoryOpeningBalanceDebt
                 ),
             ]
         ),
@@ -500,6 +506,10 @@ func systemGroupCategoryDefinitions() -> [SystemCategoryDefinition] {
                     name: L10n.Subcategory.System.settlementReceived,
                     role: GroupBridgeSystemRole.subcategorySettlementReceived
                 ),
+                SystemSubcategoryDefinition(
+                    name: L10n.Subcategory.System.openingBalanceOwed,
+                    role: GroupBridgeSystemRole.subcategoryOpeningBalanceOwed
+                ),
             ]
         ),
     ]
@@ -521,7 +531,9 @@ func seedSystemGroupCategoriesIfNeeded(
     // las categorías sistema con el icono inválido previo ("Cobros de grupos" con
     // person.2.crop.circle.fill.badge.plus, que no renderiza). El guard por flag V1
     // las dejaba sin corregir porque retornaba antes del backfill.
-    let flagKey = "seedSystemGroupCategoriesExecutedV2"
+    // V3: añade las 2 subcategorías sistema de saldo inicial (openingBalanceOwed/Debt);
+    // el bump fuerza el re-seed en devices ya instalados para que aparezcan.
+    let flagKey = "seedSystemGroupCategoriesExecutedV3"
 
     // Flag guard contra TOCTOU race con CloudKit sync
     if defaults.bool(forKey: flagKey) {

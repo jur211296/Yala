@@ -1774,6 +1774,38 @@ enum L10n {
 
         // MARK: - Bridge (A0-Bridge)
 
+        enum OpeningBalance {
+            /// Descripción del SplitExpense de saldo inicial (también label base del feed).
+            static var entryDescription: String { ls("groups.openingBalance.entryDescription", comment: "") }
+            /// Fila del feed: "%1$@ le debe a %2$@".
+            static func feedRow(_ debtor: String, _ creditor: String) -> String {
+                String(format: ls("groups.openingBalance.feedRow", comment: ""), debtor, creditor)
+            }
+            // Editor
+            static var editorTitle: String { ls("groups.openingBalance.editorTitle", comment: "") }
+            static var debtorLabel: String { ls("groups.openingBalance.debtorLabel", comment: "") }   // "Quién debe"
+            static var creditorLabel: String { ls("groups.openingBalance.creditorLabel", comment: "") } // "A quién"
+            static var dateLabel: String { ls("groups.openingBalance.dateLabel", comment: "") }       // "Fecha"
+            // Sección de Ajustes (owner-only)
+            static var sectionTitle: String { ls("groups.openingBalance.sectionTitle", comment: "") }
+            static var addButton: String { ls("groups.openingBalance.addButton", comment: "") }
+            static var emptyState: String { ls("groups.openingBalance.emptyState", comment: "") }
+            /// Rollup por miembro: "%@ debe" (deudor neto).
+            static var rollupOwes: String { ls("groups.openingBalance.rollupOwes", comment: "") }
+            /// Rollup por miembro: "a %@ le deben" (acreedor neto).
+            static var rollupOwed: String { ls("groups.openingBalance.rollupOwed", comment: "") }
+            // Atajo al aprobar miembro
+            static func approvalPromptTitle(_ name: String) -> String {
+                String(format: ls("groups.openingBalance.approvalPromptTitle", comment: ""), name)
+            }
+            static var approvalPromptBody: String { ls("groups.openingBalance.approvalPromptBody", comment: "") }
+            static var approvalPromptAdd: String { ls("groups.openingBalance.approvalPromptAdd", comment: "") }
+            static var approvalPromptSkip: String { ls("groups.openingBalance.approvalPromptSkip", comment: "") }
+            // Errores
+            static var errorNotOwner: String { ls("groups.openingBalance.errorNotOwner", comment: "") }
+            static var errorSameMember: String { ls("groups.openingBalance.errorSameMember", comment: "") }
+        }
+
         enum Bridge {
             // Delete guards
             static var deleteExpenseBlocked: String { ls("groups.bridge.deleteExpenseBlocked", comment: "") }
@@ -3110,6 +3142,10 @@ enum L10n {
             static var settlementSent: String { ls("subcategory.system.settlementSent", comment: "") }
             /// "Liquidación recibida" — Caso D TX2 (income, cuenta real): entrada a cuenta real desde otro miembro.
             static var settlementReceived: String { ls("subcategory.system.settlementReceived", comment: "") }
+            /// "Saldo inicial (me deben)" — saldo de apertura donde soy acreedor (income, virtual).
+            static var openingBalanceOwed: String { ls("subcategory.system.openingBalanceOwed", comment: "") }
+            /// "Saldo inicial (debo)" — saldo de apertura donde soy deudor (expense, virtual).
+            static var openingBalanceDebt: String { ls("subcategory.system.openingBalanceDebt", comment: "") }
         }
     }
 

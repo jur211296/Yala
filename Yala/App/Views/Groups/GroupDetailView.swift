@@ -157,7 +157,7 @@ struct GroupDetailView: View {
             // Reemplazo de sheet: si el detalle pidió editar, sube el editor
             // (conserva el gasto); si no, cierre normal (recarga datos).
             if let expense = viewModel.consumePendingEditFromDetail() {
-                viewModel.activeSheet = .editExpense(expense)
+                viewModel.activeSheet = expense.isOpeningBalance ? .editOpeningBalance(expense) : .editExpense(expense)
             } else {
                 viewModel.loadData()
             }
@@ -249,6 +249,28 @@ struct GroupDetailView: View {
             .presentationDetents(DS.Adaptive.sheetDetents([.large]))
             .presentationDragIndicator(.visible)
 
+        case .openingBalanceDetail(let expense):
+            GroupOpeningBalanceDetailSheet(
+                expense: expense,
+                debtorMemberID: viewModel.sharesForExpense(expense).first?.memberID,
+                memberNameLookup: viewModel.memberNameLookup,
+                isOwner: group.isOwner,
+                onEdit: { viewModel.requestEditFromDetail(expense) },
+                onDelete: { viewModel.removeOpeningBalance(expense) }
+            )
+
+        case .editOpeningBalance(let expense):
+            GroupOpeningBalanceFormView(
+                group: group,
+                members: viewModel.activeMembers,
+                memberNameLookup: viewModel.memberNameLookup,
+                expenseToEdit: expense,
+                existingDebtorMemberID: viewModel.sharesForExpense(expense).first?.memberID,
+                onSave: {}
+            )
+            .presentationDetents(DS.Adaptive.sheetDetents([.large]))
+            .presentationDragIndicator(.visible)
+
         case .settlement(let debt):
             SettlementFormView(
                 group: group,
@@ -324,7 +346,9 @@ struct GroupDetailView: View {
                 txBridgeMap: viewModel.txBridgeMap,
                 mySharesByExpense: viewModel.mySharesByExpense,
                 currentMemberID: viewModel.currentMemberID,
-                onTapExpense: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .expenseDetail($0) } : nil,
+                onTapExpense: viewModel.canCurrentUserParticipate ? { expense in
+                    viewModel.activeSheet = expense.isOpeningBalance ? .openingBalanceDetail(expense) : .expenseDetail(expense)
+                } : nil,
                 onEditExpense: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .editExpense($0) } : nil,
                 onDeleteExpense: viewModel.canCurrentUserParticipate ? { viewModel.deleteExpense($0) } : nil,
                 onInvite: group.isOwner && viewModel.isCurrentUserAdmin ? {

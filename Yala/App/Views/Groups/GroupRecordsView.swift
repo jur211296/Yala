@@ -46,7 +46,20 @@ struct GroupRecordsView: View {
                     ForEach(groupedByDate, id: \.key) { dateString, dayExpenses in
                         Section {
                             ForEach(dayExpenses, id: \.id) { expense in
-                                if onTapExpense != nil {
+                                if onTapExpense == nil {
+                                    expenseRow(expense)
+                                } else if expense.isOpeningBalance {
+                                    // Saldo inicial: tap → detalle (owner edita desde ahí).
+                                    // Sin context menu (edit/delete owner-only vive en el detalle).
+                                    Button {
+                                        onTapExpense?(expense)
+                                    } label: {
+                                        expenseRow(expense)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .contentShape(Rectangle())
+                                    .accessibilityIdentifier("group_opening_balance_row_\(expense.id)")
+                                } else {
                                     Button {
                                         onTapExpense?(expense)
                                     } label: {
@@ -68,8 +81,6 @@ struct GroupRecordsView: View {
                                             Label(L10n.Action.delete, systemImage: "trash")
                                         }
                                     }
-                                } else {
-                                    expenseRow(expense)
                                 }
                             }
                         } header: {
@@ -100,7 +111,53 @@ struct GroupRecordsView: View {
 
     // MARK: - Expense Row
 
+    @ViewBuilder
     private func expenseRow(_ expense: SplitExpense) -> some View {
+        if expense.isOpeningBalance {
+            openingBalanceRow(expense)
+        } else {
+            normalExpenseRow(expense)
+        }
+    }
+
+    /// Fila descriptiva de saldo inicial ("Saldo inicial · X le debe a Y" + monto neutro).
+    /// NO usa el resolver de perspectiva de TX bridgeada — es un arrastre, no un gasto.
+    private func openingBalanceRow(_ expense: SplitExpense) -> some View {
+        let debtorID = shares.first { $0.expenseID == expense.id }?.memberID
+        let debtorName = debtorID.flatMap { memberNameLookup[$0] } ?? "?"
+        let creditorName = memberNameLookup[expense.paidByMemberID] ?? "?"
+        let amountStr = appPreferences.currency(expense.amount, currencyCode: expense.currencyCode)
+
+        return HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "arrow.left.arrow.right")
+                .font(DS.Typography.label)
+                .foregroundStyle(.secondary)
+                .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
+                .background(Circle().fill(Color(.secondarySystemFill)))
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Groups.OpeningBalance.entryDescription)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Text(L10n.Groups.OpeningBalance.feedRow(debtorName, creditorName))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            Text(amountStr)
+                .font(DS.Typography.body)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.xl)
+    }
+
+    private func normalExpenseRow(_ expense: SplitExpense) -> some View {
         let amountStr = appPreferences.currency(expense.amount, currencyCode: expense.currencyCode)
         let isPayer = expense.paidByMemberID == currentMemberID
         let payerLabel: String = {

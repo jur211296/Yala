@@ -65,7 +65,8 @@ final class GroupExpenseService {
         splitType: String,
         subcategoryName: String?,
         shares: [(memberID: String, amount: Double)],
-        accountForCurrentUser: Account? = nil
+        accountForCurrentUser: Account? = nil,
+        isOpeningBalance: Bool = false
     ) throws -> SplitExpense {
         let context = try requireContext()
 
@@ -89,7 +90,8 @@ final class GroupExpenseService {
             date: date,
             paidByMemberID: paidByMemberID,
             splitType: splitType,
-            subcategoryName: subcategoryName
+            subcategoryName: subcategoryName,
+            isOpeningBalance: isOpeningBalance
         )
         context.insert(expense)
 
@@ -113,10 +115,13 @@ final class GroupExpenseService {
 
         SessionState.shared.incrementDataVersion()
         SplitSyncManager.shared.enqueueSave(modelID: expense.id, group: group)
-        TelemetryService.track(.groupExpenseAdded, parameters: [
-            "splitType": splitType,
-            "memberCount": String(shares.count)
-        ])
+        // Un saldo inicial NO es un gasto normal — su telemetría la dispara `setOpeningBalance`.
+        if !isOpeningBalance {
+            TelemetryService.track(.groupExpenseAdded, parameters: [
+                "splitType": splitType,
+                "memberCount": String(shares.count)
+            ])
+        }
 
         // Bridge to personal transaction/draft (guard: bridge may not be initialized yet)
         if GroupTransactionBridge.shared.isReady {
@@ -238,6 +243,16 @@ final class GroupExpenseService {
             throw GroupExpenseServiceError.expenseHasAssociatedSettlements
         }
 
+        try performExpenseDeletion(expense, in: group, context: context)
+    }
+
+    /// Mecánica de borrado de un expense (shares + unbridge + delete + save), SIN guards.
+    /// Compartida por `deleteExpense` (guard global) y `removeOpeningBalance` (guard targeted).
+    private func performExpenseDeletion(
+        _ expense: SplitExpense,
+        in group: SplitGroup,
+        context: ModelContext
+    ) throws {
         // Delete shares first
         let shares = try fetchShares(for: expense)
         for share in shares {
@@ -265,6 +280,113 @@ final class GroupExpenseService {
         }
 
         SessionState.shared.incrementDataVersion()
+    }
+
+    // MARK: - Opening Balance (saldo inicial / deuda de apertura)
+
+    /// Crea un saldo inicial "deudor le debe a acreedor `amount`" (owner-only).
+    /// Se modela como un `SplitExpense` con `isOpeningBalance=true`: `paidBy = acreedor`,
+    /// una share = `[deudor: amount]`, `splitType = "exact"`, fechado en `group.createdAt`.
+    /// La suma del grupo queda en cero por construcción (la arista crea +amount y −amount).
+    @discardableResult
+    func setOpeningBalance(
+        in group: SplitGroup,
+        debtorMemberID: String,
+        creditorMemberID: String,
+        amount: Double,
+        currencyCode: String
+    ) throws -> SplitExpense {
+        guard group.isOwner else { throw GroupExpenseServiceError.notOwner }
+        guard debtorMemberID != creditorMemberID else { throw GroupExpenseServiceError.invalidOpeningBalanceMembers }
+
+        let expense = try createExpense(
+            in: group,
+            amount: amount,
+            currencyCode: currencyCode,
+            description: L10n.Groups.OpeningBalance.entryDescription,
+            note: nil,
+            date: group.createdAt,
+            paidByMemberID: creditorMemberID,
+            splitType: "exact",
+            subcategoryName: nil,
+            shares: [(memberID: debtorMemberID, amount: amount)],
+            accountForCurrentUser: nil,
+            isOpeningBalance: true
+        )
+
+        TelemetryService.track(.openingBalanceCreated, parameters: [
+            "sameCurrencyAsGroup": String(currencyCode == group.currencyCode)
+        ])
+        return expense
+    }
+
+    /// Actualiza un saldo inicial existente (owner-only). Guard targeted: bloquea si una
+    /// liquidación confirmada involucra al deudor o al acreedor de esta arista.
+    func updateOpeningBalance(
+        _ expense: SplitExpense,
+        in group: SplitGroup,
+        debtorMemberID: String,
+        creditorMemberID: String,
+        amount: Double,
+        currencyCode: String
+    ) throws {
+        guard group.isOwner else { throw GroupExpenseServiceError.notOwner }
+        guard debtorMemberID != creditorMemberID else { throw GroupExpenseServiceError.invalidOpeningBalanceMembers }
+        // Guard sobre la UNIÓN del par ORIGINAL (lo que se va a mutar/borrar) y el par NUEVO:
+        // editar para alejarse de un par ya saldado corromperia ese neto histórico tanto como
+        // editar hacia él. (removeOpeningBalance solo necesita el par original.)
+        let oldEdgeMembers = Set(try fetchShares(for: expense).map(\.memberID) + [expense.paidByMemberID])
+        let guardMembers = oldEdgeMembers.union([debtorMemberID, creditorMemberID])
+        guard try !confirmedSettlementsBlock(forMembers: guardMembers, in: group) else {
+            throw GroupExpenseServiceError.expenseHasAssociatedSettlements
+        }
+
+        try updateExpense(
+            expense,
+            in: group,
+            amount: amount,
+            currencyCode: currencyCode,
+            description: L10n.Groups.OpeningBalance.entryDescription,
+            note: nil,
+            date: group.createdAt,
+            paidByMemberID: creditorMemberID,
+            splitType: "exact",
+            subcategoryName: nil,
+            shares: [(memberID: debtorMemberID, amount: amount)],
+            accountForCurrentUser: nil
+        )
+    }
+
+    /// Elimina un saldo inicial existente (owner-only). Guard targeted (ver `updateOpeningBalance`).
+    /// NO usa el guard global de `deleteExpense` (que bloquearía con cualquier liquidación,
+    /// porque los saldos van fechados en `group.createdAt`).
+    func removeOpeningBalance(_ expense: SplitExpense, in group: SplitGroup) throws {
+        guard group.isOwner else { throw GroupExpenseServiceError.notOwner }
+        let context = try requireContext()
+
+        let debtorIDs = try fetchShares(for: expense).map(\.memberID)
+        let edgeMembers = Set(debtorIDs + [expense.paidByMemberID])
+        guard try !confirmedSettlementsBlock(forMembers: edgeMembers, in: group) else {
+            throw GroupExpenseServiceError.expenseHasAssociatedSettlements
+        }
+
+        try performExpenseDeletion(expense, in: group, context: context)
+        TelemetryService.track(.openingBalanceRemoved, parameters: [:])
+    }
+
+    /// Guard targeted: `true` si una liquidación confirmada del grupo involucra a alguno de
+    /// los miembros de la arista (deudor o acreedor). Editar/borrar entonces corrompería el
+    /// neto histórico que ya se saldó.
+    private func confirmedSettlementsBlock(forMembers members: Set<String>, in group: SplitGroup) throws -> Bool {
+        let context = try requireContext()
+        let zoneID = group.cloudKitZoneID
+        let confirmed = try context.fetch(FetchDescriptor<SplitSettlement>(
+            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isConfirmed == true }
+        ))
+        return OpeningBalanceGuardLogic.isBlocked(
+            edgeMembers: members,
+            confirmedSettlementPairs: confirmed.map { ($0.fromMemberID, $0.toMemberID) }
+        )
     }
 
     // MARK: - Settlement CRUD
@@ -513,6 +635,10 @@ enum GroupExpenseServiceError: LocalizedError {
     /// A0-Bridge F8: el expense no se puede borrar porque hay settlements confirmed
     /// posteriores en el mismo grupo. El user debe regularizar o eliminar settlements primero.
     case expenseHasAssociatedSettlements
+    /// Solo el owner del grupo puede gestionar saldos iniciales.
+    case notOwner
+    /// Un saldo inicial necesita dos miembros distintos (deudor ≠ acreedor).
+    case invalidOpeningBalanceMembers
     case saveFailed(Error)
 
     var errorDescription: String? {
@@ -535,6 +661,10 @@ enum GroupExpenseServiceError: LocalizedError {
             return L10n.Groups.Errors.pendingApproval
         case .expenseHasAssociatedSettlements:
             return L10n.Groups.Bridge.deleteExpenseBlocked
+        case .notOwner:
+            return L10n.Groups.OpeningBalance.errorNotOwner
+        case .invalidOpeningBalanceMembers:
+            return L10n.Groups.OpeningBalance.errorSameMember
         case .saveFailed(let error):
             return "GroupExpenseService: Save failed - \(error.localizedDescription)"
         }

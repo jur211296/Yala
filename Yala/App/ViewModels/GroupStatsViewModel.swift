@@ -176,7 +176,9 @@ final class GroupStatsViewModel {
         // Moneda destino del donut convertido (modo "Todas"): la preferida del usuario,
         // con la principal del grupo como fallback.
         self.targetCurrency = preferredCurrency.flatMap { $0.isEmpty ? nil : $0 } ?? currencyCode
-        availableCurrencies = orderedCurrencies(Set(expenses.map(\.currencyCode)))
+        // Excluye saldos iniciales (igual que `periodExpenses`): una moneda que solo aparece
+        // en un saldo inicial no debe generar una pestaña/donut de stats vacía.
+        availableCurrencies = orderedCurrencies(Set(expenses.filter { !$0.isOpeningBalance }.map(\.currencyCode)))
         // Default: "Todas" cuando hay >1 moneda; con una sola, esa moneda.
         // Preserva la selección previa del usuario si sigue siendo válida.
         currencySelection = resolvedSelection(from: currencySelection)
@@ -255,10 +257,13 @@ final class GroupStatsViewModel {
 
     // MARK: - Helpers
 
-    /// Gastos del período (todas las monedas).
+    /// Gastos del período (todas las monedas). Excluye saldos iniciales: son deuda
+    /// arrastrada, no gasto — contarlos distorsionaría los totales/categorías. (Sí
+    /// cuentan en balances/deudas, que se calculan aparte en `GroupBalanceService`.)
     private func periodExpenses() -> [SplitExpense] {
-        guard let interval = selectedPeriod.dateInterval() else { return allExpenses }
-        return allExpenses.filter { interval.contains($0.date) }
+        let realExpenses = allExpenses.filter { !$0.isOpeningBalance }
+        guard let interval = selectedPeriod.dateInterval() else { return realExpenses }
+        return realExpenses.filter { interval.contains($0.date) }
     }
 
     /// "Mi parte" sumada sobre un conjunto de gastos.

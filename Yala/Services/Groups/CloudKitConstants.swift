@@ -55,6 +55,7 @@ enum CKConstants {
         static let paidByMemberID = "paidByMemberID"
         static let splitType = "splitType"
         static let isSettled = "isSettled"
+        static let isOpeningBalance = "isOpeningBalance"
         static let currencyCode = "currencyCode"
         static let subcategoryName = "subcategoryName"
         static let createdAt = "createdAt"

@@ -3810,3 +3810,24 @@
 
 /* FAB del Panel: opción para registrar un gasto de grupo */
 "panel.fabGroup" = "Group";
+
+// MARK: OpeningBalance-keys (saldo inicial)
+"subcategory.system.openingBalanceOwed" = "Opening balance (owed to you)";
+"subcategory.system.openingBalanceDebt" = "Opening balance (you owe)";
+"groups.openingBalance.entryDescription" = "Opening balance";
+"groups.openingBalance.feedRow" = "%1$@ owes %2$@";
+"groups.openingBalance.editorTitle" = "Opening balance";
+"groups.openingBalance.debtorLabel" = "Who owes";
+"groups.openingBalance.creditorLabel" = "Owed to";
+"groups.openingBalance.dateLabel" = "Date";
+"groups.openingBalance.sectionTitle" = "Opening balances";
+"groups.openingBalance.addButton" = "Add opening balance";
+"groups.openingBalance.emptyState" = "No opening balances yet.";
+"groups.openingBalance.rollupOwes" = "owes";
+"groups.openingBalance.rollupOwed" = "is owed";
+"groups.openingBalance.approvalPromptTitle" = "Does %@ start with a balance?";
+"groups.openingBalance.approvalPromptBody" = "Record what they owe or are owed from before.";
+"groups.openingBalance.approvalPromptAdd" = "Add opening balance";
+"groups.openingBalance.approvalPromptSkip" = "Not now";
+"groups.openingBalance.errorNotOwner" = "Only the group creator can manage opening balances.";
+"groups.openingBalance.errorSameMember" = "Choose two different members.";

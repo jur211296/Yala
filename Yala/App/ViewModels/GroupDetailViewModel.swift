@@ -223,6 +223,26 @@ final class GroupDetailViewModel {
         }
     }
 
+    /// Elimina un saldo inicial (owner-only; guard targeted en el servicio).
+    func removeOpeningBalance(_ expense: SplitExpense) {
+        do {
+            try GroupExpenseService.shared.removeOpeningBalance(expense, in: group)
+            loadData()
+        } catch {
+            #if DEBUG
+            print("GroupDetailViewModel: Error removing opening balance: \(error)")
+            #endif
+            let message: String
+            switch error {
+            case GroupExpenseServiceError.expenseHasAssociatedSettlements:
+                message = L10n.Groups.Bridge.deleteExpenseBlocked
+            default:
+                message = L10n.Groups.Errors.actionFailed
+            }
+            surfaceActionError(message)
+        }
+    }
+
     /// Name for a member ID, with fallback.
     func memberName(for memberID: String) -> String {
         memberNameLookup[memberID] ?? memberID
@@ -321,6 +341,8 @@ enum GroupSheet: Identifiable {
     case addExpense
     case expenseDetail(SplitExpense)
     case editExpense(SplitExpense)
+    case openingBalanceDetail(SplitExpense)
+    case editOpeningBalance(SplitExpense)
     case settlement(Debt)
 
     var id: String {
@@ -329,6 +351,8 @@ enum GroupSheet: Identifiable {
         case .addExpense: "addExpense"
         case .expenseDetail(let e): "expenseDetail-\(e.id)"
         case .editExpense(let e): "editExpense-\(e.id)"
+        case .openingBalanceDetail(let e): "openingBalanceDetail-\(e.id)"
+        case .editOpeningBalance(let e): "editOpeningBalance-\(e.id)"
         case .settlement(let d): "settlement-\(d.id)"
         }
     }

@@ -4560,3 +4560,24 @@
 
 /* FAB del Panel: opción para registrar un gasto de grupo */
 "panel.fabGroup" = "Groep";
+
+// MARK: OpeningBalance-keys (saldo inicial)
+"subcategory.system.openingBalanceOwed" = "Beginsaldo (te ontvangen)";
+"subcategory.system.openingBalanceDebt" = "Beginsaldo (te betalen)";
+"groups.openingBalance.entryDescription" = "Beginsaldo";
+"groups.openingBalance.feedRow" = "%1$@ is %2$@ verschuldigd";
+"groups.openingBalance.editorTitle" = "Beginsaldo";
+"groups.openingBalance.debtorLabel" = "Wie is schuldig";
+"groups.openingBalance.creditorLabel" = "Aan wie";
+"groups.openingBalance.dateLabel" = "Datum";
+"groups.openingBalance.sectionTitle" = "Beginsaldi";
+"groups.openingBalance.addButton" = "Beginsaldo toevoegen";
+"groups.openingBalance.emptyState" = "Nog geen beginsaldi.";
+"groups.openingBalance.rollupOwes" = "is schuldig";
+"groups.openingBalance.rollupOwed" = "heeft tegoed";
+"groups.openingBalance.approvalPromptTitle" = "Begint %@ met een saldo?";
+"groups.openingBalance.approvalPromptBody" = "Leg vast wat iemand schuldig is of tegoed heeft.";
+"groups.openingBalance.approvalPromptAdd" = "Beginsaldo toevoegen";
+"groups.openingBalance.approvalPromptSkip" = "Niet nu";
+"groups.openingBalance.errorNotOwner" = "Alleen de maker van de groep kan beginsaldi beheren.";
+"groups.openingBalance.errorSameMember" = "Kies twee verschillende leden.";

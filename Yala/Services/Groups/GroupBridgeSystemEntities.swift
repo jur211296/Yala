@@ -34,6 +34,10 @@ enum GroupBridgeSystemEntities {
         case settlementSent
         /// "Liquidación recibida" (income) — Caso D TX2 cuenta real.
         case settlementReceived
+        /// "Saldo inicial (me deben)" (income) — saldo de apertura donde soy acreedor.
+        case openingBalanceOwed
+        /// "Saldo inicial (debo)" (expense) — saldo de apertura donde soy deudor.
+        case openingBalanceDebt
 
         /// Identificador estable independiente de localización.
         var roleString: String {
@@ -43,6 +47,8 @@ enum GroupBridgeSystemEntities {
             case .settlementPayment: return GroupBridgeSystemRole.subcategorySettlementPayment
             case .settlementSent: return GroupBridgeSystemRole.subcategorySettlementSent
             case .settlementReceived: return GroupBridgeSystemRole.subcategorySettlementReceived
+            case .openingBalanceOwed: return GroupBridgeSystemRole.subcategoryOpeningBalanceOwed
+            case .openingBalanceDebt: return GroupBridgeSystemRole.subcategoryOpeningBalanceDebt
             }
         }
 
@@ -54,6 +60,8 @@ enum GroupBridgeSystemEntities {
             case .settlementPayment: return L10n.Subcategory.System.settlementPayment
             case .settlementSent: return L10n.Subcategory.System.settlementSent
             case .settlementReceived: return L10n.Subcategory.System.settlementReceived
+            case .openingBalanceOwed: return L10n.Subcategory.System.openingBalanceOwed
+            case .openingBalanceDebt: return L10n.Subcategory.System.openingBalanceDebt
             }
         }
 
@@ -66,9 +74,9 @@ enum GroupBridgeSystemEntities {
         /// cuelgan de "groupCollections", las expense de "groups".
         var parentCategoryRole: String {
             switch self {
-            case .loanToGroups, .settlementPayment, .settlementReceived:
+            case .loanToGroups, .settlementPayment, .settlementReceived, .openingBalanceOwed:
                 return GroupBridgeSystemRole.categoryGroupCollections  // income
-            case .loanCollection, .settlementSent:
+            case .loanCollection, .settlementSent, .openingBalanceDebt:
                 return GroupBridgeSystemRole.categoryGroups            // expense
             }
         }

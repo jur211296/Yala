@@ -4549,3 +4549,24 @@
 
 /* FAB del Panel: opción para registrar un gasto de grupo */
 "panel.fabGroup" = "Groupe";
+
+// MARK: OpeningBalance-keys (saldo inicial)
+"subcategory.system.openingBalanceOwed" = "Solde initial (on vous doit)";
+"subcategory.system.openingBalanceDebt" = "Solde initial (vous devez)";
+"groups.openingBalance.entryDescription" = "Solde initial";
+"groups.openingBalance.feedRow" = "%1$@ doit à %2$@";
+"groups.openingBalance.editorTitle" = "Solde initial";
+"groups.openingBalance.debtorLabel" = "Qui doit";
+"groups.openingBalance.creditorLabel" = "À qui";
+"groups.openingBalance.dateLabel" = "Date";
+"groups.openingBalance.sectionTitle" = "Soldes initiaux";
+"groups.openingBalance.addButton" = "Ajouter un solde initial";
+"groups.openingBalance.emptyState" = "Aucun solde initial pour l'instant.";
+"groups.openingBalance.rollupOwes" = "doit";
+"groups.openingBalance.rollupOwed" = "on lui doit";
+"groups.openingBalance.approvalPromptTitle" = "%@ commence-t-il avec un solde ?";
+"groups.openingBalance.approvalPromptBody" = "Enregistrez ce qu'il doit ou ce qu'on lui doit déjà.";
+"groups.openingBalance.approvalPromptAdd" = "Ajouter un solde initial";
+"groups.openingBalance.approvalPromptSkip" = "Pas maintenant";
+"groups.openingBalance.errorNotOwner" = "Seul le créateur du groupe peut gérer les soldes initiaux.";
+"groups.openingBalance.errorSameMember" = "Choisissez deux membres différents.";
