@@ -174,6 +174,13 @@ struct RecordRowView: View {
 
     // MARK: - Subcategory Icon
 
+    /// Registro de grupo bridgeado que aún no tiene subcategoría — al tocarlo enruta a
+    /// "asignar subcategoría". Se marca con un badge para señalar la acción pendiente.
+    /// Excluye los registros manuales sin clasificar (su tap NO va al Inbox).
+    private var needsClassification: Bool {
+        record.splitExpenseID != nil && record.subcategory == nil
+    }
+
     private var subcategoryIcon: some View {
         // Use category color for the icon background
         let colorHex = record.category?.colorHex ?? AppConstants.defaultColorHex
@@ -185,14 +192,19 @@ struct RecordRowView: View {
 
         return ZStack {
             Circle()
-                .fill(Color(hex: colorHex))
+                .fill(needsClassification ? Color.hotPink : Color(hex: colorHex))
                 .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
-            Image(systemName: iconName)
+            Image(systemName: needsClassification ? "exclamationmark" : iconName)
                 .font(DS.Typography.label)
                 .foregroundStyle(.white)
                 .accessibilityHidden(true)
         }
+        // Solo el badge de "falta clasificar" se anuncia en VoiceOver; el icono normal
+        // queda oculto porque el texto de la fila ya nombra la categoría.
+        .accessibilityElement()
+        .accessibilityLabel(L10n.Inbox.needsSubcategory)
+        .accessibilityHidden(!needsClassification)
     }
 
     // MARK: - Tags Row

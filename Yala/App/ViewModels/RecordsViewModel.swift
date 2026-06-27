@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OSLog
 import SwiftData
 import SwiftUI
 
@@ -16,6 +17,9 @@ import SwiftUI
 @MainActor
 @Observable
 final class RecordsViewModel: Filterable {
+
+    // DIAG (caso "registro de grupo desaparece al clasificar"). Quitar tras QA.
+    private static let diagLogger = Logger(subsystem: "com.yala", category: "GroupBridge")
 
     // MARK: - Filter State (SSOT: Read/Write from SessionState.shared)
 
@@ -244,6 +248,13 @@ final class RecordsViewModel: Filterable {
             transactions: eligibleTransactions,
             criteria: criteria
         )
+
+        // DIAG (caso "registro de grupo desaparece al clasificar"): cuántas TX bridgeadas
+        // quedan visibles en el feed tras este refresh. Sin PII. Quitar tras QA.
+        let bridgedVisible = groupedRecords.flatMap(\.records).filter {
+            $0.splitExpenseID != nil || $0.splitSettlementID != nil
+        }.count
+        Self.diagLogger.info("recordsRefresh visibleBridged=\(bridgedVisible, privacy: .public) totalEligible=\(eligibleTransactions.count, privacy: .public) includeGroupTxs=\(includeGroupTxs, privacy: .public)")
 
         // "Identify duplicates" mode: post-filter the result to keep only records with
         // at least one potential duplicate (exact match over selected criteria). Runs on

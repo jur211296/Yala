@@ -199,6 +199,9 @@ final class GroupTransactionBridge {
         // el intent. Si el real sobrevive, el virtual se reconcilia a +lent (no -myShare)
         // para no duplicar (B6-25). `bridgeVirtualOnly` centraliza la regla.
         if !isCaseA {
+            // DIAG (caso "registro de grupo desaparece al clasificar"): timeline del
+            // delete+recreate de la TX virtual. Sin PII (solo id + counts). Quitar tras QA.
+            Self.logger.info("caseB start expense=\(expenseIDStr, privacy: .public) existingVirtual=\(existingVirtualTxs.count, privacy: .public) existingDrafts=\(existingPendingDrafts.count, privacy: .public) matchedSubcat=\(realSubcat != nil, privacy: .public) remote=\(isRemoteSync, privacy: .public)")
             try bridgeVirtualOnly(
                 expense: expense,
                 existingRealTx: existingRealTx,
@@ -212,6 +215,7 @@ final class GroupTransactionBridge {
                 context: context
             )
             try saveIfNeeded(shouldSave: shouldSave, context: context)
+            Self.logger.info("caseB saved expense=\(expenseIDStr, privacy: .public) shouldSave=\(shouldSave, privacy: .public)")
             return
         }
 
@@ -764,6 +768,8 @@ final class GroupTransactionBridge {
         guard !ids.isEmpty else { return }
         let idSet = Set(ids)
         let expenses = try context.fetch(FetchDescriptor<SplitExpense>()).filter { idSet.contains($0.id) }
+        // DIAG: re-bridge por sync remoto (distingue del edit local). Quitar tras QA.
+        Self.logger.info("bridgeRemoteExpenses count=\(expenses.count, privacy: .public)")
 
         for expense in expenses {
             // Find the group for this expense
