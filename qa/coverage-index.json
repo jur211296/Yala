@@ -394,6 +394,7 @@
         "Yala/App/Views/Groups/GroupRecordsView.swift",
         "Yala/App/Views/Groups/GroupBalancesView.swift",
         "Yala/App/Views/Groups/GroupSettingsView.swift",
+        "Yala/App/Views/Groups/GroupMembersView.swift",
         "Yala/App/Views/Groups/GroupCardView.swift",
         "Yala/App/Views/Groups/SettlementFormView.swift",
         "Yala/App/Views/Groups/MemberPickerView.swift",
