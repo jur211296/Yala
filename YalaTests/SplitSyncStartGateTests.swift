@@ -51,43 +51,81 @@ struct SplitSyncStartGateTests {
         #expect(decision == .deferUntilImport)
     }
 
-    // MARK: - resolveWaitByQuiescence (promote on QUIESCENCE, not first import)
+    // MARK: - resolveWaitByQuiescence (promote on QUIESCENCE + observed import activity)
 
     @Test func resolveByQuiescence_settledAndQuiet_starts() {
         let r = SplitSyncStartGate.resolveWaitByQuiescence(
-            hasCompletedFirstImport: true, isQuiescent: true, reachedHardCap: false
+            hasCompletedFirstImport: true, hasObservedImportActivity: true, isQuiescent: true,
+            noImportGraceElapsed: false, reachedHardCap: false
         )
         #expect(r == .start)
     }
 
     @Test func resolveByQuiescence_firstImportButNotQuiet_keepsWaiting() {
-        // The KEY case: first import fired but the multi-batch restore is still active →
-        // must NOT promote (promoting on the first event, before quiescence, is what re-crashed).
+        // First import fired but the multi-batch restore is still active → must NOT promote
+        // (promoting before quiescence is what re-crashed the saga).
         let r = SplitSyncStartGate.resolveWaitByQuiescence(
-            hasCompletedFirstImport: true, isQuiescent: false, reachedHardCap: false
+            hasCompletedFirstImport: true, hasObservedImportActivity: true, isQuiescent: false,
+            noImportGraceElapsed: false, reachedHardCap: false
         )
         #expect(r == .keepWaiting)
     }
 
-    @Test func resolveByQuiescence_quietButNoImportYet_keepsWaiting() {
-        // `isQuiescent` is true BEFORE any import starts (lastImportDate == nil). Promoting there
-        // would be premature on a restore where the import is still pending → keep waiting.
+    @Test func resolveByQuiescence_quietButNoImportYet_beforeGrace_keepsWaiting() {
+        // THE GAP CASE: at cold launch `isQuiescent` is true BEFORE any import starts (lastImportDate == nil)
+        // and the grace has NOT elapsed → must keep waiting (a populated restore's import may be imminent;
+        // promoting here is exactly the premature-promotion crash). Empty stores promote only AFTER the grace.
         let r = SplitSyncStartGate.resolveWaitByQuiescence(
-            hasCompletedFirstImport: false, isQuiescent: true, reachedHardCap: false
+            hasCompletedFirstImport: false, hasObservedImportActivity: false, isQuiescent: true,
+            noImportGraceElapsed: false, reachedHardCap: false
         )
         #expect(r == .keepWaiting)
     }
 
     @Test func resolveByQuiescence_hardCap_startsRegardless() {
         let r = SplitSyncStartGate.resolveWaitByQuiescence(
-            hasCompletedFirstImport: false, isQuiescent: false, reachedHardCap: true
+            hasCompletedFirstImport: false, hasObservedImportActivity: false, isQuiescent: false,
+            noImportGraceElapsed: false, reachedHardCap: true
         )
         #expect(r == .start)
     }
 
     @Test func resolveByQuiescence_pendingNoCap_keepsWaiting() {
         let r = SplitSyncStartGate.resolveWaitByQuiescence(
-            hasCompletedFirstImport: false, isQuiescent: false, reachedHardCap: false
+            hasCompletedFirstImport: false, hasObservedImportActivity: false, isQuiescent: false,
+            noImportGraceElapsed: false, reachedHardCap: false
+        )
+        #expect(r == .keepWaiting)
+    }
+
+    // MARK: - resolveWaitByQuiescence — EMPTY store (no import ever observed)
+
+    @Test func resolveByQuiescence_emptyStore_graceElapsedNoActivityQuiet_starts() {
+        // THE FIX: an empty personal store never fires `.import`, so `hasCompletedFirstImport` stays false
+        // forever. After the grace with NO import activity observed + quiet → promote.
+        let r = SplitSyncStartGate.resolveWaitByQuiescence(
+            hasCompletedFirstImport: false, hasObservedImportActivity: false, isQuiescent: true,
+            noImportGraceElapsed: true, reachedHardCap: false
+        )
+        #expect(r == .start)
+    }
+
+    @Test func resolveByQuiescence_emptyStoreBranch_butActivityObserved_keepsWaiting() {
+        // THE CRITICAL SAFETY CASE: a populated restore whose import has STARTED (activity observed) but is
+        // momentarily quiescent must NOT be promoted by the empty-store branch — it has real data importing.
+        // Keying on `hasObservedImportActivity` (not onboarding mode) is what makes this safe.
+        let r = SplitSyncStartGate.resolveWaitByQuiescence(
+            hasCompletedFirstImport: false, hasObservedImportActivity: true, isQuiescent: true,
+            noImportGraceElapsed: true, reachedHardCap: false
+        )
+        #expect(r == .keepWaiting)
+    }
+
+    @Test func resolveByQuiescence_emptyStoreBranch_graceElapsedNoActivityButNotQuiet_keepsWaiting() {
+        // Empty-store branch still ANDs with quiescence → an active (non-quiet) state keeps waiting.
+        let r = SplitSyncStartGate.resolveWaitByQuiescence(
+            hasCompletedFirstImport: false, hasObservedImportActivity: false, isQuiescent: false,
+            noImportGraceElapsed: true, reachedHardCap: false
         )
         #expect(r == .keepWaiting)
     }

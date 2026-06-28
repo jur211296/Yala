@@ -32,6 +32,11 @@ enum SplitSyncStartGate {
     /// - `isAccountAvailable=false` → no CloudKit, no half-imported personal graph → start now.
     /// - `hasCompletedFirstImport=true` → personal import settled → start now.
     /// - `iCloud available && import pending` → defer until the first import completes.
+    ///
+    /// An EMPTY personal store (e.g. a groups-only user who never created personal data) never fires a
+    /// `.import` event, so `hasCompletedFirstImport` stays `false` and this returns `.deferUntilImport`. That
+    /// case is promoted later by `resolveWaitByQuiescence`'s empty-store branch (no import observed within the
+    /// grace + quiescent) — NOT here, so the quiescence/no-activity guards stay live even at cold launch.
     static func decideStart(
         isAccountAvailable: Bool,
         hasCompletedFirstImport: Bool
@@ -50,7 +55,7 @@ enum SplitSyncStartGate {
     // MARK: - Promote by QUIESCENCE (not first import)
 
     /// Decides, on each periodic poll while deferred, whether to PROMOTE the engines to auto-sync —
-    /// gating on **import quiescence** instead of the first `importEvent`.
+    /// gating on **import quiescence** + **observed import activity** instead of the first `importEvent`.
     ///
     /// The first import is a PREMATURE signal on a multi-batch restore: NSPersistentCloudKitContainer
     /// keeps importing after the first event fires, so promoting there turns off the delegate-save gate
@@ -68,18 +73,28 @@ enum SplitSyncStartGate {
     ///   quiet → promote. Both are required: `isQuiescent` alone is `true` BEFORE any import starts
     ///   (`lastImportDate == nil`), which would promote prematurely on a restore where the import is
     ///   still pending; gating also on `hasCompletedFirstImport` ensures we waited for it to happen.
+    /// - `noImportGraceElapsed && !hasObservedImportActivity && isQuiescent` → EMPTY store: the grace window
+    ///   passed and NO `.import` ever appeared (a populated account would have fired an import event by now),
+    ///   and the store is quiet → safe to promote. This is what unblocks a user with no personal data (e.g.
+    ///   groups-only) whose empty `.private` store never fires `.import`, so `hasCompletedFirstImport` stays
+    ///   `false` forever. Keying on *absence of observed import activity* (not the onboarding mode) is the
+    ///   safe distinguisher: a populated store on restore sets `hasObservedImportActivity` as soon as the
+    ///   import starts → this branch never fires for it → it waits for the real import via the branch above.
     /// - otherwise → keep waiting.
     static func resolveWaitByQuiescence(
         hasCompletedFirstImport: Bool,
+        hasObservedImportActivity: Bool,
         isQuiescent: Bool,
+        noImportGraceElapsed: Bool,
         reachedHardCap: Bool
     ) -> WaitResolution {
         if reachedHardCap { return .start }
         if hasCompletedFirstImport && isQuiescent { return .start }
+        if noImportGraceElapsed && !hasObservedImportActivity && isQuiescent { return .start }
         return .keepWaiting
     }
 
-    /// `true` when the engines are promoted without a settled+quiet import (i.e. via the hard cap).
+    /// `true` when the engines are promoted without a settled+quiet store (i.e. via the hard cap).
     /// The call site logs a diagnostic warning + telemetry in that case.
     static func promotedWhileNotQuiescent(hasCompletedFirstImport: Bool, isQuiescent: Bool) -> Bool {
         !(hasCompletedFirstImport && isQuiescent)

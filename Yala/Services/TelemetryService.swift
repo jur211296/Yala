@@ -133,6 +133,7 @@ enum AnalyticsEvent: String {
     case cloudkitBudgetCSVMirrorRebuilt = "Diagnóstico · Espejo de presupuesto reconstruido"  // params: count
     case cloudkitGroupSyncGateHardCap = "Diagnóstico · Gate de grupos llegó al tope"  // params: isSyncing — el sync de grupos arrancó por tope sin import personal asentado
     case cloudkitGroupSyncPromotedToAuto = "Diagnóstico · Sync de grupos promovido a auto"  // params: importSettled (false = promovido por hard cap sin import asentado) — los engines pasaron de export-only a automaticallySync
+    case cloudkitGroupSyncNoImportPromote = "Diagnóstico · Sync de grupos promovido sin import personal"  // sin params — store personal VACÍO (ningún .import apareció en la ventana de gracia) promovido a auto-sync; antes quedaba export-only para siempre (bug del usuario "solo grupos")
     case cloudkitGroupZoneRecovered = "Diagnóstico · Zona de grupo recuperada"  // params: count — zonas owner sin GroupMeta subido re-encoladas al arrancar
     case iCloudRestoreOutcome = "Diagnóstico · Resultado de restore"  // params: phase (completed|partial), destination (groupsOnly|directToApp|onboarding)
 

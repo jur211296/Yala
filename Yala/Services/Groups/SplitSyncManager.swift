@@ -72,6 +72,12 @@ final class SplitSyncManager {
     private var gateWaitTask: Task<Void, Never>?
     private static let hardCapSeconds: TimeInterval = 300  // absolute last-resort cap
     private static let pollInterval: TimeInterval = 15
+    /// Grace from gate start before promoting an EMPTY store (no `.import` ever observed). Long enough that a
+    /// populated account's import would have STARTED by now (flipping `hasObservedImportActivity`), so an
+    /// empty store promotes ~here while a restore-with-data keeps waiting for its real import to settle.
+    /// Keep a multiple of `pollInterval`: promotion can only fire on a poll tick, so a non-multiple value
+    /// silently rounds up to the next tick.
+    private static let noImportGraceSeconds: TimeInterval = 60
 
     // Pending record IDs — internal tracking, not observed by views
     private var pendingRecordSaves: Set<CKRecord.ID> = []
@@ -262,6 +268,28 @@ final class SplitSyncManager {
         TelemetryService.track(.cloudkitGroupSyncPromotedToAuto, parameters: [
             "importSettled": String(importSettled)
         ])
+
+        // Kick an immediate fetch on both new engines so newly-joined / remote changes appear promptly:
+        // `cancelGate()` removed the poll backstop, and `acceptShare`'s immediate fetch was gated off during
+        // the export-only window. Non-fatal: auto-sync retries on failure (a participant fetches via shared,
+        // an owner via private; fetching both covers it).
+        //
+        // ONLY when the personal store is quiescent: a normal (settled+quiet) or empty-store promotion is safe
+        // to fetch+save now. But a HARD-CAP force-promotion (the absolute last resort) can fire while the
+        // personal import is still ACTIVE; forcing an immediate fetch there would run a fetch-handler `save()`
+        // over the half-imported graph — the saga crash. In that rare case skip the explicit fetch and let
+        // auto-sync schedule it once the import settles (it gives the natural grace window). `isImportQuiescent`
+        // is false there (import in flight) and true for both safe paths, so it's the right discriminator.
+        if iCloudSyncService.shared.isImportQuiescent {
+            let promotedShared = newShared
+            let promotedPrivate = newPrivate
+            Task { @MainActor [weak self] in
+                do { try await promotedShared.fetchChanges() }
+                catch { self?.logger.error("post-promote shared fetch failed (auto-sync will retry): \(error.localizedDescription, privacy: .public)") }
+                do { try await promotedPrivate.fetchChanges() }
+                catch { self?.logger.error("post-promote private fetch failed (auto-sync will retry): \(error.localizedDescription, privacy: .public)") }
+            }
+        }
     }
 
     // MARK: - Owned Zone Recovery
@@ -326,11 +354,13 @@ final class SplitSyncManager {
     /// Waits for the personal first import to settle, then PROMOTES the export-only engines to
     /// auto-sync (`enableAutoSync()`). The engines already exist (created in export-only mode by
     /// `startEngines(autoSync: false)`); this only flips them to automatic once the graph is safe.
-    /// Fast path: the `.iCloudFirstImportCompleted` observer. Safety net: a periodic poll that
-    /// promotes at the absolute hard cap (so group sync never stays export-only forever).
+    /// Fast path: the `.iCloudFirstImportCompleted` observer. Safety nets: a periodic poll that promotes an
+    /// EMPTY store once the no-import grace passes (no import ever appeared + quiet), and the absolute hard
+    /// cap (so group sync never stays export-only forever).
     private func observeFirstImportThenStart() {
-        // Defensive: the import may have already settled+quieted between decideStart and here.
-        if evaluateQuiescentPromotion(reachedHardCap: false) { return }
+        // Defensive: the import may have already settled+quieted between decideStart and here. (The no-import
+        // grace has NOT elapsed at t=0, so an empty store is NOT promoted here — it promotes via the poll.)
+        if evaluateQuiescentPromotion(noImportGraceElapsed: false, reachedHardCap: false) { return }
 
         logger.notice("SplitSync export-only — awaiting personal import QUIESCENCE before enabling auto-sync")
 
@@ -340,7 +370,7 @@ final class SplitSyncManager {
             forName: .iCloudFirstImportCompleted, object: nil, queue: .main
         ) { [weak self] _ in
             guard let self else { return }
-            Task { @MainActor in _ = self.evaluateQuiescentPromotion(reachedHardCap: false) }
+            Task { @MainActor in _ = self.evaluateQuiescentPromotion(noImportGraceElapsed: false, reachedHardCap: false) }
         }
 
         gateWaitTask = Task { @MainActor [weak self] in
@@ -349,30 +379,48 @@ final class SplitSyncManager {
                 try? await Task.sleep(for: .seconds(Self.pollInterval))
                 guard !Task.isCancelled, let self, !self.autoSyncActive else { return }
                 elapsed += Self.pollInterval
-                if self.evaluateQuiescentPromotion(reachedHardCap: elapsed >= Self.hardCapSeconds) { return }
+                if self.evaluateQuiescentPromotion(
+                    noImportGraceElapsed: elapsed >= Self.noImportGraceSeconds,
+                    reachedHardCap: elapsed >= Self.hardCapSeconds
+                ) { return }
             }
         }
     }
 
-    /// Promote the engines to auto-sync IFF the personal import has settled AND gone quiet
-    /// (or the hard cap fired). Shared by the `.iCloudFirstImportCompleted` observer and the poll.
+    /// Promote the engines to auto-sync IFF the personal import has settled AND gone quiet, OR — for an EMPTY
+    /// personal store — the no-import grace passed with NO import activity ever observed (and quiet), or the
+    /// absolute hard cap fired. Shared by the `.iCloudFirstImportCompleted` observer and the poll.
     /// Returns `true` once promoted (or already promoted) so the poll loop can exit.
     @discardableResult
-    private func evaluateQuiescentPromotion(reachedHardCap: Bool) -> Bool {
+    private func evaluateQuiescentPromotion(noImportGraceElapsed: Bool, reachedHardCap: Bool) -> Bool {
         guard !autoSyncActive else { return true }
         let firstImport = iCloudSyncService.shared.hasCompletedFirstImport
+        let observedImport = iCloudSyncService.shared.hasObservedImportActivity
         let isQuiescent = iCloudSyncService.shared.isImportQuiescent
         let resolution = SplitSyncStartGate.resolveWaitByQuiescence(
             hasCompletedFirstImport: firstImport,
+            hasObservedImportActivity: observedImport,
             isQuiescent: isQuiescent,
+            noImportGraceElapsed: noImportGraceElapsed,
             reachedHardCap: reachedHardCap
         )
         guard resolution == .start else { return false }
         if SplitSyncStartGate.promotedWhileNotQuiescent(hasCompletedFirstImport: firstImport, isQuiescent: isQuiescent) {
-            logger.warning("SplitSync gate HARD CAP \(Int(Self.hardCapSeconds))s — promoting to auto-sync while NOT quiescent (firstImport=\(firstImport, privacy: .public), isSyncing=\(iCloudSyncService.shared.status.isSyncing, privacy: .public))")
-            TelemetryService.track(.cloudkitGroupSyncGateHardCap, parameters: [
-                "isSyncing": String(iCloudSyncService.shared.status.isSyncing)
-            ])
+            if isQuiescent && !observedImport {
+                // Empty store: the grace passed and NO personal `.import` ever appeared (a populated account
+                // would have fired one as the import started) and the store is quiet → safe to promote. This
+                // unblocks a user with no personal data (e.g. groups-only) whose empty store never sets
+                // `hasCompletedFirstImport`. No half-imported personal graph exists → the delegate save is safe.
+                logger.notice("SplitSync promoting (no personal import appeared within grace — empty store)")
+                TelemetryService.track(.cloudkitGroupSyncNoImportPromote)
+            } else {
+                // Absolute hard cap reached while NOT settled+quiet — last-resort force so group sync never
+                // hangs export-only on a stuck `.syncing` import.
+                logger.warning("SplitSync gate HARD CAP \(Int(Self.hardCapSeconds))s — promoting to auto-sync while NOT quiescent (firstImport=\(firstImport, privacy: .public), isSyncing=\(iCloudSyncService.shared.status.isSyncing, privacy: .public))")
+                TelemetryService.track(.cloudkitGroupSyncGateHardCap, parameters: [
+                    "isSyncing": String(iCloudSyncService.shared.status.isSyncing)
+                ])
+            }
         }
         enableAutoSync()
         return true

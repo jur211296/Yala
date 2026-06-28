@@ -77,6 +77,14 @@ final class iCloudSyncService {
     /// remota (e.g. UserSegmentService) para decidir si su estado es confiable.
     private(set) var hasCompletedFirstImport: Bool = false
 
+    /// Flag in-memory: ¿se observó CUALQUIER `.importEvent` personal esta sesión (en curso O completado)?
+    /// Distingue "hay un import en marcha/ocurrido → SÍ hay data remota" de "store vacío → ningún import
+    /// llega nunca". El gate del sync de grupos lo usa para promover con seguridad un store vacío tras una
+    /// ventana de gracia, sin arriesgar un `save()` sobre un grafo a medio importar (ver
+    /// `SplitSyncStartGate.resolveWaitByQuiescence`). Un store vacío nunca dispara `.importEvent`, así que
+    /// este flag se queda `false` para él; un restore con datos lo pone `true` apenas arranca el import.
+    private(set) var hasObservedImportActivity: Bool = false
+
     /// ¿es seguro hacer `save()` del store personal AHORA? Verdadero solo si NO hay un import
     /// en curso y pasó la ventana de quietud desde el último import (quiescencia). Un `save()`
     /// sobre el coordinator del store personal mientras NSPersistentCloudKitContainer importa
@@ -253,6 +261,9 @@ final class iCloudSyncService {
             }
 
         case .importEvent:
+            // Cualquier importEvent (en curso, completado o con error) implica que hay data remota que
+            // importar → marca actividad de import para el gate de grupos (un store vacío nunca llega aquí).
+            hasObservedImportActivity = true
             if let error {
                 lastImportError = error
                 consecutiveFailures += 1
@@ -576,6 +587,7 @@ final class iCloudSyncService {
         lastImportError = nil
         consecutiveFailures = 0
         hasCompletedFirstImport = false
+        hasObservedImportActivity = false
         _testIgnoreExternalEvents = true
         _testForceAccountAvailable = nil
     }
