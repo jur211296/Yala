@@ -418,5 +418,21 @@
 			<string>%d demandes en attente</string>
 		</dict>
 	</dict>
+	<key>groups.detail.memberCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d membre</string>
+			<key>other</key>
+			<string>%d membres</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

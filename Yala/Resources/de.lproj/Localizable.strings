@@ -4569,3 +4569,8 @@
 "groups.openingBalance.approvalPromptSkip" = "Jetzt nicht";
 "groups.openingBalance.errorNotOwner" = "Nur der Ersteller der Gruppe kann Anfangssalden verwalten.";
 "groups.openingBalance.errorSameMember" = "Wählen Sie zwei verschiedene Mitglieder.";
+
+// MARK: groups header balance bar
+"groups.detail.yourBalance" = "Dein Saldo";
+"groups.detail.settledUp" = "Alles ausgeglichen";
+"groups.options.ownerOnlyHint" = "Nur die Gruppenleitung kann das ändern";

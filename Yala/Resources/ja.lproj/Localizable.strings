@@ -4581,3 +4581,8 @@
 "groups.openingBalance.approvalPromptSkip" = "後で";
 "groups.openingBalance.errorNotOwner" = "グループの作成者のみが開始残高を管理できます。";
 "groups.openingBalance.errorSameMember" = "異なるメンバーを2人選んでください。";
+
+// MARK: groups header balance bar
+"groups.detail.yourBalance" = "あなたの収支";
+"groups.detail.settledUp" = "精算済み";
+"groups.options.ownerOnlyHint" = "グループの管理者のみが変更できます";

@@ -4577,3 +4577,8 @@
 "groups.openingBalance.approvalPromptSkip" = "Agora não";
 "groups.openingBalance.errorNotOwner" = "Apenas quem criou o grupo pode gerenciar os saldos iniciais.";
 "groups.openingBalance.errorSameMember" = "Escolha dois membros diferentes.";
+
+// MARK: groups header balance bar
+"groups.detail.yourBalance" = "Seu saldo";
+"groups.detail.settledUp" = "Tudo acertado";
+"groups.options.ownerOnlyHint" = "Só o organizador do grupo pode alterar";

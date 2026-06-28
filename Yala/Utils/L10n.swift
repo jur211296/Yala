@@ -1749,6 +1749,14 @@ enum L10n {
             static var comingSoon: String { ls("groups.detail.comingSoon", comment: "") }
             // A0-Bridge V2.0 (P1-3): CTA desde TX bridgeada read-only
             static var openGroup: String { ls("groups.detail.openGroup", comment: "") }
+            // Banda de balance del header del detalle
+            static var yourBalance: String { ls("groups.detail.yourBalance", comment: "") }
+            static var settledUp: String { ls("groups.detail.settledUp", comment: "") }
+            static func memberCount(_ count: Int) -> String { String(format: ls("groups.detail.memberCount", comment: ""), count) }
+        }
+
+        enum Options {
+            static var ownerOnlyHint: String { ls("groups.options.ownerOnlyHint", comment: "") }
         }
 
         enum Stats {

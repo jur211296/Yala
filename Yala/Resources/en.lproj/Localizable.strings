@@ -4575,3 +4575,8 @@
 "groups.openingBalance.approvalPromptSkip" = "Not now";
 "groups.openingBalance.errorNotOwner" = "Only the group creator can manage opening balances.";
 "groups.openingBalance.errorSameMember" = "Choose two different members.";
+
+// MARK: groups header balance bar
+"groups.detail.yourBalance" = "Your balance";
+"groups.detail.settledUp" = "All settled up";
+"groups.options.ownerOnlyHint" = "Only the group organizer can change this";

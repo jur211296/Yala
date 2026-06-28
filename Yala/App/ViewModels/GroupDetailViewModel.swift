@@ -46,6 +46,13 @@ final class GroupDetailViewModel {
     /// uuidString del current member (para resolver perspectiva personal en el feed).
     var currentMemberID: String? { currentUserMember?.id.uuidString }
 
+    /// Neto del usuario actual por moneda, para la banda de balance del header del detalle.
+    /// `debts` ya respeta `showDebtsInSingleCurrency` (se consolida en `loadData`).
+    var headerBalance: GroupHeaderBalance? {
+        guard let currentMemberID else { return nil }
+        return GroupBalanceService.computeGroupHeaderBalance(debts: debts, currentMemberID: currentMemberID)
+    }
+
     var currentUserMember: SplitMember? {
         members.first { $0.isCurrentUser }
     }
@@ -338,6 +345,7 @@ final class GroupDetailViewModel {
 
 enum GroupSheet: Identifiable {
     case settings
+    case members
     case addExpense
     case expenseDetail(SplitExpense)
     case editExpense(SplitExpense)
@@ -348,6 +356,7 @@ enum GroupSheet: Identifiable {
     var id: String {
         switch self {
         case .settings: "settings"
+        case .members: "members"
         case .addExpense: "addExpense"
         case .expenseDetail(let e): "expenseDetail-\(e.id)"
         case .editExpense(let e): "editExpense-\(e.id)"

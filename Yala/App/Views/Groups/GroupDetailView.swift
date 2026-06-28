@@ -45,6 +45,7 @@ struct GroupDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Input
 
@@ -111,8 +112,15 @@ struct GroupDetailView: View {
         }
         .yalaScreenBackground(.panel)
         .safeAreaInset(edge: .top) {
-            navigationChipsBar
-                .padding(.vertical, DS.Spacing.sm)
+            VStack(spacing: DS.Spacing.sm) {
+                navigationChipsBar
+                // Banda de balance: vistazo rápido del neto personal. Oculta en Balances
+                // (ahí ya está el detalle) y si el usuario no es miembro (currentMemberID nil).
+                if selectedTab != .balances, let balance = viewModel.headerBalance {
+                    groupHeaderBalanceBar(balance)
+                }
+            }
+            .padding(.vertical, DS.Spacing.sm)
         }
         .navigationTitle(group.name)
         .navigationBarTitleDisplayMode(.large)
@@ -132,13 +140,19 @@ struct GroupDetailView: View {
 
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    viewModel.activeSheet = .settings
+                    viewModel.activeSheet = .members
                 } label: {
                     ZStack(alignment: .topTrailing) {
-                        Image(systemName: "gearshape")
-                            .fontWeight(.medium)
-                            .foregroundStyle(Color.primary)
+                        HStack(spacing: DS.Spacing.xxs) {
+                            Image(systemName: "person.2.fill")
+                            Text("\(viewModel.activeMembers.count)")
+                                .font(DS.Typography.subheadline)
+                        }
+                        .fontWeight(.medium)
+                        .foregroundStyle(Color.primary)
 
+                        // Badge de solicitudes pendientes — movido del engranaje: las solicitudes
+                        // son de personas y se aprueban/rechazan en la sheet de Miembros.
                         if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
                             Circle()
                                 .fill(DS.Semantic.errorForeground)
@@ -147,9 +161,19 @@ struct GroupDetailView: View {
                         }
                     }
                 }
-                .accessibilityLabel(viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty
-                    ? "\(L10n.Groups.Settings.title), \(L10n.Groups.Member.pendingRequestsCount(viewModel.pendingApprovalMembers.count))"
-                    : L10n.Groups.Settings.title)
+                .accessibilityLabel(membersButtonA11yLabel)
+                .accessibilityIdentifier("group_members_button")
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    viewModel.activeSheet = .settings
+                } label: {
+                    Image(systemName: "gearshape")
+                        .fontWeight(.medium)
+                        .foregroundStyle(Color.primary)
+                }
+                .accessibilityLabel(L10n.Groups.Settings.title)
                 .buttonBorderShape(.circle)
             }
         }
@@ -209,6 +233,9 @@ struct GroupDetailView: View {
         switch sheet {
         case .settings:
             GroupSettingsView(group: group, viewModel: viewModel)
+
+        case .members:
+            GroupMembersView(group: group, viewModel: viewModel)
 
         case .addExpense:
             // Detents `.large` + drag indicator: estabilizan el sheet y evitan
@@ -284,6 +311,16 @@ struct GroupDetailView: View {
         }
     }
 
+    // MARK: - Members Button
+
+    private var membersButtonA11yLabel: String {
+        let base = L10n.Groups.Detail.memberCount(viewModel.activeMembers.count)
+        if viewModel.isCurrentUserAdmin && !viewModel.pendingApprovalMembers.isEmpty {
+            return "\(base), \(L10n.Groups.Member.pendingRequestsCount(viewModel.pendingApprovalMembers.count))"
+        }
+        return base
+    }
+
     // MARK: - Navigation Chips Bar
 
     private var navigationChipsBar: some View {
@@ -330,6 +367,112 @@ struct GroupDetailView: View {
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Header Balance Bar
+
+    @ViewBuilder
+    private func groupHeaderBalanceBar(_ balance: GroupHeaderBalance) -> some View {
+        Button {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { selectedTab = .balances }
+            TelemetryService.track(.groupBalancesViewed)
+        } label: {
+            HStack(alignment: .center, spacing: DS.Spacing.md) {
+                // Texto continuo "Debes S/270.00" — label primary + montos coloreados por signo.
+                Text(headerBalanceText(balance))
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Chevron en círculo glass; .center lo alinea al medio del texto (1 o 2 líneas).
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.label)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.primary)
+                    .frame(width: DS.Panel.headerAccessorySize, height: DS.Panel.headerAccessorySize)
+                    .glassEffect(.regular.interactive(), in: Circle())
+                    .contentShape(Circle())
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+            .frame(maxWidth: .infinity)
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, DS.Spacing.lg)
+        .accessibilityIdentifier("group_header_balance")
+        .accessibilityElement(children: .combine)
+    }
+
+    private func headerBalanceLabel(_ state: GroupHeaderBalance.State) -> String {
+        switch state {
+        case .theyOweMe: L10n.Groups.Summary.owedToMe
+        case .iOwe: L10n.Groups.Summary.iOwe
+        case .mixed: L10n.Groups.Detail.yourBalance
+        case .settled: L10n.Groups.Detail.settledUp
+        }
+    }
+
+    /// Texto continuo de la banda: label en primary grande + montos en indigo (te deben) /
+    /// hot pink (debes), con la jerarquía symbol/decimal de `AmountText.attributedAmount`.
+    @MainActor
+    private func headerBalanceText(_ balance: GroupHeaderBalance) -> AttributedString {
+        var result = AttributedString(headerBalanceLabel(balance.state))
+        result.font = .subheadline.bold()
+        result.foregroundColor = .primary
+
+        switch balance.state {
+        case .settled:
+            break
+        case .theyOweMe:
+            result.append(AttributedString(" "))
+            result.append(amountsAttributed(balance.owedToMe, color: .electricIndigo, negate: false))
+        case .iOwe:
+            result.append(AttributedString(" "))
+            result.append(amountsAttributed(balance.iOwe, color: .hotPink, negate: false))
+        case .mixed:
+            result.append(AttributedString(" "))
+            result.append(amountsAttributed(balance.owedToMe, color: .electricIndigo, negate: false))
+            result.append(AttributedString("  "))
+            result.append(amountsAttributed(balance.iOwe, color: .hotPink, negate: true))
+        }
+        return result
+    }
+
+    /// Montos de un mismo color, intercalando " + " entre monedas. Prefija "≈" cuando las
+    /// deudas se consolidaron a una moneda (`debtsWereConverted`).
+    @MainActor
+    private func amountsAttributed(_ amounts: [String: Double], color: Color, negate: Bool) -> AttributedString {
+        let integerFont = Font.subheadline.weight(.semibold)
+        let secondaryFont = Font.caption
+        let sorted = amounts.sorted { $0.key < $1.key }
+        var result = AttributedString()
+        for (index, pair) in sorted.enumerated() {
+            if index > 0 {
+                var plus = AttributedString(" + ")
+                plus.font = integerFont
+                plus.foregroundColor = color
+                result.append(plus)
+            } else if viewModel.debtsWereConverted {
+                var approx = AttributedString("≈ ")
+                approx.font = secondaryFont
+                approx.foregroundColor = color.opacity(0.6)
+                result.append(approx)
+            }
+            result.append(AmountText.attributedAmount(
+                value: negate ? -pair.value : pair.value,
+                currencyCode: pair.key,
+                prefs: appPreferences,
+                integerFont: integerFont,
+                secondaryFont: secondaryFont,
+                tintColor: color,
+                forceFullPrecision: true
+            ))
+        }
+        return result
     }
 
     // MARK: - Tab Content

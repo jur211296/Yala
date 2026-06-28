@@ -4570,3 +4570,8 @@
 "groups.openingBalance.approvalPromptSkip" = "Pas maintenant";
 "groups.openingBalance.errorNotOwner" = "Seul le créateur du groupe peut gérer les soldes initiaux.";
 "groups.openingBalance.errorSameMember" = "Choisissez deux membres différents.";
+
+// MARK: groups header balance bar
+"groups.detail.yourBalance" = "Votre solde";
+"groups.detail.settledUp" = "Tout est réglé";
+"groups.options.ownerOnlyHint" = "Seul l'organisateur du groupe peut le modifier";

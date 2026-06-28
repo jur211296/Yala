@@ -4581,3 +4581,8 @@
 "groups.openingBalance.approvalPromptSkip" = "Niet nu";
 "groups.openingBalance.errorNotOwner" = "Alleen de maker van de groep kan beginsaldi beheren.";
 "groups.openingBalance.errorSameMember" = "Kies twee verschillende leden.";
+
+// MARK: groups header balance bar
+"groups.detail.yourBalance" = "Jouw saldo";
+"groups.detail.settledUp" = "Alles vereffend";
+"groups.options.ownerOnlyHint" = "Alleen de groepsbeheerder kan dit wijzigen";

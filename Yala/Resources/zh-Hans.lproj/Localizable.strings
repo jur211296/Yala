@@ -4581,3 +4581,8 @@
 "groups.openingBalance.approvalPromptSkip" = "暂不";
 "groups.openingBalance.errorNotOwner" = "只有群组创建者可以管理初始余额。";
 "groups.openingBalance.errorSameMember" = "请选择两位不同的成员。";
+
+// MARK: groups header balance bar
+"groups.detail.yourBalance" = "你的余额";
+"groups.detail.settledUp" = "已结清";
+"groups.options.ownerOnlyHint" = "仅群组管理员可更改";

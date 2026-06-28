@@ -25,6 +25,21 @@ struct GroupGlobalSummary: Equatable, Sendable {
     let pendingSettlements: Int
 }
 
+/// Net balance del usuario actual en UN grupo, por moneda, para la banda del header del detalle.
+/// A diferencia de `GroupGlobalSummary` (que mantiene ambos lados por separado), aquí se netea
+/// por moneda (te-deben menos debes) para dar el vistazo rápido estilo Splitwise.
+struct GroupHeaderBalance: Equatable, Sendable {
+    enum State: Equatable, Sendable {
+        case theyOweMe   // todo el neto a favor
+        case iOwe        // todo el neto en contra
+        case mixed       // a favor en una moneda, en contra en otra
+        case settled     // sin saldos pendientes
+    }
+    let state: State
+    let owedToMe: [String: Double]   // neto > 0 por moneda (te deben)
+    let iOwe: [String: Double]       // abs del neto < 0 por moneda (debes)
+}
+
 enum GroupBalanceService {
 
     private static let epsilon: Double = 0.01
@@ -251,6 +266,45 @@ enum GroupBalanceService {
             totalIOwe: iOwe,
             pendingSettlements: pendingCount
         )
+    }
+
+    // MARK: - Header Balance (single group, current user)
+
+    /// Netea las deudas del usuario actual en UN grupo, por moneda, para la banda del header.
+    /// `debts` se asume ya consolidado/convertido por el caller (respeta `showDebtsInSingleCurrency`).
+    /// Suma ambas direcciones (to==me suma, from==me resta), descarta monedas saldadas (≤ epsilon)
+    /// y clasifica el estado resultante.
+    static func computeGroupHeaderBalance(debts: [Debt], currentMemberID: String) -> GroupHeaderBalance {
+        var net: [String: Double] = [:]
+        for debt in debts {
+            if debt.toMemberID == currentMemberID {
+                net[debt.currencyCode, default: 0] += debt.amount
+            }
+            if debt.fromMemberID == currentMemberID {
+                net[debt.currencyCode, default: 0] -= debt.amount
+            }
+        }
+
+        var owedToMe: [String: Double] = [:]
+        var iOwe: [String: Double] = [:]
+        for (currency, raw) in net {
+            let value = roundToTwoDecimals(raw)
+            if value > epsilon {
+                owedToMe[currency] = value
+            } else if value < -epsilon {
+                iOwe[currency] = -value
+            }
+        }
+
+        let state: GroupHeaderBalance.State
+        switch (owedToMe.isEmpty, iOwe.isEmpty) {
+        case (true, true): state = .settled
+        case (false, true): state = .theyOweMe
+        case (true, false): state = .iOwe
+        case (false, false): state = .mixed
+        }
+
+        return GroupHeaderBalance(state: state, owedToMe: owedToMe, iOwe: iOwe)
     }
 
     // MARK: - Consolidated Balances (single currency)

@@ -148,6 +148,30 @@ final class GroupService {
         SplitSyncManager.shared.enqueueSave(modelID: group.id, group: group)
     }
 
+    /// Update the group options that ANY active member may change (not admin-only).
+    /// `simplifyDebts` y `defaultSplitType` afectan cómo se presentan las deudas a todos, pero no
+    /// son decisiones estructurales del owner (la moneda única sí lo es y se queda en `updateGroup`).
+    func updateMemberEditableOptions(
+        _ group: SplitGroup,
+        simplifyDebts: Bool,
+        defaultSplitType: String
+    ) throws {
+        let context = try requireContext()
+        try requireCurrentUserActiveMember(in: group, context: context)
+
+        group.simplifyDebts = simplifyDebts
+        group.defaultSplitType = defaultSplitType
+
+        do {
+            try context.save()
+        } catch {
+            throw GroupServiceError.saveFailed(error)
+        }
+
+        SessionState.shared.incrementDataVersion()
+        SplitSyncManager.shared.enqueueSave(modelID: group.id, group: group)
+    }
+
     /// Archive or unarchive a group.
     func setArchived(_ group: SplitGroup, isArchived: Bool) throws {
         let context = try requireContext()
@@ -824,6 +848,18 @@ final class GroupService {
             return
         }
         guard group.isOwner else { throw GroupServiceError.adminRequired }
+    }
+
+    /// Cualquier miembro activo puede escribir (no requiere admin). Espejo de
+    /// `GroupExpenseService.validateCurrentUserCanWrite`: bloquea pending/inactive; el owner
+    /// pasa aunque su SplitMember aún no exista localmente.
+    private func requireCurrentUserActiveMember(in group: SplitGroup, context: ModelContext) throws {
+        let members = try fetchMembers(for: group)
+        if let current = members.first(where: { $0.isCurrentUser }) {
+            guard current.isActive else { throw GroupServiceError.inactiveMember }
+            return
+        }
+        guard group.isOwner else { throw GroupServiceError.inactiveMember }
     }
 
     private func activeAdminCount(in group: SplitGroup, context: ModelContext) throws -> Int {
