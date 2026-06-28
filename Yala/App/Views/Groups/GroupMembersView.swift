@@ -383,7 +383,7 @@ struct GroupMembersView: View {
             Spacer()
             Text("\(word) \(amountStr)")
                 .font(DS.Typography.caption)
-                .foregroundStyle(net > 0 ? DS.Semantic.successForeground : DS.Semantic.errorForeground)
+                .foregroundStyle(net > 0 ? DS.Semantic.successForeground : Color.hotPink)
         }
     }
 

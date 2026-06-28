@@ -429,13 +429,13 @@ struct GroupDetailView: View {
             break
         case .theyOweMe:
             result.append(AttributedString(" "))
-            result.append(amountsAttributed(balance.owedToMe, color: .electricIndigo, negate: false))
+            result.append(amountsAttributed(balance.owedToMe, color: DS.Semantic.successForeground, negate: false))
         case .iOwe:
             result.append(AttributedString(" "))
             result.append(amountsAttributed(balance.iOwe, color: .hotPink, negate: false))
         case .mixed:
             result.append(AttributedString(" "))
-            result.append(amountsAttributed(balance.owedToMe, color: .electricIndigo, negate: false))
+            result.append(amountsAttributed(balance.owedToMe, color: DS.Semantic.successForeground, negate: false))
             result.append(AttributedString("  "))
             result.append(amountsAttributed(balance.iOwe, color: .hotPink, negate: true))
         }

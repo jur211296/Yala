@@ -162,7 +162,7 @@ struct GroupCardView: View {
 
     private func amountColor(for perspective: GroupsViewModel.Perspective) -> Color {
         switch perspective {
-        case .iOwe: return DS.Semantic.errorForeground
+        case .iOwe: return Color.hotPink
         case .theyOweMe: return DS.Semantic.successForeground
         }
     }

@@ -34,7 +34,7 @@ struct GroupExpenseAmountView: View {
                     value: amount,
                     currencyCode: currencyCode,
                     font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
-                    tint: .color(DS.Semantic.errorForeground)
+                    tint: .color(Color.hotPink)
                 )
             case .notIncluded:
                 EmptyView()

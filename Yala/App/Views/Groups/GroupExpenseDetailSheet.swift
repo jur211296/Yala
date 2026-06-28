@@ -249,7 +249,7 @@ struct GroupExpenseDetailSheet: View {
                 icon: "arrow.down.circle",
                 label: L10n.Groups.Expense.youOwe,
                 amount: amount,
-                tint: DS.Semantic.errorForeground
+                tint: Color.hotPink
             )
         case .notIncluded:
             detailRow(
