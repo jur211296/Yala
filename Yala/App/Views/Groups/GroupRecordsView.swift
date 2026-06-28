@@ -27,6 +27,10 @@ struct GroupRecordsView: View {
     var onEditExpense: ((SplitExpense) -> Void)?
     var onDeleteExpense: ((SplitExpense) -> Void)?
     var onInvite: (() -> Void)?
+    /// Banda de balance del header (scrollea junto a los registros). nil → no se muestra.
+    var headerBalance: GroupHeaderBalance?
+    var debtsWereConverted: Bool = false
+    var onTapBalance: (() -> Void)?
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -43,6 +47,14 @@ struct GroupRecordsView: View {
         } else {
             ScrollView {
                 LazyVStack(spacing: DS.Spacing.lg, pinnedViews: .sectionHeaders) {
+                    // Banda de balance: primer elemento del scroll → se va con los registros (no fija).
+                    if let headerBalance, let onTapBalance {
+                        GroupHeaderBalanceBar(
+                            balance: headerBalance,
+                            debtsWereConverted: debtsWereConverted,
+                            onTap: onTapBalance
+                        )
+                    }
                     ForEach(groupedByDate, id: \.key) { dateString, dayExpenses in
                         Section {
                             ForEach(dayExpenses, id: \.id) { expense in

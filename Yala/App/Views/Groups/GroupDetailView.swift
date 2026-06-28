@@ -45,7 +45,6 @@ struct GroupDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
-    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Input
 
@@ -112,15 +111,8 @@ struct GroupDetailView: View {
         }
         .yalaScreenBackground(.panel)
         .safeAreaInset(edge: .top) {
-            VStack(spacing: DS.Spacing.sm) {
-                navigationChipsBar
-                // Banda de balance: vistazo rápido del neto personal. Oculta en Balances
-                // (ahí ya está el detalle) y si el usuario no es miembro (currentMemberID nil).
-                if selectedTab != .balances, let balance = viewModel.headerBalance {
-                    groupHeaderBalanceBar(balance)
-                }
-            }
-            .padding(.vertical, DS.Spacing.sm)
+            navigationChipsBar
+                .padding(.vertical, DS.Spacing.sm)
         }
         .navigationTitle(group.name)
         .navigationBarTitleDisplayMode(.large)
@@ -369,112 +361,6 @@ struct GroupDetailView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Header Balance Bar
-
-    @ViewBuilder
-    private func groupHeaderBalanceBar(_ balance: GroupHeaderBalance) -> some View {
-        Button {
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) { selectedTab = .balances }
-            TelemetryService.track(.groupBalancesViewed)
-        } label: {
-            HStack(alignment: .center, spacing: DS.Spacing.md) {
-                // Texto continuo "Debes S/270.00" — label primary + montos coloreados por signo.
-                Text(headerBalanceText(balance))
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                // Chevron en círculo glass; .center lo alinea al medio del texto (1 o 2 líneas).
-                Image(systemName: "chevron.right")
-                    .font(DS.Typography.label)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.primary)
-                    .frame(width: DS.Panel.headerAccessorySize, height: DS.Panel.headerAccessorySize)
-                    .glassEffect(.regular.interactive(), in: Circle())
-                    .contentShape(Circle())
-            }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.md)
-            .frame(maxWidth: .infinity)
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, DS.Spacing.lg)
-        .accessibilityIdentifier("group_header_balance")
-        .accessibilityElement(children: .combine)
-    }
-
-    private func headerBalanceLabel(_ state: GroupHeaderBalance.State) -> String {
-        switch state {
-        case .theyOweMe: L10n.Groups.Summary.owedToMe
-        case .iOwe: L10n.Groups.Summary.iOwe
-        case .mixed: L10n.Groups.Detail.yourBalance
-        case .settled: L10n.Groups.Detail.settledUp
-        }
-    }
-
-    /// Texto continuo de la banda: label en primary grande + montos en indigo (te deben) /
-    /// hot pink (debes), con la jerarquía symbol/decimal de `AmountText.attributedAmount`.
-    @MainActor
-    private func headerBalanceText(_ balance: GroupHeaderBalance) -> AttributedString {
-        var result = AttributedString(headerBalanceLabel(balance.state))
-        result.font = .subheadline.bold()
-        result.foregroundColor = .primary
-
-        switch balance.state {
-        case .settled:
-            break
-        case .theyOweMe:
-            result.append(AttributedString(" "))
-            result.append(amountsAttributed(balance.owedToMe, color: DS.Semantic.successForeground, negate: false))
-        case .iOwe:
-            result.append(AttributedString(" "))
-            result.append(amountsAttributed(balance.iOwe, color: .hotPink, negate: false))
-        case .mixed:
-            result.append(AttributedString(" "))
-            result.append(amountsAttributed(balance.owedToMe, color: DS.Semantic.successForeground, negate: false))
-            result.append(AttributedString("  "))
-            result.append(amountsAttributed(balance.iOwe, color: .hotPink, negate: true))
-        }
-        return result
-    }
-
-    /// Montos de un mismo color, intercalando " + " entre monedas. Prefija "≈" cuando las
-    /// deudas se consolidaron a una moneda (`debtsWereConverted`).
-    @MainActor
-    private func amountsAttributed(_ amounts: [String: Double], color: Color, negate: Bool) -> AttributedString {
-        let integerFont = Font.subheadline.weight(.semibold)
-        let secondaryFont = Font.caption
-        let sorted = amounts.sorted { $0.key < $1.key }
-        var result = AttributedString()
-        for (index, pair) in sorted.enumerated() {
-            if index > 0 {
-                var plus = AttributedString(" + ")
-                plus.font = integerFont
-                plus.foregroundColor = color
-                result.append(plus)
-            } else if viewModel.debtsWereConverted {
-                var approx = AttributedString("≈ ")
-                approx.font = secondaryFont
-                approx.foregroundColor = color.opacity(0.6)
-                result.append(approx)
-            }
-            result.append(AmountText.attributedAmount(
-                value: negate ? -pair.value : pair.value,
-                currencyCode: pair.key,
-                prefs: appPreferences,
-                integerFont: integerFont,
-                secondaryFont: secondaryFont,
-                tintColor: color,
-                forceFullPrecision: true
-            ))
-        }
-        return result
-    }
-
     // MARK: - Tab Content
 
     @ViewBuilder
@@ -502,7 +388,15 @@ struct GroupDetailView: View {
                             showShareSheet = true
                         }
                     }
-                } : nil
+                } : nil,
+                headerBalance: viewModel.headerBalance,
+                debtsWereConverted: viewModel.debtsWereConverted,
+                onTapBalance: {
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { selectedTab = .balances }
+                    TelemetryService.track(.groupBalancesViewed)
+                }
             )
 
         case .balances:
