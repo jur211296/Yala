@@ -455,20 +455,16 @@ struct GroupExpenseFormView: View {
     /// Chip único de grupo de 2: muestra el resultado ("María te debe S/ 25") y abre la
     /// pre-pantalla de 4 opciones. Con monto vacío cae a la acción elegida (sin monto).
     private func twoPersonSummaryChip(_ choice: TwoPersonSplitOptions.Choice) -> some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Text(L10n.Groups.Expense.dividedLabel)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-            Button {
-                dismissKeyboard()
-                showTwoPersonSplit = true
-            } label: {
-                inlineChip(icon: "person.2.fill", text: twoPersonSummaryText(choice), warning: false)
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("group_expense_twoperson_chip")
-            .accessibilityLabel("\(L10n.Groups.Expense.dividedLabel): \(twoPersonSummaryText(choice))")
+        // Sin label "Dividido": el texto natural ("Caro te debe S/ 25") ya es autoexplicativo.
+        Button {
+            dismissKeyboard()
+            showTwoPersonSplit = true
+        } label: {
+            inlineChip(icon: "person.2.fill", text: twoPersonSummaryText(choice), warning: false)
         }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("group_expense_twoperson_chip")
+        .accessibilityLabel(twoPersonSummaryText(choice))
     }
 
     /// Resultado natural para el chip ("María te debe S/ 25"); con monto vacío cae a la acción.
