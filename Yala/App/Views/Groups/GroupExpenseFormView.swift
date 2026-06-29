@@ -412,19 +412,13 @@ struct GroupExpenseFormView: View {
 
     // MARK: - Paid By / Split Line (debajo del monto)
 
-    /// Línea estilo Splitwise: "Pagado por [chip] · Dividido [chip]". Cada chip abre su
-    /// propio sheet (pagador / modo de división). Una línea si cabe; dos si no.
+    /// Estilo Splitwise en dos filas: "Pagado por [chip]" arriba, "Dividido [chip]" debajo.
+    /// Cada chip abre su propio sheet (pagador / modo de división). Siempre dos filas para no
+    /// ocupar demasiado ancho.
     private var paidAndSplitLine: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: DS.Spacing.sm) {
-                paidBySegment
-                Text("·").foregroundStyle(.secondary)
-                splitSegment
-            }
-            VStack(spacing: DS.Spacing.sm) {
-                paidBySegment
-                splitSegment
-            }
+        VStack(spacing: DS.Spacing.sm) {
+            paidBySegment
+            splitSegment
         }
     }
 

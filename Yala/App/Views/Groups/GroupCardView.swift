@@ -4,8 +4,8 @@
 //
 //  Card de un grupo en la lista principal — icono, nombre, miembros, deudas perspectiva.
 //
-//  M6 D3: trailing area muestra hasta 3 rows estilo Splitwise (deudas simplificadas que
-//  involucran al current user). Si hay más de 3, chip "+N más" → CTA al GroupDetailView.
+//  Trailing: deudas del current user agrupadas por sentido — "Te deben: S/47.50 + $5.30 +1 más"
+//  (verde) y "Debes: S/1.00" (hot pink). Suma por moneda, hasta 2 monedas + overflow por sentido.
 //
 
 import SwiftUI
@@ -15,7 +15,7 @@ struct GroupCardView: View {
     let group: SplitGroup
     let memberCount: Int
     let pendingCount: Int
-    /// M6 D3: deudas simplificadas perspectiva del current user (max display 3 + chip overflow).
+    /// Deudas simplificadas perspectiva del current user (se agrupan por sentido en el trailing).
     let debts: [GroupsViewModel.DebtRow]
     /// Drives chip pending/rejected en lugar del balance trailing.
     let displayMode: GroupCardDisplayMode
@@ -26,9 +26,6 @@ struct GroupCardView: View {
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
-
-    /// Max rows visibles en el trailing antes de truncate con "+N más".
-    private static let maxVisibleDebts = 3
 
     init(
         group: SplitGroup,
@@ -114,57 +111,93 @@ struct GroupCardView: View {
         }
     }
 
-    /// M6 D3: layout estilo Splitwise — hasta 3 rows + chip "+N más" si overflow.
+    /// Deudas agrupadas por sentido (te deben / debes), montos sumados por moneda.
     @ViewBuilder
     private var debtsTrailing: some View {
-        if debts.isEmpty {
+        let grouped = GroupsViewModel.groupDebtsByDirection(debts)
+        if grouped.isEmpty {
             EmptyView()
         } else {
-            let visibleDebts = Array(debts.prefix(Self.maxVisibleDebts))
-            let extraCount = max(0, debts.count - Self.maxVisibleDebts)
-            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                ForEach(visibleDebts) { row in
-                    debtRowView(row)
+            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+                if !grouped.owedToMe.isEmpty {
+                    directionBlock(
+                        label: L10n.Groups.Summary.owedToMe,
+                        amounts: grouped.owedToMe,
+                        overflow: grouped.owedToMeOverflow,
+                        color: DS.Semantic.successForeground
+                    )
                 }
-                if extraCount > 0 {
-                    Text(L10n.Groups.Card.moreDebts(extraCount))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
+                if !grouped.iOwe.isEmpty {
+                    directionBlock(
+                        label: L10n.Groups.Summary.iOwe,
+                        amounts: grouped.iOwe,
+                        overflow: grouped.iOweOverflow,
+                        color: Color.hotPink
+                    )
                 }
             }
         }
     }
 
-    private func debtRowView(_ row: GroupsViewModel.DebtRow) -> some View {
+    private func directionBlock(
+        label: String,
+        amounts: [GroupsViewModel.GroupedDebtAmount],
+        overflow: Int,
+        color: Color
+    ) -> some View {
         VStack(alignment: .trailing, spacing: 0) {
-            Text(perspectiveCopy(for: row))
+            Text("\(label):")
                 .font(DS.Typography.captionSmall)
                 .foregroundStyle(.secondary)
+            Text(attributedAmounts(amounts, overflow: overflow, color: color))
                 .lineLimit(1)
-            AmountText(
-                value: row.amount,
-                currencyCode: row.currencyCode,
-                font: DS.Typography.body, secondaryFont: DS.Typography.caption,
-                tint: .color(amountColor(for: row.perspective)),
-                isEstimate: row.wasConverted
-            )
+                .minimumScaleFactor(0.8)
         }
     }
 
-    private func perspectiveCopy(for row: GroupsViewModel.DebtRow) -> String {
-        switch row.perspective {
-        case .iOwe:
-            return L10n.Groups.Card.youOwe(row.counterpartyName)
-        case .theyOweMe:
-            return L10n.Groups.Card.theyOweYou(row.counterpartyName)
+    /// Montos por moneda con jerarquía symbol/decimal (entero grande, símbolo y decimales
+    /// pequeños y tenues) igual que la banda; unidos con " + " y "+N más" si hay overflow.
+    private func attributedAmounts(
+        _ amounts: [GroupsViewModel.GroupedDebtAmount],
+        overflow: Int,
+        color: Color
+    ) -> AttributedString {
+        let integerFont = Font.subheadline.weight(.semibold)
+        let secondaryFont = Font.caption
+        var result = AttributedString()
+        for (index, item) in amounts.enumerated() {
+            if index > 0 {
+                var plus = AttributedString(" + ")
+                plus.font = integerFont
+                plus.foregroundColor = color
+                result.append(plus)
+            }
+            result.append(AmountText.attributedAmount(
+                value: item.amount,
+                currencyCode: item.currencyCode,
+                prefs: appPreferences,
+                integerFont: integerFont,
+                secondaryFont: secondaryFont,
+                tintColor: color,
+                forceFullPrecision: true
+            ))
         }
+        if overflow > 0 {
+            var more = AttributedString(" \(L10n.Groups.Card.moreDebts(overflow))")
+            more.font = secondaryFont
+            more.foregroundColor = color.opacity(0.7)
+            result.append(more)
+        }
+        return result
     }
 
-    private func amountColor(for perspective: GroupsViewModel.Perspective) -> Color {
-        switch perspective {
-        case .iOwe: return Color.hotPink
-        case .theyOweMe: return DS.Semantic.successForeground
-        }
+    /// Texto plano de los montos para accesibilidad (VoiceOver lee el monto completo).
+    private func amountsText(_ amounts: [GroupsViewModel.GroupedDebtAmount], overflow: Int) -> String {
+        let joined = amounts
+            .map { appPreferences.currency($0.amount, currencyCode: $0.currencyCode) }
+            .joined(separator: " + ")
+        guard overflow > 0 else { return joined }
+        return "\(joined) \(L10n.Groups.Card.moreDebts(overflow))"
     }
 
     private func handleTap() {
@@ -189,12 +222,13 @@ struct GroupCardView: View {
         case .rejected:
             parts.append(L10n.Groups.Card.rejectedChip)
         case .active:
-            for row in debts.prefix(Self.maxVisibleDebts) {
-                let amount = appPreferences.currency(row.amount, currencyCode: row.currencyCode)
-                parts.append("\(perspectiveCopy(for: row)) \(amount)")
+            let grouped = GroupsViewModel.groupDebtsByDirection(debts)
+            if !grouped.owedToMe.isEmpty {
+                parts.append("\(L10n.Groups.Summary.owedToMe): \(amountsText(grouped.owedToMe, overflow: grouped.owedToMeOverflow))")
             }
-            let extra = max(0, debts.count - Self.maxVisibleDebts)
-            if extra > 0 { parts.append(L10n.Groups.Card.moreDebts(extra)) }
+            if !grouped.iOwe.isEmpty {
+                parts.append("\(L10n.Groups.Summary.iOwe): \(amountsText(grouped.iOwe, overflow: grouped.iOweOverflow))")
+            }
         }
         return parts.joined(separator: ", ")
     }

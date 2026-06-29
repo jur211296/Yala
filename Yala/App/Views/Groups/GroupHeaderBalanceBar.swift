@@ -2,10 +2,14 @@
 //  GroupHeaderBalanceBar.swift
 //  Yala
 //
-//  Banda de balance del usuario en el detalle de grupo: texto continuo "Te deben X" (verde) /
-//  "Debes Y" (hot pink) / "Tu balance" (mixto) / "Están a mano", con chevron en círculo glass.
-//  Texto suelto (sin card) — va como primer elemento del scroll del feed para scrollear junto
-//  a los registros, no fijo como los chips de tabs.
+//  Banda de balance inline: texto continuo "Te deben X" (verde) / "Debes Y" (hot pink) /
+//  "Te deben X · Debes Y" (ambos lados) / "Están a mano" (saldado).
+//  Texto suelto (sin card). Lo usa tanto el detalle de un grupo (con chevron + tap a
+//  Balances) como el resumen global de la lista (sin chevron, no interactivo).
+//
+//  El inset horizontal lo da el `.contentMargins` del ScrollView contenedor — la banda
+//  NO añade padding horizontal propio, para que el texto se alinee con el borde de las
+//  cards (no con su texto interno).
 //
 
 import SwiftUI
@@ -14,19 +18,32 @@ struct GroupHeaderBalanceBar: View {
 
     let balance: GroupHeaderBalance
     let debtsWereConverted: Bool
-    let onTap: () -> Void
+    /// Tap a la pestaña Balances. `nil` → banda no interactiva, sin chevron (resumen global).
+    let onTap: (() -> Void)?
 
     @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
-        Button(action: onTap) {
-            HStack(alignment: .center, spacing: DS.Spacing.md) {
-                Text(headerBalanceText)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        if let onTap {
+            Button(action: onTap) { content }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("group_header_balance")
+                .accessibilityElement(children: .combine)
+        } else {
+            content
+                .accessibilityElement(children: .combine)
+        }
+    }
 
-                // Chevron en círculo glass; .center lo alinea al medio del texto (1 o 2 líneas).
+    private var content: some View {
+        HStack(alignment: .center, spacing: DS.Spacing.xs) {
+            Text(headerBalanceText)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Chevron pegado al texto (no al borde derecho); el Spacer empuja el bloque
+            // a la izquierda y deja el resto del ancho libre.
+            if onTap != nil {
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.label)
                     .fontWeight(.semibold)
@@ -35,52 +52,54 @@ struct GroupHeaderBalanceBar: View {
                     .glassEffect(.regular.interactive(), in: Circle())
                     .contentShape(Circle())
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.xs)
-            .contentShape(Rectangle())
+
+            Spacer(minLength: 0)
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("group_header_balance")
-        .accessibilityElement(children: .combine)
+        .padding(.vertical, DS.Spacing.xs)
+        .contentShape(Rectangle())
     }
 
-    private func headerBalanceLabel(_ state: GroupHeaderBalance.State) -> String {
-        switch state {
-        case .theyOweMe: L10n.Groups.Summary.owedToMe
-        case .iOwe: L10n.Groups.Summary.iOwe
-        case .mixed: L10n.Groups.Detail.yourBalance
-        case .settled: L10n.Groups.Detail.settledUp
-        }
-    }
-
-    /// Texto continuo: label en primary grande negrita + montos en verde (te deben) /
-    /// hot pink (debes), con la jerarquía symbol/decimal de `AmountText.attributedAmount`.
+    /// Texto continuo en una línea: label en primary bold + montos verde (te deben) / hot pink
+    /// (debes), con la jerarquía symbol/decimal de `AmountText.attributedAmount`. En el caso de
+    /// ambos lados, "Te deben X · Debes Y" separados por " · ".
     private var headerBalanceText: AttributedString {
-        var result = AttributedString(headerBalanceLabel(balance.state))
-        result.font = .subheadline.bold()
-        result.foregroundColor = .primary
-
         switch balance.state {
         case .settled:
-            break
+            return label(L10n.Groups.Detail.settledUp)
         case .theyOweMe:
-            result.append(AttributedString(" "))
-            result.append(amountsAttributed(balance.owedToMe, color: DS.Semantic.successForeground, negate: false))
+            return labeledAmounts(L10n.Groups.Summary.owedToMe, balance.owedToMe, color: DS.Semantic.successForeground)
         case .iOwe:
-            result.append(AttributedString(" "))
-            result.append(amountsAttributed(balance.iOwe, color: .hotPink, negate: false))
+            return labeledAmounts(L10n.Groups.Summary.iOwe, balance.iOwe, color: .hotPink)
         case .mixed:
-            result.append(AttributedString(" "))
-            result.append(amountsAttributed(balance.owedToMe, color: DS.Semantic.successForeground, negate: false))
-            result.append(AttributedString("  "))
-            result.append(amountsAttributed(balance.iOwe, color: .hotPink, negate: true))
+            var result = labeledAmounts(L10n.Groups.Summary.owedToMe, balance.owedToMe, color: DS.Semantic.successForeground)
+            var separator = AttributedString("  ·  ")
+            separator.font = .subheadline.bold()
+            separator.foregroundColor = .secondary
+            result.append(separator)
+            result.append(labeledAmounts(L10n.Groups.Summary.iOwe, balance.iOwe, color: .hotPink))
+            return result
         }
+    }
+
+    /// Solo el label en primary bold (caso saldado).
+    private func label(_ text: String) -> AttributedString {
+        var result = AttributedString(text)
+        result.font = .subheadline.bold()
+        result.foregroundColor = .primary
+        return result
+    }
+
+    /// Label en primary bold + " " + montos coloreados.
+    private func labeledAmounts(_ text: String, _ amounts: [String: Double], color: Color) -> AttributedString {
+        var result = label(text)
+        result.append(AttributedString(" "))
+        result.append(amountsAttributed(amounts, color: color))
         return result
     }
 
     /// Montos de un mismo color, intercalando " + " entre monedas. Prefija "≈" cuando las
     /// deudas se consolidaron a una moneda (`debtsWereConverted`).
-    private func amountsAttributed(_ amounts: [String: Double], color: Color, negate: Bool) -> AttributedString {
+    private func amountsAttributed(_ amounts: [String: Double], color: Color) -> AttributedString {
         let integerFont = Font.subheadline.weight(.semibold)
         let secondaryFont = Font.caption
         let sorted = amounts.sorted { $0.key < $1.key }
@@ -98,7 +117,7 @@ struct GroupHeaderBalanceBar: View {
                 result.append(approx)
             }
             result.append(AmountText.attributedAmount(
-                value: negate ? -pair.value : pair.value,
+                value: pair.value,
                 currencyCode: pair.key,
                 prefs: appPreferences,
                 integerFont: integerFont,

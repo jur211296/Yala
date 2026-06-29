@@ -43,6 +43,23 @@ struct GroupsViewModelDebtsM6Tests {
         SplitShare(expenseID: expenseID, memberID: memberID, amount: amount)
     }
 
+    private func makeDebtRow(
+        counterparty: String = "X",
+        amount: Double,
+        currency: String = "PEN",
+        perspective: GroupsViewModel.Perspective,
+        converted: Bool = false
+    ) -> GroupsViewModel.DebtRow {
+        GroupsViewModel.DebtRow(
+            id: "\(counterparty)-\(currency)-\(amount)",
+            counterpartyName: counterparty,
+            amount: amount,
+            currencyCode: currency,
+            perspective: perspective,
+            wasConverted: converted
+        )
+    }
+
     // MARK: - Empty / no current user
 
     @Test func computeCurrentUserDebts_emptyWhenNoMembers() {
@@ -360,5 +377,78 @@ struct GroupsViewModelDebtsM6Tests {
         let simplifiedSum: Double = simplifiedAmounts.reduce(0, +)
         let rawSum: Double = rawAmounts.reduce(0, +)
         #expect(simplifiedSum == rawSum)
+    }
+
+    // MARK: - groupDebtsByDirection (trailing de la card)
+
+    @Test func groupDebtsByDirection_emptyWhenNoDebts() {
+        let result = GroupsViewModel.groupDebtsByDirection([])
+        #expect(result.isEmpty)
+        #expect(result.owedToMe.isEmpty)
+        #expect(result.iOwe.isEmpty)
+    }
+
+    @Test func groupDebtsByDirection_sumsPerCurrencyWithinDirection() {
+        // Pia y Juan me deben en PEN → se suman a una sola entrada PEN.
+        let debts = [
+            makeDebtRow(counterparty: "Pia", amount: 47.50, currency: "PEN", perspective: .theyOweMe),
+            makeDebtRow(counterparty: "Juan", amount: 20.00, currency: "PEN", perspective: .theyOweMe)
+        ]
+        let result = GroupsViewModel.groupDebtsByDirection(debts)
+        #expect(result.owedToMe.count == 1)
+        #expect(result.owedToMe.first?.currencyCode == "PEN")
+        #expect(result.owedToMe.first?.amount == 67.50)
+        #expect(result.iOwe.isEmpty)
+    }
+
+    @Test func groupDebtsByDirection_separatesDirectionsAcrossCurrencies() {
+        // Te deben en USD, debes en PEN (monedas distintas → ambos sentidos tras netear).
+        let debts = [
+            makeDebtRow(counterparty: "Pia", amount: 47.50, currency: "USD", perspective: .theyOweMe),
+            makeDebtRow(counterparty: "Maria", amount: 1.00, currency: "PEN", perspective: .iOwe)
+        ]
+        let result = GroupsViewModel.groupDebtsByDirection(debts)
+        #expect(result.owedToMe.map(\.currencyCode) == ["USD"])
+        #expect(result.owedToMe.first?.amount == 47.50)
+        #expect(result.iOwe.map(\.currencyCode) == ["PEN"])
+        #expect(result.iOwe.first?.amount == 1.00)
+        #expect(!result.isEmpty)
+    }
+
+    @Test func groupDebtsByDirection_netsWithinSameCurrency() {
+        // Misma moneda con ambos signos: te deben 110, debes 420 → neto "debes 310" (un solo lado),
+        // igual que la banda del header. NO muestra ambos sentidos en la misma moneda.
+        let debts = [
+            makeDebtRow(counterparty: "Pia", amount: 110, currency: "PEN", perspective: .theyOweMe),
+            makeDebtRow(counterparty: "Ana", amount: 420, currency: "PEN", perspective: .iOwe)
+        ]
+        let result = GroupsViewModel.groupDebtsByDirection(debts)
+        #expect(result.owedToMe.isEmpty)
+        #expect(result.iOwe.count == 1)
+        #expect(result.iOwe.first?.currencyCode == "PEN")
+        #expect(result.iOwe.first?.amount == 310)
+    }
+
+    @Test func groupDebtsByDirection_capsAndCountsOverflow() {
+        // 3 monedas me deben, cap 2 → 2 mostradas + overflow 1.
+        let debts = [
+            makeDebtRow(amount: 47.50, currency: "PEN", perspective: .theyOweMe),
+            makeDebtRow(amount: 5.30, currency: "USD", perspective: .theyOweMe),
+            makeDebtRow(amount: 3.00, currency: "EUR", perspective: .theyOweMe)
+        ]
+        let result = GroupsViewModel.groupDebtsByDirection(debts, maxPerDirection: 2)
+        #expect(result.owedToMe.count == 2)
+        #expect(result.owedToMeOverflow == 1)
+        #expect(result.iOweOverflow == 0)
+    }
+
+    @Test func groupDebtsByDirection_sortsByCurrencyCode() {
+        // Orden alfabético por código (consistente con la banda inline).
+        let debts = [
+            makeDebtRow(amount: 5.30, currency: "USD", perspective: .theyOweMe),
+            makeDebtRow(amount: 47.50, currency: "PEN", perspective: .theyOweMe)
+        ]
+        let result = GroupsViewModel.groupDebtsByDirection(debts, maxPerDirection: 5)
+        #expect(result.owedToMe.map(\.currencyCode) == ["PEN", "USD"])
     }
 }

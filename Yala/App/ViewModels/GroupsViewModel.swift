@@ -251,6 +251,66 @@ final class GroupsViewModel {
         }.sorted { $0.amount > $1.amount }
     }
 
+    // MARK: - Direction-Grouped Debts (card trailing)
+
+    /// Un monto agregado por moneda en un sentido (te deben / debes).
+    struct GroupedDebtAmount: Equatable {
+        let currencyCode: String
+        let amount: Double
+    }
+
+    /// Neto del current user por moneda, repartido por sentido, para el trailing de la card.
+    /// Reemplaza el listado por-persona (que se iba a muchas filas): cada sentido muestra hasta
+    /// `maxPerDirection` monedas + overflow ("+N más"). "Debes" en una moneda aparece cuando su
+    /// neto es negativo (debes más de lo que te deben en esa moneda).
+    struct DirectionGroupedDebts: Equatable {
+        let owedToMe: [GroupedDebtAmount]
+        let owedToMeOverflow: Int
+        let iOwe: [GroupedDebtAmount]
+        let iOweOverflow: Int
+
+        var isEmpty: Bool { owedToMe.isEmpty && iOwe.isEmpty }
+    }
+
+    /// Pure-logic: NETEA las deudas del current user por moneda (te deben − debes), igual que
+    /// `GroupBalanceService.computeGroupHeaderBalance` — así la card coincide con la banda del
+    /// header y el resumen global. Reparte el neto por sentido (>0 → te deben, <0 → debes),
+    /// ordena por código de moneda y aplica el cap por sentido.
+    static func groupDebtsByDirection(_ debts: [DebtRow], maxPerDirection: Int = 2) -> DirectionGroupedDebts {
+        // Neto por moneda: theyOweMe suma, iOwe resta (invariante a simplifyDebts).
+        var net: [String: Double] = [:]
+        for row in debts {
+            switch row.perspective {
+            case .theyOweMe: net[row.currencyCode, default: 0] += row.amount
+            case .iOwe: net[row.currencyCode, default: 0] -= row.amount
+            }
+        }
+        var owedToMe: [String: Double] = [:]
+        var iOwe: [String: Double] = [:]
+        for (currency, raw) in net {
+            let value = (raw * 100).rounded() / 100
+            if value > 0.01 {
+                owedToMe[currency] = value
+            } else if value < -0.01 {
+                iOwe[currency] = -value
+            }
+        }
+        func summarize(_ byCurrency: [String: Double]) -> (shown: [GroupedDebtAmount], overflow: Int) {
+            let sorted = byCurrency
+                .map { GroupedDebtAmount(currencyCode: $0.key, amount: $0.value) }
+                .sorted { $0.currencyCode < $1.currencyCode }
+            return (Array(sorted.prefix(maxPerDirection)), max(0, sorted.count - maxPerDirection))
+        }
+        let owed = summarize(owedToMe)
+        let owe = summarize(iOwe)
+        return DirectionGroupedDebts(
+            owedToMe: owed.shown,
+            owedToMeOverflow: owed.overflow,
+            iOwe: owe.shown,
+            iOweOverflow: owe.overflow
+        )
+    }
+
     /// Member count for a group.
     func memberCount(for group: SplitGroup) -> Int {
         membersByGroup[group.cloudKitZoneID]?.filter(\.isActive).count ?? 0
