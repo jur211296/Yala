@@ -2022,6 +2022,37 @@ enum L10n {
             static func overAllocated(_ amount: String) -> String {
                 String(format: ls("groups.expense.overAllocated %@", comment: ""), amount)
             }
+            /// Pre-pantalla de split rápido para grupos de 2: 4 opciones en lenguaje natural.
+            enum TwoPerson {
+                /// Título (toolbar) del sheet de 4 opciones.
+                static var sheetTitle: String { ls("groups.expense.twoPerson.sheetTitle", comment: "") }
+                /// Acción: pagaste tú, partes iguales.
+                static var actionIPaidEqual: String { ls("groups.expense.twoPerson.actionIPaidEqual", comment: "") }
+                /// Acción: pagaste tú, el gasto es todo de %@.
+                static func actionIPaidOwedFull(_ name: String) -> String {
+                    String(format: ls("groups.expense.twoPerson.actionIPaidOwedFull", comment: ""), name)
+                }
+                /// Acción: pagó %@, partes iguales.
+                static func actionTheyPaidEqual(_ name: String) -> String {
+                    String(format: ls("groups.expense.twoPerson.actionTheyPaidEqual", comment: ""), name)
+                }
+                /// Acción: pagó %@, el gasto es todo tuyo.
+                static func actionTheyPaidOwedFull(_ name: String) -> String {
+                    String(format: ls("groups.expense.twoPerson.actionTheyPaidOwedFull", comment: ""), name)
+                }
+                /// Deuda: "%1$@ te debe %2$@" (nombre, monto).
+                static func theyOweAmount(_ name: String, _ amount: String) -> String {
+                    String(format: ls("groups.expense.twoPerson.theyOweAmount", comment: ""), name, amount)
+                }
+                /// Deuda: "Le debes %2$@ a %1$@" (nombre, monto).
+                static func youOweAmount(_ name: String, _ amount: String) -> String {
+                    String(format: ls("groups.expense.twoPerson.youOweAmount", comment: ""), name, amount)
+                }
+                /// Botón: bajar al editor detallado (%, exacto, partes).
+                static var moreOptions: String { ls("groups.expense.twoPerson.moreOptions", comment: "") }
+                /// Botón: volver a las 4 opciones rápidas desde el editor detallado.
+                static var quickOptions: String { ls("groups.expense.twoPerson.quickOptions", comment: "") }
+            }
             /// Título + explicación del sheet de división, por tipo.
             enum SplitSheet {
                 static var equalTitle: String { ls("groups.expense.splitSheet.equalTitle", comment: "") }

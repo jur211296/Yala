@@ -4600,3 +4600,22 @@
 "split.inlineExact" = "per vast bedrag";
 /* Inline split-mode label: shares */
 "split.inlineShares" = "naar verhouding";
+
+/* Two-person quick split: sheet title */
+"groups.expense.twoPerson.sheetTitle" = "Hoe verdelen?";
+/* Two-person quick split: I paid, equal */
+"groups.expense.twoPerson.actionIPaidEqual" = "Jij betaalde · gelijk verdeeld";
+/* Two-person quick split: I paid, all theirs (name) */
+"groups.expense.twoPerson.actionIPaidOwedFull" = "Jij betaalde · alles voor %@";
+/* Two-person quick split: they paid, equal (name) */
+"groups.expense.twoPerson.actionTheyPaidEqual" = "%@ betaalde · gelijk verdeeld";
+/* Two-person quick split: they paid, all yours (name) */
+"groups.expense.twoPerson.actionTheyPaidOwedFull" = "%@ betaalde · helemaal voor jou";
+/* Two-person quick split debt: they owe me (name, amount) */
+"groups.expense.twoPerson.theyOweAmount" = "%1$@ is jou %2$@ schuldig";
+/* Two-person quick split debt: I owe them (name, amount) */
+"groups.expense.twoPerson.youOweAmount" = "Jij bent %1$@ %2$@ schuldig";
+/* Two-person quick split: go to detailed editor */
+"groups.expense.twoPerson.moreOptions" = "Meer opties";
+/* Detailed split editor: back to quick options (2-person only) */
+"groups.expense.twoPerson.quickOptions" = "Snelle opties";

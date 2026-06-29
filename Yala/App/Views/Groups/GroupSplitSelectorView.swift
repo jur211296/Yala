@@ -17,6 +17,8 @@ import SwiftUI
 struct GroupSplitSelectorView: View {
 
     @Bindable var viewModel: GroupExpenseViewModel
+    /// Solo en grupos de 2: vuelve a la pre-pantalla de 4 opciones rápidas. `nil` en 3+ → no aparece.
+    var onRequestSimpleOptions: (() -> Void)? = nil
     @FocusState private var focusedMember: String?
 
     @Environment(\.dismiss) private var dismiss
@@ -62,6 +64,15 @@ struct GroupSplitSelectorView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
+                    }
+                }
+                // Solo en grupos de 2: volver a la pre-pantalla de 4 opciones rápidas.
+                if let onRequestSimpleOptions {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(L10n.Groups.Expense.TwoPerson.quickOptions) {
+                            onRequestSimpleOptions()
+                            dismiss()
+                        }
                     }
                 }
             }

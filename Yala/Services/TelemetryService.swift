@@ -90,6 +90,7 @@ enum AnalyticsEvent: String {
     case groupDeleted = "Grupos · Grupo eliminado"
     case groupSoftDeleted = "Grupos · Grupo eliminado para todos"
     case groupExpenseAdded = "Grupos · Gasto agregado"
+    case groupTwoPersonSplitChosen = "Grupos · Split rápido elegido"  // params: choice (iPaidEqual|iPaidOwedFull|theyPaidEqual|theyPaidOwedFull|moreOptions)
     case openingBalanceCreated = "Grupos · Saldo inicial creado"
     case openingBalanceRemoved = "Grupos · Saldo inicial eliminado"
     case groupSettlementCreated = "Grupos · Liquidación creada"

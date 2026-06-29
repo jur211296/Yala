@@ -56,6 +56,10 @@ struct GroupExpenseFormView: View {
     @State private var showSubcategorySelector = false
     @State private var showSplitDetail = false
     @State private var showAccountSelector = false  // M6 Caso A
+    // Two-person quick split (grupos de 2): pre-pantalla de 4 opciones ↔ editor detallado.
+    @State private var showTwoPersonSplit = false
+    @State private var pendingOpenAdvanced = false  // 4 opciones → "Más opciones"
+    @State private var pendingOpenSimple = false    // editor detallado → "Opciones rápidas"
 
     // Opt-out: alert post-save cuando bridge effective OFF + Caso A.
     @State private var pendingOptInExpenseID: String?
@@ -214,8 +218,29 @@ struct GroupExpenseFormView: View {
                 // Al cerrar: quien quedó sin valor en el tipo activo se deselecciona
                 // del pago (no participa si no se le asignó porcentaje/monto/partes).
                 viewModel.purgeEmptyParticipants()
+                // Grupo de 2: "Opciones rápidas" pidió volver a la pre-pantalla (one-shot).
+                if pendingOpenSimple {
+                    pendingOpenSimple = false
+                    showTwoPersonSplit = true
+                }
             }) {
-                GroupSplitSelectorView(viewModel: viewModel)
+                GroupSplitSelectorView(
+                    viewModel: viewModel,
+                    onRequestSimpleOptions: viewModel.isTwoPersonGroup ? { pendingOpenSimple = true } : nil
+                )
+            }
+            // Pre-pantalla de split rápido (solo grupos de 2). "Más opciones" baja esta y sube
+            // el editor detallado (dismiss-then-present, flag one-shot — sin Task.sleep).
+            .sheet(isPresented: $showTwoPersonSplit, onDismiss: {
+                if pendingOpenAdvanced {
+                    pendingOpenAdvanced = false
+                    showSplitDetail = true
+                }
+            }) {
+                GroupTwoPersonSplitView(viewModel: viewModel) {
+                    pendingOpenAdvanced = true
+                    showTwoPersonSplit = false
+                }
             }
             // M6: si user cambia moneda y la cuenta seleccionada deja de ser compatible,
             // se limpia. El form vuelve a pedir cuenta antes de guardar (canSave bloquea).
@@ -412,14 +437,47 @@ struct GroupExpenseFormView: View {
 
     // MARK: - Paid By / Split Line (debajo del monto)
 
-    /// Estilo Splitwise en dos filas: "Pagado por [chip]" arriba, "Dividido [chip]" debajo.
-    /// Cada chip abre su propio sheet (pagador / modo de división). Siempre dos filas para no
-    /// ocupar demasiado ancho.
+    /// Grupos de 2 con una de las 4 opciones rápidas activas → un solo chip-resumen en
+    /// lenguaje natural. En grupos de 3+ (o split personalizado) → las dos filas clásicas
+    /// "Pagado por [chip]" / "Dividido [chip]", cada una con su sheet.
+    @ViewBuilder
     private var paidAndSplitLine: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            paidBySegment
-            splitSegment
+        if viewModel.isTwoPersonGroup, let choice = viewModel.activeTwoPersonChoice {
+            twoPersonSummaryChip(choice)
+        } else {
+            VStack(spacing: DS.Spacing.sm) {
+                paidBySegment
+                splitSegment
+            }
         }
+    }
+
+    /// Chip único de grupo de 2: muestra el resultado ("María te debe S/ 25") y abre la
+    /// pre-pantalla de 4 opciones. Con monto vacío cae a la acción elegida (sin monto).
+    private func twoPersonSummaryChip(_ choice: TwoPersonSplitOptions.Choice) -> some View {
+        HStack(spacing: DS.Spacing.xs) {
+            Text(L10n.Groups.Expense.dividedLabel)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+            Button {
+                dismissKeyboard()
+                showTwoPersonSplit = true
+            } label: {
+                inlineChip(icon: "person.2.fill", text: twoPersonSummaryText(choice), warning: false)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("group_expense_twoperson_chip")
+            .accessibilityLabel("\(L10n.Groups.Expense.dividedLabel): \(twoPersonSummaryText(choice))")
+        }
+    }
+
+    /// Resultado natural para el chip ("María te debe S/ 25"); con monto vacío cae a la acción.
+    private func twoPersonSummaryText(_ choice: TwoPersonSplitOptions.Choice) -> String {
+        let otherName = viewModel.otherActiveMemberName
+        guard viewModel.amount > 0 else { return choice.actionTitle(otherName: otherName) }
+        let amount = TwoPersonSplitOptions.debt(for: choice, total: viewModel.amount).amount
+        let amountStr = appPreferences.currency(amount, currencyCode: viewModel.currencyCode)
+        return choice.debtText(otherName: otherName, amountStr: amountStr)
     }
 
     private var paidBySegment: some View {

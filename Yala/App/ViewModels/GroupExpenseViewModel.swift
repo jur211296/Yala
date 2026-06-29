@@ -214,6 +214,48 @@ final class GroupExpenseViewModel {
         selectedAccount = nil
     }
 
+    // MARK: - Two-person quick split
+
+    /// Grupo de exactamente 2 miembros activos → habilita la pre-pantalla de 4 opciones
+    /// en lenguaje natural (estilo Splitwise) en lugar de los chips "Pagado por · Dividido".
+    var isTwoPersonGroup: Bool { selectableMemberIDs.count == 2 }
+
+    /// El otro miembro activo (no el current user). `nil` si no resuelve → el form cae al
+    /// flujo de 2-chips estándar.
+    var otherActiveMemberID: String? {
+        guard let myID = currentUserMemberID else { return nil }
+        return activeSheetMembers.first(where: { $0.id.uuidString != myID })?.id.uuidString
+    }
+
+    /// Nombre de la otra persona del grupo de 2 (para los textos de las opciones rápidas).
+    var otherActiveMemberName: String {
+        guard let otherID = otherActiveMemberID else { return "" }
+        return memberNameLookup[otherID] ?? ""
+    }
+
+    /// Qué opción rápida representa el estado actual del split, o `nil` si es "personalizado"
+    /// (el usuario configuró %/exacto/partes en "Más opciones"). En grupos de 3+ siempre `nil`.
+    var activeTwoPersonChoice: TwoPersonSplitOptions.Choice? {
+        guard isTwoPersonGroup, let myID = currentUserMemberID, let otherID = otherActiveMemberID else { return nil }
+        return TwoPersonSplitOptions.detect(
+            paidByMemberID: paidByMemberID,
+            splitType: splitType,
+            selectedMemberIDs: selectedMemberIDs,
+            currentMemberID: myID,
+            otherMemberID: otherID
+        )
+    }
+
+    /// Aplica una opción rápida: fija pagador, tipo `.equal` y participantes. Las opciones
+    /// "es todo de X" dejan al pagador fuera de `selectedMemberIDs` (la otra persona debe el total).
+    func applyTwoPersonChoice(_ choice: TwoPersonSplitOptions.Choice) {
+        guard let myID = currentUserMemberID, let otherID = otherActiveMemberID else { return }
+        let resolution = TwoPersonSplitOptions.resolution(for: choice, currentMemberID: myID, otherMemberID: otherID)
+        paidByMemberID = resolution.paidBy
+        splitType = resolution.splitType
+        selectedMemberIDs = resolution.participants
+    }
+
     // MARK: - Init
 
     init(group: SplitGroup, members: [SplitMember], memberNameLookup: [String: String]) {

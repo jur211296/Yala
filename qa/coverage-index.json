@@ -451,6 +451,9 @@
         "Yala/App/Logic/Formatters/GroupSplitPlaceholderLogic.swift",
         "Yala/App/Logic/Calculators/GroupSplitCalculator.swift",
         "Yala/App/Logic/GroupSplitConversion.swift",
+        "Yala/App/Logic/TwoPersonSplitOptions.swift",
+        "Yala/App/Logic/TwoPersonSplitOptions+Text.swift",
+        "Yala/App/Views/Groups/GroupTwoPersonSplitView.swift",
         "Yala/App/Views/Groups/GroupExpenseComposerView.swift",
         "Yala/App/Views/Groups/GroupPickerSheet.swift",
         "Yala/App/Logic/GroupExpenseEligibilityLogic.swift",
@@ -463,7 +466,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
       "owner": "",
-      "lastVerified": "2026-06-25"
+      "lastVerified": "2026-06-29"
     },
     {
       "area": "groups-stats-multicurrency",

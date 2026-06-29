@@ -4596,3 +4596,22 @@
 "split.inlineExact" = "por valor fixo";
 /* Inline split-mode label: shares */
 "split.inlineShares" = "em proporção";
+
+/* Two-person quick split: sheet title */
+"groups.expense.twoPerson.sheetTitle" = "Como dividir?";
+/* Two-person quick split: I paid, equal */
+"groups.expense.twoPerson.actionIPaidEqual" = "Você pagou · em partes iguais";
+/* Two-person quick split: I paid, all theirs (name) */
+"groups.expense.twoPerson.actionIPaidOwedFull" = "Você pagou · tudo de %@";
+/* Two-person quick split: they paid, equal (name) */
+"groups.expense.twoPerson.actionTheyPaidEqual" = "%@ pagou · em partes iguais";
+/* Two-person quick split: they paid, all yours (name) */
+"groups.expense.twoPerson.actionTheyPaidOwedFull" = "%@ pagou · tudo seu";
+/* Two-person quick split debt: they owe me (name, amount) */
+"groups.expense.twoPerson.theyOweAmount" = "%1$@ te deve %2$@";
+/* Two-person quick split debt: I owe them (name, amount) */
+"groups.expense.twoPerson.youOweAmount" = "Você deve %2$@ a %1$@";
+/* Two-person quick split: go to detailed editor */
+"groups.expense.twoPerson.moreOptions" = "Mais opções";
+/* Detailed split editor: back to quick options (2-person only) */
+"groups.expense.twoPerson.quickOptions" = "Opções rápidas";

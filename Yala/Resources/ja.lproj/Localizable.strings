@@ -4600,3 +4600,22 @@
 "split.inlineExact" = "固定額";
 /* Inline split-mode label: shares */
 "split.inlineShares" = "比率";
+
+/* Two-person quick split: sheet title */
+"groups.expense.twoPerson.sheetTitle" = "どう分けますか？";
+/* Two-person quick split: I paid, equal */
+"groups.expense.twoPerson.actionIPaidEqual" = "あなたが支払い・均等に分割";
+/* Two-person quick split: I paid, all theirs (name) */
+"groups.expense.twoPerson.actionIPaidOwedFull" = "あなたが支払い・すべて %@ の分";
+/* Two-person quick split: they paid, equal (name) */
+"groups.expense.twoPerson.actionTheyPaidEqual" = "%@ が支払い・均等に分割";
+/* Two-person quick split: they paid, all yours (name) */
+"groups.expense.twoPerson.actionTheyPaidOwedFull" = "%@ が支払い・すべてあなたの分";
+/* Two-person quick split debt: they owe me (name, amount) */
+"groups.expense.twoPerson.theyOweAmount" = "%1$@ はあなたに %2$@ の借りがあります";
+/* Two-person quick split debt: I owe them (name, amount) */
+"groups.expense.twoPerson.youOweAmount" = "あなたは %1$@ に %2$@ の借りがあります";
+/* Two-person quick split: go to detailed editor */
+"groups.expense.twoPerson.moreOptions" = "その他のオプション";
+/* Detailed split editor: back to quick options (2-person only) */
+"groups.expense.twoPerson.quickOptions" = "クイックオプション";

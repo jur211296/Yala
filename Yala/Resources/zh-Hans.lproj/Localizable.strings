@@ -4600,3 +4600,22 @@
 "split.inlineExact" = "固定金额";
 /* Inline split-mode label: shares */
 "split.inlineShares" = "比例";
+
+/* Two-person quick split: sheet title */
+"groups.expense.twoPerson.sheetTitle" = "如何分摊？";
+/* Two-person quick split: I paid, equal */
+"groups.expense.twoPerson.actionIPaidEqual" = "你支付 · 平均分摊";
+/* Two-person quick split: I paid, all theirs (name) */
+"groups.expense.twoPerson.actionIPaidOwedFull" = "你支付 · 全部是 %@ 的";
+/* Two-person quick split: they paid, equal (name) */
+"groups.expense.twoPerson.actionTheyPaidEqual" = "%@ 支付 · 平均分摊";
+/* Two-person quick split: they paid, all yours (name) */
+"groups.expense.twoPerson.actionTheyPaidOwedFull" = "%@ 支付 · 全部是你的";
+/* Two-person quick split debt: they owe me (name, amount) */
+"groups.expense.twoPerson.theyOweAmount" = "%1$@ 欠你 %2$@";
+/* Two-person quick split debt: I owe them (name, amount) */
+"groups.expense.twoPerson.youOweAmount" = "你欠 %1$@ %2$@";
+/* Two-person quick split: go to detailed editor */
+"groups.expense.twoPerson.moreOptions" = "更多选项";
+/* Detailed split editor: back to quick options (2-person only) */
+"groups.expense.twoPerson.quickOptions" = "快捷选项";
