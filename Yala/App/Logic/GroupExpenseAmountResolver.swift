@@ -22,17 +22,22 @@ enum GroupExpenseAmountResolver {
     ///
     /// - Parameters:
     ///   - expense: el gasto compartido.
-    ///   - share: el share del current user (nil si no participa).
+    ///   - share: el share del current user. `nil` cuando no tiene parte asignada — para un
+    ///     NO-pagador significa que no participa; para el pagador significa que prestó el total.
     ///   - currentMemberID: id del current member (uuidString).
     static func resolve(
         expense: SplitExpense,
         share: SplitShare?,
         currentMemberID: String
     ) -> PersonalShareStatus {
-        guard let share else { return .notIncluded }
+        // El pagador SIEMPRE participa (modelo Splitwise), tenga o no `SplitShare` propio:
+        // pagar algo cuya parte propia es 0 (otro lo devuelve todo) = prestar el total. Por eso
+        // se evalúa el pagador ANTES del guard de `share`.
         if expense.paidByMemberID == currentMemberID {
-            return .youAreOwed(amount: expense.amount - share.amount)
+            return .youAreOwed(amount: expense.amount - (share?.amount ?? 0))
         }
+        // No-pagador sin share: no participa en el gasto.
+        guard let share else { return .notIncluded }
         return .youOwe(amount: share.amount)
     }
 }

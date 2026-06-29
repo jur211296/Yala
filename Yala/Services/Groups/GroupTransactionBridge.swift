@@ -136,14 +136,20 @@ final class GroupTransactionBridge {
         let shareDescriptor = FetchDescriptor<SplitShare>(
             predicate: #Predicate { $0.expenseID == expenseID && $0.memberID == currentMemberID }
         )
-        guard let myShare = try context.fetch(shareDescriptor).first else { return }
+        let myShareRecord = try context.fetch(shareDescriptor).first
 
         // Identidad y cantidades.
-        let expenseIDStr = expense.id.uuidString
         let isCaseA = expense.paidByMemberID == currentMemberID
+
+        // El pagador SIEMPRE participa (modelo Splitwise): pagar algo cuya parte propia es 0
+        // (otro lo devuelve todo) = prestar el total, y ese préstamo DEBE reflejarse en la cuenta
+        // virtual "Grupos". Solo un NO-pagador sin share queda fuera del gasto → nada que bridgear.
+        guard isCaseA || myShareRecord != nil else { return }
+
+        let expenseIDStr = expense.id.uuidString
         let isGroupInvite = SessionState.shared.onboardingMode == .groupInvite
         let totalAmount = expense.amount
-        let mySharedAmount = myShare.amount
+        let mySharedAmount = myShareRecord?.amount ?? 0
         let lentAmount = totalAmount - mySharedAmount
 
         // Resolver decide si crear TX real para Caso A `.full/.completed`. Cuando OFF,
@@ -538,6 +544,8 @@ final class GroupTransactionBridge {
     }
 
     /// Caso B (otro pagó): TX virtual -myShare con subcat manual o draft TX-puntero.
+    /// No-op si `myShareAmount <= 0` (no participo en la división → sin costo personal que
+    /// registrar; evita una TX de monto 0). Simétrico con `createVirtualLent` (`lent > 0`).
     private func createCaseBVirtualMyShare(
         expense: SplitExpense,
         myShareAmount: Double,
@@ -546,6 +554,7 @@ final class GroupTransactionBridge {
         virtualAccount: Account,
         context: ModelContext
     ) {
+        guard myShareAmount > 0 else { return }
         let expenseIDStr = expense.id.uuidString
         let tx = TransactionItem(
             date: expense.date,
@@ -602,46 +611,17 @@ final class GroupTransactionBridge {
         context: ModelContext
     ) {
         let expenseIDStr = expense.id.uuidString
-        // TX1 virtual -myShare.
-        let tx1 = TransactionItem(
-            date: expense.date,
-            amount: -myShareAmount,
-            currencyCode: expense.currencyCode,
-            note: expense.expenseDescription.isEmpty ? nil : expense.expenseDescription,
-            category: realSubcat?.safeCategory,
-            subcategory: realSubcat,
-            account: virtualAccount
+        // TX1 virtual -myShare (idéntica a Caso B): reusa el helper de Caso B en vez de duplicar
+        // la TX + su draft puntero. El propio helper es no-op si myShare==0 (pagador sin parte:
+        // prestó el total → solo se crea la TX2 +total de abajo).
+        createCaseBVirtualMyShare(
+            expense: expense,
+            myShareAmount: myShareAmount,
+            realSubcat: realSubcat,
+            optInCoversSubcategory: optInCoversSubcategory,
+            virtualAccount: virtualAccount,
+            context: context
         )
-        tx1.splitExpenseID = expenseIDStr
-        tx1.splitGroupZoneID = expense.groupZoneID
-        tx1.splitTotalAmount = totalAmount
-        tx1.splitType = expense.splitType
-        context.insert(tx1)
-        tx1.recalculatePreferredCurrency(context: context)
-
-        if GroupDraftFinalizationLogic.shouldCreateVirtualSubcategoryPointer(
-            autoMatchFailed: realSubcat == nil,
-            optInDraftCoversSubcategory: optInCoversSubcategory
-        ) {
-            let draft = InboxDraft(
-                note: expense.expenseDescription,
-                amount: -myShareAmount,
-                date: expense.date,
-                account: virtualAccount,
-                subcategory: nil,
-                sourceType: .groupExpense,
-                confidenceAmount: 1.0,
-                confidenceDate: 1.0,
-                confidenceMerchant: 1.0,
-                confidenceSubcategory: nil,
-                needsUserInput: [DraftInputRequirement.subcategory],
-                splitExpenseID: expenseIDStr,
-                splitGroupZoneID: expense.groupZoneID,
-                splitSettlementID: nil,
-                targetTransactionID: nil
-            )
-            context.insert(draft)
-        }
 
         // TX2 virtual +totalAmount sistema (préstamo). Skip si lent==0.
         if lentAmount > 0 {

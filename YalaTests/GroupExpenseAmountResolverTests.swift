@@ -70,4 +70,45 @@ struct GroupExpenseAmountResolverTests {
 
         #expect(result == .notIncluded)
     }
+
+    /// Pagador sin `SplitShare` propio (otro le devuelve todo): participa por ser pagador
+    /// y prestó el total. NO debe caer en `.notIncluded` (regla Splitwise).
+    @Test func resolve_returnsYouAreOwedTotal_whenPayerHasNoShare() {
+        let me = "member-A"
+        let expense = SplitExpense(
+            groupZoneID: "z-1",
+            amount: 100,
+            currencyCode: "PEN",
+            paidByMemberID: me
+        )
+
+        let result = GroupExpenseAmountResolver.resolve(
+            expense: expense,
+            share: nil,
+            currentMemberID: me
+        )
+
+        // Pagué 100, mi parte es 0 → presté 100.
+        #expect(result == .youAreOwed(amount: 100))
+    }
+
+    /// Pagador cuya parte es el total (gasto 100% propio dentro del grupo): prestó 0.
+    @Test func resolve_returnsYouAreOwedZero_whenPayerOwnsFullShare() {
+        let me = "member-A"
+        let expense = SplitExpense(
+            groupZoneID: "z-1",
+            amount: 100,
+            currencyCode: "PEN",
+            paidByMemberID: me
+        )
+        let myShare = SplitShare(expenseID: expense.id, memberID: me, amount: 100)
+
+        let result = GroupExpenseAmountResolver.resolve(
+            expense: expense,
+            share: myShare,
+            currentMemberID: me
+        )
+
+        #expect(result == .youAreOwed(amount: 0))
+    }
 }
