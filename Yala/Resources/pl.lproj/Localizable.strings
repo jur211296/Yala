@@ -3463,14 +3463,13 @@
 
 // GC-05: Expense Form
 "groups.expense.paidByTitle" = "Zapłacił";
-"groups.expense.divideBetween" = "Podziel między";
 "groups.expense.selectAll" = "Zaznacz wszystkie";
 "groups.expense.deselectAll" = "Brak";
 "groups.expense.membersSelected %d %d" = "Wybrano %d z %d";
 "groups.expense.title" = "Nowy wydatek";
 "groups.expense.editTitle" = "Edytuj wydatek";
 "groups.expense.description" = "Opis";
-"groups.expense.descriptionPlaceholder" = "Czego dotyczył?";
+"groups.expense.descriptionPlaceholder" = "Opis wydatku";
 "groups.expense.note" = "Notatka";
 "groups.expense.notePlaceholder" = "Dodaj notatkę...";
 "groups.expense.category" = "Kategoria";
@@ -4586,3 +4585,18 @@
 "groups.detail.yourBalance" = "Twój bilans";
 "groups.detail.settledUp" = "Wszystko rozliczone";
 "groups.options.ownerOnlyHint" = "Tylko organizator grupy może to zmienić";
+
+/* Split sheet header title (equal mode) */
+"groups.expense.splitSheet.equalTitle" = "Po równo";
+/* Split sheet header hint (equal mode) */
+"groups.expense.splitSheet.equalHint" = "Wybierz, kto dzieli wydatek. Jest dzielony po równo.";
+/* Inline label before split-mode chip in the expense form */
+"groups.expense.dividedLabel" = "Podzielone";
+/* Inline split-mode label: equal */
+"split.inlineEqual" = "po równo";
+/* Inline split-mode label: percentage */
+"split.inlinePercentage" = "procentowo";
+/* Inline split-mode label: exact amount */
+"split.inlineExact" = "kwotowo";
+/* Inline split-mode label: shares */
+"split.inlineShares" = "proporcjonalnie";

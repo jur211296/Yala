@@ -30,7 +30,7 @@ struct GroupPickerSheet: View {
                                 }
                                 GroupPickerRow(
                                     group: group,
-                                    subtitle: "\(L10n.Groups.Member.activeCount(memberCount(group))) · \(group.currencyCode)",
+                                    subtitle: L10n.Groups.Member.activeCount(memberCount(group)),
                                     isSelected: group.id == selectedGroupID
                                 ) {
                                     onSelect(group)

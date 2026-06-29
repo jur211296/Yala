@@ -397,9 +397,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d personne active</string>
+			<string>%d membre actif</string>
 			<key>other</key>
-			<string>%d personnes actives</string>
+			<string>%d membres actifs</string>
 		</dict>
 	</dict>
 	<key>groups.member.pendingCount</key>

@@ -1684,6 +1684,11 @@ enum L10n {
         static var typeEqualShort: String { ls("split.typeEqualShort", comment: "") }
         static var typeExactShort: String { ls("split.typeExactShort", comment: "") }
         static var typeSharesShort: String { ls("split.typeSharesShort", comment: "") }
+        // Inline labels for the "Dividido [modo]" chip below the amount (GroupExpenseFormView).
+        static var inlineEqual: String { ls("split.inlineEqual", comment: "") }
+        static var inlinePercentage: String { ls("split.inlinePercentage", comment: "") }
+        static var inlineExact: String { ls("split.inlineExact", comment: "") }
+        static var inlineShares: String { ls("split.inlineShares", comment: "") }
         static var percentage: String { ls("split.percentage", comment: "") }
         static var people: String { ls("split.people", comment: "") }
         static var yourPart: String { ls("split.yourPart", comment: "") }
@@ -2002,7 +2007,6 @@ enum L10n {
             static var youOwe: String { ls("groups.expense.youOwe", comment: "") }
             /// Caption: "No participaste" — current user not in the split.
             static var notIncluded: String { ls("groups.expense.notIncluded", comment: "") }
-            static var divideBetween: String { ls("groups.expense.divideBetween", comment: "") }
             static var selectAll: String { ls("groups.expense.selectAll", comment: "") }
             static var deselectAll: String { ls("groups.expense.deselectAll", comment: "") }
             static func membersSelected(_ count: Int, _ total: Int) -> String {
@@ -2012,12 +2016,16 @@ enum L10n {
             static var allMembers: String { ls("groups.expense.allMembers", comment: "") }
             /// Título (toolbar) del sheet de división del gasto.
             static var dividePayment: String { ls("groups.expense.dividePayment", comment: "") }
+            /// Label inline antes del chip de modo de división ("Dividido [en partes iguales]").
+            static var dividedLabel: String { ls("groups.expense.dividedLabel", comment: "") }
             /// Banner cuando lo asignado supera el total.
             static func overAllocated(_ amount: String) -> String {
                 String(format: ls("groups.expense.overAllocated %@", comment: ""), amount)
             }
             /// Título + explicación del sheet de división, por tipo.
             enum SplitSheet {
+                static var equalTitle: String { ls("groups.expense.splitSheet.equalTitle", comment: "") }
+                static var equalHint: String { ls("groups.expense.splitSheet.equalHint", comment: "") }
                 static var percentageTitle: String { ls("groups.expense.splitSheet.percentageTitle", comment: "") }
                 static var percentageHint: String { ls("groups.expense.splitSheet.percentageHint", comment: "") }
                 static var exactTitle: String { ls("groups.expense.splitSheet.exactTitle", comment: "") }

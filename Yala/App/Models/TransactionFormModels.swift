@@ -86,6 +86,17 @@ enum SplitType: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Etiqueta para la línea "Dividido [modo]" debajo del monto (estilo Splitwise):
+    /// frasea con preposición ("en partes iguales", "por porcentaje") para que lea natural.
+    var inlineLabel: String {
+        switch self {
+        case .equal: return L10n.Split.inlineEqual
+        case .percentage: return L10n.Split.inlinePercentage
+        case .exact: return L10n.Split.inlineExact
+        case .shares: return L10n.Split.inlineShares
+        }
+    }
+
     var iconName: String {
         switch self {
         case .percentage: return "percent"

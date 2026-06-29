@@ -3463,14 +3463,13 @@
 
 // GC-05: Expense Form
 "groups.expense.paidByTitle" = "Betaald door";
-"groups.expense.divideBetween" = "Verdelen onder";
 "groups.expense.selectAll" = "Alles selecteren";
 "groups.expense.deselectAll" = "Geen";
 "groups.expense.membersSelected %d %d" = "%d van %d geselecteerd";
 "groups.expense.title" = "Nieuwe uitgave";
 "groups.expense.editTitle" = "Uitgave bewerken";
 "groups.expense.description" = "Omschrijving";
-"groups.expense.descriptionPlaceholder" = "Waar was het voor?";
+"groups.expense.descriptionPlaceholder" = "Omschrijving van de uitgave";
 "groups.expense.note" = "Notitie";
 "groups.expense.notePlaceholder" = "Notitie toevoegen...";
 "groups.expense.category" = "Categorie";
@@ -4586,3 +4585,18 @@
 "groups.detail.yourBalance" = "Jouw saldo";
 "groups.detail.settledUp" = "Alles vereffend";
 "groups.options.ownerOnlyHint" = "Alleen de groepsbeheerder kan dit wijzigen";
+
+/* Split sheet header title (equal mode) */
+"groups.expense.splitSheet.equalTitle" = "Gelijk verdelen";
+/* Split sheet header hint (equal mode) */
+"groups.expense.splitSheet.equalHint" = "Kies wie de uitgave deelt. De kosten worden gelijk verdeeld.";
+/* Inline label before split-mode chip in the expense form */
+"groups.expense.dividedLabel" = "Verdeeld";
+/* Inline split-mode label: equal */
+"split.inlineEqual" = "gelijk";
+/* Inline split-mode label: percentage */
+"split.inlinePercentage" = "per percentage";
+/* Inline split-mode label: exact amount */
+"split.inlineExact" = "per vast bedrag";
+/* Inline split-mode label: shares */
+"split.inlineShares" = "naar verhouding";

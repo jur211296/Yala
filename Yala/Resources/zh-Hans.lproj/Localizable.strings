@@ -3463,14 +3463,13 @@
 
 // GC-05: Expense Form
 "groups.expense.paidByTitle" = "付款人";
-"groups.expense.divideBetween" = "分摊给";
 "groups.expense.selectAll" = "全选";
 "groups.expense.deselectAll" = "无";
 "groups.expense.membersSelected %d %d" = "已选 %d / %d";
 "groups.expense.title" = "新支出";
 "groups.expense.editTitle" = "编辑支出";
 "groups.expense.description" = "描述";
-"groups.expense.descriptionPlaceholder" = "用于什么?";
+"groups.expense.descriptionPlaceholder" = "支出说明";
 "groups.expense.note" = "备注";
 "groups.expense.notePlaceholder" = "添加备注...";
 "groups.expense.category" = "类别";
@@ -4586,3 +4585,18 @@
 "groups.detail.yourBalance" = "你的余额";
 "groups.detail.settledUp" = "已结清";
 "groups.options.ownerOnlyHint" = "仅群组管理员可更改";
+
+/* Split sheet header title (equal mode) */
+"groups.expense.splitSheet.equalTitle" = "平均分摊";
+/* Split sheet header hint (equal mode) */
+"groups.expense.splitSheet.equalHint" = "选择分摊该支出的人，将平均分摊。";
+/* Inline label before split-mode chip in the expense form */
+"groups.expense.dividedLabel" = "分摊";
+/* Inline split-mode label: equal */
+"split.inlineEqual" = "平均";
+/* Inline split-mode label: percentage */
+"split.inlinePercentage" = "百分比";
+/* Inline split-mode label: exact amount */
+"split.inlineExact" = "固定金额";
+/* Inline split-mode label: shares */
+"split.inlineShares" = "比例";

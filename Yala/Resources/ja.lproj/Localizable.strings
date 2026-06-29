@@ -3463,14 +3463,13 @@
 
 // GC-05: Expense Form
 "groups.expense.paidByTitle" = "支払者";
-"groups.expense.divideBetween" = "分担対象";
 "groups.expense.selectAll" = "すべて選択";
 "groups.expense.deselectAll" = "なし";
 "groups.expense.membersSelected %d %d" = "%d / %d選択中";
 "groups.expense.title" = "新規支出";
 "groups.expense.editTitle" = "支出を編集";
 "groups.expense.description" = "説明";
-"groups.expense.descriptionPlaceholder" = "何の支出ですか？";
+"groups.expense.descriptionPlaceholder" = "支出の説明";
 "groups.expense.note" = "メモ";
 "groups.expense.notePlaceholder" = "メモを追加...";
 "groups.expense.category" = "カテゴリー";
@@ -4586,3 +4585,18 @@
 "groups.detail.yourBalance" = "あなたの収支";
 "groups.detail.settledUp" = "精算済み";
 "groups.options.ownerOnlyHint" = "グループの管理者のみが変更できます";
+
+/* Split sheet header title (equal mode) */
+"groups.expense.splitSheet.equalTitle" = "均等に分割";
+/* Split sheet header hint (equal mode) */
+"groups.expense.splitSheet.equalHint" = "支出を分担する人を選んでください。均等に分割されます。";
+/* Inline label before split-mode chip in the expense form */
+"groups.expense.dividedLabel" = "分割";
+/* Inline split-mode label: equal */
+"split.inlineEqual" = "均等";
+/* Inline split-mode label: percentage */
+"split.inlinePercentage" = "割合";
+/* Inline split-mode label: exact amount */
+"split.inlineExact" = "固定額";
+/* Inline split-mode label: shares */
+"split.inlineShares" = "比率";

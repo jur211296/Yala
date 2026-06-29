@@ -365,7 +365,7 @@
 "welcome.freshStart.alertTitle" = "Empezar desde cero";
 "welcome.freshStart.alertMessage" = "Detectamos datos previos en tu dispositivo. ¿Borrar todo para empezar como nuevo?";
 "welcome.freshStart.alertConfirm" = "Borrar todo y continuar";
-"groups.member.activeCount" = "%d personas activas";
+"groups.member.activeCount" = "%d miembros activos";
 "groups.member.pendingCount" = "%d solicitudes pendientes";
 "groups.member.pendingRequestsCount" = "%d solicitudes";
 "groups.stats.assignCategoriesHint" = "Asigná categorías a tus gastos para ver el desglose por tipo.";
@@ -524,9 +524,8 @@
 "groups.expense.currency" = "Moneda";
 "groups.expense.date" = "Fecha";
 "groups.expense.description" = "Descripción";
-"groups.expense.descriptionPlaceholder" = "¿Para qué fue?";
+"groups.expense.descriptionPlaceholder" = "Descripción del gasto";
 "groups.expense.deselectAll" = "Ninguno";
-"groups.expense.divideBetween" = "Dividir entre";
 "groups.expense.eachPays" = "Cada uno paga";
 "groups.expense.editTitle" = "Editar gasto";
 "groups.expense.memberPaid" = "%@ pagó %@";
@@ -3837,3 +3836,18 @@
 "groups.detail.settledUp" = "Están a mano";
 "groups.options.ownerOnlyHint" = "Solo el organizador del grupo puede cambiar esto";
 "groups.detail.memberCount" = "%d miembros";
+
+/* Split sheet header title (equal mode) */
+"groups.expense.splitSheet.equalTitle" = "Por partes iguales";
+/* Split sheet header hint (equal mode) */
+"groups.expense.splitSheet.equalHint" = "Elegí quiénes comparten el gasto. Se divide en partes iguales.";
+/* Inline label before split-mode chip in the expense form */
+"groups.expense.dividedLabel" = "Dividido";
+/* Inline split-mode label: equal */
+"split.inlineEqual" = "en partes iguales";
+/* Inline split-mode label: percentage */
+"split.inlinePercentage" = "por porcentaje";
+/* Inline split-mode label: exact amount */
+"split.inlineExact" = "por monto fijo";
+/* Inline split-mode label: shares */
+"split.inlineShares" = "en proporción";

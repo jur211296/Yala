@@ -317,4 +317,46 @@ struct GroupExpenseViewModelTests {
         vm.amountString = "0"
         #expect(vm.isSharesBalanced == true)
     }
+
+    // MARK: - Smart remainder distribution (Iguales → %/Monto)
+
+    @Test func equalToPercentage_payerGetsRoundingRemainder() {
+        // 300 entre 3 iguales → al pasar a % debe sumar EXACTO 100, con el remanente
+        // (0.1) en el pagador: 33.4 / 33.3 / 33.3, no 33.3 × 3 = 99.9.
+        let (vm, members) = makeViewModel()  // members[0] = Alice = current user = pagador
+        vm.amountString = "300"
+        vm.convertSplitValues(from: .equal, to: .percentage)
+
+        let payer = members[0].id.uuidString
+        let others = [members[1].id.uuidString, members[2].id.uuidString]
+        #expect(AmountInputHelper.parseDecimal(vm.percentages[payer] ?? "") == 33.4)
+        for id in others { #expect(AmountInputHelper.parseDecimal(vm.percentages[id] ?? "") == 33.3) }
+
+        let sum = members.reduce(0.0) { $0 + AmountInputHelper.parseDecimal(vm.percentages[$1.id.uuidString] ?? "") }
+        #expect(abs(sum - 100) < 0.0001)
+    }
+
+    @Test func equalToExact_divisible_splitsEvenly() {
+        // 300 / 3 = 100 exacto → sin remanente que repartir.
+        let (vm, members) = makeViewModel()
+        vm.amountString = "300"
+        vm.convertSplitValues(from: .equal, to: .exact)
+
+        for m in members {
+            #expect(AmountInputHelper.parseDecimal(vm.exactAmounts[m.id.uuidString] ?? "") == 100)
+        }
+    }
+
+    @Test func equalToExact_indivisible_payerAbsorbsCent() {
+        // 100 / 3 = 33.33… → el pagador absorbe el céntimo (33.34) y la suma da 100.00.
+        let (vm, members) = makeViewModel()
+        vm.amountString = "100"
+        vm.convertSplitValues(from: .equal, to: .exact)
+
+        let payer = members[0].id.uuidString
+        #expect(AmountInputHelper.parseDecimal(vm.exactAmounts[payer] ?? "") == 33.34)
+
+        let sum = members.reduce(0.0) { $0 + AmountInputHelper.parseDecimal(vm.exactAmounts[$1.id.uuidString] ?? "") }
+        #expect(abs(sum - 100) < 0.0001)
+    }
 }

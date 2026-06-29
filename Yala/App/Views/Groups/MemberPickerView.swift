@@ -2,34 +2,21 @@
 //  MemberPickerView.swift
 //  Yala
 //
-//  Selector de miembros — single select ("Pagado por") y multi-select ("Dividir entre").
+//  Selector de un miembro (single select) — p. ej. "Pagado por".
 //
 
 import SwiftUI
-
-enum MemberPickerMode {
-    case singleSelect
-    case multiSelect
-}
 
 struct MemberPickerView: View {
 
     @Environment(\.dismiss) private var dismiss
 
     let members: [SplitMember]
-    let memberNameLookup: [String: String]
     let groupColorHex: String
-    let mode: MemberPickerMode
 
     @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
-    // Single select
     @Binding var selectedMemberID: String
-
-    // Multi select
-    @Binding var selectedMemberIDs: Set<String>
-    let onSelectAll: () -> Void
-    let onDeselectAll: () -> Void
 
     var body: some View {
         NavigationStack {
@@ -38,11 +25,7 @@ struct MemberPickerView: View {
                     ForEach(members, id: \.id) { member in
                         let id = member.id.uuidString
 
-                        if mode == .singleSelect {
-                            singleRow(member: member, id: id)
-                        } else {
-                            multiRow(member: member, id: id)
-                        }
+                        singleRow(member: member, id: id)
 
                         if member.id != members.last?.id {
                             Divider()
@@ -62,7 +45,7 @@ struct MemberPickerView: View {
                 .padding(.top, DS.Spacing.sm)
             }
             .yalaScreenBackground(.subtle)
-            .navigationTitle(mode == .singleSelect ? L10n.Groups.Expense.paidByTitle : L10n.Groups.Expense.divideBetween)
+            .navigationTitle(L10n.Groups.Expense.paidByTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -70,23 +53,11 @@ struct MemberPickerView: View {
                         dismiss()
                     }
                 }
-
-                if mode == .multiSelect {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Menu {
-                            Button(L10n.Groups.Expense.selectAll) { onSelectAll() }
-                            Button(L10n.Groups.Expense.deselectAll) { onDeselectAll() }
-                        } label: {
-                            Text(L10n.Groups.Expense.membersSelected(selectedMemberIDs.count, members.count))
-                                .font(DS.Typography.caption)
-                        }
-                    }
-                }
             }
         }
     }
 
-    // MARK: - Single Select Row
+    // MARK: - Row
 
     private func singleRow(member: SplitMember, id: String) -> some View {
         Button {
@@ -102,33 +73,6 @@ struct MemberPickerView: View {
                         .font(DS.Typography.body)
                         .foregroundStyle(.thAccent)
                 }
-            }
-            .padding(.horizontal, DS.FormRow.paddingH)
-            .padding(.vertical, DS.FormRow.paddingV)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Multi Select Row
-
-    private func multiRow(member: SplitMember, id: String) -> some View {
-        let isSelected = selectedMemberIDs.contains(id)
-
-        return Button {
-            if isSelected {
-                selectedMemberIDs.remove(id)
-            } else {
-                selectedMemberIDs.insert(id)
-            }
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                memberAvatar(member)
-                memberName(member)
-                Spacer()
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(isSelected ? Color.electricIndigo : Color.secondary)
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)

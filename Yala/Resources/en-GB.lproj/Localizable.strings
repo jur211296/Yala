@@ -263,7 +263,7 @@
 "welcome.offerRestore.message" = "You have data in iCloud. Load it before joining the group?";
 "welcome.offerRestore.loadData" = "Load my data";
 "welcome.offerRestore.startFresh" = "Start fresh";
-"groups.member.activeCount" = "%d active people";
+"groups.member.activeCount" = "%d active members";
 "groups.member.pendingCount" = "%d pending requests";
 "groups.member.pendingRequestsCount" = "%d requests";
 
@@ -411,9 +411,8 @@
 "groups.expense.currency" = "Currency";
 "groups.expense.date" = "Date";
 "groups.expense.description" = "Description";
-"groups.expense.descriptionPlaceholder" = "What was it for?";
+"groups.expense.descriptionPlaceholder" = "Expense description";
 "groups.expense.deselectAll" = "None";
-"groups.expense.divideBetween" = "Divide between";
 "groups.expense.eachPays" = "Each pays";
 "groups.expense.editTitle" = "Edit expense";
 "groups.expense.memberPaid" = "%@ paid %@";
@@ -3837,3 +3836,18 @@
 "groups.detail.settledUp" = "All settled up";
 "groups.options.ownerOnlyHint" = "Only the group organiser can change this";
 "groups.detail.memberCount" = "%d members";
+
+/* Split sheet header title (equal mode) */
+"groups.expense.splitSheet.equalTitle" = "Split equally";
+/* Split sheet header hint (equal mode) */
+"groups.expense.splitSheet.equalHint" = "Choose who shares the expense. It's split equally.";
+/* Inline label before split-mode chip in the expense form */
+"groups.expense.dividedLabel" = "Split";
+/* Inline split-mode label: equal */
+"split.inlineEqual" = "equally";
+/* Inline split-mode label: percentage */
+"split.inlinePercentage" = "by percentage";
+/* Inline split-mode label: exact amount */
+"split.inlineExact" = "by exact amount";
+/* Inline split-mode label: shares */
+"split.inlineShares" = "by shares";

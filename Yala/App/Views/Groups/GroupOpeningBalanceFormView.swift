@@ -116,26 +116,16 @@ struct GroupOpeningBalanceFormView: View {
             .sheet(isPresented: $showDebtorPicker) {
                 MemberPickerView(
                     members: members.filter { $0.id.uuidString != creditorMemberID },
-                    memberNameLookup: memberNameLookup,
                     groupColorHex: group.colorHex,
-                    mode: .singleSelect,
-                    selectedMemberID: $debtorMemberID,
-                    selectedMemberIDs: .constant([]),
-                    onSelectAll: {},
-                    onDeselectAll: {}
+                    selectedMemberID: $debtorMemberID
                 )
                 .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showCreditorPicker) {
                 MemberPickerView(
                     members: members.filter { $0.id.uuidString != debtorMemberID },
-                    memberNameLookup: memberNameLookup,
                     groupColorHex: group.colorHex,
-                    mode: .singleSelect,
-                    selectedMemberID: $creditorMemberID,
-                    selectedMemberIDs: .constant([]),
-                    onSelectAll: {},
-                    onDeselectAll: {}
+                    selectedMemberID: $creditorMemberID
                 )
                 .presentationDetents([.medium, .large])
             }

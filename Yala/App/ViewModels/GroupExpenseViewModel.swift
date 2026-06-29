@@ -73,6 +73,12 @@ final class GroupExpenseViewModel {
         members.filter { selectedMemberIDs.contains($0.id.uuidString) && selectableMemberIDs.contains($0.id.uuidString) }
     }
 
+    /// Todos los miembros activos del grupo — la lista que muestra el sheet de división
+    /// (estilo Splitwise: todos aparecen; en `.equal` con check, en los demás con campo).
+    var activeSheetMembers: [SplitMember] {
+        members.filter { selectableMemberIDs.contains($0.id.uuidString) }
+    }
+
     var calculatedShares: [(memberID: String, amount: Double)]? {
         let participants = buildParticipants()
         guard !participants.isEmpty, amount > 0 else { return nil }
@@ -81,6 +87,20 @@ final class GroupExpenseViewModel {
             splitType: splitType,
             participants: participants
         )
+    }
+
+    /// Monto efectivo por miembro ACTIVO según los valores actuales — SIEMPRE disponible,
+    /// aunque la división no cuadre (a diferencia de `calculatedShares`, que es `nil` si no
+    /// balancea). Los no-participantes (sin valor / sin check) quedan en 0. Lo consume el
+    /// sheet para mostrar el monto debajo de cada nombre en todo momento.
+    var effectiveAmountsByID: [String: Double] {
+        let participants = selectedMembers.map { member in
+            (id: member.id.uuidString, rawValue: participantRawValue(member.id.uuidString, type: splitType))
+        }
+        let effective = GroupSplitConversion.effectiveAmounts(splitType: splitType, total: amount, participants: participants)
+        var map = Dictionary(effective.map { ($0.id, $0.amount) }, uniquingKeysWith: { first, _ in first })
+        for id in selectableMemberIDs where map[id] == nil { map[id] = 0 }
+        return map
     }
 
     /// Valores brutos (string) del tipo de división activo, por memberID.
@@ -356,6 +376,18 @@ final class GroupExpenseViewModel {
         }
     }
 
+    /// Inclusión implícita en modos ≠ `.equal`: el sheet llama esto desde el `onChange`
+    /// del campo de cada miembro — llenar (no vacío) lo incluye, vaciar lo excluye.
+    /// Sin esto, escribir en un miembro no seleccionado se ignoraría en el cálculo.
+    func setParticipation(_ memberID: String, included: Bool) {
+        guard selectableMemberIDs.contains(memberID) else { return }
+        if included {
+            selectedMemberIDs.insert(memberID)
+        } else {
+            selectedMemberIDs.remove(memberID)
+        }
+    }
+
     // MARK: - Split Type Conversion / Cleanup
 
     /// Convierte el ajuste del tipo SALIENTE al ENTRANTE preservando los montos efectivos:
@@ -373,12 +405,9 @@ final class GroupExpenseViewModel {
         let amounts = GroupSplitConversion.effectiveAmounts(splitType: oldType, total: amount, participants: participants)
         switch newType {
         case .exact:
-            for entry in amounts { exactAmounts[entry.id] = AmountInputHelper.formatWithGrouping(entry.amount) }
+            distributeExact(amounts)
         case .percentage:
-            for entry in amounts {
-                let pct = amount > 0 ? entry.amount / amount * 100 : 0
-                percentages[entry.id] = String(format: "%.1f", pct)
-            }
+            distributePercentage(amounts)
         case .shares:
             for entry in GroupSplitConversion.deriveCounts(amounts: amounts) {
                 sharesCounts[entry.id] = String(entry.count)
@@ -386,6 +415,39 @@ final class GroupExpenseViewModel {
         case .equal:
             break
         }
+    }
+
+    /// Reparte montos exactos (2 decimales) y asigna el remanente de redondeo al pagador
+    /// (o al primer participante) para que sumen EXACTO el total — al venir de Iguales,
+    /// 300/3 da 100/100/100; 100/3 da 33.34/33.33/33.33 en vez de 33.33×3 = 99.99.
+    private func distributeExact(_ amounts: [(id: String, amount: Double)]) {
+        var byID: [String: Double] = [:]
+        for entry in amounts { byID[entry.id] = (max(0, entry.amount) * 100).rounded() / 100 }
+        let sum = byID.values.reduce(0, +)
+        let diff = ((amount - sum) * 100).rounded() / 100
+        if abs(diff) >= 0.01, let target = remainderTargetID(among: amounts.map(\.id)) {
+            byID[target, default: 0] += diff
+        }
+        for (id, value) in byID { exactAmounts[id] = AmountInputHelper.formatWithGrouping(value) }
+    }
+
+    /// Igual que `distributeExact` pero en porcentajes (1 decimal) que deben sumar 100 —
+    /// 300 entre 3 iguales da 33.4/33.3/33.3 (el pagador recibe el remanente), no 33.3×3.
+    private func distributePercentage(_ amounts: [(id: String, amount: Double)]) {
+        guard amount > 0 else { return }
+        var byID: [String: Double] = [:]
+        for entry in amounts { byID[entry.id] = ((entry.amount / amount * 100) * 10).rounded() / 10 }
+        let sum = byID.values.reduce(0, +)
+        let diff = ((100 - sum) * 10).rounded() / 10
+        if abs(diff) >= 0.05, let target = remainderTargetID(among: amounts.map(\.id)) {
+            byID[target, default: 0] += diff
+        }
+        for (id, pct) in byID { percentages[id] = String(format: "%.1f", pct) }
+    }
+
+    /// Miembro que recibe el remanente de redondeo: el pagador si participa, si no el primero.
+    private func remainderTargetID(among ids: [String]) -> String? {
+        ids.contains(paidByMemberID) ? paidByMemberID : ids.first
     }
 
     private func clearValues(for type: SplitType) {
@@ -479,17 +541,4 @@ final class GroupExpenseViewModel {
         }
     }
 
-    /// Mapa `[memberID: rawValue]` con los valores brutos del usuario por miembro,
-    /// según el `splitType` activo. Consumido por `GroupSplitChipFormatter` para
-    /// renderizar suffixes de porcentaje y proporciones en el chip-detalle.
-    /// - `.equal`: no aplica (todos 1.0).
-    /// - `.exact`: monto exacto parseado.
-    /// - `.percentage`: 0-100.
-    /// - `.shares`: count entero (default 1 si vacío).
-    var participantValuesByID: [String: Double] {
-        Dictionary(
-            buildParticipants().map { ($0.memberID, $0.value) },
-            uniquingKeysWith: { first, _ in first }
-        )
-    }
 }

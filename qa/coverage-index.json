@@ -448,7 +448,6 @@
         "Yala/App/Views/Groups/GroupExpenseFormView.swift",
         "Yala/App/Views/Groups/SplitTypeSegmentedSelector.swift",
         "Yala/App/Views/Groups/GroupSplitSelectorView.swift",
-        "Yala/App/Logic/Formatters/GroupSplitChipFormatter.swift",
         "Yala/App/Logic/Formatters/GroupSplitPlaceholderLogic.swift",
         "Yala/App/Logic/Calculators/GroupSplitCalculator.swift",
         "Yala/App/Logic/GroupSplitConversion.swift",

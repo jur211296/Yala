@@ -192,7 +192,7 @@
 "welcome.offerRestore.message" = "Tens dados no iCloud. Carregar antes de entrares no grupo?";
 "welcome.offerRestore.loadData" = "Carregar os meus dados";
 "welcome.offerRestore.startFresh" = "Começar do zero";
-"groups.member.activeCount" = "%d pessoas ativas";
+"groups.member.activeCount" = "%d membros ativos";
 "groups.member.pendingCount" = "%d pedidos pendentes";
 "groups.member.pendingRequestsCount" = "%d pedidos";
 
@@ -332,9 +332,8 @@
 "groups.expense.currency" = "Moeda";
 "groups.expense.date" = "Data";
 "groups.expense.description" = "Descrição";
-"groups.expense.descriptionPlaceholder" = "Para que foi?";
+"groups.expense.descriptionPlaceholder" = "Descrição da despesa";
 "groups.expense.deselectAll" = "Nenhum";
-"groups.expense.divideBetween" = "Dividir entre";
 "groups.expense.eachPays" = "Cada um paga";
 "groups.expense.editTitle" = "Editar despesa";
 "groups.expense.memberPaid" = "%@ pagou %@";
@@ -3842,3 +3841,18 @@
 "groups.detail.settledUp" = "Tudo acertado";
 "groups.options.ownerOnlyHint" = "Só o organizador do grupo pode alterar";
 "groups.detail.memberCount" = "%d membros";
+
+/* Split sheet header title (equal mode) */
+"groups.expense.splitSheet.equalTitle" = "Em partes iguais";
+/* Split sheet header hint (equal mode) */
+"groups.expense.splitSheet.equalHint" = "Escolhe quem partilha a despesa. É dividida em partes iguais.";
+/* Inline label before split-mode chip in the expense form */
+"groups.expense.dividedLabel" = "Dividido";
+/* Inline split-mode label: equal */
+"split.inlineEqual" = "em partes iguais";
+/* Inline split-mode label: percentage */
+"split.inlinePercentage" = "por percentagem";
+/* Inline split-mode label: exact amount */
+"split.inlineExact" = "por montante fixo";
+/* Inline split-mode label: shares */
+"split.inlineShares" = "em proporção";

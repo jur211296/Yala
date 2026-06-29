@@ -9,8 +9,8 @@
 //  animated capsule fill) — chosen over Picker(.segmented) for control over
 //  DT XXL fallback and consistent look in iOS 26.
 //
-//  Lives anchored at the top of GroupExpenseFormView, replacing the previous
-//  chip-menu that was hidden below the amount.
+//  Lives at the top of the unified split sheet (GroupSplitSelectorView); the form
+//  below the amount only shows the "Dividido [modo]" chip that opens that sheet.
 //
 
 import SwiftUI
