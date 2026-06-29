@@ -4619,3 +4619,8 @@
 "groups.expense.twoPerson.moreOptions" = "その他のオプション";
 /* Detailed split editor: back to quick options (2-person only) */
 "groups.expense.twoPerson.quickOptions" = "クイックオプション";
+/* Alert al intentar dividir un gasto sin monto (monto 0) — título */
+"groups.expense.amountRequiredTitle" = "金額が必要です";
+
+/* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
+"groups.expense.amountRequiredMessage" = "メンバーで分ける前に、支出の金額を入力してください。";

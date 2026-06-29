@@ -2018,6 +2018,10 @@ enum L10n {
             static var dividePayment: String { ls("groups.expense.dividePayment", comment: "") }
             /// Label inline antes del chip de modo de división ("Dividido [en partes iguales]").
             static var dividedLabel: String { ls("groups.expense.dividedLabel", comment: "") }
+            /// Alert al tocar el chip "Dividido" (o la pre-pantalla de 2 personas) con monto 0:
+            /// no se abre el sheet de división (dividir 0 no tiene sentido) y se pide el monto.
+            static var amountRequiredTitle: String { ls("groups.expense.amountRequiredTitle", comment: "") }
+            static var amountRequiredMessage: String { ls("groups.expense.amountRequiredMessage", comment: "") }
             /// Banner cuando lo asignado supera el total.
             static func overAllocated(_ amount: String) -> String {
                 String(format: ls("groups.expense.overAllocated %@", comment: ""), amount)

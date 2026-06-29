@@ -4619,3 +4619,8 @@
 "groups.expense.twoPerson.moreOptions" = "更多选项";
 /* Detailed split editor: back to quick options (2-person only) */
 "groups.expense.twoPerson.quickOptions" = "快捷选项";
+/* Alert al intentar dividir un gasto sin monto (monto 0) — título */
+"groups.expense.amountRequiredTitle" = "缺少金额";
+
+/* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
+"groups.expense.amountRequiredMessage" = "在与成员分摊之前，请先输入支出金额。";

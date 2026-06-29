@@ -60,6 +60,9 @@ struct GroupExpenseFormView: View {
     @State private var showTwoPersonSplit = false
     @State private var pendingOpenAdvanced = false  // 4 opciones → "Más opciones"
     @State private var pendingOpenSimple = false    // editor detallado → "Opciones rápidas"
+    // Gate de monto: tocar "Dividido" (o la pre-pantalla de 2) con monto 0 no abre el
+    // sheet de división — muestra un alert pidiendo ingresar el monto primero.
+    @State private var showAmountRequiredAlert = false
 
     // Opt-out: alert post-save cuando bridge effective OFF + Caso A.
     @State private var pendingOptInExpenseID: String?
@@ -151,6 +154,11 @@ struct GroupExpenseFormView: View {
                 Button(L10n.Groups.Bridge.optoutAlertNo, role: .cancel) { declineOptIn() }
             } message: {
                 Text(L10n.Groups.Bridge.optoutAlertBody)
+            }
+            .alert(L10n.Groups.Expense.amountRequiredTitle, isPresented: $showAmountRequiredAlert) {
+                Button(L10n.Common.understood, role: .cancel) { }
+            } message: {
+                Text(L10n.Groups.Expense.amountRequiredMessage)
             }
             .confirmationDialog(
                 L10n.Action.delete,
@@ -457,8 +465,7 @@ struct GroupExpenseFormView: View {
     private func twoPersonSummaryChip(_ choice: TwoPersonSplitOptions.Choice) -> some View {
         // Sin label "Dividido": el texto natural ("Caro te debe S/ 25") ya es autoexplicativo.
         Button {
-            dismissKeyboard()
-            showTwoPersonSplit = true
+            openSplitIfAmountValid { showTwoPersonSplit = true }
         } label: {
             inlineChip(icon: "person.2.fill", text: twoPersonSummaryText(choice), warning: false)
         }
@@ -508,8 +515,7 @@ struct GroupExpenseFormView: View {
 
     private var modeChip: some View {
         Button {
-            dismissKeyboard()
-            showSplitDetail = true
+            openSplitIfAmountValid { showSplitDetail = true }
         } label: {
             inlineChip(
                 icon: viewModel.splitType.iconName,
@@ -686,6 +692,18 @@ struct GroupExpenseFormView: View {
         pendingOptInExpenseID = nil
         onSave()
         dismiss()
+    }
+
+    /// Abre el sheet de división (`open`) solo si ya hay un monto válido. Con monto 0
+    /// muestra el alert pidiéndolo: dividir 0 no tiene sentido (los montos por persona
+    /// quedarían en 0). Cubre ambos sheets — el detallado y la pre-pantalla de 2 personas.
+    private func openSplitIfAmountValid(_ open: () -> Void) {
+        dismissKeyboard()
+        guard viewModel.isAmountValid else {
+            showAmountRequiredAlert = true
+            return
+        }
+        open()
     }
 
     private func dismissKeyboard() {

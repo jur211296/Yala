@@ -4619,3 +4619,8 @@
 "groups.expense.twoPerson.moreOptions" = "Więcej opcji";
 /* Detailed split editor: back to quick options (2-person only) */
 "groups.expense.twoPerson.quickOptions" = "Szybkie opcje";
+/* Alert al intentar dividir un gasto sin monto (monto 0) — título */
+"groups.expense.amountRequiredTitle" = "Brakuje kwoty";
+
+/* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
+"groups.expense.amountRequiredMessage" = "Wpisz kwotę wydatku, zanim podzielisz go między członków.";
