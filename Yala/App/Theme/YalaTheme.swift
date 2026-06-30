@@ -201,7 +201,7 @@ extension YalaTheme {
 
     /// Whether this theme forces monochrome profile icons
     var forcesMonochromeIcons: Bool {
-        mapsColorsToGrayscale || usesMaterial
+        mapsColorsToGrayscale
     }
 
     static let minimalist = YalaTheme(

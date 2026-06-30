@@ -16,13 +16,14 @@ struct MoreNavCard: View {
     let subtitle: String
     let identifier: String
     var badge: String? = nil
+    var iconColor: Color? = nil
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 HStack(alignment: .top) {
-                    AccentIconBadge(systemName: icon)
+                    AccentIconBadge(systemName: icon, tint: iconColor)
 
                     Spacer()
 
@@ -77,15 +78,17 @@ struct AccentIconBadge: View {
     @Environment(\.yalaTheme) private var theme
     let systemName: String
     var font: Font = DS.Typography.subheadline
+    var tint: Color? = nil
 
     var body: some View {
+        let color = tint ?? theme.accent
         Image(systemName: systemName)
             .font(font)
-            .foregroundStyle(theme.accent)
+            .foregroundStyle(color)
             .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
             .background(
                 RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                    .fill(theme.accent.opacity(0.12))
+                    .fill(color.opacity(0.12))
             )
     }
 }

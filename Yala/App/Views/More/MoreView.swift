@@ -69,6 +69,18 @@ struct MoreView: View {
         MoreSectionKind.ordered(from: appPreferences.moreSectionOrder)
     }
 
+    /// Mismo criterio que `ProfileView.effectiveColorfulIcons`: el toggle de
+    /// Ajustes manda salvo que el tema fuerce monocromo (solo Minimalista).
+    private var effectiveColorfulIcons: Bool {
+        theme.forcesMonochromeIcons ? false : appPreferences.colorfulIcons
+    }
+
+    /// Color del badge de icono: el color propio del item si "Iconos coloridos"
+    /// está activo, o `.primary` si está apagado (o el tema fuerza monocromo).
+    private func iconColor(_ colorful: Color) -> Color {
+        effectiveColorfulIcons ? colorful : .primary
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -137,7 +149,7 @@ struct MoreView: View {
             RouterEntryGate.shared.submit(.navigate(.panel))
         } label: {
             HStack(spacing: DS.Spacing.md) {
-                AccentIconBadge(systemName: ConfigurableTab.panel.iconName, font: DS.Typography.headline)
+                AccentIconBadge(systemName: ConfigurableTab.panel.iconName, font: DS.Typography.headline, tint: iconColor(.electricIndigo))
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Tab.panel)
@@ -187,6 +199,7 @@ struct MoreView: View {
                         subtitle: item.subtitle,
                         identifier: "more_card_\(item.id)",
                         badge: item.badge,
+                        iconColor: item.iconColor,
                         action: item.action
                     )
                 }
@@ -198,47 +211,47 @@ struct MoreView: View {
         switch kind {
         case .statistics:
             return [
-                NavItem(id: "insights", icon: DetailViewTab.insights.icon, title: DetailViewTab.insights.title, subtitle: L10n.More.Subtitle.insights) {
+                NavItem(id: "insights", icon: DetailViewTab.insights.icon, title: DetailViewTab.insights.title, subtitle: L10n.More.Subtitle.insights, iconColor: iconColor(.blue)) {
                     SessionState.shared.navigateToDetail(.insights)
                 },
-                NavItem(id: "trends", icon: DetailViewTab.trends.icon, title: DetailViewTab.trends.title, subtitle: L10n.More.Subtitle.trends) {
+                NavItem(id: "trends", icon: DetailViewTab.trends.icon, title: DetailViewTab.trends.title, subtitle: L10n.More.Subtitle.trends, iconColor: iconColor(.green)) {
                     SessionState.shared.navigateToDetail(.trends)
                 },
-                NavItem(id: "categories", icon: DetailViewTab.categories.icon, title: DetailViewTab.categories.title, subtitle: L10n.More.Subtitle.distribution) {
+                NavItem(id: "categories", icon: DetailViewTab.categories.icon, title: DetailViewTab.categories.title, subtitle: L10n.More.Subtitle.distribution, iconColor: iconColor(.orange)) {
                     SessionState.shared.navigateToDetail(.categories)
                 },
             ]
         case .planning:
             return [
-                NavItem(id: "budgets", icon: PlanningTab.budgets.icon, title: PlanningTab.budgets.displayName, subtitle: L10n.More.Subtitle.budgets) {
+                NavItem(id: "budgets", icon: PlanningTab.budgets.icon, title: PlanningTab.budgets.displayName, subtitle: L10n.More.Subtitle.budgets, iconColor: iconColor(.purple)) {
                     SessionState.shared.navigateToBudgets()
                 },
-                NavItem(id: "scheduledPayments", icon: PlanningTab.scheduledPayments.icon, title: PlanningTab.scheduledPayments.displayName, subtitle: L10n.More.Subtitle.scheduledPayments) {
+                NavItem(id: "scheduledPayments", icon: PlanningTab.scheduledPayments.icon, title: PlanningTab.scheduledPayments.displayName, subtitle: L10n.More.Subtitle.scheduledPayments, iconColor: iconColor(.mint)) {
                     SessionState.shared.navigateToScheduledPayments()
                 },
             ]
         case .reports:
             return [
-                NavItem(id: "comparativa", icon: ReportTab.comparativa.icon, title: ReportTab.comparativa.title, subtitle: L10n.More.Subtitle.comparative) {
+                NavItem(id: "comparativa", icon: ReportTab.comparativa.icon, title: ReportTab.comparativa.title, subtitle: L10n.More.Subtitle.comparative, iconColor: iconColor(.brown)) {
                     SessionState.shared.navigateToReport(.comparativa)
                 },
-                NavItem(id: "flujoDeCaja", icon: ReportTab.flujoDeCaja.icon, title: ReportTab.flujoDeCaja.title, subtitle: L10n.More.Subtitle.cashFlow) {
+                NavItem(id: "flujoDeCaja", icon: ReportTab.flujoDeCaja.icon, title: ReportTab.flujoDeCaja.title, subtitle: L10n.More.Subtitle.cashFlow, iconColor: iconColor(.cyan)) {
                     SessionState.shared.navigateToReport(.flujoDeCaja)
                 },
             ]
         case .tools:
             return [
-                NavItem(id: "records", icon: ConfigurableTab.records.iconName, title: ConfigurableTab.records.displayName, subtitle: L10n.More.Subtitle.records) {
+                NavItem(id: "records", icon: ConfigurableTab.records.iconName, title: ConfigurableTab.records.displayName, subtitle: L10n.More.Subtitle.records, iconColor: iconColor(.yellow)) {
                     RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
                 },
-                NavItem(id: "groups", icon: ConfigurableTab.groups.iconName, title: ConfigurableTab.groups.displayName, subtitle: L10n.More.Subtitle.groups, badge: "Beta") {
+                NavItem(id: "groups", icon: ConfigurableTab.groups.iconName, title: ConfigurableTab.groups.displayName, subtitle: L10n.More.Subtitle.groups, badge: "Beta", iconColor: iconColor(.hotPink)) {
                     if groupsBetaUnlocked {
                         RouterEntryGate.shared.submit(.navigate(.groups))
                     } else {
                         showBetaIntro = true
                     }
                 },
-                NavItem(id: "profile", icon: "person.crop.circle.fill", title: L10n.Profile.title, subtitle: L10n.More.Subtitle.profile) {
+                NavItem(id: "profile", icon: "person.crop.circle.fill", title: L10n.Profile.title, subtitle: L10n.More.Subtitle.profile, iconColor: iconColor(.gray)) {
                     showProfile = true
                 },
             ]
@@ -296,5 +309,6 @@ private struct NavItem: Identifiable {
     let title: String
     let subtitle: String
     var badge: String? = nil
+    var iconColor: Color? = nil
     let action: () -> Void
 }
