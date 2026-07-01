@@ -2401,12 +2401,12 @@
 // Groups
 "notifications.groups.name" = "Gruppi";
 "notifications.groups.hint" = "Avvisi quando altri membri aggiungono spese o ti pagano";
-"notifications.groups.newExpense" = "%@ ha aggiunto una spesa di %@: %@";
-"notifications.groups.newExpenseNoDesc" = "%@ ha aggiunto una spesa di %@";
-"notifications.groups.modifiedExpense" = "%@ ha modificato '%@'";
-"notifications.groups.settlement" = "%@ ti ha pagato %@";
-"notifications.groups.newMember" = "%@ si è unito al gruppo";
-"notifications.groups.multipleChanges" = "%d nuove modifiche";
+"notifications.groups.newExpense" = "🧾 %1$@ ha aggiunto '%2$@' — la tua parte: %3$@";
+"notifications.groups.newExpenseNoDesc" = "🧾 %1$@ ha aggiunto una spesa — la tua parte: %2$@";
+"notifications.groups.modifiedExpense" = "✏️ %1$@ ha aggiornato '%2$@' — la tua parte: %3$@";
+"notifications.groups.settlement" = "💸 %@ ti ha pagato %@!";
+"notifications.groups.newMember" = "🙌 %@ si è unito al gruppo";
+"notifications.groups.multipleChanges" = "📋 %d novità da rivedere";
 "notifications.groups.fallbackGroup" = "Gruppo";
 "notifications.groups.fallbackMember" = "Qualcuno";
 
@@ -4116,7 +4116,7 @@
 "groups.invite.rejected.title" = "Richiesta rifiutata";
 "groups.invite.rejected.body" = "L'admin non ha approvato la tua richiesta. Chiedigli un nuovo link se vuoi riprovare.";
 "groups.notifications.newPendingRequest" = "👋 %@ vuole unirsi a %@";
-"groups.notifications.newPendingRequestBody" = "Approva o rifiuta da Yala.";
+"groups.notifications.newPendingRequestBody" = "Puoi approvare o rifiutare da Yala.";
 "groups.errors.pendingApproval" = "Non puoi ancora farlo — l'admin deve prima approvare la tua richiesta.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)

@@ -2397,12 +2397,12 @@
 // Groups
 "notifications.groups.name" = "Groepen";
 "notifications.groups.hint" = "Meldingen wanneer andere leden uitgaven toevoegen of jou betalen";
-"notifications.groups.newExpense" = "%@ heeft een uitgave van %@ toegevoegd: %@";
-"notifications.groups.newExpenseNoDesc" = "%@ heeft een uitgave van %@ toegevoegd";
-"notifications.groups.modifiedExpense" = "%@ heeft '%@' gewijzigd";
-"notifications.groups.settlement" = "%@ heeft jou %@ betaald";
-"notifications.groups.newMember" = "%@ is lid geworden van de groep";
-"notifications.groups.multipleChanges" = "%d nieuwe wijzigingen";
+"notifications.groups.newExpense" = "🧾 %1$@ heeft '%2$@' toegevoegd — jouw deel: %3$@";
+"notifications.groups.newExpenseNoDesc" = "🧾 %1$@ heeft een uitgave toegevoegd — jouw deel: %2$@";
+"notifications.groups.modifiedExpense" = "✏️ %1$@ heeft '%2$@' bijgewerkt — jouw deel: %3$@";
+"notifications.groups.settlement" = "💸 %@ heeft jou %@ betaald!";
+"notifications.groups.newMember" = "🙌 %@ is lid geworden van de groep";
+"notifications.groups.multipleChanges" = "📋 %d nieuwe updates";
 "notifications.groups.fallbackGroup" = "Groep";
 "notifications.groups.fallbackMember" = "Iemand";
 
@@ -4118,7 +4118,7 @@
 "groups.invite.rejected.title" = "Verzoek afgewezen";
 "groups.invite.rejected.body" = "De beheerder heeft je verzoek niet goedgekeurd. Vraag een nieuwe link als je het opnieuw wilt proberen.";
 "groups.notifications.newPendingRequest" = "👋 %@ wil meedoen aan %@";
-"groups.notifications.newPendingRequestBody" = "Goedkeuren of afwijzen in Yala.";
+"groups.notifications.newPendingRequestBody" = "Je kunt goedkeuren of afwijzen in Yala.";
 "groups.errors.pendingApproval" = "Dat kan nog niet — de beheerder moet eerst je verzoek goedkeuren.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)

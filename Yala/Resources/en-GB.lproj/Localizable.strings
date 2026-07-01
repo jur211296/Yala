@@ -180,7 +180,7 @@
 "groups.invite.rejected.title" = "Request rejected";
 "groups.invite.rejected.body" = "The admin didn't approve your request. Ask them for a new link if you'd like to try again.";
 "groups.notifications.newPendingRequest" = "👋 %@ wants to join %@";
-"groups.notifications.newPendingRequestBody" = "Approve or reject from Yala.";
+"groups.notifications.newPendingRequestBody" = "You can approve or reject from Yala.";
 "groups.errors.pendingApproval" = "You can't do this yet — the admin needs to approve your request first.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)
@@ -1968,13 +1968,13 @@
 "notifications.groups.fallbackGroup" = "Group";
 "notifications.groups.fallbackMember" = "Someone";
 "notifications.groups.hint" = "Alerts when other members add expenses or pay you";
-"notifications.groups.modifiedExpense" = "%@ modified '%@'";
-"notifications.groups.multipleChanges" = "%d new changes";
+"notifications.groups.modifiedExpense" = "✏️ %1$@ updated '%2$@' — you owe %3$@";
+"notifications.groups.multipleChanges" = "📋 %d new updates to review";
 "notifications.groups.name" = "Groups";
-"notifications.groups.newExpense" = "%@ added an expense of %@: %@";
-"notifications.groups.newExpenseNoDesc" = "%@ added an expense of %@";
-"notifications.groups.newMember" = "%@ joined the group";
-"notifications.groups.settlement" = "%@ paid you %@";
+"notifications.groups.newExpense" = "🧾 %1$@ added '%2$@' — you owe %3$@";
+"notifications.groups.newExpenseNoDesc" = "🧾 %1$@ added an expense — you owe %2$@";
+"notifications.groups.newMember" = "🙌 %@ joined the group";
+"notifications.groups.settlement" = "💸 %@ paid you %@!";
 "notifications.lunchTime.name" = "Meal time";
 "notifications.lunchTime.text" = "What did you have? 🍽️ Log it while it's fresh";
 "notifications.monthlyReport.hint" = "On the %2$@ you'll see your %1$@ for the month";

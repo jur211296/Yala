@@ -5750,14 +5750,14 @@ enum L10n {
         static var groupsHint: String { ls("notifications.groups.hint", comment: "") }
 
         enum Group {
-            static func newExpense(_ member: String, _ amount: String, _ desc: String) -> String {
-                String(format: ls("notifications.groups.newExpense", comment: ""), member, amount, desc)
+            static func newExpense(_ member: String, _ desc: String, _ myShare: String) -> String {
+                String(format: ls("notifications.groups.newExpense", comment: ""), member, desc, myShare)
             }
-            static func newExpenseNoDesc(_ member: String, _ amount: String) -> String {
-                String(format: ls("notifications.groups.newExpenseNoDesc", comment: ""), member, amount)
+            static func newExpenseNoDesc(_ member: String, _ myShare: String) -> String {
+                String(format: ls("notifications.groups.newExpenseNoDesc", comment: ""), member, myShare)
             }
-            static func modifiedExpense(_ member: String, _ desc: String) -> String {
-                String(format: ls("notifications.groups.modifiedExpense", comment: ""), member, desc)
+            static func modifiedExpense(_ member: String, _ desc: String, _ myShare: String) -> String {
+                String(format: ls("notifications.groups.modifiedExpense", comment: ""), member, desc, myShare)
             }
             static func settlement(_ member: String, _ amount: String) -> String {
                 String(format: ls("notifications.groups.settlement", comment: ""), member, amount)

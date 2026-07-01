@@ -2397,12 +2397,12 @@
 // Groups
 "notifications.groups.name" = "グループ";
 "notifications.groups.hint" = "他のメンバーが支出を追加したり、支払いをした際の通知";
-"notifications.groups.newExpense" = "%1$@が%2$@の支出を追加: %3$@";
-"notifications.groups.newExpenseNoDesc" = "%@が%@の支出を追加";
-"notifications.groups.modifiedExpense" = "%@が「%@」を編集";
-"notifications.groups.settlement" = "%@があなたに%@支払いました";
-"notifications.groups.newMember" = "%@がグループに参加しました";
-"notifications.groups.multipleChanges" = "新しい変更が%d件";
+"notifications.groups.newExpense" = "🧾 %1$@さんが「%2$@」を追加 — あなたの負担は%3$@";
+"notifications.groups.newExpenseNoDesc" = "🧾 %1$@さんが支出を追加 — あなたの負担は%2$@";
+"notifications.groups.modifiedExpense" = "✏️ %1$@さんが「%2$@」を更新 — あなたの負担は%3$@";
+"notifications.groups.settlement" = "💸 %@さんがあなたに%@を支払いました";
+"notifications.groups.newMember" = "🙌 %@さんがグループに参加しました";
+"notifications.groups.multipleChanges" = "📋 新着%d件";
 "notifications.groups.fallbackGroup" = "グループ";
 "notifications.groups.fallbackMember" = "誰か";
 
@@ -4118,7 +4118,7 @@
 "groups.invite.rejected.title" = "リクエストが拒否されました";
 "groups.invite.rejected.body" = "管理者がリクエストを承認しませんでした。再度試したい場合は、新しいリンクを依頼してください。";
 "groups.notifications.newPendingRequest" = "👋 %1$@ さんが %2$@ への参加を希望しています";
-"groups.notifications.newPendingRequestBody" = "Yalaから承認または拒否してください。";
+"groups.notifications.newPendingRequestBody" = "Yalaから承認または拒否できます。";
 "groups.errors.pendingApproval" = "まだこの操作はできません。管理者があなたのリクエストを承認する必要があります。";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)

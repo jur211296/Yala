@@ -2397,12 +2397,12 @@
 // Groups
 "notifications.groups.name" = "群组";
 "notifications.groups.hint" = "其他成员添加支出或向你付款时提醒";
-"notifications.groups.newExpense" = "%@ 添加了一笔 %@ 的支出:%@";
-"notifications.groups.newExpenseNoDesc" = "%@ 添加了一笔 %@ 的支出";
-"notifications.groups.modifiedExpense" = "%@ 修改了「%@」";
-"notifications.groups.settlement" = "%@ 给你付了 %@";
-"notifications.groups.newMember" = "%@ 加入了群组";
-"notifications.groups.multipleChanges" = "%d 个新变化";
+"notifications.groups.newExpense" = "🧾 %1$@ 添加了「%2$@」— 你需付 %3$@";
+"notifications.groups.newExpenseNoDesc" = "🧾 %1$@ 添加了一笔支出 — 你需付 %2$@";
+"notifications.groups.modifiedExpense" = "✏️ %1$@ 更新了「%2$@」— 你需付 %3$@";
+"notifications.groups.settlement" = "💸 %@ 给你付了 %@!";
+"notifications.groups.newMember" = "🙌 %@ 加入了群组";
+"notifications.groups.multipleChanges" = "📋 %d 条新动态";
 "notifications.groups.fallbackGroup" = "群组";
 "notifications.groups.fallbackMember" = "某人";
 

@@ -1489,16 +1489,20 @@
       "area": "groups-notifications-deeplinks",
       "codeGlobs": [
         "Yala/Services/Groups/GroupNotificationService.swift",
+        "Yala/App/Logic/GroupNotificationRecipientLogic.swift",
         "Yala/App/Views/Groups/GroupNudgeBanner.swift",
         "Yala/App/Models/AppRouter.swift",
         "Yala/App/Models/RouterEntryGate.swift"
       ],
       "scenarioIDs": [
         "F-S4-01",
-        "F-S5-03"
+        "F-S5-03",
+        "F-GRP-NOTIF-01",
+        "F-GRP-NOTIF-02",
+        "F-GRP-NOTIF-03"
       ],
       "classification": "manual",
-      "coverage": "manual",
+      "coverage": "unit:YalaTests/GroupNotificationRecipientLogicTests + manual",
       "owner": "",
       "lastVerified": "2026-06-01"
     },

@@ -5,6 +5,11 @@
 //  Notificaciones locales para eventos de grupo (GC-06).
 //  Disparado por SplitSyncManager cuando llegan cambios remotos.
 //
+//  Filtro por participación: un gasto/liquidación solo notifica a quien le
+//  concierne (ver GroupNotificationRecipientLogic). El autor NUNCA se notifica
+//  de lo que él mismo registró (cubre también el caso de un 2º device con el
+//  mismo iCloud, que sí hace fetch de su propio cambio).
+//
 
 import Foundation
 import SwiftData
@@ -82,32 +87,32 @@ final class GroupNotificationService {
         #endif
         guard let item, item.isActive else { return }
 
-        // Group changes by groupID
-        var changesByGroup: [UUID: GroupChangeSummary] = [:]
+        // Group RAW ids by group first (cheap, no fetch). We only pay for the
+        // per-record fetches (participation filter) on groups that pass the
+        // rate-limit — an initial history import would otherwise trigger N×2
+        // fetches just to have the 5-min rate-limit collapse them to 1 notif.
+        var rawByGroup: [UUID: RawGroupChanges] = [:]
+        for entry in changes.newExpenses { rawByGroup[entry.groupID, default: RawGroupChanges()].newExpenseIDs.append(entry.id) }
+        for entry in changes.modifiedExpenses { rawByGroup[entry.groupID, default: RawGroupChanges()].modifiedExpenseIDs.append(entry.id) }
+        for entry in changes.newSettlements { rawByGroup[entry.groupID, default: RawGroupChanges()].newSettlementIDs.append(entry.id) }
+        for entry in changes.newMembers { rawByGroup[entry.groupID, default: RawGroupChanges()].newMemberIDs.append(entry.id) }
+        for entry in changes.newPendingMembers { rawByGroup[entry.groupID, default: RawGroupChanges()].newPendingMemberIDs.append(entry.id) }
 
-        for entry in changes.newExpenses {
-            changesByGroup[entry.groupID, default: GroupChangeSummary()].newExpenseIDs.append(entry.id)
-        }
-        for entry in changes.modifiedExpenses {
-            changesByGroup[entry.groupID, default: GroupChangeSummary()].modifiedExpenseIDs.append(entry.id)
-        }
-        for entry in changes.newSettlements {
-            changesByGroup[entry.groupID, default: GroupChangeSummary()].newSettlementIDs.append(entry.id)
-        }
-        for entry in changes.newMembers {
-            changesByGroup[entry.groupID, default: GroupChangeSummary()].newMemberIDs.append(entry.id)
-        }
-        for entry in changes.newPendingMembers {
-            changesByGroup[entry.groupID, default: GroupChangeSummary()].newPendingMemberIDs.append(entry.id)
-        }
+        var memberIDCache: [String: String?] = [:]
 
-        // Send notification per group (with rate limiting)
-        for (groupID, summary) in changesByGroup {
+        for (groupID, raw) in rawByGroup {
             let rateLimited = isRateLimited(groupID: groupID)
             #if DEBUG
-            print("GroupNotif[#16-debug]: groupID=\(groupID) total=\(summary.totalCount) rateLimited=\(rateLimited) pendingMembers=\(summary.newPendingMemberIDs.count)")
+            print("GroupNotif[#16-debug]: groupID=\(groupID) rateLimited=\(rateLimited) rawExp=\(raw.newExpenseIDs.count + raw.modifiedExpenseIDs.count) rawSet=\(raw.newSettlementIDs.count) pending=\(raw.newPendingMemberIDs.count)")
             #endif
             guard !rateLimited else { continue }
+
+            // Participation filter (fetches SplitExpense/SplitShare/SplitSettlement).
+            let summary = buildFilteredSummary(raw: raw, memberIDCache: &memberIDCache)
+            #if DEBUG
+            print("GroupNotif[#16-debug]: groupID=\(groupID) filtered total=\(summary.totalCount)")
+            #endif
+            guard summary.totalCount > 0 else { continue }
 
             if let (title, body) = buildNotification(groupID: groupID, summary: summary) {
                 let deepLink = "groups/\(groupID.uuidString)"
@@ -125,7 +130,122 @@ final class GroupNotificationService {
         }
     }
 
-    // MARK: - Private
+    // MARK: - Participation Filter
+
+    /// Filters raw ids to only what concerns the current user, resolving each
+    /// record and my share. Builds the summary consumed by `buildNotification`.
+    ///
+    /// Por qué el filtro de participación vive aquí (consumidor) y NO en la clasificación
+    /// de `SplitSyncManager` (donde sí vive el filtro pending-member→admin): el mismo
+    /// `RemoteChangeSet` alimenta al bridge (`GroupTransactionBridge`), que necesita TODOS
+    /// los expenses del grupo, no solo los míos. Filtrar en la clasificación rompería el bridge.
+    private func buildFilteredSummary(raw: RawGroupChanges, memberIDCache: inout [String: String?]) -> GroupChangeSummary {
+        var summary = GroupChangeSummary()
+
+        for id in raw.newExpenseIDs {
+            if let (expense, share) = participatingExpense(expenseID: id, memberIDCache: &memberIDCache) {
+                summary.newExpenses.append((expense: expense, myShare: share))
+            }
+        }
+        for id in raw.modifiedExpenseIDs {
+            if let (expense, share) = participatingExpense(expenseID: id, memberIDCache: &memberIDCache) {
+                summary.modifiedExpenses.append((expense: expense, myShare: share))
+            }
+        }
+        for id in raw.newSettlementIDs {
+            if let settlement = participatingSettlement(settlementID: id, memberIDCache: &memberIDCache) {
+                summary.newSettlements.append(settlement)
+            }
+        }
+        // Membership events concern the whole group — no participation filter.
+        // (pending members already pre-filtered to admins in SplitSyncManager.)
+        summary.newMemberIDs = raw.newMemberIDs
+        summary.newPendingMemberIDs = raw.newPendingMemberIDs
+        return summary
+    }
+
+    /// Returns `(expense, myShare)` if this expense should notify the current user, else nil.
+    private func participatingExpense(expenseID: UUID, memberIDCache: inout [String: String?]) -> (SplitExpense, Double)? {
+        guard let modelContext else { return nil }
+        do {
+            let descriptor = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == expenseID })
+            guard let expense = try modelContext.fetch(descriptor).first else { return nil }
+            // Opening balances are Splitwise-migration seed rows, not an expense
+            // "someone added" — never notify.
+            if expense.isOpeningBalance { return nil }
+
+            let cmid = currentMemberID(inZone: expense.groupZoneID, cache: &memberIDCache)
+            // Only pay for the share fetch when it could possibly notify (not me, known identity).
+            // The canonical decision still lives in the pure-logic helper below.
+            var myShare: Double?
+            if let cmid, cmid != expense.paidByMemberID {
+                let shareDesc = FetchDescriptor<SplitShare>(
+                    predicate: #Predicate { $0.expenseID == expenseID && $0.memberID == cmid }
+                )
+                myShare = try modelContext.fetch(shareDesc).first?.amount
+            }
+
+            switch GroupNotificationRecipientLogic.expenseDecision(
+                currentMemberID: cmid,
+                paidByMemberID: expense.paidByMemberID,
+                myShareAmount: myShare
+            ) {
+            case .notify(let share): return (expense, share)
+            case .skip: return nil
+            }
+        } catch {
+            #if DEBUG
+            print("GroupNotificationService: Error resolving expense participation \(expenseID): \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// Returns the settlement if it should notify the current user (its receiver), else nil.
+    private func participatingSettlement(settlementID: UUID, memberIDCache: inout [String: String?]) -> SplitSettlement? {
+        guard let modelContext else { return nil }
+        do {
+            let descriptor = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == settlementID })
+            guard let settlement = try modelContext.fetch(descriptor).first else { return nil }
+            let cmid = currentMemberID(inZone: settlement.groupZoneID, cache: &memberIDCache)
+            return GroupNotificationRecipientLogic.shouldNotifySettlement(
+                currentMemberID: cmid, toMemberID: settlement.toMemberID
+            ) ? settlement : nil
+        } catch {
+            #if DEBUG
+            print("GroupNotificationService: Error resolving settlement participation \(settlementID): \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    /// Resolves the current user's SplitMember id (uuidString) for a zone, cached per zone.
+    /// `isCurrentUser` is refreshed by `refreshCurrentUserFlags` (awaited) right before this runs.
+    /// Canonical resolution (oldest `joinedAt`, limit 1) mirrors `SplitSyncManager.currentUserMember`
+    /// — deterministic if sync ever delivered duplicate `isCurrentUser` members for a zone.
+    private func currentMemberID(inZone zoneName: String, cache: inout [String: String?]) -> String? {
+        if let cached = cache[zoneName] { return cached }
+        guard let modelContext else { return nil }
+        do {
+            var descriptor = FetchDescriptor<SplitMember>(
+                predicate: #Predicate { $0.groupZoneID == zoneName && $0.isCurrentUser == true },
+                sortBy: [SortDescriptor(\.joinedAt, order: .forward)]
+            )
+            descriptor.fetchLimit = 1
+            let result = try modelContext.fetch(descriptor).first?.id.uuidString
+            cache[zoneName] = result   // cachea solo un resultado exitoso (incl. nil legítimo)
+            return result
+        } catch {
+            // No cacheamos ante un error transitorio de fetch: cachear el nil envenenaría
+            // toda la zona en este batch. Dejamos que el próximo record reintente.
+            #if DEBUG
+            print("GroupNotificationService: Error resolving current member for zone \(zoneName): \(error)")
+            #endif
+            return nil
+        }
+    }
+
+    // MARK: - Notification Content
 
     private func isRateLimited(groupID: UUID) -> Bool {
         let last = lastNotifiedDates[groupID] ?? loadTimestamp(for: groupID)
@@ -151,14 +271,14 @@ final class GroupNotificationService {
             return (groupName, L10n.Notifications.Group.multipleChanges(totalChanges))
         }
 
-        if let expenseID = summary.newExpenseIDs.first {
-            return buildExpenseNotification(expenseID: expenseID, groupName: groupName, isNew: true)
+        if let first = summary.newExpenses.first {
+            return buildExpenseNotification(expense: first.expense, groupName: groupName, isNew: true, myShare: first.myShare)
         }
-        if let expenseID = summary.modifiedExpenseIDs.first {
-            return buildExpenseNotification(expenseID: expenseID, groupName: groupName, isNew: false)
+        if let first = summary.modifiedExpenses.first {
+            return buildExpenseNotification(expense: first.expense, groupName: groupName, isNew: false, myShare: first.myShare)
         }
-        if let settlementID = summary.newSettlementIDs.first {
-            return buildSettlementNotification(settlementID: settlementID, groupName: groupName)
+        if let settlement = summary.newSettlements.first {
+            return buildSettlementNotification(settlement: settlement, groupName: groupName)
         }
         // prioridad sobre newMember para asegurar que admin vea solicitudes antes que joins normales.
         if let memberID = summary.newPendingMemberIDs.first {
@@ -171,46 +291,31 @@ final class GroupNotificationService {
         return nil
     }
 
-    private func buildExpenseNotification(expenseID: UUID, groupName: String, isNew: Bool) -> (String, String)? {
-        guard let modelContext else { return nil }
+    /// Builds the expense notification from the already-fetched expense (no re-fetch).
+    /// `myShare` is the current user's portion — shown instead of the total.
+    private func buildExpenseNotification(expense: SplitExpense, groupName: String, isNew: Bool, myShare: Double) -> (String, String)? {
+        let memberName = resolveMemberName(memberID: expense.paidByMemberID)
+        // Formato canónico off-MainActor: respeta decimalPlaces / formato de moneda del usuario
+        // (evita drift visual entre la notificación y el resto de la app).
+        let formattedShare = YalaFormatterStatic.currency(value: myShare, currencyCode: expense.currencyCode)
 
-        do {
-            let descriptor = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == expenseID })
-            guard let expense = try modelContext.fetch(descriptor).first else { return nil }
-
-            let memberName = resolveMemberName(memberID: expense.paidByMemberID)
-            let symbol = CurrencyCode.symbol(for: expense.currencyCode)
-            let amount = expense.amount.formatted(.number.precision(.fractionLength(0...2)))
-            let formattedAmount = "\(symbol)\(amount)"
-
-            if isNew {
-                if expense.expenseDescription.isEmpty {
-                    return (groupName, L10n.Notifications.Group.newExpenseNoDesc(memberName, formattedAmount))
-                }
-                return (groupName, L10n.Notifications.Group.newExpense(memberName, formattedAmount, expense.expenseDescription))
-            } else {
-                let desc = expense.expenseDescription.isEmpty ? L10n.Notifications.Group.fallbackGroup : expense.expenseDescription
-                return (groupName, L10n.Notifications.Group.modifiedExpense(memberName, desc))
+        if isNew {
+            if expense.expenseDescription.isEmpty {
+                return (groupName, L10n.Notifications.Group.newExpenseNoDesc(memberName, formattedShare))
             }
-        } catch {
-            return nil
+            return (groupName, L10n.Notifications.Group.newExpense(memberName, expense.expenseDescription, formattedShare))
+        } else {
+            let desc = expense.expenseDescription.isEmpty ? L10n.Notifications.Group.fallbackGroup : expense.expenseDescription
+            return (groupName, L10n.Notifications.Group.modifiedExpense(memberName, desc, formattedShare))
         }
     }
 
-    private func buildSettlementNotification(settlementID: UUID, groupName: String) -> (String, String)? {
-        guard let modelContext else { return nil }
-
-        do {
-            let descriptor = FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.id == settlementID })
-            guard let settlement = try modelContext.fetch(descriptor).first else { return nil }
-
-            let memberName = resolveMemberName(memberID: settlement.fromMemberID)
-            let symbol = CurrencyCode.symbol(for: settlement.currencyCode)
-            let amount = settlement.amount.formatted(.number.precision(.fractionLength(0...2)))
-            return (groupName, L10n.Notifications.Group.settlement(memberName, "\(symbol)\(amount)"))
-        } catch {
-            return nil
-        }
+    /// Builds the settlement notification from the already-fetched settlement (no re-fetch).
+    /// The full `settlement.amount` is correct — it's the payment the receiver got.
+    private func buildSettlementNotification(settlement: SplitSettlement, groupName: String) -> (String, String)? {
+        let memberName = resolveMemberName(memberID: settlement.fromMemberID)
+        let formattedAmount = YalaFormatterStatic.currency(value: settlement.amount, currencyCode: settlement.currencyCode)
+        return (groupName, L10n.Notifications.Group.settlement(memberName, formattedAmount))
     }
 
     private func buildMemberNotification(memberID: UUID, groupName: String) -> (String, String)? {
@@ -255,18 +360,31 @@ final class GroupNotificationService {
     }
 }
 
-// MARK: - GroupChangeSummary
+// MARK: - RawGroupChanges
 
-private struct GroupChangeSummary {
+/// Raw ids grouped by group, before the participation filter (cheap; no fetch).
+private struct RawGroupChanges {
     var newExpenseIDs: [UUID] = []
     var modifiedExpenseIDs: [UUID] = []
     var newSettlementIDs: [UUID] = []
     var newMemberIDs: [UUID] = []
     var newPendingMemberIDs: [UUID] = []
+}
+
+// MARK: - GroupChangeSummary
+
+/// Filtered changes for one group — only what concerns the current user.
+/// Expenses carry the already-fetched object + my share (avoids re-fetch in build).
+private struct GroupChangeSummary {
+    var newExpenses: [(expense: SplitExpense, myShare: Double)] = []
+    var modifiedExpenses: [(expense: SplitExpense, myShare: Double)] = []
+    var newSettlements: [SplitSettlement] = []
+    var newMemberIDs: [UUID] = []
+    var newPendingMemberIDs: [UUID] = []
 
     var totalCount: Int {
-        newExpenseIDs.count + modifiedExpenseIDs.count
-            + newSettlementIDs.count + newMemberIDs.count
+        newExpenses.count + modifiedExpenses.count
+            + newSettlements.count + newMemberIDs.count
             + newPendingMemberIDs.count
     }
 }

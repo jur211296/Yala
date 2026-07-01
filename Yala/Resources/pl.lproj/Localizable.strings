@@ -2397,12 +2397,12 @@
 // Groups
 "notifications.groups.name" = "Grupy";
 "notifications.groups.hint" = "Alerty, gdy inni członkowie dodają wydatki lub ci płacą";
-"notifications.groups.newExpense" = "%@ dodał wydatek %@: %@";
-"notifications.groups.newExpenseNoDesc" = "%@ dodał wydatek %@";
-"notifications.groups.modifiedExpense" = "%@ zmodyfikował „%@”";
-"notifications.groups.settlement" = "%@ zapłacił ci %@";
-"notifications.groups.newMember" = "%@ dołączył do grupy";
-"notifications.groups.multipleChanges" = "Nowe zmiany: %d";
+"notifications.groups.newExpense" = "🧾 %1$@ dodał(a) '%2$@' — twoja część: %3$@";
+"notifications.groups.newExpenseNoDesc" = "🧾 %1$@ dodał(a) wydatek — twoja część: %2$@";
+"notifications.groups.modifiedExpense" = "✏️ %1$@ zaktualizował(a) '%2$@' — twoja część: %3$@";
+"notifications.groups.settlement" = "💸 %@ zapłacił(a) ci %@!";
+"notifications.groups.newMember" = "🙌 %@ dołączył(a) do grupy";
+"notifications.groups.multipleChanges" = "📋 %d nowych aktualizacji";
 "notifications.groups.fallbackGroup" = "Grupa";
 "notifications.groups.fallbackMember" = "Ktoś";
 
@@ -4118,7 +4118,7 @@
 "groups.invite.rejected.title" = "Prośba odrzucona";
 "groups.invite.rejected.body" = "Administrator nie zaakceptował Twojej prośby. Poproś o nowy link, jeśli chcesz spróbować jeszcze raz.";
 "groups.notifications.newPendingRequest" = "👋 %@ chce dołączyć do %@";
-"groups.notifications.newPendingRequestBody" = "Zatwierdź lub odrzuć w Yala.";
+"groups.notifications.newPendingRequestBody" = "Możesz zatwierdzić lub odrzucić w Yala.";
 "groups.errors.pendingApproval" = "Nie możesz jeszcze tego zrobić. Administrator musi najpierw zaakceptować Twoją prośbę.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)

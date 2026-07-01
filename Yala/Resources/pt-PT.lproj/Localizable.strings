@@ -109,7 +109,7 @@
 "groups.invite.rejected.title" = "Pedido rejeitado";
 "groups.invite.rejected.body" = "O administrador não aprovou o teu pedido. Pede-lhe uma nova ligação se quiseres tentar novamente.";
 "groups.notifications.newPendingRequest" = "👋 %@ quer aderir a %@";
-"groups.notifications.newPendingRequestBody" = "Aprova ou rejeita no Yala.";
+"groups.notifications.newPendingRequestBody" = "Podes aprovar ou rejeitar no Yala.";
 "groups.errors.pendingApproval" = "Ainda não podes fazer isto. O administrador tem de aprovar o teu pedido primeiro.";
 
 // MARK: - Welcome (A4 — Chooser pre-onboarding)
@@ -1933,13 +1933,13 @@
 "notifications.groups.fallbackGroup" = "Grupo";
 "notifications.groups.fallbackMember" = "Alguem";
 "notifications.groups.hint" = "Avisos quando outros membros registram gastos ou te pagam";
-"notifications.groups.modifiedExpense" = "%@ modificou '%@'";
-"notifications.groups.multipleChanges" = "%d novas alteracoes";
+"notifications.groups.modifiedExpense" = "✏️ %1$@ atualizou '%2$@' — deves %3$@";
+"notifications.groups.multipleChanges" = "📋 %d novidades para rever";
 "notifications.groups.name" = "Grupos";
-"notifications.groups.newExpense" = "%@ adicionou um gasto de %@: %@";
-"notifications.groups.newExpenseNoDesc" = "%@ adicionou um gasto de %@";
-"notifications.groups.newMember" = "%@ entrou no grupo";
-"notifications.groups.settlement" = "%@ te pagou %@";
+"notifications.groups.newExpense" = "🧾 %1$@ adicionou '%2$@' — deves %3$@";
+"notifications.groups.newExpenseNoDesc" = "🧾 %1$@ adicionou uma despesa — deves %2$@";
+"notifications.groups.newMember" = "🙌 %@ entrou no grupo";
+"notifications.groups.settlement" = "💸 %@ pagou-te %@!";
 "notifications.lunchTime.name" = "Hora do almoço";
 "notifications.lunchTime.text" = "O que você comeu? 🍽️ Anota enquanto está fresco";
 "notifications.monthlyReport.hint" = "No %2$@ você receberá um resumo de %1$@ do mês";
