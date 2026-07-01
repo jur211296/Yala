@@ -65,6 +65,21 @@ struct ScheduledPaymentDraftService {
                 continue
             }
 
+            // Gasto de grupo: validar estado del grupo/membresía antes de materializar el draft.
+            // No pausar por una race de sync (grupo aún no importado) — reintentar next launch.
+            if payment.isGroupPayment {
+                switch groupGateDecision(for: payment, context: context) {
+                case .proceed:
+                    break
+                case .retryLater:
+                    continue
+                case .pause:
+                    payment.isActive = false
+                    hasChanges = true
+                    continue
+                }
+            }
+
             // Check if draft already exists for this payment (pending or approved)
             if hasExistingDraft(for: payment, on: payment.nextDueDate, context: context) {
                 continue
@@ -161,12 +176,55 @@ struct ScheduledPaymentDraftService {
         }
     }
 
+    /// Evalúa el estado del grupo/membresía de un pago planificado de grupo (fetch concreto + do/catch).
+    /// La decisión (proceder / reintentar / pausar) es pure-logic en `GroupScheduledPaymentGate`.
+    private static func groupGateDecision(for payment: ScheduledPayment, context: ModelContext) -> GroupScheduledPaymentGate.Decision {
+        guard let zone = payment.groupZoneID else { return .proceed }
+
+        let group: SplitGroup?
+        do {
+            var d = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zone })
+            d.fetchLimit = 1
+            group = try context.fetch(d).first
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching group for gate: \(error)")
+            #endif
+            return .retryLater
+        }
+
+        let member: SplitMember?
+        do {
+            var d = FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zone && $0.isCurrentUser == true })
+            d.fetchLimit = 1
+            member = try context.fetch(d).first
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error fetching member for gate: \(error)")
+            #endif
+            return .retryLater
+        }
+
+        return GroupScheduledPaymentGate.decide(
+            groupExists: group != nil,
+            isArchived: group?.isArchived ?? false,
+            isHidden: group?.isHiddenForAll ?? false,
+            memberExists: member != nil,
+            memberIsActive: member?.isActive ?? false
+        )
+    }
+
     /// Create an InboxDraft from a ScheduledPayment
     private static func createDraft(from payment: ScheduledPayment, context: ModelContext) -> InboxDraft {
-        // Determine source type based on payment category
-        let sourceType: DraftSourceType = payment.paymentCategory == PaymentCategory.subscription.rawValue
-            ? .subscription
-            : .scheduledPayment
+        // Determine source type: gasto de grupo recurrente > suscripción > recurrente normal.
+        let sourceType: DraftSourceType
+        if payment.isGroupPayment {
+            sourceType = .groupScheduledExpense
+        } else if payment.paymentCategory == PaymentCategory.subscription.rawValue {
+            sourceType = .subscription
+        } else {
+            sourceType = .scheduledPayment
+        }
 
         // Amount with sign (negative for expenses, positive for income)
         let signedAmount: Double
@@ -196,12 +254,21 @@ struct ScheduledPaymentDraftService {
             confidenceDate: 1.0,
             confidenceMerchant: 1.0,
             confidenceSubcategory: payment.subcategory != nil ? 1.0 : nil,
-            needsUserInput: payment.subcategory == nil ? ["subcategory"] : [],
+            needsUserInput: payment.isGroupPayment
+                ? []
+                : (payment.subcategory == nil ? [DraftInputRequirement.subcategory] : []),
             status: .pending
         )
 
         // Link to the source payment
         draft.sourceScheduledPaymentID = payment.id.uuidString
+
+        // Gasto de grupo recurrente: zona para el routing/fetch rápido en el Inbox.
+        // La config de split (participantes/modo/valores) NO se snapshotea aquí — se lee del
+        // ScheduledPayment vía sourceScheduledPaymentID al abrir el form de grupo (SSOT).
+        if payment.isGroupPayment {
+            draft.splitGroupZoneID = payment.groupZoneID
+        }
 
         return draft
     }
@@ -383,5 +450,51 @@ struct ScheduledPaymentDraftService {
 
         // Advance to next due date
         advanceToNextDueDate(payment: payment)
+    }
+
+    /// Cierra el ciclo tras crear el SplitExpense desde un draft `.groupScheduledExpense`
+    /// (F4): marca el pago pagado, avanza la fecha, vincula `scheduledPaymentID` en la TX real
+    /// bridgeada (dedup cross-device D1) y borra el draft. Llamado desde el `onExpenseCreated`
+    /// del form. A diferencia de `handleDraftApproved`, el resultado es un SplitExpense (+ TX
+    /// bridgeadas), no una `approvedTransaction` en el draft.
+    static func handleGroupScheduledExpenseApproved(draft: InboxDraft, expenseID: String, context: ModelContext) {
+        if let paymentIDString = draft.sourceScheduledPaymentID,
+           let paymentUUID = UUID(uuidString: paymentIDString) {
+            var descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == paymentUUID })
+            descriptor.fetchLimit = 1
+            do {
+                if let payment = try context.fetch(descriptor).first {
+                    payment.lastPaidDate = draft.date ?? Date.now
+                    advanceToNextDueDate(payment: payment)
+                }
+            } catch {
+                #if DEBUG
+                print("ScheduledPaymentDraftService: error fetching payment for group approval: \(error)")
+                #endif
+            }
+
+            // Vincular scheduledPaymentID en la TX real (no sistema) para el dedup cross-device.
+            let realDescriptor = FetchDescriptor<TransactionItem>(
+                predicate: #Predicate { $0.splitExpenseID == expenseID && $0.account?.isSystemAccount == false }
+            )
+            do {
+                if let realTx = try context.fetch(realDescriptor).first {
+                    realTx.scheduledPaymentID = paymentIDString
+                }
+            } catch {
+                #if DEBUG
+                print("ScheduledPaymentDraftService: error linking scheduledPaymentID: \(error)")
+                #endif
+            }
+        }
+
+        context.delete(draft)
+        do {
+            try context.save()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: error saving after group scheduled approval: \(error)")
+            #endif
+        }
     }
 }

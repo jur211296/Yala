@@ -4624,3 +4624,16 @@
 
 /* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
 "groups.expense.amountRequiredMessage" = "Voer het bedrag van de uitgave in voordat je het onder de leden verdeelt.";
+
+
+/* MARK: GroupScheduledExpense (F7) */
+"inbox.sourceGroupScheduledExpense" = "Geplande groepsuitgave";
+"scheduled.groupExpense.toggle" = "Is het een gedeelde uitgave?";
+"scheduled.groupExpense.toggleHelper" = "We leggen het vast in je groep en tellen alleen jouw deel.";
+"scheduled.groupExpense.sectionTitle" = "Gedeelde uitgave";
+"scheduled.groupExpense.groupRow" = "Groep";
+"scheduled.groupExpense.currencyRow" = "Valuta";
+"scheduled.groupExpense.divisionRow" = "Verdeling";
+"scheduled.groupExpense.splitSummary" = "Tussen %d · %@ · Jouw deel %@";
+"scheduled.groupExpense.totalHint" = "Totaal van de rekening";
+"scheduled.groupExpense.sharedBadge" = "Gedeeld";

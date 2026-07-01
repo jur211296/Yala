@@ -19,6 +19,19 @@ enum GroupContextChipMode {
     case editable(() -> Void)
 }
 
+/// Plantilla de prellenado para crear un gasto de grupo "como favorito" — p.ej. al aprobar
+/// un pago planificado de grupo desde el Inbox. El VM la aplica en `onAppear` vía `applyTemplate`.
+struct GroupExpensePrefillTemplate {
+    let totalAmount: Double
+    let currencyCode: String
+    let splitType: SplitType
+    let participantIDs: [UUID]
+    /// Valor crudo por participante según el modo (%/monto/partes). Vacío en `.equal`.
+    let values: [UUID: Double]
+    let description: String
+    let accountPrefill: Account?
+}
+
 struct GroupExpenseFormView: View {
 
     // MARK: - Environment
@@ -43,6 +56,11 @@ struct GroupExpenseFormView: View {
     /// muestra el botón). El sheet cierra siempre tras confirmar — el resultado
     /// (éxito o alert de error) lo maneja la vista padre.
     let onDelete: ((SplitExpense) -> Void)?
+    /// F4: plantilla de prellenado para crear desde un pago planificado de grupo (nil = flujo normal).
+    let initialTemplate: GroupExpensePrefillTemplate?
+    /// F4: callback con el `SplitExpense.id` creado tras `save()` exitoso — cierra el ciclo del
+    /// pago planificado. Default nil → no afecta callers existentes.
+    let onExpenseCreated: ((String) -> Void)?
 
     // MARK: - State
 
@@ -83,7 +101,9 @@ struct GroupExpenseFormView: View {
         groupChip: GroupContextChipMode = .hidden,
         expenseToEdit: SplitExpense? = nil,
         existingShares: [SplitShare] = [],
+        initialTemplate: GroupExpensePrefillTemplate? = nil,
         onSave: @escaping () -> Void,
+        onExpenseCreated: ((String) -> Void)? = nil,
         onDelete: ((SplitExpense) -> Void)? = nil
     ) {
         self.group = group
@@ -92,7 +112,9 @@ struct GroupExpenseFormView: View {
         self.groupChip = groupChip
         self.expenseToEdit = expenseToEdit
         self.existingShares = existingShares
+        self.initialTemplate = initialTemplate
         self.onSave = onSave
+        self.onExpenseCreated = onExpenseCreated
         self.onDelete = onDelete
 
         let vm = GroupExpenseViewModel(group: group, members: members, memberNameLookup: memberNameLookup)
@@ -177,6 +199,8 @@ struct GroupExpenseFormView: View {
                 viewModel.setContext(modelContext)
                 if let expense = expenseToEdit {
                     viewModel.prefill(from: expense, shares: existingShares)
+                } else if let template = initialTemplate {
+                    viewModel.applyTemplate(template)
                 }
                 // Nunca autoenfocamos el monto: el form abre sin teclado (decisión de UX).
                 // M6: defensa profundidad — si VM no resolvió current user (members no cargados),
@@ -650,6 +674,13 @@ struct GroupExpenseFormView: View {
     private func handleSave() {
         guard viewModel.save() else { return }
         DS.Haptic.success()
+
+        // F4: pago planificado de grupo — cierra el ciclo (marca pagado, avanza fecha, vincula
+        // scheduledPaymentID en la TX real, borra el draft) en cuanto el SplitExpense existe,
+        // independiente del alert opt-in de abajo. No-op para callers normales (callback nil).
+        if let createdID = viewModel.lastCreatedExpenseID {
+            onExpenseCreated?(createdID)
+        }
 
         // Opt-out: si Caso A + bridge effective OFF + creación (no edit), preguntar al
         // user si quiere crear movimiento personal opt-in. NO en `.groupInvite`: ahí el

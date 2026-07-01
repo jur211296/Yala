@@ -3879,3 +3879,16 @@
 
 /* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
 "groups.expense.amountRequiredMessage" = "Insere o valor da despesa antes de o dividires pelos membros.";
+
+
+/* MARK: GroupScheduledExpense (F7) */
+"inbox.sourceGroupScheduledExpense" = "Despesa de grupo planeada";
+"scheduled.groupExpense.toggle" = "É uma despesa partilhada?";
+"scheduled.groupExpense.toggleHelper" = "Registamos no teu grupo e contamos só a tua parte.";
+"scheduled.groupExpense.sectionTitle" = "Despesa partilhada";
+"scheduled.groupExpense.groupRow" = "Grupo";
+"scheduled.groupExpense.currencyRow" = "Moeda";
+"scheduled.groupExpense.divisionRow" = "Divisão";
+"scheduled.groupExpense.splitSummary" = "Entre %d · %@ · A tua parte %@";
+"scheduled.groupExpense.totalHint" = "Total da conta";
+"scheduled.groupExpense.sharedBadge" = "Partilhado";

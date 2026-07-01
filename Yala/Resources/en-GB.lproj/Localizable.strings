@@ -3874,3 +3874,16 @@
 
 /* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
 "groups.expense.amountRequiredMessage" = "Enter the expense amount before splitting it among members.";
+
+
+/* MARK: GroupScheduledExpense (F7) */
+"inbox.sourceGroupScheduledExpense" = "Planned group expense";
+"scheduled.groupExpense.toggle" = "Is it a shared expense?";
+"scheduled.groupExpense.toggleHelper" = "We'll log it in your group and count only your share.";
+"scheduled.groupExpense.sectionTitle" = "Shared expense";
+"scheduled.groupExpense.groupRow" = "Group";
+"scheduled.groupExpense.currencyRow" = "Currency";
+"scheduled.groupExpense.divisionRow" = "Split";
+"scheduled.groupExpense.splitSummary" = "Between %d · %@ · Your share %@";
+"scheduled.groupExpense.totalHint" = "Bill total";
+"scheduled.groupExpense.sharedBadge" = "Shared";

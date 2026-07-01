@@ -316,6 +316,8 @@ struct InboxDraftRowView: View {
             return Color.hotPink             // brand pink — grupos
         case .manual:
             return theme.secondaryText       // neutro — draft convertido (FU-02 cleanup)
+        case .groupScheduledExpense:
+            return Color.hotPink             // brand pink — gasto de grupo recurrente
         }
     }
 

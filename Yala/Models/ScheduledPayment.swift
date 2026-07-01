@@ -122,6 +122,25 @@ final class ScheduledPayment {
     /// Comma-separated ISO dates of skipped occurrences (e.g. "2026-02-18,2026-02-25")
     var skippedDatesRaw: String = ""
 
+    // MARK: - Group Shared Expense (optional — nil = pago personal normal)
+
+    /// `cloudKitZoneID` del `SplitGroup` si este pago genera un gasto de grupo recurrente.
+    /// nil = pago planificado personal normal. CloudKit: opcional (no rompe migración).
+    var groupZoneID: String?
+
+    /// Monto TOTAL de la factura del gasto de grupo (ej. 200). `amount` sigue siendo
+    /// TU PARTE (ej. 100) — lo que leen todos los consumidores/sumatorias.
+    var splitTotalAmount: Double?
+
+    /// Modo de división: "equal" | "percentage" | "exact" | "shares".
+    var splitType: String?
+
+    /// CSV de UUIDs de los miembros participantes. Ver `ScheduledPayment+SplitCSVMirror`.
+    var splitParticipantIDsRaw: String?
+
+    /// CSV de pares "uuid:value" (valor por participante en %/monto/partes). nil en modo equal.
+    var splitValuesRaw: String?
+
     // MARK: - Skipped Dates
 
     var skippedDates: Set<String> {
@@ -237,5 +256,8 @@ final class ScheduledPayment {
         }
         return subcategory?.need
     }
+
+    /// True si este pago planificado genera un gasto de grupo (no una TX personal).
+    var isGroupPayment: Bool { groupZoneID != nil }
 
 }

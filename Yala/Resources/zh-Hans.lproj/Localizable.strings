@@ -4624,3 +4624,16 @@
 
 /* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
 "groups.expense.amountRequiredMessage" = "在与成员分摊之前，请先输入支出金额。";
+
+
+/* MARK: GroupScheduledExpense (F7) */
+"inbox.sourceGroupScheduledExpense" = "计划的群组支出";
+"scheduled.groupExpense.toggle" = "是共享支出吗？";
+"scheduled.groupExpense.toggleHelper" = "我们会记入你的群组，只计算你的部分。";
+"scheduled.groupExpense.sectionTitle" = "共享支出";
+"scheduled.groupExpense.groupRow" = "群组";
+"scheduled.groupExpense.currencyRow" = "货币";
+"scheduled.groupExpense.divisionRow" = "分摊";
+"scheduled.groupExpense.splitSummary" = "%d 人 · %@ · 你的部分 %@";
+"scheduled.groupExpense.totalHint" = "账单总额";
+"scheduled.groupExpense.sharedBadge" = "共享";

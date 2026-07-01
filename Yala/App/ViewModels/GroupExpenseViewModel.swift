@@ -331,6 +331,35 @@ final class GroupExpenseViewModel {
         }
     }
 
+    /// Prellena el form para CREAR un gasto desde una plantilla (no edición). Usado al aprobar
+    /// un pago planificado de grupo. El pagador permanece = current user (Caso A, fijado en init).
+    /// Reconciliación stale: solo se incluyen participantes que siguen siendo miembros activos.
+    func applyTemplate(_ template: GroupExpensePrefillTemplate) {
+        amountString = AmountInputHelper.formatWithGrouping(template.totalAmount)
+        currencyCode = template.currencyCode
+        expenseDescription = template.description
+        splitType = template.splitType
+
+        let activeIDs = Set(activeSheetMembers.map { $0.id.uuidString })
+        selectedMemberIDs = Set(template.participantIDs.map { $0.uuidString }).intersection(activeIDs)
+
+        exactAmounts = [:]; percentages = [:]; sharesCounts = [:]
+        for (uuid, value) in template.values {
+            let id = uuid.uuidString
+            guard activeIDs.contains(id) else { continue }
+            switch template.splitType {
+            case .exact: exactAmounts[id] = AmountInputHelper.formatWithGrouping(value)
+            case .percentage: percentages[id] = String(format: "%.1f", value)
+            case .shares: sharesCounts[id] = String(Int(value.rounded()))
+            case .equal: break
+            }
+        }
+
+        if let account = template.accountPrefill {
+            selectedAccount = account
+        }
+    }
+
     func prefill(from expense: SplitExpense, shares: [SplitShare]) {
         editingExpense = expense
         amountString = AmountInputHelper.formatWithGrouping(expense.amount)

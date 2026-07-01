@@ -4624,3 +4624,16 @@
 
 /* Alert al intentar dividir sin monto — cuerpo (pedir monto antes de abrir el sheet de división) */
 "groups.expense.amountRequiredMessage" = "メンバーで分ける前に、支出の金額を入力してください。";
+
+
+/* MARK: GroupScheduledExpense (F7) */
+"inbox.sourceGroupScheduledExpense" = "予定されたグループ支出";
+"scheduled.groupExpense.toggle" = "共有の支出ですか？";
+"scheduled.groupExpense.toggleHelper" = "グループに記録し、あなたの分だけを計算します。";
+"scheduled.groupExpense.sectionTitle" = "共有の支出";
+"scheduled.groupExpense.groupRow" = "グループ";
+"scheduled.groupExpense.currencyRow" = "通貨";
+"scheduled.groupExpense.divisionRow" = "分割";
+"scheduled.groupExpense.splitSummary" = "%d人 · %@ · あなたの分 %@";
+"scheduled.groupExpense.totalHint" = "請求額の合計";
+"scheduled.groupExpense.sharedBadge" = "共有";

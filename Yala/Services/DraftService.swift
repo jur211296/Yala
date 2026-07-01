@@ -92,6 +92,14 @@ final class DraftService {
     ) throws -> TransactionItem {
         let context = try requireContext()
 
+        // Gasto planificado de grupo: se aprueba SOLO vía GroupExpenseFormView (crea el
+        // SplitExpense de grupo). Nunca por este path — crearía una TransactionItem personal
+        // y marcaría el pago pagado sin compartir el gasto. Defensa dura: swipe/bulk ya lo
+        // excluyen (requiresApprovalForm); esto cubre cualquier otro caller.
+        guard draft.sourceType != .groupScheduledExpense else {
+            throw DraftServiceError.groupScheduledExpenseRequiresForm
+        }
+
         // Draft opt-in de settlement (bridge OFF): crea TX manual independiente SIN bridge —
         // el virtual del settlement ya es de signo opuesto al real, compensa sin doble conteo.
         // (Los opt-in de groupExpense NO se bifurcan aquí: caen al path de cuenta de abajo —
@@ -334,7 +342,9 @@ final class DraftService {
         var genericApprovedCount = 0
         let preferredCode = CurrencyDefaults.currentPreferred
 
-        for draft in drafts where draft.isReadyToApprove {
+        // `.groupScheduledExpense` se excluye: solo se aprueba vía GroupExpenseFormView (crea el
+        // SplitExpense). En bulk queda pendiente para finalizar con un tap individual.
+        for draft in drafts where draft.isReadyToApprove && !draft.requiresApprovalForm {
             // Drafts de grupo → delegar a approveDraft (SSOT del ruteo de grupo). El path
             // genérico de abajo insertaría una TransactionItem NUEVA sin splitExpenseID →
             // doble conteo del gasto + la TX virtual del bridge quedaría sin subcategoría.
@@ -465,6 +475,9 @@ final class DraftService {
 
         let context = try requireContext()
 
+        // Gasto planificado de grupo: rechazar = saltar la ocurrencia (evita que reaparezca).
+        skipGroupScheduledOccurrence(for: draft, in: context)
+
         // Cache values for display in archived list
         cacheDisplayValues(draft)
 
@@ -482,6 +495,7 @@ final class DraftService {
         for draft in drafts {
             // A0-Bridge: skip drafts de grupos (silent skip en bulk).
             if draft.isFromGroup { continue }
+            skipGroupScheduledOccurrence(for: draft, in: context)
             cacheDisplayValues(draft)
             draft.status = .rejected
             draft.updatedAt = Date.now
@@ -499,6 +513,7 @@ final class DraftService {
             throw DraftServiceError.cannotDeleteGroupDraft
         }
         let context = try requireContext()
+        skipGroupScheduledOccurrence(for: draft, in: context)
         context.delete(draft)
         try context.save()
     }
@@ -508,9 +523,30 @@ final class DraftService {
         for draft in drafts {
             // A0-Bridge: skip drafts de grupos (silent skip en bulk).
             if draft.isFromGroup { continue }
+            skipGroupScheduledOccurrence(for: draft, in: context)
             context.delete(draft)
         }
         try context.save()
+    }
+
+    /// Gasto planificado de grupo (F5): descartar/rechazar un draft `.groupScheduledExpense`
+    /// debe saltar la ocurrencia del pago — si no, `processDuePayments` la recrea al día
+    /// siguiente. No-op para cualquier otro sourceType. No hace save (lo hace el caller).
+    private func skipGroupScheduledOccurrence(for draft: InboxDraft, in context: ModelContext) {
+        guard draft.sourceType == .groupScheduledExpense,
+              let paymentIDString = draft.sourceScheduledPaymentID,
+              let paymentUUID = UUID(uuidString: paymentIDString) else { return }
+        var descriptor = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == paymentUUID })
+        descriptor.fetchLimit = 1
+        do {
+            if let payment = try context.fetch(descriptor).first {
+                payment.skipDate(draft.date ?? Date.now)
+            }
+        } catch {
+            #if DEBUG
+            print("DraftService: error skipping group scheduled occurrence: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Return to Pending
@@ -886,6 +922,9 @@ enum DraftServiceError: LocalizedError {
     /// Draft-puntero `.groupExpense` cuyo expense origen se borró remotamente (no existe TX).
     /// El draft stale ya se limpió; este error informa al usuario en la sheet de finalización.
     case groupExpenseTargetMissing
+    /// `.groupScheduledExpense` solo se aprueba vía GroupExpenseFormView (crea el SplitExpense),
+    /// nunca por el path genérico de approveDraft. Defensa interna — no debería alcanzar al usuario.
+    case groupScheduledExpenseRequiresForm
 
     var errorDescription: String? {
         switch self {
@@ -905,6 +944,8 @@ enum DraftServiceError: LocalizedError {
             return L10n.Inbox.groupDraftCannotDelete
         case .groupExpenseTargetMissing:
             return L10n.Inbox.errorGroupExpenseGone
+        case .groupScheduledExpenseRequiresForm:
+            return "DraftService: group scheduled expense must be approved via the group form"
         }
     }
 }

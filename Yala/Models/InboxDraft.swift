@@ -25,8 +25,11 @@ enum DraftSourceType: String, Codable {
     case groupExpense   // A0-Bridge: caso A/B sin match — apunta a TX existente via splitExpenseID
     case groupSettlement // A0-Bridge: caso C/D — TX cuenta real diferida hasta asignar cuenta
     case manual         // FU-02 cleanup: draft convertido tras soft-delete/leave/remove. Editable como personal.
+    case groupScheduledExpense // Pago planificado de grupo: al aprobar abre el form de grupo y crea el SplitExpense.
 
     /// True para sources de grupos que NO permiten eliminar/rechazar (solo asignar+finalizar).
+    /// `.groupScheduledExpense` NO se incluye: aún no existe un SplitExpense, así que debe poder
+    /// saltarse/rechazarse como un pago planificado (el descarte hace skip de la ocurrencia).
     var isFromGroup: Bool {
         self == .groupExpense || self == .groupSettlement
     }
@@ -301,12 +304,19 @@ final class InboxDraft: Identifiable {
         case .groupExpense: return "person.2.fill"
         case .groupSettlement: return "arrow.left.arrow.right.circle.fill"
         case .manual: return "square.and.pencil"
+        case .groupScheduledExpense: return "arrow.trianglehead.2.clockwise.rotate.90"
         }
     }
 
     /// True si este draft NO permite eliminar/rechazar (solo asignar+finalizar).
     /// Drafts de grupos solo se eliminan al borrar el expense/settlement origen.
     var isFromGroup: Bool { sourceType.isFromGroup }
+
+    /// True si el draft NO puede aprobarse con quick-approve (swipe / bulk): requiere abrir el
+    /// form dedicado que crea la entidad correcta. `.groupScheduledExpense` crea un `SplitExpense`
+    /// de grupo vía `GroupExpenseFormView`, NO una `TransactionItem` personal — aprobarlo por el
+    /// path genérico lo registraría como gasto personal y nunca lo compartiría con el grupo.
+    var requiresApprovalForm: Bool { sourceType == .groupScheduledExpense }
 
     // MARK: - Init
 

@@ -3563,6 +3563,21 @@ enum L10n {
             static var badge: String { ls("scheduled.variableAmount.badge", comment: "") }
         }
 
+        enum GroupExpense {
+            static var toggle: String { ls("scheduled.groupExpense.toggle", comment: "") }
+            static var toggleHelper: String { ls("scheduled.groupExpense.toggleHelper", comment: "") }
+            static var sectionTitle: String { ls("scheduled.groupExpense.sectionTitle", comment: "") }
+            static var groupRow: String { ls("scheduled.groupExpense.groupRow", comment: "") }
+            static var currencyRow: String { ls("scheduled.groupExpense.currencyRow", comment: "") }
+            static var divisionRow: String { ls("scheduled.groupExpense.divisionRow", comment: "") }
+            static var totalHint: String { ls("scheduled.groupExpense.totalHint", comment: "") }
+            static var sharedBadge: String { ls("scheduled.groupExpense.sharedBadge", comment: "") }
+            /// "Entre %d · %@ · Tu parte %@" — participantes, modo de división, tu parte.
+            static func splitSummary(_ count: Int, _ mode: String, _ share: String) -> String {
+                String(format: ls("scheduled.groupExpense.splitSummary", comment: ""), count, mode, share)
+            }
+        }
+
         enum Editor {
             static var recurrence: String { ls("scheduled.editor.recurrence", comment: "") }
             static var dayOfMonth: String { ls("scheduled.editor.day.of.month", comment: "") }
@@ -5037,6 +5052,9 @@ enum L10n {
         }
         static var sourceGroupSettlement: String {
             ls("inbox.sourceGroupSettlement", comment: "")
+        }
+        static var sourceGroupScheduledExpense: String {
+            ls("inbox.sourceGroupScheduledExpense", comment: "")
         }
         static var sourceManual: String {
             ls("inbox.sourceManual", comment: "")

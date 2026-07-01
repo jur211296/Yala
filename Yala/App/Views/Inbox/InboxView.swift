@@ -56,6 +56,73 @@ struct InboxView: View {
         viewModel.groupedDrafts(for: selectedFilter)
     }
 
+    // MARK: - Group Scheduled Expense (F4)
+
+    /// Carga el contexto (grupo + miembros + plantilla) para abrir el form de grupo prellenado
+    /// desde un draft `.groupScheduledExpense`. Retorna nil si el grupo o el pago no están
+    /// disponibles (borrados o sync pendiente) → el caller degrada al editor de draft personal.
+    private func loadGroupScheduledContext(for draft: InboxDraft) -> (group: SplitGroup, members: [SplitMember], lookup: [String: String], template: GroupExpensePrefillTemplate)? {
+        guard let zone = draft.splitGroupZoneID,
+              let paymentIDString = draft.sourceScheduledPaymentID,
+              let paymentUUID = UUID(uuidString: paymentIDString) else { return nil }
+
+        let group: SplitGroup
+        do {
+            var d = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zone })
+            d.fetchLimit = 1
+            guard let found = try modelContext.fetch(d).first else { return nil }
+            group = found
+        } catch {
+            #if DEBUG
+            print("InboxView: error fetching group for scheduled expense: \(error)")
+            #endif
+            return nil
+        }
+
+        let payment: ScheduledPayment
+        do {
+            var d = FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == paymentUUID })
+            d.fetchLimit = 1
+            guard let found = try modelContext.fetch(d).first else { return nil }
+            payment = found
+        } catch {
+            #if DEBUG
+            print("InboxView: error fetching payment for scheduled expense: \(error)")
+            #endif
+            return nil
+        }
+
+        let members: [SplitMember]
+        do {
+            members = try GroupService.shared.fetchMembers(for: group, context: modelContext)
+        } catch {
+            #if DEBUG
+            print("InboxView: error fetching members for scheduled expense: \(error)")
+            #endif
+            return nil
+        }
+        guard !members.isEmpty else { return nil }
+        let lookup = Dictionary(members.map { ($0.id.uuidString, $0.displayName) }, uniquingKeysWith: { first, _ in first })
+
+        let template = GroupExpensePrefillTemplate(
+            totalAmount: payment.splitTotalAmount ?? abs(payment.amount),
+            currencyCode: payment.currencyCode,
+            splitType: SplitType(rawValue: payment.splitType ?? "equal") ?? .equal,
+            participantIDs: payment.resolvedParticipantIDs(),
+            values: payment.resolvedSplitValues(),
+            description: payment.name,
+            accountPrefill: payment.account
+        )
+        return (group, members, lookup, template)
+    }
+
+    private func finalizeGroupScheduledExpense(draft: InboxDraft, expenseID: String) {
+        ScheduledPaymentDraftService.handleGroupScheduledExpenseApproved(
+            draft: draft, expenseID: expenseID, context: modelContext
+        )
+        shouldDismissAfterApproval = true
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -180,6 +247,31 @@ struct InboxView: View {
                 case .groupSettlement:
                     GroupSettlementDraftFinalizationSheet(draft: draft) {
                         shouldDismissAfterApproval = true
+                    }
+                case .groupScheduledExpense:
+                    // F4: abre el form de gasto de grupo prellenado desde el pago planificado.
+                    if let ctx = loadGroupScheduledContext(for: draft) {
+                        GroupExpenseFormView(
+                            group: ctx.group,
+                            members: ctx.members,
+                            memberNameLookup: ctx.lookup,
+                            groupChip: .readOnly,
+                            initialTemplate: ctx.template,
+                            onSave: { shouldDismissAfterApproval = true },
+                            onExpenseCreated: { expenseID in
+                                finalizeGroupScheduledExpense(draft: draft, expenseID: expenseID)
+                            }
+                        )
+                    } else {
+                        // Grupo/pago no disponible (borrado o sync pendiente): degradar al editor
+                        // de draft personal — mi parte ya está en el draft; aprobarlo cierra el
+                        // ciclo vía el path genérico (handleDraftApproved).
+                        InboxDraftEditSheet(
+                            draft: draft,
+                            onApproved: { shouldDismissAfterApproval = true },
+                            onApproveNext: { _ in },
+                            onEditTransaction: { _ in }
+                        )
                     }
                 default:
                     InboxDraftEditSheet(
@@ -521,8 +613,8 @@ struct InboxView: View {
                 // Approved drafts in archived: no swipe actions
             }
         }
-        .swipeActions(edge: .leading, allowsFullSwipe: !isSelectionMode && draft.isReadyToApprove && selectedFilter == .pending) {
-            if !isSelectionMode && draft.isReadyToApprove && selectedFilter == .pending {
+        .swipeActions(edge: .leading, allowsFullSwipe: !isSelectionMode && draft.isReadyToApprove && !draft.requiresApprovalForm && selectedFilter == .pending) {
+            if !isSelectionMode && draft.isReadyToApprove && !draft.requiresApprovalForm && selectedFilter == .pending {
                 Button {
                     approveDraft(draft)
                 } label: {
@@ -626,6 +718,12 @@ struct InboxView: View {
     }
 
     private func approveDraft(_ draft: InboxDraft) {
+        // Gasto planificado de grupo: no se aprueba inline (crearía una TX personal por el path
+        // genérico). Abre el form dedicado que crea el SplitExpense de grupo.
+        if draft.requiresApprovalForm {
+            selectedDraft = draft
+            return
+        }
         guard let account = draft.account,
               let amount = draft.amount,
               let subcategory = draft.subcategory else { return }

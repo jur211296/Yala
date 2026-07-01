@@ -572,6 +572,7 @@ struct InboxDraftEditSheet: View {
         case .groupExpense: return L10n.Inbox.sourceGroupExpense
         case .groupSettlement: return L10n.Inbox.sourceGroupSettlement
         case .manual: return L10n.Inbox.sourceManual
+        case .groupScheduledExpense: return L10n.Inbox.sourceGroupScheduledExpense
         }
     }
 
