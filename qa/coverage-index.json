@@ -28,9 +28,9 @@
       "none"
     ],
     "counts": {
-      "total": 98,
+      "total": 99,
       "deterministic": 40,
-      "agentic": 29,
+      "agentic": 32,
       "manual": 26,
       "deterministicSinXCUITest": 0
     }
@@ -1821,6 +1821,24 @@
       "coverage": "device-qa",
       "owner": "",
       "lastVerified": "2026-06-30"
+    },
+    {
+      "area": "group-scheduled-payments",
+      "codeGlobs": [
+        "Yala/App/Logic/SplitConfigCodec.swift",
+        "Yala/App/Logic/GroupScheduledPaymentGate.swift",
+        "Yala/Models/ScheduledPayment+SplitCSVMirror.swift"
+      ],
+      "scenarioIDs": [
+        "F-GSP-01",
+        "F-GSP-02",
+        "F-GSP-03",
+        "F-GSP-04"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": ""
     }
   ]
 }
