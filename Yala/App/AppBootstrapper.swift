@@ -334,6 +334,12 @@ final class AppBootstrapper {
 
         isInitialized = true
 
+        // Los servicios de Grupos recién recibieron su contexto (paso 16). Una vista de Grupos ya
+        // montada (tab inicial de "Solo Grupos") pudo hacer su primer `loadData()` con el contexto
+        // aún nil y quedar vacía. Un bump de dataVersion dispara su `.onChange` → recarga con éxito,
+        // sin que el usuario tenga que cambiar de tab.
+        SessionState.shared.incrementDataVersion()
+
         #if DEBUG
         if uiTestActive { await applyUITestSeed(context: context) }
         #endif
@@ -827,6 +833,12 @@ final class AppBootstrapper {
 
         // Apply any pending remote CloudKit changes on foreground resume
         sessionState.applyPendingChangesIfNeeded()
+
+        // Prefetch group changes on foreground resume (the group CKSyncEngines don't auto-fetch
+        // without a handled push). Debounced + quiescence-gated inside syncNow. This pulls the data
+        // down; a mounted Groups view refreshes it on its next appear / pull-to-refresh (the fetch
+        // handler's markRemoteChangePending drives the deferred refresh, same as the rest of the app).
+        Task { await SplitSyncManager.shared.syncNow() }
 
         // Check if iCloud became available after container was created without it
         checkForICloudMismatch()

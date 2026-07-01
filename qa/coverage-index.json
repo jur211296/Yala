@@ -1451,7 +1451,12 @@
         "Yala/Services/Groups/CKRecordTranslator.swift",
         "Yala/Services/Groups/CloudKitConstants.swift",
         "Yala/Services/Groups/SplitGroupDeduplicationService.swift",
-        "Yala/Services/Groups/PendingLeaveShareTracker.swift"
+        "Yala/Services/Groups/PendingLeaveShareTracker.swift",
+        "Yala/App/ViewModels/GroupsViewModel.swift",
+        "Yala/App/ViewModels/GroupDetailViewModel.swift",
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/Groups/GroupDetailView.swift",
+        "Yala/App/Views/Groups/GroupRecordsView.swift"
       ],
       "scenarioIDs": [
         "F-S4-03",
@@ -1470,7 +1475,10 @@
         "F-GRP-CTX-01",
         "F-GRP-CTX-02",
         "F-GRP-CTX-03",
-        "F-GRP-CTX-04"
+        "F-GRP-CTX-04",
+        "F-GRP-CTX-05",
+        "F-GRP-FETCH-01",
+        "F-GRP-FETCH-02"
       ],
       "classification": "manual",
       "coverage": "manual",

@@ -19,6 +19,14 @@ final class GroupsViewModel {
     // MARK: - Data
 
     private(set) var groups: [SplitGroup] = []
+
+    /// `true` una vez que `loadData()` completó con éxito al menos una vez. Mientras es `false` la
+    /// vista muestra un spinner en lugar del empty state: en un cold launch de "Solo Grupos" el tab
+    /// monta antes de que el bootstrap configure el `modelContext` de `GroupService` (paso 16), así
+    /// que el primer `loadData()` puede fallar en silencio y dejar `groups` vacío — sin este gate se
+    /// vería "no tienes grupos" indebidamente hasta cambiar de tab y volver.
+    private(set) var hasLoadedOnce: Bool = false
+
     private(set) var membersByGroup: [String: [SplitMember]] = [:]       // zoneID → members
     private(set) var balancesByGroup: [String: [MemberBalance]] = [:]    // zoneID → balances
     private(set) var globalSummary: GroupGlobalSummary?
@@ -88,6 +96,12 @@ final class GroupsViewModel {
         do {
             groups = try GroupService.shared.fetchAllGroups()
 
+            // fetchAllGroups es el fetch que prueba que GroupService ya tiene contexto (la carrera de
+            // arranque). Marcamos "cargado" aquí, no al final: si un fetch por-grupo posterior lanzara
+            // (p.ej. datos de un grupo corruptos), la vista igual sale del spinner y muestra lo cargado,
+            // en vez de quedar en un ProgressView permanente.
+            hasLoadedOnce = true
+
             // Per-group data
             var allExpenses: [SplitExpense] = []
             var allShares: [SplitShare] = []
@@ -143,6 +157,13 @@ final class GroupsViewModel {
             print("GroupsViewModel: Error loading data: \(error)")
             #endif
         }
+    }
+
+    /// Fuerza un fetch de CloudKit y recarga la lista (refresh acotado a Grupos, no un bump global de
+    /// dataVersion). Usado por pull-to-refresh (`force: true`) y entrada al tab (`force: false`).
+    func refreshFromCloud(force: Bool) async {
+        await SplitSyncManager.shared.syncNow(force: force)
+        loadData()
     }
 
     // MARK: - Helpers

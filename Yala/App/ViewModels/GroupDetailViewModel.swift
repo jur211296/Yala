@@ -102,6 +102,14 @@ final class GroupDetailViewModel {
         loadData()
     }
 
+    /// Fuerza un fetch de CloudKit y recarga (refresh acotado, no bump global de dataVersion).
+    /// Usado por pull-to-refresh (`force: true`) y entrada al detalle (`force: false`) — así los
+    /// gastos de otros miembros aún no sincronizados aparecen al abrir el grupo.
+    func refreshFromCloud(force: Bool) async {
+        await SplitSyncManager.shared.syncNow(force: force)
+        loadData()
+    }
+
     // MARK: - Data Loading
 
     func loadData() {

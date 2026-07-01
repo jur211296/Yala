@@ -31,6 +31,10 @@ struct GroupRecordsView: View {
     var headerBalance: GroupHeaderBalance?
     var debtsWereConverted: Bool = false
     var onTapBalance: (() -> Void)?
+    /// Pull-to-refresh: fuerza un fetch de CloudKit. Aplicado aquí (no en GroupDetailView) para
+    /// acotar el `.refreshable` a este ScrollView y NO heredarlo por environment a los sheets del
+    /// detalle (el pull espurio en el form de gasto que arregló el commit `0643525e`).
+    var onRefresh: (() async -> Void)?
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -103,6 +107,7 @@ struct GroupRecordsView: View {
                 .padding(.bottom, DS.Spacing.safeBottom)
             }
             .scrollViewGlassEdges()
+            .refreshable { await onRefresh?() }
             .confirmationDialog(
                 L10n.Action.delete,
                 isPresented: Binding(

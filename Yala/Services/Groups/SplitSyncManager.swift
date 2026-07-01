@@ -79,6 +79,15 @@ final class SplitSyncManager {
     /// silently rounds up to the next tick.
     private static let noImportGraceSeconds: TimeInterval = 60
 
+    // MARK: - Manual sync (pull-to-refresh / foreground)
+    /// Single-flight slot para `syncNow()`: llamadas concurrentes (pull-to-refresh + foreground +
+    /// entrada al tab) esperan el mismo fetch en curso en vez de duplicar trabajo.
+    private var syncNowTask: Task<Void, Never>?
+    /// Último fetch explícito exitoso, para debounce de los disparadores automáticos (tab + foreground).
+    /// El pull-to-refresh usa `force: true` y salta el debounce.
+    private var lastSyncNowAt: Date?
+    private static let syncNowDebounce: TimeInterval = 10
+
     // Pending record IDs — internal tracking, not observed by views
     private var pendingRecordSaves: Set<CKRecord.ID> = []
 
@@ -683,6 +692,77 @@ final class SplitSyncManager {
             }
             container.add(operation)
         }
+    }
+
+    // MARK: - Manual Sync (pull-to-refresh / foreground / tab)
+
+    /// Forces a fetch of remote group changes. Wired to pull-to-refresh, tab entry, and foreground
+    /// resume — the group `CKSyncEngine`s otherwise only fetch on receipt of a push (not handled) or
+    /// the one-shot post-promotion fetch (which is skipped when the personal import just settled).
+    /// Apple's documented manual-sync pattern (`fetchChanges` on pull-to-refresh).
+    ///
+    /// - Parameter force: `true` for an explicit user pull-to-refresh (skips the debounce). The
+    ///   automatic triggers (tab appear / foreground) omit it so a burst coalesces.
+    ///
+    /// Single-flight: coalesces concurrent syncs so we never fetch in parallel. A `force` (explicit
+    /// pull-to-refresh) that arrives while a NON-forced sync is in flight does NOT settle for its
+    /// result — the non-forced one may have skipped via debounce/quiescence — it waits for it to
+    /// finish, then runs its own fetch. A non-forced caller coalesces onto whatever is in flight.
+    /// Matches the inflight-Task idiom in `GroupUserIdentityService` / `AppAttestClient`.
+    func syncNow(force: Bool = false) async {
+        if let existing = syncNowTask {
+            await existing.value
+            if !force { return }
+        }
+        let task = Task { await self.performSyncNow(force: force) }
+        syncNowTask = task
+        defer { syncNowTask = nil }
+        await task.value
+    }
+
+    private func performSyncNow(force: Bool) async {
+        // No iCloud account (e.g. simulator) → nothing to fetch; return so pull-to-refresh doesn't hang.
+        guard iCloudSyncService.shared.isAccountAvailable else { return }
+
+        // Debounce automatic triggers (foreground + tab appear can fire back-to-back). An explicit
+        // pull-to-refresh (`force`) always proceeds.
+        if !force, let last = lastSyncNowAt, Date.now.timeIntervalSince(last) < Self.syncNowDebounce {
+            return
+        }
+
+        // Still export-only: try to promote if it's safe now; if it can't, the fetch happens when the
+        // gate promotes on its own (poll) — don't fetch here.
+        if !autoSyncActive {
+            _ = evaluateQuiescentPromotion(noImportGraceElapsed: false, reachedHardCap: false)
+            guard autoSyncActive else { return }
+        }
+
+        // Don't fire straight into an import that's already running. This NARROWS but does NOT close
+        // the window: the import can still START during the `await fetchChanges()` below, and the
+        // fetch handler's `save()` isn't gated on quiescence (it can't be — deferring it would drop
+        // the CKSyncEngine token). That residual is the SAME one the promoted auto-sync already
+        // carries; the root fix is decoupling the group store (deferred, see plan). Low for a
+        // groups-only device (its personal store is idle); the guard just avoids the obvious case.
+        guard iCloudSyncService.shared.isImportQuiescent else { return }
+
+        // Private + shared are independent CloudKit round-trips → fetch concurrently (spinner waits
+        // the max, not the sum). Both apply on the @MainActor handler as before.
+        async let priv: Void = fetchEngineChanges(privateEngine, name: "private")
+        async let shar: Void = fetchEngineChanges(sharedEngine, name: "shared")
+        _ = await (priv, shar)
+        lastSyncNowAt = .now
+
+        // No dataVersion bump here: the fetch handler already calls markRemoteChangePending when
+        // records actually arrive. Bumping unconditionally would recalc every mounted tab even with
+        // zero changes, and double-refresh when there were some. Callers (pull / tab appear) reload
+        // the Groups view directly after awaiting this.
+    }
+
+    /// Fetches one engine's changes; logs (no `try?`) on failure so auto-sync retries later.
+    private func fetchEngineChanges(_ engine: CKSyncEngine?, name: String) async {
+        guard let engine else { return }
+        do { try await engine.fetchChanges() }
+        catch { logger.error("syncNow: \(name, privacy: .public) fetch failed: \(error.localizedDescription, privacy: .public)") }
     }
 
     // MARK: - Pending Changes (Low-Level)

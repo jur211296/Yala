@@ -194,6 +194,9 @@ struct GroupDetailView: View {
         .onAppear {
             wasArchivedOnAppear = group.isArchived
             viewModel.setContext(modelContext)
+            // Traer cambios remotos al abrir el grupo: los gastos de otros aún no sincronizados
+            // aparecen sin depender del pull (el empty state de records no tiene pull-to-refresh).
+            Task { await viewModel.refreshFromCloud(force: false) }
             // Only evaluate if no nudge is already showing (avoid overriding GroupsContainer nudge)
             if NudgeService.shared.currentNudge == nil {
                 NudgeService.shared.evaluate()
@@ -396,7 +399,8 @@ struct GroupDetailView: View {
                     transaction.disablesAnimations = true
                     withTransaction(transaction) { selectedTab = .balances }
                     TelemetryService.track(.groupBalancesViewed)
-                }
+                },
+                onRefresh: { await viewModel.refreshFromCloud(force: true) }
             )
 
         case .balances:

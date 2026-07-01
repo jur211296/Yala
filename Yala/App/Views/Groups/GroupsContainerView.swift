@@ -39,7 +39,12 @@ struct GroupsContainerView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty {
+                if !viewModel.hasLoadedOnce {
+                    // Cold launch de "Solo Grupos": el tab puede montar antes de que el bootstrap
+                    // configure el contexto de GroupService. Mostramos spinner en vez del empty
+                    // state hasta la primera carga con éxito (el bootstrap dispara loadData al terminar).
+                    ProgressView()
+                } else if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty {
                     YalaEmptyState.noGroups {
                         viewModel.showCreateGroup = true
                     }
@@ -104,7 +109,8 @@ struct GroupsContainerView: View {
                     // ZStack/NavigationStack): así su RefreshAction no se hereda por
                     // environment al detalle ni a los sheets — iOS 26 la captaba en el
                     // ScrollView horizontal de los chips del form de gasto (pull espurio).
-                    .refreshable { viewModel.loadData() }
+                    // Fuerza un fetch real de CloudKit (no solo relee local) — force salta el debounce.
+                    .refreshable { await viewModel.refreshFromCloud(force: true) }
                 }
 
                 // FAB — new group
@@ -170,6 +176,9 @@ struct GroupsContainerView: View {
                 viewModel.setContext(modelContext)
                 evaluateNudge()
                 evaluateGroupsOnboarding()
+                // Traer cambios remotos de grupos al entrar al tab (el engine no auto-fetchea sin
+                // push; debounced + gateado por quiescencia dentro de syncNow), luego recarga.
+                Task { await viewModel.refreshFromCloud(force: false) }
             }
             .groupsOnboardingSheet(
                 isPresented: $showGroupsOnboarding,
