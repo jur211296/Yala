@@ -1504,7 +1504,7 @@
       "classification": "manual",
       "coverage": "unit:YalaTests/GroupNotificationRecipientLogicTests + manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-07-01"
     },
     {
       "area": "icloud-sync-multi-device",
