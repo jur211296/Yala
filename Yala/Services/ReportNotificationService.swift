@@ -230,7 +230,8 @@ final class ReportNotificationService {
                 from: calendar.dateComponents([.year, .month], from: now)
             ) ?? now
             let previousMonthStart = calendar.date(byAdding: .month, value: -1, to: currentMonthStart) ?? currentMonthStart
-            return DateInterval(start: previousMonthStart, end: currentMonthStart)
+            let previousMonthEnd = calendar.date(byAdding: .second, value: -1, to: currentMonthStart) ?? currentMonthStart
+            return DateInterval(start: previousMonthStart, end: previousMonthEnd)
         case .lastDay:
             // Last day of month: report current month up to now
             let monthStart = calendar.date(

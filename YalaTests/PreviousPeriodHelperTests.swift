@@ -79,11 +79,35 @@ struct PreviousPeriodHelperTests {
         #expect(durationDays >= 28 && durationDays <= 31)
     }
 
-    @Test func previousInterval_lastMonth_month_twoMonthsAgo() {
+    @Test func previousInterval_lastMonth_month_twoMonthsAgo_exactBoundaries() {
         let interval = PreviousPeriodHelper.previousInterval(for: .lastMonth, mode: .month)
         let currentInterval = DetailPeriod.lastMonth.dateInterval()
-        // Should be before current interval
+        let cal = Calendar.current
+
+        // Debe empezar exactamente el día 1 del mes (sin drift por anclar en .end)
+        #expect(cal.component(.day, from: interval.start) == 1)
+        #expect(cal.component(.hour, from: interval.start) == 0)
+
+        // Debe terminar 1 segundo antes de que empiece currentInterval (contigüidad, sin gap ni overlap)
+        let expectedEnd = cal.date(byAdding: .second, value: -1, to: currentInterval.start)!
+        #expect(interval.end == expectedEnd)
         #expect(interval.start < currentInterval.start)
+    }
+
+    @Test func previousInterval_lastYear_year_sameYearAgo_noDrift() {
+        let interval = PreviousPeriodHelper.previousInterval(for: .lastYear, mode: .year)
+        let currentInterval = DetailPeriod.lastYear.dateInterval()
+        let cal = Calendar.current
+
+        // Debe empezar el 1 de enero (sin drift)
+        #expect(cal.component(.day, from: interval.start) == 1)
+        #expect(cal.component(.month, from: interval.start) == 1)
+
+        // El día/mes del end debe coincidir con el de currentInterval.end (31-dic ambos), solo el año difiere
+        let intervalEndComponents = cal.dateComponents([.month, .day], from: interval.end)
+        let currentEndComponents = cal.dateComponents([.month, .day], from: currentInterval.end)
+        #expect(intervalEndComponents.month == currentEndComponents.month)
+        #expect(intervalEndComponents.day == currentEndComponents.day)
     }
 
     @Test func previousInterval_thisWeek_year_sameWeekLastYear() {

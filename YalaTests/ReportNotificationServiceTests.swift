@@ -150,8 +150,10 @@ struct ReportNotificationServiceTests {
             from: calendar.dateComponents([.year, .month], from: Date())
         )!
 
-        // Should end at current month start (reporting previous month)
-        #expect(interval.end == currentMonthStart)
+        // Should end 1 second before current month start (reporting previous month,
+        // sin incluir la medianoche del día 1 del mes actual — DateInterval es cerrado en ambos extremos)
+        let expectedEnd = calendar.date(byAdding: .second, value: -1, to: currentMonthStart)!
+        #expect(interval.end == expectedEnd)
         #expect(interval.start < currentMonthStart)
     }
 

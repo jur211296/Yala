@@ -635,7 +635,8 @@ enum WidgetPeriod: String, CaseIterable, Codable {
             let startOfThisMonth = calendar.date(
                 from: calendar.dateComponents([.year, .month], from: now)) ?? startOfToday
             let startOfLastMonth = calendar.date(byAdding: .month, value: -1, to: startOfThisMonth) ?? startOfToday
-            return DateInterval(start: startOfLastMonth, end: startOfThisMonth)
+            let endOfLastMonth = calendar.date(byAdding: .second, value: -1, to: startOfThisMonth) ?? startOfThisMonth
+            return DateInterval(start: startOfLastMonth, end: endOfLastMonth)
 
         case .thisYear:
             let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? startOfToday
@@ -644,7 +645,8 @@ enum WidgetPeriod: String, CaseIterable, Codable {
         case .lastYear:
             let startOfThisYear = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? startOfToday
             let startOfLastYear = calendar.date(byAdding: .year, value: -1, to: startOfThisYear) ?? startOfToday
-            return DateInterval(start: startOfLastYear, end: startOfThisYear)
+            let endOfLastYear = calendar.date(byAdding: .second, value: -1, to: startOfThisYear) ?? startOfThisYear
+            return DateInterval(start: startOfLastYear, end: endOfLastYear)
 
         case .allTime:
             let start = calendar.date(byAdding: .year, value: -10, to: now) ?? startOfToday

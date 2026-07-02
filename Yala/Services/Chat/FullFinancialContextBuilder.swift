@@ -258,17 +258,25 @@ final class FullFinancialContextBuilder {
         let startOfToday = calendar.startOfDay(for: now)
         let weekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? startOfToday
         let prevWeekStart = calendar.date(byAdding: .weekOfYear, value: -1, to: weekStart) ?? startOfToday
+        let weekStartMinusOneSecond = calendar.date(byAdding: .second, value: -1, to: weekStart) ?? weekStart
         let monthStart = calendar.dateInterval(of: .month, for: now)?.start ?? startOfToday
+        let monthStartMinusOneSecond = calendar.date(byAdding: .second, value: -1, to: monthStart) ?? monthStart
         let lastMonthStart = calendar.date(byAdding: .month, value: -1, to: monthStart) ?? startOfToday
+        let lastMonthStartMinusOneSecond = calendar.date(byAdding: .second, value: -1, to: lastMonthStart) ?? lastMonthStart
         let twoMonthsAgoStart = calendar.date(byAdding: .month, value: -2, to: monthStart) ?? startOfToday
+        let twoMonthsAgoStartMinusOneSecond = calendar.date(byAdding: .second, value: -1, to: twoMonthsAgoStart) ?? twoMonthsAgoStart
         let threeMonthsAgoStart = calendar.date(byAdding: .month, value: -3, to: monthStart) ?? startOfToday
         let yearStart = calendar.dateInterval(of: .year, for: now)?.start ?? startOfToday
         let last30Start = calendar.date(byAdding: .day, value: -30, to: now) ?? startOfToday
 
+        // DateInterval es cerrado en ambos extremos — restamos 1s al `end` de cada
+        // bucket que coincide exactamente con el `start` del bucket adyacente, o
+        // ese instante se cuenta dos veces (ver CLAUDE.md, gotcha DateInterval boundary).
         var weeks: [DateInterval] = []
         for i in stride(from: 3, through: 0, by: -1) {
             if let start = calendar.date(byAdding: .weekOfYear, value: -i, to: weekStart),
-               let end = calendar.date(byAdding: .weekOfYear, value: 1, to: start) {
+               let rawEnd = calendar.date(byAdding: .weekOfYear, value: 1, to: start) {
+                let end = calendar.date(byAdding: .second, value: -1, to: rawEnd) ?? rawEnd
                 weeks.append(DateInterval(start: start, end: end))
             }
         }
@@ -276,12 +284,12 @@ final class FullFinancialContextBuilder {
         return Intervals(
             today: DateInterval(start: startOfToday, end: now),
             currentWeek: DateInterval(start: weekStart, end: now),
-            lastWeek: DateInterval(start: prevWeekStart, end: weekStart),
+            lastWeek: DateInterval(start: prevWeekStart, end: weekStartMinusOneSecond),
             last4Weeks: weeks,
             currentMonth: DateInterval(start: monthStart, end: now),
-            lastMonth: DateInterval(start: lastMonthStart, end: monthStart),
-            twoMonthsAgo: DateInterval(start: twoMonthsAgoStart, end: lastMonthStart),
-            threeMonthsAgo: DateInterval(start: threeMonthsAgoStart, end: twoMonthsAgoStart),
+            lastMonth: DateInterval(start: lastMonthStart, end: monthStartMinusOneSecond),
+            twoMonthsAgo: DateInterval(start: twoMonthsAgoStart, end: lastMonthStartMinusOneSecond),
+            threeMonthsAgo: DateInterval(start: threeMonthsAgoStart, end: twoMonthsAgoStartMinusOneSecond),
             currentYear: DateInterval(start: yearStart, end: now),
             last30Days: DateInterval(start: last30Start, end: now)
         )

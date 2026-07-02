@@ -101,9 +101,10 @@ enum PreviousPeriodHelper {
             return DateInterval(start: startOfPreviousMonth, end: currentInterval.start)
 
         case .lastMonth:
-            // Two months ago
-            let startOfTwoMonthsAgo = calendar.date(byAdding: .month, value: -2, to: currentInterval.end) ?? currentInterval.end
-            let endOfTwoMonthsAgo = calendar.date(byAdding: .month, value: -1, to: currentInterval.end) ?? currentInterval.end
+            // Two months ago — anclado en currentInterval.start (medianoche exacta,
+            // no afectado por el -1s del fix de boundary) en vez de .end.
+            let startOfTwoMonthsAgo = calendar.date(byAdding: .month, value: -1, to: currentInterval.start) ?? currentInterval.start
+            let endOfTwoMonthsAgo = calendar.date(byAdding: .second, value: -1, to: currentInterval.start) ?? currentInterval.start
             return DateInterval(start: startOfTwoMonthsAgo, end: endOfTwoMonthsAgo)
 
         case .last30Days:

@@ -223,6 +223,21 @@ struct FullFinancialContextBuilderTests {
         #expect(abs(variation - 33.33) < 0.5)
     }
 
+    @MainActor @Test func periodComparison_transactionExactlyAtMonthBoundary_notDoubleCounted() {
+        // Reproduce el bug: una tx a medianoche exacta del día 1 del mes actual
+        // no debe contarse en AMBOS periods.currentMonth Y periods.lastMonth.
+        let cal = Calendar.current
+        let now = Date.now
+        let monthStart = cal.dateInterval(of: .month, for: now)?.start ?? now
+        let food = makeCategory(name: "Food")
+        let tx = makeTx(amount: -100, date: monthStart, category: food)
+
+        let result = buildContext(transactions: [tx], now: now)
+
+        #expect(result.periods.currentMonth.expense == 100.0)
+        #expect(result.periods.lastMonth.expense == 0.0)
+    }
+
     // MARK: - Top tx by subcategory
 
     @MainActor @Test func topTxBySubcategory_orderedByAmount() {
