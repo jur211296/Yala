@@ -123,14 +123,19 @@ struct ApplePayTransactionIntent: AppIntent {
 
         let container: ModelContainer
         do {
+            // `personalLocalWriteConfiguration` (`.none`): NO crea un 2º mirror CloudKit sobre
+            // el store de la app. Evita el error 134410 in-process en warm launch (la app es
+            // el único dueño del sync y exporta este write vía history). Ver TN3164 / el bug.
             container = try ModelContainer(
                 for: SwiftDataConfiguration.personalSchema,
-                configurations: SwiftDataConfiguration.personalConfiguration
+                configurations: SwiftDataConfiguration.personalLocalWriteConfiguration
             )
+            IntentSignalBreadcrumb.intentContainerCreated(cloudKit: false, errorCode: nil)
         } catch {
             #if DEBUG
             print("ApplePayTransactionIntent: Error creating ModelContainer: \(error)")
             #endif
+            IntentSignalBreadcrumb.intentContainerCreated(cloudKit: false, errorCode: (error as NSError).code)
             TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "database"])
             await notifyFailure()
             return .result()
@@ -225,6 +230,13 @@ struct ApplePayTransactionIntent: AppIntent {
             await notifyFailure()
             return .result()
         }
+
+        // Señal cross-launch para que la app refresque al volver a foreground (el observer de
+        // `.NSPersistentStoreRemoteChange` pudo no estar registrado cuando guardamos). Se marca
+        // tras el save y ANTES de notificar; es un write de UserDefaults sin UI → no toca el
+        // contrato del shortcut (5ce1e43f). Ver PendingIntentSaveSignal.
+        PendingIntentSaveSignal.mark()
+        IntentSignalBreadcrumb.set("applePay")
 
         let fallbackCurrency = detectedCurrency ?? "USD"
         let notifAmount = YalaFormatterStatic.currency(value: finalAmount, currencyCode: fallbackCurrency, forceFullPrecision: true)
@@ -389,14 +401,18 @@ struct SiriNaturalEntryIntent: AppIntent {
         // Step 3: Create ModelContainer
         let container: ModelContainer
         do {
+            // `.none` (local-only): igual que ApplePay, evita el 2º mirror CloudKit sobre el
+            // store de la app (error 134410 in-process). La app exporta el write vía history.
             container = try ModelContainer(
                 for: SwiftDataConfiguration.personalSchema,
-                configurations: SwiftDataConfiguration.personalConfiguration
+                configurations: SwiftDataConfiguration.personalLocalWriteConfiguration
             )
+            IntentSignalBreadcrumb.intentContainerCreated(cloudKit: false, errorCode: nil)
         } catch {
             #if DEBUG
             print("SiriNaturalEntryIntent: Error creating ModelContainer: \(error)")
             #endif
+            IntentSignalBreadcrumb.intentContainerCreated(cloudKit: false, errorCode: (error as NSError).code)
             return .result(dialog: "shortcut.error.database", view: EmptyView())
         }
 
@@ -600,6 +616,10 @@ struct SiriNaturalEntryIntent: AppIntent {
             #endif
             return .result(dialog: "shortcut.error.save", view: EmptyView())
         }
+
+        // Señal cross-launch (igual que ApplePay): la app refresca al volver a foreground.
+        PendingIntentSaveSignal.mark()
+        IntentSignalBreadcrumb.set("siriNatural")
 
         // Step 11: Send notification
         let firstDraft = uniqueDrafts.first

@@ -83,6 +83,7 @@ enum AnalyticsEvent: String {
     case intentInvoked = "Atajos · Atajo ejecutado"
     case intentSuccess = "Atajos · Atajo exitoso"
     case intentFailed = "Atajos · Atajo fallido"
+    case intentSaveSignalConsumed = "Atajos · Señal de save consumida"  // params: site (became_active|bootstrap), age_bucket — un intent background guardó vía su container y la app refrescó al volver a foreground
 
     // Group lifecycle
     case groupCreated = "Grupos · Grupo creado"

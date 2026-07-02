@@ -819,6 +819,7 @@ struct ContentView: View {
         }
 
         hasExistingData = checkHasExistingData()
+        IntentSignalBreadcrumb.initialSyncChecked(hasExistingData: hasExistingData)
 
         if hasCompletedOnboarding {
             // Returning user este device — ya completó onboarding antes.

@@ -441,11 +441,15 @@ class SessionState {
         hasPendingRemoteChanges = true
     }
 
-    /// Apply pending remote changes (call from onAppear or handleBecameActive)
-    func applyPendingChangesIfNeeded() {
-        guard hasPendingRemoteChanges else { return }
+    /// Apply pending remote changes (call from onAppear or handleBecameActive).
+    /// Returns `true` si había cambios pendientes y se aplicaron (usado por el re-fire de
+    /// intents background para cortar temprano en cuanto el merge aterriza).
+    @discardableResult
+    func applyPendingChangesIfNeeded() -> Bool {
+        guard hasPendingRemoteChanges else { return false }
         hasPendingRemoteChanges = false
         incrementDataVersion()
+        return true
     }
 
     // MARK: - Router-migrated state

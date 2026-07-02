@@ -1243,5 +1243,10 @@ final class AppPreferences {
         // en proceso separado del intent host). expensesOnlyMode ya declarada arriba.
         nonisolated static let isProUser = "isProUser"
         nonisolated static let lastUsedAccountID = "lastUsedAccountID"
+        /// Timestamp (timeIntervalSince1970) del último `save()` de un App Intent background
+        /// (ApplePay/Siri Natural) que escribió vía su propio container. La app lo consume al
+        /// volver a foreground para forzar el refresh (el observer de `.NSPersistentStoreRemoteChange`
+        /// pudo no estar registrado cuando el intent guardó). Ver `PendingIntentSaveSignal`.
+        nonisolated static let pendingIntentSaveAt = "pendingIntentSaveAt"
     }
 }
