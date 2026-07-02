@@ -39,6 +39,12 @@ struct GroupOpeningBalanceDetailSheet: View {
     }
 
     var body: some View {
+        detailContent
+            .presentationDetents([detent])
+            .presentationDragIndicator(.hidden)
+    }
+
+    private var detailContent: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
