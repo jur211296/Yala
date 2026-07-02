@@ -1481,9 +1481,9 @@
         "F-GRP-FETCH-02"
       ],
       "classification": "manual",
-      "coverage": "manual",
+      "coverage": "unit:YalaTests/SplitSyncStartGateTests,YalaTests/CloudKitGroupsSchemaParityTests + manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-07-01"
     },
     {
       "area": "groups-notifications-deeplinks",

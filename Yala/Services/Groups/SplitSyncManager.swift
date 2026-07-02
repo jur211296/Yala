@@ -87,9 +87,25 @@ final class SplitSyncManager {
     /// El pull-to-refresh usa `force: true` y salta el debounce.
     private var lastSyncNowAt: Date?
     private static let syncNowDebounce: TimeInterval = 10
+    /// Un pull EXPLÍCITO (`force`) no aborta si el sync aún no está listo (promoción pendiente o
+    /// import personal no quiescente): espera hasta este tope, reevaluando cada `poll`. El spinner
+    /// del `.refreshable` refleja la espera — antes el pull "moría al instante" sin hacer nada.
+    private static let syncNowForceWaitTimeout: TimeInterval = 10
+    private static let syncNowForceWaitPoll: TimeInterval = 0.5
 
     // Pending record IDs — internal tracking, not observed by views
     private var pendingRecordSaves: Set<CKRecord.ID> = []
+
+    // MARK: - Deferred fetch buffers (export-only window)
+    // CKSyncEngine advances (and persists) its change token once the delegate RETURNS from a fetch
+    // event — a handler that early-returns via `deferMainContextWork` would lose those records
+    // FOREVER (they're never re-delivered). No fetch should run while export-only (no auto-fetch,
+    // syncNow gated), so these are defence-in-depth: buffer the event, re-apply on promotion.
+    private var deferredFetchedRecordZoneEvents: [(event: CKSyncEngine.Event.FetchedRecordZoneChanges, engineName: String)] = []
+    private var deferredFetchedDatabaseEvents: [(event: CKSyncEngine.Event.FetchedDatabaseChanges, engineName: String)] = []
+    /// Sign-out/switch during the export-only window: run `clearAllLocalGroupData` after promotion
+    /// (clearing supersedes any buffered fetched data — buffers are discarded).
+    private var deferredClearAllRequested = false
 
     // Coalescing task for deferred bridge/notifications after remote changes
     private var deferredBridgeTask: Task<Void, Never>?
@@ -229,6 +245,10 @@ final class SplitSyncManager {
         // Recover owned groups whose zone never reached CloudKit (created while a previous launch's
         // engines were deferred → createZone no-op'd). Idempotent; gated by the heuristic.
         recoverOwnedGroupZonesIfNeeded()
+
+        // Recover individual records that never round-tripped (nil system fields) — e.g. dropped by
+        // CKSyncEngine after a definitive server rejection. Idempotent; complements zone recovery.
+        recoverUnsyncedRecordsIfNeeded()
     }
 
     /// Promotes the engines from export-only to auto-sync once the personal import has settled
@@ -277,6 +297,11 @@ final class SplitSyncManager {
         TelemetryService.track(.cloudkitGroupSyncPromotedToAuto, parameters: [
             "importSettled": String(importSettled)
         ])
+
+        // Re-apply any fetch events that were buffered during the export-only window BEFORE the
+        // post-promotion fetch (older events first — preserves CloudKit event order). The store is
+        // quiescent here (promotion required it), so the handlers' saves are safe now.
+        drainDeferredFetchEvents()
 
         // Kick an immediate fetch on both new engines so newly-joined / remote changes appear promptly:
         // `cancelGate()` removed the poll backstop, and `acceptShare`'s immediate fetch was gated off during
@@ -358,6 +383,75 @@ final class SplitSyncManager {
         } catch {
             logger.error("SplitSync re-enqueue records failed for \(zoneName, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    // MARK: - Unsynced Record Recovery
+
+    /// Re-enqueues group records (member/expense/share/settlement) that never round-tripped to
+    /// CloudKit (`ckSystemFieldsData == nil` — see `SplitSyncStartGate.needsRecordRecovery`).
+    /// CKSyncEngine DROPS a record from its pending queue after a definitive server rejection
+    /// (e.g. the un-deployed `isOpeningBalance` schema field, 27-jun→1-jul, killed every
+    /// SplitExpense save for 4 days); without this, those records stay local-only forever unless
+    /// the user re-edits each one by hand. **Read-only on the mainContext** (fetch +
+    /// `engine.state.add`); never saves, so it's safe during the export-only window — enqueued
+    /// changes persist in the engine state and send after promotion.
+    ///
+    /// Conscious behaviors: (a) a permanently-invalid record re-enqueues ONCE per launch and fails
+    /// visibly (log + telemetry canary — bounded, not a hot loop); (b) if the zone is gone
+    /// server-side, the resulting `zoneNotFound` runs the standard local-cache cleanup (dead
+    /// group); (c) orphaned deletions are not recoverable (the local model no longer exists).
+    private func recoverUnsyncedRecordsIfNeeded() {
+        // BOTH engines required: groups route to private (owner) or shared (invitee), and
+        // markPendingChange silently no-ops on a nil engine — an || here would half-run the
+        // recovery and report recovered counts for records that never got enqueued.
+        guard let modelContext, privateEngine != nil, sharedEngine != nil else { return }
+
+        let groups: [SplitGroup]
+        do {
+            groups = try modelContext.fetch(FetchDescriptor<SplitGroup>())
+        } catch {
+            logger.error("SplitSync record recovery group fetch failed: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+
+        var recovered = 0
+        for group in groups {
+            // Soft-deleted for everyone → its zone is on the way out; don't resurrect records.
+            if group.isHiddenForAll { continue }
+            // Owner groups with no uploaded GroupMeta are FULLY re-enqueued (zone + all records)
+            // by recoverOwnedGroupZonesIfNeeded — skip to avoid double-enqueueing (harmless but noisy).
+            if SplitSyncStartGate.needsZoneRecovery(isOwner: group.isOwner, hasSystemFields: group.ckSystemFieldsData != nil) { continue }
+
+            let zoneName = group.cloudKitZoneID
+            do {
+                for m in try modelContext.fetch(FetchDescriptor<SplitMember>(predicate: #Predicate { $0.groupZoneID == zoneName }))
+                where SplitSyncStartGate.needsRecordRecovery(hasSystemFields: m.ckSystemFieldsData != nil) {
+                    enqueueSave(modelID: m.id, group: group)
+                    recovered += 1
+                }
+                for e in try modelContext.fetch(FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.groupZoneID == zoneName }))
+                where SplitSyncStartGate.needsRecordRecovery(hasSystemFields: e.ckSystemFieldsData != nil) {
+                    enqueueSave(modelID: e.id, group: group)
+                    recovered += 1
+                }
+                for s in try modelContext.fetch(FetchDescriptor<SplitShare>(predicate: #Predicate { $0.groupZoneID == zoneName }))
+                where SplitSyncStartGate.needsRecordRecovery(hasSystemFields: s.ckSystemFieldsData != nil) {
+                    enqueueSave(modelID: s.id, group: group)
+                    recovered += 1
+                }
+                for st in try modelContext.fetch(FetchDescriptor<SplitSettlement>(predicate: #Predicate { $0.groupZoneID == zoneName }))
+                where SplitSyncStartGate.needsRecordRecovery(hasSystemFields: st.ckSystemFieldsData != nil) {
+                    enqueueSave(modelID: st.id, group: group)
+                    recovered += 1
+                }
+            } catch {
+                logger.error("SplitSync record recovery fetch failed for \(zoneName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        guard recovered > 0 else { return }
+        logger.notice("SplitSync recovered \(recovered, privacy: .public) unsynced record(s) with no system fields")
+        TelemetryService.track(.cloudkitGroupRecordsRecovered, parameters: ["count": String(recovered)])
     }
 
     /// Waits for the personal first import to settle, then PROMOTES the export-only engines to
@@ -730,20 +824,28 @@ final class SplitSyncManager {
             return
         }
 
-        // Still export-only: try to promote if it's safe now; if it can't, the fetch happens when the
-        // gate promotes on its own (poll) — don't fetch here.
-        if !autoSyncActive {
-            _ = evaluateQuiescentPromotion(noImportGraceElapsed: false, reachedHardCap: false)
-            guard autoSyncActive else { return }
-        }
+        if force {
+            // Explicit pull: don't silently abort while the sync warms up (promotion pending and/or
+            // import not yet quiescent — both are common in the first seconds after a cold launch,
+            // exactly when users pull). Wait with a cap; the refresh spinner shows the wait.
+            guard await awaitReadyForForcedFetch() else { return }
+        } else {
+            // Still export-only: try to promote if it's safe now; if it can't, the fetch happens when
+            // the gate promotes on its own (poll) — don't fetch here.
+            if !autoSyncActive {
+                _ = evaluateQuiescentPromotion(noImportGraceElapsed: false, reachedHardCap: false)
+                guard autoSyncActive else { return }
+            }
 
-        // Don't fire straight into an import that's already running. This NARROWS but does NOT close
-        // the window: the import can still START during the `await fetchChanges()` below, and the
-        // fetch handler's `save()` isn't gated on quiescence (it can't be — deferring it would drop
-        // the CKSyncEngine token). That residual is the SAME one the promoted auto-sync already
-        // carries; the root fix is decoupling the group store (deferred, see plan). Low for a
-        // groups-only device (its personal store is idle); the guard just avoids the obvious case.
-        guard iCloudSyncService.shared.isImportQuiescent else { return }
+            // Don't fire straight into an import that's already running. This NARROWS but does NOT
+            // close the window: the import can still START during the `await fetchChanges()` below,
+            // and the fetch handler's `save()` isn't gated on quiescence (it can't be — deferring it
+            // would drop the CKSyncEngine token). That residual is the SAME one the promoted
+            // auto-sync already carries; the root fix is decoupling the group store (deferred, see
+            // plan). Low for a groups-only device (its personal store is idle); the guard just
+            // avoids the obvious case.
+            guard iCloudSyncService.shared.isImportQuiescent else { return }
+        }
 
         // Private + shared are independent CloudKit round-trips → fetch concurrently (spinner waits
         // the max, not the sum). Both apply on the @MainActor handler as before.
@@ -756,6 +858,27 @@ final class SplitSyncManager {
         // records actually arrive. Bumping unconditionally would recalc every mounted tab even with
         // zero changes, and double-refresh when there were some. Callers (pull / tab appear) reload
         // the Groups view directly after awaiting this.
+    }
+
+    /// Waits (bounded) until the engines are promoted AND the personal import is quiescent, trying
+    /// the promotion itself on every tick — `evaluateQuiescentPromotion` can promote at ANY moment
+    /// once conditions hold; the 15s gate poll is just its periodic caller, so an explicit pull
+    /// shouldn't have to wait for the next tick. Returns `false` on timeout (logged, no fetch —
+    /// same TOCTOU residual as before applies after `true`).
+    private func awaitReadyForForcedFetch() async -> Bool {
+        let deadline = Date.now.addingTimeInterval(Self.syncNowForceWaitTimeout)
+        while true {
+            if !autoSyncActive {
+                _ = evaluateQuiescentPromotion(noImportGraceElapsed: false, reachedHardCap: false)
+            }
+            if autoSyncActive && iCloudSyncService.shared.isImportQuiescent { return true }
+            if Date.now >= deadline {
+                logger.notice("syncNow(force): not ready after \(Int(Self.syncNowForceWaitTimeout), privacy: .public)s (autoSync=\(self.autoSyncActive, privacy: .public), quiescent=\(iCloudSyncService.shared.isImportQuiescent, privacy: .public)) — skipping fetch")
+                return false
+            }
+            do { try await Task.sleep(for: .seconds(Self.syncNowForceWaitPoll)) }
+            catch { return false }  // cancelled (e.g. view gone) → no fetch
+        }
     }
 
     /// Fetches one engine's changes; logs (no `try?`) on failure so auto-sync retries later.
@@ -894,13 +1017,47 @@ final class SplitSyncManager {
     /// Guard for every delegate handler that would touch the shared `mainContext`. During the
     /// export-only window (`autoSyncActive == false`, personal import not settled) persisting the
     /// half-imported personal graph can trip SwiftData's internal `_assertionFailure`. Returns
-    /// `true` (and logs) when the handler must defer; the fetch after `enableAutoSync()` reconciles
-    /// anything skipped. With `automaticallySync = false` the fetch handlers don't run on their own
-    /// — this is defence-in-depth plus the real gate for the sent/conflict handlers (export path).
+    /// `true` (and logs) when the handler must defer. FETCH events must then be BUFFERED by the
+    /// caller (`deferredFetched*Events`, drained on promotion) — the engine's token advances past a
+    /// handled event, so a dropped fetch would be lost FOREVER (a later fetch does NOT re-deliver
+    /// it). Sent/conflict handlers may drop safely (they reconcile via `serverRecordChanged`).
+    /// With `automaticallySync = false` the fetch handlers don't run on their own — the buffering
+    /// is defence-in-depth plus the real gate for the sent/conflict handlers (export path).
     private func deferMainContextWork(_ reason: String) -> Bool {
         guard SplitSyncStartGate.shouldDeferDelegateSave(autoSyncActive: autoSyncActive) else { return false }
         logger.notice("SplitSync deferring delegate work [\(reason, privacy: .public)] — export-only window, reconciled after auto-sync")
         return true
+    }
+
+    /// Re-applies fetch events buffered during the export-only window. Called from
+    /// `enableAutoSync()` AFTER `autoSyncActive = true` (so the handlers don't re-defer) and BEFORE
+    /// the post-promotion fetch (event order). A deferred sign-out supersedes the buffers: apply-
+    /// then-clear would be wasted work, so they're discarded. Engines are resolved by NAME — the
+    /// promotion recreated them, a captured reference would target a discarded engine.
+    private func drainDeferredFetchEvents() {
+        if deferredClearAllRequested {
+            deferredClearAllRequested = false
+            deferredFetchedDatabaseEvents.removeAll()
+            deferredFetchedRecordZoneEvents.removeAll()
+            clearAllLocalGroupData()
+            return
+        }
+        guard !deferredFetchedDatabaseEvents.isEmpty || !deferredFetchedRecordZoneEvents.isEmpty else { return }
+
+        let dbEvents = deferredFetchedDatabaseEvents
+        let recordEvents = deferredFetchedRecordZoneEvents
+        deferredFetchedDatabaseEvents.removeAll()
+        deferredFetchedRecordZoneEvents.removeAll()
+
+        logger.notice("SplitSync draining deferred fetch events — db=\(dbEvents.count, privacy: .public), recordZone=\(recordEvents.count, privacy: .public)")
+
+        for (event, name) in dbEvents {
+            guard let engine = (name == "private") ? privateEngine : sharedEngine else { continue }
+            handleFetchedDatabaseChanges(event, engineName: name, engine: engine)
+        }
+        for (event, name) in recordEvents {
+            handleFetchedRecordZoneChanges(event, engineName: name)
+        }
     }
 
     // MARK: - Event Handlers
@@ -910,7 +1067,11 @@ final class SplitSyncManager {
         logger.info("[\(engineName)] fetchedDatabaseChanges: \(fetched.modifications.count) mods, \(fetched.deletions.count) dels")
         #endif
 
-        if deferMainContextWork("fetchedDatabaseChanges") { return }
+        if deferMainContextWork("fetchedDatabaseChanges") {
+            // Buffer, don't drop: the engine's token advances past this event when we return.
+            deferredFetchedDatabaseEvents.append((fetched, engineName))
+            return
+        }
         guard !fetched.deletions.isEmpty, let modelContext else { return }
 
         for deletion in fetched.deletions {
@@ -992,9 +1153,13 @@ final class SplitSyncManager {
     /// Delete all local group data (used on sign-out and account switch for privacy).
     private func clearAllLocalGroupData() {
         // Edge case only: a sign-out/switch during the initial restore window (the user just signed
-        // in) is near-impossible. Defer the save to stay crash-safe; a normal sign-out (after the
-        // import settled, autoSyncActive == true) clears immediately.
-        if deferMainContextWork("clearAllLocalGroupData") { return }
+        // in) is near-impossible. Defer the save to stay crash-safe (flagged — runs after promotion,
+        // superseding any buffered fetched data); a normal sign-out (after the import settled,
+        // autoSyncActive == true) clears immediately.
+        if deferMainContextWork("clearAllLocalGroupData") {
+            deferredClearAllRequested = true
+            return
+        }
         guard let modelContext else { return }
 
         do {
@@ -1035,7 +1200,11 @@ final class SplitSyncManager {
     }
 
     private func handleFetchedRecordZoneChanges(_ fetched: CKSyncEngine.Event.FetchedRecordZoneChanges, engineName: String) {
-        if deferMainContextWork("fetchedRecordZoneChanges") { return }
+        if deferMainContextWork("fetchedRecordZoneChanges") {
+            // Buffer, don't drop: the engine's token advances past this event when we return.
+            deferredFetchedRecordZoneEvents.append((fetched, engineName))
+            return
+        }
         guard let modelContext else { return }
 
         var changeSet = RemoteChangeSet()
@@ -1303,8 +1472,11 @@ final class SplitSyncManager {
         for failure in sent.failedRecordSaves {
             let ckError = failure.error as CKError
 
-            switch ckError.code {
-            case .serverRecordChanged:
+            // Logging INTENCIONALMENTE fuera de `#if DEBUG` (patrón SplitSync*): el incidente del
+            // schema (isOpeningBalance, 27-jun→1-jul) fue invisible 4 días porque el rechazo solo
+            // se logueaba en DEBUG. Sin PII — recordType + recordName (UUIDs) + código CKError.
+            switch SplitSyncStartGate.classifyFailedSave(code: ckError.code) {
+            case .conflict:
                 // Conflict: server wins — accept server version and update local model
                 handleConflict(failure: failure, engineName: engineName)
 
@@ -1316,18 +1488,27 @@ final class SplitSyncManager {
                 // Record was deleted on server — remove local pending
                 pendingRecordSaves.remove(failure.record.recordID)
 
-            case .quotaExceeded:
+            case .quota:
                 syncStatus = .error("iCloud storage full")
                 quotaFailedRecordIDs.insert(failure.record.recordID)
-                #if DEBUG
-                logger.error("[\(engineName)] Quota exceeded — \(failure.record.recordID.recordName) queued for retry")
-                #endif
+                logger.error("[\(engineName, privacy: .public)] Quota exceeded — \(failure.record.recordID.recordName, privacy: .public) queued for retry")
 
-            default:
-                // Transient errors (network, rate limit) are retried automatically by CKSyncEngine
-                #if DEBUG
-                logger.error("[\(engineName)] Record save failed: \(failure.record.recordID.recordName) — \(ckError.localizedDescription)")
-                #endif
+            case .definitiveRejection:
+                // The server rejected the record itself (schema mismatch, permissions). CKSyncEngine
+                // DROPS it from its pending queue and will NOT retry — and we don't re-enqueue inline
+                // (a schema error would loop forever). The record keeps ckSystemFieldsData == nil, so
+                // recoverUnsyncedRecordsIfNeeded re-enqueues it on the next launch (bounded retry).
+                // The telemetry event is the canary: >0 in prod means a schema/permissions incident.
+                logger.error("[\(engineName, privacy: .public)] Record save REJECTED (definitive): \(failure.record.recordType, privacy: .public) \(failure.record.recordID.recordName, privacy: .public) — CKError \(ckError.code.rawValue, privacy: .public) \(ckError.localizedDescription, privacy: .public)")
+                TelemetryService.track(.cloudkitGroupRecordSaveRejected, parameters: [
+                    "code": String(ckError.code.rawValue),
+                    "recordType": failure.record.recordType
+                ])
+
+            case .transient:
+                // Transport-level failures (network, rate limit, batch): CKSyncEngine retries these
+                // on its own schedule.
+                logger.error("[\(engineName, privacy: .public)] Record save failed (transient, will retry): \(failure.record.recordID.recordName, privacy: .public) — CKError \(ckError.code.rawValue, privacy: .public)")
             }
         }
     }

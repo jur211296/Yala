@@ -7,6 +7,7 @@
 //  personal CloudKit first import (crash-loop fix on iCloud restore).
 //
 
+import CloudKit
 import Foundation
 import Testing
 
@@ -172,5 +173,48 @@ struct SplitSyncStartGateTests {
         // Shared zones are owned by someone else — never re-enqueue their zone.
         #expect(SplitSyncStartGate.needsZoneRecovery(isOwner: false, hasSystemFields: false) == false)
         #expect(SplitSyncStartGate.needsZoneRecovery(isOwner: false, hasSystemFields: true) == false)
+    }
+
+    // MARK: - needsRecordRecovery
+
+    @Test func recordRecovery_noSystemFields_needsRecovery() {
+        // Never round-tripped (e.g. dropped by CKSyncEngine after a definitive rejection — the
+        // isOpeningBalance schema incident) → re-enqueue on launch.
+        #expect(SplitSyncStartGate.needsRecordRecovery(hasSystemFields: false) == true)
+    }
+
+    @Test func recordRecovery_withSystemFields_skipped() {
+        // Uploaded OR applied from a remote fetch (both populate ckSystemFieldsData) → leave alone.
+        // This is what keeps the recovery from re-uploading other members' records (no sync storm).
+        #expect(SplitSyncStartGate.needsRecordRecovery(hasSystemFields: true) == false)
+    }
+
+    // MARK: - classifyFailedSave
+
+    @Test func classifyFailedSave_preHardeningCasesUnchanged() {
+        // The first four dispositions must mirror the pre-hardening switch exactly.
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .serverRecordChanged) == .conflict)
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .zoneNotFound) == .zoneNotFound)
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .unknownItem) == .unknownItem)
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .quotaExceeded) == .quota)
+    }
+
+    @Test func classifyFailedSave_schemaAndPermissionErrors_areDefinitive() {
+        // The server rejected the record itself — CKSyncEngine drops it from its queue and won't
+        // retry. Re-enqueueing inline would loop forever on a schema error; the launch-time
+        // recovery is the bounded retry. An un-deployed schema field surfaces as .invalidArguments.
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .invalidArguments) == .definitiveRejection)
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .serverRejectedRequest) == .definitiveRejection)
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .permissionFailure) == .definitiveRejection)
+    }
+
+    @Test func classifyFailedSave_transportErrors_areTransient() {
+        // CKSyncEngine retries these on its own — log only, no special handling.
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .networkUnavailable) == .transient)
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .networkFailure) == .transient)
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .requestRateLimited) == .transient)
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .zoneBusy) == .transient)
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .serviceUnavailable) == .transient)
+        #expect(SplitSyncStartGate.classifyFailedSave(code: .batchRequestFailed) == .transient)
     }
 }

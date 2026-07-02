@@ -136,6 +136,8 @@ enum AnalyticsEvent: String {
     case cloudkitGroupSyncPromotedToAuto = "Diagnóstico · Sync de grupos promovido a auto"  // params: importSettled (false = promovido por hard cap sin import asentado) — los engines pasaron de export-only a automaticallySync
     case cloudkitGroupSyncNoImportPromote = "Diagnóstico · Sync de grupos promovido sin import personal"  // sin params — store personal VACÍO (ningún .import apareció en la ventana de gracia) promovido a auto-sync; antes quedaba export-only para siempre (bug del usuario "solo grupos")
     case cloudkitGroupZoneRecovered = "Diagnóstico · Zona de grupo recuperada"  // params: count — zonas owner sin GroupMeta subido re-encoladas al arrancar
+    case cloudkitGroupRecordsRecovered = "Diagnóstico · Records de grupo recuperados"  // params: count — records con ckSystemFieldsData nil (nunca subieron, p.ej. rechazados por schema) re-encolados al arrancar
+    case cloudkitGroupRecordSaveRejected = "Diagnóstico · Save de grupo rechazado"  // params: code, recordType — CANARIO: >0 en prod = incidente de schema/permisos en el container de grupos (el server descarta el record; la recovery lo re-encola al próximo launch)
     case iCloudRestoreOutcome = "Diagnóstico · Resultado de restore"  // params: phase (completed|partial), destination (groupsOnly|directToApp|onboarding)
 
     // Routing observability (F9 — privacy-first: only intent IDs, no payloads)

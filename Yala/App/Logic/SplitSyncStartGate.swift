@@ -16,6 +16,7 @@
 //  See `MigrationGateLogic` — same "wait for first import" semantics for the V3 migration.
 //
 
+import CloudKit
 import Foundation
 
 enum SplitSyncStartGate {
@@ -124,5 +125,60 @@ enum SplitSyncStartGate {
     /// synced (system fields present) are skipped — no sync storm.
     static func needsZoneRecovery(isOwner: Bool, hasSystemFields: Bool) -> Bool {
         isOwner && !hasSystemFields
+    }
+
+    // MARK: - Record recovery
+
+    /// Whether an individual group record (member/expense/share/settlement) needs re-enqueueing on
+    /// engine startup because it never round-tripped to CloudKit.
+    ///
+    /// `ckSystemFieldsData` is populated on BOTH sides of a round-trip: successful uploads
+    /// (`storeSystemFields`) and records applied from a remote fetch (`CKRecordTranslator` encodes
+    /// the fetched record's system fields). So `nil` ≡ created locally and never accepted by the
+    /// server — e.g. dropped by CKSyncEngine after a definitive rejection (the `isOpeningBalance`
+    /// schema incident, 27-jun→1-jul) or enqueued right before a kill. Benign false positive: an
+    /// upload whose system-fields save was deferred during the export-only window re-uploads once
+    /// and reconciles via `serverRecordChanged` (server wins, system fields re-captured).
+    static func needsRecordRecovery(hasSystemFields: Bool) -> Bool {
+        !hasSystemFields
+    }
+
+    // MARK: - Failed save classification
+
+    /// What to do with a record save that CloudKit reported as failed.
+    ///
+    /// CKSyncEngine REMOVES a failed record save from its pending queue after reporting it — it
+    /// only retries transport-level failures on its own. Anything the delegate doesn't re-enqueue
+    /// is gone until something re-enqueues it (user edit, or `recoverUnsyncedRecordsIfNeeded` on
+    /// the next launch via the nil-system-fields heuristic).
+    enum FailedSaveDisposition: Equatable {
+        /// `serverRecordChanged` — resolve via conflict handler (server wins).
+        case conflict
+        /// `zoneNotFound` — group's zone is gone; clean up the local cache.
+        case zoneNotFound
+        /// `unknownItem` — record deleted on server; drop local pending tracking.
+        case unknownItem
+        /// `quotaExceeded` — park for retry when quota may have changed.
+        case quota
+        /// Server rejected the record itself (schema mismatch, permissions). NOT retried inline —
+        /// a schema error would loop forever; the launch-time recovery re-enqueues it instead.
+        case definitiveRejection
+        /// Transient (network, rate limit, batch): CKSyncEngine retries these on its own.
+        case transient
+    }
+
+    /// Maps a `CKError.Code` from `failedRecordSaves` to its handling. The first four cases mirror
+    /// the pre-hardening switch exactly (no behavior change); the split of the old `default:` into
+    /// `definitiveRejection`/`transient` is what makes schema rejections visible and consciously
+    /// NOT re-enqueued inline.
+    static func classifyFailedSave(code: CKError.Code) -> FailedSaveDisposition {
+        switch code {
+        case .serverRecordChanged: return .conflict
+        case .zoneNotFound: return .zoneNotFound
+        case .unknownItem: return .unknownItem
+        case .quotaExceeded: return .quota
+        case .invalidArguments, .serverRejectedRequest, .permissionFailure: return .definitiveRejection
+        default: return .transient
+        }
     }
 }
