@@ -138,65 +138,51 @@ struct ScheduledPaymentEditorView: View {
                 .navigationTitle(editorTitle)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { editorToolbar }
-                .sheet(isPresented: $showCategoriesSheet) {
-                    SubcategorySelectorSheet(
-                        selectedSubcategory: $selectedSubcategory,
-                        transactionType: transactionType == "income" ? .income : .expense
-                    )
-                }
-                .sheet(isPresented: $showGroupPicker) {
-                    GroupPickerSheet(
-                        groups: availableGroups,
-                        selectedGroupID: selectedGroup?.id ?? UUID(),
-                        memberCount: { activeMemberCount(for: $0) },
-                        onSelect: { group in selectGroup(group) }
-                    )
-                }
-                .sheet(isPresented: $showSplitCurrencyPicker) {
-                    CurrencyPickerSheet(selectedCurrency: $splitCurrency)
-                }
-                .sheet(isPresented: $showSplitSheet, onDismiss: { extractSplitConfigFromVM() }) {
-                    if let vm = splitExpenseVM {
-                        GroupSplitSelectorView(viewModel: vm)
-                    }
-                }
+                .modifier(EditorSheets(
+                    showCategoriesSheet: $showCategoriesSheet,
+                    selectedSubcategory: $selectedSubcategory,
+                    transactionType: transactionType,
+                    showGroupPicker: $showGroupPicker,
+                    availableGroups: availableGroups,
+                    selectedGroupID: selectedGroup?.id ?? UUID(),
+                    memberCount: { activeMemberCount(for: $0) },
+                    onSelectGroup: { selectGroup($0) },
+                    showSplitCurrencyPicker: $showSplitCurrencyPicker,
+                    splitCurrency: $splitCurrency,
+                    showSplitSheet: $showSplitSheet,
+                    splitExpenseVM: splitExpenseVM,
+                    onSplitSheetDismiss: { extractSplitConfigFromVM() }
+                ))
                 .onChange(of: splitCurrency) { _, newCode in
                     applySplitCurrency(newCode)
                 }
                 .onAppear { handleOnAppear() }
-                .onChange(of: isRecurring) { _, _ in dismissEditorKeyboard(); updatePreviewDates() }
-                .onChange(of: recurrenceType) { _, _ in dismissEditorKeyboard(); updatePreviewDates() }
-                .onChange(of: recurrenceInterval) { _, _ in updatePreviewDates() }
-                .onChange(of: paymentDate) { _, _ in updatePreviewDates() }
-                .onChange(of: dayOfMonth) { _, _ in updatePreviewDates() }
-                .onChange(of: selectedWeekdays) { _, _ in updatePreviewDates() }
-                .onChange(of: yearlyMonth) { _, _ in updatePreviewDates() }
-                .onChange(of: yearlyDay) { _, _ in updatePreviewDates() }
-                .onChange(of: hasEndDate) { _, _ in updatePreviewDates() }
-                .onChange(of: endDate) { _, _ in updatePreviewDates() }
+                .modifier(RecurrencePreviewObservers(
+                    isRecurring: isRecurring,
+                    recurrenceType: recurrenceType,
+                    recurrenceInterval: recurrenceInterval,
+                    paymentDate: paymentDate,
+                    dayOfMonth: dayOfMonth,
+                    selectedWeekdays: selectedWeekdays,
+                    yearlyMonth: yearlyMonth,
+                    yearlyDay: yearlyDay,
+                    hasEndDate: hasEndDate,
+                    endDate: endDate,
+                    onDismissKeyboard: { dismissEditorKeyboard() },
+                    onUpdatePreview: { updatePreviewDates() }
+                ))
                 .onChange(of: isSubscription) { _, new in paymentCategory = new ? .subscription : .recurring }
                 .onChange(of: showCategoriesSheet) { _, isPresenting in
                     if isPresenting { dismissEditorKeyboard() }
                 }
-                .alert(deleteAlertTitle, isPresented: $showDeleteConfirmation) {
-                    Button(NSLocalizedString("action.cancel", comment: ""), role: .cancel) {}
-                    Button(NSLocalizedString("action.delete", comment: ""), role: .destructive) {
-                        deletePayment()
-                    }
-                } message: {
-                    Text(NSLocalizedString("scheduled.delete.confirm.message", comment: ""))
-                }
-                .onChange(of: viewModel.showSaveError) { _, new in if new { showSaveError = true } }
-                .alert(
-                    L10n.Common.error,
-                    isPresented: $showSaveError,
-                    actions: {
-                        Button(L10n.Common.understood, role: .cancel) { viewModel.dismissSaveError() }
-                    },
-                    message: {
-                        Text(L10n.Common.saveError)
-                    }
-                )
+                .modifier(EditorAlerts(
+                    deleteAlertTitle: deleteAlertTitle,
+                    showDeleteConfirmation: $showDeleteConfirmation,
+                    onConfirmDelete: { deletePayment() },
+                    saveErrorFlag: viewModel.showSaveError,
+                    showSaveError: $showSaveError,
+                    onDismissSaveError: { viewModel.dismissSaveError() }
+                ))
         }
     }
 
@@ -1560,6 +1546,129 @@ struct ScheduledPaymentEditorView: View {
         if viewModel.deletePayment(payment) {
             dismiss()
             onDelete?()
+        }
+    }
+}
+
+// MARK: - Body Decomposition (ViewModifiers)
+//
+// El `body` de este editor era una única cadena de ~24 modificadores (4 sheets + 14 onChange +
+// 2 alerts) que excedía el límite del solver de Swift ("unable to type-check this expression in
+// reasonable time"). Se agrupan en `ViewModifier`s privados para que cada `body(content:)` se
+// type-checkee por separado. Sin cambios de comportamiento: mismos efectos, mismo orden.
+
+private extension ScheduledPaymentEditorView {
+
+    /// Los `.onChange` de recurrencia que sólo recalculan el preview de fechas.
+    /// `dismissEditorKeyboard()` se dispara únicamente en `isRecurring`/`recurrenceType`
+    /// (igual que el original); el resto sólo actualiza el preview.
+    struct RecurrencePreviewObservers: ViewModifier {
+        let isRecurring: Bool
+        let recurrenceType: RecurrenceType
+        let recurrenceInterval: Int
+        let paymentDate: Date
+        let dayOfMonth: Int
+        let selectedWeekdays: Set<Int>
+        let yearlyMonth: Int
+        let yearlyDay: Int
+        let hasEndDate: Bool
+        let endDate: Date?
+        let onDismissKeyboard: () -> Void
+        let onUpdatePreview: () -> Void
+
+        func body(content: Content) -> some View {
+            content
+                .onChange(of: isRecurring) { _, _ in onDismissKeyboard(); onUpdatePreview() }
+                .onChange(of: recurrenceType) { _, _ in onDismissKeyboard(); onUpdatePreview() }
+                .onChange(of: recurrenceInterval) { _, _ in onUpdatePreview() }
+                .onChange(of: paymentDate) { _, _ in onUpdatePreview() }
+                .onChange(of: dayOfMonth) { _, _ in onUpdatePreview() }
+                .onChange(of: selectedWeekdays) { _, _ in onUpdatePreview() }
+                .onChange(of: yearlyMonth) { _, _ in onUpdatePreview() }
+                .onChange(of: yearlyDay) { _, _ in onUpdatePreview() }
+                .onChange(of: hasEndDate) { _, _ in onUpdatePreview() }
+                .onChange(of: endDate) { _, _ in onUpdatePreview() }
+        }
+    }
+
+    /// Los 4 `.sheet` del editor: categorías, selector de grupo, moneda del split y división.
+    struct EditorSheets: ViewModifier {
+        @Binding var showCategoriesSheet: Bool
+        @Binding var selectedSubcategory: Subcategory?
+        let transactionType: String
+
+        @Binding var showGroupPicker: Bool
+        let availableGroups: [SplitGroup]
+        let selectedGroupID: UUID
+        let memberCount: (SplitGroup) -> Int
+        let onSelectGroup: (SplitGroup) -> Void
+
+        @Binding var showSplitCurrencyPicker: Bool
+        @Binding var splitCurrency: CurrencyCode
+
+        @Binding var showSplitSheet: Bool
+        let splitExpenseVM: GroupExpenseViewModel?
+        let onSplitSheetDismiss: () -> Void
+
+        func body(content: Content) -> some View {
+            content
+                .sheet(isPresented: $showCategoriesSheet) {
+                    SubcategorySelectorSheet(
+                        selectedSubcategory: $selectedSubcategory,
+                        transactionType: transactionType == "income" ? .income : .expense
+                    )
+                }
+                .sheet(isPresented: $showGroupPicker) {
+                    GroupPickerSheet(
+                        groups: availableGroups,
+                        selectedGroupID: selectedGroupID,
+                        memberCount: { memberCount($0) },
+                        onSelect: { group in onSelectGroup(group) }
+                    )
+                }
+                .sheet(isPresented: $showSplitCurrencyPicker) {
+                    CurrencyPickerSheet(selectedCurrency: $splitCurrency)
+                }
+                .sheet(isPresented: $showSplitSheet, onDismiss: { onSplitSheetDismiss() }) {
+                    if let vm = splitExpenseVM {
+                        GroupSplitSelectorView(viewModel: vm)
+                    }
+                }
+        }
+    }
+
+    /// Las 2 `.alert` del editor (confirmación de borrado y error al guardar) junto con el
+    /// `.onChange` que dispara el alert de error — contiguos para preservar el orden original.
+    struct EditorAlerts: ViewModifier {
+        let deleteAlertTitle: String
+        @Binding var showDeleteConfirmation: Bool
+        let onConfirmDelete: () -> Void
+
+        let saveErrorFlag: Bool
+        @Binding var showSaveError: Bool
+        let onDismissSaveError: () -> Void
+
+        func body(content: Content) -> some View {
+            content
+                .alert(deleteAlertTitle, isPresented: $showDeleteConfirmation) {
+                    Button(NSLocalizedString("action.cancel", comment: ""), role: .cancel) {}
+                    Button(NSLocalizedString("action.delete", comment: ""), role: .destructive) {
+                        onConfirmDelete()
+                    }
+                } message: {
+                    Text(NSLocalizedString("scheduled.delete.confirm.message", comment: ""))
+                }
+                .onChange(of: saveErrorFlag) { _, new in if new { showSaveError = true } }
+                .alert(
+                    L10n.Common.error,
+                    isPresented: $showSaveError,
+                    actions: {
+                        Button(L10n.Common.understood, role: .cancel) { onDismissSaveError() }
+                    },
+                    message: {
+                        Text(L10n.Common.saveError)
+                    }
+                )
         }
     }
 }
