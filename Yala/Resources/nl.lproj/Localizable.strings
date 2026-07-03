@@ -4637,3 +4637,16 @@
 "scheduled.groupExpense.splitSummary" = "Tussen %d · %@ · Jouw deel %@";
 "scheduled.groupExpense.totalHint" = "Totaal van de rekening";
 "scheduled.groupExpense.sharedBadge" = "Gedeeld";
+
+
+/* Solo Grupos — entrada onboarding (groupsOnly) */
+"onboarding.purpose.groups" = "Kosten met vrienden delen";
+"onboarding.purpose.groupsDesc" = "Reizen, etentjes en gedeelde rekeningen";
+"onboarding.currencyName.titleGroups" = "Kies je valuta";
+"onboarding.currencyName.subtitleGroups" = "We gebruiken deze voor je gedeelde uitgaven";
+"groups.errors.iCloudRequiredTitle" = "Zet iCloud aan om groepen te gebruiken";
+"groups.errors.iCloudRequiredBody" = "Groepen synchroniseren via iCloud. Zet het aan in Instellingen om een groep te maken of eraan deel te nemen.";
+
+
+/* Solo Grupos — entrada onboarding (groupsOnly) */
+"onboarding.confirm.motivationGroups" = "Klaar om kosten met vrienden te delen!";

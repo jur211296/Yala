@@ -54,12 +54,19 @@ enum OnboardingStepPlan {
         prefilledCategoriesCount: Int,
         hasPrefill: Bool,
         expensesOnly: Bool,
-        dayToDay: Bool
+        dayToDay: Bool,
+        groupsOnly: Bool = false
     ) -> Set<OnboardingStep> {
         var skip: Set<OnboardingStep> = []
 
-        // Skips por modo de uso (decisión binaria del usuario).
-        if expensesOnly {
+        // Skips por modo de uso (elección única del usuario en `.purpose`).
+        if groupsOnly {
+            // "Solo grupos": sin cuentas ni balance personales, y sin el paso de
+            // personalización de categorías (se siembran en silencio para tener
+            // subcategorías disponibles en los gastos de grupo). `.currencyName`
+            // se conserva (adaptado a solo-moneda) y `.name`/`.purpose` también.
+            skip.formUnion([.accounts, .accountType, .balance, .categories])
+        } else if expensesOnly {
             skip.formUnion([.accounts, .accountType, .balance])
         } else if dayToDay {
             skip.insert(.accountType)

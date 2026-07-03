@@ -44,8 +44,12 @@ struct OnboardingView: View {
 
     private var expensesOnlyMode: Bool { selectedUsageMode == .expensesOnly }
 
+    /// "Solo grupos": activa el modo `.groupInvite` sin crear cuentas personales.
+    /// Salta cuentas/tipo/saldo/categorías; conserva nombre + moneda + confirmación.
+    private var groupsOnlyMode: Bool { selectedUsageMode == .groupsOnly }
+
     private enum UsageMode: String {
-        case expensesOnly, dayToDay, fullControl
+        case expensesOnly, dayToDay, fullControl, groupsOnly
     }
 
     // Animation state for category grid
@@ -58,6 +62,8 @@ struct OnboardingView: View {
     @State private var initialBalanceText: String = ""
     @State private var balanceIsPositive: Bool = true
     @State private var showCurrencyPicker: Bool = false
+    /// Aviso cuando el usuario elige "Solo grupos" sin iCloud activo (grupos lo exige).
+    @State private var showGroupsICloudAlert: Bool = false
     @State private var showBalanceGuide: Bool = false
     @State private var balanceMode: BalanceMode = .manual
     @State private var calcFieldState = BalanceCalculatorFieldState()
@@ -160,7 +166,8 @@ struct OnboardingView: View {
             prefilledCategoriesCount: prefilledData?.categoriesCount ?? 0,
             hasPrefill: prefilledData != nil,
             expensesOnly: expensesOnlyMode,
-            dayToDay: selectedUsageMode == .dayToDay
+            dayToDay: selectedUsageMode == .dayToDay,
+            groupsOnly: groupsOnlyMode
         )
     }
 
@@ -525,6 +532,29 @@ struct OnboardingView: View {
                             selectedUsageMode = .expensesOnly
                             selectedMindset = "cashFlow"
                         }
+
+                        // "Solo grupos" solo en el onboarding inicial — NO en la
+                        // reutilización de FullModeActivation (un groupInvite activando
+                        // Yala completo no debe poder volver a "solo grupos" aquí).
+                        if mode == .initial {
+                            binaryCard(
+                                isSelected: groupsOnlyMode,
+                                icon: "person.3.fill",
+                                iconColor: .hotPink,
+                                title: L10n.Onboarding.purposeGroups,
+                                description: L10n.Onboarding.purposeGroupsDesc,
+                                accessibilityId: "onboarding_purpose_groups"
+                            ) {
+                                // Grupos exige iCloud (identidad + zonas CloudKit). Bloquea la
+                                // elección con un aviso claro ANTES de avanzar (prereq #2).
+                                if iCloudSyncService.shared.isAccountAvailable {
+                                    selectedUsageMode = .groupsOnly
+                                    selectedMindset = "cashFlow"
+                                } else {
+                                    showGroupsICloudAlert = true
+                                }
+                            }
+                        }
                     }
                     .padding(.horizontal, DS.Spacing.xl)
 
@@ -533,6 +563,11 @@ struct OnboardingView: View {
                 .frame(minHeight: geometry.size.height)
             }
             .scrollBounceBehavior(.basedOnSize)
+            .alert(L10n.Groups.Errors.iCloudRequiredTitle, isPresented: $showGroupsICloudAlert) {
+                Button(L10n.Common.ok, role: .cancel) {}
+            } message: {
+                Text(L10n.Groups.Errors.iCloudRequiredBody)
+            }
         }
     }
 
@@ -740,24 +775,28 @@ struct OnboardingView: View {
         ScrollView {
             VStack(spacing: DS.Spacing.xxl) {
                 VStack(spacing: DS.Spacing.md) {
-                    Image(systemName: wantsSeparateAccounts ? "pencil.circle" : "star.circle")
+                    Image(systemName: groupsOnlyMode ? "dollarsign.circle" : (wantsSeparateAccounts ? "pencil.circle" : "star.circle"))
                         .font(.system(size: heroIconSize))
                         .foregroundStyle(primaryTextStyle)
                         .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                         .accessibilityHidden(true)
 
-                    Text(wantsSeparateAccounts
-                         ? L10n.Onboarding.currencyNameTitleSeparate
-                         : L10n.Onboarding.currencyNameTitleSingle)
+                    Text(groupsOnlyMode
+                         ? L10n.Onboarding.currencyNameTitleGroups
+                         : (wantsSeparateAccounts
+                            ? L10n.Onboarding.currencyNameTitleSeparate
+                            : L10n.Onboarding.currencyNameTitleSingle))
                         .font(DS.Typography.title)
                         .fontWeight(.bold)
                         .foregroundStyle(primaryTextStyle)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, DS.Spacing.xl)
 
-                    Text(wantsSeparateAccounts
-                         ? L10n.Onboarding.currencyNameSubtitleSeparate
-                         : L10n.Onboarding.currencyNameSubtitleSingle)
+                    Text(groupsOnlyMode
+                         ? L10n.Onboarding.currencyNameSubtitleGroups
+                         : (wantsSeparateAccounts
+                            ? L10n.Onboarding.currencyNameSubtitleSeparate
+                            : L10n.Onboarding.currencyNameSubtitleSingle))
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(secondaryTextStyle)
                         .multilineTextAlignment(.center)
@@ -765,22 +804,24 @@ struct OnboardingView: View {
                 }
                 .padding(.top, DS.Spacing.md)
 
-                // Account name
-                OnboardingFieldSection(
-                    title: L10n.Onboarding.accountNameLabel,
-                    titleStyle: secondaryTextStyle
-                ) {
-                    HStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "pencil")
-                            .foregroundStyle(secondaryTextStyle)
-                        TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName)
-                            .focused($accountNameFocused)
-                            .accessibilityIdentifier("onboarding_account_name")
-                            .foregroundStyle(primaryTextStyle)
+                // Account name — oculto en Solo Grupos (no hay cuenta personal).
+                if !groupsOnlyMode {
+                    OnboardingFieldSection(
+                        title: L10n.Onboarding.accountNameLabel,
+                        titleStyle: secondaryTextStyle
+                    ) {
+                        HStack(spacing: DS.Spacing.md) {
+                            Image(systemName: "pencil")
+                                .foregroundStyle(secondaryTextStyle)
+                            TextField(L10n.Onboarding.accountNamePlaceholder, text: $accountName)
+                                .focused($accountNameFocused)
+                                .accessibilityIdentifier("onboarding_account_name")
+                                .foregroundStyle(primaryTextStyle)
+                        }
+                        .padding()
                     }
-                    .padding()
+                    .padding(.horizontal, DS.Spacing.lg)
                 }
-                .padding(.horizontal, DS.Spacing.lg)
 
                 // Currency
                 OnboardingFieldSection(
@@ -817,6 +858,8 @@ struct OnboardingView: View {
         .scrollDismissesKeyboard(.interactively)
         .onAppear {
             accountCurrency = selectedCurrency
+            // En Solo Grupos no hay cuenta → no autosugerir nombre (campo oculto).
+            guard !groupsOnlyMode else { return }
             let suggested = suggestedAccountName
             if accountName.isEmpty || accountName == lastAutoName {
                 accountName = suggested
@@ -1112,6 +1155,7 @@ struct OnboardingView: View {
         case .expensesOnly: return L10n.Onboarding.confirmMotivationExpenses
         case .dayToDay: return L10n.Onboarding.confirmMotivationDayToDay
         case .fullControl: return L10n.Onboarding.confirmMotivationFullControl
+        case .groupsOnly: return L10n.Onboarding.confirmMotivationGroups
         }
     }
 
@@ -1160,46 +1204,57 @@ struct OnboardingView: View {
                 value: userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     ? L10n.Profile.defaultName : userName
             )
-            rowDivider
-            confirmItem(
-                icon: iconName(for: selectedAccountType),
-                color: .hotPink,
-                value: (accountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        ? selectedAccountType.localizedName : accountName)
-                    + " · \(accountCurrency.rawValue)"
-            )
-
-            if !expensesOnlyMode {
+            if groupsOnlyMode {
+                // Solo Grupos: sin cuenta/saldo/categorías personales — solo el
+                // propósito + la moneda elegida.
                 rowDivider
-                let amount = AmountInputHelper.parseDecimal(initialBalanceText)
-                let displayAmount = amount > 0 ? (balanceIsPositive ? amount : -amount) : 0.0
-                let formattedBalance = appPreferences.currency(displayAmount,
-                    currencyCode: accountCurrency.rawValue
-                )
                 confirmItem(
-                    icon: "banknote",
+                    icon: "person.3.fill",
+                    color: .hotPink,
+                    value: L10n.Onboarding.purposeGroups + " · \(accountCurrency.rawValue)"
+                )
+            } else {
+                rowDivider
+                confirmItem(
+                    icon: iconName(for: selectedAccountType),
+                    color: .hotPink,
+                    value: (accountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? selectedAccountType.localizedName : accountName)
+                        + " · \(accountCurrency.rawValue)"
+                )
+
+                if !expensesOnlyMode {
+                    rowDivider
+                    let amount = AmountInputHelper.parseDecimal(initialBalanceText)
+                    let displayAmount = amount > 0 ? (balanceIsPositive ? amount : -amount) : 0.0
+                    let formattedBalance = appPreferences.currency(displayAmount,
+                        currencyCode: accountCurrency.rawValue
+                    )
+                    confirmItem(
+                        icon: "banknote",
+                        color: .priorityNeed,
+                        value: formattedBalance
+                    )
+                }
+
+                if expensesOnlyMode {
+                    rowDivider
+                    confirmItem(
+                        icon: "list.bullet.clipboard",
+                        color: .essentialNeed,
+                        value: L10n.Onboarding.purposeExpenses
+                    )
+                }
+
+                rowDivider
+                confirmItem(
+                    icon: "folder.fill",
                     color: .priorityNeed,
-                    value: formattedBalance
+                    value: loadSeedCategories
+                        ? L10n.Onboarding.categoriesDefault
+                        : L10n.Onboarding.categoriesCustom
                 )
             }
-
-            if expensesOnlyMode {
-                rowDivider
-                confirmItem(
-                    icon: "list.bullet.clipboard",
-                    color: .essentialNeed,
-                    value: L10n.Onboarding.purposeExpenses
-                )
-            }
-
-            rowDivider
-            confirmItem(
-                icon: "folder.fill",
-                color: .priorityNeed,
-                value: loadSeedCategories
-                    ? L10n.Onboarding.categoriesDefault
-                    : L10n.Onboarding.categoriesCustom
-            )
         }
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
@@ -1751,6 +1806,14 @@ struct OnboardingView: View {
     // MARK: - Completion
 
     private func completeOnboarding() {
+        // Solo Grupos: rama dedicada — activa `.groupInvite` sin crear cuenta ni
+        // presupuesto personal (siembra categorías en silencio para tener
+        // subcategorías en los gastos de grupo).
+        if groupsOnlyMode {
+            completeGroupsOnlyOnboarding()
+            return
+        }
+
         let sync = PreferenceSyncService.shared
 
         let finalName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1806,6 +1869,62 @@ struct OnboardingView: View {
             await ExchangeRateService.shared.forceUpdateToday(context: modelContext)
             SessionState.shared.needsExchangeRateWidgetRefresh = true
         }
+
+        onComplete()
+    }
+
+    /// Completa el onboarding en modo "Solo grupos": activa `.groupInvite` (+ push
+    /// al KV para paridad cross-device), desbloquea el gate beta, siembra categorías
+    /// (personales para el selector de subcategoría del gasto de grupo + sistema de
+    /// grupos para el bridge) y aterriza en el tab Grupos. NO crea cuenta ni saldo.
+    private func completeGroupsOnlyOnboarding() {
+        let sync = PreferenceSyncService.shared
+        let finalName = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        sync.set(string: finalName.isEmpty ? L10n.Profile.defaultName : finalName,
+                 forKey: AppPreferences.Keys.userName)
+        sync.set(string: selectedCurrency.rawValue, forKey: AppPreferences.Keys.defaultCurrencyCode)
+        sync.set(string: DetailPeriod.thisMonth.rawValue, forKey: AppPreferences.Keys.defaultPeriod)
+        sessionState.selectedPeriod = .thisMonth
+
+        // Modo Solo Grupos: reusa `.groupInvite`. Push al KV (dual-write, patrón
+        // FullModeActivationView) — el `onboardingMode` didSet solo escribe local,
+        // así que el push explícito es necesario para la paridad cross-device.
+        sync.set(string: OnboardingMode.groupInvite.rawValue, forKey: OnboardingMode.userDefaultsKey)
+        sessionState.onboardingMode = .groupInvite
+
+        // Exención del gate beta: reusar `.groupInvite` solo exime el gate del tab,
+        // no los otros lectores del flag → setearlo explícito (per-device, como
+        // CKShareEntryHandler hace al aceptar un enlace).
+        UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
+
+        // Seeds idénticos al invite path: categorías personales (subcategorías para
+        // los gastos de grupo) + sistema de grupos (bridge) + notificaciones. Sin
+        // cuenta ni presupuesto personal.
+        seedCategoriesIfNeeded(in: modelContext)
+        seedSystemGroupCategoriesIfNeeded(in: modelContext)
+        createDefaultNotifications()
+
+        do {
+            try modelContext.save()
+        } catch {
+            #if DEBUG
+            print("OnboardingView: Error saving groups-only onboarding: \(error)")
+            #endif
+        }
+
+        TelemetryService.track(.onboardingCompleted, parameters: [
+            "mode": "groupsOnly",
+        ])
+
+        UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        PreferenceSyncService.shared.signalOnboardingCompleted()
+
+        // Aterrizar en el tab Grupos: con `.groupInvite` el tab bar se reduce a
+        // [.groups] y el `selectedMainTab` persistido (.panel) no está montado.
+        // Asignación directa (mismo patrón que `resetToDefaults`) — `.groups` es el
+        // tab primario del modo, no un tab oculto en "Más" (gotcha bde61bb2).
+        sessionState.selectedMainTab = .groups
 
         onComplete()
     }

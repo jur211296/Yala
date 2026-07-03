@@ -4635,3 +4635,16 @@
 "scheduled.groupExpense.splitSummary" = "Tra %d · %@ · La tua parte %@";
 "scheduled.groupExpense.totalHint" = "Totale della fattura";
 "scheduled.groupExpense.sharedBadge" = "Condivisa";
+
+
+/* Solo Grupos — entrada onboarding (groupsOnly) */
+"onboarding.purpose.groups" = "Dividere le spese con gli amici";
+"onboarding.purpose.groupsDesc" = "Viaggi, cene e conti condivisi";
+"onboarding.currencyName.titleGroups" = "Scegliamo la tua valuta";
+"onboarding.currencyName.subtitleGroups" = "La useremo per le tue spese condivise";
+"groups.errors.iCloudRequiredTitle" = "Attiva iCloud per usare i gruppi";
+"groups.errors.iCloudRequiredBody" = "I gruppi si sincronizzano tramite iCloud. Attivalo nelle Impostazioni per creare un gruppo o unirti a uno.";
+
+
+/* Solo Grupos — entrada onboarding (groupsOnly) */
+"onboarding.confirm.motivationGroups" = "Pronto a dividere le spese con gli amici!";

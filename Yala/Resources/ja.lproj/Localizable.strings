@@ -4637,3 +4637,16 @@
 "scheduled.groupExpense.splitSummary" = "%d人 · %@ · あなたの分 %@";
 "scheduled.groupExpense.totalHint" = "請求額の合計";
 "scheduled.groupExpense.sharedBadge" = "共有";
+
+
+/* Solo Grupos — entrada onboarding (groupsOnly) */
+"onboarding.purpose.groups" = "友達と割り勘したい";
+"onboarding.purpose.groupsDesc" = "旅行や食事などの割り勘に";
+"onboarding.currencyName.titleGroups" = "通貨を選びましょう";
+"onboarding.currencyName.subtitleGroups" = "共有の支出に使います";
+"groups.errors.iCloudRequiredTitle" = "グループを使うにはiCloudをオンにしてください";
+"groups.errors.iCloudRequiredBody" = "グループはiCloudで同期されます。グループを作成または参加するには、設定でオンにしてください。";
+
+
+/* Solo Grupos — entrada onboarding (groupsOnly) */
+"onboarding.confirm.motivationGroups" = "友達と割り勘する準備ができました！";

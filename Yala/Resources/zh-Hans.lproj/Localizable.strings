@@ -4637,3 +4637,16 @@
 "scheduled.groupExpense.splitSummary" = "%d 人 · %@ · 你的部分 %@";
 "scheduled.groupExpense.totalHint" = "账单总额";
 "scheduled.groupExpense.sharedBadge" = "共享";
+
+
+/* Solo Grupos — entrada onboarding (groupsOnly) */
+"onboarding.purpose.groups" = "和朋友分摊费用";
+"onboarding.purpose.groupsDesc" = "旅行、聚餐和共同账单";
+"onboarding.currencyName.titleGroups" = "选择你的货币";
+"onboarding.currencyName.subtitleGroups" = "我们会用它来记录你的共享支出";
+"groups.errors.iCloudRequiredTitle" = "开启 iCloud 以使用群组";
+"groups.errors.iCloudRequiredBody" = "群组通过 iCloud 同步。请在设置中开启，以创建或加入群组。";
+
+
+/* Solo Grupos — entrada onboarding (groupsOnly) */
+"onboarding.confirm.motivationGroups" = "准备好和朋友分摊费用了！";

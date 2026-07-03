@@ -3887,3 +3887,16 @@
 "scheduled.groupExpense.splitSummary" = "Between %d · %@ · Your share %@";
 "scheduled.groupExpense.totalHint" = "Bill total";
 "scheduled.groupExpense.sharedBadge" = "Shared";
+
+
+/* Solo Grupos — entrada onboarding (groupsOnly) */
+"onboarding.purpose.groups" = "Split expenses with friends";
+"onboarding.purpose.groupsDesc" = "Trips, dinners and shared bills";
+"onboarding.currencyName.titleGroups" = "Let's pick your currency";
+"onboarding.currencyName.subtitleGroups" = "We'll use it for your shared expenses";
+"groups.errors.iCloudRequiredTitle" = "Turn on iCloud to use groups";
+"groups.errors.iCloudRequiredBody" = "Groups sync through iCloud. Turn it on in Settings to create or join a group.";
+
+
+/* Solo Grupos — entrada onboarding (groupsOnly) */
+"onboarding.confirm.motivationGroups" = "Ready to split expenses with friends!";

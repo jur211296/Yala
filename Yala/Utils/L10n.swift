@@ -1928,6 +1928,9 @@ enum L10n {
             static var inviteFailed: String { ls("groups.errors.inviteFailed", comment: "") }
             /// Fallo genérico de una acción de grupo (eliminar gasto, liquidar, aprobar/rechazar).
             static var actionFailed: String { ls("groups.errors.actionFailed", comment: "") }
+            /// El usuario elige "Solo grupos" sin cuenta iCloud activa (grupos exige iCloud).
+            static var iCloudRequiredTitle: String { ls("groups.errors.iCloudRequiredTitle", comment: "") }
+            static var iCloudRequiredBody: String { ls("groups.errors.iCloudRequiredBody", comment: "") }
         }
 
         /// #26: chips mostrados en GroupCardView cuando el current user está
@@ -4826,6 +4829,8 @@ enum L10n {
         static var purposeExpensesDesc: String { ls("onboarding.purpose.expensesDesc", comment: "") }
         static var purposeControl: String { ls("onboarding.purpose.control", comment: "") }
         static var purposeControlDesc: String { ls("onboarding.purpose.controlDesc", comment: "") }
+        static var purposeGroups: String { ls("onboarding.purpose.groups", comment: "") }
+        static var purposeGroupsDesc: String { ls("onboarding.purpose.groupsDesc", comment: "") }
         // Accounts step (binary: una cuenta vs varias)
         static var accountsTitle: String { ls("onboarding.accounts.title", comment: "") }
         static var accountsSingle: String { ls("onboarding.accounts.single", comment: "") }
@@ -4849,6 +4854,9 @@ enum L10n {
         static var currencyNameSubtitleSingle: String { ls("onboarding.currencyName.subtitleSingle", comment: "") }
         static var currencyNameTitleSeparate: String { ls("onboarding.currencyName.titleSeparate", comment: "") }
         static var currencyNameSubtitleSeparate: String { ls("onboarding.currencyName.subtitleSeparate", comment: "") }
+        // Currency step (Solo Grupos: solo moneda, sin cuenta)
+        static var currencyNameTitleGroups: String { ls("onboarding.currencyName.titleGroups", comment: "") }
+        static var currencyNameSubtitleGroups: String { ls("onboarding.currencyName.subtitleGroups", comment: "") }
         // Balance step
         static var balanceTitle: String { ls("onboarding.balance.title", comment: "") }
         static var balanceSubtitle: String { ls("onboarding.balance.subtitle", comment: "") }
@@ -4861,6 +4869,7 @@ enum L10n {
         static var confirmMotivationExpenses: String { ls("onboarding.confirm.motivationExpenses", comment: "") }
         static var confirmMotivationDayToDay: String { ls("onboarding.confirm.motivationDayToDay", comment: "") }
         static var confirmMotivationFullControl: String { ls("onboarding.confirm.motivationFullControl", comment: "") }
+        static var confirmMotivationGroups: String { ls("onboarding.confirm.motivationGroups", comment: "") }
 
         // Quick Budget step
         static var budgetTitle: String { ls("onboarding.budgetTitle", comment: "") }
