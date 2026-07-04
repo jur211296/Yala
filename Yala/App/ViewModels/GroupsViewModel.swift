@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import UIKit
 
 @MainActor
 @Observable
@@ -15,6 +16,15 @@ final class GroupsViewModel {
     // MARK: - Dependencies
 
     private var modelContext: ModelContext?
+
+    // MARK: - Recalculation State (debounce — espejo de PanelViewModel)
+
+    /// Task de recálculo debounced — coalesce ráfagas de `onChange(dataVersion)` del sync remoto.
+    private var recalculateTask: Task<Void, Never>?
+    /// Un reload solicitado dentro de la ventana de debounce no se pierde (se ejecuta al disparar).
+    private var pendingReload = false
+    /// Suprime el recálculo en background (evita trabajo inútil / traps de snapshot).
+    private(set) var isInBackground = false
 
     // MARK: - Data
 
@@ -190,6 +200,49 @@ final class GroupsViewModel {
     func refreshFromCloud(force: Bool) async {
         await SplitSyncManager.shared.syncNow(force: force)
         loadData()
+    }
+
+    // MARK: - Debounced Recalculation (sync remoto)
+
+    /// Recálculo debounced (150ms) — usado por el sync remoto (`onChange(dataVersion)` / vuelta a
+    /// foreground). Coalesce ráfagas de cambios de CloudKit en un solo `fetchData()` + `recalculate()`.
+    /// Las acciones LOCALES del usuario siguen usando `loadData()` directo (instantáneo).
+    func reloadAndRecalculate() {
+        scheduleRecalculation(reload: true)
+    }
+
+    /// Cancela cualquier recálculo pendiente (llamado desde `.onDisappear`).
+    func cancelRecalculation() {
+        recalculateTask?.cancel()
+    }
+
+    /// Estado de background — suprime el recálculo mientras la app no está activa.
+    func setBackground(_ value: Bool) {
+        isInBackground = value
+        if value {
+            recalculateTask?.cancel()
+            recalculateTask = nil
+            pendingReload = false
+        }
+    }
+
+    /// Debounce compartido (150ms). `pendingReload` asegura que un reload solicitado dentro de la
+    /// ventana no se pierda. Gateado por `isInBackground` + `applicationState`.
+    private func scheduleRecalculation(reload: Bool) {
+        guard !isInBackground else { return }
+        guard UIApplication.shared.applicationState == .active else { return }
+        if reload { pendingReload = true }
+        recalculateTask?.cancel()
+        recalculateTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            guard !Task.isCancelled else { return }
+            let shouldReload = pendingReload
+            pendingReload = false
+            if shouldReload {
+                fetchData()
+            }
+            recalculate()
+        }
     }
 
     // MARK: - Helpers

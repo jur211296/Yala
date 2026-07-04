@@ -8,6 +8,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 // MARK: - Detail Tab Enum
 
@@ -45,6 +46,7 @@ struct GroupDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.scenePhase) private var scenePhase
 
     // MARK: - Input
 
@@ -208,6 +210,19 @@ struct GroupDetailView: View {
         }
         .onDisappear {
             showNudgeBanner = false
+            viewModel.cancelRecalculation()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background, .inactive:
+                viewModel.setBackground(true)
+            case .active:
+                guard UIApplication.shared.applicationState == .active else { return }
+                viewModel.setBackground(false)
+                viewModel.reloadAndRecalculate()
+            @unknown default:
+                break
+            }
         }
         .onChange(of: sessionState.dataVersion) {
             viewModel.loadData()

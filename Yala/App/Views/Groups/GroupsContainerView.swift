@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct GroupsContainerView: View {
 
@@ -16,6 +17,7 @@ struct GroupsContainerView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
 
     // MARK: - State
 
@@ -189,6 +191,19 @@ struct GroupsContainerView: View {
             )
             .onDisappear {
                 showNudgeBanner = false
+                viewModel.cancelRecalculation()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                switch newPhase {
+                case .background, .inactive:
+                    viewModel.setBackground(true)
+                case .active:
+                    guard UIApplication.shared.applicationState == .active else { return }
+                    viewModel.setBackground(false)
+                    viewModel.reloadAndRecalculate()
+                @unknown default:
+                    break
+                }
             }
             .onChange(of: sessionState.dataVersion) {
                 viewModel.loadData()
