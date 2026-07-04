@@ -50,15 +50,21 @@ struct GroupStatsView: View {
             }
             .scrollViewGlassEdges()
             .onAppear { loadStats() }
+            .onDisappear { viewModel.cancelRecalculation() }
             .onChange(of: viewModel.selectedPeriod) { _, _ in
-                viewModel.recalculate()
-                syncCarouselPage()
+                // Debounced: coalesce swipes rápidos del carrusel de período.
+                viewModel.scheduleRecalculate()
                 trendFocusedDate = nil
             }
             .onChange(of: viewModel.currencySelection) { _, _ in
-                viewModel.recalculate()
-                syncCarouselPage()
+                viewModel.scheduleRecalculate()
                 trendFocusedDate = nil
+            }
+            // El carrusel se re-sincroniza cuando el set de monedas cambia — DESPUÉS de que el
+            // recalculate (debounced) actualice `perCurrencyStats`, NO antes (leería códigos stale
+            // y podría dejar `allCurrenciesPage` apuntando a una página inválida por 150ms+).
+            .onChange(of: viewModel.perCurrencyStats.map(\.currencyCode)) { _, _ in
+                syncCarouselPage()
             }
         }
     }

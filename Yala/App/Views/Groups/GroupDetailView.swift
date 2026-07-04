@@ -225,7 +225,9 @@ struct GroupDetailView: View {
             }
         }
         .onChange(of: sessionState.dataVersion) {
-            viewModel.loadData()
+            // Dismiss-first: las condiciones leen el modelo `group` directo (no dependen de la
+            // salida de loadData) → decidir cerrar ANTES, sin carrera con el reload debounced,
+            // y sin programar un recálculo sobre una vista que se está cerrando.
             if group.modelContext == nil || group.isDeleted {
                 dismiss()
                 return
@@ -233,7 +235,10 @@ struct GroupDetailView: View {
             // Only dismiss if group BECAME archived during this session
             if group.isArchived && !wasArchivedOnAppear {
                 dismiss()
+                return
             }
+            // Sync remoto: debounced para coalescer ráfagas de cambios de CloudKit.
+            viewModel.reloadAndRecalculate()
         }
     }
 

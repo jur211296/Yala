@@ -149,6 +149,10 @@ final class GroupStatsViewModel {
     private(set) var targetCurrency: String = ""
     private var modelContext: ModelContext?
 
+    /// Task de recálculo debounced — coalesce cambios rápidos de período/moneda del carrusel.
+    @ObservationIgnored
+    private var recalculateTask: Task<Void, Never>?
+
     /// Conversor de tasas para el donut del modo "Todas". Inyectable en tests.
     @ObservationIgnored
     var converter: CurrencyConverting = CurrencyConverter.shared
@@ -195,6 +199,23 @@ final class GroupStatsViewModel {
             recalculateSingleCurrency(period: period)
         }
         recalculateDualTotals(period: period)
+    }
+
+    /// Recálculo debounced (150ms) — coalesce cambios rápidos de período/moneda del carrusel.
+    /// Calc-only: los datos ya están en memoria (inyectados por `loadStats`), NO hay fetch, así que
+    /// no necesita el guard de `applicationState`/background del patrón de Panel.
+    func scheduleRecalculate() {
+        recalculateTask?.cancel()
+        recalculateTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            guard !Task.isCancelled else { return }
+            recalculate()
+        }
+    }
+
+    /// Cancela cualquier recálculo pendiente (llamado desde `.onDisappear`).
+    func cancelRecalculation() {
+        recalculateTask?.cancel()
     }
 
     /// Modo `.currency`: una sola moneda (comportamiento clásico).

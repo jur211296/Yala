@@ -181,19 +181,30 @@ final class GroupDetailViewModel {
     /// NO calcula balances/debts.
     private func fetchData() {
         guard let context = modelContext else { return }
+        // Con contexto presente, tras el INTENTO marcamos listo (mostrar contenido/estado, no un
+        // skeleton eterno si un fetch falla) — espeja el diseño temprano de `hasLoadedOnce` en
+        // GroupsViewModel. Sin contexto (carrera de bootstrap) NO se marca → sigue el skeleton.
+        defer { isReady = true }
 
         do {
-            members = try GroupService.shared.fetchMembers(for: group)
+            // Fetch atómico: a locales primero, asignar solo si TODOS tuvieron éxito. Un fallo a
+            // medias no deja `members` nuevo con `expenses` viejo (estado mixto que `recalculate`
+            // computaría como balances inconsistentes); las propiedades conservan su valor previo.
+            let fetchedMembers = try GroupService.shared.fetchMembers(for: group)
+            let fetchedExpenses = try GroupExpenseService.shared.fetchExpenses(for: group)
+            let fetchedShares = try GroupExpenseService.shared.fetchAllShares(for: group)
+            let fetchedSettlements = try GroupExpenseService.shared.fetchSettlements(for: group)
+
+            members = fetchedMembers
             memberNameLookup = Dictionary(
-                members.map { ($0.id.uuidString, $0.displayName) },
+                fetchedMembers.map { ($0.id.uuidString, $0.displayName) },
                 uniquingKeysWith: { first, _ in first }
             )
-            expenses = try GroupExpenseService.shared.fetchExpenses(for: group)
-            shares = try GroupExpenseService.shared.fetchAllShares(for: group)
-            settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
+            expenses = fetchedExpenses
+            shares = fetchedShares
+            settlements = fetchedSettlements
 
             rebuildBridgeMaps(context: context)
-            isReady = true
         } catch {
             #if DEBUG
             print("GroupDetailViewModel: Error fetching data: \(error)")

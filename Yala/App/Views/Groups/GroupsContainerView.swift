@@ -206,7 +206,8 @@ struct GroupsContainerView: View {
                 }
             }
             .onChange(of: sessionState.dataVersion) {
-                viewModel.loadData()
+                // Sync remoto: debounced para coalescer ráfagas de cambios de CloudKit.
+                viewModel.reloadAndRecalculate()
             }
             .onChange(of: viewModel.activeGroups.count) { _, _ in
                 maybeShowGroupsNotificationPrompt()
