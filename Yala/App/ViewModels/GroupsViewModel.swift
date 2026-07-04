@@ -90,23 +90,27 @@ final class GroupsViewModel {
 
     // MARK: - Data Loading
 
+    /// Path síncrono instantáneo: fetch + recálculo en una pasada. Usado por los ~19 callers locales
+    /// (setContext, Settings, Members, expense form, opening balance, retorno de detalle, archiveGroup)
+    /// que esperan feedback inmediato. El sync remoto (onChange dataVersion) usa `reloadAndRecalculate`.
     func loadData() {
+        fetchData()
+        recalculate()
+    }
+
+    /// Fase de FETCH pura (SwiftData). Puebla `groups` + los dicts por-grupo. NO calcula balances/summary.
+    private func fetchData() {
         guard modelContext != nil else { return }
 
         do {
-            groups = try GroupService.shared.fetchAllGroups()
+            let fetchedGroups = try GroupService.shared.fetchAllGroups()
+            if fetchedGroups != groups { groups = fetchedGroups }
 
             // fetchAllGroups es el fetch que prueba que GroupService ya tiene contexto (la carrera de
             // arranque). Marcamos "cargado" aquí, no al final: si un fetch por-grupo posterior lanzara
             // (p.ej. datos de un grupo corruptos), la vista igual sale del spinner y muestra lo cargado,
             // en vez de quedar en un ProgressView permanente.
             hasLoadedOnce = true
-
-            // Per-group data
-            var allExpenses: [SplitExpense] = []
-            var allShares: [SplitShare] = []
-            var allSettlements: [SplitSettlement] = []
-            var currentUserMemberIDs = Set<String>()
 
             for group in groups {
                 let members = try GroupService.shared.fetchMembers(for: group)
@@ -115,48 +119,70 @@ final class GroupsViewModel {
                 // Skip heavy data loading for archived groups
                 guard !group.isArchived else { continue }
 
-                let expenses = try GroupExpenseService.shared.fetchExpenses(for: group)
-                let shares = try GroupExpenseService.shared.fetchAllShares(for: group)
-                let settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
-
-                // M6 D3: cache para recalcular debts on-demand (currentUserDebts).
-                expensesByGroup[group.cloudKitZoneID] = expenses
-                sharesByGroup[group.cloudKitZoneID] = shares
-                settlementsByGroup[group.cloudKitZoneID] = settlements
-
-                let balances = GroupBalanceService.calculateBalances(
-                    expenses: expenses,
-                    shares: shares,
-                    members: members,
-                    settlements: settlements
-                )
-                balancesByGroup[group.cloudKitZoneID] = balances
-
-                allExpenses.append(contentsOf: expenses)
-                allShares.append(contentsOf: shares)
-                allSettlements.append(contentsOf: settlements)
-
-                for member in members where member.isCurrentUser && member.isActive {
-                    currentUserMemberIDs.insert(member.id.uuidString)
-                }
-            }
-
-            // Global summary
-            if !groups.isEmpty {
-                globalSummary = GroupBalanceService.globalSummary(
-                    allExpenses: allExpenses,
-                    allShares: allShares,
-                    allSettlements: allSettlements,
-                    currentUserMemberIDs: currentUserMemberIDs
-                )
-            } else {
-                globalSummary = nil
+                // M6 D3: cache para recalcular debts on-demand (currentUserDebts) + para `recalculate()`.
+                expensesByGroup[group.cloudKitZoneID] = try GroupExpenseService.shared.fetchExpenses(for: group)
+                sharesByGroup[group.cloudKitZoneID] = try GroupExpenseService.shared.fetchAllShares(for: group)
+                settlementsByGroup[group.cloudKitZoneID] = try GroupExpenseService.shared.fetchSettlements(for: group)
             }
         } catch {
             #if DEBUG
-            print("GroupsViewModel: Error loading data: \(error)")
+            print("GroupsViewModel: Error fetching data: \(error)")
             #endif
         }
+    }
+
+    /// Fase de CÁLCULO pura: opera sobre los dicts ya cacheados por `fetchData()` (sin fetch nuevo).
+    /// Reconstruye los acumuladores cruzando-grupos que antes se armaban en el loop de fetch.
+    private func recalculate() {
+        guard modelContext != nil else { return }
+
+        var allExpenses: [SplitExpense] = []
+        var allShares: [SplitShare] = []
+        var allSettlements: [SplitSettlement] = []
+        var currentUserMemberIDs = Set<String>()
+        var newBalancesByGroup: [String: [MemberBalance]] = [:]
+
+        for group in groups {
+            let zoneID = group.cloudKitZoneID
+            let members = membersByGroup[zoneID] ?? []
+
+            guard !group.isArchived else { continue }
+
+            let expenses = expensesByGroup[zoneID] ?? []
+            let shares = sharesByGroup[zoneID] ?? []
+            let settlements = settlementsByGroup[zoneID] ?? []
+
+            newBalancesByGroup[zoneID] = GroupBalanceService.calculateBalances(
+                expenses: expenses,
+                shares: shares,
+                members: members,
+                settlements: settlements
+            )
+
+            allExpenses.append(contentsOf: expenses)
+            allShares.append(contentsOf: shares)
+            allSettlements.append(contentsOf: settlements)
+
+            for member in members where member.isCurrentUser && member.isActive {
+                currentUserMemberIDs.insert(member.id.uuidString)
+            }
+        }
+
+        if newBalancesByGroup != balancesByGroup { balancesByGroup = newBalancesByGroup }
+
+        // Global summary
+        let newSummary: GroupGlobalSummary?
+        if !groups.isEmpty {
+            newSummary = GroupBalanceService.globalSummary(
+                allExpenses: allExpenses,
+                allShares: allShares,
+                allSettlements: allSettlements,
+                currentUserMemberIDs: currentUserMemberIDs
+            )
+        } else {
+            newSummary = nil
+        }
+        if newSummary != globalSummary { globalSummary = newSummary }
     }
 
     /// Fuerza un fetch de CloudKit y recarga la lista (refresh acotado a Grupos, no un bump global de

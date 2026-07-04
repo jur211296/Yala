@@ -36,6 +36,9 @@ struct GroupDetailViewModelTests {
         #expect(vm.activeSheet == nil)
         #expect(vm.shareURL == nil)
         #expect(vm.isCreatingShare == false)
+        // Regresión: arranca false para que el detalle muestre skeleton (no contenido a medio
+        // poblar) hasta el primer fetchData con éxito. Espejo de GroupsViewModel.hasLoadedOnce.
+        #expect(vm.isReady == false)
     }
 
     // MARK: - Computed Properties
@@ -86,6 +89,9 @@ struct GroupDetailViewModelTests {
         let vm = GroupDetailViewModel(group: makeGroup())
         vm.loadData()
         #expect(vm.members.isEmpty)
+        // Sin contexto, fetchData retorna temprano y isReady sigue false → el detalle mantiene
+        // el skeleton en vez de mostrar un estado vacío incorrecto.
+        #expect(vm.isReady == false)
     }
 
     // MARK: - Share Link Guard

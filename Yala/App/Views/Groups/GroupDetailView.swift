@@ -102,6 +102,7 @@ struct GroupDetailView: View {
                 }
 
                 tabContent
+                    .yalaSkeleton(!viewModel.isReady)
             }
 
             // FAB — new expense (only on records tab)

@@ -26,6 +26,10 @@ final class GroupDetailViewModel {
     private(set) var balances: [MemberBalance] = []
     private(set) var debts: [Debt] = []
 
+    /// `true` tras el primer `fetchData()` con éxito. Mientras es `false` el detalle muestra un
+    /// skeleton en vez de contenido a medio poblar (espejo de `GroupsViewModel.hasLoadedOnce`).
+    private(set) var isReady: Bool = false
+
     /// Drives `isEstimate` del `AmountText` para prefijar "≈" solo cuando hubo conversión
     /// real (al menos un balance/debt original tenía currency ≠ `group.currencyCode`).
     private(set) var balancesWereConverted: Bool = false
@@ -112,7 +116,17 @@ final class GroupDetailViewModel {
 
     // MARK: - Data Loading
 
+    /// Path síncrono instantáneo: fetch + recálculo en una pasada. Usado por los callers locales
+    /// (setContext, delete/confirm/reject/removeOpeningBalance) que esperan feedback inmediato.
+    /// El sync remoto (onChange dataVersion) usa `reloadAndRecalculate`.
     func loadData() {
+        fetchData()
+        recalculate()
+    }
+
+    /// Fase de FETCH pura (SwiftData): members/nameLookup/expenses/shares/settlements + bridge maps.
+    /// NO calcula balances/debts.
+    private func fetchData() {
         guard let context = modelContext else { return }
 
         do {
@@ -125,43 +139,55 @@ final class GroupDetailViewModel {
             shares = try GroupExpenseService.shared.fetchAllShares(for: group)
             settlements = try GroupExpenseService.shared.fetchSettlements(for: group)
 
-            let rawBalances = GroupBalanceService.calculateBalances(
-                expenses: expenses,
-                shares: shares,
-                members: members,
-                settlements: settlements
-            )
-
-            let rawDebts = GroupBalanceService.calculateDebts(
-                expenses: expenses,
-                shares: shares,
-                settlements: settlements,
-                simplifyDebts: group.simplifyDebts
-            )
-
-            if group.showDebtsInSingleCurrency {
-                let target = group.currencyCode
-                balancesWereConverted = rawBalances.contains { $0.currencyCode != target }
-                debtsWereConverted = rawDebts.contains { $0.currencyCode != target }
-                balances = balancesWereConverted
-                    ? GroupBalanceService.consolidatedBalances(from: rawBalances, targetCurrency: target)
-                    : rawBalances
-                debts = debtsWereConverted
-                    ? GroupBalanceService.consolidatedDebts(from: rawDebts, targetCurrency: target)
-                    : rawDebts
-            } else {
-                balances = rawBalances
-                debts = rawDebts
-                if balancesWereConverted { balancesWereConverted = false }
-                if debtsWereConverted { debtsWereConverted = false }
-            }
-
             rebuildBridgeMaps(context: context)
+            isReady = true
         } catch {
             #if DEBUG
-            print("GroupDetailViewModel: Error loading data: \(error)")
+            print("GroupDetailViewModel: Error fetching data: \(error)")
             #endif
         }
+    }
+
+    /// Fase de CÁLCULO pura: balances + debts + consolidación single-currency sobre los arrays ya
+    /// cacheados por `fetchData()` (sin fetch nuevo). Equality guards para no churnear `@Observable`.
+    private func recalculate() {
+        guard modelContext != nil else { return }
+
+        let rawBalances = GroupBalanceService.calculateBalances(
+            expenses: expenses,
+            shares: shares,
+            members: members,
+            settlements: settlements
+        )
+
+        let rawDebts = GroupBalanceService.calculateDebts(
+            expenses: expenses,
+            shares: shares,
+            settlements: settlements,
+            simplifyDebts: group.simplifyDebts
+        )
+
+        let newBalances: [MemberBalance]
+        let newDebts: [Debt]
+        if group.showDebtsInSingleCurrency {
+            let target = group.currencyCode
+            balancesWereConverted = rawBalances.contains { $0.currencyCode != target }
+            debtsWereConverted = rawDebts.contains { $0.currencyCode != target }
+            newBalances = balancesWereConverted
+                ? GroupBalanceService.consolidatedBalances(from: rawBalances, targetCurrency: target)
+                : rawBalances
+            newDebts = debtsWereConverted
+                ? GroupBalanceService.consolidatedDebts(from: rawDebts, targetCurrency: target)
+                : rawDebts
+        } else {
+            newBalances = rawBalances
+            newDebts = rawDebts
+            if balancesWereConverted { balancesWereConverted = false }
+            if debtsWereConverted { debtsWereConverted = false }
+        }
+
+        if newBalances != balances { balances = newBalances }
+        if newDebts != debts { debts = newDebts }
     }
 
     /// Prefetch TX bridge personal por `splitExpenseID` filtrado a la zona del grupo +
