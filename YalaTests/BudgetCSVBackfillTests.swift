@@ -19,7 +19,7 @@ import Testing
 @testable import Yala
 
 @MainActor
-@Suite("Budget CSV mirror — eager backfill from hydrated M2M")
+@Suite("Budget CSV mirror — eager backfill from hydrated M2M", .serialized)
 struct BudgetCSVBackfillTests {
 
     /// El bug: M2M hidratada + CSV vacío → reconstruye el espejo y el filtro vuelve a aplicar.

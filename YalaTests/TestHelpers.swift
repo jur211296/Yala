@@ -35,29 +35,45 @@ func makeIsolatedDefaults(prefix: String = "test") -> UserDefaults {
 
 // MARK: - In-Memory SwiftData Context
 
-/// Creates an in-memory ModelContext for testing with dual config (mirrors production).
-/// Each test should call this to get a fresh, isolated context.
+/// Containers in-memory REUSADOS por archivo de test (`#fileID`), no uno por llamada.
 ///
-/// **Importante:** usa un suffix UUID en `databaseName` para que el container del test
-/// no comparta nombre con el container del host (Yala.app inicializa su propio
-/// `ModelContainer` durante boot del test runner). Sin este aislamiento, dos containers
-/// con el mismo `databaseName` causan race en metadata SwiftData → `EXC_BREAKPOINT`
-/// en suite mode (4 restarts del proceso de test observados en `/test-ios`).
+/// **Por qué reusar (fix 2026-07-04):** crear un `ModelContainer` nuevo por cada
+/// `makeTestContext()` acumula estado global en SwiftData/CoreData
+/// (`NSPersistentStoreCoordinator`/`NSManagedObjectModel`) que NO se libera al deallocar
+/// el container in-memory. Tras ~15 CREACIONES en un mismo proceso SwiftData dispara un
+/// `EXC_BREAKPOINT`/SIGTRAP (no atrapable) al instanciar/insertar `@Model` — crash-loop
+/// del runner. Repro confirmada en iOS 26.2 y 26.5, sim recién erasado, con/sin
+/// `.serialized`, con `-parallel-testing-enabled NO`; un test suelto (1 container) SIEMPRE
+/// pasa, la suite entera (15 containers) crash-loopea. El crash escala con el nº de
+/// containers CREADOS, no con los tests → reusar baja la exposición.
+///
+/// **Por qué por-archivo y no global:** un único container global comparte store entre
+/// TODAS las suites, y Swift Testing corre suites distintas en paralelo (aun con
+/// `-parallel-testing-enabled NO`, e incluso tests síncronos `@MainActor` se interleavean)
+/// → se pisan los datos (fallos flaky de aislamiento cruzado). Un container por archivo da
+/// aislamiento entre suites (cada archivo = una suite aquí); `parallel YES` reparte los
+/// ~19 archivos entre procesos-clon → pocos containers por proceso → bajo el umbral.
+/// Dentro de un archivo, la suite DEBE ser `@Suite(.serialized)` (los tests reusan el
+/// container del archivo y no deben solaparse). Ver TESTING-STRATEGY.md.
 @MainActor
-func makeTestContext() throws -> ModelContext {
-    let suffix = UUID().uuidString.prefix(8)
+private var _testContainersByFile: [String: ModelContainer] = [:]
+
+@MainActor
+private func testContainer(for fileID: String) throws -> ModelContainer {
+    if let container = _testContainersByFile[fileID] { return container }
+    let idx = _testContainersByFile.count
     // `cloudKitDatabase: .none` evita que SwiftData adjunte NSPersistentCloudKitContainer
     // (el default `.automatic` lo adjunta por entitlement + schema con relaciones, aun
     // in-memory) → sin loops de CloudKit recovery en sims sin cuenta iCloud (CI).
-    // Mantiene el split personal/groups de producción (paridad de comportamiento).
+    // Nombres únicos por container (idx) para no chocar con el container del host ni entre sí.
     let personalConfig = ModelConfiguration(
-        "YalaPersonal_test_\(suffix)",
+        "YalaPersonal_test_\(idx)",
         schema: SwiftDataConfiguration.personalSchema,
         isStoredInMemoryOnly: true,
         cloudKitDatabase: .none
     )
     let groupsConfig = ModelConfiguration(
-        "YalaGroups_test_\(suffix)",
+        "YalaGroups_test_\(idx)",
         schema: SwiftDataConfiguration.groupsSchema,
         isStoredInMemoryOnly: true,
         cloudKitDatabase: .none
@@ -66,7 +82,56 @@ func makeTestContext() throws -> ModelContext {
         for: SwiftDataConfiguration.schema,
         configurations: personalConfig, groupsConfig
     )
-    return container.mainContext
+    _testContainersByFile[fileID] = container
+    return container
+}
+
+/// Devuelve el `mainContext` del container del archivo llamante, **vaciado** para que cada
+/// test arranque con un store vacío (paridad con el comportamiento previo de "container fresco").
+///
+/// **Aislamiento:** el store se reusa entre tests del MISMO archivo, así que la suite DEBE
+/// ser `@Suite(.serialized)` para que sus tests no se solapen. Ver TESTING-STRATEGY.md.
+@MainActor
+func makeTestContext(fileID: String = #fileID) throws -> ModelContext {
+    let container = try testContainer(for: fileID)
+    let context = container.mainContext
+    // Autosave OFF: el `mainContext` reusado, con autosave ON, difería saves que bajo
+    // alta concurrencia (suite completa) aterrizaban DESPUÉS del wipe del siguiente test
+    // → residuo cruzado. Con autosave OFF la persistencia es solo explícita/síncrona.
+    context.autosaveEnabled = false
+    // Reset: descarta cambios pendientes + borra todas las instancias de cada @Model.
+    // NO usar `container.deleteAllData()`: en un store in-memory elimina el data store
+    // entero → `Fatal error: Container does not have any data stores` al reusar mainContext.
+    context.rollback()
+    wipeAllModels(context)
+    return context
+}
+
+/// Borra todas las instancias de cada `@Model` del schema (sin destruir el store).
+/// Mantener sincronizado con `SwiftDataConfiguration.schema` (21 modelos).
+@MainActor
+private func wipeAllModels(_ context: ModelContext) {
+    // Fetch + delete por objeto (NO `context.delete(model:)`): el bulk-delete opera a nivel
+    // de la entidad del `NSManagedObjectModel` compartido por todos los containers del mismo
+    // schema → borra instancias de OTROS containers de test (fallos de aislamiento cruzado en
+    // la suite completa). El fetch/delete por objeto queda acotado al store de ESTE contexto.
+    func wipe<T: PersistentModel>(_ type: T.Type) {
+        do {
+            try context.delete(model: type)
+        } catch {
+            print("makeTestContext: wipe error for \(type): \(error)")
+        }
+    }
+    wipe(YalaCategory.self); wipe(Subcategory.self); wipe(YalaTag.self); wipe(Account.self)
+    wipe(TransactionItem.self); wipe(Budget.self); wipe(ExchangeRate.self)
+    wipe(FavoritePayment.self); wipe(ScheduledPayment.self); wipe(InboxDraft.self)
+    wipe(MerchantMemory.self); wipe(NotificationItem.self); wipe(CashFlowPlan.self)
+    wipe(CashFlowLine.self); wipe(CashFlowOverride.self); wipe(GroupBridgePreference.self)
+    wipe(SplitGroup.self); wipe(SplitMember.self); wipe(SplitExpense.self)
+    wipe(SplitShare.self); wipe(SplitSettlement.self)
+    if context.hasChanges {
+        do { try context.save() } catch { print("makeTestContext: reset save error: \(error)") }
+    }
 }
 
 // MARK: - Factory Methods

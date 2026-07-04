@@ -11,6 +11,9 @@ import Testing
 
 @testable import Yala
 
+// `.serialized` obligatorio: `makeTestContext()` reusa un container compartido (fix del
+// EXC_BREAKPOINT cumulativo), así que los tests NO deben solaparse o se pisan el store.
+@Suite(.serialized)
 struct CategoryDeduplicationServiceTests {
 
     // MARK: - Identity Key

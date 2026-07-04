@@ -17,7 +17,7 @@ import Testing
 @testable import Yala
 
 @MainActor
-@Suite("Budget Filter — CloudKit lazy hydration regression")
+@Suite("Budget Filter — CloudKit lazy hydration regression", .serialized)
 struct BudgetFilterRegressionTests {
 
     /// Caso 1: un Budget con CSV mirror poblado pero M2M `subcategories` vacía
