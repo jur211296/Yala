@@ -1353,6 +1353,9 @@
       "area": "apple-pay-automation",
       "codeGlobs": [
         "Yala/App/Intents/QuickExpenseIntent.swift",
+        "Yala/App/Intents/ApplePayAmountParser.swift",
+        "Yala/App/Intents/ApplePayPendingStore.swift",
+        "Yala/App/Services/ApplePayDraftService.swift",
         "Yala/App/Intents/AppShortcutsProvider.swift",
         "Yala/App/Services/MerchantMemoryService.swift",
         "Yala/Models/InboxDraft.swift"
@@ -1361,9 +1364,9 @@
         "F-WCS-03"
       ],
       "classification": "manual",
-      "coverage": "manual",
+      "coverage": "unit:YalaTests/ApplePayAmountParserTests,YalaTests/ApplePayPendingStoreTests + manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-07-04"
     },
     {
       "area": "biometric-lock",

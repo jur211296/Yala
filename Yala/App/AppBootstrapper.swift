@@ -132,6 +132,11 @@ final class AppBootstrapper {
         // 4. Process due scheduled payments (create inbox drafts)
         if !uiTestActive { processDueScheduledPayments(context: context) }
 
+        // 4b. Materializar gastos de Apple Pay encolados por el intent (App Group → InboxDraft).
+        // El intent ya no toca SwiftData; la app crea el borrador aquí (gateado por quiescencia).
+        // El refresh de UI lo cubre el `incrementDataVersion()` del final del bootstrap.
+        if !uiTestActive { ApplePayDraftService.processPending(context: context) }
+
         // 5. Check for pending inbox drafts and notify user
         if !uiTestActive { checkForPendingInboxDrafts(context: context) }
 
@@ -584,6 +589,12 @@ final class AppBootstrapper {
                        let ctx = bootstrapper.remoteChangeModelContext {
                         CategoryDeduplicationService.runDedupIfQuiescent(in: ctx)
                     }
+                    // Import asentado (3s de quietud): materializar gastos de Apple Pay que se
+                    // difirieron al abrir con el import activo; refrescar si creó alguno.
+                    if let ctx = bootstrapper.remoteChangeModelContext,
+                       ApplePayDraftService.processPending(context: ctx) > 0 {
+                        bootstrapper.sessionState.incrementDataVersion()
+                    }
                     #if DEBUG
                     print("AppBootstrapper: Remote CloudKit change — trailing edge")
                     #endif
@@ -887,6 +898,11 @@ final class AppBootstrapper {
         let shouldProcessPayments = Date.now.timeIntervalSince(lastProcessDuePaymentsDate) > 30.0
         if shouldProcessPayments {
             processDueScheduledPayments(context: context)
+        }
+        // Materializar gastos de Apple Pay encolados por el intent; refrescar UI si creó alguno
+        // (Bandeja/Registros reaccionan a `dataVersion`).
+        if ApplePayDraftService.processPending(context: context) > 0 {
+            sessionState.incrementDataVersion()
         }
         checkForPendingInboxDrafts(context: context)
 

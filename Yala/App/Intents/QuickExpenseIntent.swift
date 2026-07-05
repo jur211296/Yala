@@ -121,141 +121,50 @@ struct ApplePayTransactionIntent: AppIntent {
             return .result()
         }
 
-        let container: ModelContainer
-        do {
-            // `personalLocalWriteConfiguration` (`.none`): NO crea un 2º mirror CloudKit sobre
-            // el store de la app. Evita el error 134410 in-process en warm launch (la app es
-            // el único dueño del sync y exporta este write vía history). Ver TN3164 / el bug.
-            container = try ModelContainer(
-                for: SwiftDataConfiguration.personalSchema,
-                configurations: SwiftDataConfiguration.personalLocalWriteConfiguration
-            )
-            IntentSignalBreadcrumb.intentContainerCreated(cloudKit: false, errorCode: nil)
-        } catch {
-            #if DEBUG
-            print("ApplePayTransactionIntent: Error creating ModelContainer: \(error)")
-            #endif
-            IntentSignalBreadcrumb.intentContainerCreated(cloudKit: false, errorCode: (error as NSError).code)
-            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "database"])
-            await notifyFailure()
-            return .result()
-        }
+        // El intent NO toca SwiftData: encola el pago CRUDO en App Group y la app crea el
+        // `InboxDraft` al abrir (`ApplePayDraftService`). Abrir un 2º `ModelContainer` aquí dejaba
+        // una ventana de reconciliación que vaciaba la UI hasta un cold launch. Ver
+        // `Bugs/applepay-shortcut-ios27-warm-launch-datos-vacios`.
 
-        let context = container.mainContext
-
-        guard let parsedResult = parseAmountAndCurrency(from: amountString, context: context) else {
+        // Parseo PURO (sin base de datos) solo para formatear la notificación. La divisa ambigua
+        // ($/kr) la resuelve la app al materializar; aquí, fallback razonable por símbolo.
+        // Monto no parseable o cero (ej. auth/hold de $0) → no es un gasto real: avisar y no encolar.
+        guard let parsed = ApplePayAmountParser.parse(amountString), parsed.amount != 0 else {
             TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_amount"])
             await notifyFailure()
             return .result()
         }
 
-        let finalAmount = parsedResult.amount
-        let detectedCurrency = parsedResult.currency
-        let finalNote = merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let effectiveDate = Date.now
+        let merchantText = merchant?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
-        // Guard: no accounts configured yet (system accounts excluded — only the bridge assigns them)
-        let accountCount: Int
-        do {
-            accountCount = try context.fetchCount(
-                FetchDescriptor<Account>(predicate: #Predicate<Account> { $0.isSystemAccount == false })
+        // Encolar el gasto para que la app lo materialice como borrador al abrir.
+        ApplePayPendingStore.append(
+            ApplePayPendingExpense(
+                rawAmount: amountString,
+                merchant: merchantText.isEmpty ? nil : merchantText,
+                savedAt: Date.now.timeIntervalSince1970
             )
-        } catch {
-            #if DEBUG
-            print("QuickExpenseIntent: Error fetching account count: \(error)")
-            #endif
-            accountCount = 0
-        }
-        guard accountCount > 0 else {
-            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "no_account"])
-            await notifyFailure()
-            return .result()
-        }
-
-        // Try to find account by detected currency (if unique match)
-        var matchedAccount: Account?
-        var needsUserInput: [String] = ["subcategory"]
-
-        if let currency = detectedCurrency {
-            matchedAccount = findIntentAccount(byCurrency: currency, context: context)
-        }
-
-        if matchedAccount == nil {
-            needsUserInput.insert("account", at: 0)
-        }
-
-        // Confidence routing: autoAssign (≥5 aprobs, ≤10% error) → 0.95; suggest → 0.8.
-        var matchedSubcategory: Subcategory?
-        var subcategoryConfidence: Double?
-        if !finalNote.isEmpty {
-            let merchantService = MerchantMemoryService(modelContext: context)
-            let suggestion = merchantService.suggest(for: finalNote)
-
-            switch suggestion {
-            case .autoAssign(let sub):
-                matchedSubcategory = sub
-                subcategoryConfidence = 0.95
-                needsUserInput.removeAll { $0 == "subcategory" }
-            case .suggest(let sub):
-                matchedSubcategory = sub
-                subcategoryConfidence = 0.8
-            case .none:
-                break
-            }
-        }
-
-        // Create InboxDraft (Apple Pay siempre crea draft → user revisa en Inbox)
-        let draft = InboxDraft(
-            note: finalNote,
-            amount: -abs(finalAmount), // Apple Pay is always expense (negative)
-            date: effectiveDate,
-            account: matchedAccount,
-            subcategory: matchedSubcategory,
-            sourceType: .applePay,
-            rawText: amount, // Store original amount string for reference
-            evidence: finalNote.isEmpty ? nil : finalNote,
-            confidenceAmount: 1.0,
-            confidenceDate: 1.0,
-            confidenceMerchant: finalNote.isEmpty ? nil : 1.0,
-            confidenceSubcategory: subcategoryConfidence,
-            needsUserInput: needsUserInput
         )
-
-        context.insert(draft)
-
-        do {
-            try context.save()
-        } catch {
-            TelemetryService.track(.intentFailed, parameters: ["intent_type": "applePay", "error": "save_failed"])
-            await notifyFailure()
-            return .result()
-        }
-
-        // Señal cross-launch para que la app refresque al volver a foreground (el observer de
-        // `.NSPersistentStoreRemoteChange` pudo no estar registrado cuando guardamos). Se marca
-        // tras el save y ANTES de notificar; es un write de UserDefaults sin UI → no toca el
-        // contrato del shortcut (5ce1e43f). Ver PendingIntentSaveSignal.
-        PendingIntentSaveSignal.mark()
         IntentSignalBreadcrumb.set("applePay")
 
-        let fallbackCurrency = detectedCurrency ?? "USD"
-        let notifAmount = YalaFormatterStatic.currency(value: finalAmount, currencyCode: fallbackCurrency, forceFullPrecision: true)
-        let noteText = finalNote.isEmpty ? "" : " — \(finalNote)"
+        let notifCurrency = parsed.currency ?? "USD"
+        let notifAmount = YalaFormatterStatic.currency(value: abs(parsed.amount), currencyCode: notifCurrency, forceFullPrecision: true)
+        let noteText = merchantText.isEmpty ? "" : " — \(merchantText)"
         let notifBody = L10n.Shortcut.Notification.body(L10n.Shortcut.Notification.expense, notifAmount, noteText)
 
         // Sin ProvidesDialog/ShowsSnippetView: la automation Wallet corre con la pantalla
         // bloqueada, donde iOS no puede presentar UI → reportaría "no se pudo ejecutar el
-        // atajo" aunque el draft ya esté guardado. El único feedback es la notificación
-        // local (sí llega bloqueada). Se envía con `await` (no Task.detached): sendNotification
-        // solo consulta permisos + notificationCenter.add() (~ms), muy por debajo del budget,
-        // y await garantiza el envío antes de que el proceso del intent termine.
+        // atajo". El único feedback es la notificación local (sí llega bloqueada). Se envía con
+        // `await` (no Task.detached): sendNotification solo consulta permisos +
+        // notificationCenter.add() (~ms), muy por debajo del budget, y await garantiza el envío
+        // antes de que el proceso del intent termine.
         await NotificationService.shared.sendNotification(
             title: L10n.Shortcut.Notification.title,
             body: notifBody,
             deepLink: "inbox"
         )
 
-        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "applePay", "outcome": "draft_created"])
+        TelemetryService.track(.intentSuccess, parameters: ["intent_type": "applePay", "outcome": "draft_queued"])
         return .result()
     }
 
@@ -274,90 +183,6 @@ struct ApplePayTransactionIntent: AppIntent {
         )
     }
 
-    /// Parses amount and currency from Wallet text format
-    /// Examples: "$32.04" -> (32.04, "USD"), "S/ 25.90" -> (25.90, "PEN"), "€25,50" -> (25.50, "EUR")
-    /// Símbolos ambiguos (`$` para USD/ARS/CLP/MXN, `kr` para NOK/SEK/DKK) se resuelven
-    /// con la currency del lastUsedAccount cuando existe; sin él, fallback al símbolo default.
-    @MainActor
-    private func parseAmountAndCurrency(from text: String, context: ModelContext) -> (amount: Double, currency: String?)? {
-        // Symbols ordered by priority (más específicos primero — "MX$" antes de "$")
-        let prefixedSymbols: [(symbol: String, code: String)] = [
-            ("MX$", "MXN"), ("COP$", "COP"), ("R$", "BRL"),
-            ("A$", "AUD"), ("C$", "CAD"), ("NZ$", "NZD"), ("HK$", "HKD"),
-            ("S/.", "PEN"), ("S/", "PEN"),
-            ("€", "EUR"), ("£", "GBP"), ("¥", "JPY"),
-            ("Fr", "CHF"), ("₣", "CHF"),
-            ("kr", "NOK"),  // Ambiguo (NOK/SEK/DKK) — resolver por account
-            ("$", "USD")     // Ambiguo (USD/ARS/CLP/MXN/etc) — resolver por account
-        ]
-
-        var detectedCurrency: String?
-        var detectedSymbol: String?
-
-        for entry in prefixedSymbols {
-            if text.contains(entry.symbol) {
-                detectedCurrency = entry.code
-                detectedSymbol = entry.symbol
-                break
-            }
-        }
-
-        // Trailing currency code: "25.00 ARS" → ARS (override de símbolo ambiguo).
-        let words = text.components(separatedBy: .whitespaces)
-        if let lastWord = words.last,
-           lastWord.count == 3,
-           lastWord.uppercased() == lastWord {
-            detectedCurrency = lastWord
-            detectedSymbol = nil
-        }
-
-        // Ambiguous symbols ($ y kr): override con currency del lastUsedAccount si existe.
-        if detectedSymbol == "$" || detectedSymbol == "kr" {
-            if let lastUsedID = LastUsedAccountStore.read(),
-               let accountCurrency = Self.currencyOfAccount(shortcutID: lastUsedID, context: context) {
-                detectedCurrency = accountCurrency
-            }
-        }
-
-        // Extract numeric value
-        var cleaned = text.replacingOccurrences(of: "[^\\d.,\\-]", with: "", options: .regularExpression)
-
-        // Handle European format (comma as decimal separator)
-        if cleaned.contains(",") {
-            if !cleaned.contains(".") {
-                // Only comma: 25,50 -> 25.50
-                cleaned = cleaned.replacing(",", with: ".")
-            } else if let commaIndex = cleaned.lastIndex(of: ","),
-                      let dotIndex = cleaned.lastIndex(of: "."),
-                      commaIndex > dotIndex {
-                // Comma after dot: 1.234,56 -> 1234.56
-                cleaned = cleaned.replacing(".", with: "")
-                cleaned = cleaned.replacing(",", with: ".")
-            } else {
-                // Dot after comma: 1,234.56 -> 1234.56 (US format with thousands separator)
-                cleaned = cleaned.replacing(",", with: "")
-            }
-        }
-
-        guard let amount = Double(cleaned) else {
-            return nil
-        }
-
-        return (amount, detectedCurrency)
-    }
-
-    /// Lookup de currencyCode por shortcutID. Usado para desambiguar `$` y `kr`.
-    @MainActor
-    fileprivate static func currencyOfAccount(shortcutID: String, context: ModelContext) -> String? {
-        guard UUID(uuidString: shortcutID) != nil else { return nil }
-        let descriptor = FetchDescriptor<Account>()
-        do {
-            let all = try context.fetch(descriptor)
-            return all.first { $0.shortcutID.uuidString == shortcutID }?.currencyCode
-        } catch {
-            return nil
-        }
-    }
 }
 
 // MARK: - Siri Natural Language Entry Intent

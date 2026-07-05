@@ -1248,5 +1248,9 @@ final class AppPreferences {
         /// volver a foreground para forzar el refresh (el observer de `.NSPersistentStoreRemoteChange`
         /// pudo no estar registrado cuando el intent guardó). Ver `PendingIntentSaveSignal`.
         nonisolated static let pendingIntentSaveAt = "pendingIntentSaveAt"
+        /// Cola JSON (`[ApplePayPendingExpense]`) de gastos de Apple Pay que el intent encoló sin
+        /// tocar SwiftData; la app los materializa como `InboxDraft` al abrir (ver `ApplePayPendingStore`
+        /// / `ApplePayDraftService`). Acumula varios pagos hechos antes de abrir la app.
+        nonisolated static let pendingApplePayExpenses = "pendingApplePayExpenses"
     }
 }

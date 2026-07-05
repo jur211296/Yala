@@ -84,6 +84,8 @@ enum AnalyticsEvent: String {
     case intentSuccess = "Atajos · Atajo exitoso"
     case intentFailed = "Atajos · Atajo fallido"
     case intentSaveSignalConsumed = "Atajos · Señal de save consumida"  // params: site (became_active|bootstrap), age_bucket — un intent background guardó vía su container y la app refrescó al volver a foreground
+    case applePayPayloadMaterialized = "Atajos · Apple Pay materializado"  // params: count — la app creó N borradores desde la cola de App Group del intent de Apple Pay (nuevo flujo sin SwiftData en el intent)
+    case applePayPayloadDropped = "Atajos · Apple Pay descartado"  // params: count — N pagos encolados se descartaron por monto no parseable/cero (canario de payloads corruptos)
 
     // Group lifecycle
     case groupCreated = "Grupos · Grupo creado"
