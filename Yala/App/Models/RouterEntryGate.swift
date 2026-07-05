@@ -40,6 +40,13 @@ final class RouterEntryGate {
     func submit(_ intent: RouterIntent) {
         // 1. Defer if the app cannot process notifications/deeplinks right now.
         if shouldDefer(intent) {
+            // Canario (fuera de #if DEBUG, sin PII): un intent notification-like que se difiere
+            // pero NO es serializable se PIERDE — `deferIntent` lo descarta en silencio. Cazó el
+            // bug de cold-launch de shared-image; también delataría el mismo hueco en
+            // `.navigate(.groupDetail)`. Ver Bugs/qa_cold-launch-share-image-no-registro.
+            if !DeferredIntentBufferLogic.canSerialize(intent) {
+                logger.notice("RouterEntryGate: DROP non-serializable deferred intent \(intent.id, privacy: .public)")
+            }
             DeferredIntentBuffer.shared.deferIntent(intent)
             let r = readinessProvider()
             let reason = NotificationGateLogic.deferralReason(

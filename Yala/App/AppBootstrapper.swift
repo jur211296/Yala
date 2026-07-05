@@ -159,10 +159,11 @@ final class AppBootstrapper {
         // 6.6. Ensure static notifications are scheduled (handles reinstall/update case)
         await ensureNotificationsScheduled(context: context)
 
-        // 7. Check for pending shared images (cold launch without deep link)
-        checkForPendingSharedImage()
-
-        // 7.5. Clean up stale pending images (>24h)
+        // 7. Clean up stale pending images (>24h). La RECUPERACIÓN de imágenes pendientes
+        // (checkForPendingSharedImage) se movió a post-`isInitialized` (paso 21, abajo):
+        // correrla aquí la difería porque `isInitialized == false` → RouterEntryGate manda el
+        // `.presentSharedImage` (no-serializable) al buffer, que lo descarta en silencio →
+        // "no hace nada" en cold launch. Ver Bugs/qa_cold-launch-share-image-no-registro.
         SharedContainerService.clearOldPendingImages(olderThan: 86400)
 
         // 8. Initialize services with context
@@ -366,6 +367,13 @@ final class AppBootstrapper {
         // 20. Drain DeferredIntentBuffer: re-submit any RouterIntent that
         // arrived during pre-bootstrap, biometric lock, or mid-onboarding.
         RouterEntryGate.shared.drainDeferredBuffer()
+
+        // 21. Recuperar imagen compartida pendiente (share extension → PendingImages/).
+        // DEBE correr post-`isInitialized` y DESPUÉS del drain: así `submit(.presentSharedImage)`
+        // pasa el gate y encola en AppRouter (el consumer .panel la drena al montarse) en vez
+        // de diferirse a un buffer que no serializa el intent. Espeja la red de invites del
+        // paso 19. Ver Bugs/qa_cold-launch-share-image-no-registro.
+        checkForPendingSharedImage(site: "bootstrap")
     }
 
     #if DEBUG
@@ -893,6 +901,12 @@ final class AppBootstrapper {
         checkForPendingInboxDrafts(context: context)
 
         checkForPendingControlAction()
+
+        // Recuperar imagen compartida pendiente al volver a foreground (imagen compartida con
+        // la app en background, o re-presentación si un intento previo se interrumpió). El gate
+        // exige `isInitialized`, así que un `.active` temprano que racee con bootstrap no hace
+        // nada aquí (el paso 21 de bootstrap lo cubre).
+        checkForPendingSharedImage(site: "becameActive")
 
         // Drain buffered intents (notif taps that arrived during lock /
         // mid-onboarding while app was foregrounded but blocked).
@@ -1675,9 +1689,22 @@ final class AppBootstrapper {
         NotificationService.shared.seedDefaultNotificationsIfNeeded(context: context)
     }
 
-    /// Only called from bootstrap() for cold launch without deep link.
-    private func checkForPendingSharedImage() {
-        guard let firstImageURL = SharedContainerService.pendingImageURLs().first else { return }
+    /// Drena `PendingImages/` (share extension) en una ventana ready y re-emite el intent de
+    /// presentación. Llamado desde `bootstrap()` (post-`isInitialized`) y `handleBecameActive`.
+    /// Gateado por `SharedImageRecoveryGate`: solo re-emite cuando el `submit(.presentSharedImage)`
+    /// pasará el readiness gate (init + onboarding + no-lock); en caso contrario la imagen
+    /// persiste en el App Group y se reintenta en la próxima ventana. `site` es solo para el
+    /// breadcrumb de diagnóstico. Ver Bugs/qa_cold-launch-share-image-no-registro.
+    private func checkForPendingSharedImage(site: String) {
+        let pending = SharedContainerService.pendingImageURLs().first
+        let willReEmit = SharedImageRecoveryGate.shouldReEmit(
+            hasPendingImage: pending != nil,
+            isInitialized: isInitialized,
+            hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding),
+            isLocked: BiometricAuthService.shared.isLocked
+        )
+        SharedImageBreadcrumb.checked(site: site, found: pending != nil, willReEmit: willReEmit)
+        guard willReEmit, let firstImageURL = pending else { return }
         enqueueSharedImage(firstImageURL)
     }
 

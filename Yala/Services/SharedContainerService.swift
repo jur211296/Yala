@@ -33,7 +33,10 @@ enum SharedContainerService {
         }
     }
 
-    /// Returns all pending image URLs
+    /// Returns all pending image URLs, ordenadas por fecha de creación DESCENDENTE
+    /// (más reciente primero). `contentsOfDirectory` no garantiza orden, así que sin este
+    /// sort `.first` elegiría una imagen arbitraria cuando hay 2+ pendientes — la
+    /// recuperación debe presentar la ÚLTIMA compartida.
     static func pendingImageURLs() -> [URL] {
         guard let url = pendingImagesURL else { return [] }
         do {
@@ -42,13 +45,23 @@ enum SharedContainerService {
                 includingPropertiesForKeys: [.creationDateKey],
                 options: .skipsHiddenFiles
             )
-            return contents.filter { $0.pathExtension.lowercased() == "jpg" || $0.pathExtension.lowercased() == "png" }
+            let images = contents.filter { $0.pathExtension.lowercased() == "jpg" || $0.pathExtension.lowercased() == "png" }
+            let dated = images.map { imageURL -> (url: URL, date: Date) in
+                let date = (try? imageURL.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
+                return (imageURL, date)
+            }
+            return orderByCreationDescending(dated)
         } catch {
             #if DEBUG
             print("SharedContainerService: Error listing pending images: \(error)")
             #endif
             return []
         }
+    }
+
+    /// Pure-logic testeable del orden de `pendingImageURLs`: más reciente primero.
+    static func orderByCreationDescending(_ items: [(url: URL, date: Date)]) -> [URL] {
+        items.sorted { $0.date > $1.date }.map(\.url)
     }
 
     /// Removes a processed image

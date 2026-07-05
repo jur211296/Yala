@@ -55,8 +55,10 @@ enum DeferredIntentBufferLogic {
     ///   so a round-trip would silently lose it. Better refuse to serialize.
     /// - `.presentSharedImage(url)` — the full URL cannot be reconstructed
     ///   from `filename` alone. `AppBootstrapper.checkForPendingSharedImage`
-    ///   re-emits this intent on each cold launch from `SharedContainerService`,
-    ///   so deferral via buffer is redundant + lossy.
+    ///   re-emits this intent desde el App Group `PendingImages/` en cada ventana
+    ///   ready — bootstrap POST-`isInitialized` (NO pre-init: ahí el submit se
+    ///   difiere y esta serialización nula lo descartaría) Y `handleBecameActive`,
+    ///   gateado por `SharedImageRecoveryGate`. Persistir aquí sería redundante + lossy.
     static func serialize(_ intent: RouterIntent) -> SerializableIntent? {
         switch intent {
         case .navigate(let dest):

@@ -100,8 +100,10 @@ final class AppRouter {
 
     /// Drops all transient intents. Called on scene phase `.background`.
     /// Intents marked `isTransient == false` (remote wipe, iCloud mismatch)
-    /// are preserved. Persistence-backed intents (shared image, inbox drafts,
-    /// trial expired) re-emit on next `.active` via AppBootstrapper.
+    /// are preserved. Los intents respaldados por un store persistente se re-emiten
+    /// desde su fuente en la próxima ventana ready: invites desde `PendingInviteStore`
+    /// (`reEmitPendingInviteIfNeeded`) y shared-image desde el App Group `PendingImages/`
+    /// (`checkForPendingSharedImage`, en bootstrap post-init Y `handleBecameActive`).
     func resetTransients() {
         let before = queue.count
         queue = queue.filter { !$0.isTransient }
