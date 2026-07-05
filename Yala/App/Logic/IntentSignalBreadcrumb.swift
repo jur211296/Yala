@@ -33,39 +33,6 @@ enum IntentSignalBreadcrumb {
         logger.notice("SIGNAL SET \(intent, privacy: .public)")
     }
 
-    /// Resultado de crear el `ModelContainer` del intent. `cloudKit=false` confirma que usa
-    /// el container local-only (`.none`). `errorCode` != nil delata un fallo de creación
-    /// (canario del 134410 si alguna vez reaparece el 2º mirror `.private`).
-    nonisolated static func intentContainerCreated(cloudKit: Bool, errorCode: Int?) {
-        if let errorCode {
-            logger.notice("CONTAINER \(cloudKit ? "cloudKit" : "local", privacy: .public) — error=\(errorCode, privacy: .public)")
-        } else {
-            logger.notice("CONTAINER \(cloudKit ? "cloudKit" : "local", privacy: .public) — ok")
-        }
-    }
-
-    /// La app chequeó la señal al volver a foreground / en bootstrap. Se loguea SIEMPRE
-    /// (también `found=false`): la ausencia de señal es tan diagnóstica como su presencia.
-    nonisolated static func checked(site: String, found: Bool, ageSeconds: Double?) {
-        if let ageSeconds {
-            logger.notice("SIGNAL CHECK \(site, privacy: .public) — found=\(found, privacy: .public) age=\(ageSeconds, format: .fixed(precision: 1), privacy: .public)s")
-        } else {
-            logger.notice("SIGNAL CHECK \(site, privacy: .public) — found=\(found, privacy: .public)")
-        }
-    }
-
-    /// El re-fire diferido aplicó cambios pendientes (el merge de la history aterrizó).
-    nonisolated static func refireApplied(elapsed: Double) {
-        logger.notice("REFIRE applied — elapsed=\(elapsed, format: .fixed(precision: 1), privacy: .public)s")
-    }
-
-    /// El re-fire llegó al tope de la ventana sin aplicar ningún pending (el observer no
-    /// re-disparó dentro de la ventana). No fuerza reload — el refresh inmediato ya cubrió el
-    /// caso merged; un merge posterior lo aplica la próxima navegación.
-    nonisolated static func refireTimedOut() {
-        logger.notice("REFIRE timed-out")
-    }
-
     /// Entrada a `bootstrap()`. `alreadyInitialized=true` = el guard cortará (proceso ya
     /// bootstrapeado); `false` = primer bootstrap real de este proceso.
     nonisolated static func bootstrapEntered(alreadyInitialized: Bool) {

@@ -11,7 +11,11 @@ import OpenAI
 
 // MARK: - Parsed Transaction
 
-struct ParsedTransaction: Codable {
+// `nonisolated`: DTO de datos puros que cruza actores (lo construye el parser en @MainActor y lo
+// (de)serializa `SiriPendingStore` desde contextos `nonisolated` en el proceso del intent). Sin
+// esto, bajo `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` su conformance Codable queda main-actor-
+// isolated y no se puede usar desde `nonisolated` (error en Swift 6 mode).
+nonisolated struct ParsedTransaction: Codable, Equatable {
     let amount: Decimal?
     let date: Date?
     let note: String
@@ -21,7 +25,7 @@ struct ParsedTransaction: Codable {
     let currencyHint: String?
     let confidence: TransactionConfidence
 
-    struct TransactionConfidence: Codable {
+    nonisolated struct TransactionConfidence: Codable, Equatable {
         let amount: Double
         let date: Double
         let merchant: Double

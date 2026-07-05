@@ -1334,6 +1334,9 @@
       "area": "app-intents-shortcuts-siri",
       "codeGlobs": [
         "Yala/App/Intents/QuickExpenseIntent.swift",
+        "Yala/App/Intents/SiriPendingStore.swift",
+        "Yala/App/Intents/SiriIntentContextCache.swift",
+        "Yala/App/Services/SiriDraftService.swift",
         "Yala/App/Intents/AppShortcutsProvider.swift",
         "Yala/App/Intents/Views/TransactionSnippetView.swift",
         "Yala/Shared/ControlCenterIntents.swift",
@@ -1345,9 +1348,9 @@
         "F-WCS-07"
       ],
       "classification": "manual",
-      "coverage": "manual",
+      "coverage": "unit:YalaTests/SiriPendingStoreTests,YalaTests/SiriIntentContextCacheTests,YalaTests/SiriDraftServiceTests + manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-07-05"
     },
     {
       "area": "apple-pay-automation",

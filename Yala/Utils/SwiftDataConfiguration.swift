@@ -209,31 +209,6 @@ enum SwiftDataConfiguration {
         return ModelConfiguration(databaseName, schema: personalSchema)
     }
 
-    /// Config para escritores efímeros en background (App Intents: ApplePay/Siri Natural).
-    /// MISMO store físico que `personalConfiguration` (mismo `databaseName` = mismo SQLite),
-    /// pero SIN mirror CloudKit propio (`cloudKitDatabase: .none`).
-    ///
-    /// Razón: un App Intent que corre en el proceso de la app viva (warm launch) creaba un
-    /// SEGUNDO `NSPersistentCloudKitContainer` con `.private` sobre el mismo store → error
-    /// CloudKit 134410 ("another instance actively syncing with CloudKit in this process"),
-    /// que dejaba el store de la app en mal estado (todos los datos en 0) hasta un cold launch.
-    /// Es el anti-patrón que Apple documenta en TN3164 ("Avoid synchronizing a store with
-    /// multiple persistent containers"). Con `.none` la app (`personalConfiguration`) queda como
-    /// ÚNICO dueño del sync y exporta los writes del intent vía persistent history en su próximo
-    /// run. Ver `Bugs/applepay-shortcut-ios27-warm-launch-datos-vacios`.
-    ///
-    /// Las ramas test/uitest ya son `.none` en `personalConfiguration`, así que solo divergen
-    /// las ramas de producción (iCloud disponible / fallback).
-    static var personalLocalWriteConfiguration: ModelConfiguration {
-        if isRunningTests {
-            return ModelConfiguration("YalaPersonal", schema: personalSchema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
-        }
-        if isUITesting {
-            return ModelConfiguration("YalaModel-UITest", schema: personalSchema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
-        }
-        return ModelConfiguration(databaseName, schema: personalSchema, cloudKitDatabase: .none)
-    }
-
     /// Group data — local only (CKSyncEngine syncs via groups container).
     static var groupsConfiguration: ModelConfiguration {
         if isRunningTests {

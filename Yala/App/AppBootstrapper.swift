@@ -54,8 +54,6 @@ final class AppBootstrapper {
     private var isProcessingInvite = false
     private var subscriptionCheckTask: Task<Void, Never>?
     private var remoteChangeTask: Task<Void, Never>?
-    /// Re-fire diferido tras consumir la señal de un intent background (ver `scheduleIntentSaveRefire`).
-    private var intentSaveRefireTask: Task<Void, Never>?
     private var remoteChangeLeadingFired = false
     private var lastNotificationCheckDate = Date.distantPast
     private var lastProcessDuePaymentsDate = Date.distantPast
@@ -132,10 +130,18 @@ final class AppBootstrapper {
         // 4. Process due scheduled payments (create inbox drafts)
         if !uiTestActive { processDueScheduledPayments(context: context) }
 
-        // 4b. Materializar gastos de Apple Pay encolados por el intent (App Group → InboxDraft).
-        // El intent ya no toca SwiftData; la app crea el borrador aquí (gateado por quiescencia).
-        // El refresh de UI lo cubre el `incrementDataVersion()` del final del bootstrap.
-        if !uiTestActive { ApplePayDraftService.processPending(context: context) }
+        // 4b. Materializar gastos de Apple Pay / dictados de Siri encolados por sus intents
+        // (App Group → InboxDraft). Los intents ya no tocan SwiftData; la app crea los borradores
+        // aquí (gateado por quiescencia). El refresh de UI lo cubre el `incrementDataVersion()` del
+        // final del bootstrap.
+        if !uiTestActive {
+            ApplePayDraftService.processPending(context: context)
+            SiriDraftService.processPending(context: context)
+            // Refrescar la caché que lee el intent de Siri (subcategorías para el LLM + divisa + si
+            // hay cuentas). Read-only (no save) → seguro aunque el import de CloudKit siga en curso;
+            // converge en cada foreground.
+            SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
+        }
 
         // 5. Check for pending inbox drafts and notify user
         if !uiTestActive { checkForPendingInboxDrafts(context: context) }
@@ -341,19 +347,6 @@ final class AppBootstrapper {
         NudgeService.shared.setContext(context)
 
         isInitialized = true
-
-        // Red de seguridad: si un intent background guardó datos y la Scene arrancó ya `.active`
-        // (posible en el modelo de iOS 27), `.onChange(of: scenePhase)` pudo no disparar, así que
-        // `handleBecameActive` no consumió la señal. La consumimos aquí. NO incrementamos aparte:
-        // el `incrementDataVersion()` de abajo ya fuerza el reload. (Si algún día se elimina ese
-        // increment, este consume debe pasar a `markRemoteChangePending()` + apply + refire.)
-        if let savedAt = PendingIntentSaveSignal.consume() {
-            let age = Date.now.timeIntervalSince(savedAt)
-            IntentSignalBreadcrumb.checked(site: "bootstrap", found: true, ageSeconds: age)
-            TelemetryService.track(.intentSaveSignalConsumed, parameters: ["site": "bootstrap", "age_bucket": PendingIntentSaveSignal.ageBucket(age)])
-        } else {
-            IntentSignalBreadcrumb.checked(site: "bootstrap", found: false, ageSeconds: nil)
-        }
 
         // Los servicios de Grupos recién recibieron su contexto (paso 16). Una vista de Grupos ya
         // montada (tab inicial de "Solo Grupos") pudo hacer su primer `loadData()` con el contexto
@@ -589,11 +582,14 @@ final class AppBootstrapper {
                        let ctx = bootstrapper.remoteChangeModelContext {
                         CategoryDeduplicationService.runDedupIfQuiescent(in: ctx)
                     }
-                    // Import asentado (3s de quietud): materializar gastos de Apple Pay que se
-                    // difirieron al abrir con el import activo; refrescar si creó alguno.
-                    if let ctx = bootstrapper.remoteChangeModelContext,
-                       ApplePayDraftService.processPending(context: ctx) > 0 {
-                        bootstrapper.sessionState.incrementDataVersion()
+                    // Import asentado (3s de quietud): materializar gastos de Apple Pay / dictados de
+                    // Siri que se difirieron al abrir con el import activo; refrescar si crearon alguno.
+                    if let ctx = bootstrapper.remoteChangeModelContext {
+                        let applePayCreated = ApplePayDraftService.processPending(context: ctx)
+                        let siriCreated = SiriDraftService.processPending(context: ctx)
+                        if applePayCreated > 0 || siriCreated > 0 {
+                            bootstrapper.sessionState.incrementDataVersion()
+                        }
                     }
                     #if DEBUG
                     print("AppBootstrapper: Remote CloudKit change — trailing edge")
@@ -861,20 +857,6 @@ final class AppBootstrapper {
             hasSeenInitialActive = true
         }
 
-        // Señal de un intent background (ApplePay/Siri) que guardó vía su propio container: su
-        // save no llega al observer de remote-change si aún no estaba registrado. Consumir ANTES
-        // de applyPendingChangesIfNeeded y rutear por markRemoteChangePending: coalesce con
-        // cualquier remote-change pendiente → UN solo incrementDataVersion (no doble reload).
-        if let savedAt = PendingIntentSaveSignal.consume() {
-            let age = Date.now.timeIntervalSince(savedAt)
-            IntentSignalBreadcrumb.checked(site: "becameActive", found: true, ageSeconds: age)
-            TelemetryService.track(.intentSaveSignalConsumed, parameters: ["site": "became_active", "age_bucket": PendingIntentSaveSignal.ageBucket(age)])
-            sessionState.markRemoteChangePending()
-            scheduleIntentSaveRefire()
-        } else {
-            IntentSignalBreadcrumb.checked(site: "becameActive", found: false, ageSeconds: nil)
-        }
-
         // Apply any pending remote CloudKit changes on foreground resume
         sessionState.applyPendingChangesIfNeeded()
 
@@ -899,11 +881,15 @@ final class AppBootstrapper {
         if shouldProcessPayments {
             processDueScheduledPayments(context: context)
         }
-        // Materializar gastos de Apple Pay encolados por el intent; refrescar UI si creó alguno
-        // (Bandeja/Registros reaccionan a `dataVersion`).
-        if ApplePayDraftService.processPending(context: context) > 0 {
+        // Materializar gastos de Apple Pay / dictados de Siri encolados por sus intents; refrescar
+        // UI si crearon alguno (Bandeja/Registros reaccionan a `dataVersion`).
+        let applePayCreated = ApplePayDraftService.processPending(context: context)
+        let siriCreated = SiriDraftService.processPending(context: context)
+        if applePayCreated > 0 || siriCreated > 0 {
             sessionState.incrementDataVersion()
         }
+        // Refrescar la caché de contexto del intent de Siri (subcategorías/divisa/cuentas).
+        SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
         checkForPendingInboxDrafts(context: context)
 
         checkForPendingControlAction()
@@ -920,41 +906,6 @@ final class AppBootstrapper {
                 await ensureNotificationsScheduled(context: context)
                 await ReportNotificationService.shared.sendDueReports(context: context)
             }
-        }
-    }
-
-    /// Re-fire diferido tras consumir la señal de un intent background. Drena los cambios
-    /// remote pendientes durante una ventana bounded hasta que el coordinator de la app procesa
-    /// la persistent history del write del intent: cuando eso pasa, el observer de
-    /// `.NSPersistentStoreRemoteChange` marca pending y aquí lo aplicamos AUNQUE ya estemos en
-    /// foreground — cerrando la ventana en que un merge tardío no se reflejaba (un `fetch` no
-    /// hace pull; la UI solo refresca al aplicar el pending). Cuelga del mecanismo LOCAL de
-    /// remote-change, NO de `waitForImportQuiescence` (que es del import de CloudKit).
-    /// Bounded + post-asentamiento → sin riesgo de watchdog (solo re-dispara el path de refresh
-    /// existente, no muta @Observable durante transición de sheet).
-    private func scheduleIntentSaveRefire() {
-        intentSaveRefireTask?.cancel()
-        intentSaveRefireTask = Task { @MainActor in
-            let start = Date.now
-            for _ in 0..<10 {   // ~10s (poll 1s), estilo del loop de waitForImportQuiescence
-                try? await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled else { return }
-                if sessionState.applyPendingChangesIfNeeded() {
-                    // El observer marcó pending (el coordinator procesó la history del intent) y
-                    // lo aplicamos → la UI recargó. Listo.
-                    IntentSignalBreadcrumb.refireApplied(elapsed: Date.now.timeIntervalSince(start))
-                    return
-                }
-            }
-            guard !Task.isCancelled else { return }
-            // Sin backstop incondicional: el refresh inmediato de `handleBecameActive`
-            // (`applyPendingChangesIfNeeded` justo tras marcar pending) ya cubre el caso en que la
-            // history estaba mergeada al abrir; un merge posterior a la ventana lo aplica la próxima
-            // navegación/foreground (el observer ya marcó pending). Forzar aquí un
-            // `incrementDataVersion` dispararía un reload completo redundante (Panel + Inbox + VMs)
-            // ~10s después de CADA warm launch con Apple Pay, y no ayudaría si el observer nunca
-            // disparó (re-fetch sobre el mismo contexto sin mergear).
-            IntentSignalBreadcrumb.refireTimedOut()
         }
     }
 

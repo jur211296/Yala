@@ -16,7 +16,7 @@
 //  cross-process, así que un read-modify-write de UNA lista compartida perdería o duplicaría
 //  pagos cuando ambos procesos escriben a la vez. Con una key única por pago cada operación
 //  toca su propia key (atómica por-key) → sin lost-update. Espeja el patrón de valor-por-key de
-//  `LastUsedAccountStore` / `PendingIntentSaveSignal`.
+//  `LastUsedAccountStore`.
 //
 
 import Foundation
