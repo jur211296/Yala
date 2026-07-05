@@ -1589,6 +1589,19 @@
       "lastVerified": "2026-07-05"
     },
     {
+      "area": "groupdetail-deeplink-cold-launch-recovery",
+      "codeGlobs": [
+        "Yala/App/Logic/DeferredIntentBufferLogic.swift",
+        "Yala/App/Models/DeferredIntentBuffer.swift",
+        "Yala/App/Models/RouterEntryGate.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/DeferredIntentBufferLogicTests + manual",
+      "owner": "",
+      "lastVerified": ""
+    },
+    {
       "area": "import-file-picker",
       "codeGlobs": [
         "Yala/App/Views/Import/**",
@@ -1877,6 +1890,20 @@
       "coverage": "unit:YalaTests/DraftConversionEligibilityLogicTests,YalaTests/DraftToGroupExpenseTemplateLogicTests + manual (e2e bridge/sync device/TestFlight)",
       "owner": "",
       "lastVerified": ""
+    },
+    {
+      "area": "income-expense-classification-parity",
+      "codeGlobs": [
+        "Yala/App/Logic/TransactionClassificationLogic.swift",
+        "Yala/App/ViewModels/RecordsViewModel.swift",
+        "Yala/Services/TrendDataProcessor.swift",
+        "Yala/Services/ReportNotificationService.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/TransactionClassificationLogicTests,YalaTests/TrendDataProcessorTests + manual (device: Records/Tendencias/CashFlow coinciden 'Este mes')",
+      "owner": "",
+      "lastVerified": "2026-07-05"
     }
   ]
 }

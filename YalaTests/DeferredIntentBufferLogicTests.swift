@@ -23,10 +23,16 @@ struct DeferredIntentBufferLogicTests {
         #expect(DeferredIntentBufferLogic.serialize(.presentSharedImage(url)) == nil)
     }
 
-    @Test func serialize_navigateGroupDetail_returnsNil_byDesign() {
-        // routerKey for .groupDetail returns the bare string "groupDetail" —
-        // groupID would be lost on round-trip. Refuse to serialize.
-        #expect(DeferredIntentBufferLogic.serialize(.navigate(.groupDetail(groupID: "abc"))) == nil)
+    @Test func serialize_navigateGroupDetail_preservesGroupID() {
+        // groupDetail routes through the dedicated case so a group deep link
+        // (yala://groups/<id>) survives a pre-bootstrap defer in cold launch
+        // instead of being dropped. Regression: Bugs/qa_cold-launch-groupdetail-deeplink-no-routing.
+        let s = DeferredIntentBufferLogic.serialize(.navigate(.groupDetail(groupID: "abc")))
+        if case .navigateGroupDetail(let groupID) = s {
+            #expect(groupID == "abc")
+        } else {
+            Issue.record("expected .navigateGroupDetail, got \(String(describing: s))")
+        }
     }
 
     @Test func serialize_showInboxAlert_preservesCounters() {
@@ -48,6 +54,9 @@ struct DeferredIntentBufferLogicTests {
 
     @Test func canSerialize_consistentWithSerialize() {
         #expect(DeferredIntentBufferLogic.canSerialize(.navigate(.inbox)))
+        // groupDetail is now serializable → the RouterEntryGate "DROP non-serializable"
+        // canary must no longer fire for a group deep link.
+        #expect(DeferredIntentBufferLogic.canSerialize(.navigate(.groupDetail(groupID: "g1"))))
         #expect(!DeferredIntentBufferLogic.canSerialize(.presentTrialOffer))
     }
 
@@ -123,5 +132,26 @@ struct DeferredIntentBufferLogicTests {
         } else {
             Issue.record("wrong case")
         }
+    }
+
+    @Test func deserialize_navigateGroupDetail_roundtrips() {
+        let s: SerializableIntent = .navigateGroupDetail(groupID: "grp-42")
+        let intent = DeferredIntentBufferLogic.deserialize(s)
+        if case .navigate(let dest) = intent {
+            #expect(dest == .groupDetail(groupID: "grp-42"))
+        } else {
+            Issue.record("wrong case")
+        }
+    }
+
+    @Test func roundTrip_navigateGroupDetail_throughJSON() {
+        // The deferred buffer persists as JSON in UserDefaults — verify the new
+        // case survives the encode/decode path too, not just the enum mapping.
+        let createdAt = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970))
+        let entry = DeferredEntry(payload: .navigateGroupDetail(groupID: "grp-7"), createdAt: createdAt)
+        let data = DeferredIntentBufferLogic.encode([entry])
+        #expect(data != nil)
+        let decoded = DeferredIntentBufferLogic.decode(data)
+        #expect(decoded == [entry])
     }
 }

@@ -37,6 +37,10 @@ struct DeferredEntry: Codable, Equatable {
 /// objects (CKShare.Metadata, fetched accounts/budgets, runtime callbacks).
 enum SerializableIntent: Codable, Equatable {
     case navigate(routerKey: String)
+    /// `.navigate(.groupDetail(groupID:))` needs its own case: `routerKey`
+    /// collapses `groupDetail` to the bare string "groupDetail", dropping the
+    /// groupID. This dedicated case carries the ID across a launch.
+    case navigateGroupDetail(groupID: String)
     case showInboxAlert(scheduledPayments: Int, subscriptions: Int, automations: Int)
 }
 
@@ -49,10 +53,12 @@ enum DeferredIntentBufferLogic {
     }
 
     /// Lossy projection from RouterIntent to SerializableIntent. Returns nil
-    /// for intents without a stable persistent representation, including
-    /// intents whose deserialization cannot recover the original payload:
-    /// - `.navigate(.groupDetail(groupID:))` — groupID is NOT in `routerKey`,
-    ///   so a round-trip would silently lose it. Better refuse to serialize.
+    /// for intents without a stable persistent representation:
+    /// - `.navigate(.groupDetail(groupID:))` — serializes through the dedicated
+    ///   `.navigateGroupDetail(groupID:)` case (the generic `.navigate(routerKey:)`
+    ///   proxy would drop the groupID). This lets a group deep link
+    ///   (`yala://groups/<id>`) survive a pre-bootstrap defer and re-emit on
+    ///   drain in cold launch. Ver Bugs/qa_cold-launch-groupdetail-deeplink-no-routing.
     /// - `.presentSharedImage(url)` — the full URL cannot be reconstructed
     ///   from `filename` alone. `AppBootstrapper.checkForPendingSharedImage`
     ///   re-emits this intent desde el App Group `PendingImages/` en cada ventana
@@ -62,8 +68,17 @@ enum DeferredIntentBufferLogic {
     static func serialize(_ intent: RouterIntent) -> SerializableIntent? {
         switch intent {
         case .navigate(let dest):
-            // Reject groupDetail: payload would be silently lost on drain.
-            if case .groupDetail = dest { return nil }
+            // groupDetail carries a groupID that `routerKey` collapses away —
+            // route it through the dedicated case that preserves the ID.
+            if case .groupDetail(let groupID) = dest {
+                return .navigateGroupDetail(groupID: groupID)
+            }
+            // GUARD: any future DeepLinkDestination case with an associated value
+            // needs its OWN SerializableIntent case above (like groupDetail). This
+            // default drops any payload not in `routerKey` SILENTLY — and worse than
+            // the original bug, the RouterEntryGate "DROP non-serializable" canary
+            // won't fire (this returns a valid proxy, not nil), so a cold-launch
+            // defer would lose the payload invisibly. Ver Bugs/qa_cold-launch-groupdetail-deeplink-no-routing.
             return .navigate(routerKey: dest.routerKey)
         case .showInboxAlert(let n):
             return .showInboxAlert(
@@ -88,6 +103,8 @@ enum DeferredIntentBufferLogic {
         case .navigate(let key):
             guard let dest = deepLinkDestination(from: key) else { return nil }
             return .navigate(dest)
+        case .navigateGroupDetail(let groupID):
+            return .navigate(.groupDetail(groupID: groupID))
         case .showInboxAlert(let sched, let subs, let autos):
             return .showInboxAlert(PendingInboxNotification(
                 scheduledPayments: sched,
@@ -148,7 +165,8 @@ enum DeferredIntentBufferLogic {
     /// Reverse-lookup of `DeepLinkDestination.routerKey`. Returns nil if the
     /// key is unknown (forward compatibility — older builds may have
     /// persisted a destination the current build no longer recognises).
-    /// Note: `groupDetail` is excluded — its `groupID` payload is not in `routerKey`.
+    /// Note: `groupDetail` is NOT handled here — it round-trips through the
+    /// dedicated `.navigateGroupDetail(groupID:)` case (its groupID isn't in `routerKey`).
     static func deepLinkDestination(from key: String) -> DeepLinkDestination? {
         switch key {
         case "panel": return .panel
