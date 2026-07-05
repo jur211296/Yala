@@ -4650,3 +4650,6 @@
 
 /* Solo Grupos — entrada onboarding (groupsOnly) */
 "onboarding.confirm.motivationGroups" = "准备好和朋友分摊费用了！";
+
+/* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
+"inbox.convertToShared" = "转为共享支出";

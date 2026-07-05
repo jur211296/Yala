@@ -4638,3 +4638,6 @@
 
 /* Solo Grupos — entrada onboarding (groupsOnly) */
 "onboarding.confirm.motivationGroups" = "Bereit, Ausgaben mit Freunden zu teilen!";
+
+/* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
+"inbox.convertToShared" = "In geteilte Ausgabe umwandeln";

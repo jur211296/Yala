@@ -4648,3 +4648,6 @@
 
 /* Solo Grupos — entrada onboarding (groupsOnly) */
 "onboarding.confirm.motivationGroups" = "Pronto a dividere le spese con gli amici!";
+
+/* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
+"inbox.convertToShared" = "Converti in spesa condivisa";

@@ -926,6 +926,25 @@ final class GroupService {
         }
     }
 
+    /// Grupos donde el current user puede crear un gasto USABLE (activo + miembro `.active`
+    /// presente). Espeja `GroupsViewModel.eligibleGroupsForExpense` (que filtra sus caches del
+    /// tab) pero hace los fetches directos, para callers FUERA del tab Grupos — ej. convertir un
+    /// draft del Inbox. El filtro pure-logic (`GroupExpenseEligibilityLogic.canCreateExpense`) es
+    /// el SSOT compartido; solo difiere la fuente de datos (fetch aquí vs cache en el VM).
+    func eligibleGroupsForExpense(context providedContext: ModelContext? = nil) throws -> [SplitGroup] {
+        let context = try providedContext ?? requireContext()
+        let groups = try context.fetch(FetchDescriptor<SplitGroup>(sortBy: [SortDescriptor(\.name)]))
+        return try groups.filter { group in
+            let members = try fetchMembers(for: group, context: context)
+            let status = members.first(where: { $0.isCurrentUser })?.memberStatus
+            return GroupExpenseEligibilityLogic.canCreateExpense(
+                currentMemberStatus: status,
+                isArchived: group.isArchived,
+                isHiddenForAll: group.isHiddenForAll
+            )
+        }
+    }
+
     // MARK: - User Display Name
 
     private func currentUserDisplayName() -> String {

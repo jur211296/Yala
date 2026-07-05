@@ -5108,6 +5108,9 @@ enum L10n {
         static var saveLater: String {
             ls("inbox.saveLater", comment: "")
         }
+        static var convertToShared: String {
+            ls("inbox.convertToShared", comment: "")
+        }
         static var deleteTitle: String {
             ls("inbox.deleteTitle", comment: "")
         }

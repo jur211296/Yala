@@ -84,6 +84,37 @@ final class DraftService {
         try context.save()
     }
 
+    // MARK: - Convert to Group Expense
+
+    /// Cierra el ciclo tras convertir un draft PERSONAL de gasto en un `SplitExpense` de grupo.
+    /// El form (`GroupExpenseFormView`) ya creó el gasto + la contraparte personal vía el bridge
+    /// Caso A (`GroupExpenseService.createExpense`), e invoca esto desde su `onExpenseCreated`.
+    /// A diferencia de `handleGroupScheduledExpenseApproved`, NO hay `ScheduledPayment` que
+    /// avanzar: solo se borra el draft y se refresca. NO invoca `approveDraft` (no crea una
+    /// `TransactionItem` personal — el gasto ya vive en el grupo).
+    func handleDraftConvertedToGroupExpense(_ draft: InboxDraft, context: ModelContext) {
+        // Capturado antes del delete (leer props de un objeto borrado da un fault).
+        let sourceRaw = draft.sourceTypeRaw
+        // Canario: si el bridge no estaba listo, el SplitExpense pudo quedar sin contraparte
+        // personal (best-effort en createExpense). Muy improbable en un user-tap del Inbox
+        // (el boot ya inyectó el context), pero lo instrumentamos por si reaparece.
+        let bridgeReady = GroupTransactionBridge.shared.isReady
+        do {
+            context.delete(draft)
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+            WidgetDataCache.updateCache(context: context)
+            TelemetryService.track(
+                .draftConvertedToGroupExpense,
+                parameters: ["source": sourceRaw, "bridgeReady": bridgeReady ? "true" : "false"]
+            )
+        } catch {
+            #if DEBUG
+            print("DraftService: Error convirtiendo draft a gasto de grupo: \(error)")
+            #endif
+        }
+    }
+
     // MARK: - Approve Operations
 
     func approveDraft(

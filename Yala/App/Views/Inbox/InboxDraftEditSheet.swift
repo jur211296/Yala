@@ -83,10 +83,18 @@ struct InboxDraftEditSheet: View {
     @State private var approvedTransaction: TransactionItem?
     @State private var successData: InboxApproveSuccessData?
 
+    // Group conversion: grupos elegibles resueltos en .task (solo para gastos puntuales pendientes).
+    // Vacío = no ofrecer la acción "Convertir a gasto compartido".
+    @State private var eligibleGroups: [SplitGroup] = []
+
     // Callbacks
     var onApproved: (() -> Void)?
     var onApproveNext: ((InboxDraft) -> Void)?
     var onEditTransaction: ((TransactionItem) -> Void)?
+    /// Redirige el draft (gasto personal puntual) a un gasto compartido de grupo en vez de
+    /// aprobarlo como `TransactionItem`. `groups` = grupos elegibles ya resueltos (≥1). `InboxView`
+    /// es dueño del ruteo (1 grupo → form directo; >1 → picker). Ver Approach A del feature.
+    var onConvertToGroupExpense: ((InboxDraft, [SplitGroup]) -> Void)?
 
     // MARK: - Computed
 
@@ -181,6 +189,24 @@ struct InboxDraftEditSheet: View {
             successData = nil
             approvedTransaction = nil
             prefillFromDraft()
+        }
+        .task(id: draft.persistentModelID) {
+            // Resuelve los grupos elegibles SOLO si el draft es un candidato barato (gasto
+            // puntual pendiente): evita el fetch de grupos en ingresos/fuentes no convertibles.
+            // El gate fino (isExpense vivo, monto) se evalúa en el botón, no aquí.
+            guard DraftConversionEligibilityLogic.convertibleSources.contains(draft.sourceType),
+                  draft.status == .pending else {
+                eligibleGroups = []
+                return
+            }
+            do {
+                eligibleGroups = try GroupService.shared.eligibleGroupsForExpense(context: modelContext)
+            } catch {
+                #if DEBUG
+                print("InboxDraftEditSheet: error fetching eligible groups for conversion: \(error)")
+                #endif
+                eligibleGroups = []
+            }
         }
         .alert(L10n.Inbox.discardChangesTitle, isPresented: $showDiscardChangesAlert) {
             Button(L10n.Inbox.discardChanges, role: .destructive) {
@@ -719,6 +745,33 @@ struct InboxDraftEditSheet: View {
                 }
                 .accessibilityHint(!isReadyToApprove ? L10n.Accessibility.approveCompleteHint : "")
                 .accessibilityIdentifier("inbox_approve_button")
+            }
+
+            // Acción terciaria: redirigir el gasto a un grupo (crea un SplitExpense en vez de una
+            // TransactionItem personal). Independiente de isReadyToApprove — convertir NO exige
+            // subcategoría ni cuenta personal (se definen en el form de grupo), así que un draft
+            // de Apple Pay sin clasificar también puede convertirse. saveDraft() primero para que
+            // el template refleje los edits vivos; si el usuario cancela el form, el draft queda igual.
+            if DraftConversionEligibilityLogic.canOffer(
+                sourceType: draft.sourceType,
+                isExpense: isExpense,
+                hasAmount: amount != nil,
+                hasEligibleGroups: !eligibleGroups.isEmpty,
+                status: initialStatus
+            ) {
+                Button {
+                    saveDraft()
+                    onConvertToGroupExpense?(draft, eligibleGroups)
+                    dismiss()
+                } label: {
+                    Text(L10n.Inbox.convertToShared)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(theme.accent)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.sm)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("inbox_convert_to_shared_button")
             }
         }
     }

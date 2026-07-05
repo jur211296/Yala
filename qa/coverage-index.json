@@ -28,10 +28,10 @@
       "none"
     ],
     "counts": {
-      "total": 99,
+      "total": 101,
       "deterministic": 40,
       "agentic": 32,
-      "manual": 26,
+      "manual": 29,
       "deterministicSinXCUITest": 0
     }
   },
@@ -1569,6 +1569,23 @@
       "lastVerified": "2026-06-01"
     },
     {
+      "area": "share-extension-image-recovery",
+      "codeGlobs": [
+        "YalaShare/ShareViewController.swift",
+        "Yala/Services/SharedContainerService.swift",
+        "Yala/App/Logic/SharedImageRecoveryGate.swift",
+        "Yala/App/Logic/SharedImageBreadcrumb.swift"
+      ],
+      "scenarioIDs": [
+        "F-SHARE-IMG-01",
+        "F-SHARE-IMG-02"
+      ],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/SharedImageRecoveryGateTests + unit:YalaTests/SharedContainerServiceTests + manual",
+      "owner": "",
+      "lastVerified": "2026-07-05"
+    },
+    {
       "area": "import-file-picker",
       "codeGlobs": [
         "Yala/App/Views/Import/**",
@@ -1840,6 +1857,21 @@
       ],
       "classification": "agentic",
       "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": ""
+    },
+    {
+      "area": "inbox-convert-to-group",
+      "codeGlobs": [
+        "Yala/App/Logic/DraftConversionEligibilityLogic.swift",
+        "Yala/App/Logic/DraftToGroupExpenseTemplateLogic.swift"
+      ],
+      "scenarioIDs": [
+        "F-INB-05",
+        "F-INB-06"
+      ],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/DraftConversionEligibilityLogicTests,YalaTests/DraftToGroupExpenseTemplateLogicTests + manual (e2e bridge/sync device/TestFlight)",
       "owner": "",
       "lastVerified": ""
     }

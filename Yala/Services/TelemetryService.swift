@@ -86,6 +86,8 @@ enum AnalyticsEvent: String {
     case intentSaveSignalConsumed = "Atajos · Señal de save consumida"  // params: site (became_active|bootstrap), age_bucket — un intent background guardó vía su container y la app refrescó al volver a foreground
     case applePayPayloadMaterialized = "Atajos · Apple Pay materializado"  // params: count — la app creó N borradores desde la cola de App Group del intent de Apple Pay (nuevo flujo sin SwiftData en el intent)
     case applePayPayloadDropped = "Atajos · Apple Pay descartado"  // params: count — N pagos encolados se descartaron por monto no parseable/cero (canario de payloads corruptos)
+    case siriPayloadMaterialized = "Atajos · Siri materializado"  // params: count — la app creó N borradores desde la cola de App Group del intent de Siri (nuevo flujo sin SwiftData en el intent)
+    case siriPayloadDropped = "Atajos · Siri descartado"  // params: count — N dictados encolados se descartaron por no tener ninguna transacción parseable
 
     // Group lifecycle
     case groupCreated = "Grupos · Grupo creado"
@@ -93,6 +95,7 @@ enum AnalyticsEvent: String {
     case groupDeleted = "Grupos · Grupo eliminado"
     case groupSoftDeleted = "Grupos · Grupo eliminado para todos"
     case groupExpenseAdded = "Grupos · Gasto agregado"
+    case draftConvertedToGroupExpense = "Grupos · Gasto desde bandeja"  // params: source (draft sourceType), bridgeReady
     case groupTwoPersonSplitChosen = "Grupos · Split rápido elegido"  // params: choice (iPaidEqual|iPaidOwedFull|theyPaidEqual|theyPaidOwedFull|moreOptions)
     case openingBalanceCreated = "Grupos · Saldo inicial creado"
     case openingBalanceRemoved = "Grupos · Saldo inicial eliminado"

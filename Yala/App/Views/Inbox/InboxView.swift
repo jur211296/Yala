@@ -48,6 +48,12 @@ struct InboxView: View {
     // Archived account alert
     @State private var showArchivedAccountAlert = false
 
+    // Group conversion flow (draft personal de gasto → SplitExpense de grupo). Approach A: el
+    // edit sheet cierra y notifica; InboxView rutea. Un solo sheet activo a la vez (delays).
+    @State private var pendingConversion: PendingConversion?
+    @State private var conversionPicker: ConversionPickerData?
+    @State private var conversionContext: ConversionContext?
+
     private var filteredDrafts: [InboxDraft] {
         viewModel.filteredDrafts(for: selectedFilter)
     }
@@ -121,6 +127,84 @@ struct InboxView: View {
             draft: draft, expenseID: expenseID, context: modelContext
         )
         shouldDismissAfterApproval = true
+    }
+
+    // MARK: - Convert Draft to Group Expense
+
+    private struct PendingConversion {
+        let draft: InboxDraft
+        let groups: [SplitGroup]
+    }
+    private struct ConversionPickerData: Identifiable {
+        let id = UUID()
+        let draft: InboxDraft
+        let groups: [SplitGroup]
+        let memberCounts: [UUID: Int]
+    }
+    private struct ConversionContext: Identifiable {
+        let id = UUID()
+        let draft: InboxDraft
+        let group: SplitGroup
+        let members: [SplitMember]
+        let lookup: [String: String]
+        let template: GroupExpensePrefillTemplate
+    }
+
+    /// Arranca el flujo tras cerrarse el edit sheet: 1 grupo → form directo; >1 → picker.
+    /// Delay para no apilar sobre la transición de cierre del edit sheet (patrón existente).
+    private func startConversionFlow(_ pending: PendingConversion) {
+        Task {
+            do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+            if pending.groups.count == 1 {
+                conversionContext = buildConversionContext(draft: pending.draft, group: pending.groups[0])
+            } else {
+                var counts: [UUID: Int] = [:]
+                for group in pending.groups {
+                    do {
+                        counts[group.id] = try GroupService.shared.fetchMembers(for: group, context: modelContext)
+                            .filter(\.isActive).count
+                    } catch {
+                        #if DEBUG
+                        print("InboxView: error counting members for conversion picker: \(error)")
+                        #endif
+                        counts[group.id] = 0
+                    }
+                }
+                conversionPicker = ConversionPickerData(draft: pending.draft, groups: pending.groups, memberCounts: counts)
+            }
+        }
+    }
+
+    /// Construye el contexto (miembros + lookup + plantilla) para abrir el form de grupo
+    /// prellenado desde un draft personal. nil si el grupo no tiene miembros activos.
+    private func buildConversionContext(draft: InboxDraft, group: SplitGroup) -> ConversionContext? {
+        let members: [SplitMember]
+        do {
+            members = try GroupService.shared.fetchMembers(for: group, context: modelContext)
+        } catch {
+            #if DEBUG
+            print("InboxView: error fetching members for conversion: \(error)")
+            #endif
+            return nil
+        }
+        let activeMembers = members.filter(\.isActive)
+        guard !activeMembers.isEmpty else { return nil }
+        let lookup = Dictionary(members.map { ($0.id.uuidString, $0.displayName) }, uniquingKeysWith: { first, _ in first })
+        let template = DraftToGroupExpenseTemplateLogic.buildTemplate(
+            amount: draft.amount ?? 0,
+            cachedCurrencyCode: draft.cachedCurrencyCode,
+            note: draft.note,
+            activeMemberIDs: activeMembers.map { $0.id },
+            groupCurrencyCode: group.currencyCode,
+            accountPrefill: draft.account
+        )
+        return ConversionContext(draft: draft, group: group, members: members, lookup: lookup, template: template)
+    }
+
+    /// Cierra el ciclo tras crear el SplitExpense desde un draft personal: borra el draft.
+    /// (No usa el expenseID — a diferencia del scheduled, no hay pago recurrente que vincular.)
+    private func finalizeConvertedDraft(draft: InboxDraft) {
+        draftService.handleDraftConvertedToGroupExpense(draft, context: modelContext)
     }
 
     var body: some View {
@@ -289,13 +373,26 @@ struct InboxView: View {
                                 } catch { return }
                                 selectedTransaction = transaction
                             }
+                        },
+                        onConvertToGroupExpense: { convertDraft, groups in
+                            // El sheet ya hizo saveDraft() + dismiss(); onChange arranca el flujo.
+                            pendingConversion = PendingConversion(draft: convertDraft, groups: groups)
                         }
                     )
                 }
             }
             .onChange(of: selectedDraft) { oldValue, newValue in
+                guard oldValue != nil, newValue == nil else { return }
+                // Prioridad: conversión a grupo sobre "abrir siguiente draft". Son mutuamente
+                // excluyentes en la práctica (convertir no setea pendingNextDraftID), pero explícito.
+                if let pending = pendingConversion {
+                    pendingConversion = nil
+                    pendingNextDraftID = nil
+                    startConversionFlow(pending)
+                    return
+                }
                 // When sheet closes and we have a pending next draft, open it
-                if oldValue != nil && newValue == nil, let nextID = pendingNextDraftID {
+                if let nextID = pendingNextDraftID {
                     pendingNextDraftID = nil
                     // Find the draft by ID and open it
                     if let nextDraft = viewModel.findPendingDraft(by: nextID) {
@@ -306,6 +403,36 @@ struct InboxView: View {
             .sheet(item: $selectedTransaction, onDismiss: { viewModel.loadData() }) { transaction in
                 NewTransactionView(transactionToEdit: transaction)
                     .presentationDetents([.large])
+            }
+            .sheet(item: $conversionPicker, onDismiss: { viewModel.loadData() }) { data in
+                // >1 grupo elegible: elegir cuál antes de abrir el form prellenado.
+                GroupPickerSheet(
+                    groups: data.groups,
+                    selectedGroupID: data.groups.first?.id ?? UUID(),
+                    memberCount: { data.memberCounts[$0.id] ?? 0 }
+                ) { picked in
+                    let draft = data.draft
+                    conversionPicker = nil
+                    // Cerrar el picker y abrir el form con delay (evita apilar sheets).
+                    Task {
+                        do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+                        conversionContext = buildConversionContext(draft: draft, group: picked)
+                    }
+                }
+                .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
+            }
+            .sheet(item: $conversionContext, onDismiss: { viewModel.loadData() }) { ctx in
+                GroupExpenseFormView(
+                    group: ctx.group,
+                    members: ctx.members,
+                    memberNameLookup: ctx.lookup,
+                    groupChip: .readOnly,
+                    initialTemplate: ctx.template,
+                    onSave: {},
+                    onExpenseCreated: { _ in
+                        finalizeConvertedDraft(draft: ctx.draft)
+                    }
+                )
             }
             .sheet(isPresented: $showBulkActions, onDismiss: { viewModel.loadData() }) {
                 InboxBulkActionsSheet(
