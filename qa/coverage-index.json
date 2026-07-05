@@ -1895,13 +1895,11 @@
       "area": "income-expense-classification-parity",
       "codeGlobs": [
         "Yala/App/Logic/TransactionClassificationLogic.swift",
-        "Yala/App/ViewModels/RecordsViewModel.swift",
-        "Yala/Services/TrendDataProcessor.swift",
-        "Yala/Services/ReportNotificationService.swift"
+        "Yala/App/ViewModels/RecordsViewModel.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/TransactionClassificationLogicTests,YalaTests/TrendDataProcessorTests + manual (device: Records/Tendencias/CashFlow coinciden 'Este mes')",
+      "coverage": "unit:YalaTests/TransactionClassificationLogicTests + manual (device: header de Records/RecordsStandalone coincide con CashFlow 'Este mes'). Fase 2 (Tendencias/Estadisticas/Reportes) en ticket aparte p20-14.",
       "owner": "",
       "lastVerified": "2026-07-05"
     }

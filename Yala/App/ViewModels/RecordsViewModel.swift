@@ -298,11 +298,14 @@ final class RecordsViewModel: Filterable {
                 // Exclude balance adjustments and transfers from summary
                 let isBalanceAdjustment = record.balanceAdjustmentType != nil
                 if !isBalanceAdjustment {
+                    // La categoría decide el bucket; acumulación signed (paridad
+                    // con CashFlowCalculator): un monto de signo contrario a su
+                    // categoría reduce el bucket (reembolso), no suma magnitud.
                     let amount = record.amountInPreferredCurrency
-                    if amount > 0 {
+                    if TransactionClassificationLogic.isIncome(record) {
                         income += amount
                     } else {
-                        expense += abs(amount)
+                        expense -= amount
                     }
                 }
             }
