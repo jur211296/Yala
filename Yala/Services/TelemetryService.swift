@@ -179,7 +179,6 @@ enum AnalyticsEvent: String {
     case currencyChanged = "Ajustes · Moneda principal"               // params: moneda
     case notificationsPermission = "Notificaciones · Permiso"         // params: resultado
     case notificationTapped = "Notificaciones · Tap"                  // params: tipo
-    case biometricLockToggled = "Seguridad · Bloqueo biométrico"      // params: accion
     case widgetConfigured = "Atajos · Widget configurado"             // params: tipo
     case reportViewed = "Análisis · Reporte visto"
     case statsTabViewed = "Estadísticas · Tab visto"                  // params: tab

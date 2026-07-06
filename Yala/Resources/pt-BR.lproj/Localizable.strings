@@ -1127,25 +1127,6 @@
 "support.messagePlaceholder" = "Conte-nos em detalhe...";
 "support.send" = "Enviar";
 
-// Biometric
-"biometric.title" = "Segurança biométrica";
-"biometric.description" = "Proteja suas informações financeiras com autenticação biométrica ou senha do dispositivo.";
-"biometric.enableLock" = "Ativar bloqueio";
-"biometric.lockAfter" = "Bloquear após";
-"biometric.timeout.immediate" = "10 segundos";
-"biometric.timeout.oneMinute" = "1 minuto";
-"biometric.timeout.fiveMinutes" = "5 minutos";
-"biometric.timeout.fifteenMinutes" = "15 minutos";
-"biometric.authReason" = "Desbloqueie o Yala para acessar suas finanças";
-"biometric.enableReason" = "Verifique sua identidade para ativar o bloqueio";
-"biometric.authFailed" = "Falha na autenticação";
-"biometric.authFailedMessage" = "Não foi possível verificar sua identidade. Tente novamente.";
-"biometric.locked" = "Yala está bloqueado";
-"biometric.unlockPrompt" = "Toque no botão para desbloquear";
-"biometric.unlock" = "Desbloquear";
-"biometric.passcode" = "Senha";
-"biometric.enableLockHint" = "Você precisará verificar sua identidade cada vez que abrir o app.";
-"biometric.lockAfterHint" = "Escolha quanto tempo o app pode ficar em segundo plano antes de bloquear.";
 
 "profile.edit" = "Editar perfil";
 "profile.importSuccess" = "Importacao concluida";
@@ -2169,8 +2150,6 @@
 "tips.filters.detail" = "Use os filtros para ver só o que importa: por categoria, etiqueta, conta ou período. Compare mês a mês para detectar mudanças.";
 "tips.export.title" = "Exporte seus dados";
 "tips.export.detail" = "Baixe seus gastos em CSV ou Excel em Ajustes > Exportar. Ideal para análise em planilha ou para seus registros.";
-"tips.faceID.title" = "Proteja com Face ID";
-"tips.faceID.detail" = "Ative o bloqueio biométrico em Ajustes > Segurança. Você pode escolher ativar ao sair do app ou após um tempo.";
 "tips.siri.title" = "Anote gastos por voz";
 "tips.siri.detail" = "Diga: \"Anota um gasto no Yala\" e dite o detalhe";
 "tips.siri.close" = "Fechar sugestão da Siri";
@@ -4641,3 +4620,14 @@
 
 /* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
 "inbox.convertToShared" = "Converter em despesa compartilhada";
+
+/* Face ID protection guide (settings) */
+"settings.faceIDProtection" = "Proteger com Face ID";
+"faceIDGuide.title" = "Proteja o Yala com Face ID";
+"faceIDGuide.subtitle" = "Use o bloqueio do iOS para que só você abra o app";
+"faceIDGuide.step1Title" = "Mantenha o ícone do Yala pressionado";
+"faceIDGuide.step1Detail" = "Na sua tela de início";
+"faceIDGuide.step2Title" = "Toque em Exigir Face ID";
+"faceIDGuide.step2Detail" = "No menu que aparece";
+"faceIDGuide.step3Title" = "Confirme com seu rosto";
+"faceIDGuide.step3Detail" = "Pronto, seu app está protegido";

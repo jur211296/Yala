@@ -836,24 +836,6 @@
 "balance.status.critical" = "Critical";
 "balance.status.good" = "Good";
 "balance.status.normal" = "Normal";
-"biometric.authFailed" = "Authentication failed";
-"biometric.authFailedMessage" = "Could not verify your identity. Please try again.";
-"biometric.authReason" = "Unlock Yala to access your finances";
-"biometric.description" = "Protect your financial information with biometric authentication or device passcode.";
-"biometric.enableLock" = "Enable lock";
-"biometric.enableLockHint" = "You'll be asked to verify your identity each time you open the app.";
-"biometric.enableReason" = "Verify your identity to enable lock";
-"biometric.lockAfter" = "Lock after";
-"biometric.lockAfterHint" = "Choose how long the app can stay in the background before locking.";
-"biometric.locked" = "Yala is locked";
-"biometric.passcode" = "Passcode";
-"biometric.timeout.fifteenMinutes" = "15 minutes";
-"biometric.timeout.fiveMinutes" = "5 minutes";
-"biometric.timeout.immediate" = "10 seconds";
-"biometric.timeout.oneMinute" = "1 minute";
-"biometric.title" = "Biometric Security";
-"biometric.unlock" = "Unlock";
-"biometric.unlockPrompt" = "Tap the button to unlock";
 "budget.noInactive" = "No inactive budgets";
 "budgets.alerts.addThreshold" = "Add";
 "budgets.alerts.custom" = "Custom";
@@ -3284,8 +3266,6 @@
 "tips.camera.title" = "Scan receipts and screenshots";
 "tips.export.detail" = "Download your expenses in CSV or Excel from Settings > Export. Great for spreadsheet analysis or for your records.";
 "tips.export.title" = "Export your data";
-"tips.faceID.detail" = "Enable biometric lock in Settings > Security. You can choose to activate it when leaving the app or after a set time.";
-"tips.faceID.title" = "Protect with Face ID";
 "tips.favorites.title" = "Save frequent payments";
 "tips.filters.detail" = "Use filters to see only what matters: by category, tag, account, or period. Compare month to month to spot changes.";
 "tips.filters.title" = "Filter and compare periods";
@@ -3903,3 +3883,14 @@
 
 /* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
 "inbox.convertToShared" = "Convert to shared expense";
+
+/* Face ID protection guide (settings) */
+"settings.faceIDProtection" = "Protect with Face ID";
+"faceIDGuide.title" = "Protect Yala with Face ID";
+"faceIDGuide.subtitle" = "Use the iOS lock so only you can open the app";
+"faceIDGuide.step1Title" = "Press and hold the Yala icon";
+"faceIDGuide.step1Detail" = "On your Home Screen";
+"faceIDGuide.step2Title" = "Tap Require Face ID";
+"faceIDGuide.step2Detail" = "In the menu that appears";
+"faceIDGuide.step3Title" = "Confirm with your face";
+"faceIDGuide.step3Detail" = "Done — your app is protected";

@@ -5,7 +5,7 @@
 //  Pure-logic: codable layer for the DeferredIntentBuffer.
 //
 //  Some RouterIntents arrive when the app cannot present yet (pre-bootstrap,
-//  biometric lock, mid-onboarding). Instead of dropping them, the gate
+//  mid-onboarding). Instead of dropping them, the gate
 //  persists a serializable proxy in UserDefaults. On the next ready window
 //  the buffer drains via the gate.
 //

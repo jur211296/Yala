@@ -1125,25 +1125,6 @@
 "support.messagePlaceholder" = "詳しく教えてください...";
 "support.send" = "送信";
 
-// Biometric
-"biometric.title" = "生体認証セキュリティ";
-"biometric.description" = "生体認証またはデバイスのパスコードで金融情報を保護します。";
-"biometric.enableLock" = "ロックを有効化";
-"biometric.lockAfter" = "ロックまでの時間";
-"biometric.timeout.immediate" = "10秒";
-"biometric.timeout.oneMinute" = "1分";
-"biometric.timeout.fiveMinutes" = "5分";
-"biometric.timeout.fifteenMinutes" = "15分";
-"biometric.authReason" = "Yalaのロックを解除して資産にアクセス";
-"biometric.enableReason" = "ロックを有効にするため本人確認をしてください";
-"biometric.authFailed" = "認証に失敗しました";
-"biometric.authFailedMessage" = "本人確認できませんでした。もう一度お試しください。";
-"biometric.locked" = "Yalaはロック中です";
-"biometric.unlockPrompt" = "ボタンをタップしてロック解除";
-"biometric.unlock" = "ロック解除";
-"biometric.passcode" = "パスコード";
-"biometric.enableLockHint" = "アプリを開くたびに本人確認が求められます。";
-"biometric.lockAfterHint" = "ロックされるまでバックグラウンドに残せる時間を選択してください。";
 
 "profile.edit" = "プロフィールを編集";
 "profile.importSuccess" = "インポート完了";
@@ -2173,8 +2154,6 @@
 "tips.filters.detail" = "カテゴリー、タグ、口座、期間で必要な情報だけ表示。月ごとに比較して変化を捉えましょう。";
 "tips.export.title" = "データをエクスポート";
 "tips.export.detail" = "設定 > エクスポートから支出をCSVやExcelでダウンロード。表計算分析やバックアップに最適。";
-"tips.faceID.title" = "Face IDで保護";
-"tips.faceID.detail" = "設定 > セキュリティで生体認証ロックを有効化。アプリを離れたとき、または一定時間後にロックできます。";
 "tips.siri.title" = "音声で支出をメモ";
 "tips.siri.detail" = "「Yalaに支出をメモ」と話して、続けて詳細を口述します";
 "tips.siri.close" = "Siri候補を閉じる";
@@ -4653,3 +4632,14 @@
 
 /* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
 "inbox.convertToShared" = "共有の支出に変換";
+
+/* Face ID protection guide (settings) */
+"settings.faceIDProtection" = "Face IDで保護";
+"faceIDGuide.title" = "Face IDでYalaを保護";
+"faceIDGuide.subtitle" = "iOSのロックを使って、あなただけがアプリを開けるようにします";
+"faceIDGuide.step1Title" = "Yalaのアイコンを長押し";
+"faceIDGuide.step1Detail" = "ホーム画面で";
+"faceIDGuide.step2Title" = "「Face IDを要求」をタップ";
+"faceIDGuide.step2Detail" = "表示されるメニューで";
+"faceIDGuide.step3Title" = "顔で確認";
+"faceIDGuide.step3Detail" = "完了。アプリが保護されました";

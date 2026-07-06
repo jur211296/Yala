@@ -12,7 +12,7 @@ struct PresentationCascadeLogicTests {
 
     private func cleanReadiness() -> ShellReadinessState {
         ShellReadinessState(
-            isSplashDismissed: true, isLocked: false, isWipingData: false,
+            isSplashDismissed: true, isWipingData: false,
             showOnboarding: false, showWelcomeFlow: false, showLanguageSelection: false,
             showWelcomeRestore: false, showInviteRecovery: false, showFreshStartWipeAlert: false,
             showRemoteWipeAlert: false, showICloudRestartAlert: false, hasActiveInboxAlert: false,
@@ -164,7 +164,7 @@ struct PresentationCascadeLogicTests {
 
     @Test func splashStillUp_returnsNoop() {
         let r = ShellReadinessState(
-            isSplashDismissed: false, isLocked: false, isWipingData: false,
+            isSplashDismissed: false, isWipingData: false,
             showOnboarding: false, showWelcomeFlow: false, showLanguageSelection: false,
             showWelcomeRestore: false, showInviteRecovery: false, showFreshStartWipeAlert: false,
             showRemoteWipeAlert: false, showICloudRestartAlert: false, hasActiveInboxAlert: false,
@@ -179,7 +179,7 @@ struct PresentationCascadeLogicTests {
 
     @Test func activeInboxAlert_blocks_evenForSheetIntent() {
         let r = ShellReadinessState(
-            isSplashDismissed: true, isLocked: false, isWipingData: false,
+            isSplashDismissed: true, isWipingData: false,
             showOnboarding: false, showWelcomeFlow: false, showLanguageSelection: false,
             showWelcomeRestore: false, showInviteRecovery: false, showFreshStartWipeAlert: false,
             showRemoteWipeAlert: false, showICloudRestartAlert: false, hasActiveInboxAlert: true,

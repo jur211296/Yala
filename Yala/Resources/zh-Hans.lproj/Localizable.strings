@@ -1125,25 +1125,6 @@
 "support.messagePlaceholder" = "详细告诉我们...";
 "support.send" = "发送";
 
-// Biometric
-"biometric.title" = "生物识别安全";
-"biometric.description" = "用生物识别认证或设备密码保护你的财务信息。";
-"biometric.enableLock" = "启用锁定";
-"biometric.lockAfter" = "锁定时机";
-"biometric.timeout.immediate" = "10 秒";
-"biometric.timeout.oneMinute" = "1 分钟";
-"biometric.timeout.fiveMinutes" = "5 分钟";
-"biometric.timeout.fifteenMinutes" = "15 分钟";
-"biometric.authReason" = "解锁 Yala 以访问你的财务";
-"biometric.enableReason" = "验证你的身份以启用锁定";
-"biometric.authFailed" = "认证失败";
-"biometric.authFailedMessage" = "无法验证你的身份。请重试。";
-"biometric.locked" = "Yala 已锁定";
-"biometric.unlockPrompt" = "点击按钮解锁";
-"biometric.unlock" = "解锁";
-"biometric.passcode" = "密码";
-"biometric.enableLockHint" = "你每次打开应用时都会被要求验证身份。";
-"biometric.lockAfterHint" = "选择应用在后台多久之后锁定。";
 
 "profile.edit" = "编辑个人资料";
 "profile.importSuccess" = "导入完成";
@@ -2173,8 +2154,6 @@
 "tips.filters.detail" = "用筛选只看你关心的:按类别、标签、账户或时段。逐月对比发现变化。";
 "tips.export.title" = "导出你的数据";
 "tips.export.detail" = "在「设置 > 导出」中下载 CSV 或 Excel 格式的支出。适合电子表格分析或留存。";
-"tips.faceID.title" = "用 Face ID 保护";
-"tips.faceID.detail" = "在「设置 > 安全」中启用生物识别锁定。可以选择离开应用时或一段时间后激活。";
 "tips.siri.title" = "用语音备注支出";
 "tips.siri.detail" = "说:「在 Yala 备注一笔支出」,然后口述详情";
 "tips.siri.close" = "关闭 Siri 建议";
@@ -4653,3 +4632,14 @@
 
 /* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
 "inbox.convertToShared" = "转为共享支出";
+
+/* Face ID protection guide (settings) */
+"settings.faceIDProtection" = "用面容 ID 保护";
+"faceIDGuide.title" = "用面容 ID 保护 Yala";
+"faceIDGuide.subtitle" = "使用 iOS 锁定，只有你能打开应用";
+"faceIDGuide.step1Title" = "按住 Yala 图标";
+"faceIDGuide.step1Detail" = "在主屏幕上";
+"faceIDGuide.step2Title" = "点按要求面容 ID";
+"faceIDGuide.step2Detail" = "在出现的菜单中";
+"faceIDGuide.step3Title" = "用面容确认";
+"faceIDGuide.step3Detail" = "完成，你的应用已受保护";

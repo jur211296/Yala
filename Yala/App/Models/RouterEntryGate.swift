@@ -23,13 +23,12 @@ final class RouterEntryGate {
     private let logger = Logger(subsystem: "com.yala", category: "RoutingGate")
 
     /// Override hook for testing. Production reads `AppPreferences.Keys.hasCompletedOnboarding`
-    /// + `AppBootstrapper.shared.isInitialized` + `BiometricAuthService.shared.isLocked`.
+    /// + `AppBootstrapper.shared.isInitialized`.
     /// `@MainActor () -> ...` declares the isolation matches the caller (Swift 6 ready).
-    var readinessProvider: @MainActor () -> (hasCompletedOnboarding: Bool, isLocked: Bool, isBootstrapInitialized: Bool) = {
+    var readinessProvider: @MainActor () -> (hasCompletedOnboarding: Bool, isBootstrapInitialized: Bool) = {
         let onboardingDone = UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
         let bootstrapped = AppBootstrapper.shared.isInitialized
-        let locked = BiometricAuthService.shared.isLocked
-        return (onboardingDone, locked, bootstrapped)
+        return (onboardingDone, bootstrapped)
     }
 
     private init() {}
@@ -51,7 +50,6 @@ final class RouterEntryGate {
             let r = readinessProvider()
             let reason = NotificationGateLogic.deferralReason(
                 hasCompletedOnboarding: r.hasCompletedOnboarding,
-                isLocked: r.isLocked,
                 isBootstrapInitialized: r.isBootstrapInitialized
             ) ?? "unknown"
             TelemetryService.routingIntentDeferred(intentID: intent.id, reason: reason)
@@ -135,7 +133,6 @@ final class RouterEntryGate {
         let r = readinessProvider()
         let enqueueNow = NotificationGateLogic.shouldEnqueueNow(
             hasCompletedOnboarding: r.hasCompletedOnboarding,
-            isLocked: r.isLocked,
             isBootstrapInitialized: r.isBootstrapInitialized
         )
         return !enqueueNow

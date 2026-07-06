@@ -1125,25 +1125,6 @@
 "support.messagePlaceholder" = "Vertel het ons in detail...";
 "support.send" = "Versturen";
 
-// Biometric
-"biometric.title" = "Biometrische beveiliging";
-"biometric.description" = "Bescherm je financiële gegevens met biometrische authenticatie of je toegangscode.";
-"biometric.enableLock" = "Vergrendeling inschakelen";
-"biometric.lockAfter" = "Vergrendelen na";
-"biometric.timeout.immediate" = "10 seconden";
-"biometric.timeout.oneMinute" = "1 minuut";
-"biometric.timeout.fiveMinutes" = "5 minuten";
-"biometric.timeout.fifteenMinutes" = "15 minuten";
-"biometric.authReason" = "Ontgrendel Yala om bij je financiën te komen";
-"biometric.enableReason" = "Bevestig je identiteit om de vergrendeling in te schakelen";
-"biometric.authFailed" = "Authenticatie mislukt";
-"biometric.authFailedMessage" = "We konden je identiteit niet bevestigen. Probeer het opnieuw.";
-"biometric.locked" = "Yala is vergrendeld";
-"biometric.unlockPrompt" = "Tik op de knop om te ontgrendelen";
-"biometric.unlock" = "Ontgrendelen";
-"biometric.passcode" = "Toegangscode";
-"biometric.enableLockHint" = "Je wordt bij elk opstarten van de app gevraagd je identiteit te bevestigen.";
-"biometric.lockAfterHint" = "Kies hoelang de app op de achtergrond mag staan voordat hij vergrendelt.";
 
 "profile.edit" = "Profiel bewerken";
 "profile.importSuccess" = "Import voltooid";
@@ -2173,8 +2154,6 @@
 "tips.filters.detail" = "Gebruik filters om alleen te zien wat ertoe doet: per categorie, label, rekening of periode. Vergelijk maand voor maand om veranderingen te ontdekken.";
 "tips.export.title" = "Exporteer je gegevens";
 "tips.export.detail" = "Download je uitgaven in CSV of Excel via Instellingen > Exporteren. Handig voor analyses in een spreadsheet of als backup.";
-"tips.faceID.title" = "Beveilig met Face ID";
-"tips.faceID.detail" = "Schakel de biometrische vergrendeling in via Instellingen > Beveiliging. Je kunt kiezen of hij activeert bij verlaten van de app of na een ingestelde tijd.";
 "tips.siri.title" = "Noteer uitgaven met je stem";
 "tips.siri.detail" = "Zeg: \"Noteer een uitgave in Yala\" en dicteer dan de details";
 "tips.siri.close" = "Siri-suggestie sluiten";
@@ -4653,3 +4632,14 @@
 
 /* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
 "inbox.convertToShared" = "Omzetten naar gedeelde uitgave";
+
+/* Face ID protection guide (settings) */
+"settings.faceIDProtection" = "Beveiligen met Face ID";
+"faceIDGuide.title" = "Beveilig Yala met Face ID";
+"faceIDGuide.subtitle" = "Gebruik de iOS-vergrendeling zodat alleen jij de app opent";
+"faceIDGuide.step1Title" = "Houd het Yala-icoon ingedrukt";
+"faceIDGuide.step1Detail" = "Op je beginscherm";
+"faceIDGuide.step2Title" = "Tik op Face ID vereisen";
+"faceIDGuide.step2Detail" = "In het menu dat verschijnt";
+"faceIDGuide.step3Title" = "Bevestig met je gezicht";
+"faceIDGuide.step3Detail" = "Klaar, je app is beveiligd";

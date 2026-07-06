@@ -101,6 +101,10 @@ final class AppBootstrapper {
         //      Idempotente vía sentinel; sólo corre la primera vez post-update.
         LanguageManager.bootstrapMigrationIfNeeded()
 
+        // 0.2. Cleanup one-shot del Keychain del antiguo bloqueo biométrico in-app (removido).
+        //      Idempotente vía sentinel; no toca SwiftData.
+        cleanupBiometricKeychainIfNeeded()
+
         // 0.5. Configure analytics (no-op if API key missing)
         TelemetryService.configure()
         TelemetryService.track(.appLaunched)
@@ -365,7 +369,7 @@ final class AppBootstrapper {
         reEmitPendingInviteIfNeeded(isPresenting: false)
 
         // 20. Drain DeferredIntentBuffer: re-submit any RouterIntent that
-        // arrived during pre-bootstrap, biometric lock, or mid-onboarding.
+        // arrived during pre-bootstrap or mid-onboarding.
         RouterEntryGate.shared.drainDeferredBuffer()
 
         // 21. Recuperar imagen compartida pendiente (share extension → PendingImages/).
@@ -908,8 +912,8 @@ final class AppBootstrapper {
         // nada aquí (el paso 21 de bootstrap lo cubre).
         checkForPendingSharedImage(site: "becameActive")
 
-        // Drain buffered intents (notif taps that arrived during lock /
-        // mid-onboarding while app was foregrounded but blocked).
+        // Drain buffered intents (notif taps that arrived mid-onboarding
+        // while app was foregrounded but blocked).
         RouterEntryGate.shared.drainDeferredBuffer()
 
         // Skip notification checks if bootstrap just ran (< 5 seconds ago)
@@ -971,7 +975,7 @@ final class AppBootstrapper {
     }
 
     /// Enqueues a panel-action intent, respecting feature toggles and Pro gates.
-    /// Router handles readiness gating — intents queued while splash/lock/wipe
+    /// Router handles readiness gating — intents queued while splash/wipe
     /// active drain automatically when consumers become ready.
     private func executeAction(_ action: PanelAction) {
         switch action {
@@ -1471,6 +1475,25 @@ final class AppBootstrapper {
     }
 
     /// Clave UserDefaults del flag idempotente de la migración Live Balance.
+    // MARK: - Biometric keychain cleanup (removed in-app lock)
+
+    private static let biometricKeychainCleanedKey = "biometricKeychainCleanedV1"
+
+    /// One-shot: borra los items de Keychain que dejó el antiguo bloqueo biométrico
+    /// in-app (removido). El Keychain SOBREVIVE a la desinstalación, así que sin esto
+    /// quedarían huérfanos para siempre. Idempotente (SecItemDelete de algo inexistente
+    /// es no-op); el sentinel sólo evita re-ejecutarlo en cada cold launch. No toca
+    /// SwiftData → no requiere gate de quiescencia.
+    private func cleanupBiometricKeychainIfNeeded() {
+        guard !UserDefaults.standard.bool(forKey: Self.biometricKeychainCleanedKey) else { return }
+        KeychainService.delete(forKey: "biometricEnabled")
+        KeychainService.delete(forKey: "biometricLockTimeout")
+        UserDefaults.standard.set(true, forKey: Self.biometricKeychainCleanedKey)
+        #if DEBUG
+        print("[AppBootstrapper] Cleaned up orphaned biometric keychain items")
+        #endif
+    }
+
     private static let liveBalanceMigrationKey = "hasMigratedToLiveBalance"
 
     /// Migración v2.0 (épico Live Balance multi-divisa): recalcula
@@ -1678,7 +1701,7 @@ final class AppBootstrapper {
         }
 
         if !notification.isEmpty {
-            // Enqueue — readiness gating handles splash/biometric timing.
+            // Enqueue — readiness gating handles splash timing.
             RouterEntryGate.shared.submit(.showInboxAlert(notification))
         }
     }
@@ -1700,8 +1723,7 @@ final class AppBootstrapper {
         let willReEmit = SharedImageRecoveryGate.shouldReEmit(
             hasPendingImage: pending != nil,
             isInitialized: isInitialized,
-            hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding),
-            isLocked: BiometricAuthService.shared.isLocked
+            hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
         )
         SharedImageBreadcrumb.checked(site: site, found: pending != nil, willReEmit: willReEmit)
         guard willReEmit, let firstImageURL = pending else { return }

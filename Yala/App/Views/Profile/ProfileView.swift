@@ -224,8 +224,8 @@ struct ProfileView: View {
                     CurrencySettingsView()
                 case .appIcon:
                     AppIconSettingsView()
-                case .biometricSecurity:
-                    BiometricSecurityView()
+                case .faceIDProtectionGuide:
+                    FaceIDProtectionGuideView()
                 case .subscription:
                     SubscriptionView(source: "profile")
                 case .tips:
@@ -577,10 +577,10 @@ struct ProfileView: View {
         SectionBox(title: L10n.Settings.security) {
             VStack(spacing: DS.Spacing.none) {
                 profileRow(
-                    icon: BiometricAuthService.shared.biometricType.icon,
-                    title: BiometricAuthService.shared.biometricType.displayName,
+                    icon: "faceid",
+                    title: L10n.Settings.faceIDProtection,
                     iconColor: DS.Semantic.successForeground,
-                    destination: .biometricSecurity)
+                    destination: .faceIDProtectionGuide)
                 // Atajos de Siri: registran gastos personales — fuera de alcance en solo-grupos.
                 if !isGroupInviteMode {
                     SubsectionDivider()

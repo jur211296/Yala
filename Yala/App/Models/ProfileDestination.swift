@@ -23,7 +23,7 @@ enum ProfileDestination: Hashable {
     case budgets
     case planned
     case userDataReset
-    case biometricSecurity
+    case faceIDProtectionGuide
     case subscription
     case tips
     case faq

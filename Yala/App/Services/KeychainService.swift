@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Secure storage service using iOS Keychain.
-//  Used for sensitive configuration like biometric settings.
+//  Used for sensitive configuration values.
 //
 
 import Foundation

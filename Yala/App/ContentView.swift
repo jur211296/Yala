@@ -77,8 +77,6 @@ struct ContentView: View {
     @State private var languageVersion: Int = 0
     @Environment(\.modelContext) private var modelContext
 
-    private let authService = BiometricAuthService.shared
-
     /// Minimum splash duration (2.5 seconds to enjoy the animation)
     private let minimumSplashDuration: Double = 2.5
 
@@ -120,7 +118,7 @@ struct ContentView: View {
             // Sync status banner overlay — failure/stalled states from iCloudSyncService.
             // Gated to match MainTabView timing: only shows once onboarding/splash/initial
             // check are resolved, avoiding competition with splash, iCloudSyncWaitingView,
-            // onboarding, and biometric lock flows.
+            // and onboarding flows.
             if hasCompletedOnboarding && isInitialCheckDone && !showSplash {
                 syncStatusBannerOverlay
             }
@@ -415,14 +413,6 @@ struct ContentView: View {
             }
             .environment(SessionState.shared)
         }
-        // Biometric lock as fullScreenCover (covers everything including sheets)
-        .fullScreenCover(isPresented: Binding(
-            get: { authService.isLocked && !showSplash },
-            set: { _ in }  // Dismiss handled by BiometricLockOverlay.authenticate()
-        )) {
-            BiometricLockOverlay()
-                .environment(SessionState.shared)
-        }
         // Inbox alert as fullScreenCover (appears over any sheet).
         // Driven by @State set by the .contentView drain handler.
         .fullScreenCover(isPresented: Binding(
@@ -443,17 +433,13 @@ struct ContentView: View {
         }
         .onAppear {
             themeManager.systemColorScheme = colorScheme
-            authService.lockOnLaunchIfNeeded()
         }
         .onChange(of: colorScheme) { _, newScheme in
             themeManager.systemColorScheme = newScheme
         }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
-            case .background:
-                authService.appDidEnterBackground()
             case .active:
-                authService.appDidEnterForeground()
                 // GC-08: Recalculate user segment on each foreground activation
                 UserSegmentService.shared.recalculate()
                 // Re-emite un invite pendiente persistido si su intent transient fue
@@ -464,15 +450,6 @@ struct ContentView: View {
                 )
             default:
                 break
-            }
-        }
-        .onChange(of: authService.isLocked) { _, newLocked in
-            updateContentViewReadiness()
-            // When biometric unlocks, drain the DeferredIntentBuffer so any
-            // notification taps that arrived while locked land now — without
-            // waiting for the next background→foreground cycle.
-            if !newLocked {
-                RouterEntryGate.shared.drainDeferredBuffer()
             }
         }
         .onChange(of: SessionState.shared.isWipingData) { _, _ in updateContentViewReadiness() }
@@ -543,7 +520,6 @@ struct ContentView: View {
     private func currentShellReadinessState() -> ShellReadinessState {
         ShellReadinessState(
             isSplashDismissed: SessionState.shared.isSplashDismissed,
-            isLocked: authService.isLocked,
             isWipingData: SessionState.shared.isWipingData,
             showOnboarding: showOnboarding,
             showWelcomeFlow: showWelcomeFlow,

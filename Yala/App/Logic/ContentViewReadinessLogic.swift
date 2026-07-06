@@ -17,7 +17,6 @@ import Foundation
 /// `ContentViewReadinessLogic.isReady`.
 struct ShellReadinessState: Equatable {
     let isSplashDismissed: Bool
-    let isLocked: Bool
     let isWipingData: Bool
 
     // Onboarding/welcome covers (block readiness when active)
@@ -51,11 +50,9 @@ enum ContentViewReadinessLogic {
     /// Returns the highest-priority blocker name (for debug logs / telemetry).
     /// Nil when the consumer can drain.
     static func blocker(state: ShellReadinessState) -> String? {
-        // Order = severity. Wipe trumps everything; lock comes before splash because
-        // a locked-but-dismissed-splash app is in a worse state than a splash-loading one.
+        // Order = severity. Wipe trumps everything.
         if state.isWipingData { return "wipingData" }
         if !state.isSplashDismissed { return "splash" }
-        if state.isLocked { return "biometricLock" }
 
         // System alerts: must clear before the next router intent presents.
         if state.showRemoteWipeAlert { return "remoteWipeAlert" }
@@ -92,7 +89,7 @@ enum ContentViewReadinessLogic {
 
     /// `true` sii el blocker actual pertenece a la cadena welcome Y limpiar esa
     /// cadena dejaría al consumer listo. La 2ª condición es load-bearing: impide
-    /// el teardown cuando hay OTRO blocker (lock, splash, alerts, onboarding,
+    /// el teardown cuando hay OTRO blocker (splash, alerts, onboarding,
     /// freshStartWipeAlert) que sobreviviría — preservando la protección
     /// anti-"inbox alert tardío". Usado por `ContentView.drainContentViewIntents`
     /// para cerrar la cadena welcome cuando un intent que la supersede está
@@ -112,7 +109,6 @@ extension ShellReadinessState {
     func withWelcomeChainCleared() -> ShellReadinessState {
         ShellReadinessState(
             isSplashDismissed: isSplashDismissed,
-            isLocked: isLocked,
             isWipingData: isWipingData,
             showOnboarding: showOnboarding,
             showWelcomeFlow: false,

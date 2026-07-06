@@ -3770,6 +3770,7 @@ enum L10n {
         static var wipeData: String { ls("settings.wipeData", comment: "") }
         static var faceId: String { ls("settings.faceId", comment: "") }
         static var permissions: String { ls("settings.permissions", comment: "") }
+        static var faceIDProtection: String { ls("settings.faceIDProtection", comment: "") }
         static var aiPrivacy: String { ls("settings.aiPrivacy", comment: "") }
         static var subscriptions: String {
             ls("settings.subscriptions", comment: "")
@@ -5416,41 +5417,17 @@ enum L10n {
         }
     }
 
-    // MARK: - Biometric
+    // MARK: - Face ID protection guide
 
-    enum Biometric {
-        static var title: String { ls("biometric.title", comment: "") }
-        static var description: String { ls("biometric.description", comment: "") }
-        static var enableLock: String { ls("biometric.enableLock", comment: "") }
-        static var lockAfter: String { ls("biometric.lockAfter", comment: "") }
-        static var timeoutImmediate: String {
-            ls("biometric.timeout.immediate", comment: "")
-        }
-        static var timeoutOneMinute: String {
-            ls("biometric.timeout.oneMinute", comment: "")
-        }
-        static var timeoutFiveMinutes: String {
-            ls("biometric.timeout.fiveMinutes", comment: "")
-        }
-        static var timeoutFifteenMinutes: String {
-            ls("biometric.timeout.fifteenMinutes", comment: "")
-        }
-        static var authReason: String { ls("biometric.authReason", comment: "") }
-        static var enableReason: String { ls("biometric.enableReason", comment: "") }
-        static var authFailed: String { ls("biometric.authFailed", comment: "") }
-        static var authFailedMessage: String {
-            ls("biometric.authFailedMessage", comment: "")
-        }
-        static var locked: String { ls("biometric.locked", comment: "") }
-        static var unlockPrompt: String { ls("biometric.unlockPrompt", comment: "") }
-        static var unlock: String { ls("biometric.unlock", comment: "") }
-        static var passcode: String { ls("biometric.passcode", comment: "") }
-        static var enableLockHint: String {
-            ls("biometric.enableLockHint", comment: "")
-        }
-        static var lockAfterHint: String {
-            ls("biometric.lockAfterHint", comment: "")
-        }
+    enum FaceIDGuide {
+        static var title: String { ls("faceIDGuide.title", comment: "") }
+        static var subtitle: String { ls("faceIDGuide.subtitle", comment: "") }
+        static var step1Title: String { ls("faceIDGuide.step1Title", comment: "") }
+        static var step1Detail: String { ls("faceIDGuide.step1Detail", comment: "") }
+        static var step2Title: String { ls("faceIDGuide.step2Title", comment: "") }
+        static var step2Detail: String { ls("faceIDGuide.step2Detail", comment: "") }
+        static var step3Title: String { ls("faceIDGuide.step3Title", comment: "") }
+        static var step3Detail: String { ls("faceIDGuide.step3Detail", comment: "") }
     }
 
     // MARK: - Subscription

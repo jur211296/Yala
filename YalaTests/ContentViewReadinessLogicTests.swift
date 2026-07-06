@@ -14,7 +14,6 @@ struct ContentViewReadinessLogicTests {
     private func clean() -> ShellReadinessState {
         ShellReadinessState(
             isSplashDismissed: true,
-            isLocked: false,
             isWipingData: false,
             showOnboarding: false,
             showWelcomeFlow: false,
@@ -38,7 +37,7 @@ struct ContentViewReadinessLogicTests {
 
     @Test func splashStillUp_notReady() {
         var s = clean(); s = ShellReadinessState(
-            isSplashDismissed: false, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: false, isWipingData: s.isWipingData,
             showOnboarding: s.showOnboarding, showWelcomeFlow: s.showWelcomeFlow,
             showLanguageSelection: s.showLanguageSelection, showWelcomeRestore: s.showWelcomeRestore,
             showInviteRecovery: s.showInviteRecovery, showFreshStartWipeAlert: s.showFreshStartWipeAlert,
@@ -50,32 +49,10 @@ struct ContentViewReadinessLogicTests {
         #expect(ContentViewReadinessLogic.blocker(state: s) == "splash")
     }
 
-    @Test func wipingData_trumpsLock() {
-        let s = ShellReadinessState(
-            isSplashDismissed: true, isLocked: true, isWipingData: true,
-            showOnboarding: false, showWelcomeFlow: false, showLanguageSelection: false,
-            showWelcomeRestore: false, showInviteRecovery: false, showFreshStartWipeAlert: false,
-            showRemoteWipeAlert: false, showICloudRestartAlert: false, hasActiveInboxAlert: false,
-            showGroupInviteOnboarding: false, showGroupReconnect: false, showFullModeActivation: false
-        )
-        #expect(ContentViewReadinessLogic.blocker(state: s) == "wipingData")
-    }
-
-    @Test func locked_blocksReady() {
-        let s = ShellReadinessState(
-            isSplashDismissed: true, isLocked: true, isWipingData: false,
-            showOnboarding: false, showWelcomeFlow: false, showLanguageSelection: false,
-            showWelcomeRestore: false, showInviteRecovery: false, showFreshStartWipeAlert: false,
-            showRemoteWipeAlert: false, showICloudRestartAlert: false, hasActiveInboxAlert: false,
-            showGroupInviteOnboarding: false, showGroupReconnect: false, showFullModeActivation: false
-        )
-        #expect(ContentViewReadinessLogic.blocker(state: s) == "biometricLock")
-    }
-
     @Test func remoteWipeAlert_blocks() {
         var s = clean()
         s = ShellReadinessState(
-            isSplashDismissed: s.isSplashDismissed, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: s.isSplashDismissed, isWipingData: s.isWipingData,
             showOnboarding: s.showOnboarding, showWelcomeFlow: s.showWelcomeFlow,
             showLanguageSelection: s.showLanguageSelection, showWelcomeRestore: s.showWelcomeRestore,
             showInviteRecovery: s.showInviteRecovery, showFreshStartWipeAlert: s.showFreshStartWipeAlert,
@@ -89,7 +66,7 @@ struct ContentViewReadinessLogicTests {
     @Test func iCloudRestartAlert_blocks() {
         var s = clean()
         s = ShellReadinessState(
-            isSplashDismissed: s.isSplashDismissed, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: s.isSplashDismissed, isWipingData: s.isWipingData,
             showOnboarding: s.showOnboarding, showWelcomeFlow: s.showWelcomeFlow,
             showLanguageSelection: s.showLanguageSelection, showWelcomeRestore: s.showWelcomeRestore,
             showInviteRecovery: s.showInviteRecovery, showFreshStartWipeAlert: s.showFreshStartWipeAlert,
@@ -103,7 +80,7 @@ struct ContentViewReadinessLogicTests {
     @Test func freshStartWipeAlert_blocks() {
         var s = clean()
         s = ShellReadinessState(
-            isSplashDismissed: s.isSplashDismissed, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: s.isSplashDismissed, isWipingData: s.isWipingData,
             showOnboarding: s.showOnboarding, showWelcomeFlow: s.showWelcomeFlow,
             showLanguageSelection: s.showLanguageSelection, showWelcomeRestore: s.showWelcomeRestore,
             showInviteRecovery: s.showInviteRecovery, showFreshStartWipeAlert: true,
@@ -117,7 +94,7 @@ struct ContentViewReadinessLogicTests {
     @Test func languageSelection_blocks() {
         var s = clean()
         s = ShellReadinessState(
-            isSplashDismissed: s.isSplashDismissed, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: s.isSplashDismissed, isWipingData: s.isWipingData,
             showOnboarding: s.showOnboarding, showWelcomeFlow: s.showWelcomeFlow,
             showLanguageSelection: true, showWelcomeRestore: s.showWelcomeRestore,
             showInviteRecovery: s.showInviteRecovery, showFreshStartWipeAlert: s.showFreshStartWipeAlert,
@@ -131,7 +108,7 @@ struct ContentViewReadinessLogicTests {
     @Test func welcomeFlow_blocks() {
         var s = clean()
         s = ShellReadinessState(
-            isSplashDismissed: s.isSplashDismissed, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: s.isSplashDismissed, isWipingData: s.isWipingData,
             showOnboarding: s.showOnboarding, showWelcomeFlow: true,
             showLanguageSelection: s.showLanguageSelection, showWelcomeRestore: s.showWelcomeRestore,
             showInviteRecovery: s.showInviteRecovery, showFreshStartWipeAlert: s.showFreshStartWipeAlert,
@@ -145,7 +122,7 @@ struct ContentViewReadinessLogicTests {
     @Test func welcomeRestore_blocks() {
         var s = clean()
         s = ShellReadinessState(
-            isSplashDismissed: s.isSplashDismissed, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: s.isSplashDismissed, isWipingData: s.isWipingData,
             showOnboarding: s.showOnboarding, showWelcomeFlow: s.showWelcomeFlow,
             showLanguageSelection: s.showLanguageSelection, showWelcomeRestore: true,
             showInviteRecovery: s.showInviteRecovery, showFreshStartWipeAlert: s.showFreshStartWipeAlert,
@@ -159,7 +136,7 @@ struct ContentViewReadinessLogicTests {
     @Test func inviteRecovery_blocks() {
         var s = clean()
         s = ShellReadinessState(
-            isSplashDismissed: s.isSplashDismissed, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: s.isSplashDismissed, isWipingData: s.isWipingData,
             showOnboarding: s.showOnboarding, showWelcomeFlow: s.showWelcomeFlow,
             showLanguageSelection: s.showLanguageSelection, showWelcomeRestore: s.showWelcomeRestore,
             showInviteRecovery: true, showFreshStartWipeAlert: s.showFreshStartWipeAlert,
@@ -173,7 +150,7 @@ struct ContentViewReadinessLogicTests {
     @Test func onboarding_blocks() {
         var s = clean()
         s = ShellReadinessState(
-            isSplashDismissed: s.isSplashDismissed, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: s.isSplashDismissed, isWipingData: s.isWipingData,
             showOnboarding: true, showWelcomeFlow: s.showWelcomeFlow,
             showLanguageSelection: s.showLanguageSelection, showWelcomeRestore: s.showWelcomeRestore,
             showInviteRecovery: s.showInviteRecovery, showFreshStartWipeAlert: s.showFreshStartWipeAlert,
@@ -187,7 +164,7 @@ struct ContentViewReadinessLogicTests {
     @Test func fullModeActivation_blocks() {
         var s = clean()
         s = ShellReadinessState(
-            isSplashDismissed: s.isSplashDismissed, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: s.isSplashDismissed, isWipingData: s.isWipingData,
             showOnboarding: s.showOnboarding, showWelcomeFlow: s.showWelcomeFlow,
             showLanguageSelection: s.showLanguageSelection, showWelcomeRestore: s.showWelcomeRestore,
             showInviteRecovery: s.showInviteRecovery, showFreshStartWipeAlert: s.showFreshStartWipeAlert,
@@ -201,7 +178,7 @@ struct ContentViewReadinessLogicTests {
     @Test func groupInviteOnboarding_blocks() {
         var s = clean()
         s = ShellReadinessState(
-            isSplashDismissed: s.isSplashDismissed, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: s.isSplashDismissed, isWipingData: s.isWipingData,
             showOnboarding: s.showOnboarding, showWelcomeFlow: s.showWelcomeFlow,
             showLanguageSelection: s.showLanguageSelection, showWelcomeRestore: s.showWelcomeRestore,
             showInviteRecovery: s.showInviteRecovery, showFreshStartWipeAlert: s.showFreshStartWipeAlert,
@@ -215,7 +192,7 @@ struct ContentViewReadinessLogicTests {
     @Test func groupReconnect_blocks() {
         var s = clean()
         s = ShellReadinessState(
-            isSplashDismissed: s.isSplashDismissed, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: s.isSplashDismissed, isWipingData: s.isWipingData,
             showOnboarding: s.showOnboarding, showWelcomeFlow: s.showWelcomeFlow,
             showLanguageSelection: s.showLanguageSelection, showWelcomeRestore: s.showWelcomeRestore,
             showInviteRecovery: s.showInviteRecovery, showFreshStartWipeAlert: s.showFreshStartWipeAlert,
@@ -229,7 +206,7 @@ struct ContentViewReadinessLogicTests {
     @Test func activeInboxAlert_blocks_rootCauseOfBug() {
         var s = clean()
         s = ShellReadinessState(
-            isSplashDismissed: s.isSplashDismissed, isLocked: s.isLocked, isWipingData: s.isWipingData,
+            isSplashDismissed: s.isSplashDismissed, isWipingData: s.isWipingData,
             showOnboarding: s.showOnboarding, showWelcomeFlow: s.showWelcomeFlow,
             showLanguageSelection: s.showLanguageSelection, showWelcomeRestore: s.showWelcomeRestore,
             showInviteRecovery: s.showInviteRecovery, showFreshStartWipeAlert: s.showFreshStartWipeAlert,
@@ -242,7 +219,7 @@ struct ContentViewReadinessLogicTests {
 
     @Test func wipingData_priorityWinsOverEverything() {
         let s = ShellReadinessState(
-            isSplashDismissed: false, isLocked: true, isWipingData: true,
+            isSplashDismissed: false, isWipingData: true,
             showOnboarding: true, showWelcomeFlow: true, showLanguageSelection: true,
             showWelcomeRestore: true, showInviteRecovery: true, showFreshStartWipeAlert: true,
             showRemoteWipeAlert: true, showICloudRestartAlert: true, hasActiveInboxAlert: true,
@@ -251,23 +228,11 @@ struct ContentViewReadinessLogicTests {
         #expect(ContentViewReadinessLogic.blocker(state: s) == "wipingData")
     }
 
-    @Test func lockBeatsAlerts_butNotWipe() {
-        let s = ShellReadinessState(
-            isSplashDismissed: true, isLocked: true, isWipingData: false,
-            showOnboarding: false, showWelcomeFlow: false, showLanguageSelection: false,
-            showWelcomeRestore: false, showInviteRecovery: false, showFreshStartWipeAlert: true,
-            showRemoteWipeAlert: true, showICloudRestartAlert: true, hasActiveInboxAlert: true,
-            showGroupInviteOnboarding: false, showGroupReconnect: false, showFullModeActivation: false
-        )
-        #expect(ContentViewReadinessLogic.blocker(state: s) == "biometricLock")
-    }
-
     // MARK: - isBlockedSolelyByWelcomeChain (B4-04)
 
     /// Builder con defaults limpios — varía solo las flags relevantes por test.
     private func make(
         isSplashDismissed: Bool = true,
-        isLocked: Bool = false,
         isWipingData: Bool = false,
         showOnboarding: Bool = false,
         showWelcomeFlow: Bool = false,
@@ -283,7 +248,7 @@ struct ContentViewReadinessLogicTests {
         showFullModeActivation: Bool = false
     ) -> ShellReadinessState {
         ShellReadinessState(
-            isSplashDismissed: isSplashDismissed, isLocked: isLocked, isWipingData: isWipingData,
+            isSplashDismissed: isSplashDismissed, isWipingData: isWipingData,
             showOnboarding: showOnboarding, showWelcomeFlow: showWelcomeFlow,
             showLanguageSelection: showLanguageSelection, showWelcomeRestore: showWelcomeRestore,
             showInviteRecovery: showInviteRecovery, showFreshStartWipeAlert: showFreshStartWipeAlert,
@@ -322,10 +287,6 @@ struct ContentViewReadinessLogicTests {
 
     // Blockers de mayor prioridad que sobreviven al clear → NO teardown
     // (preserva la protección anti-"inbox alert tardío" y los gates de sistema).
-    @Test func welcomePlusLock_notSolelyWelcome() {
-        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(isLocked: true, showWelcomeFlow: true)))
-    }
-
     @Test func welcomePlusSplash_notSolelyWelcome() {
         #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(state: make(isSplashDismissed: false, showWelcomeFlow: true)))
     }

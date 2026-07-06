@@ -8,7 +8,7 @@
 //  modifiers to derived bindings from the coordinator.
 //
 //  Only includes presentations driven by RouterIntent. Local-only modals
-//  (splash, onboarding flow chain, biometric lock) remain shell @State.
+//  (splash, onboarding flow chain) remain shell @State.
 //
 
 import Foundation

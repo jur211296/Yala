@@ -24,19 +24,17 @@ enum SharedImageRecoveryGate {
     /// `false` → no hacer nada; la imagen persiste en `PendingImages/` y se reintenta en la
     /// próxima ventana ready (siguiente `.active` o cold launch).
     ///
-    /// Las condiciones de readiness (init + onboarding + no-lock) espejan
+    /// Las condiciones de readiness (init + onboarding) espejan
     /// `NotificationGateLogic.shouldEnqueueNow`: si alguna falla, `RouterEntryGate` diferiría
     /// el `.presentSharedImage` a un buffer que no lo serializa → se perdería.
     static func shouldReEmit(
         hasPendingImage: Bool,
         isInitialized: Bool,
-        hasCompletedOnboarding: Bool,
-        isLocked: Bool
+        hasCompletedOnboarding: Bool
     ) -> Bool {
         guard hasPendingImage else { return false }
         guard isInitialized else { return false }
         guard hasCompletedOnboarding else { return false }
-        guard !isLocked else { return false }
         return true
     }
 }

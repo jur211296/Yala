@@ -751,24 +751,6 @@
 "balance.status.critical" = "Crítico";
 "balance.status.good" = "Bom";
 "balance.status.normal" = "Normal";
-"biometric.authFailed" = "Falha na autenticação";
-"biometric.authFailedMessage" = "Não foi possível verificar sua identidade. Tente novamente.";
-"biometric.authReason" = "Desbloqueie o Yala para acessar suas finanças";
-"biometric.description" = "Proteja suas informações financeiras com autenticação biométrica ou senha do dispositivo.";
-"biometric.enableLock" = "Ativar bloqueio";
-"biometric.enableLockHint" = "Você precisará verificar sua identidade cada vez que abrir o app.";
-"biometric.enableReason" = "Verifique sua identidade para ativar o bloqueio";
-"biometric.lockAfter" = "Bloquear após";
-"biometric.lockAfterHint" = "Escolha quanto tempo o app pode ficar em segundo plano antes de bloquear.";
-"biometric.locked" = "Yala está bloqueado";
-"biometric.passcode" = "Senha";
-"biometric.timeout.fifteenMinutes" = "15 minutos";
-"biometric.timeout.fiveMinutes" = "5 minutos";
-"biometric.timeout.immediate" = "10 segundos";
-"biometric.timeout.oneMinute" = "1 minuto";
-"biometric.title" = "Segurança biométrica";
-"biometric.unlock" = "Desbloquear";
-"biometric.unlockPrompt" = "Toque no botão para desbloquear";
 "budget.noInactive" = "Nenhum orçamento inativo";
 "budgets.alerts.addThreshold" = "Adicionar";
 "budgets.alerts.custom" = "Personalizar";
@@ -3266,8 +3248,6 @@
 "tips.budgets.title" = "Crie orçamentos";
 "tips.export.detail" = "Baixe seus gastos em CSV ou Excel em Ajustes > Exportar. Ideal para análise em planilha ou para seus registros.";
 "tips.export.title" = "Exporte seus dados";
-"tips.faceID.detail" = "Ative o bloqueio biométrico em Ajustes > Segurança. Você pode escolher ativar ao sair do app ou após um tempo.";
-"tips.faceID.title" = "Proteja com Face ID";
 "tips.favorites.detail" = "Paga a mesma coisa com frequência? Salve um gasto como favorito e na próxima vez registre com um toque no menu +.";
 "tips.favorites.title" = "Salve pagamentos frequentes";
 "tips.filters.detail" = "Use os filtros para ver só o que importa: por categoria, etiqueta, conta ou período. Compare mês a mês para detectar mudanças.";
@@ -3908,3 +3888,14 @@
 
 /* Botón en el editor de un borrador de la bandeja: redirige el gasto personal a un grupo compartido */
 "inbox.convertToShared" = "Converter em despesa partilhada";
+
+/* Face ID protection guide (settings) */
+"settings.faceIDProtection" = "Proteger com Face ID";
+"faceIDGuide.title" = "Proteger o Yala com Face ID";
+"faceIDGuide.subtitle" = "Usa o bloqueio do iOS para que só tu abras a app";
+"faceIDGuide.step1Title" = "Mantém o ícone do Yala premido";
+"faceIDGuide.step1Detail" = "No teu ecrã principal";
+"faceIDGuide.step2Title" = "Toca em Pedir Face ID";
+"faceIDGuide.step2Detail" = "No menu que aparece";
+"faceIDGuide.step3Title" = "Confirma com o teu rosto";
+"faceIDGuide.step3Detail" = "Pronto, a tua app está protegida";

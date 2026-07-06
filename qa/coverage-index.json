@@ -1372,20 +1372,15 @@
       "lastVerified": "2026-07-04"
     },
     {
-      "area": "biometric-lock",
+      "area": "face-id-protection-guide",
       "codeGlobs": [
-        "Yala/App/Services/BiometricAuthService.swift",
-        "Yala/App/Views/BiometricLockOverlay.swift",
-        "Yala/App/Views/Settings/BiometricSecurityView.swift"
+        "Yala/App/Views/Settings/FaceIDProtectionGuideView.swift"
       ],
-      "scenarioIDs": [
-        "F-BIO-01",
-        "F-BIO-02"
-      ],
+      "scenarioIDs": [],
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-07-05"
     },
     {
       "area": "budget-alerts-push-notifications",
