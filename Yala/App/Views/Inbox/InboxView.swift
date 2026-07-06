@@ -344,7 +344,8 @@ struct InboxView: View {
                             onSave: { shouldDismissAfterApproval = true },
                             onExpenseCreated: { expenseID in
                                 finalizeGroupScheduledExpense(draft: draft, expenseID: expenseID)
-                            }
+                            },
+                            presentsSuccessScreen: false
                         )
                     } else {
                         // Grupo/pago no disponible (borrado o sync pendiente): degradar al editor
@@ -431,7 +432,8 @@ struct InboxView: View {
                     onSave: {},
                     onExpenseCreated: { _ in
                         finalizeConvertedDraft(draft: ctx.draft)
-                    }
+                    },
+                    presentsSuccessScreen: false
                 )
             }
             .sheet(isPresented: $showBulkActions, onDismiss: { viewModel.loadData() }) {

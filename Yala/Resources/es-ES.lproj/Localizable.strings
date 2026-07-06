@@ -3901,3 +3901,21 @@
 "faceIDGuide.step2Detail" = "En el menú que aparece";
 "faceIDGuide.step3Title" = "Confirma con tu rostro";
 "faceIDGuide.step3Detail" = "Listo, tu app queda protegida";
+
+/* Success screen title after creating a group expense */
+"groups.expense.success.titleCreated" = "¡Gasto agregado!";
+
+/* Success screen title after editing a group expense */
+"groups.expense.success.titleUpdated" = "¡Gasto actualizado!";
+
+/* Detail row label: the group the expense belongs to */
+"groups.expense.success.group" = "Grupo";
+
+/* Detail row label: how the expense was split */
+"groups.expense.success.splitLabel" = "División";
+
+/* Section header listing participants and their share */
+"groups.expense.success.participants" = "Participantes";
+
+/* Button: create another group expense */
+"groups.expense.success.addAnother" = "Agregar otro gasto";

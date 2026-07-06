@@ -457,16 +457,18 @@
         "Yala/App/Views/Groups/GroupExpenseComposerView.swift",
         "Yala/App/Views/Groups/GroupPickerSheet.swift",
         "Yala/App/Logic/GroupExpenseEligibilityLogic.swift",
-        "Yala/App/Views/Shared/FABStackView.swift"
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/Views/Groups/GroupExpenseSuccessView.swift",
+        "Yala/App/Logic/GroupExpenseSuccessLogic.swift"
       ],
       "scenarioIDs": [
         "F-S1-05",
         "F-S5-07"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests; xcuitest:YalaUITests/GroupExpenseSuccessUITests",
       "owner": "",
-      "lastVerified": "2026-06-29"
+      "lastVerified": "2026-07-06"
     },
     {
       "area": "groups-stats-multicurrency",

@@ -61,6 +61,9 @@ struct GroupExpenseFormView: View {
     /// F4: callback con el `SplitExpense.id` creado tras `save()` exitoso — cierra el ciclo del
     /// pago planificado. Default nil → no afecta callers existentes.
     let onExpenseCreated: ((String) -> Void)?
+    /// Flujos manuales (default `true`) muestran `GroupExpenseSuccessView` tras guardar (crear/editar).
+    /// Los flujos de Inbox pasan `false` para conservar su cierre directo con su propia semántica.
+    let presentsSuccessScreen: Bool
 
     // MARK: - State
 
@@ -86,6 +89,13 @@ struct GroupExpenseFormView: View {
     @State private var pendingOptInExpenseID: String?
     @State private var showOptInAlert: Bool = false
 
+    // Pantalla de éxito (solo flujos manuales; ver `presentsSuccessScreen`).
+    @State private var showSuccessScreen = false
+    @State private var successData: GroupExpenseSuccessData?
+    /// Gate: el prefill (edición/plantilla) corre una sola vez, no al volver de la pantalla
+    /// de éxito — así "Editar" conserva lo editado y "Crear otro" mantiene el form limpio.
+    @State private var didInitialPrefill = false
+
     // Borrado del gasto desde el toolbar (solo en modo edición).
     @State private var showDeleteConfirmation = false
 
@@ -104,6 +114,7 @@ struct GroupExpenseFormView: View {
         initialTemplate: GroupExpensePrefillTemplate? = nil,
         onSave: @escaping () -> Void,
         onExpenseCreated: ((String) -> Void)? = nil,
+        presentsSuccessScreen: Bool = true,
         onDelete: ((SplitExpense) -> Void)? = nil
     ) {
         self.group = group
@@ -115,6 +126,7 @@ struct GroupExpenseFormView: View {
         self.initialTemplate = initialTemplate
         self.onSave = onSave
         self.onExpenseCreated = onExpenseCreated
+        self.presentsSuccessScreen = presentsSuccessScreen
         self.onDelete = onDelete
 
         let vm = GroupExpenseViewModel(group: group, members: members, memberNameLookup: memberNameLookup)
@@ -124,6 +136,29 @@ struct GroupExpenseFormView: View {
     // MARK: - Body
 
     var body: some View {
+        if showSuccessScreen, let data = successData {
+            GroupExpenseSuccessView(
+                data: data,
+                onAccept: {
+                    onSave()
+                    dismiss()
+                },
+                onCreateAnother: { resetForAnother() },
+                onEdit: {
+                    dsWithAnimation(reduceMotion) {
+                        showSuccessScreen = false
+                        successData = nil
+                    }
+                }
+            )
+            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+        } else {
+            formView
+                .transition(.opacity)
+        }
+    }
+
+    private var formView: some View {
         NavigationStack {
             ZStack {
                 VStack(spacing: DS.Spacing.none) {
@@ -197,10 +232,15 @@ struct GroupExpenseFormView: View {
             }
             .onAppear {
                 viewModel.setContext(modelContext)
-                if let expense = expenseToEdit {
-                    viewModel.prefill(from: expense, shares: existingShares)
-                } else if let template = initialTemplate {
-                    viewModel.applyTemplate(template)
+                // Prefill una sola vez: al volver de la pantalla de éxito (edit/crear otro) el
+                // form se remonta y este onAppear vuelve a correr — no debe re-prellenar.
+                if !didInitialPrefill {
+                    didInitialPrefill = true
+                    if let expense = expenseToEdit {
+                        viewModel.prefill(from: expense, shares: existingShares)
+                    } else if let template = initialTemplate {
+                        viewModel.applyTemplate(template)
+                    }
                 }
                 // Nunca autoenfocamos el monto: el form abre sin teclado (decisión de UX).
                 // M6: defensa profundidad — si VM no resolvió current user (members no cargados),
@@ -336,6 +376,7 @@ struct GroupExpenseFormView: View {
             .frame(maxWidth: 280)
             .tint(Color.primary)
             .accessibilityLabel(L10n.Groups.Expense.descriptionPlaceholder)
+            .accessibilityIdentifier("group_expense_description")
     }
 
     // MARK: - Amount Display
@@ -682,25 +723,104 @@ struct GroupExpenseFormView: View {
             onExpenseCreated?(createdID)
         }
 
-        // Opt-out: si Caso A + bridge effective OFF + creación (no edit), preguntar al
-        // user si quiere crear movimiento personal opt-in. NO en `.groupInvite`: ahí el
-        // bridge es M5 puro (par virtual, sin TX real) y el invitado minimal no tiene
-        // cuentas personales donde registrar — consistente con `isAccountRequired` y con
-        // el gate Caso C de `SettlementFormView`. Caso C tiene su propio alert allí. B/D no aplican.
-        if !viewModel.effectiveBridgeEnabled,
-           !viewModel.isGroupInviteMode,
-           viewModel.isCaseA,
-           let createdID = viewModel.lastCreatedExpenseID {
-            pendingOptInExpenseID = createdID
-            showOptInAlert = true
-            return  // diferir dismiss hasta resolver alert
+        // Flujo Inbox (`presentsSuccessScreen == false`): comportamiento original — sin pantalla
+        // de éxito. El opt-in (Caso A + bridge OFF) sigue gateando el dismiss.
+        guard presentsSuccessScreen else {
+            if optInApplies {
+                pendingOptInExpenseID = viewModel.lastCreatedExpenseID
+                showOptInAlert = true
+                return
+            }
+            onSave()
+            dismiss()
+            return
         }
 
-        onSave()
-        dismiss()
+        // Flujo manual: construir el payload (crear o editar) y mostrar la pantalla de éxito.
+        successData = buildSuccessData()
+
+        // Opt-out: si Caso A + bridge OFF + creación, primero el alert; al resolver, se presenta
+        // la pantalla de éxito (ver `resolveAfterOptIn`). El alert vive en `formView`, que sigue
+        // montado (aún no activamos `showSuccessScreen`).
+        if optInApplies {
+            pendingOptInExpenseID = viewModel.lastCreatedExpenseID
+            showOptInAlert = true
+            return
+        }
+
+        presentSuccess()
     }
 
-    /// Crea el draft opt-in y dismiss. Llamado desde el alert "Sí".
+    /// Opt-out: Caso A + bridge effective OFF + creación (no edit). NO en `.groupInvite`: ahí el
+    /// bridge es M5 puro (par virtual, sin TX real) y el invitado minimal no tiene cuentas
+    /// personales donde registrar — consistente con `isAccountRequired` y el gate Caso C de
+    /// `SettlementFormView`. Solo aplica en creación (`lastCreatedExpenseID != nil`).
+    private var optInApplies: Bool {
+        !viewModel.effectiveBridgeEnabled
+            && !viewModel.isGroupInviteMode
+            && viewModel.isCaseA
+            && viewModel.lastCreatedExpenseID != nil
+    }
+
+    /// Presenta la pantalla de éxito tras un pequeño delay (deja asentar el teclado/estado),
+    /// espejando `NewTransactionView.showTransactionSuccess`.
+    private func presentSuccess() {
+        Task {
+            try? await Task.sleep(for: .milliseconds(150))
+            dsWithAnimation(reduceMotion) {
+                showSuccessScreen = true
+            }
+        }
+    }
+
+    /// Construye el payload de la pantalla de éxito desde el estado actual del VM (post-save).
+    private func buildSuccessData() -> GroupExpenseSuccessData {
+        let shares = viewModel.calculatedShares ?? []
+        let participants = shares.map { share in
+            GroupExpenseSuccessData.Participant(
+                id: share.memberID,
+                name: memberNameLookup[share.memberID] ?? "—",
+                amount: share.amount
+            )
+        }
+        let debt = GroupExpenseSuccessLogic.debt(
+            total: viewModel.amount,
+            shares: shares,
+            currentUserMemberID: viewModel.currentUserMemberID,
+            paidByMemberID: viewModel.paidByMemberID
+        )
+        return GroupExpenseSuccessData(
+            groupName: group.name,
+            groupColorHex: group.colorHex,
+            date: viewModel.date,
+            description: viewModel.expenseDescription,
+            totalAmount: viewModel.amount,
+            currencyCode: viewModel.currencyCode,
+            paidByName: memberNameLookup[viewModel.paidByMemberID] ?? "—",
+            paidByIsMe: viewModel.isCaseA,
+            subcategoryName: viewModel.subcategoryName,
+            accountName: viewModel.isCaseA ? viewModel.selectedAccount?.name : nil,
+            accountColorHex: viewModel.isCaseA ? viewModel.selectedAccount?.colorHex : nil,
+            splitType: viewModel.splitType,
+            participants: participants,
+            debt: debt,
+            isEditMode: viewModel.isEditMode
+        )
+    }
+
+    /// "Crear otro gasto": reinicia el VM a un form limpio del mismo grupo y vuelve al formulario.
+    /// El gate `didInitialPrefill` (ya `true`) evita que el `onAppear` re-prellene.
+    private func resetForAnother() {
+        let vm = GroupExpenseViewModel(group: group, members: members, memberNameLookup: memberNameLookup)
+        vm.setContext(modelContext)
+        viewModel = vm
+        dsWithAnimation(reduceMotion) {
+            showSuccessScreen = false
+            successData = nil
+        }
+    }
+
+    /// Crea el draft opt-in y continúa. Llamado desde el alert "Sí".
     private func confirmOptIn() {
         guard let expenseID = pendingOptInExpenseID else { return }
         do {
@@ -714,15 +834,24 @@ struct GroupExpenseFormView: View {
             #endif
         }
         pendingOptInExpenseID = nil
-        onSave()
-        dismiss()
+        resolveAfterOptIn()
     }
 
-    /// User dice "No" al alert opt-in: dismiss sin crear draft.
+    /// User dice "No" al alert opt-in: continúa sin crear draft.
     private func declineOptIn() {
         pendingOptInExpenseID = nil
-        onSave()
-        dismiss()
+        resolveAfterOptIn()
+    }
+
+    /// Tras resolver el alert opt-in: en flujo manual presenta la pantalla de éxito; en flujo
+    /// Inbox mantiene el cierre directo original.
+    private func resolveAfterOptIn() {
+        if presentsSuccessScreen {
+            presentSuccess()
+        } else {
+            onSave()
+            dismiss()
+        }
     }
 
     /// Abre el sheet de división (`open`) solo si ya hay un monto válido. Con monto 0

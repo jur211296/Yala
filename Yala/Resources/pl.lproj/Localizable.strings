@@ -4643,3 +4643,21 @@
 "faceIDGuide.step2Detail" = "W menu, które się pojawi";
 "faceIDGuide.step3Title" = "Potwierdź swoją twarzą";
 "faceIDGuide.step3Detail" = "Gotowe, Twoja aplikacja jest chroniona";
+
+/* Success screen title after creating a group expense */
+"groups.expense.success.titleCreated" = "Wydatek dodany!";
+
+/* Success screen title after editing a group expense */
+"groups.expense.success.titleUpdated" = "Wydatek zaktualizowany!";
+
+/* Detail row label: the group the expense belongs to */
+"groups.expense.success.group" = "Grupa";
+
+/* Detail row label: how the expense was split */
+"groups.expense.success.splitLabel" = "Podział";
+
+/* Section header listing participants and their share */
+"groups.expense.success.participants" = "Uczestnicy";
+
+/* Button: create another group expense */
+"groups.expense.success.addAnother" = "Dodaj kolejny";

@@ -4643,3 +4643,21 @@
 "faceIDGuide.step2Detail" = "表示されるメニューで";
 "faceIDGuide.step3Title" = "顔で確認";
 "faceIDGuide.step3Detail" = "完了。アプリが保護されました";
+
+/* Success screen title after creating a group expense */
+"groups.expense.success.titleCreated" = "支出を追加しました！";
+
+/* Success screen title after editing a group expense */
+"groups.expense.success.titleUpdated" = "支出を更新しました！";
+
+/* Detail row label: the group the expense belongs to */
+"groups.expense.success.group" = "グループ";
+
+/* Detail row label: how the expense was split */
+"groups.expense.success.splitLabel" = "分割方法";
+
+/* Section header listing participants and their share */
+"groups.expense.success.participants" = "参加者";
+
+/* Button: create another group expense */
+"groups.expense.success.addAnother" = "別の支出を追加";

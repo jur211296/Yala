@@ -2071,6 +2071,15 @@ enum L10n {
                 static var sharesTitle: String { ls("groups.expense.splitSheet.sharesTitle", comment: "") }
                 static var sharesHint: String { ls("groups.expense.splitSheet.sharesHint", comment: "") }
             }
+            /// Pantalla de éxito tras crear/editar un gasto de grupo (GroupExpenseSuccessView).
+            enum Success {
+                static var titleCreated: String { ls("groups.expense.success.titleCreated", comment: "") }
+                static var titleUpdated: String { ls("groups.expense.success.titleUpdated", comment: "") }
+                static var group: String { ls("groups.expense.success.group", comment: "") }
+                static var splitLabel: String { ls("groups.expense.success.splitLabel", comment: "") }
+                static var participants: String { ls("groups.expense.success.participants", comment: "") }
+                static var addAnother: String { ls("groups.expense.success.addAnother", comment: "") }
+            }
             static var title: String { ls("groups.expense.title", comment: "") }
             static var editTitle: String { ls("groups.expense.editTitle", comment: "") }
             static var descriptionLabel: String { ls("groups.expense.description", comment: "") }
