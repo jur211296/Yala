@@ -1920,6 +1920,31 @@
       "coverage": "unit:YalaTests/DateAlignmentHelperTests (KPI del período anterior == último punto VISIBLE de la curva anterior, MTD-vs-MTD; guard de coherencia + trunca/no-op/bordes; y `alignedPreviousInterval` del hero: trunca .thisMonth+month / no-op resto/edge mes corto). manual: device visual card Comparativa (Tendencias) + widget comparación (Panel) — badge/KPI/curva coherentes en período en curso, modos P-1/A-1. D2 (hero de Tendencias/Insights: variaciones balance/ingreso/gasto/prom-diario alineadas a MTD vía InsightsCalculator) — unit cubierto; device-QA del hero pendiente. Grupo B (VariationChips categoría/subcat/tags/necesidad/cashflow del Panel) HECHO (fase 2, ticket p20-15): previo truncado MTD vía DateAlignmentHelper.alignedPreviousItems (SOLO .thisMonth — .thisWeek/rodantes/cerrados/YTD ya simétricos; PanelViewModel.alignedPreviousTransactions centraliza el pre-filtro + corte por natures que coincide con cada calculadora, gasto-only salvo cashflow) truncando previousTransactions antes de cada calculadora; unit cubierto (gate aggregatePreviousNeedsAlignment solo-thisMonth + trunca thisMonth + no-op thisWeek/cerrados/rodantes + bordes mes corto/actual vacío/borde domingo dayOfWeek). /code-review high (37 agentes) cazó y corrigió: .thisWeek NO debe alinearse (previo trailing) y el corte debe ser nature-aware. Residual documentado: Tags no filtra 'tiene tag' en el corte; scrub (focusedDate) preexistente. device-QA visual pendiente.",
       "owner": "",
       "lastVerified": "2026-07-06"
+    },
+    {
+      "area": "date-period-intervals",
+      "codeGlobs": [
+        "Yala/App/Models/SharedModels.swift",
+        "Yala/App/Logic/Helpers/PreviousPeriodHelper.swift",
+        "Yala/App/Logic/Helpers/DateAlignmentHelper.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/DetailPeriodDateIntervalTests,DetailPeriodDateIntervalMoreTests,WidgetDataServiceIntervalTests,PreviousPeriodHelperTests (boundary de medianoche del SSOT DetailPeriod.dateInterval + paridad con el mirror del widget vía réplica; el widget WidgetDataService.dateInterval vive en el target YalaWidgetsExtension, no importable → réplica cruzada vs SSOT). manual: el mirror real del widget se valida por device.",
+      "owner": "",
+      "lastVerified": "2026-07-06"
+    },
+    {
+      "area": "onboarding-groups-only",
+      "codeGlobs": [
+        "Yala/App/Views/Onboarding/OnboardingView.swift",
+        "Yala/App/Logic/OnboardingStepPlan.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/OnboardingGroupsOnlyGuardUITests (card 'Dividir gastos con amigos' presente en el paso Propósito + guard iCloud al elegirla sin cuenta); unit:YalaTests/OnboardingStepPlanTests (skip de steps groupsOnly). Happy-path (con iCloud → moneda → landing) es device/TestFlight.",
+      "owner": "",
+      "lastVerified": "2026-07-06"
     }
   ]
 }

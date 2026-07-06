@@ -43,7 +43,9 @@ enum ApplePayPendingStore {
     /// Prefijo de las keys por-pago en el App Group.
     nonisolated static let keyPrefix = "applePayPending."
 
-    private nonisolated static var appGroupDefaults: UserDefaults? {
+    /// Internal (no private): `ApplePayDraftService.processPending` lo usa como default
+    /// del parámetro `defaults` inyectable, para que los tests puedan aislar el App Group.
+    nonisolated static var appGroupDefaults: UserDefaults? {
         UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)
     }
 

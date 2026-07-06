@@ -286,6 +286,7 @@ struct PersonalizationSettingsView: View {
                                     .labelsHidden()
                                     .disabled(forcesMonochromeIcons)
                                     .accessibilityHint(forcesMonochromeIcons ? L10n.Accessibility.systemMonochromeIcons : "")
+                                    .accessibilityIdentifier("settings_colorful_icons_toggle")
 
                             }
                             .padding(.horizontal, DS.FormRow.paddingH)

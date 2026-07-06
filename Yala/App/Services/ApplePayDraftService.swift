@@ -24,20 +24,31 @@ struct ApplePayDraftService {
     /// Convierte la cola de gastos de Apple Pay pendientes en `InboxDraft`s. Devuelve cuántos creó.
     /// Se llama en `bootstrap()`, en `handleBecameActive()` y en el trailing-edge del observer de
     /// remote-change; es idempotente (consume-after-save) y barato si la cola está vacía.
+    /// `pendingStoreDefaults`: App Group real por default (intent/app); inyectable en tests
+    /// para aislar la cola y evitar contaminación cross-test del App Group compartido.
+    /// `importQuiescent`: por default lee el singleton `iCloudSyncService.shared` (producción);
+    /// inyectable en tests para no depender del singleton global — que otras suites concurrentes
+    /// (iCloudSyncServiceTests) mutan a no-quiescente → `return 0` → falso rojo cross-suite.
     @discardableResult
-    static func processPending(context: ModelContext) -> Int {
+    static func processPending(
+        context: ModelContext,
+        pendingStoreDefaults: UserDefaults? = ApplePayPendingStore.appGroupDefaults,
+        importQuiescent: Bool? = nil
+    ) -> Int {
         // Gate de quiescencia (idéntico a ScheduledPaymentDraftService): crea InboxDrafts + `save()`
         // del store personal; diferir durante el import del restore de iCloud evita el
         // `_assertionFailure`/SIGTRAP interno de SwiftData. NO consumimos la cola si el gate no pasa
         // (los pagos persisten y se reintentan en el próximo arranque / trailing-edge).
-        guard iCloudSyncService.shared.isImportQuiescent else {
+        // nil (producción/intent) → lee el singleton main-actor; los tests inyectan `true` para no
+        // depender de `iCloudSyncService.shared`, que otras suites concurrentes mutan a no-quiescente.
+        guard importQuiescent ?? iCloudSyncService.shared.isImportQuiescent else {
             SaveBreadcrumb.deferred("ApplePayDraftService.processPending", "import not quiescent")
             return 0
         }
 
         // peek (NO consume): un fetch/save fallido o un crash antes del save deja la cola intacta →
         // se reintenta. Solo borramos las keys tras un `save()` exitoso (consume-after-save).
-        let pending = ApplePayPendingStore.peekAll()
+        let pending = ApplePayPendingStore.peekAll(defaults: pendingStoreDefaults)
         guard !pending.isEmpty else { return 0 }
 
         // Cuentas reales (excluye las de sistema: solo el bridge las asigna). Un solo fetch para
@@ -130,7 +141,7 @@ struct ApplePayDraftService {
 
         // Los descartados (corruptos/cero) se borran aunque no haya nada que guardar (no reintentar).
         if !droppedKeys.isEmpty {
-            ApplePayPendingStore.remove(keys: droppedKeys)
+            ApplePayPendingStore.remove(keys: droppedKeys, defaults: pendingStoreDefaults)
             TelemetryService.track(.applePayPayloadDropped, parameters: ["count": String(droppedKeys.count)])
         }
 
@@ -152,7 +163,7 @@ struct ApplePayDraftService {
 
         // Save OK → borrar las keys materializadas. Residual documentado: un crash entre este save
         // y el remove reprocesaría los pagos → borrador duplicado (recuperable), nunca pérdida.
-        ApplePayPendingStore.remove(keys: materializedKeys)
+        ApplePayPendingStore.remove(keys: materializedKeys, defaults: pendingStoreDefaults)
         TelemetryService.track(.applePayPayloadMaterialized, parameters: ["count": String(createdDrafts.count)])
         return createdDrafts.count
     }
