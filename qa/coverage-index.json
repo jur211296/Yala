@@ -466,7 +466,7 @@
         "F-S5-07"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests; xcuitest:YalaUITests/GroupExpenseSuccessUITests",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests; xcuitest:YalaUITests/GroupExpenseSuccessUITests + unit:YalaTests/GroupExpenseSuccessBuildDataTests (datos de la pantalla de éxito)",
       "owner": "",
       "lastVerified": "2026-07-06"
     },
@@ -1369,7 +1369,7 @@
         "F-WCS-03"
       ],
       "classification": "manual",
-      "coverage": "unit:YalaTests/ApplePayAmountParserTests,YalaTests/ApplePayPendingStoreTests + manual",
+      "coverage": "unit:YalaTests/ApplePayAmountParserTests,YalaTests/ApplePayPendingStoreTests + manual + unit:YalaTests/ApplePayDraftServiceTests (processPending: divisa/cuenta, drop cero, MerchantMemory, consume-after-save, idempotencia — App Group e quiescencia inyectables)",
       "owner": "",
       "lastVerified": "2026-07-04"
     },
@@ -1380,7 +1380,7 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "manual",
+      "coverage": "manual + unit:YalaTests/BiometricKeychainCleanupTests (idempotencia cleanup + delete de keys)",
       "owner": "",
       "lastVerified": "2026-07-06"
     },
@@ -1851,7 +1851,7 @@
       ],
       "scenarioIDs": [],
       "classification": "agentic",
-      "coverage": "device-qa",
+      "coverage": "device-qa + unit:YalaTests/YalaThemeColorfulIconsTests (forcesMonochromeIcons/effectiveColorfulIcons) + xcuitest:YalaUITests/PersonalizationColorfulIconsUITests (toggle alterna)",
       "owner": "",
       "lastVerified": "2026-07-06"
     },
@@ -1869,7 +1869,7 @@
         "F-GSP-04"
       ],
       "classification": "agentic",
-      "coverage": "device-qa",
+      "coverage": "device-qa + unit:YalaTests/ScheduledPaymentGroupSaveTests (savePayment grupo mi-parte/total + createDraft gate)",
       "owner": "",
       "lastVerified": ""
     },
@@ -1884,7 +1884,7 @@
         "F-INB-06"
       ],
       "classification": "manual",
-      "coverage": "unit:YalaTests/DraftConversionEligibilityLogicTests,YalaTests/DraftToGroupExpenseTemplateLogicTests + manual (e2e bridge/sync device/TestFlight)",
+      "coverage": "unit:YalaTests/DraftConversionEligibilityLogicTests,YalaTests/DraftToGroupExpenseTemplateLogicTests + manual (e2e bridge/sync device/TestFlight) + unit:YalaTests/DraftServiceHandleConvertTests (borrado del draft al convertir)",
       "owner": "",
       "lastVerified": ""
     },
