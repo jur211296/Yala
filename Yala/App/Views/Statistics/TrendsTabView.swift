@@ -1692,8 +1692,18 @@ struct TrendsTabView: View {
         // Calculate totals for VariationChip
         let newCurrentTotal = currentResult.points.last?.value ?? 0
         if newCurrentTotal != currentPeriodTotal { currentPeriodTotal = newCurrentTotal }
-        let prevTotal = previousResult.points.last?.value ?? 0
-        let newPreviousTotal: Double? = previousResult.points.isEmpty ? nil : prevTotal
+        // Total del período anterior ALINEADO al día equivalente del último día con
+        // datos del actual (MTD-vs-MTD, p20-15): == último punto VISIBLE de la curva
+        // anterior, no el fin del período anterior COMPLETO. Antes usaba
+        // `previousResult.points.last` (fin de mes) → descuadre KPI-vs-curva.
+        let newPreviousTotal = DateAlignmentHelper.alignedPreviousTotal(
+            previousPoints: previousResult.points,
+            currentPoints: currentResult.points,
+            currentInterval: currentInterval,
+            previousInterval: previousInterval,
+            period: trendsViewModel.detailPeriod,
+            comparisonMode: sessionState.comparisonMode
+        )
         if newPreviousTotal != previousPeriodTotal { previousPeriodTotal = newPreviousTotal }
 
         // Calculate combined Y domain

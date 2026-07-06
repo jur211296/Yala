@@ -1903,6 +1903,22 @@
       "coverage": "unit:YalaTests/TransactionClassificationLogicTests + TrendDataProcessorTests (reembolso/KPI==curva/invariante/yDomain negativo) + ReportNotificationServiceTests (accumulateReportTotals/empty-check por actividad) + CashFlowCalculatorTests (reembolso) + TrendProcessingTests (yDomain incluye curva .expense negativa). manual: Fase 1 device OK (header Records/RecordsStandalone == CashFlow). Fase 2 (p20-14) device visual de curvas de Tendencias + hero==KPI-chart en periodo con reembolso PENDIENTE.",
       "owner": "",
       "lastVerified": "2026-07-05"
+    },
+    {
+      "area": "trend-previous-period-alignment",
+      "codeGlobs": [
+        "Yala/App/Logic/Helpers/DateAlignmentHelper.swift",
+        "Yala/App/Views/Statistics/PeriodComparisonChartView.swift",
+        "Yala/App/Views/Statistics/TrendsTabView.swift",
+        "Yala/App/ViewModels/PanelViewModel.swift"
+      ],
+      "scenarioIDs": [
+        "F-STA-03"
+      ],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/DateAlignmentHelperTests (KPI del período anterior == último punto VISIBLE de la curva anterior, MTD-vs-MTD; guard de coherencia + trunca/no-op/bordes). manual: device visual card Comparativa (Tendencias) + widget comparación (Panel) — badge/KPI/curva coherentes en período en curso, modos P-1/A-1. Grupo B (VariationChips categoría/subcat/tags/necesidad/cashflow del Panel) diferido a fase 2 (ticket p20-15).",
+      "owner": "",
+      "lastVerified": "2026-07-06"
     }
   ]
 }

@@ -2556,9 +2556,17 @@ final class PanelViewModel {
         }
 
         let currentTotal = currentResult.points.last?.value ?? 0
-        let previousTotal: Double? = previousResult.points.isEmpty
-            ? nil
-            : (previousResult.points.last?.value ?? 0)
+        // Total del período anterior ALINEADO al día equivalente del último día
+        // con datos del actual (MTD-vs-MTD, p20-15): == último punto VISIBLE de la
+        // curva anterior, no el fin del período anterior COMPLETO.
+        let previousTotal: Double? = DateAlignmentHelper.alignedPreviousTotal(
+            previousPoints: previousResult.points,
+            currentPoints: currentResult.points,
+            currentInterval: context.effectiveInterval,
+            previousInterval: previousInterval,
+            period: context.period,
+            comparisonMode: mode
+        )
 
         let newData = PanelPeriodComparisonData(
             currentPoints: currentResult.points,
