@@ -15,6 +15,7 @@ import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct GroupExpenseEligibilityLogicTests {
 
     @Test func activeMemberCanCreate() {

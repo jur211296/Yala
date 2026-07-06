@@ -10,6 +10,9 @@ import Testing
 
 @testable import Yala
 
+// `.serialized`: los tests mutan el singleton `LanguageManager.overrideLanguage`
+// (App Group compartido) → correrlos en paralelo se pisan entre sí.
+@Suite(.serialized)
 @MainActor
 struct LocaleResolutionTests {
 
@@ -56,15 +59,14 @@ struct LocaleResolutionTests {
         defer { LanguageManager.overrideLanguage = original }
 
         // "xx" no es un SupportedLocale válido → resolved cae a Bundle.main.
-        UserDefaults(suiteName: "group.com.jurgenschmidt.yala")?
-            .set("xx", forKey: LanguageManager.overrideKey)
+        // Escribir vía el setter (NO un suiteName hardcodeado): `resolved` lee de
+        // `sharedDefaults` = `SharedContainerService.appGroupIdentifier`, que bajo el scheme
+        // "Yala Dev" NO es "group.com.jurgenschmidt.yala" → el write hardcodeado iba a otro
+        // grupo y el test leía un override filtrado de un test hermano (falso rojo).
+        LanguageManager.overrideLanguage = "xx"
 
         let resolution = LanguageManager.resolved
         #expect(resolution.bundle === Bundle.main)
-
-        // Cleanup directo (evita post de notification)
-        UserDefaults(suiteName: "group.com.jurgenschmidt.yala")?
-            .removeObject(forKey: LanguageManager.overrideKey)
     }
 
     // MARK: - ls() fallback (verificación con keys reales del bundle)

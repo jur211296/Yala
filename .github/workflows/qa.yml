@@ -13,6 +13,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validar coverage-index (ratchet anti-drift)
         run: python3 qa/validate-coverage.py
+      - name: Aislamiento de tests (makeTestContext( ⇒ .serialized)
+        run: bash qa/check-test-isolation.sh
 
   # Suite de tests. Runner macos-26 (Tahoe): Xcode `latest-stable` (26.x) + sim
   # iPhone 17 Pro. Build UNA vez + test-without-building.

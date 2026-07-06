@@ -11,6 +11,10 @@ import Testing
 
 @testable import Yala
 
+// `.serialized`: los tests `async` mutan el singleton global `LanguageManager.overrideLanguage`
+// y esperan `.languageDidChange`; el setter NO postea si el valor no cambia
+// (`guard newValue != current`) → en paralelo, un test deja "fr" y otro no recibe notif.
+@Suite(.serialized)
 @MainActor
 struct AppLanguageSyncTests {
 

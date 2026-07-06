@@ -117,7 +117,14 @@ private func wipeAllModels(_ context: ModelContext) {
     // la suite completa). El fetch/delete por objeto queda acotado al store de ESTE contexto.
     func wipe<T: PersistentModel>(_ type: T.Type) {
         do {
-            try context.delete(model: type)
+            // Fetch + delete por objeto: `context.delete(model:)` (bulk) opera a nivel de la
+            // entidad del `NSManagedObjectModel` COMPARTIDO por todos los containers del mismo
+            // schema y deja el store del contexto reusado en un estado inconsistente entre tests
+            // (fugas de identidad → `persistentModelID` de un test previo contamina al siguiente;
+            // p.ej. `dedup_preservesTransactionSubcategoryRef` pasaba a solas pero fallaba tras
+            // sus hermanos). El fetch/delete por objeto queda acotado al store de ESTE contexto.
+            let objects = try context.fetch(FetchDescriptor<T>())
+            for object in objects { context.delete(object) }
         } catch {
             print("makeTestContext: wipe error for \(type): \(error)")
         }

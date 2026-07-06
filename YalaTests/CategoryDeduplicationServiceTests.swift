@@ -114,8 +114,12 @@ struct CategoryDeduplicationServiceTests {
         context.insert(keeperSub)
         context.insert(dupSub)
 
-        // Push keeper al tope del sort: añade 1 tx para que transactions.count > 0
+        // Push keeper al tope del sort por `transactions.count` (el keeper selection de
+        // `deduplicateSeedCategories` NO tiene tie-breaker estable). Ventaja de 2 tx —
+        // NO 1 — para que un test que añada 1 tx al duplicado (dedup_preservesTransactionSubcategoryRef)
+        // no genere un empate 1-1 → keeper no-determinista → falso rojo order-dependent.
         let account = makeTestAccount(context: context, name: "Test Acc")
+        _ = makeTestTransaction(context: context, amount: 100, account: account, category: keeperCat, subcategory: keeperSub)
         _ = makeTestTransaction(context: context, amount: 100, account: account, category: keeperCat, subcategory: keeperSub)
 
         try context.save()
