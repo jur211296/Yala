@@ -1600,6 +1600,59 @@ final class PanelViewModel {
         )
     }
 
+    /// Fechas de las TX del período ACTUAL (dentro de `interval`) que la calculadora
+    /// del widget realmente cuenta — referencia MTD para truncar el previo
+    /// (`DateAlignmentHelper.alignedPreviousItems`, p20-15 fase 2). Excluye ajustes
+    /// de saldo/transferencias (`balanceAdjustmentType == nil && category != nil`) y
+    /// filtra por `natures` con la MISMA semántica que las calculadoras
+    /// (`naturesToInclude = natures ?? [.expense]`). Importa: si el corte se derivara
+    /// de un set más amplio que lo que la calculadora suma (p.ej. incluir un INGRESO
+    /// tardío cuando el widget es gasto-only), el previo quedaría bajo-truncado y
+    /// reintroduciría el sesgo parcial-vs-completo (cazado en /code-review). Cash flow
+    /// pasa `[.income, .expense]`; los widgets de gasto pasan su `naturesFilter`
+    /// (nil → gasto). Residual conocido: para Tags no se filtra "tiene tag", así que
+    /// un gasto SIN etiqueta más tardío que el último gasto etiquetado puede correr
+    /// el corte 1+ días (borde estrecho, conservador).
+    private func currentPeriodDates(
+        _ txs: [TransactionItem],
+        in interval: DateInterval,
+        natures: Set<TransactionNature>?
+    ) -> [Date] {
+        let include = natures ?? [.expense]
+        return txs.filter { tx in
+            guard tx.balanceAdjustmentType == nil, let category = tx.category,
+                  interval.contains(tx.date) else { return false }
+            let nature: TransactionNature = category.isIncome ? .income : .expense
+            return include.contains(nature)
+        }
+        .map(\.date)
+    }
+
+    /// Transacciones del período ANTERIOR (dentro de `previousInterval`) truncadas al
+    /// mismo span de días que los datos del período ACTUAL (MTD, p20-15 fase 2). El
+    /// corte se deriva de `currentSource` filtrado por `natures`, que deben coincidir
+    /// con lo que la calculadora del widget cuenta. No-op salvo `.thisMonth`.
+    /// Centraliza el pre-filtro del previo (antes duplicado en los 5 widgets) para no
+    /// re-driftar el criterio de qué TX entran al período anterior.
+    private func alignedPreviousTransactions(
+        previousInterval: DateInterval,
+        currentSource: [TransactionItem],
+        natures: Set<TransactionNature>?,
+        context: PanelCalculationContext
+    ) -> [TransactionItem] {
+        let previous = context.transactionsWithoutDateFilter.filter {
+            previousInterval.contains($0.date)
+        }
+        return DateAlignmentHelper.alignedPreviousItems(
+            previous,
+            currentDates: currentPeriodDates(currentSource, in: context.effectiveInterval, natures: natures),
+            currentInterval: context.effectiveInterval,
+            previousInterval: previousInterval,
+            period: context.period,
+            comparisonMode: .month
+        ) { $0.date }
+    }
+
     /// Calculate top spending categories with period comparison
     /// Uses needFilteredTransactions (not fullyFiltered) so that subcategory selection
     /// only dims categories visually, rather than filtering out other categories' data
@@ -1634,10 +1687,14 @@ final class PanelViewModel {
             customRange: nil
         )
 
-        // Filter transactions for previous period (using date-independent filter)
-        let previousTransactions = context.transactionsWithoutDateFilter.filter {
-            previousInterval.contains($0.date)
-        }
+        // Previo truncado MTD al día equivalente del actual (p20-15 fase 2; no-op salvo .thisMonth).
+        // El corte usa `naturesFilter` (mismo que la calculadora) para no correrse con ingresos.
+        let previousTransactions = alignedPreviousTransactions(
+            previousInterval: previousInterval,
+            currentSource: context.needFilteredTransactions,
+            natures: naturesFilter,
+            context: context
+        )
 
         let previousData = TopSpendingCategoriesCalculator.calculateTopSpending(
             transactions: previousTransactions,
@@ -1703,10 +1760,14 @@ final class PanelViewModel {
             customRange: nil
         )
 
-        // Filter transactions for previous period (using date-independent filter)
-        let previousTransactions = context.transactionsWithoutDateFilter.filter {
-            previousInterval.contains($0.date)
-        }
+        // Previo truncado MTD al día equivalente del actual (p20-15 fase 2; no-op salvo .thisMonth).
+        // El corte usa `naturesFilter` (mismo que la calculadora) para no correrse con ingresos.
+        let previousTransactions = alignedPreviousTransactions(
+            previousInterval: previousInterval,
+            currentSource: context.needFilteredTransactions,
+            natures: naturesFilter,
+            context: context
+        )
 
         let previousData = TopSubcategoriesCalculator.calculateTopSubcategories(
             transactions: previousTransactions,
@@ -1758,9 +1819,14 @@ final class PanelViewModel {
             mode: .month,
             customRange: nil
         )
-        let previousTransactions = context.transactionsWithoutDateFilter.filter {
-            previousInterval.contains($0.date)
-        }
+        // Previo truncado MTD al día equivalente del actual (p20-15 fase 2; no-op salvo .thisMonth).
+        // Cash flow cuenta ingreso+gasto → el corte incluye ambos (a diferencia de los widgets de gasto).
+        let previousTransactions = alignedPreviousTransactions(
+            previousInterval: previousInterval,
+            currentSource: context.expenseFilteredTransactions,
+            natures: [.income, .expense],
+            context: context
+        )
         let previousSummary = CashFlowCalculator.calculateCashFlow(
             transactions: previousTransactions,
             interval: previousInterval,
@@ -1824,10 +1890,14 @@ final class PanelViewModel {
             customRange: nil
         )
 
-        // Filter transactions for previous period
-        let previousTransactions = context.transactionsWithoutDateFilter.filter {
-            previousInterval.contains($0.date)
-        }
+        // Previo truncado MTD al día equivalente del actual (p20-15 fase 2; no-op salvo .thisMonth).
+        // NeedTrendHelper cuenta solo gasto (excluye ingresos) → corte gasto-only.
+        let previousTransactions = alignedPreviousTransactions(
+            previousInterval: previousInterval,
+            currentSource: context.needWidgetTransactions,
+            natures: [.expense],
+            context: context
+        )
 
         let previousPoints = NeedTrendHelper.calculateTrend(
             transactions: previousTransactions,
@@ -2455,9 +2525,15 @@ final class PanelViewModel {
             mode: .month,
             customRange: nil
         )
-        let previousTransactions = context.transactionsWithoutDateFilter.filter {
-            previousInterval.contains($0.date)
-        }
+        // Previo truncado MTD al día equivalente del actual (p20-15 fase 2; no-op salvo .thisMonth).
+        // TagSpendingCalculator cuenta solo gasto etiquetado → corte gasto-only
+        // (residual documentado: no filtra "tiene tag").
+        let previousTransactions = alignedPreviousTransactions(
+            previousInterval: previousInterval,
+            currentSource: context.filteredTransactions,
+            natures: [.expense],
+            context: context
+        )
         let previousData = TagSpendingCalculator.calculateTopSpending(
             transactions: previousTransactions,
             interval: previousInterval,

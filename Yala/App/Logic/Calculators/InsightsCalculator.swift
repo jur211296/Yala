@@ -193,7 +193,8 @@ struct InsightsCalculator {
         converter: CurrencyConverting = CurrencyConverter.shared,
         splitGroups: [SplitGroup] = [],
         currentUserMemberIDs: Set<String> = [],
-        includeBridgedGroupTx: Bool = true
+        includeBridgedGroupTx: Bool = true,
+        now: Date = .now
     ) -> InsightData {
         // Filter transactions using FilterService
         let filtered = FilterService.filterForTrends(
@@ -203,14 +204,28 @@ struct InsightsCalculator {
             includeBridgedGroupTx: includeBridgedGroupTx
         )
 
-        let interval = period.dateInterval(customRange: customRange)
+        // `now` inyectado también aquí para que el intervalo ACTUAL y el `asOf` de
+        // la alineación (abajo) compartan el mismo "hoy" (determinismo + evita que
+        // diverjan si el reloj cruza medianoche entre ambas lecturas).
+        let interval = period.dateInterval(customRange: customRange, now: now)
 
         // Transactions in current period
         let periodTxns = filtered.filter { interval.contains($0.date) }
 
-        // Previous period for variations
+        // Previous period for variations. Se alinea a MTD-vs-MTD para .thisMonth
+        // en modo .month (único caso parcial-vs-completo, D2 de p20-15): el previo
+        // se trunca al día equivalente del actual, así las 4 variaciones (balance/
+        // ingreso/gasto/prom. diario) comparan a-la-fecha en vez de MTD-parcial vs
+        // mes-completo. `prevInterval` COMPLETO se conserva SOLO para el label.
         let prevInterval = PreviousPeriodHelper.previousInterval(for: period, mode: comparisonMode, customRange: customRange)
-        let prevTxns = filtered.filter { prevInterval.contains($0.date) }
+        let alignedPrevInterval = DateAlignmentHelper.alignedPreviousInterval(
+            currentInterval: interval,
+            previousInterval: prevInterval,
+            asOf: now,
+            period: period,
+            comparisonMode: comparisonMode
+        )
+        let prevTxns = filtered.filter { alignedPrevInterval.contains($0.date) }
 
         // Period Summary
         let cashFlow = CashFlowCalculator.calculateCashFlow(
@@ -222,7 +237,7 @@ struct InsightsCalculator {
         )
         let prevCashFlow = CashFlowCalculator.calculateCashFlow(
             transactions: prevTxns,
-            interval: prevInterval,
+            interval: alignedPrevInterval,
             grouping: .day,
             currencyCode: currencyCode,
             converter: converter
@@ -246,8 +261,11 @@ struct InsightsCalculator {
         let dailyAverageCount = Double(periodTxns.count) / Double(daysInPeriod)
         let dailyAverageExpense = cashFlow.totalExpense / Double(daysInPeriod)
 
-        // Previous daily average for variation
-        let prevDaysInPeriod = max(1, calendar.dateComponents([.day], from: prevInterval.start, to: prevInterval.end).day ?? 1)
+        // Previous daily average for variation. Usa el intervalo ALINEADO (no el
+        // completo): el numerador (`prevCashFlow.totalExpense`) ya es del tramo
+        // truncado; el denominador debe escalar igual o `prevDailyAvg` colapsa y
+        // `dailyAverageVariation` se dispara (D2 p20-15).
+        let prevDaysInPeriod = max(1, calendar.dateComponents([.day], from: alignedPrevInterval.start, to: alignedPrevInterval.end).day ?? 1)
         let prevDailyAvg = prevCashFlow.totalExpense / Double(prevDaysInPeriod)
         let dailyAverageVariation = PreviousPeriodHelper.calculateVariation(
             currentAmount: dailyAverageExpense,

@@ -137,6 +137,66 @@ enum DateAlignmentHelper {
         }
     }
 
+    /// Trunca el intervalo del período ANTERIOR al día equivalente del "as-of"
+    /// actual (MTD-vs-MTD) para el ÚNICO caso con asimetría parcial-vs-completo:
+    /// `.thisMonth` en modo `.month` (actual = MTD parcial; previo = mes COMPLETO).
+    /// Para cualquier otro período/modo devuelve `previousInterval` sin tocar: el
+    /// resto ya es simétrico en duración (su previo es del mismo span vía
+    /// `sameIntervalPreviousYear` o la ventana trailing de igual duración), así que
+    /// alinear sería no-op o dañino (excluiría txns no-medianoche del día
+    /// equivalente sin arreglar nada). Pura; reusa `getOriginalPreviousDate` (misma
+    /// estrategia `.dayOfMonth` que la curva). Usado por el hero de Estadísticas
+    /// (`InsightsCalculator`) para que su variación no compare parcial-vs-completo
+    /// (D2 de p20-15). `calendar` inyectable para tests deterministas.
+    static func alignedPreviousInterval(
+        currentInterval: DateInterval,
+        previousInterval: DateInterval,
+        asOf: Date,
+        period: DetailPeriod,
+        comparisonMode: ComparisonMode,
+        calendar: Calendar = .current
+    ) -> DateInterval {
+        // Gate: solo el caso asimétrico. Resto → no-op full-vs-full.
+        // ⚠️ Si añades un DetailPeriod cuyo `previousInterval` sea el período
+        // COMPLETO mientras el actual es parcial (MTD), EXTIENDE este gate — si no,
+        // el sesgo parcial-vs-completo reaparece en el hero EN SILENCIO (hoy solo
+        // `.thisMonth`+`.month` es asimétrico; el resto ya empareja span vía
+        // `sameIntervalPreviousYear` o la ventana trailing de igual duración).
+        guard period == .thisMonth, comparisonMode == .month else { return previousInterval }
+
+        // Normaliza a medianoche del día en curso; defensivo si el período ya cerró.
+        let startOfToday = calendar.startOfDay(for: asOf)
+        guard startOfToday < currentInterval.end else { return previousInterval }
+
+        // Mapea el día en curso → día equivalente del mes previo (medianoche, por
+        // la estrategia .dayOfMonth de .thisMonth).
+        let mapped = getOriginalPreviousDate(
+            for: startOfToday,
+            currentInterval: currentInterval,
+            previousInterval: previousInterval,
+            period: period,
+            comparisonMode: comparisonMode,
+            calendar: calendar
+        )
+
+        // Extiende al INICIO del día SIGUIENTE al equivalente para incluir ese día
+        // COMPLETO. El intervalo actual termina en `endOfToday` (inicio de mañana),
+        // así que cuenta hoy entero; el previo debe incluir el día equivalente
+        // entero o la comparación MTD-vs-MTD queda asimétrica (una TX del previo con
+        // hora — jun 6 14:00 — caería fuera mientras su gemela jul 6 14:00 sí cuenta;
+        // y en día 1 el intervalo colapsaría a ancho cero). OJO: esta regla de borde
+        // (día equivalente COMPLETO, `.contains` cerrado) DIFIERE del pipeline de la
+        // curva (`clippedPreviousPoints`, padding ±1d sobre puntos) — el hero filtra
+        // TX crudas, no puntos; no asumir paridad de borde entre ambos.
+        let endOfEquivalentDay = calendar.date(byAdding: .day, value: 1, to: mapped) ?? mapped
+
+        // Clamp al rango del previo: neutraliza el rollover del mes destino más
+        // corto (ej. hoy día 31, junio 30d → mapped+1 se pasa → clamp a fin del
+        // previo = mes completo) y el último día del mes.
+        let alignedEnd = min(max(endOfEquivalentDay, previousInterval.start), previousInterval.end)
+        return DateInterval(start: previousInterval.start, end: alignedEnd)
+    }
+
     /// Total del período anterior alineado al día equivalente del último día
     /// con datos del período actual (MTD-vs-MTD). Devuelve el valor del ÚLTIMO
     /// punto VISIBLE de la curva anterior — replica EXACTAMENTE el pipeline de
@@ -223,5 +283,92 @@ enum DateAlignmentHelper {
                 return BarPoint(date: adjustedDate, value: point.value)
             }
             .sorted { $0.date < $1.date }
+    }
+
+    // MARK: - Sumas agregadas (VariationChips del Panel, p20-15 fase 2)
+
+    /// El período ACTUAL es PARCIAL y su período anterior (modo `.month`) es un
+    /// período COMPLETO más largo → la comparación de SUMAS agregadas tiene sesgo
+    /// temporal y su previo debe truncarse al día equivalente
+    /// (`alignedPreviousItems`). SOLO `.thisMonth` (`.month`): es el ÚNICO caso
+    /// asimétrico parcial-vs-completo, porque `PreviousPeriodHelper.previousInterval`
+    /// le devuelve el MES ANTERIOR COMPLETO. El resto ya es simétrico en duración y
+    /// NO debe tocarse:
+    /// - `.thisWeek`: su previo NO es la semana calendario anterior sino una VENTANA
+    ///   TRAILING de igual duración (comparte rama con `.last7Days` en
+    ///   `previousPeriodInterval`) → ya simétrico; alinear con `.dayOfWeek` empujaría
+    ///   las TX previas fuera del rango y VACIARÍA la comparación a mitad de semana.
+    /// - `.thisYear` cae a YTD-vs-YTD (`sameIntervalPreviousYear`); rodantes
+    ///   (`.last7Days`/`.last30Days`/`.custom`) igual duración; cerrados
+    ///   (`.lastMonth`/`.lastYear`) completo-vs-completo; `.allTime` no compara.
+    /// Los widgets agregados del Panel siempre pasan modo `.month` → alineación
+    /// `.dayOfMonth`. (Coincide con la conclusión del hero: `alignedPreviousInterval`
+    /// también trata `.thisMonth` como único caso.)
+    static func aggregatePreviousNeedsAlignment(
+        period: DetailPeriod,
+        comparisonMode: ComparisonMode
+    ) -> Bool {
+        guard comparisonMode == .month else { return false }
+        switch period {
+        case .thisMonth:
+            return true
+        case .thisWeek, .last7Days, .last30Days, .thisYear, .lastMonth, .lastYear, .allTime, .custom:
+            return false
+        }
+    }
+
+    /// Trunca los items del período ANTERIOR al mismo rango de días que los datos
+    /// del período ACTUAL (MTD-vs-MTD para las SUMAS agregadas del Panel:
+    /// categorías, subcategorías, tags, necesidades y cash flow). Mapea la fecha
+    /// de cada item con `adjustDateToCurrent` (misma alineación que la curva de
+    /// Comparativa) y lo conserva si la fecha alineada cae en la ventana
+    /// `[currentInterval.start ... max(currentDates)]` (desde el inicio del período
+    /// —una SUMA cuenta desde el arranque— hasta el último día con datos del
+    /// actual). Como `adjustDateToCurrent` normaliza a medianoche, equivale a
+    /// "día-del-período del previo entre el inicio del período y el del último dato
+    /// del actual". Así la suma del previo cubre el MISMO span de días que la del
+    /// actual (elimina el sesgo "mes en curso vs mes anterior completo").
+    ///
+    /// El gate `aggregatePreviousNeedsAlignment` sólo enruta `.thisMonth`
+    /// (estrategia `.dayOfMonth`). El borde INFERIOR (`>= currentInterval.start`)
+    /// es no-op para `.dayOfMonth` (el mapeo siempre cae dentro del mes actual) y
+    /// se conserva como defensa: hace el filtro correcto para CUALQUIER estrategia
+    /// —p.ej. `.dayOfWeek`, donde el domingo del previo (weekday 1 < lunes 2) mapea
+    /// a un offset negativo, ANTES del inicio de semana— por si el gate se ampliara.
+    ///
+    /// A DIFERENCIA de la curva (`clippedPreviousPoints`) NO aplica padding ±1d:
+    /// ese `+1d` es breathing-room del eje X, no semántica; para una SUMA el corte
+    /// honesto es el día exacto. El gate limita a `.thisMonth` (nunca cerrados) →
+    /// sin riesgo de rollover de fin-de-mes que exigiera el padding.
+    ///
+    /// No-op (devuelve `previous` intacto) cuando el período ya es simétrico
+    /// (`aggregatePreviousNeedsAlignment == false`) o cuando el actual no tiene
+    /// datos (`currentDates` vacío → sin referencia de corte). Genérico + closure
+    /// `date:` para testear sin SwiftData.
+    static func alignedPreviousItems<T>(
+        _ previous: [T],
+        currentDates: [Date],
+        currentInterval: DateInterval,
+        previousInterval: DateInterval,
+        period: DetailPeriod,
+        comparisonMode: ComparisonMode,
+        calendar: Calendar = .current,
+        date: (T) -> Date
+    ) -> [T] {
+        guard aggregatePreviousNeedsAlignment(period: period, comparisonMode: comparisonMode),
+              let lastCurrentDate = currentDates.max() else {
+            return previous
+        }
+        return previous.filter { item in
+            let adjusted = adjustDateToCurrent(
+                date(item),
+                currentInterval: currentInterval,
+                previousInterval: previousInterval,
+                period: period,
+                comparisonMode: comparisonMode,
+                calendar: calendar
+            )
+            return adjusted >= currentInterval.start && adjusted <= lastCurrentDate
+        }
     }
 }

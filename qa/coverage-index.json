@@ -1908,6 +1908,7 @@
       "area": "trend-previous-period-alignment",
       "codeGlobs": [
         "Yala/App/Logic/Helpers/DateAlignmentHelper.swift",
+        "Yala/App/Logic/Calculators/InsightsCalculator.swift",
         "Yala/App/Views/Statistics/PeriodComparisonChartView.swift",
         "Yala/App/Views/Statistics/TrendsTabView.swift",
         "Yala/App/ViewModels/PanelViewModel.swift"
@@ -1916,7 +1917,7 @@
         "F-STA-03"
       ],
       "classification": "manual",
-      "coverage": "unit:YalaTests/DateAlignmentHelperTests (KPI del período anterior == último punto VISIBLE de la curva anterior, MTD-vs-MTD; guard de coherencia + trunca/no-op/bordes). manual: device visual card Comparativa (Tendencias) + widget comparación (Panel) — badge/KPI/curva coherentes en período en curso, modos P-1/A-1. Grupo B (VariationChips categoría/subcat/tags/necesidad/cashflow del Panel) diferido a fase 2 (ticket p20-15).",
+      "coverage": "unit:YalaTests/DateAlignmentHelperTests (KPI del período anterior == último punto VISIBLE de la curva anterior, MTD-vs-MTD; guard de coherencia + trunca/no-op/bordes; y `alignedPreviousInterval` del hero: trunca .thisMonth+month / no-op resto/edge mes corto). manual: device visual card Comparativa (Tendencias) + widget comparación (Panel) — badge/KPI/curva coherentes en período en curso, modos P-1/A-1. D2 (hero de Tendencias/Insights: variaciones balance/ingreso/gasto/prom-diario alineadas a MTD vía InsightsCalculator) — unit cubierto; device-QA del hero pendiente. Grupo B (VariationChips categoría/subcat/tags/necesidad/cashflow del Panel) HECHO (fase 2, ticket p20-15): previo truncado MTD vía DateAlignmentHelper.alignedPreviousItems (SOLO .thisMonth — .thisWeek/rodantes/cerrados/YTD ya simétricos; PanelViewModel.alignedPreviousTransactions centraliza el pre-filtro + corte por natures que coincide con cada calculadora, gasto-only salvo cashflow) truncando previousTransactions antes de cada calculadora; unit cubierto (gate aggregatePreviousNeedsAlignment solo-thisMonth + trunca thisMonth + no-op thisWeek/cerrados/rodantes + bordes mes corto/actual vacío/borde domingo dayOfWeek). /code-review high (37 agentes) cazó y corrigió: .thisWeek NO debe alinearse (previo trailing) y el corte debe ser nature-aware. Residual documentado: Tags no filtra 'tiene tag' en el corte; scrub (focusedDate) preexistente. device-QA visual pendiente.",
       "owner": "",
       "lastVerified": "2026-07-06"
     }
