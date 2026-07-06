@@ -413,7 +413,7 @@
         "F-S5-06"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests + unit:YalaTests/GroupDetailDismissDecisionTests (dismiss-first) + xcuitest:YalaUITests/GroupsEmptyStateUITests (empty state, no spinner atascado)",
       "owner": "",
       "lastVerified": "2026-06-25"
     },
@@ -1380,7 +1380,7 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "manual + unit:YalaTests/BiometricKeychainCleanupTests (idempotencia cleanup + delete de keys)",
+      "coverage": "manual + unit:YalaTests/BiometricKeychainCleanupTests (idempotencia cleanup + delete de keys) + xcuitest:YalaUITests/SecurityFaceIDGuideUITests (fila Seguridad → FaceIDProtectionGuideView)",
       "owner": "",
       "lastVerified": "2026-07-06"
     },

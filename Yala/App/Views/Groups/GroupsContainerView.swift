@@ -46,10 +46,12 @@ struct GroupsContainerView: View {
                     // configure el contexto de GroupService. Mostramos spinner en vez del empty
                     // state hasta la primera carga con éxito (el bootstrap dispara loadData al terminar).
                     ProgressView()
+                        .accessibilityIdentifier("groups_loading_spinner")
                 } else if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty {
                     YalaEmptyState.noGroups {
                         viewModel.showCreateGroup = true
                     }
+                    .accessibilityIdentifier("groups_empty_state")
                 } else if viewModel.activeGroups.isEmpty {
                     // Only archived groups exist
                     VStack(spacing: DS.Spacing.xl) {

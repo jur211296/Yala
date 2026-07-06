@@ -66,6 +66,7 @@ struct FaceIDProtectionGuideView: View {
         .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Settings.faceIDProtection)
         .navigationBarTitleDisplayMode(.inline)
+        .accessibilityIdentifier("faceid_guide_root")
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {

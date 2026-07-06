@@ -581,6 +581,7 @@ struct ProfileView: View {
                     title: L10n.Settings.faceIDProtection,
                     iconColor: DS.Semantic.successForeground,
                     destination: .faceIDProtectionGuide)
+                    .accessibilityIdentifier("profile_security_faceid")
                 // Atajos de Siri: registran gastos personales — fuera de alcance en solo-grupos.
                 if !isGroupInviteMode {
                     SubsectionDivider()

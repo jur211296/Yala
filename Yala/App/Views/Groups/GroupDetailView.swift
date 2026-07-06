@@ -228,12 +228,13 @@ struct GroupDetailView: View {
             // Dismiss-first: las condiciones leen el modelo `group` directo (no dependen de la
             // salida de loadData) → decidir cerrar ANTES, sin carrera con el reload debounced,
             // y sin programar un recálculo sobre una vista que se está cerrando.
-            if group.modelContext == nil || group.isDeleted {
-                dismiss()
-                return
-            }
-            // Only dismiss if group BECAME archived during this session
-            if group.isArchived && !wasArchivedOnAppear {
+            // Lógica pura en GroupDetailDismissDecision (testeada sin UI).
+            if GroupDetailDismissDecision.shouldDismiss(
+                contextIsNil: group.modelContext == nil,
+                isDeleted: group.isDeleted,
+                isArchived: group.isArchived,
+                wasArchivedOnAppear: wasArchivedOnAppear
+            ) {
                 dismiss()
                 return
             }
