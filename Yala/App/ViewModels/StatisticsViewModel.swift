@@ -527,16 +527,18 @@ final class StatisticsViewModel: Filterable {
         allTransactions: [TransactionItem],
         defaultCurrencyCode: String
     ) {
+        // La categoría decide el bucket; acumulación signed (paridad con
+        // TrendDataProcessor/CashFlowCalculator): un reembolso reduce el bucket.
         let newIncome =
             filtered
-            .filter { $0.amountInPreferredCurrency > 0 && $0.balanceAdjustmentType == nil }
+            .filter { $0.balanceAdjustmentType == nil && TransactionClassificationLogic.isIncome($0) }
             .reduce(0) { $0 + $1.amountInPreferredCurrency }
         if newIncome != totalIncome { totalIncome = newIncome }
 
         let newExpense =
             filtered
-            .filter { $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil }
-            .reduce(0) { $0 + abs($1.amountInPreferredCurrency) }
+            .filter { $0.balanceAdjustmentType == nil && !TransactionClassificationLogic.isIncome($0) }
+            .reduce(0) { $0 - $1.amountInPreferredCurrency }
         if newExpense != totalExpense { totalExpense = newExpense }
 
         // KPI Saldo Actual: usa LiveBalanceCalculator (TC actual sobre saldo
@@ -558,11 +560,11 @@ final class StatisticsViewModel: Filterable {
             metricFiltered = filtered
         case .income:
             metricFiltered = filtered.filter {
-                $0.amountInPreferredCurrency > 0 && $0.balanceAdjustmentType == nil
+                $0.balanceAdjustmentType == nil && TransactionClassificationLogic.isIncome($0)
             }
         case .expense:
             metricFiltered = filtered.filter {
-                $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil
+                $0.balanceAdjustmentType == nil && !TransactionClassificationLogic.isIncome($0)
             }
         }
         let newRecent = Array(
@@ -649,19 +651,19 @@ final class StatisticsViewModel: Filterable {
                 }
 
             case .income:
-                // Exclude balance adjustments from income
+                // Clasificación por categoría; signed (paridad con TrendDataProcessor).
                 for txn in accountTransactions
-                where txn.amountInPreferredCurrency > 0 && txn.balanceAdjustmentType == nil {
+                where txn.balanceAdjustmentType == nil && TransactionClassificationLogic.isIncome(txn) {
                     let bucketDate = trendGrouping.dateKey(for: txn.date, calendar: calendar)
                     buckets[bucketDate, default: 0] += txn.amountInPreferredCurrency
                 }
 
             case .expense:
-                // Exclude balance adjustments from expense
+                // Signed: gasto (monto negativo) sube la curva; reembolso la baja.
                 for txn in accountTransactions
-                where txn.amountInPreferredCurrency < 0 && txn.balanceAdjustmentType == nil {
+                where txn.balanceAdjustmentType == nil && !TransactionClassificationLogic.isIncome(txn) {
                     let bucketDate = trendGrouping.dateKey(for: txn.date, calendar: calendar)
-                    buckets[bucketDate, default: 0] += abs(txn.amountInPreferredCurrency)
+                    buckets[bucketDate, default: 0] -= txn.amountInPreferredCurrency
                 }
             }
 

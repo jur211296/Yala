@@ -86,10 +86,13 @@ struct TrendDataProcessor {
             let isBalanceAdjustment = transaction.balanceAdjustmentType != nil
 
             if !isBalanceAdjustment {
-                if amount > 0 {
+                // La categoría decide el bucket; acumulación signed (paridad con
+                // CashFlowCalculator): un monto de signo contrario a su categoría
+                // reduce el bucket (reembolso), no suma magnitud.
+                if TransactionClassificationLogic.isIncome(transaction) {
                     totalIncome += amount
                 } else {
-                    totalExpense += abs(amount)
+                    totalExpense -= amount
                 }
             }
 
@@ -169,10 +172,12 @@ struct TrendDataProcessor {
             )
 
         case .income:
+            // Clasificación por categoría (paridad con el total y CashFlow); la
+            // curva acumula signed → un ingreso de monto negativo la baja.
             fillCumulativeBuckets(
                 &buckets,
                 transactions: transactions.filter {
-                    $0.amountInPreferredCurrency > 0 && $0.balanceAdjustmentType == nil
+                    TransactionClassificationLogic.isIncome($0) && $0.balanceAdjustmentType == nil
                 },
                 grouping: grouping,
                 calendar: calendar,
@@ -180,14 +185,16 @@ struct TrendDataProcessor {
             )
 
         case .expense:
+            // Signed: un gasto (monto negativo) sube la curva; un reembolso
+            // (monto positivo en categoría de gasto) la baja.
             fillCumulativeBuckets(
                 &buckets,
                 transactions: transactions.filter {
-                    $0.amountInPreferredCurrency < 0 && $0.balanceAdjustmentType == nil
+                    !TransactionClassificationLogic.isIncome($0) && $0.balanceAdjustmentType == nil
                 },
                 grouping: grouping,
                 calendar: calendar,
-                valueTransform: { abs($0.amountInPreferredCurrency) }
+                valueTransform: { -$0.amountInPreferredCurrency }
             )
         }
 

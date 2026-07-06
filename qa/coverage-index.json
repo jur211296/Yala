@@ -1890,11 +1890,15 @@
       "area": "income-expense-classification-parity",
       "codeGlobs": [
         "Yala/App/Logic/TransactionClassificationLogic.swift",
-        "Yala/App/ViewModels/RecordsViewModel.swift"
+        "Yala/App/ViewModels/RecordsViewModel.swift",
+        "Yala/Services/TrendDataProcessor.swift",
+        "Yala/App/ViewModels/StatisticsViewModel.swift",
+        "Yala/Services/ReportNotificationService.swift",
+        "Yala/App/Logic/Helpers/TrendProcessingHelper.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/TransactionClassificationLogicTests + manual (device: header de Records/RecordsStandalone coincide con CashFlow 'Este mes'). Fase 2 (Tendencias/Estadisticas/Reportes) en ticket aparte p20-14.",
+      "coverage": "unit:YalaTests/TransactionClassificationLogicTests + TrendDataProcessorTests (reembolso/KPI==curva/invariante/yDomain negativo) + ReportNotificationServiceTests (accumulateReportTotals/empty-check por actividad) + CashFlowCalculatorTests (reembolso) + TrendProcessingTests (yDomain incluye curva .expense negativa). manual: Fase 1 device OK (header Records/RecordsStandalone == CashFlow). Fase 2 (p20-14) device visual de curvas de Tendencias + hero==KPI-chart en periodo con reembolso PENDIENTE.",
       "owner": "",
       "lastVerified": "2026-07-05"
     }

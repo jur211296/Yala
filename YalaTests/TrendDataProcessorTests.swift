@@ -539,12 +539,161 @@ struct TrendDataProcessorTests {
         #expect(result.liveAnchor == nil)
     }
 
+    // MARK: - Clasificación por categoría + signed (p20-14 Fase 2)
+
+    @Test func totals_classifyByCategory_notSign() {
+        // La categoría manda: income+monto negativo reduce income; expense+monto
+        // positivo (reembolso) reduce expense. NO clasifica por signo.
+        let now = Date()
+        let interval = DateInterval(
+            start: Calendar.current.startOfDay(for: now),
+            end: now.addingTimeInterval(1)
+        )
+        let incomeCat = makeCategory(isIncome: true)
+        let expenseCat = makeCategory(isIncome: false)
+        let salary = makeTransaction(amount: 500, amountInPreferred: 500, date: now, category: incomeCat)
+        let incomeRefund = makeTransaction(amount: -40, amountInPreferred: -40, date: now, category: incomeCat)
+        let groceries = makeTransaction(amount: -100, amountInPreferred: -100, date: now, category: expenseCat)
+        let expenseRefund = makeTransaction(amount: 30, amountInPreferred: 30, date: now, category: expenseCat)
+
+        let result = TrendDataProcessor.processTrendData(
+            transactions: [salary, incomeRefund, groceries, expenseRefund],
+            accounts: [],
+            metric: .balance,
+            period: .thisMonth,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN"
+        )
+        // income: 500 + (-40) = 460 ; expense: -(-100) + -(30) = 70
+        #expect(result.totalIncome == 460)
+        #expect(result.totalExpense == 70)
+    }
+
+    @Test func incomeKPI_matchesEndOfCurve_withDesyncedTx() {
+        // AC-a: con una TX desincronizada (categoría income + monto negativo), el
+        // KPI (totalIncome) coincide con el fin de la curva cumulativa .income.
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let day1 = today
+        let day2 = calendar.date(byAdding: .day, value: 1, to: today)!
+        let endDate = calendar.date(byAdding: .day, value: 2, to: today)!
+        let interval = DateInterval(start: day1, end: endDate)
+        let incomeCat = makeCategory(isIncome: true)
+
+        let salary = makeTransaction(amount: 500, amountInPreferred: 500, date: day1, category: incomeCat)
+        let refund = makeTransaction(amount: -120, amountInPreferred: -120, date: day2, category: incomeCat)
+
+        let result = TrendDataProcessor.processTrendData(
+            transactions: [salary, refund],
+            accounts: [],
+            metric: .income,
+            period: .thisMonth,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN"
+        )
+        #expect(result.totalIncome == 380)  // 500 - 120
+        #expect(result.rawPoints.last?.value == 380)
+        #expect(result.totalIncome == result.rawPoints.last?.value)
+    }
+
+    @Test func expenseCurve_refundLowersCurve() {
+        // La curva .expense es signed: un reembolso (monto positivo en categoría
+        // de gasto) baja la curva acumulada; el KPI coincide con el fin.
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let day1 = today
+        let day2 = calendar.date(byAdding: .day, value: 1, to: today)!
+        let endDate = calendar.date(byAdding: .day, value: 2, to: today)!
+        let interval = DateInterval(start: day1, end: endDate)
+        let expenseCat = makeCategory(isIncome: false)
+
+        let spend = makeTransaction(amount: -100, amountInPreferred: -100, date: day1, category: expenseCat)
+        let refund = makeTransaction(amount: 30, amountInPreferred: 30, date: day2, category: expenseCat)
+
+        let result = TrendDataProcessor.processTrendData(
+            transactions: [spend, refund],
+            accounts: [],
+            metric: .expense,
+            period: .thisMonth,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN"
+        )
+        #expect(result.rawPoints.first?.value == 100)      // gasto sube
+        #expect(result.rawPoints.last?.value == 70)        // reembolso baja: 100 - 30
+        #expect(result.totalExpense == 70)
+        #expect(result.totalExpense == result.rawPoints.last?.value)
+    }
+
+    @Test func expenseCurve_refundDominant_yDomainIncludesNegative() {
+        // Reembolsos > gastos → la curva .expense va negativa; el yDomain debe
+        // incluir el valor negativo (no clipearlo al piso 0).
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let day1 = today
+        let day2 = calendar.date(byAdding: .day, value: 1, to: today)!
+        let endDate = calendar.date(byAdding: .day, value: 2, to: today)!
+        let interval = DateInterval(start: day1, end: endDate)
+        let expenseCat = makeCategory(isIncome: false)
+
+        let spend = makeTransaction(amount: -50, amountInPreferred: -50, date: day1, category: expenseCat)
+        let refund = makeTransaction(amount: 200, amountInPreferred: 200, date: day2, category: expenseCat)
+
+        let result = TrendDataProcessor.processTrendData(
+            transactions: [spend, refund],
+            accounts: [],
+            metric: .expense,
+            period: .thisMonth,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN"
+        )
+        // Curva: día1 = 50 ; día2 = 50 - 200 = -150.
+        #expect(result.rawPoints.last?.value == -150)
+        #expect(result.yDomain.lowerBound <= -150)
+    }
+
+    @Test func balanceInvariant_totalIncomeMinusExpense_equalsSignedSum() {
+        // AC-b: income − expense == Σ montos con signo (excl. balance adjustments).
+        let now = Date()
+        let interval = DateInterval(
+            start: Calendar.current.startOfDay(for: now),
+            end: now.addingTimeInterval(1)
+        )
+        let incomeCat = makeCategory(isIncome: true)
+        let expenseCat = makeCategory(isIncome: false)
+        let txs = [
+            makeTransaction(amount: 500, amountInPreferred: 500, date: now, category: incomeCat),
+            makeTransaction(amount: -40, amountInPreferred: -40, date: now, category: incomeCat),
+            makeTransaction(amount: -100, amountInPreferred: -100, date: now, category: expenseCat),
+            makeTransaction(amount: 30, amountInPreferred: 30, date: now, category: expenseCat),
+        ]
+        let result = TrendDataProcessor.processTrendData(
+            transactions: txs,
+            accounts: [],
+            metric: .balance,
+            period: .thisMonth,
+            grouping: .day,
+            interval: interval,
+            currencyCode: "PEN"
+        )
+        let signedSum = txs.reduce(0.0) { $0 + $1.amountInPreferredCurrency }  // 390
+        #expect(result.totalIncome - result.totalExpense == signedSum)
+    }
+
     // MARK: - Helper
+
+    private func makeCategory(isIncome: Bool) -> YalaCategory {
+        YalaCategory(name: isIncome ? "Salario" : "Comida", colorHex: "#000000", isIncome: isIncome)
+    }
 
     private func makeTransaction(
         amount: Double,
         amountInPreferred: Double,
         date: Date,
+        category: YalaCategory? = nil,
         balanceAdjustmentType: String? = nil
     ) -> TransactionItem {
         let tx = TransactionItem(
@@ -552,6 +701,7 @@ struct TrendDataProcessorTests {
             amount: amount,
             currencyCode: "PEN",
             note: nil,
+            category: category,
             amountInPreferredCurrency: amountInPreferred,
             preferredCurrencyCode: "PEN"
         )

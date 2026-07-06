@@ -15,6 +15,20 @@ struct ReportData {
     let totalExpense: Double
     let totalIncome: Double
     let topCategory: String?
+    /// `true` si hubo ≥1 TX clasificada de ese tipo en el período. Distingue
+    /// "no hubo actividad del tipo" de "el neto quedó en 0" (p.ej. gasto −100 +
+    /// reembolso +100) → el empty-check del copy se basa en actividad, no en neto.
+    let hasExpenseActivity: Bool
+    let hasIncomeActivity: Bool
+}
+
+/// Totales income/expense de un reporte + señal de actividad por tipo,
+/// producidos por `ReportNotificationService.accumulateReportTotals`.
+struct ReportTotals {
+    let totalIncome: Decimal
+    let totalExpense: Decimal
+    let hasIncomeActivity: Bool
+    let hasExpenseActivity: Bool
 }
 
 /// Service for sending report notifications with real financial data
@@ -153,40 +167,15 @@ final class ReportNotificationService {
             preferredCurrencyCode: currencyCode
         )
 
-        // Calculate income/expense with proper currency conversion (R2, R4, R5)
-        var totalIncome: Decimal = 0
-        var totalExpense: Decimal = 0
+        // Income/expense: clasificación por categoría + acumulación signed vía
+        // helper puro (testeable sin ModelContext). Excluye balance adjustments y
+        // cuentas no elegibles dentro del helper.
         let eligibleAccountIDs = Set(accounts.map { $0.persistentModelID })
-
-        for tx in transactions {
-            // Exclude balance adjustments (same as TrendDataProcessor)
-            guard tx.balanceAdjustmentType == nil else { continue }
-            // Filter by eligible accounts (consistent with BalanceHelper)
-            guard let account = tx.account,
-                  eligibleAccountIDs.contains(account.persistentModelID) else { continue }
-
-            let amount: Decimal
-            // R2: Check currency and convert if needed (BalanceHelper pattern)
-            if tx.preferredCurrencyCode == currencyCode {
-                amount = Decimal(tx.amountInPreferredCurrency)
-            } else {
-                let sourceCurrency = CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
-                    ?? (CurrencyCode(rawValue: currencyCode) ?? .usd)
-                amount = CurrencyConverter.shared.convert(
-                    Decimal(tx.amount),
-                    from: sourceCurrency.rawValue,
-                    to: currencyCode,
-                    on: tx.date
-                )
-            }
-
-            // R4: Same sign convention as TrendDataProcessor (income > 0, expense < 0)
-            if amount > 0 {
-                totalIncome += amount
-            } else {
-                totalExpense += abs(amount)
-            }
-        }
+        let totals = Self.accumulateReportTotals(
+            transactions: transactions,
+            eligibleAccountIDs: eligibleAccountIDs,
+            currencyCode: currencyCode
+        )
 
         // Get top category using TopSpendingCategoriesCalculator
         let topCategories = TopSpendingCategoriesCalculator.calculateTopSpending(
@@ -197,9 +186,70 @@ final class ReportNotificationService {
 
         return ReportData(
             balance: balance,
-            totalExpense: NSDecimalNumber(decimal: totalExpense).doubleValue,
-            totalIncome: NSDecimalNumber(decimal: totalIncome).doubleValue,
-            topCategory: topCategories.first?.category.name
+            totalExpense: NSDecimalNumber(decimal: totals.totalExpense).doubleValue,
+            totalIncome: NSDecimalNumber(decimal: totals.totalIncome).doubleValue,
+            topCategory: topCategories.first?.category.name,
+            hasExpenseActivity: totals.hasExpenseActivity,
+            hasIncomeActivity: totals.hasIncomeActivity
+        )
+    }
+
+    /// Acumula income/expense de las transacciones de un reporte. Clasifica por
+    /// categoría (regla canónica `TransactionClassificationLogic`) y acumula
+    /// *signed* (paridad con `CashFlowCalculator`): un monto de signo contrario a
+    /// su categoría (reembolso) REDUCE el bucket. Excluye balance adjustments y
+    /// cuentas no elegibles. Clasifica y acumula sobre el MISMO valor con signo.
+    /// Pure-logic (sin `ModelContext`) para tests; el converter es inyectable.
+    static func accumulateReportTotals(
+        transactions: [TransactionItem],
+        eligibleAccountIDs: Set<PersistentIdentifier>,
+        currencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> ReportTotals {
+        var totalIncome: Decimal = 0
+        var totalExpense: Decimal = 0
+        var hasIncomeActivity = false
+        var hasExpenseActivity = false
+
+        for tx in transactions {
+            // Exclude balance adjustments (same as TrendDataProcessor)
+            guard tx.balanceAdjustmentType == nil else { continue }
+            // Filter by eligible accounts (consistent with BalanceHelper)
+            guard let account = tx.account,
+                  eligibleAccountIDs.contains(account.persistentModelID) else { continue }
+
+            let amount: Decimal
+            // Check currency and convert if needed (BalanceHelper pattern); el
+            // signo se preserva desde `tx.amount`.
+            if tx.preferredCurrencyCode == currencyCode {
+                amount = Decimal(tx.amountInPreferredCurrency)
+            } else {
+                let sourceCurrency = CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))
+                    ?? (CurrencyCode(rawValue: currencyCode) ?? .usd)
+                amount = converter.convert(
+                    Decimal(tx.amount),
+                    from: sourceCurrency.rawValue,
+                    to: currencyCode,
+                    on: tx.date
+                )
+            }
+
+            // La categoría decide el bucket; acumulación signed sobre el mismo
+            // `amount` (reembolso reduce). La actividad marca "hubo TX del tipo".
+            if TransactionClassificationLogic.isIncome(tx) {
+                totalIncome += amount
+                hasIncomeActivity = true
+            } else {
+                totalExpense -= amount
+                hasExpenseActivity = true
+            }
+        }
+
+        return ReportTotals(
+            totalIncome: totalIncome,
+            totalExpense: totalExpense,
+            hasIncomeActivity: hasIncomeActivity,
+            hasExpenseActivity: hasExpenseActivity
         )
     }
 
@@ -253,7 +303,9 @@ final class ReportNotificationService {
             let formatted = YalaFormatterStatic.currency(value: data.balance, currencyCode: currencyCode, forceFullPrecision: true)
             return L10n.Notifications.reportData(.balance, period: period, value: formatted)
         case .expenses:
-            if data.totalExpense == 0 {
+            // "Vacío" = no hubo gastos del período, NO "el neto quedó en 0"
+            // (un reembolso que cancela el gasto no debe disparar el copy vacío).
+            if !data.hasExpenseActivity {
                 switch reportType {
                 case .dailyReport: return L10n.Notifications.emptyExpensesDaily
                 case .weeklyReport: return L10n.Notifications.emptyExpensesWeekly
@@ -264,7 +316,7 @@ final class ReportNotificationService {
             let formatted = YalaFormatterStatic.currency(value: data.totalExpense, currencyCode: currencyCode, forceFullPrecision: true)
             return L10n.Notifications.reportData(.expenses, period: period, value: formatted)
         case .income:
-            if data.totalIncome == 0 {
+            if !data.hasIncomeActivity {
                 return L10n.Notifications.emptyIncome
             }
             let formatted = YalaFormatterStatic.currency(value: data.totalIncome, currencyCode: currencyCode, forceFullPrecision: true)

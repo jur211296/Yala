@@ -65,8 +65,15 @@ struct TrendProcessingHelper {
         let topBuffer = max(abs(maxVal) * 0.05, 100)
 
         if isExpense {
-            let safeMax = max(0, abs(maxVal))
-            return 0...(safeMax + topBuffer)
+            // La curva .expense es signed: normalmente ≥0 (gastos), pero un
+            // período con reembolsos dominantes puede llevarla a valores
+            // negativos. Ancla el baseline en 0 para el caso normal, pero
+            // extiende el piso hacia abajo cuando hay puntos negativos (sino
+            // quedarían clipeados bajo el eje). `max(0, maxVal)` — no `abs` —
+            // evita invertir el techo cuando todos los puntos son negativos.
+            let safeMax = max(0, maxVal)
+            let lowerBound = min(0, minVal)
+            return lowerBound...(safeMax + topBuffer)
         } else {
             // Adaptive domain around real min/max (balance/income).
             // Replicates the comparison chart logic so the line is never

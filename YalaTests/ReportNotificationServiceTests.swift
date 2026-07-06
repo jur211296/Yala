@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 
 @testable import Yala
@@ -174,40 +175,58 @@ struct ReportNotificationServiceTests {
 
     @Test @MainActor func formatReportBody_balance_containsAmount() {
         let config = ReportConfig(dataType: .balance, dayPreference: .monday)
-        let data = ReportData(balance: 1500.50, totalExpense: 0, totalIncome: 0, topCategory: nil)
+        let data = ReportData(balance: 1500.50, totalExpense: 0, totalIncome: 0, topCategory: nil, hasExpenseActivity: false, hasIncomeActivity: false)
         let body = ReportNotificationService.formatReportBody(config, reportType: .dailyReport, data: data)
 
         #expect(!body.isEmpty)
     }
 
-    @Test @MainActor func formatReportBody_expenses_zeroAmount_emptyState() {
+    @Test @MainActor func formatReportBody_expenses_noActivity_emptyState() {
         let config = ReportConfig(dataType: .expenses, dayPreference: .monday)
-        let data = ReportData(balance: 0, totalExpense: 0, totalIncome: 0, topCategory: nil)
+        let data = ReportData(balance: 0, totalExpense: 0, totalIncome: 0, topCategory: nil, hasExpenseActivity: false, hasIncomeActivity: false)
         let body = ReportNotificationService.formatReportBody(config, reportType: .dailyReport, data: data)
 
-        // Should show empty state message, not a formatted amount
-        #expect(!body.isEmpty)
+        // Sin actividad de gasto → copy vacío
+        #expect(body == L10n.Notifications.emptyExpensesDaily)
+    }
+
+    @Test @MainActor func formatReportBody_expenses_netZeroButActivity_showsAmount() {
+        // AC-c: gasto neto 0 PERO hubo actividad (reembolso que cancela) → NO empty.
+        let config = ReportConfig(dataType: .expenses, dayPreference: .monday)
+        let data = ReportData(balance: 0, totalExpense: 0, totalIncome: 0, topCategory: nil, hasExpenseActivity: true, hasIncomeActivity: false)
+        let body = ReportNotificationService.formatReportBody(config, reportType: .dailyReport, data: data)
+
+        #expect(body != L10n.Notifications.emptyExpensesDaily)
     }
 
     @Test @MainActor func formatReportBody_expenses_withAmount_showsFormatted() {
         let config = ReportConfig(dataType: .expenses, dayPreference: .monday)
-        let data = ReportData(balance: 0, totalExpense: 250.75, totalIncome: 0, topCategory: nil)
+        let data = ReportData(balance: 0, totalExpense: 250.75, totalIncome: 0, topCategory: nil, hasExpenseActivity: true, hasIncomeActivity: false)
         let body = ReportNotificationService.formatReportBody(config, reportType: .dailyReport, data: data)
 
-        #expect(!body.isEmpty)
+        #expect(body != L10n.Notifications.emptyExpensesDaily)
     }
 
-    @Test @MainActor func formatReportBody_income_zeroAmount_emptyState() {
+    @Test @MainActor func formatReportBody_income_noActivity_emptyState() {
         let config = ReportConfig(dataType: .income, dayPreference: .monday)
-        let data = ReportData(balance: 0, totalExpense: 0, totalIncome: 0, topCategory: nil)
+        let data = ReportData(balance: 0, totalExpense: 0, totalIncome: 0, topCategory: nil, hasExpenseActivity: false, hasIncomeActivity: false)
         let body = ReportNotificationService.formatReportBody(config, reportType: .dailyReport, data: data)
 
-        #expect(!body.isEmpty)
+        #expect(body == L10n.Notifications.emptyIncome)
+    }
+
+    @Test @MainActor func formatReportBody_income_netZeroButActivity_showsAmount() {
+        // AC-c simétrico: ingreso neto 0 con actividad → NO empty.
+        let config = ReportConfig(dataType: .income, dayPreference: .monday)
+        let data = ReportData(balance: 0, totalExpense: 0, totalIncome: 0, topCategory: nil, hasExpenseActivity: false, hasIncomeActivity: true)
+        let body = ReportNotificationService.formatReportBody(config, reportType: .dailyReport, data: data)
+
+        #expect(body != L10n.Notifications.emptyIncome)
     }
 
     @Test @MainActor func formatReportBody_topCategory_noCategory_emptyState() {
         let config = ReportConfig(dataType: .topCategory, dayPreference: .monday)
-        let data = ReportData(balance: 0, totalExpense: 0, totalIncome: 0, topCategory: nil)
+        let data = ReportData(balance: 0, totalExpense: 0, totalIncome: 0, topCategory: nil, hasExpenseActivity: false, hasIncomeActivity: false)
         let body = ReportNotificationService.formatReportBody(config, reportType: .dailyReport, data: data)
 
         #expect(!body.isEmpty)
@@ -215,7 +234,7 @@ struct ReportNotificationServiceTests {
 
     @Test @MainActor func formatReportBody_topCategory_withCategory_showsName() {
         let config = ReportConfig(dataType: .topCategory, dayPreference: .monday)
-        let data = ReportData(balance: 0, totalExpense: 100, totalIncome: 0, topCategory: "Alimentación")
+        let data = ReportData(balance: 0, totalExpense: 100, totalIncome: 0, topCategory: "Alimentación", hasExpenseActivity: true, hasIncomeActivity: false)
         let body = ReportNotificationService.formatReportBody(config, reportType: .dailyReport, data: data)
 
         #expect(body.contains("Alimentación"))
@@ -223,16 +242,98 @@ struct ReportNotificationServiceTests {
 
     @Test @MainActor func formatReportBody_expenses_differentReportTypes_differentEmptyStates() {
         let config = ReportConfig(dataType: .expenses, dayPreference: .monday)
-        let data = ReportData(balance: 0, totalExpense: 0, totalIncome: 0, topCategory: nil)
+        let data = ReportData(balance: 0, totalExpense: 0, totalIncome: 0, topCategory: nil, hasExpenseActivity: false, hasIncomeActivity: false)
 
         let dailyBody = ReportNotificationService.formatReportBody(config, reportType: .dailyReport, data: data)
         let weeklyBody = ReportNotificationService.formatReportBody(config, reportType: .weeklyReport, data: data)
         let monthlyBody = ReportNotificationService.formatReportBody(config, reportType: .monthlyReport, data: data)
 
         // Each report type should have its own empty state message
-        #expect(!dailyBody.isEmpty)
-        #expect(!weeklyBody.isEmpty)
-        #expect(!monthlyBody.isEmpty)
+        #expect(dailyBody == L10n.Notifications.emptyExpensesDaily)
+        #expect(weeklyBody == L10n.Notifications.emptyExpensesWeekly)
+        #expect(monthlyBody == L10n.Notifications.emptyExpensesMonthly)
+    }
+
+    // MARK: - accumulateReportTotals (clasificación + actividad — p20-14 Fase 2)
+
+    @Test @MainActor func accumulate_classifiesByCategory_signed() {
+        let account = makeAccount()
+        let ids: Set<PersistentIdentifier> = [account.persistentModelID]
+        let incomeCat = makeCategory(isIncome: true)
+        let expenseCat = makeCategory(isIncome: false)
+        let txs = [
+            makeTransaction(amount: 500, account: account, category: incomeCat),
+            makeTransaction(amount: -40, account: account, category: incomeCat),   // income refund
+            makeTransaction(amount: -100, account: account, category: expenseCat),
+            makeTransaction(amount: 30, account: account, category: expenseCat),   // expense refund
+        ]
+
+        let totals = ReportNotificationService.accumulateReportTotals(
+            transactions: txs, eligibleAccountIDs: ids, currencyCode: "USD"
+        )
+
+        #expect(totals.totalIncome == 460)   // 500 - 40
+        #expect(totals.totalExpense == 70)    // 100 - 30
+        #expect(totals.hasIncomeActivity == true)
+        #expect(totals.hasExpenseActivity == true)
+    }
+
+    @Test @MainActor func accumulate_netZeroExpense_stillHasActivity() {
+        // AC-c: gasto −100 + reembolso +100 = neto 0 PERO hubo actividad de gasto.
+        let account = makeAccount()
+        let ids: Set<PersistentIdentifier> = [account.persistentModelID]
+        let expenseCat = makeCategory(isIncome: false)
+        let txs = [
+            makeTransaction(amount: -100, account: account, category: expenseCat),
+            makeTransaction(amount: 100, account: account, category: expenseCat),
+        ]
+
+        let totals = ReportNotificationService.accumulateReportTotals(
+            transactions: txs, eligibleAccountIDs: ids, currencyCode: "USD"
+        )
+
+        #expect(totals.totalExpense == 0)
+        #expect(totals.hasExpenseActivity == true)   // ← la clave del fix
+        #expect(totals.hasIncomeActivity == false)
+    }
+
+    @Test @MainActor func accumulate_excludesBalanceAdjustmentsAndIneligibleAccounts() {
+        let account = makeAccount()
+        let other = makeAccount()
+        let ids: Set<PersistentIdentifier> = [account.persistentModelID]
+        let expenseCat = makeCategory(isIncome: false)
+        let valid = makeTransaction(amount: -100, account: account, category: expenseCat)
+        let adjustment = makeTransaction(amount: -50, account: account, category: expenseCat, balanceAdjustmentType: "manual")
+        let ineligible = makeTransaction(amount: -200, account: other, category: expenseCat)
+        let noAccount = makeTransaction(amount: -300, account: nil, category: expenseCat)
+
+        let totals = ReportNotificationService.accumulateReportTotals(
+            transactions: [valid, adjustment, ineligible, noAccount],
+            eligibleAccountIDs: ids, currencyCode: "USD"
+        )
+
+        #expect(totals.totalExpense == 100)   // solo `valid`
+        #expect(totals.hasExpenseActivity == true)
+    }
+
+    @Test @MainActor func accumulate_multiCurrency_convertsWithConverter() {
+        let account = makeAccount()
+        let ids: Set<PersistentIdentifier> = [account.persistentModelID]
+        let expenseCat = makeCategory(isIncome: false)
+        // EUR expense, reporting USD, rate 2.0 → −100 EUR = −200 USD
+        let tx = makeTransaction(
+            amount: -100, account: account, category: expenseCat,
+            currencyCode: "EUR", preferredCurrencyCode: "EUR"
+        )
+        let converter = MockCurrencyConverter(fixedRate: 2.0)
+
+        let totals = ReportNotificationService.accumulateReportTotals(
+            transactions: [tx], eligibleAccountIDs: ids, currencyCode: "USD", converter: converter
+        )
+
+        // convert(−100, rate 2.0) = −200 ; expense -= (−200) = 200
+        #expect(totals.totalExpense == 200)
+        #expect(totals.hasExpenseActivity == true)
     }
 
     // MARK: - Helpers
@@ -257,5 +358,44 @@ struct ReportNotificationServiceTests {
             type: type,
             reportConfig: config
         )
+    }
+
+    @MainActor
+    private func makeAccount() -> Account {
+        Account(
+            name: "Test",
+            currencyCode: "USD",
+            colorHex: "#000000",
+            iconName: "creditcard",
+            type: "bank"
+        )
+    }
+
+    @MainActor
+    private func makeCategory(isIncome: Bool) -> YalaCategory {
+        YalaCategory(name: isIncome ? "Salario" : "Comida", colorHex: "#000000", isIncome: isIncome)
+    }
+
+    @MainActor
+    private func makeTransaction(
+        amount: Double,
+        account: Account?,
+        category: YalaCategory?,
+        currencyCode: String = "USD",
+        preferredCurrencyCode: String = "USD",
+        balanceAdjustmentType: String? = nil
+    ) -> TransactionItem {
+        let tx = TransactionItem(
+            date: Date(timeIntervalSince1970: 1_700_000_000),
+            amount: amount,
+            currencyCode: currencyCode,
+            note: nil,
+            category: category,
+            account: account,
+            amountInPreferredCurrency: amount,
+            preferredCurrencyCode: preferredCurrencyCode
+        )
+        tx.balanceAdjustmentType = balanceAdjustmentType
+        return tx
     }
 }
