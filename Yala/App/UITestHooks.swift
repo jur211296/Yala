@@ -59,6 +59,13 @@ final class UITestHooks {
     /// transcribe — solo destraba la navegación a la vista.
     nonisolated static var aiConsent: Bool { hasArg("-uitest-ai-consent") }
 
+    /// `-uitest-seed-desync`: siembra un set MÍNIMO y determinista de transacciones
+    /// "desincronizadas" (categoría income con monto NEGATIVO y categoría expense con
+    /// monto POSITIVO) para el XCUI de clasificación income/expense por CATEGORÍA
+    /// (fix `8347a776`/`13f2cbb0`). Excluyente con `-uitest-seed <perfil>`: el test lo
+    /// lanza SIN perfil para no contaminar los totales. Ver `DevSeedTransactions.createDesyncFixtures`.
+    nonisolated static var seedDesync: Bool { hasArg("-uitest-seed-desync") }
+
     /// Valor de `-uitest-seed <perfil>` (ej. "realista", "pesado"). Nil si ausente.
     nonisolated static var seedProfile: String? {
         #if DEBUG
@@ -86,6 +93,28 @@ final class UITestHooks {
         return nil
         #endif
     }
+
+    /// `-uitest-deeplink-url <url>`: a diferencia de `-uitest-deeplink <target>` (que
+    /// mapea un target BARE a un tab POST-seed vía `uitestDeeplinkDestination`), esta URL
+    /// COMPLETA entra PRE-init por `AppBootstrapper.handleIncomingURL(_:)` → el intent se
+    /// DIFIERE al DeferredIntentBuffer y se re-emite en el drain (bootstrap paso 20),
+    /// ejercitando el defer→drain REAL de un deep link en cold launch (fix `ba8513e5`).
+    /// Soporta el token `seeded-first` en el path (`yala://groups/seeded-first`), que el
+    /// hook sustituye por el id del primer grupo sembrado (persistido en `seededGroupIDKey`).
+    nonisolated static var deeplinkURL: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-deeplink-url", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Key en `UserDefaults.standard` donde `DevSeedGroups.create` publica el
+    /// `SplitGroup.id.uuidString` del primer grupo sembrado, para que el hook de
+    /// `-uitest-deeplink-url` resuelva el token `seeded-first` a un id real en una
+    /// corrida posterior (patrón de 2 launches del XCUI de deep link en cold launch).
+    nonisolated static let seededGroupIDKey = "uitest.seededGroupID"
 
     /// Pure-logic: extrae el valor que sigue a `flag`. Nil si ausente, si es el último
     /// token, o si el siguiente token es otro flag (`-...`). Separado para test.

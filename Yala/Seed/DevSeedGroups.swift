@@ -25,6 +25,15 @@ enum DevSeedGroups {
         context.insert(group)
         let zoneID = group.cloudKitZoneID
 
+        // XCUI de deep link en cold launch: publica el id del PRIMER grupo sembrado para
+        // que `-uitest-deeplink-url yala://groups/seeded-first` lo resuelva a un id real en
+        // una corrida posterior (el store uitest persiste en disco → 2 launches). El router
+        // resuelve `.groupDetail(groupID:)` como `UUID` contra `SplitGroup.id`
+        // (GroupsContainerView.openPendingGroupIfAvailable), por eso se expone `id`, NO el zoneID.
+        if UITestHooks.isActive {
+            UserDefaults.standard.set(group.id.uuidString, forKey: UITestHooks.seededGroupIDKey)
+        }
+
         // 2. Miembros: tú + 2 amigos (todos activos)
         let me = SplitMember(
             groupZoneID: zoneID, displayName: "Tú",

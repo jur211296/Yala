@@ -559,5 +559,58 @@ struct DevSeedTransactions {
         usdTx.createdAt = startDate
         context.insert(usdTx)
     }
+
+    // MARK: - Desync Fixtures (XCUI clasificación income/expense por categoría)
+
+    /// Set MÍNIMO y determinista para `IncomeExpenseClassificationUITests`: 4 TX en
+    /// `Date.now` (cae en cualquier período por defecto — hoy/semana/mes/año) donde DOS
+    /// tienen el signo del monto CONTRARIO a su categoría (income con monto negativo,
+    /// expense con monto positivo). La regla canónica (`TransactionClassificationLogic.isIncome`)
+    /// clasifica por CATEGORÍA, no por signo, con acumulación signed (un monto de signo
+    /// contrario reduce el bucket). Valores elegidos para que el bucket CORRECTO (fix) y
+    /// el INCORRECTO (bug por-signo) den totales DISTINTOS y sin colisión de dígitos:
+    ///   fix (por categoría):   Ingresos = 600 − 100 = 500 · Gastos = 500 − 200 = 300
+    ///   bug (por signo):       Ingresos = 600 + 200 = 800 · Gastos = 100 + 500 = 600
+    /// Moneda = la de display (`currencyCode`) con `amountInPreferredCurrency = amount`
+    /// (sin FX): así income/expense usan el valor signed CRUDO en ambas superficies —
+    /// Registros (usa `amountInPreferredCurrency` directo) e Insights (vía CashFlowCalculator,
+    /// que usa el crudo sólo si `preferredCurrencyCode == currencyCode` de display).
+    @MainActor
+    static func createDesyncFixtures(
+        account: Account,
+        subcategoryLookup: [String: Subcategory],
+        currencyCode: String,
+        in context: ModelContext
+    ) {
+        let now = Date.now
+        let salary = subcategoryLookup[L10n.Subcategory.salary]           // categoría income
+        let restaurants = subcategoryLookup[L10n.Subcategory.restaurants] // categoría expense
+
+        func insert(amount: Double, sub: Subcategory?) {
+            let tx = TransactionItem(
+                date: now,
+                amount: amount,
+                currencyCode: currencyCode,
+                note: nil,
+                category: sub?.category,
+                subcategory: sub,
+                account: account,
+                exchangeRate: 1.0,
+                amountInPreferredCurrency: amount,
+                preferredCurrencyCode: currencyCode
+            )
+            tx.createdAt = now
+            context.insert(tx)
+        }
+
+        insert(amount: 600, sub: salary)        // income normal (categoría income, monto +)
+        insert(amount: -100, sub: salary)       // DESYNC: categoría income, monto NEGATIVO
+        insert(amount: -500, sub: restaurants)  // gasto normal (categoría expense, monto −)
+        insert(amount: 200, sub: restaurants)   // DESYNC: categoría expense, monto POSITIVO
+
+        do { try context.save() } catch {
+            print("DevSeedTransactions: Desync fixtures save error: \(error)")
+        }
+    }
 }
 #endif

@@ -245,6 +245,7 @@ struct InsightsTabView: View {
                         font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                         tint: .secondary
                     )
+                    .accessibilityIdentifier("stats_kpi_income")
                     if appPreferences.showVariations {
                         VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
                     }
@@ -262,6 +263,7 @@ struct InsightsTabView: View {
                     font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                     tint: .secondary
                 )
+                .accessibilityIdentifier("stats_kpi_expense")
                 if appPreferences.showVariations {
                     VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
                 }

@@ -1594,9 +1594,9 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/DeferredIntentBufferLogicTests + manual",
+      "coverage": "unit:YalaTests/DeferredIntentBufferLogicTests + xcuitest:YalaUITests/GroupDetailDeeplinkColdLaunchUITests (e2e cold launch: siembra grupos → termina app → relanza con yala://groups/seeded-first PRE-init por handleIncomingURL → defer→drain → rutea al detalle; hook -uitest-deeplink-url + seededGroupIDKey) + manual (sync CloudKit real device/TestFlight)",
       "owner": "",
-      "lastVerified": ""
+      "lastVerified": "2026-07-07"
     },
     {
       "area": "import-file-picker",
@@ -1900,9 +1900,9 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/TransactionClassificationLogicTests + TrendDataProcessorTests (reembolso/KPI==curva/invariante/yDomain negativo) + ReportNotificationServiceTests (accumulateReportTotals/empty-check por actividad) + CashFlowCalculatorTests (reembolso) + TrendProcessingTests (yDomain incluye curva .expense negativa). manual: Fase 1 device OK (header Records/RecordsStandalone == CashFlow). Fase 2 (p20-14) device visual de curvas de Tendencias + hero==KPI-chart en periodo con reembolso PENDIENTE.",
+      "coverage": "unit:YalaTests/TransactionClassificationLogicTests + TrendDataProcessorTests (reembolso/KPI==curva/invariante/yDomain negativo) + ReportNotificationServiceTests (accumulateReportTotals/empty-check por actividad) + CashFlowCalculatorTests (reembolso) + TrendProcessingTests (yDomain incluye curva .expense negativa) + xcuitest:YalaUITests/IncomeExpenseClassificationUITests (discriminante e2e: seed -uitest-seed-desync con income-cat monto negativo + expense-cat monto positivo → cifras de Insights clasifican por CATEGORÍA [500/300], no por signo [800/600]). manual: Fase 1 device OK (header Records/RecordsStandalone == CashFlow). Fase 2 (p20-14) device visual de curvas de Tendencias + hero==KPI-chart en periodo con reembolso PENDIENTE.",
       "owner": "",
-      "lastVerified": "2026-07-05"
+      "lastVerified": "2026-07-07"
     },
     {
       "area": "trend-previous-period-alignment",

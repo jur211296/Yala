@@ -170,6 +170,40 @@ final class DevSeedService {
         isSeeding = false
     }
 
+    // MARK: - Desync Fixtures (XCUI clasificación income/expense)
+
+    /// Seed AISLADO para `IncomeExpenseClassificationUITests` (`-uitest-seed-desync`):
+    /// NO arranca el seed aleatorio de `seed(...)` (contaminaría los totales), solo crea
+    /// categorías + una cuenta + las 4 TX "desincronizadas" de `createDesyncFixtures`.
+    /// `currencyCode` = moneda de display (para que income/expense usen el valor crudo).
+    func seedDesyncFixtures(in context: ModelContext, currencyCode: String) async {
+        guard !isSeeding else { return }
+        isSeeding = true
+        defer { isSeeding = false }
+
+        seedCategoriesIfNeeded(in: context)
+        let subcategoryLookup = buildSubcategoryLookup(in: context)
+        guard !subcategoryLookup.isEmpty else {
+            print("DevSeedService: No subcategories — cannot seed desync fixtures")
+            return
+        }
+
+        let accounts = DevSeedAccounts.create(in: context)
+        DevSeedTransactions.createDesyncFixtures(
+            account: accounts.cuentaPrincipal,
+            subcategoryLookup: subcategoryLookup,
+            currencyCode: currencyCode,
+            in: context
+        )
+
+        do { try context.save() } catch {
+            print("DevSeedService: Desync fixtures save error: \(error)")
+        }
+        UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+        hasSeeded = true
+        SessionState.shared.incrementDataVersion()
+    }
+
     // MARK: - Reset
 
     func reset(in context: ModelContext) async {

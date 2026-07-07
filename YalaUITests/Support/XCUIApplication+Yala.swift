@@ -19,6 +19,8 @@ extension XCUIApplication {
         pro: Bool = false,
         seed: String? = "minimal",
         deeplink: String? = nil,
+        deeplinkURL: String? = nil,
+        seedDesync: Bool = false,
         onboarding: Bool = false,
         inboxAlert: Bool = false,
         forceUpdate: Bool = false,
@@ -33,9 +35,14 @@ extension XCUIApplication {
             args.append("-uitest-seed")
             args.append(seed)
         }
+        if seedDesync { args.append("-uitest-seed-desync") }
         if let deeplink {
             args.append("-uitest-deeplink")
             args.append(deeplink)
+        }
+        if let deeplinkURL {
+            args.append("-uitest-deeplink-url")
+            args.append(deeplinkURL)
         }
         if onboarding { args.append("-uitest-onboarding") }
         if inboxAlert { args.append("-uitest-inbox-alert") }

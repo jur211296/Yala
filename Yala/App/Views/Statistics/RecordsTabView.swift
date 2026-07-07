@@ -146,6 +146,7 @@ struct RecordsTabView: View {
                     currencyCode: defaultCurrencyCode,
                     font: DS.Typography.heroAmount, secondaryFont: DS.Typography.heroAmountSecondary
                 )
+                .accessibilityIdentifier("records_summary_balance")
             }
 
             incomeExpenseChips
@@ -200,6 +201,7 @@ struct RecordsTabView: View {
                             font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                             tint: .secondary
                         )
+                        .accessibilityIdentifier("records_summary_income")
                     }
                     .opacity(hasNeedFilter && !isIncomeFiltered ? 0.3 : 1.0)
                 }
@@ -230,6 +232,7 @@ struct RecordsTabView: View {
                         font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall,
                         tint: .secondary
                     )
+                    .accessibilityIdentifier("records_summary_expense")
                 }
                 .opacity(hasNeedFilter && !isExpenseFiltered ? 0.3 : 1.0)
             }

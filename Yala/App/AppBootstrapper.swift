@@ -403,6 +403,16 @@ final class AppBootstrapper {
             // un test que reordena/oculta tabs (TabBarConfigView) contaminaría a los demás.
             // Restaurar el tab bar al default (`[.panel, .statistics, .planning]`).
             UserDefaults.standard.removeObject(forKey: TabBarConfiguration.storageKey)
+            // Mismo motivo (UserDefaults sobrevive al wipe): limpiar flags de uitest que
+            // contaminarían corridas posteriores con fallos engañosos:
+            //  · `expensesOnlyMode` oculta el chip de Ingresos (InsightsTabView) → rompería el
+            //    XCUI de clasificación income/expense. Se resetea también la copia YA construida
+            //    en SessionState (leída de UserDefaults en su init, antes de este reset).
+            //  · `seededGroupIDKey` stale apuntaría a un grupo ya borrado (stale ≠ nil) → el
+            //    token `seeded-first` del deep link rutearía a un grupo fantasma.
+            UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)
+            SessionState.shared.isExpensesOnlyMode = false
+            UserDefaults.standard.removeObject(forKey: UITestHooks.seededGroupIDKey)
         }
         // Estado Pro determinista según el launch arg, idempotente entre tests.
         // `devForceProTier` se persiste en UserDefaults (`dev.forceProTier`) y el wipe
@@ -437,14 +447,54 @@ final class AppBootstrapper {
         if UITestHooks.isActive {
             UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
         }
+
+        // Deep link en cold launch (PRE-init): `-uitest-deeplink-url <url>` entra por
+        // `handleIncomingURL` ANTES de que bootstrap ponga `isInitialized` → el intent
+        // notification-like se DIFIERE al DeferredIntentBuffer y se re-emite en el drain
+        // (bootstrap paso 20), ejercitando el fix del deep link `yala://groups/<id>` perdido
+        // en cold launch (`ba8513e5`). El token `seeded-first` se resuelve al id del primer
+        // grupo sembrado en una corrida previa (persistido en `seededGroupIDKey`).
+        // El scheme se NORMALIZA al del build (`WidgetURLHelper.urlScheme` = `yala` en prod,
+        // `yaladev` en Yala Dev): el test no puede conocerlo (corre en otro proceso) y
+        // `handleIncomingURL` hace early-return si el scheme no coincide.
+        if let raw = UITestHooks.deeplinkURL {
+            var resolved = raw
+            if let seededID = UserDefaults.standard.string(forKey: UITestHooks.seededGroupIDKey) {
+                resolved = resolved.replacingOccurrences(of: "seeded-first", with: seededID)
+            }
+            #if DEBUG
+            if resolved.contains("seeded-first") {
+                // Diagnóstico: el token quedó sin resolver (no hay seededGroupID persistido —
+                // ¿faltó sembrar 'grupos' en un launch previo?). El deep link no resolverá a un
+                // grupo; sin esto el fallo del test sería un timeout opaco en group_members_button.
+                print("UITestHooks: -uitest-deeplink-url con token 'seeded-first' pero sin seededGroupID persistido — el deep link no resolverá a un grupo.")
+            }
+            #endif
+            if var components = URLComponents(string: resolved) {
+                components.scheme = WidgetURLHelper.urlScheme
+                if let url = components.url {
+                    handleIncomingURL(url)
+                }
+            }
+        }
     }
 
     /// Seed de datos UI-test al final del bootstrap + señal `uitest_ready`.
     private func applyUITestSeed(context: ModelContext) async {
         defer { UITestHooks.shared.markReady() }
-        if let raw = UITestHooks.seedProfile {
+        // Excluyente con `-uitest-seed-desync`: el seed aleatorio del perfil contaminaría los
+        // totales del XCUI de clasificación → si ambos flags están, gana el desync (aislado).
+        if let raw = UITestHooks.seedProfile, !UITestHooks.seedDesync {
             let profile = DevSeedProfile(rawValue: raw) ?? .realista
             await DevSeedService().seed(in: context, profile: profile)
+        }
+        // Seed desync AISLADO (excluyente con `-uitest-seed`): 4 TX con signo↔categoría
+        // desincronizada para el XCUI de clasificación income/expense por categoría.
+        if UITestHooks.seedDesync {
+            await DevSeedService().seedDesyncFixtures(
+                in: context,
+                currencyCode: appPreferences.defaultCurrencyCode.rawValue
+            )
         }
         // Deeplink simulado en uitest: encola la navegación al tab destino (el gate la
         // drena cuando el routing esté listo). Ejercita el wiring de tabs ocultos.
