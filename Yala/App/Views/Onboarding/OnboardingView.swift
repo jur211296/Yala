@@ -850,6 +850,7 @@ struct OnboardingView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("onboarding_currency_selector")
                 }
                 .padding(.horizontal, DS.Spacing.lg)
             }
@@ -1659,18 +1660,14 @@ struct OnboardingView: View {
     // MARK: - Navigation Buttons
 
     private var isNextDisabled: Bool {
-        switch currentStep {
-        case .name:
-            return userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        case .accountType:
-            return !fullControlAccountTypes.contains(selectedAccountType)
-        case .currencyName:
-            return accountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        case .balance:
-            return initialBalanceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        default:
-            return false
-        }
+        OnboardingNextEnablement.isNextDisabled(
+            step: currentStep,
+            groupsOnly: groupsOnlyMode,
+            userName: userName,
+            accountName: accountName,
+            isAccountTypeValid: fullControlAccountTypes.contains(selectedAccountType),
+            initialBalanceText: initialBalanceText
+        )
     }
 
     /// Footer del flow. En `.heroFlow`: solo CTA único (back vive en toolbar).

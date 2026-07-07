@@ -1938,13 +1938,14 @@
       "area": "onboarding-groups-only",
       "codeGlobs": [
         "Yala/App/Views/Onboarding/OnboardingView.swift",
-        "Yala/App/Logic/OnboardingStepPlan.swift"
+        "Yala/App/Logic/OnboardingStepPlan.swift",
+        "Yala/App/Logic/OnboardingNextEnablement.swift"
       ],
       "scenarioIDs": [],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/OnboardingGroupsOnlyGuardUITests (card 'Dividir gastos con amigos' presente en el paso Propósito + guard iCloud al elegirla sin cuenta); unit:YalaTests/OnboardingStepPlanTests (skip de steps groupsOnly). Happy-path (con iCloud → moneda → landing) es device/TestFlight.",
+      "coverage": "xcuitest:YalaUITests/OnboardingGroupsOnlyGuardUITests (paso Propósito ofrece la card; guard iCloud al elegirla sin cuenta; Y happy-path e2e con -uitest-fake-icloud: card → paso moneda → botón Continuar HABILITADO → completa → landing en tab Grupos, regresión del botón muerto fix 2.0.5); unit:YalaTests/OnboardingStepPlanTests (skip de steps groupsOnly); unit:YalaTests/OnboardingNextEnablementTests (habilitación del botón Continuar por paso). El happy-path e2e ya NO es device/TestFlight: el launch arg -uitest-fake-icloud fuerza isAccountAvailable en sim (crear grupo/CKShare real siguen siendo TestFlight).",
       "owner": "",
-      "lastVerified": "2026-07-06"
+      "lastVerified": "2026-07-07"
     }
   ]
 }

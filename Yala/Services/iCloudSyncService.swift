@@ -574,6 +574,17 @@ final class iCloudSyncService {
     /// `forceFetchAndWait` before its post-account logic. `nil` = use the real check.
     var _testForceAccountAvailable: Bool?
 
+    /// Simula "cuenta iCloud disponible + primer import ya asentado" para UI testing en
+    /// simulador (launch arg `-uitest-fake-icloud`, aplicado desde `AppBootstrapper`).
+    /// Fuerza `isAccountAvailable` Y marca el primer import completado: sin esto último,
+    /// `awaitPersonalImportForBootSave` esperaría el hard-cap (`safeToBootSave()` nunca
+    /// sería `true` porque `hasCompletedFirstImport` no se pone solo sin CloudKit real).
+    /// NO habilita CloudKit real (el store uitest es local, `.none`). Producción nunca lo llama.
+    func _uiTestSimulateAvailableAccount() {
+        _testForceAccountAvailable = true
+        hasCompletedFirstImport = true
+    }
+
     /// Reset state between tests. Not exposed in release.
     func _testReset() {
         pendingFailedTransition?.cancel()

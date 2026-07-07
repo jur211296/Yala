@@ -46,6 +46,16 @@ final class UITestHooks {
     /// con onboarding saltado y el tab Grupos seleccionado. Para testear el Perfil reducido.
     nonisolated static var forceGroupInvite: Bool { hasArg("-uitest-group-invite") }
 
+    /// `-uitest-fake-icloud`: fuerza `iCloudSyncService.isAccountAvailable = true` en el
+    /// simulador (que NO tiene cuenta iCloud). Desbloquea los flujos cuyo único obstáculo
+    /// es el guard de disponibilidad de cuenta —onboarding "Solo grupos", prompts de
+    /// restore de iCloud— que de otro modo bloquean ANTES de poder ejercitarlos en sim.
+    /// NO habilita CloudKit real: crear grupo/CKShare/sync bidireccional siguen sin
+    /// funcionar en sim (el store uitest es local, `cloudKitDatabase: .none`). El
+    /// AppBootstrapper también marca el primer import como asentado para que los gates
+    /// de boot no esperen un import de CloudKit que en sim nunca llega. Solo DEBUG.
+    nonisolated static var fakeICloudAvailable: Bool { hasArg("-uitest-fake-icloud") }
+
     /// `-uitest-inbox-alert`: tras el seed, encola `.showInboxAlert` con un payload de
     /// muestra para presentar el InboxAlertModal sin depender del sync de CloudKit.
     nonisolated static var showInboxAlert: Bool { hasArg("-uitest-inbox-alert") }

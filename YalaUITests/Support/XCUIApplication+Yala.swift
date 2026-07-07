@@ -25,7 +25,8 @@ extension XCUIApplication {
         inboxAlert: Bool = false,
         forceUpdate: Bool = false,
         aiConsent: Bool = false,
-        groupInvite: Bool = false
+        groupInvite: Bool = false,
+        fakeICloud: Bool = false
     ) -> XCUIApplication {
         var args = ["-uitest"]
         if reset { args.append("-uitest-reset") }
@@ -49,6 +50,7 @@ extension XCUIApplication {
         if forceUpdate { args.append("-uitest-force-update") }
         if aiConsent { args.append("-uitest-ai-consent") }
         if groupInvite { args.append("-uitest-group-invite") }
+        if fakeICloud { args.append("-uitest-fake-icloud") }
         launchArguments = args
         launch()
         return self

@@ -448,6 +448,17 @@ final class AppBootstrapper {
             UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
         }
 
+        // `-uitest-fake-icloud`: simula cuenta iCloud disponible (+ import asentado) para
+        // ejercitar en sim los flujos gated por `isAccountAvailable` (onboarding "Solo
+        // grupos", prompts de restore). Debe aplicarse ANTES de `bootstrap()` (este método
+        // corre desde `YalaApp.init`) para que el guard del onboarding y los gates de boot
+        // lo vean. No habilita CloudKit real (el store uitest es `.none`).
+        #if DEBUG
+        if UITestHooks.fakeICloudAvailable {
+            iCloudSyncService.shared._uiTestSimulateAvailableAccount()
+        }
+        #endif
+
         // Deep link en cold launch (PRE-init): `-uitest-deeplink-url <url>` entra por
         // `handleIncomingURL` ANTES de que bootstrap ponga `isInitialized` → el intent
         // notification-like se DIFIERE al DeferredIntentBuffer y se re-emite en el drain
