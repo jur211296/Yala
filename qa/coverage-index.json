@@ -468,7 +468,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests; xcuitest:YalaUITests/GroupExpenseSuccessUITests + unit:YalaTests/GroupExpenseSuccessBuildDataTests (datos de la pantalla de éxito)",
       "owner": "",
-      "lastVerified": "2026-07-06"
+      "lastVerified": "2026-07-07"
     },
     {
       "area": "groups-stats-multicurrency",

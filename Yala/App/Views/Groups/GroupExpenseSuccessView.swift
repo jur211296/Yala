@@ -136,7 +136,9 @@ struct GroupExpenseSuccessView: View {
                 .offset(y: showActions ? 0 : 10)
             }
         }
-        .accessibilityIdentifier("group_expense_success_view")
+        // Sin identifier en el contenedor: en un container SwiftUI, .accessibilityIdentifier se
+        // propaga a TODOS los elementos hijos y PISA sus identifiers propios (los botones
+        // group_expense_success_accept/_edit/_add_another reportaban este id → XCUI no los hallaba).
         .onAppear(perform: runEntranceAnimation)
     }
 
