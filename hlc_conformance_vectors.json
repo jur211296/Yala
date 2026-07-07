@@ -1,0 +1,275 @@
+{
+  "_meta": {
+    "format": "c1",
+    "description": "Vectores de conformidad HAND-AUTHORED desde la spec §d.3/§d.1 del Modo Nube (I1). Los esperados se calcularon a mano desde las reglas, NO ejecutando la implementación. HLC c1 = '<iso:24>-<counterHex:4>-<nodeID:16>' (46 chars). Ancla verificada: 2021-01-01T00:00:00.000Z == 1609459200000 ms Unix.",
+    "maxDriftMillis": 300000,
+    "nodes": {
+      "A": "00000000000000aa",
+      "B": "00000000000000bb",
+      "C": "ffffffffffffffff"
+    }
+  },
+
+  "canonicalIsoMillis": [
+    {
+      "description": "Epoch Unix: 0 ms == 1970-01-01T00:00:00.000Z (NUNCA el epoch 2001 de Swift)",
+      "unixMs": 0,
+      "expected": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "description": "Ancla 2021-01-01 (1609459200 s * 1000)",
+      "unixMs": 1609459200000,
+      "expected": "2021-01-01T00:00:00.000Z"
+    },
+    {
+      "description": "ms fraccional simple",
+      "unixMs": 1609459200500,
+      "expected": "2021-01-01T00:00:00.500Z"
+    },
+    {
+      "description": "Cruce al segundo siguiente",
+      "unixMs": 1609459201000,
+      "expected": "2021-01-01T00:00:01.000Z"
+    },
+    {
+      "description": "Pre-1970: -1 ms == 1969-12-31T23:59:59.999Z (FLOOR hacia -inf, floorDiv/floorMod)",
+      "unixMs": -1,
+      "expected": "1969-12-31T23:59:59.999Z"
+    },
+    {
+      "description": "Pre-1970: -1000 ms == 1969-12-31T23:59:59.000Z (segundo entero negativo)",
+      "unixMs": -1000,
+      "expected": "1969-12-31T23:59:59.000Z"
+    },
+    {
+      "description": "Borde inferior de año: 0001-01-01T00:00:00.000Z (dentro de rango, OK)",
+      "unixMs": -62135596800000,
+      "expected": "0001-01-01T00:00:00.000Z"
+    },
+    {
+      "description": "Borde superior de año: 9999-12-31T23:59:59.999Z (dentro de rango, OK)",
+      "unixMs": 253402300799999,
+      "expected": "9999-12-31T23:59:59.999Z"
+    }
+  ],
+
+  "canonicalIsoMillisErrors": [
+    {
+      "description": "Año 0000 (un día antes de 0001-01-01) → yearOutOfRange",
+      "unixMs": -62135683200000,
+      "expectedError": "yearOutOfRange"
+    },
+    {
+      "description": "Año 10000 (1 ms tras 9999-12-31T23:59:59.999Z) → yearOutOfRange",
+      "unixMs": 253402300800000,
+      "expectedError": "yearOutOfRange"
+    }
+  ],
+
+  "roundTrip": [
+    { "description": "Ancla, counter 0, nodo A", "hlc": "2021-01-01T00:00:00.000Z-0000-00000000000000aa" },
+    { "description": "Epoch, counter 1, nodo C", "hlc": "1970-01-01T00:00:00.000Z-0001-ffffffffffffffff" },
+    { "description": "Pre-1970 con hex mezclado", "hlc": "1969-12-31T23:59:59.999Z-abcd-0123456789abcdef" },
+    { "description": "Borde año 0001, counter maximo 0xffff", "hlc": "0001-01-01T00:00:00.000Z-ffff-fedcba9876543210" },
+    { "description": "Borde año 9999, counter 0x0f0f, nodo B", "hlc": "9999-12-31T23:59:59.999Z-0f0f-00000000000000bb" }
+  ],
+
+  "parseReject": [
+    {
+      "description": "Hex MAYÚSCULA en nodeID → rechazo",
+      "hlc": "2021-01-01T00:00:00.000Z-0000-00000000000000AA"
+    },
+    {
+      "description": "Hex MAYÚSCULA en counterHex → rechazo",
+      "hlc": "2021-01-01T00:00:00.000Z-000A-00000000000000aa"
+    },
+    {
+      "description": "45 chars (falta 1) → rechazo",
+      "hlc": "2021-01-01T00:00:00.000Z-0000-00000000000000a"
+    },
+    {
+      "description": "47 chars (sobra 1) → rechazo",
+      "hlc": "2021-01-01T00:00:00.000Z-0000-00000000000000aaa"
+    },
+    {
+      "description": "Guion separador movido (posición 24 no es '-') → rechazo",
+      "hlc": "2021-01-01T00:00:00.000Z00000-00000000000000aa"
+    },
+    {
+      "description": "'z' minúscula en vez de 'Z' literal → rechazo",
+      "hlc": "2021-01-01T00:00:00.000z-0000-00000000000000aa"
+    },
+    {
+      "description": "Mes 13 fuera de rango → rechazo",
+      "hlc": "2021-13-01T00:00:00.000Z-0000-00000000000000aa"
+    },
+    {
+      "description": "Carácter no numérico en la fecha → rechazo",
+      "hlc": "2021-1a-01T00:00:00.000Z-0000-00000000000000aa"
+    },
+    {
+      "description": "Día 30 de febrero (inválido) → rechazo",
+      "hlc": "2021-02-30T00:00:00.000Z-0000-00000000000000aa"
+    },
+    {
+      "description": "Hora 24 fuera de rango → rechazo",
+      "hlc": "2021-01-01T24:00:00.000Z-0000-00000000000000aa"
+    },
+    {
+      "description": "No-hex ('g') en nodeID → rechazo",
+      "hlc": "2021-01-01T00:00:00.000Z-0000-0000000000000g0a"
+    }
+  ],
+
+  "compareLess": [
+    {
+      "description": "physicalMs manda: earlier < later aunque counter/nodeID sean mayores",
+      "a": "2021-01-01T00:00:00.000Z-0009-ffffffffffffffff",
+      "b": "2021-01-01T00:00:01.000Z-0000-00000000000000aa"
+    },
+    {
+      "description": "Mismo physicalMs: counter menor < counter mayor (nodeID no decide)",
+      "a": "2021-01-01T00:00:00.000Z-0001-ffffffffffffffff",
+      "b": "2021-01-01T00:00:00.000Z-0002-00000000000000aa"
+    },
+    {
+      "description": "Empate (physicalMs, counter): desempata nodeID (aa < bb)",
+      "a": "2021-01-01T00:00:00.000Z-0003-00000000000000aa",
+      "b": "2021-01-01T00:00:00.000Z-0003-00000000000000bb"
+    },
+    {
+      "description": "Empate (physicalMs, counter): nodeID como string (bb < ffff...)",
+      "a": "2021-01-01T00:00:00.000Z-0003-00000000000000bb",
+      "b": "2021-01-01T00:00:00.000Z-0003-ffffffffffffffff"
+    },
+    {
+      "description": "physicalMs NEGATIVO (pre-1970) < positivo: -1 ms < ancla, aunque counter/nodeID de 'a' sean máximos (comparación numérica de physicalMs, no de la string)",
+      "a": "1969-12-31T23:59:59.999Z-ffff-ffffffffffffffff",
+      "b": "2021-01-01T00:00:00.000Z-0000-00000000000000aa"
+    }
+  ],
+
+  "send": [
+    {
+      "description": "Fresh clock (sin latest): adopta el reloj de pared, counter 0",
+      "nodeID": "00000000000000aa",
+      "latest": null,
+      "nowUnixMs": 1609459200000,
+      "expected": "2021-01-01T00:00:00.000Z-0000-00000000000000aa"
+    },
+    {
+      "description": "Mismo ms que latest → counter++ (0 → 1)",
+      "nodeID": "00000000000000aa",
+      "latest": "2021-01-01T00:00:00.000Z-0000-00000000000000aa",
+      "nowUnixMs": 1609459200000,
+      "expected": "2021-01-01T00:00:00.000Z-0001-00000000000000aa"
+    },
+    {
+      "description": "Mismo ms, counter alto → counter++ (5 → 6)",
+      "nodeID": "00000000000000aa",
+      "latest": "2021-01-01T00:00:00.000Z-0005-00000000000000aa",
+      "nowUnixMs": 1609459200000,
+      "expected": "2021-01-01T00:00:00.000Z-0006-00000000000000aa"
+    },
+    {
+      "description": "El reloj de pared avanza a ms nuevo → counter=0",
+      "nodeID": "00000000000000aa",
+      "latest": "2021-01-01T00:00:00.000Z-0009-00000000000000aa",
+      "nowUnixMs": 1609459201000,
+      "expected": "2021-01-01T00:00:01.000Z-0000-00000000000000aa"
+    },
+    {
+      "description": "Regresión de reloj (pared retrocede): latest manda en physical, counter++ (3 → 4)",
+      "nodeID": "00000000000000aa",
+      "latest": "2021-01-01T00:00:01.000Z-0003-00000000000000aa",
+      "nowUnixMs": 1609459200000,
+      "expected": "2021-01-01T00:00:01.000Z-0004-00000000000000aa"
+    },
+    {
+      "description": "Drift en el borde exacto (5 min = 300000 ms de adelanto) → PERMITIDO, counter++",
+      "nodeID": "00000000000000aa",
+      "latest": "2021-01-01T00:05:00.000Z-0000-00000000000000aa",
+      "nowUnixMs": 1609459200000,
+      "expected": "2021-01-01T00:05:00.000Z-0001-00000000000000aa"
+    }
+  ],
+
+  "sendErrors": [
+    {
+      "description": "Counter overflow: latest en 0xffff, mismo ms → 0x10000 → counterOverflow",
+      "nodeID": "00000000000000aa",
+      "latest": "2021-01-01T00:00:00.000Z-ffff-00000000000000aa",
+      "nowUnixMs": 1609459200000,
+      "expectedError": "counterOverflow"
+    },
+    {
+      "description": "Drift >5 min: latest 6 min por delante del reloj de pared → driftExceeded",
+      "nodeID": "00000000000000aa",
+      "latest": "2021-01-01T00:06:00.000Z-0000-00000000000000aa",
+      "nowUnixMs": 1609459200000,
+      "expectedError": "driftExceeded"
+    }
+  ],
+
+  "receive": [
+    {
+      "description": "Remoto adelantado en physical → adopta remoto, counter = msgCounter+1 (5 → 6), nodeID LOCAL",
+      "nodeID": "00000000000000aa",
+      "latest": "2021-01-01T00:00:00.000Z-0002-00000000000000aa",
+      "remote": "2021-01-01T00:00:01.000Z-0005-00000000000000bb",
+      "nowUnixMs": 1609459200000,
+      "expected": "2021-01-01T00:00:01.000Z-0006-00000000000000aa"
+    },
+    {
+      "description": "Remoto atrasado en physical → local manda, counter = localCounter+1 (3 → 4)",
+      "nodeID": "00000000000000aa",
+      "latest": "2021-01-01T00:00:01.000Z-0003-00000000000000aa",
+      "remote": "2021-01-01T00:00:00.000Z-0009-00000000000000bb",
+      "nowUnixMs": 1609459201000,
+      "expected": "2021-01-01T00:00:01.000Z-0004-00000000000000aa"
+    },
+    {
+      "description": "Empate de physical local==remoto==pared → counter = max(local,remoto)+1 (max(4,7)+1=8)",
+      "nodeID": "00000000000000aa",
+      "latest": "2021-01-01T00:00:00.000Z-0004-00000000000000aa",
+      "remote": "2021-01-01T00:00:00.000Z-0007-00000000000000bb",
+      "nowUnixMs": 1609459200000,
+      "expected": "2021-01-01T00:00:00.000Z-0008-00000000000000aa"
+    },
+    {
+      "description": "El reloj de pared supera a local y remoto → counter=0",
+      "nodeID": "00000000000000aa",
+      "latest": "2021-01-01T00:00:00.000Z-0001-00000000000000aa",
+      "remote": "2021-01-01T00:00:00.000Z-0001-00000000000000bb",
+      "nowUnixMs": 1609459201000,
+      "expected": "2021-01-01T00:00:01.000Z-0000-00000000000000aa"
+    },
+    {
+      "description": "Receive fresh (sin latest): remoto y pared iguales → tie con remoto → msgCounter+1 (2 → 3)",
+      "nodeID": "00000000000000aa",
+      "latest": null,
+      "remote": "2021-01-01T00:00:00.000Z-0002-00000000000000bb",
+      "nowUnixMs": 1609459200000,
+      "expected": "2021-01-01T00:00:00.000Z-0003-00000000000000aa"
+    }
+  ],
+
+  "receiveErrors": [
+    {
+      "description": "Remoto 6 min en el futuro respecto al reloj de pared → driftExceeded",
+      "nodeID": "00000000000000aa",
+      "latest": null,
+      "remote": "2021-01-01T00:06:00.000Z-0000-00000000000000bb",
+      "nowUnixMs": 1609459200000,
+      "expectedError": "driftExceeded"
+    },
+    {
+      "description": "Counter overflow en empate: local y remoto ambos 0xffff, mismo ms → max+1 = 0x10000 → counterOverflow",
+      "nodeID": "00000000000000aa",
+      "latest": "2021-01-01T00:00:00.000Z-ffff-00000000000000aa",
+      "remote": "2021-01-01T00:00:00.000Z-ffff-00000000000000bb",
+      "nowUnixMs": 1609459200000,
+      "expectedError": "counterOverflow"
+    }
+  ]
+}

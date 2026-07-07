@@ -71,1252 +71,6 @@
       "lastVerified": "2026-06-01"
     },
     {
-      "area": "budget-alerts-configuration",
-      "codeGlobs": [
-        "Yala/App/Views/Planning/BudgetEditorView.swift",
-        "Yala/App/ViewModels/BudgetEditorViewModel.swift",
-        "Yala/App/Views/Settings/NotificationsSettingsView.swift",
-        "Yala/App/ViewModels/NotificationsSettingsViewModel.swift",
-        "Yala/App/Views/Onboarding/OnboardingView.swift",
-        "Yala/Models/Budget.swift"
-      ],
-      "scenarioIDs": [
-        "F-BUD-03"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/BudgetAlertsConfigUITests",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "budgets",
-      "codeGlobs": [
-        "Yala/App/Views/Planning/BudgetDetailView.swift",
-        "Yala/App/Views/Planning/BudgetEditorView.swift",
-        "Yala/App/Views/Planning/BudgetsListView.swift",
-        "Yala/App/Views/Planning/BudgetRowView.swift",
-        "Yala/App/Views/Planning/BudgetChartsView.swift",
-        "Yala/App/Views/Planning/Components/BudgetPeriodSelectorSheet.swift"
-      ],
-      "scenarioIDs": [
-        "F-BUD-01",
-        "F-BUD-02"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/BudgetsCrudUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "cash-flow-plan",
-      "codeGlobs": [
-        "Yala/App/Views/Reports/CashFlow/**",
-        "Yala/App/ViewModels/CashFlowPlanViewModel.swift",
-        "Yala/Models/CashFlowPlan.swift"
-      ],
-      "scenarioIDs": [
-        "F-STA-06"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/CashFlowPlanUITests",
-      "owner": "",
-      "lastVerified": "2026-06-03"
-    },
-    {
-      "area": "categories-subcategories-crud",
-      "codeGlobs": [
-        "Yala/App/Views/Categories/**",
-        "Yala/App/Views/Settings/CategoriesSettingsListView.swift",
-        "Yala/App/Services/CategoryDeduplicationService.swift",
-        "Yala/App/Logic/SubcategoryDedupLogic.swift",
-        "Yala/App/Logic/SubcategoryDedupGate.swift"
-      ],
-      "scenarioIDs": [
-        "F-CAT-01",
-        "F-CAT-02"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/CategoriesCrudUITests",
-      "owner": "",
-      "lastVerified": "2026-06-08"
-    },
-    {
-      "area": "chat-assistant",
-      "codeGlobs": [
-        "Yala/App/Views/Chat/**",
-        "Yala/Services/ChatAssistantService.swift",
-        "Yala/Services/Chat/**",
-        "Yala/App/Services/ChatSuggestionsLLMService.swift",
-        "Yala/App/Services/SuggestionsRewriterService.swift"
-      ],
-      "scenarioIDs": [
-        "F-CHA-01",
-        "F-CHA-02",
-        "F-CHA-03",
-        "F-CHA-04"
-      ],
-      "classification": "agentic",
-      "coverage": "none",
-      "owner": "",
-      "lastVerified": "2026-06-11"
-    },
-    {
-      "area": "contextual-ai-insight-panel",
-      "codeGlobs": [
-        "Yala/App/Views/Panel/Sections/PanelPanoramaSection.swift",
-        "Yala/App/Views/Panel/PanelView.swift",
-        "Yala/App/Views/Shared/AIInsightCardComponents.swift",
-        "Yala/App/Views/Chat/AIPersonalizationSheet.swift",
-        "Yala/Services/InsightsLLMService.swift"
-      ],
-      "scenarioIDs": [
-        "F-PAN-04",
-        "F-PAN-05"
-      ],
-      "classification": "agentic",
-      "coverage": "none",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "currency-filter-statistics",
-      "codeGlobs": [
-        "Yala/App/Views/Filters/FilterControlBar.swift",
-        "Yala/App/Views/Filters/FilterChipsSection.swift",
-        "Yala/App/Views/Statistics/StatisticsView.swift",
-        "Yala/Services/FilterService.swift"
-      ],
-      "scenarioIDs": [
-        "F-STA-05"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/CurrencyFilterStatsUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "currency-picker-onboarding-and-secondary",
-      "codeGlobs": [
-        "Yala/App/Views/Onboarding/OnboardingView.swift",
-        "Yala/App/Views/Settings/CurrencyPickerSheet.swift",
-        "Yala/App/Views/Settings/SecondaryCurrencyPickerSheet.swift",
-        "Yala/App/Views/Settings/CurrencySettingsView.swift",
-        "Yala/App/Views/Shared/CurrencySelectorView.swift",
-        "Yala/Utils/CurrencyUtils.swift"
-      ],
-      "scenarioIDs": [
-        "F-ONB-01",
-        "F-ONB-02",
-        "F-ONB-03",
-        "F-ONB-04",
-        "F-ONB-05",
-        "F-ONB-06",
-        "F-ONB-07",
-        "F-ONB-08"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/CurrencyPickerUITests",
-      "owner": "",
-      "lastVerified": "2026-07-04"
-    },
-    {
-      "area": "deeplinks-tab-routing",
-      "codeGlobs": [
-        "Yala/App/Models/SessionState.swift",
-        "Yala/App/Logic/MainTabSelectionLogic.swift",
-        "Yala/App/Models/AppRouter.swift"
-      ],
-      "scenarioIDs": [
-        "F-NAV-01",
-        "F-NAV-02",
-        "F-NAV-06",
-        "F-NAV-07"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/DeeplinkRoutingUITests",
-      "owner": "",
-      "lastVerified": "2026-06-03"
-    },
-    {
-      "area": "deferred-filters-apply-discard",
-      "codeGlobs": [
-        "Yala/App/Views/Records/RecordsFiltersView.swift",
-        "Yala/Services/FilterService.swift",
-        "Yala/App/Views/Filters/FilterChipsSection.swift"
-      ],
-      "scenarioIDs": [
-        "F-FIL-01",
-        "F-FIL-02",
-        "F-FIL-03"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/DeferredFiltersUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "edge-cases-logic",
-      "codeGlobs": [
-        "Yala/App/Views/**",
-        "Yala/Services/**"
-      ],
-      "scenarioIDs": [
-        "F-EDG-01",
-        "F-EDG-02"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/EdgeCasesUITests",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "export-wizard",
-      "codeGlobs": [
-        "Yala/App/Views/ExportWizard/**",
-        "Yala/Utils/TransactionsExportService.swift"
-      ],
-      "scenarioIDs": [
-        "F-IMP-03"
-      ],
-      "classification": "agentic",
-      "coverage": "none",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "favorites",
-      "codeGlobs": [
-        "Yala/App/Views/Favorites/**",
-        "Yala/App/Views/Settings/BudgetsFavoritesSettingsView.swift"
-      ],
-      "scenarioIDs": [
-        "F-FAV-01",
-        "F-FAV-02"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/FavoritesCrudUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "filters",
-      "codeGlobs": [
-        "Yala/App/Views/Records/RecordsFiltersView.swift",
-        "Yala/App/ViewModels/RecordsFiltersViewModel.swift",
-        "Yala/App/Views/Filters/**"
-      ],
-      "scenarioIDs": [
-        "F-FIL-01",
-        "F-FIL-03"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/FiltersUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "form-help-banners",
-      "codeGlobs": [
-        "Yala/App/Views/Shared/ContextualGuideBanner.swift",
-        "Yala/App/Views/Planning/Budget*.swift",
-        "Yala/App/Views/Accounts/AccountFormView.swift",
-        "Yala/App/Views/Settings/**"
-      ],
-      "scenarioIDs": [
-        "F-TX-08",
-        "F-TX-09"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "groups-bridge-personal",
-      "codeGlobs": [
-        "Yala/Services/Groups/GroupTransactionBridge.swift",
-        "Yala/Services/Groups/GroupBridgeSystemEntities.swift",
-        "Yala/Services/Groups/GroupBridgeRaceCleaner.swift",
-        "Yala/App/Views/Inbox/GroupExpenseDraftFinalizationSheet.swift",
-        "Yala/App/Views/Inbox/GroupSettlementDraftFinalizationSheet.swift",
-        "Yala/App/Views/Inbox/GroupExpenseAccountFinalizationSheet.swift",
-        "Yala/App/Views/Inbox/GroupExpenseAccountAndSubcategoryFinalizationSheet.swift",
-        "Yala/App/Logic/GroupDraftFinalizationLogic.swift",
-        "Yala/App/Logic/BulkApproveRoutingLogic.swift",
-        "Yala/Services/DraftService.swift",
-        "Yala/App/Views/Groups/BridgeActivationSheet.swift",
-        "Yala/App/Views/Groups/BridgeDeactivationSheet.swift",
-        "Yala/Models/SplitExpense.swift",
-        "Yala/Models/SplitSettlement.swift",
-        "Yala/Models/SplitShare.swift"
-      ],
-      "scenarioIDs": [
-        "F-S2-02",
-        "F-S2-03",
-        "F-S2-04",
-        "F-S2-05",
-        "F-S2-11",
-        "F-S3-04"
-      ],
-      "classification": "agentic",
-      "coverage": "none",
-      "owner": "",
-      "lastVerified": "2026-06-26"
-    },
-    {
-      "area": "groups-bridge-settings-optout",
-      "codeGlobs": [
-        "Yala/App/Views/Groups/GroupsGlobalSettingsView.swift",
-        "Yala/Services/Groups/BridgeModeResolver.swift",
-        "Yala/Services/Groups/GroupBridgePreferenceDeduplicationService.swift",
-        "Yala/Models/GroupBridgePreference.swift",
-        "Yala/App/Logic/BridgeResolverLogic.swift",
-        "Yala/App/Logic/BridgeBranchLogic.swift",
-        "Yala/App/Logic/BridgeOptOutAlertLogic.swift",
-        "Yala/App/Logic/BridgedTransactionFilter.swift"
-      ],
-      "scenarioIDs": [
-        "F-S1-06",
-        "F-S2-04",
-        "F-S2-05"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
-      "owner": "",
-      "lastVerified": "2026-06-03"
-    },
-    {
-      "area": "groups-crud-balances-settlements",
-      "codeGlobs": [
-        "Yala/App/Views/Groups/GroupsContainerView.swift",
-        "Yala/App/Views/Groups/GroupFormView.swift",
-        "Yala/App/Views/Groups/GroupDetailView.swift",
-        "Yala/App/Views/Groups/GroupRecordsView.swift",
-        "Yala/App/Views/Groups/GroupBalancesView.swift",
-        "Yala/App/Views/Groups/GroupSettingsView.swift",
-        "Yala/App/Views/Groups/GroupMembersView.swift",
-        "Yala/App/Views/Groups/GroupCardView.swift",
-        "Yala/App/Views/Groups/SettlementFormView.swift",
-        "Yala/App/Views/Groups/MemberPickerView.swift",
-        "Yala/Services/Groups/GroupService.swift",
-        "Yala/Services/Groups/GroupExpenseService.swift",
-        "Yala/Services/Groups/GroupBalanceService.swift",
-        "Yala/Services/Groups/DebtSimplificationService.swift",
-        "Yala/App/Logic/GroupBalanceRowGrouping.swift",
-        "Yala/App/Views/Shared/ExpandableFAB.swift"
-      ],
-      "scenarioIDs": [
-        "F-S1-04",
-        "F-S1-05",
-        "F-S4-03",
-        "F-S4-04",
-        "F-S5-06"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests + unit:YalaTests/GroupDetailDismissDecisionTests (dismiss-first) + xcuitest:YalaUITests/GroupsEmptyStateUITests (empty state, no spinner atascado)",
-      "owner": "",
-      "lastVerified": "2026-06-25"
-    },
-    {
-      "area": "groups-opening-balance",
-      "codeGlobs": [
-        "Yala/App/Views/Groups/GroupOpeningBalanceFormView.swift",
-        "Yala/App/Views/Groups/GroupOpeningBalanceDetailSheet.swift",
-        "Yala/App/Logic/OpeningBalanceBridgeLogic.swift",
-        "Yala/App/Logic/OpeningBalanceRollup.swift",
-        "Yala/App/Logic/OpeningBalanceGuardLogic.swift"
-      ],
-      "scenarioIDs": [
-        "OPEN-BAL-01",
-        "OPEN-BAL-02",
-        "OPEN-BAL-03",
-        "OPEN-BAL-04",
-        "OPEN-BAL-05",
-        "OPEN-BAL-06",
-        "OPEN-BAL-07",
-        "OPEN-BAL-08",
-        "OPEN-BAL-09"
-      ],
-      "classification": "manual",
-      "coverage": "manual:sim-qa-local (OPEN-BAL-01/02/03/05/09 + bridge virtual local OPEN-BAL-06); OPEN-BAL-06 cross-device + OPEN-BAL-08 atajo pendientes TestFlight",
-      "owner": "",
-      "lastVerified": "2026-07-02"
-    },
-    {
-      "area": "groups-expense-form",
-      "codeGlobs": [
-        "Yala/App/Views/Groups/GroupExpenseFormView.swift",
-        "Yala/App/Views/Groups/SplitTypeSegmentedSelector.swift",
-        "Yala/App/Views/Groups/GroupSplitSelectorView.swift",
-        "Yala/App/Logic/Formatters/GroupSplitPlaceholderLogic.swift",
-        "Yala/App/Logic/Calculators/GroupSplitCalculator.swift",
-        "Yala/App/Logic/GroupSplitConversion.swift",
-        "Yala/App/Logic/TwoPersonSplitOptions.swift",
-        "Yala/App/Logic/TwoPersonSplitOptions+Text.swift",
-        "Yala/App/Views/Groups/GroupTwoPersonSplitView.swift",
-        "Yala/App/Views/Groups/GroupExpenseComposerView.swift",
-        "Yala/App/Views/Groups/GroupPickerSheet.swift",
-        "Yala/App/Logic/GroupExpenseEligibilityLogic.swift",
-        "Yala/App/Views/Shared/FABStackView.swift",
-        "Yala/App/Views/Groups/GroupExpenseSuccessView.swift",
-        "Yala/App/Logic/GroupExpenseSuccessLogic.swift"
-      ],
-      "scenarioIDs": [
-        "F-S1-05",
-        "F-S5-07"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests; xcuitest:YalaUITests/GroupExpenseSuccessUITests + unit:YalaTests/GroupExpenseSuccessBuildDataTests (datos de la pantalla de éxito)",
-      "owner": "",
-      "lastVerified": "2026-07-07"
-    },
-    {
-      "area": "groups-stats-multicurrency",
-      "codeGlobs": [
-        "Yala/App/Views/Groups/GroupStatsView.swift",
-        "Yala/App/ViewModels/GroupStatsViewModel.swift",
-        "Yala/App/Views/Shared/DonutChartView.swift",
-        "Yala/App/Logic/GroupTrendChartAdapter.swift"
-      ],
-      "scenarioIDs": [
-        "F-S5-07",
-        "F-S5-08"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-25"
-    },
-    {
-      "area": "groups-form",
-      "codeGlobs": [
-        "Yala/App/Views/Groups/GroupFormView.swift",
-        "Yala/App/Views/Groups/GroupSplitSelectorView.swift",
-        "Yala/App/Views/Groups/SplitTypeSegmentedSelector.swift",
-        "Yala/App/Views/Groups/GroupExpenseFormView.swift"
-      ],
-      "scenarioIDs": [
-        "F-S1-04"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
-      "owner": "",
-      "lastVerified": "2026-06-25"
-    },
-    {
-      "area": "groups-pending-approval-reconnect",
-      "codeGlobs": [
-        "Yala/App/Views/Groups/GroupReconnectView.swift",
-        "Yala/App/Views/Groups/GroupInviteOnboardingView.swift",
-        "Yala/App/Views/Groups/FullModeActivationView.swift",
-        "Yala/App/Views/Groups/GroupStatsView.swift",
-        "Yala/Services/Groups/GroupUserIdentityService.swift",
-        "Yala/Services/Groups/InviteLinkService.swift",
-        "Yala/Services/Groups/PendingInviteStore.swift",
-        "Yala/App/Services/CKShareEntryHandler.swift",
-        "Yala/Models/SplitMember.swift"
-      ],
-      "scenarioIDs": [
-        "F-S3-02",
-        "F-S3-03",
-        "F-S3-05",
-        "F-S3-06",
-        "F-S3-07",
-        "F-S4-01",
-        "F-S4-02",
-        "F-S4-05"
-      ],
-      "classification": "agentic",
-      "coverage": "none",
-      "owner": "",
-      "lastVerified": "2026-06-08"
-    },
-    {
-      "area": "image-settings-fab",
-      "codeGlobs": [
-        "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
-        "Yala/App/Views/Profile/ProfileView.swift",
-        "Yala/App/Views/Shared/FABStackView.swift",
-        "Yala/App/Views/Panel/PanelView.swift"
-      ],
-      "scenarioIDs": [
-        "F-VIM-01"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/VoiceImageSettingsFabUITests",
-      "owner": "",
-      "lastVerified": "2026-06-03"
-    },
-    {
-      "area": "inbox-crud",
-      "codeGlobs": [
-        "Yala/App/Views/Inbox/InboxView.swift",
-        "Yala/App/Views/Inbox/InboxDraftRowView.swift",
-        "Yala/App/Views/Inbox/InboxDraftEditSheet.swift",
-        "Yala/App/Views/Inbox/InboxBulkActionsSheet.swift",
-        "Yala/App/ViewModels/InboxViewModel.swift",
-        "Yala/App/ViewModels/InboxDraftEditViewModel.swift",
-        "Yala/Models/InboxDraft.swift",
-        "Yala/Models/InboxDraft+TagsCSVMirror.swift"
-      ],
-      "scenarioIDs": [
-        "F-INB-01",
-        "F-INB-02",
-        "F-INB-03",
-        "F-INB-04"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/InboxCrudUITests",
-      "owner": "",
-      "lastVerified": "2026-06-10"
-    },
-    {
-      "area": "inbox-new-items-modal",
-      "codeGlobs": [
-        "Yala/App/Views/Shared/InboxAlertModal.swift",
-        "Yala/App/Models/PresentationCoordinator.swift",
-        "Yala/App/Models/RouterEntryGate.swift",
-        "Yala/App/Logic/PresentationCascadeLogic.swift",
-        "Yala/App/ContentView.swift",
-        "Yala/App/ViewModels/InboxViewModel.swift"
-      ],
-      "scenarioIDs": [
-        "F-INB-05"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/InboxNewItemsModalUITests",
-      "owner": "",
-      "lastVerified": "2026-06-03"
-    },
-    {
-      "area": "notifications-settings-crud",
-      "codeGlobs": [
-        "Yala/App/Views/Settings/NotificationsSettingsView.swift",
-        "Yala/App/Views/Settings/NotificationEditorSheet.swift",
-        "Yala/App/ViewModels/NotificationsSettingsViewModel.swift",
-        "Yala/Models/NotificationItem.swift",
-        "Yala/Services/NotificationService.swift",
-        "Yala/Services/ReportNotificationService.swift"
-      ],
-      "scenarioIDs": [
-        "F-NOT-01",
-        "F-NOT-02"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/NotificationsSettingsUITests",
-      "owner": "",
-      "lastVerified": "2026-06-08"
-    },
-    {
-      "area": "onboarding-flow",
-      "codeGlobs": [
-        "Yala/App/Views/Onboarding/OnboardingView.swift",
-        "Yala/App/Views/Onboarding/OnboardingFlowScreen.swift",
-        "Yala/App/Views/Onboarding/WelcomeChooserView.swift",
-        "Yala/App/Views/Onboarding/WelcomeFlowContainer.swift"
-      ],
-      "scenarioIDs": [
-        "F-ONB-01",
-        "F-ONB-02",
-        "F-ONB-03",
-        "F-ONB-04"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/OnboardingFlowUITests",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "panel-dashboard-logic",
-      "codeGlobs": [
-        "Yala/App/Views/Panel/PanelView.swift",
-        "Yala/App/Views/Panel/PanelShell.swift",
-        "Yala/App/Views/Panel/PanelSectionPreferencesSheet.swift",
-        "Yala/App/Views/Panel/PanelSectionsConfigView.swift",
-        "Yala/App/Views/Panel/PanelWidgetSection.swift",
-        "Yala/App/Views/Panel/BudgetsWidget.swift",
-        "Yala/App/Views/Panel/CashFlowWidget.swift",
-        "Yala/App/Views/Panel/CategoriesPieWidget.swift",
-        "Yala/App/Views/Panel/TopCategoriesWidget.swift",
-        "Yala/App/Views/Panel/RecentRecordsWidget.swift",
-        "Yala/App/Views/Panel/ScheduledPaymentsWidget.swift"
-      ],
-      "scenarioIDs": [
-        "F-PAN-01",
-        "F-PAN-02"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/PanelDashboardUITests",
-      "owner": "",
-      "lastVerified": "2026-06-10"
-    },
-    {
-      "area": "pro-conversion-upsells",
-      "codeGlobs": [
-        "Yala/App/Views/Shared/TrialBanner.swift",
-        "Yala/App/Views/Shared/ProUpgradeBanner.swift",
-        "Yala/App/Views/Shared/MilestoneUpgradeSheet.swift",
-        "Yala/App/Views/Shared/UpgradePromptSheet.swift",
-        "Yala/App/Services/FeatureGateService.swift",
-        "Yala/Services/TelemetryService.swift"
-      ],
-      "scenarioIDs": [
-        "F-PRO-01",
-        "F-PRO-03",
-        "F-PRO-04"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/ProConversionUpsellsUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "scheduled-payment-skip-occurrences",
-      "codeGlobs": [
-        "Yala/App/ViewModels/ScheduledPaymentsViewModel.swift",
-        "Yala/App/Models/ScheduledPaymentModels.swift",
-        "Yala/Models/ScheduledPayment.swift",
-        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
-        "Yala/App/Views/Planning/ScheduledPaymentRowView.swift",
-        "Yala/App/Views/Planning/ScheduledPaymentsListView.swift",
-        "Yala/App/Views/Panel/ScheduledPaymentsWidget.swift"
-      ],
-      "scenarioIDs": [
-        "F-SCH-02",
-        "F-SCH-03"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/ScheduledPaymentSkipUITests",
-      "owner": "",
-      "lastVerified": "2026-06-09"
-    },
-    {
-      "area": "scheduled-payments",
-      "codeGlobs": [
-        "Yala/App/Views/Planning/ScheduledPaymentEditorView.swift",
-        "Yala/App/Views/Planning/ScheduledPaymentsListView.swift",
-        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
-        "Yala/App/Views/Planning/ScheduledPaymentsView.swift",
-        "Yala/App/Views/Planning/ScheduledPaymentRowView.swift",
-        "Yala/App/Views/Settings/ScheduledPaymentsSettingsView.swift"
-      ],
-      "scenarioIDs": [
-        "F-SCH-01",
-        "F-SCH-02"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/ScheduledPaymentsCrudUITests",
-      "owner": "",
-      "lastVerified": "2026-06-09"
-    },
-    {
-      "area": "secondary-currency-and-notification-primer",
-      "codeGlobs": [
-        "Yala/App/Views/Accounts/AccountFormView.swift",
-        "Yala/App/Views/Notifications/NotificationPrimerSheet.swift",
-        "Yala/App/Views/Transactions/TransactionSuccessView.swift",
-        "Yala/App/Services/AppPreferences.swift"
-      ],
-      "scenarioIDs": [
-        "F-ONB-07"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/SecondaryCurrencyPromptUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "settings-currency-exchange",
-      "codeGlobs": [
-        "Yala/App/Views/Settings/CurrencySettingsView.swift",
-        "Yala/App/Views/Settings/CurrencyPickerSheet.swift",
-        "Yala/App/Views/Settings/SecondaryCurrencyPickerSheet.swift",
-        "Yala/App/Views/Settings/ExchangeRatesSheet.swift",
-        "Yala/App/Views/Panel/ExchangeRateWidget.swift"
-      ],
-      "scenarioIDs": [
-        "F-SET-05"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/CurrencySettingsUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "settings-profile-general",
-      "codeGlobs": [
-        "Yala/App/Views/Profile/ProfileView.swift",
-        "Yala/App/Views/Settings/UserDataResetView.swift",
-        "Yala/App/Views/Settings/TabBarConfigView.swift"
-      ],
-      "scenarioIDs": [
-        "F-SET-01",
-        "F-SET-03"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/ProfileSettingsUITests, YalaUITests/ProfileGroupInviteUITests",
-      "owner": "",
-      "lastVerified": "2026-06-08"
-    },
-    {
-      "area": "setup-checklist",
-      "codeGlobs": [
-        "Yala/App/Views/Panel/SetupChecklistCard.swift",
-        "Yala/App/Views/Panel/SetupStepRow.swift"
-      ],
-      "scenarioIDs": [
-        "F-ONB-01",
-        "F-ONB-04"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "smart-insights-tab",
-      "codeGlobs": [
-        "Yala/App/Views/Statistics/InsightsTabView.swift",
-        "Yala/App/Views/Statistics/Components/InsightCard.swift",
-        "Yala/App/Views/Settings/SmartInsightsSettingsView.swift",
-        "Yala/App/ViewModels/InsightsViewModel.swift",
-        "Yala/App/Logic/Calculators/InsightsCalculator.swift",
-        "Yala/Services/InsightsLLMService.swift"
-      ],
-      "scenarioIDs": [
-        "F-STA-01",
-        "F-STA-02",
-        "F-STA-03"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "smart-refinement-fab-stats",
-      "codeGlobs": [
-        "Yala/App/Views/Shared/FABStackView.swift",
-        "Yala/App/Views/Statistics/DetailContainerView.swift",
-        "Yala/App/Views/Records/RecordsStandaloneView.swift"
-      ],
-      "scenarioIDs": [
-        "F-TX-05"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/SmartRefinementFabUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "split-calculator",
-      "codeGlobs": [
-        "Yala/App/Views/Shared/SplitCalculatorSheet.swift",
-        "Yala/App/Logic/Calculators/SplitCalculator.swift",
-        "Yala/App/Views/Transactions/NewTransactionView.swift",
-        "Yala/App/Views/Records/Components/RecordRowView.swift",
-        "Yala/Utils/TransactionsExportService.swift"
-      ],
-      "scenarioIDs": [
-        "F-TX-08"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/SplitCalculatorUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "statistics",
-      "codeGlobs": [
-        "Yala/App/Views/Statistics/DetailContainerView.swift",
-        "Yala/App/Views/Statistics/TrendsTabView.swift",
-        "Yala/App/Views/Statistics/CategoriesTabView.swift",
-        "Yala/App/Views/Statistics/RecordsTabView.swift",
-        "Yala/App/Views/Statistics/StatisticsView.swift",
-        "Yala/App/Views/Statistics/InsightsTabView.swift"
-      ],
-      "scenarioIDs": [
-        "F-STA-01",
-        "F-STA-03",
-        "F-STA-04",
-        "F-STA-05"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/StatisticsNavigationUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "tags-crud",
-      "codeGlobs": [
-        "Yala/App/Views/Tags/**",
-        "Yala/App/Views/Settings/TagsSettingsListView.swift"
-      ],
-      "scenarioIDs": [
-        "F-CAT-03"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/TagsCrudUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "transactions-bulk-edit",
-      "codeGlobs": [
-        "Yala/App/Views/Records/BulkEditSheet.swift",
-        "Yala/App/ViewModels/BulkEditViewModel.swift"
-      ],
-      "scenarioIDs": [
-        "F-TX-04"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/BulkEditUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "records-transaction-detail",
-      "codeGlobs": [
-        "Yala/App/Views/Records/TransactionDetailSheet.swift",
-        "Yala/App/Logic/TransactionDetailSheetLogic.swift"
-      ],
-      "scenarioIDs": [
-        "F-TX-01"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/RecordsDetailSheetUITests",
-      "owner": "",
-      "lastVerified": "2026-06-09"
-    },
-    {
-      "area": "transactions-core-crud",
-      "codeGlobs": [
-        "Yala/App/Views/Transactions/NewTransactionView.swift",
-        "Yala/App/Views/Transactions/AccountSelectorSheet.swift",
-        "Yala/App/Views/Transactions/SubcategorySelectorSheet.swift",
-        "Yala/App/Views/Transactions/TagSelectorSheet.swift",
-        "Yala/App/Views/Transactions/TransactionSuccessView.swift",
-        "Yala/App/Views/Records/RecordsStandaloneView.swift"
-      ],
-      "scenarioIDs": [
-        "F-TX-01",
-        "F-TX-02"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/TransactionsCrudUITests",
-      "owner": "",
-      "lastVerified": "2026-06-10"
-    },
-    {
-      "area": "transactions-quick-actions-favorites",
-      "codeGlobs": [
-        "Yala/App/Views/Transactions/NewTransactionView.swift",
-        "Yala/App/Views/Transactions/SaveAsFavoriteSheet.swift",
-        "Yala/App/Views/Transactions/DescriptionAutocomplete.swift"
-      ],
-      "scenarioIDs": [
-        "F-TX-02",
-        "F-TX-03"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/QuickActionsFavoritesUITests",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "update-available-banner",
-      "codeGlobs": [
-        "Yala/App/Services/AppUpdateService.swift",
-        "Yala/App/Views/Shared/UpdateAvailableBanner.swift",
-        "Yala/App/Views/Panel/PanelView.swift"
-      ],
-      "scenarioIDs": [
-        "F-PRO-04"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/UpdateAvailableBannerUITests",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "voice-input-currency-examples",
-      "codeGlobs": [
-        "Yala/App/Views/Voice/VoiceRecordingView.swift",
-        "Yala/Services/VoiceTranscriptionService.swift",
-        "Yala/Utils/CurrencyUtils.swift"
-      ],
-      "scenarioIDs": [
-        "F-VIM-02",
-        "F-VIM-07"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/VoiceInputCurrencyExamplesUITests",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "voice-settings-fab",
-      "codeGlobs": [
-        "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
-        "Yala/App/Views/Profile/ProfileView.swift",
-        "Yala/App/Views/Shared/FABStackView.swift",
-        "Yala/App/Views/Panel/PanelView.swift",
-        "Yala/App/Views/Statistics/DetailContainerView.swift"
-      ],
-      "scenarioIDs": [
-        "F-VIM-01"
-      ],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/VoiceImageSettingsFabUITests",
-      "owner": "",
-      "lastVerified": "2026-06-03"
-    },
-    {
-      "area": "average-line-bar-charts",
-      "codeGlobs": [
-        "Yala/App/Views/Panel/CashFlowWidget.swift",
-        "Yala/App/Views/Panel/NeedTrendWidget.swift",
-        "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
-        "Yala/App/Views/Statistics/TrendsTabView.swift"
-      ],
-      "scenarioIDs": [
-        "F-BUD-05"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-03"
-    },
-    {
-      "area": "cash-flow-charts-comments",
-      "codeGlobs": [
-        "Yala/App/Views/Reports/CashFlow/CashFlowChartsSheet.swift",
-        "Yala/App/Views/Reports/CashFlow/CashFlowCellMiniChart.swift",
-        "Yala/App/ViewModels/CashFlowPlanViewModel.swift"
-      ],
-      "scenarioIDs": [
-        "F-STA-06"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-10"
-    },
-    {
-      "area": "cashflow-waterfall-chart",
-      "codeGlobs": [
-        "Yala/App/Views/Statistics/TrendsTabView.swift",
-        "Yala/App/Views/Panel/CashFlowWidget.swift",
-        "Yala/App/Logic/Calculators/CashFlowCalculator.swift",
-        "YalaWidgets/Widgets/CashFlowWidget.swift"
-      ],
-      "scenarioIDs": [
-        "F-STA-03"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "coach-mark-tours",
-      "codeGlobs": [
-        "Yala/App/Tips/ProTourManager.swift",
-        "Yala/App/Tips/CoachMarkOverlay.swift",
-        "Yala/App/Views/Panel/PanelView.swift",
-        "Yala/App/Views/Transactions/**",
-        "Yala/App/Views/Profile/ProfileView.swift"
-      ],
-      "scenarioIDs": [
-        "F-NAV-03",
-        "F-NAV-04",
-        "F-NAV-05"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "expenses-only-mode",
-      "codeGlobs": [
-        "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
-        "Yala/App/Services/AppPreferences.swift",
-        "Yala/App/Views/Transactions/**",
-        "Yala/App/Views/Favorites/**",
-        "Yala/App/Views/Planning/ScheduledPayment*.swift",
-        "Yala/App/Views/Panel/CashFlowWidget.swift",
-        "Yala/App/Views/Panel/RecentRecordsWidget.swift",
-        "Yala/App/Views/Records/RecordsFiltersView.swift",
-        "Yala/App/Intents/QuickExpenseIntent.swift",
-        "YalaWidgets/Widgets/**"
-      ],
-      "scenarioIDs": [
-        "F-ONB-07"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-03"
-    },
-    {
-      "area": "groups-onboarding-tutorial-visual",
-      "codeGlobs": [
-        "Yala/App/Views/Groups/Onboarding/GroupsOnboardingView.swift",
-        "Yala/App/Views/Groups/Onboarding/GroupsOnboardingDemo.swift",
-        "Yala/App/Views/Groups/Onboarding/OnboardingDemoGroupCard.swift",
-        "Yala/App/Views/Groups/Onboarding/OnboardingDemoNotificationBubble.swift"
-      ],
-      "scenarioIDs": [
-        "F-S1-03"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "inbox-success-screens",
-      "codeGlobs": [
-        "Yala/App/Views/Inbox/InboxApproveSuccessView.swift",
-        "Yala/App/Views/Inbox/InboxBulkApproveSuccessView.swift",
-        "Yala/App/Views/Inbox/InboxDraftRowView.swift",
-        "Yala/App/Logic/InboxHeroSubtitleLogic.swift"
-      ],
-      "scenarioIDs": [
-        "F-INB-02",
-        "F-INB-03",
-        "F-INB-04"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "onboarding-privacy-and-tutorials",
-      "codeGlobs": [
-        "Yala/App/Views/Onboarding/OnboardingView.swift",
-        "Yala/App/Views/Settings/TutorialsListView.swift",
-        "Yala/App/Views/Settings/TutorialDetailView.swift",
-        "Yala/App/Views/Settings/TutorialCompletionView.swift"
-      ],
-      "scenarioIDs": [
-        "F-ONB-01",
-        "F-ONB-06"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "onboarding-redesign-flow",
-      "codeGlobs": [
-        "Yala/App/Views/Onboarding/OnboardingView.swift",
-        "Yala/App/Views/Shared/BalanceCalculatorSheet.swift",
-        "Yala/App/Views/Accounts/AccountFormView.swift",
-        "Yala/App/Logic/OnboardingPrefillResolver.swift",
-        "Yala/App/Logic/FullModeActivationLogic.swift"
-      ],
-      "scenarioIDs": [
-        "F-ONB-01",
-        "F-ONB-02",
-        "F-ONB-03",
-        "F-ONB-04"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "onboarding-restyle-visual",
-      "codeGlobs": [
-        "Yala/App/Views/Onboarding/OnboardingView.swift",
-        "Yala/App/Views/Groups/FullModeActivationView.swift"
-      ],
-      "scenarioIDs": [
-        "F-WEL-01",
-        "F-WEL-05",
-        "F-WEL-06"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "polish-budget-bar-and-credit-card-account",
-      "codeGlobs": [
-        "Yala/App/Views/Planning/Components/BudgetProgressBar.swift",
-        "Yala/App/Views/Planning/BudgetRowView.swift",
-        "Yala/App/Views/Transactions/**",
-        "Yala/App/Views/Accounts/AccountFormView.swift",
-        "Yala/App/Views/Panel/BudgetWidgetRow.swift"
-      ],
-      "scenarioIDs": [
-        "F-ACC-02",
-        "F-ACC-06"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "scheduled-payments-visual-consistency",
-      "codeGlobs": [
-        "Yala/App/Views/Planning/ScheduledPaymentsView.swift",
-        "Yala/App/Views/Planning/ScheduledPaymentsListView.swift",
-        "Yala/App/Views/Planning/ScheduledPaymentRowView.swift",
-        "Yala/App/Views/Planning/Components/**"
-      ],
-      "scenarioIDs": [
-        "F-SCH-01"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-09"
-    },
-    {
-      "area": "settings-theme-visual",
-      "codeGlobs": [
-        "Yala/App/Views/Settings/ThemeSettingsView.swift",
-        "Yala/App/Views/Settings/AppIconSettingsView.swift"
-      ],
-      "scenarioIDs": [
-        "F-SET-04"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-08"
-    },
-    {
-      "area": "setup-checklist-demos",
-      "codeGlobs": [
-        "Yala/App/Views/Panel/SetupChecklistCard.swift",
-        "Yala/App/Views/Panel/SetupStepRow.swift",
-        "Yala/App/Models/SetupChecklistManager.swift",
-        "Yala/App/Models/SetupStep.swift",
-        "Yala/App/Views/Voice/VoiceRecordingView.swift",
-        "Yala/App/Views/Image/ImageSelectionView.swift"
-      ],
-      "scenarioIDs": [
-        "F-ONB-01",
-        "F-ONB-02",
-        "F-ONB-03",
-        "F-ONB-04",
-        "F-ONB-05",
-        "F-ONB-06",
-        "F-ONB-07",
-        "F-ONB-08"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-02"
-    },
-    {
-      "area": "stats-records-polish",
-      "codeGlobs": [
-        "Yala/App/Views/Statistics/RecordsTabView.swift",
-        "Yala/App/Views/Statistics/DetailContainerView.swift",
-        "Yala/App/Views/Records/RecordsStandaloneView.swift"
-      ],
-      "scenarioIDs": [
-        "F-STA-05"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-09"
-    },
-    {
-      "area": "themes-system-9-themes",
-      "codeGlobs": [
-        "Yala/App/Theme/ThemeManager.swift",
-        "Yala/App/Theme/YalaTheme.swift",
-        "Yala/App/Theme/ThemeColor.swift",
-        "Yala/App/Views/Settings/ThemeSettingsView.swift"
-      ],
-      "scenarioIDs": [
-        "F-SET-03",
-        "F-SET-04"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-30"
-    },
-    {
-      "area": "transaction-success-view",
-      "codeGlobs": [
-        "Yala/App/Views/Transactions/TransactionSuccessView.swift"
-      ],
-      "scenarioIDs": [
-        "F-TX-07"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "welcome-flow-visual",
-      "codeGlobs": [
-        "Yala/App/Views/Onboarding/WelcomeFlowContainer.swift",
-        "Yala/App/Views/Onboarding/WelcomeHeroView.swift",
-        "Yala/App/Views/Onboarding/WelcomeChooserView.swift",
-        "Yala/App/Views/Onboarding/WelcomeRestoreView.swift",
-        "Yala/App/Views/Onboarding/InviteRecoveryView.swift"
-      ],
-      "scenarioIDs": [
-        "F-WEL-01",
-        "F-WEL-02",
-        "F-WEL-03",
-        "F-WEL-04",
-        "F-WEL-05",
-        "F-WEL-06"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
-      "area": "whats-new-sheet",
-      "codeGlobs": [
-        "Yala/App/Views/WhatsNew/WhatsNewSheet.swift",
-        "Yala/App/Views/WhatsNew/WhatsNewConfig.swift"
-      ],
-      "scenarioIDs": [
-        "F-PRO-05"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-10"
-    },
-    {
-      "area": "yala-ai-onboarding",
-      "codeGlobs": [
-        "Yala/App/Views/Chat/Onboarding/YalaAIOnboardingView.swift",
-        "Yala/App/Logic/YalaAIOnboardingLogic.swift",
-        "Yala/App/Views/Chat/ChatSheetView.swift",
-        "Yala/App/Views/Chat/AIPersonalizationSheet.swift"
-      ],
-      "scenarioIDs": [
-        "F-WEL-04"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa",
-      "owner": "",
-      "lastVerified": "2026-06-01"
-    },
-    {
       "area": "ai-data-consent",
       "codeGlobs": [
         "Yala/App/Views/Settings/AIPrivacySettingsView.swift",
@@ -1374,15 +128,38 @@
       "lastVerified": "2026-07-04"
     },
     {
-      "area": "face-id-protection-guide",
+      "area": "average-line-bar-charts",
       "codeGlobs": [
-        "Yala/App/Views/Settings/FaceIDProtectionGuideView.swift"
+        "Yala/App/Views/Panel/CashFlowWidget.swift",
+        "Yala/App/Views/Panel/NeedTrendWidget.swift",
+        "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
+        "Yala/App/Views/Statistics/TrendsTabView.swift"
       ],
-      "scenarioIDs": [],
-      "classification": "manual",
-      "coverage": "manual + unit:YalaTests/BiometricKeychainCleanupTests (idempotencia cleanup + delete de keys) + xcuitest:YalaUITests/SecurityFaceIDGuideUITests (fila Seguridad → FaceIDProtectionGuideView)",
+      "scenarioIDs": [
+        "F-BUD-05"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-07-06"
+      "lastVerified": "2026-06-03"
+    },
+    {
+      "area": "budget-alerts-configuration",
+      "codeGlobs": [
+        "Yala/App/Views/Planning/BudgetEditorView.swift",
+        "Yala/App/ViewModels/BudgetEditorViewModel.swift",
+        "Yala/App/Views/Settings/NotificationsSettingsView.swift",
+        "Yala/App/ViewModels/NotificationsSettingsViewModel.swift",
+        "Yala/App/Views/Onboarding/OnboardingView.swift",
+        "Yala/Models/Budget.swift"
+      ],
+      "scenarioIDs": [
+        "F-BUD-03"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/BudgetAlertsConfigUITests",
+      "owner": "",
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "budget-alerts-push-notifications",
@@ -1400,6 +177,158 @@
       "lastVerified": "2026-06-01"
     },
     {
+      "area": "budgets",
+      "codeGlobs": [
+        "Yala/App/Views/Planning/BudgetDetailView.swift",
+        "Yala/App/Views/Planning/BudgetEditorView.swift",
+        "Yala/App/Views/Planning/BudgetsListView.swift",
+        "Yala/App/Views/Planning/BudgetRowView.swift",
+        "Yala/App/Views/Planning/BudgetChartsView.swift",
+        "Yala/App/Views/Planning/Components/BudgetPeriodSelectorSheet.swift"
+      ],
+      "scenarioIDs": [
+        "F-BUD-01",
+        "F-BUD-02"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/BudgetsCrudUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "cash-flow-charts-comments",
+      "codeGlobs": [
+        "Yala/App/Views/Reports/CashFlow/CashFlowChartsSheet.swift",
+        "Yala/App/Views/Reports/CashFlow/CashFlowCellMiniChart.swift",
+        "Yala/App/ViewModels/CashFlowPlanViewModel.swift"
+      ],
+      "scenarioIDs": [
+        "F-STA-06"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-10"
+    },
+    {
+      "area": "cash-flow-plan",
+      "codeGlobs": [
+        "Yala/App/Views/Reports/CashFlow/**",
+        "Yala/App/ViewModels/CashFlowPlanViewModel.swift",
+        "Yala/Models/CashFlowPlan.swift"
+      ],
+      "scenarioIDs": [
+        "F-STA-06"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/CashFlowPlanUITests",
+      "owner": "",
+      "lastVerified": "2026-06-03"
+    },
+    {
+      "area": "cashflow-waterfall-chart",
+      "codeGlobs": [
+        "Yala/App/Views/Statistics/TrendsTabView.swift",
+        "Yala/App/Views/Panel/CashFlowWidget.swift",
+        "Yala/App/Logic/Calculators/CashFlowCalculator.swift",
+        "YalaWidgets/Widgets/CashFlowWidget.swift"
+      ],
+      "scenarioIDs": [
+        "F-STA-03"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "categories-subcategories-crud",
+      "codeGlobs": [
+        "Yala/App/Views/Categories/**",
+        "Yala/App/Views/Settings/CategoriesSettingsListView.swift",
+        "Yala/App/Services/CategoryDeduplicationService.swift",
+        "Yala/App/Logic/SubcategoryDedupLogic.swift",
+        "Yala/App/Logic/SubcategoryDedupGate.swift"
+      ],
+      "scenarioIDs": [
+        "F-CAT-01",
+        "F-CAT-02"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/CategoriesCrudUITests",
+      "owner": "",
+      "lastVerified": "2026-06-08"
+    },
+    {
+      "area": "chat-assistant",
+      "codeGlobs": [
+        "Yala/App/Views/Chat/**",
+        "Yala/Services/ChatAssistantService.swift",
+        "Yala/Services/Chat/**",
+        "Yala/App/Services/ChatSuggestionsLLMService.swift",
+        "Yala/App/Services/SuggestionsRewriterService.swift"
+      ],
+      "scenarioIDs": [
+        "F-CHA-01",
+        "F-CHA-02",
+        "F-CHA-03",
+        "F-CHA-04"
+      ],
+      "classification": "agentic",
+      "coverage": "none",
+      "owner": "",
+      "lastVerified": "2026-06-11"
+    },
+    {
+      "area": "cloud-sync-hlc",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/HLC.swift",
+        "Yala/Services/CloudSync/CanonicalTime.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/HLCTests + unit:YalaTests/HLCConformanceVectorTests (oraculo hlc_conformance_vectors.json, raiz del repo) — pure-logic sin superficie UI (motor DARK tras cloudModeEnabled)",
+      "owner": "",
+      "lastVerified": "2026-07-07"
+    },
+    {
+      "area": "coach-mark-tours",
+      "codeGlobs": [
+        "Yala/App/Tips/ProTourManager.swift",
+        "Yala/App/Tips/CoachMarkOverlay.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Transactions/**",
+        "Yala/App/Views/Profile/ProfileView.swift"
+      ],
+      "scenarioIDs": [
+        "F-NAV-03",
+        "F-NAV-04",
+        "F-NAV-05"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "contextual-ai-insight-panel",
+      "codeGlobs": [
+        "Yala/App/Views/Panel/Sections/PanelPanoramaSection.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Shared/AIInsightCardComponents.swift",
+        "Yala/App/Views/Chat/AIPersonalizationSheet.swift",
+        "Yala/Services/InsightsLLMService.swift"
+      ],
+      "scenarioIDs": [
+        "F-PAN-04",
+        "F-PAN-05"
+      ],
+      "classification": "agentic",
+      "coverage": "none",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
       "area": "control-center-lock-screen-controls",
       "codeGlobs": [
         "YalaWidgets/ControlWidgets.swift",
@@ -1410,6 +339,95 @@
       ],
       "classification": "manual",
       "coverage": "manual",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "currency-filter-statistics",
+      "codeGlobs": [
+        "Yala/App/Views/Filters/FilterControlBar.swift",
+        "Yala/App/Views/Filters/FilterChipsSection.swift",
+        "Yala/App/Views/Statistics/StatisticsView.swift",
+        "Yala/Services/FilterService.swift"
+      ],
+      "scenarioIDs": [
+        "F-STA-05"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/CurrencyFilterStatsUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "currency-picker-onboarding-and-secondary",
+      "codeGlobs": [
+        "Yala/App/Views/Onboarding/OnboardingView.swift",
+        "Yala/App/Views/Settings/CurrencyPickerSheet.swift",
+        "Yala/App/Views/Settings/SecondaryCurrencyPickerSheet.swift",
+        "Yala/App/Views/Settings/CurrencySettingsView.swift",
+        "Yala/App/Views/Shared/CurrencySelectorView.swift",
+        "Yala/Utils/CurrencyUtils.swift"
+      ],
+      "scenarioIDs": [
+        "F-ONB-01",
+        "F-ONB-02",
+        "F-ONB-03",
+        "F-ONB-04",
+        "F-ONB-05",
+        "F-ONB-06",
+        "F-ONB-07",
+        "F-ONB-08"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/CurrencyPickerUITests",
+      "owner": "",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "area": "date-period-intervals",
+      "codeGlobs": [
+        "Yala/App/Models/SharedModels.swift",
+        "Yala/App/Logic/Helpers/PreviousPeriodHelper.swift",
+        "Yala/App/Logic/Helpers/DateAlignmentHelper.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/DetailPeriodDateIntervalTests,DetailPeriodDateIntervalMoreTests,WidgetDataServiceIntervalTests,PreviousPeriodHelperTests (boundary de medianoche del SSOT DetailPeriod.dateInterval + paridad con el mirror del widget vía réplica; el widget WidgetDataService.dateInterval vive en el target YalaWidgetsExtension, no importable → réplica cruzada vs SSOT). manual: el mirror real del widget se valida por device.",
+      "owner": "",
+      "lastVerified": "2026-07-06"
+    },
+    {
+      "area": "deeplinks-tab-routing",
+      "codeGlobs": [
+        "Yala/App/Models/SessionState.swift",
+        "Yala/App/Logic/MainTabSelectionLogic.swift",
+        "Yala/App/Models/AppRouter.swift"
+      ],
+      "scenarioIDs": [
+        "F-NAV-01",
+        "F-NAV-02",
+        "F-NAV-06",
+        "F-NAV-07"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/DeeplinkRoutingUITests",
+      "owner": "",
+      "lastVerified": "2026-06-03"
+    },
+    {
+      "area": "deferred-filters-apply-discard",
+      "codeGlobs": [
+        "Yala/App/Views/Records/RecordsFiltersView.swift",
+        "Yala/Services/FilterService.swift",
+        "Yala/App/Views/Filters/FilterChipsSection.swift"
+      ],
+      "scenarioIDs": [
+        "F-FIL-01",
+        "F-FIL-02",
+        "F-FIL-03"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/DeferredFiltersUITests",
       "owner": "",
       "lastVerified": "2026-06-01"
     },
@@ -1430,6 +448,116 @@
       "lastVerified": "2026-06-02"
     },
     {
+      "area": "edge-cases-logic",
+      "codeGlobs": [
+        "Yala/App/Views/**",
+        "Yala/Services/**"
+      ],
+      "scenarioIDs": [
+        "F-EDG-01",
+        "F-EDG-02"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/EdgeCasesUITests",
+      "owner": "",
+      "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "expenses-only-mode",
+      "codeGlobs": [
+        "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
+        "Yala/App/Services/AppPreferences.swift",
+        "Yala/App/Views/Transactions/**",
+        "Yala/App/Views/Favorites/**",
+        "Yala/App/Views/Planning/ScheduledPayment*.swift",
+        "Yala/App/Views/Panel/CashFlowWidget.swift",
+        "Yala/App/Views/Panel/RecentRecordsWidget.swift",
+        "Yala/App/Views/Records/RecordsFiltersView.swift",
+        "Yala/App/Intents/QuickExpenseIntent.swift",
+        "YalaWidgets/Widgets/**"
+      ],
+      "scenarioIDs": [
+        "F-ONB-07"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-03"
+    },
+    {
+      "area": "export-wizard",
+      "codeGlobs": [
+        "Yala/App/Views/ExportWizard/**",
+        "Yala/Utils/TransactionsExportService.swift"
+      ],
+      "scenarioIDs": [
+        "F-IMP-03"
+      ],
+      "classification": "agentic",
+      "coverage": "none",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "face-id-protection-guide",
+      "codeGlobs": [
+        "Yala/App/Views/Settings/FaceIDProtectionGuideView.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "manual + unit:YalaTests/BiometricKeychainCleanupTests (idempotencia cleanup + delete de keys) + xcuitest:YalaUITests/SecurityFaceIDGuideUITests (fila Seguridad → FaceIDProtectionGuideView)",
+      "owner": "",
+      "lastVerified": "2026-07-06"
+    },
+    {
+      "area": "favorites",
+      "codeGlobs": [
+        "Yala/App/Views/Favorites/**",
+        "Yala/App/Views/Settings/BudgetsFavoritesSettingsView.swift"
+      ],
+      "scenarioIDs": [
+        "F-FAV-01",
+        "F-FAV-02"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/FavoritesCrudUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "filters",
+      "codeGlobs": [
+        "Yala/App/Views/Records/RecordsFiltersView.swift",
+        "Yala/App/ViewModels/RecordsFiltersViewModel.swift",
+        "Yala/App/Views/Filters/**"
+      ],
+      "scenarioIDs": [
+        "F-FIL-01",
+        "F-FIL-03"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/FiltersUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "form-help-banners",
+      "codeGlobs": [
+        "Yala/App/Views/Shared/ContextualGuideBanner.swift",
+        "Yala/App/Views/Planning/Budget*.swift",
+        "Yala/App/Views/Accounts/AccountFormView.swift",
+        "Yala/App/Views/Settings/**"
+      ],
+      "scenarioIDs": [
+        "F-TX-08",
+        "F-TX-09"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-02"
+    },
+    {
       "area": "free-trial-ui-paywall",
       "codeGlobs": [
         "Yala/App/Views/Settings/SubscriptionView.swift",
@@ -1444,6 +572,91 @@
       "coverage": "manual",
       "owner": "",
       "lastVerified": "2026-06-10"
+    },
+    {
+      "area": "group-scheduled-payments",
+      "codeGlobs": [
+        "Yala/App/Logic/SplitConfigCodec.swift",
+        "Yala/App/Logic/GroupScheduledPaymentGate.swift",
+        "Yala/Models/ScheduledPayment+SplitCSVMirror.swift"
+      ],
+      "scenarioIDs": [
+        "F-GSP-01",
+        "F-GSP-02",
+        "F-GSP-03",
+        "F-GSP-04"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa + unit:YalaTests/ScheduledPaymentGroupSaveTests (savePayment grupo mi-parte/total + createDraft gate)",
+      "owner": "",
+      "lastVerified": ""
+    },
+    {
+      "area": "groupdetail-deeplink-cold-launch-recovery",
+      "codeGlobs": [
+        "Yala/App/Logic/DeferredIntentBufferLogic.swift",
+        "Yala/App/Models/DeferredIntentBuffer.swift",
+        "Yala/App/Models/RouterEntryGate.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/DeferredIntentBufferLogicTests + xcuitest:YalaUITests/GroupDetailDeeplinkColdLaunchUITests (e2e cold launch: siembra grupos → termina app → relanza con yala://groups/seeded-first PRE-init por handleIncomingURL → defer→drain → rutea al detalle; hook -uitest-deeplink-url + seededGroupIDKey) + manual (sync CloudKit real device/TestFlight)",
+      "owner": "",
+      "lastVerified": "2026-07-07"
+    },
+    {
+      "area": "groups-bridge-personal",
+      "codeGlobs": [
+        "Yala/Services/Groups/GroupTransactionBridge.swift",
+        "Yala/Services/Groups/GroupBridgeSystemEntities.swift",
+        "Yala/Services/Groups/GroupBridgeRaceCleaner.swift",
+        "Yala/App/Views/Inbox/GroupExpenseDraftFinalizationSheet.swift",
+        "Yala/App/Views/Inbox/GroupSettlementDraftFinalizationSheet.swift",
+        "Yala/App/Views/Inbox/GroupExpenseAccountFinalizationSheet.swift",
+        "Yala/App/Views/Inbox/GroupExpenseAccountAndSubcategoryFinalizationSheet.swift",
+        "Yala/App/Logic/GroupDraftFinalizationLogic.swift",
+        "Yala/App/Logic/BulkApproveRoutingLogic.swift",
+        "Yala/Services/DraftService.swift",
+        "Yala/App/Views/Groups/BridgeActivationSheet.swift",
+        "Yala/App/Views/Groups/BridgeDeactivationSheet.swift",
+        "Yala/Models/SplitExpense.swift",
+        "Yala/Models/SplitSettlement.swift",
+        "Yala/Models/SplitShare.swift"
+      ],
+      "scenarioIDs": [
+        "F-S2-02",
+        "F-S2-03",
+        "F-S2-04",
+        "F-S2-05",
+        "F-S2-11",
+        "F-S3-04"
+      ],
+      "classification": "agentic",
+      "coverage": "none",
+      "owner": "",
+      "lastVerified": "2026-06-26"
+    },
+    {
+      "area": "groups-bridge-settings-optout",
+      "codeGlobs": [
+        "Yala/App/Views/Groups/GroupsGlobalSettingsView.swift",
+        "Yala/Services/Groups/BridgeModeResolver.swift",
+        "Yala/Services/Groups/GroupBridgePreferenceDeduplicationService.swift",
+        "Yala/Models/GroupBridgePreference.swift",
+        "Yala/App/Logic/BridgeResolverLogic.swift",
+        "Yala/App/Logic/BridgeBranchLogic.swift",
+        "Yala/App/Logic/BridgeOptOutAlertLogic.swift",
+        "Yala/App/Logic/BridgedTransactionFilter.swift"
+      ],
+      "scenarioIDs": [
+        "F-S1-06",
+        "F-S2-04",
+        "F-S2-05"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
+      "owner": "",
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "groups-cross-device-sync",
@@ -1489,6 +702,82 @@
       "lastVerified": "2026-07-01"
     },
     {
+      "area": "groups-crud-balances-settlements",
+      "codeGlobs": [
+        "Yala/App/Views/Groups/GroupsContainerView.swift",
+        "Yala/App/Views/Groups/GroupFormView.swift",
+        "Yala/App/Views/Groups/GroupDetailView.swift",
+        "Yala/App/Views/Groups/GroupRecordsView.swift",
+        "Yala/App/Views/Groups/GroupBalancesView.swift",
+        "Yala/App/Views/Groups/GroupSettingsView.swift",
+        "Yala/App/Views/Groups/GroupMembersView.swift",
+        "Yala/App/Views/Groups/GroupCardView.swift",
+        "Yala/App/Views/Groups/SettlementFormView.swift",
+        "Yala/App/Views/Groups/MemberPickerView.swift",
+        "Yala/Services/Groups/GroupService.swift",
+        "Yala/Services/Groups/GroupExpenseService.swift",
+        "Yala/Services/Groups/GroupBalanceService.swift",
+        "Yala/Services/Groups/DebtSimplificationService.swift",
+        "Yala/App/Logic/GroupBalanceRowGrouping.swift",
+        "Yala/App/Views/Shared/ExpandableFAB.swift"
+      ],
+      "scenarioIDs": [
+        "F-S1-04",
+        "F-S1-05",
+        "F-S4-03",
+        "F-S4-04",
+        "F-S5-06"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests + unit:YalaTests/GroupDetailDismissDecisionTests (dismiss-first) + xcuitest:YalaUITests/GroupsEmptyStateUITests (empty state, no spinner atascado)",
+      "owner": "",
+      "lastVerified": "2026-06-25"
+    },
+    {
+      "area": "groups-expense-form",
+      "codeGlobs": [
+        "Yala/App/Views/Groups/GroupExpenseFormView.swift",
+        "Yala/App/Views/Groups/SplitTypeSegmentedSelector.swift",
+        "Yala/App/Views/Groups/GroupSplitSelectorView.swift",
+        "Yala/App/Logic/Formatters/GroupSplitPlaceholderLogic.swift",
+        "Yala/App/Logic/Calculators/GroupSplitCalculator.swift",
+        "Yala/App/Logic/GroupSplitConversion.swift",
+        "Yala/App/Logic/TwoPersonSplitOptions.swift",
+        "Yala/App/Logic/TwoPersonSplitOptions+Text.swift",
+        "Yala/App/Views/Groups/GroupTwoPersonSplitView.swift",
+        "Yala/App/Views/Groups/GroupExpenseComposerView.swift",
+        "Yala/App/Views/Groups/GroupPickerSheet.swift",
+        "Yala/App/Logic/GroupExpenseEligibilityLogic.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/Views/Groups/GroupExpenseSuccessView.swift",
+        "Yala/App/Logic/GroupExpenseSuccessLogic.swift"
+      ],
+      "scenarioIDs": [
+        "F-S1-05",
+        "F-S5-07"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests; xcuitest:YalaUITests/GroupExpenseSuccessUITests + unit:YalaTests/GroupExpenseSuccessBuildDataTests (datos de la pantalla de éxito)",
+      "owner": "",
+      "lastVerified": "2026-07-07"
+    },
+    {
+      "area": "groups-form",
+      "codeGlobs": [
+        "Yala/App/Views/Groups/GroupFormView.swift",
+        "Yala/App/Views/Groups/GroupSplitSelectorView.swift",
+        "Yala/App/Views/Groups/SplitTypeSegmentedSelector.swift",
+        "Yala/App/Views/Groups/GroupExpenseFormView.swift"
+      ],
+      "scenarioIDs": [
+        "F-S1-04"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/GroupsSmokeUITests",
+      "owner": "",
+      "lastVerified": "2026-06-25"
+    },
+    {
       "area": "groups-notifications-deeplinks",
       "codeGlobs": [
         "Yala/Services/Groups/GroupNotificationService.swift",
@@ -1508,6 +797,92 @@
       "coverage": "unit:YalaTests/GroupNotificationRecipientLogicTests + manual",
       "owner": "",
       "lastVerified": "2026-07-01"
+    },
+    {
+      "area": "groups-onboarding-tutorial-visual",
+      "codeGlobs": [
+        "Yala/App/Views/Groups/Onboarding/GroupsOnboardingView.swift",
+        "Yala/App/Views/Groups/Onboarding/GroupsOnboardingDemo.swift",
+        "Yala/App/Views/Groups/Onboarding/OnboardingDemoGroupCard.swift",
+        "Yala/App/Views/Groups/Onboarding/OnboardingDemoNotificationBubble.swift"
+      ],
+      "scenarioIDs": [
+        "F-S1-03"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "groups-opening-balance",
+      "codeGlobs": [
+        "Yala/App/Views/Groups/GroupOpeningBalanceFormView.swift",
+        "Yala/App/Views/Groups/GroupOpeningBalanceDetailSheet.swift",
+        "Yala/App/Logic/OpeningBalanceBridgeLogic.swift",
+        "Yala/App/Logic/OpeningBalanceRollup.swift",
+        "Yala/App/Logic/OpeningBalanceGuardLogic.swift"
+      ],
+      "scenarioIDs": [
+        "OPEN-BAL-01",
+        "OPEN-BAL-02",
+        "OPEN-BAL-03",
+        "OPEN-BAL-04",
+        "OPEN-BAL-05",
+        "OPEN-BAL-06",
+        "OPEN-BAL-07",
+        "OPEN-BAL-08",
+        "OPEN-BAL-09"
+      ],
+      "classification": "manual",
+      "coverage": "manual:sim-qa-local (OPEN-BAL-01/02/03/05/09 + bridge virtual local OPEN-BAL-06); OPEN-BAL-06 cross-device + OPEN-BAL-08 atajo pendientes TestFlight",
+      "owner": "",
+      "lastVerified": "2026-07-02"
+    },
+    {
+      "area": "groups-pending-approval-reconnect",
+      "codeGlobs": [
+        "Yala/App/Views/Groups/GroupReconnectView.swift",
+        "Yala/App/Views/Groups/GroupInviteOnboardingView.swift",
+        "Yala/App/Views/Groups/FullModeActivationView.swift",
+        "Yala/App/Views/Groups/GroupStatsView.swift",
+        "Yala/Services/Groups/GroupUserIdentityService.swift",
+        "Yala/Services/Groups/InviteLinkService.swift",
+        "Yala/Services/Groups/PendingInviteStore.swift",
+        "Yala/App/Services/CKShareEntryHandler.swift",
+        "Yala/Models/SplitMember.swift"
+      ],
+      "scenarioIDs": [
+        "F-S3-02",
+        "F-S3-03",
+        "F-S3-05",
+        "F-S3-06",
+        "F-S3-07",
+        "F-S4-01",
+        "F-S4-02",
+        "F-S4-05"
+      ],
+      "classification": "agentic",
+      "coverage": "none",
+      "owner": "",
+      "lastVerified": "2026-06-08"
+    },
+    {
+      "area": "groups-stats-multicurrency",
+      "codeGlobs": [
+        "Yala/App/Views/Groups/GroupStatsView.swift",
+        "Yala/App/ViewModels/GroupStatsViewModel.swift",
+        "Yala/App/Views/Shared/DonutChartView.swift",
+        "Yala/App/Logic/GroupTrendChartAdapter.swift"
+      ],
+      "scenarioIDs": [
+        "F-S5-07",
+        "F-S5-08"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-25"
     },
     {
       "area": "icloud-sync-multi-device",
@@ -1569,34 +944,20 @@
       "lastVerified": "2026-06-01"
     },
     {
-      "area": "share-extension-image-recovery",
+      "area": "image-settings-fab",
       "codeGlobs": [
-        "YalaShare/ShareViewController.swift",
-        "Yala/Services/SharedContainerService.swift",
-        "Yala/App/Logic/SharedImageRecoveryGate.swift",
-        "Yala/App/Logic/SharedImageBreadcrumb.swift"
+        "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/Views/Panel/PanelView.swift"
       ],
       "scenarioIDs": [
-        "F-SHARE-IMG-01",
-        "F-SHARE-IMG-02"
+        "F-VIM-01"
       ],
-      "classification": "manual",
-      "coverage": "unit:YalaTests/SharedImageRecoveryGateTests + unit:YalaTests/SharedContainerServiceTests + manual",
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/VoiceImageSettingsFabUITests",
       "owner": "",
-      "lastVerified": "2026-07-05"
-    },
-    {
-      "area": "groupdetail-deeplink-cold-launch-recovery",
-      "codeGlobs": [
-        "Yala/App/Logic/DeferredIntentBufferLogic.swift",
-        "Yala/App/Models/DeferredIntentBuffer.swift",
-        "Yala/App/Models/RouterEntryGate.swift"
-      ],
-      "scenarioIDs": [],
-      "classification": "manual",
-      "coverage": "unit:YalaTests/DeferredIntentBufferLogicTests + xcuitest:YalaUITests/GroupDetailDeeplinkColdLaunchUITests (e2e cold launch: siembra grupos → termina app → relanza con yala://groups/seeded-first PRE-init por handleIncomingURL → defer→drain → rutea al detalle; hook -uitest-deeplink-url + seededGroupIDKey) + manual (sync CloudKit real device/TestFlight)",
-      "owner": "",
-      "lastVerified": "2026-07-07"
+      "lastVerified": "2026-06-03"
     },
     {
       "area": "import-file-picker",
@@ -1613,6 +974,44 @@
       "coverage": "manual",
       "owner": "",
       "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "inbox-convert-to-group",
+      "codeGlobs": [
+        "Yala/App/Logic/DraftConversionEligibilityLogic.swift",
+        "Yala/App/Logic/DraftToGroupExpenseTemplateLogic.swift"
+      ],
+      "scenarioIDs": [
+        "F-INB-05",
+        "F-INB-06"
+      ],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/DraftConversionEligibilityLogicTests,YalaTests/DraftToGroupExpenseTemplateLogicTests + manual (e2e bridge/sync device/TestFlight) + unit:YalaTests/DraftServiceHandleConvertTests (borrado del draft al convertir)",
+      "owner": "",
+      "lastVerified": ""
+    },
+    {
+      "area": "inbox-crud",
+      "codeGlobs": [
+        "Yala/App/Views/Inbox/InboxView.swift",
+        "Yala/App/Views/Inbox/InboxDraftRowView.swift",
+        "Yala/App/Views/Inbox/InboxDraftEditSheet.swift",
+        "Yala/App/Views/Inbox/InboxBulkActionsSheet.swift",
+        "Yala/App/ViewModels/InboxViewModel.swift",
+        "Yala/App/ViewModels/InboxDraftEditViewModel.swift",
+        "Yala/Models/InboxDraft.swift",
+        "Yala/Models/InboxDraft+TagsCSVMirror.swift"
+      ],
+      "scenarioIDs": [
+        "F-INB-01",
+        "F-INB-02",
+        "F-INB-03",
+        "F-INB-04"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/InboxCrudUITests",
+      "owner": "",
+      "lastVerified": "2026-06-10"
     },
     {
       "area": "inbox-modal-apple-pay-automation-trigger",
@@ -1633,6 +1032,58 @@
       "coverage": "manual",
       "owner": "",
       "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "inbox-new-items-modal",
+      "codeGlobs": [
+        "Yala/App/Views/Shared/InboxAlertModal.swift",
+        "Yala/App/Models/PresentationCoordinator.swift",
+        "Yala/App/Models/RouterEntryGate.swift",
+        "Yala/App/Logic/PresentationCascadeLogic.swift",
+        "Yala/App/ContentView.swift",
+        "Yala/App/ViewModels/InboxViewModel.swift"
+      ],
+      "scenarioIDs": [
+        "F-INB-05"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/InboxNewItemsModalUITests",
+      "owner": "",
+      "lastVerified": "2026-06-03"
+    },
+    {
+      "area": "inbox-success-screens",
+      "codeGlobs": [
+        "Yala/App/Views/Inbox/InboxApproveSuccessView.swift",
+        "Yala/App/Views/Inbox/InboxBulkApproveSuccessView.swift",
+        "Yala/App/Views/Inbox/InboxDraftRowView.swift",
+        "Yala/App/Logic/InboxHeroSubtitleLogic.swift"
+      ],
+      "scenarioIDs": [
+        "F-INB-02",
+        "F-INB-03",
+        "F-INB-04"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "income-expense-classification-parity",
+      "codeGlobs": [
+        "Yala/App/Logic/TransactionClassificationLogic.swift",
+        "Yala/App/ViewModels/RecordsViewModel.swift",
+        "Yala/Services/TrendDataProcessor.swift",
+        "Yala/App/ViewModels/StatisticsViewModel.swift",
+        "Yala/Services/ReportNotificationService.swift",
+        "Yala/App/Logic/Helpers/TrendProcessingHelper.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/TransactionClassificationLogicTests + TrendDataProcessorTests (reembolso/KPI==curva/invariante/yDomain negativo) + ReportNotificationServiceTests (accumulateReportTotals/empty-check por actividad) + CashFlowCalculatorTests (reembolso) + TrendProcessingTests (yDomain incluye curva .expense negativa) + xcuitest:YalaUITests/IncomeExpenseClassificationUITests (discriminante e2e: seed -uitest-seed-desync con income-cat monto negativo + expense-cat monto positivo → cifras de Insights clasifican por CATEGORÍA [500/300], no por signo [800/600]). manual: Fase 1 device OK (header Records/RecordsStandalone == CashFlow). Fase 2 (p20-14) device visual de curvas de Tendencias + hero==KPI-chart en periodo con reembolso PENDIENTE.",
+      "owner": "",
+      "lastVerified": "2026-07-07"
     },
     {
       "area": "merchant-memory",
@@ -1674,6 +1125,17 @@
       "lastVerified": "2026-06-10"
     },
     {
+      "area": "more-dashboard-icons",
+      "codeGlobs": [
+        "Yala/App/Views/More/**"
+      ],
+      "scenarioIDs": [],
+      "classification": "agentic",
+      "coverage": "device-qa + unit:YalaTests/YalaThemeColorfulIconsTests (forcesMonochromeIcons/effectiveColorfulIcons) + xcuitest:YalaUITests/PersonalizationColorfulIconsUITests (toggle alterna)",
+      "owner": "",
+      "lastVerified": "2026-07-06"
+    },
+    {
       "area": "notifications-permissions-delivery",
       "codeGlobs": [
         "Yala/Services/NotificationService.swift",
@@ -1688,6 +1150,134 @@
       "coverage": "manual",
       "owner": "",
       "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "notifications-settings-crud",
+      "codeGlobs": [
+        "Yala/App/Views/Settings/NotificationsSettingsView.swift",
+        "Yala/App/Views/Settings/NotificationEditorSheet.swift",
+        "Yala/App/ViewModels/NotificationsSettingsViewModel.swift",
+        "Yala/Models/NotificationItem.swift",
+        "Yala/Services/NotificationService.swift",
+        "Yala/Services/ReportNotificationService.swift"
+      ],
+      "scenarioIDs": [
+        "F-NOT-01",
+        "F-NOT-02"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/NotificationsSettingsUITests",
+      "owner": "",
+      "lastVerified": "2026-06-08"
+    },
+    {
+      "area": "onboarding-flow",
+      "codeGlobs": [
+        "Yala/App/Views/Onboarding/OnboardingView.swift",
+        "Yala/App/Views/Onboarding/OnboardingFlowScreen.swift",
+        "Yala/App/Views/Onboarding/WelcomeChooserView.swift",
+        "Yala/App/Views/Onboarding/WelcomeFlowContainer.swift"
+      ],
+      "scenarioIDs": [
+        "F-ONB-01",
+        "F-ONB-02",
+        "F-ONB-03",
+        "F-ONB-04"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/OnboardingFlowUITests",
+      "owner": "",
+      "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "onboarding-groups-only",
+      "codeGlobs": [
+        "Yala/App/Views/Onboarding/OnboardingView.swift",
+        "Yala/App/Logic/OnboardingStepPlan.swift",
+        "Yala/App/Logic/OnboardingNextEnablement.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/OnboardingGroupsOnlyGuardUITests (paso Propósito ofrece la card; guard iCloud al elegirla sin cuenta; Y happy-path e2e con -uitest-fake-icloud: card → paso moneda → botón Continuar HABILITADO → completa → landing en tab Grupos, regresión del botón muerto fix 2.0.5); unit:YalaTests/OnboardingStepPlanTests (skip de steps groupsOnly); unit:YalaTests/OnboardingNextEnablementTests (habilitación del botón Continuar por paso). El happy-path e2e ya NO es device/TestFlight: el launch arg -uitest-fake-icloud fuerza isAccountAvailable en sim (crear grupo/CKShare real siguen siendo TestFlight).",
+      "owner": "",
+      "lastVerified": "2026-07-07"
+    },
+    {
+      "area": "onboarding-privacy-and-tutorials",
+      "codeGlobs": [
+        "Yala/App/Views/Onboarding/OnboardingView.swift",
+        "Yala/App/Views/Settings/TutorialsListView.swift",
+        "Yala/App/Views/Settings/TutorialDetailView.swift",
+        "Yala/App/Views/Settings/TutorialCompletionView.swift"
+      ],
+      "scenarioIDs": [
+        "F-ONB-01",
+        "F-ONB-06"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "onboarding-redesign-flow",
+      "codeGlobs": [
+        "Yala/App/Views/Onboarding/OnboardingView.swift",
+        "Yala/App/Views/Shared/BalanceCalculatorSheet.swift",
+        "Yala/App/Views/Accounts/AccountFormView.swift",
+        "Yala/App/Logic/OnboardingPrefillResolver.swift",
+        "Yala/App/Logic/FullModeActivationLogic.swift"
+      ],
+      "scenarioIDs": [
+        "F-ONB-01",
+        "F-ONB-02",
+        "F-ONB-03",
+        "F-ONB-04"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "onboarding-restyle-visual",
+      "codeGlobs": [
+        "Yala/App/Views/Onboarding/OnboardingView.swift",
+        "Yala/App/Views/Groups/FullModeActivationView.swift"
+      ],
+      "scenarioIDs": [
+        "F-WEL-01",
+        "F-WEL-05",
+        "F-WEL-06"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "panel-dashboard-logic",
+      "codeGlobs": [
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Panel/PanelShell.swift",
+        "Yala/App/Views/Panel/PanelSectionPreferencesSheet.swift",
+        "Yala/App/Views/Panel/PanelSectionsConfigView.swift",
+        "Yala/App/Views/Panel/PanelWidgetSection.swift",
+        "Yala/App/Views/Panel/BudgetsWidget.swift",
+        "Yala/App/Views/Panel/CashFlowWidget.swift",
+        "Yala/App/Views/Panel/CategoriesPieWidget.swift",
+        "Yala/App/Views/Panel/TopCategoriesWidget.swift",
+        "Yala/App/Views/Panel/RecentRecordsWidget.swift",
+        "Yala/App/Views/Panel/ScheduledPaymentsWidget.swift"
+      ],
+      "scenarioIDs": [
+        "F-PAN-01",
+        "F-PAN-02"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/PanelDashboardUITests",
+      "owner": "",
+      "lastVerified": "2026-06-10"
     },
     {
       "area": "panel-icloud-sync",
@@ -1709,6 +1299,24 @@
       "lastVerified": "2026-06-01"
     },
     {
+      "area": "polish-budget-bar-and-credit-card-account",
+      "codeGlobs": [
+        "Yala/App/Views/Planning/Components/BudgetProgressBar.swift",
+        "Yala/App/Views/Planning/BudgetRowView.swift",
+        "Yala/App/Views/Transactions/**",
+        "Yala/App/Views/Accounts/AccountFormView.swift",
+        "Yala/App/Views/Panel/BudgetWidgetRow.swift"
+      ],
+      "scenarioIDs": [
+        "F-ACC-02",
+        "F-ACC-06"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
       "area": "pre-release-checklist",
       "codeGlobs": [
         "Yala/App/Views/**"
@@ -1722,6 +1330,58 @@
       "coverage": "manual",
       "owner": "",
       "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "pro-conversion-upsells",
+      "codeGlobs": [
+        "Yala/App/Views/Shared/TrialBanner.swift",
+        "Yala/App/Views/Shared/ProUpgradeBanner.swift",
+        "Yala/App/Views/Shared/MilestoneUpgradeSheet.swift",
+        "Yala/App/Views/Shared/UpgradePromptSheet.swift",
+        "Yala/App/Services/FeatureGateService.swift",
+        "Yala/Services/TelemetryService.swift"
+      ],
+      "scenarioIDs": [
+        "F-PRO-01",
+        "F-PRO-03",
+        "F-PRO-04"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/ProConversionUpsellsUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "records-duplicate-detection",
+      "codeGlobs": [
+        "Yala/App/Logic/RecordsDuplicateLogic.swift",
+        "Yala/App/Views/Records/Components/RecordsOverflowMenu.swift",
+        "Yala/App/ViewModels/RecordsViewModel.swift",
+        "Yala/App/Views/Statistics/RecordsTabView.swift"
+      ],
+      "scenarioIDs": [
+        "F-DUP-01",
+        "F-DUP-02",
+        "F-DUP-03"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-16"
+    },
+    {
+      "area": "records-transaction-detail",
+      "codeGlobs": [
+        "Yala/App/Views/Records/TransactionDetailSheet.swift",
+        "Yala/App/Logic/TransactionDetailSheetLogic.swift"
+      ],
+      "scenarioIDs": [
+        "F-TX-01"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/RecordsDetailSheetUITests",
+      "owner": "",
+      "lastVerified": "2026-06-09"
     },
     {
       "area": "scheduled-payment-notifications-robustness",
@@ -1738,6 +1398,201 @@
       "coverage": "manual",
       "owner": "",
       "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "scheduled-payment-skip-occurrences",
+      "codeGlobs": [
+        "Yala/App/ViewModels/ScheduledPaymentsViewModel.swift",
+        "Yala/App/Models/ScheduledPaymentModels.swift",
+        "Yala/Models/ScheduledPayment.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentRowView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentsListView.swift",
+        "Yala/App/Views/Panel/ScheduledPaymentsWidget.swift"
+      ],
+      "scenarioIDs": [
+        "F-SCH-02",
+        "F-SCH-03"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/ScheduledPaymentSkipUITests",
+      "owner": "",
+      "lastVerified": "2026-06-09"
+    },
+    {
+      "area": "scheduled-payments",
+      "codeGlobs": [
+        "Yala/App/Views/Planning/ScheduledPaymentEditorView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentsListView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentsView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentRowView.swift",
+        "Yala/App/Views/Settings/ScheduledPaymentsSettingsView.swift"
+      ],
+      "scenarioIDs": [
+        "F-SCH-01",
+        "F-SCH-02"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/ScheduledPaymentsCrudUITests",
+      "owner": "",
+      "lastVerified": "2026-06-09"
+    },
+    {
+      "area": "scheduled-payments-visual-consistency",
+      "codeGlobs": [
+        "Yala/App/Views/Planning/ScheduledPaymentsView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentsListView.swift",
+        "Yala/App/Views/Planning/ScheduledPaymentRowView.swift",
+        "Yala/App/Views/Planning/Components/**"
+      ],
+      "scenarioIDs": [
+        "F-SCH-01"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-09"
+    },
+    {
+      "area": "secondary-currency-and-notification-primer",
+      "codeGlobs": [
+        "Yala/App/Views/Accounts/AccountFormView.swift",
+        "Yala/App/Views/Notifications/NotificationPrimerSheet.swift",
+        "Yala/App/Views/Transactions/TransactionSuccessView.swift",
+        "Yala/App/Services/AppPreferences.swift"
+      ],
+      "scenarioIDs": [
+        "F-ONB-07"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/SecondaryCurrencyPromptUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "settings-currency-exchange",
+      "codeGlobs": [
+        "Yala/App/Views/Settings/CurrencySettingsView.swift",
+        "Yala/App/Views/Settings/CurrencyPickerSheet.swift",
+        "Yala/App/Views/Settings/SecondaryCurrencyPickerSheet.swift",
+        "Yala/App/Views/Settings/ExchangeRatesSheet.swift",
+        "Yala/App/Views/Panel/ExchangeRateWidget.swift"
+      ],
+      "scenarioIDs": [
+        "F-SET-05"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/CurrencySettingsUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "settings-profile-general",
+      "codeGlobs": [
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Settings/UserDataResetView.swift",
+        "Yala/App/Views/Settings/TabBarConfigView.swift"
+      ],
+      "scenarioIDs": [
+        "F-SET-01",
+        "F-SET-03"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/ProfileSettingsUITests, YalaUITests/ProfileGroupInviteUITests",
+      "owner": "",
+      "lastVerified": "2026-06-08"
+    },
+    {
+      "area": "settings-theme-visual",
+      "codeGlobs": [
+        "Yala/App/Views/Settings/ThemeSettingsView.swift",
+        "Yala/App/Views/Settings/AppIconSettingsView.swift"
+      ],
+      "scenarioIDs": [
+        "F-SET-04"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-08"
+    },
+    {
+      "area": "setup-checklist",
+      "codeGlobs": [
+        "Yala/App/Views/Panel/SetupChecklistCard.swift",
+        "Yala/App/Views/Panel/SetupStepRow.swift"
+      ],
+      "scenarioIDs": [
+        "F-ONB-01",
+        "F-ONB-04"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "setup-checklist-demos",
+      "codeGlobs": [
+        "Yala/App/Views/Panel/SetupChecklistCard.swift",
+        "Yala/App/Views/Panel/SetupStepRow.swift",
+        "Yala/App/Models/SetupChecklistManager.swift",
+        "Yala/App/Models/SetupStep.swift",
+        "Yala/App/Views/Voice/VoiceRecordingView.swift",
+        "Yala/App/Views/Image/ImageSelectionView.swift"
+      ],
+      "scenarioIDs": [
+        "F-ONB-01",
+        "F-ONB-02",
+        "F-ONB-03",
+        "F-ONB-04",
+        "F-ONB-05",
+        "F-ONB-06",
+        "F-ONB-07",
+        "F-ONB-08"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "share-extension-image-recovery",
+      "codeGlobs": [
+        "YalaShare/ShareViewController.swift",
+        "Yala/Services/SharedContainerService.swift",
+        "Yala/App/Logic/SharedImageRecoveryGate.swift",
+        "Yala/App/Logic/SharedImageBreadcrumb.swift"
+      ],
+      "scenarioIDs": [
+        "F-SHARE-IMG-01",
+        "F-SHARE-IMG-02"
+      ],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/SharedImageRecoveryGateTests + unit:YalaTests/SharedContainerServiceTests + manual",
+      "owner": "",
+      "lastVerified": "2026-07-05"
+    },
+    {
+      "area": "smart-insights-tab",
+      "codeGlobs": [
+        "Yala/App/Views/Statistics/InsightsTabView.swift",
+        "Yala/App/Views/Statistics/Components/InsightCard.swift",
+        "Yala/App/Views/Settings/SmartInsightsSettingsView.swift",
+        "Yala/App/ViewModels/InsightsViewModel.swift",
+        "Yala/App/Logic/Calculators/InsightsCalculator.swift",
+        "Yala/Services/InsightsLLMService.swift"
+      ],
+      "scenarioIDs": [
+        "F-STA-01",
+        "F-STA-02",
+        "F-STA-03"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "smart-refinement-accents-permissions",
@@ -1758,6 +1613,151 @@
       "lastVerified": "2026-06-03"
     },
     {
+      "area": "smart-refinement-fab-stats",
+      "codeGlobs": [
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift"
+      ],
+      "scenarioIDs": [
+        "F-TX-05"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/SmartRefinementFabUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "split-calculator",
+      "codeGlobs": [
+        "Yala/App/Views/Shared/SplitCalculatorSheet.swift",
+        "Yala/App/Logic/Calculators/SplitCalculator.swift",
+        "Yala/App/Views/Transactions/NewTransactionView.swift",
+        "Yala/App/Views/Records/Components/RecordRowView.swift",
+        "Yala/Utils/TransactionsExportService.swift"
+      ],
+      "scenarioIDs": [
+        "F-TX-08"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/SplitCalculatorUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "statistics",
+      "codeGlobs": [
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Statistics/TrendsTabView.swift",
+        "Yala/App/Views/Statistics/CategoriesTabView.swift",
+        "Yala/App/Views/Statistics/RecordsTabView.swift",
+        "Yala/App/Views/Statistics/StatisticsView.swift",
+        "Yala/App/Views/Statistics/InsightsTabView.swift"
+      ],
+      "scenarioIDs": [
+        "F-STA-01",
+        "F-STA-03",
+        "F-STA-04",
+        "F-STA-05"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/StatisticsNavigationUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "stats-records-polish",
+      "codeGlobs": [
+        "Yala/App/Views/Statistics/RecordsTabView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift"
+      ],
+      "scenarioIDs": [
+        "F-STA-05"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-09"
+    },
+    {
+      "area": "tags-crud",
+      "codeGlobs": [
+        "Yala/App/Views/Tags/**",
+        "Yala/App/Views/Settings/TagsSettingsListView.swift"
+      ],
+      "scenarioIDs": [
+        "F-CAT-03"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/TagsCrudUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "themes-system-9-themes",
+      "codeGlobs": [
+        "Yala/App/Theme/ThemeManager.swift",
+        "Yala/App/Theme/YalaTheme.swift",
+        "Yala/App/Theme/ThemeColor.swift",
+        "Yala/App/Views/Settings/ThemeSettingsView.swift"
+      ],
+      "scenarioIDs": [
+        "F-SET-03",
+        "F-SET-04"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-30"
+    },
+    {
+      "area": "transaction-success-view",
+      "codeGlobs": [
+        "Yala/App/Views/Transactions/TransactionSuccessView.swift"
+      ],
+      "scenarioIDs": [
+        "F-TX-07"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "transactions-bulk-edit",
+      "codeGlobs": [
+        "Yala/App/Views/Records/BulkEditSheet.swift",
+        "Yala/App/ViewModels/BulkEditViewModel.swift"
+      ],
+      "scenarioIDs": [
+        "F-TX-04"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/BulkEditUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "transactions-core-crud",
+      "codeGlobs": [
+        "Yala/App/Views/Transactions/NewTransactionView.swift",
+        "Yala/App/Views/Transactions/AccountSelectorSheet.swift",
+        "Yala/App/Views/Transactions/SubcategorySelectorSheet.swift",
+        "Yala/App/Views/Transactions/TagSelectorSheet.swift",
+        "Yala/App/Views/Transactions/TransactionSuccessView.swift",
+        "Yala/App/Views/Records/RecordsStandaloneView.swift"
+      ],
+      "scenarioIDs": [
+        "F-TX-01",
+        "F-TX-02"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/TransactionsCrudUITests",
+      "owner": "",
+      "lastVerified": "2026-06-10"
+    },
+    {
       "area": "transactions-import-transfers",
       "codeGlobs": [
         "Yala/App/Views/Import/**",
@@ -1770,6 +1770,70 @@
       "coverage": "manual",
       "owner": "",
       "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "transactions-quick-actions-favorites",
+      "codeGlobs": [
+        "Yala/App/Views/Transactions/NewTransactionView.swift",
+        "Yala/App/Views/Transactions/SaveAsFavoriteSheet.swift",
+        "Yala/App/Views/Transactions/DescriptionAutocomplete.swift"
+      ],
+      "scenarioIDs": [
+        "F-TX-02",
+        "F-TX-03"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/QuickActionsFavoritesUITests",
+      "owner": "",
+      "lastVerified": "2026-06-01"
+    },
+    {
+      "area": "trend-previous-period-alignment",
+      "codeGlobs": [
+        "Yala/App/Logic/Helpers/DateAlignmentHelper.swift",
+        "Yala/App/Logic/Calculators/InsightsCalculator.swift",
+        "Yala/App/Views/Statistics/PeriodComparisonChartView.swift",
+        "Yala/App/Views/Statistics/TrendsTabView.swift",
+        "Yala/App/ViewModels/PanelViewModel.swift"
+      ],
+      "scenarioIDs": [
+        "F-STA-03"
+      ],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/DateAlignmentHelperTests (KPI del período anterior == último punto VISIBLE de la curva anterior, MTD-vs-MTD; guard de coherencia + trunca/no-op/bordes; y `alignedPreviousInterval` del hero: trunca .thisMonth+month / no-op resto/edge mes corto). manual: device visual card Comparativa (Tendencias) + widget comparación (Panel) — badge/KPI/curva coherentes en período en curso, modos P-1/A-1. D2 (hero de Tendencias/Insights: variaciones balance/ingreso/gasto/prom-diario alineadas a MTD vía InsightsCalculator) — unit cubierto; device-QA del hero pendiente. Grupo B (VariationChips categoría/subcat/tags/necesidad/cashflow del Panel) HECHO (fase 2, ticket p20-15): previo truncado MTD vía DateAlignmentHelper.alignedPreviousItems (SOLO .thisMonth — .thisWeek/rodantes/cerrados/YTD ya simétricos; PanelViewModel.alignedPreviousTransactions centraliza el pre-filtro + corte por natures que coincide con cada calculadora, gasto-only salvo cashflow) truncando previousTransactions antes de cada calculadora; unit cubierto (gate aggregatePreviousNeedsAlignment solo-thisMonth + trunca thisMonth + no-op thisWeek/cerrados/rodantes + bordes mes corto/actual vacío/borde domingo dayOfWeek). /code-review high (37 agentes) cazó y corrigió: .thisWeek NO debe alinearse (previo trailing) y el corte debe ser nature-aware. Residual documentado: Tags no filtra 'tiene tag' en el corte; scrub (focusedDate) preexistente. device-QA visual pendiente.",
+      "owner": "",
+      "lastVerified": "2026-07-06"
+    },
+    {
+      "area": "update-available-banner",
+      "codeGlobs": [
+        "Yala/App/Services/AppUpdateService.swift",
+        "Yala/App/Views/Shared/UpdateAvailableBanner.swift",
+        "Yala/App/Views/Panel/PanelView.swift"
+      ],
+      "scenarioIDs": [
+        "F-PRO-04"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/UpdateAvailableBannerUITests",
+      "owner": "",
+      "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "voice-input-currency-examples",
+      "codeGlobs": [
+        "Yala/App/Views/Voice/VoiceRecordingView.swift",
+        "Yala/Services/VoiceTranscriptionService.swift",
+        "Yala/Utils/CurrencyUtils.swift"
+      ],
+      "scenarioIDs": [
+        "F-VIM-02",
+        "F-VIM-07"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/VoiceInputCurrencyExamplesUITests",
+      "owner": "",
+      "lastVerified": "2026-06-02"
     },
     {
       "area": "voice-recording-capture",
@@ -1786,6 +1850,45 @@
       "coverage": "manual",
       "owner": "",
       "lastVerified": "2026-06-02"
+    },
+    {
+      "area": "voice-settings-fab",
+      "codeGlobs": [
+        "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
+        "Yala/App/Views/Profile/ProfileView.swift",
+        "Yala/App/Views/Shared/FABStackView.swift",
+        "Yala/App/Views/Panel/PanelView.swift",
+        "Yala/App/Views/Statistics/DetailContainerView.swift"
+      ],
+      "scenarioIDs": [
+        "F-VIM-01"
+      ],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/VoiceImageSettingsFabUITests",
+      "owner": "",
+      "lastVerified": "2026-06-03"
+    },
+    {
+      "area": "welcome-flow-visual",
+      "codeGlobs": [
+        "Yala/App/Views/Onboarding/WelcomeFlowContainer.swift",
+        "Yala/App/Views/Onboarding/WelcomeHeroView.swift",
+        "Yala/App/Views/Onboarding/WelcomeChooserView.swift",
+        "Yala/App/Views/Onboarding/WelcomeRestoreView.swift",
+        "Yala/App/Views/Onboarding/InviteRecoveryView.swift"
+      ],
+      "scenarioIDs": [
+        "F-WEL-01",
+        "F-WEL-02",
+        "F-WEL-03",
+        "F-WEL-04",
+        "F-WEL-05",
+        "F-WEL-06"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-01"
     },
     {
       "area": "welcome-universal-link-icloud",
@@ -1809,6 +1912,20 @@
       "lastVerified": "2026-06-02"
     },
     {
+      "area": "whats-new-sheet",
+      "codeGlobs": [
+        "Yala/App/Views/WhatsNew/WhatsNewSheet.swift",
+        "Yala/App/Views/WhatsNew/WhatsNewConfig.swift"
+      ],
+      "scenarioIDs": [
+        "F-PRO-05"
+      ],
+      "classification": "agentic",
+      "coverage": "device-qa",
+      "owner": "",
+      "lastVerified": "2026-06-10"
+    },
+    {
       "area": "widgets-widgetkit",
       "codeGlobs": [
         "YalaWidgets/Widgets/**",
@@ -1827,125 +1944,20 @@
       "lastVerified": "2026-06-01"
     },
     {
-      "area": "records-duplicate-detection",
+      "area": "yala-ai-onboarding",
       "codeGlobs": [
-        "Yala/App/Logic/RecordsDuplicateLogic.swift",
-        "Yala/App/Views/Records/Components/RecordsOverflowMenu.swift",
-        "Yala/App/ViewModels/RecordsViewModel.swift",
-        "Yala/App/Views/Statistics/RecordsTabView.swift"
+        "Yala/App/Views/Chat/Onboarding/YalaAIOnboardingView.swift",
+        "Yala/App/Logic/YalaAIOnboardingLogic.swift",
+        "Yala/App/Views/Chat/ChatSheetView.swift",
+        "Yala/App/Views/Chat/AIPersonalizationSheet.swift"
       ],
       "scenarioIDs": [
-        "F-DUP-01",
-        "F-DUP-02",
-        "F-DUP-03"
+        "F-WEL-04"
       ],
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-06-16"
-    },
-    {
-      "area": "more-dashboard-icons",
-      "codeGlobs": [
-        "Yala/App/Views/More/**"
-      ],
-      "scenarioIDs": [],
-      "classification": "agentic",
-      "coverage": "device-qa + unit:YalaTests/YalaThemeColorfulIconsTests (forcesMonochromeIcons/effectiveColorfulIcons) + xcuitest:YalaUITests/PersonalizationColorfulIconsUITests (toggle alterna)",
-      "owner": "",
-      "lastVerified": "2026-07-06"
-    },
-    {
-      "area": "group-scheduled-payments",
-      "codeGlobs": [
-        "Yala/App/Logic/SplitConfigCodec.swift",
-        "Yala/App/Logic/GroupScheduledPaymentGate.swift",
-        "Yala/Models/ScheduledPayment+SplitCSVMirror.swift"
-      ],
-      "scenarioIDs": [
-        "F-GSP-01",
-        "F-GSP-02",
-        "F-GSP-03",
-        "F-GSP-04"
-      ],
-      "classification": "agentic",
-      "coverage": "device-qa + unit:YalaTests/ScheduledPaymentGroupSaveTests (savePayment grupo mi-parte/total + createDraft gate)",
-      "owner": "",
-      "lastVerified": ""
-    },
-    {
-      "area": "inbox-convert-to-group",
-      "codeGlobs": [
-        "Yala/App/Logic/DraftConversionEligibilityLogic.swift",
-        "Yala/App/Logic/DraftToGroupExpenseTemplateLogic.swift"
-      ],
-      "scenarioIDs": [
-        "F-INB-05",
-        "F-INB-06"
-      ],
-      "classification": "manual",
-      "coverage": "unit:YalaTests/DraftConversionEligibilityLogicTests,YalaTests/DraftToGroupExpenseTemplateLogicTests + manual (e2e bridge/sync device/TestFlight) + unit:YalaTests/DraftServiceHandleConvertTests (borrado del draft al convertir)",
-      "owner": "",
-      "lastVerified": ""
-    },
-    {
-      "area": "income-expense-classification-parity",
-      "codeGlobs": [
-        "Yala/App/Logic/TransactionClassificationLogic.swift",
-        "Yala/App/ViewModels/RecordsViewModel.swift",
-        "Yala/Services/TrendDataProcessor.swift",
-        "Yala/App/ViewModels/StatisticsViewModel.swift",
-        "Yala/Services/ReportNotificationService.swift",
-        "Yala/App/Logic/Helpers/TrendProcessingHelper.swift"
-      ],
-      "scenarioIDs": [],
-      "classification": "manual",
-      "coverage": "unit:YalaTests/TransactionClassificationLogicTests + TrendDataProcessorTests (reembolso/KPI==curva/invariante/yDomain negativo) + ReportNotificationServiceTests (accumulateReportTotals/empty-check por actividad) + CashFlowCalculatorTests (reembolso) + TrendProcessingTests (yDomain incluye curva .expense negativa) + xcuitest:YalaUITests/IncomeExpenseClassificationUITests (discriminante e2e: seed -uitest-seed-desync con income-cat monto negativo + expense-cat monto positivo → cifras de Insights clasifican por CATEGORÍA [500/300], no por signo [800/600]). manual: Fase 1 device OK (header Records/RecordsStandalone == CashFlow). Fase 2 (p20-14) device visual de curvas de Tendencias + hero==KPI-chart en periodo con reembolso PENDIENTE.",
-      "owner": "",
-      "lastVerified": "2026-07-07"
-    },
-    {
-      "area": "trend-previous-period-alignment",
-      "codeGlobs": [
-        "Yala/App/Logic/Helpers/DateAlignmentHelper.swift",
-        "Yala/App/Logic/Calculators/InsightsCalculator.swift",
-        "Yala/App/Views/Statistics/PeriodComparisonChartView.swift",
-        "Yala/App/Views/Statistics/TrendsTabView.swift",
-        "Yala/App/ViewModels/PanelViewModel.swift"
-      ],
-      "scenarioIDs": [
-        "F-STA-03"
-      ],
-      "classification": "manual",
-      "coverage": "unit:YalaTests/DateAlignmentHelperTests (KPI del período anterior == último punto VISIBLE de la curva anterior, MTD-vs-MTD; guard de coherencia + trunca/no-op/bordes; y `alignedPreviousInterval` del hero: trunca .thisMonth+month / no-op resto/edge mes corto). manual: device visual card Comparativa (Tendencias) + widget comparación (Panel) — badge/KPI/curva coherentes en período en curso, modos P-1/A-1. D2 (hero de Tendencias/Insights: variaciones balance/ingreso/gasto/prom-diario alineadas a MTD vía InsightsCalculator) — unit cubierto; device-QA del hero pendiente. Grupo B (VariationChips categoría/subcat/tags/necesidad/cashflow del Panel) HECHO (fase 2, ticket p20-15): previo truncado MTD vía DateAlignmentHelper.alignedPreviousItems (SOLO .thisMonth — .thisWeek/rodantes/cerrados/YTD ya simétricos; PanelViewModel.alignedPreviousTransactions centraliza el pre-filtro + corte por natures que coincide con cada calculadora, gasto-only salvo cashflow) truncando previousTransactions antes de cada calculadora; unit cubierto (gate aggregatePreviousNeedsAlignment solo-thisMonth + trunca thisMonth + no-op thisWeek/cerrados/rodantes + bordes mes corto/actual vacío/borde domingo dayOfWeek). /code-review high (37 agentes) cazó y corrigió: .thisWeek NO debe alinearse (previo trailing) y el corte debe ser nature-aware. Residual documentado: Tags no filtra 'tiene tag' en el corte; scrub (focusedDate) preexistente. device-QA visual pendiente.",
-      "owner": "",
-      "lastVerified": "2026-07-06"
-    },
-    {
-      "area": "date-period-intervals",
-      "codeGlobs": [
-        "Yala/App/Models/SharedModels.swift",
-        "Yala/App/Logic/Helpers/PreviousPeriodHelper.swift",
-        "Yala/App/Logic/Helpers/DateAlignmentHelper.swift"
-      ],
-      "scenarioIDs": [],
-      "classification": "manual",
-      "coverage": "unit:YalaTests/DetailPeriodDateIntervalTests,DetailPeriodDateIntervalMoreTests,WidgetDataServiceIntervalTests,PreviousPeriodHelperTests (boundary de medianoche del SSOT DetailPeriod.dateInterval + paridad con el mirror del widget vía réplica; el widget WidgetDataService.dateInterval vive en el target YalaWidgetsExtension, no importable → réplica cruzada vs SSOT). manual: el mirror real del widget se valida por device.",
-      "owner": "",
-      "lastVerified": "2026-07-06"
-    },
-    {
-      "area": "onboarding-groups-only",
-      "codeGlobs": [
-        "Yala/App/Views/Onboarding/OnboardingView.swift",
-        "Yala/App/Logic/OnboardingStepPlan.swift",
-        "Yala/App/Logic/OnboardingNextEnablement.swift"
-      ],
-      "scenarioIDs": [],
-      "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/OnboardingGroupsOnlyGuardUITests (paso Propósito ofrece la card; guard iCloud al elegirla sin cuenta; Y happy-path e2e con -uitest-fake-icloud: card → paso moneda → botón Continuar HABILITADO → completa → landing en tab Grupos, regresión del botón muerto fix 2.0.5); unit:YalaTests/OnboardingStepPlanTests (skip de steps groupsOnly); unit:YalaTests/OnboardingNextEnablementTests (habilitación del botón Continuar por paso). El happy-path e2e ya NO es device/TestFlight: el launch arg -uitest-fake-icloud fuerza isAccountAvailable en sim (crear grupo/CKShare real siguen siendo TestFlight).",
-      "owner": "",
-      "lastVerified": "2026-07-07"
+      "lastVerified": "2026-06-01"
     }
   ]
 }
