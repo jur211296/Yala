@@ -51,12 +51,16 @@ nonisolated enum CloudSyncFlags {
     /// migración) llega en I10/I14. `var` para que los tests ejerciten el enrutado `.cloud`.
     static var storageMode: StorageMode = .icloud
 
-    /// SUB-flag de la purga de SwiftData History tras un ciclo completo del runtime (DOBLE-DARK: exige
-    /// además `syncRuntimeEnabled`). `false` hasta el veredicto del spike device S2: en `.icloud` el
-    /// mirror personal de NSPersistentCloudKitContainer TAMBIÉN consume el History del container — una
-    /// purga agresiva puede invalidar SU token y forzar un re-import completo (§i.6: purga
-    /// conservadora). El corte de `purgeHistoryOnce` ya es conservador (`deleteHistorySafeCut`: nunca
-    /// por delante de la fila outbox sin-2xx más vieja), pero el riesgo del token AJENO solo se
-    /// resuelve en device. `var` solo para tests (`defer { restore }`).
-    static var historyPurgeEnabled = false
+    /// SUB-flag de la purga de SwiftData History tras un ciclo completo del runtime (sigue DOBLE-DARK:
+    /// exige además `syncRuntimeEnabled`, hoy `false` → la purga NO corre en producción todavía).
+    /// `true` desde el veredicto del spike device S2 (owner, 2026-07-08, iPhone real con datos +
+    /// grupo activo): una purga de 6284 transacciones de History inmediatamente después de un import
+    /// inicial completo NO invalidó el token del mirror personal de NSPersistentCloudKitContainer
+    /// (export incremental limpio post-purga, cero re-import) NI afectó al CKSyncEngine de Grupos
+    /// (round-trip de systemFields aceptado post-purga; CKSyncEngine no consume History — es
+    /// storage-agnóstico, los records se los damos a mano). Veredicto completo en
+    /// MODO-NUBE-SPIKES-I0 §S2 (matiz: verificado single-device + análisis de código). El corte de
+    /// `purgeHistoryOnce` sigue siendo conservador (`deleteHistorySafeCut`: nunca por delante de la
+    /// fila outbox sin-2xx más vieja). `var` solo para tests (`defer { restore }`).
+    static var historyPurgeEnabled = true
 }
