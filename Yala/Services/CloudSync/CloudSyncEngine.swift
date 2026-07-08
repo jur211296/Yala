@@ -65,6 +65,17 @@ enum CloudSyncBreadcrumb {
     static func historyTokenExpired() {
         logger.notice("CloudSync historyTokenExpired — reconcile (full rescan)")
     }
+
+    /// RED (I8c): el emisor produjo un grupo de coherencia incompleto tras la expansión. No debe ocurrir.
+    static func coherenceGroupPartial(entity: String, group: String) {
+        logger.notice("CloudSyncCoherenceGroupPartial \(entity, privacy: .public) group=\(group, privacy: .public)")
+    }
+
+    /// RED (I8c): el codec c1 rechazó los `fields` de una fila (número no-finito / fuera de rango / blob
+    /// malformado). La fila se DESCARTA (no se puede serializar canónicamente) — canario del codec.
+    static func encodeRejected(entity: String, reason: String) {
+        logger.notice("CloudSyncEncodeRejected \(entity, privacy: .public) reason=\(reason, privacy: .public)")
+    }
 }
 
 // MARK: - CloudSyncEngine
@@ -337,32 +348,32 @@ final class CloudSyncEngine {
         switch entityName {
         case SyncEntityType.transactionItem:
             try translateChange(change, type: TransactionItem.self, entityType: entityName,
-                                syncIDKeyPath: \.syncID, insertFields: Self.transactionItemFields,
+                                syncIDKeyPath: \.syncID, emission: EntityEmissionMap.transactionItem,
                                 lookup: lookups.transactionItem, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.inboxDraft:
             try translateChange(change, type: InboxDraft.self, entityType: entityName,
-                                syncIDKeyPath: \.syncID, insertFields: Self.inboxDraftFields,
+                                syncIDKeyPath: \.syncID, emission: EntityEmissionMap.inboxDraft,
                                 lookup: lookups.inboxDraft, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.category:
             try translateChange(change, type: Category.self, entityType: entityName,
-                                syncIDKeyPath: \.syncID, insertFields: Self.categoryFields,
+                                syncIDKeyPath: \.syncID, emission: EntityEmissionMap.category,
                                 lookup: lookups.category, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.favoritePayment:
             try translateChange(change, type: FavoritePayment.self, entityType: entityName,
-                                syncIDKeyPath: \.syncID, insertFields: Self.favoritePaymentFields,
+                                syncIDKeyPath: \.syncID, emission: EntityEmissionMap.favoritePayment,
                                 lookup: lookups.favoritePayment, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.merchantMemory:
             try translateChange(change, type: MerchantMemory.self, entityType: entityName,
-                                syncIDKeyPath: \.syncID, insertFields: Self.merchantMemoryFields,
+                                syncIDKeyPath: \.syncID, emission: EntityEmissionMap.merchantMemory,
                                 lookup: lookups.merchantMemory, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.exchangeRate:
             try translateChange(change, type: ExchangeRate.self, entityType: entityName,
-                                syncIDKeyPath: \.syncID, insertFields: Self.exchangeRateFields,
+                                syncIDKeyPath: \.syncID, emission: EntityEmissionMap.exchangeRate,
                                 lookup: lookups.exchangeRate, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         default:
@@ -371,13 +382,14 @@ final class CloudSyncEngine {
         }
     }
 
-    /// Traduce UN cambio de un tipo concreto `T` a (a lo sumo) una fila de outbox.
+    /// Traduce UN cambio de un tipo concreto `T` a (a lo sumo) una fila de outbox. El payload de dominio
+    /// (`fields` + `field_hlcs`) lo produce `DeltaEmitter` (proyección `EntityEmissionMap` + codec c1).
     private func translateChange<T: PersistentModel & SyncIdentifiable>(
         _ change: HistoryChange,
         type: T.Type,
         entityType: String,
         syncIDKeyPath: KeyPath<T, UUID?>,
-        insertFields: (T) -> [String: String],
+        emission: EntityEmission<T>,
         lookup: [PersistentIdentifier: T],
         tx: DefaultHistoryTransaction,
         tombstoneReason: SyncTombstoneReason,
@@ -390,29 +402,27 @@ final class CloudSyncEngine {
             guard insert is DefaultHistoryInsert<T> else { return }
             guard let model = lookup[insert.changedPersistentIdentifier] else { return }  // borrada → skip
             guard let syncID = model[keyPath: syncIDKeyPath] else { return }  // sin identidad → skip
-            let fields = insertFields(model)  // colección estable (NUNCA incluye syncID)
-            guard !fields.isEmpty else { return }
-            try appendRow(op: .upsert, syncID: syncID, entityType: entityType,
-                          fields: fields, tx: tx, rows: &rows, seen: &seen)
+            // INSERT = proyección COMPLETA de dominio (todas las columnas). Todas las unidades reciben
+            // el HLC de la transacción. Los grupos de coherencia viajan enteros por construcción.
+            try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,
+                             changedColumns: emission.columns, tx: tx, rows: &rows, seen: &seen)
 
         case .update(let update):
             guard let typed = update as? DefaultHistoryUpdate<T> else { return }
             guard let model = lookup[typed.changedPersistentIdentifier] else { return }
             guard let syncID = model[keyPath: syncIDKeyPath] else { return }
-            // Propiedades cambiadas EXCLUYENDO syncID (es la PK del upsert, no columna de dominio).
-            let syncIDPartial = syncIDKeyPath as PartialKeyPath<T>
-            let changedKeyPaths = typed.updatedAttributes.filter { ($0 as PartialKeyPath<T>) != syncIDPartial }
-            // Si solo cambió syncID (p.ej. el barrido lo acuñó) → set vacío → SKIP (no crear fila).
-            guard !changedKeyPaths.isEmpty else { return }
-            var fields: [String: String] = [:]
-            for keyPath in changedKeyPaths {
-                let partial = keyPath as PartialKeyPath<T>
-                // STUB (I8 → codec c1): nombre best-effort del keypath + descripción del valor actual.
-                fields[String(describing: partial)] = String(describing: model[keyPath: partial])
+            // PATCH parcial: mapea los keypaths cambiados a columnas Postgres. `syncID` NO está en el
+            // mapa (es la PK) → si SOLO cambió syncID (p.ej. el barrido lo acuñó) el set queda vacío →
+            // SKIP. Los keypaths sin mapeo (relaciones no-columna, internos) se ignoran.
+            var changedColumns: Set<String> = []
+            for keyPath in typed.updatedAttributes {
+                if let columns = emission.columnKeyPaths[keyPath as PartialKeyPath<T>] {
+                    changedColumns.formUnion(columns)
+                }
             }
-            guard !fields.isEmpty else { return }
-            try appendRow(op: .upsert, syncID: syncID, entityType: entityType,
-                          fields: fields, tx: tx, rows: &rows, seen: &seen)
+            guard !changedColumns.isEmpty else { return }
+            try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,
+                             changedColumns: changedColumns, tx: tx, rows: &rows, seen: &seen)
 
         case .delete(let delete):
             guard let typed = delete as? DefaultHistoryDelete<T> else { return }
@@ -423,8 +433,9 @@ final class CloudSyncEngine {
             }
             // Tombstone (I4): op + syncID + `reason` clasificado drain-side (§c.1), sin payload de campos.
             try appendRow(op: .tombstone, syncID: syncID, entityType: entityType,
-                          fields: [:], tombstoneReason: tombstoneReason,
-                          tx: tx, rows: &rows, seen: &seen)
+                          tombstoneReason: tombstoneReason, tx: tx, rows: &rows, seen: &seen) { _ in
+                ("{}", nil)  // tombstone: sin fields ni field_hlcs
+            }
 
         @unknown default:
             // `HistoryChange` puede ganar casos nuevos (Swift 6): ignorar defensivamente.
@@ -432,18 +443,51 @@ final class CloudSyncEngine {
         }
     }
 
+    /// Emite una fila `upsert`: acuña el HLC, arma el delta (`DeltaEmitter`) y lo serializa por el codec
+    /// c1. Si el codec rechaza los `fields` (número no-finito / fuera de rango / blob malformado) la fila
+    /// se DESCARTA con canario (no puede viajar canónicamente) — no aborta el resto de la transacción.
+    private func appendUpsert<T: AnyObject>(
+        model: T,
+        emission: EntityEmission<T>,
+        syncID: UUID,
+        entityType: String,
+        changedColumns: Set<String>,
+        tx: DefaultHistoryTransaction,
+        rows: inout [PendingOutboxRow],
+        seen: inout Set<String>
+    ) throws {
+        try appendRow(op: .upsert, syncID: syncID, entityType: entityType,
+                      tombstoneReason: nil, tx: tx, rows: &rows, seen: &seen) { hlc in
+            let result = DeltaEmitter.emit(model: model, emission: emission,
+                                           changedColumns: changedColumns, hlc: hlc)
+            let fieldsJSON: String
+            do {
+                fieldsJSON = try Canonc1Codec.encode(result.fields)
+            } catch {
+                #if DEBUG
+                print("CloudSyncEngine: codec c1 rechazó \(entityType): \(error)")
+                #endif
+                CloudSyncBreadcrumb.encodeRejected(entity: entityType, reason: "\(error)")
+                return nil  // fila descartada (clock ya avanzó → lockstep preservado)
+            }
+            return (fieldsJSON, encodeFieldHlcs(result.fieldHlcs))
+        }
+    }
+
     /// Acuña el HLC (ÚNICO punto que llama `clock.send` → advance determinista y en orden), deduplica
-    /// por (syncID, hlc, op) y encola una fila pendiente. `clock.send` puede lanzar `ClockDriftError`
-    /// → se propaga al llamador (criterio de drift del drain).
+    /// por (syncID, hlc, op) y encola una fila pendiente. `makePayload(hlc)` construye
+    /// `(fieldsJSON, fieldHlcsJSON)`; si devuelve `nil` la fila se descarta SIN deshacer el advance del
+    /// reloj (lockstep de resumibilidad intacto). `clock.send` puede lanzar `ClockDriftError` → se
+    /// propaga al llamador (criterio de drift del drain).
     private func appendRow(
         op: SyncOutboxOp,
         syncID: UUID,
         entityType: String,
-        fields: [String: String],
-        tombstoneReason: SyncTombstoneReason? = nil,
+        tombstoneReason: SyncTombstoneReason?,
         tx: DefaultHistoryTransaction,
         rows: inout [PendingOutboxRow],
-        seen: inout Set<String>
+        seen: inout Set<String>,
+        makePayload: (String) -> (fieldsJSON: String, fieldHlcsJSON: String?)?
     ) throws {
         // Advance del reloj: SIEMPRE tras pasar los guards estructurales y ANTES del dedup, de modo que
         // dos instancias frescas procesando el mismo History avanzan el reloj en lockstep → HLCs
@@ -452,12 +496,14 @@ final class CloudSyncEngine {
         let key = dedupKey(syncID: syncID, hlc: hlc, op: op)
         guard !seen.contains(key) else { return }
         seen.insert(key)
+        guard let payload = makePayload(hlc) else { return }  // codec rechazó → fila descartada
         rows.append(PendingOutboxRow(
             syncID: syncID,
             entityType: entityType,
             op: op,
             hlc: hlc,
-            fieldsJSON: encodeFields(fields),
+            fieldsJSON: payload.fieldsJSON,
+            fieldHlcsJSON: payload.fieldHlcsJSON,
             author: tx.author ?? "",
             // Solo los tombstones llevan reason (upsert → nil). Defensivo: aunque el llamador pasara un
             // reason con op:upsert, se descarta (el reason es semántica exclusiva del tombstone).
@@ -582,63 +628,21 @@ final class CloudSyncEngine {
         "\(syncID.uuidString)\u{1}\(hlc)\u{1}\(op.rawValue)"
     }
 
-    /// STUB (I8 → codec canónico c1): JSON `{prop: descripción}` con claves ordenadas (determinista).
-    private func encodeFields(_ fields: [String: String]) -> String {
-        guard !fields.isEmpty else { return "{}" }
+    /// Serializa el `field_hlcs` (mapa unidad-de-coherencia → HLC) como JSON plano `{unit:hlc}` con
+    /// claves ordenadas (determinista). Vacío → `"{}"` (no ocurre en upserts: siempre hay ≥1 unidad).
+    private func encodeFieldHlcs(_ fieldHlcs: [String: String]) -> String {
+        guard !fieldHlcs.isEmpty else { return "{}" }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
         do {
-            let data = try encoder.encode(fields)
+            let data = try encoder.encode(fieldHlcs)
             return String(decoding: data, as: UTF8.self)
         } catch {
             #if DEBUG
-            print("CloudSyncEngine: encodeFields error: \(error)")
+            print("CloudSyncEngine: encodeFieldHlcs error: \(error)")
             #endif
             return "{}"
         }
-    }
-
-    // MARK: - Colecciones de campos por tipo (STUB de inserts)
-    //
-    // Colección ESTABLE de campos de dominio por entidad (equivalente al `updatedAttributes` que un
-    // update sí trae). NUNCA incluye `syncID`. Garantiza ≥1 clave → un insert siempre produce una
-    // fila (salvo que el modelo ya no exista o no tenga identidad). I8 lo reemplaza por el codec c1.
-
-    private static func transactionItemFields(_ m: TransactionItem) -> [String: String] {
-        [
-            "amount": String(describing: m.amount),
-            "currencyCode": m.currencyCode,
-            "date": SyncContentAnchor.canonicalDate(m.date),
-        ]
-    }
-
-    private static func inboxDraftFields(_ m: InboxDraft) -> [String: String] {
-        [
-            "sourceTypeRaw": m.sourceTypeRaw,
-            "rawText": m.rawText ?? "",
-        ]
-    }
-
-    private static func categoryFields(_ m: Category) -> [String: String] {
-        ["name": m.name]
-    }
-
-    private static func favoritePaymentFields(_ m: FavoritePayment) -> [String: String] {
-        [
-            "name": m.name,
-            "amount": String(describing: m.amount),
-        ]
-    }
-
-    private static func merchantMemoryFields(_ m: MerchantMemory) -> [String: String] {
-        ["merchantCanonical": m.merchantCanonical]
-    }
-
-    private static func exchangeRateFields(_ m: ExchangeRate) -> [String: String] {
-        [
-            "dateKey": m.dateKey,
-            "base": m.base,
-        ]
     }
 }
 
@@ -652,6 +656,7 @@ private struct PendingOutboxRow {
     let op: SyncOutboxOp
     let hlc: String
     let fieldsJSON: String
+    let fieldHlcsJSON: String?
     let author: String
     let tombstoneReason: String?
 
@@ -663,6 +668,7 @@ private struct PendingOutboxRow {
             op: op,
             hlc: hlc,
             fieldsJSON: fieldsJSON,
+            fieldHlcsJSON: fieldHlcsJSON,
             author: author,
             tombstoneReason: tombstoneReason
         )

@@ -14,9 +14,11 @@
 //  = reenviar la misma fila con su HLC fijo; regenerarlo rompería el orden total / la deduplicación
 //  aguas abajo. Por eso el HLC es la fuente de verdad temporal de la operación, no `createdAt`.
 //
-//  `fieldsJSON` es HOY un STUB estructurado (ver `CloudSyncEngine`): un JSON `{prop: descripción}`
-//  de las propiedades cambiadas, SIN `syncID` (es la PK del upsert, no una columna de dominio). I8 lo
-//  reemplaza por el codec canónico c1.
+//  `fieldsJSON` es el `fields` del delta serializado por el codec canónico c1 (I8a) — dominio limpio,
+//  PATCH parcial, SIN `syncID` (es la PK del upsert, no columna de dominio). `fieldHlcsJSON` es el
+//  `field_hlcs` (mapa unidad-de-coherencia → HLC, §d.4bis) como JSON plano `{unit:hlc}`. Ambos van
+//  vacíos/`nil` en filas `tombstone` (el borrado no lleva payload de campos). I8c los produce vía
+//  `DeltaEmitter` + `Canonc1Codec`.
 //
 
 import Foundation
@@ -53,7 +55,8 @@ nonisolated enum SyncTombstoneReason: String {
 
 extension CloudSyncSchemaVersions {
     /// Versión de schema de `SyncOutbox` (testigo A1 en cada fila). v2 (I4): añade `tombstoneReason`.
-    static let syncOutbox = 2
+    /// v3 (I8c): añade `fieldHlcsJSON` (el `field_hlcs` por-unidad, additive).
+    static let syncOutbox = 3
 }
 
 /// Fila de la cola de salida. Una por operación de dominio pendiente de sincronizar.
@@ -76,8 +79,13 @@ final class SyncOutbox {
     /// Identidad única de esta mutación concreta (idempotencia end-to-end en el backend; I8).
     var clientMutationID: UUID = UUID()
 
-    /// Payload de campos. HOY STUB (`{prop: descripción}` sin `syncID`); I8 → codec canónico c1.
+    /// Payload de campos: el `fields` del delta (dominio limpio, PATCH parcial) serializado por el codec
+    /// canónico c1. `"{}"` en filas `tombstone`.
     var fieldsJSON: String = ""
+
+    /// `field_hlcs` del delta: JSON plano `{unit:hlc}` (unidad de coherencia → HLC, §d.4bis). `nil` en
+    /// filas `tombstone` (el árbitro es `hlc`/`deleted_hlc`). Additive (v3).
+    var fieldHlcsJSON: String?
 
     /// Razón del tombstone (`SyncTombstoneReason.rawValue`) — `nil` en filas `upsert`. Metadata de
     /// auditoría: el backend no ramifica sobre ella (aplica `deleted=true` igual). Additive (v2).
@@ -101,6 +109,7 @@ final class SyncOutbox {
         hlc: String,
         clientMutationID: UUID = UUID(),
         fieldsJSON: String,
+        fieldHlcsJSON: String? = nil,
         author: String,
         tombstoneReason: String? = nil,
         createdAt: Date = .now,
@@ -112,6 +121,7 @@ final class SyncOutbox {
         self.hlc = hlc
         self.clientMutationID = clientMutationID
         self.fieldsJSON = fieldsJSON
+        self.fieldHlcsJSON = fieldHlcsJSON
         self.author = author
         self.tombstoneReason = tombstoneReason
         self.createdAt = createdAt

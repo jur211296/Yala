@@ -324,11 +324,13 @@
       "codeGlobs": [
         "Yala/Services/CloudSync/CloudSyncEngine.swift",
         "Yala/Services/CloudSync/SyncOutbox.swift",
-        "Yala/Services/CloudSync/SyncCursor.swift"
+        "Yala/Services/CloudSync/SyncCursor.swift",
+        "Yala/Services/CloudSync/EntityEmissionMap.swift",
+        "Yala/Services/CloudSync/DeltaEmitter.swift"
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/CloudSyncEngineTests + unit:YalaTests/CloudSyncTombstoneTests + unit:YalaTests/CloudSyncSchemaParityTests — captura write→drain (History → outbox) + clasificación de reason de tombstone (I4: user/cascade/dedup/migration/wipe, drain-side). DARK (nada lo instancia; wiring en I9/I12), sin superficie UI",
+      "coverage": "unit:YalaTests/CloudSyncEngineTests + unit:YalaTests/CloudSyncTombstoneTests + unit:YalaTests/CloudSyncSchemaParityTests — captura write→drain (History → outbox) + clasificación de reason de tombstone (I4: user/cascade/dedup/migration/wipe, drain-side). DARK (nada lo instancia; wiring en I9/I12), sin superficie UI + DeltaEmitter/EntityEmissionParity (I8c: emisión canon c1 + field_hlcs por-unidad)",
       "owner": "",
       "lastVerified": "2026-07-07"
     },
