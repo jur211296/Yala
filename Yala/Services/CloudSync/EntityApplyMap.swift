@@ -367,6 +367,10 @@ enum EntityApplyMap {
     ) -> T? {
         switch value {
         case .null:
+            // El wire puso el vínculo a NULL → un dangler previo de esta (fila, columna) queda OBSOLETO
+            // y DEBE borrarse (dejarlo re-adjuntaría una relación stale en la re-resolución y el Merkle
+            // usaría un target que el server ya no tiene).
+            if let rowSyncID { clearDangler(rowSyncID: rowSyncID, column: column, context: context) }
             return nil
         case .string(let s):
             guard let id = UUID(uuidString: s) else { return nil }
@@ -377,10 +381,31 @@ enum EntityApplyMap {
                     registerDangler(entityTable: entity, rowSyncID: rowSyncID, column: column,
                                     targetUUID: id, context: context)
                 }
+            } else if let rowSyncID {
+                // Resolvió en caliente → un dangler previo queda obsoleto (higiene simétrica).
+                clearDangler(rowSyncID: rowSyncID, column: column, context: context)
             }
             return resolved
         default:
             return nil
+        }
+    }
+
+    /// Borra el dangler de una (fila, columna) si existe — el wire lo dejó obsoleto (NULL explícito o
+    /// resolución en caliente). No-op si no hay.
+    private static func clearDangler(rowSyncID: UUID, column: String, context: ModelContext) {
+        do {
+            var d = FetchDescriptor<SyncDanglingRef>(
+                predicate: #Predicate { $0.rowSyncID == rowSyncID && $0.column == column }
+            )
+            d.fetchLimit = 1
+            if let existing = try context.fetch(d).first {
+                context.delete(existing)
+            }
+        } catch {
+            #if DEBUG
+            print("EntityApplyMap.clearDangler error: \(error)")
+            #endif
         }
     }
 
@@ -492,6 +517,13 @@ enum EntityApplyMap {
     }
 
     // MARK: - Dispatch tabla → EntityApply (invierte EntityEmissionMap.table(forClass:))
+
+    /// Las 6 tablas cableadas al apply (las que el cliente MATERIALIZA en v1). Consumidas también por
+    /// la verificación Merkle (I8f-3, regla 5: solo estos entityHash se comparan).
+    static var wiredTables: Set<String> {
+        [transactionItem.table, inboxDraft.table, category.table,
+         favoritePayment.table, merchantMemory.table, exchangeRate.table]
+    }
 
     /// `true` si la tabla está cableada al apply (una de las 6). El apply consulta esto para decidir
     /// materializar vs cuarentenar; el dispatch concreto por tipo lo hace `SyncApplyEngine`.

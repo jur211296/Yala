@@ -331,11 +331,16 @@
         "Yala/Services/CloudSync/SyncQuarantine.swift",
         "Yala/Services/CloudSync/SyncDanglingRef.swift",
         "Yala/Services/CloudSync/SyncUnitClock.swift",
-        "Yala/Services/CloudSync/CloudSyncReconciler.swift"
+        "Yala/Services/CloudSync/CloudSyncReconciler.swift",
+        "Yala/Services/CloudSync/SyncMerkle.swift",
+        "Yala/Services/CloudSync/SyncMerkleClient.swift",
+        "gateway/src/sync/canon.ts",
+        "gateway/src/sync/merkle.ts",
+        "merkle_fixtures.json"
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/CloudSync/SyncApplyEngineTests (23: LWW por-unidad vs outbox vivo, anti-laundering D-2 con interleaving real, rollback D-5, born-remote, tombstones, danglers) + SyncPullClientTests (10) + WireValueDecoderTests (10) + SyncQuarantineTests (3) + EntityApplyParityTests (7, paridad emission↔apply) + e2e:YalaTests/CloudSync/CloudSyncE2EStagingTests (round-trip push→pull→apply→edit→converge contra staging real, gateado por YALA_CLOUD_E2E) — motor DARK, wiring en I9 + SyncUnitClockTests (5) + CloudSyncReconcilerTests (9, I8f-2: desempate transfer-pair por field_hlcs['money'] [SERIO 4] + poda split real-gana interina [C3 RED]; review adversarial Opus APROBADO 0 bloqueantes)",
+      "coverage": "unit:YalaTests/CloudSync/SyncApplyEngineTests (23: LWW por-unidad vs outbox vivo, anti-laundering D-2 con interleaving real, rollback D-5, born-remote, tombstones, danglers) + SyncPullClientTests (10) + WireValueDecoderTests (10) + SyncQuarantineTests (3) + EntityApplyParityTests (7, paridad emission↔apply) + e2e:YalaTests/CloudSync/CloudSyncE2EStagingTests (round-trip push→pull→apply→edit→converge contra staging real, gateado por YALA_CLOUD_E2E) — motor DARK, wiring en I9 + SyncUnitClockTests (5) + CloudSyncReconcilerTests (9, I8f-2: desempate transfer-pair por field_hlcs['money'] [SERIO 4] + poda split real-gana interina [C3 RED]; review adversarial Opus APROBADO 0 bloqueantes) + SyncMerkleTests (16, I8f-3: Canal 1 sin hlc, ensamblado A-4 vía merkle_fixtures.json cross-lenguaje, guard quiescencia+dead-letters+contrato c1) + gateway canon.golden.test.ts (54: golden_vectors.json COMPLETO en el 4º codec TS) + merkle.unit.test.ts (8) + e2e merkle staging (gateway + Swift verifyIntegrity sobre store B: 5 tablas convergen, divergencia VERDADERA de tx_items del dataset hand-crafted detectada)",
       "owner": "",
       "lastVerified": "2026-07-08"
     },

@@ -193,5 +193,39 @@ struct CloudSyncE2EStagingTests {
         let echoRows = try contextA.fetch(FetchDescriptor<SyncOutbox>())
             .filter { $0.rejectedReason == nil }
         #expect(echoRows.isEmpty, "el apply de A no debe producir eco en el outbox: \(echoRows.count)")
+
+        // ---------- Merkle (I8f-3): B verifica integridad contra staging ----------
+        // Assert FUERTE de fidelidad del apply I8f-1: B tiene TODA la historia del user de staging
+        // (incl. filas de runs previos) — cualquier decode con pérdida rompe el entityHash de su tabla.
+        // Pull final en B (recoge su propio push — echo idempotente) para satisfacer el guard A-3.
+        let outcomeB2 = await engineB.pullAndApplyOnce(using: pullClientB, context: contextB)
+        guard case .completed = outcomeB2 else {
+            Issue.record("pull final de B no completó: \(outcomeB2)")
+            return
+        }
+        let merkleClient = SyncMerkleClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let verdict = await engineB.verifyIntegrity(using: merkleClient, context: contextB)
+        switch verdict {
+        case .converged:
+            break  // las 6 cableadas convergen byte a byte (las tablas con cuarentena se saltan, regla 5)
+        case .diverged(let entities):
+            // DIVERGENCIA CONOCIDA de ESTE dataset (medida 2026-07-08): el user A de staging arrastra
+            // ~77 tx_items HAND-CRAFTED por los goldens del gateway (pushes parciales pre-I8f: `date`/
+            // `amount`/`currency_code` NULL server-side) que son DOMAIN-INVALID para el cliente (props
+            // non-optional → defaults del init) → el leaf local JAMÁS puede reproducirlas. Es una
+            // divergencia VERDADERA (el cliente NO pudo materializar todo fielmente), no un fallo del
+            // verificador: el canario haciendo exactamente su trabajo contra datos fuera del dominio.
+            // Las refs colgadas (subcategory_ref a targets inexistentes) SÍ convergen vía el override
+            // de SyncDanglingRef. Cualquier OTRA tabla divergente = infidelidad real del apply → falla.
+            // MASKING ACEPTADO (hallazgo 5 del review, decisión owner): la divergencia permanente de
+            // tx_items podría ENMASCARAR una infidelidad real del apply en ESA tabla dentro de este e2e.
+            // Se acepta porque (a) el assert campo-a-campo de NUESTRA fila (arriba: note/amount/money
+            // group verbatim) ya cubre la fidelidad del path fresco, y (b) un assert por count sería
+            // frágil: el dataset de staging CRECE con cada run (sin cleanup por diseño).
+            #expect(entities == ["tx_items"],
+                    "solo tx_items puede divergir (filas parciales hand-crafted de staging): \(entities)")
+        case .skipped(let reason):
+            Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
+        }
     }
 }

@@ -10,6 +10,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import app from "../src/index";
 import type { Env } from "../src/env";
 import { setBreakingColumnsForTest } from "../src/sync/schemaGate";
+import { canonRowC1, merkleColumns } from "../src/sync/canon";
 import type { SyncPushResponse, SyncPullResponse, PrefsPullResponse } from "../src/sync/types";
 
 // Staging (mismo target que qa/cloud/cross-user-rls-test.sh). Anon key + 2 JWTs de usuario; NUNCA service_role.
@@ -390,10 +391,88 @@ describe("I6 goldens · /sync/* contra staging real", () => {
     expect((row?.field_hlcs as Record<string, string>).budget).toBe(h);
   });
 
-  it("merkle: 501 explícito hasta I8 (codec canon c1)", async () => {
-    const res = await app.fetch(new Request("https://gw.local/sync/merkle", { headers: { Authorization: `Bearer ${jwtA}` } }), env);
-    expect(res.status).toBe(501);
-    expect((await res.json()) as unknown).toEqual({ available: false, reason: "merkle_requires_c1_codec" });
+  // Timeout amplio: 2 snapshots Merkle = 2 fan-outs de 16 tablas + un pull completo, contra staging real.
+  it("merkle (I8f-3): el root cambia al pushear y entities.tx_items.hash es reproducible por una referencia independiente del handler", { timeout: 120_000 }, async () => {
+    interface MerkleResponse {
+      canon_version: string;
+      capability_set: string;
+      root: string;
+      entities: Record<string, { count: number; hash: string }>;
+      channel2_root: string;
+    }
+    const merkle = async (): Promise<MerkleResponse> => {
+      const res = await app.fetch(
+        new Request("https://gw.local/sync/merkle", { headers: { Authorization: `Bearer ${jwtA}` } }),
+        env,
+      );
+      expect(res.status).toBe(200);
+      return (await res.json()) as MerkleResponse;
+    };
+
+    const m1 = await merkle();
+    expect(m1.canon_version).toBe("c1");
+    expect(Object.keys(m1.entities).length).toBe(16); // SIEMPRE las 16 (vacías = hash de "")
+
+    // Push de una fila conocida (money group entero + note con no-ASCII).
+    const sid = uuid();
+    const h = hlc(T0 + 9000);
+    const r = await push(jwtA, [
+      {
+        entity_type: "tx_items",
+        sync_id: sid,
+        op: "upsert",
+        fields: { ...money(-42.5, -42.5, 1), note: "merkle café", date: "2026-07-08T12:00:00.000Z" },
+        field_hlcs: { money: h, note: h, date: h },
+        hlc: h,
+      },
+    ]);
+    expect(r.body.results[0].status).toBe("applied");
+
+    const m2 = await merkle();
+    expect(m2.root).not.toBe(m1.root);
+    expect(m2.entities.tx_items.count).toBe(m1.entities.tx_items.count + 1);
+    expect(m2.channel2_root).not.toBe(m1.channel2_root);
+
+    // REFERENCIA INDEPENDIENTE del handler: reconstruye el entityHash de tx_items desde el PULL
+    // (select=* — numéricos como número JSON: ejercita la ruta double del canon) y un ensamblado
+    // sha256 local del test (no importa merkle.ts). Reproducir el hash del endpoint byte a byte
+    // valida el pipeline completo: proyección, exclusiones (deleted, local_day) y orden.
+    const sha = async (b: Uint8Array): Promise<Uint8Array> =>
+      new Uint8Array(await crypto.subtle.digest("SHA-256", b as unknown as ArrayBuffer));
+    const te = new TextEncoder();
+    const utf8Cmp = (a: string, b: string): number => {
+      const x = te.encode(a), y = te.encode(b);
+      const n = Math.min(x.length, y.length);
+      for (let i = 0; i < n; i++) if (x[i] !== y[i]) return x[i] - y[i];
+      return x.length - y.length;
+    };
+    // Pull COMPLETO (páginas hasta agotar): cada fila materializada aparece UNA vez.
+    const txRows: Array<{ sync_id: string; fields: Record<string, unknown>; op: string }> = [];
+    let since = 0;
+    for (;;) {
+      const page = await pull(jwtA, since, 1000);
+      for (const d of page.deltas) {
+        if (d.entity_type === "tx_items") txRows.push({ sync_id: d.sync_id, fields: d.fields, op: d.op });
+      }
+      if (page.deltas.length < 1000) break;
+      since = page.max_server_seq;
+    }
+    const columns = merkleColumns("tx_items", {});
+    const leaves: Array<{ syncId: string; leaf: Uint8Array }> = [];
+    for (const rrow of txRows) {
+      if (rrow.op === "tombstone") continue; // A-2: deleted fuera del Canal 1
+      const syncId = rrow.sync_id.toLowerCase();
+      const payload = canonRowC1("tx_items", rrow.fields, columns);
+      const payloadDigest = await sha(te.encode(payload));
+      const leafInput = new Uint8Array([...te.encode(syncId), ...payloadDigest]);
+      leaves.push({ syncId, leaf: await sha(leafInput) });
+    }
+    expect(leaves.length).toBe(m2.entities.tx_items.count);
+    leaves.sort((a, b) => utf8Cmp(a.syncId, b.syncId));
+    const concat = new Uint8Array(leaves.length * 32);
+    leaves.forEach((l, i) => concat.set(l.leaf, i * 32));
+    const refEntityHash = [...(await sha(concat))].map((b) => b.toString(16).padStart(2, "0")).join("");
+    expect(refEntityHash).toBe(m2.entities.tx_items.hash);
   });
 
   it("auth: sin JWT → 401", async () => {

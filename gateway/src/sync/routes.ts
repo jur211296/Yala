@@ -26,11 +26,14 @@ import {
 import {
   SYNCABLE_ENTITIES,
   isSyncableEntity,
+  manifest,
   nestFieldsByUnit,
   projectRowToDelta,
   resolveCapabilitySet,
   validateUpsertShape,
 } from "./manifest";
+import { CanonError, canonRowC1, merkleColumns } from "./canon";
+import { entityHash, hex, leafChannel1, leafChannel2, merkleRoot } from "./merkle";
 import { checkSchemaGate } from "./schemaGate";
 import type {
   PrefsPullResponse,
@@ -283,10 +286,88 @@ export async function handleSyncPull(c: Ctx): Promise<Response> {
 
 // ------------------------------------------------------------------------------------- /sync/merkle
 
-export function handleSyncMerkle(c: Ctx): Response {
-  // Frontera I6/I8 (§d.7 dos canales): la computación del árbol Merkle llega con el codec canon c1
-  // en I8. Aquí es un 501 explícito y estable.
-  return c.json({ available: false, reason: "merkle_requires_c1_codec" }, 501);
+/**
+ * GET /sync/merkle (I8f-3, §d.7 dos canales). Fan-out por las 16 tablas con el select construido del
+ * manifest (NUMERIC casteado a `::text` — NUNCA confiar en el padding de PostgREST; el re-serializador
+ * re-cuantiza con aritmética string/BigInt), re-serializa cada fila con `canon.ts` (proyectada al
+ * capability-set EXPLÍCITO de la request, grupo-entero-o-nada; `local_day` excluida — A-2b) y computa
+ * leaves/entityHash/root (regla A-4). El Canal 1 EXCLUYE `deleted=true` (A-2: el cliente no tiene fila
+ * local que hashear para un tombstone aplicado); el Canal 2 (interno, informativo) las incluye.
+ * Buckets POR ENTIDAD (A-1): el trie fino por-sync_id queda diferido; la remediación v1 del cliente es
+ * re-pull completo de la tabla divergente.
+ */
+export async function handleSyncMerkle(c: Ctx): Promise<Response> {
+  const auth = await requireUserAndAttest(c);
+  if (auth instanceof Response) return auth;
+
+  const rawCap = c.req.header("X-Yala-Capability-Set") ?? c.req.query("capability_set") ?? null;
+  const cap = resolveCapabilitySet(rawCap);
+
+  const channel1 = new Map<string, Uint8Array>();
+  const channel2 = new Map<string, Uint8Array>();
+  const entities: Record<string, { count: number; hash: string }> = {};
+
+  try {
+    for (const entity of SYNCABLE_ENTITIES) {
+      const columns = merkleColumns(entity, cap);
+      const select = merkleSelect(entity, columns);
+      const leaves1: Array<{ syncId: string; leaf: Uint8Array }> = [];
+      const leaves2: Array<{ syncId: string; leaf: Uint8Array }> = [];
+      const pageSize = 1000;
+      // Paginación KEYSET por sync_id (fix #2 del review): con offset, un insert concurrente durante
+      // el fan-out desplaza las páginas → filas saltadas/duplicadas → root incorrecto transitorio.
+      // `sync_id=gt.<último>` con `order=sync_id.asc` es estable ante inserts: una fila nueva jamás se
+      // cuenta dos veces (si cae detrás del cursor simplemente no entra en ESTE snapshot — divergencia
+      // transitoria esperada que el guard A-3 del cliente absorbe).
+      let lastSyncId: string | null = null;
+      for (;;) {
+        const keyset = lastSyncId === null ? "" : `&sync_id=gt.${lastSyncId}`;
+        const q = `select=${select}&order=sync_id.asc&limit=${pageSize}${keyset}`;
+        const { ok, status, rows } = await getRows(c.env, auth.userJWT, entity, q);
+        if (!ok) {
+          return jsonError("yala_unavailable", `merkle upstream ${status} (${entity})`, 502);
+        }
+        for (const row of rows) {
+          const syncId = String(row.sync_id).toLowerCase();
+          const payload = canonRowC1(entity, row, columns);
+          // Canal 2 (full-row, incluye deleted): hlc de fila VERBATIM (informativo, sin consumidor v1).
+          leaves2.push({ syncId, leaf: await leafChannel2(syncId, String(row.hlc ?? ""), payload) });
+          if (row.deleted !== true) {
+            leaves1.push({ syncId, leaf: await leafChannel1(syncId, payload) });
+          }
+        }
+        if (rows.length < pageSize) break;
+        lastSyncId = String(rows[rows.length - 1].sync_id);
+      }
+      const eh = await entityHash(leaves1);
+      channel1.set(entity, eh);
+      channel2.set(entity, await entityHash(leaves2));
+      entities[entity] = { count: leaves1.length, hash: hex(eh) };
+    }
+  } catch (e) {
+    if (e instanceof CanonError) {
+      // Una fila almacenada que el canon rechaza = incidente de datos (no debe ocurrir: todo entró
+      // canónico por push). Metadata-only, nunca el valor.
+      console.log(`[sync-merkle] canon error: ${e.code}`);
+      return jsonError("yala_unavailable", `merkle canon ${e.code}`, 502);
+    }
+    throw e;
+  }
+
+  return c.json({
+    canon_version: manifest.canon_version,
+    capability_set: rawCap ?? "full",
+    root: hex(await merkleRoot(channel1)),
+    entities,
+    channel2_root: hex(await merkleRoot(channel2)),
+  });
+}
+
+/** Select del Merkle: identidad + flags server-side + columnas proyectadas (NUMERIC como `::text`). */
+function merkleSelect(entity: string, columns: string[]): string {
+  const spec = manifest.entities[entity];
+  const cols = columns.map((c) => (spec.columns[c]?.pg_type === "numeric" ? `${c}::text` : c));
+  return ["sync_id", "hlc", "deleted", "deleted_hlc", ...cols].join(",");
 }
 
 // ------------------------------------------------------------------------------------- /attest/bind

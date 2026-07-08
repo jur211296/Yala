@@ -154,6 +154,7 @@ enum AnalyticsEvent: String {
     case cloudSyncMutationRejected = "Diagnóstico · Mutación de sync rechazada"  // params: reason — CANARIO (Modo Nube I8e, §d.5): el backend RECHAZÓ un delta (status rejected). El delta queda en dead-letter (SyncOutbox.rejectedReason), NO se pierde. >0 = write-site sin auditar / grupo de coherencia parcial (bug de emisión, debe ser 0). La DISPARA SyncPushClient.applyResults. Sin PII (solo el motivo)
     case cloudAccountUnavailable = "Diagnóstico · Cuenta no disponible"  // BREADCRUMB (Modo Nube I8e, §d.5): el backend respondió 403 (autenticado pero prohibido) → cuenta suspendida/deshabilitada, distinto del 401 (sesión expirada). >0 = revisar estado de la cuenta. La DISPARA SyncPushClient.push. Sin PII
     case cloudSyncClockReceiveRejected = "Diagnóstico · HLC remoto rechazado por el reloj"  // params: reason — CANARIO (Modo Nube I8f-1, F-5): `HLCClock.receive` RECHAZÓ un HLC remoto (drift >5min futuro / counter overflow) al aplicar deltas del pull → el reloj local NO se envenena pero pierde causalidad con ese emisor bajo skew extremo (residual documentado; el server lo vigila con cloudSyncSuspectClockWin). La DISPARA CloudSyncEngine.receiveRemoteClock. Sin PII (solo el motivo)
+    case cloudSyncMerkleDivergence = "Diagnóstico · Divergencia Merkle de sync"  // params: entity — CANARIO (Modo Nube I8f-3, §d.7 Canal 1): el entityHash local de una tabla ≠ el del backend CON quiescencia local (outbox vivo vacío + pull completado, guard A-3) → infidelidad del apply/canon vs la verdad server-side. >0 = incidente de fidelidad del sync (remediación v1: re-pull completo, wiring I9). La DISPARA CloudSyncEngine.verifyIntegrity. Sin PII (solo el nombre de tabla o "root")
 
     // Routing observability (F9 — privacy-first: only intent IDs, no payloads)
     case routingIntentSuperseded = "Diagnóstico · Routing supersedido"  // a queued intent was dropped by an incoming one
@@ -442,6 +443,17 @@ enum TelemetryService {
     static func cloudSyncClockReceiveRejected(reason: String) {
         track(.cloudSyncClockReceiveRejected, parameters: [
             "reason": reason
+        ])
+    }
+
+    /// CANARIO Modo Nube (I8f-3, §d.7 Canal 1): el entityHash Merkle LOCAL de una tabla difiere del
+    /// del backend CON quiescencia local (guard A-3: outbox vivo vacío + último pull `.completed`) →
+    /// el apply/canon divergió de la verdad server-side (infidelidad del sync). Remediación v1 =
+    /// re-pull completo de la tabla (wiring I9). La dispara `CloudSyncEngine.verifyIntegrity`.
+    /// Privacy-first: solo el nombre de tabla (o "root"), jamás hashes ni datos.
+    static func cloudSyncMerkleDivergence(entity: String) {
+        track(.cloudSyncMerkleDivergence, parameters: [
+            "entity": entity
         ])
     }
 

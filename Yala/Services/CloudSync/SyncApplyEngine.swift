@@ -92,6 +92,13 @@ extension CloudSyncEngine {
 
         let (outcome, pagesApplied) = await pullLoop(client: client, context: context, now: now,
                                                      pageLimit: pageLimit, maxPages: maxPages)
+        // I8f-3 (guard A-3 del Merkle): registrar si este ciclo AGOTÓ la cola. Un ciclo incompleto
+        // (transient/401/403) deja el flag en false → la verificación se salta (divergencia esperada).
+        if case .completed = outcome {
+            lastPullCycleCompleted = true
+        } else {
+            lastPullCycleCompleted = false
+        }
         // F-2: pase de re-resolución de refs colgadas — corre SIEMPRE al final del ciclo (también en
         // salidas tempranas: lo aplicado hasta aquí es durable y puede haber destapado targets).
         reresolveDanglingRefs(context: context)

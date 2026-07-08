@@ -710,6 +710,32 @@ struct SyncApplyEngineTests {
         #expect(d.targetUUID == catUUID)
     }
 
+    // MARK: - I8f-3: un NULL del wire deja OBSOLETO el dangler previo de esa (fila, columna)
+
+    @Test func danglingRef_nulledByWire_clearsStaleDangler() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = ModelContext(try makeContainer(dir))
+        let engine = CloudSyncEngine()
+
+        // Delta 1: TX con category_ref colgada → dangler registrado.
+        let sid = UUID()
+        let catUUID = UUID()
+        let page1 = txWithCategoryPage(sid: sid, catUUID: catUUID, serverSeq: 1, h: hlc(1))
+        engine.applyPage(try decodePage(page1), context: context, now: applyNow)
+        #expect(danglers(context).count == 1)
+
+        // Delta 2: el wire pone category_ref a NULL → el dangler queda obsoleto y se BORRA (sin esto,
+        // la re-resolución re-adjuntaría una relación stale y el Merkle usaría un target inexistente).
+        let page2 = #"""
+        {"deltas":[{"entity_type":"tx_items","sync_id":"\#(sid.uuidString.lowercased())","op":"upsert",
+        "fields":{"category_ref":null},"field_hlcs":{"category_ref":"\#(hlc(2))"},
+        "hlc":"\#(hlc(2))","server_seq":2,"schema_version":1}],"max_server_seq":2}
+        """#
+        engine.applyPage(try decodePage(page2), context: context, now: applyNow)
+        #expect(danglers(context).isEmpty)
+        #expect(txItems(context).first?.category == nil)
+    }
+
     @Test func danglingRef_reresolution_producesNoDrainEcho() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = ModelContext(try makeContainer(dir))

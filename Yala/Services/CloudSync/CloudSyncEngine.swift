@@ -195,6 +195,31 @@ enum CloudSyncBreadcrumb {
     static func reconcilerNoSignal(pairID: String) {
         logger.notice("CloudSyncReconciler noSignal id=\(pairID, privacy: .public)")
     }
+
+    // MARK: Merkle (I8f-3) — sin PII (tablas, counts, motivos; nunca hashes de datos de usuario)
+
+    /// La verificación se SALTÓ por la precondición A-3 (outbox pendiente / pull incompleto / fetch).
+    /// NUNCA canario: la divergencia con trabajo en vuelo es ESPERADA.
+    static func merkleSkippedNotQuiescent(reason: String) {
+        logger.notice("CloudSyncMerkle skipped reason=\(reason, privacy: .public)")
+    }
+
+    /// Una tabla con cuarentena local se EXCLUYE de la comparación (el cliente no la materializa —
+    /// compararla sería divergencia falsa; límite v1, regla 5).
+    static func merkleEntitySkippedQuarantined(entity: String) {
+        logger.notice("CloudSyncMerkle entitySkipped=quarantined \(entity, privacy: .public)")
+    }
+
+    /// El entityHash local ≠ remoto para `entity` (o `"root"`). Par del canario TelemetryDeck
+    /// `cloudSyncMerkleDivergence`.
+    static func merkleDivergence(entity: String) {
+        logger.notice("CloudSyncMerkle divergence entity=\(entity, privacy: .public)")
+    }
+
+    /// Verificación completa sin divergencias (las `entities` tablas cableadas comparadas).
+    static func merkleConverged(entities: Int) {
+        logger.notice("CloudSyncMerkle converged entities=\(entities, privacy: .public)")
+    }
 }
 
 // MARK: - CloudSyncEngine
@@ -302,6 +327,11 @@ final class CloudSyncEngine {
     /// Expuesto para el guard D-2 de `pullAndApplyOnce` (extensión `SyncApplyEngine`): nunca aplicar
     /// deltas remotos con un drain EN CURSO (History sin drenar → laundering en el re-drain).
     var isDrainInProgress: Bool { isDraining }
+
+    /// I8f-3 (guard A-3 de la verificación Merkle): `true` solo si el ÚLTIMO `pullAndApplyOnce` terminó
+    /// `.completed` (cola agotada). Un pull incompleto → divergencia ESPERADA → el verificador se salta.
+    /// Lo escribe SOLO `pullAndApplyOnce` (internal para que los tests puedan simular el estado).
+    var lastPullCycleCompleted = false
 
     // MARK: Seams de test
 
