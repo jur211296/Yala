@@ -35,6 +35,29 @@ las filas de prueba se ACUMULAN bajo los `user_id` de test. Para limpiarlas, bor
 2 usuarios de test vía el SQL editor / MCP (contexto service) — igual que con el RLS gate. Los goldens
 nunca usan `service_role`.
 
+## Goldens de I7a (Worker `/account/*` contra staging)
+
+`gateway/test/account.goldens.test.ts` (vitest) ejerce `POST /account/claim` + `GET /account/exists`
+end-to-end contra ESTE staging con los 2 JWTs de usuario (password grant). Cubren: dos claims
+concurrentes del mismo sub → exactamente uno `created` y el otro `existing_stable` (serialización del
+`ON CONFLICT`), `claiming_in_progress` con líder distinto, reclaim idempotente del mismo líder →
+`created`, `exists` false→true, y el `sub` SIEMPRE del JWT (un `id`/`sub`/`user_id` ajeno en el body se
+ignora). Corren con `cd gateway && npm test` (network ON; NO en CI).
+
+**Estado previo REQUERIDO:** el test 1 exige que `profiles[subA]` NO preexista (para ver `created`);
+`profiles` tiene 1 fila por sub (PK = `id`) y `DELETE` está revocado, así que la fila se ACUMULA entre
+runs. Antes de correr, limpia los `profiles` de los 2 usuarios de test en contexto **service** (SQL
+editor / MCP — el test nunca usa `service_role`):
+
+```sql
+DELETE FROM public.profiles WHERE id IN (
+  SELECT id FROM auth.users WHERE email IN ('i5-user-a@test.yala','i5-user-b@test.yala')
+);
+```
+
+Los tests que necesitan estado `migration_in_progress` lo fijan por un PATCH directo a PostgREST con el
+JWT del propio dueño (RLS UPDATE lo permite) y lo revierten al terminar.
+
 ## Related repo artifacts
 
 - `capability_manifest.json` (repo root) — per-entity domain columns with explicit `safe` / `group_key`.

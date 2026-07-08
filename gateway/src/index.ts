@@ -13,6 +13,7 @@ import {
   handleSyncPull,
   handleSyncPush,
 } from "./sync/routes";
+import { handleAccountClaim, handleAccountExists } from "./sync/account";
 
 /**
  * Yala Gateway — entrada del Worker.
@@ -53,6 +54,10 @@ app.get("/sync/merkle", handleSyncMerkle); // 501 hasta I8 (codec canon c1)
 app.post("/attest/bind", handleAttestBind);
 app.post("/prefs/push", handlePrefsPush);
 app.get("/prefs/pull", handlePrefsPull);
+
+// --- Cuenta (I7a): gate de identidad §f.1 — corre tras el sign-in, ANTES de todo save() de onboarding ---
+app.post("/account/claim", handleAccountClaim); // reserva atómica; estado de 3 valores
+app.get("/account/exists", handleAccountExists); // hint de encaminamiento (no la garantía anti-doble-siembra)
 
 app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
 
