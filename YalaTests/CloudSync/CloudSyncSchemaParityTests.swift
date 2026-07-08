@@ -96,11 +96,52 @@ struct CloudSyncSchemaParityTests {
     }
 
     @Test func syncCursor_hasExactPropertySet() {
+        // I8f-1 añadió `serverSeqCursor` (cursor del pull) + `clockLatestHLC` (reloj durable, D-3),
+        // ambos additive.
         let expected: Set<String> = [
             "historyTokenData",
+            "serverSeqCursor",
+            "clockLatestHLC",
             "schemaVersion",
         ]
         #expect(propertyNames(SyncCursor.self) == expected)
+    }
+
+    // MARK: - (b·I8f) SyncQuarantine
+
+    @Test func syncQuarantine_entityName_isAnchoredLiteral() {
+        #expect(entity(SyncQuarantine.self)?.name == "SyncQuarantine")
+    }
+
+    @Test func syncQuarantine_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "serverSeq",
+            "entityType",
+            "syncID",
+            "rawDelta",
+            "hlc",
+            "createdAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(SyncQuarantine.self) == expected)
+    }
+
+    // MARK: - (b·I8f/F-2) SyncDanglingRef
+
+    @Test func syncDanglingRef_entityName_isAnchoredLiteral() {
+        #expect(entity(SyncDanglingRef.self)?.name == "SyncDanglingRef")
+    }
+
+    @Test func syncDanglingRef_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "entityTable",
+            "rowSyncID",
+            "column",
+            "targetUUID",
+            "createdAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(SyncDanglingRef.self) == expected)
     }
 
     // MARK: - (c) Membresía de stores
@@ -110,10 +151,13 @@ struct CloudSyncSchemaParityTests {
         #expect(!personal.contains("SyncIdentity"))
         #expect(!personal.contains("SyncOutbox"))
         #expect(!personal.contains("SyncCursor"))
+        #expect(!personal.contains("SyncQuarantine"))
+        #expect(!personal.contains("SyncDanglingRef"))
     }
 
     @Test func syncMetaStore_containsExactly_syncMetaEntities_andIsCloudKitNone() {
-        let expected: Set<String> = ["SyncIdentity", "SyncOutbox", "SyncCursor"]
+        let expected: Set<String> = ["SyncIdentity", "SyncOutbox", "SyncCursor", "SyncQuarantine",
+                                     "SyncDanglingRef"]
         #expect(entityNames(SwiftDataConfiguration.syncMetaSchema) == expected)
 
         let config = SwiftDataConfiguration.syncMetaConfiguration

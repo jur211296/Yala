@@ -322,6 +322,22 @@
       "lastVerified": "2026-07-08"
     },
     {
+      "area": "cloud-sync-pull-apply",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/SyncPullClient.swift",
+        "Yala/Services/CloudSync/SyncApplyEngine.swift",
+        "Yala/Services/CloudSync/EntityApplyMap.swift",
+        "Yala/Services/CloudSync/WireValueDecoder.swift",
+        "Yala/Services/CloudSync/SyncQuarantine.swift",
+        "Yala/Services/CloudSync/SyncDanglingRef.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/CloudSync/SyncApplyEngineTests (23: LWW por-unidad vs outbox vivo, anti-laundering D-2 con interleaving real, rollback D-5, born-remote, tombstones, danglers) + SyncPullClientTests (10) + WireValueDecoderTests (10) + SyncQuarantineTests (3) + EntityApplyParityTests (7, paridad emission↔apply) + e2e:YalaTests/CloudSync/CloudSyncE2EStagingTests (round-trip push→pull→apply→edit→converge contra staging real, gateado por YALA_CLOUD_E2E) — motor DARK, wiring en I9",
+      "owner": "",
+      "lastVerified": "2026-07-08"
+    },
+    {
       "area": "cloud-sync-capture",
       "codeGlobs": [
         "Yala/Services/CloudSync/CloudSyncEngine.swift",

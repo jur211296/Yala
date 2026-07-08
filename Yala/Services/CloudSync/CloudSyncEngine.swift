@@ -115,6 +115,66 @@ enum CloudSyncBreadcrumb {
     static func pushTransientUpstream(syncID: String, reason: String) {
         logger.notice("CloudSyncPush transientUpstream sync_id=\(syncID, privacy: .public) reason=\(reason, privacy: .public)")
     }
+
+    // MARK: Pull (I8f-1) — sin PII (status HTTP, counts, seq; nunca valores de usuario)
+
+    /// Una página del pull llegó: número de deltas + high-water del `server_seq`.
+    static func pull(count: Int, maxSeq: Int64) {
+        logger.notice("CloudSyncPull page count=\(count, privacy: .public) maxSeq=\(maxSeq, privacy: .public)")
+    }
+
+    /// No hay sesión (token ausente) o el backend devolvió 401 → no se puede bajar.
+    static func pullBlockedNoSession() {
+        logger.notice("CloudSyncPull blocked=no-session")
+    }
+
+    /// El backend devolvió 403 → cuenta suspendida/deshabilitada (≠401).
+    static func pullAccountUnavailable() {
+        logger.notice("CloudSyncPull blocked=account-unavailable (403)")
+    }
+
+    /// Fallo de transporte (red caída / timeout / no-HTTP / 200 no decodificable) → reintentar.
+    static func pullTransport(reason: String) {
+        logger.notice("CloudSyncPull transient transport reason=\(reason, privacy: .public)")
+    }
+
+    /// El Worker respondió con un status inesperado (5xx / 429 / 4xx) → reintentar.
+    static func pullHTTP(status: Int) {
+        logger.notice("CloudSyncPull transient http=\(status, privacy: .public)")
+    }
+
+    // MARK: Apply (I8f-1)
+
+    /// Un `_ref` remoto no resolvió a una fila local (destino aún no sincronizado / no cableado en v1).
+    /// NO es canario de incidente: con 6 entidades cableadas es esperable; el CSV mirror preserva los
+    /// UUIDs para auto-cura cuando el destino llegue.
+    static func applyDanglingRef(entity: String, column: String) {
+        logger.notice("CloudSyncApply danglingRef \(entity, privacy: .public).\(column, privacy: .public)")
+    }
+
+    /// Un delta remoto se cuarentenó (entity_type aún no materializable / identidad no resoluble).
+    static func applyQuarantined(entity: String, serverSeq: Int64) {
+        logger.notice("CloudSyncApply quarantined \(entity, privacy: .public) serverSeq=\(serverSeq, privacy: .public)")
+    }
+
+    /// F-3: el `save()` de una página del apply FALLÓ → rollback ejecutado, cursor NO avanzó, el ciclo
+    /// corta con `.transient`. Producción (fuera de #if DEBUG): un fallo repetido aquí = pull atascado.
+    static func applyPageFailed(reason: String) {
+        logger.notice("CloudSyncApply pageFailed reason=\(reason, privacy: .public)")
+    }
+
+    /// F-6c: un HLC del pipeline del apply (wire u outbox) NO parsea — no debe ocurrir desde nuestro
+    /// server/drain. `site` nombra el punto exacto (sin PII). El caller toma la rama conservadora.
+    static func hlcUnparseable(site: String) {
+        logger.notice("CloudSyncApply hlcUnparseable site=\(site, privacy: .public)")
+    }
+
+    /// F-5: `clock.receive` RECHAZÓ un HLC remoto (drift >5min / counter overflow) → el reloj conserva
+    /// su `latest` previo y el apply continúa. Par del canario TelemetryDeck
+    /// `cloudSyncClockReceiveRejected`.
+    static func clockReceiveRejected(reason: String) {
+        logger.notice("CloudSyncApply clockReceiveRejected reason=\(reason, privacy: .public)")
+    }
 }
 
 // MARK: - CloudSyncEngine
@@ -219,11 +279,19 @@ final class CloudSyncEngine {
     private var isDraining = false
     private var pendingDrain = false
 
+    /// Expuesto para el guard D-2 de `pullAndApplyOnce` (extensión `SyncApplyEngine`): nunca aplicar
+    /// deltas remotos con un drain EN CURSO (History sin drenar → laundering en el re-drain).
+    var isDrainInProgress: Bool { isDraining }
+
     // MARK: Seams de test
 
     /// Cuando `true`, `drainOnce` NO avanza el token del cursor tras persistir el outbox — simula un
     /// kill entre el save del outbox y el avance del token. SOLO para tests.
     var _testSuppressTokenAdvance = false
+
+    /// Cuando `true`, `applyPage` LANZA al final del `saveWithAuthor` (tras las mutaciones, antes del
+    /// commit) → simula un crash: nada se persiste, el cursor NO avanza (D-5, atomicidad). SOLO tests.
+    var _testThrowOnApplySave = false
 
     // MARK: Init
 
@@ -254,8 +322,10 @@ final class CloudSyncEngine {
     private func performDrain(context: ModelContext) {
         drainSeq += 1
         do {
-            // 1) Cursor + token persistido.
+            // 1) Cursor + token persistido. D-3: cargar el reloj persistido (send parte del estado
+            //    durable — necesario para el lockstep de resumibilidad tras integrar remotos vía apply).
             let cursor = try loadOrCreateCursor(context)
+            loadClock(from: cursor)
             let token = decodeToken(cursor.historyTokenData)
 
             // 2) Barrido defensivo: asigna syncID a las filas vivas de los 6 tipos que aún no lo tengan
@@ -328,9 +398,13 @@ final class CloudSyncEngine {
             // 7) Avanzar el token SOLO tras persistir el outbox (crash entre 6 y 7 → el re-drain re-crea
             //    idempotente por el dedup), y SOLO si se consumió history externa (advancedToken != nil).
             //    El save del cursor lleva `outboxSaveAuthor` → no se re-lee. Suprimible en tests (kill).
+            //    D-3: el reloj se PERSISTE en el MISMO save que avanza el token (crash → ambos revierten
+            //    juntos → replay determinista). Bundling seguro: todo `clock.send` de esta vuelta ocurrió
+            //    al traducir una tx externa que también fijó `advancedToken` (advance ⟹ token consumido).
             if !_testSuppressTokenAdvance, let advancedToken {
                 try saveWithAuthor(context, Self.outboxSaveAuthor) {
                     cursor.historyTokenData = try encodeToken(advancedToken)
+                    cursor.clockLatestHLC = clock.latest?.description
                 }
             }
 
@@ -614,7 +688,8 @@ final class CloudSyncEngine {
 
     // MARK: - Cursor / token
 
-    private func loadOrCreateCursor(_ context: ModelContext) throws -> SyncCursor {
+    /// `internal` (no `private`): lo consume también `SyncApplyEngine` (extensión en otro archivo).
+    func loadOrCreateCursor(_ context: ModelContext) throws -> SyncCursor {
         var descriptor = FetchDescriptor<SyncCursor>()
         descriptor.fetchLimit = 1
         if let existing = try context.fetch(descriptor).first {
@@ -628,9 +703,63 @@ final class CloudSyncEngine {
         return cursor
     }
 
+    // MARK: - Reloj (D-3): carga/persistencia + receive de remotos (apply)
+
+    /// D-3: carga el `HLCClock` desde el estado durable del cursor (`clockLatestHLC`). Send y receive
+    /// parten de aquí → un crash revierte reloj y cursor juntos. `nil`/malformado → conserva el reloj
+    /// en memoria (fresco en el primer arranque). Preserva el `nodeID` de esta instancia.
+    func loadClock(from cursor: SyncCursor) {
+        guard let raw = cursor.clockLatestHLC else { return }
+        do {
+            let hlc = try HLC.parse(raw)
+            clock = HLCClock(nodeID: clock.nodeID, latest: hlc)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: loadClock parse falló para \(raw): \(error)")
+            #endif
+        }
+    }
+
+    /// D-3: integra un HLC remoto en el reloj (apply). No propaga el error (drift/overflow del remoto no
+    /// debe abortar el apply de una página): breadcrumb + canario y sigue — el reloj conserva su `latest`
+    /// previo. SEMÁNTICA INTENCIONAL (F-5): el guard de drift existe para NO envenenar el reloj local con
+    /// un remoto insano (>5min en el futuro); la pérdida de causalidad bajo skew extremo es un residual
+    /// DOCUMENTADO vigilado server-side por `cloudSyncSuspectClockWin` — aquí solo se hace visible.
+    func receiveRemoteClock(_ remote: HLC, now: Date) {
+        do {
+            _ = try clock.receive(remote: remote, now: now)
+        } catch {
+            CloudSyncBreadcrumb.clockReceiveRejected(reason: "\(error)")
+            TelemetryService.cloudSyncClockReceiveRejected(reason: "\(error)")
+            #if DEBUG
+            print("CloudSyncEngine: receiveRemoteClock falló para \(remote): \(error)")
+            #endif
+        }
+    }
+
+    /// El `latest` del reloj como string c1 (para persistir en `clockLatestHLC`). `nil` = reloj fresco.
+    var clockLatestString: String? { clock.latest?.description }
+
+    /// §d.5 A1 (D-6): fuerza `serverSeqCursor = 0` (re-pull completo). Lo invocará el guard de
+    /// recuperación de I9 si `SyncQuarantine` se recreó por lightweight migration. Hook aquí + test.
+    func resetServerSeqCursor(context: ModelContext) {
+        do {
+            let cursor = try loadOrCreateCursor(context)
+            guard cursor.serverSeqCursor != 0 else { return }
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                cursor.serverSeqCursor = 0
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: resetServerSeqCursor falló: \(error)")
+            #endif
+        }
+    }
+
     /// Ejecuta `body` y hace `context.save()` bajo un `author` dado, restaurando el autor previo.
-    /// Centraliza el manejo de `context.author` para los saves internos del motor.
-    private func saveWithAuthor(
+    /// Centraliza el manejo de `context.author` para los saves internos del motor. `internal` (no
+    /// `private`): lo comparte `SyncApplyEngine`.
+    func saveWithAuthor(
         _ context: ModelContext, _ author: String, _ body: () throws -> Void
     ) throws {
         let previous = context.author

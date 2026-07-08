@@ -78,6 +78,8 @@ enum SwiftDataConfiguration {
             SyncIdentity.self,
             SyncOutbox.self,
             SyncCursor.self,
+            SyncQuarantine.self,
+            SyncDanglingRef.self,
         ])
     }
 
@@ -119,12 +121,15 @@ enum SwiftDataConfiguration {
 
     /// Sub-schema: metadata de sync del Modo Nube (I2/I3), en su propio store con
     /// `cloudKitDatabase: .none` — metadata LOCAL por dispositivo que NUNCA se espeja a CloudKit.
-    /// `SyncIdentity` (I2), `SyncOutbox` + `SyncCursor` (I3, pipeline de captura).
+    /// `SyncIdentity` (I2), `SyncOutbox` + `SyncCursor` (I3, pipeline de captura), `SyncQuarantine`
+    /// + `SyncDanglingRef` (I8f-1, deltas no materializables aún + refs singulares colgadas).
     static var syncMetaSchema: Schema {
         Schema([
             SyncIdentity.self,
             SyncOutbox.self,
             SyncCursor.self,
+            SyncQuarantine.self,
+            SyncDanglingRef.self,
         ])
     }
 

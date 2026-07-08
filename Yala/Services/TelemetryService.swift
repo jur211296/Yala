@@ -153,6 +153,7 @@ enum AnalyticsEvent: String {
     case cloudSyncOutboxMirrorDivergence = "Diagnóstico · Divergencia del espejo del outbox"  // params: delta — CANARIO (Modo Nube I8d/A1, §d.5): delta = |espejo del userID| − |store SyncOutbox| en cada arranque; >0 persistente SIN migración = crash entre purga y remove no reconciliado, o vaciado parcial (el modo de fallo que ni el Merkle ve). La DISPARA CloudSyncEngine.rehydrateOutboxFromMirror
     case cloudSyncMutationRejected = "Diagnóstico · Mutación de sync rechazada"  // params: reason — CANARIO (Modo Nube I8e, §d.5): el backend RECHAZÓ un delta (status rejected). El delta queda en dead-letter (SyncOutbox.rejectedReason), NO se pierde. >0 = write-site sin auditar / grupo de coherencia parcial (bug de emisión, debe ser 0). La DISPARA SyncPushClient.applyResults. Sin PII (solo el motivo)
     case cloudAccountUnavailable = "Diagnóstico · Cuenta no disponible"  // BREADCRUMB (Modo Nube I8e, §d.5): el backend respondió 403 (autenticado pero prohibido) → cuenta suspendida/deshabilitada, distinto del 401 (sesión expirada). >0 = revisar estado de la cuenta. La DISPARA SyncPushClient.push. Sin PII
+    case cloudSyncClockReceiveRejected = "Diagnóstico · HLC remoto rechazado por el reloj"  // params: reason — CANARIO (Modo Nube I8f-1, F-5): `HLCClock.receive` RECHAZÓ un HLC remoto (drift >5min futuro / counter overflow) al aplicar deltas del pull → el reloj local NO se envenena pero pierde causalidad con ese emisor bajo skew extremo (residual documentado; el server lo vigila con cloudSyncSuspectClockWin). La DISPARA CloudSyncEngine.receiveRemoteClock. Sin PII (solo el motivo)
 
     // Routing observability (F9 — privacy-first: only intent IDs, no payloads)
     case routingIntentSuperseded = "Diagnóstico · Routing supersedido"  // a queued intent was dropped by an incoming one
@@ -431,6 +432,17 @@ enum TelemetryService {
     /// La dispara `SyncPushClient.push`. Privacy-first: sin IDs ni PII.
     static func cloudAccountUnavailable() {
         track(.cloudAccountUnavailable)
+    }
+
+    /// CANARIO Modo Nube (I8f-1, F-5): `HLCClock.receive` RECHAZÓ un HLC remoto (drift >5min en el
+    /// futuro / counter overflow) al integrar deltas del pull. El reloj local conserva su `latest`
+    /// (no se envenena) y el apply continúa; bajo skew extremo se pierde causalidad con ese emisor —
+    /// residual documentado vigilado server-side. La dispara `CloudSyncEngine.receiveRemoteClock`.
+    /// Privacy-first: solo el motivo del rechazo, sin IDs ni PII.
+    static func cloudSyncClockReceiveRejected(reason: String) {
+        track(.cloudSyncClockReceiveRejected, parameters: [
+            "reason": reason
+        ])
     }
 
     /// Reports a `transferPairID` shared by 3+ TXs (collision). NO auto-repair se aplica

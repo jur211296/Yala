@@ -36,14 +36,31 @@ final class SyncCursor {
     /// ha procesado nada (primer drain → escaneo completo).
     var historyTokenData: Data?
 
+    /// PULL (I8f-1, §d.6 / D-5): posición en el eje de orden GLOBAL del backend (`server_seq`). El pull
+    /// pide `since = serverSeqCursor` y, tras aplicar una página, lo avanza al `max_server_seq` procesado
+    /// en el MISMO `save()` que aplica la página → interrumpir a mitad es idempotente (re-pull converge).
+    /// Additive (v1→v2 lógico; el testigo A1 `schemaVersion` no se bumpea: el campo trae default).
+    var serverSeqCursor: Int64 = 0
+
+    /// PULL/reloj (I8f-1, §d.6 / D-3): último HLC del `HLCClock` PERSISTIDO. El motor CARGA el reloj desde
+    /// aquí al arrancar (send y receive parten del estado durable) y lo PERSISTE en el MISMO `save()` que
+    /// avanza el history token (drain) o el `serverSeqCursor` (apply) → un crash revierte reloj y cursor
+    /// JUNTOS → replay determinista (sin `receive` de un remoto se rompería el lockstep de resumibilidad
+    /// del drain). `nil` = reloj aún fresco (nunca se emitió/recibió nada). Additive.
+    var clockLatestHLC: String?
+
     /// Versión del schema bajo la que se materializó esta fila (testigo A1).
     var schemaVersion: Int = CloudSyncSchemaVersions.syncCursor
 
     init(
         historyTokenData: Data? = nil,
+        serverSeqCursor: Int64 = 0,
+        clockLatestHLC: String? = nil,
         schemaVersion: Int = CloudSyncSchemaVersions.syncCursor
     ) {
         self.historyTokenData = historyTokenData
+        self.serverSeqCursor = serverSeqCursor
+        self.clockLatestHLC = clockLatestHLC
         self.schemaVersion = schemaVersion
     }
 }
