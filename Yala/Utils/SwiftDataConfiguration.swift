@@ -51,7 +51,7 @@ enum SwiftDataConfiguration {
 
     // MARK: - Schemas
 
-    /// Schema completo (21 modelos) — usado por ModelContainer.
+    /// Schema completo (22 modelos) — usado por ModelContainer.
     static var schema: Schema {
         Schema([
             Category.self,
@@ -75,6 +75,7 @@ enum SwiftDataConfiguration {
             SplitExpense.self,
             SplitShare.self,
             SplitSettlement.self,
+            SyncIdentity.self,
         ])
     }
 
@@ -111,6 +112,14 @@ enum SwiftDataConfiguration {
             SplitExpense.self,
             SplitShare.self,
             SplitSettlement.self,
+        ])
+    }
+
+    /// Sub-schema: metadata de sync del Modo Nube (I2). SOLO `SyncIdentity`, en su propio store con
+    /// `cloudKitDatabase: .none` — es metadata LOCAL por dispositivo que NUNCA se espeja a CloudKit.
+    static var syncMetaSchema: Schema {
+        Schema([
+            SyncIdentity.self,
         ])
     }
 
@@ -234,5 +243,24 @@ enum SwiftDataConfiguration {
     /// Database name for groups store, derived from personal databaseName.
     static var groupsDatabaseName: String {
         databaseName.replacing("YalaModel", with: "YalaGroups")
+    }
+
+    /// Sync-meta store (Modo Nube, I2) — `SyncIdentity` local, NUNCA CloudKit.
+    /// `cloudKitDatabase: .none` SIEMPRE: es metadata por-dispositivo (mapping identidad↔ancla↔
+    /// record) que se reconstruye localmente y no debe espejarse. Store propio (URL separada, mismo
+    /// directorio que personal/grupos), espejando el patrón de `groupsConfiguration`.
+    static var syncMetaConfiguration: ModelConfiguration {
+        if isRunningTests {
+            return ModelConfiguration("YalaSyncMeta", schema: syncMetaSchema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        }
+        if isUITesting {
+            return ModelConfiguration("YalaSyncMeta-UITest", schema: syncMetaSchema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
+        }
+        return ModelConfiguration(syncMetaDatabaseName, schema: syncMetaSchema, cloudKitDatabase: .none)
+    }
+
+    /// Database name for the sync-meta store, derived from personal databaseName.
+    static var syncMetaDatabaseName: String {
+        databaseName.replacing("YalaModel", with: "YalaSyncMeta")
     }
 }

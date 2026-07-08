@@ -94,6 +94,14 @@ final class TransactionItem {
     /// Timestamp de creación del registro (usado para ordenar registros del mismo día)
     var createdAt: Date = Date.now
 
+    // MARK: - Sync Identity (Modo Nube, I2)
+    /// Identidad estable de sync. OPCIONAL SIN DEFAULT a propósito: si fuera `= UUID()` y CloudKit
+    /// entregara un record sin el campo, el default se evaluaría UNA vez y quedaría COMPARTIDO entre
+    /// todas esas filas (gotcha de UUID colapsado, ver CLAUDE.md). Un record sin el campo DEBE verse
+    /// `nil`, no un UUID compartido. Lo puebla `SyncIdentityService` (born-cloud vía hub gateado, o
+    /// backfill de migración). `.preserveValueOnDeletion` lo conserva en el tombstone para sync.
+    @Attribute(.preserveValueOnDeletion) var syncID: UUID?
+
     /// Naturaleza efectiva del registro (usa override si existe, sino la de subcategoría)
     var effectiveNeed: SubcategoryNeed {
         if let override = needOverride {

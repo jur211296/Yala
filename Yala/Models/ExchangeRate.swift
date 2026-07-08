@@ -19,6 +19,11 @@ final class ExchangeRate {
     /// Unix timestamp from the API response (when the rate was recorded)
     var timestamp: Date?
 
+    // MARK: - Sync Identity (Modo Nube, I2)
+    /// Identidad estable de sync. Opcional sin default (gotcha de UUID colapsado — ver
+    /// `TransactionItem.syncID`). Poblado por `SyncIdentityService`.
+    @Attribute(.preserveValueOnDeletion) var syncID: UUID?
+
     init(
         dateKey: String,
         base: String,

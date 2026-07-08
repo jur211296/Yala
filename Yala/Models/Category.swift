@@ -48,6 +48,11 @@ final class Category {
     @Relationship(deleteRule: .nullify)
     var cashFlowLines: [CashFlowLine]?
 
+    // MARK: - Sync Identity (Modo Nube, I2)
+    /// Identidad estable de sync. Opcional sin default (gotcha de UUID colapsado — ver
+    /// `TransactionItem.syncID`). Poblado por `SyncIdentityService`.
+    @Attribute(.preserveValueOnDeletion) var syncID: UUID?
+
     init(
         name: String,
         colorHex: String,

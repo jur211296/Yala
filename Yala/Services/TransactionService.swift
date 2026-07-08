@@ -51,6 +51,8 @@ final class TransactionService {
     /// - Parameter transaction: The transaction to insert
     func create(_ transaction: TransactionItem) throws {
         let context = try requireContext()
+        // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
+        SyncIdentityService.captureIfEnabled(transaction)
         context.insert(transaction)
         try context.save()
 

@@ -72,6 +72,8 @@ final class DraftService {
 
     func createDraft(_ draft: InboxDraft) throws {
         let context = try requireContext()
+        // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
+        SyncIdentityService.captureIfEnabled(draft)
         context.insert(draft)
         try context.save()
     }
@@ -79,6 +81,8 @@ final class DraftService {
     func createDrafts(_ drafts: [InboxDraft]) throws {
         let context = try requireContext()
         for draft in drafts {
+            // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
+            SyncIdentityService.captureIfEnabled(draft)
             context.insert(draft)
         }
         try context.save()

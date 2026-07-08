@@ -31,6 +31,11 @@ final class MerchantMemory {
     /// Variantes del nombre del comercio (nombres crudos originales) - CloudKit: default required
     var aliases: [String] = []
 
+    // MARK: - Sync Identity (Modo Nube, I2)
+    /// Identidad estable de sync. Opcional sin default (gotcha de UUID colapsado — ver
+    /// `TransactionItem.syncID`). Poblado por `SyncIdentityService`.
+    @Attribute(.preserveValueOnDeletion) var syncID: UUID?
+
     // MARK: - Computed Properties
 
     /// Tasa de corrección: proporción de veces que el usuario cambió la sugerencia

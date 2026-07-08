@@ -292,6 +292,20 @@
       "lastVerified": "2026-07-07"
     },
     {
+      "area": "cloud-sync-identity",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/SyncIdentity.swift",
+        "Yala/Services/CloudSync/SyncIdentityService.swift",
+        "Yala/Services/CloudSync/SyncContentAnchor.swift",
+        "Yala/Services/CloudSync/CloudSyncFlags.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/SyncIdentityServiceTests + unit:YalaTests/SyncContentAnchorTests + unit:YalaTests/CloudSyncSchemaParityTests — DARK (flag off), sin superficie UI hasta I12/I14",
+      "owner": "",
+      "lastVerified": "2026-07-07"
+    },
+    {
       "area": "coach-mark-tours",
       "codeGlobs": [
         "Yala/App/Tips/ProTourManager.swift",

@@ -78,9 +78,17 @@ private func testContainer(for fileID: String) throws -> ModelContainer {
         isStoredInMemoryOnly: true,
         cloudKitDatabase: .none
     )
+    // Sync-meta store (Modo Nube I2): SyncIdentity vive en su propia config (`.none`), igual que en
+    // producción. El schema global la incluye → toda config del schema debe tener su store asignado.
+    let syncMetaConfig = ModelConfiguration(
+        "YalaSyncMeta_test_\(idx)",
+        schema: SwiftDataConfiguration.syncMetaSchema,
+        isStoredInMemoryOnly: true,
+        cloudKitDatabase: .none
+    )
     let container = try ModelContainer(
         for: SwiftDataConfiguration.schema,
-        configurations: personalConfig, groupsConfig
+        configurations: personalConfig, groupsConfig, syncMetaConfig
     )
     _testContainersByFile[fileID] = container
     return container
@@ -108,7 +116,7 @@ func makeTestContext(fileID: String = #fileID) throws -> ModelContext {
 }
 
 /// Borra todas las instancias de cada `@Model` del schema (sin destruir el store).
-/// Mantener sincronizado con `SwiftDataConfiguration.schema` (21 modelos).
+/// Mantener sincronizado con `SwiftDataConfiguration.schema` (22 modelos).
 @MainActor
 private func wipeAllModels(_ context: ModelContext) {
     // Fetch + delete por objeto (NO `context.delete(model:)`): el bulk-delete opera a nivel
@@ -135,7 +143,7 @@ private func wipeAllModels(_ context: ModelContext) {
     wipe(MerchantMemory.self); wipe(NotificationItem.self); wipe(CashFlowPlan.self)
     wipe(CashFlowLine.self); wipe(CashFlowOverride.self); wipe(GroupBridgePreference.self)
     wipe(SplitGroup.self); wipe(SplitMember.self); wipe(SplitExpense.self)
-    wipe(SplitShare.self); wipe(SplitSettlement.self)
+    wipe(SplitShare.self); wipe(SplitSettlement.self); wipe(SyncIdentity.self)
     if context.hasChanges {
         do { try context.save() } catch { print("makeTestContext: reset save error: \(error)") }
     }

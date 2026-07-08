@@ -295,6 +295,9 @@ enum CategoryDeduplicationService {
             let oldSubIDs = Set(collidedSubs.map(\.shortcutID))
             let oldTagIDs = Set(collidedTags.map(\.id))
 
+            // MODO NUBE I8: al regenerar un UUID adoptado como syncID, emitir IdentityRemap
+            // {old,new,entityType} al outbox (§b.4) — NO implementado aún; el gate es
+            // CloudSyncFlags.identityCaptureEnabled.
             for account in collidedAccounts { account.shortcutID = UUID() }
             for sub in collidedSubs { sub.shortcutID = UUID() }
             for tag in collidedTags { tag.id = UUID() }

@@ -45,7 +45,8 @@ struct YalaApp: App {
     }
 
     /// ModelContainer compartido para toda la app.
-    /// Dos configs: personal (CloudKit) + groups (local, synced por CKSyncEngine).
+    /// Tres configs: personal (CloudKit) + groups (local, synced por CKSyncEngine) +
+    /// sync-meta (`SyncIdentity` local, nunca CloudKit — Modo Nube I2).
     /// Bajo unit tests `personalConfiguration`/`groupsConfiguration` devuelven stores
     /// in-memory con `cloudKitDatabase: .none` (sin mirror CloudKit), así que crear este
     /// container en el host de tests es barato y NO toca CloudKit.
@@ -56,7 +57,8 @@ struct YalaApp: App {
             return try ModelContainer(
                 for: SwiftDataConfiguration.schema,
                 configurations: SwiftDataConfiguration.personalConfiguration,
-                               SwiftDataConfiguration.groupsConfiguration
+                               SwiftDataConfiguration.groupsConfiguration,
+                               SwiftDataConfiguration.syncMetaConfiguration
             )
         } catch {
             fatalError("Error al inicializar ModelContainer de Yala: \(error)")

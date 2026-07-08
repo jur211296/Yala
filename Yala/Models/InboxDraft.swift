@@ -194,6 +194,11 @@ final class InboxDraft: Identifiable {
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now
 
+    // MARK: - Sync Identity (Modo Nube, I2)
+    /// Identidad estable de sync. Opcional sin default (gotcha de UUID colapsado — ver
+    /// `TransactionItem.syncID`). Poblado por `SyncIdentityService`.
+    @Attribute(.preserveValueOnDeletion) var syncID: UUID?
+
     // MARK: - Computed Properties
 
     var sourceType: DraftSourceType {

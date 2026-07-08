@@ -388,6 +388,8 @@ func seedCategoriesIfNeeded(in modelContext: ModelContext) {
             sortOrder: categoryIndex,
             iconName: definition.iconName
         )
+        // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
+        SyncIdentityService.captureIfEnabled(category)
         modelContext.insert(category)
 
         // Crear subcategorías asociadas

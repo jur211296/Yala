@@ -99,6 +99,8 @@ final class SaveAsFavoriteViewModel {
             displayOrder: nextOrder
         )
 
+        // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
+        SyncIdentityService.captureIfEnabled(favorite)
         context.insert(favorite)
         try context.save()
     }

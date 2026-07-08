@@ -97,6 +97,8 @@ final class CategoriesSettingsListViewModel {
             sortOrder: nextSortOrder,
             subcategories: []
         )
+        // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
+        SyncIdentityService.captureIfEnabled(category)
         context.insert(category)
 
         newCategory = category

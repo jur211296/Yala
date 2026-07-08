@@ -406,6 +406,8 @@ final class ExchangeRateService: ExchangeRateServiceProtocol {
                 ratesDictionary: rates,
                 timestamp: timestamp
             )
+            // Modo Nube I2: born-cloud identity capture (gateado DARK; no-op en producción hoy).
+            SyncIdentityService.captureIfEnabled(newRate)
             context.insert(newRate)
         }
 
