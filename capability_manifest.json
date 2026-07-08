@@ -46,6 +46,16 @@
         "account_ids",
         "tag_refs"
       ]
+    },
+    "tx_split": {
+      "entity": "tx_items",
+      "columns": [
+        "split_divisor",
+        "split_my_value",
+        "split_total_amount",
+        "split_type"
+      ],
+      "rationale": "Decision owner 2026-07-07 (review adversarial I5): split_type discrimina la interpretacion de split_my_value/split_divisor (percentage/shares/exact) — mismo acople que el grupo split de scheduled_payments. Residual documentado: amount (grupo money) es derivado de estos 4; un merge cross-group puede divergir amount de sus insumos — cosmetico (las sumatorias consumen amount; estos campos son la memoria del editor)."
     }
   },
   "entities": {
@@ -1138,24 +1148,24 @@
           "pg_type": "numeric",
           "scale": 4,
           "format": "decimal_fixed",
-          "safe": true
+          "group_key": "tx_split"
         },
         "split_type": {
           "pg_type": "text",
           "format": "utf8",
-          "safe": true
+          "group_key": "tx_split"
         },
         "split_my_value": {
           "pg_type": "numeric",
           "scale": 4,
           "format": "decimal_fixed",
-          "safe": true
+          "group_key": "tx_split"
         },
         "split_divisor": {
           "pg_type": "numeric",
           "scale": 4,
           "format": "decimal_fixed",
-          "safe": true
+          "group_key": "tx_split"
         },
         "created_at": {
           "pg_type": "timestamptz",

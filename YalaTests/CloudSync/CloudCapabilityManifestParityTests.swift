@@ -42,6 +42,13 @@ struct CloudCapabilityManifestParityTests {
             "limit_amount", "currency_code", "natures",
             "subcategory_ids", "account_ids", "tag_refs",
         ]),
+        // 4º grupo — decisión owner 2026-07-07 (review adversarial I5): split_type discrimina
+        // la interpretación de split_my_value/split_divisor; mismo acople que el grupo "split".
+        // Residual aceptado: amount (grupo money) es derivado de estos 4 — divergencia
+        // cross-group posible y cosmética (las sumatorias consumen amount).
+        "tx_split": ("tx_items", [
+            "split_type", "split_total_amount", "split_my_value", "split_divisor",
+        ]),
     ]
 
     /// Columnas server-authored + identidad: legítimas en el snapshot, NUNCA en el manifest.
@@ -146,7 +153,7 @@ struct CloudCapabilityManifestParityTests {
     @Test("(a) cada columna declara safe XOR group_key — sin default silencioso")
     func everyColumnDeclaresExactlyOne() throws {
         let manifest = try Self.loadManifest()
-        let validGroups: Set<String> = ["money", "split", "budget"]
+        let validGroups: Set<String> = ["money", "split", "budget", "tx_split"]
         for (ent, cols) in manifest.entities {
             for (col, meta) in cols {
                 let hasSafe = (meta["safe"] as? Bool) == true
@@ -163,12 +170,12 @@ struct CloudCapabilityManifestParityTests {
 
     // MARK: - (b) grupos de coherencia == frozen sets (declaraciones por-columna Y bloque)
 
-    @Test("(b) los 3 grupos de coherencia contienen EXACTAMENTE las columnas congeladas")
+    @Test("(b) los 4 grupos de coherencia contienen EXACTAMENTE las columnas congeladas")
     func coherenceGroupsMatchFrozen() throws {
         let manifest = try Self.loadManifest()
 
         // Derivado de las declaraciones por-columna:
-        var derived: [String: Set<String>] = ["money": [], "split": [], "budget": []]
+        var derived: [String: Set<String>] = ["money": [], "split": [], "budget": [], "tx_split": []]
         for (_, cols) in manifest.entities {
             for (col, meta) in cols {
                 if let g = meta["group_key"] as? String { derived[g, default: []].insert(col) }
