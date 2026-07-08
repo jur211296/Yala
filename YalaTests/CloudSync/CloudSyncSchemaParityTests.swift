@@ -75,10 +75,16 @@ struct CloudSyncSchemaParityTests {
             "clientMutationID",
             "fieldsJSON",
             "author",
+            "tombstoneReason",
             "createdAt",
             "schemaVersion",
         ]
         #expect(propertyNames(SyncOutbox.self) == expected)
+    }
+
+    @Test func syncOutbox_schemaVersion_isTwo_afterTombstoneReason() {
+        // I4 añadió `tombstoneReason` (additive) → bump del testigo A1 a 2.
+        #expect(CloudSyncSchemaVersions.syncOutbox == 2)
     }
 
     @Test func syncCursor_entityName_isAnchoredLiteral() {

@@ -30,9 +30,30 @@ nonisolated enum SyncOutboxOp: String {
     case tombstone
 }
 
+/// Taxonomía de la razón de un tombstone (§c.1). Es METADATA DE AUDITORÍA aguas abajo (el backend
+/// mantiene `deleted=true` igual sea cual sea el reason) → una clasificación conservadora NO
+/// compromete la correctness. La clasificación es 100% DRAIN-SIDE (`CloudSyncEngine.classify*`): los
+/// ~30 call-sites de delete de producción NO se tocan.
+nonisolated enum SyncTombstoneReason: String {
+    /// Borrado directo pedido por el usuario (default cuando no hay señal de cascada/migración).
+    case user
+    /// Borrado en cascada: el delete llegó en una transacción de History que TAMBIÉN borra un tipo
+    /// PADRE de cascada conocida (hoy `ScheduledPayment` → sus TX/drafts futuros; `EntityDeletionService`).
+    case cascade
+    /// Deduplicación de categorías (I9: `CategoryDeduplicationService` marcará un author dedicado; hasta
+    /// entonces esos deletes caen en `user`/`cascade`).
+    case dedup
+    /// Borrado emitido por el motor/migración (I10). Bucket por completitud — de facto inalcanzable hoy
+    /// (los writes del motor se descartan por echo-suppression antes de clasificar).
+    case migration
+    /// Vaciado total de datos (I12: `DataWipeService` marcará un author dedicado; hasta entonces esos
+    /// deletes caen en `user`/`cascade`).
+    case wipe
+}
+
 extension CloudSyncSchemaVersions {
-    /// Versión de schema de `SyncOutbox` (testigo A1 en cada fila).
-    static let syncOutbox = 1
+    /// Versión de schema de `SyncOutbox` (testigo A1 en cada fila). v2 (I4): añade `tombstoneReason`.
+    static let syncOutbox = 2
 }
 
 /// Fila de la cola de salida. Una por operación de dominio pendiente de sincronizar.
@@ -58,6 +79,10 @@ final class SyncOutbox {
     /// Payload de campos. HOY STUB (`{prop: descripción}` sin `syncID`); I8 → codec canónico c1.
     var fieldsJSON: String = ""
 
+    /// Razón del tombstone (`SyncTombstoneReason.rawValue`) — `nil` en filas `upsert`. Metadata de
+    /// auditoría: el backend no ramifica sobre ella (aplica `deleted=true` igual). Additive (v2).
+    var tombstoneReason: String?
+
     /// Autor de la mutación de origen (el `author` de la transacción de History que la produjo;
     /// cadena vacía para writes locales sin autor). Distinto del autor del CONTEXTO con que el motor
     /// persiste el outbox (`CloudSyncEngine.outboxSaveAuthor`), que sirve para la anti-auto-captura.
@@ -77,6 +102,7 @@ final class SyncOutbox {
         clientMutationID: UUID = UUID(),
         fieldsJSON: String,
         author: String,
+        tombstoneReason: String? = nil,
         createdAt: Date = .now,
         schemaVersion: Int = CloudSyncSchemaVersions.syncOutbox
     ) {
@@ -87,6 +113,7 @@ final class SyncOutbox {
         self.clientMutationID = clientMutationID
         self.fieldsJSON = fieldsJSON
         self.author = author
+        self.tombstoneReason = tombstoneReason
         self.createdAt = createdAt
         self.schemaVersion = schemaVersion
     }

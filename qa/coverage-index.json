@@ -314,7 +314,7 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/CloudSyncEngineTests + unit:YalaTests/CloudSyncSchemaParityTests — captura write→drain (History → outbox). DARK (nada lo instancia; wiring en I9/I12), sin superficie UI",
+      "coverage": "unit:YalaTests/CloudSyncEngineTests + unit:YalaTests/CloudSyncTombstoneTests + unit:YalaTests/CloudSyncSchemaParityTests — captura write→drain (History → outbox) + clasificación de reason de tombstone (I4: user/cascade/dedup/migration/wipe, drain-side). DARK (nada lo instancia; wiring en I9/I12), sin superficie UI",
       "owner": "",
       "lastVerified": "2026-07-07"
     },

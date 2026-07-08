@@ -18,8 +18,10 @@
 //  → tras un kill (proceso reiniciado = instancia+reloj frescos), el re-drain reproduce las mismas
 //  filas y la deduplicación por (syncID, hlc, op) las absorbe sin duplicar.
 //
-//  Frontera I3/I4: aquí el tombstone es MÍNIMO (op + syncID preservado). La clasificación del
-//  `reason` del delete, las cascadas manuales y los goldens S4 son de I4.
+//  I4: el tombstone lleva op + syncID preservado + `reason` clasificado 100% DRAIN-SIDE
+//  (`classifyTombstoneReason`, taxonomía §c.1: user | cascade | dedup | migration | wipe). La
+//  clasificación NO toca los ~30 call-sites de delete de producción (cero cambios en
+//  `EntityDeletionService` ni vistas). `dedup`/`wipe` se afinan en I9/I12 (comentario-guardia).
 //
 //  Frontera I3/I8: `fieldsJSON` es un STUB estructurado (JSON `{prop: descripción}` sin `syncID`);
 //  el espejo App Group `.atomic` previo al insert; el sender; el `serverSeqCursor` del pull; y el
@@ -105,6 +107,40 @@ final class CloudSyncEngine {
         "GroupBridgePreference",
     ]
 
+    // MARK: Clasificación del reason de tombstone (§c.1) — 100% DRAIN-SIDE
+
+    /// Entity names PADRE de una cascada MANUAL cuyos hijos syncables se borran en el MISMO `save()`
+    /// (= misma transacción de History). Si una transacción borra uno de estos, los tombstones de las
+    /// 6 entidades syncables producidos en ESA transacción se clasifican `cascade`.
+    ///
+    /// Inventario VERIFICADO contra `EntityDeletionService.swift` (2026-07-07):
+    ///   • `ScheduledPayment` — `deleteScheduledPayment` borra `InboxDraft` (línea 253) y
+    ///     `TransactionItem` (línea 274) y luego el pago (línea 285) en UN solo `save()`. Ambos hijos
+    ///     SON syncables → `cascade`. ÚNICO padre verificado.
+    /// EXCLUIDOS (no borran hijos syncables o no son deletes):
+    ///   • `deleteTag` (Tag NO es syncable; los TX/drafts/favoritos se ACTUALIZAN, no se borran → upsert).
+    ///   • `deleteCategory`/`deleteSubcategory`/`deleteAccount`/`deleteBudget` (los hijos son
+    ///     Subcategory/nullify, no deletes de syncables; el propio Category borrado es el delete de nivel
+    ///     superior pedido por el usuario, no una cascada).
+    ///   • cascada de SCHEMA `CashFlowPlan → CashFlowLine → CashFlowOverride` (ninguna es syncable).
+    ///   • `SubcategoryTransferViewModel.deleteTransactions` (borra TX sin borrar un padre en el mismo
+    ///     save → bulk del usuario = `user`).
+    ///   • `CategoryDeduplicationService` (I9 → `dedup`) / `DataWipeService` (I12 → `wipe`): sin señal de
+    ///     call-site hoy → caen en `user`/`cascade`. Comentario-guardia: I9/I12 marcarán un author
+    ///     dedicado y esta clasificación se afinará entonces (el reason es metadata de auditoría — la
+    ///     clasificación conservadora NO compromete correctness: el backend mantiene `deleted=true` igual).
+    static let cascadeParentEntityNames: Set<String> = [
+        "ScheduledPayment",
+    ]
+
+    /// Authors cuyas transacciones se clasifican `migration`. Bucket por COMPLETITUD (§c.1): hoy solo
+    /// `outboxSaveAuthor` caería aquí, pero sus transacciones ya se DESCARTAN por echo-suppression
+    /// antes de clasificar → de facto inalcanzable. Reservado para el author dedicado de la migración
+    /// (I10). El delete-vs-cascade se decide DESPUÉS de este gate.
+    static let migrationAuthors: Set<String> = [
+        outboxSaveAuthor,
+    ]
+
     // MARK: Estado
 
     /// Reloj HLC en-memoria de esta instancia (fresco; persistencia + `receive()` en I8).
@@ -186,6 +222,9 @@ final class CloudSyncEngine {
                 // Anti-auto-captura (echo suppression): descartar los writes del propio motor. NO
                 // avanzan el high-water (si lo hicieran, cada avance escribiría el cursor → loop).
                 if tx.author == Self.outboxSaveAuthor { continue }
+                // Clasificación del reason de tombstone: UNA vez por transacción (el reason depende del
+                // CONJUNTO de deletes de la transacción, no del change individual). §c.1.
+                let tombstoneReason = Self.classifyTombstoneReason(tx)
                 var txRows: [PendingOutboxRow] = []
                 do {
                     for change in tx.changes {
@@ -193,6 +232,7 @@ final class CloudSyncEngine {
                         // Anti-fuga de Grupos: solo entidades del store personal.
                         guard Self.personalEntityNames.contains(entityName) else { continue }
                         try translate(change, entityName: entityName, tx: tx,
+                                      tombstoneReason: tombstoneReason,
                                       lookups: lookups, rows: &txRows, seen: &seen)
                     }
                 } catch {
@@ -247,6 +287,30 @@ final class CloudSyncEngine {
         }
     }
 
+    // MARK: - Clasificación del reason de tombstone (§c.1, drain-side)
+
+    /// Deriva el `reason` de los tombstones de UNA transacción (§c.1). Precedencia: `migration` (author
+    /// del motor/migración) → `cascade` (la transacción borra un tipo padre de cascada conocida) →
+    /// `user` (default). `dedup`/`wipe` NO son clasificables hoy sin señal de call-site (I9/I12) → caen
+    /// en `user`/`cascade`. Es metadata de auditoría: una clasificación conservadora no compromete la
+    /// correctness (el backend mantiene `deleted=true` igual). Estático + puro → testeable en aislamiento
+    /// del ciclo del drain no es trivial (requiere `DefaultHistoryTransaction`), así que los goldens lo
+    /// ejercitan end-to-end vía el drain real.
+    private static func classifyTombstoneReason(_ tx: DefaultHistoryTransaction) -> SyncTombstoneReason {
+        // migration: author dedicado del motor/migración (bucket por completitud; ver `migrationAuthors`).
+        if let author = tx.author, migrationAuthors.contains(author) {
+            return .migration
+        }
+        // cascade: la transacción TAMBIÉN borra un tipo padre de cascada conocida.
+        for change in tx.changes {
+            guard case .delete = change else { continue }
+            if cascadeParentEntityNames.contains(change.changedPersistentIdentifier.entityName) {
+                return .cascade
+            }
+        }
+        return .user
+    }
+
     // MARK: - Traducción de un cambio (dispatch por tipo concreto)
 
     /// Índices persistentID→modelo de los 6 tipos sincronizables (construidos en el barrido).
@@ -265,6 +329,7 @@ final class CloudSyncEngine {
         _ change: HistoryChange,
         entityName: String,
         tx: DefaultHistoryTransaction,
+        tombstoneReason: SyncTombstoneReason,
         lookups: Lookups,
         rows: inout [PendingOutboxRow],
         seen: inout Set<String>
@@ -273,27 +338,33 @@ final class CloudSyncEngine {
         case SyncEntityType.transactionItem:
             try translateChange(change, type: TransactionItem.self, entityType: entityName,
                                 syncIDKeyPath: \.syncID, insertFields: Self.transactionItemFields,
-                                lookup: lookups.transactionItem, tx: tx, rows: &rows, seen: &seen)
+                                lookup: lookups.transactionItem, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.inboxDraft:
             try translateChange(change, type: InboxDraft.self, entityType: entityName,
                                 syncIDKeyPath: \.syncID, insertFields: Self.inboxDraftFields,
-                                lookup: lookups.inboxDraft, tx: tx, rows: &rows, seen: &seen)
+                                lookup: lookups.inboxDraft, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.category:
             try translateChange(change, type: Category.self, entityType: entityName,
                                 syncIDKeyPath: \.syncID, insertFields: Self.categoryFields,
-                                lookup: lookups.category, tx: tx, rows: &rows, seen: &seen)
+                                lookup: lookups.category, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.favoritePayment:
             try translateChange(change, type: FavoritePayment.self, entityType: entityName,
                                 syncIDKeyPath: \.syncID, insertFields: Self.favoritePaymentFields,
-                                lookup: lookups.favoritePayment, tx: tx, rows: &rows, seen: &seen)
+                                lookup: lookups.favoritePayment, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.merchantMemory:
             try translateChange(change, type: MerchantMemory.self, entityType: entityName,
                                 syncIDKeyPath: \.syncID, insertFields: Self.merchantMemoryFields,
-                                lookup: lookups.merchantMemory, tx: tx, rows: &rows, seen: &seen)
+                                lookup: lookups.merchantMemory, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.exchangeRate:
             try translateChange(change, type: ExchangeRate.self, entityType: entityName,
                                 syncIDKeyPath: \.syncID, insertFields: Self.exchangeRateFields,
-                                lookup: lookups.exchangeRate, tx: tx, rows: &rows, seen: &seen)
+                                lookup: lookups.exchangeRate, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         default:
             // Personal-pero-aún-sin-identidad (los 10 restantes de los 16). No se traduce en I3.
             return
@@ -309,6 +380,7 @@ final class CloudSyncEngine {
         insertFields: (T) -> [String: String],
         lookup: [PersistentIdentifier: T],
         tx: DefaultHistoryTransaction,
+        tombstoneReason: SyncTombstoneReason,
         rows: inout [PendingOutboxRow],
         seen: inout Set<String>
     ) throws {
@@ -349,9 +421,10 @@ final class CloudSyncEngine {
                 recordIdentityGap(entityType: entityType, reason: "tombstoneSyncIDNil")
                 return
             }
-            // Tombstone MÍNIMO (frontera I3/I4): op + syncID, sin payload de campos.
+            // Tombstone (I4): op + syncID + `reason` clasificado drain-side (§c.1), sin payload de campos.
             try appendRow(op: .tombstone, syncID: syncID, entityType: entityType,
-                          fields: [:], tx: tx, rows: &rows, seen: &seen)
+                          fields: [:], tombstoneReason: tombstoneReason,
+                          tx: tx, rows: &rows, seen: &seen)
 
         @unknown default:
             // `HistoryChange` puede ganar casos nuevos (Swift 6): ignorar defensivamente.
@@ -367,6 +440,7 @@ final class CloudSyncEngine {
         syncID: UUID,
         entityType: String,
         fields: [String: String],
+        tombstoneReason: SyncTombstoneReason? = nil,
         tx: DefaultHistoryTransaction,
         rows: inout [PendingOutboxRow],
         seen: inout Set<String>
@@ -384,7 +458,10 @@ final class CloudSyncEngine {
             op: op,
             hlc: hlc,
             fieldsJSON: encodeFields(fields),
-            author: tx.author ?? ""
+            author: tx.author ?? "",
+            // Solo los tombstones llevan reason (upsert → nil). Defensivo: aunque el llamador pasara un
+            // reason con op:upsert, se descarta (el reason es semántica exclusiva del tombstone).
+            tombstoneReason: op == .tombstone ? tombstoneReason?.rawValue : nil
         ))
     }
 
@@ -576,6 +653,7 @@ private struct PendingOutboxRow {
     let hlc: String
     let fieldsJSON: String
     let author: String
+    let tombstoneReason: String?
 
     @MainActor
     func makeModel() -> SyncOutbox {
@@ -585,7 +663,8 @@ private struct PendingOutboxRow {
             op: op,
             hlc: hlc,
             fieldsJSON: fieldsJSON,
-            author: author
+            author: author,
+            tombstoneReason: tombstoneReason
         )
     }
 }
