@@ -145,6 +145,9 @@ enum AnalyticsEvent: String {
     case cloudkitGroupRecordSaveRejected = "Diagnóstico · Save de grupo rechazado"  // params: code, recordType — CANARIO: >0 en prod = incidente de schema/permisos en el container de grupos (el server descarta el record; la recovery lo re-encola al próximo launch)
     case iCloudRestoreOutcome = "Diagnóstico · Resultado de restore"  // params: phase (completed|partial), destination (groupsOnly|directToApp|onboarding)
     case cloudSyncIdentityGapObserved = "Diagnóstico · Gap de identidad de sync"  // params: entityType — CANARIO (Modo Nube I3): un delete cuyo tombstone NO trae syncID preservado → el outbox no pudo emitir el tombstone; >0 = revisar la captura de identidad (barrido/born-cloud)
+    case cloudSignInProviderMismatch = "Diagnóstico · Proveedor de sign-in distinto"  // CANARIO (Modo Nube I7, §f.1 variante B): un born-cloud con faro cloud-activado firmó con OTRO proveedor (sub nuevo) → 2ª cuenta divergente evitada con aviso; >0 = priorizar identity-linking (A30). Superficie declarada; la DISPARA el consumidor I7c cuando AccountClaimDecision → .showProviderMismatch
+    case cloudSyncBlockedByAttestUnavailable = "Diagnóstico · Sync bloqueado por attest"  // params: platform — CANARIO (Modo Nube I7, §f.5/E2E-S10): la 2ª señal (App Attest/Play Integrity/WebAuthn) es TERMINAL → el device no puede sincronizar de forma segura; >0 = devices sin backup. Superficie declarada; la DISPARA el consumidor I7c cuando AttestSyncGate.classify → .terminal
+    case cloudSyncBlockedByExpiredSession = "Diagnóstico · Sync bloqueado por sesión expirada"  // params: pending — BREADCRUMB (Modo Nube I7, §f.3/S11): sesión no renovable con deltas en el outbox → estado accionable "inicia sesión para subirlos". Superficie declarada; la DISPARA el consumidor I7c/I8 cuando SessionExpiryPolicy → .blockedNeedsSignIn
 
     // Routing observability (F9 — privacy-first: only intent IDs, no payloads)
     case routingIntentSuperseded = "Diagnóstico · Routing supersedido"  // a queued intent was dropped by an incoming one
@@ -346,6 +349,34 @@ enum TelemetryService {
     static func cloudSyncIdentityGapObserved(entityType: String) {
         track(.cloudSyncIdentityGapObserved, parameters: [
             "entityType": entityType
+        ])
+    }
+
+    /// CANARIO Modo Nube (I7, §f.1 variante B): un born-cloud cuyo faro KV dice "cloud activado" firmó
+    /// con un proveedor cuyo `sub` NO tiene cuenta → se evitó una 2ª cuenta divergente con un aviso.
+    /// >0 = priorizar identity-linking (riesgo A30). La dispara el consumidor I7c cuando
+    /// `AccountClaimDecision.decide` devuelve `.showProviderMismatch`. Privacy-first: sin IDs ni PII.
+    static func cloudSignInProviderMismatch() {
+        track(.cloudSignInProviderMismatch)
+    }
+
+    /// CANARIO Modo Nube (I7, §f.5/E2E-S10): la 2ª señal (App Attest iOS / Play Integrity Android /
+    /// WebAuthn web) es TERMINAL → este device no puede sincronizar de forma segura (nunca respalda).
+    /// La dispara el consumidor I7c cuando `AttestSyncGate.classify` devuelve `.terminal`.
+    /// Privacy-first: solo la plataforma, sin IDs ni PII.
+    static func cloudSyncBlockedByAttestUnavailable(platform: String) {
+        track(.cloudSyncBlockedByAttestUnavailable, parameters: [
+            "platform": platform
+        ])
+    }
+
+    /// BREADCRUMB Modo Nube (I7, §f.3/S11): la sesión de Supabase no puede renovar y hay deltas en el
+    /// outbox → estado accionable "inicia sesión para subir tus N cambios" (los datos están a salvo
+    /// localmente). La dispara el consumidor I7c/I8 cuando `SessionExpiryPolicy.decide` devuelve
+    /// `.blockedNeedsSignIn`. Privacy-first: solo el conteo, sin IDs ni PII.
+    static func cloudSyncBlockedByExpiredSession(pending: Int) {
+        track(.cloudSyncBlockedByExpiredSession, parameters: [
+            "pending": String(pending)
         ])
     }
 
