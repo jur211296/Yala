@@ -55,8 +55,9 @@ nonisolated enum SyncTombstoneReason: String {
 
 extension CloudSyncSchemaVersions {
     /// Versión de schema de `SyncOutbox` (testigo A1 en cada fila). v2 (I4): añade `tombstoneReason`.
-    /// v3 (I8c): añade `fieldHlcsJSON` (el `field_hlcs` por-unidad, additive).
-    static let syncOutbox = 3
+    /// v3 (I8c): añade `fieldHlcsJSON` (el `field_hlcs` por-unidad, additive). v4 (I8e): añade el
+    /// dead-letter (`rejectedReason`/`rejectedAt`, ambos additive-optional).
+    static let syncOutbox = 4
 }
 
 /// Fila de la cola de salida. Una por operación de dominio pendiente de sincronizar.
@@ -99,6 +100,17 @@ final class SyncOutbox {
     /// Cuándo se encoló la fila. Diagnóstico/orden de inserción — NO es la verdad temporal (esa es `hlc`).
     var createdAt: Date = Date.now
 
+    /// DEAD-LETTER (I8e, §d.5 cero-silencios): motivo por el que el backend RECHAZÓ este delta (el
+    /// `reason` del `SyncDeltaResult` con `status == rejected`, p.ej. `coherence_group_partial:money`).
+    /// `nil` = nunca rechazado. La fila NO se purga al rechazarse (a diferencia de `applied`/`noop`): queda
+    /// aquí con su motivo para que el panel DEBUG (I12) la superficie; un rechazo repetido re-escribe el
+    /// mismo motivo (no se pierde). Additive-optional (v4). Un `coherence_group_partial` en v1 = bug de
+    /// emisión (debe ser 0 tras I8b/I8c) — el canario `cloudSyncMutationRejected` lo delata.
+    var rejectedReason: String?
+
+    /// Cuándo el backend rechazó este delta por última vez (par de `rejectedReason`). Additive-optional (v4).
+    var rejectedAt: Date?
+
     /// Versión del schema bajo la que se materializó esta fila (testigo A1).
     var schemaVersion: Int = CloudSyncSchemaVersions.syncOutbox
 
@@ -113,6 +125,8 @@ final class SyncOutbox {
         author: String,
         tombstoneReason: String? = nil,
         createdAt: Date = .now,
+        rejectedReason: String? = nil,
+        rejectedAt: Date? = nil,
         schemaVersion: Int = CloudSyncSchemaVersions.syncOutbox
     ) {
         self.syncID = syncID
@@ -125,6 +139,8 @@ final class SyncOutbox {
         self.author = author
         self.tombstoneReason = tombstoneReason
         self.createdAt = createdAt
+        self.rejectedReason = rejectedReason
+        self.rejectedAt = rejectedAt
         self.schemaVersion = schemaVersion
     }
 }

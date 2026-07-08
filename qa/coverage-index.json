@@ -299,11 +299,13 @@
         "supabase-staging.ddl",
         "qa/cloud/**",
         "gateway/src/sync/**",
-        "gateway/src/sync/account.ts"
+        "gateway/src/sync/account.ts",
+        "Yala/Services/CloudSync/SyncPushClient.swift",
+        "qa/cloud/push-e2e-test.sh"
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/CloudCapabilityManifestParityTests (manifest/groups/DDL offline) + script:qa/cloud/cross-user-rls-test.sh (gate §2.3, 18/18 contra staging 2026-07-07) — + gateway/test/sync.goldens.test.ts (Worker /sync/* + /account/* — 17 goldens contra staging real) — backend staging fostjbbwstyuunmmefuk",
+      "coverage": "unit:YalaTests/CloudCapabilityManifestParityTests (manifest/groups/DDL offline) + script:qa/cloud/cross-user-rls-test.sh (gate §2.3, 18/18 contra staging 2026-07-07) — + gateway/test/sync.goldens.test.ts (Worker /sync/* + /account/* — 17 goldens contra staging real) — backend staging fostjbbwstyuunmmefuk + SyncPushClient e2e (I8e: push del outbox al Worker, verificado contra staging)",
       "owner": "",
       "lastVerified": "2026-07-07"
     },

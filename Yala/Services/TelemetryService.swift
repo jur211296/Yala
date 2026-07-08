@@ -151,6 +151,8 @@ enum AnalyticsEvent: String {
     case cloudSyncBlockedByExpiredSession = "Diagnóstico · Sync bloqueado por sesión expirada"  // params: pending — BREADCRUMB (Modo Nube I7, §f.3/S11): sesión no renovable con deltas en el outbox → estado accionable "inicia sesión para subirlos". Superficie declarada; la DISPARA el consumidor I7c/I8 cuando SessionExpiryPolicy → .blockedNeedsSignIn
     case cloudSyncOutboxMirrorRehydrated = "Diagnóstico · Outbox re-hidratado del espejo"  // params: count — CANARIO (Modo Nube I8d/A1, §d.5): >0 en boot = una lightweight migration recreó la tabla SyncOutbox y `count` filas se re-hidrataron del espejo App Group (evento hoy invisible). La DISPARA CloudSyncEngine.rehydrateOutboxFromMirror
     case cloudSyncOutboxMirrorDivergence = "Diagnóstico · Divergencia del espejo del outbox"  // params: delta — CANARIO (Modo Nube I8d/A1, §d.5): delta = |espejo del userID| − |store SyncOutbox| en cada arranque; >0 persistente SIN migración = crash entre purga y remove no reconciliado, o vaciado parcial (el modo de fallo que ni el Merkle ve). La DISPARA CloudSyncEngine.rehydrateOutboxFromMirror
+    case cloudSyncMutationRejected = "Diagnóstico · Mutación de sync rechazada"  // params: reason — CANARIO (Modo Nube I8e, §d.5): el backend RECHAZÓ un delta (status rejected). El delta queda en dead-letter (SyncOutbox.rejectedReason), NO se pierde. >0 = write-site sin auditar / grupo de coherencia parcial (bug de emisión, debe ser 0). La DISPARA SyncPushClient.applyResults. Sin PII (solo el motivo)
+    case cloudAccountUnavailable = "Diagnóstico · Cuenta no disponible"  // BREADCRUMB (Modo Nube I8e, §d.5): el backend respondió 403 (autenticado pero prohibido) → cuenta suspendida/deshabilitada, distinto del 401 (sesión expirada). >0 = revisar estado de la cuenta. La DISPARA SyncPushClient.push. Sin PII
 
     // Routing observability (F9 — privacy-first: only intent IDs, no payloads)
     case routingIntentSuperseded = "Diagnóstico · Routing supersedido"  // a queued intent was dropped by an incoming one
@@ -412,6 +414,23 @@ enum TelemetryService {
         track(.cloudSyncOutboxMirrorDivergence, parameters: [
             "delta": String(delta)
         ])
+    }
+
+    /// CANARIO Modo Nube (I8e, §d.5): el backend RECHAZÓ un delta (`SyncDeltaResult.status == rejected`).
+    /// El delta NO se pierde — queda en dead-letter (`SyncOutbox.rejectedReason`) para el panel DEBUG (I12).
+    /// >0 = un write-site sin auditar o un grupo de coherencia parcial (bug de emisión, debe ser 0 tras
+    /// I8b/I8c). La dispara `SyncPushClient.applyResults`. Privacy-first: solo el motivo, sin IDs ni PII.
+    static func cloudSyncMutationRejected(reason: String) {
+        track(.cloudSyncMutationRejected, parameters: [
+            "reason": reason
+        ])
+    }
+
+    /// BREADCRUMB Modo Nube (I8e, §d.5): el backend respondió 403 (autenticado pero prohibido) → la cuenta
+    /// está suspendida/deshabilitada. Distinto del 401 (sesión expirada → `cloudSyncBlockedByExpiredSession`).
+    /// La dispara `SyncPushClient.push`. Privacy-first: sin IDs ni PII.
+    static func cloudAccountUnavailable() {
+        track(.cloudAccountUnavailable)
     }
 
     /// Reports a `transferPairID` shared by 3+ TXs (collision). NO auto-repair se aplica

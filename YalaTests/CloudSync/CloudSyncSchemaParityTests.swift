@@ -78,14 +78,17 @@ struct CloudSyncSchemaParityTests {
             "author",
             "tombstoneReason",
             "createdAt",
+            "rejectedReason",
+            "rejectedAt",
             "schemaVersion",
         ]
         #expect(propertyNames(SyncOutbox.self) == expected)
     }
 
-    @Test func syncOutbox_schemaVersion_isThree_afterFieldHlcs() {
-        // I4 añadió `tombstoneReason` (v2); I8c añadió `fieldHlcsJSON` (additive) → bump del testigo A1 a 3.
-        #expect(CloudSyncSchemaVersions.syncOutbox == 3)
+    @Test func syncOutbox_schemaVersion_isFour_afterDeadLetter() {
+        // I4 añadió `tombstoneReason` (v2); I8c añadió `fieldHlcsJSON` (v3); I8e añadió el dead-letter
+        // (`rejectedReason`/`rejectedAt`, additive) → bump del testigo A1 a 4.
+        #expect(CloudSyncSchemaVersions.syncOutbox == 4)
     }
 
     @Test func syncCursor_entityName_isAnchoredLiteral() {

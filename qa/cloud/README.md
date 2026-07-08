@@ -58,6 +58,27 @@ DELETE FROM public.profiles WHERE id IN (
 Los tests que necesitan estado `migration_in_progress` lo fijan por un PATCH directo a PostgREST con el
 JWT del propio dueño (RLS UPDATE lo permite) y lo revierten al terminar.
 
+## Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)
+
+`push-e2e-test.sh` ejerce `POST /sync/push` con EL MISMO envelope JSON que arma `SyncPushClient`
+(`fields`/`field_hlcs` RawJSON-crudo verbatim, `hlc` de fila, `client_mutation_id`) contra el Worker
+staging desplegado, con el JWT de user-A (password grant). Escenarios:
+
+- **(a)** upsert de un `tx_items` real (columnas safe field-level) → `200 applied` (inserted).
+- **(b)** idempotencia: re-push del MISMO delta (mismo `sync_id`+`hlc`) → `200 noop` (`all_units_stale`).
+- **(c)** forja de grupo de coherencia parcial: toca `amount` (grupo `money`) sin el resto del grupo →
+  `200 rejected` con `reason=coherence_group_partial:money` (http 422).
+
+```bash
+bash qa/cloud/push-e2e-test.sh
+# luego, en contexto service (SQL editor / MCP), verifica que la fila (a) aterrizó:
+#   select sync_id, note, currency_code, hlc, field_hlcs from public.tx_items where sync_id = '<SID>';
+```
+
+**Sin cleanup:** `sync_id` FRESCO (UUID) por corrida — `DELETE` está revocado, las filas se ACUMULAN bajo
+el `user_id` de test. Limpia por `user_id` de los 2 usuarios de test en contexto service, igual que los
+goldens. El script nunca usa `service_role`. NO corre en CI (red + usuarios sembrados).
+
 ## Related repo artifacts
 
 - `capability_manifest.json` (repo root) — per-entity domain columns with explicit `safe` / `group_key`.

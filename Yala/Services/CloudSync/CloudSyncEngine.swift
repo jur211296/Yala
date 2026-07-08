@@ -76,6 +76,45 @@ enum CloudSyncBreadcrumb {
     static func encodeRejected(entity: String, reason: String) {
         logger.notice("CloudSyncEncodeRejected \(entity, privacy: .public) reason=\(reason, privacy: .public)")
     }
+
+    // MARK: Push (I8e) — sin PII (status HTTP, counts, motivos de transporte; nunca valores de usuario)
+
+    /// No hay sesión (token ausente) o el backend devolvió 401 → `pending` deltas quedan sin subir.
+    static func pushBlockedNoSession(pending: Int) {
+        logger.notice("CloudSyncPush blocked=no-session pending=\(pending, privacy: .public)")
+    }
+
+    /// El backend devolvió 403 → cuenta suspendida/deshabilitada (≠401).
+    static func pushAccountUnavailable() {
+        logger.notice("CloudSyncPush blocked=account-unavailable (403)")
+    }
+
+    /// Fallo de transporte (red caída / timeout / respuesta no-HTTP / 200 no decodificable) → reintentar.
+    static func pushTransport(reason: String) {
+        logger.notice("CloudSyncPush transient transport reason=\(reason, privacy: .public)")
+    }
+
+    /// El Worker respondió con un status inesperado (5xx / 429 / 4xx) → reintentar.
+    static func pushHTTP(status: Int) {
+        logger.notice("CloudSyncPush transient http=\(status, privacy: .public)")
+    }
+
+    /// Una fila de outbox no pudo traducirse a delta (clase no cableada al wire). No debe ocurrir.
+    static func pushBuildFailed(reason: String) {
+        logger.notice("CloudSyncPush buildFailed reason=\(reason, privacy: .public)")
+    }
+
+    /// Un `SyncDeltaResult` llegó sin `client_mutation_id` correlacionable → no se aplicó (ni purga ni
+    /// dead-letter). No debe ocurrir (el Worker siempre lo ecoa).
+    static func applyResultUnmatched(syncID: String) {
+        logger.notice("CloudSyncPush applyResult unmatched sync_id=\(syncID, privacy: .public)")
+    }
+
+    /// Un `rejected` con reason `upstream_*` = error de infraestructura TRANSITORIO del Worker (no un
+    /// rechazo definitivo del delta). La fila NO se dead-letterea ni dispara el canario; se reintenta.
+    static func pushTransientUpstream(syncID: String, reason: String) {
+        logger.notice("CloudSyncPush transientUpstream sync_id=\(syncID, privacy: .public) reason=\(reason, privacy: .public)")
+    }
 }
 
 // MARK: - CloudSyncEngine

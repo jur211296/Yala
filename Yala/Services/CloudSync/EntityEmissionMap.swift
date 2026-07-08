@@ -600,6 +600,26 @@ enum EntityEmissionMap {
         ]
     )
 
+    // MARK: - Mapeo NOMBRE-DE-CLASE → tabla Postgres (para el sender I8e)
+
+    /// El `SyncOutbox.entityType` guarda el NOMBRE DE CLASE (`SyncEntityType.*`, ej. `"TransactionItem"`),
+    /// no la tabla. El delta de wire (§d) exige la tabla Postgres (`entity_type`, key del manifest). Este
+    /// mapeo cierra ese salto para las 6 entidades que HOY llevan `syncID` y se traducen a outbox (I3). Un
+    /// `nil` = la fila de outbox referencia una clase que aún no está cableada al wire → el sender la
+    /// DESCARTA con canario (no debe ocurrir: el drain solo produce filas de estas 6). Ancla los strings a
+    /// `SyncEntityType` (renombrar la clase `@Model` NO cambia estos literales — invariante de rebind).
+    static func table(forClass className: String) -> String? {
+        switch className {
+        case SyncEntityType.transactionItem: return transactionItem.table
+        case SyncEntityType.inboxDraft: return inboxDraft.table
+        case SyncEntityType.category: return category.table
+        case SyncEntityType.favoritePayment: return favoritePayment.table
+        case SyncEntityType.merchantMemory: return merchantMemory.table
+        case SyncEntityType.exchangeRate: return exchangeRate.table
+        default: return nil
+        }
+    }
+
     // MARK: - Catálogo type-erased (para EntityEmissionParityTests)
 
     /// tabla Postgres → (columnas emitidas, columna→group_key). Cubre las 16 entidades.
