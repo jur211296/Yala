@@ -22,6 +22,19 @@ The test leaves A's inserted rows behind (authenticated cannot DELETE by design)
 delete rows for the two test `user_id`s via the Supabase SQL editor / MCP (service context) — the
 script itself never uses `service_role`.
 
+## Goldens de I6 (Worker `/sync/*` contra staging)
+
+`gateway/test/sync.goldens.test.ts` (vitest) ejerce el Worker end-to-end contra ESTE staging con los 2
+JWTs de usuario (password grant, mismos `i5-user-a/b@test.yala`). Cubren: `user_id` siempre del JWT,
+PATCH FATAL-2, gate `schema_version` por-columna, invariante de emisión (grupo parcial → 422),
+delete-vs-upsert (ambos sentidos), convergencia orden-independiente (re-golden S-B6 G3), idempotencia de
+batch, y prefs push/pull. Corren con `cd gateway && npm test` (network ON; NO en CI).
+
+**Sin cleanup:** cada run usa `sync_id`s FRESCOS (UUID) — como `DELETE` está revocado (`REVOKE DELETE`),
+las filas de prueba se ACUMULAN bajo los `user_id` de test. Para limpiarlas, borrar por `user_id` de los
+2 usuarios de test vía el SQL editor / MCP (contexto service) — igual que con el RLS gate. Los goldens
+nunca usan `service_role`.
+
 ## Related repo artifacts
 
 - `capability_manifest.json` (repo root) — per-entity domain columns with explicit `safe` / `group_key`.

@@ -23,6 +23,10 @@ APPLE_TEAM_ID = "3WKFFVD66J"
 APPLE_BUNDLE_IDS = "com.jurgenschmidt.yala.dev"
 ATTEST_ENV = "development"
 TRUST_ATTESTED_AS_PRO = "true"   # SOLO staging — QA del chat sin suscripción real. Prod NO lo setea.
+# Modo Nube (I6) — Supabase STAGING. URL + anon key son públicos (no secretos); el JWT del USUARIO
+# viaja en Authorization y RLS es el árbitro. NUNCA service_role.
+SUPABASE_URL = "https://fostjbbwstyuunmmefuk.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg"
 
 [[d1_databases]]
 binding = "DB"
@@ -52,6 +56,10 @@ APPLE_TEAM_ID = "3WKFFVD66J"
 APPLE_BUNDLE_IDS = "com.jurgenschmidt.yala"
 ATTEST_ENV = "production"
 TRUST_ATTESTED_AS_PRO = "false"   # EXPLÍCITO: jamás Pro-trust en prod (cierra el trap; prod exige suscripción real)
+# Modo Nube — PRODUCTION usará el proyecto Supabase de producción (placeholder: hoy apunta a staging
+# para no romper el typecheck; el owner lo cambia al crear el proyecto prod). Ver README.
+SUPABASE_URL = "https://fostjbbwstyuunmmefuk.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg"
 
 [[env.production.d1_databases]]
 binding = "DB"

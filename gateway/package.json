@@ -5,10 +5,15 @@
   "type": "module",
   "description": "Gateway seguro de Yala: proxy a OpenAI + tasas de cambio con App Attest, entitlement Pro y rate-limit server-side.",
   "scripts": {
+    "sync:manifest": "cp ../capability_manifest.json ./capability_manifest.json",
     "dev": "wrangler dev",
+    "predeploy:staging": "npm run sync:manifest",
     "deploy:staging": "wrangler deploy",
+    "predeploy:production": "npm run sync:manifest",
     "deploy:production": "wrangler deploy --env production",
+    "pretypecheck": "npm run sync:manifest",
     "typecheck": "tsc --noEmit",
+    "pretest": "npm run sync:manifest",
     "test": "vitest run"
   },
   "dependencies": {

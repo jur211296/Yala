@@ -5,6 +5,14 @@ import { handleAssert, handleChallenge, handleDevToken, handleRegister } from ".
 import { handleAudioTranscriptions, handleChatCompletions } from "./proxy/openai";
 import { handleRatesLive, handleRatesTimeframe } from "./proxy/rates";
 import { handleAppStoreWebhook } from "./proxy/webhook";
+import {
+  handleAttestBind,
+  handlePrefsPull,
+  handlePrefsPush,
+  handleSyncMerkle,
+  handleSyncPull,
+  handleSyncPush,
+} from "./sync/routes";
 
 /**
  * Yala Gateway — entrada del Worker.
@@ -37,6 +45,14 @@ app.get("/rates/timeframe", handleRatesTimeframe);
 
 // --- App Store Server Notifications V2 (task #5) ---
 app.post("/webhooks/appstore", handleAppStoreWebhook);
+
+// --- Modo Nube (I6): JWT del usuario (Supabase) + App Attest + PATCH por-unidad contra PostgREST ---
+app.post("/sync/push", handleSyncPush);
+app.get("/sync/pull", handleSyncPull);
+app.get("/sync/merkle", handleSyncMerkle); // 501 hasta I8 (codec canon c1)
+app.post("/attest/bind", handleAttestBind);
+app.post("/prefs/push", handlePrefsPush);
+app.get("/prefs/pull", handlePrefsPull);
 
 app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
 

@@ -13,6 +13,10 @@ export interface Env {
   ATTEST_ENV: string; // "development" | "production"
   TRUST_ATTESTED_AS_PRO?: string; // SOLO staging: "true" → device atestado = Pro (QA sin suscripción)
 
+  // --- Modo Nube (Supabase) — públicos (no secretos): URL del proyecto + anon/publishable key ---
+  SUPABASE_URL: string; // p.ej. https://fostjbbwstyuunmmefuk.supabase.co
+  SUPABASE_ANON_KEY: string; // apikey de PostgREST; el JWT del USUARIO va en Authorization (RLS activa)
+
   // --- Secrets (wrangler secret put — NUNCA en el repo) ---
   OPENAI_API_KEY: string;
   EXCHANGE_RATE_API_KEY: string;

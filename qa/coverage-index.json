@@ -284,11 +284,12 @@
       "codeGlobs": [
         "capability_manifest.json",
         "supabase-staging.ddl",
-        "qa/cloud/**"
+        "qa/cloud/**",
+        "gateway/src/sync/**"
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/CloudCapabilityManifestParityTests (manifest/groups/DDL offline) + script:qa/cloud/cross-user-rls-test.sh (gate §2.3, 18/18 contra staging 2026-07-07) — backend staging fostjbbwstyuunmmefuk",
+      "coverage": "unit:YalaTests/CloudCapabilityManifestParityTests (manifest/groups/DDL offline) + script:qa/cloud/cross-user-rls-test.sh (gate §2.3, 18/18 contra staging 2026-07-07) — + gateway/test/sync.goldens.test.ts (Worker /sync/* — 12 goldens contra staging real) — backend staging fostjbbwstyuunmmefuk",
       "owner": "",
       "lastVerified": "2026-07-07"
     },
