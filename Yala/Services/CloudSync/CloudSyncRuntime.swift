@@ -187,11 +187,15 @@ final class CloudSyncRuntime {
         await runtime.start(context: context)
     }
 
-    /// Fábrica de producción (DARK): motor + clients con providers de la sesión Noop + espejo App Group.
+    /// Fábrica de producción (DARK): motor + clients con providers de la sesión + espejo App Group. Con
+    /// `CloudBackendConfig.isConfigured` usa el `LiveCloudSessionProvider` (sesión real de I7c); si no
+    /// (producción placeholder), conserva el `NoopCloudSessionProvider` de I9 → sin sesión, sin cambio.
     private static func makeDefault() -> CloudSyncRuntime {
         // `session` capturado FUERTE por los providers (viven en los clients → runtime). Sin ciclo de
-        // vuelta al runtime (el Noop no referencia nada). Evita el doble-opcional del optional-chaining.
-        let session = NoopCloudSessionProvider()
+        // vuelta al runtime. Evita el doble-opcional del optional-chaining.
+        let session: CloudSyncSessionProviding = CloudBackendConfig.isConfigured
+            ? LiveCloudSessionProvider()
+            : NoopCloudSessionProvider()
         let token: () async -> String? = { await session.accessToken() }
         let attest: () async -> String? = { try? await session.attestToken() }
         let engine = CloudSyncEngine()

@@ -1003,6 +1003,14 @@ final class AppBootstrapper {
             CloudSyncRuntime.shared?.handleBecameActive()
         }
 
+        // Modo Nube auth (I7c, mitigación #23): re-chequea la credencial de Apple al foreground; si fue
+        // revocada, cierra la sesión local. El guard `isConfigured` evita incluso instanciar `.shared`
+        // en producción (placeholder); con staging configurado pero sin sign-in previo es un no-op
+        // (sin appleUserID capturado). Sin side-effects fuera de eso.
+        if CloudBackendConfig.isConfigured {
+            Task { await CloudAuthService.shared.refreshCredentialStateIfNeeded() }
+        }
+
         // Prefetch group changes on foreground resume (the group CKSyncEngines don't auto-fetch
         // without a handled push). Debounced + quiescence-gated inside syncNow. This pulls the data
         // down; a mounted Groups view refreshes it on its next appear / pull-to-refresh (the fetch

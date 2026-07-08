@@ -290,7 +290,23 @@
       "classification": "manual",
       "coverage": "unit:YalaTests/CloudSync/AccountClaimDecisionTests,AttestSyncGateTests,SessionExpiryPolicyTests (máquinas de decisión pure-logic I7b, DARK — consumidor I7c) + goldens gateway/test/account.goldens.test.ts (claim atómico vs staging)",
       "owner": "",
-      "lastVerified": "2026-07-07"
+      "lastVerified": "2026-07-08"
+    },
+    {
+      "area": "cloud-auth-session",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/CloudAuthService.swift",
+        "Yala/Services/CloudSync/CloudAuthKeychainStorage.swift",
+        "Yala/Services/CloudSync/CloudAccountClient.swift",
+        "Yala/Services/CloudSync/LiveCloudSessionProvider.swift",
+        "Yala/App/Services/CloudBackendConfig.swift",
+        "Yala/App/Views/Settings/CloudSyncDebugView.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/CloudSync/CloudAuthServiceTests,CloudAccountClientTests (nonce SHA256/RAW, decoder claim 3-estados anclado al wire, storage Keychain AfterFirstUnlockThisDeviceOnly) + e2e:CloudAccountClaimE2EStagingTests (claim real contra Worker staging, gate YALA_CLOUD_E2E) + manual device (SIWA real via panel DEBUG DEV_BUILD — sim no puede) — I7c, DARK: prod isConfigured=false conserva NoopCloudSessionProvider",
+      "owner": "",
+      "lastVerified": "2026-07-08"
     },
     {
       "area": "cloud-backend-schema",

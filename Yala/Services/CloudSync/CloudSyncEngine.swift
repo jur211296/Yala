@@ -264,6 +264,38 @@ enum CloudSyncBreadcrumb {
     static func historyPurged(count: Int) {
         logger.notice("CloudSync historyPurged count=\(count, privacy: .public)")
     }
+
+    // MARK: Auth (I7c) — transiciones de la sesión real (sin PII: jamás token/email/sub)
+
+    /// Sign in with Apple → `signInWithIdToken` exitoso: sesión de Supabase creada.
+    static func authSignedIn() {
+        logger.notice("CloudSyncAuth signedIn")
+    }
+
+    /// El sign-in falló. `reason` sin PII (`apple-authorization` / `idtoken-exchange`).
+    static func authSignInFailed(reason: String) {
+        logger.notice("CloudSyncAuth signInFailed reason=\(reason, privacy: .public)")
+    }
+
+    /// Sign-out local. `reason` sin PII (`user` / `credential-revoked`).
+    static func authSignedOut(reason: String) {
+        logger.notice("CloudSyncAuth signedOut reason=\(reason, privacy: .public)")
+    }
+
+    /// El sign-out del SDK lanzó (no debería) — la sesión local podría seguir presente.
+    static func authSignOutFailed() {
+        logger.notice("CloudSyncAuth signOutFailed")
+    }
+
+    /// La credencial de Apple fue revocada (#23 mitigación cliente) → se cierra la sesión local.
+    static func authCredentialRevoked() {
+        logger.notice("CloudSyncAuth credentialRevoked — signing out locally")
+    }
+
+    /// No se pudo obtener un access token vigente (refresh falló / sin sesión) para una llamada de sync.
+    static func authAccessTokenUnavailable() {
+        logger.notice("CloudSyncAuth accessTokenUnavailable")
+    }
 }
 
 // MARK: - CloudSyncEngine

@@ -45,6 +45,7 @@ struct iCloudSyncSettingsView: View {
 
                     #if DEV_BUILD
                     qaPanel
+                    cloudAuthPanel
                     #endif
                     #if DEBUG
                     dedupHookPanel
@@ -343,6 +344,36 @@ struct iCloudSyncSettingsView: View {
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
         .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    /// Acceso al panel de auth del Modo Nube (I7c) — DEV_BUILD only.
+    private var cloudAuthPanel: some View {
+        NavigationLink {
+            CloudSyncDebugView()
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "key.icloud")
+                    .foregroundStyle(DS.Semantic.infoForeground)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text("Modo Nube · Auth")
+                        .font(DS.Typography.body.weight(.medium))
+                        .foregroundStyle(.primary)
+                    Text("Sign in with Apple + claim contra staging")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+            .padding(DS.Spacing.lg)
+            .background(.thCard)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+            .padding(.horizontal, DS.Spacing.lg)
+        }
+        .buttonStyle(.plain)
     }
     #endif
 
