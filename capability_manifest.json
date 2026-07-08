@@ -1,0 +1,1168 @@
+{
+  "manifest_version": 1,
+  "canon_version": "c1",
+  "description": "SSOT of the Modo Nube cloud schema capability-set (I5). Per entity, the DOMAIN columns the iOS client understands, each declaring EXACTLY ONE of {\"safe\":true (independent field-level unit) | \"group_key\":<money|split|budget> (atomic coherence group, d.4bis)}. No silent safe-by-omission default: an unclassified column FAILS the parity build. Server-authored + identity columns are NOT listed (see server_only_columns / identity_columns). Append-only: a column never leaves nor changes its type/scale/group.",
+  "server_only_columns": [
+    "user_id",
+    "server_seq",
+    "hlc",
+    "field_hlcs",
+    "deleted",
+    "deleted_hlc",
+    "schema_version",
+    "updated_at"
+  ],
+  "identity_columns": [
+    "sync_id"
+  ],
+  "coherence_groups": {
+    "money": {
+      "entity": "tx_items",
+      "columns": [
+        "amount",
+        "amount_in_preferred_currency",
+        "exchange_rate",
+        "preferred_currency_code",
+        "is_exchange_rate_provisional"
+      ]
+    },
+    "split": {
+      "entity": "scheduled_payments",
+      "columns": [
+        "amount",
+        "split_type",
+        "split_total_amount",
+        "split_participant_ids_raw",
+        "split_values_raw"
+      ]
+    },
+    "budget": {
+      "entity": "budgets",
+      "columns": [
+        "limit_amount",
+        "currency_code",
+        "natures",
+        "subcategory_ids",
+        "account_ids",
+        "tag_refs"
+      ]
+    }
+  },
+  "entities": {
+    "accounts": {
+      "table": "accounts",
+      "sync_id_source": "Account.shortcutID",
+      "columns": {
+        "name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "currency_code": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "color_hex": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "icon_name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "type": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "account_number": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "adjustment_mode": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "exclude_from_statistics": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "is_archived": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "is_system_account": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "credit_card_payment_reminder": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "credit_card_payment_day": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        }
+      }
+    },
+    "budgets": {
+      "table": "budgets",
+      "sync_id_source": "Budget.id",
+      "columns": {
+        "name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "currency_code": {
+          "pg_type": "text",
+          "format": "utf8",
+          "group_key": "budget"
+        },
+        "limit_amount": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "group_key": "budget"
+        },
+        "category_id": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "period_type": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "start_date": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "end_date": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "natures": {
+          "pg_type": "text[]",
+          "format": "text_array",
+          "group_key": "budget"
+        },
+        "subcategory_ids": {
+          "pg_type": "uuid[]",
+          "format": "uuid_lower_array",
+          "group_key": "budget"
+        },
+        "account_ids": {
+          "pg_type": "uuid[]",
+          "format": "uuid_lower_array",
+          "group_key": "budget"
+        },
+        "tag_refs": {
+          "pg_type": "uuid[]",
+          "format": "uuid_lower_array",
+          "group_key": "budget"
+        },
+        "is_active": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "created_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "is_favorite": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "favorite_order": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "alert_enabled": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "alert_thresholds": {
+          "pg_type": "text[]",
+          "format": "text_array",
+          "safe": true
+        },
+        "include_shared_expenses": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        }
+      }
+    },
+    "cashflow_lines": {
+      "table": "cashflow_lines",
+      "sync_id_source": "CashFlowLine.id",
+      "columns": {
+        "name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "is_income": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "sort_order": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "is_enabled": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "estimation_method": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "manual_amount": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "safe": true
+        },
+        "custom_months_raw": {
+          "pg_type": "text[]",
+          "format": "text_array",
+          "safe": true
+        },
+        "category_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "subcategory_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "scheduled_payment_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "plan_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        }
+      }
+    },
+    "cashflow_overrides": {
+      "table": "cashflow_overrides",
+      "sync_id_source": "CashFlowOverride.id",
+      "columns": {
+        "month_key": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "amount": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "safe": true
+        },
+        "note": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "line_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        }
+      }
+    },
+    "cashflow_plans": {
+      "table": "cashflow_plans",
+      "sync_id_source": "CashFlowPlan.id",
+      "columns": {
+        "name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "starting_balance": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "safe": true
+        },
+        "default_months_ahead": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "default_months_back": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "show_other_expenses": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "show_accumulated_balance": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "starting_balance_date": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "created_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "updated_at_domain": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        }
+      }
+    },
+    "categories": {
+      "table": "categories",
+      "sync_id_source": "synthetic_uuidv4",
+      "columns": {
+        "name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "color_hex": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "is_income": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "is_default_seed": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "is_visible": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "sort_order": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "icon_name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "is_system": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        }
+      }
+    },
+    "exchange_rates": {
+      "table": "exchange_rates",
+      "sync_id_source": "synthetic_uuidv4",
+      "columns": {
+        "date_key": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "base": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "rates": {
+          "pg_type": "jsonb",
+          "format": "jcs",
+          "safe": true
+        },
+        "timestamp": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        }
+      }
+    },
+    "favorite_payments": {
+      "table": "favorite_payments",
+      "sync_id_source": "synthetic_uuidv4",
+      "columns": {
+        "name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "transaction_type": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "amount": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "safe": true
+        },
+        "note": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "account_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "subcategory_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "tag_refs": {
+          "pg_type": "uuid[]",
+          "format": "uuid_lower_array",
+          "safe": true
+        },
+        "need_override": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "currency_code": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "created_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "display_order": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        }
+      }
+    },
+    "group_bridge_prefs": {
+      "table": "group_bridge_prefs",
+      "sync_id_source": "GroupBridgePreference.id",
+      "columns": {
+        "group_zone_id": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "bridge_override": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "created_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        }
+      }
+    },
+    "inbox_drafts": {
+      "table": "inbox_drafts",
+      "sync_id_source": "synthetic_uuidv4",
+      "columns": {
+        "note": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "amount": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "safe": true
+        },
+        "date": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "account_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "subcategory_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "tag_refs": {
+          "pg_type": "uuid[]",
+          "format": "uuid_lower_array",
+          "safe": true
+        },
+        "approved_transaction_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "source_type_raw": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "raw_text": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "evidence": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "confidence_amount": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "confidence_date": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "confidence_merchant": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "confidence_subcategory": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "needs_user_input": {
+          "pg_type": "text[]",
+          "format": "text_array",
+          "safe": true
+        },
+        "newly_created_tag_names": {
+          "pg_type": "text[]",
+          "format": "text_array",
+          "safe": true
+        },
+        "status_raw": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "cached_account_name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "cached_subcategory_name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "cached_category_color_hex": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "cached_subcategory_icon": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "cached_currency_code": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "source_scheduled_payment_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "split_expense_id": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "split_group_zone_id": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "split_settlement_id": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "opt_in_personal_only": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "origin_reason_key": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "origin_actor_name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "origin_group_name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "created_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "updated_at_domain": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        }
+      }
+    },
+    "merchant_memory": {
+      "table": "merchant_memory",
+      "sync_id_source": "synthetic_uuidv4",
+      "columns": {
+        "merchant_canonical": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "subcategory_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "count_approved": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "count_corrected": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "last_approved_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "aliases": {
+          "pg_type": "text[]",
+          "format": "text_array",
+          "safe": true
+        }
+      }
+    },
+    "notification_items": {
+      "table": "notification_items",
+      "sync_id_source": "NotificationItem.id",
+      "columns": {
+        "name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "text": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "hour": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "minute": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "type_raw": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "is_active": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "icon_name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "color_hex": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "created_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "sort_order": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "report_data_type": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "report_day_preference": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "weekdays_raw": {
+          "pg_type": "text[]",
+          "format": "text_array",
+          "safe": true
+        }
+      }
+    },
+    "scheduled_payments": {
+      "table": "scheduled_payments",
+      "sync_id_source": "ScheduledPayment.id",
+      "columns": {
+        "name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "note": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "amount": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "group_key": "split"
+        },
+        "currency_code": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "is_variable_amount": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "transaction_type": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "account_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "subcategory_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "tag_refs": {
+          "pg_type": "uuid[]",
+          "format": "uuid_lower_array",
+          "safe": true
+        },
+        "need_override": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "is_recurring": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "recurrence_type": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "recurrence_interval": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "next_due_date": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "day_of_month": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "selected_weekdays": {
+          "pg_type": "text[]",
+          "format": "text_array",
+          "safe": true
+        },
+        "yearly_month": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "yearly_day": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "end_date": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "payment_category": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "notify_on_due_date": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "notify_days_before": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "is_active": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "created_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "last_paid_date": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "skipped_dates_raw": {
+          "pg_type": "text[]",
+          "format": "text_array",
+          "safe": true
+        },
+        "group_zone_id": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "split_total_amount": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "group_key": "split"
+        },
+        "split_type": {
+          "pg_type": "text",
+          "format": "utf8",
+          "group_key": "split"
+        },
+        "split_participant_ids_raw": {
+          "pg_type": "text",
+          "format": "utf8",
+          "group_key": "split"
+        },
+        "split_values_raw": {
+          "pg_type": "text",
+          "format": "utf8",
+          "group_key": "split"
+        }
+      }
+    },
+    "subcategories": {
+      "table": "subcategories",
+      "sync_id_source": "Subcategory.shortcutID",
+      "columns": {
+        "name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "color_hex": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "is_default_seed": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "is_visible": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "sort_order": {
+          "pg_type": "integer",
+          "format": "int",
+          "safe": true
+        },
+        "nature_raw_value": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "icon_name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "is_system": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "category_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        }
+      }
+    },
+    "tags": {
+      "table": "tags",
+      "sync_id_source": "Tag.id",
+      "columns": {
+        "name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "color_hex": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "icon_name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "is_active": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "created_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        }
+      }
+    },
+    "tx_items": {
+      "table": "tx_items",
+      "sync_id_source": "synthetic_uuidv4",
+      "columns": {
+        "date": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "local_day": {
+          "pg_type": "date",
+          "format": "yyyy_mm_dd",
+          "safe": true
+        },
+        "amount": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "group_key": "money"
+        },
+        "currency_code": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "note": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "category_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "subcategory_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "account_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "tag_refs": {
+          "pg_type": "uuid[]",
+          "format": "uuid_lower_array",
+          "safe": true
+        },
+        "amount_in_preferred_currency": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "group_key": "money"
+        },
+        "preferred_currency_code": {
+          "pg_type": "text",
+          "format": "utf8",
+          "group_key": "money"
+        },
+        "exchange_rate": {
+          "pg_type": "numeric",
+          "scale": 8,
+          "format": "decimal_fixed",
+          "group_key": "money"
+        },
+        "is_exchange_rate_provisional": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "group_key": "money"
+        },
+        "need_override": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "scheduled_payment_ref": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "balance_adjustment_type": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "transfer_pair_id": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "split_expense_id": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "split_group_zone_id": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "split_settlement_id": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "split_total_amount": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "safe": true
+        },
+        "split_type": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "split_my_value": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "safe": true
+        },
+        "split_divisor": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "safe": true
+        },
+        "created_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        }
+      }
+    }
+  }
+}
