@@ -11,7 +11,30 @@ import Testing
 
 @testable import Yala
 
+@Suite(.serialized)
 struct TransactionServiceTests {
+
+    // MARK: - Money coherence group (Modo Nube §d.4bis)
+
+    /// `bulkUpdateAmount` debe mantener COHERENTE el grupo money: al cambiar `amount`, recomputa
+    /// `amountInPreferredCurrency`. Con la TX en la divisa preferida (rate 1.0) la derivada debe
+    /// igualar el nuevo amount; si quedara stale (el bug latente pre-fix), seguiría en su valor viejo.
+    @MainActor @Test func bulkUpdateAmount_recomputesPreferredCurrency_moneyGroupCoherent() throws {
+        let context = try makeTestContext()
+        TransactionService.shared.setContext(context)
+
+        let preferred = CurrencyDefaults.currentPreferred
+        let tx = TransactionItem(date: Date(), amount: -100, currencyCode: preferred, note: nil)
+        tx.amountInPreferredCurrency = -999   // valor STALE a propósito
+        tx.preferredCurrencyCode = preferred
+        context.insert(tx)
+        try context.save()
+
+        try TransactionService.shared.bulkUpdateAmount([tx], amount: 50)
+
+        #expect(tx.amount == -50)                      // signo preservado, magnitud nueva
+        #expect(tx.amountInPreferredCurrency == -50)   // derivada RECOMPUTADA (no el -999 stale)
+    }
 
     // MARK: - Error Descriptions
 

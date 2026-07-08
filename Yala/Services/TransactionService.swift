@@ -236,12 +236,17 @@ final class TransactionService {
             // Preserve sign (expense = negative, income = positive)
             let sign: Double = transaction.amount < 0 ? -1 : 1
             transaction.amount = sign * abs(amount)
+            // Grupo de coherencia "money" (Modo Nube §d.4bis): al tocar `amount` SIEMPRE recomputar
+            // las derivadas (amountInPreferredCurrency/exchangeRate/preferredCurrencyCode), o el
+            // drain de sync emitiría un money-group incoherente (canario cloudSyncCoherenceGroupPartial).
+            transaction.recalculatePreferredCurrency(context: context)
 
             if let pairID = transaction.transferPairID, !processedPairIDs.contains(pairID),
                let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: transaction, in: context) {
                 processedPairIDs.insert(pairID)
                 let partnerSign: Double = partner.amount < 0 ? -1 : 1
                 partner.amount = partnerSign * abs(amount)
+                partner.recalculatePreferredCurrency(context: context)
             }
         }
         try context.save()

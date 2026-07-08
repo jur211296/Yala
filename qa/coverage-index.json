@@ -1795,7 +1795,8 @@
       "area": "transactions-bulk-edit",
       "codeGlobs": [
         "Yala/App/Views/Records/BulkEditSheet.swift",
-        "Yala/App/ViewModels/BulkEditViewModel.swift"
+        "Yala/App/ViewModels/BulkEditViewModel.swift",
+        "Yala/Services/TransactionService.swift"
       ],
       "scenarioIDs": [
         "F-TX-04"
@@ -1803,7 +1804,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/BulkEditUITests",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-07-07"
     },
     {
       "area": "transactions-core-crud",
