@@ -96,15 +96,21 @@ struct CloudSyncSchemaParityTests {
     }
 
     @Test func syncCursor_hasExactPropertySet() {
-        // I8f-1 añadió `serverSeqCursor` (cursor del pull) + `clockLatestHLC` (reloj durable, D-3),
-        // ambos additive.
+        // I8f-1 añadió `serverSeqCursor` (cursor del pull) + `clockLatestHLC` (reloj durable, D-3);
+        // I9 añadió `quarantinePendingCount` (testigo lockstep de la cuarentena), todos additive.
         let expected: Set<String> = [
             "historyTokenData",
             "serverSeqCursor",
             "clockLatestHLC",
+            "quarantinePendingCount",
             "schemaVersion",
         ]
         #expect(propertyNames(SyncCursor.self) == expected)
+    }
+
+    @Test func syncCursor_schemaVersion_isTwo_afterQuarantineWitness() {
+        // I9 añadió `quarantinePendingCount` (additive) → bump del testigo A1 a 2.
+        #expect(CloudSyncSchemaVersions.syncCursor == 2)
     }
 
     // MARK: - (b·I8f) SyncQuarantine

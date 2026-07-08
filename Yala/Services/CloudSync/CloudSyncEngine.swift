@@ -220,6 +220,50 @@ enum CloudSyncBreadcrumb {
     static func merkleConverged(entities: Int) {
         logger.notice("CloudSyncMerkle converged entities=\(entities, privacy: .public)")
     }
+
+    // MARK: Runtime (I9) — transiciones de estado del orquestador (sin PII)
+
+    /// El runtime arrancó su cadencia para la sesión actual.
+    static func runtimeStarted() {
+        logger.notice("CloudSyncRuntime started")
+    }
+
+    /// El runtime no arranca cadencia (sin sesión / gate de claim no proceed-like). `reason` sin PII.
+    static func runtimeIdle(reason: String) {
+        logger.notice("CloudSyncRuntime idle reason=\(reason, privacy: .public)")
+    }
+
+    /// El runtime DETUVO la cadencia (401 sesión, 403 cuenta, attest terminal, transporte). `reason` sin PII.
+    static func runtimeStopped(reason: String) {
+        logger.notice("CloudSyncRuntime stopped reason=\(reason, privacy: .public)")
+    }
+
+    /// Teardown de sesión invitada (M1): espejo purgado + identidad limpiada + cadencia detenida.
+    static func runtimeTeardown() {
+        logger.notice("CloudSyncRuntime teardownGuestSession")
+    }
+
+    /// Guard de recreación (§d.5 A1): la tabla `SyncQuarantine` se recreó vacía (testigo>0, count==0) →
+    /// serverSeqCursor forzado a 0 (re-pull completo).
+    static func quarantineTableRecreated() {
+        logger.notice("CloudSyncQuarantine tableRecreated — forcing full re-pull (serverSeq=0)")
+    }
+
+    /// Drenaje del upgrade path: `count` filas de cuarentena se re-aplicaron (entidad recién cableada).
+    static func quarantineDrained(count: Int) {
+        logger.notice("CloudSyncQuarantine drained count=\(count, privacy: .public)")
+    }
+
+    /// Remediación Merkle (E-bis): tras `.diverged`, se reseteó el cursor + re-pull (una vez por sesión).
+    static func merkleRemediated() {
+        logger.notice("CloudSyncMerkle remediated — reset cursor + re-pull (once per session)")
+    }
+
+    /// Purga de History (§i.6, doble-DARK): `count` transacciones borradas por delante del corte seguro.
+    /// También lo emite el trigger del spike device S2 (`-spike-s2-purge-history`).
+    static func historyPurged(count: Int) {
+        logger.notice("CloudSync historyPurged count=\(count, privacy: .public)")
+    }
 }
 
 // MARK: - CloudSyncEngine
@@ -332,6 +376,22 @@ final class CloudSyncEngine {
     /// `.completed` (cola agotada). Un pull incompleto → divergencia ESPERADA → el verificador se salta.
     /// Lo escribe SOLO `pullAndApplyOnce` (internal para que los tests puedan simular el estado).
     var lastPullCycleCompleted = false
+
+    // MARK: Gate de quiescencia de reconcilers (I9, §G)
+
+    /// Gate opcional para los saves de autor NORMAL de `runPostPullReconcilers` (REQUISITO I9 anotado en
+    /// `pullAndApplyOnce`). `nil` = comportamiento actual (corren siempre — tests intactos). Cuando el
+    /// runtime lo instala (`{ coordinator.isImportQuiescent }`), un ciclo con `pagesApplied > 0` pero
+    /// import NO quieto DIFIERE los reconcilers (`pendingReconcile = true`) en vez de saveear sobre un
+    /// grafo a medio importar → los reintenta al inicio de un ciclo futuro cuando el gate abra (no se
+    /// pierde el repair). `internal`: lo lee/escribe la extensión `SyncApplyEngine` (otro archivo).
+    var reconcilerQuiescenceGate: (() -> Bool)?
+
+    /// Bandera en memoria: hay un `runPostPullReconcilers` diferido por quiescencia esperando reintento.
+    /// La consume `pullAndApplyOnce` al inicio del pase de reconcilers. Un kill pierde esta bandera (los
+    /// reconcilers son idempotentes) → el AJUSTE review corre `runStartupReconcilersIfQuiescent` en el
+    /// arranque del runtime para cerrar ese hueco. `internal` (cross-file con `SyncApplyEngine`).
+    var pendingReconcile = false
 
     // MARK: Seams de test
 
@@ -811,6 +871,30 @@ final class CloudSyncEngine {
         }
     }
 
+    /// §d.5 A1 (guard de recreación de cuarentena, I9): al arrancar, si el testigo lockstep dice que
+    /// HABÍA filas de cuarentena (`quarantinePendingCount > 0`) pero la tabla `SyncQuarantine` está
+    /// VACÍA (`COUNT == 0`), una lightweight migration recreó la tabla → los deltas cuarentenados se
+    /// perdieron. Fuerza `serverSeqCursor = 0` (re-pull completo reconstruye lo perdido) + resetea el
+    /// testigo, ambos en UN save. No-op si el testigo y la tabla son coherentes. Lo invoca `start()` del
+    /// runtime ANTES del rehydrate/primer pull.
+    func recoverIfQuarantineRecreated(context: ModelContext) {
+        do {
+            let cursor = try loadOrCreateCursor(context)
+            guard cursor.quarantinePendingCount > 0 else { return }
+            let liveCount = try context.fetchCount(FetchDescriptor<SyncQuarantine>())
+            guard liveCount == 0 else { return }  // testigo y tabla coherentes → nada que recuperar
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                cursor.serverSeqCursor = 0
+                cursor.quarantinePendingCount = 0
+            }
+            CloudSyncBreadcrumb.quarantineTableRecreated()
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: recoverIfQuarantineRecreated falló: \(error)")
+            #endif
+        }
+    }
+
     /// Ejecuta `body` y hace `context.save()` bajo un `author` dado, restaurando el autor previo.
     /// Centraliza el manejo de `context.author` para los saves internos del motor. `internal` (no
     /// `private`): lo comparte `SyncApplyEngine`.
@@ -1050,6 +1134,39 @@ final class CloudSyncEngine {
         var descriptor = FetchDescriptor<SyncOutbox>(sortBy: [SortDescriptor(\.createdAt, order: .forward)])
         descriptor.fetchLimit = 1
         return try context.fetch(descriptor).first?.createdAt
+    }
+
+    /// Purga el SwiftData History por delante del corte SEGURO (I9 ampliado, §i.6 purga conservadora).
+    /// El corte lo calcula `deleteHistorySafeCut(drainedBoundary: now)` — invariante §d.5: NUNCA por
+    /// delante de la fila de outbox sin-2xx más vieja (su transacción de History es el backup del delta
+    /// hasta el 2xx; el espejo App Group es la red redundante, no la primaria). Se llama SOLO tras un
+    /// ciclo del runtime con pull `.completed` (drain ya consumió toda la history externa → `now` es un
+    /// boundary honesto) y bajo DOBLE flag (`syncRuntimeEnabled` + `historyPurgeEnabled` — el riesgo
+    /// device-only del token del mirror de NSPersistentCloudKitContainer se resuelve en el spike S2).
+    ///
+    /// - Returns: nº de transacciones purgadas; `nil` si no había corte, no había nada que purgar, o el
+    ///   fetch/delete falló (con log — un fallo NUNCA rompe el ciclo).
+    @discardableResult
+    func purgeHistoryOnce(context: ModelContext, now: Date = .now) -> Int? {
+        do {
+            guard let cut = try deleteHistorySafeCut(drainedBoundary: now, context: context) else {
+                return nil  // sin restricción calculable → conservador: no purgar nada
+            }
+            // Contar ANTES de borrar (deleteHistory devuelve Void). Mismo predicate en fetch y delete.
+            let descriptor = HistoryDescriptor<DefaultHistoryTransaction>(
+                predicate: #Predicate { $0.timestamp < cut }
+            )
+            let count = try context.fetchHistory(descriptor).count
+            guard count > 0 else { return nil }
+            try context.deleteHistory(descriptor)
+            CloudSyncBreadcrumb.historyPurged(count: count)
+            return count
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: purgeHistoryOnce falló (el ciclo continúa): \(error)")
+            #endif
+            return nil
+        }
     }
 }
 

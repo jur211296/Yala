@@ -106,8 +106,24 @@ extension CloudSyncEngine {
         // pudo introducir divergencia nueva), DESPUÉS de los danglers (una ref recién resuelta completa
         // la clasificación real-vs-virtual del split). Cada uno en su propio save con rollback-on-fail,
         // bajo autor NORMAL (sus writes DEBEN drenar/subir en el próximo ciclo).
+        //
+        // I9 (§G): gateados por QUIESCENCIA (`reconcilerQuiescenceGate`). `nil` = comportamiento actual
+        // (corren siempre — tests intactos). Si el gate está PUESTO y CERRADO, se DIFIEREN
+        // (`pendingReconcile = true`) para no saveear (autor NORMAL) sobre un grafo a medio importar
+        // (anti-crash-loop de CLAUDE.md) → se reintentan al inicio de un ciclo futuro cuando el gate
+        // abra, aunque ese ciclo aplique 0 páginas (no se pierde el repair).
+        let gateOpen = reconcilerQuiescenceGate?() ?? true
         if pagesApplied > 0 {
+            if gateOpen {
+                runPostPullReconcilers(context: context)
+                pendingReconcile = false
+            } else {
+                pendingReconcile = true
+            }
+        } else if pendingReconcile, gateOpen {
+            // Reintento del repair diferido: el ciclo no aplicó páginas nuevas pero el gate ya abrió.
             runPostPullReconcilers(context: context)
+            pendingReconcile = false
         }
         return outcome
     }
@@ -168,9 +184,13 @@ extension CloudSyncEngine {
     /// Corre los 2 reconciliadores cross-fila, cada uno en su propio save con rollback-on-fail (patrón
     /// F-3), bajo autor NORMAL — el próximo drain captura sus writes (repair del money / tombstones de
     /// la poda) y los sube con HLC fresco. Un fallo de uno NO impide el otro. `internal` para tests.
-    /// REQUISITO I9 (wiring): estos saves de autor NORMAL sobre el store personal deben respetar el
-    /// gate de QUIESCENCIA del import cuando el path `.icloud` coexista (regla anti-crash-loop de
-    /// CLAUDE.md) — en `.cloud` puro aplica la quiescencia del propio motor (SyncQuiescenceCoordinator).
+    /// GATE I9 (cableado: `reconcilerQuiescenceGate` ← `SyncQuiescenceCoordinator.
+    /// isQuiescentForEngineSaves`): en `.icloud` estos saves de autor NORMAL respetan la quiescencia
+    /// del import de CloudKit AJENO (regla anti-crash-loop de CLAUDE.md); en `.cloud` la señal es
+    /// `true` SIEMPRE — cuando esto corre, el save de página del PROPIO batch ya commiteó y no hay
+    /// import ajeno. NO cablear `isImportQuiescent` aquí: queda `false` durante toda la ventana
+    /// markApplyBegan/Ended que envuelve al pull (donde esto corre) → deferral perpetuo en `.cloud`
+    /// (SERIO-1 del review de I9).
     func runPostPullReconcilers(context: ModelContext) {
         do {
             _ = CloudSyncReconciler.reconcileTransferPairDivergence(context: context)
@@ -211,6 +231,7 @@ extension CloudSyncEngine {
 
             let guards = buildPendingGuards(context)
             var quarantineSeqs = existingQuarantineSeqs(context)
+            var newQuarantineCount = 0
 
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
                 for delta in page.deltas {
@@ -222,12 +243,19 @@ extension CloudSyncEngine {
                         dispatchApply(delta, guard: guards[delta.syncID], context: context)
                     } else {
                         // §d.6/D-5: entity_type aún no materializable (10 de 16) → cuarentena (dedup seq).
-                        quarantineDelta(delta, existing: &quarantineSeqs, context: context)
+                        if quarantineDelta(delta, existing: &quarantineSeqs, context: context) {
+                            newQuarantineCount += 1
+                        }
                     }
                 }
                 // D-5 + D-3: cursor + reloj en el MISMO save. `max` defensivo (nunca retroceder).
                 cursor.serverSeqCursor = max(cursor.serverSeqCursor, page.maxServerSeq)
                 cursor.clockLatestHLC = clockLatestString
+                // I9 (§d.5 A1): testigo lockstep — se bumpea en el MISMO save que INSERTA las filas de
+                // cuarentena (ÚNICO sitio de insert). Guard de recreación depende de esta atomicidad.
+                if newQuarantineCount > 0 {
+                    cursor.quarantinePendingCount += Int64(newQuarantineCount)
+                }
                 // Seam de test (D-5/F-3): crash antes del commit → rollback, cursor NO avanza.
                 if _testThrowOnApplySave { throw ApplyTestCrash.suppressed }
             }
@@ -404,10 +432,13 @@ extension CloudSyncEngine {
 
     // MARK: - Cuarentena (D-5/D-6)
 
+    /// Inserta el delta en cuarentena. Devuelve `true` si INSERTÓ una fila nueva (para el bump lockstep
+    /// del testigo `quarantinePendingCount`), `false` si el `serverSeq` ya estaba (dedup idempotente).
+    @discardableResult
     private func quarantineDelta(
         _ delta: PulledDelta, existing: inout Set<Int64>, context: ModelContext
-    ) {
-        guard !existing.contains(delta.serverSeq) else { return }  // dedup por serverSeq (re-pull idempotente)
+    ) -> Bool {
+        guard !existing.contains(delta.serverSeq) else { return false }  // dedup por serverSeq (re-pull idempotente)
         context.insert(SyncQuarantine(
             serverSeq: delta.serverSeq,
             entityType: delta.entityType,
@@ -417,6 +448,7 @@ extension CloudSyncEngine {
         ))
         existing.insert(delta.serverSeq)
         CloudSyncBreadcrumb.applyQuarantined(entity: delta.entityType, serverSeq: delta.serverSeq)
+        return true
     }
 
     private func existingQuarantineSeqs(_ context: ModelContext) -> Set<Int64> {
@@ -427,6 +459,111 @@ extension CloudSyncEngine {
             print("CloudSyncEngine.existingQuarantineSeqs: fetch falló: \(error)")
             #endif
             return []
+        }
+    }
+
+    // MARK: - Drenaje de cuarentena (upgrade path, I9 §F)
+
+    /// Re-aplica las filas de `SyncQuarantine` cuya `entityType` YA está cableada al apply (típicamente
+    /// tras un update de app que cablea una entidad antes no materializable). HOY es SIEMPRE no-op en
+    /// prod: las 6 tablas cableadas nunca se cuarentenan → la cuarentena solo guarda las 10 no cableadas;
+    /// el mecanismo queda listo para cuando un update cablee más.
+    ///
+    /// GUARDIA (F-8, misma disciplina anti-laundering que `applyPage`): SOLO llamable desde `start()`
+    /// del runtime (o tests) tras `rehydrateOutboxFromMirror` **y** un `drainOnce` SÍNCRONO inmediatamente
+    /// antes (sin `await` entre medio) — sin ese drain, una edición local sin capturar se machacaría al
+    /// re-aplicar el delta cuarentenado y el próximo drain la relee bajo un HLC fresco (laundering D-2).
+    ///
+    /// Contrato: re-decodifica `rawDelta` con EL MISMO decoder del pull (`SyncPullClient.decodeDelta`),
+    /// orden `serverSeq` ASC, integra el HLC de fila en el reloj (D-3), aplica con el guard D-1
+    /// (`buildPendingGuards`), borra las filas consumidas y DECREMENTA el testigo lockstep — todo en UN
+    /// `saveWithAuthor(outboxSaveAuthor)`. **NO toca `serverSeqCursor`** (esos `server_seq` ya pasaron —
+    /// avanzarlo re-saltaría deltas). Falla el save → rollback + las filas siguen (reintento al próximo
+    /// arranque). Después: `reresolveDanglingRefs` (los deltas re-aplicados pueden colgar refs).
+    func drainQuarantineOnce(context: ModelContext, now: Date = .now) {
+        let rows: [SyncQuarantine]
+        do {
+            rows = try context.fetch(FetchDescriptor<SyncQuarantine>(
+                sortBy: [SortDescriptor(\.serverSeq, order: .forward)]
+            ))
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.drainQuarantineOnce: fetch falló: \(error)")
+            #endif
+            return
+        }
+        let drainable = rows.filter { EntityApplyMap.isWired(table: $0.entityType) }
+        guard !drainable.isEmpty else { return }  // hoy SIEMPRE vacío en prod (las 6 cableadas no se cuarentenan)
+
+        let cursor: SyncCursor
+        do {
+            cursor = try loadOrCreateCursor(context)
+            loadClock(from: cursor)  // D-3: reloj desde el estado durable antes de integrar remotos
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.drainQuarantineOnce: loadCursor falló: \(error)")
+            #endif
+            return
+        }
+        let guards = buildPendingGuards(context)
+        var consumed = 0
+        do {
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                for row in drainable {
+                    let delta: PulledDelta
+                    do {
+                        delta = try SyncPullClient.decodeDelta(row.rawDelta)
+                    } catch {
+                        // `rawDelta` corrupto (no debe ocurrir — lo serializó el propio pull) → dejar la
+                        // fila cuarentenada (no se puede re-aplicar) sin romper el batch.
+                        #if DEBUG
+                        print("CloudSyncEngine.drainQuarantineOnce: rawDelta no decodifica (\(row.entityType)): \(error)")
+                        #endif
+                        continue
+                    }
+                    // D-3: integra el HLC de fila en el reloj.
+                    if let remote = parseHLC(delta.hlc, site: "drainQuarantine.rowHlc") {
+                        receiveRemoteClock(remote, now: now)
+                    }
+                    dispatchApply(delta, guard: guards[delta.syncID], context: context)
+                    context.delete(row)
+                    consumed += 1
+                }
+                // D-3: persistir el reloj. NO tocar `serverSeqCursor` (esos server_seq ya pasaron).
+                cursor.clockLatestHLC = clockLatestString
+                // Testigo lockstep: decrementar por las filas consumidas en el MISMO save que las borra
+                // (floor 0 defensivo por si el testigo divergiera del conteo real).
+                if consumed > 0 {
+                    cursor.quarantinePendingCount = max(0, cursor.quarantinePendingCount - Int64(consumed))
+                }
+            }
+        } catch {
+            context.rollback()
+            CloudSyncBreadcrumb.applyPageFailed(reason: "drainQuarantine:\(error)")
+            #if DEBUG
+            print("CloudSyncEngine.drainQuarantineOnce: save falló (rollback; filas siguen → reintento): \(error)")
+            #endif
+            return
+        }
+        if consumed > 0 {
+            CloudSyncBreadcrumb.quarantineDrained(count: consumed)
+            // Los deltas re-aplicados pueden colgar refs → re-resolver (save propio bajo outboxSaveAuthor).
+            reresolveDanglingRefs(context: context)
+        }
+    }
+
+    // MARK: - Reconcilers de arranque (I9 §E AJUSTE review)
+
+    /// Corre `runPostPullReconcilers` UNA vez en el arranque del runtime si el gate de quiescencia está
+    /// abierto — cierra el hueco del `pendingReconcile` EN MEMORIA perdido por un kill (los reconcilers
+    /// son idempotentes). Si el gate está cerrado, arma `pendingReconcile` para el reintento del primer
+    /// ciclo. Usa el `reconcilerQuiescenceGate` ya instalado por el runtime (nil → corre).
+    func runStartupReconcilersIfQuiescent(context: ModelContext) {
+        if reconcilerQuiescenceGate?() ?? true {
+            runPostPullReconcilers(context: context)
+            pendingReconcile = false
+        } else {
+            pendingReconcile = true
         }
     }
 

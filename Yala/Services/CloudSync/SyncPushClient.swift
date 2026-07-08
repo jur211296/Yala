@@ -149,6 +149,35 @@ final class SyncPushClient {
         )
     }
 
+    // MARK: partitionBuildable (DIFERIDOS #26 — aislar poison rows ANTES de push)
+
+    /// Una fila de outbox que NO se pudo traducir a delta de wire (clase no cableada) — poison. Se
+    /// dead-letterea en el store (`rejectedReason = reason`) SIN subirse, y el resto del batch sí sube.
+    struct PoisonRow: Equatable {
+        let row: SyncOutbox
+        /// Motivo canónico del dead-letter: `"unbuildable:<clase>"` (§d.5 cero-silencios).
+        let reason: String
+    }
+
+    /// Particiona `rows` en construibles (subibles) y poison (no traducibles a delta) ANTES de `push`,
+    /// preservando el ORDEN (los construibles conservan su orden relativo → `applyResults` correlaciona
+    /// por `client_mutation_id`, no por posición, así que el orden es informativo pero se respeta). NO
+    /// lanza: un `buildDelta` que falla clasifica la fila como poison. La entidad de la fila
+    /// (`row.entityType`) ES el nombre de clase → el motivo se arma sin depender del tipo de error.
+    func partitionBuildable(_ rows: [SyncOutbox]) -> (buildable: [SyncOutbox], poison: [PoisonRow]) {
+        var buildable: [SyncOutbox] = []
+        var poison: [PoisonRow] = []
+        for row in rows {
+            do {
+                _ = try buildDelta(from: row)
+                buildable.append(row)
+            } catch {
+                poison.append(PoisonRow(row: row, reason: "unbuildable:\(row.entityType)"))
+            }
+        }
+        return (buildable, poison)
+    }
+
     // MARK: push
 
     /// Sube `rows` a `POST /sync/push`. NO purga nada (eso es `applyResults`). Devuelve un `PushOutcome`

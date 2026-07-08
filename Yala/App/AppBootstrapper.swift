@@ -65,6 +65,9 @@ final class AppBootstrapper {
     /// Cached on the main actor so the `.NSPersistentStoreRemoteChange` observer
     /// can run the subcategory dedup without capturing a non-Sendable `ModelContext`.
     private var remoteChangeModelContext: ModelContext?
+    /// Token del observer del fan-out del Modo Nube (paso 14.7, DARK). Retenido para poder removerlo
+    /// (fix MENOR del review de I9: descartarlo con `_ =` lo hacía irremovible).
+    private var cloudSyncFanOutObserver: NSObjectProtocol?
 
     // MARK: - Initialization
 
@@ -239,6 +242,21 @@ final class AppBootstrapper {
         // cuyo splitExpenseID ya tiene TX cuenta real (race resuelto por sync).
         observeTransactionsImportedFromSync(context: context)
 
+        // 14.7 Modo Nube runtime (I9, DARK). INERTE con `CloudSyncFlags.syncRuntimeEnabled == false`
+        // (default de producción HOY): ni observer, ni arranque, ni red. Va ANTES del paso 15 de Grupos
+        // (no toca Grupos). El fan-out post-apply se cablea a la UI vía `.cloudSyncAppliedRemoteChanges`
+        // (espejo del observer de CloudKit del paso 13 — `markRemoteChangePending`).
+        if CloudSyncFlags.syncRuntimeEnabled {
+            if cloudSyncFanOutObserver == nil {
+                cloudSyncFanOutObserver = NotificationCenter.default.addObserver(
+                    forName: .cloudSyncAppliedRemoteChanges, object: nil, queue: .main
+                ) { _ in
+                    Task { @MainActor in SessionState.shared.markRemoteChangePending() }
+                }
+            }
+            Task { await CloudSyncRuntime.startShared(context: context) }
+        }
+
         // 15. Initialize CKSyncEngine for shared group data (separate groups store)
         SplitSyncManager.shared.setContext(context)
         if !uiTestActive { SplitSyncManager.shared.initialize() }
@@ -281,7 +299,7 @@ final class AppBootstrapper {
         // 16.4.5. Safety net: hidden groups + removed-self cleanup que el observer pudo perder.
         // Corre ANTES de retryPendingBridges para que el bridge guard `isHiddenForAll` aplique.
         Task { @MainActor in
-            guard await awaitPersonalImportForBootSave() else {
+            guard await awaitPersonalStoreReady() else {
                 SaveBreadcrumb.deferred("AppBootstrapper.freezeOrphanedGroups", "import not quiescent")
                 return
             }
@@ -293,7 +311,7 @@ final class AppBootstrapper {
         // Task-wrapped (no sync) para no bloquear cold launch en DBs grandes; downstream steps
         // (16.5 retryPendingBridges, etc.) no dependen del resultado.
         Task { @MainActor in
-            guard await awaitPersonalImportForBootSave() else {
+            guard await awaitPersonalStoreReady() else {
                 SaveBreadcrumb.deferred("AppBootstrapper.reconcileTransferPairs", "import not quiescent")
                 return
             }
@@ -309,7 +327,7 @@ final class AppBootstrapper {
         // Covers kill-app between acceptShare and performSilentSetup (SplitMember
         // would otherwise stay with the "Usuario" default forever). Idempotent.
         Task { @MainActor in
-            guard await awaitPersonalImportForBootSave() else {
+            guard await awaitPersonalStoreReady() else {
                 SaveBreadcrumb.deferred("AppBootstrapper.reconcileCurrentUserDisplayName", "import not quiescent")
                 return
             }
@@ -324,7 +342,7 @@ final class AppBootstrapper {
         // Seed current iCloud user identity for groups and refresh local membership flags.
         Task { @MainActor in
             _ = try? await GroupUserIdentityService.shared.currentUserRecordName()
-            guard await awaitPersonalImportForBootSave() else {
+            guard await awaitPersonalStoreReady() else {
                 SaveBreadcrumb.deferred("AppBootstrapper.refreshCurrentUserFlags", "import not quiescent")
                 return
             }
@@ -340,7 +358,7 @@ final class AppBootstrapper {
         // graph. Idempotent: if the import doesn't settle in time, the sentinel stays unset and it
         // retries next launch.
         Task { @MainActor in
-            guard await awaitPersonalImportForBootSave() else { return }
+            guard await awaitPersonalStoreReady() else { return }
             migrateShareGroupZoneIDs(context: context)
         }
 
@@ -378,6 +396,20 @@ final class AppBootstrapper {
         // de diferirse a un buffer que no serializa el intent. Espeja la red de invites del
         // paso 19. Ver Bugs/qa_cold-launch-share-image-no-registro.
         checkForPendingSharedImage(site: "bootstrap")
+
+        #if DEBUG
+        // Trigger del spike device S2 (purga de History en `.icloud` REAL — patrón UITestHooks).
+        // NO depende de `syncRuntimeEnabled`: el spike mide si `deleteHistory` sobre el container
+        // compartido invalida el token del mirror personal de NSPersistentCloudKitContainer (y el del
+        // CKSyncEngine de Grupos) en un device con datos reales. Lo corre el OWNER con el launch arg
+        // EXACTO `-spike-s2-purge-history` (guion en el vault). Engine efímero: solo necesita el
+        // helper + el corte seguro (outbox vacío en `.icloud` hoy → corte = now).
+        if ProcessInfo.processInfo.arguments.contains("-spike-s2-purge-history") {
+            let spikeEngine = CloudSyncEngine()
+            let purged = spikeEngine.purgeHistoryOnce(context: context)
+            logger.notice("Spike S2: purgeHistoryOnce purged=\(purged ?? 0, privacy: .public)")
+        }
+        #endif
     }
 
     #if DEBUG
@@ -710,6 +742,38 @@ final class AppBootstrapper {
         return safeToBootSave()
     }
 
+    /// Wrapper de "el store personal está listo para un boot-save", enrutado por `StorageMode` (I9, R2).
+    /// En `.icloud` (SIEMPRE hoy) DELEGA 1:1 a `awaitPersonalImportForBootSave` → cero cambio de
+    /// comportamiento. En `.cloud` (I10/I11) espera al motor: primer pull asentado + apply quieto
+    /// (`SyncQuiescenceCoordinator`). Los call-sites internos de boot-save llaman a ESTE wrapper para que
+    /// la coexistencia futura no exija tocarlos de nuevo. `awaitPersonalImportForBootSave` se mantiene
+    /// (lo llama el wrapper).
+    private func awaitPersonalStoreReady() async -> Bool {
+        switch StorageModeSignalRouter.quiescenceSource(mode: CloudSyncFlags.storageMode) {
+        case .icloudImport:
+            return await awaitPersonalImportForBootSave()
+        case .cloudEngine:
+            // El motor Modo Nube es la autoridad. Espera el primer pull asentado + apply quieto, con el
+            // mismo tope/poll que el import de CloudKit (idempotente: el caller difiere si no asienta).
+            let coordinator = SyncQuiescenceCoordinator.shared
+            func safe() -> Bool { coordinator.hasCompletedFirstPull && coordinator.isPersonalApplyQuiescent }
+            var waited: TimeInterval = 0
+            let pollInterval: TimeInterval = 2
+            let quiescenceHardCap: TimeInterval = 120
+            while !safe() && waited < quiescenceHardCap {
+                do {
+                    try await Task.sleep(for: .seconds(pollInterval))
+                } catch {
+                    // Task cancelado: NO busy-spinear el resto del cap — devolver el valor conservador
+                    // (el caller difiere; regla "nunca try? que silencia").
+                    return false
+                }
+                waited += pollInterval
+            }
+            return safe()
+        }
+    }
+
     private func migrateShareGroupZoneIDs(context: ModelContext) {
         let migKey = "Yala_SplitShareGroupZoneID_v1"
         guard !UserDefaults.standard.bool(forKey: migKey) else { return }
@@ -756,7 +820,7 @@ final class AppBootstrapper {
         // ventana de quietud, no solo el primer evento), para que el `save()` no caiga sobre un grafo a
         // medio importar (`_assertionFailure`). Idempotente: `bridgePending` queda true y reintenta al
         // próximo arranque si el import no se asentó.
-        guard await awaitPersonalImportForBootSave() else {
+        guard await awaitPersonalStoreReady() else {
             logger.notice("retryPendingBridges deferred — personal import not quiescent")
             return
         }
@@ -932,6 +996,12 @@ final class AppBootstrapper {
 
         // Apply any pending remote CloudKit changes on foreground resume
         sessionState.applyPendingChangesIfNeeded()
+
+        // Modo Nube runtime (I9, DARK): dispara un ciclo inmediato / re-evalúa stop-states. Inerte con
+        // el flag apagado (y sin `shared` asignado, que solo lo pone el wiring del paso 14.7).
+        if CloudSyncFlags.syncRuntimeEnabled {
+            CloudSyncRuntime.shared?.handleBecameActive()
+        }
 
         // Prefetch group changes on foreground resume (the group CKSyncEngines don't auto-fetch
         // without a handled push). Debounced + quiescence-gated inside syncNow. This pulls the data
@@ -1568,7 +1638,7 @@ final class AppBootstrapper {
         // Gate de quiescencia: el bulk recalc (`CurrencyChangeService.updateAllTransactions`) guarda
         // `TransactionItem` (store personal); durante el import del restore dispararía el assert.
         // Espera a que el import asiente y corre esta sesión; si no asienta, NO setea el flag → reintenta.
-        guard await awaitPersonalImportForBootSave() else {
+        guard await awaitPersonalStoreReady() else {
             SaveBreadcrumb.deferred("AppBootstrapper.migrateToLiveBalance", "import not quiescent")
             return
         }

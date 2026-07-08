@@ -228,4 +228,78 @@ struct CloudSyncE2EStagingTests {
             Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
         }
     }
+
+    // MARK: - Runtime completo (I9): syncCycle drain→push→pull→apply contra staging
+
+    /// Corre el `syncCycle()` del ORQUESTADOR (no los componentes sueltos) contra staging real: write
+    /// local → un ciclo (drain+push+pull+apply) → segundo ciclo (recoge su propio push, echo idempotente,
+    /// para satisfacer el guard A-3) → verificación Merkle. Conserva el assert `diverged == ["tx_items"]`
+    /// (mismas filas parciales hand-crafted del dataset de staging; ver el test de round-trip).
+    @Test(.enabled(if: CloudSyncE2EStagingTests.isEnabled))
+    func runtimeSyncCycle_pushPullMerkle_againstStaging() async throws {
+        let jwt = try await login()
+        let tokenProvider: () async -> String? = { jwt }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let push = SyncPushClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let pull = SyncPullClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let merkle = SyncMerkleClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let runtime = CloudSyncRuntime(
+            engine: engine, pushClient: push, pullClient: pull, merkleClient: merkle,
+            mirror: nil,
+            coordinator: SyncQuiescenceCoordinator(icloudQuiescent: { true }, modeProvider: { .icloud }),
+            session: E2ECloudSession(userID: "i9-e2e"),
+            onRemoteChangesApplied: nil
+        )
+
+        // Write local: una TX nueva con marcador único.
+        let marker = "i9-e2e-\(UUID().uuidString.prefix(8))"
+        let tx = TransactionItem(date: Date(timeIntervalSince1970: 1_751_900_000),
+                                 amount: -21.75, currencyCode: "PEN")
+        tx.note = marker
+        tx.amountInPreferredCurrency = -21.75
+        tx.preferredCurrencyCode = "PEN"
+        tx.exchangeRate = 1.0
+        tx.isExchangeRateProvisional = false
+        tx.createdAt = Date(timeIntervalSince1970: 1_751_900_000)
+        context.insert(tx)
+        try context.save()
+
+        // Ciclo 1: drena la TX, la sube, pullea el historial y aplica.
+        _ = await runtime.syncCycle(context: context)
+        // Ciclo 2: recoge su propio push (echo idempotente) → outbox vivo vacío + pull completado.
+        _ = await runtime.syncCycle(context: context)
+
+        // La TX sigue en el store (no se perdió) y el outbox quedó limpio (todo confirmado).
+        #expect(try context.fetch(FetchDescriptor<TransactionItem>()).contains { $0.note == marker })
+        let liveOutbox = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(liveOutbox.isEmpty, "el outbox vivo debe quedar vacío tras el ciclo: \(liveOutbox.count)")
+
+        // Merkle: mismo veredicto que el round-trip (solo tx_items puede divergir por el dataset staging).
+        let verdict = await engine.verifyIntegrity(using: merkle, context: context)
+        switch verdict {
+        case .converged:
+            break
+        case .diverged(let entities):
+            #expect(entities == ["tx_items"],
+                    "solo tx_items puede divergir (filas parciales hand-crafted de staging): \(entities)")
+        case .skipped(let reason):
+            Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
+        }
+    }
+}
+
+// MARK: - Sesión e2e (seam I7c stub para el runtime)
+
+/// Sesión mínima para el `CloudSyncRuntime` en e2e: identidad + renovable, sin attest (el JWT viaja por
+/// los `tokenProvider` de los clients). `@MainActor` (el seam lo es).
+@MainActor
+private final class E2ECloudSession: CloudSyncSessionProviding {
+    let currentUserID: String?
+    let canRenewSession = true
+    init(userID: String) { self.currentUserID = userID }
+    func accessToken() async -> String? { nil }
+    func attestToken() async throws -> String? { nil }
 }

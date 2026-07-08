@@ -206,6 +206,15 @@ final class SyncPullClient {
         return PulledPage(deltas: deltas, maxServerSeq: decoded.maxServerSeq)
     }
 
+    /// Re-decodifica UN `rawDelta` (el JSON determinista que `SyncQuarantine.rawDelta` guarda, producido
+    /// por `reserialize`) al `PulledDelta` de dominio, con EL MISMO decoder del pull. Lo consume el
+    /// drenaje del upgrade path (`SyncApplyEngine.drainQuarantineOnce`) cuando una entidad antes no
+    /// cableada gana identidad local. `internal` (no `private`): cruza de archivo al apply engine.
+    static func decodeDelta(_ rawDelta: String) throws -> PulledDelta {
+        let raw = try JSONDecoder().decode(RawPulledDelta.self, from: Data(rawDelta.utf8))
+        return try mapDelta(raw)
+    }
+
     /// Traduce un `RawPulledDelta` (wire) a `PulledDelta` (dominio). Re-serializa el delta para `rawDelta`.
     private static func mapDelta(_ raw: RawPulledDelta) throws -> PulledDelta {
         // `op` desconocido → tratar como upsert (el apply lo cuarentenará si la entidad no está cableada;

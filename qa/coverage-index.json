@@ -358,7 +358,7 @@
       "classification": "manual",
       "coverage": "unit:YalaTests/CloudSyncEngineTests + unit:YalaTests/CloudSyncTombstoneTests + unit:YalaTests/CloudSyncSchemaParityTests — captura write→drain (History → outbox) + clasificación de reason de tombstone (I4: user/cascade/dedup/migration/wipe, drain-side). DARK (nada lo instancia; wiring en I9/I12), sin superficie UI + DeltaEmitter/EntityEmissionParity (I8c: emisión canon c1 + field_hlcs por-unidad) + SyncOutboxMirror (I8d: espejo App Group A1 durabilidad + owner-scoping M1)",
       "owner": "",
-      "lastVerified": "2026-07-07"
+      "lastVerified": "2026-07-08"
     },
     {
       "area": "cloud-sync-hlc",
@@ -385,6 +385,20 @@
       "coverage": "unit:YalaTests/SyncIdentityServiceTests + unit:YalaTests/SyncContentAnchorTests + unit:YalaTests/CloudSyncSchemaParityTests — DARK (flag off), sin superficie UI hasta I12/I14",
       "owner": "",
       "lastVerified": "2026-07-07"
+    },
+    {
+      "area": "cloud-sync-runtime",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/CloudSyncRuntime.swift",
+        "Yala/Services/CloudSync/SyncQuiescenceCoordinator.swift",
+        "Yala/Services/CloudSync/SyncCadencePolicy.swift",
+        "Yala/Services/CloudSync/StorageModeSignalRouter.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/CloudSync/CloudSyncRuntimeTests,SyncQuiescenceCoordinatorTests,SyncCadencePolicyTests,StorageModeSignalRouterTests,SyncQuarantineDrainTests + e2e:CloudSyncE2EStagingTests.runtimeSyncCycle_pushPullMerkle_againstStaging (ciclo completo del orquestador contra staging real, gate YALA_CLOUD_E2E) — I9 wiring runtime, DARK tras CloudSyncFlags.syncRuntimeEnabled",
+      "owner": "",
+      "lastVerified": "2026-07-08"
     },
     {
       "area": "coach-mark-tours",

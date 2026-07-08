@@ -15,6 +15,20 @@
 
 import Foundation
 
+/// Modo de almacenamiento del store personal (SSOT del enrutado de quiescencia y de las redes de
+/// arranque/teardown del motor). `nonisolated`: es un valor puro leído tanto desde el main actor
+/// (bootstrap) como desde la lógica pura de enrutado (`StorageModeSignalRouter`).
+///
+/// - `.icloud`: el store personal lo espeja NSPersistentCloudKitContainer (comportamiento de HOY,
+///   SIEMPRE). La quiescencia la manda `iCloudSyncService.isImportQuiescent`.
+/// - `.cloud`: el store personal lo sincroniza el propio motor Modo Nube (CKit apagado). La
+///   quiescencia la manda el `SyncQuiescenceCoordinator` del motor. NO alcanzable en I9 — la
+///   persistencia real del modo + su transición llegan en I10/I14.
+nonisolated enum StorageMode: String {
+    case icloud
+    case cloud
+}
+
 /// Flags del Modo Nube. DARK por defecto.
 nonisolated enum CloudSyncFlags {
 
@@ -25,4 +39,24 @@ nonisolated enum CloudSyncFlags {
     /// Modo Nube en I12/I14. Es una `var` (no `let`) solo para que los tests puedan togglearlo con
     /// `defer { restore }`.
     static var identityCaptureEnabled = false
+
+    /// Gate ÚNICO del wiring runtime del motor (I9). Cuando `false` (default, PRODUCCIÓN HOY) el
+    /// `CloudSyncRuntime` no arranca ninguna cadencia, no toca la red y no muta el store: el
+    /// comportamiento es EXACTAMENTE el de antes de I9. Lo encenderá el Modo Nube en un incremento
+    /// posterior. `var` (no `let`) solo para que los tests lo togglean con `defer { restore }`.
+    static var syncRuntimeEnabled = false
+
+    /// SSOT PROVISIONAL del modo de almacenamiento. HOY es SIEMPRE `.icloud` y ningún path de
+    /// producción lo cambia — la persistencia real (leer/escribir el modo elegido en onboarding/
+    /// migración) llega en I10/I14. `var` para que los tests ejerciten el enrutado `.cloud`.
+    static var storageMode: StorageMode = .icloud
+
+    /// SUB-flag de la purga de SwiftData History tras un ciclo completo del runtime (DOBLE-DARK: exige
+    /// además `syncRuntimeEnabled`). `false` hasta el veredicto del spike device S2: en `.icloud` el
+    /// mirror personal de NSPersistentCloudKitContainer TAMBIÉN consume el History del container — una
+    /// purga agresiva puede invalidar SU token y forzar un re-import completo (§i.6: purga
+    /// conservadora). El corte de `purgeHistoryOnce` ya es conservador (`deleteHistorySafeCut`: nunca
+    /// por delante de la fila outbox sin-2xx más vieja), pero el riesgo del token AJENO solo se
+    /// resuelve en device. `var` solo para tests (`defer { restore }`).
+    static var historyPurgeEnabled = false
 }
