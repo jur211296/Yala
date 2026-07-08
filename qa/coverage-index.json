@@ -306,6 +306,19 @@
       "lastVerified": "2026-07-07"
     },
     {
+      "area": "cloud-sync-capture",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/CloudSyncEngine.swift",
+        "Yala/Services/CloudSync/SyncOutbox.swift",
+        "Yala/Services/CloudSync/SyncCursor.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/CloudSyncEngineTests + unit:YalaTests/CloudSyncSchemaParityTests — captura write→drain (History → outbox). DARK (nada lo instancia; wiring en I9/I12), sin superficie UI",
+      "owner": "",
+      "lastVerified": "2026-07-07"
+    },
+    {
       "area": "coach-mark-tours",
       "codeGlobs": [
         "Yala/App/Tips/ProTourManager.swift",

@@ -51,7 +51,7 @@ enum SwiftDataConfiguration {
 
     // MARK: - Schemas
 
-    /// Schema completo (22 modelos) — usado por ModelContainer.
+    /// Schema completo (24 modelos) — usado por ModelContainer.
     static var schema: Schema {
         Schema([
             Category.self,
@@ -76,6 +76,8 @@ enum SwiftDataConfiguration {
             SplitShare.self,
             SplitSettlement.self,
             SyncIdentity.self,
+            SyncOutbox.self,
+            SyncCursor.self,
         ])
     }
 
@@ -115,11 +117,14 @@ enum SwiftDataConfiguration {
         ])
     }
 
-    /// Sub-schema: metadata de sync del Modo Nube (I2). SOLO `SyncIdentity`, en su propio store con
-    /// `cloudKitDatabase: .none` — es metadata LOCAL por dispositivo que NUNCA se espeja a CloudKit.
+    /// Sub-schema: metadata de sync del Modo Nube (I2/I3), en su propio store con
+    /// `cloudKitDatabase: .none` — metadata LOCAL por dispositivo que NUNCA se espeja a CloudKit.
+    /// `SyncIdentity` (I2), `SyncOutbox` + `SyncCursor` (I3, pipeline de captura).
     static var syncMetaSchema: Schema {
         Schema([
             SyncIdentity.self,
+            SyncOutbox.self,
+            SyncCursor.self,
         ])
     }
 

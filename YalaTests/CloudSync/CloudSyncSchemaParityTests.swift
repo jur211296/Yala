@@ -60,20 +60,63 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(SyncIdentity.self) == expected)
     }
 
-    // MARK: - (c) Membresía de stores
+    // MARK: - (b·I3) Set EXACTO de propiedades de SyncOutbox / SyncCursor
 
-    @Test func personalStore_doesNotContain_syncIdentity() {
-        #expect(!entityNames(SwiftDataConfiguration.personalSchema).contains("SyncIdentity"))
+    @Test func syncOutbox_entityName_isAnchoredLiteral() {
+        #expect(entity(SyncOutbox.self)?.name == "SyncOutbox")
     }
 
-    @Test func syncMetaStore_containsOnly_syncIdentity_andIsCloudKitNone() {
-        #expect(entityNames(SwiftDataConfiguration.syncMetaSchema) == ["SyncIdentity"])
+    @Test func syncOutbox_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "syncID",
+            "entityType",
+            "opRaw",
+            "hlc",
+            "clientMutationID",
+            "fieldsJSON",
+            "author",
+            "createdAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(SyncOutbox.self) == expected)
+    }
+
+    @Test func syncCursor_entityName_isAnchoredLiteral() {
+        #expect(entity(SyncCursor.self)?.name == "SyncCursor")
+    }
+
+    @Test func syncCursor_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "historyTokenData",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(SyncCursor.self) == expected)
+    }
+
+    // MARK: - (c) Membresía de stores
+
+    @Test func personalStore_doesNotContain_syncMetaEntities() {
+        let personal = entityNames(SwiftDataConfiguration.personalSchema)
+        #expect(!personal.contains("SyncIdentity"))
+        #expect(!personal.contains("SyncOutbox"))
+        #expect(!personal.contains("SyncCursor"))
+    }
+
+    @Test func syncMetaStore_containsExactly_syncMetaEntities_andIsCloudKitNone() {
+        let expected: Set<String> = ["SyncIdentity", "SyncOutbox", "SyncCursor"]
+        #expect(entityNames(SwiftDataConfiguration.syncMetaSchema) == expected)
 
         let config = SwiftDataConfiguration.syncMetaConfiguration
         // El config sync-meta usa el schema sync-meta…
-        #expect(config.schema.flatMap { entityNames($0) } == ["SyncIdentity"])
+        #expect(config.schema.flatMap { entityNames($0) } == expected)
         // …y NUNCA CloudKit (`.none`). CloudKitDatabase no es Equatable → comparamos su descripción.
         #expect(String(describing: config.cloudKitDatabase).lowercased().contains("none"))
+    }
+
+    // MARK: - (e·I3) Anti-drift: la lista anti-fuga del motor == entity names del store personal
+
+    @Test func engine_personalEntityNames_matchPersonalSchema() {
+        #expect(CloudSyncEngine.personalEntityNames == entityNames(SwiftDataConfiguration.personalSchema))
     }
 
     // MARK: - (d) Las 6 entidades sincronizables llevan `syncID`

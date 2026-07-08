@@ -144,6 +144,7 @@ enum AnalyticsEvent: String {
     case cloudkitGroupRecordsRecovered = "Diagnóstico · Records de grupo recuperados"  // params: count — records con ckSystemFieldsData nil (nunca subieron, p.ej. rechazados por schema) re-encolados al arrancar
     case cloudkitGroupRecordSaveRejected = "Diagnóstico · Save de grupo rechazado"  // params: code, recordType — CANARIO: >0 en prod = incidente de schema/permisos en el container de grupos (el server descarta el record; la recovery lo re-encola al próximo launch)
     case iCloudRestoreOutcome = "Diagnóstico · Resultado de restore"  // params: phase (completed|partial), destination (groupsOnly|directToApp|onboarding)
+    case cloudSyncIdentityGapObserved = "Diagnóstico · Gap de identidad de sync"  // params: entityType — CANARIO (Modo Nube I3): un delete cuyo tombstone NO trae syncID preservado → el outbox no pudo emitir el tombstone; >0 = revisar la captura de identidad (barrido/born-cloud)
 
     // Routing observability (F9 — privacy-first: only intent IDs, no payloads)
     case routingIntentSuperseded = "Diagnóstico · Routing supersedido"  // a queued intent was dropped by an incoming one
@@ -335,6 +336,16 @@ enum TelemetryService {
             "orphansCleared": String(orphansCleared),
             "pairedCount": String(pairedCount),
             "context": TransferReconcileContext.bootReconcile.rawValue
+        ])
+    }
+
+    /// CANARIO Modo Nube (I3): un delete llegó al `CloudSyncEngine` con un tombstone SIN `syncID`
+    /// preservado (`.preserveValueOnDeletion` vacío = identidad nunca acuñada antes del borrado) →
+    /// el outbox no pudo emitir el tombstone. >0 en producción = revisar la captura de identidad.
+    /// Privacy-first: solo el tipo de entidad, sin IDs ni PII.
+    static func cloudSyncIdentityGapObserved(entityType: String) {
+        track(.cloudSyncIdentityGapObserved, parameters: [
+            "entityType": entityType
         ])
     }
 
