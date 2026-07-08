@@ -148,6 +148,17 @@ async function applyOneDelta(c: Ctx, auth: AuthedUser, delta: SyncDelta): Promis
 
   // op === "upsert"
   // 1. Validación de forma + INVARIANTE DE EMISIÓN (grupo entero) contra el manifest.
+  //
+  // RESIDUAL ACEPTADO (owner 2026-07-07, decisión #1 tras review adversarial de I6): este guard es
+  // el ÚNICO punto de enforcement del invariante de emisión, y es BYPASSEABLE — `apply_delta` tiene
+  // GRANT EXECUTE TO authenticated, así que un usuario puede llamarlo directo por PostgREST con su
+  // propio JWT y escribir un grupo de coherencia parcial (p.ej. `amount` sin recalcular las derivadas
+  // → "número mal convertido"). El daño está CONFINADO a los datos del propio usuario (RLS + PK
+  // compuesta (user_id, sync_id) impiden tocar filas ajenas); es corrupción de la propia coherencia,
+  // NO una fuga cross-tenant. Aceptado porque (a) el modelo de confianza ya asume que el usuario puede
+  // escribir datos raros a su cuenta (hoy mismo vía SwiftData local), y (b) endurecer el RPC con un
+  // CHECK de membresía contradiría §d.4bis ("el RPC nunca conoce la membresía"). El cliente legítimo
+  // (único en v1) siempre pasa por aquí. Reconsiderar si llega un 2º cliente con bug de emisión.
   const shape = validateUpsertShape(delta.entity_type, rawFields, fieldHlcs);
   if (shape) {
     if (shape.type === "coherence_group_partial") {
