@@ -16,7 +16,7 @@
 
 import Foundation
 
-enum AccountClaimDecision {
+nonisolated enum AccountClaimDecision {
 
     /// The 3-state result of `POST /account/claim` (§f.1 contract). `created` includes the idempotent
     /// reclaim by the SAME in-progress leader device (the RPC collapses it to `created`).
