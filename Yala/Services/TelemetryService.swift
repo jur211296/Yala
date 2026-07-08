@@ -149,6 +149,8 @@ enum AnalyticsEvent: String {
     case cloudSignInProviderMismatch = "Diagnóstico · Proveedor de sign-in distinto"  // CANARIO (Modo Nube I7, §f.1 variante B): un born-cloud con faro cloud-activado firmó con OTRO proveedor (sub nuevo) → 2ª cuenta divergente evitada con aviso; >0 = priorizar identity-linking (A30). Superficie declarada; la DISPARA el consumidor I7c cuando AccountClaimDecision → .showProviderMismatch
     case cloudSyncBlockedByAttestUnavailable = "Diagnóstico · Sync bloqueado por attest"  // params: platform — CANARIO (Modo Nube I7, §f.5/E2E-S10): la 2ª señal (App Attest/Play Integrity/WebAuthn) es TERMINAL → el device no puede sincronizar de forma segura; >0 = devices sin backup. Superficie declarada; la DISPARA el consumidor I7c cuando AttestSyncGate.classify → .terminal
     case cloudSyncBlockedByExpiredSession = "Diagnóstico · Sync bloqueado por sesión expirada"  // params: pending — BREADCRUMB (Modo Nube I7, §f.3/S11): sesión no renovable con deltas en el outbox → estado accionable "inicia sesión para subirlos". Superficie declarada; la DISPARA el consumidor I7c/I8 cuando SessionExpiryPolicy → .blockedNeedsSignIn
+    case cloudSyncOutboxMirrorRehydrated = "Diagnóstico · Outbox re-hidratado del espejo"  // params: count — CANARIO (Modo Nube I8d/A1, §d.5): >0 en boot = una lightweight migration recreó la tabla SyncOutbox y `count` filas se re-hidrataron del espejo App Group (evento hoy invisible). La DISPARA CloudSyncEngine.rehydrateOutboxFromMirror
+    case cloudSyncOutboxMirrorDivergence = "Diagnóstico · Divergencia del espejo del outbox"  // params: delta — CANARIO (Modo Nube I8d/A1, §d.5): delta = |espejo del userID| − |store SyncOutbox| en cada arranque; >0 persistente SIN migración = crash entre purga y remove no reconciliado, o vaciado parcial (el modo de fallo que ni el Merkle ve). La DISPARA CloudSyncEngine.rehydrateOutboxFromMirror
 
     // Routing observability (F9 — privacy-first: only intent IDs, no payloads)
     case routingIntentSuperseded = "Diagnóstico · Routing supersedido"  // a queued intent was dropped by an incoming one
@@ -389,6 +391,26 @@ enum TelemetryService {
     static func cloudSyncBlockedByExpiredSession(pending: Int) {
         track(.cloudSyncBlockedByExpiredSession, parameters: [
             "pending": String(pending)
+        ])
+    }
+
+    /// CANARIO Modo Nube (I8d/A1, §d.5): una lightweight migration recreó la tabla `SyncOutbox` y
+    /// `count` filas se re-hidrataron del espejo App Group. >0 = evento hoy invisible (pérdida de deltas
+    /// financieros evitada). La dispara `CloudSyncEngine.rehydrateOutboxFromMirror` cuando `count > 0`.
+    /// Privacy-first: solo el conteo, sin IDs ni PII.
+    static func cloudSyncOutboxMirrorRehydrated(count: Int) {
+        track(.cloudSyncOutboxMirrorRehydrated, parameters: [
+            "count": String(count)
+        ])
+    }
+
+    /// CANARIO Modo Nube (I8d/A1, §d.5): `delta = |espejo del userID| − |store SyncOutbox|` medido en
+    /// cada arranque. >0 persistente SIN migración = crash entre purga y remove no reconciliado (archivo
+    /// espejo huérfano), o vaciado parcial — el modo de fallo que ni el Merkle ve. La dispara
+    /// `CloudSyncEngine.rehydrateOutboxFromMirror` cuando `delta != 0`. Privacy-first: solo el delta.
+    static func cloudSyncOutboxMirrorDivergence(delta: Int) {
+        track(.cloudSyncOutboxMirrorDivergence, parameters: [
+            "delta": String(delta)
         ])
     }
 

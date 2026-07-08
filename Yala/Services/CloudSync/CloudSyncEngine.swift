@@ -164,6 +164,17 @@ final class CloudSyncEngine {
     /// (el logger no es asertable). Acumula a lo largo de la vida de la instancia.
     private(set) var identityGapCount = 0
 
+    // MARK: Espejo del outbox (A1, §d.5)
+
+    /// Espejo App Group del `SyncOutbox` (durabilidad ante lightweight migration). `nil` = mirroring
+    /// desactivado (I8d DARK / tests que no lo ejercitan). El wiring de producción —resolverlo del App
+    /// Group + inyectar `currentUserID`— llega en I9.
+    var outboxMirror: SyncOutboxMirror?
+
+    /// El `sub` de la sesión actual — sella cada entry del espejo (owner-scoping M1). Con `outboxMirror`
+    /// puesto pero `currentUserID` nil, NO se espeja (no se puede owner-scopear una entry sin identidad).
+    var currentUserID: String?
+
     // MARK: Coalescing "one in-flight, one queued"
 
     private var isDraining = false
@@ -261,10 +272,15 @@ final class CloudSyncEngine {
             }
 
             // 6) Persistir las filas del outbox (autor del motor → anti-auto-captura + no re-lectura).
-            //    COMENTARIO-GUARDIA (hook A1, I8): el espejo App Group `.atomic` va AQUÍ, ANTES del
-            //    insert+save, en el MISMO cuerpo síncrono sin `await` (regla Q3 del spike S-A1) — así
-            //    autosave no puede invertir el orden fila-durable-sin-espejo.
+            //    A1 (§d.5): el espejo App Group `.atomic` va AQUÍ, ANTES del insert+save, en el MISMO
+            //    cuerpo síncrono sin `await` (regla Q3 del spike S-A1) — así autosave no puede invertir
+            //    el orden fila-durable-sin-espejo.
             if !rows.isEmpty {
+                // (1) ESPEJO PRIMERO (best-effort, per-fila, síncrono): si falla, la History es backup
+                //     redundante y el canario de divergencia lo delata → NO abortamos el drain. Requiere
+                //     `outboxMirror` + `currentUserID` (nil en I8d DARK → no-op).
+                writeMirror(rows: rows)
+                // (2) insertar (3) save.
                 try saveWithAuthor(context, Self.outboxSaveAuthor) {
                     for row in rows { context.insert(row.makeModel()) }
                 }
@@ -502,12 +518,14 @@ final class CloudSyncEngine {
             entityType: entityType,
             op: op,
             hlc: hlc,
+            clientMutationID: UUID(),
             fieldsJSON: payload.fieldsJSON,
             fieldHlcsJSON: payload.fieldHlcsJSON,
             author: tx.author ?? "",
             // Solo los tombstones llevan reason (upsert → nil). Defensivo: aunque el llamador pasara un
             // reason con op:upsert, se descarta (el reason es semántica exclusiva del tombstone).
-            tombstoneReason: op == .tombstone ? tombstoneReason?.rawValue : nil
+            tombstoneReason: op == .tombstone ? tombstoneReason?.rawValue : nil,
+            createdAt: .now
         ))
     }
 
@@ -644,21 +662,167 @@ final class CloudSyncEngine {
             return "{}"
         }
     }
+
+    // MARK: - Espejo del outbox (A1, §d.5)
+
+    /// Escribe el espejo `.atomic` de cada fila NUEVA de un drain, ANTES del insert+save (mismo cuerpo
+    /// síncrono). Best-effort: un fallo se loguea y NO aborta el drain (la History es backup redundante
+    /// y el canario de divergencia lo delata). No-op sin `outboxMirror` + `currentUserID` (I8d DARK).
+    private func writeMirror(rows: [PendingOutboxRow]) {
+        guard let mirror = outboxMirror, let userID = currentUserID else { return }
+        for row in rows {
+            do {
+                try mirror.write(row.mirrorEntry(userID: userID))
+            } catch {
+                #if DEBUG
+                print("CloudSyncEngine: espejo write falló para \(row.entityType): \(error)")
+                #endif
+            }
+        }
+    }
+
+    /// Re-hidrata el outbox desde el espejo App Group tras una lightweight migration que recreó la tabla
+    /// (§d.5 A1). Se llama en `startEngines` ANTES del primer drain/pull (el wiring es I9); aquí solo el
+    /// método + tests.
+    ///
+    /// **DIFF INCONDICIONAL con owner-scoping DURO**: solo procesa `entriesForUser(userID)` (las de otra
+    /// identidad se IGNORAN — no se re-insertan ni se borran, red M1(b)); por cada entry cuyo
+    /// `(syncID,hlc,op)` NO tiene fila viva en `SyncOutbox` (fetch CONCRETO), re-inserta con
+    /// `author`/`clientMutationID`/`hlc`/`op` ORIGINALES. **SIN gate `count==0`** → cubre el vaciado
+    /// PARCIAL. Idempotente (guard "fila viva ya presente"). El SAVE va bajo `outboxSaveAuthor` → el drain
+    /// NO re-captura las filas re-insertadas (self-echo). Un archivo huérfano (crash entre purga y remove)
+    /// es benigno: se re-inserta, el drain lo re-sube, el backend deduplica por `client_mutation_id`.
+    /// Emite `cloudSyncOutboxMirrorRehydrated(n>0)` y `cloudSyncOutboxMirrorDivergence(delta≠0)`.
+    func rehydrateOutboxFromMirror(userID: String, context: ModelContext) {
+        guard let mirror = outboxMirror else { return }
+        let entries = mirror.entriesForUser(userID)
+
+        // Filas vivas actuales (fetch concreto) → keys de dedup + conteo para divergencia.
+        let liveKeys: Set<String>
+        let liveCount: Int
+        do {
+            let live = try context.fetch(FetchDescriptor<SyncOutbox>())
+            liveCount = live.count
+            liveKeys = try existingOutboxKeys(context)
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: rehydrate fetch(SyncOutbox) falló: \(error)")
+            #endif
+            return
+        }
+
+        // Divergencia = |espejo del userID| − |store| (medida ANTES de re-insertar). >0 = archivo huérfano
+        // o vaciado parcial → el modo de fallo que ni el Merkle ve.
+        let divergence = entries.count - liveCount
+        if divergence != 0 {
+            TelemetryService.cloudSyncOutboxMirrorDivergence(delta: divergence)
+        }
+
+        // Seleccionar las entries faltantes (idempotente: guard "fila viva ya presente").
+        var missing: [OutboxMirrorEntry] = []
+        for entry in entries {
+            guard let op = SyncOutboxOp(rawValue: entry.op) else { continue }
+            let key = dedupKey(syncID: entry.syncID, hlc: entry.hlc, op: op)
+            if !liveKeys.contains(key) { missing.append(entry) }
+        }
+        guard !missing.isEmpty else { return }
+
+        // Re-insertar bajo el autor del motor (echo-suppression) con los valores ORIGINALES.
+        do {
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                for entry in missing {
+                    guard let op = SyncOutboxOp(rawValue: entry.op) else { continue }
+                    context.insert(SyncOutbox(
+                        syncID: entry.syncID,
+                        entityType: entry.entityType,
+                        op: op,
+                        hlc: entry.hlc,
+                        clientMutationID: entry.clientMutationID,
+                        fieldsJSON: entry.fieldsJSON,
+                        fieldHlcsJSON: entry.fieldHlcsJSON,
+                        author: entry.author,
+                        tombstoneReason: entry.tombstoneReason,
+                        createdAt: entry.createdAt
+                    ))
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: rehydrate save falló: \(error)")
+            #endif
+            return
+        }
+        TelemetryService.cloudSyncOutboxMirrorRehydrated(count: missing.count)
+    }
+
+    /// HOOK I8e (2xx): purga la fila del outbox subida con éxito + borra su archivo espejo, y SOLO
+    /// ENTONCES el corte de `deleteHistory` puede avanzar sobre ella (invariante §d.5 —
+    /// `deleteHistorySafeCut`). En I8d el drain NO lo llama solo (no hay upload todavía); lo invocará el
+    /// cliente HTTP de I8e al recibir el 2xx. Idempotente (fila/archivo ya ausentes → no-op).
+    func confirmUploaded(syncID: UUID, hlc: String, context: ModelContext) {
+        do {
+            let rows = try context.fetch(FetchDescriptor<SyncOutbox>(
+                predicate: #Predicate { $0.syncID == syncID && $0.hlc == hlc }
+            ))
+            if !rows.isEmpty {
+                try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                    for row in rows { context.delete(row) }
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: confirmUploaded purge falló: \(error)")
+            #endif
+        }
+        // El espejo se borra DESPUÉS del purge de la fila (orden espeja el write: fila-primero al subir).
+        outboxMirror?.remove(syncID: syncID, hlc: hlc)
+    }
+
+    /// Corte SEGURO para `deleteHistory(before:)` (invariante §d.5): NUNCA por delante de la fila de
+    /// outbox sin-2xx más vieja. `drainedBoundary` = hasta dónde consumió el drain la History (nil = sin
+    /// restricción por ese lado). Retorna `min(drainedBoundary, createdAt de la fila outbox presente más
+    /// vieja)`; `nil` = ni fila sin-confirmar ni boundary → sin restricción. En I8d NO hay un
+    /// `deleteHistory` real todavía (I8e/I9 lo cablean): esto EXPRESA el invariante testeable —
+    /// `confirmUploaded` purga la fila, y solo entonces el corte avanza sobre ella.
+    func deleteHistorySafeCut(drainedBoundary: Date?, context: ModelContext) throws -> Date? {
+        let oldestUnconfirmed = try oldestUnconfirmedOutboxDate(context)
+        switch (drainedBoundary, oldestUnconfirmed) {
+        case (nil, nil): return nil
+        case (let d?, nil): return d
+        case (nil, let o?): return o
+        case (let d?, let o?): return min(d, o)
+        }
+    }
+
+    /// `createdAt` de la fila de outbox presente (= sin-2xx) más vieja, o `nil` si el outbox está vacío.
+    private func oldestUnconfirmedOutboxDate(_ context: ModelContext) throws -> Date? {
+        var descriptor = FetchDescriptor<SyncOutbox>(sortBy: [SortDescriptor(\.createdAt, order: .forward)])
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first?.createdAt
+    }
 }
 
 // MARK: - PendingOutboxRow
 
 /// Fila de outbox acumulada en memoria durante un drain, materializada a `@Model` al persistir.
 /// Struct simple (no `@Model`) para separar la fase de traducción de la de inserción.
+///
+/// `clientMutationID` y `createdAt` se ACUÑAN al armar la fila (no en `SyncOutbox.init`) para que el
+/// `@Model` persistido Y su entry en el espejo App Group compartan EXACTAMENTE los mismos valores
+/// (idempotencia end-to-end + re-hidratación byte-idéntica, §d.5). La regeneración por drain no duplica:
+/// el dedup por `(syncID,hlc,op)` (pre-sembrado con las filas existentes) evita re-crear una fila viva,
+/// así que el `clientMutationID` original sobrevive a un kill-replay.
 private struct PendingOutboxRow {
     let syncID: UUID
     let entityType: String
     let op: SyncOutboxOp
     let hlc: String
+    let clientMutationID: UUID
     let fieldsJSON: String
     let fieldHlcsJSON: String?
     let author: String
     let tombstoneReason: String?
+    let createdAt: Date
 
     @MainActor
     func makeModel() -> SyncOutbox {
@@ -667,10 +831,31 @@ private struct PendingOutboxRow {
             entityType: entityType,
             op: op,
             hlc: hlc,
+            clientMutationID: clientMutationID,
             fieldsJSON: fieldsJSON,
             fieldHlcsJSON: fieldHlcsJSON,
             author: author,
-            tombstoneReason: tombstoneReason
+            tombstoneReason: tombstoneReason,
+            createdAt: createdAt
+        )
+    }
+
+    /// La entry del espejo App Group. `author` = el CONSTANTE del motor de recovery (`CloudSyncOutbox`),
+    /// NO el `author` de la transacción de origen (diagnóstico; la re-hidratación re-inserta bajo el
+    /// autor de echo-suppression). `userID` sella la entry para el owner-scoping M1.
+    func mirrorEntry(userID: String) -> OutboxMirrorEntry {
+        OutboxMirrorEntry(
+            userID: userID,
+            syncID: syncID,
+            entityType: entityType,
+            op: op.rawValue,
+            hlc: hlc,
+            clientMutationID: clientMutationID,
+            fieldsJSON: fieldsJSON,
+            fieldHlcsJSON: fieldHlcsJSON,
+            tombstoneReason: tombstoneReason,
+            author: SyncOutboxMirror.author,
+            createdAt: createdAt
         )
     }
 }
