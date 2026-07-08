@@ -1,0 +1,528 @@
+{
+  "canon_version" : "c1",
+  "errorVectors" : [
+    {
+      "description" : "NaN -> nonFinite",
+      "expectedError" : "nonFiniteNumber",
+      "fields" : {
+        "v" : {
+          "double" : "nan",
+          "t" : "money"
+        }
+      },
+      "id" : "money_nan"
+    },
+    {
+      "description" : "+Inf -> nonFinite",
+      "expectedError" : "nonFiniteNumber",
+      "fields" : {
+        "v" : {
+          "double" : "inf",
+          "t" : "money"
+        }
+      },
+      "id" : "money_inf"
+    },
+    {
+      "description" : "-Inf -> nonFinite",
+      "expectedError" : "nonFiniteNumber",
+      "fields" : {
+        "v" : {
+          "double" : "-inf",
+          "t" : "money"
+        }
+      },
+      "id" : "money_neg_inf"
+    },
+    {
+      "description" : "1e14 -> numericOutOfRange",
+      "expectedError" : "numericOutOfRange",
+      "fields" : {
+        "v" : {
+          "double" : "100000000000000",
+          "t" : "money"
+        }
+      },
+      "id" : "money_out_of_range"
+    },
+    {
+      "description" : "1e10 -> numericOutOfRange",
+      "expectedError" : "numericOutOfRange",
+      "fields" : {
+        "v" : {
+          "double" : "10000000000",
+          "t" : "rate"
+        }
+      },
+      "id" : "rate_out_of_range"
+    },
+    {
+      "description" : "key server-authored -> serverAuthoredKey",
+      "expectedError" : "serverAuthoredKey",
+      "fields" : {
+        "hlc" : {
+          "t" : "string",
+          "value" : "x"
+        }
+      },
+      "id" : "server_authored_key"
+    },
+    {
+      "description" : "año 0 -> yearOutOfRange",
+      "expectedError" : "yearOutOfRange",
+      "fields" : {
+        "v" : {
+          "t" : "timestamp",
+          "unixMs" : -62167219200000
+        }
+      },
+      "id" : "date_year_out_of_range"
+    }
+  ],
+  "vectors" : [
+    {
+      "description" : "19.99 -> pad a 4",
+      "expected" : "{\"v\":\"19.9900\"}",
+      "fields" : {
+        "v" : {
+          "double" : "19.99",
+          "t" : "money"
+        }
+      },
+      "id" : "money_pad"
+    },
+    {
+      "description" : "0.1 -> 0.1000",
+      "expected" : "{\"v\":\"0.1000\"}",
+      "fields" : {
+        "v" : {
+          "double" : "0.1",
+          "t" : "money"
+        }
+      },
+      "id" : "money_tenth"
+    },
+    {
+      "description" : "-0.0 -> 0.0000 sin signo",
+      "expected" : "{\"v\":\"0.0000\"}",
+      "fields" : {
+        "v" : {
+          "double" : "-0.0",
+          "t" : "money"
+        }
+      },
+      "id" : "money_neg_zero"
+    },
+    {
+      "description" : "0.00005 (binario >½) -> 0.0001",
+      "expected" : "{\"v\":\"0.0001\"}",
+      "fields" : {
+        "v" : {
+          "double" : "0.00005",
+          "t" : "money"
+        }
+      },
+      "id" : "money_half_even_up_binary"
+    },
+    {
+      "description" : "0.12345 binario tail>½ -> 0.1235",
+      "expected" : "{\"v\":\"0.1235\"}",
+      "fields" : {
+        "v" : {
+          "double" : "0.12345",
+          "t" : "money"
+        }
+      },
+      "id" : "money_half_even_12345"
+    },
+    {
+      "description" : "0.12355 binario tail<½ -> 0.1235",
+      "expected" : "{\"v\":\"0.1235\"}",
+      "fields" : {
+        "v" : {
+          "double" : "0.12355",
+          "t" : "money"
+        }
+      },
+      "id" : "money_half_even_12355"
+    },
+    {
+      "description" : "2.5 -> 2.5000",
+      "expected" : "{\"v\":\"2.5000\"}",
+      "fields" : {
+        "v" : {
+          "double" : "2.5",
+          "t" : "money"
+        }
+      },
+      "id" : "money_25"
+    },
+    {
+      "description" : "-19.99 -> -19.9900",
+      "expected" : "{\"v\":\"-19.9900\"}",
+      "fields" : {
+        "v" : {
+          "double" : "-19.99",
+          "t" : "money"
+        }
+      },
+      "id" : "money_negative"
+    },
+    {
+      "description" : "99999999999999 entero en rango",
+      "expected" : "{\"v\":\"99999999999999.0000\"}",
+      "fields" : {
+        "v" : {
+          "double" : "99999999999999",
+          "t" : "money"
+        }
+      },
+      "id" : "money_large_int"
+    },
+    {
+      "description" : "9999999.9999 (4 decimales preservados)",
+      "expected" : "{\"v\":\"9999999.9999\"}",
+      "fields" : {
+        "v" : {
+          "double" : "9999999.9999",
+          "t" : "money"
+        }
+      },
+      "id" : "money_border_4dec"
+    },
+    {
+      "description" : "1.1 -> escala 8",
+      "expected" : "{\"v\":\"1.10000000\"}",
+      "fields" : {
+        "v" : {
+          "double" : "1.1",
+          "t" : "rate"
+        }
+      },
+      "id" : "rate_pad"
+    },
+    {
+      "description" : "1.23456789 -> 8 decimales",
+      "expected" : "{\"v\":\"1.23456789\"}",
+      "fields" : {
+        "v" : {
+          "double" : "1.23456789",
+          "t" : "rate"
+        }
+      },
+      "id" : "rate_full"
+    },
+    {
+      "description" : "5e-9 -> 0.00000001",
+      "expected" : "{\"v\":\"0.00000001\"}",
+      "fields" : {
+        "v" : {
+          "double" : "5e-9",
+          "t" : "rate"
+        }
+      },
+      "id" : "rate_tiny"
+    },
+    {
+      "description" : "0.5 -> 0.50000000",
+      "expected" : "{\"v\":\"0.50000000\"}",
+      "fields" : {
+        "v" : {
+          "double" : "0.5",
+          "t" : "rate"
+        }
+      },
+      "id" : "rate_half"
+    },
+    {
+      "description" : "ancla I1 2021-01-01T00:00:00.000Z",
+      "expected" : "{\"v\":\"2021-01-01T00:00:00.000Z\"}",
+      "fields" : {
+        "v" : {
+          "t" : "timestamp",
+          "unixMs" : 1609459200000
+        }
+      },
+      "id" : "date_anchor_2021"
+    },
+    {
+      "description" : "ms enteros preservados",
+      "expected" : "{\"v\":\"2021-01-01T00:00:00.123Z\"}",
+      "fields" : {
+        "v" : {
+          "t" : "timestamp",
+          "unixMs" : 1609459200123
+        }
+      },
+      "id" : "date_with_ms"
+    },
+    {
+      "description" : "µs truncados por FLOOR a ms",
+      "expected" : "{\"v\":\"2021-01-01T00:00:00.123Z\"}",
+      "fields" : {
+        "v" : {
+          "t" : "timestamp",
+          "unixSeconds" : 1609459200.123456
+        }
+      },
+      "id" : "date_floor_us"
+    },
+    {
+      "description" : "2026-07-06 civil",
+      "expected" : "{\"v\":\"2026-07-06\"}",
+      "fields" : {
+        "v" : {
+          "t" : "localDay",
+          "unixMs" : 1783296000000
+        }
+      },
+      "id" : "localday_civil"
+    },
+    {
+      "description" : "el tiempo no afecta el día civil",
+      "expected" : "{\"v\":\"2021-01-01\"}",
+      "fields" : {
+        "v" : {
+          "t" : "localDay",
+          "unixMs" : 1609545599999
+        }
+      },
+      "id" : "localday_endofday"
+    },
+    {
+      "description" : "uppercase -> lowercase",
+      "expected" : "{\"v\":\"a1b2c3d4-e5f6-7890-abcd-ef1234567890\"}",
+      "fields" : {
+        "v" : {
+          "t" : "uuid",
+          "value" : "A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
+        }
+      },
+      "id" : "uuid_lower"
+    },
+    {
+      "description" : "orden bytes UTF-8 + dedup",
+      "expected" : "{\"v\":[\"00ff0000-0000-0000-0000-000000000000\",\"ff0000aa-0000-0000-0000-000000000000\"]}",
+      "fields" : {
+        "v" : {
+          "t" : "uuidArray",
+          "values" : [
+            "FF0000AA-0000-0000-0000-000000000000",
+            "00FF0000-0000-0000-0000-000000000000",
+            "00FF0000-0000-0000-0000-000000000000"
+          ]
+        }
+      },
+      "id" : "uuidarr_sort_dedup"
+    },
+    {
+      "description" : "array vacío -> key OMITIDA",
+      "expected" : "{}",
+      "fields" : {
+        "tag_refs" : {
+          "t" : "uuidArray",
+          "values" : [
+
+          ]
+        }
+      },
+      "id" : "uuidarr_empty_omitted"
+    },
+    {
+      "description" : "true literal",
+      "expected" : "{\"v\":true}",
+      "fields" : {
+        "v" : {
+          "bool" : true,
+          "t" : "bool"
+        }
+      },
+      "id" : "bool_true"
+    },
+    {
+      "description" : "false literal",
+      "expected" : "{\"v\":false}",
+      "fields" : {
+        "v" : {
+          "bool" : false,
+          "t" : "bool"
+        }
+      },
+      "id" : "bool_false"
+    },
+    {
+      "description" : "nil -> null literal",
+      "expected" : "{\"v\":null}",
+      "fields" : {
+        "v" : {
+          "isNull" : true,
+          "t" : "bool"
+        }
+      },
+      "id" : "bool_null"
+    },
+    {
+      "description" : "entero como número JSON",
+      "expected" : "{\"v\":42}",
+      "fields" : {
+        "v" : {
+          "int" : 42,
+          "t" : "int"
+        }
+      },
+      "id" : "int_positive"
+    },
+    {
+      "description" : "entero negativo",
+      "expected" : "{\"v\":-7}",
+      "fields" : {
+        "v" : {
+          "int" : -7,
+          "t" : "int"
+        }
+      },
+      "id" : "int_negative"
+    },
+    {
+      "description" : "NULL explícito -> key:null",
+      "expected" : "{\"v\":null}",
+      "fields" : {
+        "v" : {
+          "t" : "null"
+        }
+      },
+      "id" : "null_explicit"
+    },
+    {
+      "description" : "café -> UTF-8 crudo",
+      "expected" : "{\"v\":\"café\"}",
+      "fields" : {
+        "v" : {
+          "t" : "string",
+          "value" : "café"
+        }
+      },
+      "id" : "string_non_ascii_accent"
+    },
+    {
+      "description" : "日本 -> UTF-8 crudo (no \\u)",
+      "expected" : "{\"v\":\"日本\"}",
+      "fields" : {
+        "v" : {
+          "t" : "string",
+          "value" : "日本"
+        }
+      },
+      "id" : "string_cjk"
+    },
+    {
+      "description" : "escape mínimo: quote/backslash sí, slash no",
+      "expected" : "{\"v\":\"a\\\"b\\\\c/d\"}",
+      "fields" : {
+        "v" : {
+          "t" : "string",
+          "value" : "a\"b\\c/d"
+        }
+      },
+      "id" : "string_escape_quote_backslash_slash"
+    },
+    {
+      "description" : "controles C0: \\t forma corta, 0x00/0x1f como \\u00xx",
+      "expected" : "{\"v\":\"x\\t\\u0000\\u001fy\"}",
+      "fields" : {
+        "v" : {
+          "t" : "string",
+          "value" : "x\t\u0000\u001fy"
+        }
+      },
+      "id" : "string_control_c0"
+    },
+    {
+      "description" : "rates: keys por bytes UTF-8 (café<pen<usd), doubles rate-8 como string",
+      "expected" : "{\"v\":{\"café\":\"0.50000000\",\"pen\":\"3.75000000\",\"usd\":\"1.10000000\"}}",
+      "fields" : {
+        "v" : {
+          "json" : "{\"usd\":1.1,\"pen\":3.75,\"café\":0.5}",
+          "t" : "dataJSON"
+        }
+      },
+      "id" : "blob_rates"
+    },
+    {
+      "description" : "recursivo: array en orden, sub-objeto keys ordenadas, bool/null preservados",
+      "expected" : "{\"v\":{\"a\":[\"1.00000000\",\"2.50000000\",\"x\"],\"b\":{\"y\":null,\"z\":true}}}",
+      "fields" : {
+        "v" : {
+          "json" : "{\"a\":[1,2.5,\"x\"],\"b\":{\"z\":true,\"y\":null}}",
+          "t" : "dataJSON"
+        }
+      },
+      "id" : "blob_nested"
+    },
+    {
+      "description" : "blob vacío -> {}",
+      "expected" : "{\"v\":{}}",
+      "fields" : {
+        "v" : {
+          "json" : "{}",
+          "t" : "dataJSON"
+        }
+      },
+      "id" : "blob_empty"
+    },
+    {
+      "description" : "multi-columna: keys por bytes UTF-8, money=string, int=número, null presente, tag_refs vacío OMITIDA",
+      "expected" : "{\"amount\":\"19.9900\",\"count\":5,\"date\":\"2021-01-01T00:00:00.000Z\",\"is_active\":null,\"note\":\"café\"}",
+      "fields" : {
+        "amount" : {
+          "double" : "19.99",
+          "t" : "money"
+        },
+        "count" : {
+          "int" : 5,
+          "t" : "int"
+        },
+        "date" : {
+          "t" : "timestamp",
+          "unixMs" : 1609459200000
+        },
+        "is_active" : {
+          "isNull" : true,
+          "t" : "bool"
+        },
+        "note" : {
+          "t" : "string",
+          "value" : "café"
+        },
+        "tag_refs" : {
+          "t" : "uuidArray",
+          "values" : [
+
+          ]
+        }
+      },
+      "id" : "object_multikey"
+    },
+    {
+      "description" : "key presente con .null -> key:null",
+      "expected" : "{\"note\":null}",
+      "fields" : {
+        "note" : {
+          "t" : "null"
+        }
+      },
+      "id" : "tristate_key_present_null"
+    },
+    {
+      "description" : "key ausente del mapa -> no aparece",
+      "expected" : "{\"amount\":\"1.0000\"}",
+      "fields" : {
+        "amount" : {
+          "double" : "1.0",
+          "t" : "money"
+        }
+      },
+      "id" : "tristate_key_absent"
+    }
+  ]
+}

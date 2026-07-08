@@ -308,6 +308,18 @@
       "lastVerified": "2026-07-07"
     },
     {
+      "area": "cloud-sync-canon-codec",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/Canonc1Codec.swift",
+        "Yala/Services/CloudSync/CanonValue.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/CloudSync/Canonc1CodecTests + unit:YalaTests/CloudSync/Canonc1GoldenVectorTests (oráculo golden_vectors.json raíz — gate CI cross-lenguaje c1) — pure-logic DARK",
+      "owner": "",
+      "lastVerified": "2026-07-07"
+    },
+    {
       "area": "cloud-sync-capture",
       "codeGlobs": [
         "Yala/Services/CloudSync/CloudSyncEngine.swift",
