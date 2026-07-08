@@ -228,7 +228,7 @@ enum EntityEmissionMap {
         ]
     )
 
-    // MARK: scheduled_payments (split) — declarativa (aún sin syncID)
+    // MARK: scheduled_payments (split) — CABLEADA (I12; identidad = `id`)
 
     static let scheduledPayment = EntityEmission<ScheduledPayment>(
         table: "scheduled_payments",
@@ -264,10 +264,44 @@ enum EntityEmissionMap {
             ColumnEmitter("split_type", group: "split") { m, _ in Emit.text(m.splitType) },
             ColumnEmitter("split_participant_ids_raw", group: "split") { m, _ in Emit.text(m.splitParticipantIDsRaw) },
             ColumnEmitter("split_values_raw", group: "split") { m, _ in Emit.text(m.splitValuesRaw) },
+        ],
+        columnKeyPaths: [
+            \ScheduledPayment.name: ["name"],
+            \ScheduledPayment.note: ["note"],
+            \ScheduledPayment.amount: ["amount"],
+            \ScheduledPayment.currencyCode: ["currency_code"],
+            \ScheduledPayment.isVariableAmount: ["is_variable_amount"],
+            \ScheduledPayment.transactionType: ["transaction_type"],
+            \ScheduledPayment.account: ["account_ref"],
+            \ScheduledPayment.subcategory: ["subcategory_ref"],
+            \ScheduledPayment.tags: ["tag_refs"],
+            \ScheduledPayment.tagIDs: ["tag_refs"],
+            \ScheduledPayment.needOverride: ["need_override"],
+            \ScheduledPayment.isRecurring: ["is_recurring"],
+            \ScheduledPayment.recurrenceType: ["recurrence_type"],
+            \ScheduledPayment.recurrenceInterval: ["recurrence_interval"],
+            \ScheduledPayment.nextDueDate: ["next_due_date"],
+            \ScheduledPayment.dayOfMonth: ["day_of_month"],
+            \ScheduledPayment.selectedWeekdays: ["selected_weekdays"],
+            \ScheduledPayment.yearlyMonth: ["yearly_month"],
+            \ScheduledPayment.yearlyDay: ["yearly_day"],
+            \ScheduledPayment.endDate: ["end_date"],
+            \ScheduledPayment.paymentCategory: ["payment_category"],
+            \ScheduledPayment.notifyOnDueDate: ["notify_on_due_date"],
+            \ScheduledPayment.notifyDaysBefore: ["notify_days_before"],
+            \ScheduledPayment.isActive: ["is_active"],
+            \ScheduledPayment.createdAt: ["created_at"],
+            \ScheduledPayment.lastPaidDate: ["last_paid_date"],
+            \ScheduledPayment.skippedDatesRaw: ["skipped_dates_raw"],
+            \ScheduledPayment.groupZoneID: ["group_zone_id"],
+            \ScheduledPayment.splitTotalAmount: ["split_total_amount"],
+            \ScheduledPayment.splitType: ["split_type"],
+            \ScheduledPayment.splitParticipantIDsRaw: ["split_participant_ids_raw"],
+            \ScheduledPayment.splitValuesRaw: ["split_values_raw"],
         ]
     )
 
-    // MARK: budgets (budget) — declarativa (aún sin syncID)
+    // MARK: budgets (budget) — CABLEADA (I12; identidad = `id`)
 
     static let budget = EntityEmission<Budget>(
         table: "budgets",
@@ -290,6 +324,30 @@ enum EntityEmissionMap {
             ColumnEmitter("alert_enabled") { m, _ in .bool(m.alertEnabled) },
             ColumnEmitter("alert_thresholds") { m, _ in Emit.csvTextArray(m.alertThresholds) },
             ColumnEmitter("include_shared_expenses") { m, _ in .bool(m.includeSharedExpenses) },
+        ],
+        columnKeyPaths: [
+            \Budget.name: ["name"],
+            \Budget.currencyCode: ["currency_code"],
+            \Budget.limitAmount: ["limit_amount"],
+            \Budget.category: ["category_id"],
+            \Budget.periodType: ["period_type"],
+            \Budget.startDate: ["start_date"],
+            \Budget.endDate: ["end_date"],
+            \Budget.natures: ["natures"],
+            // M2M y su CSV mirror tocan la MISMA columna uuid[] (patrón TransactionItem.tags/tagIDs).
+            \Budget.subcategories: ["subcategory_ids"],
+            \Budget.subcategoryIDs: ["subcategory_ids"],
+            \Budget.accounts: ["account_ids"],
+            \Budget.accountIDs: ["account_ids"],
+            \Budget.tags: ["tag_refs"],
+            \Budget.tagIDs: ["tag_refs"],
+            \Budget.isActive: ["is_active"],
+            \Budget.createdAt: ["created_at"],
+            \Budget.isFavorite: ["is_favorite"],
+            \Budget.favoriteOrder: ["favorite_order"],
+            \Budget.alertEnabled: ["alert_enabled"],
+            \Budget.alertThresholds: ["alert_thresholds"],
+            \Budget.includeSharedExpenses: ["include_shared_expenses"],
         ]
     )
 
@@ -618,6 +676,17 @@ enum EntityEmissionMap {
         case SyncEntityType.favoritePayment: return favoritePayment.table
         case SyncEntityType.merchantMemory: return merchantMemory.table
         case SyncEntityType.exchangeRate: return exchangeRate.table
+        // I12: las 10 restantes ya mapean a su tabla (el sender/updateUnitClock las necesita).
+        case SyncEntityType.scheduledPayment: return scheduledPayment.table
+        case SyncEntityType.budget: return budget.table
+        case SyncEntityType.account: return account.table
+        case SyncEntityType.subcategory: return subcategory.table
+        case SyncEntityType.tag: return tag.table
+        case SyncEntityType.notificationItem: return notificationItem.table
+        case SyncEntityType.cashFlowPlan: return cashFlowPlan.table
+        case SyncEntityType.cashFlowLine: return cashFlowLine.table
+        case SyncEntityType.cashFlowOverride: return cashFlowOverride.table
+        case SyncEntityType.groupBridgePreference: return groupBridgePreference.table
         default: return nil
         }
     }

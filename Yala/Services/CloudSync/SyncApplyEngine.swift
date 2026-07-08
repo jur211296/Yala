@@ -288,6 +288,10 @@ extension CloudSyncEngine {
             applyToEntity(delta, EntityApplyMap.merchantMemory, guard: g, context: context)
         case EntityApplyMap.exchangeRate.table:
             applyToEntity(delta, EntityApplyMap.exchangeRate, guard: g, context: context)
+        case EntityApplyMap.budget.table:
+            applyToEntity(delta, EntityApplyMap.budget, guard: g, context: context)
+        case EntityApplyMap.scheduledPayment.table:
+            applyToEntity(delta, EntityApplyMap.scheduledPayment, guard: g, context: context)
         default:
             break  // isWired ya lo filtró; inalcanzable.
         }

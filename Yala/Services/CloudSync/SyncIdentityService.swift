@@ -114,6 +114,18 @@ enum SyncIdentityService {
                 rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs
             )
 
+            // I12: entidades cuya identidad de sync es su UUID EXISTENTE (D3). SIN rebind por contenido
+            // (esos UUID no se regeneran-por-pérdida) → solo materializan la fila testigo si falta, con
+            // `localAnchor = stableID` (la identidad misma). NO conforman `SyncIdentifiable` (D1).
+            try backfillIdentityType(
+                Budget.self, entityType: SyncEntityType.budget, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                ScheduledPayment.self, entityType: SyncEntityType.scheduledPayment, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+
             if context.hasChanges {
                 try context.save()
             }
@@ -170,6 +182,30 @@ enum SyncIdentityService {
                     knownSyncIDs.insert(newID)
                 }
             }
+        }
+    }
+
+    /// I12 (D3): materializa la fila testigo `SyncIdentity` de una entidad cuya identidad de sync es su
+    /// UUID persistido (`id`). SIN rebind (esos UUID no se regeneran-por-pérdida): `localAnchor` es la
+    /// identidad misma (`stableID`). Idempotente vía `knownSyncIDs` (crash a mitad de migración previa →
+    /// no duplica). Fetch CONCRETO por tipo (regla inviolable de `#Predicate`).
+    private static func backfillIdentityType<T: PersistentModel>(
+        _ type: T.Type,
+        entityType: String,
+        id: (T) -> UUID,
+        context: ModelContext,
+        now: Date,
+        knownSyncIDs: inout Set<UUID>
+    ) throws {
+        let models = try context.fetch(FetchDescriptor<T>())
+        for model in models {
+            let sid = id(model)
+            guard !knownSyncIDs.contains(sid) else { continue }
+            context.insert(SyncIdentity(
+                syncID: sid, entityType: entityType,
+                localAnchor: SyncContentAnchor.stableID(sid), createdAt: now
+            ))
+            knownSyncIDs.insert(sid)
         }
     }
 

@@ -12,8 +12,10 @@ import SwiftData
 
 @Model
 final class Budget {
-    // Stable identifier for tracking (e.g., alert notifications)
-    var id: UUID = UUID()
+    // Stable identifier for tracking (e.g., alert notifications).
+    // `.preserveValueOnDeletion`: Modo Nube (I12) usa `id` como identidad de sync → el history
+    // tombstone debe conservarla para poder emitir el tombstone al backend (§b.1/D1).
+    @Attribute(.preserveValueOnDeletion) var id: UUID = UUID()
 
     // Legacy properties (kept for backwards compatibility) - CloudKit: defaults required
     var currencyCode: String = "USD"

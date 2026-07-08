@@ -92,14 +92,15 @@ struct CloudSyncTombstoneTests {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
 
-        // Padre (ScheduledPayment — NO syncable, no produce tombstone) + hijos syncables (2 TX + 1 draft).
+        // Padre (ScheduledPayment — YA syncable en I12; identidad = `id`) + hijos syncables (2 TX + 1 draft).
         let payment = makeScheduledPayment(context: context)
+        let paymentID = payment.id
         let tx1 = makeTx(amount: 10, context: context)
         let tx2 = makeTx(amount: 20, context: context)
         let draft = makeDraft(note: "future occurrence", context: context)
         try context.save()
 
-        // Drain 1: el barrido asigna syncID a los 3 hijos + captura sus upserts.
+        // Drain 1: el barrido asigna syncID a los hijos + captura los upserts (padre e hijos).
         let engine = CloudSyncEngine()
         engine.drainOnce(context: context)
         let syncTx1 = try #require(tx1.syncID)
@@ -115,13 +116,18 @@ struct CloudSyncTombstoneTests {
 
         engine.drainOnce(context: context)
 
-        // 3 tombstones (los 3 hijos syncables); el ScheduledPayment NO produce fila (no es syncable).
+        // 4 tombstones: los 3 hijos + el PADRE (ahora syncable). §c.1 clasifica por TRANSACCIÓN: como la
+        // tx contiene el delete de un cascade-parent (`ScheduledPayment`), TODOS los tombstones —incluido
+        // el del propio padre— llevan `cascade` (metadata de auditoría conservadora, no compromete
+        // correctness: el backend mantiene `deleted=true` igual). El `id` del padre se preserva vía
+        // `.preserveValueOnDeletion` (I12) → su tombstone lo conserva.
         let stones = try tombstones(context)
-        #expect(stones.count == 3)
+        #expect(stones.count == 4)
         #expect(stones.allSatisfy { $0.tombstoneReason == SyncTombstoneReason.cascade.rawValue })
-        #expect(Set(stones.map(\.syncID)) == [syncTx1, syncTx2, syncDraft])
-        // Ninguna fila para el padre no-syncable.
-        #expect(!(try outboxRows(context)).contains { $0.entityType == "ScheduledPayment" })
+        #expect(Set(stones.map(\.syncID)) == [syncTx1, syncTx2, syncDraft, paymentID])
+        // El padre AHORA sí produce su propia fila (tombstone) con la identidad preservada.
+        let parentStone = stones.first { $0.entityType == "ScheduledPayment" }
+        #expect(parentStone?.syncID == paymentID)
     }
 
     // MARK: - S4-i · latencia larga: create sin syncID → drain (barrido) → delete → tombstone con syncID

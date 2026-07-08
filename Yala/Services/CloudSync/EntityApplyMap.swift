@@ -102,6 +102,20 @@ private enum Apply {
     static func stringArrayReq<M>(_ kp: ReferenceWritableKeyPath<M, [String]>) -> ColumnApplier<M> {
         ColumnApplier { m, v, _ in m[keyPath: kp] = WireValueDecoder.stringArray(v) ?? [] }
     }
+    /// text[] del wire → CSV `String?` local (inverso EXACTO de `Emit.csvTextArray`). `null` → `nil`;
+    /// array → `join(",")` (array vacío `[]` → `""`, distinto de `nil`). Ej. Budget.natures/alertThresholds,
+    /// ScheduledPayment.selectedWeekdays.
+    static func csvOpt<M>(_ kp: ReferenceWritableKeyPath<M, String?>) -> ColumnApplier<M> {
+        ColumnApplier { m, v, _ in
+            if let arr = WireValueDecoder.stringArray(v) { m[keyPath: kp] = arr.joined(separator: ",") }
+            else { m[keyPath: kp] = nil }  // null → nil (columna opcional puesta a NULL)
+        }
+    }
+    /// text[] del wire → CSV `String` NO-opcional local. `null` → `""` (no puede ser nil; ej.
+    /// ScheduledPayment.skippedDatesRaw, default `""`); array → `join(",")`.
+    static func csvReq<M>(_ kp: ReferenceWritableKeyPath<M, String>) -> ColumnApplier<M> {
+        ColumnApplier { m, v, _ in m[keyPath: kp] = (WireValueDecoder.stringArray(v) ?? []).joined(separator: ",") }
+    }
     /// FK guardada como `String?` local (`scheduledPaymentID`) — uuid del wire → uuidString (uppercase
     /// local-convention de Foundation); `null`/no-uuid → `nil`.
     static func refUUIDStringOpt<M>(_ kp: ReferenceWritableKeyPath<M, String?>) -> ColumnApplier<M> {
@@ -353,6 +367,114 @@ enum EntityApplyMap {
         ]
     )
 
+    // MARK: budgets — Budget (I12; identidad = `id`)
+
+    static let budget = EntityApply<Budget>(
+        table: "budgets",
+        entityTypeName: SyncEntityType.budget,
+        make: { ctx in let m = Budget(currencyCode: "USD", limitAmount: 0); ctx.insert(m); return m },
+        setSyncID: { $0.id = $1 },
+        fetchBySyncID: { fetchBudget(byID: $0, context: $1) },
+        anchor: { SyncContentAnchor.stableID($0.id) },
+        groupByColumn: EntityEmissionMap.budget.groupByColumn,
+        appliers: [
+            "name": Apply.stringReq(\.name),
+            "currency_code": Apply.stringReq(\.currencyCode),
+            "limit_amount": Apply.moneyReq(\.limitAmount),
+            "category_id": ColumnApplier { m, v, ctx in
+                m.category = resolveRef(v, entity: "budgets", column: "category_id",
+                                        rowSyncID: m.id, context: ctx) {
+                    fetchCategory(bySyncID: $0, context: ctx)
+                }
+            },
+            "period_type": Apply.stringReq(\.periodType),
+            "start_date": Apply.dateOpt(\.startDate),
+            "end_date": Apply.dateOpt(\.endDate),
+            "natures": Apply.csvOpt(\.natures),
+            // uuid[] M2M mirrors: resuelve por `shortcutID` (subcat/account) o `id` (tags) → M2M para el
+            // cascade .nullify + CSV = wire COMPLETO (SSOT; CSV-first auto-cura cuando el destino llegue).
+            "subcategory_ids": ColumnApplier { m, v, ctx in
+                applyUUIDArrayRefs(v, fetch: { fetchSubcategories(byShortcutIDs: $0, context: $1) },
+                                   setM2M: { m.subcategories = $0 }, csv: { m.subcategoryIDs = $0 }, context: ctx)
+            },
+            "account_ids": ColumnApplier { m, v, ctx in
+                applyUUIDArrayRefs(v, fetch: { fetchAccounts(byShortcutIDs: $0, context: $1) },
+                                   setM2M: { m.accounts = $0 }, csv: { m.accountIDs = $0 }, context: ctx)
+            },
+            "tag_refs": ColumnApplier { m, v, ctx in
+                applyTagRefs(v, into: m, setter: { m.tags = $0 }, csv: { m.tagIDs = $0 }, context: ctx)
+            },
+            "is_active": Apply.boolReq(\.isActive),
+            "created_at": Apply.dateReq(\.createdAt),
+            "is_favorite": Apply.boolReq(\.isFavorite),
+            "favorite_order": Apply.intReq(\.favoriteOrder),
+            "alert_enabled": Apply.boolReq(\.alertEnabled),
+            "alert_thresholds": Apply.csvOpt(\.alertThresholds),
+            "include_shared_expenses": Apply.boolReq(\.includeSharedExpenses),
+        ]
+    )
+
+    // MARK: scheduled_payments — ScheduledPayment (I12; identidad = `id`)
+
+    static let scheduledPayment = EntityApply<ScheduledPayment>(
+        table: "scheduled_payments",
+        entityTypeName: SyncEntityType.scheduledPayment,
+        make: { ctx in
+            let m = ScheduledPayment(name: "", amount: 0, currencyCode: "USD", nextDueDate: .now)
+            ctx.insert(m)
+            return m
+        },
+        setSyncID: { $0.id = $1 },
+        fetchBySyncID: { fetchScheduledPayment(byID: $0, context: $1) },
+        anchor: { SyncContentAnchor.stableID($0.id) },
+        groupByColumn: EntityEmissionMap.scheduledPayment.groupByColumn,
+        appliers: [
+            "name": Apply.stringReq(\.name),
+            "note": Apply.textOpt(\.note),
+            "amount": Apply.moneyReq(\.amount),
+            "currency_code": Apply.stringReq(\.currencyCode),
+            "is_variable_amount": Apply.boolReq(\.isVariableAmount),
+            "transaction_type": Apply.stringReq(\.transactionType),
+            "account_ref": ColumnApplier { m, v, ctx in
+                m.account = resolveRef(v, entity: "scheduled_payments", column: "account_ref",
+                                       rowSyncID: m.id, context: ctx) {
+                    fetchAccount(byShortcutID: $0, context: ctx)
+                }
+            },
+            "subcategory_ref": ColumnApplier { m, v, ctx in
+                m.subcategory = resolveRef(v, entity: "scheduled_payments", column: "subcategory_ref",
+                                           rowSyncID: m.id, context: ctx) {
+                    fetchSubcategory(byShortcutID: $0, context: ctx)
+                }
+            },
+            "tag_refs": ColumnApplier { m, v, ctx in
+                applyTagRefs(v, into: m, setter: { m.setTags(from: $0) }, csv: { m.tagIDs = $0 }, context: ctx)
+            },
+            "need_override": Apply.textOpt(\.needOverride),
+            "is_recurring": Apply.boolReq(\.isRecurring),
+            "recurrence_type": Apply.stringReq(\.recurrenceType),
+            "recurrence_interval": Apply.intReq(\.recurrenceInterval),
+            "next_due_date": Apply.dateReq(\.nextDueDate),
+            "day_of_month": Apply.intOpt(\.dayOfMonth),
+            "selected_weekdays": Apply.csvOpt(\.selectedWeekdays),
+            "yearly_month": Apply.intOpt(\.yearlyMonth),
+            "yearly_day": Apply.intOpt(\.yearlyDay),
+            "end_date": Apply.dateOpt(\.endDate),
+            "payment_category": Apply.stringReq(\.paymentCategory),
+            "notify_on_due_date": Apply.boolReq(\.notifyOnDueDate),
+            "notify_days_before": Apply.intReq(\.notifyDaysBefore),
+            "is_active": Apply.boolReq(\.isActive),
+            "created_at": Apply.dateReq(\.createdAt),
+            "last_paid_date": Apply.dateOpt(\.lastPaidDate),
+            "skipped_dates_raw": Apply.csvReq(\.skippedDatesRaw),
+            "group_zone_id": Apply.textOpt(\.groupZoneID),
+            "split_total_amount": Apply.moneyOpt(\.splitTotalAmount),
+            "split_type": Apply.textOpt(\.splitType),
+            "split_participant_ids_raw": Apply.textOpt(\.splitParticipantIDsRaw),
+            "split_values_raw": Apply.textOpt(\.splitValuesRaw),
+        ]
+    )
+
     // MARK: - Resolución de un `_ref` (dangling → nil + breadcrumb + registro durable F-2)
 
     /// Decodifica un `WireValue` FK y lo resuelve con `fetch`. `null` → `nil` SIN breadcrumb (borrado
@@ -498,6 +620,21 @@ enum EntityApplyMap {
             guard let t = fetchSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
             row.subcategory = t
             return .resolved
+        case (budget.table, "category_id"):
+            guard let row = fetchBudget(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = fetchCategory(bySyncID: target, context: context) else { return .targetMissing }
+            row.category = t
+            return .resolved
+        case (scheduledPayment.table, "account_ref"):
+            guard let row = fetchScheduledPayment(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = fetchAccount(byShortcutID: target, context: context) else { return .targetMissing }
+            row.account = t
+            return .resolved
+        case (scheduledPayment.table, "subcategory_ref"):
+            guard let row = fetchScheduledPayment(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = fetchSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
+            row.subcategory = t
+            return .resolved
         default:
             // Combinación desconocida (drift futuro) → tratar como obsoleto para no acumular basura.
             return .rowGone
@@ -516,21 +653,38 @@ enum EntityApplyMap {
         csv(CSVMirrorCodec.encode(wireUUIDs))          // CSV = wire COMPLETO (SSOT; preserva no-locales)
     }
 
+    /// Generalización de `applyTagRefs` a cualquier columna `uuid[]` de refs M2M (Budget
+    /// subcategory_ids/account_ids/tag_refs): resuelve los `[UUID]` del wire a `[T]` locales
+    /// (`setM2M`, para el cascade `.nullify`) y sobrescribe el CSV mirror con los UUIDs del WIRE
+    /// COMPLETOS (`csv`) — preserva refs a destinos aún no locales (CSV-first auto-cura; gotcha
+    /// CSV-stale). `null` → sin refs (`[]`/`""`). El orden del CSV lo canonicaliza `CSVMirrorCodec`.
+    private static func applyUUIDArrayRefs<T: PersistentModel>(
+        _ value: WireValue,
+        fetch: ([UUID], ModelContext) -> [T],
+        setM2M: ([T]) -> Void, csv: (String?) -> Void, context: ModelContext
+    ) {
+        let wireUUIDs = WireValueDecoder.uuidArray(value) ?? []
+        setM2M(fetch(wireUUIDs, context))
+        csv(CSVMirrorCodec.encode(wireUUIDs))
+    }
+
     // MARK: - Dispatch tabla → EntityApply (invierte EntityEmissionMap.table(forClass:))
 
     /// Las 6 tablas cableadas al apply (las que el cliente MATERIALIZA en v1). Consumidas también por
     /// la verificación Merkle (I8f-3, regla 5: solo estos entityHash se comparan).
     static var wiredTables: Set<String> {
         [transactionItem.table, inboxDraft.table, category.table,
-         favoritePayment.table, merchantMemory.table, exchangeRate.table]
+         favoritePayment.table, merchantMemory.table, exchangeRate.table,
+         budget.table, scheduledPayment.table]
     }
 
-    /// `true` si la tabla está cableada al apply (una de las 6). El apply consulta esto para decidir
-    /// materializar vs cuarentenar; el dispatch concreto por tipo lo hace `SyncApplyEngine`.
+    /// `true` si la tabla está cableada al apply. El apply consulta esto para decidir materializar vs
+    /// cuarentenar; el dispatch concreto por tipo lo hace `SyncApplyEngine`.
     static func isWired(table: String) -> Bool {
         switch table {
         case transactionItem.table, inboxDraft.table, category.table,
-             favoritePayment.table, merchantMemory.table, exchangeRate.table:
+             favoritePayment.table, merchantMemory.table, exchangeRate.table,
+             budget.table, scheduledPayment.table:
             return true
         default:
             return false
@@ -562,6 +716,45 @@ enum EntityApplyMap {
     }
     static func fetchSubcategory(byShortcutID id: UUID, context: ModelContext) -> Subcategory? {
         fetchFirst(FetchDescriptor<Subcategory>(predicate: #Predicate { $0.shortcutID == id }), context)
+    }
+    static func fetchBudget(byID id: UUID, context: ModelContext) -> Budget? {
+        fetchFirst(FetchDescriptor<Budget>(predicate: #Predicate { $0.id == id }), context)
+    }
+    static func fetchScheduledPayment(byID id: UUID, context: ModelContext) -> ScheduledPayment? {
+        fetchFirst(FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id }), context)
+    }
+
+    /// `[Subcategory]` por sus `shortcutID` (CSV mirror de Budget). Fetch de TODAS + lookup en memoria
+    /// (patrón `fetchTags`; tolera ids duplicados quedándose con la primera). Orden = el de `ids` (wire).
+    static func fetchSubcategories(byShortcutIDs ids: [UUID], context: ModelContext) -> [Subcategory] {
+        guard !ids.isEmpty else { return [] }
+        do {
+            let all = try context.fetch(FetchDescriptor<Subcategory>())
+            var lookup: [UUID: Subcategory] = [:]
+            for s in all where lookup[s.shortcutID] == nil { lookup[s.shortcutID] = s }
+            return ids.compactMap { lookup[$0] }
+        } catch {
+            #if DEBUG
+            print("EntityApplyMap.fetchSubcategories error: \(error)")
+            #endif
+            return []
+        }
+    }
+
+    /// `[Account]` por sus `shortcutID` (CSV mirror de Budget).
+    static func fetchAccounts(byShortcutIDs ids: [UUID], context: ModelContext) -> [Account] {
+        guard !ids.isEmpty else { return [] }
+        do {
+            let all = try context.fetch(FetchDescriptor<Account>())
+            var lookup: [UUID: Account] = [:]
+            for a in all where lookup[a.shortcutID] == nil { lookup[a.shortcutID] = a }
+            return ids.compactMap { lookup[$0] }
+        } catch {
+            #if DEBUG
+            print("EntityApplyMap.fetchAccounts error: \(error)")
+            #endif
+            return []
+        }
     }
 
     /// `SyncIdentity` de un `syncID` (para el born-remote insert y el tombstone delete). Store sync-meta.

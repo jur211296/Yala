@@ -69,26 +69,33 @@ enum SyncMerkle {
 
         let overrides = danglingOverrides(context: context)
 
-        // Las 6 cableadas se computan de verdad (dispatch CONCRETO por tipo).
+        // Las cableadas se computan de verdad (dispatch CONCRETO por tipo). D1: la identidad de sync es
+        // `syncID` (las 6 sintéticas) o `id` (las cableadas en I12) — se pasa como closure.
         let computed: [(String, [(String, Data)])] = [
             (EntityEmissionMap.transactionItem.table,
              collectLeaves(TransactionItem.self, emission: EntityEmissionMap.transactionItem,
-                           overrides: overrides, context: context)),
+                           identity: { $0.syncID }, overrides: overrides, context: context)),
             (EntityEmissionMap.inboxDraft.table,
              collectLeaves(InboxDraft.self, emission: EntityEmissionMap.inboxDraft,
-                           overrides: overrides, context: context)),
+                           identity: { $0.syncID }, overrides: overrides, context: context)),
             (EntityEmissionMap.category.table,
              collectLeaves(Category.self, emission: EntityEmissionMap.category,
-                           overrides: overrides, context: context)),
+                           identity: { $0.syncID }, overrides: overrides, context: context)),
             (EntityEmissionMap.favoritePayment.table,
              collectLeaves(FavoritePayment.self, emission: EntityEmissionMap.favoritePayment,
-                           overrides: overrides, context: context)),
+                           identity: { $0.syncID }, overrides: overrides, context: context)),
             (EntityEmissionMap.merchantMemory.table,
              collectLeaves(MerchantMemory.self, emission: EntityEmissionMap.merchantMemory,
-                           overrides: overrides, context: context)),
+                           identity: { $0.syncID }, overrides: overrides, context: context)),
             (EntityEmissionMap.exchangeRate.table,
              collectLeaves(ExchangeRate.self, emission: EntityEmissionMap.exchangeRate,
-                           overrides: overrides, context: context)),
+                           identity: { $0.syncID }, overrides: overrides, context: context)),
+            (EntityEmissionMap.budget.table,
+             collectLeaves(Budget.self, emission: EntityEmissionMap.budget,
+                           identity: { $0.id }, overrides: overrides, context: context)),
+            (EntityEmissionMap.scheduledPayment.table,
+             collectLeaves(ScheduledPayment.self, emission: EntityEmissionMap.scheduledPayment,
+                           identity: { $0.id }, overrides: overrides, context: context)),
         ]
         for (table, leaves) in computed {
             let digest = entityDigest(leaves)
@@ -124,8 +131,8 @@ enum SyncMerkle {
     /// Leaves de UNA entidad cableada. Una fila cuyo payload el codec rechaza (dato no-canonicalizable;
     /// tampoco habría podido pushearse — el drain la descarta con canario) se SALTA con rastro: mejor
     /// una divergencia detectable que un crash del verificador (hueco documentado v1).
-    private static func collectLeaves<M: PersistentModel & SyncIdentifiable>(
-        _ type: M.Type, emission: EntityEmission<M>,
+    private static func collectLeaves<M: PersistentModel>(
+        _ type: M.Type, emission: EntityEmission<M>, identity: (M) -> UUID?,
         overrides: [UUID: [String: UUID]], context: ModelContext
     ) -> [(String, Data)] {
         let models: [M]
@@ -139,7 +146,7 @@ enum SyncMerkle {
         }
         var leaves: [(String, Data)] = []
         for model in models {
-            guard let syncID = model.syncID else { continue }  // sin identidad → aún no participa
+            guard let syncID = identity(model) else { continue }  // sin identidad → aún no participa
             do {
                 let payload = try channel1Payload(model: model, emission: emission,
                                                   overrides: overrides[syncID] ?? [:])

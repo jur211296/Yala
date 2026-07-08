@@ -15,8 +15,10 @@ import SwiftData
 final class ScheduledPayment {
     // MARK: - Identification
 
-    /// Unique identifier (stable across sessions)
-    var id: UUID = UUID()
+    /// Unique identifier (stable across sessions).
+    /// `.preserveValueOnDeletion`: Modo Nube (I12) usa `id` como identidad de sync → el history
+    /// tombstone debe conservarla para poder emitir el tombstone al backend (§b.1/D1).
+    @Attribute(.preserveValueOnDeletion) var id: UUID = UUID()
 
     /// Display name for the scheduled payment (required) - CloudKit: default required
     var name: String = ""

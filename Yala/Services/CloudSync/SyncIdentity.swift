@@ -31,6 +31,18 @@ nonisolated enum SyncEntityType {
     static let favoritePayment = "FavoritePayment"
     static let merchantMemory = "MerchantMemory"
     static let exchangeRate = "ExchangeRate"
+    // I12: las 10 restantes usan su UUID EXISTENTE como identidad de sync (Account/Subcategory =
+    // `shortcutID`; el resto = `id`). Literales estables = nombre de clase (invariante de rebind).
+    static let scheduledPayment = "ScheduledPayment"
+    static let budget = "Budget"
+    static let account = "Account"
+    static let subcategory = "Subcategory"
+    static let tag = "Tag"
+    static let notificationItem = "NotificationItem"
+    static let cashFlowPlan = "CashFlowPlan"
+    static let cashFlowLine = "CashFlowLine"
+    static let cashFlowOverride = "CashFlowOverride"
+    static let groupBridgePreference = "GroupBridgePreference"
 }
 
 /// Fila testigo de identidad de sync. Una por cada entidad sincronizable materializada.

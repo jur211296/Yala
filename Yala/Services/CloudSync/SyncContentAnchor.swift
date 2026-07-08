@@ -102,6 +102,17 @@ nonisolated enum SyncContentAnchor {
         ])
     }
 
+    // MARK: - Ancla trivial de identidad (D3, I12)
+
+    /// Ancla para las entidades cuya identidad de sync es su UUID EXISTENTE (Budget/ScheduledPayment/…):
+    /// el ancla ES la identidad misma (`uuidString` lowercased, SIN hash). Esas identidades no se
+    /// regeneran-por-pérdida de contenido, así que el rebind por contenido NO aplica — la fila testigo
+    /// solo necesita un `localAnchor` estable y determinista. Simétrico con la mecánica de las 6
+    /// sintéticas, pero sin normalización ni SHA-256 (no hay contenido que resumir).
+    static func stableID(_ id: UUID) -> String {
+        id.uuidString.lowercased()
+    }
+
     // MARK: - Serialización canónica de componentes
 
     /// Fecha → ms Unix enteros (floor), como string. Determinista, sin zona/locale.

@@ -155,8 +155,9 @@ struct CloudSyncE2EStagingTests {
         #expect(txB.exchangeRate == 1.0)
         #expect(txB.isExchangeRateProvisional == false)
 
-        // Bonus: las tablas no cableadas del historial de staging (p.ej. budgets del golden 10 del
-        // gateway) deben haber caído en cuarentena con los bytes reales del wire, nunca descartadas.
+        // Bonus: las tablas AÚN no cableadas del historial de staging (p.ej. `accounts` del golden 10
+        // del gateway — `budgets`/`scheduled_payments` ya se cablearon en I12 commit A) deben haber
+        // caído en cuarentena con los bytes reales del wire, nunca descartadas.
         let quarantined = try contextB.fetch(FetchDescriptor<SyncQuarantine>())
         #expect(quarantined.allSatisfy { !$0.rawDelta.isEmpty })
 
@@ -285,6 +286,149 @@ struct CloudSyncE2EStagingTests {
         case .diverged(let entities):
             #expect(entities == ["tx_items"],
                     "solo tx_items puede divergir (filas parciales hand-crafted de staging): \(entities)")
+        case .skipped(let reason):
+            Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
+        }
+    }
+
+    // MARK: - Round-trip budgets + scheduled_payments (I12 commit A)
+
+    /// A crea un Budget con filtros POBLADOS (CSV mirror uuid[]) y otro con filtros VACÍOS + un
+    /// ScheduledPayment con split configurado (`amount` = MI-PARTE) → push → B (store fresco) materializa
+    /// las 3 filas → B edita el pago planificado → A converge → Merkle `diverged == ["tx_items"]` SE
+    /// CONSERVA (mismas filas parciales hand-crafted del dataset de staging; ver el round-trip de tx).
+    ///
+    /// **NOTA para el owner (D7) — ACCIÓN PENDIENTE (medido 2026-07-08)**: al cablear `budgets` el Merkle
+    /// reporta `diverged == ["budgets","tx_items"]`. La divergencia de `budgets` la causan 3 filas LEGACY
+    /// hand-crafted del golden 10 en staging con `name`/`period_type`/`created_at` = NULL server-side
+    /// (DOMAIN-INVALID: props non-optional → el cliente materializa defaults del init → su leaf jamás las
+    /// reproduce; idéntico al caso de los ~77 tx_items). `scheduled_payments` NO diverge (limpia). El assert
+    /// se mantiene ESTRICTO (`== ["tx_items"]`, NUNCA relajar) → estos 3 tests fallan hasta que el owner haga
+    /// `UPDATE budgets SET deleted=true WHERE sync_id IN (...)` en staging:
+    ///     0800943b-80a3-4c1c-a4c6-5de4f3373d67
+    ///     316a26fd-4657-4bc0-aa7b-04593a04f8a8
+    ///     3a86674e-c3b1-4780-a00e-5977bfb714db
+    /// Tras tombstonearlas, los 3 tests convergen a `["tx_items"]`. Los sync_id nuevos de este run son
+    /// ÚNICOS (sin cleanup); las 2 filas i12-filled/i12-empty son DOMAIN-VALID y convergen.
+    @Test(.enabled(if: CloudSyncE2EStagingTests.isEnabled))
+    func roundTrip_budgetAndScheduledPayment_pushFromA_materializesInB_convergesInA() async throws {
+        let jwt = try await login()
+        let tokenProvider: () async -> String? = { jwt }
+
+        // ---------- Device A: write local (budget con filtros + budget vacío + pago con split) ----------
+        let dirA = freshDir(); defer { cleanup(dirA) }
+        let contextA = try makeContext(dirA)
+        let engineA = CloudSyncEngine()
+        let run = String(UUID().uuidString.prefix(8))
+
+        // Budget con filtros POBLADOS: los uuid[] viajan como CSV mirror (los destinos no están cableados
+        // en commit A → en B quedan como CSV sin M2M, pero el leaf usa el CSV = wire-completo → converge).
+        let budgetFilled = Budget(currencyCode: "PEN", limitAmount: 500)
+        budgetFilled.name = "i12-filled-\(run)"
+        let subShortcut = UUID(); let accShortcut = UUID(); let tagID = UUID()
+        budgetFilled.subcategoryIDs = CSVMirrorCodec.encode([subShortcut])
+        budgetFilled.accountIDs = CSVMirrorCodec.encode([accShortcut])
+        budgetFilled.tagIDs = CSVMirrorCodec.encode([tagID])
+        budgetFilled.natures = "essential,priority"
+        budgetFilled.alertEnabled = true
+        budgetFilled.alertThresholds = "50,75,100"
+        contextA.insert(budgetFilled)
+
+        // Budget con filtros VACÍOS.
+        let budgetEmpty = Budget(currencyCode: "PEN", limitAmount: 100)
+        budgetEmpty.name = "i12-empty-\(run)"
+        contextA.insert(budgetEmpty)
+
+        // ScheduledPayment con split — `amount` = MI-PARTE (100), `splitTotalAmount` = total (250).
+        let sp = ScheduledPayment(name: "i12-sp-\(run)", amount: 100, currencyCode: "PEN",
+                                  nextDueDate: Date(timeIntervalSince1970: 1_751_900_000))
+        sp.createdAt = Date(timeIntervalSince1970: 1_751_900_000)
+        sp.groupZoneID = "zone-\(run)"
+        sp.splitTotalAmount = 250
+        sp.splitType = "equal"
+        sp.splitParticipantIDsRaw = "\(UUID().uuidString):1"
+        sp.splitValuesRaw = "\(UUID().uuidString):1"
+        sp.selectedWeekdays = "1,3,5"
+        contextA.insert(sp)
+        try contextA.save()
+
+        let budgetFilledID = budgetFilled.id
+        let budgetEmptyID = budgetEmpty.id
+        let spID = sp.id
+
+        engineA.drainOnce(context: contextA)
+        let rowsA = try contextA.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(rowsA.count >= 3, "el drain de A debe producir ≥3 filas (2 budgets + 1 pago): \(rowsA.count)")
+
+        let pushClient = SyncPushClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let pushOutcome = await pushClient.push(rowsA)
+        guard case .completed(let results) = pushOutcome else {
+            Issue.record("push A no completó: \(pushOutcome)"); return
+        }
+        #expect(results.allSatisfy { $0.status == .applied || $0.status == .noop },
+                "todos los deltas de A deben aplicar: \(results)")
+        await pushClient.applyResults(results, rows: rowsA, engine: engineA, context: contextA)
+
+        // ---------- Device B (store fresco): pull → apply materializa las 3 filas ----------
+        let dirB = freshDir(); defer { cleanup(dirB) }
+        let contextB = try makeContext(dirB)
+        let engineB = CloudSyncEngine()
+        let pullClientB = SyncPullClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+
+        let outcomeB = await engineB.pullAndApplyOnce(using: pullClientB, context: contextB)
+        guard case .completed = outcomeB else { Issue.record("pull B no completó: \(outcomeB)"); return }
+
+        let bFilled = try contextB.fetch(FetchDescriptor<Budget>()).first { $0.id == budgetFilledID }
+        #expect(bFilled?.limitAmount == 500)
+        #expect(bFilled?.natures == "essential,priority")
+        #expect(bFilled?.alertThresholds == "50,75,100")
+        // CSV mirror wire-completo (los destinos no cableados → M2M vacía, CSV preservado).
+        #expect(bFilled?.subcategoryIDsSet == Set([subShortcut]))
+        #expect(bFilled?.accountIDsSet == Set([accShortcut]))
+        #expect(bFilled?.tagIDsSet == Set([tagID]))
+
+        let bEmpty = try contextB.fetch(FetchDescriptor<Budget>()).first { $0.id == budgetEmptyID }
+        #expect(bEmpty?.limitAmount == 100)
+        #expect(bEmpty?.subcategoryIDs == nil)   // grupo vacío → CSV nil (sin filtro)
+
+        let bSP = try contextB.fetch(FetchDescriptor<ScheduledPayment>()).first { $0.id == spID }
+        #expect(bSP?.amount == 100)              // MI-PARTE preservada verbatim (no el total)
+        #expect(bSP?.splitTotalAmount == 250)
+        #expect(bSP?.splitType == "equal")
+        #expect(bSP?.selectedWeekdays == "1,3,5")
+
+        // ---------- B edita el pago → push; A pullea → converge ----------
+        bSP?.amount = 130
+        try contextB.save()
+        engineB.drainOnce(context: contextB)
+        let rowsB = try contextB.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(!rowsB.isEmpty, "el drain de B debe capturar la edición del pago")
+        let pushClientB = SyncPushClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        guard case .completed(let resultsB) = await pushClientB.push(rowsB) else {
+            Issue.record("push B no completó"); return
+        }
+        await pushClientB.applyResults(resultsB, rows: rowsB, engine: engineB, context: contextB)
+
+        let pullClientA = SyncPullClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        guard case .completed = await engineA.pullAndApplyOnce(using: pullClientA, context: contextA) else {
+            Issue.record("pull A no completó"); return
+        }
+        #expect(sp.amount == 130, "A debe converger a la edición de B (amount: \(sp.amount))")
+
+        // ---------- Merkle: B verifica integridad; el veredicto se CONSERVA en ["tx_items"] ----------
+        guard case .completed = await engineB.pullAndApplyOnce(using: pullClientB, context: contextB) else {
+            Issue.record("pull final de B no completó"); return
+        }
+        let merkleClient = SyncMerkleClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        switch await engineB.verifyIntegrity(using: merkleClient, context: contextB) {
+        case .converged:
+            break
+        case .diverged(let entities):
+            // Ver la NOTA de D7 arriba: solo `tx_items` puede divergir (filas parciales hand-crafted).
+            // Si aparece `budgets`/`scheduled_payments`, son filas legacy de staging → tombstonearlas,
+            // NUNCA relajar el assert.
+            #expect(entities == ["tx_items"],
+                    "solo tx_items puede divergir; si hay budgets/scheduled_payments, tombstonear en staging: \(entities)")
         case .skipped(let reason):
             Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
         }

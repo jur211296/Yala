@@ -197,9 +197,10 @@ struct CloudSyncSchemaParityTests {
         #expect(CloudSyncEngine.personalEntityNames == entityNames(SwiftDataConfiguration.personalSchema))
     }
 
-    // MARK: - (d) Las 6 entidades sincronizables llevan `syncID`
+    // MARK: - (d) Identidad de sync por entidad
 
-    @Test func allSyncableEntities_haveSyncIDProperty() {
+    /// Las 6 originales llevan el `syncID` sintético.
+    @Test func syntheticSyncableEntities_haveSyncIDProperty() {
         let syncable: [any PersistentModel.Type] = [
             TransactionItem.self,
             InboxDraft.self,
@@ -211,5 +212,65 @@ struct CloudSyncSchemaParityTests {
         for type in syncable {
             #expect(propertyNames(type).contains("syncID"), "\(type) debe tener la propiedad syncID")
         }
+    }
+
+    /// Las cableadas en I12 usan su UUID EXISTENTE como identidad de sync (Budget/ScheduledPayment = `id`;
+    /// las de commit B añadirán `shortcutID`/`id`). El campo debe existir en el schema para que el
+    /// tombstone (`.preserveValueOnDeletion`) y el fetch por identidad lo resuelvan.
+    @Test func wiredIdentityEntities_haveIdentityProperty() {
+        // (tipo, campo de identidad)
+        let wired: [(any PersistentModel.Type, String)] = [
+            (Budget.self, "id"),
+            (ScheduledPayment.self, "id"),
+        ]
+        for (type, field) in wired {
+            #expect(propertyNames(type).contains(field),
+                    "\(type) debe tener la propiedad de identidad \(field)")
+        }
+    }
+
+    /// `.preserveValueOnDeletion` en la identidad de las cableadas en I12 no es introspectable vía
+    /// `Schema.Entity`; se valida con un tombstone REAL: borrar la fila y comprobar que el history
+    /// tombstone conserva el `id`. Store ON-DISK propio en dir temporal (patrón SyncApplyEngineTests)
+    /// — NO usa `makeTestContext()` (helper in-memory), así que la regla `.serialized` (≥2
+    /// makeTestContext por proceso) NO aplica a esta suite; es el único test con container aquí.
+    @MainActor
+    @Test func wiredIdentity_isPreservedInTombstone_budget() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SchemaParity-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let personalCfg = ModelConfiguration(
+            "SP-Personal", schema: SwiftDataConfiguration.personalSchema,
+            url: dir.appendingPathComponent("personal.sqlite"), cloudKitDatabase: .none)
+        let groupsCfg = ModelConfiguration(
+            "SP-Groups", schema: SwiftDataConfiguration.groupsSchema,
+            url: dir.appendingPathComponent("groups.sqlite"), cloudKitDatabase: .none)
+        let syncMetaCfg = ModelConfiguration(
+            "SP-SyncMeta", schema: SwiftDataConfiguration.syncMetaSchema,
+            url: dir.appendingPathComponent("syncmeta.sqlite"), cloudKitDatabase: .none)
+        let container = try ModelContainer(for: SwiftDataConfiguration.schema,
+                                           configurations: personalCfg, groupsCfg, syncMetaCfg)
+        let context = ModelContext(container)
+
+        let budget = Budget(currencyCode: "USD", limitAmount: 100)
+        let budgetID = budget.id
+        context.insert(budget)
+        try context.save()
+        context.delete(budget)
+        try context.save()
+
+        // El history tombstone del delete debe conservar `id` (= `.preserveValueOnDeletion`).
+        let txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+        var preservedIDs: [UUID] = []
+        for tx in txns {
+            for change in tx.changes {
+                guard case .delete(let del) = change,
+                      let typed = del as? DefaultHistoryDelete<Budget> else { continue }
+                if let id = typed.tombstone[\.id] as? UUID { preservedIDs.append(id) }
+            }
+        }
+        #expect(preservedIDs.contains(budgetID),
+                "el tombstone de Budget debe conservar `id` (@Attribute(.preserveValueOnDeletion))")
     }
 }

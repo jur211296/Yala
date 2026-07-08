@@ -192,7 +192,9 @@ struct CloudSyncRuntimeTests {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let good = liveRow(context, entityType: SyncEntityType.transactionItem, h: hlc(1))  // buildable
-        let bad = liveRow(context, entityType: "Budget", h: hlc(2))                          // poison
+        // Poison = clase SIN mapeo a tabla Postgres (`table(forClass:)` → nil). `Budget` YA no sirve
+        // (cableada en I12 commit A); un literal inexistente delata igual el path de dead-letter.
+        let bad = liveRow(context, entityType: "LegacyUnmappedEntity", h: hlc(2))
 
         let push = StubSession(body: pushAppliedJSON([good]))
         let runtime = makeRuntime(push: push, pull: StubSession(body: emptyPageJSON()),
@@ -203,7 +205,7 @@ struct CloudSyncRuntimeTests {
         // La fila buildable se subió y purgó; la poison quedó dead-letter (no se subió, no se perdió).
         #expect(!rows.contains { $0.syncID == good.syncID })
         let deadLetter = rows.first { $0.syncID == bad.syncID }
-        #expect(deadLetter?.rejectedReason == "unbuildable:Budget")
+        #expect(deadLetter?.rejectedReason == "unbuildable:LegacyUnmappedEntity")
     }
 
     // MARK: - Gates de sesión / cuenta

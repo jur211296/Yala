@@ -68,6 +68,27 @@ struct SyncQuarantineDrainTests {
         return p.deltas[0].rawDelta
     }
 
+    /// Página JSON con UN upsert full-row de `budgets` (cableada en commit A). Grupo `budget` con las 3
+    /// uuid[] VACÍAS `[]` (no `null`) — DIFERIDOS #25: dentro de un grupo la array vacía viaja explícita.
+    private func budgetPage(sid: UUID, serverSeq: Int, h: String) -> String {
+        #"""
+        {"deltas":[{"entity_type":"budgets","sync_id":"\#(sid.uuidString.lowercased())","op":"upsert",
+        "fields":{"name":"Comida","currency_code":"USD","limit_amount":"500.0000","period_type":"monthly",
+        "is_active":true,"created_at":"\#(epochTS)","is_favorite":false,"favorite_order":0,
+        "alert_enabled":false,"include_shared_expenses":true,
+        "subcategory_ids":[],"account_ids":[],"tag_refs":[]},
+        "field_hlcs":{"budget":"\#(h)","name":"\#(h)","period_type":"\#(h)","is_active":"\#(h)",
+        "created_at":"\#(h)","is_favorite":"\#(h)","favorite_order":"\#(h)","alert_enabled":"\#(h)",
+        "include_shared_expenses":"\#(h)"},
+        "hlc":"\#(h)","server_seq":\#(serverSeq),"schema_version":1}],"max_server_seq":\#(serverSeq)}
+        """#
+    }
+
+    private func budgetRawDelta(sid: UUID, serverSeq: Int, h: String) -> String {
+        let p = try! SyncPullClient.decodePage(Data(budgetPage(sid: sid, serverSeq: serverSeq, h: h).utf8))
+        return p.deltas[0].rawDelta
+    }
+
     private func cursor(_ c: ModelContext) -> SyncCursor? {
         try? c.fetch(FetchDescriptor<SyncCursor>()).first
     }
@@ -84,9 +105,10 @@ struct SyncQuarantineDrainTests {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let engine = CloudSyncEngine()
-        // `budgets` no está cableada al apply → se cuarentena.
+        // `accounts` aún NO está cableada al apply (commit B) → se cuarentena. (`budgets` ya se cableó
+        // en commit A, así que YA NO sirve como ejemplo no-cableado.)
         let sid = UUID()
-        let p = try SyncPullClient.decodePage(Data(page(entity: "budgets", sid: sid, serverSeq: 7, h: hlc(1)).utf8))
+        let p = try SyncPullClient.decodePage(Data(page(entity: "accounts", sid: sid, serverSeq: 7, h: hlc(1)).utf8))
         #expect(engine.applyPage(p, context: context, now: applyNow))
 
         #expect(quarantine(context).count == 1)
@@ -134,8 +156,8 @@ struct SyncQuarantineDrainTests {
         let context = try makeContext(dir)
         let engine = CloudSyncEngine()
         let sid = UUID()
-        let raw = rawDelta(entity: "budgets", sid: sid, serverSeq: 5, h: hlc(1))
-        context.insert(SyncQuarantine(serverSeq: 5, entityType: "budgets", syncID: sid, rawDelta: raw, hlc: hlc(1)))
+        let raw = rawDelta(entity: "accounts", sid: sid, serverSeq: 5, h: hlc(1))
+        context.insert(SyncQuarantine(serverSeq: 5, entityType: "accounts", syncID: sid, rawDelta: raw, hlc: hlc(1)))
         let cur = try engine.loadOrCreateCursor(context)
         cur.quarantinePendingCount = 1
         try context.save()
@@ -143,9 +165,39 @@ struct SyncQuarantineDrainTests {
         engine.drainOnce(context: context)
         engine.drainQuarantineOnce(context: context, now: applyNow)
 
-        // `budgets` sigue sin cablear → la fila permanece cuarentenada, testigo intacto.
+        // `accounts` sigue sin cablear (commit B) → la fila permanece cuarentenada, testigo intacto.
         #expect(quarantine(context).count == 1)
         #expect(cursor(context)?.quarantinePendingCount == 1)
+    }
+
+    // MARK: - D8 (I12): drenaje del upgrade path para una entidad recién cableada (budgets)
+
+    /// Un delta de `budgets` (cableada en commit A) pre-sembrado en cuarentena (llegó cuando la app aún
+    /// no la materializaba) → `drainQuarantineOnce` lo materializa, borra la fila, decrementa el testigo
+    /// y NO toca `serverSeqCursor` (ese server_seq ya pasó). Patrón `drainQuarantine_reappliesWiredRow`.
+    @Test func drainQuarantine_reappliesWiredBudget_deletesRow_decrementsWitness_keepsCursor() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+
+        let sid = UUID()
+        let raw = budgetRawDelta(sid: sid, serverSeq: 31, h: hlc(1))
+        context.insert(SyncQuarantine(serverSeq: 31, entityType: "budgets", syncID: sid, rawDelta: raw, hlc: hlc(1)))
+        let cur = try engine.loadOrCreateCursor(context)
+        cur.serverSeqCursor = 88
+        cur.quarantinePendingCount = 1
+        try context.save()
+
+        engine.drainOnce(context: context)
+        engine.drainQuarantineOnce(context: context, now: applyNow)
+
+        let budget = (try? context.fetch(FetchDescriptor<Budget>()))?.first { $0.id == sid }
+        #expect(budget != nil)
+        #expect(budget?.name == "Comida")
+        #expect(budget?.limitAmount == 500)
+        #expect(quarantine(context).isEmpty)
+        #expect(cursor(context)?.quarantinePendingCount == 0)
+        #expect(cursor(context)?.serverSeqCursor == 88)  // intacto
     }
 
     // MARK: - Guard de recreación (testigo>0 + tabla vacía → serverSeq=0 + testigo=0)

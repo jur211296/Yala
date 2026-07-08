@@ -66,6 +66,15 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSync historyTokenExpired — reconcile (full rescan)")
     }
 
+    /// D4 (I12): un UPDATE de History mutó el keypath de IDENTIDAD de una entidad cuya identidad de sync
+    /// es su UUID persistido (p.ej. `Tag.id`/`Account.shortcutID` regenerado por
+    /// `repairCollapsedIdentityUUIDs`) → el drain emitiría un upsert con sync_id NUEVO (fila nueva
+    /// server-side) dejando la vieja huérfana sin tombstone. IdentityRemap (§b.4, DIFERIDOS #29) lo
+    /// resuelve; aquí solo se DELATA en runtime (no bloquea). Sin PII (solo el tipo de entidad).
+    static func identityMutationObserved(entity: String) {
+        logger.notice("CloudSyncIdentityMutation entity=\(entity, privacy: .public)")
+    }
+
     /// RED (I8c): el emisor produjo un grupo de coherencia incompleto tras la expansión. No debe ocurrir.
     static func coherenceGroupPartial(entity: String, group: String) {
         logger.notice("CloudSyncCoherenceGroupPartial \(entity, privacy: .public) group=\(group, privacy: .public)")
@@ -384,6 +393,11 @@ final class CloudSyncEngine {
     /// (el logger no es asertable). Acumula a lo largo de la vida de la instancia.
     private(set) var identityGapCount = 0
 
+    /// D4 (I12): nº de UPDATEs que mutaron el keypath de IDENTIDAD de una entidad con identidad = UUID
+    /// persistido (regeneración detectada; §b.4/DIFERIDOS #29). Expuesto para tests (el logger no es
+    /// asertable). Acumula a lo largo de la vida de la instancia.
+    private(set) var identityMutationObservedCount = 0
+
     // MARK: Espejo del outbox (A1, §d.5)
 
     /// Espejo App Group del `SyncOutbox` (durabilidad ante lightweight migration). `nil` = mirroring
@@ -600,7 +614,7 @@ final class CloudSyncEngine {
 
     // MARK: - Traducción de un cambio (dispatch por tipo concreto)
 
-    /// Índices persistentID→modelo de los 6 tipos sincronizables (construidos en el barrido).
+    /// Índices persistentID→modelo de los tipos sincronizables cableados (construidos en el barrido).
     private struct Lookups {
         var transactionItem: [PersistentIdentifier: TransactionItem] = [:]
         var inboxDraft: [PersistentIdentifier: InboxDraft] = [:]
@@ -608,10 +622,18 @@ final class CloudSyncEngine {
         var favoritePayment: [PersistentIdentifier: FavoritePayment] = [:]
         var merchantMemory: [PersistentIdentifier: MerchantMemory] = [:]
         var exchangeRate: [PersistentIdentifier: ExchangeRate] = [:]
+        // I12: identidad = UUID persistido (`id`), nunca nil → el barrido NO las acuña, solo indexa.
+        var budget: [PersistentIdentifier: Budget] = [:]
+        var scheduledPayment: [PersistentIdentifier: ScheduledPayment] = [:]
     }
 
-    /// Despacha el cambio al handler concreto por entity name. Los tipos personales sin `syncID` (los
-    /// 10 restantes) caen al `default` y se ignoran (aún sin identidad de sync — incrementos futuros).
+    /// Despacha el cambio al handler concreto por entity name. Los tipos personales aún NO cableados
+    /// caen al `default` y se ignoran (identidad de sync pendiente — incrementos futuros).
+    ///
+    /// D1: las 6 originales usan `syncID: UUID?` sintético (mismo accessor para live y tombstone; sin
+    /// canario de mutación de identidad — el `syncID` no se regenera). Las cableadas en I12 usan su UUID
+    /// EXISTENTE (`id`, NO-opcional): `liveSyncID` lo lee directo, `tombstoneSyncID` lo lee del atributo
+    /// real preservado, y `identityKeyPath` arma el canario D4 (regeneración de identidad detectable).
     private func translate(
         _ change: HistoryChange,
         entityName: String,
@@ -624,47 +646,72 @@ final class CloudSyncEngine {
         switch entityName {
         case SyncEntityType.transactionItem:
             try translateChange(change, type: TransactionItem.self, entityType: entityName,
-                                syncIDKeyPath: \.syncID, emission: EntityEmissionMap.transactionItem,
+                                liveSyncID: { $0.syncID }, tombstoneSyncID: { $0.tombstone[\.syncID] as? UUID },
+                                identityKeyPath: nil, emission: EntityEmissionMap.transactionItem,
                                 lookup: lookups.transactionItem, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.inboxDraft:
             try translateChange(change, type: InboxDraft.self, entityType: entityName,
-                                syncIDKeyPath: \.syncID, emission: EntityEmissionMap.inboxDraft,
+                                liveSyncID: { $0.syncID }, tombstoneSyncID: { $0.tombstone[\.syncID] as? UUID },
+                                identityKeyPath: nil, emission: EntityEmissionMap.inboxDraft,
                                 lookup: lookups.inboxDraft, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.category:
             try translateChange(change, type: Category.self, entityType: entityName,
-                                syncIDKeyPath: \.syncID, emission: EntityEmissionMap.category,
+                                liveSyncID: { $0.syncID }, tombstoneSyncID: { $0.tombstone[\.syncID] as? UUID },
+                                identityKeyPath: nil, emission: EntityEmissionMap.category,
                                 lookup: lookups.category, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.favoritePayment:
             try translateChange(change, type: FavoritePayment.self, entityType: entityName,
-                                syncIDKeyPath: \.syncID, emission: EntityEmissionMap.favoritePayment,
+                                liveSyncID: { $0.syncID }, tombstoneSyncID: { $0.tombstone[\.syncID] as? UUID },
+                                identityKeyPath: nil, emission: EntityEmissionMap.favoritePayment,
                                 lookup: lookups.favoritePayment, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.merchantMemory:
             try translateChange(change, type: MerchantMemory.self, entityType: entityName,
-                                syncIDKeyPath: \.syncID, emission: EntityEmissionMap.merchantMemory,
+                                liveSyncID: { $0.syncID }, tombstoneSyncID: { $0.tombstone[\.syncID] as? UUID },
+                                identityKeyPath: nil, emission: EntityEmissionMap.merchantMemory,
                                 lookup: lookups.merchantMemory, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         case SyncEntityType.exchangeRate:
             try translateChange(change, type: ExchangeRate.self, entityType: entityName,
-                                syncIDKeyPath: \.syncID, emission: EntityEmissionMap.exchangeRate,
+                                liveSyncID: { $0.syncID }, tombstoneSyncID: { $0.tombstone[\.syncID] as? UUID },
+                                identityKeyPath: nil, emission: EntityEmissionMap.exchangeRate,
                                 lookup: lookups.exchangeRate, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.budget:
+            try translateChange(change, type: Budget.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \Budget.id, emission: EntityEmissionMap.budget,
+                                lookup: lookups.budget, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.scheduledPayment:
+            try translateChange(change, type: ScheduledPayment.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \ScheduledPayment.id, emission: EntityEmissionMap.scheduledPayment,
+                                lookup: lookups.scheduledPayment, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         default:
-            // Personal-pero-aún-sin-identidad (los 10 restantes de los 16). No se traduce en I3.
+            // Personal-pero-aún-sin-identidad (las restantes de los 16). No se traduce todavía.
             return
         }
     }
 
     /// Traduce UN cambio de un tipo concreto `T` a (a lo sumo) una fila de outbox. El payload de dominio
     /// (`fields` + `field_hlcs`) lo produce `DeltaEmitter` (proyección `EntityEmissionMap` + codec c1).
-    private func translateChange<T: PersistentModel & SyncIdentifiable>(
+    ///
+    /// D1: la identidad de sync se lee vía dos accessors en lugar de un keypath único, para acoplar
+    /// `UUID?` (sintético) y `UUID` (existente): `liveSyncID` de la fila viva (insert/update) y
+    /// `tombstoneSyncID` del atributo preservado (delete). `identityKeyPath` (nil = identidad sintética
+    /// que no se regenera) arma el canario D4 en el path de UPDATE.
+    private func translateChange<T: PersistentModel>(
         _ change: HistoryChange,
         type: T.Type,
         entityType: String,
-        syncIDKeyPath: KeyPath<T, UUID?>,
+        liveSyncID: (T) -> UUID?,
+        tombstoneSyncID: (DefaultHistoryDelete<T>) -> UUID?,
+        identityKeyPath: PartialKeyPath<T>?,
         emission: EntityEmission<T>,
         lookup: [PersistentIdentifier: T],
         tx: DefaultHistoryTransaction,
@@ -677,7 +724,7 @@ final class CloudSyncEngine {
             // El entityName ya coincide; el `is` confirma el tipo concreto (defensivo).
             guard insert is DefaultHistoryInsert<T> else { return }
             guard let model = lookup[insert.changedPersistentIdentifier] else { return }  // borrada → skip
-            guard let syncID = model[keyPath: syncIDKeyPath] else { return }  // sin identidad → skip
+            guard let syncID = liveSyncID(model) else { return }  // sin identidad → skip
             // INSERT = proyección COMPLETA de dominio (todas las columnas). Todas las unidades reciben
             // el HLC de la transacción. Los grupos de coherencia viajan enteros por construcción.
             try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,
@@ -686,10 +733,16 @@ final class CloudSyncEngine {
         case .update(let update):
             guard let typed = update as? DefaultHistoryUpdate<T> else { return }
             guard let model = lookup[typed.changedPersistentIdentifier] else { return }
-            guard let syncID = model[keyPath: syncIDKeyPath] else { return }
-            // PATCH parcial: mapea los keypaths cambiados a columnas Postgres. `syncID` NO está en el
-            // mapa (es la PK) → si SOLO cambió syncID (p.ej. el barrido lo acuñó) el set queda vacío →
-            // SKIP. Los keypaths sin mapeo (relaciones no-columna, internos) se ignoran.
+            guard let syncID = liveSyncID(model) else { return }
+            // Canario D4: el UPDATE mutó el keypath de IDENTIDAD (solo entidades con identidad = UUID
+            // persistido) → delatar la regeneración (fila nueva server-side + huérfana; §b.4/DIFERIDOS #29).
+            if let identityKeyPath, typed.updatedAttributes.contains(identityKeyPath) {
+                identityMutationObservedCount += 1
+                CloudSyncBreadcrumb.identityMutationObserved(entity: entityType)
+            }
+            // PATCH parcial: mapea los keypaths cambiados a columnas Postgres. La identidad NO está en el
+            // mapa (es la PK) → si SOLO cambió la identidad el set queda vacío → SKIP. Los keypaths sin
+            // mapeo (relaciones no-columna, internos) se ignoran.
             var changedColumns: Set<String> = []
             for keyPath in typed.updatedAttributes {
                 if let columns = emission.columnKeyPaths[keyPath as PartialKeyPath<T>] {
@@ -703,7 +756,7 @@ final class CloudSyncEngine {
         case .delete(let delete):
             guard let typed = delete as? DefaultHistoryDelete<T> else { return }
             // Identidad preservada vía `.preserveValueOnDeletion` (spike S1/S4).
-            guard let syncID = typed.tombstone[syncIDKeyPath] as? UUID else {
+            guard let syncID = tombstoneSyncID(typed) else {
                 recordIdentityGap(entityType: entityType, reason: "tombstoneSyncIDNil")
                 return
             }
@@ -809,6 +862,10 @@ final class CloudSyncEngine {
         lookups.favoritePayment = try sweepType(FavoritePayment.self, context: context)
         lookups.merchantMemory = try sweepType(MerchantMemory.self, context: context)
         lookups.exchangeRate = try sweepType(ExchangeRate.self, context: context)
+        // I12: identidad = UUID persistido (nunca nil) → solo indexar, NUNCA acuñar (regenerarla sería
+        // un incidente D4, no una asignación defensiva). Fetch CONCRETO por tipo.
+        lookups.budget = try indexType(Budget.self, context: context)
+        lookups.scheduledPayment = try indexType(ScheduledPayment.self, context: context)
         if context.hasChanges {
             // Autor por DEFECTO (no `outboxSaveAuthor`): el cambio de syncID DEBE quedar en el History
             // para que la próxima vuelta lo procese (y lo salte por ser syncID-only), no ocultarse.
@@ -828,6 +885,20 @@ final class CloudSyncEngine {
             if model.syncID == nil {
                 model.syncID = UUID()
             }
+            map[model.persistentModelID] = model
+        }
+        return map
+    }
+
+    /// I12: barrido SIN acuñar para las entidades cuya identidad de sync es su UUID persistido (nunca
+    /// nil). Solo construye el índice persistentID→modelo (fetch CONCRETO por tipo). Regenerar ese UUID
+    /// es un incidente (canario D4), no una asignación defensiva → aquí jamás se toca.
+    private func indexType<T: PersistentModel>(
+        _ type: T.Type, context: ModelContext
+    ) throws -> [PersistentIdentifier: T] {
+        let models = try context.fetch(FetchDescriptor<T>())
+        var map: [PersistentIdentifier: T] = [:]
+        for model in models {
             map[model.persistentModelID] = model
         }
         return map

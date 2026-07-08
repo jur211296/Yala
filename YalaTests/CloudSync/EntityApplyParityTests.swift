@@ -63,6 +63,14 @@ struct EntityApplyParityTests {
         assertParity(EntityEmissionMap.exchangeRate, EntityApplyMap.exchangeRate)
     }
 
+    @Test func budget_applyMatchesEmission() {
+        assertParity(EntityEmissionMap.budget, EntityApplyMap.budget)
+    }
+
+    @Test func scheduledPayment_applyMatchesEmission() {
+        assertParity(EntityEmissionMap.scheduledPayment, EntityApplyMap.scheduledPayment)
+    }
+
     /// El groupByColumn del apply debe ser EL MISMO objeto lógico que el de emission (LWW por-unidad
     /// coherente con las unidades que viajan en field_hlcs).
     @Test func groupByColumn_isSharedWithEmission() {
@@ -72,5 +80,7 @@ struct EntityApplyParityTests {
         #expect(EntityApplyMap.favoritePayment.groupByColumn == EntityEmissionMap.favoritePayment.groupByColumn)
         #expect(EntityApplyMap.merchantMemory.groupByColumn == EntityEmissionMap.merchantMemory.groupByColumn)
         #expect(EntityApplyMap.exchangeRate.groupByColumn == EntityEmissionMap.exchangeRate.groupByColumn)
+        #expect(EntityApplyMap.budget.groupByColumn == EntityEmissionMap.budget.groupByColumn)
+        #expect(EntityApplyMap.scheduledPayment.groupByColumn == EntityEmissionMap.scheduledPayment.groupByColumn)
     }
 }
