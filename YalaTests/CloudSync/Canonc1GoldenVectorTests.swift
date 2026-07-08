@@ -44,6 +44,9 @@ struct Canonc1GoldenVectorTests {
         let id: String
         let description: String
         let fields: [String: FieldVal]
+        /// Columnas del vector que pertenecen a un grupo de coherencia (DIFERIDOS #25 opción 1):
+        /// `.uuidArray` vacía en grupo → `[]` explícito. Ausente = todas singleton (O8 original).
+        let groupedColumns: [String]?
         let expected: String
     }
     private struct ErrorVector: Decodable {
@@ -143,7 +146,7 @@ struct Canonc1GoldenVectorTests {
         let golden = try Self.loadGolden()
         for vector in golden.vectors {
             let fields = try decodeFields(vector.fields, vector.id)
-            let got = try Canonc1Codec.encode(fields)
+            let got = try Canonc1Codec.encode(fields, groupedColumns: Set(vector.groupedColumns ?? []))
             #expect(got == vector.expected,
                     "[\(vector.id)] \(vector.description)\n  esperado: \(vector.expected)\n  obtenido: \(got)")
         }

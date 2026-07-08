@@ -105,6 +105,21 @@ struct Canonc1CodecTests {
         #expect(try Canonc1Codec.encode(["tag_refs": .uuidArray([]), "note": .string("x")]) == #"{"note":"x"}"#)
     }
 
+    @Test func uuidArray_empty_inCoherenceGroup_emitsExplicitEmptyArray() throws {
+        // DIFERIDOS #25 opción 1: la columna agrupada vacía viaja como [] explícito (grupo entero).
+        #expect(try Canonc1Codec.encode(["account_ids": .uuidArray([])],
+                                        groupedColumns: ["account_ids"]) == #"{"account_ids":[]}"#)
+        // La regla es POR-COLUMNA: singleton vacía omitida JUNTO a agrupada vacía → [].
+        #expect(try Canonc1Codec.encode(["account_ids": .uuidArray([]), "tag_refs": .uuidArray([])],
+                                        groupedColumns: ["account_ids"]) == #"{"account_ids":[]}"#)
+        // No-vacía en grupo: sort/dedup/lowercase idéntico al singleton (el contexto solo afecta al vacío).
+        let a = UUID(uuidString: "FF0000AA-0000-0000-0000-000000000000")!
+        let b = UUID(uuidString: "00FF0000-0000-0000-0000-000000000000")!
+        #expect(try Canonc1Codec.encode(["subcategory_ids": .uuidArray([a, b, b])],
+                                        groupedColumns: ["subcategory_ids"]) ==
+                #"{"subcategory_ids":["00ff0000-0000-0000-0000-000000000000","ff0000aa-0000-0000-0000-000000000000"]}"#)
+    }
+
     // MARK: - Bool tri-estado / int / null
 
     @Test func bool_triState() throws {

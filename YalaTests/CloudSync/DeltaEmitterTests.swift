@@ -119,6 +119,27 @@ struct DeltaEmitterTests {
         #expect(result.fieldHlcs == ["budget": "H"])
     }
 
+    // MARK: - budget: uuid[] vacías DENTRO del grupo viajan como [] explícito (DIFERIDOS #25 opción 1)
+
+    @Test func budgetGroup_emptyUuidArrays_travelExplicitInGroup() throws {
+        let budget = Budget(currencyCode: "PEN", limitAmount: 500, name: "Comida")  // sin filtros (caso mayoritario)
+
+        let result = DeltaEmitter.emit(model: budget, emission: EntityEmissionMap.budget,
+                                       changedColumns: ["limit_amount"], hlc: "H")
+        // Las 3 uuid[] del grupo están en el mapa como vacías…
+        #expect(result.fields["subcategory_ids"] == .uuidArray([]))
+        #expect(result.fields["account_ids"] == .uuidArray([]))
+        #expect(result.fields["tag_refs"] == .uuidArray([]))
+        // …la unidad budget viaja (regla nueva: el skip de field_hlcs es SOLO para singletons vacías)…
+        #expect(result.fieldHlcs == ["budget": "H"])
+        // …y el codec, con el contexto de grupo, las emite como [] explícito — NUNCA omitidas
+        // (sin esto el Worker rechazaría el grupo con coherence_group_partial 422 y el budget
+        // jamás sincronizaría — el bug que motivó DIFERIDOS #25).
+        let encoded = try Canonc1Codec.encode(result.fields,
+                                              groupedColumns: Set(EntityEmissionMap.budget.groupByColumn.keys))
+        #expect(encoded == #"{"account_ids":[],"currency_code":"PEN","limit_amount":"500.0000","natures":null,"subcategory_ids":[],"tag_refs":[]}"#)
+    }
+
     // MARK: - scheduled_payments split expande
 
     @Test func scheduledPaymentSplitGroup_touchingAmount_expandsWholeGroup() throws {

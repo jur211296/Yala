@@ -88,16 +88,20 @@ enum DeltaEmitter {
         // 5) `field_hlcs`: unidad de cada columna que VIAJARÁ en `fields` = su grupo, si no la columna
         //    misma. Todas las unidades reciben el mismo `hlc` de la transacción.
         //    §d.4bis (MODO-NUBE-ARQUITECTURA:487): "field_hlcs con SOLO las unidades cuyas columnas están
-        //    en `fields`". El codec OMITE del wire toda `.uuidArray` VACÍA (§d.1/O8:368,1576 — sin-filtro
-        //    ≠ null ≠ []) → esa columna NO está en el `fields` que viaja → su unidad NO debe ir en
-        //    `field_hlcs`. Derivar las unidades de `fields.keys` a secas embarcaba un unit huérfano (p.ej.
-        //    "tag_refs" en un insert sin tags) sin columna en el wire: el Worker (`validateUpsertShape`
-        //    solo valida fields→field_hlcs, no el reverso) lo ACEPTA y el RPC avanzaría el reloj de esa
-        //    unidad SIN valor → rechazo espurio de un update legítimo posterior de OTRO device (LWW por
-        //    unidad). Excluir aquí las columnas que el codec omitirá reproduce el contrato del wire.
+        //    en `fields`". El codec OMITE del wire toda `.uuidArray` VACÍA **SINGLETON** (§d.1/O8 —
+        //    sin-filtro ≠ null ≠ []) → esa columna NO está en el `fields` que viaja → su unidad NO debe ir
+        //    en `field_hlcs`. Derivar las unidades de `fields.keys` a secas embarcaba un unit huérfano
+        //    (p.ej. "tag_refs" en un insert sin tags) sin columna en el wire: el Worker
+        //    (`validateUpsertShape` solo valida fields→field_hlcs, no el reverso) lo ACEPTA y el RPC
+        //    avanzaría el reloj de esa unidad SIN valor → rechazo espurio de un update legítimo posterior
+        //    de OTRO device (LWW por unidad). Excluir aquí las columnas que el codec omitirá reproduce el
+        //    contrato del wire. Una `.uuidArray` vacía DENTRO de un grupo SÍ viaja (`[]` explícito,
+        //    DIFERIDOS #25 opción 1) → su unidad SÍ cuenta (el skip es solo-singleton).
         var units: Set<String> = []
         for (column, value) in fields {
-            if case .uuidArray(let ids) = value, ids.isEmpty { continue }  // el codec la OMITE → no viaja
+            if case .uuidArray(let ids) = value, ids.isEmpty, groupByColumn[column] == nil {
+                continue  // singleton vacía: el codec la OMITE → no viaja
+            }
             units.insert(groupByColumn[column] ?? column)
         }
         var fieldHlcs: [String: String] = [:]

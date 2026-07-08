@@ -17,7 +17,14 @@
 //    (`.nonFiniteNumber`); |dinero|≥10¹⁴ o |tasa|≥10¹⁰ → THROW (`.numericOutOfRange`).
 //  - Fecha (`Date`→TIMESTAMPTZ): `canonicalIsoMillis(physicalMillis(from:))` de `CanonicalTime` (I1, reutilizado).
 //  - `local_day`: `YYYY-MM-DD` = los 10 primeros chars de esa misma T-CANON.
-//  - UUID/FK: 36 chars lowercase. `UUID[]`: array lowercase ordenado por bytes UTF-8, dedup; vacío → OMITIR key.
+//  - UUID/FK: 36 chars lowercase. `UUID[]`: array lowercase ordenado por bytes UTF-8, dedup; vacío →
+//    OMITIR key si la columna es SINGLETON, `[]` EXPLÍCITO si pertenece a un grupo de coherencia
+//    (enmienda O8, DIFERIDOS #25 opción 1 — owner 2026-07-08: el invariante §d.4bis "grupo entero" manda
+//    dentro de grupo; sin `[]` explícito un budget sin filtros de cuenta/tag jamás pasaría
+//    `validateUpsertShape`). El contexto de grupo lo pasa el caller (`groupedColumns`), derivado del
+//    MISMO SSOT que los 4 codecs: `capability_manifest.json` (`group_key` por columna). Nota para el
+//    APPLY del pull (I8f): en Postgres una fila histórica sin la columna tiene `NULL` y una post-#25
+//    tiene `'{}'` — ambos significan "sin filtro".
 //  - `Bool?`: `true`/`false`/`null` literal. NULL explícito (`.null`/`.bool(nil)`) → `key:null`; ausencia → sin key.
 //  - Blob Data-JSON: parsea y re-canonicaliza recursivamente (keys por bytes UTF-8; números anidados = regla
 //    de tasa escala-8 como STRING JSON; ver `canonicalizeBlobValue`).
@@ -72,11 +79,16 @@ nonisolated enum Canonc1Codec {
     // MARK: - Entrada pública
 
     /// Serializa un mapa columna→valor al string canónico c1 EXACTO.
-    /// - Parameter fields: columna Postgres snake_case → `CanonValue`. Solo columnas TOCADAS (PATCH parcial).
+    /// - Parameters:
+    ///   - fields: columna Postgres snake_case → `CanonValue`. Solo columnas TOCADAS (PATCH parcial).
+    ///   - groupedColumns: columnas que pertenecen a un grupo de coherencia de SU entidad (SSOT:
+    ///     `capability_manifest.json:group_key`, espejo `EntityEmission.groupByColumn`). Cambia UNA regla:
+    ///     `.uuidArray` VACÍA en grupo → `[]` explícito en vez de omitir la key (DIFERIDOS #25 opción 1).
+    ///     Default vacío = toda columna es singleton (comportamiento O8 original).
     /// - Returns: objeto JSON de un nivel, JCS-restringido, keys ordenadas por bytes UTF-8.
     /// - Throws: `Canonc1Error` (número no-finito / fuera de rango / key server-authored / blob malformado)
     ///           o `CanonicalTimeError.yearOutOfRange` (año de fecha fuera de 0001..9999).
-    static func encode(_ fields: [String: CanonValue]) throws -> String {
+    static func encode(_ fields: [String: CanonValue], groupedColumns: Set<String> = []) throws -> String {
         // Defensa: ninguna columna server-authored puede viajar como leaf.
         for key in fields.keys where serverAuthoredKeys.contains(key) {
             throw Canonc1Error.serverAuthoredKey(key)
@@ -88,8 +100,9 @@ nonisolated enum Canonc1Codec {
         var entries: [String] = []
         entries.reserveCapacity(sortedKeys.count)
         for key in sortedKeys {
-            // `encodeValue` devuelve `nil` SOLO para el caso "OMITIR la key" (`.uuidArray` vacío).
-            guard let valueString = try encodeValue(fields[key]!) else { continue }
+            // `encodeValue` devuelve `nil` SOLO para "OMITIR la key" (`.uuidArray` vacío SINGLETON).
+            guard let valueString = try encodeValue(fields[key]!,
+                                                    inCoherenceGroup: groupedColumns.contains(key)) else { continue }
             entries.append(encodeJSONString(key) + ":" + valueString)
         }
         return "{" + entries.joined(separator: ",") + "}"
@@ -98,7 +111,8 @@ nonisolated enum Canonc1Codec {
     // MARK: - Encoder por valor
 
     /// Serializa un `CanonValue` a su fragmento JSON canónico, o `nil` si la key debe OMITIRSE.
-    static func encodeValue(_ value: CanonValue) throws -> String? {
+    /// `inCoherenceGroup` solo afecta `.uuidArray` vacía: en grupo → `[]` explícito (DIFERIDOS #25).
+    static func encodeValue(_ value: CanonValue, inCoherenceGroup: Bool = false) throws -> String? {
         switch value {
         case .money(let d):
             return encodeJSONString(try decimalFixed(d, scale: moneyScale))
@@ -117,7 +131,9 @@ nonisolated enum Canonc1Codec {
         case .uuid(let id):
             return encodeJSONString(id.uuidString.lowercased())
         case .uuidArray(let ids):
-            if ids.isEmpty { return nil }  // vacío → OMITIR la key entera (sin-filtro ≠ null ≠ [])
+            // Vacío: singleton → OMITIR la key entera (O8, sin-filtro ≠ null ≠ []); en grupo de
+            // coherencia → `[]` EXPLÍCITO (el grupo viaja entero, DIFERIDOS #25 opción 1).
+            if ids.isEmpty { return inCoherenceGroup ? "[]" : nil }
             let lowered = ids.map { $0.uuidString.lowercased() }
             // Ordena por bytes UTF-8 ascendentes y deduplica (adyacentes tras ordenar).
             let sorted = lowered.sorted(by: utf8BytesLess)

@@ -358,6 +358,38 @@ describe("I6 goldens · /sync/* contra staging real", () => {
     expect(d?.hlc).toBe(hDead); // NO hAlive — si no, un peer resucitaría con un upsert intermedio
   });
 
+  it("10. grupo budget con uuid[] vacías como [] explícito → applied; Postgres persiste '{}' no NULL (DIFERIDOS #25 opción 1)", async () => {
+    const sid = uuid();
+    const subcatA = "aa000000-0000-0000-0000-000000000002";
+    const h = hlc(T0 + 700);
+    const r = await push(jwtA, [
+      {
+        entity_type: "budgets",
+        sync_id: sid,
+        op: "upsert",
+        fields: {
+          currency_code: "PEN",
+          limit_amount: "500.0000",
+          natures: null,
+          subcategory_ids: [subcatA],
+          account_ids: [], // vacía EN grupo → [] explícito (antes de #25 el codec la omitía → 422)
+          tag_refs: [],
+        },
+        field_hlcs: { budget: h },
+        hlc: h,
+        client_mutation_id: uuid(),
+      },
+    ]);
+    expect(r.status).toBe(200);
+    expect(r.body.results[0].status).toBe("applied");
+    // El RPC (jsonb_populate_record) traga []→uuid[] vacío: la columna queda '{}' (array vacío), NO NULL.
+    const row = await readRow(jwtA, "budgets", sid);
+    expect(row?.account_ids).toEqual([]);
+    expect(row?.tag_refs).toEqual([]);
+    expect(row?.subcategory_ids).toEqual([subcatA]);
+    expect((row?.field_hlcs as Record<string, string>).budget).toBe(h);
+  });
+
   it("merkle: 501 explícito hasta I8 (codec canon c1)", async () => {
     const res = await app.fetch(new Request("https://gw.local/sync/merkle", { headers: { Authorization: `Bearer ${jwtA}` } }), env);
     expect(res.status).toBe(501);

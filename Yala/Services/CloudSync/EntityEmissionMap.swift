@@ -64,8 +64,10 @@ nonisolated enum Emit {
         return .uuid(id)
     }
 
-    /// Array `uuid[]` resuelto (tag_refs/subcategory_ids/…): vacío/nil → `.uuidArray([])` (el codec OMITE
-    /// la key = "sin filtro", ≠ null ≠ []). El orden/dedup/lowercase los aplica el codec.
+    /// Array `uuid[]` resuelto (tag_refs/subcategory_ids/…): vacío/nil → `.uuidArray([])`. Con esa array
+    /// vacía el codec OMITE la key si la columna es SINGLETON ("sin filtro", ≠ null ≠ []) y emite `[]`
+    /// explícito si pertenece a un grupo de coherencia (DIFERIDOS #25 opción 1). El orden/dedup/lowercase
+    /// los aplica el codec.
     static func uuidArray(_ ids: Set<UUID>?) -> CanonValue { .uuidArray(Array(ids ?? [])) }
 
     /// Un `Double?` de confianza que la DDL modela como TEXT: nil → `.null`; si no, su repr decimal.

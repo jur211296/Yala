@@ -517,7 +517,10 @@ final class CloudSyncEngine {
                                            changedColumns: changedColumns, hlc: hlc)
             let fieldsJSON: String
             do {
-                fieldsJSON = try Canonc1Codec.encode(result.fields)
+                // `groupedColumns`: las columnas agrupadas de la entidad — una `.uuidArray` vacía DENTRO
+                // de un grupo se encodea `[]` explícito (DIFERIDOS #25 opción 1), no se omite.
+                fieldsJSON = try Canonc1Codec.encode(result.fields,
+                                                     groupedColumns: Set(emission.groupByColumn.keys))
             } catch {
                 #if DEBUG
                 print("CloudSyncEngine: codec c1 rechazó \(entityType): \(error)")

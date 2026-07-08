@@ -329,6 +329,94 @@
       "id" : "uuidarr_empty_omitted"
     },
     {
+      "description" : "array vacía DENTRO de grupo -> [] explícito (DIFERIDOS #25 opción 1)",
+      "expected" : "{\"account_ids\":[]}",
+      "fields" : {
+        "account_ids" : {
+          "t" : "uuidArray",
+          "values" : [
+
+          ]
+        }
+      },
+      "groupedColumns" : [
+        "account_ids"
+      ],
+      "id" : "uuidarr_empty_in_group_explicit"
+    },
+    {
+      "description" : "vacía singleton OMITIDA junto a vacía en grupo -> [] (la regla es por-columna)",
+      "expected" : "{\"account_ids\":[],\"note\":\"x\"}",
+      "fields" : {
+        "account_ids" : {
+          "t" : "uuidArray",
+          "values" : [
+
+          ]
+        },
+        "note" : {
+          "t" : "string",
+          "value" : "x"
+        },
+        "tag_refs" : {
+          "t" : "uuidArray",
+          "values" : [
+
+          ]
+        }
+      },
+      "groupedColumns" : [
+        "account_ids"
+      ],
+      "id" : "uuidarr_empty_mixed_singleton_vs_group"
+    },
+    {
+      "description" : "grupo budget realista: money + string + uuid[] llena (sort+lowercase) + 2 uuid[] vacías -> [] + natures blob (caso mayoritario de DIFERIDOS #25)",
+      "expected" : "{\"account_ids\":[],\"currency_code\":\"PEN\",\"limit_amount\":\"250.5000\",\"natures\":[\"gasto\"],\"subcategory_ids\":[\"aa000000-0000-0000-0000-000000000002\",\"bb000000-0000-0000-0000-000000000001\"],\"tag_refs\":[]}",
+      "fields" : {
+        "account_ids" : {
+          "t" : "uuidArray",
+          "values" : [
+
+          ]
+        },
+        "currency_code" : {
+          "t" : "string",
+          "value" : "PEN"
+        },
+        "limit_amount" : {
+          "double" : "250.5",
+          "t" : "money"
+        },
+        "natures" : {
+          "json" : "[\"gasto\"]",
+          "t" : "dataJSON"
+        },
+        "subcategory_ids" : {
+          "t" : "uuidArray",
+          "values" : [
+            "BB000000-0000-0000-0000-000000000001",
+            "AA000000-0000-0000-0000-000000000002"
+          ]
+        },
+        "tag_refs" : {
+          "t" : "uuidArray",
+          "values" : [
+
+          ]
+        }
+      },
+      "groupedColumns" : [
+        "account_ids",
+        "currency_code",
+        "limit_amount",
+        "natures",
+        "subcategory_ids",
+        "tag_refs"
+      ],
+      "id" : "budget_group_mixed"
+    },
+    {
       "description" : "true literal",
       "expected" : "{\"v\":true}",
       "fields" : {

@@ -100,6 +100,18 @@ export interface ShapeError {
  *  4. cada columna de `fields` tiene su unidad presente en `field_hlcs`.
  *  5. cada grupo TOCADO (unidad de grupo en field_hlcs, o alguna columna del grupo en fields) trae
  *     el grupo ENTERO en `fields` — si no, `coherence_group_partial` (→ 422 + canario).
+ *
+ * NOTA (DIFERIDOS #25 opción 1, owner 2026-07-08): una columna `uuid[]` VACÍA dentro de un grupo de
+ * coherencia viaja como `[]` EXPLÍCITO (la regla O8 "vacío→omitir" del canon c1 quedó acotada a
+ * columnas singleton). `[]` presente como key ES la forma válida — la presencia se valida con
+ * `col in fields`, así que NADIE debe "optimizar" quitando keys con arrays vacíos del payload:
+ * eso reintroduciría el rechazo 422 que condenaba a los budgets sin filtros a no sincronizar jamás.
+ *
+ * Para el RE-SERIALIZADOR del Merkle (I8f, §d.7 Canal 1): al proyectar una fila Postgres al canon c1,
+ * una `uuid[]` AGRUPADA con `NULL` (fila histórica pre-#25) o `'{}'` (post-#25) se re-serializa IGUAL:
+ * `[]` explícito — ambas significan "sin filtro". Divergir aquí rompe la byte-paridad del leaf con el
+ * cliente. La membresía de grupo se deriva de `group_key` de ESTE manifest (mismo SSOT que el cliente);
+ * los vectores con `groupedColumns` de `golden_vectors.json` fijan el contrato cross-lenguaje.
  */
 export function validateUpsertShape(
   entity: string,

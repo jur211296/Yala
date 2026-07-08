@@ -38,7 +38,10 @@ nonisolated enum CanonValue: Sendable, Equatable {
     case localDay(Date)
     /// UUID/FK. Se emite 36 chars lowercase con guiones (forma `uuid::text` de Postgres).
     case uuid(UUID)
-    /// `UUID[]`/`tag_refs`. Array ordenado ascendente por bytes UTF-8 + deduplicado; **vacío → OMITIR la key**.
+    /// `UUID[]`/`tag_refs`. Array ordenado ascendente por bytes UTF-8 + deduplicado. **Vacío**: columna
+    /// SINGLETON → OMITIR la key (O8); columna DENTRO de un grupo de coherencia → `[]` explícito
+    /// (DIFERIDOS #25 opción 1 — el grupo viaja entero). El contexto lo pasa el caller del codec
+    /// (`groupedColumns`).
     case uuidArray([UUID])
     /// Texto (`name`/`note`/FKs opacas). SIN normalización Unicode/trim/case-fold; escape mínimo RFC-8785.
     case string(String)
