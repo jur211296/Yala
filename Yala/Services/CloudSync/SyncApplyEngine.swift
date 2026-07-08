@@ -292,6 +292,22 @@ extension CloudSyncEngine {
             applyToEntity(delta, EntityApplyMap.budget, guard: g, context: context)
         case EntityApplyMap.scheduledPayment.table:
             applyToEntity(delta, EntityApplyMap.scheduledPayment, guard: g, context: context)
+        case EntityApplyMap.account.table:
+            applyToEntity(delta, EntityApplyMap.account, guard: g, context: context)
+        case EntityApplyMap.subcategory.table:
+            applyToEntity(delta, EntityApplyMap.subcategory, guard: g, context: context)
+        case EntityApplyMap.tag.table:
+            applyToEntity(delta, EntityApplyMap.tag, guard: g, context: context)
+        case EntityApplyMap.notificationItem.table:
+            applyToEntity(delta, EntityApplyMap.notificationItem, guard: g, context: context)
+        case EntityApplyMap.cashFlowPlan.table:
+            applyToEntity(delta, EntityApplyMap.cashFlowPlan, guard: g, context: context)
+        case EntityApplyMap.cashFlowLine.table:
+            applyToEntity(delta, EntityApplyMap.cashFlowLine, guard: g, context: context)
+        case EntityApplyMap.cashFlowOverride.table:
+            applyToEntity(delta, EntityApplyMap.cashFlowOverride, guard: g, context: context)
+        case EntityApplyMap.groupBridgePreference.table:
+            applyToEntity(delta, EntityApplyMap.groupBridgePreference, guard: g, context: context)
         default:
             break  // isWired ya lo filtró; inalcanzable.
         }

@@ -4,11 +4,11 @@
 //
 //  Mapa DECLARATIVO INVERSO de `EntityEmissionMap` (Modo Nube, incremento I8f-1): por entidad CABLEADA,
 //  `columna Postgres → ColumnApplier` que decodifica el valor de wire (`WireValue`) y lo ESCRIBE en el
-//  `@Model` local. Es el consumidor del pull (§d.6, D-7). Cobertura: SOLO las 6 entidades que hoy llevan
-//  `syncID` local (TransactionItem/InboxDraft/Category/FavoritePayment/MerchantMemory/ExchangeRate); las
-//  otras 10 tablas no tienen identidad local → sus deltas van a `SyncQuarantine` (las materializa el
-//  apply, no este mapa). La tabla → `EntityApply` la resuelve `applyEntry(forTable:)`, espejo invertido
-//  de `EntityEmissionMap.table(forClass:)`.
+//  `@Model` local. Es el consumidor del pull (§d.6, D-7). Cobertura: las 16 entidades de dominio (I12
+//  completa) — las 6 originales por `syncID` sintético, las 10 restantes por su UUID EXISTENTE
+//  (`Account.shortcutID`/`Subcategory.shortcutID`; `.id` en el resto). Solo un `entity_type` fuera del
+//  manifest (drift futuro) caería en cuarentena (`isWired` → false). La tabla → `EntityApply` la resuelve
+//  el dispatch de `SyncApplyEngine`, espejo invertido de `EntityEmissionMap.table(forClass:)`.
 //
 //  REGLAS (§d.7, D-7):
 //   - **money/rate**: STRING decimal o número JSON → `Double` (`WireValueDecoder.double`). VERBATIM: el
@@ -86,6 +86,10 @@ private enum Apply {
     }
     static func boolReq<M>(_ kp: ReferenceWritableKeyPath<M, Bool>) -> ColumnApplier<M> {
         ColumnApplier { m, v, _ in if let b = WireValueDecoder.bool(v) { m[keyPath: kp] = b } }
+    }
+    /// bool → `Bool?` (columna optional, ej. `GroupBridgePreference.bridgeOverride`). `null` → `nil`.
+    static func boolOpt<M>(_ kp: ReferenceWritableKeyPath<M, Bool?>) -> ColumnApplier<M> {
+        ColumnApplier { m, v, _ in m[keyPath: kp] = WireValueDecoder.bool(v) }
     }
     static func intReq<M>(_ kp: ReferenceWritableKeyPath<M, Int>) -> ColumnApplier<M> {
         ColumnApplier { m, v, _ in if let i = WireValueDecoder.int(v) { m[keyPath: kp] = i } }
@@ -475,6 +479,234 @@ enum EntityApplyMap {
         ]
     )
 
+    // MARK: accounts — Account (I12 commit B; identidad = `shortcutID`)
+
+    static let account = EntityApply<Account>(
+        table: "accounts",
+        entityTypeName: SyncEntityType.account,
+        make: { ctx in
+            let m = Account(name: "", currencyCode: "USD", colorHex: "#6366F1",
+                            iconName: "creditcard", type: "checking")
+            ctx.insert(m)
+            return m
+        },
+        setSyncID: { $0.shortcutID = $1 },
+        fetchBySyncID: { fetchAccount(byShortcutID: $0, context: $1) },
+        anchor: { SyncContentAnchor.stableID($0.shortcutID) },
+        groupByColumn: EntityEmissionMap.account.groupByColumn,
+        appliers: [
+            "name": Apply.stringReq(\.name),
+            "currency_code": Apply.stringReq(\.currencyCode),
+            "color_hex": Apply.stringReq(\.colorHex),
+            "icon_name": Apply.stringReq(\.iconName),
+            "type": Apply.stringReq(\.type),
+            "account_number": Apply.textOpt(\.accountNumber),
+            "adjustment_mode": Apply.stringReq(\.adjustmentMode),
+            "exclude_from_statistics": Apply.boolReq(\.excludeFromStatistics),
+            "is_archived": Apply.boolReq(\.isArchived),
+            "is_system_account": Apply.boolReq(\.isSystemAccount),
+            "credit_card_payment_reminder": Apply.boolReq(\.creditCardPaymentReminder),
+            "credit_card_payment_day": Apply.intReq(\.creditCardPaymentDay),
+        ]
+    )
+
+    // MARK: subcategories — Subcategory (I12 commit B; identidad = `shortcutID`)
+
+    static let subcategory = EntityApply<Subcategory>(
+        table: "subcategories",
+        entityTypeName: SyncEntityType.subcategory,
+        make: { ctx in let m = Subcategory(name: "", category: nil); ctx.insert(m); return m },
+        setSyncID: { $0.shortcutID = $1 },
+        fetchBySyncID: { fetchSubcategory(byShortcutID: $0, context: $1) },
+        anchor: { SyncContentAnchor.stableID($0.shortcutID) },
+        groupByColumn: EntityEmissionMap.subcategory.groupByColumn,
+        appliers: [
+            "name": Apply.stringReq(\.name),
+            "color_hex": Apply.textOpt(\.colorHex),
+            "is_default_seed": Apply.boolReq(\.isDefaultSeed),
+            "is_visible": Apply.boolReq(\.isVisible),
+            "sort_order": Apply.intReq(\.sortOrder),
+            "nature_raw_value": Apply.textOpt(\.natureRawValue),
+            "icon_name": Apply.textOpt(\.iconName),
+            "is_system": Apply.boolReq(\.isSystem),
+            "category_ref": ColumnApplier { m, v, ctx in
+                m.category = resolveRef(v, entity: "subcategories", column: "category_ref",
+                                        rowSyncID: m.shortcutID, context: ctx) {
+                    fetchCategory(bySyncID: $0, context: ctx)
+                }
+            },
+        ]
+    )
+
+    // MARK: tags — Tag (I12 commit B; identidad = `id`)
+
+    static let tag = EntityApply<Tag>(
+        table: "tags",
+        entityTypeName: SyncEntityType.tag,
+        make: { ctx in let m = Tag(name: ""); ctx.insert(m); return m },
+        setSyncID: { $0.id = $1 },
+        fetchBySyncID: { fetchTag(byID: $0, context: $1) },
+        anchor: { SyncContentAnchor.stableID($0.id) },
+        groupByColumn: EntityEmissionMap.tag.groupByColumn,
+        appliers: [
+            "name": Apply.stringReq(\.name),
+            "color_hex": Apply.stringReq(\.colorHex),
+            "icon_name": Apply.stringReq(\.iconName),
+            "is_active": Apply.boolReq(\.isActive),
+            "created_at": Apply.dateReq(\.createdAt),
+        ]
+    )
+
+    // MARK: notification_items — NotificationItem (I12 commit B; identidad = `id`)
+
+    static let notificationItem = EntityApply<NotificationItem>(
+        table: "notification_items",
+        entityTypeName: SyncEntityType.notificationItem,
+        make: { ctx in
+            let m = NotificationItem(name: "", text: "", hour: 12, minute: 0, type: .custom)
+            ctx.insert(m)
+            return m
+        },
+        setSyncID: { $0.id = $1 },
+        fetchBySyncID: { fetchNotificationItem(byID: $0, context: $1) },
+        anchor: { SyncContentAnchor.stableID($0.id) },
+        groupByColumn: EntityEmissionMap.notificationItem.groupByColumn,
+        appliers: [
+            "name": Apply.stringReq(\.name),
+            "text": Apply.stringReq(\.text),
+            "hour": Apply.intReq(\.hour),
+            "minute": Apply.intReq(\.minute),
+            "type_raw": Apply.stringReq(\.typeRaw),
+            "is_active": Apply.boolReq(\.isActive),
+            "icon_name": Apply.stringReq(\.iconName),
+            "color_hex": Apply.stringReq(\.colorHex),
+            "created_at": Apply.dateReq(\.createdAt),
+            "sort_order": Apply.intReq(\.sortOrder),
+            // report_data_type / report_day_preference: el STORAGE es `configurationData` (JSON). Se
+            // reconstruye con read-modify-write DIRECTO del blob (NO vía el computed `reportConfig`, cuyo
+            // getter se cierra por `isReportType` — order-independiente frente al orden no determinista de
+            // `delta.fields`). null → no-op (ambos campos viajan juntos, gateados por `isReportType`; el
+            // wire ignora `configurationData` para tipos no-reporte → round-trip fiel; ver header + emit).
+            "report_data_type": ColumnApplier { m, v, _ in
+                applyReportField(m, v) { $0.dataType = ReportDataType(rawValue: $1) ?? $0.dataType }
+            },
+            "report_day_preference": ColumnApplier { m, v, _ in
+                applyReportField(m, v) { $0.dayPreference = ReportDayPreference(rawValue: $1) ?? $0.dayPreference }
+            },
+            "weekdays_raw": Apply.csvOpt(\.weekdaysRaw),
+        ]
+    )
+
+    // MARK: cashflow_plans — CashFlowPlan (I12 commit B; identidad = `id`)
+
+    static let cashFlowPlan = EntityApply<CashFlowPlan>(
+        table: "cashflow_plans",
+        entityTypeName: SyncEntityType.cashFlowPlan,
+        make: { ctx in let m = CashFlowPlan(); ctx.insert(m); return m },
+        setSyncID: { $0.id = $1 },
+        fetchBySyncID: { fetchCashFlowPlan(byID: $0, context: $1) },
+        anchor: { SyncContentAnchor.stableID($0.id) },
+        groupByColumn: EntityEmissionMap.cashFlowPlan.groupByColumn,
+        appliers: [
+            "name": Apply.stringReq(\.name),
+            "starting_balance": Apply.moneyReq(\.startingBalance),
+            "default_months_ahead": Apply.intReq(\.defaultMonthsAhead),
+            "default_months_back": Apply.intReq(\.defaultMonthsBack),
+            "show_other_expenses": Apply.boolReq(\.showOtherExpenses),
+            "show_accumulated_balance": Apply.boolReq(\.showAccumulatedBalance),
+            "starting_balance_date": Apply.dateOpt(\.startingBalanceDate),
+            "created_at": Apply.dateReq(\.createdAt),
+            "updated_at_domain": Apply.dateReq(\.updatedAt),
+        ]
+    )
+
+    // MARK: cashflow_lines — CashFlowLine (I12 commit B; identidad = `id`)
+
+    static let cashFlowLine = EntityApply<CashFlowLine>(
+        table: "cashflow_lines",
+        entityTypeName: SyncEntityType.cashFlowLine,
+        make: { ctx in let m = CashFlowLine(name: ""); ctx.insert(m); return m },
+        setSyncID: { $0.id = $1 },
+        fetchBySyncID: { fetchCashFlowLine(byID: $0, context: $1) },
+        anchor: { SyncContentAnchor.stableID($0.id) },
+        groupByColumn: EntityEmissionMap.cashFlowLine.groupByColumn,
+        appliers: [
+            "name": Apply.stringReq(\.name),
+            "is_income": Apply.boolReq(\.isIncome),
+            "sort_order": Apply.intReq(\.sortOrder),
+            "is_enabled": Apply.boolReq(\.isEnabled),
+            "estimation_method": Apply.stringReq(\.estimationMethod),
+            "manual_amount": Apply.moneyOpt(\.manualAmount),
+            "custom_months_raw": Apply.csvOpt(\.customMonthsRaw),
+            "category_ref": ColumnApplier { m, v, ctx in
+                m.category = resolveRef(v, entity: "cashflow_lines", column: "category_ref",
+                                        rowSyncID: m.id, context: ctx) {
+                    fetchCategory(bySyncID: $0, context: ctx)
+                }
+            },
+            "subcategory_ref": ColumnApplier { m, v, ctx in
+                m.subcategory = resolveRef(v, entity: "cashflow_lines", column: "subcategory_ref",
+                                           rowSyncID: m.id, context: ctx) {
+                    fetchSubcategory(byShortcutID: $0, context: ctx)
+                }
+            },
+            "scheduled_payment_ref": ColumnApplier { m, v, ctx in
+                m.scheduledPayment = resolveRef(v, entity: "cashflow_lines", column: "scheduled_payment_ref",
+                                                rowSyncID: m.id, context: ctx) {
+                    fetchScheduledPayment(byID: $0, context: ctx)
+                }
+            },
+            "plan_ref": ColumnApplier { m, v, ctx in
+                m.plan = resolveRef(v, entity: "cashflow_lines", column: "plan_ref",
+                                    rowSyncID: m.id, context: ctx) {
+                    fetchCashFlowPlan(byID: $0, context: ctx)
+                }
+            },
+        ]
+    )
+
+    // MARK: cashflow_overrides — CashFlowOverride (I12 commit B; identidad = `id`)
+
+    static let cashFlowOverride = EntityApply<CashFlowOverride>(
+        table: "cashflow_overrides",
+        entityTypeName: SyncEntityType.cashFlowOverride,
+        make: { ctx in let m = CashFlowOverride(monthKey: "", amount: 0); ctx.insert(m); return m },
+        setSyncID: { $0.id = $1 },
+        fetchBySyncID: { fetchCashFlowOverride(byID: $0, context: $1) },
+        anchor: { SyncContentAnchor.stableID($0.id) },
+        groupByColumn: EntityEmissionMap.cashFlowOverride.groupByColumn,
+        appliers: [
+            "month_key": Apply.stringReq(\.monthKey),
+            "amount": Apply.moneyReq(\.amount),
+            "note": Apply.stringReq(\.note),
+            "line_ref": ColumnApplier { m, v, ctx in
+                m.line = resolveRef(v, entity: "cashflow_overrides", column: "line_ref",
+                                    rowSyncID: m.id, context: ctx) {
+                    fetchCashFlowLine(byID: $0, context: ctx)
+                }
+            },
+        ]
+    )
+
+    // MARK: group_bridge_prefs — GroupBridgePreference (I12 commit B; identidad = `id`)
+    // D6: entidad del store PERSONAL por diseño (manifest/DDL). group_zone_id es TEXT opaco cross-store
+    // (FK a SplitGroup.cloudKitZoneID) → se copia byte a byte, NUNCA se remapea.
+
+    static let groupBridgePreference = EntityApply<GroupBridgePreference>(
+        table: "group_bridge_prefs",
+        entityTypeName: SyncEntityType.groupBridgePreference,
+        make: { ctx in let m = GroupBridgePreference(); ctx.insert(m); return m },
+        setSyncID: { $0.id = $1 },
+        fetchBySyncID: { fetchGroupBridgePreference(byID: $0, context: $1) },
+        anchor: { SyncContentAnchor.stableID($0.id) },
+        groupByColumn: EntityEmissionMap.groupBridgePreference.groupByColumn,
+        appliers: [
+            "group_zone_id": Apply.stringReq(\.groupZoneID),
+            "bridge_override": Apply.boolOpt(\.bridgeOverride),
+            "created_at": Apply.dateReq(\.createdAt),
+        ]
+    )
+
     // MARK: - Resolución de un `_ref` (dangling → nil + breadcrumb + registro durable F-2)
 
     /// Decodifica un `WireValue` FK y lo resuelve con `fetch`. `null` → `nil` SIN breadcrumb (borrado
@@ -568,10 +800,10 @@ enum EntityApplyMap {
     }
 
     /// Intenta re-resolver UNA referencia colgada: fetch de la fila origen (dispatch concreto por tabla)
-    /// + fetch del destino (por el tipo de la columna) + set de la relación. Solo cubre los `_ref`
-    /// SINGULARES de las 6 entidades cableadas (`tag_refs` se auto-cura vía CSV mirror y NUNCA se
-    /// registra; `scheduled_payment_ref`/`source_scheduled_payment_ref` tampoco — son String plano, sin
-    /// relación que colgar).
+    /// + fetch del destino (por el tipo de la columna) + set de la relación. Cubre los `_ref` SINGULARES
+    /// de las 16 entidades cableadas (`tag_refs`/`subcategory_ids`/`account_ids` se auto-curan vía CSV
+    /// mirror y NUNCA se registran). Matiz `scheduled_payment_ref`: en TX/InboxDraft es String plano
+    /// (sin relación que colgar, no se registra); en `cashflow_lines` SÍ es `@Relationship` → tiene caso.
     static func reresolveDangler(_ dangler: SyncDanglingRef, context: ModelContext) -> DanglerOutcome {
         let target = dangler.targetUUID
         switch (dangler.entityTable, dangler.column) {
@@ -635,6 +867,37 @@ enum EntityApplyMap {
             guard let t = fetchSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
             row.subcategory = t
             return .resolved
+        // I12 commit B: refs singulares de las nuevas entidades.
+        case (subcategory.table, "category_ref"):
+            guard let row = fetchSubcategory(byShortcutID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = fetchCategory(bySyncID: target, context: context) else { return .targetMissing }
+            row.category = t
+            return .resolved
+        case (cashFlowLine.table, "category_ref"):
+            guard let row = fetchCashFlowLine(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = fetchCategory(bySyncID: target, context: context) else { return .targetMissing }
+            row.category = t
+            return .resolved
+        case (cashFlowLine.table, "subcategory_ref"):
+            guard let row = fetchCashFlowLine(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = fetchSubcategory(byShortcutID: target, context: context) else { return .targetMissing }
+            row.subcategory = t
+            return .resolved
+        case (cashFlowLine.table, "scheduled_payment_ref"):
+            guard let row = fetchCashFlowLine(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = fetchScheduledPayment(byID: target, context: context) else { return .targetMissing }
+            row.scheduledPayment = t
+            return .resolved
+        case (cashFlowLine.table, "plan_ref"):
+            guard let row = fetchCashFlowLine(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = fetchCashFlowPlan(byID: target, context: context) else { return .targetMissing }
+            row.plan = t
+            return .resolved
+        case (cashFlowOverride.table, "line_ref"):
+            guard let row = fetchCashFlowOverride(byID: dangler.rowSyncID, context: context) else { return .rowGone }
+            guard let t = fetchCashFlowLine(byID: target, context: context) else { return .targetMissing }
+            row.line = t
+            return .resolved
         default:
             // Combinación desconocida (drift futuro) → tratar como obsoleto para no acumular basura.
             return .rowGone
@@ -668,6 +931,21 @@ enum EntityApplyMap {
         csv(CSVMirrorCodec.encode(wireUUIDs))
     }
 
+    /// Reconstruye UNO de los dos campos de `reportConfig` (`report_data_type`/`report_day_preference`)
+    /// en `configurationData` de un `NotificationItem`, sin pasar por el computed `reportConfig` (cuyo
+    /// getter se cierra por `isReportType`). Read-modify-write DIRECTO del blob JSON → order-independiente
+    /// (los dos campos llegan en el mismo delta pero en orden no determinista). `null` → no-op (los dos
+    /// campos viajan juntos gateados por `isReportType`; el wire ignora `configurationData` para tipos no
+    /// reporte → el blob stale es inofensivo, round-trip fiel).
+    private static func applyReportField(
+        _ m: NotificationItem, _ value: WireValue, mutate: (inout ReportConfig, String) -> Void
+    ) {
+        guard case .string(let s) = value else { return }  // null/otro → no-op
+        var config = m.configurationData.flatMap(ReportConfig.fromData) ?? .default
+        mutate(&config, s)
+        m.configurationData = config.toData()
+    }
+
     // MARK: - Dispatch tabla → EntityApply (invierte EntityEmissionMap.table(forClass:))
 
     /// Las 6 tablas cableadas al apply (las que el cliente MATERIALIZA en v1). Consumidas también por
@@ -675,16 +953,22 @@ enum EntityApplyMap {
     static var wiredTables: Set<String> {
         [transactionItem.table, inboxDraft.table, category.table,
          favoritePayment.table, merchantMemory.table, exchangeRate.table,
-         budget.table, scheduledPayment.table]
+         budget.table, scheduledPayment.table,
+         account.table, subcategory.table, tag.table, notificationItem.table,
+         cashFlowPlan.table, cashFlowLine.table, cashFlowOverride.table, groupBridgePreference.table]
     }
 
     /// `true` si la tabla está cableada al apply. El apply consulta esto para decidir materializar vs
-    /// cuarentenar; el dispatch concreto por tipo lo hace `SyncApplyEngine`.
+    /// cuarentenar; el dispatch concreto por tipo lo hace `SyncApplyEngine`. I12 completa: las 16 de las
+    /// 16 tablas de dominio están cableadas → `isWired` es `true` para toda tabla de dominio (solo un
+    /// `entity_type` NO presente en el manifest [drift futuro] caería en el `default` = cuarentena).
     static func isWired(table: String) -> Bool {
         switch table {
         case transactionItem.table, inboxDraft.table, category.table,
              favoritePayment.table, merchantMemory.table, exchangeRate.table,
-             budget.table, scheduledPayment.table:
+             budget.table, scheduledPayment.table,
+             account.table, subcategory.table, tag.table, notificationItem.table,
+             cashFlowPlan.table, cashFlowLine.table, cashFlowOverride.table, groupBridgePreference.table:
             return true
         default:
             return false
@@ -722,6 +1006,24 @@ enum EntityApplyMap {
     }
     static func fetchScheduledPayment(byID id: UUID, context: ModelContext) -> ScheduledPayment? {
         fetchFirst(FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.id == id }), context)
+    }
+    static func fetchTag(byID id: UUID, context: ModelContext) -> Tag? {
+        fetchFirst(FetchDescriptor<Tag>(predicate: #Predicate { $0.id == id }), context)
+    }
+    static func fetchNotificationItem(byID id: UUID, context: ModelContext) -> NotificationItem? {
+        fetchFirst(FetchDescriptor<NotificationItem>(predicate: #Predicate { $0.id == id }), context)
+    }
+    static func fetchCashFlowPlan(byID id: UUID, context: ModelContext) -> CashFlowPlan? {
+        fetchFirst(FetchDescriptor<CashFlowPlan>(predicate: #Predicate { $0.id == id }), context)
+    }
+    static func fetchCashFlowLine(byID id: UUID, context: ModelContext) -> CashFlowLine? {
+        fetchFirst(FetchDescriptor<CashFlowLine>(predicate: #Predicate { $0.id == id }), context)
+    }
+    static func fetchCashFlowOverride(byID id: UUID, context: ModelContext) -> CashFlowOverride? {
+        fetchFirst(FetchDescriptor<CashFlowOverride>(predicate: #Predicate { $0.id == id }), context)
+    }
+    static func fetchGroupBridgePreference(byID id: UUID, context: ModelContext) -> GroupBridgePreference? {
+        fetchFirst(FetchDescriptor<GroupBridgePreference>(predicate: #Predicate { $0.id == id }), context)
     }
 
     /// `[Subcategory]` por sus `shortcutID` (CSV mirror de Budget). Fetch de TODAS + lookup en memoria

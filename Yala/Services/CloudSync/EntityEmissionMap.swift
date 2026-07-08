@@ -22,10 +22,11 @@
 //    CONGELADA (espeja `capability_manifest.json:coherence_groups`) — la expansión al grupo entero
 //    (invariante de emisión) la hace `DeltaEmitter`, no este mapa.
 //
-//  Cobertura: las 16 entidades de dominio. De ellas, SOLO 6 llevan `syncID` y las cablea hoy el
-//  `CloudSyncEngine` (TransactionItem/InboxDraft/Category/FavoritePayment/MerchantMemory/ExchangeRate);
-//  esas 6 declaran además `columnKeyPaths` (mapping keypath→columna para el PATCH parcial del path de
-//  UPDATE). Las otras 10 son declarativas (parity + cuando ganen identidad en incrementos futuros).
+//  Cobertura: las 16 entidades de dominio, TODAS cableadas al `CloudSyncEngine` (I12). Las 6 originales
+//  (TransactionItem/InboxDraft/Category/FavoritePayment/MerchantMemory/ExchangeRate) usan `syncID`
+//  sintético; las 10 restantes usan su UUID EXISTENTE (`Account.shortcutID`/`Subcategory.shortcutID`;
+//  `.id` en el resto). Cada entidad declara `columnKeyPaths` (mapping keypath→columna para el PATCH
+//  parcial del path de UPDATE).
 //
 //  `@MainActor`: los builders leen `@Model`/relaciones (aislados al main actor bajo
 //  `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`).
@@ -525,7 +526,7 @@ enum EntityEmissionMap {
         ]
     )
 
-    // MARK: accounts — declarativa
+    // MARK: accounts — CABLEADA (I12 commit B; identidad = `shortcutID`)
 
     static let account = EntityEmission<Account>(
         table: "accounts",
@@ -542,10 +543,24 @@ enum EntityEmissionMap {
             ColumnEmitter("is_system_account") { m, _ in .bool(m.isSystemAccount) },
             ColumnEmitter("credit_card_payment_reminder") { m, _ in .bool(m.creditCardPaymentReminder) },
             ColumnEmitter("credit_card_payment_day") { m, _ in .int(m.creditCardPaymentDay) },
+        ],
+        columnKeyPaths: [
+            \Account.name: ["name"],
+            \Account.currencyCode: ["currency_code"],
+            \Account.colorHex: ["color_hex"],
+            \Account.iconName: ["icon_name"],
+            \Account.type: ["type"],
+            \Account.accountNumber: ["account_number"],
+            \Account.adjustmentMode: ["adjustment_mode"],
+            \Account.excludeFromStatistics: ["exclude_from_statistics"],
+            \Account.isArchived: ["is_archived"],
+            \Account.isSystemAccount: ["is_system_account"],
+            \Account.creditCardPaymentReminder: ["credit_card_payment_reminder"],
+            \Account.creditCardPaymentDay: ["credit_card_payment_day"],
         ]
     )
 
-    // MARK: subcategories — declarativa
+    // MARK: subcategories — CABLEADA (I12 commit B; identidad = `shortcutID`)
 
     static let subcategory = EntityEmission<Subcategory>(
         table: "subcategories",
@@ -559,10 +574,21 @@ enum EntityEmissionMap {
             ColumnEmitter("icon_name") { m, _ in Emit.text(m.iconName) },
             ColumnEmitter("is_system") { m, _ in .bool(m.isSystem) },
             ColumnEmitter("category_ref") { m, _ in Emit.ref(m.category?.syncID) },
+        ],
+        columnKeyPaths: [
+            \Subcategory.name: ["name"],
+            \Subcategory.colorHex: ["color_hex"],
+            \Subcategory.isDefaultSeed: ["is_default_seed"],
+            \Subcategory.isVisible: ["is_visible"],
+            \Subcategory.sortOrder: ["sort_order"],
+            \Subcategory.natureRawValue: ["nature_raw_value"],
+            \Subcategory.iconName: ["icon_name"],
+            \Subcategory.isSystem: ["is_system"],
+            \Subcategory.category: ["category_ref"],
         ]
     )
 
-    // MARK: tags — declarativa
+    // MARK: tags — CABLEADA (I12 commit B; identidad = `id`)
 
     static let tag = EntityEmission<Tag>(
         table: "tags",
@@ -572,10 +598,17 @@ enum EntityEmissionMap {
             ColumnEmitter("icon_name") { m, _ in .string(m.iconName) },
             ColumnEmitter("is_active") { m, _ in .bool(m.isActive) },
             ColumnEmitter("created_at") { m, _ in .timestamp(m.createdAt) },
+        ],
+        columnKeyPaths: [
+            \Tag.name: ["name"],
+            \Tag.colorHex: ["color_hex"],
+            \Tag.iconName: ["icon_name"],
+            \Tag.isActive: ["is_active"],
+            \Tag.createdAt: ["created_at"],
         ]
     )
 
-    // MARK: notification_items — declarativa
+    // MARK: notification_items — CABLEADA (I12 commit B; identidad = `id`)
 
     static let notificationItem = EntityEmission<NotificationItem>(
         table: "notification_items",
@@ -590,7 +623,8 @@ enum EntityEmissionMap {
             ColumnEmitter("color_hex") { m, _ in .string(m.colorHex) },
             ColumnEmitter("created_at") { m, _ in .timestamp(m.createdAt) },
             ColumnEmitter("sort_order") { m, _ in .int(m.sortOrder) },
-            // Solo para tipos de reporte (CHECK de la DDL: NULL o valor válido).
+            // Solo para tipos de reporte (CHECK de la DDL: NULL o valor válido). Los dos campos se
+            // reconstruyen en el apply desde `configurationData` (ver EntityApplyMap.notificationItem).
             ColumnEmitter("report_data_type") { m, _ in
                 m.notificationType.isReportType ? .string(m.reportConfig.dataType.rawValue) : .null
             },
@@ -598,10 +632,31 @@ enum EntityEmissionMap {
                 m.notificationType.isReportType ? .string(m.reportConfig.dayPreference.rawValue) : .null
             },
             ColumnEmitter("weekdays_raw") { m, _ in Emit.csvTextArray(m.weekdaysRaw) },
+        ],
+        columnKeyPaths: [
+            \NotificationItem.name: ["name"],
+            \NotificationItem.text: ["text"],
+            \NotificationItem.hour: ["hour"],
+            \NotificationItem.minute: ["minute"],
+            // GUARDIA (NOTA-1 review I12-B): hoy `typeRaw` es INMUTABLE post-init (verificado: cero
+            // write-sites fuera del init). Si algún día se permite CAMBIAR el tipo, este mapping DEBE
+            // pasar a ["type_raw", "report_data_type", "report_day_preference"] — los emitters de las
+            // columnas report gatean por isReportType y quedarían STALE en el server (divergencia
+            // Merkle del propio row) si un PATCH de solo type_raw no las re-emite.
+            \NotificationItem.typeRaw: ["type_raw"],
+            \NotificationItem.isActive: ["is_active"],
+            \NotificationItem.iconName: ["icon_name"],
+            \NotificationItem.colorHex: ["color_hex"],
+            \NotificationItem.createdAt: ["created_at"],
+            \NotificationItem.sortOrder: ["sort_order"],
+            // El STORAGE real de reportConfig es `configurationData` (JSON) → toca AMBAS columnas de
+            // reporte (patrón `date` → [date, local_day]). El emitter las deriva; el applier las reconstruye.
+            \NotificationItem.configurationData: ["report_data_type", "report_day_preference"],
+            \NotificationItem.weekdaysRaw: ["weekdays_raw"],
         ]
     )
 
-    // MARK: cashflow_plans — declarativa
+    // MARK: cashflow_plans — CABLEADA (I12 commit B; identidad = `id`)
 
     static let cashFlowPlan = EntityEmission<CashFlowPlan>(
         table: "cashflow_plans",
@@ -615,10 +670,21 @@ enum EntityEmissionMap {
             ColumnEmitter("starting_balance_date") { m, _ in Emit.timestamp(m.startingBalanceDate) },
             ColumnEmitter("created_at") { m, _ in .timestamp(m.createdAt) },
             ColumnEmitter("updated_at_domain") { m, _ in .timestamp(m.updatedAt) },
+        ],
+        columnKeyPaths: [
+            \CashFlowPlan.name: ["name"],
+            \CashFlowPlan.startingBalance: ["starting_balance"],
+            \CashFlowPlan.defaultMonthsAhead: ["default_months_ahead"],
+            \CashFlowPlan.defaultMonthsBack: ["default_months_back"],
+            \CashFlowPlan.showOtherExpenses: ["show_other_expenses"],
+            \CashFlowPlan.showAccumulatedBalance: ["show_accumulated_balance"],
+            \CashFlowPlan.startingBalanceDate: ["starting_balance_date"],
+            \CashFlowPlan.createdAt: ["created_at"],
+            \CashFlowPlan.updatedAt: ["updated_at_domain"],
         ]
     )
 
-    // MARK: cashflow_lines — declarativa
+    // MARK: cashflow_lines — CABLEADA (I12 commit B; identidad = `id`)
 
     static let cashFlowLine = EntityEmission<CashFlowLine>(
         table: "cashflow_lines",
@@ -634,10 +700,23 @@ enum EntityEmissionMap {
             ColumnEmitter("subcategory_ref") { m, _ in Emit.ref(m.subcategory?.shortcutID) },
             ColumnEmitter("scheduled_payment_ref") { m, _ in Emit.ref(m.scheduledPayment?.id) },
             ColumnEmitter("plan_ref") { m, _ in Emit.ref(m.plan?.id) },
+        ],
+        columnKeyPaths: [
+            \CashFlowLine.name: ["name"],
+            \CashFlowLine.isIncome: ["is_income"],
+            \CashFlowLine.sortOrder: ["sort_order"],
+            \CashFlowLine.isEnabled: ["is_enabled"],
+            \CashFlowLine.estimationMethod: ["estimation_method"],
+            \CashFlowLine.manualAmount: ["manual_amount"],
+            \CashFlowLine.customMonthsRaw: ["custom_months_raw"],
+            \CashFlowLine.category: ["category_ref"],
+            \CashFlowLine.subcategory: ["subcategory_ref"],
+            \CashFlowLine.scheduledPayment: ["scheduled_payment_ref"],
+            \CashFlowLine.plan: ["plan_ref"],
         ]
     )
 
-    // MARK: cashflow_overrides — declarativa
+    // MARK: cashflow_overrides — CABLEADA (I12 commit B; identidad = `id`)
 
     static let cashFlowOverride = EntityEmission<CashFlowOverride>(
         table: "cashflow_overrides",
@@ -646,10 +725,16 @@ enum EntityEmissionMap {
             ColumnEmitter("amount") { m, _ in .money(m.amount) },
             ColumnEmitter("note") { m, _ in .string(m.note) },
             ColumnEmitter("line_ref") { m, _ in Emit.ref(m.line?.id) },
+        ],
+        columnKeyPaths: [
+            \CashFlowOverride.monthKey: ["month_key"],
+            \CashFlowOverride.amount: ["amount"],
+            \CashFlowOverride.note: ["note"],
+            \CashFlowOverride.line: ["line_ref"],
         ]
     )
 
-    // MARK: group_bridge_prefs — declarativa
+    // MARK: group_bridge_prefs — CABLEADA (I12 commit B; identidad = `id`)
 
     static let groupBridgePreference = EntityEmission<GroupBridgePreference>(
         table: "group_bridge_prefs",
@@ -657,6 +742,11 @@ enum EntityEmissionMap {
             ColumnEmitter("group_zone_id") { m, _ in .string(m.groupZoneID) },
             ColumnEmitter("bridge_override") { m, _ in .bool(m.bridgeOverride) },
             ColumnEmitter("created_at") { m, _ in .timestamp(m.createdAt) },
+        ],
+        columnKeyPaths: [
+            \GroupBridgePreference.groupZoneID: ["group_zone_id"],
+            \GroupBridgePreference.bridgeOverride: ["bridge_override"],
+            \GroupBridgePreference.createdAt: ["created_at"],
         ]
     )
 

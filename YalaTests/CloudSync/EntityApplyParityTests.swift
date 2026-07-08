@@ -71,6 +71,39 @@ struct EntityApplyParityTests {
         assertParity(EntityEmissionMap.scheduledPayment, EntityApplyMap.scheduledPayment)
     }
 
+    // Commit B: las 8 restantes.
+    @Test func account_applyMatchesEmission() {
+        assertParity(EntityEmissionMap.account, EntityApplyMap.account)
+    }
+
+    @Test func subcategory_applyMatchesEmission() {
+        assertParity(EntityEmissionMap.subcategory, EntityApplyMap.subcategory)
+    }
+
+    @Test func tag_applyMatchesEmission() {
+        assertParity(EntityEmissionMap.tag, EntityApplyMap.tag)
+    }
+
+    @Test func notificationItem_applyMatchesEmission() {
+        assertParity(EntityEmissionMap.notificationItem, EntityApplyMap.notificationItem)
+    }
+
+    @Test func cashFlowPlan_applyMatchesEmission() {
+        assertParity(EntityEmissionMap.cashFlowPlan, EntityApplyMap.cashFlowPlan)
+    }
+
+    @Test func cashFlowLine_applyMatchesEmission() {
+        assertParity(EntityEmissionMap.cashFlowLine, EntityApplyMap.cashFlowLine)
+    }
+
+    @Test func cashFlowOverride_applyMatchesEmission() {
+        assertParity(EntityEmissionMap.cashFlowOverride, EntityApplyMap.cashFlowOverride)
+    }
+
+    @Test func groupBridgePreference_applyMatchesEmission() {
+        assertParity(EntityEmissionMap.groupBridgePreference, EntityApplyMap.groupBridgePreference)
+    }
+
     /// El groupByColumn del apply debe ser EL MISMO objeto lógico que el de emission (LWW por-unidad
     /// coherente con las unidades que viajan en field_hlcs).
     @Test func groupByColumn_isSharedWithEmission() {
@@ -82,5 +115,13 @@ struct EntityApplyParityTests {
         #expect(EntityApplyMap.exchangeRate.groupByColumn == EntityEmissionMap.exchangeRate.groupByColumn)
         #expect(EntityApplyMap.budget.groupByColumn == EntityEmissionMap.budget.groupByColumn)
         #expect(EntityApplyMap.scheduledPayment.groupByColumn == EntityEmissionMap.scheduledPayment.groupByColumn)
+        #expect(EntityApplyMap.account.groupByColumn == EntityEmissionMap.account.groupByColumn)
+        #expect(EntityApplyMap.subcategory.groupByColumn == EntityEmissionMap.subcategory.groupByColumn)
+        #expect(EntityApplyMap.tag.groupByColumn == EntityEmissionMap.tag.groupByColumn)
+        #expect(EntityApplyMap.notificationItem.groupByColumn == EntityEmissionMap.notificationItem.groupByColumn)
+        #expect(EntityApplyMap.cashFlowPlan.groupByColumn == EntityEmissionMap.cashFlowPlan.groupByColumn)
+        #expect(EntityApplyMap.cashFlowLine.groupByColumn == EntityEmissionMap.cashFlowLine.groupByColumn)
+        #expect(EntityApplyMap.cashFlowOverride.groupByColumn == EntityEmissionMap.cashFlowOverride.groupByColumn)
+        #expect(EntityApplyMap.groupBridgePreference.groupByColumn == EntityEmissionMap.groupBridgePreference.groupByColumn)
     }
 }

@@ -89,6 +89,27 @@ struct SyncQuarantineDrainTests {
         return p.deltas[0].rawDelta
     }
 
+    /// Página JSON con UN upsert full-row de `accounts` (cableada en commit B; identidad = `shortcutID`).
+    /// Sin grupos de coherencia → cada columna es su propia unidad.
+    private func accountPage(sid: UUID, serverSeq: Int, h: String) -> String {
+        #"""
+        {"deltas":[{"entity_type":"accounts","sync_id":"\#(sid.uuidString.lowercased())","op":"upsert",
+        "fields":{"name":"BCP","currency_code":"PEN","color_hex":"#111111","icon_name":"creditcard",
+        "type":"checking","account_number":null,"adjustment_mode":"manual","exclude_from_statistics":false,
+        "is_archived":false,"is_system_account":false,"credit_card_payment_reminder":false,
+        "credit_card_payment_day":1},
+        "field_hlcs":{"name":"\#(h)","currency_code":"\#(h)","color_hex":"\#(h)","icon_name":"\#(h)",
+        "type":"\#(h)","adjustment_mode":"\#(h)","exclude_from_statistics":"\#(h)","is_archived":"\#(h)",
+        "is_system_account":"\#(h)","credit_card_payment_reminder":"\#(h)","credit_card_payment_day":"\#(h)"},
+        "hlc":"\#(h)","server_seq":\#(serverSeq),"schema_version":1}],"max_server_seq":\#(serverSeq)}
+        """#
+    }
+
+    private func accountRawDelta(sid: UUID, serverSeq: Int, h: String) -> String {
+        let p = try! SyncPullClient.decodePage(Data(accountPage(sid: sid, serverSeq: serverSeq, h: h).utf8))
+        return p.deltas[0].rawDelta
+    }
+
     private func cursor(_ c: ModelContext) -> SyncCursor? {
         try? c.fetch(FetchDescriptor<SyncCursor>()).first
     }
@@ -105,10 +126,11 @@ struct SyncQuarantineDrainTests {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let engine = CloudSyncEngine()
-        // `accounts` aún NO está cableada al apply (commit B) → se cuarentena. (`budgets` ya se cableó
-        // en commit A, así que YA NO sirve como ejemplo no-cableado.)
+        // I12 completa: las 16 tablas de dominio están cableadas → el único ejemplo NO-cableado es un
+        // `entity_type` fuera del manifest (drift futuro). `LegacyUnmappedEntity` (poison-row) delata
+        // igual el path de cuarentena. (`accounts`/`budgets`/… YA no sirven — cableadas.)
         let sid = UUID()
-        let p = try SyncPullClient.decodePage(Data(page(entity: "accounts", sid: sid, serverSeq: 7, h: hlc(1)).utf8))
+        let p = try SyncPullClient.decodePage(Data(page(entity: "LegacyUnmappedEntity", sid: sid, serverSeq: 7, h: hlc(1)).utf8))
         #expect(engine.applyPage(p, context: context, now: applyNow))
 
         #expect(quarantine(context).count == 1)
@@ -156,8 +178,8 @@ struct SyncQuarantineDrainTests {
         let context = try makeContext(dir)
         let engine = CloudSyncEngine()
         let sid = UUID()
-        let raw = rawDelta(entity: "accounts", sid: sid, serverSeq: 5, h: hlc(1))
-        context.insert(SyncQuarantine(serverSeq: 5, entityType: "accounts", syncID: sid, rawDelta: raw, hlc: hlc(1)))
+        let raw = rawDelta(entity: "LegacyUnmappedEntity", sid: sid, serverSeq: 5, h: hlc(1))
+        context.insert(SyncQuarantine(serverSeq: 5, entityType: "LegacyUnmappedEntity", syncID: sid, rawDelta: raw, hlc: hlc(1)))
         let cur = try engine.loadOrCreateCursor(context)
         cur.quarantinePendingCount = 1
         try context.save()
@@ -165,7 +187,7 @@ struct SyncQuarantineDrainTests {
         engine.drainOnce(context: context)
         engine.drainQuarantineOnce(context: context, now: applyNow)
 
-        // `accounts` sigue sin cablear (commit B) → la fila permanece cuarentenada, testigo intacto.
+        // `LegacyUnmappedEntity` no está en el manifest → la fila permanece cuarentenada, testigo intacto.
         #expect(quarantine(context).count == 1)
         #expect(cursor(context)?.quarantinePendingCount == 1)
     }
@@ -198,6 +220,34 @@ struct SyncQuarantineDrainTests {
         #expect(quarantine(context).isEmpty)
         #expect(cursor(context)?.quarantinePendingCount == 0)
         #expect(cursor(context)?.serverSeqCursor == 88)  // intacto
+    }
+
+    /// D8 (I12 commit B): un delta de `accounts` (cableada en commit B; identidad = `shortcutID`)
+    /// pre-sembrado en cuarentena → `drainQuarantineOnce` lo materializa, borra la fila, decrementa el
+    /// testigo y NO toca `serverSeqCursor`. Espeja el D8 de budgets.
+    @Test func drainQuarantine_reappliesWiredAccount_deletesRow_decrementsWitness_keepsCursor() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+
+        let sid = UUID()
+        let raw = accountRawDelta(sid: sid, serverSeq: 21, h: hlc(1))
+        context.insert(SyncQuarantine(serverSeq: 21, entityType: "accounts", syncID: sid, rawDelta: raw, hlc: hlc(1)))
+        let cur = try engine.loadOrCreateCursor(context)
+        cur.serverSeqCursor = 77
+        cur.quarantinePendingCount = 1
+        try context.save()
+
+        engine.drainOnce(context: context)
+        engine.drainQuarantineOnce(context: context, now: applyNow)
+
+        let account = (try? context.fetch(FetchDescriptor<Account>()))?.first { $0.shortcutID == sid }
+        #expect(account != nil)
+        #expect(account?.name == "BCP")
+        #expect(account?.currencyCode == "PEN")
+        #expect(quarantine(context).isEmpty)
+        #expect(cursor(context)?.quarantinePendingCount == 0)
+        #expect(cursor(context)?.serverSeqCursor == 77)  // intacto
     }
 
     // MARK: - Guard de recreación (testigo>0 + tabla vacía → serverSeq=0 + testigo=0)

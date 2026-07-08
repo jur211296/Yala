@@ -256,7 +256,10 @@ struct ReportConfig: Equatable, Sendable {
 @Model
 final class NotificationItem {
     // CloudKit: defaults required
-    var id: UUID = UUID()
+    // I12: identidad de sync del Modo Nube (`sync_id_source = NotificationItem.id`).
+    // `.preserveValueOnDeletion` para que el history tombstone conserve el `id` (metadata de History;
+    // sin deploy .ckdb).
+    @Attribute(.preserveValueOnDeletion) var id: UUID = UUID()
     var name: String = ""
     var text: String = ""
     var hour: Int = 12

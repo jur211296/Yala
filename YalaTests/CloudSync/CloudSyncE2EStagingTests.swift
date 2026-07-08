@@ -155,11 +155,9 @@ struct CloudSyncE2EStagingTests {
         #expect(txB.exchangeRate == 1.0)
         #expect(txB.isExchangeRateProvisional == false)
 
-        // Bonus: las tablas AÚN no cableadas del historial de staging (p.ej. `accounts` del golden 10
-        // del gateway — `budgets`/`scheduled_payments` ya se cablearon en I12 commit A) deben haber
-        // caído en cuarentena con los bytes reales del wire, nunca descartadas.
-        let quarantined = try contextB.fetch(FetchDescriptor<SyncQuarantine>())
-        #expect(quarantined.allSatisfy { !$0.rawDelta.isEmpty })
+        // (I12 completa: las 16 tablas de dominio están cableadas → ya NO queda tabla que caiga en
+        // cuarentena por diseño; el assert de cuarentena se retiró — la mecánica del upgrade-path queda
+        // cubierta por los unit tests de SyncQuarantineDrainTests con `LegacyUnmappedEntity`.)
 
         // El cursor de B avanzó de forma durable.
         let cursorB = try contextB.fetch(FetchDescriptor<SyncCursor>()).first
@@ -429,6 +427,152 @@ struct CloudSyncE2EStagingTests {
             // NUNCA relajar el assert.
             #expect(entities == ["tx_items"],
                     "solo tx_items puede divergir; si hay budgets/scheduled_payments, tombstonear en staging: \(entities)")
+        case .skipped(let reason):
+            Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
+        }
+    }
+
+    // MARK: - Round-trip "las 8" restantes (I12 commit B)
+
+    /// A crea UNA fila de cada una de las 8 entidades de commit B (accounts, subcategories, tags,
+    /// notification_items, cashflow_plans, cashflow_lines, cashflow_overrides, group_bridge_prefs) CON
+    /// refs cruzadas reales (subcategory→category, cashflow_line→plan+scheduled_payment+category+
+    /// subcategory, override→line) + una TX que referencia account/subcategory/tag (prueba el auto-cure de
+    /// refs) → push → B (store fresco) materializa TODO con las refs re-resueltas → Merkle
+    /// `diverged == ["tx_items"]` ESTRICTO (staging LIMPIO en las 8; solo las filas parciales hand-crafted
+    /// de tx_items divergen — ver el round-trip de tx). Si aparece cualquier otra tabla divergente son
+    /// filas legacy de staging → tombstonearlas, NUNCA relajar el assert.
+    @Test(.enabled(if: CloudSyncE2EStagingTests.isEnabled))
+    func roundTrip_theEight_pushFromA_materializesInB_merkleConverges() async throws {
+        let jwt = try await login()
+        let tokenProvider: () async -> String? = { jwt }
+
+        // ---------- Device A: grafo con refs cruzadas ----------
+        let dirA = freshDir(); defer { cleanup(dirA) }
+        let contextA = try makeContext(dirA)
+        let engineA = CloudSyncEngine()
+        let run = String(UUID().uuidString.prefix(8))
+
+        let category = Category(name: "cat-\(run)", colorHex: "#222222", isIncome: false, isDefaultSeed: false)
+        contextA.insert(category)
+        let account = Account(name: "acc-\(run)", currencyCode: "PEN", colorHex: "#111111",
+                              iconName: "creditcard", type: "checking")
+        contextA.insert(account)
+        let subcategory = Subcategory(name: "sub-\(run)", category: category)
+        contextA.insert(subcategory)
+        let tag = Tag(name: "tag-\(run)")
+        contextA.insert(tag)
+        let notif = NotificationItem(name: "notif-\(run)", text: "", hour: 21, minute: 0,
+                                     type: .dailyReport,
+                                     reportConfig: ReportConfig(dataType: .income, dayPreference: .monday))
+        contextA.insert(notif)
+        let sp = ScheduledPayment(name: "sp-\(run)", amount: 50, currencyCode: "PEN",
+                                  nextDueDate: Date(timeIntervalSince1970: 1_751_900_000))
+        sp.createdAt = Date(timeIntervalSince1970: 1_751_900_000)
+        contextA.insert(sp)
+        let plan = CashFlowPlan(name: "plan-\(run)")
+        contextA.insert(plan)
+        let line = CashFlowLine(name: "line-\(run)", isIncome: true, estimationMethod: .manual,
+                                manualAmount: 1000, category: category, subcategory: subcategory,
+                                scheduledPayment: sp)
+        line.plan = plan
+        line.customMonthsRaw = "2026-01,2026-02"
+        contextA.insert(line)
+        let override = CashFlowOverride(monthKey: "2026-04", amount: 12, note: "n")
+        override.line = line
+        contextA.insert(override)
+        let pref = GroupBridgePreference(groupZoneID: "zone-\(run)", bridgeOverride: false)
+        contextA.insert(pref)
+        // TX que referencia account/subcategory/tag → prueba el auto-cure de refs al cablear.
+        let tx = TransactionItem(date: Date(timeIntervalSince1970: 1_751_900_000), amount: -9,
+                                 currencyCode: "PEN")
+        tx.note = "tx8-\(run)"
+        tx.amountInPreferredCurrency = -9
+        tx.preferredCurrencyCode = "PEN"
+        tx.exchangeRate = 1.0
+        tx.isExchangeRateProvisional = false
+        tx.createdAt = Date(timeIntervalSince1970: 1_751_900_000)
+        tx.account = account
+        tx.subcategory = subcategory
+        tx.setTags(from: [tag])
+        contextA.insert(tx)
+        try contextA.save()
+
+        let accShortcut = account.shortcutID
+        let subShortcut = subcategory.shortcutID
+        let tagID = tag.id
+        let notifID = notif.id
+        let planID = plan.id
+        let lineID = line.id
+        let overrideID = override.id
+        let prefID = pref.id
+        let txSID: UUID?
+
+        engineA.drainOnce(context: contextA)
+        let rowsA = try contextA.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        txSID = rowsA.first { $0.entityType == SyncEntityType.transactionItem }?.syncID
+        #expect(rowsA.count >= 10, "≥10 filas (8 nuevas + Category + ScheduledPayment + TX): \(rowsA.count)")
+
+        let pushClient = SyncPushClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        guard case .completed(let results) = await pushClient.push(rowsA) else {
+            Issue.record("push A no completó"); return
+        }
+        #expect(results.allSatisfy { $0.status == .applied || $0.status == .noop },
+                "todos los deltas de A deben aplicar: \(results)")
+        await pushClient.applyResults(results, rows: rowsA, engine: engineA, context: contextA)
+
+        // ---------- Device B (store fresco): pull → materializa TODO ----------
+        let dirB = freshDir(); defer { cleanup(dirB) }
+        let contextB = try makeContext(dirB)
+        let engineB = CloudSyncEngine()
+        let pullClientB = SyncPullClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        guard case .completed = await engineB.pullAndApplyOnce(using: pullClientB, context: contextB) else {
+            Issue.record("pull B no completó"); return
+        }
+
+        let bAcc = try contextB.fetch(FetchDescriptor<Account>()).first { $0.shortcutID == accShortcut }
+        #expect(bAcc?.name == "acc-\(run)")
+        let bSub = try contextB.fetch(FetchDescriptor<Subcategory>()).first { $0.shortcutID == subShortcut }
+        #expect(bSub?.name == "sub-\(run)")
+        #expect(bSub?.category != nil)  // subcategory→category re-resuelto
+        let bTag = try contextB.fetch(FetchDescriptor<Yala.Tag>()).first { $0.id == tagID }
+        #expect(bTag?.name == "tag-\(run)")
+        let bNotif = try contextB.fetch(FetchDescriptor<NotificationItem>()).first { $0.id == notifID }
+        #expect(bNotif?.reportConfig.dataType == .income)
+        #expect(bNotif?.reportConfig.dayPreference == .monday)
+        let bPlan = try contextB.fetch(FetchDescriptor<CashFlowPlan>()).first { $0.id == planID }
+        #expect(bPlan?.name == "plan-\(run)")
+        let bLine = try contextB.fetch(FetchDescriptor<CashFlowLine>()).first { $0.id == lineID }
+        #expect(bLine?.manualAmount == 1000)
+        #expect(bLine?.plan?.id == planID)              // line→plan
+        #expect(bLine?.scheduledPayment?.id == sp.id)   // line→scheduled_payment
+        #expect(bLine?.category != nil)                 // line→category
+        #expect(bLine?.subcategory?.shortcutID == subShortcut)
+        #expect(bLine?.customMonthsRaw == "2026-01,2026-02")
+        let bOverride = try contextB.fetch(FetchDescriptor<CashFlowOverride>()).first { $0.id == overrideID }
+        #expect(bOverride?.line?.id == lineID)          // override→line
+        let bPref = try contextB.fetch(FetchDescriptor<GroupBridgePreference>()).first { $0.id == prefID }
+        #expect(bPref?.groupZoneID == "zone-\(run)")    // opaco byte a byte
+        #expect(bPref?.bridgeOverride == false)
+        // La TX auto-cura sus refs a account/subcategory/tag (todas ahora cableadas).
+        if let txSID {
+            let bTx = try contextB.fetch(FetchDescriptor<TransactionItem>()).first { $0.syncID == txSID }
+            #expect(bTx?.account?.shortcutID == accShortcut)
+            #expect(bTx?.subcategory?.shortcutID == subShortcut)
+            #expect((bTx?.resolvedTagIDs() ?? []).contains(tagID))
+        }
+
+        // ---------- Merkle: veredicto CONSERVADO en ["tx_items"] ----------
+        guard case .completed = await engineB.pullAndApplyOnce(using: pullClientB, context: contextB) else {
+            Issue.record("pull final de B no completó"); return
+        }
+        let merkleClient = SyncMerkleClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        switch await engineB.verifyIntegrity(using: merkleClient, context: contextB) {
+        case .converged:
+            break
+        case .diverged(let entities):
+            #expect(entities == ["tx_items"],
+                    "solo tx_items puede divergir; cualquier otra tabla = filas legacy de staging a tombstonear: \(entities)")
         case .skipped(let reason):
             Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
         }

@@ -12,7 +12,10 @@ import SwiftData
 
 @Model
 final class CashFlowOverride {
-    var id: UUID = UUID()
+    // I12: identidad de sync del Modo Nube (`sync_id_source = CashFlowOverride.id`).
+    // `.preserveValueOnDeletion` para que el history tombstone conserve el `id` (metadata de History;
+    // sin deploy .ckdb).
+    @Attribute(.preserveValueOnDeletion) var id: UUID = UUID()
     var monthKey: String = ""        // "2026-04"
     var amount: Double = 0
     var note: String = ""

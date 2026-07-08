@@ -2,9 +2,11 @@
 //  SyncQuarantineTests.swift
 //  YalaTests / CloudSync
 //
-//  Cuarentena de deltas remotos NO materializables (I8f-1, test #5): un `entity_type` aún no cableado al
-//  apply (10 de 16) → fila `SyncQuarantine` con `rawDelta` verbatim + cursor avanza en el MISMO save; el
-//  re-pull de la misma página NO duplica (dedup por `serverSeq`). Container ON-DISK temp con los 3 stores.
+//  Cuarentena de deltas remotos NO materializables (I8f-1, test #5): un `entity_type` NO cableado al
+//  apply → fila `SyncQuarantine` con `rawDelta` verbatim + cursor avanza en el MISMO save; el re-pull de
+//  la misma página NO duplica (dedup por `serverSeq`). Container ON-DISK temp con los 3 stores.
+//  I12 completa: las 16 tablas de dominio están cableadas → el único ejemplo NO-cableado es un
+//  `entity_type` fuera del manifest (`LegacyUnmappedEntity`, poison-row).
 //
 
 import Foundation
@@ -43,13 +45,11 @@ struct SyncQuarantineTests {
     private func hlc(_ c: Int) -> String { "2023-11-14T22:13:20.000Z-\(String(format: "%04x", c))-\(node)" }
     private let applyNow = Date(timeIntervalSince1970: 1_700_000_100)
 
-    /// Página con UN delta de una tabla NO cableada (`accounts`).
-    private func accountsPage(sid: UUID, serverSeq: Int) -> String {
+    /// Página con UN delta de una tabla NO cableada (`LegacyUnmappedEntity`, fuera del manifest).
+    private func unwiredPage(sid: UUID, serverSeq: Int) -> String {
         #"""
-        {"deltas":[{"entity_type":"accounts","sync_id":"\#(sid.uuidString.lowercased())","op":"upsert",
-        "fields":{"name":"Cash","currency_code":"USD","color_hex":"#111111","icon_name":"creditcard",
-        "type":"checking","adjustment_mode":"manual","exclude_from_statistics":false,"is_archived":false,
-        "is_system_account":false,"credit_card_payment_reminder":false,"credit_card_payment_day":1},
+        {"deltas":[{"entity_type":"LegacyUnmappedEntity","sync_id":"\#(sid.uuidString.lowercased())","op":"upsert",
+        "fields":{"name":"Cash"},
         "field_hlcs":{"name":"\#(hlc(1))"},"hlc":"\#(hlc(1))","server_seq":\#(serverSeq),"schema_version":1}],
         "max_server_seq":\#(serverSeq)}
         """#
@@ -65,24 +65,22 @@ struct SyncQuarantineTests {
         let engine = CloudSyncEngine()
 
         let sid = UUID()
-        let page = try SyncPullClient.decodePage(Data(accountsPage(sid: sid, serverSeq: 12).utf8))
+        let page = try SyncPullClient.decodePage(Data(unwiredPage(sid: sid, serverSeq: 12).utf8))
         engine.applyPage(page, context: context, now: applyNow)
 
         let rows = quarantine(context)
         #expect(rows.count == 1)
         let q = try #require(rows.first)
-        #expect(q.entityType == "accounts")
+        #expect(q.entityType == "LegacyUnmappedEntity")
         #expect(q.serverSeq == 12)
         #expect(q.syncID == sid)
         #expect(q.hlc == hlc(1))
         // rawDelta round-trippea (re-decodable a un PulledDelta con los mismos datos).
         let redecoded = try SyncPullClient.decodePage(Data(#"{"deltas":[\#(q.rawDelta)],"max_server_seq":12}"#.utf8))
-        #expect(redecoded.deltas.first?.entityType == "accounts")
+        #expect(redecoded.deltas.first?.entityType == "LegacyUnmappedEntity")
         #expect(redecoded.deltas.first?.syncID == sid)
         // Cursor avanzó en el MISMO save (D-5).
         #expect((try context.fetch(FetchDescriptor<SyncCursor>()).first)?.serverSeqCursor == 12)
-        // NO se materializó ninguna Account (no cableada).
-        #expect(((try? context.fetch(FetchDescriptor<Account>())) ?? []).isEmpty)
     }
 
     @Test func reapplySamePage_doesNotDuplicate_dedupByServerSeq() throws {
@@ -90,7 +88,7 @@ struct SyncQuarantineTests {
         let context = ModelContext(try makeContainer(dir))
         let engine = CloudSyncEngine()
 
-        let page = try SyncPullClient.decodePage(Data(accountsPage(sid: UUID(), serverSeq: 5).utf8))
+        let page = try SyncPullClient.decodePage(Data(unwiredPage(sid: UUID(), serverSeq: 5).utf8))
         engine.applyPage(page, context: context, now: applyNow)
         engine.applyPage(page, context: context, now: applyNow)  // re-pull idempotente
         #expect(quarantine(context).count == 1)  // dedup por serverSeq
@@ -101,7 +99,7 @@ struct SyncQuarantineTests {
         let context = ModelContext(try makeContainer(dir))
         let engine = CloudSyncEngine()
 
-        engine.applyPage(try SyncPullClient.decodePage(Data(accountsPage(sid: UUID(), serverSeq: 30).utf8)),
+        engine.applyPage(try SyncPullClient.decodePage(Data(unwiredPage(sid: UUID(), serverSeq: 30).utf8)),
                          context: context, now: applyNow)
         #expect((try context.fetch(FetchDescriptor<SyncCursor>()).first)?.serverSeqCursor == 30)
         engine.resetServerSeqCursor(context: context)  // §d.5 A1 hook (I9)

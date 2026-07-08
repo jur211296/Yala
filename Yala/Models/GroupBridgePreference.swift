@@ -23,7 +23,11 @@ import SwiftData
 
 @Model
 final class GroupBridgePreference {
-    var id: UUID = UUID()
+    // I12: identidad de sync del Modo Nube (`sync_id_source = GroupBridgePreference.id`).
+    // `.preserveValueOnDeletion` para que el history tombstone conserve el `id` (metadata de History;
+    // sin deploy .ckdb). NOTA (D6): entidad del store PERSONAL por diseño (manifest/DDL); esto NO toca
+    // Services/Groups/* ni Split*.
+    @Attribute(.preserveValueOnDeletion) var id: UUID = UUID()
     /// FK a `SplitGroup.cloudKitZoneID`. Identifica el grupo al que aplica el override.
     var groupZoneID: String = ""
     /// nil = heredar del toggle global. true/false = override explícito.

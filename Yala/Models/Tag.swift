@@ -14,7 +14,9 @@ import SwiftData
 final class Tag {
     // CloudKit: defaults required
     // Stable UUID for CSV mirror references (TransactionItem.tagIDs, Budget.tagIDs, etc.)
-    var id: UUID = UUID()
+    // I12: identidad de sync del Modo Nube (`sync_id_source = Tag.id`). `.preserveValueOnDeletion`
+    // para que el history tombstone conserve el `id` (metadata de History; sin deploy .ckdb).
+    @Attribute(.preserveValueOnDeletion) var id: UUID = UUID()
     var name: String = ""
     var colorHex: String = "#FF9F0A"
     var iconName: String = "tag.fill"

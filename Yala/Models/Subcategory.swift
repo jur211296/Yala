@@ -19,7 +19,10 @@ final class Subcategory {
     /// Stable identifier for App Intents (Siri/Shortcuts). Unaffected by name/category renames.
     /// CloudKit: must have default value, no `@Attribute(.unique)`. Migration: legacy entities
     /// receive a UUID at first save via AppBootstrapper.persistAppEntityShortcutIDsIfNeeded.
-    var shortcutID: UUID = UUID()
+    /// I12: identidad de sync del Modo Nube (`sync_id_source = Subcategory.shortcutID`).
+    /// `.preserveValueOnDeletion` para que el history tombstone conserve el `shortcutID` (metadata de
+    /// History; NO es un campo CloudKit nuevo → sin deploy .ckdb).
+    @Attribute(.preserveValueOnDeletion) var shortcutID: UUID = UUID()
 
     /// Indica si esta subcategoría proviene de la semilla inicial
     var isDefaultSeed: Bool = false

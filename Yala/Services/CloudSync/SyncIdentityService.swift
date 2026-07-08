@@ -126,6 +126,40 @@ enum SyncIdentityService {
                 context: context, now: now, knownSyncIDs: &knownSyncIDs
             )
 
+            // I12 commit B: las 8 restantes. Account/Subcategory usan `shortcutID`; el resto `id`.
+            try backfillIdentityType(
+                Account.self, entityType: SyncEntityType.account, id: { $0.shortcutID },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                Subcategory.self, entityType: SyncEntityType.subcategory, id: { $0.shortcutID },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                Tag.self, entityType: SyncEntityType.tag, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                NotificationItem.self, entityType: SyncEntityType.notificationItem, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                CashFlowPlan.self, entityType: SyncEntityType.cashFlowPlan, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                CashFlowLine.self, entityType: SyncEntityType.cashFlowLine, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                CashFlowOverride.self, entityType: SyncEntityType.cashFlowOverride, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+            try backfillIdentityType(
+                GroupBridgePreference.self, entityType: SyncEntityType.groupBridgePreference, id: { $0.id },
+                context: context, now: now, knownSyncIDs: &knownSyncIDs
+            )
+
             if context.hasChanges {
                 try context.save()
             }

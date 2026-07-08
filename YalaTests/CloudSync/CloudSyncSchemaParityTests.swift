@@ -214,14 +214,23 @@ struct CloudSyncSchemaParityTests {
         }
     }
 
-    /// Las cableadas en I12 usan su UUID EXISTENTE como identidad de sync (Budget/ScheduledPayment = `id`;
-    /// las de commit B añadirán `shortcutID`/`id`). El campo debe existir en el schema para que el
-    /// tombstone (`.preserveValueOnDeletion`) y el fetch por identidad lo resuelvan.
+    /// Las cableadas en I12 usan su UUID EXISTENTE como identidad de sync (Account/Subcategory =
+    /// `shortcutID`; el resto = `id`). El campo debe existir en el schema para que el tombstone
+    /// (`.preserveValueOnDeletion`) y el fetch por identidad lo resuelvan.
     @Test func wiredIdentityEntities_haveIdentityProperty() {
         // (tipo, campo de identidad)
         let wired: [(any PersistentModel.Type, String)] = [
             (Budget.self, "id"),
             (ScheduledPayment.self, "id"),
+            // Commit B: las 8 restantes.
+            (Account.self, "shortcutID"),
+            (Subcategory.self, "shortcutID"),
+            (Tag.self, "id"),
+            (NotificationItem.self, "id"),
+            (CashFlowPlan.self, "id"),
+            (CashFlowLine.self, "id"),
+            (CashFlowOverride.self, "id"),
+            (GroupBridgePreference.self, "id"),
         ]
         for (type, field) in wired {
             #expect(propertyNames(type).contains(field),

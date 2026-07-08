@@ -46,7 +46,10 @@ enum EstimationMethod: String, CaseIterable {
 
 @Model
 final class CashFlowLine {
-    var id: UUID = UUID()
+    // I12: identidad de sync del Modo Nube (`sync_id_source = CashFlowLine.id`).
+    // `.preserveValueOnDeletion` para que el history tombstone conserve el `id` (metadata de History;
+    // sin deploy .ckdb).
+    @Attribute(.preserveValueOnDeletion) var id: UUID = UUID()
     var name: String = ""
     var isIncome: Bool = false
     var sortOrder: Int = 0

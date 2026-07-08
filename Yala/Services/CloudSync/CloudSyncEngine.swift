@@ -359,18 +359,23 @@ final class CloudSyncEngine {
     ///     SON syncables → `cascade`. ÚNICO padre verificado.
     /// EXCLUIDOS (no borran hijos syncables o no son deletes):
     ///   • `deleteTag` (Tag NO es syncable; los TX/drafts/favoritos se ACTUALIZAN, no se borran → upsert).
-    ///   • `deleteCategory`/`deleteSubcategory`/`deleteAccount`/`deleteBudget` (los hijos son
-    ///     Subcategory/nullify, no deletes de syncables; el propio Category borrado es el delete de nivel
-    ///     superior pedido por el usuario, no una cascada).
-    ///   • cascada de SCHEMA `CashFlowPlan → CashFlowLine → CashFlowOverride` (ninguna es syncable).
+    ///   • `deleteCategory`/`deleteSubcategory`/`deleteAccount`/`deleteBudget` (los hijos de Account/
+    ///     Subcategory son `.nullify`, no deletes de syncables; el propio Category/Account/Subcategory
+    ///     borrado es el delete de nivel superior pedido por el usuario, no una cascada).
     ///   • `SubcategoryTransferViewModel.deleteTransactions` (borra TX sin borrar un padre en el mismo
     ///     save → bulk del usuario = `user`).
     ///   • `CategoryDeduplicationService` (I9 → `dedup`) / `DataWipeService` (I12 → `wipe`): sin señal de
     ///     call-site hoy → caen en `user`/`cascade`. Comentario-guardia: I9/I12 marcarán un author
     ///     dedicado y esta clasificación se afinará entonces (el reason es metadata de auditoría — la
     ///     clasificación conservadora NO compromete correctness: el backend mantiene `deleted=true` igual).
+    ///
+    /// I12 commit B: `CashFlowPlan` y `CashFlowLine` AHORA son syncables (identidad = `id`) y cascadean
+    /// deletes a syncables (`CashFlowPlan .cascade→ CashFlowLine .cascade→ CashFlowOverride`) → se añaden
+    /// como cascade-parents (mismo trato conservador que `ScheduledPayment`; audit-only, correctness-neutral).
     static let cascadeParentEntityNames: Set<String> = [
         "ScheduledPayment",
+        "CashFlowPlan",
+        "CashFlowLine",
     ]
 
     /// Authors cuyas transacciones se clasifican `migration`. Bucket por COMPLETITUD (§c.1): hoy solo
@@ -625,6 +630,15 @@ final class CloudSyncEngine {
         // I12: identidad = UUID persistido (`id`), nunca nil → el barrido NO las acuña, solo indexa.
         var budget: [PersistentIdentifier: Budget] = [:]
         var scheduledPayment: [PersistentIdentifier: ScheduledPayment] = [:]
+        // I12 commit B: las 8 restantes (identidad = `shortcutID` en Account/Subcategory; `id` en el resto).
+        var account: [PersistentIdentifier: Account] = [:]
+        var subcategory: [PersistentIdentifier: Subcategory] = [:]
+        var tag: [PersistentIdentifier: Tag] = [:]
+        var notificationItem: [PersistentIdentifier: NotificationItem] = [:]
+        var cashFlowPlan: [PersistentIdentifier: CashFlowPlan] = [:]
+        var cashFlowLine: [PersistentIdentifier: CashFlowLine] = [:]
+        var cashFlowOverride: [PersistentIdentifier: CashFlowOverride] = [:]
+        var groupBridgePreference: [PersistentIdentifier: GroupBridgePreference] = [:]
     }
 
     /// Despacha el cambio al handler concreto por entity name. Los tipos personales aún NO cableados
@@ -691,6 +705,54 @@ final class CloudSyncEngine {
                                 liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
                                 identityKeyPath: \ScheduledPayment.id, emission: EntityEmissionMap.scheduledPayment,
                                 lookup: lookups.scheduledPayment, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.account:
+            try translateChange(change, type: Account.self, entityType: entityName,
+                                liveSyncID: { $0.shortcutID }, tombstoneSyncID: { $0.tombstone[\.shortcutID] as? UUID },
+                                identityKeyPath: \Account.shortcutID, emission: EntityEmissionMap.account,
+                                lookup: lookups.account, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.subcategory:
+            try translateChange(change, type: Subcategory.self, entityType: entityName,
+                                liveSyncID: { $0.shortcutID }, tombstoneSyncID: { $0.tombstone[\.shortcutID] as? UUID },
+                                identityKeyPath: \Subcategory.shortcutID, emission: EntityEmissionMap.subcategory,
+                                lookup: lookups.subcategory, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.tag:
+            try translateChange(change, type: Tag.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \Tag.id, emission: EntityEmissionMap.tag,
+                                lookup: lookups.tag, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.notificationItem:
+            try translateChange(change, type: NotificationItem.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \NotificationItem.id, emission: EntityEmissionMap.notificationItem,
+                                lookup: lookups.notificationItem, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.cashFlowPlan:
+            try translateChange(change, type: CashFlowPlan.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \CashFlowPlan.id, emission: EntityEmissionMap.cashFlowPlan,
+                                lookup: lookups.cashFlowPlan, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.cashFlowLine:
+            try translateChange(change, type: CashFlowLine.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \CashFlowLine.id, emission: EntityEmissionMap.cashFlowLine,
+                                lookup: lookups.cashFlowLine, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.cashFlowOverride:
+            try translateChange(change, type: CashFlowOverride.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \CashFlowOverride.id, emission: EntityEmissionMap.cashFlowOverride,
+                                lookup: lookups.cashFlowOverride, tx: tx,
+                                tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
+        case SyncEntityType.groupBridgePreference:
+            try translateChange(change, type: GroupBridgePreference.self, entityType: entityName,
+                                liveSyncID: { $0.id }, tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
+                                identityKeyPath: \GroupBridgePreference.id, emission: EntityEmissionMap.groupBridgePreference,
+                                lookup: lookups.groupBridgePreference, tx: tx,
                                 tombstoneReason: tombstoneReason, rows: &rows, seen: &seen)
         default:
             // Personal-pero-aún-sin-identidad (las restantes de los 16). No se traduce todavía.
@@ -866,6 +928,15 @@ final class CloudSyncEngine {
         // un incidente D4, no una asignación defensiva). Fetch CONCRETO por tipo.
         lookups.budget = try indexType(Budget.self, context: context)
         lookups.scheduledPayment = try indexType(ScheduledPayment.self, context: context)
+        // I12 commit B: las 8 restantes — identidad = UUID persistido (`shortcutID`/`id`) → solo indexar.
+        lookups.account = try indexType(Account.self, context: context)
+        lookups.subcategory = try indexType(Subcategory.self, context: context)
+        lookups.tag = try indexType(Tag.self, context: context)
+        lookups.notificationItem = try indexType(NotificationItem.self, context: context)
+        lookups.cashFlowPlan = try indexType(CashFlowPlan.self, context: context)
+        lookups.cashFlowLine = try indexType(CashFlowLine.self, context: context)
+        lookups.cashFlowOverride = try indexType(CashFlowOverride.self, context: context)
+        lookups.groupBridgePreference = try indexType(GroupBridgePreference.self, context: context)
         if context.hasChanges {
             // Autor por DEFECTO (no `outboxSaveAuthor`): el cambio de syncID DEBE quedar en el History
             // para que la próxima vuelta lo procese (y lo salte por ser syncID-only), no ocultarse.
