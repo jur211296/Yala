@@ -175,6 +175,26 @@ enum CloudSyncBreadcrumb {
     static func clockReceiveRejected(reason: String) {
         logger.notice("CloudSyncApply clockReceiveRejected reason=\(reason, privacy: .public)")
     }
+
+    // MARK: Reconciliadores (I8f-2) — sin PII (ids de par/expense y counts; NUNCA montos)
+
+    /// El reconciler del transfer-pair REPARÓ el lado perdedor de un par divergente (LWW por
+    /// `SyncUnitClock['money']`).
+    static func reconcilerRepairedPair(pairID: String) {
+        logger.notice("CloudSyncReconciler repairedPair id=\(pairID, privacy: .public)")
+    }
+
+    /// El reconciler del split PODÓ `count` TXs virtuales negativas de un `splitExpenseID` con ambas
+    /// formas presentes (regla interina real-gana; ver CloudSyncReconciler).
+    static func reconcilerPrunedSplit(splitExpenseID: String, count: Int) {
+        logger.notice("CloudSyncReconciler prunedSplit id=\(splitExpenseID, privacy: .public) count=\(count, privacy: .public)")
+    }
+
+    /// Un par divergente NO se tocó por falta de señal (`SyncUnitClock['money']` ausente/no parseable
+    /// en algún lado, o empate exacto). Rama conservadora — nunca se adivina con un monto.
+    static func reconcilerNoSignal(pairID: String) {
+        logger.notice("CloudSyncReconciler noSignal id=\(pairID, privacy: .public)")
+    }
 }
 
 // MARK: - CloudSyncEngine
@@ -389,9 +409,14 @@ final class CloudSyncEngine {
                 //     redundante y el canario de divergencia lo delata → NO abortamos el drain. Requiere
                 //     `outboxMirror` + `currentUserID` (nil en I8d DARK → no-op).
                 writeMirror(rows: rows)
-                // (2) insertar (3) save.
+                // (2) insertar (3) save. I8f-2 (D-A): el `SyncUnitClock` se actualiza en el MISMO save
+                //     que la fila de outbox (upsert = unidades emitidas → HLC acuñado; tombstone =
+                //     borrar la fila de clock — higiene) → crash-atómico con la cola.
                 try saveWithAuthor(context, Self.outboxSaveAuthor) {
-                    for row in rows { context.insert(row.makeModel()) }
+                    for row in rows {
+                        context.insert(row.makeModel())
+                        updateUnitClock(for: row, context: context)
+                    }
                 }
             }
 
@@ -831,6 +856,31 @@ final class CloudSyncEngine {
             print("CloudSyncEngine: encodeFieldHlcs error: \(error)")
             #endif
             return "{}"
+        }
+    }
+
+    // MARK: - SyncUnitClock (I8f-2, D-A) — hook del drain
+
+    /// Actualiza el `SyncUnitClock` para UNA fila nueva de outbox, DENTRO del save del outbox (el
+    /// caller garantiza la atomicidad). Upsert → merge MAX de las unidades emitidas (el `fieldHlcsJSON`
+    /// de la fila ES la verdad de qué unidades viajaron con qué HLC). Tombstone → borrar la fila de
+    /// clock (higiene del review; si el modelo resucita, drain/apply la re-pueblan).
+    private func updateUnitClock(for row: PendingOutboxRow, context: ModelContext) {
+        switch row.op {
+        case .tombstone:
+            SyncUnitClockStore.delete(syncID: row.syncID, context: context)
+        case .upsert:
+            // `entityType` de la fila es NOMBRE DE CLASE; el clock coordina por TABLA (como el wire).
+            guard let table = EntityEmissionMap.table(forClass: row.entityType) else {
+                #if DEBUG
+                print("CloudSyncEngine.updateUnitClock: clase sin tabla \(row.entityType) — clock omitido")
+                #endif
+                return
+            }
+            guard let json = row.fieldHlcsJSON else { return }  // sin unidades (no ocurre en upserts)
+            let units = SyncUnitClockStore.decodeMap(json)
+            SyncUnitClockStore.upsert(syncID: row.syncID, entityTable: table,
+                                      unitHlcs: units, context: context)
         }
     }
 

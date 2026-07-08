@@ -90,18 +90,27 @@ extension CloudSyncEngine {
         // Drenar al entrar: captura las escrituras locales pendientes ANTES del primer fetch.
         drainOnce(context: context)
 
-        let outcome = await pullLoop(client: client, context: context, now: now,
-                                     pageLimit: pageLimit, maxPages: maxPages)
+        let (outcome, pagesApplied) = await pullLoop(client: client, context: context, now: now,
+                                                     pageLimit: pageLimit, maxPages: maxPages)
         // F-2: pase de re-resolución de refs colgadas — corre SIEMPRE al final del ciclo (también en
         // salidas tempranas: lo aplicado hasta aquí es durable y puede haber destapado targets).
         reresolveDanglingRefs(context: context)
+        // I8f-2 (D-D): reconciliadores cross-fila — SOLO si el ciclo aplicó ≥1 página (un ciclo vacío no
+        // pudo introducir divergencia nueva), DESPUÉS de los danglers (una ref recién resuelta completa
+        // la clasificación real-vs-virtual del split). Cada uno en su propio save con rollback-on-fail,
+        // bajo autor NORMAL (sus writes DEBEN drenar/subir en el próximo ciclo).
+        if pagesApplied > 0 {
+            runPostPullReconcilers(context: context)
+        }
         return outcome
     }
 
-    /// El loop de páginas (separado para que el pase F-2 corra en TODAS las salidas).
+    /// El loop de páginas (separado para que los pases F-2/I8f-2 corran en TODAS las salidas). Devuelve
+    /// también `pagesApplied` aparte del outcome (los cases `.sessionExpired`/`.accountUnavailable` no
+    /// lo llevan, pero el gate de los reconcilers necesita saber si HUBO páginas antes de esa salida).
     private func pullLoop(
         client: SyncPullClient, context: ModelContext, now: Date, pageLimit: Int, maxPages: Int
-    ) async -> PullApplyOutcome {
+    ) async -> (PullApplyOutcome, Int) {
         var pagesApplied = 0
         while pagesApplied < maxPages {
             let since: Int64
@@ -111,14 +120,16 @@ extension CloudSyncEngine {
                 #if DEBUG
                 print("CloudSyncEngine.pullAndApplyOnce: loadCursor falló: \(error)")
                 #endif
-                return .transient(pagesApplied: pagesApplied)
+                return (.transient(pagesApplied: pagesApplied), pagesApplied)
             }
 
             let outcome = await client.pull(since: since, limit: pageLimit)
             switch outcome {
             case .page(let page):
                 // Página vacía = cola agotada (nada nuevo desde `since`) → sin avanzar cursor.
-                guard !page.deltas.isEmpty else { return .completed(pagesApplied: pagesApplied) }
+                guard !page.deltas.isEmpty else {
+                    return (.completed(pagesApplied: pagesApplied), pagesApplied)
+                }
                 // F-1: RE-drenar SÍNCRONO inmediatamente antes del apply — sin `await` entre medio.
                 // Cubre toda edición local que aterrizó durante la suspensión del `await pull`: su fila
                 // de outbox queda escrita y el guard D-1 protege sus unidades del full-row remoto.
@@ -126,23 +137,54 @@ extension CloudSyncEngine {
                 guard applyPage(page, context: context, now: now) else {
                     // F-3: el save de página falló (rollback ya hecho) → cortar; el cursor NO avanzó,
                     // así que reintentar el mismo `since` en este loop podría girar hasta maxPages.
-                    return .transient(pagesApplied: pagesApplied)
+                    return (.transient(pagesApplied: pagesApplied), pagesApplied)
                 }
                 pagesApplied += 1
                 // Última página (menos deltas que el límite) → agotado.
                 if page.deltas.count < pageLimit {
-                    return .completed(pagesApplied: pagesApplied)
+                    return (.completed(pagesApplied: pagesApplied), pagesApplied)
                 }
                 // Página llena → puede haber más: siguiente vuelta con el cursor ya avanzado.
             case .sessionExpired:
-                return .sessionExpired
+                return (.sessionExpired, pagesApplied)
             case .accountUnavailable:
-                return .accountUnavailable
+                return (.accountUnavailable, pagesApplied)
             case .transient:
-                return .transient(pagesApplied: pagesApplied)
+                return (.transient(pagesApplied: pagesApplied), pagesApplied)
             }
         }
-        return .completed(pagesApplied: pagesApplied)  // tope de páginas alcanzado (defensivo)
+        return (.completed(pagesApplied: pagesApplied), pagesApplied)  // tope defensivo alcanzado
+    }
+
+    // MARK: - Reconciliadores post-pull (I8f-2, D-D)
+
+    /// Corre los 2 reconciliadores cross-fila, cada uno en su propio save con rollback-on-fail (patrón
+    /// F-3), bajo autor NORMAL — el próximo drain captura sus writes (repair del money / tombstones de
+    /// la poda) y los sube con HLC fresco. Un fallo de uno NO impide el otro. `internal` para tests.
+    /// REQUISITO I9 (wiring): estos saves de autor NORMAL sobre el store personal deben respetar el
+    /// gate de QUIESCENCIA del import cuando el path `.icloud` coexista (regla anti-crash-loop de
+    /// CLAUDE.md) — en `.cloud` puro aplica la quiescencia del propio motor (SyncQuiescenceCoordinator).
+    func runPostPullReconcilers(context: ModelContext) {
+        do {
+            _ = CloudSyncReconciler.reconcileTransferPairDivergence(context: context)
+            if context.hasChanges { try context.save() }  // autor NORMAL (debe drenar/subir)
+        } catch {
+            context.rollback()
+            CloudSyncBreadcrumb.applyPageFailed(reason: "reconcilerTransfer:\(error)")
+            #if DEBUG
+            print("CloudSyncEngine.runPostPullReconcilers: transfer save falló: \(error)")
+            #endif
+        }
+        do {
+            _ = CloudSyncReconciler.reconcileSplitRepresentations(context: context)
+            if context.hasChanges { try context.save() }  // autor NORMAL
+        } catch {
+            context.rollback()
+            CloudSyncBreadcrumb.applyPageFailed(reason: "reconcilerSplit:\(error)")
+            #if DEBUG
+            print("CloudSyncEngine.runPostPullReconcilers: split save falló: \(error)")
+            #endif
+        }
     }
 
     /// Aplica UNA página en UN `saveWithAuthor` (D-5, atómico): por cada delta → apply|quarantine +
@@ -241,6 +283,9 @@ extension CloudSyncEngine {
             if let identity = EntityApplyMap.fetchSyncIdentity(bySyncID: delta.syncID, context: context) {
                 context.delete(identity)
             }
+            // I8f-2 (D-A): higiene del clock por-unidad en el MISMO save de página (si el modelo
+            // resucita por un upsert posterior, drain/apply lo re-pueblan).
+            SyncUnitClockStore.delete(syncID: delta.syncID, context: context)
 
         case .upsert:
             // D-8: sin fila local → born-remote (crear + fijar syncID para que el sweep del drain no
@@ -260,13 +305,24 @@ extension CloudSyncEngine {
             // locales de una fila EXISTENTE; una fila outbox huérfana (upsert pendiente de un syncID
             // sin modelo) saltaría p.ej. el grupo money y dejaría el born-remote con los defaults del
             // init ($0, moneda equivocada) = fila incoherente. El full-row remoto se materializa ÍNTEGRO.
+            // I8f-2 (D-A): las unidades APLICADAS (no las saltadas por D-1 — la saltada conserva el HLC
+            // local pendiente que el drain ya escribió en el clock) alimentan el `SyncUnitClock` con el
+            // HLC remoto de esa unidad, en el MISMO save de página.
+            var appliedUnits: [String: String] = [:]
             for (column, value) in delta.fields {
                 guard let applier = entry.appliers[column] else { continue }  // p.ej. local_day / no cableada
+                let unit = entry.unit(for: column)
                 if !isNew {
-                    let unit = entry.unit(for: column)
                     if shouldSkipUnit(unit, remoteFieldHlcs: delta.fieldHlcs, guard: g) { continue }  // D-1
                 }
                 applier.apply(model, value, context)
+                if let remoteUnitHLC = delta.fieldHlcs[unit] {
+                    appliedUnits[unit] = remoteUnitHLC
+                }
+            }
+            if !appliedUnits.isEmpty {
+                SyncUnitClockStore.upsert(syncID: delta.syncID, entityTable: delta.entityType,
+                                          unitHlcs: appliedUnits, context: context)
             }
             if isNew {
                 ensureIdentity(for: model, entry: entry, syncID: delta.syncID, context: context)

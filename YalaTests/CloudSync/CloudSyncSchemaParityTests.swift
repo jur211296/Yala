@@ -144,6 +144,23 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(SyncDanglingRef.self) == expected)
     }
 
+    // MARK: - (b·I8f-2) SyncUnitClock
+
+    @Test func syncUnitClock_entityName_isAnchoredLiteral() {
+        #expect(entity(SyncUnitClock.self)?.name == "SyncUnitClock")
+    }
+
+    @Test func syncUnitClock_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "syncID",
+            "entityTable",
+            "unitHlcsJSON",
+            "updatedAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(SyncUnitClock.self) == expected)
+    }
+
     // MARK: - (c) Membresía de stores
 
     @Test func personalStore_doesNotContain_syncMetaEntities() {
@@ -153,11 +170,12 @@ struct CloudSyncSchemaParityTests {
         #expect(!personal.contains("SyncCursor"))
         #expect(!personal.contains("SyncQuarantine"))
         #expect(!personal.contains("SyncDanglingRef"))
+        #expect(!personal.contains("SyncUnitClock"))
     }
 
     @Test func syncMetaStore_containsExactly_syncMetaEntities_andIsCloudKitNone() {
         let expected: Set<String> = ["SyncIdentity", "SyncOutbox", "SyncCursor", "SyncQuarantine",
-                                     "SyncDanglingRef"]
+                                     "SyncDanglingRef", "SyncUnitClock"]
         #expect(entityNames(SwiftDataConfiguration.syncMetaSchema) == expected)
 
         let config = SwiftDataConfiguration.syncMetaConfiguration
