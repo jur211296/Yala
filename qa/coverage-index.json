@@ -2095,6 +2095,22 @@
       "coverage": "unit:YalaTests/CloudSync/MigrationStateMachineTests (38: camino feliz con secuencia exacta de effects [faro TEMPRANO en claim, marcador CloudKit ÚLTIMO], kill-resume en cada estado/sub-estado de cutover, reclaim idempotente mismo device, S9 timeout-red≠mismatch con topes exactos y contadores independientes, ventana localModeSet→mirrorOff requiresParallelHistoryCapture, markerReconciliation 3 ramas, follower waitingForLeader, Codable round-trip journal) — pure-logic I10, SIN wiring (bloqueado por spikes device S5/S6/S7); notas del review adversarial para el wiring en ~/.claude/plans/i10-migration-state-machine-pure.md",
       "owner": "",
       "lastVerified": "2026-07-08"
+    },
+    {
+      "area": "cloud-prefs-sync",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/PrefValueCodec.swift",
+        "Yala/Services/CloudSync/PreferenceMergeLogic.swift",
+        "Yala/Services/CloudSync/PrefsOutbox.swift",
+        "Yala/Services/CloudSync/PrefsSyncClient.swift",
+        "Yala/App/Services/PreferenceSyncService.swift",
+        "Yala/App/Models/OnboardingMode.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/CloudSync/PrefValueCodecTests,PreferenceMergeLogicTests,PrefsOutboxTests,PrefsSyncClientTests (I13: codec round-trip por tipo, merge oráculo-primero [never-downgrade todos los pares de rank, vacío-válido Panel, guard no-vacío, appLanguage remove-on-empty], outbox durable [enqueue sobrescribe/HLC monótono/owner-scoping/purga], transporte URLProtocol stub) + e2e:YalaTests/CloudSync/PrefsSyncE2EStagingTests (push 3 tipos→pull→merge + LWW stale→noop contra Worker staging real, gate YALA_CLOUD_E2E) — I13 DARK (storageMode siempre .icloud; el refactor de applyRemoteValues es extracción byte-idéntica). Rama .cloud del set()/bootstrap/runtime sin wiring de producción hasta I10/I14",
+      "owner": "",
+      "lastVerified": "2026-07-08"
     }
   ]
 }

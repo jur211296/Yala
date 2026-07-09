@@ -113,6 +113,11 @@ final class CloudSyncRuntime {
     private let session: CloudSyncSessionProviding
     private let onRemoteChangesApplied: (() -> Void)?
 
+    /// I13 (prefs sync): transporte + cola durable de preferencias. `nil` = paso de prefs deshabilitado
+    /// (tests del runtime que no lo ejercitan). El merge del pull lo aplica `PreferenceSyncService.shared`.
+    private let prefsClient: PrefsSyncClient?
+    private let prefsOutbox: PrefsOutbox?
+
     /// El contexto sobre el que opera (el `mainContext` compartido en prod). Se fija en `start()`.
     private var context: ModelContext?
 
@@ -151,7 +156,9 @@ final class CloudSyncRuntime {
         mirror: SyncOutboxMirror?,
         coordinator: SyncQuiescenceCoordinator,
         session: CloudSyncSessionProviding,
-        onRemoteChangesApplied: (() -> Void)?
+        onRemoteChangesApplied: (() -> Void)?,
+        prefsClient: PrefsSyncClient? = nil,
+        prefsOutbox: PrefsOutbox? = nil
     ) {
         self.engine = engine
         self.pushClient = pushClient
@@ -161,6 +168,8 @@ final class CloudSyncRuntime {
         self.coordinator = coordinator
         self.session = session
         self.onRemoteChangesApplied = onRemoteChangesApplied
+        self.prefsClient = prefsClient
+        self.prefsOutbox = prefsOutbox
     }
 
     // MARK: - Gate puro de arranque (AccountClaimDecision, §f.1)
@@ -212,7 +221,10 @@ final class CloudSyncRuntime {
             session: session,
             // Fan-out cableado por el observer DARK de AppBootstrapper vía `.cloudSyncAppliedRemoteChanges`
             // (el runtime SIEMPRE postea la Notification además de este closure opcional).
-            onRemoteChangesApplied: nil
+            onRemoteChangesApplied: nil,
+            // I13: prefs sync (transporte + cola durable App Group). Mismos providers de sesión/attest.
+            prefsClient: PrefsSyncClient(tokenProvider: token, attestProvider: attest),
+            prefsOutbox: PrefsOutbox()
         )
     }
 
@@ -299,6 +311,7 @@ final class CloudSyncRuntime {
     func teardownGuestSession() {
         sessionEpoch += 1  // aborta el ciclo en vuelo en su próximo re-chequeo post-await
         mirror?.purgeAll()
+        prefsOutbox?.purgeAll()  // I13/M1: el outbox de prefs contiene VALORES → no puede cruzar owners
         engine.currentUserID = nil
         cadenceTask?.cancel()
         cadenceTask = nil
@@ -459,6 +472,12 @@ final class CloudSyncRuntime {
         // 5) Fan-out post-apply (§i.4): solo si llegó algo remoto.
         if pagesApplied > 0 { fanOutRemoteChangesApplied() }
 
+        // 5.5) Prefs sync (I13): push del outbox de prefs + pull/merge, MISMA cadencia que el dominio
+        //      (latencia ≈60s foreground — decisión v1, paridad con la latencia de dominio). Piggyback
+        //      tras el push/pull de dominio. Aborta limpio si un teardown cambió la época.
+        await syncPrefsOnce(epoch: epoch)
+        guard epoch == sessionEpoch else { return .coalesced }
+
         // 6) Primer pull completado + contador de Merkle (solo avanza en ciclos `.completed`) + purga
         //    de history (DOBLE-DARK: syncRuntimeEnabled gatea todo el runtime Y historyPurgeEnabled
         //    gatea la purga — se togglea SOLO tras el veredicto del spike device S2, ver CloudSyncFlags).
@@ -504,6 +523,57 @@ final class CloudSyncRuntime {
             CloudSyncBreadcrumb.merkleRemediated()
         }
         return verdict
+    }
+
+    // MARK: - Prefs sync (I13)
+
+    /// UN ciclo de sync de preferencias: push del outbox (owner-scoped) → purga de las aplicadas; luego
+    /// pull por cursor → merge vía `PreferenceSyncService` (semánticas NO-LWW client-side) → avance del
+    /// cursor (persistido en el propio archivo del outbox, NO en `SyncCursor`). No-op si el paso está
+    /// deshabilitado (deps nil) o no hay sesión. Cero silencios: los fallos de I/O del outbox se loguean.
+    ///
+    /// SERIO-2: re-verifica `sessionEpoch` tras cada `await` — un teardown durante un push/pull suspendido
+    /// aborta SIN purgar el outbox ni avanzar el cursor (no se toca estado bajo una sesión que ya no existe).
+    private func syncPrefsOnce(epoch: Int) async {
+        // S1 (review I13): gate DURO por storageMode — espeja el de `set()`/`bootstrap()`. Sin él, un
+        // device `.icloud` con syncRuntimeEnabled=true (ventana de SPIKES de device) pullearía prefs del
+        // backend mientras las escrituras van a iKV = split-brain (y los markers de test de staging
+        // pisarían prefs reales del user de spike). El sync de prefs solo existe en `.cloud`.
+        guard CloudSyncFlags.storageMode == .cloud else { return }
+        guard let prefsClient, let prefsOutbox, let userID = session.currentUserID else { return }
+
+        // Push: subir las entries del owner actual (owner-scoping M1).
+        let entries = prefsOutbox.entries(forUserID: userID)
+        if !entries.isEmpty {
+            let wire = entries.map { WirePref(key: $0.key, value: $0.entry.value, hlc: $0.entry.hlc) }
+            let outcome = await prefsClient.push(wire)
+            guard epoch == sessionEpoch else { return }
+            if case .completed(let results) = outcome {
+                // `applied`/`noop` (LWW resuelto server-side) → purgar del outbox. `reason` != nil (upstream
+                // transitorio) NO llega como `applied`/`noop` → la entry queda y se reintenta.
+                let done = results.filter { $0.reason == nil }.map(\.key)
+                do { try prefsOutbox.removeEntries(keys: done) } catch {
+                    #if DEBUG
+                    print("CloudSyncRuntime.syncPrefsOnce: removeEntries falló: \(error)")
+                    #endif
+                }
+            }
+        }
+
+        // Pull: bajar desde el cursor y mergear.
+        let since = prefsOutbox.pullCursor
+        let pullOutcome = await prefsClient.pull(since: since)
+        guard epoch == sessionEpoch else { return }
+        if case .page(let page) = pullOutcome {
+            PreferenceSyncService.shared.applyPulledPrefs(page.prefs)
+            if page.maxServerSeq > since {
+                do { try prefsOutbox.setPullCursor(page.maxServerSeq) } catch {
+                    #if DEBUG
+                    print("CloudSyncRuntime.syncPrefsOnce: setPullCursor falló: \(error)")
+                    #endif
+                }
+            }
+        }
     }
 
     // MARK: - Helpers

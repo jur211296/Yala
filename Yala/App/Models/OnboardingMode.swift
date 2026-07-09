@@ -18,7 +18,9 @@ enum OnboardingMode: String, Codable {
 
     /// Ordering for never-downgrade merge rule.
     /// Remote sync never overwrites a higher-rank local value.
-    var rank: Int {
+    /// `nonisolated`: valor puro consumido por `PreferenceMergeLogic` (lógica de merge nonisolated) bajo
+    /// `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`.
+    nonisolated var rank: Int {
         switch self {
         case .full: return 0
         case .groupInvite: return 1

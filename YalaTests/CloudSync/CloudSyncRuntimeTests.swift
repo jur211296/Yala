@@ -90,7 +90,9 @@ struct CloudSyncRuntimeTests {
         mirror: SyncOutboxMirror? = nil,
         coordinator: SyncQuiescenceCoordinator? = nil,
         session: StubCloudSession? = nil,
-        onRemoteChangesApplied: (() -> Void)? = nil
+        onRemoteChangesApplied: (() -> Void)? = nil,
+        prefsSession: StubSession? = nil,
+        prefsOutbox: PrefsOutbox? = nil
     ) -> CloudSyncRuntime {
         CloudSyncRuntime(
             engine: engine ?? CloudSyncEngine(),
@@ -100,7 +102,11 @@ struct CloudSyncRuntimeTests {
             mirror: mirror,
             coordinator: coordinator ?? SyncQuiescenceCoordinator(icloudQuiescent: { true }, modeProvider: { .icloud }),
             session: session ?? StubCloudSession(),
-            onRemoteChangesApplied: onRemoteChangesApplied
+            onRemoteChangesApplied: onRemoteChangesApplied,
+            prefsClient: prefsSession.map {
+                PrefsSyncClient(baseURL: URL(string: "https://x.test")!, tokenProvider: { "jwt" }, urlSession: $0)
+            },
+            prefsOutbox: prefsOutbox
         )
     }
 
@@ -128,6 +134,62 @@ struct CloudSyncRuntimeTests {
         let runtime = makeRuntime(session: StubCloudSession(userID: nil))
         await runtime.start(context: context)
         #expect(runtime.state == .idleSignedOut)
+    }
+
+    // MARK: - S1 (review I13): el paso de prefs del ciclo está gateado por storageMode
+
+    /// En `.icloud` (default SSOT hoy), el paso 5.5 de prefs NO corre aunque las deps estén cableadas
+    /// y haya entries pendientes — sin este gate, un device de SPIKE (.icloud + runtime ON) haría
+    /// split-brain: escrituras a iKV, lecturas del backend (y los markers de staging pisarían prefs
+    /// reales). Regresión del fix S1.
+    @Test func syncCycle_prefsStep_gatedOff_inICloudMode() async throws {
+        let prev = CloudSyncFlags.syncRuntimeEnabled
+        CloudSyncFlags.syncRuntimeEnabled = true
+        defer { CloudSyncFlags.syncRuntimeEnabled = prev }
+        // CloudSyncFlags.storageMode queda en su default `.icloud` — es el caso bajo test.
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let prefsDir = freshDir(); defer { cleanup(prefsDir) }
+        let prefsOutbox = PrefsOutbox(directoryURL: prefsDir)
+        try prefsOutbox.enqueue(key: "userName", userID: "u1", value: .string("Spike"),
+                                now: Date(timeIntervalSince1970: 1_700_000_000))
+        let prefsSession = StubSession(
+            status: 200, body: Data(#"{"results":[{"key":"userName","status":"applied"}]}"#.utf8))
+        let runtime = makeRuntime(session: StubCloudSession(userID: "u1"),
+                                  prefsSession: prefsSession, prefsOutbox: prefsOutbox)
+        _ = await runtime.syncCycle(context: context)
+
+        #expect(prefsSession.callCount == 0)                      // ni push ni pull de prefs
+        #expect(prefsOutbox.entries(forUserID: "u1").count == 1)  // la entry sigue: no se purgó nada
+        #expect(prefsOutbox.pullCursor == 0)
+    }
+
+    /// Contraparte: en `.cloud` el paso SÍ corre (el gate no convierte el sync de prefs en dead code).
+    @Test func syncCycle_prefsStep_runs_inCloudMode() async throws {
+        let prevFlag = CloudSyncFlags.syncRuntimeEnabled
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.syncRuntimeEnabled = true
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags.syncRuntimeEnabled = prevFlag
+            CloudSyncFlags.storageMode = prevMode
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let prefsDir = freshDir(); defer { cleanup(prefsDir) }
+        let prefsOutbox = PrefsOutbox(directoryURL: prefsDir)
+        try prefsOutbox.enqueue(key: "userName", userID: "u1", value: .string("Nube"),
+                                now: Date(timeIntervalSince1970: 1_700_000_000))
+        let prefsSession = StubSession(
+            status: 200, body: Data(#"{"results":[{"key":"userName","status":"applied"}]}"#.utf8))
+        let runtime = makeRuntime(session: StubCloudSession(userID: "u1"),
+                                  prefsSession: prefsSession, prefsOutbox: prefsOutbox)
+        _ = await runtime.syncCycle(context: context)
+
+        #expect(prefsSession.callCount >= 1)                      // el paso corrió
+        #expect(prefsOutbox.entries(forUserID: "u1").isEmpty)     // applied → purgada del outbox
     }
 
     // MARK: - Gate puro de claim (AccountClaimDecision)
