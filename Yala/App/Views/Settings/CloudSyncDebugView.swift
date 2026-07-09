@@ -135,6 +135,9 @@ struct CloudSyncDebugView: View {
         .navigationTitle("Modo Nube · Auth")
         .navigationBarTitleDisplayMode(.inline)
         .task {
+            // Spike S5: re-encuentra la TX desechable de un run anterior (el estado del harness
+            // no sobrevive al relaunch, pero la TX sí) → habilita ir directo al paso 2.
+            spike.recoverDisposableIfNeeded(context: modelContext)
             await model.refreshAttest()
             await model.refreshCredential()
         }
