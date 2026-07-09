@@ -2097,6 +2097,19 @@
       "lastVerified": "2026-07-08"
     },
     {
+      "area": "cloud-bgtask-migration-gate",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/BGTaskMigrationGate.swift",
+        "Yala/Services/CloudSync/MigrationPhaseStore.swift",
+        "Yala/App/BackgroundTaskManager.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/CloudSync/BGTaskMigrationGateTests (matriz EXHAUSTIVA fase×rol×quiescencia — 12 POSITIVOS explícitos primero [estables notStarted/done/failedRollback × reader/writer × quiescent/no → .run incondicional, guard del bug invertido], transitorios reader→suspend siempre, writer→quiescent?run:defer, cutover 5 sub-estados, invariantes recíprocos) + YalaTests/CloudSync/MigrationPhaseStoreTests (override DEBUG round-trip + mapeo espejo→MigrationPhase). Gate §i.9 LIVE en BackgroundTaskManager: hoy fase real=.notStarted constante → .run (idéntico al actual) hasta I10-wiring. device: spike S7 (panel CloudSyncDebugView, DEV_BUILD) — mitad POSITIVA (sin override, disparar los 3 BGTask IDs vía lldb, reports corren) + transitorios simulados (widget SUSPENDE, escritores DIFIEREN, 0 crash) PENDIENTE.",
+      "owner": "",
+      "lastVerified": ""
+    },
+    {
       "area": "cloud-prefs-sync",
       "codeGlobs": [
         "Yala/Services/CloudSync/PrefValueCodec.swift",

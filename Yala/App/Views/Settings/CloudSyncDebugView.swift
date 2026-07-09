@@ -110,6 +110,10 @@ struct CloudSyncDebugView: View {
     @State private var model = CloudSyncDebugModel()
     @State private var spike = SpikeS5Harness()
     @State private var spike6 = SpikeS6Harness()
+    // Spike S7: override de fase simulada (nil = sin override = producción `.notStarted`) + quiescencia
+    // viva (refrescada cada 1s) para mostrar en vivo la decisión del gate §i.9.
+    @State private var selectedS7Phase: MigrationPhaseStore.SimulatedPhase?
+    @State private var s7Quiescent = false
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
@@ -119,6 +123,7 @@ struct CloudSyncDebugView: View {
                 actionsCard
                 spikeS5Card
                 spikeS6Card
+                spikeS7Card
                 if let message = model.lastMessage {
                     Text(message)
                         .font(DS.Typography.caption.monospaced())
@@ -148,6 +153,15 @@ struct CloudSyncDebugView: View {
             // cada 1s — aceptable para tooling DEBUG. Se detiene al cancelarse el .task de la vista.
             while !Task.isCancelled {
                 spike6.refreshHeader(context: modelContext)
+                do { try await Task.sleep(for: .seconds(1)) } catch { break }
+            }
+        }
+        .task {
+            // Spike S7: refleja el override persistido al abrir + refresca la quiescencia viva (1s) para
+            // que la decisión del gate se muestre en vivo.
+            selectedS7Phase = MigrationPhaseStore.shared.simulatedPhase
+            while !Task.isCancelled {
+                s7Quiescent = iCloudSyncService.shared.isImportQuiescent
                 do { try await Task.sleep(for: .seconds(1)) } catch { break }
             }
         }
@@ -343,6 +357,100 @@ struct CloudSyncDebugView: View {
         .padding(DS.Spacing.sm)
         .background(.thBackground)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+    }
+
+    // MARK: - Spike S7 (gate §i.9 de los 3 BGTasks + fase simulada)
+
+    /// La `MigrationPhase` que el gate verá (= exactamente lo que `MigrationPhaseStore.currentPhase`
+    /// devuelve con este override; nil = producción `.notStarted`).
+    private var s7CurrentPhase: MigrationPhase {
+        selectedS7Phase?.migrationPhase ?? .notStarted
+    }
+
+    private func s7Decision(_ role: BGTaskMigrationGate.Role) -> BGTaskMigrationGate.Decision {
+        BGTaskMigrationGate.decide(phase: s7CurrentPhase, isImportQuiescent: s7Quiescent, role: role)
+    }
+
+    private func s7DecisionLabel(_ decision: BGTaskMigrationGate.Decision) -> String {
+        switch decision {
+        case .run:                  return "RUN ✅ · corre el flujo normal"
+        case .suspendAndReschedule: return "SUSPEND ⏸ · setTaskCompleted(false) + re-programa"
+        case .deferAndReschedule:   return "DEFER ⏳ · difiere save() + re-programa"
+        }
+    }
+
+    /// Comandos lldb con los IDs REALES (referencian las constantes del manager → sin drift).
+    private var s7LldbCommands: [(role: String, command: String)] {
+        func cmd(_ id: String) -> String {
+            "e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@\"\(id)\"]"
+        }
+        return [
+            ("widget-refresh · lector", cmd(BackgroundTaskManager.widgetRefreshTaskID)),
+            ("report-notification · escritor", cmd(BackgroundTaskManager.reportNotificationTaskID)),
+            ("report-backup · escritor", cmd(BackgroundTaskManager.reportBackupTaskID)),
+        ]
+    }
+
+    private var spikeS7Card: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Text("Spike S7 · gate §i.9 de los BGTasks")
+                .font(DS.Typography.body.weight(.semibold))
+                .foregroundStyle(.primary)
+            Text("Gate REAL de producción (BackgroundTaskManager) + simulador de fase. SIN override la fase real es SIEMPRE .notStarted → los 3 corren normal (mitad POSITIVA). Simula una fase transitoria para ver SUSPEND (lector) / DEFER (escritor sin quiescencia).")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
+
+            Picker("Fase simulada", selection: $selectedS7Phase) {
+                Text("sin override · producción (.notStarted)")
+                    .tag(MigrationPhaseStore.SimulatedPhase?.none)
+                ForEach(MigrationPhaseStore.SimulatedPhase.allCases, id: \.self) { phase in
+                    Text(phase.label).tag(MigrationPhaseStore.SimulatedPhase?.some(phase))
+                }
+            }
+            .pickerStyle(.menu)
+            .font(DS.Typography.caption)
+            .onChange(of: selectedS7Phase) { _, newValue in
+                MigrationPhaseStore.shared.setSimulatedPhase(newValue)
+            }
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                row("Quiescent", s7Quiescent ? "SÍ · isImportQuiescent" : "NO")
+                row("widget · lector", s7DecisionLabel(s7Decision(.reader)))
+                row("report · escritor", s7DecisionLabel(s7Decision(.writer)))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(DS.Spacing.sm)
+            .background(.thBackground)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+
+            Text("Disparar un BGTask (pausa en el debugger → pega el comando → continue):")
+                .font(DS.Typography.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            ForEach(s7LldbCommands, id: \.role) { entry in
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Text(entry.role)
+                        .font(DS.Typography.caption.weight(.medium))
+                        .foregroundStyle(.tertiary)
+                    Text(entry.command)
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(.primary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(DS.Spacing.sm)
+                .background(.thBackground)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            }
+
+            Text("⚠️ Quita el override (‘sin override’) al terminar — deja la fase en producción .notStarted.")
+                .font(DS.Typography.caption.weight(.medium))
+                .foregroundStyle(.orange)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.lg)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     private func spike6Button(

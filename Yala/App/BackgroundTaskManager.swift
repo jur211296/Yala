@@ -130,8 +130,27 @@ final class BackgroundTaskManager {
     // MARK: - Task Handlers
 
     private func handleWidgetRefreshTask(_ task: BGAppRefreshTask) {
-        // Schedule next refresh
+        // Schedule next refresh (esto ES la re-programación — no dupliques submits abajo)
         scheduleWidgetRefresh()
+
+        // §i.9 gate — widget-refresh es el ÚNICO SOLO-LECTURA. En estados ESTABLES corre normal; en un
+        // estado TRANSITORIO de migración/reversa SUSPENDE (no toca el mainContext a medio hidratar → no
+        // reabre el SIGTRAP de la saga de Grupos). El re-scheduling de arriba hace que iOS lo reintente.
+        // HOY la fase real es SIEMPRE .notStarted → .run: comportamiento IDÉNTICO al actual hasta I10-wiring.
+        let gateDecision = BGTaskMigrationGate.decide(
+            phase: MigrationPhaseStore.shared.currentPhase,
+            isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
+            role: .reader
+        )
+        // `!= .run` (no el case concreto): si un refactor futuro cruzara decisiones de rol, el
+        // fallo debe ser CERRADO (no tocar el mainContext en transición), nunca fail-open al crash.
+        if gateDecision != .run {
+            #if DEBUG
+            print("BackgroundTaskManager: widget-refresh SUSPENDED by §i.9 gate (fase transitoria) — re-programado [\(gateDecision)]")
+            #endif
+            task.setTaskCompleted(success: false)
+            return
+        }
 
         // Set expiration handler
         task.expirationHandler = {
@@ -163,8 +182,27 @@ final class BackgroundTaskManager {
 
     /// Handles report notification background task
     private func handleReportNotificationTask(_ task: BGAppRefreshTask) {
-        // Schedule next report check
+        // Schedule next report check (re-programa main + backup — no dupliques submits abajo)
         scheduleNextReportTask()
+
+        // §i.9 gate — ESCRITOR: report-notification Y report-backup comparten este handler (ambos
+        // escriben `lastNotifiedDate` + save()). En estados ESTABLES escribe normal; en un estado
+        // TRANSITORIO exige QUIESCENCIA del import antes de leer/escribir el mainContext, difiriendo
+        // (re-programado arriba) si aún no la hay → nunca un save() sobre grafo a medio hidratar. HOY la
+        // fase real es SIEMPRE .notStarted → .run: comportamiento IDÉNTICO al actual hasta I10-wiring.
+        let gateDecision = BGTaskMigrationGate.decide(
+            phase: MigrationPhaseStore.shared.currentPhase,
+            isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
+            role: .writer
+        )
+        // `!= .run` (no el case concreto) — misma defensa fail-closed que el lector.
+        if gateDecision != .run {
+            #if DEBUG
+            print("BackgroundTaskManager: report task DEFERRED by §i.9 gate (fase transitoria, sin quiescencia) — re-programado [\(gateDecision)]")
+            #endif
+            task.setTaskCompleted(success: false)
+            return
+        }
 
         // Perform the report check
         guard let container = modelContainer else {
