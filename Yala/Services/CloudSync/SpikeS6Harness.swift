@@ -54,13 +54,14 @@ final class SpikeS6Harness {
 
     // MARK: - Notes de las TXs del spike (JAMÁS tocan datos reales del owner)
 
-    /// TX zombie: la escribe FASE 0/A, la borra `deletingZombies`. Substring de match SIN emoji
-    /// (robusto en `localizedStandardContains`) que cubre también el sufijo " (editada offline)".
+    /// TX zombie: la escribe FASE 0/A, la borra `deletingZombies`. El match es por IGUALDAD EXACTA
+    /// contra las variantes conocidas (base / " (editada offline)" / " (rebound)") — GOTCHA device
+    /// (round 2): `localizedStandardContains` sobre `note` opcional genera `TERNARY(...) CONTAINS[cdl]`
+    /// que el SQL de SwiftData NO implementa → NSInvalidArgumentException NO atrapable (crash real en
+    /// el device del owner). La igualdad (`$0.note == x`) está probada en device por el harness S5.
     static let zombieNote = "🧟 SPIKE-S6 — zombie"
-    static let zombieMatch = "SPIKE-S6 — zombie"
     /// TX marker: la crea/muta/borra `rebindingUUIDs` (trabajo idempotente sin tocar datos reales).
     static let markerNote = "🧪 SPIKE-S6 — marker"
-    static let markerMatch = "SPIKE-S6 — marker"
 
     // MARK: - Log
 
@@ -132,8 +133,8 @@ final class SpikeS6Harness {
         quiescentNow = iCloudSyncService.shared.isImportQuiescent
         journaledSubState = journaledRaw ?? "—"
         do {
-            zombieCount = try count(matching: Self.zombieMatch, context: context)
-            markerCount = try count(matching: Self.markerMatch, context: context)
+            zombieCount = try count(matching: Self.zombieNote, context: context)
+            markerCount = try count(matching: Self.markerNote, context: context)
             headerError = nil
         } catch {
             headerError = "conteo falló: \(error)"
@@ -184,7 +185,7 @@ final class SpikeS6Harness {
         }
         do {
             // Editar SOLO las que aún no llevan el sufijo (idempotente ante re-taps).
-            let all = try fetch(matching: Self.zombieMatch, context: context)
+            let all = try fetch(matching: Self.zombieNote, context: context)
             var edited = 0
             for tx in all where (tx.note ?? "") == Self.zombieNote {
                 tx.note = Self.zombieNote + " (editada offline)"
@@ -306,7 +307,7 @@ final class SpikeS6Harness {
     private func execute(_ s: SubState, context: ModelContext) throws {
         switch s {
         case .deletingZombies:
-            let zombies = try fetch(matching: Self.zombieMatch, context: context)
+            let zombies = try fetch(matching: Self.zombieNote, context: context)
             line("   deletingZombies: \(zombies.count) 🧟 a borrar.")
             for tx in zombies { context.delete(tx) }
             try context.save()
@@ -314,7 +315,7 @@ final class SpikeS6Harness {
 
         case .rebindingUUIDs:
             // Idempotente: limpia markers residuales de un run parcial anterior antes del ciclo.
-            let leftovers = try fetch(matching: Self.markerMatch, context: context)
+            let leftovers = try fetch(matching: Self.markerNote, context: context)
             if !leftovers.isEmpty {
                 line("   rebindingUUIDs: \(leftovers.count) 🧪 residual(es) — limpio antes del ciclo.")
                 for tx in leftovers { context.delete(tx) }
@@ -350,8 +351,8 @@ final class SpikeS6Harness {
         isWorking = true; defer { isWorking = false }
         section("Verificar invariantes")
         do {
-            let z = try count(matching: Self.zombieMatch, context: context)
-            let m = try count(matching: Self.markerMatch, context: context)
+            let z = try count(matching: Self.zombieNote, context: context)
+            let m = try count(matching: Self.markerNote, context: context)
             line("🧟 zombies: \(z)   (esperado 0 tras done)")
             line("🧪 markers: \(m)   (esperado 0)")
             line("📓 journal.subState = \(journaledRaw ?? "—")")
@@ -376,8 +377,8 @@ final class SpikeS6Harness {
         isWorking = true; defer { isWorking = false }
         section("Reset spike")
         do {
-            let zombies = try fetch(matching: Self.zombieMatch, context: context)
-            let markers = try fetch(matching: Self.markerMatch, context: context)
+            let zombies = try fetch(matching: Self.zombieNote, context: context)
+            let markers = try fetch(matching: Self.markerNote, context: context)
             for tx in zombies { context.delete(tx) }
             for tx in markers { context.delete(tx) }
             if !zombies.isEmpty || !markers.isEmpty { try context.save() }
@@ -398,24 +399,25 @@ final class SpikeS6Harness {
 
     // MARK: - Fetch/count helpers (predicado CONCRETO por tipo — regla #Predicate de CLAUDE.md)
 
-    /// Match por substring case/diacritic-insensitive vía `localizedStandardContains` (soportado por
-    /// SwiftData). El substring va SIN emoji para robustez.
-    private func count(matching needle: String, context: ModelContext) throws -> Int {
-        let descriptor = FetchDescriptor<TransactionItem>(
+    /// Match por IGUALDAD EXACTA contra las 3 variantes que el propio harness produce (ver GOTCHA en
+    /// las constantes de note: CONTAINS[cdl] sobre opcional crashea en SQL generation, no atrapable).
+    private func descriptor(forBaseNote base: String) -> FetchDescriptor<TransactionItem> {
+        let a = base
+        let b = base + " (editada offline)"
+        let c = base + " (rebound)"
+        return FetchDescriptor<TransactionItem>(
             predicate: #Predicate<TransactionItem> { tx in
-                (tx.note ?? "").localizedStandardContains(needle)
+                tx.note == a || tx.note == b || tx.note == c
             }
         )
-        return try context.fetchCount(descriptor)
     }
 
-    private func fetch(matching needle: String, context: ModelContext) throws -> [TransactionItem] {
-        let descriptor = FetchDescriptor<TransactionItem>(
-            predicate: #Predicate<TransactionItem> { tx in
-                (tx.note ?? "").localizedStandardContains(needle)
-            }
-        )
-        return try context.fetch(descriptor)
+    private func count(matching baseNote: String, context: ModelContext) throws -> Int {
+        try context.fetchCount(descriptor(forBaseNote: baseNote))
+    }
+
+    private func fetch(matching baseNote: String, context: ModelContext) throws -> [TransactionItem] {
+        try context.fetch(descriptor(forBaseNote: baseNote))
     }
 }
 #endif
