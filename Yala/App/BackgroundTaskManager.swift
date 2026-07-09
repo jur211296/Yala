@@ -418,4 +418,26 @@ final class BackgroundTaskManager {
 
         return candidate
     }
+
+    #if DEBUG
+    // MARK: - Spike S7 (DEBUG) — siembra INMEDIATA para `_simulateLaunchForTaskWithIdentifier`
+
+    /// Re-somete los 3 requests SIN `earliestBeginDate` (= "cuanto antes"). HALLAZGO de plataforma
+    /// (device, iOS 26, spike S7): `_simulateLaunchForTaskWithIdentifier` RESPETA `earliestBeginDate`
+    /// — un request con fecha futura responde "No task request … has been scheduled" aunque esté en
+    /// cola (antes lo ignoraba). Con fecha nil el simulate dispara. `submit` REEMPLAZA el request
+    /// pendiente por identifier → la siguiente pasada real del scheduler de la app restaura las
+    /// fechas normales (boot re-siembra reports; el propio handler re-programa widget).
+    func seedImmediateForSpikeS7() {
+        for id in [Self.widgetRefreshTaskID, Self.reportNotificationTaskID, Self.reportBackupTaskID] {
+            let request = BGAppRefreshTaskRequest(identifier: id)
+            do {
+                try BGTaskScheduler.shared.submit(request)
+                print("BackgroundTaskManager: [S7] sembrado INMEDIATO \(id)")
+            } catch {
+                print("BackgroundTaskManager: [S7] siembra inmediata falló para \(id): \(error)")
+            }
+        }
+    }
+    #endif
 }

@@ -427,13 +427,15 @@ struct CloudSyncDebugView: View {
             // SOLO dispara requests PENDIENTES ("No task request … has been scheduled" si la cola está
             // vacía; cazado en la corrida device del spike: widget-refresh no tiene siembra de boot).
             Button {
-                BackgroundTaskManager.shared.scheduleWidgetRefresh()
-                BackgroundTaskManager.shared.scheduleNextReportTask()
+                BackgroundTaskManager.shared.seedImmediateForSpikeS7()
             } label: {
-                Label("Programar los 3 BGTasks ahora (siembra la cola)", systemImage: "calendar.badge.clock")
+                Label("Sembrar los 3 BGTasks AHORA (sin earliestBeginDate)", systemImage: "calendar.badge.clock")
                     .font(DS.Typography.caption)
             }
             .buttonStyle(.bordered)
+            Text("Hallazgo device: el simulate RESPETA earliestBeginDate en iOS 26 — un request con fecha futura responde 'No task request'. Este botón siembra sin fecha; re-siémbralo antes de CADA tanda de disparos (cada simulate consume su request).")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
 
             Text("Disparar un BGTask (pausa en el debugger → pega el comando → continue):")
                 .font(DS.Typography.caption.weight(.semibold))
