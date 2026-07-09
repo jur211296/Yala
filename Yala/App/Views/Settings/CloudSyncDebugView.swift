@@ -16,6 +16,7 @@
 
 #if DEV_BUILD
 import DeviceCheck
+import SwiftData
 import SwiftUI
 import UIKit
 
@@ -107,12 +108,15 @@ final class CloudSyncDebugModel {
 
 struct CloudSyncDebugView: View {
     @State private var model = CloudSyncDebugModel()
+    @State private var spike = SpikeS5Harness()
+    @Environment(\.modelContext) private var modelContext
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Spacing.xl) {
                 stateCard
                 actionsCard
+                spikeS5Card
                 if let message = model.lastMessage {
                     Text(message)
                         .font(DS.Typography.caption.monospaced())
@@ -171,6 +175,88 @@ struct CloudSyncDebugView: View {
             }
         }
         .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    // MARK: - Spike S5 (captura de CKRecord.ID + delete dirigido)
+
+    private var spikeS5Card: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Text("Spike S5 · captura de CKRecord.ID + delete")
+                .font(DS.Typography.body.weight(.semibold))
+                .foregroundStyle(.primary)
+            Text("Harness DEBUG device-only. Corre los pasos EN ORDEN. Espera 30-60s tras el paso 1 (export del mirror) antes del paso 2.")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
+
+            VStack(spacing: DS.Spacing.sm) {
+                spikeButton("1 · Crear TX desechable", disabled: false) {
+                    spike.createDisposable(context: modelContext)
+                }
+                spikeButton("2 · Capturar IDs (A y B)", disabled: !spike.hasDisposable) {
+                    await spike.captureDisposable(context: modelContext)
+                }
+                spikeButton("3 · Borrar de CloudKit", disabled: !spike.hasCapture) {
+                    await spike.deleteFromCloudKit()
+                }
+                spikeButton("4 · Verificar gone", disabled: !spike.deleteAttempted) {
+                    await spike.verifyGone()
+                }
+            }
+
+            Divider()
+
+            VStack(spacing: DS.Spacing.sm) {
+                spikeButton("Capturar sobre TX existente (solo lectura)", disabled: false) {
+                    await spike.captureOldestExisting(context: modelContext)
+                }
+                spikeButton("Limpiar TX local", disabled: !spike.hasDisposable) {
+                    spike.clearLocalDisposable(context: modelContext)
+                }
+            }
+
+            HStack {
+                Text("Log")
+                    .font(DS.Typography.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Limpiar log") { spike.clearLog() }
+                    .font(DS.Typography.caption)
+                    .disabled(spike.isWorking)
+            }
+
+            ScrollView {
+                Text(spike.log.isEmpty ? "— sin resultados aún —" : spike.log)
+                    .font(.system(.caption2, design: .monospaced))
+                    .foregroundStyle(.primary)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(height: 280)
+            .padding(DS.Spacing.sm)
+            .background(.thBackground)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.lg)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    private func spikeButton(
+        _ title: String, disabled: Bool, action: @escaping () async -> Void
+    ) -> some View {
+        Button {
+            Task { await action() }
+        } label: {
+            Text(title)
+                .font(DS.Typography.caption.weight(.medium))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.xs)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.bordered)
+        .disabled(disabled || spike.isWorking)
     }
 
     private func actionButton(
