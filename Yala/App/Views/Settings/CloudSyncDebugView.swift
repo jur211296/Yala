@@ -423,6 +423,18 @@ struct CloudSyncDebugView: View {
             .background(.thBackground)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
 
+            // Siembra los 3 requests en la cola de BGTaskScheduler — `_simulateLaunchForTaskWithIdentifier`
+            // SOLO dispara requests PENDIENTES ("No task request … has been scheduled" si la cola está
+            // vacía; cazado en la corrida device del spike: widget-refresh no tiene siembra de boot).
+            Button {
+                BackgroundTaskManager.shared.scheduleWidgetRefresh()
+                BackgroundTaskManager.shared.scheduleNextReportTask()
+            } label: {
+                Label("Programar los 3 BGTasks ahora (siembra la cola)", systemImage: "calendar.badge.clock")
+                    .font(DS.Typography.caption)
+            }
+            .buttonStyle(.bordered)
+
             Text("Disparar un BGTask (pausa en el debugger → pega el comando → continue):")
                 .font(DS.Typography.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
