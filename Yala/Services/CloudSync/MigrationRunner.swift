@@ -441,7 +441,7 @@ final class MigrationRunner {
             case .reverseVerify:
                 if !(try await driveReverseVerify()) { return }
             case .reverseFreezeBackend:
-                // I11-3 cabla el server real; hoy `freezeBackendForReverse` devuelve false → stop retomable.
+                // `reverse_freeze` server-side (I11-3): false = rechazo/red → stop retomable SIN evento.
                 guard await executor.freezeBackendForReverse() else { return }
                 try await handle(.reverseBackendFrozen)        // efecto: mountMirrorAndRelaunch
             case .reverseMountMirror:

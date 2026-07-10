@@ -178,9 +178,12 @@ final class CloudAccountClient {
 
     // MARK: - POST /account/migration
 
-    /// Avance del cutover (§g.4): `action` = `"cutover"` (estampa `migrated_at`) o `"complete"`
-    /// (`migration_in_progress=false`). Guard líder server-side. NUNCA lanza — traduce a
-    /// `MigrationProgressOutcome`. `other_leader` = este device fue usurpado (lease-takeover).
+    /// Avance de la migración (§g.4) y de la REVERSA (§h, I11-3). `action` = `"cutover"` (estampa
+    /// `migrated_at`) / `"complete"` (`migration_in_progress=false`) / `"reverse_claim"` /
+    /// `"reverse_freeze"` / `"reverse_complete"` / `"reverse_abort"`. Guards líder/lease SERVER-side
+    /// (toda la semántica vive en el RPC `migration_progress`; este cliente es genérico en el action).
+    /// NUNCA lanza — traduce a `MigrationProgressOutcome`. `other_leader` = este device fue usurpado
+    /// (lease-takeover).
     func migrationProgress(jwt: String, deviceID: String, action: String) async -> MigrationProgressOutcome {
         var request = URLRequest(url: baseURL.appendingPathComponent("account/migration"))
         request.httpMethod = "POST"

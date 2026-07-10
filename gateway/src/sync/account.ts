@@ -94,12 +94,27 @@ export async function handleAccountClaim(c: Ctx): Promise<Response> {
 // ------------------------------------------------------------------------------- /account/migration
 
 /**
- * Avance del cutover de la migración (I10-wiring §g.4). Body `{device_id, action}` con `action` =
- * `cutover` (`profiles.migrated_at=now()`, guard líder, idempotente) o `complete`
- * (`migration_in_progress=false`, guard líder). El sub SIEMPRE del JWT (RLS + `auth.uid()` dentro del
- * RPC). Sin App Attest — precede al bind, como el resto de `/account/*`. Devuelve el `{ok, reason?}`
- * del RPC tal cual (`other_leader` cuando otro device usurpó el liderazgo).
+ * Avance de la migración Y de la reversa (I10-wiring §g.4 + I11-3 §h). Body `{device_id, action}`.
+ * Passthrough al RPC `migration_progress` — TODA la lógica (guards de líder/lease, idempotencia)
+ * vive en el RPC; aquí solo se valida el set de actions. Ida: `cutover` (`migrated_at=now()`,
+ * guard líder, idempotente) y `complete` (`migration_in_progress=false`, guard líder). Reversa:
+ * `reverse_claim` (guard `migrated_at` set; takeover de migración ABANDONADA con lease expirado
+ * >60min; idempotente para el mismo líder), `reverse_freeze` (`reverse_frozen_at=now()`, guard
+ * líder SIN edad de lease, idempotente), `reverse_complete` (`reverse_in_progress=false` +
+ * `reverted_at=now()`; `migrated_at` NO se toca — §h.4) y `reverse_abort` (des-congela; acepta
+ * lease expirado — abort de emergencia post-crash). El sub SIEMPRE del JWT (RLS + `auth.uid()`
+ * dentro del RPC). Sin App Attest — precede al bind, como el resto de `/account/*`. Devuelve el
+ * `{ok, reason?}` del RPC tal cual (`other_leader` cuando otro device usurpó el liderazgo).
  */
+const MIGRATION_ACTIONS = new Set([
+  "cutover",
+  "complete",
+  "reverse_claim",
+  "reverse_freeze",
+  "reverse_complete",
+  "reverse_abort",
+]);
+
 export async function handleAccountMigration(c: Ctx): Promise<Response> {
   const auth = await requireUser(c);
   if (auth instanceof Response) return auth;
@@ -113,8 +128,12 @@ export async function handleAccountMigration(c: Ctx): Promise<Response> {
 
   const deviceId = typeof body.device_id === "string" ? body.device_id : "";
   const action = typeof body.action === "string" ? body.action : "";
-  if (!deviceId || (action !== "cutover" && action !== "complete")) {
-    return jsonError("yala_bad_request", "Se espera { device_id, action: 'cutover'|'complete' }", 400);
+  if (!deviceId || !MIGRATION_ACTIONS.has(action)) {
+    return jsonError(
+      "yala_bad_request",
+      "Se espera { device_id, action: 'cutover'|'complete'|'reverse_claim'|'reverse_freeze'|'reverse_complete'|'reverse_abort' }",
+      400,
+    );
   }
 
   const { ok, status, body: out } = await callRpc(c.env, auth.userJWT, "migration_progress", {

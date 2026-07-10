@@ -8,8 +8,10 @@
 //  cableó el CUTOVER (§g.4): `confirmCutoverServer`/`persistLocalMode` + los efectos
 //  `startParallelHistoryCapture`/`writeCloudKitMarker`/`disableMirrorAndRelaunch`/
 //  `runLeaderReconcileFromFrozenCloudKit` + los testigos `isMirrorConfirmedOff`/`isMarkerExported`. El
-//  BACKSTOP `reconcileFromFrozenCloudKit` (capa de RED) y `rollback`/`adoptBackendAccount` (I11/§k.4)
-//  siguen `notWired` (el runner los deja journaled, retomable).
+//  BACKSTOP corre en `runLeaderReconcileFromFrozenCloudKit`. I11-2 cableó los efectos LOCALES de la
+//  reversa (§h); I11-3 cableó su server-side (`performReverseClaim`/`freezeBackendForReverse`/
+//  `completeReverseServer`/`reverseRollback` → acciones `reverse_*` del RPC `migration_progress`). Solo
+//  `adoptBackendAccount` (§k.4) sigue `notWired` (el runner lo deja journaled, retomable).
 //
 //  DARK: nada de producción instancia este executor (el runner no se instancia; la UI de migración es I14,
 //  el panel DEBUG w7). Solo lo ejercitan los tests del ciclo + el e2e staging.
@@ -358,8 +360,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
 
     /// Ejecuta un efecto declarativo. Cableados en w6: `.writeBeacon` (§g.4-faro, al claim),
     /// `.startParallelHistoryCapture`, `.writeCloudKitMarker`, `.disableMirrorAndRelaunch`,
-    /// `.runLeaderReconcileFromFrozenCloudKit`. `.rollback`/`.adoptBackendAccount` → `notWired` (I11/§k.4,
-    /// fuera de este ciclo; el runner los deja journaled retomable).
+    /// `.runLeaderReconcileFromFrozenCloudKit`; en I11-2 los efectos locales de la reversa; en I11-3
+    /// `.completeReverseServer`/`.reverseRollback` (server-side, acciones `reverse_*` del RPC).
+    /// `.adoptBackendAccount` → `notWired` (§k.4, fuera de este ciclo; el runner lo deja journaled retomable).
     func execute(_ effect: MigrationEffect) async throws {
         switch effect {
         case .writeBeacon:
@@ -486,14 +489,62 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             storageDefaults.removeObject(forKey: Self.relaunchRequestedKey)
             CloudSyncBreadcrumb.reverseModePersisted()
 
-        // completeReverseServer / reverseRollback siguen server-side (I11-3): el runner los deja journaled
-        // → retomable, aceptable DARK. D1 DIFERIDO (review): la higiene de sync-meta al entrar a
-        // `icloudActive` (SyncOutbox/SyncCursor/unit-clocks/quarantine/danglers con estado de la época nube)
-        // es inerte en `.icloud` (runtime gateado por `storageMode == .cloud`), pero un re-cutover futuro con
+        // D1 DIFERIDO (review I11-2): la higiene de sync-meta al entrar a `icloudActive`
+        // (SyncOutbox/SyncCursor/unit-clocks/quarantine/danglers con estado de la época nube) es inerte en
+        // `.icloud` (runtime gateado por `storageMode == .cloud`), pero un re-cutover futuro con
         // cursor/clocks stale podría envenenarse — el diseño de re-cutover (I14+) DEBE decidir purga-vs-reuso.
-        case .reverseRollback, .completeReverseServer:
-            CloudSyncBreadcrumb.migrationExecutorNotWired(step: effect.rawValue)
-            throw MigrationExecutorError.notWired(effect: effect.rawValue)
+        case .completeReverseServer:
+            // `reverse_complete` (§h, I11-3): `reverse_in_progress=false` + `reverted_at=now()` server-side.
+            // `migrated_at` NO se toca (§h.4 — el backend queda congelado como red; `reverted_at` es la
+            // señal para el diseño futuro de re-cutover). `.ok` → breadcrumb; el resto THROWEA → queda
+            // journaled-pendiente retomable (patrón del complete de la ida en runLeaderReconcile).
+            guard let jwt = await session.accessToken(), !jwt.isEmpty else {
+                CloudSyncBreadcrumb.reverseCompleteRejected(reason: "sessionExpired")
+                throw MigrationExecutorError.notWired(effect: "completeReverseServer: sessionExpired")
+            }
+            switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "reverse_complete") {
+            case .ok:
+                CloudSyncBreadcrumb.reverseCompleteConfirmed()
+            case .otherLeader:
+                CloudSyncBreadcrumb.reverseCompleteRejected(reason: "otherLeader")
+                throw MigrationExecutorError.notWired(effect: "completeReverseServer: otherLeader")
+            case .rejected(let reason):
+                CloudSyncBreadcrumb.reverseCompleteRejected(reason: reason)
+                throw MigrationExecutorError.notWired(effect: "completeReverseServer: \(reason)")
+            case .sessionExpired:
+                CloudSyncBreadcrumb.reverseCompleteRejected(reason: "sessionExpired")
+                throw MigrationExecutorError.notWired(effect: "completeReverseServer: sessionExpired")
+            case .transient:
+                CloudSyncBreadcrumb.reverseCompleteRejected(reason: "transient")
+                throw MigrationExecutorError.notWired(effect: "completeReverseServer: transient")
+            }
+
+        case .reverseRollback:
+            // `reverse_abort` (§h, I11-3): DES-congela el backend (`reverse_in_progress=false` +
+            // `reverse_frozen_at=null`; `reverted_at` queda null — la reversa NO ocurrió). El RPC acepta
+            // lease expirado (abort de emergencia post-crash largo) y es idempotente con rip ya false.
+            // sessionExpired/transient → THROW (journaled, retomable — la red/el re-login lo despiertan).
+            // rejected/otherLeader → NO throw perpetuo (decisión I11-3, documentada en el plan): el estado
+            // local ya es TERMINAL estable (reverseFailedRollback); un abort rechazado por lease usurpado
+            // dejaría el efecto journaled-pendiente PARA SIEMPRE re-lanzando en cada resume (el mismo
+            // bug-class del rollback de la ida, device 2026-07-10) → breadcrumb RUIDOSO + completar. El
+            // backend puede quedar rip=true: un `reverse_claim` posterior es idempotente-ok (o el nuevo
+            // líder sigue su propia reversa — su estado manda).
+            guard let jwt = await session.accessToken(), !jwt.isEmpty else {
+                throw MigrationExecutorError.notWired(effect: "reverseRollback: sessionExpired")
+            }
+            switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "reverse_abort") {
+            case .ok:
+                CloudSyncBreadcrumb.reverseAborted()
+            case .sessionExpired:
+                throw MigrationExecutorError.notWired(effect: "reverseRollback: sessionExpired")
+            case .transient:
+                throw MigrationExecutorError.notWired(effect: "reverseRollback: transient")
+            case .otherLeader:
+                CloudSyncBreadcrumb.reverseAbortRejectedButCompleted(reason: "otherLeader")
+            case .rejected(let reason):
+                CloudSyncBreadcrumb.reverseAbortRejectedButCompleted(reason: reason)
+            }
         }
     }
 
@@ -548,11 +599,28 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
 
     // MARK: - Reversa (§h, I11-2)
 
-    /// `reverse_claim` (§h). SERVER-side → I11-3 (columna `reverse_in_progress` + RPC + CloudAccountClient).
-    /// Hoy `notWired` → `.transient` (el runner corta retomable). NUNCA lanza.
+    /// `reverse_claim` (§h, I11-3): reserva del liderazgo de la REVERSA server-side (RPC
+    /// `migration_progress`, action `reverse_claim`). Guards server-side: `migrated_at` set (born-cloud v1
+    /// → `rejected("not_migrated")`), takeover de migración ABANDONADA o reversa ajena con lease expirado
+    /// >60min, re-claim idempotente del MISMO líder sin chequear edad. Sin JWT → `.sessionExpired`
+    /// (patrón `performClaim`: el runner corta SIN evento, retomable). NUNCA lanza — los breadcrumbs de
+    /// outcome los emite el runner (`driveReverseClaim`).
     func performReverseClaim() async -> ReverseClaimOutcome {
-        CloudSyncBreadcrumb.migrationExecutorNotWired(step: "performReverseClaim")
-        return .transient
+        guard let jwt = await session.accessToken(), !jwt.isEmpty else {
+            return .sessionExpired
+        }
+        switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "reverse_claim") {
+        case .ok:
+            return .accepted
+        case .otherLeader:
+            return .otherLeader
+        case .rejected(let reason):
+            return .rejected(reason: reason)
+        case .sessionExpired:
+            return .sessionExpired
+        case .transient:
+            return .transient
+        }
     }
 
     /// `reverseDrainAll` (§h): drain de la History local → outbox, push del residual, y `pullAndApplyOnce`
@@ -578,11 +646,33 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         }
     }
 
-    /// `reverseFreezeBackend` (§h): marca la cuenta backend "reverting". SERVER-side → I11-3. Hoy `notWired`
-    /// → `false` (el runner corta retomable). NUNCA lanza.
+    /// `reverseFreezeBackend` (§h, I11-3): `reverse_freeze` server-side — estampa `reverse_frozen_at`
+    /// (guard reverse-líder SIN edad de lease: el MISMO líder lento siempre puede continuar; idempotente).
+    /// `.ok` → `true`; el resto → breadcrumb + `false` (el runner corta retomable SIN evento). El
+    /// ENFORCEMENT del freeze en `/sync/push` (rechazar pushes con `reverse_frozen_at` set) está DIFERIDO
+    /// al gate de encendido de flags — v1 single-device DARK (ver qa/cloud/README.md). NUNCA lanza.
     func freezeBackendForReverse() async -> Bool {
-        CloudSyncBreadcrumb.migrationExecutorNotWired(step: "freezeBackendForReverse")
-        return false
+        guard let jwt = await session.accessToken(), !jwt.isEmpty else {
+            CloudSyncBreadcrumb.reverseFreezeRejected(reason: "sessionExpired")
+            return false
+        }
+        switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "reverse_freeze") {
+        case .ok:
+            CloudSyncBreadcrumb.reverseBackendFrozen()
+            return true
+        case .otherLeader:
+            CloudSyncBreadcrumb.reverseFreezeRejected(reason: "otherLeader")
+            return false
+        case .rejected(let reason):
+            CloudSyncBreadcrumb.reverseFreezeRejected(reason: reason)
+            return false
+        case .sessionExpired:
+            CloudSyncBreadcrumb.reverseFreezeRejected(reason: "sessionExpired")
+            return false
+        case .transient:
+            CloudSyncBreadcrumb.reverseFreezeRejected(reason: "transient")
+            return false
+        }
     }
 
     /// Observación post-relaunch (§h): ¿ESTE proceso montó el store personal en modo `.icloud` (mirror ON)?

@@ -72,6 +72,7 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     private(set) var lastClaimBody: [String: Any]?
     var migrationBody = Data("{\"ok\":true}".utf8)
     var migrationStatus = 200
+    private(set) var lastMigrationBody: [String: Any]?
     var pushStatus = 200
     var merkleBody = Data()
     private let lock = NSLock()
@@ -83,6 +84,7 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
             HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
         }
         if path.contains("account/migration") {
+            lastMigrationBody = (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())) as? [String: Any]
             return (migrationBody, resp(migrationStatus))
         }
         if path.contains("account/claim") {
@@ -608,15 +610,128 @@ struct MigrationWorkExecutorTests {
         #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
     }
 
-    @Test("performReverseClaim/freezeBackendForReverse: notWired hoy (I11-3) → transient/false")
-    func reverseServerStubs_notWired() async throws {
+    // MARK: - Reversa server-side (I11-3): las 4 acciones `reverse_*`. LECCIÓN d49d2e47: cada acción
+    // asserta el BODY enviado (device_id + action exactos) — el gap del bug del claim era exactamente un
+    // test faltante del body.
+
+    @Test("performReverseClaim: ok → accepted + BODY {device_id, action:'reverse_claim'} exacto")
+    func reverseClaim_ok_sendsExactBody() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let session = FakeSession(token: "jwt", userID: "sub-1")
-        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executor.performReverseClaim() == .accepted)
+        #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
+        #expect(stub.lastMigrationBody?["action"] as? String == "reverse_claim")
+    }
+
+    @Test("performReverseClaim: mapeo de outcomes — other_leader/rejected/500/sin-JWT")
+    func reverseClaim_outcomeMapping() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+        #expect(await executor.performReverseClaim() == .otherLeader)
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"not_migrated\"}".utf8)
+        #expect(await executor.performReverseClaim() == .rejected(reason: "not_migrated"))
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"migration_in_progress\"}".utf8)
+        #expect(await executor.performReverseClaim() == .rejected(reason: "migration_in_progress"))
+
+        stub.migrationStatus = 500
         #expect(await executor.performReverseClaim() == .transient)
+
+        session.token = nil
+        #expect(await executor.performReverseClaim() == .sessionExpired, "sin JWT → sessionExpired SIN tocar la red")
+    }
+
+    @Test("freezeBackendForReverse: ok → true + BODY {device_id, action:'reverse_freeze'}; rechazo/red/sin-JWT → false")
+    func reverseFreeze_bodyAndOutcomes() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executor.freezeBackendForReverse() == true)
+        #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
+        #expect(stub.lastMigrationBody?["action"] as? String == "reverse_freeze")
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
         #expect(await executor.freezeBackendForReverse() == false)
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"not_in_progress\"}".utf8)
+        #expect(await executor.freezeBackendForReverse() == false)
+
+        stub.migrationStatus = 500
+        #expect(await executor.freezeBackendForReverse() == false)
+
+        session.token = nil
+        #expect(await executor.freezeBackendForReverse() == false)
+    }
+
+    @Test("execute(.completeReverseServer): ok → no throw + BODY {device_id, action:'reverse_complete'}; rechazo → throw retomable")
+    func reverseComplete_bodyAndThrows() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.completeReverseServer)
+        #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
+        #expect(stub.lastMigrationBody?["action"] as? String == "reverse_complete")
+
+        // Rechazo (not_in_progress) → THROW: queda journaled-pendiente retomable (patrón de la ida).
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"not_in_progress\"}".utf8)
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.completeReverseServer)
+        }
+        // Red caída → THROW retomable.
+        stub.migrationStatus = 500
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.completeReverseServer)
+        }
+    }
+
+    @Test("execute(.reverseRollback): ok → no throw + BODY {device_id, action:'reverse_abort'}; rejected/other_leader NO throwean (perpetuo); red sí")
+    func reverseRollback_bodyAndNoPerpetualThrow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.reverseRollback)
+        #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
+        #expect(stub.lastMigrationBody?["action"] as? String == "reverse_abort")
+
+        // Decisión I11-3: un abort RECHAZADO (lease usurpado / rejected) COMPLETA el efecto (no throw) —
+        // el estado local ya es terminal estable; re-lanzar perpetuo repetiría el bug-class del rollback
+        // de la ida (device 2026-07-10). Breadcrumb RUIDOSO delata el caso.
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+        try await executor.execute(.reverseRollback)
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"no_profile\"}".utf8)
+        try await executor.execute(.reverseRollback)
+
+        // Red caída / sin JWT → THROW retomable (la red/el re-login lo despiertan).
+        stub.migrationStatus = 500
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.reverseRollback)
+        }
+        session.token = nil
+        stub.migrationStatus = 200
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.reverseRollback)
+        }
     }
 
     @Test("reverseUploadStatus: store vacío → drained (0 pares, sin cambios que persistir)")

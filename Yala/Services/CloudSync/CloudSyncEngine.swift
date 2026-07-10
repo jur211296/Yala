@@ -511,6 +511,44 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncReverse seqCutFallbackZero — barrido desde since 0 (correcto, más caro)")
     }
 
+    /// §h `reverseFreezeBackend` (I11-3): `reverse_freeze` OK — `profiles.reverse_frozen_at` estampado
+    /// (guard reverse-líder, idempotente). El backend dejó de ser fuente de verdad para este device.
+    static func reverseBackendFrozen() {
+        logger.notice("CloudSyncReverse backendFrozen — reverse_frozen_at estampado (guard líder OK)")
+    }
+
+    /// §h `reverseFreezeBackend` (I11-3): `reverse_freeze` NO aplicó (otherLeader/rejected/401/red) →
+    /// el runner corta retomable SIN evento. `reason` sin PII.
+    static func reverseFreezeRejected(reason: String) {
+        logger.notice("CloudSyncReverse freezeRejected reason=\(reason, privacy: .public) — corta retomable")
+    }
+
+    /// §h cuarteto de cierre (I11-3): `reverse_complete` OK — `reverse_in_progress=false` +
+    /// `reverted_at` estampado server-side (`migrated_at` INTACTO, §h.4). La reversa cerró en el backend.
+    static func reverseCompleteConfirmed() {
+        logger.notice("CloudSyncReverse completeConfirmed — rip=false + reverted_at estampado (migrated_at intacto)")
+    }
+
+    /// §h cuarteto de cierre (I11-3): `reverse_complete` NO aplicó → el efecto THROWEA y queda
+    /// journaled-pendiente retomable (patrón del complete de la ida). `reason` sin PII.
+    static func reverseCompleteRejected(reason: String) {
+        logger.notice("CloudSyncReverse completeRejected reason=\(reason, privacy: .public) — journaled, retomable")
+    }
+
+    /// §h `reverseRollback` (I11-3): `reverse_abort` OK — backend DES-congelado (`rip=false` +
+    /// `reverse_frozen_at=null`; `reverted_at` queda null). El estado local ya era terminal estable.
+    static func reverseAborted() {
+        logger.notice("CloudSyncReverse aborted — backend des-congelado (rip=false, frozen_at=null)")
+    }
+
+    /// §h `reverseRollback` (I11-3) — RUIDOSO: el `reverse_abort` fue RECHAZADO (lease usurpado /
+    /// rejected) pero el efecto se COMPLETA igual (decisión I11-3: el estado local ya es terminal estable;
+    /// re-lanzar perpetuo repetiría el bug-class del rollback de la ida, device 2026-07-10). El backend
+    /// puede quedar `rip=true` — un `reverse_claim` posterior es idempotente-ok. `reason` sin PII.
+    static func reverseAbortRejectedButCompleted(reason: String) {
+        logger.error("CloudSyncReverse abortRejectedButCompleted reason=\(reason, privacy: .public) — efecto completado igual; el backend puede quedar rip=true")
+    }
+
     /// §h residual DIFERIDO (canario v1 SIN reparación): metadata CloudKit huérfana (record cuyo delete se
     /// perdió del History por purga + token que no expiró) → zombie invisible localmente. HOY inalcanzable
     /// (la purga jamás corrió en `.cloud`, flags DARK). El SCAN de side-table está DIFERIDO (exige queries

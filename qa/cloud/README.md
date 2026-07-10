@@ -58,6 +58,47 @@ DELETE FROM public.profiles WHERE id IN (
 Los tests que necesitan estado `migration_in_progress` lo fijan por un PATCH directo a PostgREST con el
 JWT del propio dueño (RLS UPDATE lo permite) y lo revierten al terminar.
 
+## Reversa server-side (I11-3, §h) — columnas `reverse_*` + acciones del RPC
+
+Migración `i11_reverse_progress_actions` (staging). `profiles` ganó 3 columnas ADITIVAS
+(`reverse_in_progress boolean not null default false` — ya existía desde i10 —, `reverse_frozen_at
+timestamptz`, `reverted_at timestamptz`) y el RPC `migration_progress(p_device_id, p_action)` se
+EXTENDIÓ (los branches `cutover`/`complete` de la ida quedaron intactos) con 4 acciones, expuestas por
+`POST /account/migration` (passthrough — toda la lógica vive en el RPC). El lease REUSA
+`leader_device_id` + `migration_updated_at` (migración y reversa son mutuamente excluyentes; expiry
+>60min, heartbeat NULL jamás expira — mismo idiom que `claim_account`):
+
+- **`reverse_claim`** — guards: `migrated_at` set (born-cloud v1 → `not_migrated`); `mip=true` con lease
+  VIGENTE → `migration_in_progress`, con lease EXPIRADO → **takeover de la migración ABANDONADA**
+  (mip=false, rip=true, líder=caller — el modo de fallo real del device run 2026-07-10); re-claim del
+  MISMO líder → ok idempotente SIN edad de lease; reversa ajena con lease expirado → takeover. El claim
+  FRESCO (y todo takeover) resetea `reverse_frozen_at`/`reverted_at` del run anterior.
+- **`reverse_freeze`** — guard reverse-líder SIN edad de lease (el lease existe SOLO para que
+  competidores usurpen) → `reverse_frozen_at=coalesce(...,now())` idempotente + heartbeat.
+- **`reverse_complete`** — guard reverse-líder → `rip=false` + `reverted_at=now()`. **`migrated_at` NO
+  se toca** (§h.4: el backend queda congelado como red; `reverted_at` es la señal para el diseño futuro
+  de re-cutover — `claim_account` NO cambia hoy, diferido documentado). Idempotente tras el flip.
+- **`reverse_abort`** — DES-congela (`rip=false`, `reverse_frozen_at=null`; `reverted_at` queda null).
+  Acepta líder **o lease expirado** (abort de emergencia post-crash largo). Idempotente con rip ya false.
+
+Cada acción del líder refresca `migration_updated_at` (heartbeat). Goldens 11-18 de
+`account.goldens.test.ts` cubren las 4 acciones (incl. el takeover 1-bis y la acción inválida → 400).
+
+**ASIMETRÍA documentada (review adversarial I11-3) — `reverse_claim` NO es atómico como
+`claim_account`:** el claim de la ida es un INSERT atómico; `reverse_claim` es read-then-UPDATE
+(TOCTOU): dos devices del MISMO usuario reclamando la reversa a la vez podrían recibir ambos
+`ok:true` (last-writer-wins en `leader_device_id`) → ventana transitoria de dual-líder que CONVERGE
+sola (freeze/complete re-verifican el guard de líder — el perdedor corta a follower; el drain/push es
+HLC-idempotente). Aceptable en v1 single-device DARK. **ANTES de multi-device real: hacer los UPDATE
+del claim/takeover condicionales (`WHERE … AND reverse_in_progress=false` / `AND migration_updated_at
+= <leído>`) + re-chequear FOUND** — registrado en el gate de encendido de flags.
+
+**DIFERIDO explícito — enforcement del freeze en `/sync/push`:** el gateway hoy NO rechaza pushes con
+`reverse_frozen_at` set (exigiría churn del push handler + una query extra por request). v1 DARK
+single-device: se difiere al gate de encendido de flags. Residual: un device `.cloud` rezagado podría
+pushear a un backend congelado — converge sin corromper (el líder verificó Merkle ANTES del freeze y no
+vuelve a pullear).
+
 **Estado POSTERIOR que dejan los goldens de `/sync/*` (gotcha cazado 2026-07-10):** `sync.goldens.test.ts`
 re-crea en cada corrida filas PARCIALES de `budgets` (hand-crafted, `name` NULL — el golden de uuid[] `'{}'`
 de DIFERIDOS #25) para el user A. Esas filas divergen PERMANENTE en el Merkle del e2e Swift

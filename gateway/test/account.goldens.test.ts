@@ -115,11 +115,14 @@ interface ProfileRow {
   migrated_at: string | null;
   migration_in_progress: boolean;
   leader_device_id: string | null;
+  reverse_in_progress: boolean;
+  reverse_frozen_at: string | null;
+  reverted_at: string | null;
 }
 async function readProfile(jwt: string): Promise<ProfileRow | null> {
   const sub = decodeSub(jwt);
   const res = await fetch(
-    `${URL}/rest/v1/profiles?id=eq.${sub}&select=migrated_at,migration_in_progress,leader_device_id`,
+    `${URL}/rest/v1/profiles?id=eq.${sub}&select=migrated_at,migration_in_progress,leader_device_id,reverse_in_progress,reverse_frozen_at,reverted_at`,
     { headers: { apikey: ANON, Authorization: `Bearer ${jwt}` } },
   );
   const rows = (await res.json()) as ProfileRow[];
@@ -278,5 +281,151 @@ describe("I10 goldens · /account/migration + lease (staging real)", () => {
     const r = await claim(jwtB, { device_id: DEV_LEADER, provider: "google", migration: true });
     expect(r.body.state).toBe("existing_stable"); // fila ya existe → nunca re-arma mip aquí
     expect((await readProfile(jwtB))?.migration_in_progress).toBe(false);
+  });
+});
+
+// I11-3 — reversa server-side (§h): las 4 acciones reverse_* del RPC. Usan sub B (ya migrado por los
+// goldens 6-7) salvo el 11 (sub A, jamás migrado). Corren en orden y dejan la fila de B estable
+// (rip=false) — la limpieza pre-run de la suite la resetea igual. Ver header.
+const DEV_REV = "device-B-rev-leader";
+const DEV_REV_OTHER = "device-rev-usurper";
+
+describe("I11-3 goldens · /account/migration reverse_* (staging real)", () => {
+  it("11. reverse_claim sobre cuenta NO migrada → 'not_migrated' (born-cloud v1 excluido)", async () => {
+    // Sub A tiene fila (test 1) pero jamás migró → migrated_at null.
+    expect((await readProfile(jwtA))?.migrated_at).toBeNull();
+    const r = await migrationProgress(jwtA, { device_id: DEV_A, action: "reverse_claim" });
+    expect(r.status).toBe(200);
+    expect(r.body.ok).toBe(false);
+    expect(r.body.reason).toBe("not_migrated");
+  });
+
+  it("12. takeover reverse-sobre-migración-ABANDONADA: lease vigente → 'migration_in_progress'; vencida → ok + mip=false + rip=true", async () => {
+    // El modo de fallo real del device run 2026-07-10: líder crasheado entre cutover y complete →
+    // mip=true colgado para siempre. Sin el takeover, esa cuenta jamás podría revertir.
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        leader_device_id: "device-stale-leader",
+        migration_updated_at: new Date().toISOString(), // lease VIGENTE
+        migrated_at: "2026-01-01T00:00:00Z", // cutover ya ocurrió (autocontenido)
+        reverse_in_progress: false,
+      }),
+    ).toBeLessThan(300);
+
+    const r1 = await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_claim" });
+    expect(r1.body.ok).toBe(false);
+    expect(r1.body.reason).toBe("migration_in_progress"); // lease vigente: la ida aún manda
+
+    expect(await patchProfile(jwtB, { migration_updated_at: "2000-01-01T00:00:00Z" })).toBeLessThan(300);
+    const r2 = await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_claim" });
+    expect(r2.body.ok).toBe(true); // lease vencida: la reversa TOMA
+    const p = await readProfile(jwtB);
+    expect(p?.migration_in_progress).toBe(false);
+    expect(p?.reverse_in_progress).toBe(true);
+    expect(p?.leader_device_id).toBe(DEV_REV);
+    // Limpia para el ciclo completo del test 13.
+    await patchProfile(jwtB, { reverse_in_progress: false, leader_device_id: null });
+  });
+
+  it("13. ciclo completo: migrar (patrón 6-7) → reverse_claim por el líder → ok + reverse_in_progress=true", async () => {
+    // Migra con el patrón de los goldens 6-7: arma lease + cutover + complete.
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        leader_device_id: DEV_REV,
+        migration_updated_at: new Date().toISOString(),
+        migrated_at: null,
+        reverse_frozen_at: null,
+        reverted_at: null,
+      }),
+    ).toBeLessThan(300);
+    expect((await migrationProgress(jwtB, { device_id: DEV_REV, action: "cutover" })).body.ok).toBe(true);
+    expect((await migrationProgress(jwtB, { device_id: DEV_REV, action: "complete" })).body.ok).toBe(true);
+
+    const r = await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_claim" });
+    expect(r.body.ok).toBe(true);
+    const p = await readProfile(jwtB);
+    expect(p?.reverse_in_progress).toBe(true);
+    expect(p?.leader_device_id).toBe(DEV_REV);
+    expect(p?.migrated_at).not.toBeNull(); // la reversa NO toca migrated_at
+  });
+
+  it("14. re-claim mismo device → ok idempotente; otro device lease vigente → 'other_leader'; vencida → takeover", async () => {
+    // Estado del test 13: rip=true, líder=DEV_REV, heartbeat fresco.
+    const r1 = await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_claim" });
+    expect(r1.body.ok).toBe(true); // re-claim tras kill: SIN chequear edad del lease para el MISMO líder
+
+    const r2 = await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_claim" });
+    expect(r2.body.ok).toBe(false);
+    expect(r2.body.reason).toBe("other_leader"); // lease vigente: nadie usurpa
+
+    expect(await patchProfile(jwtB, { migration_updated_at: "2000-01-01T00:00:00Z" })).toBeLessThan(300);
+    const r3 = await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_claim" });
+    expect(r3.body.ok).toBe(true); // lease vencida: takeover
+    expect((await readProfile(jwtB))?.leader_device_id).toBe(DEV_REV_OTHER);
+    // Devuelve el liderazgo a DEV_REV para los tests siguientes.
+    await patchProfile(jwtB, { leader_device_id: DEV_REV, migration_updated_at: new Date().toISOString() });
+  });
+
+  it("15. reverse_freeze: no-líder → 'other_leader'; líder → ok + reverse_frozen_at set (idempotente, sin edad de lease)", async () => {
+    const rBad = await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_freeze" });
+    expect(rBad.body.ok).toBe(false);
+    expect(rBad.body.reason).toBe("other_leader");
+
+    // El MISMO líder pasa aunque su lease esté vencida (el lease existe SOLO para que competidores usurpen).
+    expect(await patchProfile(jwtB, { migration_updated_at: "2000-01-01T00:00:00Z" })).toBeLessThan(300);
+    const r1 = await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_freeze" });
+    expect(r1.body.ok).toBe(true);
+    const frozen = (await readProfile(jwtB))?.reverse_frozen_at;
+    expect(frozen).not.toBeNull();
+
+    // Idempotente: un 2º freeze no re-mueve el timestamp.
+    expect((await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_freeze" })).body.ok).toBe(true);
+    expect((await readProfile(jwtB))?.reverse_frozen_at).toBe(frozen);
+  });
+
+  it("16. reverse_complete líder → rip=false + reverted_at set + migrated_at INTACTO (idempotente)", async () => {
+    const before = await readProfile(jwtB);
+    expect(before?.migrated_at).not.toBeNull();
+
+    const r = await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_complete" });
+    expect(r.body.ok).toBe(true);
+    const p = await readProfile(jwtB);
+    expect(p?.reverse_in_progress).toBe(false);
+    expect(p?.reverted_at).not.toBeNull();
+    expect(p?.migrated_at).toBe(before?.migrated_at); // §h.4: el backend congelado sigue marcando "migró una vez"
+
+    // Idempotente tras el flip (resume del complete): rip ya false + reverted_at set → ok.
+    expect((await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_complete" })).body.ok).toBe(true);
+    expect((await readProfile(jwtB))?.reverted_at).toBe(p?.reverted_at);
+  });
+
+  it("17. reverse_abort desde claim fresco + freeze → rip=false + reverse_frozen_at=null + reverted_at=null (DES-congela)", async () => {
+    // Claim FRESCO sobre la cuenta ya revertida (2ª reversa = variante migrado, §h.6): debe resetear
+    // reverse_frozen_at Y reverted_at del run anterior (test 16 los dejó set).
+    const rc = await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_claim" });
+    expect(rc.body.ok).toBe(true);
+    const pc = await readProfile(jwtB);
+    expect(pc?.reverted_at).toBeNull(); // el claim fresco resetea los marcadores del run anterior
+    expect(pc?.reverse_frozen_at).toBeNull();
+
+    expect((await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_freeze" })).body.ok).toBe(true);
+    expect((await readProfile(jwtB))?.reverse_frozen_at).not.toBeNull();
+
+    const ra = await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_abort" });
+    expect(ra.body.ok).toBe(true);
+    const p = await readProfile(jwtB);
+    expect(p?.reverse_in_progress).toBe(false);
+    expect(p?.reverse_frozen_at).toBeNull(); // DES-congelado
+    expect(p?.reverted_at).toBeNull(); // la reversa NO ocurrió
+
+    // Idempotente: un 2º abort con rip ya false → ok.
+    expect((await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_abort" })).body.ok).toBe(true);
+  });
+
+  it("18. acción inválida → 400 del Worker (nunca llega al RPC)", async () => {
+    const r = await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_nuke" });
+    expect(r.status).toBe(400);
   });
 });
