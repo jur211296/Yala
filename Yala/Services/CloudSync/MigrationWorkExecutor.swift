@@ -112,7 +112,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         guard let jwt = await session.accessToken(), !jwt.isEmpty else {
             return .sessionExpired(detail: "no access token")
         }
-        return await accountClient.claim(jwt: jwt, deviceID: deviceID, provider: provider)
+        // `migration: true` ES OBLIGATORIO (bug device 2026-07-10): arma `migration_in_progress=true` en
+        // el INSERT atómico → el guard de `migration_progress('cutover')` (exige mip) pasa. Sin él, el
+        // claim crea la fila con mip=false y el cutover se clava en `not_in_progress` para siempre.
+        return await accountClient.claim(jwt: jwt, deviceID: deviceID, provider: provider, migration: true)
     }
 
     // MARK: - Identidad (w3)

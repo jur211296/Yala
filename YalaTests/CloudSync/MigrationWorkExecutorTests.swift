@@ -47,6 +47,7 @@ private final class FakeBeaconStore: BeaconKeyValueStore, @unchecked Sendable {
 private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     var claimBody = Data("{\"state\":\"created\"}".utf8)
     var claimStatus = 200
+    private(set) var lastClaimBody: [String: Any]?
     var migrationBody = Data("{\"ok\":true}".utf8)
     var migrationStatus = 200
     var pushStatus = 200
@@ -63,6 +64,7 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
             return (migrationBody, resp(migrationStatus))
         }
         if path.contains("account/claim") {
+            lastClaimBody = (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())) as? [String: Any]
             return (claimBody, resp(claimStatus))
         }
         if path.contains("sync/push") {
@@ -166,6 +168,19 @@ struct MigrationWorkExecutorTests {
         let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
         #expect(await executor.performClaim() == .success(.created))
+    }
+
+    @Test("performClaim: el body lleva migration=true (bug device 2026-07-10: sin él el cutover se clava en not_in_progress)")
+    func claim_sendsMigrationTrue() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        _ = await executor.performClaim()
+        #expect(stub.lastClaimBody?["migration"] as? Bool == true,
+                "el claim de la MIGRACIÓN debe armar migration_in_progress en el INSERT atómico")
     }
 
     // MARK: - Beacon / efectos
