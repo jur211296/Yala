@@ -167,6 +167,32 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(SyncUnitClock.self) == expected)
     }
 
+    // MARK: - (b·I10-wiring) MigrationState
+
+    @Test func migrationState_entityName_isAnchoredLiteral() {
+        #expect(entity(MigrationState.self)?.name == "MigrationState")
+    }
+
+    @Test func migrationState_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "phaseData",
+            "pendingEffectsData",
+            "snapshotCursorJSON",
+            "verifyMismatchRetries",
+            "verifyNetworkRetries",
+            "leaderDeviceID",
+            "serverSeqCut",
+            "startedAt",
+            "updatedAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(MigrationState.self) == expected)
+    }
+
+    @Test func migrationState_schemaVersion_isOne() {
+        #expect(CloudSyncSchemaVersions.migrationState == 1)
+    }
+
     // MARK: - (c) Membresía de stores
 
     @Test func personalStore_doesNotContain_syncMetaEntities() {
@@ -177,11 +203,12 @@ struct CloudSyncSchemaParityTests {
         #expect(!personal.contains("SyncQuarantine"))
         #expect(!personal.contains("SyncDanglingRef"))
         #expect(!personal.contains("SyncUnitClock"))
+        #expect(!personal.contains("MigrationState"))
     }
 
     @Test func syncMetaStore_containsExactly_syncMetaEntities_andIsCloudKitNone() {
         let expected: Set<String> = ["SyncIdentity", "SyncOutbox", "SyncCursor", "SyncQuarantine",
-                                     "SyncDanglingRef", "SyncUnitClock"]
+                                     "SyncDanglingRef", "SyncUnitClock", "MigrationState"]
         #expect(entityNames(SwiftDataConfiguration.syncMetaSchema) == expected)
 
         let config = SwiftDataConfiguration.syncMetaConfiguration

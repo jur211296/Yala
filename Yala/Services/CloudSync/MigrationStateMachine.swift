@@ -144,7 +144,12 @@ nonisolated enum MigrationEvent: Equatable {
 // MARK: - Effects
 
 /// Declarative side-effects the RUNTIME must perform (the machine executes none of these).
-nonisolated enum MigrationEffect: Equatable {
+///
+/// `String, Codable` (ADITIVO for I10-wiring): the raw value = the case name and is WIRE-STABLE —
+/// `MigrationRunner` journals the PENDING effects of a transition (`MigrationState.pendingEffectsData`,
+/// journal-then-execute, N1) so a kill re-executes exactly what was authorized. The cases are
+/// APPEND-ONLY once shipped: renaming/removing one would break the decode of an in-flight journal.
+nonisolated enum MigrationEffect: String, Equatable, Codable {
     /// Write the iCloud-KV beacon (`cloudAccountLinked` + provider), EARLY — at the claim, not the marker
     /// (v8, §g.4-faro). Closes the provider-mismatch hole across the whole cutover window.
     case writeBeacon

@@ -81,6 +81,7 @@ enum SwiftDataConfiguration {
             SyncQuarantine.self,
             SyncDanglingRef.self,
             SyncUnitClock.self,
+            MigrationState.self,
         ])
     }
 
@@ -125,6 +126,7 @@ enum SwiftDataConfiguration {
     /// `SyncIdentity` (I2), `SyncOutbox` + `SyncCursor` (I3, pipeline de captura), `SyncQuarantine`
     /// + `SyncDanglingRef` (I8f-1, deltas no materializables aún + refs singulares colgadas),
     /// `SyncUnitClock` (I8f-2, HLC por-unidad por fila — señal de los reconciliadores).
+    /// `MigrationState` (I10-wiring, journal durable de la máquina de migración — single-row).
     static var syncMetaSchema: Schema {
         Schema([
             SyncIdentity.self,
@@ -133,6 +135,7 @@ enum SwiftDataConfiguration {
             SyncQuarantine.self,
             SyncDanglingRef.self,
             SyncUnitClock.self,
+            MigrationState.self,
         ])
     }
 
