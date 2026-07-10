@@ -210,6 +210,12 @@ final class CloudSyncMigrationPanelModel {
     /// el mirror-off + borra el journal + apaga el gate de identidad. NO es "forzar done" — devuelve el
     /// device al estado iCloud. El par (storageMode, mirrorOffArmed) se limpia JUNTO (invariante SERIO 1).
     func forceRollbackEscapeHatch() {
+        // Suelta el runner en vuelo (su Task muere en el próximo relaunch; su próximo loadState sobre el
+        // journal borrado daría notStarted → drive corta) y destraba el panel: `isWorking` puede haber
+        // quedado `true` porque una corrida autónoma (subida de snapshot, 10-25 min) mantiene el `await`
+        // vivo — es EXACTAMENTE cuando el escape hatch hace falta.
+        runner = nil
+        isWorking = false
         StorageModePersistence.write(.icloud)
         UserDefaults.standard.removeObject(forKey: StorageModePersistence.mirrorOffArmedKey)
         CloudSyncFlags.identityCaptureEnabled = false
@@ -220,7 +226,6 @@ final class CloudSyncMigrationPanelModel {
         } catch {
             lastMessage = "Escape hatch falló: \(error)"
         }
-        runner = nil
         refresh()
     }
 
@@ -410,7 +415,7 @@ struct CloudSyncDebugView: View {
                 Button {
                     confirmEscapeHatch = true
                 } label: {
-                    Label("Forzar storageMode=.icloud + limpiar journal", systemImage: "arrow.uturn.backward")
+                    Label("Forzar salida (escape hatch) — detiene y limpia", systemImage: "arrow.uturn.backward")
                         .font(DS.Typography.caption)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Spacing.xs)
@@ -418,7 +423,8 @@ struct CloudSyncDebugView: View {
                 }
                 .buttonStyle(.bordered)
                 .tint(.red)
-                .disabled(migration.isWorking)
+                // NUNCA deshabilitado: es el botón de EMERGENCIA — debe funcionar precisamente durante una
+                // corrida autónoma (isWorking=true por los ~20 min de subida). Bug device 2026-07-10.
 
                 if let message = migration.lastMessage {
                     Text(message)
