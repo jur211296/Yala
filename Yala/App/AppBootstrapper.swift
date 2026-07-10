@@ -225,6 +225,11 @@ final class AppBootstrapper {
         // 11. Set model container for background tasks and schedule first report task
         BackgroundTaskManager.shared.setModelContainer(container)
         BackgroundTaskManager.shared.scheduleNextReportTask(context: context)
+        // Siembra inicial del widget-refresh — sin esto el request NUNCA entra a la cola: su único
+        // otro submit vive DENTRO de su propio handler (re-programación), que jamás corre si nadie
+        // sembró la primera vez (bug latente cazado en device durante el spike S7, 2026-07-09).
+        // `submit` reemplaza el request pendiente por identifier → re-sembrar en cada boot es seguro.
+        BackgroundTaskManager.shared.scheduleWidgetRefresh()
 
         // 12. Check if any report notifications should be sent now (app launch case)
         await ReportNotificationService.shared.sendDueReports(context: context)
