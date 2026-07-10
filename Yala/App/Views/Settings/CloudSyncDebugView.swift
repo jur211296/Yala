@@ -173,6 +173,18 @@ final class CloudSyncMigrationPanelModel {
         refresh()
     }
 
+    /// Avanza `consent` → `authenticating` → `claimingMigration` (los 2 eventos de UI que la máquina §g
+    /// espera y que la UI real de migración — I14 — emitirá). En el panel DEBUG el sign-in ya ocurrió
+    /// (I7c) → `signInSucceeded` es confirmatorio; tras él la máquina drive-a sola hasta el cutover.
+    func acceptConsentAndSignIn() async {
+        isWorking = true; defer { isWorking = false }
+        let r = makeRunner()
+        await r.submit(.consentAccepted)     // consent → authenticating
+        await r.submit(.signInSucceeded)     // authenticating → claimingMigration → drive autónomo
+        lastMessage = "consent aceptado + sign-in → la máquina avanza a claimingMigration y sigue sola"
+        refresh()
+    }
+
     func resume() async {
         isWorking = true; defer { isWorking = false }
         await makeRunner().resume()
@@ -376,6 +388,7 @@ struct CloudSyncDebugView: View {
                 VStack(spacing: DS.Spacing.sm) {
                     migrationButton("Simular migración (dry-run)") { await migration.simulate() }
                     migrationButton("Conteos dry-run (§g.5, no escribe)") { migration.computeDryRun() }
+                    migrationButton("Aceptar consent + sign-in (continuar)") { await migration.acceptConsentAndSignIn() }
                     migrationButton("Retomar (resume)") { await migration.resume() }
                     migrationButton("Poll líder") { await migration.pollLeader() }
                     migrationButton("Reset tras rollback") { await migration.resetAfterRollback() }
