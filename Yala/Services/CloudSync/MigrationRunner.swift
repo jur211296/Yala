@@ -50,6 +50,38 @@ enum SnapshotStepOutcome: Equatable {
     case transient
 }
 
+// MARK: - Outcomes de la reversa (§h, I11-2). `nonisolated` Equatable: los compara la lógica de tests.
+
+/// Resultado del `reverse_claim` (§h). `accepted` = reserva otorgada; `otherLeader` = otro device ya es
+/// reverse-líder (desatascador); el resto = stop retomable. I11-3 cabla el server real; hoy `.transient`.
+nonisolated enum ReverseClaimOutcome: Equatable {
+    case accepted
+    case otherLeader
+    case sessionExpired
+    case transient
+    case rejected(reason: String)
+}
+
+/// Resultado de un paso genérico de la reversa (drain final / freeze). `completed` avanza; `transient` corta.
+nonisolated enum ReverseStepOutcome: Equatable {
+    case completed
+    case transient
+}
+
+/// Resultado del barrido de zombies (§h.3 `deletingZombies`). `completed(deleted:)` = filas vivas
+/// tombstoneadas borradas (0 = no-op idempotente, caso normal); `transient` = red del pull → retomable.
+nonisolated enum ZombieSweepOutcome: Equatable {
+    case completed(deleted: Int)
+    case transient
+}
+
+/// Estado del drenaje del store al mirror en `reverseUpload` (§h). `drained` = todo exportó (o hizo
+/// round-trip); `pending(count:)` = `count` filas aún sin metadata/export → retomable.
+nonisolated enum ReverseUploadStatus: Equatable {
+    case drained
+    case pending(count: Int)
+}
+
 /// Seam del trabajo REAL por fase (los ejecutores reales llegan en w3-w6; aquí solo el fake de tests).
 /// `@MainActor`: manipula red/identidad/ModelContext en prod.
 @MainActor
@@ -73,6 +105,29 @@ protocol MigrationWorkExecuting: AnyObject {
     /// Gate de EXPORT del marcador (§g.4, entre paso 3 y 4): ¿el `CloudMigrationMarker` LLEGÓ a CloudKit?
     /// El save del marcador exporta ASYNC; apagar el mirror antes lo perdería. `false` = aún sin exportar.
     func isMarkerExported() -> Bool
+
+    // MARK: Reversa (§h, I11-2). El server-side (claim/freeze) queda notWired hasta I11-3.
+
+    /// `reverse_claim` (§h). I11-3 cabla el RPC real; hoy `.transient` + breadcrumb notWired.
+    func performReverseClaim() async -> ReverseClaimOutcome
+    /// `reverseDrainAll` (§h): pull final + drain del outbox propio + push del residual (reusa piezas de `verify()`).
+    func reverseDrainOnce() async -> ReverseStepOutcome
+    /// `reverseFreezeBackend` (§h): marca la cuenta backend "reverting". I11-3; hoy `false` + breadcrumb notWired.
+    func freezeBackendForReverse() async -> Bool
+    /// Observación post-relaunch: ¿el mirror `.private` está confirmado ON? (resuelve `.mountMirrorAndRelaunch`,
+    /// análogo a `isMirrorConfirmedOff`). CONTRATO I11-2: debe ser fake-able en tests (el testigo real reporta
+    /// `.icloud` por default → "montado SIEMPRE" = falso verde).
+    func isMirrorConfirmedOn() -> Bool
+    /// §h.3 `deletingZombies`: barrido tombstones-del-backend vs filas VIVAS locales (borra las resucitadas).
+    /// `sinceSeq` = corte del pull en enumeración PURA (sin applyPage, sin avanzar cursor/testigos).
+    func sweepZombies(sinceSeq: Int64) async -> ZombieSweepOutcome
+    /// §h.3 `rebindingUUIDs`: verificación (v1) de `SyncIdentity.lastReboundAt` con fila viva presente.
+    /// Devuelve el conteo verificado (sin deletes — el replay del mirror exporta el update de campo, S5).
+    func verifyRebinds() -> Int
+    /// §h.3 `dedupHealed`: DETECCIÓN read-only de copias idénticas (I11-2; auto-cura en I11-4). Devuelve el conteo.
+    func healDuplicates() -> Int
+    /// §h `reverseUpload`: muestreo CKIdentityCapture sobre las filas vivas → `.drained` / `.pending(count)`.
+    func reverseUploadStatus() -> ReverseUploadStatus
 }
 
 // MARK: - Runner
@@ -171,15 +226,14 @@ final class MigrationRunner {
         }
     }
 
-    /// Reinicio EXPLÍCITO tras un `failedRollback` (S2): la máquina no tiene arista de salida de ese
-    /// estado terminal a propósito (el reinicio es una decisión del USUARIO, no una transición
-    /// automática). Resetea el journal COMPLETO a `notStarted` (fase, efectos, campos scoped y
-    /// `startedAt`). No-op fuera de `failedRollback`. I14 lo invoca desde el botón "reintentar".
-    ///
-    /// CONTRATO I11-2 (anclado): este método se EXTENDERÁ a `reverseFailedRollback` reseteando la fase al
-    /// ORIGIN journaleado (`MigrationState.reverseOriginRaw`, campo aditivo), NO a `notStarted` ciego — un
-    /// líder que revirtió desde `done` que resetee a `notStarted` mentiría para siempre a
-    /// `markerReconciliation`.
+    /// Reinicio EXPLÍCITO tras un rollback (S2): la máquina no tiene arista de salida de esos estados
+    /// terminales a propósito (el reinicio es una decisión del USUARIO, no una transición automática). No-op
+    /// fuera de `failedRollback`/`reverseFailedRollback`. I14 lo invoca desde el botón "reintentar".
+    ///  - `failedRollback` (forward) → reset COMPLETO a `notStarted` (fase, efectos, campos scoped, startedAt).
+    ///  - `reverseFailedRollback` (I11-2) → repone la fase ORIGEN journaleada (`reverseOriginRaw`, fallback
+    ///    `.done`), NO `notStarted` ciego — un líder que revirtió desde `done` que resetee a `notStarted`
+    ///    mentiría para siempre a `markerReconciliation` (marker vivo + sin traza → falso
+    ///    `secondaryDeviceCloudLogin`). Limpia lo scoped + `reverseOriginRaw`.
     func resetAfterRollback() async {
         guard await awaitQuiescence() else {
             CloudSyncBreadcrumb.migrationQuiescenceTimeout()
@@ -187,17 +241,34 @@ final class MigrationRunner {
         }
         await runGuarded {
             let state = try self.loadState()
-            guard state.readPhase().phase == .failedRollback else { return }
-            state.setPhase(.notStarted)
+            let phase = state.readPhase().phase
+            let target: MigrationPhase
+            switch phase {
+            case .failedRollback:
+                // Forward: reinicio COMPLETO a notStarted (la máquina no tiene arista de salida a propósito).
+                target = .notStarted
+            case .reverseFailedRollback:
+                // Reversa (I11-2): reponer la fase ORIGEN journaleada, NO `notStarted` ciego — un líder que
+                // revirtió desde `done` que resetee a `notStarted` mentiría para siempre a
+                // `markerReconciliation` (marker vivo + sin traza → falso secondaryDeviceCloudLogin). Fallback
+                // `.done`: veraz para el único caso real (líder migrado); benigno para ambos (con el mirror
+                // off el marker no es visible ⇒ markerReconciliation no dispara).
+                let origin = state.reverseOriginRaw.flatMap(ReverseOrigin.init(rawValue:)) ?? .done
+                target = (origin == .notStarted) ? .notStarted : .done
+            default:
+                return                                     // no-op fuera de los dos estados de rollback
+            }
+            state.setPhase(target)
             state.setPendingEffects([])
             state.leaderDeviceID = nil
             state.verifyMismatchRetries = 0
             state.verifyNetworkRetries = 0
             state.snapshotCursorJSON = nil
-            state.startedAt = nil
+            state.reverseOriginRaw = nil
+            if target == .notStarted { state.startedAt = nil }
             state.updatedAt = self.now()
             try self.context.save()
-            CloudSyncBreadcrumb.migrationJournaled(phase: "notStarted (reset tras rollback)")
+            CloudSyncBreadcrumb.migrationJournaled(phase: "\(target) (reset tras rollback)")
         }
     }
 
@@ -246,16 +317,29 @@ final class MigrationRunner {
         case let .transition(next, effects):
             state.setPhase(next)
             state.setPendingEffects(effects)
+            // I11-2: al CRUZAR reverseConfirm(origin) → reverseClaimLeader, journalar el ORIGIN (la máquina
+            // no lo propaga) + resetear los contadores S9 (pueden traer gasto del verify forward — el
+            // S2-cleanup solo resetea en notStarted/failedRollback). En el MISMO save de la transición (N1).
+            if case let .reverseConfirm(origin) = current, next == .reverseClaimLeader {
+                state.reverseOriginRaw = origin.rawValue
+                state.verifyMismatchRetries = 0
+                state.verifyNetworkRetries = 0
+                state.snapshotCursorJSON = nil
+            }
             // S2 (review adversarial): al llegar a un estado de CIERRE de intento, limpiar los campos
             // SCOPED a la migración en el MISMO save — un `leaderDeviceID`/contador/cursor stale que
             // sobreviva a un intento anterior envenenaría al siguiente (p.ej. contadores S9 ya gastados
             // → rollback prematuro). `startedAt` se conserva en `failedRollback` (diagnóstico del intento
-            // fallido) y se limpia en `notStarted` (adopt/decline — sin migración en curso).
-            if next == .notStarted || next == .failedRollback {
+            // fallido) y se limpia en `notStarted` (adopt/decline — sin migración en curso). `icloudActive`
+            // (terminal de la reversa) se une al bloque (I11-2): la reversa terminó → limpia lo scoped +
+            // `reverseOriginRaw`. `reverseFailedRollback` NO entra: conserva `reverseOriginRaw` para que
+            // `resetAfterRollback` reponga la fase origen (no `notStarted` ciego).
+            if next == .notStarted || next == .failedRollback || next == .icloudActive {
                 state.leaderDeviceID = nil
                 state.verifyMismatchRetries = 0
                 state.verifyNetworkRetries = 0
                 state.snapshotCursorJSON = nil
+                state.reverseOriginRaw = nil
                 if next == .notStarted { state.startedAt = nil }
             }
             mutate(state, next)
@@ -276,6 +360,15 @@ final class MigrationRunner {
                 removeFirstPending(state)
                 try context.save()
                 try await handle(.mirrorRelaunchCompleted)
+                return
+            }
+            if effect == .mountMirrorAndRelaunch, isResume, executor.isMirrorConfirmedOn() {
+                // Simétrico al mirror-off (§h): el relaunch remontó el mirror `.private` → consumir el
+                // pendiente + avanzar por observación (nunca re-ejecución ciega del efecto que cruza el
+                // process boundary).
+                removeFirstPending(state)
+                try context.save()
+                try await handle(.reverseMirrorMounted)
                 return
             }
             do {
@@ -332,13 +425,33 @@ final class MigrationRunner {
                 if !(try await driveVerify()) { return }
             case let .cutover(sub):
                 if !(try await driveCutover(sub)) { return }
-            case .reverseConfirm, .reverseClaimLeader, .reverseDrainAll, .reverseVerify,
-                 .reverseFreezeBackend, .reverseMountMirror, .reverseReconcile, .reverseUpload,
-                 .icloudActive, .reverseFailedRollback:
-                // I11-2 cablea el driving de la reversa (§h). En I11-1 la máquina/journal ya modelan los
-                // estados pero NADA los conduce (DARK): corta sin trabajo. `icloudActive`/`reverseFailedRollback`
-                // son terminales estables; el resto espera el wiring del runner de la reversa.
+            case .reverseConfirm, .icloudActive, .reverseFailedRollback:
+                // reverseConfirm espera el evento de UI (reverseConfirmed/reverseDeclined, I14);
+                // icloudActive/reverseFailedRollback son terminales estables. DARK: nada de producción
+                // emite `reverseActivated`, así que estas fases no se alcanzan hoy en runtime.
                 return
+            case .reverseClaimLeader:
+                if !(try await driveReverseClaim()) { return }
+            case .reverseDrainAll:
+                switch await executor.reverseDrainOnce() {
+                case .completed: try await handle(.reverseDrainCompleted)
+                case .transient: return
+                }
+            case .reverseVerify:
+                if !(try await driveReverseVerify()) { return }
+            case .reverseFreezeBackend:
+                // I11-3 cabla el server real; hoy `freezeBackendForReverse` devuelve false → stop retomable.
+                guard await executor.freezeBackendForReverse() else { return }
+                try await handle(.reverseBackendFrozen)        // efecto: mountMirrorAndRelaunch
+            case .reverseMountMirror:
+                // Resuelto SIEMPRE por observación (forward tras ejecutar el efecto, o resume post-relaunch):
+                // el efecto `mountMirrorAndRelaunch` desarma el flag; el mirror monta al RELANZAR.
+                guard executor.isMirrorConfirmedOn() else { return }
+                try await handle(.reverseMirrorMounted)        // → reverseReconcile(.awaitingQuiescence)
+            case let .reverseReconcile(sub):
+                if !(try await driveReverseReconcile(sub)) { return }
+            case .reverseUpload:
+                if !(try await driveReverseUpload()) { return }
             }
         }
     }
@@ -465,6 +578,139 @@ final class MigrationRunner {
             guard executor.isMirrorConfirmedOff() else { return false }
             try await handle(.mirrorRelaunchCompleted)     // → done
             return true
+        }
+    }
+
+    // MARK: - Reversa (§h, I11-2) — driving por fase
+
+    /// `reverseClaimLeader`. `accepted` → avanza; `otherLeader` → desatascador (vuelve al origin
+    /// journaleado); el resto (session/transient/rejected) → stop retomable SIN evento (un resume re-claima).
+    /// Devuelve `false` para cortar el bucle.
+    private func driveReverseClaim() async throws -> Bool {
+        switch await executor.performReverseClaim() {
+        case .accepted:
+            try await handle(.reverseLeaderClaimed)
+            return true
+        case .otherLeader:
+            CloudSyncBreadcrumb.reverseOtherLeader()
+            try await handle(.reverseOtherLeader(returnTo: try originFromJournal()))
+            return false                                   // la máquina ya movió al origin (terminal/forward)
+        case .sessionExpired:
+            CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "reverse: sessionExpired")
+            return false
+        case .transient:
+            CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "reverse: transient")
+            return false
+        case let .rejected(reason):
+            CloudSyncBreadcrumb.migrationClaimNoSuccess(reason: "reverse: \(reason)")
+            return false
+        }
+    }
+
+    /// `reverseVerify` (S9 REUSADO; autoridad backend→local → un mismatch RE-DRENA, no re-sube). Inyecta el
+    /// `retriesSoFar` desde el journal e incrementa el contador correcto en el MISMO save. Corta tras un
+    /// `networkTimeout` que reintenta (anti tight-loop, igual que el verify forward).
+    private func driveReverseVerify() async throws -> Bool {
+        switch await executor.verify() {
+        case .match:
+            try await handle(.reverseVerifyOutcome(.match))
+            return true
+        case .newDeltaDetected:
+            try await handle(.reverseVerifyOutcome(.newDeltaDetected))   // no consume retry
+            return true
+        case .mismatch:
+            let spent = try loadState().verifyMismatchRetries
+            try await handle(.reverseVerifyOutcome(.mismatch(retriesSoFar: spent))) { state, next in
+                // Solo si REINTENTA (reverseDrainAll = re-pull) se gasta un retry. NO se limpia cursor (la
+                // reversa no re-sube snapshot).
+                if next == .reverseDrainAll { state.verifyMismatchRetries += 1 }
+            }
+            return true
+        case .networkTimeout:
+            let spent = try loadState().verifyNetworkRetries
+            try await handle(.reverseVerifyOutcome(.networkTimeout(retriesSoFar: spent))) { state, next in
+                if next == .reverseVerify { state.verifyNetworkRetries += 1 }
+            }
+            // Si degradó a reverseFailedRollback (tope), drive() corta solo en la próxima vuelta; si reintenta
+            // (sigue en reverseVerify), corta AQUÍ retomable (sin tight-loop de red).
+            return try loadState().readPhase().phase != .reverseVerify
+        }
+    }
+
+    /// `reverseReconcile`, un sub-estado por vuelta (§h.3, orden estricto). Devuelve `false` para cortar retomable.
+    private func driveReverseReconcile(_ sub: ReverseReconcileSubstate) async throws -> Bool {
+        switch sub {
+        case .awaitingQuiescence:
+            // El PRIMER delete+save espera quiescencia del import del mirror remontado (SERIO 3 v3, molde SpikeS6).
+            guard quiescenceSignal() else { return false }
+            try await handle(.reverseQuiescenceReached)
+            return true
+        case .deletingZombies:
+            switch await executor.sweepZombies(sinceSeq: try reverseSeqCut()) {
+            case let .completed(deleted):
+                CloudSyncBreadcrumb.reverseZombiesSwept(count: deleted)
+                try await handle(.reverseZombiesDeleted)
+                return true
+            case .transient:
+                return false
+            }
+        case .rebindingUUIDs:
+            let verified = executor.verifyRebinds()
+            CloudSyncBreadcrumb.reverseRebindsVerified(count: verified)
+            try await handle(.reverseUUIDsRebound)
+            return true
+        case .dedupHealed:
+            let detected = executor.healDuplicates()
+            CloudSyncBreadcrumb.reverseDuplicatesDetected(count: detected)
+            try await handle(.reverseDedupHealed)
+            return true
+        }
+    }
+
+    /// `reverseUpload`. `drained` → cierra a `icloudActive` (con el cuarteto de efectos); `pending(count)` →
+    /// breadcrumb + stop retomable (el resume/panel re-sondea el drenaje del mirror).
+    private func driveReverseUpload() async throws -> Bool {
+        switch executor.reverseUploadStatus() {
+        case .drained:
+            try await handle(.reverseUploadCompleted)      // → icloudActive [marker, beacon, mode, server]
+            return true
+        case let .pending(count):
+            CloudSyncBreadcrumb.reverseUploadPending(count: count)
+            return false
+        }
+    }
+
+    /// El `origin` de la reversa journaleado (`reverseOriginRaw`) para el desatascador `reverseOtherLeader`.
+    /// Fallback `.done` si falta (benigno: markerReconciliation(done)→.none; veraz para el líder migrado —
+    /// el único caso real actual).
+    private func originFromJournal() throws -> ReverseOrigin {
+        (try loadState().reverseOriginRaw).flatMap(ReverseOrigin.init(rawValue:)) ?? .done
+    }
+
+    /// Corte `serverSeqCut` para el barrido de zombies. Fuente PRIMARIA: la fila local `CloudMigrationMarker`
+    /// (vive hasta `icloudActive`); FALLBACK: `MigrationState.serverSeqCut` (journal — hoy NADIE lo escribe,
+    /// queda 0); FALLBACK: 0 + breadcrumb (since-0 es correcto, solo más caro). Nunca lanza por un fallo de
+    /// fetch (degrada a 0).
+    private func reverseSeqCut() throws -> Int64 {
+        if let cut = markerSeqCut(), cut > 0 { return cut }
+        let journalCut = try loadState().serverSeqCut
+        if journalCut > 0 { return journalCut }
+        CloudSyncBreadcrumb.reverseSeqCutFallbackZero()
+        return 0
+    }
+
+    /// `CloudMigrationMarker.serverSeqCut` de la fila local (single-row). Lectura pura; `nil` si no hay marcador
+    /// o el fetch falla.
+    private func markerSeqCut() -> Int64? {
+        do {
+            var descriptor = FetchDescriptor<CloudMigrationMarker>()
+            descriptor.fetchLimit = 1
+            return try context.fetch(descriptor).first?.serverSeqCut
+        } catch {
+            #if DEBUG
+            print("MigrationRunner: fetch(CloudMigrationMarker) para serverSeqCut falló: \(error)")
+            #endif
+            return nil
         }
     }
 

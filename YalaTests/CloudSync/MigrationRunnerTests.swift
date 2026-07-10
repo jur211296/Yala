@@ -42,6 +42,23 @@ private final class FakeExecutor: MigrationWorkExecuting {
     var confirmCutoverResult = true
     var persistLocalModeResult = true
 
+    // Reversa (§h, I11-2).
+    var reverseClaimOutcomes: [ReverseClaimOutcome] = [.accepted]
+    private var reverseClaimIndex = 0
+    var reverseClaimCallCount = 0
+    var reverseDrainOutcome: ReverseStepOutcome = .completed
+    var freezeBackendResult = true
+    /// `isMirrorConfirmedOn()` — fake-able (el real reporta `.icloud` SIEMPRE en tests = false green).
+    var mirrorOn = false
+    /// Ejecutar `.mountMirrorAndRelaunch` monta el mirror (simula el relaunch surtiendo efecto).
+    var setMirrorOnOnMount = true
+    var sweepOutcome: ZombieSweepOutcome = .completed(deleted: 0)
+    var sweepCallCount = 0
+    var verifyRebindsResult = 0
+    var healDuplicatesResult = 0
+    var reverseUploadStatuses: [ReverseUploadStatus] = [.drained]
+    private var reverseUploadIndex = 0
+
     // Efectos.
     var executedEffects: [MigrationEffect] = []
     var effectErrors: [MigrationEffect: any Error] = [:]
@@ -93,10 +110,33 @@ private final class FakeExecutor: MigrationWorkExecuting {
         executedEffects.append(effect)
         if effect == .disableMirrorAndRelaunch, setMirrorOffOnDisable { mirrorOff = true }
         if effect == .writeCloudKitMarker, setMarkerExportedOnWrite { markerExported = true }
+        if effect == .mountMirrorAndRelaunch, setMirrorOnOnMount { mirrorOn = true }
     }
 
     func isMirrorConfirmedOff() -> Bool { mirrorOff }
     func isMarkerExported() -> Bool { markerExported }
+
+    // MARK: Reversa (§h)
+    func performReverseClaim() async -> ReverseClaimOutcome {
+        reverseClaimCallCount += 1
+        await Task.yield()
+        guard !reverseClaimOutcomes.isEmpty else { return .transient }
+        let outcome = reverseClaimOutcomes[min(reverseClaimIndex, reverseClaimOutcomes.count - 1)]
+        reverseClaimIndex += 1
+        return outcome
+    }
+    func reverseDrainOnce() async -> ReverseStepOutcome { reverseDrainOutcome }
+    func freezeBackendForReverse() async -> Bool { freezeBackendResult }
+    func isMirrorConfirmedOn() -> Bool { mirrorOn }
+    func sweepZombies(sinceSeq: Int64) async -> ZombieSweepOutcome { sweepCallCount += 1; return sweepOutcome }
+    func verifyRebinds() -> Int { verifyRebindsResult }
+    func healDuplicates() -> Int { healDuplicatesResult }
+    func reverseUploadStatus() -> ReverseUploadStatus {
+        guard !reverseUploadStatuses.isEmpty else { return .drained }
+        let status = reverseUploadStatuses[min(reverseUploadIndex, reverseUploadStatuses.count - 1)]
+        reverseUploadIndex += 1
+        return status
+    }
 
     func count(_ effect: MigrationEffect) -> Int { executedEffects.filter { $0 == effect }.count }
 }
@@ -159,7 +199,7 @@ struct MigrationRunnerTests {
     private func seedJournal(
         _ context: ModelContext, phase: Phase, pending: [Effect] = [],
         leaderDeviceID: String? = nil, mismatchRetries: Int = 0, networkRetries: Int = 0,
-        snapshotCursor: String? = nil
+        snapshotCursor: String? = nil, reverseOriginRaw: String? = nil
     ) throws -> MigrationState {
         let state = MigrationState()
         state.setPhase(phase)
@@ -168,6 +208,7 @@ struct MigrationRunnerTests {
         state.verifyMismatchRetries = mismatchRetries
         state.verifyNetworkRetries = networkRetries
         state.snapshotCursorJSON = snapshotCursor
+        state.reverseOriginRaw = reverseOriginRaw
         state.startedAt = fixedNow
         state.updatedAt = fixedNow
         context.insert(state)
@@ -623,5 +664,215 @@ struct MigrationRunnerTests {
             await runner2.resume()
             #expect(fake.count(.writeBeacon) == 1, "el resume re-claima y avanza (\(noSuccess))")
         }
+    }
+
+    // MARK: - 11. Reversa (§h, I11-2) — driving del runner
+
+    /// Camino feliz completo de la reversa desde `done`: secuencia exacta de efectos + reverseOriginRaw
+    /// escrito en el claim y LIMPIADO al llegar a icloudActive.
+    @Test func reverse_happyPath_fromDone_reachesICloudActive_withExactEffects() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseClaimOutcomes = [.accepted]
+        fake.reverseDrainOutcome = .completed
+        fake.verifyProbes = [.match]                 // reverse verify reusa executor.verify()
+        fake.freezeBackendResult = true
+        fake.setMirrorOnOnMount = true               // ejecutar el efecto monta el mirror → drive avanza
+        fake.sweepOutcome = .completed(deleted: 0)
+        fake.reverseUploadStatuses = [.drained]
+        try seedJournal(context, phase: .done)
+
+        await runner(context, fake).submit(.reverseActivated)
+        #expect(try journal(context).readPhase().phase == .reverseConfirm(.done))
+
+        await runner(context, fake).submit(.reverseConfirmed)   // → drive autónomo hasta icloudActive
+        let final = try journal(context)
+        #expect(final.readPhase().phase == .icloudActive)
+        #expect(final.readPendingEffects().isEmpty)
+        #expect(final.reverseOriginRaw == nil, "icloudActive limpia reverseOriginRaw (S2-cleanup extendido)")
+        #expect(fake.executedEffects == [
+            .mountMirrorAndRelaunch,
+            .deleteCloudKitMarker, .clearCloudBeacon, .persistICloudMode, .completeReverseServer,
+        ], "efecto de mount al entrar a reverseMountMirror + cuarteto de cierre EN ORDEN")
+    }
+
+    /// El origin + el reset S9 se journalean en el MISMO save del claim (reverseConfirm→reverseClaimLeader).
+    @Test func reverse_originAndS9Reset_writtenOnClaimTransition() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseClaimOutcomes = [.transient]     // corta en reverseClaimLeader para inspeccionar
+        // Contadores S9 con gasto del verify forward previo.
+        try seedJournal(context, phase: .reverseConfirm(.done), mismatchRetries: 3, networkRetries: 5,
+                        snapshotCursor: "stale")
+
+        await runner(context, fake).submit(.reverseConfirmed)
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .reverseClaimLeader)
+        #expect(j.reverseOriginRaw == "done", "el origin se journalea en la transición del claim")
+        #expect(j.verifyMismatchRetries == 0, "S9 reset en el claim de la reversa")
+        #expect(j.verifyNetworkRetries == 0)
+        #expect(j.snapshotCursorJSON == nil)
+    }
+
+    /// Desatascador: otro device es reverse-líder → vuelve al ORIGIN journaleado (ambos origins + fallback).
+    @Test func reverse_otherLeader_returnsToJournaledOrigin() async throws {
+        for (originRaw, expected): (String?, Phase) in [("done", .done), ("notStarted", .notStarted), (nil, .done)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            fake.reverseClaimOutcomes = [.otherLeader]
+            try seedJournal(context, phase: .reverseClaimLeader, reverseOriginRaw: originRaw)
+
+            await runner(context, fake).resume()
+
+            #expect(try journal(context).readPhase().phase == expected,
+                    "otherLeader con origin=\(originRaw ?? "nil") → \(expected)")
+        }
+    }
+
+    /// REGRESIÓN (review I11-2, gap de la lente A): la TRANSICIÓN REAL a `reverseFailedRollback` (tope de
+    /// mismatch del reverseVerify) debe CONSERVAR `reverseOriginRaw` — está deliberadamente FUERA del
+    /// S2-cleanup. Si alguien lo añadiera al set de limpieza, `resetAfterRollback` caería al fallback `.done`
+    /// y un ADOPTADOR (origin notStarted) quedaría con journal `done` mintiendo para siempre. Los demás tests
+    /// de reset seedean el journal directo y NO cazarían esa regresión.
+    @Test func reverse_fatalTransition_preservesOrigin_resetRestoresNotStarted() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.verifyProbes = [.mismatch]              // reverse verify reusa executor.verify()
+        try seedJournal(context, phase: .reverseVerify, mismatchRetries: 3, reverseOriginRaw: "notStarted")
+
+        let r = makeRunner(context, fake, policy: MigrationPolicy(maxMismatchRetries: 3, maxNetworkRetries: 8))
+        await r.resume()
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .reverseFailedRollback, "tope de mismatch → reverseFailedRollback")
+        #expect(j.reverseOriginRaw == "notStarted",
+                "la transición a reverseFailedRollback CONSERVA el origin (fuera del S2-cleanup)")
+
+        await r.resetAfterRollback()
+        let after = try journal(context)
+        #expect(after.readPhase().phase == .notStarted, "el reset repone el ORIGEN journaleado, no .done")
+        #expect(after.reverseOriginRaw == nil, "el reset limpia el origin")
+    }
+
+    /// Kill-resume: el efecto `.mountMirrorAndRelaunch` pendiente + mirror YA montado (observación) → consume
+    /// el pendiente y avanza SIN re-ejecutar el efecto (cruza el process boundary).
+    @Test func reverse_killResume_mountEffectPending_mirrorMounted_advancesByObservation() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.mirrorOn = true                         // el relaunch ya remontó el mirror
+        fake.sweepOutcome = .transient               // corta en deletingZombies para inspeccionar
+        try seedJournal(context, phase: .reverseMountMirror, pending: [.mountMirrorAndRelaunch],
+                        reverseOriginRaw: "done")
+
+        await runner(context, fake).resume()
+
+        #expect(fake.count(.mountMirrorAndRelaunch) == 0, "NO se re-ejecuta el mount (resuelto por observación)")
+        #expect(try journal(context).readPhase().phase == .reverseReconcile(.deletingZombies))
+    }
+
+    /// Kill-resume en un sub-estado de reconcile → retoma EXACTO (no re-ejecuta los completados).
+    @Test func reverse_killResume_reconcileSubstate_retakesExact_noReRun() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.verifyRebindsResult = 2
+        fake.healDuplicatesResult = 0
+        fake.reverseUploadStatuses = [.pending(count: 1)]   // corta en reverseUpload
+        try seedJournal(context, phase: .reverseReconcile(.rebindingUUIDs), reverseOriginRaw: "done")
+
+        await runner(context, fake).resume()
+
+        #expect(fake.sweepCallCount == 0, "deletingZombies ya estaba hecho → NO se re-barre")
+        #expect(try journal(context).readPhase().phase == .reverseUpload)
+    }
+
+    /// reverseUpload pending → stop retomable → drained → icloudActive.
+    @Test func reverse_reverseUpload_pendingThenDrained_reachesICloudActive() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseUploadStatuses = [.pending(count: 4)]
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        await runner(context, fake).resume()
+        #expect(try journal(context).readPhase().phase == .reverseUpload, "pending → stop retomable")
+
+        fake.reverseUploadStatuses = [.drained]
+        await runner(context, fake).resume()
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .icloudActive)
+        #expect(j.readPendingEffects().isEmpty)
+    }
+
+    /// completeReverseServer notWired → journaled-pendiente; el resume lo reintenta (los otros 3 ya corrieron).
+    @Test func reverse_completeServerNotWired_journaledPending_resumeRetries() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseUploadStatuses = [.drained]
+        fake.effectErrors[.completeReverseServer] = FakeError()   // simula el notWired del executor
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        await runner(context, fake).resume()
+        var j = try journal(context)
+        #expect(j.readPhase().phase == .icloudActive)
+        #expect(j.readPendingEffects() == [.completeReverseServer], "los 3 primeros corrieron; el server queda pendiente")
+        #expect(fake.count(.deleteCloudKitMarker) == 1)
+        #expect(fake.count(.clearCloudBeacon) == 1)
+        #expect(fake.count(.persistICloudMode) == 1)
+        #expect(fake.count(.completeReverseServer) == 0)
+
+        fake.effectErrors.removeValue(forKey: .completeReverseServer)
+        await runner(context, fake).resume()
+        j = try journal(context)
+        #expect(fake.count(.completeReverseServer) == 1, "el resume reintenta el efecto pendiente")
+        #expect(j.readPendingEffects().isEmpty)
+    }
+
+    /// reverseVerify mismatch RE-DRENA (pull), gasta un retry de MISMATCH, NUNCA re-sube.
+    @Test func reverse_verifyMismatch_reDrains_spendsMismatchRetry() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.verifyProbes = [.mismatch]
+        fake.reverseDrainOutcome = .transient        // corta en reverseDrainAll para inspeccionar
+        try seedJournal(context, phase: .reverseVerify, reverseOriginRaw: "done")
+
+        await runner(context, fake).resume()
+
+        let j = try journal(context)
+        #expect(j.readPhase().phase == .reverseDrainAll, "mismatch de la reversa RE-DRENA (pull), no re-sube")
+        #expect(j.verifyMismatchRetries == 1)
+        #expect(j.verifyNetworkRetries == 0, "el contador de red NO se toca")
+    }
+
+    /// resetAfterRollback desde reverseFailedRollback → repone la fase ORIGEN journaleada (no notStarted ciego).
+    @Test func reverse_resetAfterRollback_restoresJournaledOrigin() async throws {
+        for (originRaw, expected): (String?, Phase) in [("done", .done), ("notStarted", .notStarted), (nil, .done)] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let fake = FakeExecutor()
+            try seedJournal(context, phase: .reverseFailedRollback, leaderDeviceID: "stale",
+                            mismatchRetries: 2, reverseOriginRaw: originRaw)
+
+            await runner(context, fake).resetAfterRollback()
+
+            let j = try journal(context)
+            #expect(j.readPhase().phase == expected, "origin=\(originRaw ?? "nil") → \(expected)")
+            #expect(j.reverseOriginRaw == nil)
+            #expect(j.leaderDeviceID == nil)
+            #expect(j.verifyMismatchRetries == 0)
+        }
+    }
+
+    /// Un NUEVO runner por acción (espeja el patrón de kill: instancia nueva re-lee el store).
+    private func runner(_ context: ModelContext, _ fake: FakeExecutor) -> MigrationRunner {
+        makeRunner(context, fake)
     }
 }

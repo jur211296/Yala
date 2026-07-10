@@ -26,6 +26,7 @@ protocol BeaconKeyValueStore: AnyObject {
     func bool(forKey key: String) -> Bool
     func string(forKey key: String) -> String?
     func double(forKey key: String) -> Double
+    func removeObject(forKey key: String)
     @discardableResult func synchronize() -> Bool
 }
 
@@ -67,6 +68,17 @@ final class CloudBeacon {
             store.setString(Self.hash(sub), forKey: Keys.accountHash)
         }
         store.setDouble(now.timeIntervalSince1970, forKey: Keys.linkedAt)
+        store.synchronize()
+    }
+
+    /// Limpia el faro `cloudAccountLinked` (§g.4-faro, efecto `.clearCloudBeacon` de la reversa I11). Remueve
+    /// las 4 keys + `synchronize()` — simétrico a `writeCloudAccountLinked`. Tras revertir a iCloud el device
+    /// ya NO tiene una cuenta nube vinculada: dejar el faro puesto haría que un 2º device firmara "cuenta nube
+    /// activa" para un Apple ID que ya volvió a CloudKit.
+    func clearCloudAccountLinked() {
+        for key in [Keys.linked, Keys.provider, Keys.accountHash, Keys.linkedAt] {
+            store.removeObject(forKey: key)
+        }
         store.synchronize()
     }
 

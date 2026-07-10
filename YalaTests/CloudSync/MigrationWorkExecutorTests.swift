@@ -40,7 +40,29 @@ private final class FakeBeaconStore: BeaconKeyValueStore, @unchecked Sendable {
     func bool(forKey key: String) -> Bool { bools[key] ?? false }
     func string(forKey key: String) -> String? { strings[key] }
     func double(forKey key: String) -> Double { doubles[key] ?? 0 }
+    func removeObject(forKey key: String) { bools[key] = nil; strings[key] = nil; doubles[key] = nil }
     @discardableResult func synchronize() -> Bool { true }
+}
+
+/// Fuente de tombstones fabricada para el barrido de zombies (§h.3, golden §h.5). Sirve `pages` en orden
+/// y luego una página VACÍA que agota la paginación; `forced` fuerza un outcome de red.
+@MainActor
+private final class FakeTombstoneSource: ReverseTombstoneSource {
+    var pages: [PulledPage] = []
+    var forced: PullOutcome?
+    private var index = 0
+    func pullPage(since: Int64, limit: Int) async -> PullOutcome {
+        if let forced { return forced }
+        if index < pages.count { defer { index += 1 }; return .page(pages[index]) }
+        return .page(PulledPage(deltas: [], maxServerSeq: 0))
+    }
+}
+
+/// Construye un tombstone `PulledDelta` de una tabla + syncID (op=.tombstone, fields vacíos).
+@MainActor
+private func tombstone(table: String, syncID: UUID, seq: Int64) -> PulledDelta {
+    PulledDelta(entityType: table, syncID: syncID, op: .tombstone, fields: [:], fieldHlcs: [:],
+                hlc: "deleted", serverSeq: seq, schemaVersion: 1, rawDelta: "{}")
 }
 
 /// Enruta por path: claim / push (ecoa applied) / pull (página vacía) / merkle (body configurable).
@@ -129,7 +151,8 @@ struct MigrationWorkExecutorTests {
     private func makeExecutor(
         _ context: ModelContext, _ engine: CloudSyncEngine, _ stub: RoutingStub,
         _ session: FakeSession, _ beaconStore: FakeBeaconStore, personalStoreURL: URL,
-        storageDefaults: UserDefaults? = nil
+        storageDefaults: UserDefaults? = nil,
+        tombstoneSource: ReverseTombstoneSource? = nil
     ) -> MigrationWorkExecutor {
         let token: () async -> String? = { "jwt" }
         let account = CloudAccountClient(baseURL: workerURL, urlSession: stub)
@@ -143,7 +166,7 @@ struct MigrationWorkExecutorTests {
             deviceID: "device-1", beacon: CloudBeacon(store: beaconStore),
             personalStoreURL: personalStoreURL,
             storageDefaults: storageDefaults ?? makeIsolatedDefaults(prefix: "mwe.storage"),
-            snapshotPageSize: 200)
+            snapshotPageSize: 200, reverseTombstoneSource: tombstoneSource)
     }
 
     // MARK: - Claim
@@ -430,5 +453,204 @@ struct MigrationWorkExecutorTests {
         #expect(cat.syncID != nil, "el backfill debe acuñar el syncID")
         let witnesses = try context.fetch(FetchDescriptor<SyncIdentity>())
         #expect(witnesses.contains { $0.syncID == cat.syncID }, "debe existir la fila testigo")
+    }
+
+    // MARK: - Reversa (§h, I11-2)
+
+    /// GOLDEN §h.5: 50 TX post-cutover + 10 tombstones fake + 1 SyncIdentity rebound → tras sweep 40 vivas,
+    /// 0 zombies, verifyRebinds()==1; idempotente; tombstone de syncID inexistente no-op; el sweep NO avanza
+    /// SyncCursor NI borra testigos; anti-eco (drainOnce tras el sweep no produce filas nuevas en el outbox).
+    @Test("sweepZombies §h.5: barrido tombstones-vs-vivas — 40 vivas, verifyRebinds==1, idempotente, sin side-effects, anti-eco")
+    func sweepZombies_goldenH5() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        // 50 TX post-cutover con syncID acuñado (sin CKRecord — irrelevante in-memory).
+        var syncIDs: [UUID] = []
+        for i in 0..<50 {
+            let tx = TransactionItem(date: fixedNow, amount: Double(i), currencyCode: "USD")
+            tx.syncID = UUID()
+            syncIDs.append(tx.syncID!)
+            context.insert(tx)
+        }
+        try context.save()
+
+        // Baseline: drenar los 50 inserts al outbox (autor por DEFECTO) → token avanza.
+        engine.drainOnce(context: context)
+        let baselineOutbox = try context.fetchCount(FetchDescriptor<SyncOutbox>())
+        #expect(baselineOutbox > 0, "los inserts se emitieron al outbox como baseline")
+
+        // 1 testigo SyncIdentity rebound (lastReboundAt) apuntando a una TX que SOBREVIVE (no está entre 0..<10).
+        let reboundSyncID = syncIDs[49]
+        context.insert(SyncIdentity(syncID: reboundSyncID, entityType: SyncEntityType.transactionItem,
+                                    localAnchor: "anchor", lastReboundAt: fixedNow))
+        try context.save()
+
+        // Fuente: 10 tombstones (syncIDs 0..<10) + 1 tombstone de syncID INEXISTENTE (no-op).
+        var deltas = (0..<10).map { tombstone(table: "tx_items", syncID: syncIDs[$0], seq: Int64($0 + 1)) }
+        deltas.append(tombstone(table: "tx_items", syncID: UUID(), seq: 999))
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: deltas, maxServerSeq: 999)]
+
+        let executor = makeExecutor(context, engine, RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        // Testigos ANTES del sweep (para asserts de no-side-effects).
+        let cursorBefore = try context.fetch(FetchDescriptor<SyncCursor>()).first?.serverSeqCursor ?? 0
+        let witnessesBefore = try context.fetchCount(FetchDescriptor<SyncIdentity>())
+
+        // SWEEP.
+        #expect(await executor.sweepZombies(sinceSeq: 0) == .completed(deleted: 10),
+                "10 filas vivas tombstoneadas borradas (el syncID inexistente es no-op)")
+        #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 40, "quedan 40 vivas")
+        #expect(executor.verifyRebinds() == 1, "la fila rebound sigue viva portando su syncID")
+
+        // El sweep NO avanza SyncCursor NI borra testigos SyncIdentity (enumeración read-only salvo deletes).
+        let cursorAfter = try context.fetch(FetchDescriptor<SyncCursor>()).first?.serverSeqCursor ?? 0
+        #expect(cursorAfter == cursorBefore, "el sweep NO avanza SyncCursor")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == witnessesBefore, "el sweep NO borra testigos")
+
+        // Idempotencia: re-sweep con la misma página → 0 deletes (ya no hay filas vivas que casen).
+        let source2 = FakeTombstoneSource()
+        source2.pages = [PulledPage(deltas: deltas, maxServerSeq: 999)]
+        let executor2 = makeExecutor(context, engine, RoutingStub(), session, FakeBeaconStore(),
+                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: source2)
+        #expect(await executor2.sweepZombies(sinceSeq: 0) == .completed(deleted: 0), "re-sweep idempotente")
+
+        // ANTI-ECO: los deletes van bajo outboxSaveAuthor → un drainOnce posterior NO los re-emite al outbox.
+        engine.drainOnce(context: context)
+        #expect(try context.fetchCount(FetchDescriptor<SyncOutbox>()) == baselineOutbox,
+                "los deletes del sweep NO se re-emiten al outbox (anti-eco)")
+    }
+
+    @Test("sweepZombies: red del pull → transient (sin mutación)")
+    func sweepZombies_networkTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let tx = TransactionItem(date: fixedNow, amount: 1, currencyCode: "USD")
+        tx.syncID = UUID()
+        context.insert(tx)
+        try context.save()
+
+        let source = FakeTombstoneSource()
+        source.forced = .transient
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        #expect(await executor.sweepZombies(sinceSeq: 0) == .transient)
+        #expect(try context.fetchCount(FetchDescriptor<TransactionItem>()) == 1, "red → sin borrar nada")
+    }
+
+    @Test("execute(.mountMirrorAndRelaunch): DESARMA el flag mirror-off (el proceso NO se mata solo)")
+    func execute_mountMirror_disarmsFlag() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.mount")
+        defaults.set(true, forKey: MigrationWorkExecutor.relaunchRequestedKey)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.mountMirrorAndRelaunch)
+        #expect(defaults.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey) == false)
+    }
+
+    @Test("execute(.persistICloudMode): storageMode=.icloud + mirrorOffArmed=false JUNTOS (invariante SERIO 1)")
+    func execute_persistICloudMode_pair() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.icloud")
+        StorageModePersistence.write(.cloud, defaults: defaults)
+        defaults.set(true, forKey: StorageModePersistence.mirrorOffArmedKey)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.persistICloudMode)
+        #expect(StorageModePersistence.read(defaults) == .icloud)
+        #expect(StorageModePersistence.isMirrorOffArmed(defaults) == false)
+    }
+
+    @Test("execute(.clearCloudBeacon): remueve las 4 keys del faro (simétrico a write)")
+    func execute_clearBeacon_removesKeys() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let beaconStore = FakeBeaconStore()
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, beaconStore,
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.writeBeacon)
+        #expect(beaconStore.bool(forKey: CloudBeacon.Keys.linked))
+        try await executor.execute(.clearCloudBeacon)
+        #expect(beaconStore.bool(forKey: CloudBeacon.Keys.linked) == false)
+        #expect(beaconStore.string(forKey: CloudBeacon.Keys.provider) == nil)
+        #expect(beaconStore.string(forKey: CloudBeacon.Keys.accountHash) == nil)
+        #expect(beaconStore.double(forKey: CloudBeacon.Keys.linkedAt) == 0)
+    }
+
+    @Test("execute(.deleteCloudKitMarker): borra los marcadores (idempotente)")
+    func execute_deleteMarker_idempotent() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.writeCloudKitMarker)
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 1)
+        try await executor.execute(.deleteCloudKitMarker)
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
+        try await executor.execute(.deleteCloudKitMarker)   // idempotente (0 marcadores)
+        #expect(try context.fetchCount(FetchDescriptor<CloudMigrationMarker>()) == 0)
+    }
+
+    @Test("performReverseClaim/freezeBackendForReverse: notWired hoy (I11-3) → transient/false")
+    func reverseServerStubs_notWired() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executor.performReverseClaim() == .transient)
+        #expect(await executor.freezeBackendForReverse() == false)
+    }
+
+    @Test("reverseUploadStatus: store vacío → drained (0 pares, sin cambios que persistir)")
+    func reverseUploadStatus_empty_drained() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(executor.reverseUploadStatus() == .drained)
+    }
+
+    @Test("healDuplicates: DETECCIÓN read-only de copias idénticas de Account (I11-2; auto-cura en I11-4)")
+    func healDuplicates_detectsDuplicates() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        // 2 cuentas idénticas por contenido (shortcutID distinto) → 1 grupo duplicado.
+        context.insert(Account(name: "Cash", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash"))
+        context.insert(Account(name: "Cash", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash"))
+        try context.save()
+        #expect(executor.healDuplicates() == 1)
+    }
+
+    // MARK: - ReverseEligibility (guardarraíl §h.6-A1, obligación 1 del review)
+
+    @Test("ReverseEligibility: notCloudMode / reverseAlreadyTerminal / degradedNoMap / eligible")
+    func reverseEligibility_decisions() {
+        #expect(ReverseEligibility.decide(storageMode: .icloud, hasCKMap: true, journaledPhase: .done) == .notCloudMode)
+        #expect(ReverseEligibility.decide(storageMode: .cloud, hasCKMap: true, journaledPhase: .icloudActive) == .reverseAlreadyTerminal)
+        #expect(ReverseEligibility.decide(storageMode: .cloud, hasCKMap: true, journaledPhase: .reverseFailedRollback) == .reverseAlreadyTerminal)
+        #expect(ReverseEligibility.decide(storageMode: .cloud, hasCKMap: false, journaledPhase: .done) == .degradedNoMap)
+        #expect(ReverseEligibility.decide(storageMode: .cloud, hasCKMap: true, journaledPhase: .done) == .eligible)
     }
 }

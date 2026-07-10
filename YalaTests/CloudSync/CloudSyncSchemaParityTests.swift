@@ -182,6 +182,7 @@ struct CloudSyncSchemaParityTests {
             "verifyNetworkRetries",
             "leaderDeviceID",
             "serverSeqCut",
+            "reverseOriginRaw",
             "startedAt",
             "updatedAt",
             "schemaVersion",
@@ -189,8 +190,9 @@ struct CloudSyncSchemaParityTests {
         #expect(propertyNames(MigrationState.self) == expected)
     }
 
-    @Test func migrationState_schemaVersion_isOne() {
-        #expect(CloudSyncSchemaVersions.migrationState == 1)
+    @Test func migrationState_schemaVersion_isTwo() {
+        // Subió a 2 en I11-2 al añadir el campo aditivo `reverseOriginRaw`.
+        #expect(CloudSyncSchemaVersions.migrationState == 2)
     }
 
     // MARK: - (c) Membresía de stores

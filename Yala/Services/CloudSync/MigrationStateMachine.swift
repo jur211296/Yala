@@ -212,6 +212,12 @@ nonisolated enum MigrationEvent: Equatable {
     case reverseDeclined
     /// Ack: the backend accepted the reservation (`reverse_in_progress` + leader).
     case reverseLeaderClaimed
+    /// The reverse-claim found ANOTHER device already reverse-leader (§h). UN-STICKS `reverseClaimLeader`
+    /// (a TRANSIENT phase): without this exit the journal would sit in `reverseClaimLeader` forever →
+    /// BGTasks (reports) suppressed indefinitely. The RUNNER injects `returnTo` from the journal's
+    /// `reverseOriginRaw` (fallback `.done`). v1 is single-device → no reverse-follower is modeled; this
+    /// simply bows out to the origin (a re-activation is legal later). NOT journaled (an event, like the rest).
+    case reverseOtherLeader(returnTo: ReverseOrigin)
     /// Ack: the final pull + own outbox drain finished.
     case reverseDrainCompleted
     /// The reverse verify outcome. REUSES `VerifyOutcome` (S9): a mismatch re-drains (authority in the
@@ -430,6 +436,14 @@ nonisolated enum MigrationStateMachine {
         // verify (the current S2-cleanup only resets on notStarted/failedRollback).
         case (.reverseClaimLeader, .reverseLeaderClaimed):
             return .transition(next: .reverseDrainAll, effects: [])
+
+        // reverseClaimLeader → ORIGIN (desatascador, obligación 4 del review I11-1): otro device ya es
+        // reverse-líder. El runner inyecta el `origin` desde el journal (`reverseOriginRaw`, fallback `.done`).
+        // Sin esta salida `reverseClaimLeader` (TRANSIENT) quedaría journaleado para siempre → reports
+        // suprimidos. v1 single-device: no hay reverse-follower que modelar; se cede al origin (una
+        // re-activación posterior vuelve a entrar por `reverseActivated`). Sin efectos.
+        case let (.reverseClaimLeader, .reverseOtherLeader(origin)):
+            return .transition(next: reverseOriginPhase(origin), effects: [])
 
         // reverseDrainAll → reverseVerify
         case (.reverseDrainAll, .reverseDrainCompleted):

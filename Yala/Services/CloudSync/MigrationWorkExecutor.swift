@@ -29,6 +29,53 @@ nonisolated enum MigrationExecutorError: Error, Equatable {
     case notWired(effect: String)
 }
 
+// MARK: - ReverseTombstoneSource (§h.3, I11-2)
+
+/// Fuente de tombstones del backend para el barrido de zombies de la reversa (§h.3). Enumeración de LECTURA
+/// PURA: NO aplica (`applyPage`), NO avanza `SyncCursor`, NO toca testigos `SyncIdentity` — el apply normal
+/// BORRA el testigo al aplicar un tombstone y aquí NO queremos ese side-effect. Default = wrapper del
+/// `pullClient`; los tests la fakean para el golden §h.5 (no se protocoliza `SyncPullClient` entero).
+@MainActor
+protocol ReverseTombstoneSource: AnyObject {
+    /// Baja UNA página de deltas desde `since` (reusa el `PullOutcome` del pull).
+    func pullPage(since: Int64, limit: Int) async -> PullOutcome
+}
+
+extension SyncPullClient: ReverseTombstoneSource {
+    func pullPage(since: Int64, limit: Int) async -> PullOutcome { await pull(since: since, limit: limit) }
+}
+
+// MARK: - ReverseEligibility (guardarraíl §h.6-A1, obligación 1 del review)
+
+/// Guardarraíl PURO que el panel (I11-5) consulta ANTES de emitir `reverseActivated`. `nonisolated`: lógica
+/// pura sin `ModelContext`/red/`Date`. `hasCKMap` = existe ≥1 `SyncIdentity` con `ckRecordName != nil` (el
+/// mapa de coordenadas CloudKit que la reversa NECESITA para borrar los records — un born-cloud §h.6 con
+/// map-nil-por-diseño queda EXCLUIDO en v1; el panel targetea al migrado). `degradedNoMap` dispara el canario
+/// `cloudReverseDegradedNoMap`.
+nonisolated enum ReverseEligibility {
+    enum Decision: Equatable {
+        case eligible
+        /// El device NO está en modo nube (`storageMode != .cloud`) → la reversa no aplica.
+        case notCloudMode
+        /// Modo nube PERO sin mapa de coordenadas CloudKit (born-cloud sin captura) → NO elegible en v1.
+        case degradedNoMap
+        /// Ya en un terminal de la reversa (`icloudActive`/`reverseFailedRollback`) → nada que revertir.
+        case reverseAlreadyTerminal
+    }
+
+    static func decide(storageMode: StorageMode, hasCKMap: Bool, journaledPhase: MigrationPhase) -> Decision {
+        guard storageMode == .cloud else { return .notCloudMode }
+        switch journaledPhase {
+        case .icloudActive, .reverseFailedRollback:
+            return .reverseAlreadyTerminal
+        default:
+            break
+        }
+        guard hasCKMap else { return .degradedNoMap }
+        return .eligible
+    }
+}
+
 @MainActor
 final class MigrationWorkExecutor: MigrationWorkExecuting {
 
@@ -46,6 +93,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     private let beacon: CloudBeacon
     private let personalStoreURL: URL
     private let uploader: MigrationSnapshotUploader
+    /// Fuente de tombstones para el barrido de zombies (§h.3). Default = `pullClient`; inyectable para el
+    /// golden §h.5 (enumeración PURA, sin applyPage/cursor/testigos).
+    private let tombstoneSource: ReverseTombstoneSource
     /// UserDefaults para persistir `storageMode=.cloud` (paso 2) y el flag `relaunchRequested` (paso 4).
     /// Inyectable para tests (nunca `.standard` directo en tests — regla del repo).
     private let storageDefaults: UserDefaults
@@ -82,7 +132,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         beacon: CloudBeacon? = nil,
         personalStoreURL: URL? = nil,
         storageDefaults: UserDefaults = .standard,
-        snapshotPageSize: Int = 200
+        snapshotPageSize: Int = 200,
+        reverseTombstoneSource: ReverseTombstoneSource? = nil
     ) {
         self.engine = engine
         self.pushClient = pushClient
@@ -102,6 +153,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         self.uploader = MigrationSnapshotUploader(
             engine: engine, pushClient: pushClient, context: context,
             calendar: calendar, now: now, pageSize: snapshotPageSize)
+        self.tombstoneSource = reverseTombstoneSource ?? pullClient
     }
 
     // MARK: - Claim (§f.1)
@@ -402,13 +454,44 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             CloudSyncBreadcrumb.migrationExecutorNotWired(step: effect.rawValue)
             throw MigrationExecutorError.notWired(effect: effect.rawValue)
 
-        // Reversa (§h) — DARK en I11-1: la máquina/journal ya modelan los efectos pero el executor NO los
-        // cablea. I11-2/3 los implementan (mountMirrorAndRelaunch cruza el process boundary como
-        // disableMirrorAndRelaunch; el cuarteto de cierre borra marker+beacon, persiste .icloud y cierra
-        // el server). El runner los deja journaled → retomable. CONTRATO I11-2: la observación
-        // `reverseMirrorMounted` (análoga a `isMirrorConfirmedOff`) debe ser inyectable/fake-able en tests.
-        case .reverseRollback, .mountMirrorAndRelaunch, .deleteCloudKitMarker,
-             .clearCloudBeacon, .persistICloudMode, .completeReverseServer:
+        // Reversa (§h, I11-2) — efectos LOCALES cableados. mountMirrorAndRelaunch cruza el process boundary
+        // (espeja disableMirrorAndRelaunch): DESARMA el flag manteniendo `.cloud` → `personalStoreDecision`
+        // monta el mirror `.private` al RELANZAR; el forward a reverseMountMirror lo resuelve el runner por
+        // OBSERVACIÓN (`isMirrorConfirmedOn`). NO mata el proceso (relaunch asistido = I14).
+        case .mountMirrorAndRelaunch:
+            storageDefaults.removeObject(forKey: Self.relaunchRequestedKey)
+            CloudSyncBreadcrumb.reverseRelaunchRequested()
+
+        case .deleteCloudKitMarker:
+            // Borra el `CloudMigrationMarker` del store PERSONAL (el mirror VIVO exporta el delete). Sin él
+            // un re-migrate futuro dispararía falso `secondaryDeviceCloudLogin`. Idempotente (0 si no había).
+            // Save por DEFECTO (como el insert del marcador en el cutover): el marcador no es entidad de sync
+            // (sin syncID) → no ecoa al backend; el mirror sí lo exporta.
+            // El fetch RELANZA en fallo (review I11-2): un `try?` aquí saltaba el borrado PERMANENTEMENTE
+            // (el efecto no throweaba → se removía del pending → jamás retomado). Throwear lo deja
+            // journaled-pendiente y el próximo resume() lo reintenta.
+            let markers = try context.fetch(FetchDescriptor<CloudMigrationMarker>())
+            for marker in markers { context.delete(marker) }
+            if context.hasChanges { try context.save() }
+            CloudSyncBreadcrumb.reverseMarkerDeleted(count: markers.count)
+
+        case .clearCloudBeacon:
+            beacon.clearCloudAccountLinked()
+            CloudSyncBreadcrumb.reverseBeaconCleared()
+
+        case .persistICloudMode:
+            // Invariante SERIO 1: `storageMode=.icloud` + `mirrorOffArmed=false` se mueven JUNTOS (dejar
+            // `.cloud`+mirror ON, o `.icloud`+armado, sería dual-write). Ambos en el mismo efecto.
+            StorageModePersistence.write(.icloud, defaults: storageDefaults)
+            storageDefaults.removeObject(forKey: Self.relaunchRequestedKey)
+            CloudSyncBreadcrumb.reverseModePersisted()
+
+        // completeReverseServer / reverseRollback siguen server-side (I11-3): el runner los deja journaled
+        // → retomable, aceptable DARK. D1 DIFERIDO (review): la higiene de sync-meta al entrar a
+        // `icloudActive` (SyncOutbox/SyncCursor/unit-clocks/quarantine/danglers con estado de la época nube)
+        // es inerte en `.icloud` (runtime gateado por `storageMode == .cloud`), pero un re-cutover futuro con
+        // cursor/clocks stale podría envenenarse — el diseño de re-cutover (I14+) DEBE decidir purga-vs-reuso.
+        case .reverseRollback, .completeReverseServer:
             CloudSyncBreadcrumb.migrationExecutorNotWired(step: effect.rawValue)
             throw MigrationExecutorError.notWired(effect: effect.rawValue)
         }
@@ -461,5 +544,153 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             #endif
             return 0
         }
+    }
+
+    // MARK: - Reversa (§h, I11-2)
+
+    /// `reverse_claim` (§h). SERVER-side → I11-3 (columna `reverse_in_progress` + RPC + CloudAccountClient).
+    /// Hoy `notWired` → `.transient` (el runner corta retomable). NUNCA lanza.
+    func performReverseClaim() async -> ReverseClaimOutcome {
+        CloudSyncBreadcrumb.migrationExecutorNotWired(step: "performReverseClaim")
+        return .transient
+    }
+
+    /// `reverseDrainAll` (§h): drain de la History local → outbox, push del residual, y `pullAndApplyOnce`
+    /// (pull FINAL). Reusa las piezas de `verify()` (partición poison + push + apply). Red → `.transient`.
+    func reverseDrainOnce() async -> ReverseStepOutcome {
+        engine.drainOnce(context: context)
+        let allLive = liveOutboxRows()
+        let (live, poison) = pushClient.partitionBuildable(allLive)
+        engine.deadLetterPoison(poison, context: context, now: now())
+        if !live.isEmpty {
+            switch await pushClient.push(live) {
+            case .completed(let results):
+                await pushClient.applyResults(results, rows: live, engine: engine, context: context)
+            case .sessionExpired, .accountUnavailable, .transient:
+                return .transient
+            }
+        }
+        switch await engine.pullAndApplyOnce(using: pullClient, context: context, now: now()) {
+        case .completed:
+            return .completed
+        case .busy, .transient, .sessionExpired, .accountUnavailable:
+            return .transient
+        }
+    }
+
+    /// `reverseFreezeBackend` (§h): marca la cuenta backend "reverting". SERVER-side → I11-3. Hoy `notWired`
+    /// → `false` (el runner corta retomable). NUNCA lanza.
+    func freezeBackendForReverse() async -> Bool {
+        CloudSyncBreadcrumb.migrationExecutorNotWired(step: "freezeBackendForReverse")
+        return false
+    }
+
+    /// Observación post-relaunch (§h): ¿ESTE proceso montó el store personal en modo `.icloud` (mirror ON)?
+    /// Testigo de arranque (`personalStoreMountedMode`), NO lo persistido — análogo INVERSO de
+    /// `isMirrorConfirmedOff`. CONTRATO I11-2 (machine doc): el default del testigo es `.icloud` → un read
+    /// real reportaría "montado SIEMPRE" = false green → los tests FAKEAN esta observación (no usan el real).
+    func isMirrorConfirmedOn() -> Bool {
+        SwiftDataConfiguration.personalStoreMountedMode == .icloud
+    }
+
+    /// §h.3 `deletingZombies` — EL NÚCLEO. Enumera tombstones del backend en LECTURA PURA (`pullPage`, SIN
+    /// applyPage/cursor/testigos), los agrupa por TABLA, y para cada tabla afectada BORRA en UN fetch + match
+    /// en memoria las filas VIVAS que los porten (nunca un fetch por tombstone; reusa `EntityApplyMap`). El
+    /// `save()` va bajo `outboxSaveAuthor` (AUTOR ANTI-ECO): el barrido ES un apply de tombstones del backend
+    /// → sin él un `drainOnce` futuro re-emitiría los deletes como tombstones al backend congelado. El mirror
+    /// exporta el delete igual (NSPersistentCloudKitContainer no filtra por autor; solo nuestro drain).
+    /// Caso normal (token vigente): 0 filas vivas tombstoneadas → no-op idempotente. Red del pull → `.transient`.
+    func sweepZombies(sinceSeq: Int64) async -> ZombieSweepOutcome {
+        var tombstonesByTable: [String: Set<UUID>] = [:]
+        var cursor = sinceSeq
+        pageLoop: while true {
+            switch await tombstoneSource.pullPage(since: cursor, limit: 500) {
+            case let .page(page):
+                for delta in page.deltas where delta.op == .tombstone {
+                    tombstonesByTable[delta.entityType, default: []].insert(delta.syncID)
+                }
+                let next = max(page.maxServerSeq, cursor)
+                if page.deltas.isEmpty || next <= cursor { break pageLoop }  // agotado / sin progreso
+                cursor = next
+            case .sessionExpired, .accountUnavailable, .transient:
+                return .transient
+            }
+        }
+        guard !tombstonesByTable.isEmpty else { return .completed(deleted: 0) }
+        var totalDeleted = 0
+        do {
+            try engine.saveWithAuthor(context, CloudSyncEngine.outboxSaveAuthor) {
+                for (table, ids) in tombstonesByTable {
+                    totalDeleted += EntityApplyMap.deleteLiveRows(table: table, syncIDs: ids, context: context)
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor.sweepZombies: save del barrido falló: \(error)")
+            #endif
+            return .transient
+        }
+        return .completed(deleted: totalDeleted)
+    }
+
+    /// §h.3 `rebindingUUIDs`: VERIFICACIÓN (v1, sin deletes — recordName≠UUID de dominio, S5: el rebind es un
+    /// update de campo `CD_syncID` sobre el MISMO CKRecord que el replay del mirror exporta). Cuenta las
+    /// identidades con `lastReboundAt != nil` cuya fila viva sigue portando su `syncID` (regla `899c1c25` ya
+    /// reconstruyó los mirrors). Si una fila rebound NO existe viva, la cubre el barrido de zombies (tombstone).
+    func verifyRebinds() -> Int {
+        do {
+            let rebound = try context.fetch(FetchDescriptor<SyncIdentity>()).filter { $0.lastReboundAt != nil }
+            return rebound.reduce(0) { acc, row in
+                EntityApplyMap.liveRowExists(entityTypeName: row.entityType, syncID: row.syncID, context: context)
+                    ? acc + 1 : acc
+            }
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor.verifyRebinds: fetch(SyncIdentity) falló: \(error)")
+            #endif
+            return 0
+        }
+    }
+
+    /// §h.3 `dedupHealed`: DETECCIÓN read-only (I11-2) de copias idénticas de Account/Tag por identidad de
+    /// contenido (`AccountTagDuplicateCountLogic`) — el mismo detonante que duplicó subcategorías (regeneración
+    /// masiva de `shortcutID`/`id`). Devuelve el nº de grupos duplicados detectados. I11-4 la promueve a
+    /// auto-cura (el sub-estado ya es journaled; el upgrade es interno a este método).
+    func healDuplicates() -> Int {
+        var groups = 0
+        do {
+            let accounts = try context.fetch(FetchDescriptor<Account>())
+            groups += AccountTagDuplicateCountLogic.duplicateGroups(
+                accounts, identity: AccountTagDuplicateCountLogic.accountIdentity).count
+            let tags = try context.fetch(FetchDescriptor<Tag>())
+            groups += AccountTagDuplicateCountLogic.duplicateGroups(
+                tags, identity: AccountTagDuplicateCountLogic.tagIdentity).count
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor.healDuplicates: fetch falló: \(error)")
+            #endif
+        }
+        return groups
+    }
+
+    /// §h `reverseUpload`: muestreo CKIdentityCapture sobre TODAS las filas vivas. `exportPending + noMetadata
+    /// == 0` ⇒ `.drained` (`noMetadata` cuenta como pendiente: un insert del replay que el mirror aún no
+    /// procesó); si no, `.pending(count)`. §h.6 pto 3: `capture` MUTA los testigos `.captured` con las
+    /// coordenadas frescas — eso ES "los SyncIdentity se ACTUALIZAN durante reverseUpload" (una futura 2ª
+    /// reversa ya es variante migrado con mapa poblado) → se PERSISTE (quiescencia garantizada por el runner).
+    func reverseUploadStatus() -> ReverseUploadStatus {
+        let pairs = collectIdentityPairs()
+        let report = CKIdentityCapture.capture(pairs, storeURL: personalStoreURL)
+        if context.hasChanges {
+            do {
+                try context.save()
+            } catch {
+                #if DEBUG
+                print("MigrationWorkExecutor.reverseUploadStatus: save de captura falló: \(error)")
+                #endif
+            }
+        }
+        let pending = report.exportPending + report.noMetadata
+        return pending == 0 ? .drained : .pending(count: pending)
     }
 }

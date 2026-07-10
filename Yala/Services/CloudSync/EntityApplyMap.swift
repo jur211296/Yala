@@ -975,6 +975,81 @@ enum EntityApplyMap {
         }
     }
 
+    // MARK: - Barrido de la reversa (§h.3, I11-2) — reuso del mapa tabla→tipo concreto
+
+    /// Barrido de zombies (§h.3): para una TABLA Postgres y un conjunto de `syncIDs` tombstoneados por el
+    /// backend, BORRA las filas VIVAS que los porten. UN fetch por tabla (dispatch CONCRETO por tipo — regla
+    /// inviolable `#Predicate`) + match EN MEMORIA; JAMÁS un fetch por tombstone. El `context.save()` lo hace
+    /// el caller (bajo `outboxSaveAuthor` — el barrido ES semánticamente un apply de tombstones del backend →
+    /// sin eco al outbox). Devuelve el nº de filas borradas. Tabla desconocida → 0.
+    static func deleteLiveRows(table: String, syncIDs: Set<UUID>, context: ModelContext) -> Int {
+        guard !syncIDs.isEmpty else { return 0 }
+        switch table {
+        case transactionItem.table:   return deleteMatching(TransactionItem.self, id: { $0.syncID }, syncIDs, context)
+        case inboxDraft.table:        return deleteMatching(InboxDraft.self, id: { $0.syncID }, syncIDs, context)
+        case category.table:          return deleteMatching(Category.self, id: { $0.syncID }, syncIDs, context)
+        case favoritePayment.table:   return deleteMatching(FavoritePayment.self, id: { $0.syncID }, syncIDs, context)
+        case merchantMemory.table:    return deleteMatching(MerchantMemory.self, id: { $0.syncID }, syncIDs, context)
+        case exchangeRate.table:      return deleteMatching(ExchangeRate.self, id: { $0.syncID }, syncIDs, context)
+        case budget.table:            return deleteMatching(Budget.self, id: { $0.id }, syncIDs, context)
+        case scheduledPayment.table:  return deleteMatching(ScheduledPayment.self, id: { $0.id }, syncIDs, context)
+        case account.table:           return deleteMatching(Account.self, id: { $0.shortcutID }, syncIDs, context)
+        case subcategory.table:       return deleteMatching(Subcategory.self, id: { $0.shortcutID }, syncIDs, context)
+        case tag.table:               return deleteMatching(Tag.self, id: { $0.id }, syncIDs, context)
+        case notificationItem.table:  return deleteMatching(NotificationItem.self, id: { $0.id }, syncIDs, context)
+        case cashFlowPlan.table:      return deleteMatching(CashFlowPlan.self, id: { $0.id }, syncIDs, context)
+        case cashFlowLine.table:      return deleteMatching(CashFlowLine.self, id: { $0.id }, syncIDs, context)
+        case cashFlowOverride.table:  return deleteMatching(CashFlowOverride.self, id: { $0.id }, syncIDs, context)
+        case groupBridgePreference.table: return deleteMatching(GroupBridgePreference.self, id: { $0.id }, syncIDs, context)
+        default:                      return 0
+        }
+    }
+
+    /// Fetch CONCRETO de TODAS las filas del tipo + delete de las que portan un `syncID` tombstoneado (match
+    /// en memoria). El caller saveea (bajo `outboxSaveAuthor`). Fetch fallido → 0 (no borra nada).
+    private static func deleteMatching<M: PersistentModel>(
+        _ type: M.Type, id identity: (M) -> UUID?, _ syncIDs: Set<UUID>, _ context: ModelContext
+    ) -> Int {
+        do {
+            var deleted = 0
+            for model in try context.fetch(FetchDescriptor<M>()) {
+                guard let sid = identity(model), syncIDs.contains(sid) else { continue }
+                context.delete(model)
+                deleted += 1
+            }
+            return deleted
+        } catch {
+            #if DEBUG
+            print("EntityApplyMap.deleteMatching<\(M.self)> error: \(error)")
+            #endif
+            return 0
+        }
+    }
+
+    /// §h.3 `rebindingUUIDs`: ¿existe una fila VIVA que porte `syncID` para el `entityTypeName` (nombre de
+    /// clase, `SyncEntityType.*`)? Reusa los fetchers concretos por tipo. Tipo desconocido → false.
+    static func liveRowExists(entityTypeName: String, syncID: UUID, context: ModelContext) -> Bool {
+        switch entityTypeName {
+        case SyncEntityType.transactionItem:      return fetchTransactionItem(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.inboxDraft:           return fetchInboxDraft(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.category:             return fetchCategory(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.favoritePayment:      return fetchFavoritePayment(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.merchantMemory:       return fetchMerchantMemory(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.exchangeRate:         return fetchExchangeRate(bySyncID: syncID, context: context) != nil
+        case SyncEntityType.budget:               return fetchBudget(byID: syncID, context: context) != nil
+        case SyncEntityType.scheduledPayment:     return fetchScheduledPayment(byID: syncID, context: context) != nil
+        case SyncEntityType.account:              return fetchAccount(byShortcutID: syncID, context: context) != nil
+        case SyncEntityType.subcategory:          return fetchSubcategory(byShortcutID: syncID, context: context) != nil
+        case SyncEntityType.tag:                  return fetchTag(byID: syncID, context: context) != nil
+        case SyncEntityType.notificationItem:     return fetchNotificationItem(byID: syncID, context: context) != nil
+        case SyncEntityType.cashFlowPlan:         return fetchCashFlowPlan(byID: syncID, context: context) != nil
+        case SyncEntityType.cashFlowLine:         return fetchCashFlowLine(byID: syncID, context: context) != nil
+        case SyncEntityType.cashFlowOverride:     return fetchCashFlowOverride(byID: syncID, context: context) != nil
+        case SyncEntityType.groupBridgePreference: return fetchGroupBridgePreference(byID: syncID, context: context) != nil
+        default:                                  return false
+        }
+    }
+
     // MARK: - Fetchers CONCRETOS por tipo (regla inviolable `#Predicate`: nunca genérico por protocolo)
 
     static func fetchTransactionItem(bySyncID id: UUID, context: ModelContext) -> TransactionItem? {

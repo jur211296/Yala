@@ -763,4 +763,31 @@ struct MigrationStateMachineTests {
                 == .invalid(from: .reverseVerify, event: .snapshotUploaded)
         )
     }
+
+    // MARK: - R11. reverseOtherLeader desatascador (I11-2, obligación 4 del review I11-1)
+
+    @Test func reverseOtherLeader_returnsToOrigin_bothOrigins_noEffects() {
+        let toDone = step(.reverseClaimLeader, .reverseOtherLeader(returnTo: .done))
+        #expect(toDone.next == .done)
+        #expect(toDone.effects.isEmpty)
+        let toNotStarted = step(.reverseClaimLeader, .reverseOtherLeader(returnTo: .notStarted))
+        #expect(toNotStarted.next == .notStarted)
+        #expect(toNotStarted.effects.isEmpty)
+    }
+
+    @Test func reverseOtherLeader_illegalOutsideReverseClaimLeader() {
+        // Solo legal desde reverseClaimLeader; en cualquier otra fase es inválido.
+        #expect(
+            MigrationStateMachine.transition(from: .reverseDrainAll, event: .reverseOtherLeader(returnTo: .done))
+                == .invalid(from: .reverseDrainAll, event: .reverseOtherLeader(returnTo: .done))
+        )
+        #expect(
+            MigrationStateMachine.transition(from: .done, event: .reverseOtherLeader(returnTo: .done))
+                == .invalid(from: .done, event: .reverseOtherLeader(returnTo: .done))
+        )
+        #expect(
+            MigrationStateMachine.transition(from: .reverseReconcile(.deletingZombies), event: .reverseOtherLeader(returnTo: .notStarted))
+                == .invalid(from: .reverseReconcile(.deletingZombies), event: .reverseOtherLeader(returnTo: .notStarted))
+        )
+    }
 }

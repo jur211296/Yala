@@ -449,6 +449,75 @@ enum CloudSyncBreadcrumb {
     static func prefsCutoverDrained(count: Int, failures: Int) {
         logger.notice("CloudSyncMigration prefsCutoverDrained count=\(count, privacy: .public) failures=\(failures, privacy: .public)")
     }
+
+    // MARK: Reversa (I11-2, §h nube→CloudKit) — sin PII (solo fases, conteos, motivos de transporte)
+
+    /// §h desatascador: `performReverseClaim` encontró OTRO device ya reverse-líder → el runner emite
+    /// `reverseOtherLeader(returnTo:)` y vuelve al origin (done/notStarted). v1 single-device.
+    static func reverseOtherLeader() {
+        logger.notice("CloudSyncReverse otherLeader — otro device es reverse-líder, vuelve al origin")
+    }
+
+    /// §h.3 `deletingZombies`: el barrido tombstones-del-backend-vs-filas-vivas borró `count` filas vivas
+    /// que un re-import de CloudKit congelado había RESUCITADO (0 en el caso normal, token vigente → replay
+    /// del mirror cubre todo; load-bearing solo en el edge de token inválido). Sin PII (solo el conteo).
+    static func reverseZombiesSwept(count: Int) {
+        logger.notice("CloudSyncReverse zombiesSwept count=\(count, privacy: .public)")
+    }
+
+    /// §h.3 `rebindingUUIDs`: verificación (v1, sin deletes — el recordName≠UUID de dominio, S5) de las
+    /// identidades con `lastReboundAt` que aún portan una fila viva. `count` = rebinds verificados.
+    static func reverseRebindsVerified(count: Int) {
+        logger.notice("CloudSyncReverse rebindsVerified count=\(count, privacy: .public)")
+    }
+
+    /// §h.3 `dedupHealed`: DETECCIÓN read-only (I11-2; auto-cura en I11-4) de copias idénticas de
+    /// Account/Tag/Subcategory. `count` = grupos duplicados detectados. Sin PII (solo el conteo).
+    static func reverseDuplicatesDetected(count: Int) {
+        logger.notice("CloudSyncReverse duplicatesDetected count=\(count, privacy: .public)")
+    }
+
+    /// §h `reverseUpload`: el muestreo CKIdentityCapture ve `count` filas aún sin drenar a CloudKit
+    /// (exportPending + noMetadata) → la reversa espera retomable. Diagnóstico para el panel si se atasca.
+    static func reverseUploadPending(count: Int) {
+        logger.notice("CloudSyncReverse uploadPending count=\(count, privacy: .public) — filas sin exportar aún, retomable")
+    }
+
+    /// §h efecto de cierre: `count` `CloudMigrationMarker` borrados del store personal (el mirror VIVO
+    /// exporta el delete). Idempotente (0 si ya no había marcador).
+    static func reverseMarkerDeleted(count: Int) {
+        logger.notice("CloudSyncReverse markerDeleted count=\(count, privacy: .public)")
+    }
+
+    /// §h efecto de cierre: el faro `cloudAccountLinked` se limpió del iCloud KV (device revirtió a iCloud).
+    static func reverseBeaconCleared() {
+        logger.notice("CloudSyncReverse beaconCleared")
+    }
+
+    /// §h efecto de cierre: `storageMode=.icloud` + `mirrorOffArmed=false` persistidos JUNTOS (invariante SERIO 1).
+    static func reverseModePersisted() {
+        logger.notice("CloudSyncReverse modePersisted — storageMode=.icloud + mirrorOffArmed=false (par)")
+    }
+
+    /// §h `mountMirrorAndRelaunch`: se DESARMÓ `mirrorOffArmed` (manteniendo `.cloud` → decisión iCloudMirror
+    /// al próximo launch) + se pidió relaunch asistido. iOS no se auto-relanza — el proceso NO se mata solo.
+    static func reverseRelaunchRequested() {
+        logger.notice("CloudSyncReverse relaunchRequested — mirror-off desarmado; el proceso NO se mata solo (relaunch asistido = I14)")
+    }
+
+    /// §h `deletingZombies`: no había fuente de `serverSeqCut` (ni marcador ni journal) → el barrido enumera
+    /// desde `since 0` (correcto, solo más caro). Canario de configuración, no de error.
+    static func reverseSeqCutFallbackZero() {
+        logger.notice("CloudSyncReverse seqCutFallbackZero — barrido desde since 0 (correcto, más caro)")
+    }
+
+    /// §h residual DIFERIDO (canario v1 SIN reparación): metadata CloudKit huérfana (record cuyo delete se
+    /// perdió del History por purga + token que no expiró) → zombie invisible localmente. HOY inalcanzable
+    /// (la purga jamás corrió en `.cloud`, flags DARK). El SCAN de side-table está DIFERIDO (exige queries
+    /// nuevos por tabla — ver gate de encendido de flags). Sin PII (solo el conteo).
+    static func reverseOrphanMetadata(count: Int) {
+        logger.notice("CloudSyncReverse orphanMetadata count=\(count, privacy: .public) — canario sin reparación v1 (scan DIFERIDO)")
+    }
 }
 
 // MARK: - CloudSyncEngine

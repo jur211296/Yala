@@ -23,8 +23,9 @@ import Foundation
 import SwiftData
 
 extension CloudSyncSchemaVersions {
-    /// Versión de schema de `MigrationState` (testigo A1 en la fila).
-    static let migrationState = 1
+    /// Versión de schema de `MigrationState` (testigo A1 en la fila). Subió a 2 en I11-2 al añadir el campo
+    /// aditivo `reverseOriginRaw` (origin de la reversa journaleado en la transición reverseConfirm→claim).
+    static let migrationState = 2
 }
 
 /// Journal single-row de la migración. Debe existir a lo sumo UNA fila (el runner la crea
@@ -61,6 +62,14 @@ final class MigrationState {
     /// ya para evitar churn de schema (additive cuando w6 lo use).
     var serverSeqCut: Int64 = 0
 
+    /// I11-2: `ReverseOrigin.rawValue` (`done`/`notStarted`) journaleado en el MISMO save de la transición
+    /// `reverseConfirm(origin)→reverseClaimLeader` — la máquina NO propaga el origin más allá de
+    /// `reverseConfirm`, así que el runner lo persiste aquí para: (1) el desatascador `reverseOtherLeader`
+    /// (volver al origin correcto), (2) `resetAfterRollback` desde `reverseFailedRollback` (reponer la fase
+    /// origen, no `notStarted` ciego que mentiría a `markerReconciliation`). Se limpia en los cierres
+    /// (notStarted/failedRollback/icloudActive) y tras el reset. `nil` = sin reversa en curso.
+    var reverseOriginRaw: String?
+
     /// Cuándo empezó la migración (el runner lo estampa con el `now` INYECTADO al arrancar). `nil` = no
     /// iniciada.
     var startedAt: Date?
@@ -80,6 +89,7 @@ final class MigrationState {
         verifyNetworkRetries: Int = 0,
         leaderDeviceID: String? = nil,
         serverSeqCut: Int64 = 0,
+        reverseOriginRaw: String? = nil,
         startedAt: Date? = nil,
         updatedAt: Date = Date.now,
         schemaVersion: Int = CloudSyncSchemaVersions.migrationState
@@ -91,6 +101,7 @@ final class MigrationState {
         self.verifyNetworkRetries = verifyNetworkRetries
         self.leaderDeviceID = leaderDeviceID
         self.serverSeqCut = serverSeqCut
+        self.reverseOriginRaw = reverseOriginRaw
         self.startedAt = startedAt
         self.updatedAt = updatedAt
         self.schemaVersion = schemaVersion
