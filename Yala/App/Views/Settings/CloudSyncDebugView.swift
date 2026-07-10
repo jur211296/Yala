@@ -130,6 +130,12 @@ final class CloudSyncMigrationPanelModel {
     var relaunchRequested = false
     var dryRunSummary: String?
 
+    // Reversa I11 (I11-5): veredicto del guardarraíl + origin journaleado. `reverseEligible` gatea el botón
+    // "Iniciar REVERSA" (gate DURO pre-diálogo, obligaciones 1-2 del review I11-1).
+    var reverseEligibilityLabel = "—"
+    var reverseOriginLabel = "—"
+    var reverseEligible = false
+
     private let context: ModelContext
     private var runner: MigrationRunner?
     private let deviceID = MigrationWorkExecutor.vendorDeviceID
@@ -200,16 +206,81 @@ final class CloudSyncMigrationPanelModel {
         refresh()
     }
 
+    /// El runner ya repone la fase ORIGEN de una reversa journaleada (`reverseFailedRollback` →
+    /// `reverseOriginRaw`, fallback `.done`); el forward (`failedRollback`) resetea a `notStarted`. No-op
+    /// fuera de esos dos terminales.
     func resetAfterRollback() async {
         isWorking = true; defer { isWorking = false }
         await makeRunner().resetAfterRollback()
-        lastMessage = "resetAfterRollback() ejecutado (no-op fuera de failedRollback)"
+        lastMessage = "resetAfterRollback() ejecutado (no-op fuera de failedRollback/reverseFailedRollback)"
         refresh()
     }
 
-    /// Escape hatch DEBUG (salida manual mientras no exista la reversa I11): storageMode=.icloud + DESARMA
-    /// el mirror-off + borra el journal + apaga el gate de identidad. NO es "forzar done" — devuelve el
-    /// device al estado iCloud. El par (storageMode, mirrorOffArmed) se limpia JUNTO (invariante SERIO 1).
+    // MARK: - Reversa I11 (I11-5)
+
+    /// Recalcula SOLO el veredicto de elegibilidad (`ReverseEligibility.decide`) + el conteo de testigos con
+    /// `ckRecordName != nil` (el `hasCKMap`) + el origin journaleado. No muta nada.
+    func verifyReverseEligibility() {
+        refreshReverse()
+        lastMessage = "Elegibilidad reversa: \(reverseEligibilityLabel)"
+    }
+
+    /// Diálogos-primero (obligación 5 del review POR CONSTRUCCIÓN): SOLO se invoca tras la 2ª confirmación
+    /// del panel. Re-valida el gate DURO (elegibilidad, obligaciones 1-2) y, si pasa, emite
+    /// `.reverseActivated` seguido de `.reverseConfirmed` en la MISMA acción async → `reverseConfirm` jamás
+    /// persiste esperando UI (un kill entre ambos submits lo normaliza `resume()` → origin). NUNCA fuerza
+    /// `icloudActive`: la única vía a un terminal es la máquina. Si NO es elegible, no se emite nada.
+    func startReverse() async {
+        isWorking = true; defer { isWorking = false }
+        refreshReverse()
+        guard reverseEligible else {
+            lastMessage = "Reversa NO iniciada — no elegible: \(reverseEligibilityLabel)"
+            return
+        }
+        let r = makeRunner()
+        await r.submit(.reverseActivated)   // done/notStarted → reverseConfirm(origin)
+        await r.submit(.reverseConfirmed)   // reverseConfirm → reverseClaimLeader → drive autónomo
+        lastMessage = "Reversa iniciada — reverseActivated + reverseConfirmed emitidos. El driving avanza; HOY corta retomable en reverseClaimLeader (performReverseClaim notWired → transient) hasta que aterrice I11-3."
+        refresh()
+    }
+
+    /// Veredicto + origin de la reversa (sin mutar). `hasCKMap` = ≥1 `SyncIdentity` con `ckRecordName != nil`
+    /// (el mapa de coordenadas CloudKit que la reversa necesita para borrar los records) — vía `fetchCount`
+    /// con `#Predicate<SyncIdentity>` CONCRETO (barato, no carga filas).
+    private func refreshReverse() {
+        let ckMapCount = (try? context.fetchCount(
+            FetchDescriptor<SyncIdentity>(predicate: #Predicate { $0.ckRecordName != nil }))) ?? -1
+        let hasCKMap = ckMapCount > 0
+        var journaledPhase: MigrationPhase = .notStarted
+        var descriptor = FetchDescriptor<MigrationState>()
+        descriptor.fetchLimit = 1
+        if let state = try? context.fetch(descriptor).first {
+            journaledPhase = state.readPhase().phase
+            reverseOriginLabel = state.reverseOriginRaw ?? "—"
+        } else {
+            reverseOriginLabel = "—"
+        }
+        let decision = ReverseEligibility.decide(
+            storageMode: CloudSyncFlags.storageMode, hasCKMap: hasCKMap, journaledPhase: journaledPhase)
+        reverseEligible = decision == .eligible
+        switch decision {
+        case .eligible:
+            reverseEligibilityLabel = "eligible ✅ · \(ckMapCount) testigos con ckRecordName"
+        case .notCloudMode:
+            reverseEligibilityLabel = "notCloudMode · storageMode != .cloud (nada que revertir)"
+        case .degradedNoMap:
+            reverseEligibilityLabel = "degradedNoMap ⚠️ · \(ckMapCount) testigos con ckRecordName (born-cloud sin mapa → EXCLUIDO en v1, §h.6-A1)"
+        case .reverseAlreadyTerminal:
+            reverseEligibilityLabel = "reverseAlreadyTerminal · ya en icloudActive/reverseFailedRollback (nada que revertir)"
+        }
+    }
+
+    /// Escape hatch DEBUG (salida de EMERGENCIA): storageMode=.icloud + DESARMA el mirror-off + borra el
+    /// journal + apaga el gate de identidad. NO es "forzar done" — devuelve el device al estado iCloud. El par
+    /// (storageMode, mirrorOffArmed) se limpia JUNTO (invariante SERIO 1). También ABORTA una reversa en
+    /// vuelo: borra su journal (incl. `reverseOriginRaw`) y devuelve el device a `.icloud`; post-mount de una
+    /// reversa es aún más benigno (el mirror ya está encendido). El backend puede quedar con
+    /// `reverse_in_progress=true` → un `reverse_claim` posterior del mismo device es idempotente-ok.
     func forceRollbackEscapeHatch() {
         // Suelta el runner en vuelo (su Task muere en el próximo relaunch; su próximo loadState sobre el
         // journal borrado daría notStarted → drive corta) y destraba el panel: `isWorking` puede haber
@@ -246,6 +317,7 @@ final class CloudSyncMigrationPanelModel {
     /// Lee el journal + testigos vivos (sin mutar nada).
     func refresh() {
         quiescent = iCloudSyncService.shared.isImportQuiescent
+        refreshReverse()
         // Diagnóstico del verify (bug-hunting device): outbox vivo + dead-letters CON MOTIVOS + cuarentena.
         // Un dead-letter = el server RECHAZÓ esa fila (verify skippea `dead-letters` → mismatch → rollback).
         do {
@@ -295,6 +367,8 @@ struct CloudSyncDebugView: View {
     @State private var migration: CloudSyncMigrationPanelModel?
     @State private var confirmStartReal = false
     @State private var confirmStartReal2 = false
+    @State private var confirmStartReverse = false
+    @State private var confirmStartReverse2 = false
     @State private var confirmEscapeHatch = false
     // Spike S7: override de fase simulada (nil = sin override = producción `.notStarted`) + quiescencia
     // viva (refrescada cada 1s) para mostrar en vivo la decisión del gate §i.9.
@@ -308,6 +382,7 @@ struct CloudSyncDebugView: View {
                 stateCard
                 actionsCard
                 migrationCard
+                reverseCard
                 spikeS5Card
                 spikeS6Card
                 spikeS7Card
@@ -383,7 +458,26 @@ struct CloudSyncDebugView: View {
             }
             Button("Cancelar", role: .cancel) {}
         } message: {
-            Text("Salida MANUAL mientras no exista la reversa (I11): devuelve el device a iCloud y borra el journal. RELANZA después. NO es 'forzar done'.")
+            Text("Salida de EMERGENCIA: devuelve el device a iCloud y borra el journal (aborta también una reversa en vuelo). RELANZA después. NO es 'forzar done'.")
+        }
+        // Reversa I11 — doble confirmación DIÁLOGOS-PRIMERO: cero eventos hasta la 2ª confirmación. Cancelar
+        // cualquiera = no-op total (nada emitido). Solo tras confirmStartReverse2 se llama startReverse(),
+        // que emite reverseActivated + reverseConfirmed JUNTOS.
+        .confirmationDialog("Iniciar REVERSA a iCloud (staging)",
+                            isPresented: $confirmStartReverse, titleVisibility: .visible) {
+            Button("Continuar (1/2)", role: .destructive) { confirmStartReverse2 = true }
+            Button("Cancelar", role: .cancel) {}
+        } message: {
+            Text("Arranca la reversa REAL a iCloud: drena/verifica el backend, congela, borra los records de CloudKit y remonta el mirror. Al remontar el mirror pedirá MATAR Y RELANZAR. Solo en un device de pruebas.")
+        }
+        .confirmationDialog("¿Seguro? Inicia la reversa a iCloud",
+                            isPresented: $confirmStartReverse2, titleVisibility: .visible) {
+            Button("SÍ, iniciar REVERSA (2/2)", role: .destructive) {
+                Task { await migration?.startReverse() }
+            }
+            Button("Cancelar", role: .cancel) {}
+        } message: {
+            Text("Segunda confirmación. Emite reverseActivated + reverseConfirmed. HOY el flujo corta retomable en reverseClaimLeader (server I11-3 aún no desplegado a staging) — usa ‘Retomar’ para reanudar.")
         }
     }
 
@@ -479,6 +573,55 @@ struct CloudSyncDebugView: View {
         }
         .buttonStyle(.bordered)
         .disabled(migration?.isWorking ?? true)
+    }
+
+    // MARK: - Reversa I11 (I11-5)
+
+    private var reverseCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Text("Reversa I11 · volver a iCloud (staging)")
+                .font(DS.Typography.body.weight(.semibold))
+                .foregroundStyle(.primary)
+            Text("Revierte el Modo Nube a iCloud sobre el mainContext. La Fase / Pending fx / sub-estado reconcile viven en la card de arriba. HOY el driving corta retomable en reverseClaimLeader (server I11-3 sin desplegar a staging) — usa ‘Retomar’ de la card de migración para reanudar.")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
+
+            if let migration {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    row("Elegible", migration.reverseEligibilityLabel)
+                    row("Origin", migration.reverseOriginLabel)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(DS.Spacing.sm)
+                .background(.thBackground)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+
+                migrationButton("Verificar elegibilidad reversa") { migration.verifyReverseEligibility() }
+
+                Button {
+                    confirmStartReverse = true
+                } label: {
+                    Label("Iniciar REVERSA (staging)", systemImage: "arrow.uturn.backward.circle.fill")
+                        .font(DS.Typography.caption.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.xs)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+                // Gate DURO: solo elegible (obligaciones 1-2 del review). startReverse() re-valida por si el
+                // estado cambió entre el refresh y el tap. Deshabilitado durante isWorking (patrón existente);
+                // el escape hatch de la card de migración sigue siendo la única salida SIEMPRE habilitada.
+                .disabled(migration.isWorking || !migration.reverseEligible)
+            } else {
+                Text("Inicializando…").font(DS.Typography.caption).foregroundStyle(.tertiary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.lg)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .padding(.horizontal, DS.Spacing.lg)
     }
 
     private var stateCard: some View {
