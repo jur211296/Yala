@@ -305,6 +305,48 @@ enum CloudSyncBreadcrumb {
     static func authAccessTokenUnavailable() {
         logger.notice("CloudSyncAuth accessTokenUnavailable")
     }
+
+    // MARK: Migración (I10-wiring) — journal + orquestador (sin PII: solo fases, motivos, contadores)
+
+    /// Una transición se journaleó (fase + efectos pendientes). `phase` es el `MigrationPhase` (sin PII).
+    static func migrationJournaled(phase: String) {
+        logger.notice("CloudSyncMigration journaled phase=\(phase, privacy: .public)")
+    }
+
+    /// La máquina rechazó el par (fase, evento) → no-op, journal intacto. Delata un bug de secuenciación.
+    static func migrationInvalidTransition(from: String, event: String) {
+        logger.notice("CloudSyncMigration invalidTransition from=\(from, privacy: .public) event=\(event, privacy: .public)")
+    }
+
+    /// RUIDOSO a propósito (fuera de #if DEBUG, patrón SaveBreadcrumb): el `phaseData` journaleado NO
+    /// decodifica (rot del enum `MigrationPhase`) → fallback `.notStarted`. Si dispara en mid-cutover real,
+    /// el gate §i.9 leería "estable" — este rastro lo nombra sin dSYM.
+    static func migrationPhaseDecodeFailed() {
+        logger.notice("CloudSyncMigration phaseDecodeFailed — journal ilegible, fallback notStarted (gate §i.9 leería estable)")
+    }
+
+    /// El `POST /account/claim` devolvió un outcome NO-success recuperable (sessionExpired/transient) →
+    /// stop SIN evento (journal en `claimingMigration`); un `resume()` re-claima idempotente. JAMÁS rollback.
+    static func migrationClaimNoSuccess(reason: String) {
+        logger.notice("CloudSyncMigration claimNoSuccess reason=\(reason, privacy: .public) — stop sin evento (retomable)")
+    }
+
+    /// El claim devolvió 403 (cuenta suspendida) → stop SIN evento (breadcrumb dedicado, ≠401).
+    static func migrationAccountUnavailable() {
+        logger.notice("CloudSyncMigration accountUnavailable (403) — stop sin evento (retomable)")
+    }
+
+    /// Un efecto declarativo lanzó al ejecutarse → queda journaled en `pendingEffectsData` + stop; un
+    /// `resume()` lo re-ejecuta. `effect` = raw value del `MigrationEffect` (sin PII).
+    static func migrationEffectFailed(effect: String, reason: String) {
+        logger.notice("CloudSyncMigration effectFailed effect=\(effect, privacy: .public) reason=\(reason, privacy: .public) — journaled, retomable")
+    }
+
+    /// El gate de quiescencia del import no se cumplió en el tope → el runner NO procede (retomable, sin
+    /// tocar el journal — ni un solo `save()`).
+    static func migrationQuiescenceTimeout() {
+        logger.notice("CloudSyncMigration quiescenceTimeout — no procede (retomable)")
+    }
 }
 
 // MARK: - CloudSyncEngine
