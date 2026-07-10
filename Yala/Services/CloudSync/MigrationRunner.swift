@@ -70,6 +70,9 @@ protocol MigrationWorkExecuting: AnyObject {
     func execute(_ effect: MigrationEffect) async throws
     /// Observación post-relaunch: ¿el mirror personal está confirmado OFF? (resuelve `.disableMirrorAndRelaunch`).
     func isMirrorConfirmedOff() -> Bool
+    /// Gate de EXPORT del marcador (§g.4, entre paso 3 y 4): ¿el `CloudMigrationMarker` LLEGÓ a CloudKit?
+    /// El save del marcador exporta ASYNC; apagar el mirror antes lo perdería. `false` = aún sin exportar.
+    func isMarkerExported() -> Bool
 }
 
 // MARK: - Runner
@@ -435,7 +438,15 @@ final class MigrationRunner {
             try await handle(.markerWritten)               // efecto: writeCloudKitMarker
             return true
         case .markerWritten:
-            try await handle(.mirrorDisabled)              // efecto: disableMirrorAndRelaunch (puede matar el proceso)
+            // Gate de EXPORT del marcador (§g.4 ajuste de /review-plan): solo apagar el mirror cuando el
+            // marcador LLEGÓ a CloudKit. El save del marcador exporta ASYNC — apagarlo antes lo perdería
+            // para siempre (los 2º devices jamás se auto-bloquearían = divergencia silenciosa, el punto
+            // entero del paso 3). Si aún no exportó → corta retomable (el próximo resume re-verifica).
+            guard executor.isMarkerExported() else {
+                CloudSyncBreadcrumb.migrationMarkerExportPending()
+                return false
+            }
+            try await handle(.mirrorDisabled)              // efecto: disableMirrorAndRelaunch (persiste flag; NO mata el proceso)
             return true
         case .mirrorOff:
             // Resuelto SIEMPRE por observación (forward tras ejecutar el efecto, o resume post-relaunch).

@@ -29,6 +29,44 @@ nonisolated enum StorageMode: String {
     case cloud
 }
 
+/// Persistencia DURABLE del `StorageMode` elegido (I10-wiring w6). UserDefaults key `cloudSync.storageMode`.
+/// DARK: NADIE escribe la key en producción hasta que el cutover de una migración REAL ejecute
+/// `persistLocalMode` (`MigrationWorkExecutor`). Ausencia de la key ⇒ `.icloud` (comportamiento de HOY,
+/// SIEMPRE). `defaults` inyectable para tests (nunca `.standard` directo en tests — regla del repo).
+nonisolated enum StorageModePersistence {
+    static let key = "cloudSync.storageMode"
+
+    /// Flag "mirror-off ARMADO" (§g.4 paso 4 — el `relaunchRequested` del executor, MISMA key). SERIO 1
+    /// del review adversarial del ciclo C: el montaje mirror-OFF NO puede decidirse por `storageMode`
+    /// solo — `.cloud` se persiste en el paso 2 y el marcador CloudKit exporta ASYNC en el paso 3; un
+    /// kill involuntario en esa ventana relanzaría con el mirror OFF → el marcador JAMÁS exportaría →
+    /// migración enclavada en `markerWritten` para siempre. Este flag lo escribe el executor SOLO al
+    /// ejecutar `.disableMirrorAndRelaunch` (que el runner emite ÚNICAMENTE tras `isMarkerExported()`
+    /// == true) → un kill pre-armado remonta el mirror ON, el marcador exporta en el resume, y solo el
+    /// relaunch posterior apaga el mirror. INVARIANTE: el par (`storageMode=.cloud`, armado=true) se
+    /// mueve JUNTO en operación normal post-done; limpiarlos por separado dejaría `.cloud`+mirror ON =
+    /// dual-write (la reversa I11 y el escape hatch DEBUG limpian AMBOS).
+    static let mirrorOffArmedKey = "cloudSync.migration.relaunchRequested"
+
+    /// Lee el modo persistido; `.icloud` si la key no existe o trae un rawValue desconocido.
+    static func read(_ defaults: UserDefaults = .standard) -> StorageMode {
+        guard let raw = defaults.string(forKey: key), let mode = StorageMode(rawValue: raw) else {
+            return .icloud
+        }
+        return mode
+    }
+
+    /// Persiste el modo (lo escribe SOLO el cutover — `persistLocalMode`, paso 2 del §g.4).
+    static func write(_ mode: StorageMode, defaults: UserDefaults = .standard) {
+        defaults.set(mode.rawValue, forKey: key)
+    }
+
+    /// ¿El mirror-off está ARMADO? (ver doc de `mirrorOffArmedKey`).
+    static func isMirrorOffArmed(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: mirrorOffArmedKey)
+    }
+}
+
 /// Flags del Modo Nube. DARK por defecto.
 nonisolated enum CloudSyncFlags {
 
@@ -46,10 +84,23 @@ nonisolated enum CloudSyncFlags {
     /// posterior. `var` (no `let`) solo para que los tests lo togglean con `defer { restore }`.
     static var syncRuntimeEnabled = false
 
-    /// SSOT PROVISIONAL del modo de almacenamiento. HOY es SIEMPRE `.icloud` y ningún path de
-    /// producción lo cambia — la persistencia real (leer/escribir el modo elegido en onboarding/
-    /// migración) llega en I10/I14. `var` para que los tests ejerciten el enrutado `.cloud`.
-    static var storageMode: StorageMode = .icloud
+    /// SSOT del modo de almacenamiento. Getter: `override de tests ?? StorageModePersistence.read()`
+    /// (I10-wiring w6). HOY, sin override ni key persistida, es SIEMPRE `.icloud` (ningún path de
+    /// producción escribe la key hasta el cutover de una migración real, DARK). El setter guarda un
+    /// override EN MEMORIA → los tests que asignan `.cloud` con `defer { restore }` siguen funcionando
+    /// sin tocar `UserDefaults` (la persistencia real la escribe `StorageModePersistence.write`).
+    static var storageMode: StorageMode {
+        get { storageModeTestOverride ?? StorageModePersistence.read() }
+        set { storageModeTestOverride = newValue }
+    }
+    nonisolated(unsafe) private static var storageModeTestOverride: StorageMode?
+
+    /// Solo tests: vuelve el getter a la lectura PERSISTIDA (un `defer { storageMode = prev }` deja un
+    /// override pegajoso no-nil — inocuo hoy porque el default coincide, pero rompe el aislamiento si un
+    /// test posterior quiere ejercitar la key persistida). Aislamiento explícito > coincidencia.
+    static func _testResetStorageModeOverride() {
+        storageModeTestOverride = nil
+    }
 
     /// SUB-flag de la purga de SwiftData History tras un ciclo completo del runtime (sigue DOBLE-DARK:
     /// exige además `syncRuntimeEnabled`, hoy `false` → la purga NO corre en producción todavía).

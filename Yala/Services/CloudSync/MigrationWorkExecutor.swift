@@ -4,11 +4,12 @@
 //
 //  Ejecutor REAL del seam `MigrationWorkExecuting` (Modo Nube Fase 4, I10-wiring ciclo B). Implementa el
 //  trabajo por fase que el `MigrationRunner` orquesta: claim / identidad / snapshot / verify + el faro KV,
-//  reusando los componentes ya probados del motor (engine, push/pull/merkle clients, account client). Los
-//  efectos de CUTOVER (`writeCloudKitMarker` / `disableMirrorAndRelaunch` / `runLeaderReconcileFromFrozen`
-//  / `rollback` / `adoptBackendAccount`) y los pasos `confirmCutoverServer`/`persistLocalMode` NO están
-//  cableados aún (w6/w8) → lanzan `MigrationExecutorError.notWired` (el runner los deja journaled,
-//  retomable) o devuelven `false` (stop retomable). El único efecto REAL de este ciclo es `.writeBeacon`.
+//  reusando los componentes ya probados del motor (engine, push/pull/merkle clients, account client). w6
+//  cableó el CUTOVER (§g.4): `confirmCutoverServer`/`persistLocalMode` + los efectos
+//  `startParallelHistoryCapture`/`writeCloudKitMarker`/`disableMirrorAndRelaunch`/
+//  `runLeaderReconcileFromFrozenCloudKit` + los testigos `isMirrorConfirmedOff`/`isMarkerExported`. El
+//  BACKSTOP `reconcileFromFrozenCloudKit` (capa de RED) y `rollback`/`adoptBackendAccount` (I11/§k.4)
+//  siguen `notWired` (el runner los deja journaled, retomable).
 //
 //  DARK: nada de producción instancia este executor (el runner no se instancia; la UI de migración es I14,
 //  el panel DEBUG w7). Solo lo ejercitan los tests del ciclo + el e2e staging.
@@ -45,6 +46,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     private let beacon: CloudBeacon
     private let personalStoreURL: URL
     private let uploader: MigrationSnapshotUploader
+    /// UserDefaults para persistir `storageMode=.cloud` (paso 2) y el flag `relaunchRequested` (paso 4).
+    /// Inyectable para tests (nunca `.standard` directo en tests — regla del repo).
+    private let storageDefaults: UserDefaults
+
+    /// Key del flag `relaunchRequested` (§g.4 paso 4). iOS no se auto-relanza; el relaunch asistido es
+    /// I14. ALIAS de `StorageModePersistence.mirrorOffArmedKey` (SERIO 1): este flag es TAMBIÉN el
+    /// armado del montaje mirror-OFF — `personalStoreDecision` lo exige junto a `.cloud`; escribirlo
+    /// solo tras `isMarkerExported()` (el runner lo garantiza) cierra la ventana de kill que enclavaba
+    /// la migración con el marcador sin exportar.
+    static let relaunchRequestedKey = StorageModePersistence.mirrorOffArmedKey
 
     /// `identifierForVendor` (o un UUID fresco si UIKit no está disponible / es nil). El faro/claim lo usan
     /// como `device_id` estable del dispositivo.
@@ -70,6 +81,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         provider: String = "apple",
         beacon: CloudBeacon? = nil,
         personalStoreURL: URL? = nil,
+        storageDefaults: UserDefaults = .standard,
         snapshotPageSize: Int = 200
     ) {
         self.engine = engine
@@ -86,6 +98,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         self.provider = provider
         self.beacon = beacon ?? CloudBeacon()
         self.personalStoreURL = personalStoreURL ?? SwiftDataConfiguration.personalConfiguration.url
+        self.storageDefaults = storageDefaults
         self.uploader = MigrationSnapshotUploader(
             engine: engine, pushClient: pushClient, context: context,
             calendar: calendar, now: now, pageSize: snapshotPageSize)
@@ -248,37 +261,158 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         }
     }
 
-    // MARK: - Cutover (w6/w8 — NO cableado)
+    // MARK: - Cutover (w6, §g.4)
 
-    /// w6 paso 1 (`profiles.migrated_at`) — NO cableado. Devuelve `false` (stop retomable) + breadcrumb.
+    /// w6 paso 1: `migration_progress('cutover')` — estampa `profiles.migrated_at` (guard líder). `.ok`
+    /// → `true`; `.otherLeader` (usurpado) → `false` + breadcrumb (el runner corta retomable → follower);
+    /// cualquier otro (rejected/transient/sessionExpired) → `false` + breadcrumb (stop retomable). Sin JWT
+    /// → `false` (`.sessionExpired`; un re-login lo despierta). NUNCA lanza.
     func confirmCutoverServer() async -> Bool {
-        CloudSyncBreadcrumb.migrationExecutorNotWired(step: "confirmCutoverServer")
-        return false
+        guard let jwt = await session.accessToken(), !jwt.isEmpty else {
+            CloudSyncBreadcrumb.migrationCutoverRejected(reason: "sessionExpired")
+            return false
+        }
+        switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "cutover") {
+        case .ok:
+            CloudSyncBreadcrumb.migrationCutoverConfirmed()
+            return true
+        case .otherLeader:
+            CloudSyncBreadcrumb.migrationCutoverOtherLeader()
+            return false
+        case .rejected(let reason):
+            CloudSyncBreadcrumb.migrationCutoverRejected(reason: reason)
+            return false
+        case .sessionExpired:
+            CloudSyncBreadcrumb.migrationCutoverRejected(reason: "sessionExpired")
+            return false
+        case .transient:
+            CloudSyncBreadcrumb.migrationCutoverRejected(reason: "transient")
+            return false
+        }
     }
 
-    /// w6 paso 2 (`storageMode=.cloud`) — NO cableado. Devuelve `false` (stop retomable) + breadcrumb.
+    /// w6 paso 2: persiste `storageMode=.cloud` (`StorageModePersistence`). El próximo relanzamiento montará
+    /// el store personal con el mirror OFF (`personalConfiguration` rama `.cloud`). Devuelve `true`.
     func persistLocalMode() async -> Bool {
-        CloudSyncBreadcrumb.migrationExecutorNotWired(step: "persistLocalMode")
-        return false
+        StorageModePersistence.write(.cloud, defaults: storageDefaults)
+        CloudSyncBreadcrumb.migrationLocalModePersisted()
+        return true
     }
 
     // MARK: - Efectos declarativos
 
-    /// Ejecuta un efecto declarativo. HOY solo `.writeBeacon` está cableado (§g.4-faro v8, TEMPRANO — al
-    /// claim); el resto lanza `notWired` (el runner los deja journaled, retomable — w6/w8 los cablean).
+    /// Ejecuta un efecto declarativo. Cableados en w6: `.writeBeacon` (§g.4-faro, al claim),
+    /// `.startParallelHistoryCapture`, `.writeCloudKitMarker`, `.disableMirrorAndRelaunch`,
+    /// `.runLeaderReconcileFromFrozenCloudKit`. `.rollback`/`.adoptBackendAccount` → `notWired` (I11/§k.4,
+    /// fuera de este ciclo; el runner los deja journaled retomable).
     func execute(_ effect: MigrationEffect) async throws {
         switch effect {
         case .writeBeacon:
             beacon.writeCloudAccountLinked(provider: provider, accountSub: session.currentUserID, now: now())
-        case .startParallelHistoryCapture, .writeCloudKitMarker, .disableMirrorAndRelaunch,
-             .runLeaderReconcileFromFrozenCloudKit, .rollback, .adoptBackendAccount:
+
+        case .startParallelHistoryCapture:
+            // La CAPTURA continua ES el History (token-based): cualquier write de la ventana
+            // localModeSet→mirrorOff queda en History tras el token y lo drena el próximo `drainOnce`
+            // (post-relaunch). Un `drainOnce` aquí ancla el baseline al momento del cutover — no hace falta
+            // un loop de captura dedicado.
+            engine.drainOnce(context: context)
+
+        case .writeCloudKitMarker:
+            // Último efecto OBSERVABLE: insertar el marcador en el store PERSONAL (el mirror VIVO lo exporta).
+            // `serverSeqCut` = `SyncCursor.serverSeqCursor` actual (corte para `reconcileFromFrozenCloudKit`).
+            let marker = CloudMigrationMarker(
+                accountHash: session.currentUserID.map { CloudBeacon.hash($0) } ?? "",
+                migratedAtStamp: now(),
+                serverSeqCut: currentServerSeqCut(),
+                writerDeviceID: deviceID)
+            context.insert(marker)
+            if context.hasChanges {
+                try context.save()
+            }
+            CloudSyncBreadcrumb.migrationMarkerWritten(serverSeqCut: marker.serverSeqCut)
+
+        case .disableMirrorAndRelaunch:
+            // iOS no puede auto-relanzarse: persistimos el flag; el relanzamiento asistido con UI es I14
+            // (en DEBUG el panel indica MATAR Y RELANZAR). El proceso NO se mata solo. El forward a
+            // `done` lo resuelve por OBSERVACIÓN `isMirrorConfirmedOff()` (post-relaunch).
+            storageDefaults.set(true, forKey: Self.relaunchRequestedKey)
+            CloudSyncBreadcrumb.migrationRelaunchRequested()
+
+        case .runLeaderReconcileFromFrozenCloudKit:
+            // `migration_progress('complete')` (líder). La capa PRIMARIA (captura por History desde
+            // localModeSet) ya está activa; el BACKSTOP `reconcileFromFrozenCloudKit` (capa de RED) llega
+            // en w8 (residual documentado — DEBE existir antes de migrar usuarios reales).
+            guard let jwt = await session.accessToken(), !jwt.isEmpty else {
+                CloudSyncBreadcrumb.migrationCutoverRejected(reason: "complete: sessionExpired")
+                throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: sessionExpired")
+            }
+            switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "complete") {
+            case .ok:
+                CloudSyncBreadcrumb.migrationReconcileDeferred()
+            case .otherLeader:
+                CloudSyncBreadcrumb.migrationCutoverOtherLeader()
+                throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: otherLeader")
+            case .rejected(let reason):
+                CloudSyncBreadcrumb.migrationCutoverRejected(reason: "complete: \(reason)")
+                throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: \(reason)")
+            case .sessionExpired:
+                throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: sessionExpired")
+            case .transient:
+                throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: transient")
+            }
+
+        case .rollback, .adoptBackendAccount:
             CloudSyncBreadcrumb.migrationExecutorNotWired(step: effect.rawValue)
             throw MigrationExecutorError.notWired(effect: effect.rawValue)
         }
     }
 
-    /// Observación post-relaunch (w6) — NO cableada. Devuelve `false` (el mirror no se ha apagado; DARK).
+    /// Observación post-relaunch (§g.4): ¿ESTE proceso montó el store personal en modo `.cloud` (mirror
+    /// OFF)? Testigo de arranque (`SwiftDataConfiguration.personalStoreMountedMode`), NO lo persistido: en
+    /// la misma sesión, tras `persistLocalMode`, el mirror SIGUE vivo (se montó al arrancar) → esto queda
+    /// `false` hasta el RELANZAMIENTO, cuando un proceso nuevo monta `.none` y captura `.cloud`.
     func isMirrorConfirmedOff() -> Bool {
-        false
+        SwiftDataConfiguration.personalStoreMountedMode == .cloud
+    }
+
+    /// Gate de EXPORT del marcador (§g.4 ajuste, entre paso 3 y 4): ¿el `CloudMigrationMarker` LLEGÓ a
+    /// CloudKit? Reusa `CKIdentityCapture` sobre la fila del marcador (`ZCKRECORDNAME` non-NULL = exportado).
+    /// El save del marcador exporta ASYNC — apagar el mirror antes lo perdería para siempre (los 2º devices
+    /// jamás se auto-bloquearían = divergencia silenciosa). Señal S5-validada, necesaria-no-suficiente
+    /// (residual documentado; el guion device lo re-verifica en CloudKit Console). `false` si no hay
+    /// marcador o su recordName sigue NULL.
+    func isMarkerExported() -> Bool {
+        let markers: [CloudMigrationMarker]
+        do {
+            markers = try context.fetch(FetchDescriptor<CloudMigrationMarker>())
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor: fetch(CloudMigrationMarker) falló: \(error)")
+            #endif
+            return false
+        }
+        guard !markers.isEmpty else { return false }
+        // Testigo SCRATCH por fila (NUNCA insertado): `capture` solo muta la fila en `.captured` y devuelve
+        // el Report agregado — `captured >= 1` ⇒ al menos un marcador con recordName non-NULL (exportado).
+        let pairs = markers.map {
+            (id: $0.persistentModelID,
+             row: SyncIdentity(syncID: UUID(), entityType: "CloudMigrationMarker", localAnchor: ""))
+        }
+        let report = CKIdentityCapture.capture(pairs, storeURL: personalStoreURL)
+        return report.captured >= 1
+    }
+
+    /// `SyncCursor.serverSeqCursor` actual (corte del marcador). Sin fila aún → 0. Lectura pura (no crea).
+    private func currentServerSeqCut() -> Int64 {
+        do {
+            var descriptor = FetchDescriptor<SyncCursor>()
+            descriptor.fetchLimit = 1
+            return try context.fetch(descriptor).first?.serverSeqCursor ?? 0
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor: fetch(SyncCursor) para serverSeqCut falló: \(error)")
+            #endif
+            return 0
+        }
     }
 }

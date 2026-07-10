@@ -41,6 +41,22 @@ enum ExistsOutcome: Equatable {
     case transient(detail: String)
 }
 
+/// Resultado ESTRUCTURADO de `POST /account/migration` (I10-wiring w6, cutover §g.4). `ok:true` → `.ok`;
+/// `ok:false` con `reason=='other_leader'` → `.otherLeader` (el líder fue usurpado — el runner corta
+/// retomable y converge a follower); cualquier otro `ok:false` → `.rejected(reason)`.
+enum MigrationProgressOutcome: Equatable {
+    /// 200 `{ok:true}` → el avance se aplicó (idempotente).
+    case ok
+    /// 200 `{ok:false, reason:'other_leader'}` → otro device lidera → cortar retomable → follower.
+    case otherLeader
+    /// 200 `{ok:false, reason:…}` distinto (no_profile / not_in_progress / bad_action) → stop retomable.
+    case rejected(reason: String)
+    /// 401: JWT ausente/inválido/expirado → re-firmar.
+    case sessionExpired(detail: String)
+    /// 5xx / red caída / respuesta no decodificable / status inesperado → reintentar.
+    case transient(detail: String)
+}
+
 @MainActor
 final class CloudAccountClient {
 
@@ -75,18 +91,25 @@ final class CloudAccountClient {
         let exists: Bool
     }
 
+    private struct MigrationResponse: Decodable {
+        let ok: Bool?
+        let reason: String?
+    }
+
     // MARK: - POST /account/claim
 
-    /// Reserva atómica de la cuenta. `provider` = "apple" para Sign in with Apple. NO envía header de
-    /// attest (el gate de cuenta no lo exige). NUNCA lanza — traduce todo a `ClaimOutcome`.
-    func claim(jwt: String, deviceID: String, provider: String) async -> ClaimOutcome {
+    /// Reserva atómica de la cuenta. `provider` = "apple" para Sign in with Apple. `migration=true`
+    /// arma la reserva de LÍDER (`migration_in_progress` + heartbeat) ATÓMICAMENTE en el INSERT del RPC
+    /// (§g.1) — SOLO la rama de migración lo pasa; born-cloud/exists usan `false` (default). NO envía
+    /// header de attest (el gate de cuenta no lo exige). NUNCA lanza — traduce todo a `ClaimOutcome`.
+    func claim(jwt: String, deviceID: String, provider: String, migration: Bool = false) async -> ClaimOutcome {
         var request = URLRequest(url: baseURL.appendingPathComponent("account/claim"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
         do {
             request.httpBody = try JSONSerialization.data(
-                withJSONObject: ["device_id": deviceID, "provider": provider]
+                withJSONObject: ["device_id": deviceID, "provider": provider, "migration": migration]
             )
         } catch {
             return .transient(detail: "encode failed")
@@ -146,6 +169,50 @@ final class CloudAccountClient {
                 return .transient(detail: "HTTP 200 undecodable")
             }
             return .exists(decoded.exists)
+        case 401:
+            return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
+        default:
+            return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
+        }
+    }
+
+    // MARK: - POST /account/migration
+
+    /// Avance del cutover (§g.4): `action` = `"cutover"` (estampa `migrated_at`) o `"complete"`
+    /// (`migration_in_progress=false`). Guard líder server-side. NUNCA lanza — traduce a
+    /// `MigrationProgressOutcome`. `other_leader` = este device fue usurpado (lease-takeover).
+    func migrationProgress(jwt: String, deviceID: String, action: String) async -> MigrationProgressOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/migration"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        do {
+            request.httpBody = try JSONSerialization.data(
+                withJSONObject: ["device_id": deviceID, "action": action]
+            )
+        } catch {
+            return .transient(detail: "encode failed")
+        }
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch {
+            return .transient(detail: "network: \(error.localizedDescription)")
+        }
+        guard let http = response as? HTTPURLResponse else {
+            return .transient(detail: "non-HTTP response")
+        }
+        switch http.statusCode {
+        case 200:
+            guard let decoded = try? JSONDecoder().decode(MigrationResponse.self, from: data),
+                  let ok = decoded.ok else {
+                return .transient(detail: "HTTP 200 undecodable: \(Self.bodyString(data))")
+            }
+            if ok { return .ok }
+            let reason = decoded.reason ?? "unknown"
+            return reason == "other_leader" ? .otherLeader : .rejected(reason: reason)
         case 401:
             return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
         default:

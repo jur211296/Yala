@@ -73,6 +73,25 @@ async function exists(jwt: string): Promise<boolean> {
   return ((await res.json()) as { exists: boolean }).exists;
 }
 
+interface ProgressResult {
+  ok?: boolean;
+  reason?: string;
+}
+async function migrationProgress(
+  jwt: string,
+  body: Record<string, unknown>,
+): Promise<{ status: number; body: ProgressResult }> {
+  const res = await app.fetch(
+    new Request("https://gw.local/account/migration", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+    env,
+  );
+  return { status: res.status, body: (await res.json()) as ProgressResult };
+}
+
 /** PATCH directo a `profiles` con el JWT del dueño (RLS UPDATE lo permite) para fijar estado in-progress. */
 async function patchProfile(jwt: string, patch: Record<string, unknown>): Promise<number> {
   const sub = decodeSub(jwt);
@@ -90,6 +109,21 @@ async function readProfileId(jwt: string): Promise<string | null> {
   });
   const rows = (await res.json()) as { id: string }[];
   return rows[0]?.id ?? null;
+}
+
+interface ProfileRow {
+  migrated_at: string | null;
+  migration_in_progress: boolean;
+  leader_device_id: string | null;
+}
+async function readProfile(jwt: string): Promise<ProfileRow | null> {
+  const sub = decodeSub(jwt);
+  const res = await fetch(
+    `${URL}/rest/v1/profiles?id=eq.${sub}&select=migrated_at,migration_in_progress,leader_device_id`,
+    { headers: { apikey: ANON, Authorization: `Bearer ${jwt}` } },
+  );
+  const rows = (await res.json()) as ProfileRow[];
+  return rows[0] ?? null;
 }
 
 const DEV_A = "device-A-01";
@@ -147,5 +181,102 @@ describe("I7a goldens · /account/* contra staging real", () => {
     // A ya tiene fila estable (test 1/4) → existing_stable, NUNCA toca la cuenta de B.
     expect(r.body.state).toBe("existing_stable");
     expect(await readProfileId(jwtA)).toBe(subA); // la fila que ve A es la de A
+  });
+});
+
+// I10-wiring w6 — cutover server-side (migration_progress + lease). Usan SOLO sub B (corren al final;
+// dejan la fila en estado estable — la limpieza pre-run de la suite la resetea). Ver header.
+const DEV_LEADER = "device-B-leader";
+
+describe("I10 goldens · /account/migration + lease (staging real)", () => {
+  it("6. cutover por el LÍDER registrado → ok:true y estampa migrated_at (idempotente)", async () => {
+    // Estado in-progress con ESTE device como líder (migrated_at limpio).
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        leader_device_id: DEV_LEADER,
+        migration_updated_at: new Date().toISOString(),
+        migrated_at: null,
+      }),
+    ).toBeLessThan(300);
+
+    const r1 = await migrationProgress(jwtB, { device_id: DEV_LEADER, action: "cutover" });
+    expect(r1.status).toBe(200);
+    expect(r1.body.ok).toBe(true);
+    const p1 = await readProfile(jwtB);
+    expect(p1?.migrated_at).not.toBeNull(); // migrated_at quedó estampado
+
+    // Idempotente: un 2º cutover del mismo líder NO falla ni re-mueve migrated_at.
+    const r2 = await migrationProgress(jwtB, { device_id: DEV_LEADER, action: "cutover" });
+    expect(r2.body.ok).toBe(true);
+    expect((await readProfile(jwtB))?.migrated_at).toBe(p1?.migrated_at);
+  });
+
+  it("7. complete por el líder → ok:true, migration_in_progress=false (returning-user correcto)", async () => {
+    // Continúa del estado del test 6 (líder = DEV_LEADER, mip=true, migrated_at estampado).
+    const r = await migrationProgress(jwtB, { device_id: DEV_LEADER, action: "complete" });
+    expect(r.body.ok).toBe(true);
+    expect((await readProfile(jwtB))?.migration_in_progress).toBe(false);
+
+    // Idempotente tras el flip (leader match basta): un resume del complete no debe romper.
+    expect((await migrationProgress(jwtB, { device_id: DEV_LEADER, action: "complete" })).body.ok).toBe(true);
+  });
+
+  it("8. otro líder → ok:false, reason 'other_leader' (el usurpado corta y converge a follower)", async () => {
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        leader_device_id: "device-other-usurper",
+        migration_updated_at: new Date().toISOString(),
+      }),
+    ).toBeLessThan(300);
+    const r = await migrationProgress(jwtB, { device_id: DEV_LEADER, action: "cutover" });
+    expect(r.body.ok).toBe(false);
+    expect(r.body.reason).toBe("other_leader");
+    // Limpia.
+    await patchProfile(jwtB, { migration_in_progress: false, leader_device_id: null });
+  });
+
+  it("9. lease expiry: claim(migration) con líder ANTIGUO (>60min) → 'created' (takeover)", async () => {
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        leader_device_id: "device-stale-leader",
+        migration_updated_at: "2000-01-01T00:00:00Z", // heartbeat vencido
+      }),
+    ).toBeLessThan(300);
+    const r = await claim(jwtB, { device_id: DEV_LEADER, provider: "google", migration: true });
+    expect(r.body.state).toBe("created"); // takeover: este device toma el liderazgo
+    expect((await readProfile(jwtB))?.leader_device_id).toBe(DEV_LEADER);
+    // Limpia el estado in-progress.
+    await patchProfile(jwtB, { migration_in_progress: false, leader_device_id: null });
+  });
+
+  it("9-bis. takeover DENEGADO a p_migration=false: born-cloud sobre lease vencida → 'claiming_in_progress' (SERIO 2)", async () => {
+    // SERIO 2 del review adversarial: un caller NO-migración (born-cloud/returning-user) sobre una
+    // migración abortada >60min JAMÁS usurpa la lease — recibiría 'created' y sembraría defaults ENCIMA
+    // de datos parcialmente migrados, dejando mip=true colgado. Debe recibir claiming_in_progress y
+    // encaminar a espera/adopt, nunca sembrar.
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        leader_device_id: "device-stale-leader",
+        migration_updated_at: "2000-01-01T00:00:00Z", // heartbeat vencido
+      }),
+    ).toBeLessThan(300);
+    const r = await claim(jwtB, { device_id: DEV_LEADER, provider: "google" }); // SIN migration
+    expect(r.body.state).toBe("claiming_in_progress"); // denegado: la lease vencida NO es suya
+    expect((await readProfile(jwtB))?.leader_device_id).toBe("device-stale-leader"); // líder intacto
+    // Limpia el estado in-progress.
+    await patchProfile(jwtB, { migration_in_progress: false, leader_device_id: null });
+  });
+
+  it("10. claim(migration) sobre fila EXISTENTE estable → 'existing_stable' (el mip se arma solo en el INSERT)", async () => {
+    expect(
+      await patchProfile(jwtB, { migration_in_progress: false, leader_device_id: null }),
+    ).toBeLessThan(300);
+    const r = await claim(jwtB, { device_id: DEV_LEADER, provider: "google", migration: true });
+    expect(r.body.state).toBe("existing_stable"); // fila ya existe → nunca re-arma mip aquí
+    expect((await readProfile(jwtB))?.migration_in_progress).toBe(false);
   });
 });

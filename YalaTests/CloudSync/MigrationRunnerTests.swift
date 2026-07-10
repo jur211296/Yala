@@ -48,6 +48,10 @@ private final class FakeExecutor: MigrationWorkExecuting {
     /// Ejecutar `.disableMirrorAndRelaunch` pone el mirror OFF (simula el relaunch surtiendo efecto).
     var setMirrorOffOnDisable = true
     var mirrorOff = false
+    /// Ejecutar `.writeCloudKitMarker` marca el marcador EXPORTADO (simula el export async completando) →
+    /// el gate `isMarkerExported()` deja avanzar. Ponerlo `false` prueba que el gate CORTA retomable.
+    var setMarkerExportedOnWrite = true
+    var markerExported = false
 
     func performClaim() async -> ClaimOutcome {
         claimCallCount += 1
@@ -88,9 +92,11 @@ private final class FakeExecutor: MigrationWorkExecuting {
         if let error = effectErrors[effect] { throw error }   // NO se marca ejecutado si lanza
         executedEffects.append(effect)
         if effect == .disableMirrorAndRelaunch, setMirrorOffOnDisable { mirrorOff = true }
+        if effect == .writeCloudKitMarker, setMarkerExportedOnWrite { markerExported = true }
     }
 
     func isMirrorConfirmedOff() -> Bool { mirrorOff }
+    func isMarkerExported() -> Bool { markerExported }
 
     func count(_ effect: MigrationEffect) -> Int { executedEffects.filter { $0 == effect }.count }
 }
@@ -557,6 +563,33 @@ struct MigrationRunnerTests {
         await runner.resume()
 
         #expect(fake.count(.disableMirrorAndRelaunch) == 1, "re-ejecuta el relaunch EXACTAMENTE una vez, sin loop")
+        #expect(try journal(context).readPhase().phase == .done)
+    }
+
+    // MARK: - 9b. Gate de EXPORT del marcador (§g.4, entre paso 3 y 4)
+
+    @Test func markerExportGate_holdsBeforeMirrorOff_untilExported() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.setMarkerExportedOnWrite = false     // el marcador se escribe pero AÚN no llega a CloudKit
+        try seedJournal(context, phase: .cutover(.localModeSet), leaderDeviceID: deviceID)
+
+        let runner = makeRunner(context, fake)
+        await runner.resume()
+
+        // El marcador se escribió, pero el mirror NO se apaga hasta que el export confirme.
+        #expect(fake.count(.writeCloudKitMarker) == 1)
+        #expect(fake.count(.disableMirrorAndRelaunch) == 0, "el gate corta ANTES de apagar el mirror")
+        #expect(try journal(context).readPhase().phase == .cutover(.markerWritten), "se queda retomable en markerWritten")
+
+        // Confirmado el export → un resume posterior avanza sin re-escribir el marcador.
+        fake.markerExported = true
+        let runner2 = makeRunner(context, fake)
+        await runner2.resume()
+
+        #expect(fake.count(.writeCloudKitMarker) == 1, "el marcador NO se re-escribe")
+        #expect(fake.count(.disableMirrorAndRelaunch) == 1)
         #expect(try journal(context).readPhase().phase == .done)
     }
 

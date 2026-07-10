@@ -47,9 +47,14 @@ async function requireUser(c: Ctx): Promise<AuthedUser | Response> {
 // ----------------------------------------------------------------------------------- /account/claim
 
 /**
- * Reserva ATÓMICA de la cuenta (§f.1). Body `{device_id, provider}`. Descarta cualquier `sub`/`id`/
- * `user_id` del body (el sub sale del JWT vía `claim_account`→`auth.uid()`). Devuelve el estado de 3
- * valores tal cual lo emite el RPC: `created` | `existing_stable` | `claiming_in_progress`.
+ * Reserva ATÓMICA de la cuenta (§f.1). Body `{device_id, provider, migration?}`. Descarta cualquier
+ * `sub`/`id`/`user_id` del body (el sub sale del JWT vía `claim_account`→`auth.uid()`). Devuelve el
+ * estado de 3 valores tal cual lo emite el RPC: `created` | `existing_stable` | `claiming_in_progress`.
+ *
+ * `migration` (bool, default false) arma la reserva de LÍDER (`migration_in_progress=true` +
+ * heartbeat) ATÓMICAMENTE en el propio INSERT del RPC (I10-wiring §g.1): sin él, un kill entre el
+ * `created` de la rama migración y un `begin` separado dejaría `mip=false` (el resume re-claimaría →
+ * `existing_stable` → adoptaría una cuenta VACÍA). El default preserva el contrato born-cloud.
  */
 export async function handleAccountClaim(c: Ctx): Promise<Response> {
   const auth = await requireUser(c);
@@ -69,6 +74,7 @@ export async function handleAccountClaim(c: Ctx): Promise<Response> {
 
   const deviceId = typeof body.device_id === "string" ? body.device_id : "";
   const provider = typeof body.provider === "string" ? body.provider : "";
+  const migration = body.migration === true;
   if (!deviceId || !provider) {
     return jsonError("yala_bad_request", "Se espera { device_id, provider }", 400);
   }
@@ -76,10 +82,48 @@ export async function handleAccountClaim(c: Ctx): Promise<Response> {
   const { ok, status, body: out } = await callRpc(c.env, auth.userJWT, "claim_account", {
     p_device_id: deviceId,
     p_provider: provider,
+    p_migration: migration,
   });
   if (!ok) {
     console.log(`[account-claim] claim_account upstream ${status}`);
     return jsonError("yala_unavailable", `claim upstream ${status}`, 502);
+  }
+  return c.json((out ?? {}) as Record<string, unknown>);
+}
+
+// ------------------------------------------------------------------------------- /account/migration
+
+/**
+ * Avance del cutover de la migración (I10-wiring §g.4). Body `{device_id, action}` con `action` =
+ * `cutover` (`profiles.migrated_at=now()`, guard líder, idempotente) o `complete`
+ * (`migration_in_progress=false`, guard líder). El sub SIEMPRE del JWT (RLS + `auth.uid()` dentro del
+ * RPC). Sin App Attest — precede al bind, como el resto de `/account/*`. Devuelve el `{ok, reason?}`
+ * del RPC tal cual (`other_leader` cuando otro device usurpó el liderazgo).
+ */
+export async function handleAccountMigration(c: Ctx): Promise<Response> {
+  const auth = await requireUser(c);
+  if (auth instanceof Response) return auth;
+
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json<Record<string, unknown>>();
+  } catch {
+    return jsonError("yala_bad_request", "JSON inválido", 400);
+  }
+
+  const deviceId = typeof body.device_id === "string" ? body.device_id : "";
+  const action = typeof body.action === "string" ? body.action : "";
+  if (!deviceId || (action !== "cutover" && action !== "complete")) {
+    return jsonError("yala_bad_request", "Se espera { device_id, action: 'cutover'|'complete' }", 400);
+  }
+
+  const { ok, status, body: out } = await callRpc(c.env, auth.userJWT, "migration_progress", {
+    p_device_id: deviceId,
+    p_action: action,
+  });
+  if (!ok) {
+    console.log(`[account-migration] migration_progress upstream ${status}`);
+    return jsonError("yala_unavailable", `migration upstream ${status}`, 502);
   }
   return c.json((out ?? {}) as Record<string, unknown>);
 }

@@ -43,6 +43,10 @@ final class BackgroundTaskManager {
     /// Sets the model container for background operations
     func setModelContainer(_ container: ModelContainer) {
         self.modelContainer = container
+        // §i.9 (I10-wiring w6): conecta el journal real al SSOT de fase que consultan los gates de los
+        // BGTasks + deriva el gate permanente de captura de identidad al boot. Aquí (no en AppBootstrapper)
+        // porque este manager ya recibe el container temprano en el bootstrap.
+        MigrationPhaseStore.shared.configure(container: container)
     }
 
     /// Registers all background tasks with the system

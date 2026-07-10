@@ -70,6 +70,7 @@ enum SwiftDataConfiguration {
             CashFlowLine.self,
             CashFlowOverride.self,
             GroupBridgePreference.self,
+            CloudMigrationMarker.self,
             SplitGroup.self,
             SplitMember.self,
             SplitExpense.self,
@@ -107,6 +108,7 @@ enum SwiftDataConfiguration {
             CashFlowLine.self,
             CashFlowOverride.self,
             GroupBridgePreference.self,
+            CloudMigrationMarker.self,
         ])
     }
 
@@ -211,6 +213,51 @@ enum SwiftDataConfiguration {
         #endif
     }()
 
+    // MARK: - Personal store mount witness (I10-wiring w6)
+
+    /// Decisión PURA de qué store personal montar según el `StorageMode`, el flag "mirror-off ARMADO" y
+    /// la disponibilidad de iCloud (extraída para testear la rama SIN construir el config —
+    /// `isRunningTests` fuerza in-memory y ocultaría la rama real). `.cloud` ARMADO gana ANTES del check
+    /// de iCloud: tener cuenta iCloud NO importa (Grupos la usa, pero el store personal ya NO lo espeja
+    /// el mirror).
+    enum PersonalStoreDecision: Equatable {
+        /// `.cloud` + mirror-off ARMADO → `cloudKitDatabase: .none` sobre el MISMO archivo (mirror OFF).
+        case cloudMirrorOff
+        /// iCloud disponible → mirror `NSPersistentCloudKitContainer` (`.private`) — comportamiento de HOY.
+        case iCloudMirror
+        /// Sin iCloud → store local plano (sin mirror).
+        case localNoMirror
+    }
+
+    /// SERIO 1 del review adversarial (ciclo C): `storageMode == .cloud` por sí solo NO basta para
+    /// apagar el mirror — `.cloud` se persiste en el paso 2 del cutover (§g.4) y el marcador CloudKit
+    /// exporta ASYNC en el paso 3; un kill involuntario en esa ventana relanzaría con el mirror OFF y el
+    /// marcador JAMÁS exportaría (migración enclavada en `markerWritten`, irrecuperable sin la reversa).
+    /// El montaje mirror-OFF exige el par COMPLETO: `.cloud` Y `mirrorOffArmed` (que el executor arma
+    /// SOLO tras `isMarkerExported()`). Un kill pre-armado → mirror remonta ON → el marcador exporta en
+    /// el resume → recién el relaunch posterior apaga el mirror. R9: JAMÁS caer a `.automatic`.
+    static func personalStoreDecision(
+        storageMode: StorageMode, mirrorOffArmed: Bool, iCloudAvailable: Bool
+    ) -> PersonalStoreDecision {
+        if storageMode == .cloud && mirrorOffArmed { return .cloudMirrorOff }
+        return iCloudAvailable ? .iCloudMirror : .localNoMirror
+    }
+
+    /// Testigo de QUÉ modo montó realmente ESTE proceso el store personal (NO lo persistido). Lo captura
+    /// UNA sola vez, en la PRIMERA evaluación de `personalConfiguration` en el path de producción (= el
+    /// build de `sharedModelContainer` al arrancar). Es el árbitro de `isMirrorConfirmedOff()`: en-sesión,
+    /// tras `persistLocalMode` escribir `.cloud`, el mirror SIGUE montado (se montó al arrancar) → este
+    /// testigo permanece en su valor de arranque hasta el RELANZAMIENTO, cuando un proceso nuevo lo captura
+    /// como `.cloud`. Default `.icloud` (los paths test/uitest/spike no lo capturan → mirror asumido vivo).
+    nonisolated(unsafe) static private(set) var personalStoreMountedMode: StorageMode = .icloud
+    nonisolated(unsafe) private static var personalStoreMountedModeCaptured = false
+
+    private static func capturePersonalStoreMountedModeOnce(_ mode: StorageMode) {
+        guard !personalStoreMountedModeCaptured else { return }
+        personalStoreMountedModeCaptured = true
+        personalStoreMountedMode = mode
+    }
+
     // MARK: - Container CloudKit State
 
     private static let containerCloudKitKey = "containerCreatedWithCloudKit"
@@ -247,14 +294,27 @@ enum SwiftDataConfiguration {
         if isSpikeS6MirrorOff {
             return ModelConfiguration(databaseName, schema: personalSchema, cloudKitDatabase: .none)
         }
-        if isICloudAvailable() {
+        // I10-wiring w6: rama `.cloud` ANTES del check de iCloud (mirror OFF sobre el MISMO archivo de
+        // store, patrón SpikeS6), gateada ADEMÁS por el flag mirror-off-ARMADO (SERIO 1 — ver doc de
+        // `personalStoreDecision`). DARK: nadie escribe `storageMode=.cloud` ni arma el flag en
+        // producción hasta que el cutover de una migración real ejecute sus pasos.
+        let decision = personalStoreDecision(
+            storageMode: CloudSyncFlags.storageMode,
+            mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
+            iCloudAvailable: isICloudAvailable())
+        capturePersonalStoreMountedModeOnce(decision == .cloudMirrorOff ? .cloud : .icloud)
+        switch decision {
+        case .cloudMirrorOff:
+            return ModelConfiguration(databaseName, schema: personalSchema, cloudKitDatabase: .none)
+        case .iCloudMirror:
             return ModelConfiguration(
                 databaseName,
                 schema: personalSchema,
                 cloudKitDatabase: .private(cloudKitContainerIdentifier)
             )
+        case .localNoMirror:
+            return ModelConfiguration(databaseName, schema: personalSchema)
         }
-        return ModelConfiguration(databaseName, schema: personalSchema)
     }
 
     /// Group data — local only (CKSyncEngine syncs via groups container).

@@ -373,6 +373,55 @@ enum CloudSyncBreadcrumb {
     static func migrationVerifyUnknownReason(reason: String) {
         logger.notice("CloudSyncMigration verifyUnknownReason reason=\(reason, privacy: .public) — networkTimeout conservador")
     }
+
+    // MARK: Cutover (I10-wiring w6, §g.4)
+
+    /// w6 paso 1: `migration_progress('cutover')` confirmó `profiles.migrated_at` (guard líder OK).
+    static func migrationCutoverConfirmed() {
+        logger.notice("CloudSyncMigration cutoverConfirmed — profiles.migrated_at estampado (guard líder OK)")
+    }
+
+    /// w6 paso 1: el guard líder rechazó (`other_leader`) → este device fue USURPADO (lease-takeover) →
+    /// el runner corta retomable y converge a follower.
+    static func migrationCutoverOtherLeader() {
+        logger.notice("CloudSyncMigration cutoverOtherLeader — usurpado, corta retomable → follower")
+    }
+
+    /// w6 paso 1: `migration_progress` devolvió otro `ok:false` (no_profile/not_in_progress/bad_action) o
+    /// transient/401 → stop retomable. `reason` sin PII.
+    static func migrationCutoverRejected(reason: String) {
+        logger.notice("CloudSyncMigration cutoverRejected reason=\(reason, privacy: .public) — stop retomable")
+    }
+
+    /// w6 paso 2: `storageMode=.cloud` persistido (`persistLocalMode`). El próximo relanzamiento montará el
+    /// store personal con el mirror OFF.
+    static func migrationLocalModePersisted() {
+        logger.notice("CloudSyncMigration localModePersisted — storageMode=.cloud (mirror OFF tras relaunch)")
+    }
+
+    /// w6 paso 3: marcador `CloudMigrationMarker` insertado + guardado (el mirror vivo lo exporta ASYNC).
+    static func migrationMarkerWritten(serverSeqCut: Int64) {
+        logger.notice("CloudSyncMigration markerWritten serverSeqCut=\(serverSeqCut, privacy: .public) — export ASYNC pendiente")
+    }
+
+    /// w6 paso 3→4: el gate de EXPORT del marcador cortó — el marcador aún NO llegó a CloudKit
+    /// (`ZCKRECORDNAME` NULL). Apagar el mirror ahora lo perdería → se espera al próximo resume/poll.
+    static func migrationMarkerExportPending() {
+        logger.notice("CloudSyncMigration markerExportPending — marcador sin exportar aún, mirror NO se apaga (retomable)")
+    }
+
+    /// w6 paso 4: flag `relaunchRequested` persistido. iOS no se auto-relanza — el relanzamiento asistido
+    /// con UI es I14; en DEBUG el panel indica MATAR Y RELANZAR. El proceso NO se mata solo.
+    static func migrationRelaunchRequested() {
+        logger.notice("CloudSyncMigration relaunchRequested — persiste flag; el proceso NO se mata solo (relaunch asistido = I14)")
+    }
+
+    /// w6 (efecto de `done`): `migration_progress('complete')` OK. La capa PRIMARIA de captura (History
+    /// desde `localModeSet`) YA está activa; el BACKSTOP `reconcileFromFrozenCloudKit` (capa de RED) queda
+    /// DIFERIDO a w8 — residual documentado, DEBE existir antes de migrar usuarios reales.
+    static func migrationReconcileDeferred() {
+        logger.notice("CloudSyncMigration reconcileDeferred — complete OK; backstop capa-de-red DIFERIDO a w8")
+    }
 }
 
 // MARK: - CloudSyncEngine

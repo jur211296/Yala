@@ -47,6 +47,8 @@ private final class FakeBeaconStore: BeaconKeyValueStore, @unchecked Sendable {
 private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     var claimBody = Data("{\"state\":\"created\"}".utf8)
     var claimStatus = 200
+    var migrationBody = Data("{\"ok\":true}".utf8)
+    var migrationStatus = 200
     var merkleBody = Data()
     private let lock = NSLock()
     private(set) var pushedSyncIDs: [String] = []
@@ -55,6 +57,9 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
         let path = request.url?.path ?? ""
         func resp(_ status: Int) -> HTTPURLResponse {
             HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
+        }
+        if path.contains("account/migration") {
+            return (migrationBody, resp(migrationStatus))
         }
         if path.contains("account/claim") {
             return (claimBody, resp(claimStatus))
@@ -119,7 +124,8 @@ struct MigrationWorkExecutorTests {
 
     private func makeExecutor(
         _ context: ModelContext, _ engine: CloudSyncEngine, _ stub: RoutingStub,
-        _ session: FakeSession, _ beaconStore: FakeBeaconStore, personalStoreURL: URL
+        _ session: FakeSession, _ beaconStore: FakeBeaconStore, personalStoreURL: URL,
+        storageDefaults: UserDefaults? = nil
     ) -> MigrationWorkExecutor {
         let token: () async -> String? = { "jwt" }
         let account = CloudAccountClient(baseURL: workerURL, urlSession: stub)
@@ -131,7 +137,9 @@ struct MigrationWorkExecutorTests {
             accountClient: account, session: session, context: context,
             calendar: Calendar(identifier: .gregorian), now: { self.fixedNow },
             deviceID: "device-1", beacon: CloudBeacon(store: beaconStore),
-            personalStoreURL: personalStoreURL, snapshotPageSize: 200)
+            personalStoreURL: personalStoreURL,
+            storageDefaults: storageDefaults ?? makeIsolatedDefaults(prefix: "mwe.storage"),
+            snapshotPageSize: 200)
     }
 
     // MARK: - Claim
@@ -176,28 +184,114 @@ struct MigrationWorkExecutorTests {
         #expect(beaconStore.string(forKey: CloudBeacon.Keys.accountHash) != "sub-abc-123")
     }
 
-    @Test("execute(cutover): notWired → throw (el runner lo deja journaled)")
+    @Test("execute(.rollback): notWired → throw (I11, fuera de este ciclo — el runner lo deja journaled)")
     func execute_notWired_throws() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let session = FakeSession(token: "jwt", userID: "sub-1")
         let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
-        await #expect(throws: MigrationExecutorError.notWired(effect: "writeCloudKitMarker")) {
-            try await executor.execute(.writeCloudKitMarker)
+        await #expect(throws: MigrationExecutorError.notWired(effect: "rollback")) {
+            try await executor.execute(.rollback)
         }
     }
 
-    @Test("confirmCutoverServer / persistLocalMode / isMirrorConfirmedOff → false (w6 no cableado)")
-    func cutoverSteps_notWired_false() async throws {
+    // MARK: - Cutover (w6, §g.4)
+
+    @Test("confirmCutoverServer: migration_progress ok → true; other_leader → false")
+    func confirmCutoverServer_okAndOtherLeader() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executor.confirmCutoverServer() == true)
+
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+        #expect(await executor.confirmCutoverServer() == false)
+    }
+
+    @Test("confirmCutoverServer: sin JWT → false (sessionExpired)")
+    func confirmCutoverServer_noJWT_false() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: nil, userID: nil)
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(await executor.confirmCutoverServer() == false)
+    }
+
+    @Test("persistLocalMode: escribe storageMode=.cloud en los defaults inyectados → true")
+    func persistLocalMode_writesCloud() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.persist")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults)
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud)   // antes: default
+        #expect(await executor.persistLocalMode() == true)
+        #expect(StorageModePersistence.read(storageDefaults) == .cloud)
+    }
+
+    @Test("isMirrorConfirmedOff: false en tests (personalStoreMountedMode default .icloud)")
+    func isMirrorConfirmedOff_defaultFalse() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let session = FakeSession(token: "jwt", userID: "sub-1")
         let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
-        #expect(await executor.confirmCutoverServer() == false)
-        #expect(await executor.persistLocalMode() == false)
         #expect(executor.isMirrorConfirmedOff() == false)
+    }
+
+    @Test("execute(.writeCloudKitMarker): inserta el marcador con serverSeqCut + accountHash (sin PII)")
+    func execute_writeCloudKitMarker_insertsMarker() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-xyz")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // serverSeqCut se lee del SyncCursor (single-row).
+        let cursor = SyncCursor(serverSeqCursor: 42)
+        context.insert(cursor)
+        try context.save()
+
+        try await executor.execute(.writeCloudKitMarker)
+
+        let markers = try context.fetch(FetchDescriptor<CloudMigrationMarker>())
+        #expect(markers.count == 1)
+        let marker = try #require(markers.first)
+        #expect(marker.serverSeqCut == 42)
+        #expect(marker.writerDeviceID == "device-1")
+        #expect(marker.migratedAtStamp == fixedNow)
+        #expect(marker.accountHash == CloudBeacon.hash("sub-xyz"))
+        #expect(marker.accountHash != "sub-xyz")   // sin PII
+    }
+
+    @Test("isMarkerExported: false en un store de test (sin metadata CloudKit real)")
+    func isMarkerExported_falseWithoutRealCloudKit() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        #expect(executor.isMarkerExported() == false)   // sin marcador
+        try await executor.execute(.writeCloudKitMarker)
+        // Marcador presente pero el store de test no tiene metadata CloudKit (cloudKitDatabase: .none).
+        #expect(executor.isMarkerExported() == false)
+    }
+
+    @Test("execute(.runLeaderReconcileFromFrozenCloudKit): complete ok → no throw")
+    func execute_reconcileComplete_ok() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)   // migration_progress('complete') ok
     }
 
     // MARK: - Verify

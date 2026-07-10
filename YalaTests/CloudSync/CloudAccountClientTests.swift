@@ -123,6 +123,64 @@ struct CloudAccountClientTests {
         }
     }
 
+    @Test func claim_migrationTrue_sendsMigrationInBody() async {
+        let stub = AccountStubHTTP(status: 200, body: Data(#"{"state":"created"}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        _ = await client.claim(jwt: "j", deviceID: "d", provider: "apple", migration: true)
+        let body = try? JSONSerialization.jsonObject(with: stub.lastRequest?.httpBody ?? Data()) as? [String: Any]
+        #expect(body?["migration"] as? Bool == true)
+        #expect(body?["device_id"] as? String == "d")
+    }
+
+    // MARK: - migrationProgress (cutover §g.4, I10-wiring w6)
+
+    @Test func migrationProgress_okTrue_isOk() async {
+        let stub = AccountStubHTTP(status: 200, body: Data(#"{"ok":true}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        #expect(await client.migrationProgress(jwt: "j", deviceID: "d", action: "cutover") == .ok)
+        #expect(stub.lastRequest?.httpMethod == "POST")
+        #expect(stub.lastRequest?.url?.absoluteString == "https://gw.local/account/migration")
+        let body = try? JSONSerialization.jsonObject(with: stub.lastRequest?.httpBody ?? Data()) as? [String: Any]
+        #expect(body?["action"] as? String == "cutover")
+    }
+
+    @Test func migrationProgress_otherLeader_isOtherLeader() async {
+        let stub = AccountStubHTTP(status: 200, body: Data(#"{"ok":false,"reason":"other_leader"}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        #expect(await client.migrationProgress(jwt: "j", deviceID: "d", action: "cutover") == .otherLeader)
+    }
+
+    @Test func migrationProgress_otherReason_isRejected() async {
+        let stub = AccountStubHTTP(status: 200, body: Data(#"{"ok":false,"reason":"not_in_progress"}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        #expect(await client.migrationProgress(jwt: "j", deviceID: "d", action: "cutover")
+                == .rejected(reason: "not_in_progress"))
+    }
+
+    @Test func migrationProgress_401_sessionExpired() async {
+        let stub = AccountStubHTTP(status: 401, body: Data(#"{"error":{"type":"yala_attest_invalid"}}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        guard case .sessionExpired = await client.migrationProgress(jwt: "j", deviceID: "d", action: "complete") else {
+            Issue.record("esperaba sessionExpired"); return
+        }
+    }
+
+    @Test func migrationProgress_502_transient() async {
+        let stub = AccountStubHTTP(status: 502, body: Data(#"{"error":{"type":"yala_unavailable"}}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        guard case .transient = await client.migrationProgress(jwt: "j", deviceID: "d", action: "cutover") else {
+            Issue.record("esperaba transient"); return
+        }
+    }
+
+    @Test func migrationProgress_200_undecodable_isTransient() async {
+        let stub = AccountStubHTTP(status: 200, body: Data(#"{"nope":1}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        guard case .transient = await client.migrationProgress(jwt: "j", deviceID: "d", action: "cutover") else {
+            Issue.record("esperaba transient ante body sin ok"); return
+        }
+    }
+
     // MARK: - exists
 
     @Test func exists_200true() async {

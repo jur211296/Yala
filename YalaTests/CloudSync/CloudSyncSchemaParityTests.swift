@@ -218,10 +218,43 @@ struct CloudSyncSchemaParityTests {
         #expect(String(describing: config.cloudKitDatabase).lowercased().contains("none"))
     }
 
-    // MARK: - (e·I3) Anti-drift: la lista anti-fuga del motor == entity names del store personal
+    // MARK: - (b·I10-wiring w6) CloudMigrationMarker (store personal espejado, NO backend)
+
+    @Test func cloudMigrationMarker_entityName_isAnchoredLiteral() {
+        #expect(entity(CloudMigrationMarker.self)?.name == "CloudMigrationMarker")
+    }
+
+    @Test func cloudMigrationMarker_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "accountHash",
+            "migratedAtStamp",
+            "serverSeqCut",
+            "writerDeviceID",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(CloudMigrationMarker.self) == expected)
+    }
+
+    @Test func cloudMigrationMarker_isInPersonalSchema_notSyncMeta() {
+        // Vive en el store PERSONAL (el mirror lo exporta como CD_CloudMigrationMarker), NUNCA en sync-meta.
+        #expect(entityNames(SwiftDataConfiguration.personalSchema).contains("CloudMigrationMarker"))
+        #expect(!entityNames(SwiftDataConfiguration.syncMetaSchema).contains("CloudMigrationMarker"))
+    }
+
+    @Test func cloudMigrationMarker_schemaVersion_isOne() {
+        #expect(CloudSyncSchemaVersions.cloudMigrationMarker == 1)
+    }
+
+    // MARK: - (e·I3) Anti-drift: la lista anti-fuga del motor == entity names sincronizables del personal
 
     @Test func engine_personalEntityNames_matchPersonalSchema() {
-        #expect(CloudSyncEngine.personalEntityNames == entityNames(SwiftDataConfiguration.personalSchema))
+        // `CloudMigrationMarker` (I10-wiring w6) vive en el store personal y lo espeja el mirror
+        // (CD_CloudMigrationMarker), pero NO se sincroniza al backend Modo Nube (su equivalente
+        // server-side es `profiles.migrated_at`) → se EXCLUYE de la lista anti-fuga del motor. Es la
+        // ÚNICA divergencia intencional entre `personalEntityNames` y el schema personal.
+        let personalSynced = entityNames(SwiftDataConfiguration.personalSchema)
+            .subtracting(["CloudMigrationMarker"])
+        #expect(CloudSyncEngine.personalEntityNames == personalSynced)
     }
 
     // MARK: - (d) Identidad de sync por entidad
