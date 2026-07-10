@@ -347,6 +347,32 @@ enum CloudSyncBreadcrumb {
     static func migrationQuiescenceTimeout() {
         logger.notice("CloudSyncMigration quiescenceTimeout — no procede (retomable)")
     }
+
+    /// w3: la captura de coordenadas CloudKit `(recordName, zoneName, ownerName)` terminó. Conteos
+    /// tri-estado (captured/exportPending/noMetadata/failed). Sin PII (solo counts). Filas sin captura NO
+    /// bloquean la fase (`assigningIdentity` es idempotente/re-ejecutable; una fila jamás exportada no
+    /// tiene record que borrar en la reversa — §b.5 born-cloud analogía).
+    static func migrationIdentityCaptured(captured: Int, exportPending: Int, noMetadata: Int, failed: Int) {
+        logger.notice("CloudSyncMigration identityCaptured captured=\(captured, privacy: .public) exportPending=\(exportPending, privacy: .public) noMetadata=\(noMetadata, privacy: .public) failed=\(failed, privacy: .public)")
+    }
+
+    /// w4: una página del snapshot quedó CONFIRMADA (todas sus filas + incrementales subidas y purgadas).
+    /// `table` = la tabla actual del cursor; `rows` = filas enqueuadas en la página. Sin PII.
+    static func migrationSnapshotPageConfirmed(table: String, rows: Int) {
+        logger.notice("CloudSyncMigration snapshotPageConfirmed table=\(table, privacy: .public) rows=\(rows, privacy: .public)")
+    }
+
+    /// w5/w6/w8: un efecto/paso de la migración aún NO está cableado (cutover/reconcile/rollback/adopt) →
+    /// el runner lo deja journaled (retomable). `step` = nombre del efecto/paso (sin PII).
+    static func migrationExecutorNotWired(step: String) {
+        logger.notice("CloudSyncMigration executorNotWired step=\(step, privacy: .public) — journaled, retomable")
+    }
+
+    /// w5: `verifyIntegrity` devolvió un `skipped` con un reason DESCONOCIDO (contrato futuro) → el mapping
+    /// toma la rama conservadora `networkTimeout` (nunca crashea ni consume un retry de mismatch). Canario.
+    static func migrationVerifyUnknownReason(reason: String) {
+        logger.notice("CloudSyncMigration verifyUnknownReason reason=\(reason, privacy: .public) — networkTimeout conservador")
+    }
 }
 
 // MARK: - CloudSyncEngine
@@ -1384,6 +1410,125 @@ final class CloudSyncEngine {
             return nil
         }
     }
+
+    // MARK: - Snapshot upload seam (I10-wiring w4)
+
+    /// Avanza el token del `SyncCursor` al ÚLTIMO de History SIN emitir (baseline del snapshot, §g).
+    /// Corre ANTES de enumerar el snapshot para CERRAR la ventana de escrituras concurrentes: todo write
+    /// posterior al baseline aparece en History y lo captura el drain normal como delta INCREMENTAL
+    /// (idempotente aunque el snapshot ya lo hubiera incluido: LWW por unidad converge). Save con el autor
+    /// del motor (anti-auto-captura, lockstep D-3 intacto: no se emite ninguna fila). No-op si no hay
+    /// History todavía. Un fallo se loguea (DEBUG) y NUNCA rompe la fase (el snapshot re-enumerará full-row).
+    func fastForwardHistoryBaseline(context: ModelContext) {
+        do {
+            let cursor = try loadOrCreateCursor(context)
+            let txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            // Anclar el baseline al último token de una transacción NO-motor (autor ≠ outboxSaveAuthor).
+            // Lo que este filtro garantiza (ajuste del review adversarial — la versión previa del comentario
+            // sobre-vendía "dominio/store personal"): excluye las transacciones RECIÉN escritas por el
+            // propio motor (creación del cursor / este mismo save), cuyo token bajo carga resultó
+            // intermitentemente NO-comparable con writes futuros del store personal (bug real cazado por
+            // test: `token > baseline` cross-store fallaba ~50% → el drain se saltaba writes concurrentes
+            // post-baseline = pérdida silenciosa). La tx anclada PUEDE seguir siendo del store sync-meta
+            // (p.ej. el save de captura de SyncIdentity, autor default) — eso es SEGURO por la misma
+            // monotonía global de tokens en la que el drain ya se apoya a diario (avanza su cursor con
+            // tokens de SyncIdentity de forma rutinaria, device-probado); lo que NO era seguro es anclar a
+            // la tx del PROPIO save del motor. Sin tx no-motor todavía (born-cloud), no hay ventana que
+            // cerrar → return (token queda como estaba).
+            guard let lastToken = txns.last(where: { $0.author != Self.outboxSaveAuthor })?.token else { return }
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                cursor.historyTokenData = try encodeToken(lastToken)
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: fastForwardHistoryBaseline falló: \(error)")
+            #endif
+        }
+    }
+
+    /// Encola una página de filas de snapshot (op `.upsert` full-row) reusando la disciplina PRIVADA del
+    /// drain (`PendingOutboxRow` + `updateUnitClock` + persistencia del reloj) sin duplicarla (seam w4).
+    ///
+    /// El motor acuña el HLC por fila (`clock.send`, ÚNICO punto de advance) y llama `input.makePayload(hlc)`
+    /// — que construye `(fieldsJSON, fieldHlcsJSON)` con ese HLC en `field_hlcs`; `nil` = el codec c1 rechazó
+    /// la fila (poison) → se SALTA y la página CONTINÚA (el builder ya emitió el canario; el mismatch
+    /// permanente que esto provoca en verify degradará a `failedRollback` tras los topes — CORRECTO por
+    /// diseño: jamás cutover con pérdida silenciosa de una fila).
+    ///
+    /// **INVARIANTE lockstep D-3**: el HLC consumido se persiste (`clockLatestHLC`) en el MISMO `save()` que
+    /// inserta las filas de la página. Autor del motor (echo-suppression). `SyncUnitClock` SÍ se escribe por
+    /// fila (los reconcilers lo necesitan; volumen aceptado). El dedup por `(syncID,hlc,op)` protege el
+    /// replay dentro de una misma corrida; un kill entre enqueue y confirm re-emite con HLC NUEVO al resumir
+    /// (el reloj persistido avanza) → el RPC lo resuelve por LWW (mismo contenido, converge) — H5: jamás
+    /// resumir por contador. Las filas de snapshot NO se espejan al App Group (decisión de /review-plan): son
+    /// RE-DERIVABLES (kill → el cursor no avanzó → la página se re-emite); el espejo A1 protege ediciones
+    /// pendientes no re-derivables. `confirmUploaded` sobre una fila sin entrada de espejo es no-op benigno
+    /// (`outboxMirror?.remove` sobre una key ausente no hace nada).
+    func enqueueSnapshotRows(_ inputs: [SnapshotRowInput], context: ModelContext, now: Date) throws {
+        guard !inputs.isEmpty else { return }
+        let cursor = try loadOrCreateCursor(context)
+        loadClock(from: cursor)
+        var seen = try existingOutboxKeys(context)
+        var rows: [PendingOutboxRow] = []
+        for input in inputs {
+            let hlc = try clock.send(now: now).description
+            let key = dedupKey(syncID: input.syncID, hlc: hlc, op: .upsert)
+            guard !seen.contains(key) else { continue }
+            seen.insert(key)
+            guard let payload = input.makePayload(hlc) else { continue }  // codec rechazó → skip (canario en el builder)
+            rows.append(PendingOutboxRow(
+                syncID: input.syncID, entityType: input.entityType, op: .upsert, hlc: hlc,
+                clientMutationID: UUID(), fieldsJSON: payload.fieldsJSON, fieldHlcsJSON: payload.fieldHlcsJSON,
+                author: Self.outboxSaveAuthor, tombstoneReason: nil, createdAt: now))
+        }
+        // Filas + SyncUnitClock + reloj en UN save (lockstep D-3). Aunque `rows` quede vacío (todo
+        // deduplicado), persistir el avance del reloj es benigno e idempotente.
+        try saveWithAuthor(context, Self.outboxSaveAuthor) {
+            for row in rows {
+                context.insert(row.makeModel())
+                updateUnitClock(for: row, context: context)
+            }
+            cursor.clockLatestHLC = clock.latest?.description
+        }
+    }
+
+    /// Dead-letterea filas poison (#26) fuera del camino del runtime (que conserva su copia privada ya
+    /// probada). Consumido por el uploader del snapshot y el verify del executor (I10-wiring w4/w5, fix del
+    /// review adversarial del ciclo B): sin esto, una fila poison quedaría VIVA para siempre → el uploader
+    /// jamás confirma su página (migración ATASCADA en uploadingSnapshot, transient perpetuo) y el guard
+    /// `outbox-pending` de `verifyIntegrity` produce `newDeltaDetected` en LIVELOCK. Dead-letterearla la saca
+    /// de las filas vivas; el mismatch resultante degrada honesto a `failedRollback` por topes (jamás cutover
+    /// con pérdida silenciosa). Imposible hoy (16/16 cableadas ⇒ sin poison); protege el futuro.
+    func deadLetterPoison(_ poison: [SyncPushClient.PoisonRow], context: ModelContext, now: Date) {
+        guard !poison.isEmpty else { return }
+        do {
+            try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                for p in poison {
+                    p.row.rejectedReason = p.reason
+                    p.row.rejectedAt = now
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.deadLetterPoison: save falló: \(error)")
+            #endif
+            return
+        }
+        for p in poison { TelemetryService.cloudSyncMutationRejected(reason: p.reason) }
+    }
+}
+
+// MARK: - SnapshotRowInput (seam w4)
+
+/// Insumo de UNA fila de snapshot para `CloudSyncEngine.enqueueSnapshotRows`. El motor acuña el HLC y llama
+/// `makePayload(hlc)` — que construye `(fieldsJSON, fieldHlcsJSON)` con ese HLC en `field_hlcs`; `nil` = el
+/// codec c1 rechazó la fila (poison) → el motor la SALTA (el builder ya emitió el canario). `entityType` =
+/// NOMBRE DE CLASE (`SyncEntityType.*`), como el resto del outbox. El closure captura `@Model`/emisión → se
+/// construye y consume SIEMPRE bajo el main actor (no cruza fronteras de actor).
+struct SnapshotRowInput {
+    let syncID: UUID
+    let entityType: String
+    let makePayload: (String) -> (fieldsJSON: String, fieldHlcsJSON: String?)?
 }
 
 // MARK: - PendingOutboxRow
