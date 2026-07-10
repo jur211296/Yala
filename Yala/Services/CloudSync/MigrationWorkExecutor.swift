@@ -390,7 +390,15 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
                 throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: transient")
             }
 
-        case .rollback, .adoptBackendAccount:
+        case .rollback:
+            // Pre-cutover el device YA está intacto (el mirror nunca se apagó; el runner limpia los
+            // campos scoped al entrar a failedRollback). El "rollback" ES un no-op observable — dejarlo
+            // notWired (bug device 2026-07-10) lo dejaba journaled-pendiente para siempre y cada resume
+            // re-lanzaba. Defensivo: desarmar mirror-off (no puede estar armado pre-cutover, pero barato).
+            storageDefaults.removeObject(forKey: Self.relaunchRequestedKey)
+            CloudSyncBreadcrumb.migrationRollbackCompleted()
+
+        case .adoptBackendAccount:
             CloudSyncBreadcrumb.migrationExecutorNotWired(step: effect.rawValue)
             throw MigrationExecutorError.notWired(effect: effect.rawValue)
         }

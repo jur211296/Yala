@@ -111,6 +111,48 @@ struct SyncIdentityServiceTests {
 
     // MARK: - Rebind por ancla de contenido
 
+    // MARK: - Colisión de anclas entre filas VIVAS (bug device 2026-07-10, residual A3 materializado)
+
+    @Test func backfill_twoLiveRowsIdenticalContent_getDistinctSyncIDs() throws {
+        // Dos filas COEXISTENTES con contenido idéntico (2 pares de InboxDraft reales del owner: misma
+        // createdAt+source+rawText) — el rebind viejo les daba el MISMO syncID → el upsert server-side
+        // las colapsaba (8 local vs 6 server) → divergencia Merkle PERMANENTE → failedRollback.
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let a = makeTx(amount: 42, context: context)
+        let b = makeTx(amount: 42, context: context)   // ancla IDÉNTICA (misma fecha fija + monto + cuenta)
+        try context.save()
+
+        SyncIdentityService.backfillIdentities(context: context, now: now)
+
+        let idA = try #require(a.syncID)
+        let idB = try #require(b.syncID)
+        #expect(idA != idB, "dos filas VIVAS jamás comparten syncID, aunque el contenido sea idéntico")
+        #expect(try identityCount(context) == 2, "cada una con su testigo")
+    }
+
+    @Test func backfill_healsPreexistingLiveCollision_remintsOne() throws {
+        // Auto-cura: un store que YA tiene dos filas vivas compartiendo syncID (el estado en que quedó
+        // el device del owner tras la corrida con el bug) → el próximo backfill re-acuña una de las dos.
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let shared = UUID()
+        let a = makeTx(amount: 42, context: context)
+        let b = makeTx(amount: 42, context: context)
+        a.syncID = shared
+        b.syncID = shared
+        try context.save()
+
+        SyncIdentityService.backfillIdentities(context: context, now: now)
+
+        let idA = try #require(a.syncID)
+        let idB = try #require(b.syncID)
+        #expect(idA != idB, "la colisión preexistente se cura re-acuñando")
+        #expect(idA == shared || idB == shared, "solo UNA se re-acuña; la otra conserva el id original")
+    }
+
     @Test func backfill_rebindsDeletedRecreated_byContentAnchor() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)

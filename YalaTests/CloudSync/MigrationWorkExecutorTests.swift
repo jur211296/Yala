@@ -201,16 +201,18 @@ struct MigrationWorkExecutorTests {
         #expect(beaconStore.string(forKey: CloudBeacon.Keys.accountHash) != "sub-abc-123")
     }
 
-    @Test("execute(.rollback): notWired → throw (I11, fuera de este ciclo — el runner lo deja journaled)")
-    func execute_notWired_throws() async throws {
+    @Test("execute(.rollback): no-op REAL (device intacto pre-cutover) — no lanza y desarma mirror-off")
+    func execute_rollback_isRealNoop() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = UserDefaults(suiteName: "test.rollback.\(UUID().uuidString)")!
+        defaults.set(true, forKey: MigrationWorkExecutor.relaunchRequestedKey)  // defensivo: no debería estar
         let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
-                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
-        await #expect(throws: MigrationExecutorError.notWired(effect: "rollback")) {
-            try await executor.execute(.rollback)
-        }
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.rollback)   // bug device 2026-07-10: notWired lo dejaba journaled-pendiente para siempre
+        #expect(defaults.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey) == false)
     }
 
     // MARK: - Cutover (w6, §g.4)

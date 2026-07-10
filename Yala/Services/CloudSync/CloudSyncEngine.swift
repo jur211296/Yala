@@ -430,6 +430,19 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration leaderOrphanReconciled count=\(count, privacy: .public) — la capa de red rescató writes de la ventana de cutover")
     }
 
+    /// El efecto `.rollback` completó (pre-cutover el device ya estaba intacto — no-op observable; el
+    /// journal en `failedRollback` + los campos scoped limpiados por el runner son el estado final).
+    static func migrationRollbackCompleted() {
+        logger.notice("CloudSyncMigration rollbackCompleted — device intacto (el mirror nunca se apagó)")
+    }
+
+    /// Auto-cura del backfill (bug device 2026-07-10, residual A3 materializado): N filas VIVAS
+    /// compartían syncID (rebind viejo sobre anclas idénticas) y se re-acuñaron. >0 en un corpus real =
+    /// el residual A3 NO era tan raro como se asumió. Sin PII (solo el conteo).
+    static func identityCollisionHealed(count: Int) {
+        logger.notice("CloudSyncMigration identityCollisionHealed count=\(count, privacy: .public) — filas vivas con syncID compartido re-acuñadas")
+    }
+
     /// w8 (DIFERIDOS #30 / §g.4 S8): el drenaje único iKV→outbox del cutover corrió en el device LÍDER.
     /// `failures` > 0 = I/O del outbox falló para algunas keys → el sentinel NO se estampó y el próximo
     /// boot reintenta (LWW absorbe el re-enqueue). Sin PII (solo conteos).

@@ -77,6 +77,13 @@ enum SyncIdentityService {
             // syncIDs ya cubiertos por una fila testigo (para detectar filas con id pero sin testigo).
             var rowsByKey: [String: SyncIdentity] = [:]
             var knownSyncIDs: Set<UUID> = []
+            // syncIDs portados por filas VIVAS procesadas en ESTA corrida (bug device 2026-07-10 /
+            // residual A3 materializado): el rebind por ancla le daba el MISMO syncID a dos filas
+            // COEXISTENTES con contenido idéntico (2 pares de InboxDraft reales) → el upsert server-side
+            // las colapsaba (8 local vs 6 server) → divergencia Merkle PERMANENTE → failedRollback tras
+            // los topes. Regla: el rebind es para "borrada y RECREADA" — jamás para dos filas vivas.
+            var liveSyncIDs: Set<UUID> = []
+            var healedCollisions = 0
             let existingRows = try context.fetch(FetchDescriptor<SyncIdentity>())
             for row in existingRows {
                 rowsByKey[key(row.entityType, row.localAnchor)] = row
@@ -86,32 +93,38 @@ enum SyncIdentityService {
             try backfillType(
                 TransactionItem.self, entityType: SyncEntityType.transactionItem,
                 anchor: anchor(for:), context: context, now: now,
-                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs
+                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs,
+                liveSyncIDs: &liveSyncIDs, healedCollisions: &healedCollisions
             )
             try backfillType(
                 InboxDraft.self, entityType: SyncEntityType.inboxDraft,
                 anchor: anchor(for:), context: context, now: now,
-                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs
+                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs,
+                liveSyncIDs: &liveSyncIDs, healedCollisions: &healedCollisions
             )
             try backfillType(
                 Category.self, entityType: SyncEntityType.category,
                 anchor: anchor(for:), context: context, now: now,
-                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs
+                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs,
+                liveSyncIDs: &liveSyncIDs, healedCollisions: &healedCollisions
             )
             try backfillType(
                 FavoritePayment.self, entityType: SyncEntityType.favoritePayment,
                 anchor: anchor(for:), context: context, now: now,
-                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs
+                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs,
+                liveSyncIDs: &liveSyncIDs, healedCollisions: &healedCollisions
             )
             try backfillType(
                 MerchantMemory.self, entityType: SyncEntityType.merchantMemory,
                 anchor: anchor(for:), context: context, now: now,
-                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs
+                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs,
+                liveSyncIDs: &liveSyncIDs, healedCollisions: &healedCollisions
             )
             try backfillType(
                 ExchangeRate.self, entityType: SyncEntityType.exchangeRate,
                 anchor: anchor(for:), context: context, now: now,
-                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs
+                rowsByKey: &rowsByKey, knownSyncIDs: &knownSyncIDs,
+                liveSyncIDs: &liveSyncIDs, healedCollisions: &healedCollisions
             )
 
             // I12: entidades cuya identidad de sync es su UUID EXISTENTE (D3). SIN rebind por contenido
@@ -160,6 +173,9 @@ enum SyncIdentityService {
                 context: context, now: now, knownSyncIDs: &knownSyncIDs
             )
 
+            if healedCollisions > 0 {
+                CloudSyncBreadcrumb.identityCollisionHealed(count: healedCollisions)
+            }
             if context.hasChanges {
                 try context.save()
             }
@@ -181,29 +197,51 @@ enum SyncIdentityService {
         context: ModelContext,
         now: Date,
         rowsByKey: inout [String: SyncIdentity],
-        knownSyncIDs: inout Set<UUID>
+        knownSyncIDs: inout Set<UUID>,
+        liveSyncIDs: inout Set<UUID>,
+        healedCollisions: inout Int
     ) throws {
         let models = try context.fetch(FetchDescriptor<T>())
         for model in models {
+            let contentAnchor = anchor(model)
+            let anchorKey = key(entityType, contentAnchor)
             if let existingID = model.syncID {
-                // Ya tiene identidad. Garantizar que exista su fila testigo (crash a mitad de una
-                // migración previa dejó la fila con id pero sin testigo) — SIN regenerar el id.
+                // COLISIÓN VIVA (auto-cura del bug device 2026-07-10): otra fila VIVA ya porta este
+                // syncID (un rebind viejo sobre anclas idénticas). Re-acuñar para ESTA fila — dejarla
+                // colapsaría en el upsert server-side (count/hash divergen → failedRollback perpetuo).
+                // Seguro re-ejecutar pre-upload: la migración limpia/re-sube; el testigo nuevo se añade.
+                if liveSyncIDs.contains(existingID) {
+                    let newID = UUID()
+                    model.syncID = newID
+                    context.insert(SyncIdentity(
+                        syncID: newID, entityType: entityType,
+                        localAnchor: contentAnchor, createdAt: now
+                    ))
+                    knownSyncIDs.insert(newID)
+                    liveSyncIDs.insert(newID)
+                    healedCollisions += 1
+                    continue
+                }
+                liveSyncIDs.insert(existingID)
+                // Garantizar que exista su fila testigo (crash a mitad de una migración previa dejó la
+                // fila con id pero sin testigo) — SIN regenerar el id.
                 guard !knownSyncIDs.contains(existingID) else { continue }
-                let contentAnchor = anchor(model)
                 let row = SyncIdentity(
                     syncID: existingID, entityType: entityType,
                     localAnchor: contentAnchor, createdAt: now
                 )
                 context.insert(row)
-                rowsByKey[key(entityType, contentAnchor)] = row
+                rowsByKey[anchorKey] = row
                 knownSyncIDs.insert(existingID)
             } else {
-                let contentAnchor = anchor(model)
-                let anchorKey = key(entityType, contentAnchor)
-                if let existing = rowsByKey[anchorKey] {
-                    // REBIND: reusar el syncID de una identidad con el mismo (entityType, ancla).
+                if let existing = rowsByKey[anchorKey], !liveSyncIDs.contains(existing.syncID) {
+                    // REBIND legítimo: el testigo existe y NINGUNA fila viva porta ya ese syncID (= la
+                    // fila original fue borrada y esta es su recreación, §b.3/H3). Si otra fila VIVA ya
+                    // lo porta, NO se rebindea (dos filas coexistentes con contenido idéntico son DOS
+                    // filas — el caso InboxDraft del bug) → cae al else y acuña fresco.
                     model.syncID = existing.syncID
                     existing.lastReboundAt = now
+                    liveSyncIDs.insert(existing.syncID)
                 } else {
                     let newID = UUID()
                     model.syncID = newID
@@ -214,6 +252,7 @@ enum SyncIdentityService {
                     context.insert(row)
                     rowsByKey[anchorKey] = row
                     knownSyncIDs.insert(newID)
+                    liveSyncIDs.insert(newID)
                 }
             }
         }

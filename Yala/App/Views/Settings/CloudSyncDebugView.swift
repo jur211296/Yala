@@ -123,6 +123,7 @@ final class CloudSyncMigrationPanelModel {
     var countersLabel = "—"
     var cursorLabel = "—"
     var startedAtLabel = "—"
+    var outboxDiagLabel = "—"
     var quiescent = false
     var mountedModeLabel = "—"
     var persistedModeLabel = "—"
@@ -245,6 +246,29 @@ final class CloudSyncMigrationPanelModel {
     /// Lee el journal + testigos vivos (sin mutar nada).
     func refresh() {
         quiescent = iCloudSyncService.shared.isImportQuiescent
+        // Diagnóstico del verify (bug-hunting device): outbox vivo + dead-letters CON MOTIVOS + cuarentena.
+        // Un dead-letter = el server RECHAZÓ esa fila (verify skippea `dead-letters` → mismatch → rollback).
+        do {
+            let outbox = try context.fetch(FetchDescriptor<SyncOutbox>())
+            let live = outbox.filter { $0.rejectedReason == nil }.count
+            let dead = outbox.filter { $0.rejectedReason != nil }
+            let quarantine = try context.fetchCount(FetchDescriptor<SyncQuarantine>())
+            if dead.isEmpty {
+                outboxDiagLabel = "vivo \(live) · dead-letters 0 · cuarentena \(quarantine)"
+            } else {
+                var reasonCounts: [String: Int] = [:]
+                var tables: Set<String> = []
+                for row in dead {
+                    reasonCounts[row.rejectedReason ?? "?", default: 0] += 1
+                    tables.insert(row.entityType)
+                }
+                let reasons = reasonCounts.sorted { $0.value > $1.value }
+                    .map { "\($0.key)×\($0.value)" }.joined(separator: " · ")
+                outboxDiagLabel = "vivo \(live) · DEAD \(dead.count) [\(tables.sorted().joined(separator: ","))] → \(reasons) · cuarentena \(quarantine)"
+            }
+        } catch {
+            outboxDiagLabel = "diag falló: \(error.localizedDescription)"
+        }
         mountedModeLabel = SwiftDataConfiguration.personalStoreMountedMode.rawValue
         persistedModeLabel = StorageModePersistence.read().rawValue
         relaunchRequested = UserDefaults.standard.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey)
