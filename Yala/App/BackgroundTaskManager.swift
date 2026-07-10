@@ -420,6 +420,52 @@ final class BackgroundTaskManager {
     }
 
     #if DEBUG
+    // MARK: - Spike S7 (DEBUG) — ejecución DIRECTA del camino del handler (sin daemon)
+
+    /// HALLAZGO de plataforma (device, iOS 26, spike S7): `_simulateLaunchForTaskWithIdentifier` es NO
+    /// CONFIABLE — "No task request … has been scheduled" con el request confirmado en cola (siembra
+    /// inmediata sin fecha, con y sin espera de asentamiento; funcionó 1 de 6 veces sin patrón). Estos
+    /// runners ejecutan el MISMO camino gate+trabajo del handler real sobre el store real — lo que el
+    /// spike debe validar es NUESTRO gate, no el despachador de Apple. Mantener ESPEJADOS con los
+    /// handlers de arriba (se retiran junto al resto del harness al cerrar I11).
+    func spikeS7RunWidgetPath() {
+        let gateDecision = BGTaskMigrationGate.decide(
+            phase: MigrationPhaseStore.shared.currentPhase,
+            isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
+            role: .reader
+        )
+        if gateDecision != .run {
+            print("BackgroundTaskManager: [S7-directo] widget-refresh SUSPENDED by §i.9 gate [\(gateDecision)]")
+            return
+        }
+        guard let container = modelContainer else {
+            print("BackgroundTaskManager: [S7-directo] No model container available")
+            return
+        }
+        WidgetDataCache.updateCache(context: container.mainContext)
+        print("BackgroundTaskManager: [S7-directo] Widget cache refreshed (gate .run)")
+    }
+
+    func spikeS7RunReportPath() {
+        let gateDecision = BGTaskMigrationGate.decide(
+            phase: MigrationPhaseStore.shared.currentPhase,
+            isImportQuiescent: iCloudSyncService.shared.isImportQuiescent,
+            role: .writer
+        )
+        if gateDecision != .run {
+            print("BackgroundTaskManager: [S7-directo] report task DEFERRED by §i.9 gate [\(gateDecision)]")
+            return
+        }
+        guard let container = modelContainer else {
+            print("BackgroundTaskManager: [S7-directo] No model container for report task")
+            return
+        }
+        Task {
+            await ReportNotificationService.shared.sendDueReports(context: container.mainContext)
+            print("BackgroundTaskManager: [S7-directo] Report notifications processed (gate .run)")
+        }
+    }
+
     // MARK: - Spike S7 (DEBUG) — siembra INMEDIATA para `_simulateLaunchForTaskWithIdentifier`
 
     /// Re-somete los 3 requests SIN `earliestBeginDate` (= "cuanto antes"). HALLAZGO de plataforma

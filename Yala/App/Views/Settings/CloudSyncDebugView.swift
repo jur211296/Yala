@@ -425,17 +425,37 @@ struct CloudSyncDebugView: View {
 
             // Siembra los 3 requests en la cola de BGTaskScheduler — `_simulateLaunchForTaskWithIdentifier`
             // SOLO dispara requests PENDIENTES ("No task request … has been scheduled" si la cola está
-            // vacía; cazado en la corrida device del spike: widget-refresh no tiene siembra de boot).
+            // vacía; cazado en la corrida device del spike: widget-refresh no tenía siembra de boot —
+            // ya arreglado en AppBootstrapper paso 11, pero este botón sigue siendo necesario para
+            // quitar el earliestBeginDate futuro de los 3 requests).
+            // Ejecución DIRECTA del camino del handler (gate + trabajo sobre el store real) — el
+            // simulate del daemon resultó NO CONFIABLE en iOS 26 device (hallazgo del spike).
+            HStack(spacing: DS.Spacing.sm) {
+                Button {
+                    BackgroundTaskManager.shared.spikeS7RunWidgetPath()
+                } label: {
+                    Label("Ejecutar widget (directo)", systemImage: "play.circle")
+                        .font(DS.Typography.caption)
+                }
+                .buttonStyle(.bordered)
+                Button {
+                    BackgroundTaskManager.shared.spikeS7RunReportPath()
+                } label: {
+                    Label("Ejecutar reports (directo)", systemImage: "play.circle.fill")
+                        .font(DS.Typography.caption)
+                }
+                .buttonStyle(.bordered)
+            }
+            Text("Ejecutan el MISMO camino gate+trabajo del handler real, sin pasar por BGTaskScheduler (su _simulateLaunch… es no-confiable en iOS 26 device — hallazgo del spike). El resultado sale en la consola de Xcode con prefijo [S7-directo].")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
             Button {
                 BackgroundTaskManager.shared.seedImmediateForSpikeS7()
             } label: {
-                Label("Sembrar los 3 BGTasks AHORA (sin earliestBeginDate)", systemImage: "calendar.badge.clock")
+                Label("(Opcional) Sembrar los 3 BGTasks sin fecha", systemImage: "calendar.badge.clock")
                     .font(DS.Typography.caption)
             }
             .buttonStyle(.bordered)
-            Text("Hallazgo device: el simulate RESPETA earliestBeginDate en iOS 26 — un request con fecha futura responde 'No task request'. Este botón siembra sin fecha; re-siémbralo antes de CADA tanda de disparos (cada simulate consume su request).")
-                .font(DS.Typography.caption)
-                .foregroundStyle(.tertiary)
 
             Text("Disparar un BGTask (pausa en el debugger → pega el comando → continue):")
                 .font(DS.Typography.caption.weight(.semibold))
