@@ -416,11 +416,11 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration relaunchRequested — persiste flag; el proceso NO se mata solo (relaunch asistido = I14)")
     }
 
-    /// w6 (efecto de `done`): `migration_progress('complete')` OK. La capa PRIMARIA de captura (History
-    /// desde `localModeSet`) YA está activa; el BACKSTOP `reconcileFromFrozenCloudKit` (capa de RED) queda
-    /// DIFERIDO a w8 — residual documentado, DEBE existir antes de migrar usuarios reales.
+    /// w6/w8 (efecto de `done`): `migration_progress('complete')` OK. La capa de RED del líder (w8: drain
+    /// de History + push del residual) corrió ANTES de este complete; si rescató algo lo delata
+    /// `leaderOrphanReconciled` + su canario.
     static func migrationReconcileDeferred() {
-        logger.notice("CloudSyncMigration reconcileDeferred — complete OK; backstop capa-de-red DIFERIDO a w8")
+        logger.notice("CloudSyncMigration cutoverComplete — complete OK (barrido de red del líder corrió antes)")
     }
 
     /// w8 (capa de RED del líder, §g.4 SERIO 1 v3): el barrido residual al entrar a `done` rescató writes
