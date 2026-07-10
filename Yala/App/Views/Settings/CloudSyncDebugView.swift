@@ -106,10 +106,155 @@ final class CloudSyncDebugModel {
     }
 }
 
+// MARK: - Migración I10 (panel DEBUG A2 §m.6)
+
+/// Conduce el `MigrationRunner` REAL (staging) sobre el `mainContext` + refleja el journal vivo. DEV_BUILD.
+/// JAMÁS ofrece "forzar done" — el único atajo de salida es el escape hatch (storageMode=.icloud + limpiar
+/// journal) mientras no exista la reversa (I11).
+@MainActor
+@Observable
+final class CloudSyncMigrationPanelModel {
+    var isWorking = false
+    var lastMessage: String?
+
+    // Snapshot del estado vivo.
+    var phaseLabel = "—"
+    var pendingEffectsLabel = "—"
+    var countersLabel = "—"
+    var cursorLabel = "—"
+    var startedAtLabel = "—"
+    var quiescent = false
+    var mountedModeLabel = "—"
+    var persistedModeLabel = "—"
+    var relaunchRequested = false
+    var dryRunSummary: String?
+
+    private let context: ModelContext
+    private var runner: MigrationRunner?
+    private let deviceID = MigrationWorkExecutor.vendorDeviceID
+
+    init(context: ModelContext) {
+        self.context = context
+    }
+
+    /// Construye (una vez) el runner con el executor REAL (staging) + la señal de quiescencia de producción.
+    private func makeRunner() -> MigrationRunner {
+        if let runner { return runner }
+        let session = LiveCloudSessionProvider()
+        let account = CloudAccountClient()
+        let engine = CloudSyncEngine()
+        let token: () async -> String? = { await CloudAuthService.shared.accessToken() }
+        let push = SyncPushClient(baseURL: ProxyConfig.baseURL, tokenProvider: token)
+        let pull = SyncPullClient(baseURL: ProxyConfig.baseURL, tokenProvider: token)
+        let merkle = SyncMerkleClient(baseURL: ProxyConfig.baseURL, tokenProvider: token)
+        let executor = MigrationWorkExecutor(
+            engine: engine, pushClient: push, pullClient: pull, merkleClient: merkle,
+            accountClient: account, session: session, context: context, deviceID: deviceID)
+        let r = MigrationRunner(
+            context: context, executor: executor, deviceID: deviceID,
+            quiescenceSignal: { iCloudSyncService.shared.isImportQuiescent })
+        runner = r
+        return r
+    }
+
+    // MARK: - Acciones (todas idempotentes; ninguna fuerza `done`)
+
+    func simulate() async {
+        isWorking = true; defer { isWorking = false }
+        await makeRunner().startMigration(dryRun: true)
+        lastMessage = "Simulación (dry-run) enviada — el journal NO cambia de forma durable"
+        refresh()
+    }
+
+    func startReal() async {
+        isWorking = true; defer { isWorking = false }
+        await makeRunner().startMigration(dryRun: false)
+        lastMessage = "Migración REAL iniciada — persiste storageMode=.cloud al llegar al cutover"
+        refresh()
+    }
+
+    func resume() async {
+        isWorking = true; defer { isWorking = false }
+        await makeRunner().resume()
+        lastMessage = "resume() ejecutado"
+        refresh()
+    }
+
+    func pollLeader() async {
+        isWorking = true; defer { isWorking = false }
+        await makeRunner().pollLeader()
+        lastMessage = "pollLeader() ejecutado"
+        refresh()
+    }
+
+    func resetAfterRollback() async {
+        isWorking = true; defer { isWorking = false }
+        await makeRunner().resetAfterRollback()
+        lastMessage = "resetAfterRollback() ejecutado (no-op fuera de failedRollback)"
+        refresh()
+    }
+
+    /// Escape hatch DEBUG (salida manual mientras no exista la reversa I11): storageMode=.icloud + DESARMA
+    /// el mirror-off + borra el journal + apaga el gate de identidad. NO es "forzar done" — devuelve el
+    /// device al estado iCloud. El par (storageMode, mirrorOffArmed) se limpia JUNTO (invariante SERIO 1).
+    func forceRollbackEscapeHatch() {
+        StorageModePersistence.write(.icloud)
+        UserDefaults.standard.removeObject(forKey: StorageModePersistence.mirrorOffArmedKey)
+        CloudSyncFlags.identityCaptureEnabled = false
+        do {
+            for state in try context.fetch(FetchDescriptor<MigrationState>()) { context.delete(state) }
+            if context.hasChanges { try context.save() }
+            lastMessage = "Escape hatch: storageMode=.icloud + journal limpiado. RELANZA para remontar el mirror."
+        } catch {
+            lastMessage = "Escape hatch falló: \(error)"
+        }
+        runner = nil
+        refresh()
+    }
+
+    /// Dry-run (§g.5): conteos EN MEMORIA por entidad clave + outbox vivo. NO escribe nada.
+    func computeDryRun() {
+        func count<M: PersistentModel>(_ type: M.Type) -> Int {
+            (try? context.fetchCount(FetchDescriptor<M>())) ?? -1
+        }
+        let liveOutbox = (try? context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }.count) ?? -1
+        dryRunSummary = """
+        TX \(count(TransactionItem.self)) · Cat \(count(Category.self)) · Sub \(count(Subcategory.self)) · \
+        Acc \(count(Account.self)) · Budget \(count(Budget.self)) · Sched \(count(ScheduledPayment.self))
+        Identidades \(count(SyncIdentity.self)) · Outbox vivo \(liveOutbox)
+        """
+    }
+
+    /// Lee el journal + testigos vivos (sin mutar nada).
+    func refresh() {
+        quiescent = iCloudSyncService.shared.isImportQuiescent
+        mountedModeLabel = SwiftDataConfiguration.personalStoreMountedMode.rawValue
+        persistedModeLabel = StorageModePersistence.read().rawValue
+        relaunchRequested = UserDefaults.standard.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey)
+        var descriptor = FetchDescriptor<MigrationState>()
+        descriptor.fetchLimit = 1
+        guard let state = try? context.fetch(descriptor).first else {
+            phaseLabel = "notStarted (sin journal)"
+            pendingEffectsLabel = "—"; countersLabel = "—"; cursorLabel = "—"; startedAtLabel = "—"
+            return
+        }
+        phaseLabel = "\(state.readPhase().phase)"
+        let pending = state.readPendingEffects().map(\.rawValue)
+        pendingEffectsLabel = pending.isEmpty ? "—" : pending.joined(separator: ", ")
+        countersLabel = "mismatch \(state.verifyMismatchRetries) · red \(state.verifyNetworkRetries) · leader \(state.leaderDeviceID ?? "—") · seqCut \(state.serverSeqCut)"
+        cursorLabel = state.snapshotCursorJSON ?? "—"
+        startedAtLabel = state.startedAt.map { $0.formatted(date: .omitted, time: .standard) } ?? "—"
+    }
+}
+
 struct CloudSyncDebugView: View {
     @State private var model = CloudSyncDebugModel()
     @State private var spike = SpikeS5Harness()
     @State private var spike6 = SpikeS6Harness()
+    @State private var migration: CloudSyncMigrationPanelModel?
+    @State private var confirmStartReal = false
+    @State private var confirmStartReal2 = false
+    @State private var confirmEscapeHatch = false
     // Spike S7: override de fase simulada (nil = sin override = producción `.notStarted`) + quiescencia
     // viva (refrescada cada 1s) para mostrar en vivo la decisión del gate §i.9.
     @State private var selectedS7Phase: MigrationPhaseStore.SimulatedPhase?
@@ -121,6 +266,7 @@ struct CloudSyncDebugView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xl) {
                 stateCard
                 actionsCard
+                migrationCard
                 spikeS5Card
                 spikeS6Card
                 spikeS7Card
@@ -165,6 +311,131 @@ struct CloudSyncDebugView: View {
                 do { try await Task.sleep(for: .seconds(1)) } catch { break }
             }
         }
+        .task {
+            // Migración I10: crea el modelo con el mainContext + refresca el estado vivo cada 1s.
+            if migration == nil { migration = CloudSyncMigrationPanelModel(context: modelContext) }
+            while !Task.isCancelled {
+                migration?.refresh()
+                do { try await Task.sleep(for: .seconds(1)) } catch { break }
+            }
+        }
+        .confirmationDialog("Iniciar migración REAL contra staging",
+                            isPresented: $confirmStartReal, titleVisibility: .visible) {
+            Button("Continuar (1/2)", role: .destructive) { confirmStartReal2 = true }
+            Button("Cancelar", role: .cancel) {}
+        } message: {
+            Text("Arranca el cutover REAL. Al llegar al cutover PERSISTE storageMode=.cloud en ESTE device: el próximo relanzamiento montará el store personal con el mirror OFF. Solo en un device de pruebas.")
+        }
+        .confirmationDialog("¿Seguro? Persiste storageMode=.cloud",
+                            isPresented: $confirmStartReal2, titleVisibility: .visible) {
+            Button("SÍ, iniciar migración REAL (2/2)", role: .destructive) {
+                Task { await migration?.startReal() }
+            }
+            Button("Cancelar", role: .cancel) {}
+        } message: {
+            Text("Segunda confirmación. Esto NO es reversible sin el escape hatch (I11 aún no existe).")
+        }
+        .confirmationDialog("Forzar storageMode=.icloud + limpiar journal",
+                            isPresented: $confirmEscapeHatch, titleVisibility: .visible) {
+            Button("Forzar salida (escape hatch)", role: .destructive) {
+                migration?.forceRollbackEscapeHatch()
+            }
+            Button("Cancelar", role: .cancel) {}
+        } message: {
+            Text("Salida MANUAL mientras no exista la reversa (I11): devuelve el device a iCloud y borra el journal. RELANZA después. NO es 'forzar done'.")
+        }
+    }
+
+    private var migrationCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Text("Migración I10 · cutover (staging)")
+                .font(DS.Typography.body.weight(.semibold))
+                .foregroundStyle(.primary)
+            Text("Conduce el MigrationRunner REAL sobre el mainContext contra staging. Idempotente/retomable. JAMÁS ofrece 'forzar done'.")
+                .font(DS.Typography.caption)
+                .foregroundStyle(.tertiary)
+
+            if let migration {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    row("Fase", migration.phaseLabel)
+                    row("Pending fx", migration.pendingEffectsLabel)
+                    row("Contadores", migration.countersLabel)
+                    row("Cursor", migration.cursorLabel)
+                    row("startedAt", migration.startedAtLabel)
+                    row("Quiescent", migration.quiescent ? "SÍ" : "NO")
+                    row("Mount (proc)", migration.mountedModeLabel)
+                    row("Mode persist", migration.persistedModeLabel)
+                    row("Relaunch req", migration.relaunchRequested ? "SÍ" : "NO")
+                    if let dry = migration.dryRunSummary { row("Dry-run", dry) }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(DS.Spacing.sm)
+                .background(.thBackground)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+
+                VStack(spacing: DS.Spacing.sm) {
+                    migrationButton("Simular migración (dry-run)") { await migration.simulate() }
+                    migrationButton("Conteos dry-run (§g.5, no escribe)") { migration.computeDryRun() }
+                    migrationButton("Retomar (resume)") { await migration.resume() }
+                    migrationButton("Poll líder") { await migration.pollLeader() }
+                    migrationButton("Reset tras rollback") { await migration.resetAfterRollback() }
+                }
+
+                Button {
+                    confirmStartReal = true
+                } label: {
+                    Label("Iniciar migración REAL (staging)", systemImage: "exclamationmark.triangle.fill")
+                        .font(DS.Typography.caption.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.xs)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+                .disabled(migration.isWorking)
+
+                Button {
+                    confirmEscapeHatch = true
+                } label: {
+                    Label("Forzar storageMode=.icloud + limpiar journal", systemImage: "arrow.uturn.backward")
+                        .font(DS.Typography.caption)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.xs)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.bordered)
+                .tint(.red)
+                .disabled(migration.isWorking)
+
+                if let message = migration.lastMessage {
+                    Text(message)
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else {
+                Text("Inicializando…").font(DS.Typography.caption).foregroundStyle(.tertiary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.lg)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    private func migrationButton(_ title: String, action: @escaping () async -> Void) -> some View {
+        Button {
+            Task { await action() }
+        } label: {
+            Text(title)
+                .font(DS.Typography.caption.weight(.medium))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.xs)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.bordered)
+        .disabled(migration?.isWorking ?? true)
     }
 
     private var stateCard: some View {
