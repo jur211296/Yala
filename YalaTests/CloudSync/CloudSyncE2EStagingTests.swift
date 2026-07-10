@@ -577,6 +577,82 @@ struct CloudSyncE2EStagingTests {
             Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
         }
     }
+
+    // MARK: - Snapshot upload REAL (I10-wiring w4/w5)
+
+    /// Dataset local propio multi-entidad (Category/Account/Subcategory/Tag — tablas LIMPIAS en staging) →
+    /// `backfillIdentities` → `MigrationSnapshotUploader` REAL contra staging → pull final (guard A-3) →
+    /// `verifyIntegrity` REAL (`/sync/merkle`). CONSERVA ESTRICTO el assert `diverged == ["tx_items"]` (la
+    /// divergencia legacy hand-crafted es PERMANENTE server-side) y comprueba que NINGUNA tabla del dataset
+    /// aparece divergente tras el snapshot. Se evita `budgets` a propósito (D7: 3 filas legacy divergen
+    /// hasta que el owner las tombstonee — NUNCA relajar el assert).
+    @Test(.enabled(if: CloudSyncE2EStagingTests.isEnabled))
+    func snapshotUpload_backfillThenVerify_datasetTablesConverge() async throws {
+        let jwt = try await login()
+        let tokenProvider: () async -> String? = { jwt }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let push = SyncPushClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let pull = SyncPullClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let merkle = SyncMerkleClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+
+        // Dataset propio (tablas limpias en staging; se EVITA tx_items/budgets por la divergencia legacy).
+        let run = String(UUID().uuidString.prefix(8))
+        let category = Category(name: "snap-cat-\(run)", colorHex: "#333333", isIncome: false, isDefaultSeed: false)
+        context.insert(category)
+        let account = Account(name: "snap-acc-\(run)", currencyCode: "PEN", colorHex: "#111111",
+                              iconName: "creditcard", type: "checking")
+        context.insert(account)
+        let subcategory = Subcategory(name: "snap-sub-\(run)", category: category)
+        context.insert(subcategory)
+        let tag = Tag(name: "snap-tag-\(run)")
+        context.insert(tag)
+        try context.save()
+
+        // Backfill de identidades (la migración lo hace ANTES del snapshot).
+        SyncIdentityService.backfillIdentities(context: context)
+
+        // Snapshot upload REAL, página a página hasta completar.
+        let uploader = MigrationSnapshotUploader(engine: engine, pushClient: push, context: context)
+        var cursor: String?
+        var done = false
+        for _ in 0..<500 {
+            switch await uploader.uploadPage(cursor: cursor) {
+            case .completed:
+                done = true
+            case .pageConfirmed(let c):
+                cursor = c
+            case .transient:
+                Issue.record("snapshot .transient contra staging"); return
+            }
+            if done { break }
+        }
+        #expect(done, "el snapshot no completó contra staging")
+        let liveOutbox = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(liveOutbox.isEmpty, "el outbox vivo debe quedar vacío tras el snapshot: \(liveOutbox.count)")
+
+        // Pull final (satisface el guard A-3 de la verificación: recoge nuestro propio push, echo idempotente).
+        guard case .completed = await engine.pullAndApplyOnce(using: pull, context: context) else {
+            Issue.record("pull final no completó"); return
+        }
+
+        // verify REAL: el veredicto CONSERVA ["tx_items"] y NINGUNA tabla del dataset diverge.
+        switch await engine.verifyIntegrity(using: merkle, context: context) {
+        case .converged:
+            break
+        case .diverged(let entities):
+            #expect(entities == ["tx_items"],
+                    "solo tx_items (legacy hand-crafted) puede divergir; nada del dataset: \(entities)")
+            for table in ["categories", "accounts", "subcategories", "tags"] {
+                #expect(!entities.contains(table),
+                        "la tabla \(table) del dataset divergió tras el snapshot: \(entities)")
+            }
+        case .skipped(let reason):
+            Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
+        }
+    }
 }
 
 // MARK: - Sesión e2e (seam I7c stub para el runtime)
