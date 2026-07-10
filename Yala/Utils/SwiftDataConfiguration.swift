@@ -197,22 +197,6 @@ enum SwiftDataConfiguration {
         #endif
     }()
 
-    /// SPIKE S6 — quitar al cerrar I11. Seam DEBUG del harness de remontaje del mirror
-    /// (spike S6, Modo Nube Fase 4). Con el arg `-spike-s6-mirror-off` presente, el store
-    /// PERSONAL se monta con `cloudKitDatabase: .none` sobre el MISMO archivo de store
-    /// (`databaseName`) — a diferencia de `-uitest`, que cambia de nombre de store. Desmonta el
-    /// mirror `NSPersistentCloudKitContainer` para simular la fase offline de la reversa; al quitar
-    /// el arg y relanzar, el mirror re-monta sobre los mismos datos (= el REMONTAJE que S6 prueba).
-    /// Solo lo activa el OWNER con el arg explícito; en release siempre false. Grupos/sync-meta NO
-    /// se tocan (su config ya es `.none` siempre).
-    static let isSpikeS6MirrorOff: Bool = {
-        #if DEBUG
-        return ProcessInfo.processInfo.arguments.contains("-spike-s6-mirror-off")
-        #else
-        return false
-        #endif
-    }()
-
     // MARK: - Personal store mount witness (I10-wiring w6)
 
     /// Decisión PURA de qué store personal montar según el `StorageMode`, el flag "mirror-off ARMADO" y
@@ -287,15 +271,9 @@ enum SwiftDataConfiguration {
         if isUITesting {
             return ModelConfiguration("YalaModel-UITest", schema: personalSchema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
         }
-        // SPIKE S6 — quitar al cerrar I11. MISMO archivo de store personal (databaseName), pero sin
-        // mirror: `.none` sobre el store de prod para la fase offline del remontaje. NO cambia el
-        // nombre del store (a diferencia de UITest) → al quitar el arg, el mirror re-monta sobre los
-        // mismos datos. Va ANTES del check de iCloud a propósito: fuerza mirror OFF haya o no cuenta.
-        if isSpikeS6MirrorOff {
-            return ModelConfiguration(databaseName, schema: personalSchema, cloudKitDatabase: .none)
-        }
         // I10-wiring w6: rama `.cloud` ANTES del check de iCloud (mirror OFF sobre el MISMO archivo de
-        // store, patrón SpikeS6), gateada ADEMÁS por el flag mirror-off-ARMADO (SERIO 1 — ver doc de
+        // store, patrón device-validado por el spike S6 — harness retirado al cerrar I11), gateada
+        // ADEMÁS por el flag mirror-off-ARMADO (SERIO 1 — ver doc de
         // `personalStoreDecision`). DARK: nadie escribe `storageMode=.cloud` ni arma el flag en
         // producción hasta que el cutover de una migración real ejecute sus pasos.
         let decision = personalStoreDecision(

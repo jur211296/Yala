@@ -362,8 +362,6 @@ final class CloudSyncMigrationPanelModel {
 
 struct CloudSyncDebugView: View {
     @State private var model = CloudSyncDebugModel()
-    @State private var spike = SpikeS5Harness()
-    @State private var spike6 = SpikeS6Harness()
     @State private var migration: CloudSyncMigrationPanelModel?
     @State private var confirmStartReal = false
     @State private var confirmStartReal2 = false
@@ -383,8 +381,6 @@ struct CloudSyncDebugView: View {
                 actionsCard
                 migrationCard
                 reverseCard
-                spikeS5Card
-                spikeS6Card
                 spikeS7Card
                 if let message = model.lastMessage {
                     Text(message)
@@ -404,19 +400,8 @@ struct CloudSyncDebugView: View {
         .navigationTitle("Modo Nube · Auth")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            // Spike S5: re-encuentra la TX desechable de un run anterior (el estado del harness
-            // no sobrevive al relaunch, pero la TX sí) → habilita ir directo al paso 2.
-            spike.recoverDisposableIfNeeded(context: modelContext)
             await model.refreshAttest()
             await model.refreshCredential()
-        }
-        .task {
-            // Spike S6: cabecera de estado viva (quiescencia + conteo de 🧟/🧪 + sub-estado). Refresco
-            // cada 1s — aceptable para tooling DEBUG. Se detiene al cancelarse el .task de la vista.
-            while !Task.isCancelled {
-                spike6.refreshHeader(context: modelContext)
-                do { try await Task.sleep(for: .seconds(1)) } catch { break }
-            }
         }
         .task {
             // Spike S7: refleja el override persistido al abrir + refresca la quiescencia viva (1s) para
@@ -661,161 +646,6 @@ struct CloudSyncDebugView: View {
         .padding(.horizontal, DS.Spacing.lg)
     }
 
-    // MARK: - Spike S5 (captura de CKRecord.ID + delete dirigido)
-
-    private var spikeS5Card: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text("Spike S5 · captura de CKRecord.ID + delete")
-                .font(DS.Typography.body.weight(.semibold))
-                .foregroundStyle(.primary)
-            Text("Harness DEBUG device-only. Corre los pasos EN ORDEN. Espera 30-60s tras el paso 1 (export del mirror) antes del paso 2.")
-                .font(DS.Typography.caption)
-                .foregroundStyle(.tertiary)
-
-            VStack(spacing: DS.Spacing.sm) {
-                spikeButton("1 · Crear TX desechable", disabled: false) {
-                    spike.createDisposable(context: modelContext)
-                }
-                spikeButton("2 · Capturar IDs (A y B)", disabled: !spike.hasDisposable) {
-                    await spike.captureDisposable(context: modelContext)
-                }
-                spikeButton("3 · Borrar de CloudKit", disabled: !spike.hasCapture) {
-                    await spike.deleteFromCloudKit()
-                }
-                spikeButton("4 · Verificar gone", disabled: !spike.deleteAttempted) {
-                    await spike.verifyGone()
-                }
-            }
-
-            Divider()
-
-            VStack(spacing: DS.Spacing.sm) {
-                spikeButton("Capturar sobre TX existente (solo lectura)", disabled: false) {
-                    await spike.captureOldestExisting(context: modelContext)
-                }
-                spikeButton("Limpiar TX local", disabled: !spike.hasDisposable) {
-                    spike.clearLocalDisposable(context: modelContext)
-                }
-            }
-
-            HStack {
-                Text("Log")
-                    .font(DS.Typography.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button("Limpiar log") { spike.clearLog() }
-                    .font(DS.Typography.caption)
-                    .disabled(spike.isWorking)
-            }
-
-            ScrollView {
-                Text(spike.log.isEmpty ? "— sin resultados aún —" : spike.log)
-                    .font(.system(.caption2, design: .monospaced))
-                    .foregroundStyle(.primary)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .frame(height: 280)
-            .padding(DS.Spacing.sm)
-            .background(.thBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Spacing.lg)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .padding(.horizontal, DS.Spacing.lg)
-    }
-
-    // MARK: - Spike S6 (remontaje del mirror + reverseReconcile gateado, resumible)
-
-    private var spikeS6Card: some View {
-        @Bindable var spike6 = spike6
-        return VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text("Spike S6 · remontaje del mirror")
-                .font(DS.Typography.body.weight(.semibold))
-                .foregroundStyle(.primary)
-            Text("Harness DEBUG device-only. El arg -spike-s6-mirror-off monta el store PERSONAL sin mirror (mismo archivo). Sigue el guion: [0] con mirror ON → añade el arg → [A] → quita el arg (REMONTAJE) → [B].")
-                .font(DS.Typography.caption)
-                .foregroundStyle(.tertiary)
-
-            spikeS6Header
-
-            VStack(spacing: DS.Spacing.sm) {
-                spike6Button("0 · Preparar zombies (mirror ON)", disabled: spike6.mirrorOff) {
-                    spike6.prepareZombies(context: modelContext)
-                }
-                spike6Button("A · Divergencia offline (mirror OFF)", disabled: !spike6.mirrorOff) {
-                    spike6.divergeOffline(context: modelContext)
-                }
-                spike6Button("B · reverseReconcile simulado (gateado)", disabled: spike6.mirrorOff) {
-                    await spike6.runReverseReconcile(context: modelContext)
-                }
-            }
-
-            Toggle(isOn: $spike6.killAfterNextJournal) {
-                Text("Parar tras journalear el siguiente sub-estado (simula kill)")
-                    .font(DS.Typography.caption.weight(.medium))
-            }
-            .disabled(spike6.isWorking)
-
-            Divider()
-
-            VStack(spacing: DS.Spacing.sm) {
-                spike6Button("Verificar invariantes", disabled: false) {
-                    spike6.verifyInvariants(context: modelContext)
-                }
-                spike6Button("Reset spike", disabled: false) {
-                    spike6.resetSpike(context: modelContext)
-                }
-            }
-
-            HStack {
-                Text("Log")
-                    .font(DS.Typography.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button("Limpiar log") { spike6.clearLog() }
-                    .font(DS.Typography.caption)
-                    .disabled(spike6.isWorking)
-            }
-
-            ScrollView {
-                Text(spike6.log.isEmpty ? "— sin resultados aún —" : spike6.log)
-                    .font(.system(.caption2, design: .monospaced))
-                    .foregroundStyle(.primary)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .frame(height: 280)
-            .padding(DS.Spacing.sm)
-            .background(.thBackground)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Spacing.lg)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .padding(.horizontal, DS.Spacing.lg)
-    }
-
-    private var spikeS6Header: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            row("Mirror", spike6.mirrorOff ? "OFF (-spike-s6-mirror-off)" : "ON (normal)")
-            row("Quiescent", spike6.quiescentNow ? "SÍ · isImportQuiescent" : "NO")
-            row("Sub-estado", spike6.journaledSubState)
-            row("🧟 zombies", "\(spike6.zombieCount)")
-            row("🧪 markers", "\(spike6.markerCount)")
-            if let e = spike6.headerError {
-                row("Error", e)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Spacing.sm)
-        .background(.thBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-    }
-
     // MARK: - Spike S7 (gate §i.9 de los 3 BGTasks + fase simulada)
 
     /// La `MigrationPhase` que el gate verá (= exactamente lo que `MigrationPhaseStore.currentPhase`
@@ -942,38 +772,6 @@ struct CloudSyncDebugView: View {
         .background(.thCard)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
         .padding(.horizontal, DS.Spacing.lg)
-    }
-
-    private func spike6Button(
-        _ title: String, disabled: Bool, action: @escaping () async -> Void
-    ) -> some View {
-        Button {
-            Task { await action() }
-        } label: {
-            Text(title)
-                .font(DS.Typography.caption.weight(.medium))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DS.Spacing.xs)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.bordered)
-        .disabled(disabled || spike6.isWorking)
-    }
-
-    private func spikeButton(
-        _ title: String, disabled: Bool, action: @escaping () async -> Void
-    ) -> some View {
-        Button {
-            Task { await action() }
-        } label: {
-            Text(title)
-                .font(DS.Typography.caption.weight(.medium))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DS.Spacing.xs)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.bordered)
-        .disabled(disabled || spike.isWorking)
     }
 
     private func actionButton(
