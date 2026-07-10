@@ -54,6 +54,11 @@ final class MigrationPhaseStore {
         if Self.isIdentityCaptureWindow(journaledPhase(container: container)) {
             CloudSyncFlags.identityCaptureEnabled = true
         }
+        // w8 (DIFERIDOS #30): el drenaje único iKV→outbox del cutover se dispara AQUÍ porque configure
+        // corre post-journal (el gate líder-only necesita la fase real) y antes de cualquier ciclo de
+        // prefs del runtime. Internamente re-verifica todo (storageMode/fase/userID/sentinel) → no-op
+        // total en producción (.icloud) y en cualquier device que no sea el líder post-relaunch.
+        PreferenceSyncService.shared.drainiKVToOutboxOnceIfNeeded()
     }
 
     /// La ventana en que el gate permanente de captura de identidad debe estar ON (§g.3): desde que se

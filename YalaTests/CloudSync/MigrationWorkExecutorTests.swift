@@ -49,6 +49,7 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     var claimStatus = 200
     var migrationBody = Data("{\"ok\":true}".utf8)
     var migrationStatus = 200
+    var pushStatus = 200
     var merkleBody = Data()
     private let lock = NSLock()
     private(set) var pushedSyncIDs: [String] = []
@@ -65,6 +66,7 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
             return (claimBody, resp(claimStatus))
         }
         if path.contains("sync/push") {
+            if pushStatus != 200 { return (Data(), resp(pushStatus)) }
             var results: [[String: Any]] = []
             if let json = try? JSONSerialization.jsonObject(with: request.httpBody ?? Data()) as? [String: Any],
                let deltas = json["deltas"] as? [[String: Any]] {
@@ -284,7 +286,7 @@ struct MigrationWorkExecutorTests {
         #expect(executor.isMarkerExported() == false)
     }
 
-    @Test("execute(.runLeaderReconcileFromFrozenCloudKit): complete ok → no throw")
+    @Test("execute(.runLeaderReconcileFromFrozenCloudKit): complete ok → no throw (sin residual, barrido no-op)")
     func execute_reconcileComplete_ok() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
@@ -292,6 +294,51 @@ struct MigrationWorkExecutorTests {
         let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
         try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)   // migration_progress('complete') ok
+    }
+
+    @Test("done-effect w8: el barrido de RED rescata un write huérfano de la ventana de cutover ANTES del complete")
+    func execute_reconcile_sweepRescuesOrphanWrite() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        // Write "huérfano" de la ventana localModeSet→mirrorOff: en History, aún sin drenar/subir.
+        let cat = Category(name: "orphan-window", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(cat)
+        try context.save()
+
+        try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+
+        #expect(!stub.pushedSyncIDs.isEmpty, "el barrido debe drenar + subir el write huérfano")
+        let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(live.isEmpty, "tras el barrido el outbox vivo queda limpio (rescate confirmado)")
+    }
+
+    @Test("done-effect w8: barrido con red caída → throw retomable, el complete NO se marca")
+    func execute_reconcile_sweepTransient_retomable() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        stub.pushStatus = 503   // red caída durante el barrido
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+
+        let cat = Category(name: "orphan-transient", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(cat)
+        try context.save()
+
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.runLeaderReconcileFromFrozenCloudKit)
+        }
+        // El residual sigue VIVO (nada se perdió) → el resume re-corre el efecto entero.
+        let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(!live.isEmpty, "con red caída el residual queda vivo, retomable")
     }
 
     // MARK: - Verify

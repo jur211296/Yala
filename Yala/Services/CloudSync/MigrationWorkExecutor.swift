@@ -339,9 +339,35 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             CloudSyncBreadcrumb.migrationRelaunchRequested()
 
         case .runLeaderReconcileFromFrozenCloudKit:
-            // `migration_progress('complete')` (líder). La capa PRIMARIA (captura por History desde
-            // localModeSet) ya está activa; el BACKSTOP `reconcileFromFrozenCloudKit` (capa de RED) llega
-            // en w8 (residual documentado — DEBE existir antes de migrar usuarios reales).
+            // w8 — CAPA DE RED del líder (§g.4 SERIO 1 v3), ANTES del 'complete'. DECISIÓN documentada
+            // (invariante PRECISADO por el review adversarial): el líder solo responde por SUS PROPIOS
+            // writes — y TODOS sus writes de la ventana de cutover están en su History LOCAL (durable)
+            // tras el baseline → el barrido correcto para el líder es drain(History) + push del residual.
+            // Una fila que el CloudKit congelado tenga y el local NO (un 2º device del mismo Apple ID,
+            // aún .icloud, escribiendo a la base compartida durante la ventana — el device puede no
+            // haberla importado antes del mirror-off) NO es responsabilidad de este barrido: la sube el
+            // PROPIO device que la escribió por su camino de migración/adopt (I11). RESIDUAL EXPLÍCITO
+            // de I11: un device que escribió post-cutover y JAMÁS adopta deja esa fila huérfana en
+            // CloudKit congelado — registrar en el gate de encendido de flags (cruza con #29/#30).
+            engine.drainOnce(context: context)
+            let residual = liveOutboxRows()
+            let (buildable, poison) = pushClient.partitionBuildable(residual)
+            engine.deadLetterPoison(poison, context: context, now: now())
+            if !buildable.isEmpty {
+                guard case .completed(let results) = await pushClient.push(buildable) else {
+                    // Red → retomable: el 'complete' NO se marca; el resume re-corre este efecto entero
+                    // (drain/push idempotentes por LWW + confirmUploaded).
+                    throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: sweepTransient")
+                }
+                await pushClient.applyResults(results, rows: buildable, engine: engine, context: context)
+                let rescued = results.filter { $0.status == .applied }.count
+                if rescued > 0 {
+                    CloudSyncBreadcrumb.migrationLeaderOrphanReconciled(count: rescued)
+                    TelemetryService.cloudCutoverLeaderOrphanReconciled(count: rescued)
+                }
+            }
+            // `migration_progress('complete')` (líder) — SOLO tras el barrido (un kill entre ambos re-corre
+            // el barrido, no-op, y reintenta el complete; idempotente).
             guard let jwt = await session.accessToken(), !jwt.isEmpty else {
                 CloudSyncBreadcrumb.migrationCutoverRejected(reason: "complete: sessionExpired")
                 throw MigrationExecutorError.notWired(effect: "runLeaderReconcile: sessionExpired")

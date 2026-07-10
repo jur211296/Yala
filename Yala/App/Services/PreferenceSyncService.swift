@@ -90,10 +90,11 @@ final class PreferenceSyncService {
             // NO se lee iKV aquí. Las señales wipe/onboarding (WipeKeys) SÍ siguen en iKV en ambos modos
             // v1 (su reemplazo por el summary del backend es I14/§k.4 — documentado).
             //
-            // CUTOVER S8 (§g.4) — DIFERIDOS #30, residual declarado v1: el drenaje único KV→backend al
-            // migrar un device NO existe aún. Cuando I10/I14 cableen el cutover, va AQUÍ:
-            //   // PrefsCutover.drainiKVOnceIfNeeded(iKV: iKV, outbox: prefsOutbox, userID: cloudUserIDProvider())
-            break
+            // CUTOVER S8 (§g.4) — DIFERIDOS #30 CERRADO (I10-wiring w8): el drenaje único iKV→outbox
+            // corre vía `drainiKVToOutboxOnceIfNeeded()`, disparado desde `MigrationPhaseStore.configure`
+            // (que conoce la fase journaleada — el gate LÍDER-only) y redundantemente aquí (por si el
+            // configure corrió ANTES de que la sesión nube tuviera userID). Idempotente por sentinel.
+            drainiKVToOutboxOnceIfNeeded()
         }
 
         // Offline catch-up: process any wipe/onboarding signals that arrived while app was closed
@@ -173,6 +174,55 @@ final class PreferenceSyncService {
             print("PreferenceSyncService: enqueue pref \(key) failed: \(error)")
             #endif
         }
+    }
+
+    // MARK: - Drenaje único iKV → outbox (CUTOVER S8, DIFERIDOS #30 — I10-wiring w8)
+
+    private static let ikvDrainSentinelPrefix = "cloudSync.prefsCutoverDrained."
+
+    /// Drena UNA VEZ por userID el estado iKV → outbox de prefs, SOLO en el device LÍDER de la
+    /// migración en su ventana post-relaunch (gate por fase journaleada — ver `PrefsCutoverDrain`, que
+    /// documenta POR QUÉ un adoptador/follower NO drena: su iKV puede ser más viejo que el backend y el
+    /// HLC fresco del enqueue lo haría ganar). Belt: salta keys con entry ya pendiente en el outbox
+    /// (un write local post-relaunch es más nuevo que la réplica iKV). El sentinel se estampa SOLO si
+    /// el drenaje completó sin fallos de I/O — un fallo parcial reintenta al próximo boot (LWW absorbe
+    /// el re-enqueue). Callers: `MigrationPhaseStore.configure` (orden garantizado post-journal) +
+    /// `bootstrap()` rama `.cloud` (redundante benigno).
+    func drainiKVToOutboxOnceIfNeeded(sentinelDefaults: UserDefaults = .standard) {
+        guard CloudSyncFlags.storageMode == .cloud else { return }
+        guard PrefsCutoverDrain.isLeaderPostRelaunchPhase(MigrationPhaseStore.shared.currentPhase) else { return }
+        guard let userID = cloudUserIDProvider() else { return }
+        let sentinelKey = Self.ikvDrainSentinelPrefix + userID
+        guard !sentinelDefaults.bool(forKey: sentinelKey) else { return }
+        guard let prefsOutbox else {
+            #if DEBUG
+            print("PreferenceSyncService: drain iKV — outbox no disponible (App Group)")
+            #endif
+            return
+        }
+
+        let present = Set(PrefSyncKey.allCases.filter { readRemoteIKV($0) != nil }.map(\.rawValue))
+        let pending = Set(prefsOutbox.entries(forUserID: userID).map(\.key))
+        let planned = PrefsCutoverDrain.plan(
+            allKeys: PrefSyncKey.allCases.map(\.rawValue),
+            presentInIKV: present, pendingInOutbox: pending)
+
+        var failures = 0
+        for raw in planned {
+            guard let key = PrefSyncKey(rawValue: raw), let value = readRemoteIKV(key) else { continue }
+            do {
+                try prefsOutbox.enqueue(key: raw, userID: userID, value: value)
+            } catch {
+                failures += 1
+                #if DEBUG
+                print("PreferenceSyncService: drain iKV — enqueue \(raw) falló: \(error)")
+                #endif
+            }
+        }
+        if failures == 0 {
+            sentinelDefaults.set(true, forKey: sentinelKey)
+        }
+        CloudSyncBreadcrumb.prefsCutoverDrained(count: planned.count - failures, failures: failures)
     }
 
     // MARK: - Apply Detected Defaults (Risk 1 — "data found" with no currency)

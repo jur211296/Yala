@@ -422,6 +422,20 @@ enum CloudSyncBreadcrumb {
     static func migrationReconcileDeferred() {
         logger.notice("CloudSyncMigration reconcileDeferred — complete OK; backstop capa-de-red DIFERIDO a w8")
     }
+
+    /// w8 (capa de RED del líder, §g.4 SERIO 1 v3): el barrido residual al entrar a `done` rescató writes
+    /// huérfanos de la ventana de cutover (drain de History + push). `count` > 0 = la ventana existió en la
+    /// práctica (el canario de telemetría acompaña). Sin PII (solo el conteo).
+    static func migrationLeaderOrphanReconciled(count: Int) {
+        logger.notice("CloudSyncMigration leaderOrphanReconciled count=\(count, privacy: .public) — la capa de red rescató writes de la ventana de cutover")
+    }
+
+    /// w8 (DIFERIDOS #30 / §g.4 S8): el drenaje único iKV→outbox del cutover corrió en el device LÍDER.
+    /// `failures` > 0 = I/O del outbox falló para algunas keys → el sentinel NO se estampó y el próximo
+    /// boot reintenta (LWW absorbe el re-enqueue). Sin PII (solo conteos).
+    static func prefsCutoverDrained(count: Int, failures: Int) {
+        logger.notice("CloudSyncMigration prefsCutoverDrained count=\(count, privacy: .public) failures=\(failures, privacy: .public)")
+    }
 }
 
 // MARK: - CloudSyncEngine

@@ -151,6 +151,7 @@ enum AnalyticsEvent: String {
     case cloudSyncBlockedByExpiredSession = "Diagnóstico · Sync bloqueado por sesión expirada"  // params: pending — BREADCRUMB (Modo Nube I7, §f.3/S11): sesión no renovable con deltas en el outbox → estado accionable "inicia sesión para subirlos". Superficie declarada; la DISPARA el consumidor I7c/I8 cuando SessionExpiryPolicy → .blockedNeedsSignIn
     case cloudSyncOutboxMirrorRehydrated = "Diagnóstico · Outbox re-hidratado del espejo"  // params: count — CANARIO (Modo Nube I8d/A1, §d.5): >0 en boot = una lightweight migration recreó la tabla SyncOutbox y `count` filas se re-hidrataron del espejo App Group (evento hoy invisible). La DISPARA CloudSyncEngine.rehydrateOutboxFromMirror
     case cloudSyncOutboxMirrorDivergence = "Diagnóstico · Divergencia del espejo del outbox"  // params: delta — CANARIO (Modo Nube I8d/A1, §d.5): delta = |espejo del userID| − |store SyncOutbox| en cada arranque; >0 persistente SIN migración = crash entre purga y remove no reconciliado, o vaciado parcial (el modo de fallo que ni el Merkle ve). La DISPARA CloudSyncEngine.rehydrateOutboxFromMirror
+    case cloudCutoverLeaderOrphanReconciled = "Diagnóstico · Cutover: writes huérfanos rescatados"  // params: count — CANARIO (Modo Nube I10 w8, §g.4 SERIO 1 v3): la capa de RED del líder rescató writes de la ventana localModeSet→mirrorOff que la capa primaria no había subido. >0 = la ventana existió en la práctica (esperado raro). Sin PII (solo el conteo)
     case cloudSyncMutationRejected = "Diagnóstico · Mutación de sync rechazada"  // params: reason — CANARIO (Modo Nube I8e, §d.5): el backend RECHAZÓ un delta (status rejected). El delta queda en dead-letter (SyncOutbox.rejectedReason), NO se pierde. >0 = write-site sin auditar / grupo de coherencia parcial (bug de emisión, debe ser 0). La DISPARA SyncPushClient.applyResults. Sin PII (solo el motivo)
     case cloudAccountUnavailable = "Diagnóstico · Cuenta no disponible"  // BREADCRUMB (Modo Nube I8e, §d.5): el backend respondió 403 (autenticado pero prohibido) → cuenta suspendida/deshabilitada, distinto del 401 (sesión expirada). >0 = revisar estado de la cuenta. La DISPARA SyncPushClient.push. Sin PII
     case cloudSyncClockReceiveRejected = "Diagnóstico · HLC remoto rechazado por el reloj"  // params: reason — CANARIO (Modo Nube I8f-1, F-5): `HLCClock.receive` RECHAZÓ un HLC remoto (drift >5min futuro / counter overflow) al aplicar deltas del pull → el reloj local NO se envenena pero pierde causalidad con ese emisor bajo skew extremo (residual documentado; el server lo vigila con cloudSyncSuspectClockWin). La DISPARA CloudSyncEngine.receiveRemoteClock. Sin PII (solo el motivo)
@@ -425,6 +426,15 @@ enum TelemetryService {
     static func cloudSyncMutationRejected(reason: String) {
         track(.cloudSyncMutationRejected, parameters: [
             "reason": reason
+        ])
+    }
+
+    /// CANARIO Modo Nube (I10 w8, §g.4 SERIO 1 v3): la capa de RED del líder rescató writes huérfanos de
+    /// la ventana de cutover que la capa primaria no había subido. >0 = la ventana existió en la práctica
+    /// (esperado raro). Sin PII (solo el conteo).
+    static func cloudCutoverLeaderOrphanReconciled(count: Int) {
+        track(.cloudCutoverLeaderOrphanReconciled, parameters: [
+            "count": String(count)
         ])
     }
 
