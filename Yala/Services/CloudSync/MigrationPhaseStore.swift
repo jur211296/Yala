@@ -71,6 +71,12 @@ final class MigrationPhaseStore {
         case .notStarted, .dryRun, .consent, .authenticating, .waitingForLeader,
              .claimingMigration, .done, .failedRollback:
             return false
+        // Reversa (I11-1) → false: la ventana de captura era de la IDA; en `.cloud` el engine acuña
+        // syncIDs por su camino y post-reversa no hay sync (misma clasificación que `done`).
+        case .reverseConfirm, .reverseClaimLeader, .reverseDrainAll, .reverseVerify,
+             .reverseFreezeBackend, .reverseMountMirror, .reverseReconcile, .reverseUpload,
+             .icloudActive, .reverseFailedRollback:
+            return false
         }
     }
 

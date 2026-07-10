@@ -65,15 +65,20 @@ nonisolated enum BGTaskMigrationGate {
 
         // ESTABLES → `.run` INCONDICIONAL (ignora quiescencia y rol). §i.9: en todo estado estable los
         // 3 corren NORMAL, sin gate. `failedRollback` es ESTABLE: la transición TERMINÓ y el device
-        // quedó idéntico a como empezó (el mirror nunca se apagó).
-        case .notStarted, .done, .failedRollback:
+        // quedó idéntico a como empezó (el mirror nunca se apagó). `icloudActive` (reversa TERMINÓ, modo
+        // privado normal) y `reverseFailedRollback` (la reversa abortó pre-mount; el device quedó en modo
+        // nube limpio) son igualmente ESTABLES (I11-1).
+        case .notStarted, .done, .failedRollback, .icloudActive, .reverseFailedRollback:
             return .run
 
-        // TRANSITORIOS (migración EN CURSO) → gate por rol. `.cutover` cubre TODOS sus sub-estados
-        // (pending/serverConfirmed/localModeSet/markerWritten/mirrorOff) sin bindear el associated value.
+        // TRANSITORIOS (migración/reversa EN CURSO) → gate por rol. `.cutover` cubre TODOS sus sub-estados
+        // (pending/serverConfirmed/localModeSet/markerWritten/mirrorOff) sin bindear el associated value;
+        // `.reverseReconcile` cubre sus 4 sub-estados igual (I11-1).
         case .dryRun, .consent, .authenticating, .waitingForLeader,
              .claimingMigration, .assigningIdentity, .uploadingSnapshot,
-             .verifying, .cutover:
+             .verifying, .cutover,
+             .reverseConfirm, .reverseClaimLeader, .reverseDrainAll, .reverseVerify,
+             .reverseFreezeBackend, .reverseMountMirror, .reverseReconcile, .reverseUpload:
             switch role {
             case .reader:
                 // Solo-lectura → suspende siempre (el cache viejo es aceptable en la ventana transitoria).

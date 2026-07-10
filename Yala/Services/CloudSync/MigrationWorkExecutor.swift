@@ -401,6 +401,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         case .adoptBackendAccount:
             CloudSyncBreadcrumb.migrationExecutorNotWired(step: effect.rawValue)
             throw MigrationExecutorError.notWired(effect: effect.rawValue)
+
+        // Reversa (§h) — DARK en I11-1: la máquina/journal ya modelan los efectos pero el executor NO los
+        // cablea. I11-2/3 los implementan (mountMirrorAndRelaunch cruza el process boundary como
+        // disableMirrorAndRelaunch; el cuarteto de cierre borra marker+beacon, persiste .icloud y cierra
+        // el server). El runner los deja journaled → retomable. CONTRATO I11-2: la observación
+        // `reverseMirrorMounted` (análoga a `isMirrorConfirmedOff`) debe ser inyectable/fake-able en tests.
+        case .reverseRollback, .mountMirrorAndRelaunch, .deleteCloudKitMarker,
+             .clearCloudBeacon, .persistICloudMode, .completeReverseServer:
+            CloudSyncBreadcrumb.migrationExecutorNotWired(step: effect.rawValue)
+            throw MigrationExecutorError.notWired(effect: effect.rawValue)
         }
     }
 

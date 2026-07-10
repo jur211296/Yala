@@ -66,6 +66,67 @@ nonisolated enum MigrationPhase: Equatable, Codable {
     case done
     /// Any failure BEFORE cutover → device identical to how it started (mirror never turned off).
     case failedRollback
+
+    // MARK: Reverse (§h — cloud→CloudKit) — DARK in I11-1 (nothing in production drives it; the panel
+    // wires it in I11-5, the real UI is I14). Ordering premise (§h.1 REORDERED): the mirror is mounted
+    // BEFORE deleting anything. The rollback boundary is the mirror mount: PRE-mount failures roll back
+    // (local intact, storageMode still `.cloud`); POST-mount failures HOLD + idempotent resume (the
+    // mirror is already alive) — symmetric to the cutover.
+    /// Double-confirmation UI. NON-durable (resume → origin). `ReverseOrigin` records where a decline/kill
+    /// returns: `.done` (the original migration leader) or `.notStarted` (a device that ADOPTED the cloud
+    /// account — its journal is `notStarted` after `adoptBackendAccount`). Without the origin, a decline
+    /// from `done` would reset the journal to `notStarted` and `markerReconciliation` would falsely fire
+    /// `secondaryDeviceCloudLogin` (live marker + no trace). The "is this device in cloud mode?" guard is
+    /// NOT the machine's (pure): the wiring/panel gates by `storageMode == .cloud`.
+    case reverseConfirm(ReverseOrigin)
+    /// Server-side reservation (`reverse_in_progress` + leader). Durable.
+    case reverseClaimLeader
+    /// Final pull + drain of this device's own outbox. Durable.
+    case reverseDrainAll
+    /// Pull to server_seq top + Merkle local==backend. Durable. (Reuses `VerifyOutcome` + the S9 counters,
+    /// which are INDEPENDENT of the forward migration's — the runner resets them on `reverseClaimLeader`.)
+    case reverseVerify
+    /// Mark the backend account "reverting". Durable.
+    case reverseFreezeBackend
+    /// RE-LIGHTS the `.private` mirror via assisted relaunch — CROSSES the process boundary (like the
+    /// cutover's mirror-off). Resolved by OBSERVATION on resume, never blind re-execution. Durable.
+    case reverseMountMirror
+    /// Journaled §h.3 sub-states (`ReverseReconcileSubstate`). Durable. The "done" of the reconcile is NOT
+    /// a sub-state: leaving to `reverseUpload` IS the done (same pattern as cutover→done).
+    case reverseReconcile(ReverseReconcileSubstate)
+    /// The mirror exports the complete store (the History token survives, spike S2). Durable.
+    case reverseUpload
+    /// STABLE terminal: private mode; the backend is frozen as a safety net.
+    case icloudActive
+    /// STABLE terminal: the reverse aborted PRE-mount; the device stays in clean cloud mode (the mirror
+    /// was never re-lit).
+    case reverseFailedRollback
+}
+
+/// Where a `reverseConfirm` decline/kill returns. `String, Codable` for the journal (the I11-2 runner
+/// persists `MigrationState.reverseOriginRaw` on the `reverseConfirm→reverseClaimLeader` edge — the
+/// machine does NOT thread the origin past `reverseConfirm`). A leader that migrated returns to `.done`;
+/// an adopter returns to `.notStarted`.
+nonisolated enum ReverseOrigin: String, Codable, Equatable {
+    case done
+    case notStarted
+}
+
+/// The journaled reverse-reconcile sub-states (§h.3), in STRICT order. The raw values encode the order
+/// (`awaitingQuiescence < deletingZombies < …`). `Comparable` so resume never regresses/skips (invariant).
+nonisolated enum ReverseReconcileSubstate: Int, Codable, Equatable, CaseIterable, Comparable {
+    /// Gate `isImportQuiescent` BEFORE the first delete+save (SERIO 3 v3).
+    case awaitingQuiescence = 0
+    /// Backend tombstones → `CKRecord.ID` via `SyncIdentity` → delete through the mirror.
+    case deletingZombies = 1
+    /// `SyncIdentity.lastReboundAt` → delete the stale record + upload the new one.
+    case rebindingUUIDs = 2
+    /// Auto-heal Account/Tag (I11-4).
+    case dedupHealed = 3
+
+    static func < (lhs: ReverseReconcileSubstate, rhs: ReverseReconcileSubstate) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
 }
 
 /// The journaled cutover sub-states, in STRICT observable order (§g.4). The raw values encode the
@@ -139,6 +200,41 @@ nonisolated enum MigrationEvent: Equatable {
     case leaderVanished
     /// A non-recoverable failure BEFORE cutover.
     case fatalError
+
+    // MARK: Reverse events (§h) — command-vs-ack like the cutover events. DARK in I11-1.
+    /// User asked to go back to iCloud (the wiring gates by `storageMode == .cloud`). Legal from `done`
+    /// (the migration leader) AND from `notStarted` (an adopter — returning-user §k.4), and from
+    /// `icloudActive` as `.userActivated` re-cutover (via consent; §h.4, flow I14).
+    case reverseActivated
+    /// Double-confirmation accepted → `reverseClaimLeader`.
+    case reverseConfirmed
+    /// Double-confirmation declined → back to the origin (from `reverseConfirm`'s associated value).
+    case reverseDeclined
+    /// Ack: the backend accepted the reservation (`reverse_in_progress` + leader).
+    case reverseLeaderClaimed
+    /// Ack: the final pull + own outbox drain finished.
+    case reverseDrainCompleted
+    /// The reverse verify outcome. REUSES `VerifyOutcome` (S9): a mismatch re-drains (authority in the
+    /// reverse is backend→local, so the fix is a PULL, not a re-upload); a timeout retries the verify.
+    case reverseVerifyOutcome(VerifyOutcome)
+    /// Ack: the account is marked `reverting`.
+    case reverseBackendFrozen
+    /// OBSERVATION post-relaunch: the `.private` mirror mounted (witness `personalStoreMountedMode ==
+    /// .icloud`) — analogous to `mirrorRelaunchCompleted`. CONTRACT (I11-2): this observation MUST be
+    /// injectable/fake-able in tests (`personalStoreMountedMode` defaults to `.icloud` and is only
+    /// captured on the production path → a real read would report "mounted" ALWAYS = false green). Seam
+    /// like `isMirrorConfirmedOff` of the fake.
+    case reverseMirrorMounted
+    /// `awaitingQuiescence` → `deletingZombies`.
+    case reverseQuiescenceReached
+    /// `deletingZombies` → `rebindingUUIDs`.
+    case reverseZombiesDeleted
+    /// `rebindingUUIDs` → `dedupHealed`.
+    case reverseUUIDsRebound
+    /// `dedupHealed` → `reverseUpload`.
+    case reverseDedupHealed
+    /// → `icloudActive` (with the closing effects, S2).
+    case reverseUploadCompleted
 }
 
 // MARK: - Effects
@@ -168,6 +264,23 @@ nonisolated enum MigrationEffect: String, Equatable, Codable {
     /// Adopt an already-existing backend account (returning-user §k.4) — the adoption flow lives OUTSIDE
     /// this machine; the machine bows out to `notStarted`.
     case adoptBackendAccount
+
+    // MARK: Reverse effects (§h) — String/Codable APPEND-ONLY. DARK in I11-1: the executor receives them
+    // and throws `notWired` (I11-2/3 wire them). Only the ordering-critical / observable ones are surfaced.
+    /// Un-reserve the server (`reverse_abort`) — reachable ONLY PRE-mount (local unchanged).
+    case reverseRollback
+    /// ORDER: disarm `mirrorOffArmedKey` (keeping `.cloud` → decision iCloudMirror) + request an assisted
+    /// relaunch. Resolved by OBSERVATION on resume (like `disableMirrorAndRelaunch`, never blind re-exec).
+    case mountMirrorAndRelaunch
+    /// Delete `CD_CloudMigrationMarker` from the personal store (the LIVE mirror exports the delete). S2 of
+    /// the I10-pre review: without it, a re-migrate would falsely fire `secondaryDeviceCloudLogin`.
+    case deleteCloudKitMarker
+    /// Clear the `cloudAccountLinked` beacon from iCloud KV (§g.4-faro, v6 A26).
+    case clearCloudBeacon
+    /// Persist `storageMode=.icloud` + `mirrorOffArmed=false` TOGETHER (invariant SERIO 1).
+    case persistICloudMode
+    /// `migration_progress` `reverse_complete` (`reverse_in_progress=false`).
+    case completeReverseServer
 }
 
 // MARK: - Outcome & Policy
@@ -290,8 +403,106 @@ nonisolated enum MigrationStateMachine {
              (.verifying, .fatalError):
             return .transition(next: .failedRollback, effects: [.rollback])
 
+        // MARK: Reverse (§h) — DARK in I11-1.
+
+        // Entry from `done` (the migration leader) AND from `notStarted` (an adopter, returning-user §k.4).
+        // If the reverse only left `done`, ONLY the original leader could ever revert. The origin is
+        // recorded so a decline/kill returns to the RIGHT place (see `reverseConfirm` doc).
+        case (.done, .reverseActivated):
+            return .transition(next: .reverseConfirm(.done), effects: [])
+        case (.notStarted, .reverseActivated):
+            return .transition(next: .reverseConfirm(.notStarted), effects: [])
+        // `icloudActive` re-cutover (§h.4): re-enters the forward migration via consent. The claim will
+        // return `existing_stable` → adopt (flow I14); this edge only avoids a terminal without exit.
+        case let (.icloudActive, .userActivated(dryRun)):
+            return .transition(next: dryRun ? .dryRun : .consent, effects: [])
+
+        // reverseConfirm — NON-durable. CONTRACT (I11-2): the runner persists `reverseOriginRaw` in the
+        // SAME journal save as this `reverseConfirm(origin)→reverseClaimLeader` transition; the machine
+        // does NOT carry the origin past `reverseConfirm`.
+        case (.reverseConfirm, .reverseConfirmed):
+            return .transition(next: .reverseClaimLeader, effects: [])
+        case let (.reverseConfirm(origin), .reverseDeclined):
+            return .transition(next: reverseOriginPhase(origin), effects: [])
+
+        // reverseClaimLeader → reverseDrainAll. CONTRACT (I11-2): the runner RESETS the S9 counters (and
+        // scoped fields) when it journals `reverseClaimLeader` — they may carry gasto from the forward
+        // verify (the current S2-cleanup only resets on notStarted/failedRollback).
+        case (.reverseClaimLeader, .reverseLeaderClaimed):
+            return .transition(next: .reverseDrainAll, effects: [])
+
+        // reverseDrainAll → reverseVerify
+        case (.reverseDrainAll, .reverseDrainCompleted):
+            return .transition(next: .reverseVerify, effects: [])
+
+        // reverseVerify — S9 reused; the mismatch fix is a PULL (re-drain), not a re-upload.
+        case let (.reverseVerify, .reverseVerifyOutcome(outcome)):
+            return reverseVerifyTransition(outcome: outcome, policy: policy)
+
+        // reverseFreezeBackend → reverseMountMirror (RE-LIGHT the mirror, crosses the process boundary).
+        case (.reverseFreezeBackend, .reverseBackendFrozen):
+            return .transition(next: .reverseMountMirror, effects: [.mountMirrorAndRelaunch])
+
+        // reverseMountMirror → reverseReconcile(.awaitingQuiescence), resolved by OBSERVATION post-relaunch.
+        case (.reverseMountMirror, .reverseMirrorMounted):
+            return .transition(next: .reverseReconcile(.awaitingQuiescence), effects: [])
+
+        // reverseReconcile — STRICT order, one journaled sub-state per event (like cutover).
+        case (.reverseReconcile(.awaitingQuiescence), .reverseQuiescenceReached):
+            return .transition(next: .reverseReconcile(.deletingZombies), effects: [])
+        case (.reverseReconcile(.deletingZombies), .reverseZombiesDeleted):
+            return .transition(next: .reverseReconcile(.rebindingUUIDs), effects: [])
+        case (.reverseReconcile(.rebindingUUIDs), .reverseUUIDsRebound):
+            return .transition(next: .reverseReconcile(.dedupHealed), effects: [])
+        case (.reverseReconcile(.dedupHealed), .reverseDedupHealed):
+            // Leaving the reconcile IS its done (no sub-state for it), same pattern as cutover→done.
+            return .transition(next: .reverseUpload, effects: [])
+
+        // reverseUpload → icloudActive, with the closing quartet in ORDER (marker first — it needs the
+        // mirror already mounted, which it is; server last — the network is the flakiest, journal-then-
+        // execute keeps it retakeable). No export gate for the marker-delete: the mirror stays alive
+        // FOREVER after the reverse → the export lands on its own (unlike the cutover, where turning the
+        // mirror off killed the channel).
+        case (.reverseUpload, .reverseUploadCompleted):
+            return .transition(next: .icloudActive, effects: [
+                .deleteCloudKitMarker, .clearCloudBeacon, .persistICloudMode, .completeReverseServer,
+            ])
+
+        // fatalError PRE-mount (nothing local changed; the mirror was never re-lit) → reverseFailedRollback.
+        case (.reverseClaimLeader, .fatalError),
+             (.reverseDrainAll, .fatalError),
+             (.reverseVerify, .fatalError),
+             (.reverseFreezeBackend, .fatalError):
+            return .transition(next: .reverseFailedRollback, effects: [.reverseRollback])
+
+        // fatalError POST-mount → HOLD the state (idempotent resume covers recovery), NEVER rollback: the
+        // mirror is already alive and the resume retakes.
+        case let (.reverseReconcile(sub), .fatalError):
+            return .transition(next: .reverseReconcile(sub), effects: [])
+        case (.reverseMountMirror, .fatalError):
+            return .transition(next: .reverseMountMirror, effects: [])
+        case (.reverseUpload, .fatalError):
+            return .transition(next: .reverseUpload, effects: [])
+
+        // fatalError in reverseConfirm → back to the origin (nothing durable).
+        case let (.reverseConfirm(origin), .fatalError):
+            return .transition(next: reverseOriginPhase(origin), effects: [])
+
+        // §h.6 (born-cloud→iCloud) reuses this SAME chain; its differences (trivial reconcile, first
+        // upload, SyncIdentity capture in reverseUpload) are the EXECUTOR's — annotated for I11-2, exposed
+        // in I14. The machine models no separate born-cloud path.
+
         default:
             return .invalid(from: phase, event: event)
+        }
+    }
+
+    /// The phase a `reverseConfirm` decline/kill returns to. A migrated leader → `done`; an adopter →
+    /// `notStarted`.
+    private static func reverseOriginPhase(_ origin: ReverseOrigin) -> MigrationPhase {
+        switch origin {
+        case .done:       return .done
+        case .notStarted: return .notStarted
         }
     }
 
@@ -339,6 +550,30 @@ nonisolated enum MigrationStateMachine {
         }
     }
 
+    /// The reverse verify (§h) — REUSES `VerifyOutcome` and the S9 counters (INDEPENDENT of the forward
+    /// verify's; the runner resets them on `reverseClaimLeader`). Authority in the reverse is backend→local,
+    /// so a mismatch is fixed by a PULL (`reverseDrainAll`), NEVER a re-upload.
+    private static func reverseVerifyTransition(outcome: VerifyOutcome, policy: MigrationPolicy) -> TransitionOutcome {
+        switch outcome {
+        case .match:
+            return .transition(next: .reverseFreezeBackend, effects: [])
+        case .newDeltaDetected:
+            // Re-run verify; does NOT consume a retry.
+            return .transition(next: .reverseVerify, effects: [])
+        case let .mismatch(retriesSoFar):
+            if retriesSoFar >= policy.maxMismatchRetries {
+                return .transition(next: .reverseFailedRollback, effects: [.reverseRollback])
+            }
+            // Backend→local authority: fix a divergence by re-pulling/draining, never re-uploading.
+            return .transition(next: .reverseDrainAll, effects: [])
+        case let .networkTimeout(retriesSoFar):
+            if retriesSoFar >= policy.maxNetworkRetries {
+                return .transition(next: .reverseFailedRollback, effects: [.reverseRollback])
+            }
+            return .transition(next: .reverseVerify, effects: [])
+        }
+    }
+
     // MARK: Resume (kill-recovery, §g.2/§g.4)
 
     /// Where to resume from a journaled phase after a process kill. Every DURABLE state resumes IN
@@ -350,6 +585,11 @@ nonisolated enum MigrationStateMachine {
         switch phase {
         case .dryRun, .consent, .authenticating:
             return .notStarted
+        case let .reverseConfirm(origin):
+            // NON-durable (like consent) → re-enter from the origin. All other reverse phases are durable
+            // and idempotent → they resume in themselves (covered by `default`), incl. each
+            // `reverseReconcile(sub)` exactly (invariant: never regress/skip a sub-state).
+            return reverseOriginPhase(origin)
         default:
             return phase
         }
@@ -367,12 +607,27 @@ nonisolated enum MigrationStateMachine {
     /// - Marker + NO trace of own cutover → `.secondaryDeviceCloudLogin`.
     static func markerReconciliation(markerFound: Bool, journaledPhase: MigrationPhase) -> MarkerDecision {
         guard markerFound else { return .none }
+        // EXHAUSTIVE SIN default (D3 of the I11-1 review — same principle as `BGTaskMigrationGate`): a
+        // future phase MUST break compilation and force classification. A silent `default` was EXACTLY the
+        // bug-class the inverted §i.9 gate already paid for. Here it would route a device MID-REVERSE (its
+        // own marker still alive — it is deleted at the end) falsely to `secondaryDeviceCloudLogin`.
         switch journaledPhase {
         case .cutover:
             return .resumeOwnCutover
         case .done:
             return .none
-        default:
+        // Reverse phases + terminals → `.none`: a present marker is EXPECTED mid-reverse (deleted as an
+        // effect of `icloudActive`, drained by resume; post-reverse a residual marker is its own delete
+        // still in export, benign). The marker is only VISIBLE with the mirror mounted (post-mount phases +
+        // icloudActive) but ALL reverse phases are classified for robustness.
+        case .reverseConfirm, .reverseClaimLeader, .reverseDrainAll, .reverseVerify,
+             .reverseFreezeBackend, .reverseMountMirror, .reverseReconcile, .reverseUpload,
+             .icloudActive, .reverseFailedRollback:
+            return .none
+        // Forward phases before/at the cutover trace, with a marker but no OWN cutover trace → a
+        // legitimate secondary device; route to cloud login.
+        case .notStarted, .dryRun, .consent, .authenticating, .waitingForLeader,
+             .claimingMigration, .assigningIdentity, .uploadingSnapshot, .verifying, .failedRollback:
             return .secondaryDeviceCloudLogin
         }
     }
@@ -384,11 +639,20 @@ nonisolated enum MigrationStateMachine {
     /// owns CloudKit, the engine does not push yet). The runtime consumes this predicate; the golden test
     /// fixes the contract.
     static func requiresParallelHistoryCapture(phase: MigrationPhase) -> Bool {
+        // EXHAUSTIVE SIN default (D3 of the I11-1 review) — same principle as `markerReconciliation`.
         switch phase {
         case let .cutover(sub):
             return sub >= .localModeSet
-        default:
-            // `done` and everything before `localModeSet` → no active capture window.
+        // Reverse phases (§h) → false: during the reverse the RE-MOUNTED mirror is the write channel; the
+        // backend is frozen and receives no more — the user's writes in the window go to CloudKit via the
+        // mirror. The I14 UI communicates the freeze; residual documented.
+        case .reverseConfirm, .reverseClaimLeader, .reverseDrainAll, .reverseVerify,
+             .reverseFreezeBackend, .reverseMountMirror, .reverseReconcile, .reverseUpload,
+             .icloudActive, .reverseFailedRollback:
+            return false
+        // `done` and everything before `localModeSet` → no active capture window.
+        case .notStarted, .dryRun, .consent, .authenticating, .waitingForLeader,
+             .claimingMigration, .assigningIdentity, .uploadingSnapshot, .verifying, .done, .failedRollback:
             return false
         }
     }

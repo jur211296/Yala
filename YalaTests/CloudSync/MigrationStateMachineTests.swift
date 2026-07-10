@@ -19,16 +19,32 @@ struct MigrationStateMachineTests {
 
     typealias Phase = MigrationPhase
     typealias Sub = CutoverSubstate
+    typealias RSub = ReverseReconcileSubstate
     typealias Event = MigrationEvent
     typealias Effect = MigrationEffect
 
-    /// Every journaled phase (manual `CaseIterable` — `.cutover` has an associated value).
+    /// Every journaled phase (manual `CaseIterable` — `.cutover`/`.reverseReconcile`/`.reverseConfirm`
+    /// carry associated values). 16 forward + 14 reverse (I11-1) = 30.
     static let allPhases: [Phase] = [
         .notStarted, .dryRun, .consent, .authenticating, .waitingForLeader,
         .claimingMigration, .assigningIdentity, .uploadingSnapshot, .verifying,
         .cutover(.pending), .cutover(.serverConfirmed), .cutover(.localModeSet),
         .cutover(.markerWritten), .cutover(.mirrorOff),
         .done, .failedRollback,
+        // Reverse (§h, I11-1)
+        .reverseConfirm(.done), .reverseConfirm(.notStarted),
+        .reverseClaimLeader, .reverseDrainAll, .reverseVerify, .reverseFreezeBackend, .reverseMountMirror,
+        .reverseReconcile(.awaitingQuiescence), .reverseReconcile(.deletingZombies),
+        .reverseReconcile(.rebindingUUIDs), .reverseReconcile(.dedupHealed),
+        .reverseUpload, .icloudActive, .reverseFailedRollback,
+    ]
+
+    /// The reverse phases that resume in themselves (durable). `reverseConfirm` is NON-durable (→ origin).
+    static let durableReversePhases: [Phase] = [
+        .reverseClaimLeader, .reverseDrainAll, .reverseVerify, .reverseFreezeBackend, .reverseMountMirror,
+        .reverseReconcile(.awaitingQuiescence), .reverseReconcile(.deletingZombies),
+        .reverseReconcile(.rebindingUUIDs), .reverseReconcile(.dedupHealed),
+        .reverseUpload, .icloudActive, .reverseFailedRollback,
     ]
 
     /// Helper: asserts a transition is valid and returns (next, effects).
@@ -126,6 +142,10 @@ struct MigrationStateMachineTests {
             switch phase {
             case .dryRun, .consent, .authenticating:
                 #expect(resumed == .notStarted, "\(phase) is not durable progress → notStarted")
+            case .reverseConfirm(.done):
+                #expect(resumed == .done, "reverseConfirm(.done) is NON-durable → origin done")
+            case .reverseConfirm(.notStarted):
+                #expect(resumed == .notStarted, "reverseConfirm(.notStarted) is NON-durable → origin notStarted")
             default:
                 #expect(resumed == phase, "\(phase) must resume in itself")
             }
@@ -276,9 +296,12 @@ struct MigrationStateMachineTests {
     }
 
     @Test func marker_found_noOwnCutoverTrace_isSecondaryDeviceCloudLogin() {
+        // Forward pre-cutover phases (+ failedRollback) with a marker but no own cutover trace → secondary.
+        // The reverse phases + terminals are EXCLUDED here — they are `.none` (see the reverse test below).
         let noTracePhases = Self.allPhases.filter { phase in
             if case .cutover = phase { return false }
             if case .done = phase { return false }
+            if isReversePhase(phase) { return false }
             return true
         }
         for phase in noTracePhases {
@@ -287,6 +310,19 @@ struct MigrationStateMachineTests {
                     == .secondaryDeviceCloudLogin,
                 "\(phase) with a marker but no own cutover → secondary"
             )
+        }
+    }
+
+    /// Whether a phase is one of the reverse (§h) phases + reverse terminals (`icloudActive`,
+    /// `reverseFailedRollback`).
+    private func isReversePhase(_ phase: Phase) -> Bool {
+        switch phase {
+        case .reverseConfirm, .reverseClaimLeader, .reverseDrainAll, .reverseVerify,
+             .reverseFreezeBackend, .reverseMountMirror, .reverseReconcile, .reverseUpload,
+             .icloudActive, .reverseFailedRollback:
+            return true
+        default:
+            return false
         }
     }
 
@@ -444,5 +480,287 @@ struct MigrationStateMachineTests {
                 ) == .transition(next: .assigningIdentity, effects: [.writeBeacon])
             )
         }
+    }
+
+    // MARK: - R1. Reverse happy path (§h) — from `done` and from `notStarted`
+
+    /// Full reverse from `done`: the exact phase + effect sequence. Mount effect on entering
+    /// `reverseMountMirror`; the closing quartet [marker, beacon, mode, server] IN ORDER on `icloudActive`.
+    @Test func reverse_happyPath_fromDone_fullSequenceAndEffects() {
+        assertReverseHappyPath(origin: .done, expectedConfirm: .reverseConfirm(.done))
+    }
+
+    /// Full reverse from `notStarted` (an ADOPTER device — returning-user §k.4). Same chain, different origin.
+    @Test func reverse_happyPath_fromNotStarted_fullSequenceAndEffects() {
+        assertReverseHappyPath(origin: .notStarted, expectedConfirm: .reverseConfirm(.notStarted))
+    }
+
+    private func assertReverseHappyPath(origin: MigrationPhase, expectedConfirm: Phase) {
+        var phase = origin
+        var log: [(Phase, [Effect])] = []
+        func fire(_ event: Event) {
+            let r = step(phase, event)
+            phase = r.next
+            log.append((r.next, r.effects))
+        }
+
+        fire(.reverseActivated)              // → reverseConfirm(origin)
+        #expect(log.first?.0 == expectedConfirm)
+        fire(.reverseConfirmed)              // → reverseClaimLeader
+        fire(.reverseLeaderClaimed)          // → reverseDrainAll
+        fire(.reverseDrainCompleted)         // → reverseVerify
+        fire(.reverseVerifyOutcome(.match))  // → reverseFreezeBackend
+        fire(.reverseBackendFrozen)          // → reverseMountMirror [.mountMirrorAndRelaunch]
+        fire(.reverseMirrorMounted)          // → reverseReconcile(.awaitingQuiescence)
+        fire(.reverseQuiescenceReached)      // → reverseReconcile(.deletingZombies)
+        fire(.reverseZombiesDeleted)         // → reverseReconcile(.rebindingUUIDs)
+        fire(.reverseUUIDsRebound)           // → reverseReconcile(.dedupHealed)
+        fire(.reverseDedupHealed)            // → reverseUpload
+        fire(.reverseUploadCompleted)        // → icloudActive [quartet]
+
+        #expect(log.map(\.0) == [
+            expectedConfirm, .reverseClaimLeader, .reverseDrainAll, .reverseVerify, .reverseFreezeBackend,
+            .reverseMountMirror, .reverseReconcile(.awaitingQuiescence), .reverseReconcile(.deletingZombies),
+            .reverseReconcile(.rebindingUUIDs), .reverseReconcile(.dedupHealed), .reverseUpload, .icloudActive,
+        ])
+
+        #expect(log.flatMap(\.1) == [
+            .mountMirrorAndRelaunch,                 // entering reverseMountMirror
+            .deleteCloudKitMarker, .clearCloudBeacon, .persistICloudMode, .completeReverseServer, // icloudActive
+        ])
+    }
+
+    @Test func reverse_closingQuartet_exactOrder_onlyOnEnteringICloudActive() {
+        let r = step(.reverseUpload, .reverseUploadCompleted)
+        #expect(r.next == .icloudActive)
+        #expect(r.effects == [.deleteCloudKitMarker, .clearCloudBeacon, .persistICloudMode, .completeReverseServer])
+        // The marker-delete is FIRST (needs the mirror mounted); the server is LAST (flakiest).
+        #expect(r.effects.first == .deleteCloudKitMarker)
+        #expect(r.effects.last == .completeReverseServer)
+    }
+
+    @Test func reverse_mountEffect_onlyOnEnteringReverseMountMirror() {
+        #expect(step(.reverseFreezeBackend, .reverseBackendFrozen).effects == [.mountMirrorAndRelaunch])
+        // Not emitted on any other reverse edge.
+        #expect(step(.reverseConfirm(.done), .reverseConfirmed).effects.isEmpty)
+        #expect(step(.reverseMountMirror, .reverseMirrorMounted).effects.isEmpty)
+    }
+
+    // MARK: - R2. Reverse entry from both origins + re-cutover from icloudActive
+
+    @Test func reverse_entry_fromDoneAndNotStarted_recordsOrigin() {
+        #expect(
+            MigrationStateMachine.transition(from: .done, event: .reverseActivated)
+                == .transition(next: .reverseConfirm(.done), effects: [])
+        )
+        #expect(
+            MigrationStateMachine.transition(from: .notStarted, event: .reverseActivated)
+                == .transition(next: .reverseConfirm(.notStarted), effects: [])
+        )
+    }
+
+    @Test func icloudActive_userActivated_reEntersMigrationViaConsent() {
+        #expect(
+            MigrationStateMachine.transition(from: .icloudActive, event: .userActivated(dryRun: false))
+                == .transition(next: .consent, effects: [])
+        )
+        #expect(
+            MigrationStateMachine.transition(from: .icloudActive, event: .userActivated(dryRun: true))
+                == .transition(next: .dryRun, effects: [])
+        )
+    }
+
+    // MARK: - R3. Decline from both origins + kill in reverseConfirm
+
+    @Test func reverse_decline_returnsToExactOrigin() {
+        #expect(step(.reverseConfirm(.done), .reverseDeclined).next == .done)
+        #expect(step(.reverseConfirm(.done), .reverseDeclined).effects.isEmpty)
+        #expect(step(.reverseConfirm(.notStarted), .reverseDeclined).next == .notStarted)
+        #expect(step(.reverseConfirm(.notStarted), .reverseDeclined).effects.isEmpty)
+    }
+
+    @Test func reverse_killInConfirm_resumesToOrigin_nothingDurable() {
+        #expect(MigrationStateMachine.resume(fromJournaled: .reverseConfirm(.done)) == .done)
+        #expect(MigrationStateMachine.resume(fromJournaled: .reverseConfirm(.notStarted)) == .notStarted)
+    }
+
+    // MARK: - R4. Kill-resume in every reverse phase (durables retake in themselves)
+
+    @Test func reverse_durablePhases_resumeInThemselves() {
+        for phase in Self.durableReversePhases {
+            #expect(MigrationStateMachine.resume(fromJournaled: phase) == phase, "\(phase) must resume in itself")
+        }
+    }
+
+    @Test func reverse_reconcile_resumesExactSubstate_neverRegressesOrSkips() {
+        for sub in RSub.allCases {
+            #expect(MigrationStateMachine.resume(fromJournaled: .reverseReconcile(sub)) == .reverseReconcile(sub))
+        }
+        // The sub-state raw values encode the strict order (Comparable invariant).
+        #expect(RSub.awaitingQuiescence < RSub.deletingZombies)
+        #expect(RSub.deletingZombies < RSub.rebindingUUIDs)
+        #expect(RSub.rebindingUUIDs < RSub.dedupHealed)
+    }
+
+    // MARK: - R5. Reverse verify (S9) — mismatch RE-DRAINS (never re-uploads), independent counters
+
+    @Test func reverseVerify_match_entersFreezeBackend_noEffects() {
+        let r = step(.reverseVerify, .reverseVerifyOutcome(.match))
+        #expect(r.next == .reverseFreezeBackend)
+        #expect(r.effects.isEmpty)
+    }
+
+    @Test func reverseVerify_mismatch_belowCap_reDrains_neverReUploads() {
+        let policy = MigrationPolicy(maxMismatchRetries: 3, maxNetworkRetries: 8)
+        for retries in 0..<policy.maxMismatchRetries {
+            let r = step(.reverseVerify, .reverseVerifyOutcome(.mismatch(retriesSoFar: retries)), policy: policy)
+            #expect(r.next == .reverseDrainAll, "reverse mismatch \(retries) must re-drain (pull), not re-upload")
+            #expect(r.next != .reverseUpload)
+            #expect(r.next != .uploadingSnapshot)
+            #expect(r.effects.isEmpty)
+        }
+    }
+
+    @Test func reverseVerify_mismatch_atCap_failsRollbackWithReverseRollback() {
+        let policy = MigrationPolicy(maxMismatchRetries: 3, maxNetworkRetries: 8)
+        let r = step(.reverseVerify, .reverseVerifyOutcome(.mismatch(retriesSoFar: 3)), policy: policy)
+        #expect(r.next == .reverseFailedRollback)
+        #expect(r.effects == [.reverseRollback])
+    }
+
+    @Test func reverseVerify_networkTimeout_belowCap_retriesVerify_atCap_failsRollback() {
+        let policy = MigrationPolicy(maxMismatchRetries: 3, maxNetworkRetries: 8)
+        for retries in 0..<policy.maxNetworkRetries {
+            let r = step(.reverseVerify, .reverseVerifyOutcome(.networkTimeout(retriesSoFar: retries)), policy: policy)
+            #expect(r.next == .reverseVerify, "reverse network timeout \(retries) must retry verify")
+            #expect(r.effects.isEmpty)
+        }
+        let capped = step(.reverseVerify, .reverseVerifyOutcome(.networkTimeout(retriesSoFar: 8)), policy: policy)
+        #expect(capped.next == .reverseFailedRollback)
+        #expect(capped.effects == [.reverseRollback])
+    }
+
+    @Test func reverseVerify_newDelta_reRuns_doesNotConsumeRetry() {
+        let r = step(.reverseVerify, .reverseVerifyOutcome(.newDeltaDetected))
+        #expect(r.next == .reverseVerify)
+        #expect(r.effects.isEmpty)
+    }
+
+    @Test func reverseVerify_countersIndependent_networkDoesNotConsumeMismatchBudget() {
+        let policy = MigrationPolicy(maxMismatchRetries: 1, maxNetworkRetries: 8)
+        #expect(step(.reverseVerify, .reverseVerifyOutcome(.networkTimeout(retriesSoFar: 7)), policy: policy).next
+            == .reverseVerify)
+        #expect(step(.reverseVerify, .reverseVerifyOutcome(.mismatch(retriesSoFar: 1)), policy: policy).next
+            == .reverseFailedRollback)
+    }
+
+    // MARK: - R6. fatalError in reverse (pre-mount rolls back; post-mount HOLDs; terminals invalid)
+
+    @Test func reverse_fatalError_preMount_failsRollbackWithReverseRollback() {
+        let preMount: [Phase] = [.reverseClaimLeader, .reverseDrainAll, .reverseVerify, .reverseFreezeBackend]
+        for phase in preMount {
+            let r = step(phase, .fatalError)
+            #expect(r.next == .reverseFailedRollback, "\(phase) + fatalError → reverseFailedRollback")
+            #expect(r.effects == [.reverseRollback])
+        }
+    }
+
+    @Test func reverse_fatalError_postMount_holdsState_noEffects() {
+        var postMount: [Phase] = [.reverseMountMirror, .reverseUpload]
+        postMount += RSub.allCases.map { .reverseReconcile($0) }
+        for phase in postMount {
+            let r = step(phase, .fatalError)
+            #expect(r.next == phase, "\(phase) + fatalError HOLDS the state")
+            #expect(r.effects.isEmpty)
+            #expect(r.next != .reverseFailedRollback)
+        }
+    }
+
+    @Test func reverse_fatalError_inConfirm_returnsToOrigin() {
+        #expect(step(.reverseConfirm(.done), .fatalError).next == .done)
+        #expect(step(.reverseConfirm(.notStarted), .fatalError).next == .notStarted)
+    }
+
+    @Test func reverse_fatalError_terminals_areInvalid() {
+        #expect(
+            MigrationStateMachine.transition(from: .icloudActive, event: .fatalError)
+                == .invalid(from: .icloudActive, event: .fatalError)
+        )
+        #expect(
+            MigrationStateMachine.transition(from: .reverseFailedRollback, event: .fatalError)
+                == .invalid(from: .reverseFailedRollback, event: .fatalError)
+        )
+    }
+
+    // MARK: - R7. markerReconciliation — all reverse phases + terminals with a marker → `.none`
+
+    @Test func reverse_markerReconciliation_allReversePhases_areNone() {
+        let reversePhases = Self.allPhases.filter { isReversePhase($0) }
+        // sanity: 14 reverse phases in the inventory.
+        #expect(reversePhases.count == 14)
+        for phase in reversePhases {
+            #expect(
+                MigrationStateMachine.markerReconciliation(markerFound: true, journaledPhase: phase) == .none,
+                "\(phase) with a live marker mid-reverse must NOT be secondaryDeviceCloudLogin"
+            )
+        }
+    }
+
+    // MARK: - R8. requiresParallelHistoryCapture == false in every reverse phase
+
+    @Test func reverse_requiresParallelHistoryCapture_alwaysFalse() {
+        for phase in Self.allPhases where isReversePhase(phase) {
+            #expect(!MigrationStateMachine.requiresParallelHistoryCapture(phase: phase), "\(phase) → false")
+        }
+    }
+
+    // MARK: - R9. Codable round-trip of the reverse phases
+
+    @Test func reverse_codable_roundTrips_confirmBothOrigins_andReconcileSubs() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        let reversePhases = Self.allPhases.filter { isReversePhase($0) }
+        for phase in reversePhases {
+            let back = try decoder.decode(Phase.self, from: encoder.encode(phase))
+            #expect(back == phase, "round-trip failed for \(phase)")
+        }
+        // ReverseOrigin + ReverseReconcileSubstate also round-trip standalone.
+        for origin in [ReverseOrigin.done, .notStarted] {
+            #expect(try decoder.decode(ReverseOrigin.self, from: encoder.encode(origin)) == origin)
+        }
+        for sub in RSub.allCases {
+            #expect(try decoder.decode(RSub.self, from: encoder.encode(sub)) == sub)
+        }
+    }
+
+    // MARK: - R10. Illegal reverse edges
+
+    @Test func reverse_illegalEdges_areInvalid() {
+        // An out-of-order reconcile event while still in reverseVerify.
+        #expect(
+            MigrationStateMachine.transition(from: .reverseVerify, event: .reverseZombiesDeleted)
+                == .invalid(from: .reverseVerify, event: .reverseZombiesDeleted)
+        )
+        // A reverse ack fired on `done` (before confirming) is illegal.
+        #expect(
+            MigrationStateMachine.transition(from: .done, event: .reverseConfirmed)
+                == .invalid(from: .done, event: .reverseConfirmed)
+        )
+        // Reverse events on forward phases are illegal.
+        #expect(
+            MigrationStateMachine.transition(from: .verifying, event: .reverseLeaderClaimed)
+                == .invalid(from: .verifying, event: .reverseLeaderClaimed)
+        )
+        // A reconcile cannot skip a sub-state.
+        #expect(
+            MigrationStateMachine.transition(
+                from: .reverseReconcile(.awaitingQuiescence), event: .reverseUUIDsRebound
+            ) == .invalid(from: .reverseReconcile(.awaitingQuiescence), event: .reverseUUIDsRebound)
+        )
+        // A forward event on a reverse phase is illegal.
+        #expect(
+            MigrationStateMachine.transition(from: .reverseVerify, event: .snapshotUploaded)
+                == .invalid(from: .reverseVerify, event: .snapshotUploaded)
+        )
     }
 }

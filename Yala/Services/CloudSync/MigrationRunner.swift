@@ -175,6 +175,11 @@ final class MigrationRunner {
     /// estado terminal a propósito (el reinicio es una decisión del USUARIO, no una transición
     /// automática). Resetea el journal COMPLETO a `notStarted` (fase, efectos, campos scoped y
     /// `startedAt`). No-op fuera de `failedRollback`. I14 lo invoca desde el botón "reintentar".
+    ///
+    /// CONTRATO I11-2 (anclado): este método se EXTENDERÁ a `reverseFailedRollback` reseteando la fase al
+    /// ORIGIN journaleado (`MigrationState.reverseOriginRaw`, campo aditivo), NO a `notStarted` ciego — un
+    /// líder que revirtió desde `done` que resetee a `notStarted` mentiría para siempre a
+    /// `markerReconciliation`.
     func resetAfterRollback() async {
         guard await awaitQuiescence() else {
             CloudSyncBreadcrumb.migrationQuiescenceTimeout()
@@ -327,6 +332,13 @@ final class MigrationRunner {
                 if !(try await driveVerify()) { return }
             case let .cutover(sub):
                 if !(try await driveCutover(sub)) { return }
+            case .reverseConfirm, .reverseClaimLeader, .reverseDrainAll, .reverseVerify,
+                 .reverseFreezeBackend, .reverseMountMirror, .reverseReconcile, .reverseUpload,
+                 .icloudActive, .reverseFailedRollback:
+                // I11-2 cablea el driving de la reversa (§h). En I11-1 la máquina/journal ya modelan los
+                // estados pero NADA los conduce (DARK): corta sin trabajo. `icloudActive`/`reverseFailedRollback`
+                // son terminales estables; el resto espera el wiring del runner de la reversa.
+                return
             }
         }
     }

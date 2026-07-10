@@ -62,9 +62,27 @@ struct BGTaskMigrationGateTests {
         #expect(BGTaskMigrationGate.decide(phase: .failedRollback, isImportQuiescent: false, role: .writer) == .run)
     }
 
+    // icloudActive (reversa TERMINÓ, modo privado normal → ESTABLE, I11-1)
+    @Test func positive_icloudActive_reader_notQuiescent_runs() {
+        #expect(BGTaskMigrationGate.decide(phase: .icloudActive, isImportQuiescent: false, role: .reader) == .run)
+    }
+    @Test func positive_icloudActive_writer_notQuiescent_runs() {
+        #expect(BGTaskMigrationGate.decide(phase: .icloudActive, isImportQuiescent: false, role: .writer) == .run)
+    }
+
+    // reverseFailedRollback (la reversa abortó pre-mount; device en modo nube limpio → ESTABLE, I11-1)
+    @Test func positive_reverseFailedRollback_reader_notQuiescent_runs() {
+        #expect(BGTaskMigrationGate.decide(phase: .reverseFailedRollback, isImportQuiescent: false, role: .reader) == .run)
+    }
+    @Test func positive_reverseFailedRollback_writer_notQuiescent_runs() {
+        #expect(BGTaskMigrationGate.decide(phase: .reverseFailedRollback, isImportQuiescent: false, role: .writer) == .run)
+    }
+
     // MARK: - Inventario manual de fases (guard de exhaustividad de la matriz transitoria)
 
-    /// TODAS las fases transitorias (migración en curso), incl. los 5 sub-estados de cutover.
+    /// TODAS las fases transitorias (migración/reversa en curso), incl. los 5 sub-estados de cutover y los
+    /// 4 de reverseReconcile. Las 8 transitorias de reversa (I11-1): reverseConfirm (origin irrelevante para
+    /// el gate), claimLeader/drainAll/verify/freezeBackend/mountMirror, reverseReconcile ×4 subs, upload.
     static let transientPhases: [MigrationPhase] = [
         .dryRun,
         .consent,
@@ -78,10 +96,21 @@ struct BGTaskMigrationGateTests {
         .cutover(.serverConfirmed),
         .cutover(.localModeSet),
         .cutover(.markerWritten),
-        .cutover(.mirrorOff)
+        .cutover(.mirrorOff),
+        // Reversa (I11-1)
+        .reverseConfirm(.done),
+        .reverseClaimLeader,
+        .reverseDrainAll,
+        .reverseVerify,
+        .reverseFreezeBackend,
+        .reverseMountMirror,
+    ] + ReverseReconcileSubstate.allCases.map { .reverseReconcile($0) } + [
+        .reverseUpload
     ]
 
-    static let stablePhases: [MigrationPhase] = [.notStarted, .done, .failedRollback]
+    static let stablePhases: [MigrationPhase] = [
+        .notStarted, .done, .failedRollback, .icloudActive, .reverseFailedRollback,
+    ]
 
     // MARK: - Transitorio · LECTOR → `.suspendAndReschedule` SIEMPRE (ignora quiescencia)
 

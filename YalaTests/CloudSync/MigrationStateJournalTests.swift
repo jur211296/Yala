@@ -74,14 +74,32 @@ struct MigrationStateJournalTests {
         (#"{"cutover":{"_0":4}}"#, .cutover(.mirrorOff)),
         (#"{"done":{}}"#, .done),
         (#"{"failedRollback":{}}"#, .failedRollback),
+        // Reverse (§h, I11-1) — APPEND-ONLY. `reverseConfirm` carries a String-raw `ReverseOrigin`
+        // (`_0` = raw string); `reverseReconcile` an Int-raw sub-state (`_0` = raw int, like cutover).
+        (#"{"reverseConfirm":{"_0":"done"}}"#, .reverseConfirm(.done)),
+        (#"{"reverseConfirm":{"_0":"notStarted"}}"#, .reverseConfirm(.notStarted)),
+        (#"{"reverseClaimLeader":{}}"#, .reverseClaimLeader),
+        (#"{"reverseDrainAll":{}}"#, .reverseDrainAll),
+        (#"{"reverseVerify":{}}"#, .reverseVerify),
+        (#"{"reverseFreezeBackend":{}}"#, .reverseFreezeBackend),
+        (#"{"reverseMountMirror":{}}"#, .reverseMountMirror),
+        (#"{"reverseReconcile":{"_0":0}}"#, .reverseReconcile(.awaitingQuiescence)),
+        (#"{"reverseReconcile":{"_0":1}}"#, .reverseReconcile(.deletingZombies)),
+        (#"{"reverseReconcile":{"_0":2}}"#, .reverseReconcile(.rebindingUUIDs)),
+        (#"{"reverseReconcile":{"_0":3}}"#, .reverseReconcile(.dedupHealed)),
+        (#"{"reverseUpload":{}}"#, .reverseUpload),
+        (#"{"icloudActive":{}}"#, .icloudActive),
+        (#"{"reverseFailedRollback":{}}"#, .reverseFailedRollback),
     ]
 
     // MARK: - (a) Estabilidad de wire (fixtures APPEND-ONLY)
 
     @Test func wireFixtures_coverEveryPhase() {
-        // Guardia anti-drift: el número de fixtures == número de cases journalables (14 base + los 5
-        // cutover comparten el mismo case padre, así que 9 base + 5 cutover + done + failedRollback = 16).
-        #expect(Self.wireFixtures.count == 16)
+        // Guardia anti-drift: el número de fixtures == número de cases journalables. 16 forward (9 base +
+        // 5 cutover que comparten el case padre + done + failedRollback) + 14 reversa (I11-1: reverseConfirm
+        // ×2 origins + claimLeader/drainAll/verify/freezeBackend/mountMirror + reconcile ×4 subs + upload +
+        // icloudActive + reverseFailedRollback) = 30.
+        #expect(Self.wireFixtures.count == 30)
     }
 
     @Test func frozenWireLiteral_decodesToExpectedPhase() throws {
