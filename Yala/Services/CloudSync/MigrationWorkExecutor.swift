@@ -652,25 +652,16 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         }
     }
 
-    /// §h.3 `dedupHealed`: DETECCIÓN read-only (I11-2) de copias idénticas de Account/Tag por identidad de
-    /// contenido (`AccountTagDuplicateCountLogic`) — el mismo detonante que duplicó subcategorías (regeneración
-    /// masiva de `shortcutID`/`id`). Devuelve el nº de grupos duplicados detectados. I11-4 la promueve a
-    /// auto-cura (el sub-estado ya es journaled; el upgrade es interno a este método).
+    /// §h.3 `dedupHealed`: AUTO-CURA (I11-4) de copias idénticas de Account/Tag por identidad de contenido —
+    /// el mismo detonante que duplicó subcategorías (regeneración masiva de `shortcutID`/`id`). Fusiona cada
+    /// grupo duplicado en un ganador determinista, re-apunta las referencias del perdedor y lo borra
+    /// (`AccountTagMergeService`, autor DEFECTO → el tombstone del perdedor viaja al backend/mirror). Devuelve
+    /// el nº total de filas PERDEDORAS curadas. La quiescencia la GARANTIZÓ el runner (`dedupHealed` corre
+    /// post-`awaitingQuiescence`). Idempotente: una 2ª pasada devuelve 0. I11-2 era DETECCIÓN read-only; I11-4
+    /// promueve a cura (el sub-estado ya era journaled).
     func healDuplicates() -> Int {
-        var groups = 0
-        do {
-            let accounts = try context.fetch(FetchDescriptor<Account>())
-            groups += AccountTagDuplicateCountLogic.duplicateGroups(
-                accounts, identity: AccountTagDuplicateCountLogic.accountIdentity).count
-            let tags = try context.fetch(FetchDescriptor<Tag>())
-            groups += AccountTagDuplicateCountLogic.duplicateGroups(
-                tags, identity: AccountTagDuplicateCountLogic.tagIdentity).count
-        } catch {
-            #if DEBUG
-            print("MigrationWorkExecutor.healDuplicates: fetch falló: \(error)")
-            #endif
-        }
-        return groups
+        AccountTagMergeService.mergeDuplicateAccounts(in: context)
+            + AccountTagMergeService.mergeDuplicateTags(in: context)
     }
 
     /// §h `reverseUpload`: muestreo CKIdentityCapture sobre TODAS las filas vivas. `exportPending + noMetadata

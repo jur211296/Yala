@@ -629,18 +629,20 @@ struct MigrationWorkExecutorTests {
         #expect(executor.reverseUploadStatus() == .drained)
     }
 
-    @Test("healDuplicates: DETECCIÓN read-only de copias idénticas de Account (I11-2; auto-cura en I11-4)")
-    func healDuplicates_detectsDuplicates() async throws {
+    @Test("healDuplicates: AUTO-CURA (I11-4) — fusiona copias idénticas de Account y devuelve nº de perdedores")
+    func healDuplicates_mergesDuplicates() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let session = FakeSession(token: "jwt", userID: "sub-1")
         let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
-        // 2 cuentas idénticas por contenido (shortcutID distinto) → 1 grupo duplicado.
+        // 2 cuentas idénticas por contenido (shortcutID distinto) → 1 grupo duplicado → 1 perdedor curado.
         context.insert(Account(name: "Cash", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash"))
         context.insert(Account(name: "Cash", currencyCode: "USD", colorHex: "#111111", iconName: "banknote", type: "cash"))
         try context.save()
         #expect(executor.healDuplicates() == 1)
+        #expect(try context.fetchCount(FetchDescriptor<Account>()) == 1, "el perdedor fue borrado (cura, no solo detección)")
+        #expect(executor.healDuplicates() == 0, "idempotente: 2ª pasada no cura nada")
     }
 
     // MARK: - ReverseEligibility (guardarraíl §h.6-A1, obligación 1 del review)

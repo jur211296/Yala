@@ -124,7 +124,8 @@ protocol MigrationWorkExecuting: AnyObject {
     /// §h.3 `rebindingUUIDs`: verificación (v1) de `SyncIdentity.lastReboundAt` con fila viva presente.
     /// Devuelve el conteo verificado (sin deletes — el replay del mirror exporta el update de campo, S5).
     func verifyRebinds() -> Int
-    /// §h.3 `dedupHealed`: DETECCIÓN read-only de copias idénticas (I11-2; auto-cura en I11-4). Devuelve el conteo.
+    /// §h.3 `dedupHealed`: AUTO-CURA (I11-4) de copias idénticas de Account/Tag. Devuelve el nº de filas
+    /// perdedoras fusionadas+borradas (idempotente: 2ª pasada → 0).
     func healDuplicates() -> Int
     /// §h `reverseUpload`: muestreo CKIdentityCapture sobre las filas vivas → `.drained` / `.pending(count)`.
     func reverseUploadStatus() -> ReverseUploadStatus
@@ -660,8 +661,8 @@ final class MigrationRunner {
             try await handle(.reverseUUIDsRebound)
             return true
         case .dedupHealed:
-            let detected = executor.healDuplicates()
-            CloudSyncBreadcrumb.reverseDuplicatesDetected(count: detected)
+            let healed = executor.healDuplicates()
+            CloudSyncBreadcrumb.reverseDuplicatesHealed(count: healed)
             try await handle(.reverseDedupHealed)
             return true
         }

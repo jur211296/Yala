@@ -471,10 +471,10 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncReverse rebindsVerified count=\(count, privacy: .public)")
     }
 
-    /// §h.3 `dedupHealed`: DETECCIÓN read-only (I11-2; auto-cura en I11-4) de copias idénticas de
-    /// Account/Tag/Subcategory. `count` = grupos duplicados detectados. Sin PII (solo el conteo).
-    static func reverseDuplicatesDetected(count: Int) {
-        logger.notice("CloudSyncReverse duplicatesDetected count=\(count, privacy: .public)")
+    /// §h.3 `dedupHealed`: AUTO-CURA (I11-4) de copias idénticas de Account/Tag. `count` = filas PERDEDORAS
+    /// fusionadas+borradas (0 = nada que curar, idempotente). Sin PII (solo el conteo).
+    static func reverseDuplicatesHealed(count: Int) {
+        logger.notice("CloudSyncReverse duplicatesHealed count=\(count, privacy: .public)")
     }
 
     /// §h `reverseUpload`: el muestreo CKIdentityCapture ve `count` filas aún sin drenar a CloudKit
