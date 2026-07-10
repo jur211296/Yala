@@ -58,6 +58,19 @@ DELETE FROM public.profiles WHERE id IN (
 Los tests que necesitan estado `migration_in_progress` lo fijan por un PATCH directo a PostgREST con el
 JWT del propio dueño (RLS UPDATE lo permite) y lo revierten al terminar.
 
+**Estado POSTERIOR que dejan los goldens de `/sync/*` (gotcha cazado 2026-07-10):** `sync.goldens.test.ts`
+re-crea en cada corrida filas PARCIALES de `budgets` (hand-crafted, `name` NULL — el golden de uuid[] `'{}'`
+de DIFERIDOS #25) para el user A. Esas filas divergen PERMANENTE en el Merkle del e2e Swift
+(`snapshotUpload_backfillThenVerify_datasetTablesConverge` espera `diverged == ["tx_items"]` ESTRICTO —
+el cliente materializa `name` con default ≠ NULL server-side). Tras correr `npm test`, RE-TOMBSTONEARLAS
+(mismo remedio que I12-A aplicó a las legacy) antes de correr el e2e Swift:
+
+```sql
+UPDATE public.budgets SET deleted=true, deleted_hlc = hlc
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'i5-user-a@test.yala')
+  AND deleted=false AND name IS NULL;
+```
+
 ## Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)
 
 `push-e2e-test.sh` ejerce `POST /sync/push` con EL MISMO envelope JSON que arma `SyncPushClient`
