@@ -84,14 +84,20 @@ EXTENDIÓ (los branches `cutover`/`complete` de la ida quedaron intactos) con 4 
 Cada acción del líder refresca `migration_updated_at` (heartbeat). Goldens 11-18 de
 `account.goldens.test.ts` cubren las 4 acciones (incl. el takeover 1-bis y la acción inválida → 400).
 
-**ASIMETRÍA documentada (review adversarial I11-3) — `reverse_claim` NO es atómico como
-`claim_account`:** el claim de la ida es un INSERT atómico; `reverse_claim` es read-then-UPDATE
-(TOCTOU): dos devices del MISMO usuario reclamando la reversa a la vez podrían recibir ambos
-`ok:true` (last-writer-wins en `leader_device_id`) → ventana transitoria de dual-líder que CONVERGE
-sola (freeze/complete re-verifican el guard de líder — el perdedor corta a follower; el drain/push es
-HLC-idempotente). Aceptable en v1 single-device DARK. **ANTES de multi-device real: hacer los UPDATE
-del claim/takeover condicionales (`WHERE … AND reverse_in_progress=false` / `AND migration_updated_at
-= <leído>`) + re-chequear FOUND** — registrado en el gate de encendido de flags.
+**ASIMETRÍA CERRADA (2026-07-11, migración `i11_reverse_claim_cas`) — `reverse_claim` ya es CAS:**
+el review adversarial de I11-3 documentó que `reverse_claim` era read-then-UPDATE (TOCTOU): dos
+devices del MISMO usuario reclamando a la vez podían recibir ambos `ok:true` (dual-líder transitorio
+que convergía por los guards de freeze/complete). Fix desplegado en staging: los 4 UPDATE de la rama
+`reverse_claim` son CONDICIONALES sobre el estado leído (claim fresco: `AND reverse_in_progress=false
+AND migration_in_progress=false`; takeovers de ida/reversa abandonada: `AND migration_updated_at =
+<leído>`; re-claim mismo líder: `AND leader_device_id = p_device_id AND reverse_in_progress=true`) +
+re-check de `FOUND` → `other_leader` si perdió la carrera (bajo READ COMMITTED el UPDATE perdedor
+re-evalúa su WHERE sobre la fila comiteada por el ganador — EvalPlanQual — y no matchea). Los demás
+branches del RPC quedaron VERBATIM (goldens 6-18 verdes lo prueban). **Golden 19 (test `22.` del
+archivo): la carrera REAL** — dos `reverse_claim` concurrentes vía `Promise.all` (patrón del golden 1
+de `claim_account`) → exactamente uno `ok:true`, el perdedor `other_leader`; el assert es determinista
+post-fix en ambos interleavings. Nota: un golden FOUND-false SECUENCIAL no es representable — el read
+y el UPDATE condicional viven dentro de la MISMA llamada al RPC; `patchProfile` solo pre-setea ANTES.
 
 **DIFERIDO explícito — enforcement del freeze en `/sync/push`:** el gateway hoy NO rechaza pushes con
 `reverse_frozen_at` set (exigiría churn del push handler + una query extra por request). v1 DARK

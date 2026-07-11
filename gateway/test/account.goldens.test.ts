@@ -428,4 +428,45 @@ describe("I11-3 goldens · /account/migration reverse_* (staging real)", () => {
     const r = await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_nuke" });
     expect(r.status).toBe(400);
   });
+
+  it("22. dos reverse_claim CONCURRENTES → exactamente uno ok:true, el otro 'other_leader' (CAS — asimetría CERRADA)", async () => {
+    // Cierre de la ASIMETRÍA del review I11-3 (migración i11_reverse_claim_cas): pre-CAS, dos devices
+    // reclamando a la vez podían recibir AMBOS ok:true (read-then-UPDATE). El golden FOUND-false
+    // SECUENCIAL no es representable — el read y el UPDATE condicional viven dentro de la MISMA
+    // llamada al RPC, y patchProfile solo puede pre-setear ANTES de la llamada. La carrera REAL vía
+    // Promise.all (patrón del golden 1 de claim_account) sí lo es, y el assert es determinista
+    // post-fix en AMBOS interleavings: carrera real → el CAS mata al perdedor (FOUND=false);
+    // secuencial → el guard de lease vigente. Pre-fix, la carrera real daba 2 ok (flaky-caza-bug).
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: false,
+        reverse_in_progress: false,
+        leader_device_id: null,
+        migrated_at: "2026-01-01T00:00:00Z", // cuenta migrada (autocontenido)
+        reverse_frozen_at: null,
+        reverted_at: null,
+      }),
+    ).toBeLessThan(300);
+
+    const [r1, r2] = await Promise.all([
+      migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_claim" }),
+      migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_claim" }),
+    ]);
+    expect(r1.status).toBe(200);
+    expect(r2.status).toBe(200);
+    const winners = [r1, r2].filter((r) => r.body.ok === true);
+    const losers = [r1, r2].filter((r) => r.body.ok === false);
+    expect(winners).toHaveLength(1); // JAMÁS dual-líder, ni transitorio
+    expect(losers).toHaveLength(1);
+    expect(losers[0].body.reason).toBe("other_leader");
+
+    // El líder registrado es exactamente el device del ganador.
+    const winnerDev = r1.body.ok ? DEV_REV : DEV_REV_OTHER;
+    const p = await readProfile(jwtB);
+    expect(p?.reverse_in_progress).toBe(true);
+    expect(p?.leader_device_id).toBe(winnerDev);
+
+    // Deja la fila estable (patrón de la suite).
+    await patchProfile(jwtB, { reverse_in_progress: false, leader_device_id: null });
+  });
 });
