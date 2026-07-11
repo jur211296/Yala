@@ -58,6 +58,17 @@ DELETE FROM public.profiles WHERE id IN (
 Los tests que necesitan estado `migration_in_progress` lo fijan por un PATCH directo a PostgREST con el
 JWT del propio dueño (RLS UPDATE lo permite) y lo revierten al terminar.
 
+## IdentityRemap (§b.4, DIFERIDOS #29) — traducción client-side, op first-class diferido a v2
+
+El remap de un UUID de identidad cableado como sync_id se traduce CLIENT-SIDE a `tombstone(old, reason
+.remap)` + `upsert FULL(new)` + upserts FULL de las filas referenciantes (commit `54ccf391`) — CERO
+cambios de wire/gateway/RPC: la PK `(user_id, sync_id)` hace las dos filas disjuntas, el batch es
+conmutativo y HLC-idempotente. **Un op `remap` first-class server-side queda como candidato v2
+multi-device** (compraría atomicidad cross-device del par y auditoría explícita; en v1 single-device no
+aporta). Si se implementa: el RPC tendría que re-keyear la fila preservando server_seq/HLC y el applier
+cliente ganar el case — revisar entonces la interacción con el sweep de la reversa (el tombstone(old)
+de la traducción actual NO resuelve testigo en la reversa → skip correcto, §b.5).
+
 ## Reversa server-side (I11-3, §h) — columnas `reverse_*` + acciones del RPC
 
 Migración `i11_reverse_progress_actions` (staging). `profiles` ganó 3 columnas ADITIVAS

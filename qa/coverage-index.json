@@ -398,9 +398,9 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/SyncIdentityServiceTests + unit:YalaTests/SyncContentAnchorTests + unit:YalaTests/CloudSyncSchemaParityTests — DARK (flag off), sin superficie UI hasta I12/I14",
+      "coverage": "unit:YalaTests/SyncIdentityServiceTests + unit:YalaTests/SyncContentAnchorTests + unit:YalaTests/CloudSyncSchemaParityTests — DARK (flag off), sin superficie UI hasta I12/I14 + unit:YalaTests/CloudSync/IdentityRemapEmissionTests (15, DIFERIDOS #29 `54ccf391`: regenerar Tag.id/Account.shortcutID/Subcategory.shortcutID emite en la MISMA transacción tombstone(old, reason .remap) + upsert FULL(new) + upserts FULL de TODAS las filas referenciantes — las columnas *_ref se derivan de la relación viva al emitir, sin re-emisión sintética la regen diverge Merkle perpetuo clase-FX; re-key del testigo preservando ck*; PREFLIGHT antes-de-mutar + gates migración/reversa; contenido REAL del outbox assertado, lección d49d2e47). Follow-up del commit cerrado 2026-07-11 (retenido por co-edición de 3 sesiones).",
       "owner": "",
-      "lastVerified": "2026-07-07"
+      "lastVerified": "2026-07-11"
     },
     {
       "area": "cloud-sync-runtime",
