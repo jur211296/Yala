@@ -129,6 +129,21 @@ protocol MigrationWorkExecuting: AnyObject {
     func healDuplicates() -> Int
     /// §h `reverseUpload`: muestreo CKIdentityCapture sobre las filas vivas → `.drained` / `.pending(count)`.
     func reverseUploadStatus() -> ReverseUploadStatus
+
+    // MARK: Heartbeat del lease (I14-pre, residual pendiente #3)
+
+    /// Refresca `profiles.migration_updated_at` (heartbeat del lease de 60 min) MIENTRAS un paso largo
+    /// progresa. BEST-EFFORT: el runner lo llama POR PROGRESO (el dueño del pacing); el executor aplica el
+    /// THROTTLE (a lo sumo una vez por ventana) y NUNCA lanza ni altera el outcome del paso. Default no-op
+    /// en la extension de abajo → los fakes/ejecutores que no laten heredan sin cambios.
+    func sendLeaseHeartbeatIfDue() async
+}
+
+extension MigrationWorkExecuting {
+    /// Default NO-OP del heartbeat (I14-pre): un conformador que no necesita latir (fakes del runner que no
+    /// lo asertan, ejecutores futuros verify-only) no está obligado a implementarlo. El ejecutor real lo
+    /// override con el tick throttled best-effort.
+    func sendLeaseHeartbeatIfDue() async {}
 }
 
 // MARK: - Runner
@@ -435,7 +450,11 @@ final class MigrationRunner {
                 if !(try await driveReverseClaim()) { return }
             case .reverseDrainAll:
                 switch await executor.reverseDrainOnce() {
-                case .completed: try await handle(.reverseDrainCompleted)
+                case .completed:
+                    try await handle(.reverseDrainCompleted)
+                    // Heartbeat (I14-pre): el drain de una época nube grande puede tardar minutos — late al
+                    // cerrar el paso para no dejar la lease de 60 min usurpable a mitad de la reversa.
+                    await executor.sendLeaseHeartbeatIfDue()
                 case .transient: return
                 }
             case .reverseVerify:
@@ -506,6 +525,9 @@ final class MigrationRunner {
             state.snapshotCursorJSON = newCursor
             state.updatedAt = now()
             try context.save()
+            // Heartbeat (I14-pre): el snapshot de un corpus 10k+ podría superar los 60 min del lease — late
+            // por página confirmada (el throttle del executor lo capa a 1/min) para mantenerlo vivo.
+            await executor.sendLeaseHeartbeatIfDue()
             return true                       // re-loop: sigue subiendo desde el cursor confirmado
         case .transient:
             return false                      // el caller reintenta después (sin retry-loop de red aquí)
@@ -677,6 +699,9 @@ final class MigrationRunner {
             return true
         case let .pending(count):
             CloudSyncBreadcrumb.reverseUploadPending(count: count)
+            // Heartbeat (I14-pre): cada re-poll del panel/resume mientras el mirror aún exporta mantiene la
+            // lease viva (el drenaje a CloudKit puede tardar).
+            await executor.sendLeaseHeartbeatIfDue()
             return false
         }
     }

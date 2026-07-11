@@ -102,7 +102,11 @@ export async function handleAccountClaim(c: Ctx): Promise<Response> {
  * >60min; idempotente para el mismo líder), `reverse_freeze` (`reverse_frozen_at=now()`, guard
  * líder SIN edad de lease, idempotente), `reverse_complete` (`reverse_in_progress=false` +
  * `reverted_at=now()`; `migrated_at` NO se toca — §h.4) y `reverse_abort` (des-congela; acepta
- * lease expirado — abort de emergencia post-crash). El sub SIEMPRE del JWT (RLS + `auth.uid()`
+ * lease expirado — abort de emergencia post-crash). `heartbeat` (I14-pre) refresca SOLO
+ * `migration_updated_at` (lease de 60 min) MIENTRAS un paso largo progresa (upload/drain del líder),
+ * sirviendo a la ida Y a la reversa por `migration_in_progress OR reverse_in_progress` con guard líder
+ * SIN edad de lease; NO toca `migrated_at`/`reverse_frozen_at`/`reverted_at`/`claim_account` (sin run
+ * activo → `not_in_progress`, benigno idempotente). El sub SIEMPRE del JWT (RLS + `auth.uid()`
  * dentro del RPC). Sin App Attest — precede al bind, como el resto de `/account/*`. Devuelve el
  * `{ok, reason?}` del RPC tal cual (`other_leader` cuando otro device usurpó el liderazgo).
  */
@@ -113,6 +117,7 @@ const MIGRATION_ACTIONS = new Set([
   "reverse_freeze",
   "reverse_complete",
   "reverse_abort",
+  "heartbeat",
 ]);
 
 export async function handleAccountMigration(c: Ctx): Promise<Response> {
@@ -131,7 +136,7 @@ export async function handleAccountMigration(c: Ctx): Promise<Response> {
   if (!deviceId || !MIGRATION_ACTIONS.has(action)) {
     return jsonError(
       "yala_bad_request",
-      "Se espera { device_id, action: 'cutover'|'complete'|'reverse_claim'|'reverse_freeze'|'reverse_complete'|'reverse_abort' }",
+      "Se espera { device_id, action: 'cutover'|'complete'|'reverse_claim'|'reverse_freeze'|'reverse_complete'|'reverse_abort'|'heartbeat' }",
       400,
     );
   }

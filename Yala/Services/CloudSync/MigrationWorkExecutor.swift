@@ -101,6 +101,13 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// UserDefaults para persistir `storageMode=.cloud` (paso 2) y el flag `relaunchRequested` (paso 4).
     /// Inyectable para tests (nunca `.standard` directo en tests — regla del repo).
     private let storageDefaults: UserDefaults
+    /// Ventana mínima entre heartbeats del lease (I14-pre). El runner llama `sendLeaseHeartbeatIfDue()` por
+    /// PROGRESO (por página del snapshot, por drain de la reversa); este throttle lo capa a 1 request/ventana.
+    private let heartbeatInterval: TimeInterval
+    /// Instante del último heartbeat EMITIDO (I14-pre). IN-MEMORY, NO journaled: un kill+resume lo resetea →
+    /// a lo sumo UN heartbeat extra por relanzamiento (idempotente, 1 request). Se arma también en rechazo/red
+    /// para no martillar el endpoint por-página cuando el server rechaza o la red está caída.
+    private var lastHeartbeatAt: Date?
 
     /// Key del flag `relaunchRequested` (§g.4 paso 4). iOS no se auto-relanza; el relaunch asistido es
     /// I14. ALIAS de `StorageModePersistence.mirrorOffArmedKey` (SERIO 1): este flag es TAMBIÉN el
@@ -135,6 +142,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         personalStoreURL: URL? = nil,
         storageDefaults: UserDefaults = .standard,
         snapshotPageSize: Int = 200,
+        heartbeatInterval: TimeInterval = 60,
         reverseTombstoneSource: ReverseTombstoneSource? = nil
     ) {
         self.engine = engine
@@ -152,6 +160,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         self.beacon = beacon ?? CloudBeacon()
         self.personalStoreURL = personalStoreURL ?? SwiftDataConfiguration.personalConfiguration.url
         self.storageDefaults = storageDefaults
+        self.heartbeatInterval = heartbeatInterval
         self.uploader = MigrationSnapshotUploader(
             engine: engine, pushClient: pushClient, context: context,
             calendar: calendar, now: now, pageSize: snapshotPageSize)
@@ -774,5 +783,42 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         }
         let pending = report.exportPending + report.noMetadata
         return pending == 0 ? .drained : .pending(count: pending)
+    }
+
+    // MARK: - Heartbeat del lease (I14-pre, residual pendiente #3)
+
+    /// `migration_progress('heartbeat')` — refresca `profiles.migration_updated_at` (lease de 60 min) MIENTRAS
+    /// un paso largo progresa (upload de corpus grande; drain de la reversa sobre una época nube grande) para
+    /// que el líder NO quede usurpable a mitad de trabajo. Sirve a la ida Y a la reversa (una sola acción; el
+    /// RPC decide por `migration_in_progress OR reverse_in_progress`, guard SIN edad de lease — el mismo líder
+    /// lento siempre puede latir).
+    ///
+    /// BEST-EFFORT ABSOLUTO — la firma NO lanza (garantía de compilador) y NUNCA altera el outcome del paso
+    /// que lo invoca: esa propiedad es lo que hace SEGURO commitear el cliente ANTES de desplegar la acción al
+    /// RPC (pre-deploy el Worker devuelve 400/el RPC no la entiende → breadcrumb y sigue). Un `other_leader`
+    /// aquí NO corta el paso: el guard REAL del lease vive en cutover/freeze/complete (cortar aquí duplicaría
+    /// la lógica de usurpación con una señal débil).
+    ///
+    /// Throttle: el runner llama por-página, pero solo se emite a lo sumo un request por `heartbeatInterval`.
+    /// El throttle se arma para CUALQUIER outcome (incluida red caída) — evita martillar el endpoint cuando el
+    /// server rechaza o no responde.
+    func sendLeaseHeartbeatIfDue() async {
+        if let last = lastHeartbeatAt, now().timeIntervalSince(last) < heartbeatInterval { return }
+        // Sin JWT → sin request (ni arma el throttle): el paso que sigue reportará sessionExpired por su
+        // propio camino; un re-login despierta el heartbeat en el próximo tick.
+        guard let jwt = await session.accessToken(), !jwt.isEmpty else { return }
+        lastHeartbeatAt = now()
+        switch await accountClient.migrationProgress(jwt: jwt, deviceID: deviceID, action: "heartbeat") {
+        case .ok:
+            CloudSyncBreadcrumb.migrationLeaseHeartbeat()
+        case .otherLeader:
+            CloudSyncBreadcrumb.migrationLeaseHeartbeatRejected(reason: "otherLeader")
+        case .rejected(let reason):
+            CloudSyncBreadcrumb.migrationLeaseHeartbeatRejected(reason: reason)
+        case .sessionExpired:
+            CloudSyncBreadcrumb.migrationLeaseHeartbeatRejected(reason: "sessionExpired")
+        case .transient:
+            CloudSyncBreadcrumb.migrationLeaseHeartbeatRejected(reason: "transient")
+        }
     }
 }

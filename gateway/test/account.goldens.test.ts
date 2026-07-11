@@ -128,6 +128,16 @@ async function readProfile(jwt: string): Promise<ProfileRow | null> {
   const rows = (await res.json()) as ProfileRow[];
   return rows[0] ?? null;
 }
+/** Lee `migration_updated_at` (el timestamp del lease) — usado por los goldens del heartbeat (I14-pre). */
+async function readMigrationUpdatedAt(jwt: string): Promise<string | null> {
+  const sub = decodeSub(jwt);
+  const res = await fetch(`${URL}/rest/v1/profiles?id=eq.${sub}&select=migration_updated_at`, {
+    headers: { apikey: ANON, Authorization: `Bearer ${jwt}` },
+  });
+  const rows = (await res.json()) as { migration_updated_at: string | null }[];
+  return rows[0]?.migration_updated_at ?? null;
+}
+
 
 const DEV_A = "device-A-01";
 const DEV_OTHER = "device-other-99";
@@ -557,5 +567,92 @@ describe("Freeze enforcement · /sync/push con reverse_frozen_at (staging real)"
     const body = r.body as { results: Array<{ status: string }> };
     expect(body.results.map((x) => x.status)).toEqual(["noop", "applied"]); // SID0 ya aterrizó en el leak
     expect(await rowExists(jwtB, SID1)).toBe(true);
+  });
+});
+
+// I14-pre — heartbeat del lease (§residual pendiente #3). Refresca SOLO migration_updated_at MIENTRAS un
+// paso largo (upload/drain) progresa, para que el líder no quede usurpable a mitad. Usan sub B.
+// REQUIEREN el deploy `i14_heartbeat_action` (RPC) + el redeploy del Worker: pre-deploy el edge devuelve
+// 400 a `heartbeat` (protege al RPC viejo) y estos 4 goldens FALLAN RUIDOSO — es el rojo ESPERADO
+// documentado en qa/cloud/README (sin gate silencioso por env var, lección d49d2e47). Ver
+// qa/cloud/pending-heartbeat-action.sql para el injerto SQL.
+const DEV_HB = "device-B-hb-leader";
+const DEV_HB_OTHER = "device-hb-usurper";
+
+describe("I14-pre goldens · /account/migration heartbeat (staging real, REQUIERE deploy i14_heartbeat_action + Worker)", () => {
+  it("23. heartbeat es acción VÁLIDA en el edge (no 400) y sin run activo → ok:false 'not_in_progress'", async () => {
+    // Sin migración ni reversa en curso.
+    expect(
+      await patchProfile(jwtB, { migration_in_progress: false, reverse_in_progress: false, leader_device_id: null }),
+    ).toBeLessThan(300);
+    const r = await migrationProgress(jwtB, { device_id: DEV_HB, action: "heartbeat" });
+    expect(r.status).toBe(200); // no 400: la acción es válida en el set del Worker
+    expect(r.body.ok).toBe(false);
+    expect(r.body.reason).toBe("not_in_progress"); // heartbeat tardío/benigno idempotente
+  });
+
+  it("24. líder de la IDA + lease retrocedido → heartbeat ok:true y refresca migration_updated_at", async () => {
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        reverse_in_progress: false,
+        leader_device_id: DEV_HB,
+        migration_updated_at: "2000-01-01T00:00:00Z", // lease retrocedido a propósito
+      }),
+    ).toBeLessThan(300);
+    const before = await readMigrationUpdatedAt(jwtB);
+
+    const r = await migrationProgress(jwtB, { device_id: DEV_HB, action: "heartbeat" });
+    expect(r.body.ok).toBe(true);
+    const after = await readMigrationUpdatedAt(jwtB);
+    expect(after).not.toBeNull();
+    expect(new Date(after!).getTime()).toBeGreaterThan(new Date(before!).getTime()); // el lease se refrescó
+
+    // Limpia el estado in-progress.
+    await patchProfile(jwtB, { migration_in_progress: false, leader_device_id: null });
+  });
+
+  it("25. líder de la IDA + heartbeat de OTRO device → ok:false 'other_leader', el lease NO cambia", async () => {
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        reverse_in_progress: false,
+        leader_device_id: DEV_HB,
+        migration_updated_at: "2000-01-01T00:00:00Z",
+      }),
+    ).toBeLessThan(300);
+    const before = await readMigrationUpdatedAt(jwtB);
+
+    const r = await migrationProgress(jwtB, { device_id: DEV_HB_OTHER, action: "heartbeat" });
+    expect(r.body.ok).toBe(false);
+    expect(r.body.reason).toBe("other_leader");
+    expect(await readMigrationUpdatedAt(jwtB)).toBe(before); // un no-líder NO refresca el lease
+
+    await patchProfile(jwtB, { migration_in_progress: false, leader_device_id: null });
+  });
+
+  it("26. reverse-líder (reverse_claim sobre migrado) → heartbeat ok:true (sirve a la reversa por rip)", async () => {
+    // Migra (patrón goldens 6-7) y reclama la reversa (patrón 13) → rip=true, líder=DEV_HB.
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        leader_device_id: DEV_HB,
+        migration_updated_at: new Date().toISOString(),
+        migrated_at: null,
+        reverse_in_progress: false,
+        reverse_frozen_at: null,
+        reverted_at: null,
+      }),
+    ).toBeLessThan(300);
+    expect((await migrationProgress(jwtB, { device_id: DEV_HB, action: "cutover" })).body.ok).toBe(true);
+    expect((await migrationProgress(jwtB, { device_id: DEV_HB, action: "complete" })).body.ok).toBe(true);
+    expect((await migrationProgress(jwtB, { device_id: DEV_HB, action: "reverse_claim" })).body.ok).toBe(true);
+
+    const r = await migrationProgress(jwtB, { device_id: DEV_HB, action: "heartbeat" });
+    expect(r.body.ok).toBe(true); // el heartbeat late para reverse_in_progress igual que para migration_in_progress
+
+    // Limpia: aborta la reversa y resetea la fila.
+    await migrationProgress(jwtB, { device_id: DEV_HB, action: "reverse_abort" });
+    await patchProfile(jwtB, { reverse_in_progress: false, leader_device_id: null });
   });
 });

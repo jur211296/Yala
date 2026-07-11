@@ -58,7 +58,7 @@ app.get("/prefs/pull", handlePrefsPull);
 // --- Cuenta (I7a): gate de identidad §f.1 — corre tras el sign-in, ANTES de todo save() de onboarding ---
 app.post("/account/claim", handleAccountClaim); // reserva atómica; estado de 3 valores
 app.get("/account/exists", handleAccountExists); // hint de encaminamiento (no la garantía anti-doble-siembra)
-app.post("/account/migration", handleAccountMigration); // cutover/complete §g.4 + reverse_* §h (guard líder)
+app.post("/account/migration", handleAccountMigration); // cutover/complete §g.4 + reverse_* §h + heartbeat I14-pre (guard líder)
 
 app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
 

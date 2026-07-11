@@ -138,6 +138,11 @@ private final class FakeExecutor: MigrationWorkExecuting {
         return status
     }
 
+    // Heartbeat del lease (I14-pre): registra las llamadas del runner. El throttle vive en el executor REAL
+    // (MigrationWorkExecutorTests), así que aquí cada invocación cuenta 1:1 (el runner es el dueño del pacing).
+    var heartbeatCallCount = 0
+    func sendLeaseHeartbeatIfDue() async { heartbeatCallCount += 1 }
+
     func count(_ effect: MigrationEffect) -> Int { executedEffects.filter { $0 == effect }.count }
 }
 
@@ -869,6 +874,37 @@ struct MigrationRunnerTests {
             #expect(j.leaderDeviceID == nil)
             #expect(j.verifyMismatchRetries == 0)
         }
+    }
+
+    // MARK: - 12. Heartbeat del lease (I14-pre, residual pendiente #3) — pacing del runner
+
+    /// El runner late tras CADA página confirmada del snapshot (el throttle vive en el executor real, no aquí).
+    @Test func heartbeat_uploadPageConfirmed_ticksPerPage() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.uploadOutcomes = [.pageConfirmed(cursor: "c1"), .pageConfirmed(cursor: "c2"), .completed]
+        fake.verifyProbes = [.match]
+        fake.confirmCutoverResult = false            // corta en cutover(.pending) tras el upload
+        try seedJournal(context, phase: .uploadingSnapshot, leaderDeviceID: deviceID)
+
+        await runner(context, fake).resume()
+
+        #expect(fake.heartbeatCallCount == 2, "heartbeat tras CADA pageConfirmed; NUNCA en .completed")
+    }
+
+    /// El runner late en `reverseUpload` pendiente (cada re-poll mantiene la lease viva mientras exporta el mirror).
+    @Test func heartbeat_reverseUploadPending_ticks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let fake = FakeExecutor()
+        fake.reverseUploadStatuses = [.pending(count: 1)]
+        try seedJournal(context, phase: .reverseUpload, reverseOriginRaw: "done")
+
+        await runner(context, fake).resume()
+
+        #expect(fake.heartbeatCallCount == 1, "reverseUpload pending late para mantener la lease viva")
+        #expect(try journal(context).readPhase().phase == .reverseUpload, "pending → stop retomable")
     }
 
     /// Un NUEVO runner por acción (espeja el patrón de kill: instancia nueva re-lee el store).

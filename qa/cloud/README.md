@@ -153,6 +153,41 @@ Alternativa SIN contexto service (verificada 2026-07-11): con el JWT del propio 
 /rest/v1/rpc/apply_delta` con `p_op:"tombstone"` y un `p_row_hlc` fresco (> los HLC T0 de los goldens)
 — `apply_delta` tiene GRANT a `authenticated` y el tombstone es el mismo efecto.
 
+## Heartbeat del lease (I14-pre) — acción `heartbeat` del RPC `migration_progress`
+
+Residual pendiente #3. Un PASO monolítico largo (upload del snapshot: minutos con 1.1k filas, más en
+corpus 10k+; drain de la reversa sobre una época nube grande) sólo refrescaba `migration_updated_at` en
+claim/cutover/complete y en las acciones `reverse_*` → dejaba al líder **usurpable a mitad de trabajo**
+(converge seguro por los guards de freeze/complete, pero sucio). Fix: el runner llama
+`sendLeaseHeartbeatIfDue()` por PROGRESO (por página del snapshot, al cerrar `reverseDrainAll`, y en cada
+re-poll de `reverseUpload`); el executor lo capa a **1 request/60s** (throttle in-memory) y es
+**BEST-EFFORT ABSOLUTO** (nunca lanza, nunca altera el outcome del paso — un `other_leader` aquí NO corta,
+el guard real vive en cutover/freeze/complete).
+
+Semántica de la acción (sirve a la ida Y a la reversa con UNA sola acción; `migration_in_progress OR
+reverse_in_progress`, guard líder SIN edad de lease): líder de un run activo → `UPDATE
+migration_updated_at=now()` → `ok:true`; líder distinto → `ok:false, reason:'other_leader'`; sin run (o
+sin fila) → `ok:false, reason:'not_in_progress'`. NO toca `migrated_at`/`reverse_frozen_at`/`reverted_at`/
+`claim_account`.
+
+**ESTADO: PENDIENTE DE DEPLOY (gateado al MCP de Supabase).** El cliente Swift + el set de actions del
+Worker + los goldens están en el repo, pero el RPC NO se desplegó (esta sesión no tenía el MCP; la regla
+es leer la functiondef viva y EXTENDER, jamás reescribir a ciegas). Orden EXACTO del owner:
+
+1. Aplicar `qa/cloud/pending-heartbeat-action.sql` vía MCP — **leer primero** `select
+   pg_get_functiondef('public.migration_progress(text,text)'::regprocedure)`, graftear el branch antes del
+   `else` de acción desconocida, `create or replace` con el cuerpo completo. **Staging
+   `fostjbbwstyuunmmefuk`; Production JAMÁS.**
+2. `cd gateway && npx wrangler deploy` (RPC-primero, Worker-después: pre-deploy el edge devuelve 400 a
+   `heartbeat`, protegiendo al RPC viejo).
+3. `cd gateway && npm test` → goldens **23-26** de `account.goldens.test.ts` (network ON).
+4. Re-tombstonear budgets (mismo SQL de la sección de la reversa) antes del e2e Swift.
+5. e2e Swift staging.
+
+**Nota (decisión de review-plan, sin gate silencioso):** hasta que (1)+(2) estén hechos, `npm test` tiene
+**4 rojos ESPERADOS** (goldens 23-26 activos a propósito — un gate por env var crearía el gap exacto de la
+lección `d49d2e47`; la suite es manual/network-only, así que el rojo pre-deploy es esperado y documentado).
+
 ## Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)
 
 `push-e2e-test.sh` ejerce `POST /sync/push` con EL MISMO envelope JSON que arma `SyncPushClient`

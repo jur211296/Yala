@@ -30,6 +30,14 @@ private final class FakeSession: CloudSyncSessionProviding {
     func attestToken() async throws -> String? { nil }
 }
 
+/// Reloj MUTABLE para el test de throttle del heartbeat (I14-pre): avanzar `value` entre ticks sin recrear
+/// el executor. MainActor (se muta y lee solo desde el test MainActor).
+@MainActor
+private final class MutableClock {
+    var value: Date
+    init(_ start: Date) { value = start }
+}
+
 private final class FakeBeaconStore: BeaconKeyValueStore, @unchecked Sendable {
     var bools: [String: Bool] = [:]
     var strings: [String: String] = [:]
@@ -73,6 +81,7 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     var migrationBody = Data("{\"ok\":true}".utf8)
     var migrationStatus = 200
     private(set) var lastMigrationBody: [String: Any]?
+    private(set) var migrationCallCount = 0
     var pushStatus = 200
     var merkleBody = Data()
     private let lock = NSLock()
@@ -84,6 +93,7 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
             HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
         }
         if path.contains("account/migration") {
+            migrationCallCount += 1
             lastMigrationBody = (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())) as? [String: Any]
             return (migrationBody, resp(migrationStatus))
         }
@@ -154,6 +164,8 @@ struct MigrationWorkExecutorTests {
         _ context: ModelContext, _ engine: CloudSyncEngine, _ stub: RoutingStub,
         _ session: FakeSession, _ beaconStore: FakeBeaconStore, personalStoreURL: URL,
         storageDefaults: UserDefaults? = nil,
+        now: (() -> Date)? = nil,
+        heartbeatInterval: TimeInterval = 60,
         tombstoneSource: ReverseTombstoneSource? = nil
     ) -> MigrationWorkExecutor {
         let token: () async -> String? = { "jwt" }
@@ -164,11 +176,12 @@ struct MigrationWorkExecutorTests {
         return MigrationWorkExecutor(
             engine: engine, pushClient: push, pullClient: pull, merkleClient: merkle,
             accountClient: account, session: session, context: context,
-            calendar: Calendar(identifier: .gregorian), now: { self.fixedNow },
+            calendar: Calendar(identifier: .gregorian), now: now ?? { self.fixedNow },
             deviceID: "device-1", beacon: CloudBeacon(store: beaconStore),
             personalStoreURL: personalStoreURL,
             storageDefaults: storageDefaults ?? makeIsolatedDefaults(prefix: "mwe.storage"),
-            snapshotPageSize: 200, reverseTombstoneSource: tombstoneSource)
+            snapshotPageSize: 200, heartbeatInterval: heartbeatInterval,
+            reverseTombstoneSource: tombstoneSource)
     }
 
     // MARK: - Claim
@@ -769,5 +782,79 @@ struct MigrationWorkExecutorTests {
         #expect(ReverseEligibility.decide(storageMode: .cloud, hasCKMap: true, journaledPhase: .reverseFailedRollback) == .reverseAlreadyTerminal)
         #expect(ReverseEligibility.decide(storageMode: .cloud, hasCKMap: false, journaledPhase: .done) == .degradedNoMap)
         #expect(ReverseEligibility.decide(storageMode: .cloud, hasCKMap: true, journaledPhase: .done) == .eligible)
+    }
+
+    // MARK: - Heartbeat del lease (I14-pre, residual pendiente #3)
+
+    @Test("sendLeaseHeartbeatIfDue: BODY exacto {device_id:'device-1', action:'heartbeat'} (lección d49d2e47)")
+    func heartbeat_sendsExactBody() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 1)
+        #expect(stub.lastMigrationBody?["device_id"] as? String == "device-1")
+        #expect(stub.lastMigrationBody?["action"] as? String == "heartbeat")
+    }
+
+    @Test("sendLeaseHeartbeatIfDue: throttle — 2 ticks dentro de la ventana → 1 request; pasada la ventana → 2")
+    func heartbeat_throttlesWithinWindow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        let clock = MutableClock(fixedNow)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    now: { clock.value }, heartbeatInterval: 60)
+        await executor.sendLeaseHeartbeatIfDue()               // t=0 → emite
+        #expect(stub.migrationCallCount == 1)
+        clock.value = fixedNow.addingTimeInterval(10)          // +10s: dentro de la ventana
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 1, "throttled: 10s < 60s")
+        clock.value = fixedNow.addingTimeInterval(70)          // +70s: pasada la ventana
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 2, "pasada la ventana → 2º heartbeat")
+    }
+
+    @Test("sendLeaseHeartbeatIfDue: best-effort — rechazo (other_leader) y red (500) NO lanzan y ARMAN el throttle")
+    func heartbeat_bestEffort_armsThrottleOnReject() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let stub = RoutingStub()
+        stub.migrationBody = Data("{\"ok\":false,\"reason\":\"other_leader\"}".utf8)
+        let clock = MutableClock(fixedNow)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    now: { clock.value }, heartbeatInterval: 60)
+        // La firma NO lanza (best-effort garantizado por el compilador). El rechazo arma el throttle igual.
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 1)
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 1, "other_leader armó el throttle → 2º tick inmediato no re-pega")
+        // Red caída (500) pasada la ventana: tampoco lanza y también arma el throttle.
+        clock.value = fixedNow.addingTimeInterval(70)
+        stub.migrationStatus = 500
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 2)
+        clock.value = fixedNow.addingTimeInterval(80)
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 2, "el 500 también armó el throttle")
+    }
+
+    @Test("sendLeaseHeartbeatIfDue: sin JWT → 0 requests (no arma throttle; el paso reporta sessionExpired por su camino)")
+    func heartbeat_noJWT_noRequest() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: nil, userID: nil)
+        let stub = RoutingStub()
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        await executor.sendLeaseHeartbeatIfDue()
+        #expect(stub.migrationCallCount == 0)
     }
 }

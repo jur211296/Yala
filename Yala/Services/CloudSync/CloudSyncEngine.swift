@@ -562,6 +562,21 @@ enum CloudSyncBreadcrumb {
     static func reverseOrphanMetadata(count: Int) {
         logger.notice("CloudSyncReverse orphanMetadata count=\(count, privacy: .public) — canario sin reparación v1 (scan DIFERIDO)")
     }
+
+    // MARK: Heartbeat del lease (I14-pre, residual pendiente #3) — best-effort, sin PII
+
+    /// I14-pre: `migration_progress('heartbeat')` OK — `profiles.migration_updated_at` refrescado durante un
+    /// paso largo (upload/drain) → el lease de 60 min sigue vivo, el líder no queda usurpable a mitad.
+    static func migrationLeaseHeartbeat() {
+        logger.notice("CloudSyncMigration leaseHeartbeat — migration_updated_at refrescado (lease vivo)")
+    }
+
+    /// I14-pre: el heartbeat NO aplicó (otherLeader/rejected/401/red) — BEST-EFFORT, NO corta el paso (el
+    /// guard real del lease vive en cutover/freeze/complete). `reason` sin PII. Pre-deploy del RPC un
+    /// `bad_action`/400 cae aquí como ruido esperado (documentado en qa/cloud/README).
+    static func migrationLeaseHeartbeatRejected(reason: String) {
+        logger.notice("CloudSyncMigration leaseHeartbeatRejected reason=\(reason, privacy: .public) — best-effort, no corta el paso")
+    }
 }
 
 // MARK: - CloudSyncEngine
