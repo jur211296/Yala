@@ -56,10 +56,11 @@ APPLE_TEAM_ID = "3WKFFVD66J"
 APPLE_BUNDLE_IDS = "com.jurgenschmidt.yala"
 ATTEST_ENV = "production"
 TRUST_ATTESTED_AS_PRO = "false"   # EXPLÍCITO: jamás Pro-trust en prod (cierra el trap; prod exige suscripción real)
-# Modo Nube — PRODUCTION usará el proyecto Supabase de producción (placeholder: hoy apunta a staging
-# para no romper el typecheck; el owner lo cambia al crear el proyecto prod). Ver README.
-SUPABASE_URL = "https://fostjbbwstyuunmmefuk.supabase.co"
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg"
+# Modo Nube — Supabase PRODUCTION (proyecto kefvaiymtgytemwbltlz, org yala-production plan Pro,
+# us-east-1; creado 2026-07-11, DIFERIDOS #23). URL + anon key son públicos (no secretos); el JWT
+# del USUARIO viaja en Authorization y RLS es el árbitro. NUNCA service_role.
+SUPABASE_URL = "https://kefvaiymtgytemwbltlz.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlZnZhaXltdGd5dGVtd2JsdGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTg0MDYsImV4cCI6MjA5OTM3NDQwNn0.H8P3-kNUjeK8CTNZHwhfkqwqeflrNXLGvNa7OGGXkAk"
 
 [[env.production.d1_databases]]
 binding = "DB"

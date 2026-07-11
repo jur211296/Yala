@@ -291,6 +291,61 @@ habilitar el drain, (iii) pull + `runPostPullReconcilers` post-upload (cura dupl
 **e2e `adoptOrphanReconcile_twoDevices_uploadsOnlyTheOrphanRow`:** mismo patrón de cleanup RP-1 a 0
 vivas del run que el e2e de system entities (remedio SQL manual de arriba aplica igual).
 
+## Proyecto Supabase de PRODUCCIÓN (DIFERIDOS #23 — creado 2026-07-11)
+
+Proyecto **`kefvaiymtgytemwbltlz`** (`yala-modo-nube-production`), organización dedicada
+**`yala-production`** (plan Pro — separada de la org free donde vive staging, aislando billing y
+blast-radius), **us-east-1** (= staging), Postgres 17.6.1.141 (= staging). El MCP de Supabase
+autoriza UNA org a la vez → para operar staging y prod hay que re-conmutar el conector.
+
+**Schema replicado de staging vía 3 migraciones bootstrap** (historial de migraciones de prod):
+
+- `prod_bootstrap_01_schema` — las 21 tablas: el `supabase-staging.ddl` del repo (contrato offline)
+  + **`profiles`** extraída del vivo (NO está en el .ddl: `id` PK=sub, `provider`,
+  `leader_device_id`, `migration_in_progress`, `migrated_at`, `migration_updated_at`,
+  `reverse_in_progress`, `reverse_frozen_at`, `reverted_at`, `created_at`).
+- `prod_bootstrap_02_rls_grants` — cola uniforme extraída verbatim del vivo: 17 triggers
+  `stamp_server_seq`, 19 índices, RLS ON en las 21, **78 policies** con nombres exactos de staging
+  (asimetrías intencionales: `profiles` sin policy DELETE, `report_claims` solo select/insert,
+  `sync_seq_counters` solo select) + REVOKEs (DELETE global; `report_claims` también UPDATE;
+  `sync_seq_counters` INSERT/UPDATE/DELETE).
+- `prod_bootstrap_03_functions` — las 6 funciones con la functiondef VIVA de staging
+  (`pg_get_functiondef`, 2026-07-11) aplicada VERBATIM: `apply_delta`, `apply_pref`,
+  `claim_account` (3-arg con `p_migration`), `claim_report`, `migration_progress` (versión completa:
+  cutover/complete + 4 `reverse_*` con CAS `i11_reverse_claim_cas` + `heartbeat` de
+  `i14_heartbeat_action`), `stamp_server_seq` + ACLs del lockdown i5_11 (`stamp_server_seq` solo
+  service_role; `apply_delta`/`apply_pref`/`claim_report` solo authenticated;
+  `claim_account`/`migration_progress` default PUBLIC — inerte sin JWT, igual que staging).
+  **NO replicado (a propósito):** tablas `spike_*`, `spike_apply_delta`, usuarios de test, datos.
+
+**Verificación (2026-07-11):** conteos estructurales = staging sin spikes (21 tablas / 21 RLS / 78
+policies / 17 triggers / 19 índices / 6 funciones) · columnas de las 16 tablas de dominio conformes
+al contrato del .ddl (query compacta de `dump-schema.sh`) · security advisors de Supabase: 0
+hallazgos · **gate RLS `cross-user-rls-test.sh` contra prod: 18/18** (usuarios efímeros
+`rls-a/b@test.yala`, borrados post-gate — el CASCADE de `auth.users` limpia sus filas) · Auth
+v2.192.0 (gotcha issuer SIWA ≥2.177.0 cubierto).
+
+**Auth de prod (decisiones owner 2026-07-11):** provider **Apple** ON (Client IDs
+`com.jurgenschmidt.yala,com.jurgenschmidt.yala.dev`, secret vacío — flujo nativo); provider
+**Email OFF** (solo se re-habilita temporalmente para correr el gate RLS, que usa password grant —
+gotcha: con Email OFF el login devuelve `email_provider_disabled`); Google = fase web/Android, NO
+configurado; **inactivity-timeout 720 h (30 días)** + **time-box 0 (never)** — la mitigación
+server-side de DIFERIDOS #23 (racional en el vault, `MODO-NUBE-DIFERIDOS.md` §23).
+
+**Gateway:** `gateway/wrangler.toml` `[env.production.vars]` apunta a este proyecto (URL + anon
+key reales). El Worker de producción **NO está desplegado** — deploy solo con pedido explícito del
+owner.
+
+**Paridad de funciones VERIFICADA byte-exacta (2026-07-11):** `md5(pg_get_functiondef)` idéntico
+staging↔prod en las 6 — apply_delta `7f8cb94d32f3976b6a9b0ade8f165b73`, apply_pref
+`9ca95ec43db6aae72ab958bab68498d0`, claim_account `6f9d2bc967ed2402c39b20d4d42e7e99`, claim_report
+`d4180fd245bc755e652f82d8159e3a70`, migration_progress `1768ad02de1cb25bf3fbfe458d22771e`,
+stamp_server_seq `62ec7acb7d9eb68ff9b01415984b54ab`. Query de re-verificación (ambos proyectos):
+`SELECT proname, md5(pg_get_functiondef(p.oid)) FROM pg_proc p JOIN pg_namespace n ON
+n.oid=p.pronamespace WHERE n.nspname='public' AND proname NOT LIKE 'spike%' ORDER BY 1;`
+**Regla anti-drift:** toda migración futura de staging (`i*`) debe re-aplicarse a prod en el mismo
+cambio o anotarse aquí como drift pendiente (el MCP autoriza una org a la vez — re-conmutar).
+
 ## Related repo artifacts
 
 - `capability_manifest.json` (repo root) — per-entity domain columns with explicit `safe` / `group_key`.
