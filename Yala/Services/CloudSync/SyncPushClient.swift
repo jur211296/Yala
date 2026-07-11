@@ -71,6 +71,13 @@ private struct SyncPushResponse: Decodable {
     let results: [SyncDeltaResult]
 }
 
+/// Envelope de error del gateway (shape OpenAI-compatible, `gateway/src/errors.ts`) — solo el `type`
+/// discriminante. Se usa para distinguir el 409 `yala_account_reverting` (freeze de la reversa §h.1).
+private struct GatewayErrorEnvelope: Decodable {
+    struct Inner: Decodable { let type: String? }
+    let error: Inner?
+}
+
 // MARK: - PushOutcome
 
 /// Resultado ESTRUCTURADO de una subida (cero silencios). El orquestador I9 lo consume para decidir
@@ -82,7 +89,10 @@ enum PushOutcome: Equatable {
     /// 401: JWT ausente/inválido/expirado (o attest requerido). NO se purga NADA ni se marca dead-letter —
     /// los deltas se reintentan tras re-login. `pending` = cuántos deltas quedaron sin subir.
     case sessionExpired(pending: Int)
-    /// 403: autenticado pero prohibido → cuenta suspendida/deshabilitada (≠401). NO se purga ni dead-letter.
+    /// 403 (cuenta suspendida/deshabilitada) o 409 `yala_account_reverting` (freeze de la reversa §h.1:
+    /// el backend dejó de ser fuente de verdad — device rezagado durante/tras una reversa). En ambos la
+    /// cadencia hace STOP sin loop (`SyncCadencePolicy` → `stopUntilRelaunch`). NO se purga ni dead-letter:
+    /// los deltas sobreviven en el outbox para la reversa/adopción de ESTE device.
     case accountUnavailable
     /// 5xx / error de red / respuesta no decodificable / 4xx inesperado → reintentar con backoff (I9). NO
     /// se marca dead-letter (el rechazo definitivo es SOLO un delta con status `rejected`).
@@ -246,6 +256,23 @@ final class SyncPushClient {
             CloudSyncBreadcrumb.pushAccountUnavailable()
             TelemetryService.cloudAccountUnavailable()
             return .accountUnavailable
+        case 409:
+            // Enforcement del freeze de la reversa (§h.1): `reverse_frozen_at` estampado → el backend ya
+            // no es fuente de verdad. Mismo trato de STOP que el 403 (breadcrumb/telemetría propios para
+            // distinguirlo en diagnóstico). Un 409 SIN ese type conserva el trato previo (transient).
+            let decoded: GatewayErrorEnvelope?
+            do {
+                decoded = try JSONDecoder().decode(GatewayErrorEnvelope.self, from: data)
+            } catch {
+                decoded = nil // 409 ajeno sin envelope del gateway → cae al transient de abajo (se loguea).
+            }
+            if decoded?.error?.type == "yala_account_reverting" {
+                CloudSyncBreadcrumb.pushAccountReverting()
+                TelemetryService.cloudAccountReverting()
+                return .accountUnavailable
+            }
+            CloudSyncBreadcrumb.pushHTTP(status: http.statusCode)
+            return .transient
         default:
             // 5xx (retry), 429 (rate-limit → retry), y 4xx inesperados. Ninguno es un rechazo DEFINITIVO
             // de datos (esos son per-delta) → transient. No dead-letter: no perdemos deltas. I9 acota los

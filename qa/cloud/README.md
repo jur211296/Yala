@@ -99,11 +99,41 @@ de `claim_account`) → exactamente uno `ok:true`, el perdedor `other_leader`; e
 post-fix en ambos interleavings. Nota: un golden FOUND-false SECUENCIAL no es representable — el read
 y el UPDATE condicional viven dentro de la MISMA llamada al RPC; `patchProfile` solo pre-setea ANTES.
 
-**DIFERIDO explícito — enforcement del freeze en `/sync/push`:** el gateway hoy NO rechaza pushes con
-`reverse_frozen_at` set (exigiría churn del push handler + una query extra por request). v1 DARK
-single-device: se difiere al gate de encendido de flags. Residual: un device `.cloud` rezagado podría
-pushear a un backend congelado — converge sin corromper (el líder verificó Merkle ANTES del freeze y no
-vuelve a pullear).
+**CERRADO (2026-07-11) — enforcement del freeze en `/sync/push`:** el gateway RECHAZA con **409
+`yala_account_reverting`** (request-level) los pushes de una cuenta con `reverse_frozen_at` set (el
+backend dejó de ser fuente de verdad §h.1, y SIGUE congelado tras `reverse_complete` — red §h.4).
+Diseño (handler `handleSyncPush`, `gateway/src/sync/routes.ts`):
+
+- **Request-level, NO per-delta:** un `rejected` por-delta dead-letterearía en el cliente filas
+  legítimas que deben sobrevivir en el outbox para la reversa/adopción de ese device (y el guard en
+  `apply_delta` sería inevitablemente per-delta + migración SQL).
+- **Costo CERO de pared** (el motivo original del diferido era "una query extra por request"): el check
+  (1 GET a la fila propia de `profiles`, RLS/PK, por request) corre **EN PARALELO con el primer
+  `apply_delta`** y se gatea antes del 2º delta y antes de responder. Medido contra el Worker staging
+  desplegado (12-20 pushes noop de 1 delta): baseline p50 0.51s → secuencial 0.67s (+160ms, descartado)
+  → paralelo **p50 0.512s** (sin delta medible).
+- **Leak ACOTADO documentado:** el delta[0] puede aterrizar en el backend congelado (y el batch entero
+  en el caso 1-delta, donde el gate queda al final). Benigno por diseño: apply HLC-idempotente, el
+  backend congelado jamás vuelve a ser fuente de verdad (la reversa deja de pullear ANTES del freeze), y
+  el 409 hace stop en el cliente SIN purgar. El freeze tiene TOCTOU inherente de todos modos (un push en
+  vuelo cuando cae el freeze también aterriza).
+- **La reversa NO se auto-bloquea:** todos sus pushes (`reverseDrainOnce`, fase `reverseDrainAll`)
+  ocurren ANTES de `reverse_freeze` (el freeze solo se estampa tras `reverseVerify` OK); `reverseUpload`
+  es CloudKit. Pull y Merkle NO se gatean (el re-drain y el sweep de zombies DEPENDEN de ellos post-freeze).
+- **Cliente:** `SyncPushClient` mapea el 409-reverting → `.accountUnavailable` (misma semántica de stop:
+  `SyncCadencePolicy` → `stopUntilRelaunch`, sin loop de reintentos, nada se purga) con breadcrumb
+  (`pushAccountReverting`) y telemetría (`cloudAccountReverting`) PROPIOS para distinguirlo del 403 en
+  diagnóstico. Un 409 sin ese `type` conserva el trato previo (`transient`). Sin case nuevo en
+  `PushOutcome`: la cadencia es idéntica y un case nuevo tocaría todos los switches exhaustivos sin
+  cambiar comportamiento; I14 detectará la reversa por estado de cuenta, no por el push outcome.
+- **Fail-closed:** check upstream caído → 502 (cliente → transient/backoff; el batch aplicado se
+  re-pushea noop-idempotente).
+- **Goldens 19-21** (`account.goldens.test.ts`, sub B — VIVEN ahí y no en sync.goldens porque vitest
+  corre los archivos en paralelo y congelar a sub A rompería los pushes concurrentes de sync.goldens):
+  409 + type + leak delta[0]/bloqueo delta[1]; pull/merkle 200 congelada; des-congelada → noop/applied.
+- **Residual (documentado, fuera de scope):** `/prefs/push` NO se gatea — un device rezagado puede
+  pushear prefs a un backend congelado (mismo perfil de riesgo: converge sin corromper; las prefs de la
+  época nube quedan en un backend muerto).
 
 **Estado POSTERIOR que dejan los goldens de `/sync/*` (gotcha cazado 2026-07-10):** `sync.goldens.test.ts`
 re-crea en cada corrida filas PARCIALES de `budgets` (hand-crafted, `name` NULL — el golden de uuid[] `'{}'`
@@ -117,6 +147,11 @@ UPDATE public.budgets SET deleted=true, deleted_hlc = hlc
 WHERE user_id = (SELECT id FROM auth.users WHERE email = 'i5-user-a@test.yala')
   AND deleted=false AND name IS NULL;
 ```
+
+Alternativa SIN contexto service (verificada 2026-07-11): con el JWT del propio user A, `GET
+/rest/v1/budgets?deleted=eq.false&name=is.null&select=sync_id` y por cada fila un `POST
+/rest/v1/rpc/apply_delta` con `p_op:"tombstone"` y un `p_row_hlc` fresco (> los HLC T0 de los goldens)
+— `apply_delta` tiene GRANT a `authenticated` y el tombstone es el mismo efecto.
 
 ## Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)
 

@@ -154,6 +154,7 @@ enum AnalyticsEvent: String {
     case cloudCutoverLeaderOrphanReconciled = "Diagnóstico · Cutover: writes huérfanos rescatados"  // params: count — CANARIO (Modo Nube I10 w8, §g.4 SERIO 1 v3): la capa de RED del líder rescató writes de la ventana localModeSet→mirrorOff que la capa primaria no había subido. >0 = la ventana existió en la práctica (esperado raro). Sin PII (solo el conteo)
     case cloudSyncMutationRejected = "Diagnóstico · Mutación de sync rechazada"  // params: reason — CANARIO (Modo Nube I8e, §d.5): el backend RECHAZÓ un delta (status rejected). El delta queda en dead-letter (SyncOutbox.rejectedReason), NO se pierde. >0 = write-site sin auditar / grupo de coherencia parcial (bug de emisión, debe ser 0). La DISPARA SyncPushClient.applyResults. Sin PII (solo el motivo)
     case cloudAccountUnavailable = "Diagnóstico · Cuenta no disponible"  // BREADCRUMB (Modo Nube I8e, §d.5): el backend respondió 403 (autenticado pero prohibido) → cuenta suspendida/deshabilitada, distinto del 401 (sesión expirada). >0 = revisar estado de la cuenta. La DISPARA SyncPushClient.push. Sin PII
+    case cloudAccountReverting = "Diagnóstico · Cuenta en reversa"  // BREADCRUMB (freeze §h.1): el backend respondió 409 yala_account_reverting → la cuenta está en/tras una reversa a iCloud (reverse_frozen_at estampado; el backend ya no es fuente de verdad). El device deja de pushear (stop hasta relanzar, mismo trato que 403) y sus deltas quedan en el outbox para su propia reversa/adopción (I14). La DISPARA SyncPushClient.push. Sin PII
     case cloudSyncClockReceiveRejected = "Diagnóstico · HLC remoto rechazado por el reloj"  // params: reason — CANARIO (Modo Nube I8f-1, F-5): `HLCClock.receive` RECHAZÓ un HLC remoto (drift >5min futuro / counter overflow) al aplicar deltas del pull → el reloj local NO se envenena pero pierde causalidad con ese emisor bajo skew extremo (residual documentado; el server lo vigila con cloudSyncSuspectClockWin). La DISPARA CloudSyncEngine.receiveRemoteClock. Sin PII (solo el motivo)
     case cloudSyncMerkleDivergence = "Diagnóstico · Divergencia Merkle de sync"  // params: entity — CANARIO (Modo Nube I8f-3, §d.7 Canal 1): el entityHash local de una tabla ≠ el del backend CON quiescencia local (outbox vivo vacío + pull completado, guard A-3) → infidelidad del apply/canon vs la verdad server-side. >0 = incidente de fidelidad del sync (remediación v1: re-pull completo, wiring I9). La DISPARA CloudSyncEngine.verifyIntegrity. Sin PII (solo el nombre de tabla o "root")
 
@@ -443,6 +444,13 @@ enum TelemetryService {
     /// La dispara `SyncPushClient.push`. Privacy-first: sin IDs ni PII.
     static func cloudAccountUnavailable() {
         track(.cloudAccountUnavailable)
+    }
+
+    /// BREADCRUMB Modo Nube (freeze §h.1): el backend respondió 409 `yala_account_reverting` → la cuenta
+    /// está en/tras una reversa a iCloud (backend congelado, ya no es fuente de verdad). El device deja
+    /// de pushear (stop hasta relanzar). La dispara `SyncPushClient.push`. Privacy-first: sin IDs ni PII.
+    static func cloudAccountReverting() {
+        track(.cloudAccountReverting)
     }
 
     /// CANARIO Modo Nube (I8f-1, F-5): `HLCClock.receive` RECHAZÓ un HLC remoto (drift >5min en el

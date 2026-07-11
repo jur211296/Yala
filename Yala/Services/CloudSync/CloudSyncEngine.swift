@@ -98,6 +98,12 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncPush blocked=account-unavailable (403)")
     }
 
+    /// El backend devolvió 409 `yala_account_reverting` → cuenta congelada por la reversa (§h.1): el
+    /// backend ya no es fuente de verdad. Stop (mismo trato que 403); los deltas quedan en el outbox.
+    static func pushAccountReverting() {
+        logger.notice("CloudSyncPush blocked=account-reverting (409)")
+    }
+
     /// Fallo de transporte (red caída / timeout / respuesta no-HTTP / 200 no decodificable) → reintentar.
     static func pushTransport(reason: String) {
         logger.notice("CloudSyncPush transient transport reason=\(reason, privacy: .public)")

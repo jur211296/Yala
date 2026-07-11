@@ -649,8 +649,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// `reverseFreezeBackend` (§h, I11-3): `reverse_freeze` server-side — estampa `reverse_frozen_at`
     /// (guard reverse-líder SIN edad de lease: el MISMO líder lento siempre puede continuar; idempotente).
     /// `.ok` → `true`; el resto → breadcrumb + `false` (el runner corta retomable SIN evento). El
-    /// ENFORCEMENT del freeze en `/sync/push` (rechazar pushes con `reverse_frozen_at` set) está DIFERIDO
-    /// al gate de encendido de flags — v1 single-device DARK (ver qa/cloud/README.md). NUNCA lanza.
+    /// ENFORCEMENT del freeze en `/sync/push` está ACTIVO (cerrado 2026-07-11): el gateway rechaza 409
+    /// `yala_account_reverting` los pushes con `reverse_frozen_at` set. NO afecta a esta reversa: todos
+    /// sus pushes (`reverseDrainOnce`) ocurren ANTES de este freeze (ver qa/cloud/README.md). NUNCA lanza.
     func freezeBackendForReverse() async -> Bool {
         guard let jwt = await session.accessToken(), !jwt.isEmpty else {
             CloudSyncBreadcrumb.reverseFreezeRejected(reason: "sessionExpired")

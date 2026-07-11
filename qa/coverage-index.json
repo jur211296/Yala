@@ -321,9 +321,9 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/CloudCapabilityManifestParityTests (manifest/groups/DDL offline) + script:qa/cloud/cross-user-rls-test.sh (gate §2.3, 18/18 contra staging 2026-07-07) — + gateway/test/sync.goldens.test.ts + account.goldens.test.ts (Worker /sync/* + /account/* — 32 goldens contra staging real, incl. I11-3 reverse_claim/freeze/complete/abort 11-18) — backend staging fostjbbwstyuunmmefuk + SyncPushClient e2e (I8e: push del outbox al Worker, verificado contra staging) + gateway/test/manifest.shape.test.ts (offline: invariante de emisión + [] explícito en grupo, DIFERIDOS #25) + golden 10 de sync.goldens.test.ts (RPC persiste '{}' no NULL, staging 2026-07-08)",
+      "coverage": "unit:YalaTests/CloudCapabilityManifestParityTests (manifest/groups/DDL offline) + script:qa/cloud/cross-user-rls-test.sh (gate §2.3, 18/18 contra staging 2026-07-07) — + gateway/test/sync.goldens.test.ts + account.goldens.test.ts (Worker /sync/* + /account/* — 32 goldens contra staging real, incl. I11-3 reverse_claim/freeze/complete/abort 11-18) — backend staging fostjbbwstyuunmmefuk + SyncPushClient e2e (I8e: push del outbox al Worker, verificado contra staging) + gateway/test/manifest.shape.test.ts (offline: invariante de emisión + [] explícito en grupo, DIFERIDOS #25) + golden 10 de sync.goldens.test.ts (RPC persiste '{}' no NULL, staging 2026-07-08) + enforcement del freeze en /sync/push (2026-07-11, cierra el DIFERIDO): goldens 19-21 de account.goldens.test.ts (409 yala_account_reverting request-level con leak acotado delta[0]/bloqueo delta[1]; pull/merkle NO gateados congelada; des-congelada noop/applied) + unit:SyncPushClientTests push_409_reverting/push_409_unknownBody (mapeo cliente → accountUnavailable=stop / transient) + latencia verificada costo-cero (check en paralelo con el primer apply_delta, p50 0.512s = baseline; detalle qa/cloud/README)",
       "owner": "",
-      "lastVerified": "2026-07-08"
+      "lastVerified": "2026-07-11"
     },
     {
       "area": "cloud-sync-canon-codec",

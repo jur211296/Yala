@@ -470,3 +470,92 @@ describe("I11-3 goldens · /account/migration reverse_* (staging real)", () => {
     await patchProfile(jwtB, { reverse_in_progress: false, leader_device_id: null });
   });
 });
+
+// Enforcement del freeze en /sync/push (cierre del DIFERIDO de qa/cloud/README, §h.1). VIVEN AQUÍ y no
+// en sync.goldens.test.ts A PROPÓSITO: vitest corre los archivos en PARALELO y estos tests congelan el
+// profile de un usuario — hacerlo con sub A rompería los pushes concurrentes de sync.goldens (que pushea
+// SOLO como A). Sub B se manipula ÚNICAMENTE en este archivo (secuencial) → sin race cross-file.
+
+/** Push mínimo como en sync.goldens (columna `note`, safe field-level — sin grupo de coherencia). */
+function hlcOf(ms: number): string {
+  return `${new Date(ms).toISOString()}-0001-00000000000000bb`;
+}
+function txDelta(syncId: string, note: string, hlc: string): Record<string, unknown> {
+  return {
+    entity_type: "tx_items",
+    sync_id: syncId,
+    op: "upsert",
+    fields: { note },
+    field_hlcs: { note: hlc },
+    hlc,
+    client_mutation_id: crypto.randomUUID(),
+  };
+}
+async function pushDeltas(jwt: string, deltas: unknown[]): Promise<{ status: number; body: unknown }> {
+  const res = await app.fetch(
+    new Request("https://gw.local/sync/push", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ deltas }),
+    }),
+    env,
+  );
+  return { status: res.status, body: await res.json() };
+}
+async function getSync(jwt: string, path: string): Promise<number> {
+  const res = await app.fetch(
+    new Request(`https://gw.local${path}`, { method: "GET", headers: { Authorization: `Bearer ${jwt}` } }),
+    env,
+  );
+  return res.status;
+}
+async function rowExists(jwt: string, syncId: string): Promise<boolean> {
+  const res = await fetch(`${URL}/rest/v1/tx_items?sync_id=eq.${syncId}&select=sync_id`, {
+    headers: { apikey: ANON, Authorization: `Bearer ${jwt}` },
+  });
+  return ((await res.json()) as unknown[]).length > 0;
+}
+
+describe("Freeze enforcement · /sync/push con reverse_frozen_at (staging real)", () => {
+  const SID0 = crypto.randomUUID();
+  const SID1 = crypto.randomUUID();
+  const HLC0 = hlcOf(Date.UTC(2026, 6, 11, 12, 0, 0));
+  const HLC1 = hlcOf(Date.UTC(2026, 6, 11, 12, 0, 1));
+
+  it("19. cuenta CONGELADA → push 409 'yala_account_reverting'; leak ACOTADO al delta[0], el 2º NO entra", async () => {
+    // Precondición: B tiene fila de profiles (goldens previos); un PATCH sobre fila ausente sería un
+    // 204 silencioso sin congelar nada → el assert de abajo lo delataría con un 200.
+    expect(await readProfileId(jwtB)).not.toBeNull();
+    expect(await patchProfile(jwtB, { reverse_frozen_at: new Date().toISOString() })).toBeLessThan(300);
+
+    // El check de freeze corre EN LA SOMBRA del primer apply (costo cero de pared para el push normal)
+    // → contrato: delta[0] puede aterrizar (benigno: idempotente, backend congelado jamás vuelve a ser
+    // fuente de verdad), el gate corta ANTES del 2º delta, y la respuesta es 409 request-level.
+    const r = await pushDeltas(jwtB, [txDelta(SID0, "frozen-leak", HLC0), txDelta(SID1, "frozen-blocked", HLC1)]);
+    expect(r.status).toBe(409);
+    const err = r.body as { error?: { type?: string } };
+    expect(err.error?.type).toBe("yala_account_reverting");
+    expect(await rowExists(jwtB, SID0)).toBe(true); // el leak documentado (delta[0])
+    expect(await rowExists(jwtB, SID1)).toBe(false); // el gate corta antes del 2º delta
+
+    // Caso 1-delta (el gate queda al FINAL): 409 igual — el cliente hace stop sin purgar.
+    const r1 = await pushDeltas(jwtB, [txDelta(SID0, "frozen-leak", HLC0)]);
+    expect(r1.status).toBe(409);
+  });
+
+  it("20. la cuenta congelada NO bloquea pull ni merkle (la reversa §h DEPENDE del pull)", async () => {
+    // Sigue congelada (estado del test 19). El enforcement es PUSH-only: el re-drain de la reversa
+    // (backend→local) y el sweep de zombies leen vía pull/merkle con el freeze YA estampado.
+    expect(await getSync(jwtB, "/sync/pull?since=0&limit=1")).toBe(200);
+    expect(await getSync(jwtB, "/sync/merkle")).toBe(200);
+  });
+
+  it("21. DES-congelada → el MISMO batch entra 200 (noop el leak, applied el bloqueado — sin falso positivo residual)", async () => {
+    expect(await patchProfile(jwtB, { reverse_frozen_at: null })).toBeLessThan(300);
+    const r = await pushDeltas(jwtB, [txDelta(SID0, "frozen-leak", HLC0), txDelta(SID1, "frozen-blocked", HLC1)]);
+    expect(r.status).toBe(200);
+    const body = r.body as { results: Array<{ status: string }> };
+    expect(body.results.map((x) => x.status)).toEqual(["noop", "applied"]); // SID0 ya aterrizó en el leak
+    expect(await rowExists(jwtB, SID1)).toBe(true);
+  });
+});

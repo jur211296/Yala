@@ -5,7 +5,8 @@
 //  Sender del outbox al Worker (POST /sync/push) — incremento I8e. Cubre (sin red, URLSession stub):
 //    - buildDelta: entity_type = TABLA (no clase), fields VERBATIM del canon c1, tombstone sin fields,
 //      hlc de fila (nunca regenerado), client_mutation_id.
-//    - Clasificación de PushOutcome: 200→completed, 401→sessionExpired, 403→accountUnavailable, 500→transient.
+//    - Clasificación de PushOutcome: 200→completed, 401→sessionExpired, 403→accountUnavailable,
+//      409 yala_account_reverting (freeze §h.1)→accountUnavailable, 409 ajeno→transient, 500→transient.
 //    - applyResults: applied/noop → confirmUploaded purga la fila; rejected → dead-letter (rejectedReason)
 //      + la fila NO se purga.
 //
@@ -213,6 +214,28 @@ struct SyncPushClientTests {
         let client = stubClient(StubHTTPSession(status: 403, body: Data()))
         let outcome = await client.push([row])
         #expect(outcome == .accountUnavailable)
+    }
+
+    @Test func push_409_reverting_returnsAccountUnavailable() async throws {
+        // Freeze de la reversa (§h.1): 409 con type `yala_account_reverting` → STOP (mismo trato que
+        // 403); los deltas NO se purgan ni dead-letterean.
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let row = makeUpsertRow(fieldsJSON: "{}", fieldHlcsJSON: "{}", hlc: "h", context: context)
+        let body = Data(#"{"error":{"message":"reversa","type":"yala_account_reverting","param":null,"code":"yala_account_reverting"}}"#.utf8)
+        let client = stubClient(StubHTTPSession(status: 409, body: body))
+        let outcome = await client.push([row])
+        #expect(outcome == .accountUnavailable)
+    }
+
+    @Test func push_409_unknownBody_returnsTransient() async throws {
+        // Un 409 AJENO (sin el envelope del gateway, o con otro type) conserva el trato previo: transient.
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let row = makeUpsertRow(fieldsJSON: "{}", fieldHlcsJSON: "{}", hlc: "h", context: context)
+        let client = stubClient(StubHTTPSession(status: 409, body: Data("conflict".utf8)))
+        let outcome = await client.push([row])
+        #expect(outcome == .transient)
     }
 
     @Test func push_500_returnsTransient() async throws {
