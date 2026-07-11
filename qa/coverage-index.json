@@ -104,9 +104,9 @@
         "F-WCS-07"
       ],
       "classification": "manual",
-      "coverage": "unit:YalaTests/SiriPendingStoreTests,YalaTests/SiriIntentContextCacheTests,YalaTests/SiriDraftServiceTests + manual",
+      "coverage": "unit:YalaTests/SiriPendingStoreTests,YalaTests/SiriIntentContextCacheTests,YalaTests/SiriDraftServiceTests + manual (TestFlight 2.0.5 b2 2026-07-11: e2e device force-quit/warm/multi-TX — notificación inmediata + draft al abrir; Console SIGNAL SET siriNatural + SAVE/SAVED SiriDraftService, sin 134410)",
       "owner": "",
-      "lastVerified": "2026-07-05"
+      "lastVerified": "2026-07-11"
     },
     {
       "area": "apple-pay-automation",
@@ -123,9 +123,9 @@
         "F-WCS-03"
       ],
       "classification": "manual",
-      "coverage": "unit:YalaTests/ApplePayAmountParserTests,YalaTests/ApplePayPendingStoreTests + manual + unit:YalaTests/ApplePayDraftServiceTests (processPending: divisa/cuenta, drop cero, MerchantMemory, consume-after-save, idempotencia — App Group e quiescencia inyectables)",
+      "coverage": "unit:YalaTests/ApplePayAmountParserTests,YalaTests/ApplePayPendingStoreTests + manual + unit:YalaTests/ApplePayDraftServiceTests (processPending: divisa/cuenta, drop cero, MerchantMemory, consume-after-save, idempotencia — App Group e quiescencia inyectables) (TestFlight 2.0.5 b2 2026-07-11: patrón de cola verificado en device por el owner — warm/cold/acumulados, gasto se crea al abrir, sin pérdida ni duplicado)",
       "owner": "",
-      "lastVerified": "2026-07-04"
+      "lastVerified": "2026-07-11"
     },
     {
       "area": "average-line-bar-charts",
@@ -1206,9 +1206,9 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/TransactionClassificationLogicTests + TrendDataProcessorTests (reembolso/KPI==curva/invariante/yDomain negativo) + ReportNotificationServiceTests (accumulateReportTotals/empty-check por actividad) + CashFlowCalculatorTests (reembolso) + TrendProcessingTests (yDomain incluye curva .expense negativa) + xcuitest:YalaUITests/IncomeExpenseClassificationUITests (discriminante e2e: seed -uitest-seed-desync con income-cat monto negativo + expense-cat monto positivo → cifras de Insights clasifican por CATEGORÍA [500/300], no por signo [800/600]). manual: Fase 1 device OK (header Records/RecordsStandalone == CashFlow). Fase 2 (p20-14) device visual de curvas de Tendencias + hero==KPI-chart en periodo con reembolso PENDIENTE.",
+      "coverage": "unit:YalaTests/TransactionClassificationLogicTests + TrendDataProcessorTests (reembolso/KPI==curva/invariante/yDomain negativo) + ReportNotificationServiceTests (accumulateReportTotals/empty-check por actividad) + CashFlowCalculatorTests (reembolso) + TrendProcessingTests (yDomain incluye curva .expense negativa) + xcuitest:YalaUITests/IncomeExpenseClassificationUITests (discriminante e2e: seed -uitest-seed-desync con income-cat monto negativo + expense-cat monto positivo → cifras de Insights clasifican por CATEGORÍA [500/300], no por signo [800/600]). manual: Fase 1 device OK (header Records/RecordsStandalone == CashFlow). Fase 2 (p20-14) device OK (TestFlight 2.0.5 b2 2026-07-11): curva de gasto NEGATIVA con reembolso real vía import CSV — buckets bajo 0, ejes/yDomain, hero==KPI, coherencia Tendencias/Estadísticas/Registros, empty-check por actividad.",
       "owner": "",
-      "lastVerified": "2026-07-07"
+      "lastVerified": "2026-07-11"
     },
     {
       "area": "merchant-memory",
