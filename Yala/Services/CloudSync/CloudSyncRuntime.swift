@@ -172,6 +172,14 @@ final class CloudSyncRuntime {
         self.prefsOutbox = prefsOutbox
     }
 
+    // MARK: - Emisión de IdentityRemap (DIFERIDOS #29, §b.4)
+
+    /// El motor de captura, expuesto SOLO para que `CategoryDeduplicationService.repairCollapsedIdentityUUIDs`
+    /// (App layer, static) emita el IdentityRemap en la MISMA transacción de su save (§b.4 crítica #6) reusando
+    /// el reloj HLC + el espejo App Group ya montados por el runtime. NO se expone para otros usos: el ciclo de
+    /// vida del motor lo gobierna el runtime. Alcanzable solo vía `shared` (⇒ runtime vivo, gate estructural).
+    var identityRemapEmitter: CloudSyncEngine { engine }
+
     // MARK: - Gate puro de arranque (AccountClaimDecision, §f.1)
 
     /// Solo las acciones proceed-like arrancan el sync (el flujo de claim UI completo es I7c/I14):

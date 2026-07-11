@@ -282,6 +282,73 @@ enum SyncIdentityService {
         }
     }
 
+    // MARK: - Re-key del testigo (DIFERIDOS #29, §b.4/§b.5)
+
+    /// Re-vincula la fila testigo `SyncIdentity` de una identidad regenerada (`oldID → newID`), PRESERVANDO
+    /// las coordenadas CloudKit (`ckRecordName`/`ckZoneName`/`ckOwnerName`) — crítico §b.5: el CKRecord
+    /// congelado es EL MISMO (el `recordName` ≠ el UUID de dominio), la fila solo cambia su sync_id local; en
+    /// la reversa, un tombstone(oldID) del backend ya no resuelve testigo → skip correcto (borrar el CK record
+    /// sería el FATAL). Estampa `lastReboundAt` (señal de la reversa, §b.5) y re-ancla `localAnchor` a
+    /// `stableID(newID)`.
+    ///
+    /// Semántica de N testigos para un mismo `oldID` (grupo colisionado X→A, X→B, …): el PRIMER par re-keyea el
+    /// testigo X→A; los SIGUIENTES NO encuentran ya el testigo por `oldID` → CREAN uno nuevo para su `newID`
+    /// (con `lastReboundAt` estampado) — jamás dos testigos al mismo sync_id.
+    ///
+    /// Colisión defensiva (regla `00439727`, astronómica con UUID() fresco): si ya existe un testigo con
+    /// `syncID == newID`, NO se crea un segundo → breadcrumb + retorna `false`. MENOR 4 del review: el llamador
+    /// real (`repairCollapsedIdentityUUIDs`) acuña los newID EVITANDO todo id vivo y todo testigo existente
+    /// (`freshIdentityID()`), así que este path es INALCANZABLE desde el repair — queda como RED con breadcrumb,
+    /// y por eso su retorno puede descartarse allí sin pérdida de información.
+    ///
+    /// Fetch CONCRETO por tipo dentro de un `#Predicate<SyncIdentity>` (SyncIdentity es un tipo CONCRETO —
+    /// nunca un requisito de protocolo → seguro). SIN save: el llamador comitea en su transacción (§b.4).
+    @discardableResult
+    static func rekeyIdentity(
+        entityType: String,
+        oldID: UUID,
+        newID: UUID,
+        in context: ModelContext,
+        now: Date = .now
+    ) -> Bool {
+        do {
+            // Colisión defensiva: ¿ya hay testigo para el newID? (UUID() fresco → astronómico.)
+            let newRows = try context.fetch(FetchDescriptor<SyncIdentity>(
+                predicate: #Predicate<SyncIdentity> { $0.syncID == newID }
+            ))
+            guard newRows.isEmpty else {
+                CloudSyncBreadcrumb.identityCollisionHealed(count: 1)
+                #if DEBUG
+                print("SyncIdentityService.rekeyIdentity: testigo YA existe para newID \(newID) (\(entityType)) — el llamador debe regenerar")
+                #endif
+                return false
+            }
+
+            let oldRows = try context.fetch(FetchDescriptor<SyncIdentity>(
+                predicate: #Predicate<SyncIdentity> { $0.syncID == oldID && $0.entityType == entityType }
+            ))
+            if let witness = oldRows.first {
+                // Re-key PRESERVANDO ck* (el CKRecord es EL MISMO).
+                witness.syncID = newID
+                witness.localAnchor = SyncContentAnchor.stableID(newID)
+                witness.lastReboundAt = now
+            } else {
+                // Sin testigo previo (flag de captura apagado en eras previas, o par N>1 del grupo colisionado):
+                // crear uno nuevo con `lastReboundAt` estampado (señal de rebind para la reversa).
+                context.insert(SyncIdentity(
+                    syncID: newID, entityType: entityType,
+                    localAnchor: SyncContentAnchor.stableID(newID), createdAt: now, lastReboundAt: now
+                ))
+            }
+            return true
+        } catch {
+            #if DEBUG
+            print("SyncIdentityService.rekeyIdentity error (\(entityType) \(oldID)→\(newID)): \(error)")
+            #endif
+            return false
+        }
+    }
+
     // MARK: - Anclas por tipo (extracción de valores + delegación a la capa pura)
 
     private static func anchor(for model: TransactionItem) -> String {

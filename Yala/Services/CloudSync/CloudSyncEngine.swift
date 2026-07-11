@@ -67,12 +67,38 @@ enum CloudSyncBreadcrumb {
     }
 
     /// D4 (I12): un UPDATE de History mutó el keypath de IDENTIDAD de una entidad cuya identidad de sync
-    /// es su UUID persistido (p.ej. `Tag.id`/`Account.shortcutID` regenerado por
-    /// `repairCollapsedIdentityUUIDs`) → el drain emitiría un upsert con sync_id NUEVO (fila nueva
-    /// server-side) dejando la vieja huérfana sin tombstone. IdentityRemap (§b.4, DIFERIDOS #29) lo
-    /// resuelve; aquí solo se DELATA en runtime (no bloquea). Sin PII (solo el tipo de entidad).
+    /// es su UUID persistido (p.ej. `Tag.id`/`Account.shortcutID` regenerado). El drain, ante ese UPDATE
+    /// identity-only, SIGUE haciendo SKIP (el sync_id es la PK, no una columna del mapa → `changedColumns`
+    /// vacío) — POR DISEÑO: el remap NO se emite desde el drain, sino desde `emitIdentityRemap` en la MISMA
+    /// transacción del reparador (`repairCollapsedIdentityUUIDs`), que además tombstonea el sync_id viejo y
+    /// re-emite las filas referenciantes. DIFERIDOS #29 (§b.4) cerró el gap; este canario pasó de "delator del
+    /// gap" a RED DE SEGURIDAD: si suena SIN el par `identityRemapEmitted` en la misma ventana, hay un sitio
+    /// de mutación de identidad NO cableado al remap (bug). Sin PII (solo el tipo de entidad).
     static func identityMutationObserved(entity: String) {
         logger.notice("CloudSyncIdentityMutation entity=\(entity, privacy: .public)")
+    }
+
+    /// DIFERIDOS #29 (§b.4): `emitIdentityRemap` encoló el trío {tombstone(oldID), upsert-FULL(newID),
+    /// re-emisión de referenciantes} para `count` re-keys de una entidad. Co-ocurre con `identityMutationObserved`
+    /// (el mismo save que regenera el id) → juntos = remap SANO; `identityMutationObserved` a solas = sitio de
+    /// mutación no cableado. Sin PII (solo el tipo de entidad y el conteo).
+    static func identityRemapEmitted(entity: String, count: Int) {
+        logger.notice("CloudSyncIdentityRemap emitted entity=\(entity, privacy: .public) count=\(count, privacy: .public)")
+    }
+
+    /// DIFERIDOS #29 (§5): en `storageMode == .cloud` el one-shot `migrateShortcutIDsAndRebuildCSVMirrors`
+    /// SALTÓ la regeneración masiva de UUIDs de identidad (`tags` presentes) — el applier asigna ids explícitos
+    /// del backend; el backstop repetible es `repairCollapsedIdentityUUIDs` (con emisión de remap). Sin PII.
+    static func identityRemapRegenSkippedInCloud(tags: Int) {
+        logger.notice("CloudSyncIdentityRemap regenSkippedInCloud tags=\(tags, privacy: .public) — one-shot regen saltado en .cloud (backstop repairCollapsedIdentityUUIDs)")
+    }
+
+    /// DIFERIDOS #29 (SERIO 1 del review) — RUIDOSO (error-level): el remap NO pudo emitirse (motor caído,
+    /// ClockDrift, migración/reversa en curso, etc.) → el reparador hizo ROLLBACK de la regeneración entera y
+    /// difirió al próximo run del dedup. Comitear la regeneración SIN su outbox sería divergencia PERPETUA (el
+    /// drain SKIPea updates identity-only — la premisa de #29), por eso se aborta. `reason` sin PII.
+    static func identityRemapAborted(reason: String) {
+        logger.error("CloudSyncIdentityRemap aborted reason=\(reason, privacy: .public) — rollback de la regeneración; se difiere al próximo run del dedup")
     }
 
     /// RED (I8c): el emisor produjo un grupo de coherencia incompleto tras la expansión. No debe ocurrir.
@@ -209,6 +235,13 @@ enum CloudSyncBreadcrumb {
     /// en algún lado, o empate exacto). Rama conservadora — nunca se adivina con un monto.
     static func reconcilerNoSignal(pairID: String) {
         logger.notice("CloudSyncReconciler noSignal id=\(pairID, privacy: .public)")
+    }
+
+    /// El pase de entidades de SISTEMA (política v1) colapsó `count` filas PERDEDORAS de una identidad lógica
+    /// duplicada cross-device a su ganador determinista-global (`account` = cuentas `Grupos [moneda]`;
+    /// `balanceAdjustment` = subcategoría de ajuste de saldo). Sin PII (kind + conteo).
+    static func systemEntityMerged(kind: String, count: Int) {
+        logger.notice("CloudSyncReconciler systemEntityMerged kind=\(kind, privacy: .public) count=\(count, privacy: .public)")
     }
 
     // MARK: Merkle (I8f-3) — sin PII (tablas, counts, motivos; nunca hashes de datos de usuario)
@@ -555,12 +588,13 @@ enum CloudSyncBreadcrumb {
         logger.error("CloudSyncReverse abortRejectedButCompleted reason=\(reason, privacy: .public) — efecto completado igual; el backend puede quedar rip=true")
     }
 
-    /// §h residual DIFERIDO (canario v1 SIN reparación): metadata CloudKit huérfana (record cuyo delete se
-    /// perdió del History por purga + token que no expiró) → zombie invisible localmente. HOY inalcanzable
-    /// (la purga jamás corrió en `.cloud`, flags DARK). El SCAN de side-table está DIFERIDO (exige queries
-    /// nuevos por tabla — ver gate de encendido de flags). Sin PII (solo el conteo).
+    /// §h residual (canario v1 SIN reparación): metadata CloudKit huérfana (record cuyo delete se perdió del
+    /// History por purga + token que no expiró) → zombie invisible localmente. HOY inalcanzable (la purga
+    /// jamás corrió en `.cloud`, flags DARK). El SCAN de side-table YA está cableado
+    /// (`CKIdentityCapture.scanOrphanMetadata`, read-only); la REPARACIÓN queda diferida al diseño
+    /// multi-device (¿re-subir tombstone? ¿delete CKRecord dirigido? — D4). Sin PII (solo el conteo).
     static func reverseOrphanMetadata(count: Int) {
-        logger.notice("CloudSyncReverse orphanMetadata count=\(count, privacy: .public) — canario sin reparación v1 (scan DIFERIDO)")
+        logger.notice("CloudSyncReverse orphanMetadata count=\(count, privacy: .public) — canario sin reparación v1 (scan cableado)")
     }
 
     // MARK: Heartbeat del lease (I14-pre, residual pendiente #3) — best-effort, sin PII
@@ -725,6 +759,11 @@ final class CloudSyncEngine {
     /// Cuando `true`, `applyPage` LANZA al final del `saveWithAuthor` (tras las mutaciones, antes del
     /// commit) → simula un crash: nada se persiste, el cursor NO avanza (D-5, atomicidad). SOLO tests.
     var _testThrowOnApplySave = false
+
+    /// DIFERIDOS #29 (SERIO 3): override de la fase de migración que consulta el guard de `emitIdentityRemap`
+    /// (default `nil` → `MigrationPhaseStore.shared.currentPhase`, el SSOT real). SOLO para tests (simular una
+    /// migración/reversa EN CURSO sin journal real).
+    var _testMigrationPhaseOverride: MigrationPhase?
 
     // MARK: Init
 
@@ -1068,8 +1107,11 @@ final class CloudSyncEngine {
             guard let typed = update as? DefaultHistoryUpdate<T> else { return }
             guard let model = lookup[typed.changedPersistentIdentifier] else { return }
             guard let syncID = liveSyncID(model) else { return }
-            // Canario D4: el UPDATE mutó el keypath de IDENTIDAD (solo entidades con identidad = UUID
-            // persistido) → delatar la regeneración (fila nueva server-side + huérfana; §b.4/DIFERIDOS #29).
+            // Canario D4 (RED DE SEGURIDAD tras DIFERIDOS #29): el UPDATE mutó el keypath de IDENTIDAD (solo
+            // entidades con identidad = UUID persistido). El drain lo SKIPea abajo por diseño (el remap lo emite
+            // `emitIdentityRemap` en la transacción del reparador). Este canario delata AHORA una mutación de
+            // identidad desde un sitio NO cableado al remap: sin el par `identityRemapEmitted` en la misma
+            // ventana → bug (fila nueva server-side + huérfana; §b.4).
             if let identityKeyPath, typed.updatedAttributes.contains(identityKeyPath) {
                 identityMutationObservedCount += 1
                 CloudSyncBreadcrumb.identityMutationObserved(entity: entityType)
@@ -1719,6 +1761,282 @@ final class CloudSyncEngine {
             return
         }
         for p in poison { TelemetryService.cloudSyncMutationRejected(reason: p.reason) }
+    }
+}
+
+// MARK: - IdentityRemap (DIFERIDOS #29, §b.4)
+
+/// Descriptor de UN re-key de identidad: la entidad, su sync_id VIEJO y el NUEVO. UUID-only (el emisor
+/// resuelve el modelo VIVO desde el contexto por `newID`). `entityType` = `SyncEntityType.tag/account/subcategory`
+/// (las 3 identidades regenerables hoy — `Tag.id`/`Account.shortcutID`/`Subcategory.shortcutID`, vía
+/// `CategoryDeduplicationService.repairCollapsedIdentityUUIDs`). Si un futuro sitio regenerara otra identidad
+/// cableada (Budget/ScheduledPayment/CashFlow*/NotificationItem/GroupBridgePreference), DEBE pasar por
+/// `emitIdentityRemap` (añadir su rama de dispatch) — el canario D4 queda como red hasta entonces.
+struct IdentityRemapPair {
+    let entityType: String
+    let oldID: UUID
+    let newID: UUID
+}
+
+/// Errores del emisor de IdentityRemap. Nombrados (nunca silenciados): el reparador los convierte en
+/// ROLLBACK + breadcrumb `identityRemapAborted` + defer (SERIO 1 del review).
+nonisolated enum IdentityRemapError: Error, Equatable {
+    /// SERIO 3 (R4 del plan): una migración/reversa §g/§h está EN CURSO (fase transitoria journaleada) —
+    /// el journal/lease posee el outbox en esa ventana; inyectar filas de remap corrompería el snapshot/verify.
+    /// El reparador difiere al próximo run del dedup (fase estable).
+    case migrationInProgress
+}
+
+/// Resultado de `emitIdentityRemap`: el conteo + las filas pendientes de ESPEJO (opacas al llamador — el
+/// contenido es `fileprivate`). SERIO 2 del review: el espejo App Group NO se escribe en la emisión sino
+/// POST-save del llamador (`mirrorRemapRows`) — espejar antes del save envenenaba el App Group si el save
+/// fallaba (dominio revertido pero entries vivas → `rehydrateOutboxFromMirror` re-insertaría y pushearía un
+/// tombstone de un id VIVO + un upsert huérfano).
+struct IdentityRemapEmission {
+    /// nº de filas de outbox encoladas (0 = gate cerrado o nada que emitir).
+    let rowCount: Int
+    fileprivate let rows: [PendingOutboxRow]
+
+    fileprivate init(rowCount: Int, rows: [PendingOutboxRow]) {
+        self.rowCount = rowCount
+        self.rows = rows
+    }
+
+    /// Emisión vacía (gate cerrado / sin pares).
+    static var empty: IdentityRemapEmission { IdentityRemapEmission(rowCount: 0, rows: []) }
+}
+
+extension CloudSyncEngine {
+
+    /// SERIO 3 (R4 del plan): `true` si hay una migración/reversa §g/§h EN CURSO (fase TRANSITORIA journaleada)
+    /// → el remap NO debe emitirse (el journal/lease posee el outbox en esa ventana). Predicado CANÓNICO
+    /// reusado, NO inventado: la clasificación estable/transitoria EXHAUSTIVA de `BGTaskMigrationGate.decide`
+    /// (rol `.reader`, quiescencia irrelevante — las fases estables devuelven `.run` incondicional) sobre la
+    /// fase SSOT (`MigrationPhaseStore.shared.currentPhase`, el mismo journal que consultan los BGTasks §i.9).
+    /// El reparador lo PRE-consulta antes de mutar dominio (así el defer no necesita rollback); `emitIdentityRemap`
+    /// lo re-verifica como defensa en profundidad.
+    var isIdentityRemapBlockedByMigration: Bool {
+        let phase = _testMigrationPhaseOverride ?? MigrationPhaseStore.shared.currentPhase
+        return BGTaskMigrationGate.decide(phase: phase, isImportQuiescent: false, role: .reader) != .run
+    }
+
+    /// Emite el trío de identidad de §b.4 para cada `pair` regenerado, ENCOLÁNDOLO en `context` **SIN save** (el
+    /// llamador — `repairCollapsedIdentityUUIDs` — comitea dominio + outbox en UNA transacción de History, §b.4
+    /// crítica #6):
+    ///   a) `tombstone(oldID)` con reason `.remap` — **DEDUP por `oldID`**: un grupo colisionado (X→A, X→B, …)
+    ///      emite UN solo `tombstone(X)`;
+    ///   b) `upsert` FILA-COMPLETA (proyección INSERT = `emission.columns`) de la fila con `newID`;
+    ///   c) `upsert` FILA-COMPLETA de cada fila REFERENCIANTE — sus `*_ref`/`tag_refs` se derivan de la relación
+    ///      VIVA en la emisión → sin re-emitirlas divergen para SIEMPRE (misma clase que el bug FX del device run
+    ///      2026-07-11: la proyección cambia sin write → History no captura → jamás push). Enumeradas por TRAVESÍA
+    ///      de relaciones INVERSAS del modelo remapeado (dispatch CONCRETO por tipo, jamás `#Predicate` genérico).
+    ///      Cobertura por el manifest: `account_ref` en tx_items/scheduled/inbox/favorites; `subcategory_ref` en
+    ///      esos 4 + merchant_memory + cashflow_lines; `tag_refs` en tx_items/scheduled/inbox/favorites/budgets
+    ///      (los CSV de Budget account_ids/subcategory_ids y los tagIDs los rehace el reparador → drain posterior).
+    ///
+    /// + HLCs acuñados vía la MISMA `clock.send` (lockstep §d.5) + persistencia del reloj (`clockLatestHLC`) EN
+    ///   el contexto (lo comitea el save del llamador). La limpieza de los `SyncUnitClock` del `oldID` la hace
+    ///   `updateUnitClock` al insertar el tombstone (higiene; espeja el applier de un tombstone remoto).
+    ///
+    /// ESPEJO App Group **DIFERIDO** (SERIO 2 del review): esta función NO espeja — devuelve las filas en el
+    /// `IdentityRemapEmission` y el llamador invoca `mirrorRemapRows(_:)` DESPUÉS de su `try context.save()`
+    /// exitoso. Espejar antes del save envenenaba el App Group si el save fallaba (ver doc de la struct).
+    ///
+    /// El drain POSTERIOR verá el UPDATE identity-only → SKIP (D4) + re-emitirá los patches CSV del reparador
+    /// (redundante con (c), inofensivo: HLC distinto ⇒ el dedup `(syncID,hlc,op)` no los colisiona, backend LWW converge).
+    ///
+    /// GATES: (1) `storageMode == .cloud` (el motor solo sincroniza el store personal en `.cloud`; en `.icloud`
+    /// está DARK) → gate cerrado = no-op que devuelve `.empty`. (2) SERIO 3 (R4): fase de migración/reversa
+    /// TRANSITORIA journaleada → `throw IdentityRemapError.migrationInProgress` (el outbox pertenece al runner en
+    /// esa ventana). `now` inyectable para HLCs deterministas en tests.
+    ///
+    /// - Returns: la emisión (conteo + filas pendientes de espejo). `throws`: `IdentityRemapError`, errores del
+    ///   fetch o `ClockDriftError` — el reparador los convierte TODOS en rollback + defer (SERIO 1).
+    @discardableResult
+    func emitIdentityRemap(pairs: [IdentityRemapPair], in context: ModelContext, now: Date = .now) throws -> IdentityRemapEmission {
+        guard CloudSyncFlags.storageMode == .cloud else { return .empty }
+        guard !pairs.isEmpty else { return .empty }
+
+        // SERIO 3 (R4): JAMÁS inyectar filas al outbox con una migración/reversa §g/§h EN CURSO — el
+        // journal/lease posee el outbox en esa ventana (el snapshot/verify enumeran filas vivas; un remap
+        // concurrente les cambiaría el corpus debajo). El reparador PRE-consulta el mismo predicado
+        // (`isIdentityRemapBlockedByMigration`) ANTES de mutar dominio; este guard es la defensa en
+        // profundidad para cualquier llamador futuro.
+        guard !isIdentityRemapBlockedByMigration else {
+            throw IdentityRemapError.migrationInProgress
+        }
+
+        // Cursor SIN save: `loadOrCreateCursor` SALVA (bajo `outboxSaveAuthor`) al crear uno fresco — eso
+        // comitearía las mutaciones de dominio PENDIENTES del reparador bajo el autor del motor → el drain las
+        // descartaría por echo-suppression (los patches CSV JAMÁS se capturarían). Aquí solo fetch/insert EN
+        // MEMORIA; el `save()` del llamador (autor DEFAULT, §b.4) comitea cursor + dominio + outbox juntos.
+        // En prod el cursor ya existe (el drain de arranque lo creó); este insert es la red del edge sin-drain.
+        var cursorDescriptor = FetchDescriptor<SyncCursor>()
+        cursorDescriptor.fetchLimit = 1
+        let cursor: SyncCursor
+        if let existing = try context.fetch(cursorDescriptor).first {
+            cursor = existing
+        } else {
+            let fresh = SyncCursor()
+            context.insert(fresh)
+            cursor = fresh
+        }
+        loadClock(from: cursor)
+        var seen = try existingOutboxKeys(context)
+        var rows: [PendingOutboxRow] = []
+        var tombstonedOldIDs: Set<UUID> = []
+        var emittedUpsertSyncIDs: Set<UUID> = []
+        var perEntityCount: [String: Int] = [:]
+
+        // Fetch-all + match EN MEMORIA por `newID` (NUNCA un `#Predicate` sobre el id NUEVO: la reasignación del
+        // reparador está sin-save en memoria → un predicado SQL la fallaría; además es la regla inviolable de
+        // `#Predicate`). Solo los tipos presentes en `pairs` (fetch concreto por tipo).
+        let needTag = pairs.contains { $0.entityType == SyncEntityType.tag }
+        let needAccount = pairs.contains { $0.entityType == SyncEntityType.account }
+        let needSub = pairs.contains { $0.entityType == SyncEntityType.subcategory }
+        let tags = needTag ? try context.fetch(FetchDescriptor<Tag>()) : []
+        let accounts = needAccount ? try context.fetch(FetchDescriptor<Account>()) : []
+        let subcategories = needSub ? try context.fetch(FetchDescriptor<Subcategory>()) : []
+
+        for pair in pairs {
+            switch pair.entityType {
+            case SyncEntityType.tag:
+                guard let tag = tags.first(where: { $0.id == pair.newID }) else { continue }
+                try appendRemapTombstoneIfNeeded(oldID: pair.oldID, entityType: SyncEntityType.tag, now: now,
+                                                 tombstoned: &tombstonedOldIDs, seen: &seen, rows: &rows)
+                try appendRemapFullUpsert(model: tag, emission: EntityEmissionMap.tag, syncID: pair.newID,
+                                          entityType: SyncEntityType.tag, now: now,
+                                          emitted: &emittedUpsertSyncIDs, seen: &seen, rows: &rows)
+                try appendReferencing(tag.transactions, SyncEntityType.transactionItem, EntityEmissionMap.transactionItem, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(tag.scheduledPayments, SyncEntityType.scheduledPayment, EntityEmissionMap.scheduledPayment, { $0.id }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(tag.inboxDrafts, SyncEntityType.inboxDraft, EntityEmissionMap.inboxDraft, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(tag.favoritePayments, SyncEntityType.favoritePayment, EntityEmissionMap.favoritePayment, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(tag.budgets, SyncEntityType.budget, EntityEmissionMap.budget, { $0.id }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                perEntityCount[SyncEntityType.tag, default: 0] += 1
+
+            case SyncEntityType.account:
+                guard let account = accounts.first(where: { $0.shortcutID == pair.newID }) else { continue }
+                try appendRemapTombstoneIfNeeded(oldID: pair.oldID, entityType: SyncEntityType.account, now: now,
+                                                 tombstoned: &tombstonedOldIDs, seen: &seen, rows: &rows)
+                try appendRemapFullUpsert(model: account, emission: EntityEmissionMap.account, syncID: pair.newID,
+                                          entityType: SyncEntityType.account, now: now,
+                                          emitted: &emittedUpsertSyncIDs, seen: &seen, rows: &rows)
+                try appendReferencing(account.transactions, SyncEntityType.transactionItem, EntityEmissionMap.transactionItem, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(account.scheduledPayments, SyncEntityType.scheduledPayment, EntityEmissionMap.scheduledPayment, { $0.id }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(account.inboxDrafts, SyncEntityType.inboxDraft, EntityEmissionMap.inboxDraft, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(account.favoritePayments, SyncEntityType.favoritePayment, EntityEmissionMap.favoritePayment, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                perEntityCount[SyncEntityType.account, default: 0] += 1
+
+            case SyncEntityType.subcategory:
+                guard let sub = subcategories.first(where: { $0.shortcutID == pair.newID }) else { continue }
+                try appendRemapTombstoneIfNeeded(oldID: pair.oldID, entityType: SyncEntityType.subcategory, now: now,
+                                                 tombstoned: &tombstonedOldIDs, seen: &seen, rows: &rows)
+                try appendRemapFullUpsert(model: sub, emission: EntityEmissionMap.subcategory, syncID: pair.newID,
+                                          entityType: SyncEntityType.subcategory, now: now,
+                                          emitted: &emittedUpsertSyncIDs, seen: &seen, rows: &rows)
+                try appendReferencing(sub.transactions, SyncEntityType.transactionItem, EntityEmissionMap.transactionItem, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(sub.scheduledPayments, SyncEntityType.scheduledPayment, EntityEmissionMap.scheduledPayment, { $0.id }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(sub.inboxDrafts, SyncEntityType.inboxDraft, EntityEmissionMap.inboxDraft, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(sub.favoritePayments, SyncEntityType.favoritePayment, EntityEmissionMap.favoritePayment, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(sub.merchantMemories, SyncEntityType.merchantMemory, EntityEmissionMap.merchantMemory, { $0.syncID }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                try appendReferencing(sub.cashFlowLines, SyncEntityType.cashFlowLine, EntityEmissionMap.cashFlowLine, { $0.id }, now, &emittedUpsertSyncIDs, &seen, &rows)
+                perEntityCount[SyncEntityType.subcategory, default: 0] += 1
+
+            default:
+                // entityType desconocido (no regenerable hoy) → no se emite (defensivo).
+                continue
+            }
+        }
+
+        guard !rows.isEmpty else { return .empty }
+
+        // Insertar + `SyncUnitClock`, SIN save (el llamador comitea en la MISMA transacción) y SIN espejo
+        // (SERIO 2: diferido a `mirrorRemapRows` post-save). El tombstone borra el `SyncUnitClock` del `oldID`
+        // vía `updateUnitClock` (higiene — espeja el applier de un tombstone remoto).
+        for row in rows {
+            context.insert(row.makeModel())
+            updateUnitClock(for: row, context: context)
+        }
+        cursor.clockLatestHLC = clock.latest?.description
+
+        for (entity, count) in perEntityCount {
+            CloudSyncBreadcrumb.identityRemapEmitted(entity: entity, count: count)
+        }
+        return IdentityRemapEmission(rowCount: rows.count, rows: rows)
+    }
+
+    /// SERIO 2: escribe el espejo App Group de las filas de un remap — invocado por el reparador DESPUÉS de su
+    /// `try context.save()` exitoso (jamás antes: envenenaría el espejo si el save fallara). Best-effort, patrón
+    /// `writeMirror` del drain (un fallo se loguea y no aborta; no-op sin `outboxMirror`+`currentUserID`).
+    /// RESIDUAL ACEPTADO (inverso del envenenamiento, estrictamente mejor): un kill entre el save y este espejo
+    /// deja filas de outbox durables SIN entry en el espejo — solo importa si el store sync-meta se RECREA
+    /// (lightweight migration) antes del push (ventana epsilon²); el canario `cloudSyncOutboxMirrorDivergence`
+    /// lo delataría.
+    func mirrorRemapRows(_ emission: IdentityRemapEmission) {
+        writeMirror(rows: emission.rows)
+    }
+
+    /// Encola el `tombstone(oldID)` reason `.remap`, DEDUP por `oldID` (grupo colisionado ⇒ UN tombstone). Acuña
+    /// el HLC (advance del reloj) tras el dedup de `oldID` y ANTES del dedup `(syncID,hlc,op)` — espeja `appendRow`.
+    private func appendRemapTombstoneIfNeeded(
+        oldID: UUID, entityType: String, now: Date,
+        tombstoned: inout Set<UUID>, seen: inout Set<String>, rows: inout [PendingOutboxRow]
+    ) throws {
+        guard !tombstoned.contains(oldID) else { return }
+        tombstoned.insert(oldID)
+        let hlc = try clock.send(now: now).description
+        let key = dedupKey(syncID: oldID, hlc: hlc, op: .tombstone)
+        guard !seen.contains(key) else { return }
+        seen.insert(key)
+        rows.append(PendingOutboxRow(
+            syncID: oldID, entityType: entityType, op: .tombstone, hlc: hlc,
+            clientMutationID: UUID(), fieldsJSON: "{}", fieldHlcsJSON: nil,
+            author: "", tombstoneReason: SyncTombstoneReason.remap.rawValue, createdAt: now))
+    }
+
+    /// Encola un `upsert` FILA-COMPLETA (proyección INSERT = todas las columnas) de `model`. Dedup por `syncID`
+    /// (una fila referenciada por 2 remaps se re-emite UNA vez) ANTES del advance del reloj. Codec rechaza →
+    /// canario + fila descartada (clock ya avanzó → lockstep preservado, patrón `appendUpsert`).
+    private func appendRemapFullUpsert<M: AnyObject>(
+        model: M, emission: EntityEmission<M>, syncID: UUID, entityType: String, now: Date,
+        emitted: inout Set<UUID>, seen: inout Set<String>, rows: inout [PendingOutboxRow]
+    ) throws {
+        guard !emitted.contains(syncID) else { return }
+        emitted.insert(syncID)
+        let hlc = try clock.send(now: now).description
+        let key = dedupKey(syncID: syncID, hlc: hlc, op: .upsert)
+        guard !seen.contains(key) else { return }
+        seen.insert(key)
+        let result = DeltaEmitter.emit(model: model, emission: emission, changedColumns: emission.columns, hlc: hlc)
+        let fieldsJSON: String
+        do {
+            fieldsJSON = try Canonc1Codec.encode(result.fields, groupedColumns: Set(emission.groupByColumn.keys))
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine.emitIdentityRemap: codec c1 rechazó \(entityType): \(error)")
+            #endif
+            CloudSyncBreadcrumb.encodeRejected(entity: entityType, reason: "\(error)")
+            return
+        }
+        rows.append(PendingOutboxRow(
+            syncID: syncID, entityType: entityType, op: .upsert, hlc: hlc,
+            clientMutationID: UUID(), fieldsJSON: fieldsJSON, fieldHlcsJSON: encodeFieldHlcs(result.fieldHlcs),
+            author: "", tombstoneReason: nil, createdAt: now))
+    }
+
+    /// Re-emite (upsert FULL) cada fila referenciante de un modelo remapeado, saltando las que aún NO tienen
+    /// identidad de sync (nunca subidas → no divergen). Travesía por relación INVERSA (dispatch concreto por tipo).
+    private func appendReferencing<M: PersistentModel>(
+        _ models: [M]?, _ entityType: String, _ emission: EntityEmission<M>,
+        _ syncID: (M) -> UUID?, _ now: Date,
+        _ emitted: inout Set<UUID>, _ seen: inout Set<String>, _ rows: inout [PendingOutboxRow]
+    ) throws {
+        guard let models else { return }
+        for model in models {
+            guard let sid = syncID(model) else { continue }
+            try appendRemapFullUpsert(model: model, emission: emission, syncID: sid, entityType: entityType,
+                                      now: now, emitted: &emitted, seen: &seen, rows: &rows)
+        }
     }
 }
 

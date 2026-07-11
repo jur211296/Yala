@@ -51,6 +51,12 @@ nonisolated enum SyncTombstoneReason: String {
     /// Vaciado total de datos (I12: `DataWipeService` marcará un author dedicado; hasta entonces esos
     /// deletes caen en `user`/`cascade`).
     case wipe
+    /// Re-key de una identidad de sync (DIFERIDOS #29, §b.4): al regenerar un UUID de identidad cableado
+    /// como sync_id (`Tag.id`/`Account.shortcutID`/`Subcategory.shortcutID`), el emisor `emitIdentityRemap`
+    /// tombstonea el sync_id VIEJO y re-inserta la fila con el NUEVO. Es metadata de AUDITORÍA — NO viaja en
+    /// el wire (el delta de tombstone no lleva reason; el backend aplica `deleted=true` igual). Additive: raw
+    /// string nuevo, SIN bump de `schemaVersion` (las filas viejas no lo usan).
+    case remap
 }
 
 extension CloudSyncSchemaVersions {

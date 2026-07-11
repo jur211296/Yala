@@ -1220,13 +1220,30 @@ final class AppBootstrapper {
             // Regen sentinel: si ya corrió en un launch previo, NO re-regenerar
             // (preserva Tag.id cross-device estable aunque el backfill aún no converge).
             let regenAlreadyRan = UserDefaults.standard.bool(forKey: regenKey)
+            // DIFERIDOS #29 (§5): en `.cloud` SALTAR la regeneración masiva — la patología del default
+            // colapsado es CloudKit-specific; el applier del motor asigna ids explícitos del backend, y una
+            // reinstalación post-cutover (sentinels de UserDefaults perdidos) ejecutaría `regenerateAllUUIDs`
+            // sobre TODOS los tags pulleados → remap masivo injustificado. El backstop repetible
+            // `repairCollapsedIdentityUUIDs` (ahora CON emisión de remap) cubre colisiones residuales legítimas.
+            // Los sub-pasos de CSV backfill de abajo se CONSERVAN.
+            //
+            // INTENCIONAL (MENOR 6 del review): el skip QUEMA el `regenKey` igual (se marca tras el save de
+            // abajo) — incluso tras una REVERSA §h posterior (device de vuelta en `.icloud`) la regeneración
+            // masiva JAMÁS debe correr sobre ese corpus: los datos vienen del backend con ids explícitos
+            // por-fila (sin la patología del default colapsado), el backstop quirúrgico cubre cualquier
+            // colisión real, y un mass-regen post-reversa sería exactamente el path peligroso (remap masivo
+            // de identidades ya sincronizadas). Quemar el sentinel aquí es el comportamiento deseado.
+            let skipRegenInCloud = CloudSyncFlags.storageMode == .cloud
             let accountsRegen: Int
             let subsRegen: Int
             let tagsRegen: Int
-            if regenAlreadyRan {
+            if regenAlreadyRan || skipRegenInCloud {
                 accountsRegen = 0
                 subsRegen = 0
                 tagsRegen = 0
+                if skipRegenInCloud && !regenAlreadyRan && !tags.isEmpty {
+                    CloudSyncBreadcrumb.identityRemapRegenSkippedInCloud(tags: tags.count)
+                }
             } else {
                 accountsRegen = regenerateDuplicateUUIDs(accounts, keyPath: \.shortcutID)
                 subsRegen = regenerateDuplicateUUIDs(subcategories, keyPath: \.shortcutID)

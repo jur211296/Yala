@@ -273,9 +273,22 @@ enum CategoryDeduplicationService {
     /// quiescencia (ver `runDedupIfQuiescent`) para que la M2M esté hidratada: si una
     /// M2M forward viene `nil` se salta — nunca se nukea, para no perder tags.
     ///
+    /// - Parameters:
+    ///   - context: contexto sobre el que fetchear/regenerar/emitir (el `mainContext` compartido en prod).
+    ///   - now: inyectable para HLCs deterministas del IdentityRemap en tests (`.now` en prod).
+    ///   - remapEmitter: el motor que emite el IdentityRemap (§b.4). `nil` (default) ⇒ se resuelve del motor
+    ///     VIVO del runtime (`CloudSyncRuntime.shared`) DENTRO del cuerpo; inyectable en tests. En `.cloud` SIN
+    ///     motor resoluble (runtime no arrancado) el repair ABORTA con rollback (MENOR 5 del review — regenerar
+    ///     sin emitir el remap sería divergencia perpetua) y difiere al próximo run. (Default `nil` en vez de la
+    ///     resolución directa: un default-arg que lea `CloudSyncRuntime.shared` es contexto nonisolated → no
+    ///     compila bajo @MainActor.)
     /// - Returns: número de entidades cuyo UUID fue regenerado.
     @discardableResult
-    static func repairCollapsedIdentityUUIDs(in context: ModelContext) -> Int {
+    static func repairCollapsedIdentityUUIDs(
+        in context: ModelContext,
+        now: Date = .now,
+        remapEmitter: CloudSyncEngine? = nil
+    ) -> Int {
         do {
             let accounts = try context.fetch(FetchDescriptor<Account>())
             let subcategories = try context.fetch(FetchDescriptor<Subcategory>())
@@ -295,12 +308,64 @@ enum CategoryDeduplicationService {
             let oldSubIDs = Set(collidedSubs.map(\.shortcutID))
             let oldTagIDs = Set(collidedTags.map(\.id))
 
-            // MODO NUBE I8: al regenerar un UUID adoptado como syncID, emitir IdentityRemap
-            // {old,new,entityType} al outbox (§b.4) — NO implementado aún; el gate es
-            // CloudSyncFlags.identityCaptureEnabled.
-            for account in collidedAccounts { account.shortcutID = UUID() }
-            for sub in collidedSubs { sub.shortcutID = UUID() }
-            for tag in collidedTags { tag.id = UUID() }
+            // DIFERIDOS #29 (§b.4): al regenerar un UUID adoptado como sync_id, CAPTURAMOS los pares old→new
+            // para emitir el IdentityRemap (tombstone(old) + upsert-FULL(new) + re-emisión de referenciantes)
+            // en la MISMA transacción del save de abajo. En `.icloud` el motor está DARK ⇒ `emitIdentityRemap`
+            // es no-op (gate `storageMode == .cloud`); la regeneración + rebuild CSV siguen intactas.
+            //
+            // PREFLIGHT (SERIO 1 + SERIO 3 + MENOR 5 del review) — ANTES de mutar nada: regenerar SIN poder
+            // emitir el remap sería DIVERGENCIA PERPETUA (el drain SKIPea updates identity-only, la premisa de
+            // #29 — NO hay "retry que drene"). En `.cloud`, si falta el motor (runtime no arrancado — MENOR 5) o
+            // hay una migración/reversa §g/§h EN CURSO (fase transitoria journaleada — SERIO 3/R4: el
+            // journal/lease posee el outbox en esa ventana), se ABORTA aquí con breadcrumb error-level y el
+            // repair se DIFIERE al próximo run del dedup (cuando el runtime esté arriba / la fase sea estable).
+            // Chequear ANTES de mutar evita depender de rollback para los dos casos previsibles; el rollback
+            // queda como cinturón para fallos IMPREVISTOS a mitad de vuelo (ClockDrift, fetch) — ver abajo.
+            var cloudEngine: CloudSyncEngine?
+            if CloudSyncFlags.storageMode == .cloud {
+                guard let engine = remapEmitter ?? CloudSyncRuntime.shared?.identityRemapEmitter else {
+                    CloudSyncBreadcrumb.identityRemapAborted(reason: "engineUnavailable")
+                    return 0
+                }
+                guard !engine.isIdentityRemapBlockedByMigration else {
+                    CloudSyncBreadcrumb.identityRemapAborted(reason: "migrationInProgress")
+                    return 0
+                }
+                cloudEngine = engine
+            }
+            //
+            // MENOR 4 del review: el UUID FRESCO se acuña EVITANDO colisiones con toda identidad viva de los 3
+            // tipos Y con los syncIDs de los testigos `SyncIdentity` existentes (astronómico con UUID(), pero
+            // gratis de garantizar aquí) → el path defensivo de `rekeyIdentity` (testigo ya existente para el
+            // newID) queda INALCANZABLE (se conserva con breadcrumb como red) y su retorno deja de importar.
+            var usedIdentityIDs: Set<UUID> = []
+            usedIdentityIDs.formUnion(accounts.map(\.shortcutID))
+            usedIdentityIDs.formUnion(subcategories.map(\.shortcutID))
+            usedIdentityIDs.formUnion(tags.map(\.id))
+            usedIdentityIDs.formUnion(try context.fetch(FetchDescriptor<SyncIdentity>()).map(\.syncID))
+            func freshIdentityID() -> UUID {
+                var candidate = UUID()
+                while usedIdentityIDs.contains(candidate) { candidate = UUID() }
+                usedIdentityIDs.insert(candidate)
+                return candidate
+            }
+
+            var remapPairs: [IdentityRemapPair] = []
+            for account in collidedAccounts {
+                let old = account.shortcutID
+                account.shortcutID = freshIdentityID()
+                remapPairs.append(IdentityRemapPair(entityType: SyncEntityType.account, oldID: old, newID: account.shortcutID))
+            }
+            for sub in collidedSubs {
+                let old = sub.shortcutID
+                sub.shortcutID = freshIdentityID()
+                remapPairs.append(IdentityRemapPair(entityType: SyncEntityType.subcategory, oldID: old, newID: sub.shortcutID))
+            }
+            for tag in collidedTags {
+                let old = tag.id
+                tag.id = freshIdentityID()
+                remapPairs.append(IdentityRemapPair(entityType: SyncEntityType.tag, oldID: old, newID: tag.id))
+            }
 
             // Budget: 3 CSV mirrors. Re-encodear desde la M2M forward si el CSV intersecta un
             // id viejo. `?? []` cubre el caso M2M lazy-nil (en paths sin gate de quiescencia:
@@ -327,7 +392,54 @@ enum CategoryDeduplicationService {
                 rebuildTagCSVMirrors(in: context, oldTagIDs: oldTagIDs)
             }
 
+            // DIFERIDOS #29 (§b.4): emitir el IdentityRemap al outbox + re-key de los testigos `SyncIdentity`,
+            // TODO en la MISMA transacción que el save de abajo (dominio + CSV + outbox + testigos juntos, §b.4
+            // crítica #6).
+            //
+            // SERIO 1 del review — REGENERACIÓN SIN OUTBOX = DIVERGENCIA PERPETUA: el drain SKIPea los updates
+            // identity-only (la premisa de #29) → NO hay "retry que drene" el remap. Los dos fallos PREVISIBLES
+            // (motor ausente, migración en curso) se abortan en el PREFLIGHT de arriba SIN haber mutado nada.
+            // Este catch es el CINTURÓN para fallos imprevistos a mitad de vuelo (ClockDrift del HLC, fetch):
+            // `context.rollback()` + breadcrumb error-level + return SIN save — la regeneración entera se
+            // DESHACE (nada llega al store) y se reintenta en el próximo run del dedup, cuando la causa sane.
+            // Residual documentado: el estado EN MEMORIA post-rollback de SwiftData puede quedar stale hasta
+            // re-fault (verificado en test) → en el peor caso el retry se difiere al próximo LAUNCH (el
+            // colapso persistido re-aflora al re-fetchear); nada dirty queda que un save ajeno pueda filtrar.
+            // El rollback es seguro aquí: el repair corre bajo el gate de quiescencia (`runDedupIfQuiescent`)
+            // sobre un mainContext quieto — todo lo dirty en este punto lo escribió ESTE método; abortarlo es
+            // estrictamente preferible a comitear divergencia inconvergible.
+            //
+            // SERIO 2 del review — el ESPEJO App Group se escribe POST-save (`mirrorRemapRows`), jamás antes: un
+            // save fallido tras espejar dejaría entries de un dominio revertido que `rehydrateOutboxFromMirror`
+            // re-insertaría y pushearía (tombstone de un id VIVO + upsert huérfano).
+            var pendingMirror: (engine: CloudSyncEngine, emission: IdentityRemapEmission)?
+            if let cloudEngine {
+                do {
+                    let emission = try cloudEngine.emitIdentityRemap(pairs: remapPairs, in: context, now: now)
+                    pendingMirror = (cloudEngine, emission)
+                    // Re-key del testigo (ck* preservado, `lastReboundAt` estampado, `localAnchor` re-anclado).
+                    // Tras un `emit` exitoso las filas de outbox ya están en el contexto → los testigos deben
+                    // reflejar el sync_id nuevo o el drenaje/reverse verían un testigo stale.
+                    for pair in remapPairs {
+                        SyncIdentityService.rekeyIdentity(
+                            entityType: pair.entityType, oldID: pair.oldID, newID: pair.newID, in: context, now: now
+                        )
+                    }
+                } catch {
+                    #if DEBUG
+                    print("CategoryDeduplicationService: emitIdentityRemap falló — rollback + defer al próximo run: \(error)")
+                    #endif
+                    CloudSyncBreadcrumb.identityRemapAborted(reason: "\(error)")
+                    context.rollback()
+                    return 0
+                }
+            }
+
             try context.save()
+            // SERIO 2: espejo App Group SOLO tras el save exitoso (ver comentario arriba).
+            if let pendingMirror {
+                pendingMirror.engine.mirrorRemapRows(pendingMirror.emission)
+            }
             SessionState.shared.incrementDataVersion()
 
             // Telemetría por modelo (keySuffix distingue de la detección por contenido
