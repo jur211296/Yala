@@ -301,6 +301,27 @@ final class CloudSyncMigrationPanelModel {
         refresh()
     }
 
+    /// Borra el marcador `CD_CloudMigrationMarker` del store personal (higiene DEBUG). Con el mirror
+    /// MONTADO el delete se exporta a CloudKit de forma nativa — mismo mecanismo que el efecto
+    /// `deleteCloudKitMarker` de la reversa (I11-2), expuesto aquí para limpiar un marcador STALE:
+    /// el escape hatch post-cutover borra el journal pero el marcador SOBREVIVE (local + CloudKit) →
+    /// una migración fresca dispararía falso `secondaryDeviceCloudLogin` (markerReconciliation con
+    /// journal notStarted). Idempotente (0 si no había). Corrida device 2026-07-10.
+    func deleteStaleCloudKitMarker() {
+        do {
+            let markers = try context.fetch(FetchDescriptor<CloudMigrationMarker>())
+            for marker in markers { context.delete(marker) }
+            if context.hasChanges { try context.save() }
+            CloudSyncBreadcrumb.reverseMarkerDeleted(count: markers.count)
+            lastMessage = markers.isEmpty
+                ? "Sin marcador local — nada que borrar (si existe en CloudKit sin fila local, espera el import y reintenta)."
+                : "Marcador borrado (\(markers.count)). El mirror exporta el delete a CloudKit (mount actual: \(mountedModeLabel))."
+        } catch {
+            lastMessage = "Borrar marcador falló: \(error)"
+        }
+        refresh()
+    }
+
     /// Dry-run (§g.5): conteos EN MEMORIA por entidad clave + outbox vivo. NO escribe nada.
     func computeDryRun() {
         func count<M: PersistentModel>(_ type: M.Type) -> Int {
@@ -368,6 +389,7 @@ struct CloudSyncDebugView: View {
     @State private var confirmStartReverse = false
     @State private var confirmStartReverse2 = false
     @State private var confirmEscapeHatch = false
+    @State private var confirmDeleteMarker = false
     // Spike S7: override de fase simulada (nil = sin override = producción `.notStarted`) + quiescencia
     // viva (refrescada cada 1s) para mostrar en vivo la decisión del gate §i.9.
     @State private var selectedS7Phase: MigrationPhaseStore.SimulatedPhase?
@@ -463,6 +485,15 @@ struct CloudSyncDebugView: View {
             Button("Cancelar", role: .cancel) {}
         } message: {
             Text("Segunda confirmación. Emite reverseActivated + reverseConfirmed. HOY el flujo corta retomable en reverseClaimLeader (server I11-3 aún no desplegado a staging) — usa ‘Retomar’ para reanudar.")
+        }
+        .confirmationDialog("Borrar marcador CloudKit (stale)",
+                            isPresented: $confirmDeleteMarker, titleVisibility: .visible) {
+            Button("Borrar marcador", role: .destructive) {
+                migration?.deleteStaleCloudKitMarker()
+            }
+            Button("Cancelar", role: .cancel) {}
+        } message: {
+            Text("Borra CD_CloudMigrationMarker del store personal; con el mirror MONTADO el delete se exporta a CloudKit. Úsalo SOLO para limpiar un marcador stale (p.ej. tras escape hatch post-cutover) antes de re-migrar.")
         }
     }
 
@@ -582,6 +613,7 @@ struct CloudSyncDebugView: View {
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
 
                 migrationButton("Verificar elegibilidad reversa") { migration.verifyReverseEligibility() }
+                migrationButton("Borrar marcador CloudKit (stale)") { confirmDeleteMarker = true }
 
                 Button {
                     confirmStartReverse = true
