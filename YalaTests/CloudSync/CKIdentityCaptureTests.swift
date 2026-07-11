@@ -203,6 +203,93 @@ struct CKIdentityCaptureTests {
         #expect(parsed == nil)
     }
 
+    // MARK: - Scan de metadata HUÉRFANA (canario reverseOrphanMetadata)
+
+    /// Fixture con un zombie: TransactionItem (zent=5) zpk 10/11 VIVOS + zpk 999 HUÉRFANO; Account (zent=7)
+    /// zpk 50 (para probar que una entidad AUSENTE del mapa de vivos se ignora). Fila con NULLs → ignorada.
+    private func makeOrphanFixture(_ dir: URL) -> URL {
+        let url = dir.appendingPathComponent("orphanfixture.sqlite")
+        var db: OpaquePointer?
+        #expect(sqlite3_open(url.path, &db) == SQLITE_OK)
+        let statements = [
+            "CREATE TABLE Z_PRIMARYKEY (Z_ENT INTEGER, Z_NAME TEXT)",
+            "INSERT INTO Z_PRIMARYKEY (Z_ENT, Z_NAME) VALUES (5, 'TransactionItem')",
+            "INSERT INTO Z_PRIMARYKEY (Z_ENT, Z_NAME) VALUES (7, 'Account')",
+            """
+            CREATE TABLE ANSCKRECORDMETADATA
+            (Z_PK INTEGER, ZENTITYPK INTEGER, ZENTITYID INTEGER, ZCKRECORDNAME TEXT, ZRECORDZONE INTEGER)
+            """,
+            "INSERT INTO ANSCKRECORDMETADATA VALUES (1, 10, 5, 'rec-tx-10', 2)",   // vivo
+            "INSERT INTO ANSCKRECORDMETADATA VALUES (2, 11, 5, 'rec-tx-11', 2)",   // vivo
+            "INSERT INTO ANSCKRECORDMETADATA VALUES (3, 999, 5, 'rec-zombie', 2)", // HUÉRFANO
+            "INSERT INTO ANSCKRECORDMETADATA VALUES (4, 50, 7, 'rec-acc-50', 2)",  // Account (ignorada si no es key)
+            "INSERT INTO ANSCKRECORDMETADATA VALUES (5, NULL, NULL, 'bookkeeping', 2)",  // NULLs → ignorada
+        ]
+        for sql in statements {
+            #expect(sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK, "SQL: \(sql)")
+        }
+        sqlite3_close(db)
+        return url
+    }
+
+    @Test("orphan scan: 1 huérfano (zpk 999) contra vivos {TransactionItem: {10,11}}; Account ignorada")
+    func orphanScan_countsZombie_ignoresAbsentEntity() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let fixture = makeOrphanFixture(dir)
+        // Account NO está en las keys → sus filas de metadata se ignoran (no huérfanas).
+        let report = CKIdentityCapture.scanOrphanMetadata(
+            liveByEntityName: ["TransactionItem": [10, 11]], storeURL: fixture)
+        #expect(report.orphans == 1)   // solo zpk 999
+        #expect(report.scanned == 3)   // 10, 11, 999 (Account y la fila NULL no cuentan)
+        #expect(report.failed == 0)
+    }
+
+    @Test("orphan scan: entidad sin filas vivas (key con Set vacío) → su metadata ES huérfana")
+    func orphanScan_emptyLiveSet_metadataIsOrphan() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let fixture = makeOrphanFixture(dir)
+        // TransactionItem presente como key pero Set VACÍO → las 3 filas TX son huérfanas reales (RP-4).
+        let report = CKIdentityCapture.scanOrphanMetadata(
+            liveByEntityName: ["TransactionItem": []], storeURL: fixture)
+        #expect(report.orphans == 3)
+        #expect(report.scanned == 3)
+        #expect(report.failed == 0)
+    }
+
+    @Test("orphan scan: entidad fuera de las keys → sus filas se ignoran (0 huérfanos)")
+    func orphanScan_entityNotAKey_ignored() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let fixture = makeOrphanFixture(dir)
+        // Solo "Budget" como key (sin filas de Budget en el fixture) → TX/Account ignoradas.
+        let report = CKIdentityCapture.scanOrphanMetadata(
+            liveByEntityName: ["Budget": [1]], storeURL: fixture)
+        #expect(report.orphans == 0)
+        #expect(report.scanned == 0)
+        #expect(report.failed == 0)
+    }
+
+    @Test("orphan scan: liveByEntityName VACÍO → sin señal (0/0/0, failed=0)")
+    func orphanScan_emptyMap_noSignal() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let fixture = makeOrphanFixture(dir)
+        let report = CKIdentityCapture.scanOrphanMetadata(liveByEntityName: [:], storeURL: fixture)
+        #expect(report == .init(orphans: 0, scanned: 0, failed: 0))
+    }
+
+    @Test("orphan scan: store sin side-tables CK → failed sin crash")
+    func orphanScan_noCKTables_failed() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)   // store personal `.none` → sin ANSCKRECORDMETADATA
+        let tx = TransactionItem(date: .now, amount: 1, currencyCode: "USD")
+        context.insert(tx)
+        try context.save()
+        let personalURL = dir.appendingPathComponent("personal.sqlite")
+        let report = CKIdentityCapture.scanOrphanMetadata(
+            liveByEntityName: ["TransactionItem": [1]], storeURL: personalURL)
+        #expect(report.failed == 1)
+        #expect(report.orphans == 0)
+    }
+
     @Test("capture (PersistentIdentifier real): resuelve el URI y abre el store; sin side-tables CK → failed")
     func capture_realPersistentIdentifier_noCKTables() throws {
         let dir = freshDir(); defer { cleanup(dir) }

@@ -135,6 +135,7 @@ final class CloudSyncMigrationPanelModel {
     var reverseEligibilityLabel = "—"
     var reverseOriginLabel = "—"
     var reverseEligible = false
+    var orphanScanLabel = "—"
 
     private let context: ModelContext
     private var runner: MigrationRunner?
@@ -223,6 +224,19 @@ final class CloudSyncMigrationPanelModel {
     func verifyReverseEligibility() {
         refreshReverse()
         lastMessage = "Elegibilidad reversa: \(reverseEligibilityLabel)"
+    }
+
+    /// Scan READ-ONLY de metadata CloudKit HUÉRFANA (canario v1 SIN reparación, §h residual): filas de
+    /// `ANSCKRECORDMETADATA` cuyo `(Z_ENT, Z_PK)` no tiene fila viva (zombie por History purgada). NO muta
+    /// nada (molde `computeDryRun`, sin confirmationDialog). Emite el breadcrumb informativo.
+    func scanOrphanMetadata() {
+        let live = MigrationWorkExecutor.collectLiveByEntityName(context: context)
+        let report = CKIdentityCapture.scanOrphanMetadata(
+            liveByEntityName: live, storeURL: SwiftDataConfiguration.personalConfiguration.url)
+        CloudSyncBreadcrumb.reverseOrphanMetadata(count: report.orphans)
+        let liveCount = live.values.reduce(0) { $0 + $1.count }
+        orphanScanLabel = "huérfanos \(report.orphans) · escaneados \(report.scanned) · failed \(report.failed) · vivos \(liveCount)"
+        lastMessage = "Scan metadata huérfana (read-only): \(orphanScanLabel)"
     }
 
     /// Diálogos-primero (obligación 5 del review POR CONSTRUCCIÓN): SOLO se invoca tras la 2ª confirmación
@@ -647,6 +661,7 @@ struct CloudSyncDebugView: View {
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     row("Elegible", migration.reverseEligibilityLabel)
                     row("Origin", migration.reverseOriginLabel)
+                    row("Orphan scan", migration.orphanScanLabel)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(DS.Spacing.sm)
@@ -654,6 +669,7 @@ struct CloudSyncDebugView: View {
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
 
                 migrationButton("Verificar elegibilidad reversa") { migration.verifyReverseEligibility() }
+                migrationButton("Scan metadata huérfana (read-only)") { migration.scanOrphanMetadata() }
                 migrationButton("Borrar marcador CloudKit (stale)") { confirmDeleteMarker = true }
                 migrationButton("Purgar ExchangeRate locales (caché)") { confirmPurgeFX = true }
 

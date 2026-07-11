@@ -348,6 +348,131 @@ struct CloudSyncReconcilerTests {
         let rows = outbox(context)
         #expect(rows.contains { $0.syncID == b.syncID && $0.opRaw == SyncOutboxOp.upsert.rawValue })
     }
+
+    // MARK: - Entidades de SISTEMA: política v1 (residual gate de flags)
+
+    private func makeSystemAccount(name: String, currency: String, archived: Bool = false,
+                                   context: ModelContext) -> Account {
+        let acc = Account(name: name, currencyCode: currency, colorHex: "#7C3AED",
+                          iconName: "person.2.circle.fill", type: "system", isArchived: archived,
+                          isSystemAccount: true)
+        context.insert(acc)
+        return acc
+    }
+
+    /// Aislado (regla del repo: NUNCA `UserDefaults.standard` en tests).
+    private func isolatedDefaults() -> UserDefaults {
+        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+    }
+
+    @Test("cuentas sistema misma moneda → merge determinista; TXs re-apuntadas; tombstone drena (autor default)")
+    func systemAccounts_sameCurrency_merge_reattach_tombstoneDrains() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+
+        // Dos nombres distintos (simula dos idiomas), misma moneda. "Groups USD" < "Grupos USD" (o < r).
+        let accLosing = makeSystemAccount(name: "Grupos USD", currency: "USD", context: context)
+        let accWinning = makeSystemAccount(name: "Groups USD", currency: "USD", context: context)
+        let txOnLoser = makeTx(-40, account: accLosing, context: context)
+        _ = makeTx(-10, account: accWinning, context: context)
+        try context.save()
+        engine.drainOnce(context: context)   // acuña identidad/testigo por cuenta (syncID = shortcutID)
+        try purgeOutbox(context)
+        let loserShortcut = accLosing.shortcutID
+
+        let stats = CloudSyncReconciler.reconcileSystemEntities(context: context, lastUsedDefaults: isolatedDefaults())
+        #expect(stats == .init(accountsMerged: 1, subcategoriesMerged: 0))
+
+        // 1 cuenta sistema viva (la ganadora), la TX del perdedor re-apuntada.
+        let liveSystem = try context.fetch(FetchDescriptor<Account>(
+            predicate: #Predicate { $0.isSystemAccount == true }))
+        #expect(liveSystem.count == 1)
+        #expect(liveSystem.first?.name == "Groups USD")
+        #expect(txOnLoser.account?.name == "Groups USD")
+
+        // El delete de la perdedora va bajo autor DEFAULT → el drain lo captura como tombstone y lo encola.
+        engine.drainOnce(context: context)
+        let tombstones = outbox(context).filter { $0.opRaw == SyncOutboxOp.tombstone.rawValue }
+        #expect(tombstones.contains { $0.syncID == loserShortcut })
+    }
+
+    @Test("cuentas sistema de MONEDAS distintas → NO se mergean (grupos independientes)")
+    func systemAccounts_differentCurrency_notMerged() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        _ = makeSystemAccount(name: "Grupos USD", currency: "USD", context: context)
+        _ = makeSystemAccount(name: "Grupos PEN", currency: "PEN", context: context)
+        try context.save()
+
+        let stats = CloudSyncReconciler.reconcileSystemEntities(context: context, lastUsedDefaults: isolatedDefaults())
+        #expect(stats == .init(accountsMerged: 0, subcategoriesMerged: 0))
+        let live = try context.fetch(FetchDescriptor<Account>(predicate: #Predicate { $0.isSystemAccount == true }))
+        #expect(live.count == 2)
+    }
+
+    @Test("RP-2: ganadora ARCHIVADA + perdedora viva → ganadora des-archivada, perdedora tombstoneada")
+    func systemAccounts_winnerArchived_getsUnarchived() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        // La ganadora por criterio ("Groups") llega ARCHIVADA; la perdedora ("Grupos") viva.
+        let winnerArchived = makeSystemAccount(name: "Groups USD", currency: "USD", archived: true, context: context)
+        let loserLive = makeSystemAccount(name: "Grupos USD", currency: "USD", archived: false, context: context)
+        let winnerShortcut = winnerArchived.shortcutID
+        try context.save()
+
+        let stats = CloudSyncReconciler.reconcileSystemEntities(context: context, lastUsedDefaults: isolatedDefaults())
+        #expect(stats == .init(accountsMerged: 1, subcategoriesMerged: 0))
+
+        let live = try context.fetch(FetchDescriptor<Account>(predicate: #Predicate { $0.isSystemAccount == true }))
+        #expect(live.count == 1)
+        let winner = try #require(live.first)
+        #expect(winner.shortcutID == winnerShortcut)
+        #expect(winner.isArchived == false)          // des-archivada
+        #expect(!live.contains { $0.shortcutID == loserLive.shortcutID })
+    }
+
+    @Test("subcategoría balanceAdjustment cross-idioma → merge; TX re-apuntada al ganador")
+    func balanceAdjustment_crossLanguage_merges() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        // Categorías padre distintas (cada idioma sembró la suya) — R5: NO se mergean categorías.
+        let catES = Category(name: "Otros", colorHex: "#64748B", isIncome: false, isDefaultSeed: true)
+        let catEN = Category(name: "Other", colorHex: "#64748B", isIncome: false, isDefaultSeed: true)
+        context.insert(catES); context.insert(catEN)
+        // Dos nombres del set multi-idioma `balanceAdjustmentNames`, ambos isDefaultSeed.
+        let subEN = Subcategory(name: "Balance adjustments", isDefaultSeed: true, category: catEN)
+        let subES = Subcategory(name: "Ajustes de saldo", isDefaultSeed: true, category: catES)
+        context.insert(subEN); context.insert(subES)
+        // "Ajustes de saldo" (A) < "Balance adjustments" (B) → ganador = subES.
+        let tx = makeTx(-5, context: context)
+        tx.subcategory = subEN   // en la perdedora
+        try context.save()
+
+        let stats = CloudSyncReconciler.reconcileSystemEntities(context: context, lastUsedDefaults: isolatedDefaults())
+        #expect(stats == .init(accountsMerged: 0, subcategoriesMerged: 1))
+
+        let liveSubs = try context.fetch(FetchDescriptor<Subcategory>())
+            .filter { Subcategory.balanceAdjustmentNames.contains($0.name) }
+        #expect(liveSubs.count == 1)
+        #expect(liveSubs.first?.name == "Ajustes de saldo")
+        #expect(tx.subcategory?.name == "Ajustes de saldo")   // re-apuntada al ganador
+        // La categoría padre del ganador se conserva (no se mergea).
+        #expect(tx.subcategory?.category?.name == "Otros")
+    }
+
+    @Test("sin duplicados sistema → no-op")
+    func systemEntities_noDuplicates_noOp() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        _ = makeSystemAccount(name: "Grupos USD", currency: "USD", context: context)
+        try context.save()
+        let stats = CloudSyncReconciler.reconcileSystemEntities(context: context, lastUsedDefaults: isolatedDefaults())
+        #expect(stats == .init(accountsMerged: 0, subcategoriesMerged: 0))
+    }
 }
 
 // MARK: - Stub

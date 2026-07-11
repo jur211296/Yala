@@ -209,6 +209,37 @@ bash qa/cloud/push-e2e-test.sh
 el `user_id` de test. Limpia por `user_id` de los 2 usuarios de test en contexto service, igual que los
 goldens. El script nunca usa `service_role`. NO corre en CI (red + usuarios sembrados).
 
+## Entidades de SISTEMA — política v1 de merge determinista (residual NOTA-2 de I12-B, 2026-07-11)
+
+Las entidades de sistema (`Account.isSystemAccount` — cuentas `Grupos [moneda]` del bridge — y la
+subcategoría `balanceAdjustment`) sincronizan con `sync_id = shortcutID` ALEATORIO por device → en
+multi-device cada device acuña la suya (nombres LOCALIZADOS distintos) → duplicados server-side y saldo
+virtual partido. **Política v1 (client-side, lado sync):** `CloudSyncReconciler.reconcileSystemEntities`
+(post-pull + reversa) colapsa al ganador determinista-global — criterio `(name, shortcutID)` ascendente,
+el MISMO del dedup local del bridge, computado sobre filas convergidas (NO usa estado local como el
+conteo de TXs → sin el hazard de I11-4) — re-apunta referenciadores y tombstonea perdedoras con autor
+default (el tombstone viaja). Argumento de convergencia completo en `SystemEntityMergePolicy.swift`.
+
+**Candidato de RED server-side DIFERIDO (D2):** un índice parcial
+`UNIQUE (user_id, currency_code) WHERE is_system_account AND NOT deleted` en `accounts` (staging vía
+MCP, contexto service) NO sustituye la política (el server no puede re-apuntar las refs del perdedor)
+pero acotaría el blast-radius a 1 fila viva. Evaluar en el gate de encendido de flags.
+
+**e2e `systemAccountMerge_twoDevices_convergeToDeterministicWinner_thenCleanup`:** cierra con cleanup a
+0 vivas del run (corre SIEMPRE, incluso con el escenario fallido). Residual: si el PUSH del propio
+cleanup falla (red caída), quedan filas `accounts`/`tx_items` vivas del run bajo user A → el snapshot
+e2e (`diverged == ["tx_items"]` estricto) se rompe hasta limpiarlas. Remedio manual (contexto service,
+mismo idiom que los budgets parciales): tombstonear por nombre/nota con el sufijo del run:
+
+```sql
+UPDATE public.accounts SET deleted=true, deleted_hlc = hlc
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'i5-user-a@test.yala')
+  AND deleted=false AND is_system_account AND name LIKE '%<run>%';
+UPDATE public.tx_items SET deleted=true, deleted_hlc = hlc
+WHERE user_id = (SELECT id FROM auth.users WHERE email = 'i5-user-a@test.yala')
+  AND deleted=false AND note LIKE '%<run>%';
+```
+
 ## Related repo artifacts
 
 - `capability_manifest.json` (repo root) — per-entity domain columns with explicit `safe` / `group_key`.

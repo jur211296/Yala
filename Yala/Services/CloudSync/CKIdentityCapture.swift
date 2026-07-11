@@ -246,7 +246,83 @@ enum CKIdentityCapture {
         }
     }
 
+    // MARK: - Scan de metadata HUÉRFANA (§h residual, canario v1 SIN reparación)
+
+    /// Conteos de un barrido read-only de la side-table de metadata: filas de metadata cuyo `(Z_ENT, Z_PK)`
+    /// NO tiene fila viva en el store (zombie por History purgada con token vivo → ni tombstone en backend ni
+    /// evento re-entregable). `scanned` ⊇ `orphans` (solo entidades presentes en `liveByEntityName`).
+    struct OrphanScanReport: Equatable {
+        var orphans = 0
+        var scanned = 0
+        var failed = 0
+    }
+
+    /// Barrido READ-ONLY de la side-table `ANSCKRECORDMETADATA` contra el set de filas VIVAS que aporta el
+    /// caller (`liveByEntityName: [entityName: Set<Z_PK vivos>]`). Huérfano = fila de metadata de una entidad
+    /// PRESENTE como key (las 16 entidades sync) cuyo `Z_PK` no está en su set de vivos. Metadata de entidades
+    /// AUSENTES de las keys (modelos no cableados, p.ej. `CloudMigrationMarker`) se IGNORA (no es huérfana).
+    /// `liveByEntityName` vacío = SIN SEÑAL (0/0/0, no "todo huérfano" — política explícita). NUNCA muta el
+    /// store ni el SQLite; jamás `try?` silencioso (tri-estado con `failed`).
+    static func scanOrphanMetadata(liveByEntityName: [String: Set<Int64>], storeURL: URL) -> OrphanScanReport {
+        var report = OrphanScanReport()
+        guard !liveByEntityName.isEmpty else { return report }  // sin señal → sin veredicto
+
+        var db: OpaquePointer?
+        let openRC = sqlite3_open_v2(storeURL.path, &db, SQLITE_OPEN_READONLY, nil)
+        guard openRC == SQLITE_OK, let db else {
+            if let db { sqlite3_close(db) }
+            report.failed = 1
+            return report
+        }
+        defer { sqlite3_close(db) }
+
+        let ckTables = queryColumn(db, sql:
+            "SELECT name FROM sqlite_master WHERE type='table' AND upper(name) LIKE '%CK%' ORDER BY name")
+        guard let metaTable = ckTables.first(where: {
+            let u = $0.uppercased()
+            return u.contains("RECORDMETADATA") && !u.contains("ZONE") && !u.contains("SYSTEMFIELDS")
+        }) else {
+            report.failed = 1
+            return report
+        }
+        let metaCols = tableColumns(db, table: metaTable)
+        func metaCol(_ needle: String) -> String? {
+            metaCols.first { $0.uppercased() == needle } ?? metaCols.first { $0.uppercased().contains(needle) }
+        }
+        guard let entityPKCol = metaCol("ZENTITYPK"), let entityIDCol = metaCol("ZENTITYID") else {
+            report.failed = 1
+            return report
+        }
+
+        // Z_ENT → entityName (invertido de `Z_PRIMARYKEY`). Vacío → cada fila cae a "sin nombre" → ignorada.
+        var entityByZent: [Int64: String] = [:]
+        for (name, ent) in loadPrimaryKeyMap(db) { entityByZent[ent] = name }
+
+        switch queryTypedRows(db, sql: "SELECT \(entityIDCol), \(entityPKCol) FROM \(metaTable)") {
+        case .failure:
+            report.failed = 1
+            return report
+        case .success(let rows):
+            for row in rows where row.count >= 2 {
+                // NULL en Z_ENT/Z_PK (filas de bookkeeping de CloudKit) → no clasificable → ignorar.
+                guard let zent = row[0].int64Value, let zpk = row[1].int64Value else { continue }
+                guard let entityName = entityByZent[zent],
+                      let liveSet = liveByEntityName[entityName] else { continue }  // fuera de las 16 → ignorar
+                report.scanned += 1
+                if !liveSet.contains(zpk) { report.orphans += 1 }
+            }
+            return report
+        }
+    }
+
     // MARK: - URI parsing
+
+    /// Resuelve `(entityName, Z_PK)` de un `PersistentIdentifier` (URI `x-coredata://…` → parse). `internal`
+    /// para que el caller construya el `liveByEntityName` de `scanOrphanMetadata` sin duplicar la extracción.
+    static func entityAndPK(for id: PersistentIdentifier) -> (entityName: String, zpk: Int64)? {
+        guard let uri = objectURI(for: id) else { return nil }
+        return parseCoreDataURI(uri)
+    }
 
     /// Parsea el URI `x-coredata://STORE-UUID/EntityName/pNNN` → `(entityName, Z_PK)`. `nil` = no parseable.
     /// `internal` para tests.

@@ -187,4 +187,209 @@ enum CloudSyncReconciler {
         }
         return stats
     }
+
+    // MARK: - Entidades de SISTEMA: merge determinista-global (política v1, residual gate de flags)
+
+    /// Resultado del pase de entidades de sistema (asertable en tests).
+    struct SystemStats: Equatable {
+        var accountsMerged = 0
+        var subcategoriesMerged = 0
+    }
+
+    /// Colapsa las entidades de sistema DUPLICADAS cross-device (dos devices acuñan la suya por nombre
+    /// localizado) a un ganador determinista-global (`SystemEntityMergePolicy`), re-apunta las referencias de
+    /// las perdedoras y las tombstonea. Ver el doc-comment de `SystemEntityMergePolicy` para el argumento de
+    /// convergencia. GESTIONA SUS PROPIOS `save()` bajo autor DEFAULT (NUNCA `outboxSaveAuthor`: el tombstone
+    /// y los updates DEBEN drenar/viajar; el cascade `.nullify` debe aplicar ANTES de re-encodear los CSV
+    /// mirror o el espejo captaría el `shortcutID` del perdedor que va a morir → huérfano permanente, regla
+    /// `899c1c25`). Consumido por `runPostPullReconcilers` (post-páginas; corre DENTRO de la ventana
+    /// `markApplyBegan/Ended` — inocuo: la ventana solo difiere la señal de quiescencia, no cambia el autor,
+    /// y el save default drena igual) Y por `MigrationWorkExecutor.healDuplicates` (reversa).
+    /// `lastUsedDefaults` inyectable para tests.
+    @discardableResult
+    static func reconcileSystemEntities(
+        context: ModelContext,
+        lastUsedDefaults: UserDefaults? = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)
+    ) -> SystemStats {
+        var stats = SystemStats()
+        stats.accountsMerged = mergeSystemAccounts(context: context, lastUsedDefaults: lastUsedDefaults)
+        stats.subcategoriesMerged = mergeBalanceAdjustmentSubcategories(context: context)
+        return stats
+    }
+
+    /// Cuentas `isSystemAccount` duplicadas por `currencyCode`. Ganador por `(name, shortcutID)` asc; re-apunta
+    /// TXs/scheduled/favorites/drafts + M2M/CSV `Budget.accounts` + `LastUsedAccountStore`; borra perdedoras.
+    private static func mergeSystemAccounts(context: ModelContext, lastUsedDefaults: UserDefaults?) -> Int {
+        let accounts: [Account]
+        do {
+            accounts = try context.fetch(FetchDescriptor<Account>(
+                predicate: #Predicate { $0.isSystemAccount == true }))
+        } catch {
+            #if DEBUG
+            print("CloudSyncReconciler.systemAccounts fetch falló: \(error)")
+            #endif
+            return 0
+        }
+        let plans = SystemEntityMergePolicy.plan(
+            accounts, groupKey: { $0.currencyCode }, name: { $0.name },
+            tiebreak: { $0.shortcutID.uuidString })
+        guard !plans.isEmpty else { return 0 }
+
+        var merged = 0
+        var budgetsToResync: Set<PersistentIdentifier> = []
+        var loserShortcutIDs: Set<UUID> = []
+        var winnerByLoserShortcutID: [UUID: UUID] = [:]
+
+        for group in plans {
+            let winner = group.winner
+            // RP-2: el dedup local del bridge ARCHIVA perdedoras; el fetch de `ensureSystemAccount` NO excluye
+            // archivadas (no acuñaría una tercera), pero des-archivar a la ganadora garantiza que quede VISIBLE
+            // y evita cualquier loop de duplicación si el criterio del bridge cambiara.
+            if winner.isArchived { winner.isArchived = false }
+            for loser in group.losers {
+                loserShortcutIDs.insert(loser.shortcutID)
+                winnerByLoserShortcutID[loser.shortcutID] = winner.shortcutID
+                for tx in loser.transactions ?? [] { tx.account = winner }
+                for sched in loser.scheduledPayments ?? [] { sched.account = winner }
+                for fav in loser.favoritePayments ?? [] { fav.account = winner }
+                for draft in loser.inboxDrafts ?? [] { draft.account = winner }
+                for budget in loser.budgets ?? [] {
+                    budgetsToResync.insert(budget.persistentModelID)
+                    if (budget.accounts ?? []).allSatisfy({ $0.persistentModelID != winner.persistentModelID }) {
+                        if budget.accounts == nil { budget.accounts = [] }
+                        budget.accounts?.append(winner)
+                    }
+                }
+                context.delete(loser)
+                merged += 1
+            }
+        }
+        guard merged > 0 else { return 0 }
+
+        do {
+            try context.save()  // autor DEFAULT + cascade `.nullify` aplica ANTES de re-encodear CSV
+            for budget in budgetsToResync.compactMap({ context.model(for: $0) as? Budget }) {
+                budget.setAccountIDs(from: budget.accounts ?? [])
+            }
+            resyncOrphanCSV(loserAccountIDs: loserShortcutIDs, context: context)
+            if let defaults = lastUsedDefaults,
+               let stored = defaults.string(forKey: AppPreferences.Keys.lastUsedAccountID),
+               let storedUUID = UUID(uuidString: stored),
+               loserShortcutIDs.contains(storedUUID),
+               let winnerShortcutID = winnerByLoserShortcutID[storedUUID] {
+                defaults.set(winnerShortcutID.uuidString, forKey: AppPreferences.Keys.lastUsedAccountID)
+            }
+            if context.hasChanges { try context.save() }
+            CloudSyncBreadcrumb.systemEntityMerged(kind: "account", count: merged)
+            SessionState.shared.incrementDataVersion()
+        } catch {
+            #if DEBUG
+            print("CloudSyncReconciler.systemAccounts save falló: \(error)")
+            #endif
+        }
+        return merged
+    }
+
+    /// Subcategorías `balanceAdjustment` duplicadas cross-idioma (matching `Subcategory.balanceAdjustmentNames`).
+    /// v1: UN grupo lógico por store (no hay dimensión currency; es 1 lógica por usuario). Ganador
+    /// `(name, shortcutID)` asc; re-apunta TXs/favorites/scheduled/drafts/merchant/cashFlowLines + M2M/CSV
+    /// `Budget.subcategories`; borra perdedoras. NO mergea categorías padre (R5: cada idioma sembró la suya;
+    /// la ganadora conserva SU categoría, las TXs de la perdedora van a la ganadora con esa categoría).
+    private static func mergeBalanceAdjustmentSubcategories(context: ModelContext) -> Int {
+        let candidates: [Subcategory]
+        do {
+            // Scope a sistema/sembradas (evita adoptar una homónima PERSONAL); balanceAdjustment se siembra
+            // con `isDefaultSeed = true` (seed Y `ensureBalanceAdjustmentSubcategoryExists` — ninguno pone
+            // `isSystem=true`, así que exigir `isSystem` mataría la política). INVARIANTE del que depende el
+            // scope: el path de creación de UI (`SubcategoryDetailView`) pasa `isDefaultSeed: false` explícito
+            // → las subcats tecleadas por el usuario quedan FUERA aunque el nombre coincida. Vector residual
+            // aceptado: un auto-create futuro con el default (`isDefaultSeed: true`) cuyo nombre caiga en el
+            // set multi-idioma entraría al merge — el modelo no registra procedencia (MAPA invariante 11), no
+            // hay señal más fuerte. El nombre multi-idioma se filtra en Swift (`#Predicate` no maneja
+            // `Set.contains`).
+            candidates = try context.fetch(FetchDescriptor<Subcategory>(
+                predicate: #Predicate { $0.isSystem || $0.isDefaultSeed }))
+        } catch {
+            #if DEBUG
+            print("CloudSyncReconciler.balanceAdjustment fetch falló: \(error)")
+            #endif
+            return 0
+        }
+        let balanceAdj = candidates.filter { Subcategory.balanceAdjustmentNames.contains($0.name) }
+        guard balanceAdj.count > 1 else { return 0 }
+
+        let plans = SystemEntityMergePolicy.plan(
+            balanceAdj, groupKey: { _ in "balanceAdjustment" }, name: { $0.name },
+            tiebreak: { $0.shortcutID.uuidString })
+        guard let group = plans.first else { return 0 }
+        let winner = group.winner
+
+        var merged = 0
+        var budgetsToResync: Set<PersistentIdentifier> = []
+        var loserShortcutIDs: Set<UUID> = []
+        for loser in group.losers {
+            loserShortcutIDs.insert(loser.shortcutID)
+            for tx in loser.transactions ?? [] { tx.subcategory = winner }
+            for fav in loser.favoritePayments ?? [] { fav.subcategory = winner }
+            for sched in loser.scheduledPayments ?? [] { sched.subcategory = winner }
+            for draft in loser.inboxDrafts ?? [] { draft.subcategory = winner }
+            for mm in loser.merchantMemories ?? [] { mm.subcategory = winner }
+            for line in loser.cashFlowLines ?? [] { line.subcategory = winner }
+            for budget in loser.budgets ?? [] {
+                budgetsToResync.insert(budget.persistentModelID)
+                if (budget.subcategories ?? []).allSatisfy({ $0.persistentModelID != winner.persistentModelID }) {
+                    if budget.subcategories == nil { budget.subcategories = [] }
+                    budget.subcategories?.append(winner)
+                }
+            }
+            context.delete(loser)
+            merged += 1
+        }
+        guard merged > 0 else { return 0 }
+
+        do {
+            try context.save()
+            for budget in budgetsToResync.compactMap({ context.model(for: $0) as? Budget }) {
+                budget.setSubcategoryIDs(from: budget.subcategories ?? [])
+            }
+            resyncOrphanCSV(loserSubcategoryIDs: loserShortcutIDs, context: context)
+            if context.hasChanges { try context.save() }
+            CloudSyncBreadcrumb.systemEntityMerged(kind: "balanceAdjustment", count: merged)
+            SessionState.shared.incrementDataVersion()
+        } catch {
+            #if DEBUG
+            print("CloudSyncReconciler.balanceAdjustment save falló: \(error)")
+            #endif
+        }
+        return merged
+    }
+
+    /// Nuke-on-nil de los CSV mirror de `Budget` que referencian un `shortcutID` PERDEDOR aunque el
+    /// descubrimiento por inversa lo saltara (ventana M2M lazy-nil): un CSV stale-pero-presente NO cae a M2M
+    /// → huérfano permanente (regla `899c1c25`). Re-encode desde el M2M actual (ya sin el perdedor tras el
+    /// cascade). Solo `Budget` porta CSV mirror de account/subcategory IDs.
+    private static func resyncOrphanCSV(
+        loserAccountIDs: Set<UUID> = [], loserSubcategoryIDs: Set<UUID> = [], context: ModelContext
+    ) {
+        do {
+            if !loserAccountIDs.isEmpty {
+                for budget in try context.fetch(FetchDescriptor<Budget>(
+                    predicate: #Predicate<Budget> { $0.accountIDs != nil })) {
+                    guard let csv = budget.accountIDsSet, !csv.isDisjoint(with: loserAccountIDs) else { continue }
+                    budget.setAccountIDs(from: budget.accounts ?? [])
+                }
+            }
+            if !loserSubcategoryIDs.isEmpty {
+                for budget in try context.fetch(FetchDescriptor<Budget>(
+                    predicate: #Predicate<Budget> { $0.subcategoryIDs != nil })) {
+                    guard let csv = budget.subcategoryIDsSet, !csv.isDisjoint(with: loserSubcategoryIDs) else { continue }
+                    budget.setSubcategoryIDs(from: budget.subcategories ?? [])
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("CloudSyncReconciler.resyncOrphanCSV fetch falló: \(error)")
+            #endif
+        }
+    }
 }

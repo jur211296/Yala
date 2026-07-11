@@ -653,6 +653,177 @@ struct CloudSyncE2EStagingTests {
             Issue.record("Merkle no se verificó (\(reason)) — el guard A-3 debía estar satisfecho")
         }
     }
+
+    // MARK: - Merge de entidades de SISTEMA (política v1, residual gate de flags)
+
+    private func isolatedDefaults() -> UserDefaults {
+        UserDefaults(suiteName: "test.\(UUID().uuidString)")!
+    }
+
+    /// Drena la History, pushea el outbox vivo, aplica resultados. `true` si todo aplicó/noop.
+    @discardableResult
+    private func drainAndPush(_ engine: CloudSyncEngine, _ context: ModelContext,
+                              _ push: SyncPushClient) async throws -> Bool {
+        engine.drainOnce(context: context)
+        let rows = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        guard !rows.isEmpty else { return true }
+        guard case .completed(let results) = await push.push(rows) else { return false }
+        await push.applyResults(results, rows: rows, engine: engine, context: context)
+        return results.allSatisfy { $0.status == .applied || $0.status == .noop }
+    }
+
+    /// Tombstonea (delete local, autor default) TODAS las filas del `run` (cuentas por nombre, TXs por note).
+    /// `.contains` en Swift SOBRE ARRAYS ya fetcheados (NUNCA `#Predicate localizedStandardContains` — gotcha
+    /// CLAUDE.md variante 2).
+    private func tombstoneRunRows(run: String, context: ModelContext) throws {
+        for acc in try context.fetch(FetchDescriptor<Account>()).filter({ $0.name.contains(run) }) {
+            context.delete(acc)
+        }
+        for tx in try context.fetch(FetchDescriptor<TransactionItem>()).filter({ ($0.note ?? "").contains(run) }) {
+            context.delete(tx)
+        }
+        if context.hasChanges { try context.save() }
+    }
+
+    /// Dos devices acuñan la cuenta de sistema `Grupos PEN` con NOMBRES distintos (idiomas distintos) → el
+    /// DUPLICADO server-side se demuestra a nivel de WIRE (pull read-only sin apply — el merge corre DENTRO
+    /// de `pullAndApplyOnce`, así que post-apply ya no es observable) → el pase interno colapsa AMBOS devices
+    /// al MISMO ganador determinista (`(name, shortcutID)` asc → "Groups" < "Grupos"), re-apunta las TXs y
+    /// tombstonea la perdedora; el reconcile manual posterior asserta idempotencia (no-op). **RP-1: cleanup a
+    /// 0 VIVAS del run** (el Merkle es por user; una fila `accounts` viva rompería el
+    /// `diverged == ["tx_items"]` del test de snapshot, mismo user A). Verificado en un 3er store fresco.
+    @Test(.enabled(if: CloudSyncE2EStagingTests.isEnabled))
+    func systemAccountMerge_twoDevices_convergeToDeterministicWinner_thenCleanup() async throws {
+        let jwt = try await login()
+        let tokenProvider: () async -> String? = { jwt }
+        let run = String(UUID().uuidString.prefix(8))
+        let pushA = SyncPushClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let pullA = SyncPullClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let pushB = SyncPushClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let pullB = SyncPullClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+
+        func systemAccount(_ name: String) -> Account {
+            Account(name: name, currencyCode: "PEN", colorHex: "#7C3AED",
+                    iconName: "person.2.circle.fill", type: "system", isSystemAccount: true)
+        }
+        func makeTx(_ note: String, account: Account) -> TransactionItem {
+            let tx = TransactionItem(date: Date(timeIntervalSince1970: 1_751_900_000), amount: -11, currencyCode: "PEN")
+            tx.note = note
+            tx.amountInPreferredCurrency = -11
+            tx.preferredCurrencyCode = "PEN"
+            tx.exchangeRate = 1.0
+            tx.isExchangeRateProvisional = false
+            tx.createdAt = Date(timeIntervalSince1970: 1_751_900_000)
+            tx.account = account
+            return tx
+        }
+
+        // ---------- Device A: "Grupos PEN (run)" ----------
+        let dirA = freshDir(); defer { cleanup(dirA) }
+        let contextA = try makeContext(dirA)
+        let engineA = CloudSyncEngine()
+        let accA = systemAccount("Grupos PEN (\(run))")
+        contextA.insert(accA)
+        let txA = makeTx("sysmerge-a-\(run)", account: accA)
+        contextA.insert(txA)
+        try contextA.save()
+        #expect(try await drainAndPush(engineA, contextA, pushA), "push A")
+
+        // ---------- Device B: "Groups PEN (run)" (idioma distinto) ----------
+        let dirB = freshDir(); defer { cleanup(dirB) }
+        let contextB = try makeContext(dirB)
+        let engineB = CloudSyncEngine()
+        let accB = systemAccount("Groups PEN (\(run))")   // "Groups" < "Grupos" → GANADOR
+        contextB.insert(accB)
+        let txB = makeTx("sysmerge-b-\(run)", account: accB)
+        contextB.insert(txB)
+        try contextB.save()
+        #expect(try await drainAndPush(engineB, contextB, pushB), "push B")
+        let winnerShortcut = accB.shortcutID
+
+        // El escenario va en closure y su error se RE-LANZA tras el cleanup: un `guard…return` aquí saltaría
+        // el cleanup RP-1 y una fila `accounts` viva del user A rompería el `diverged == ["tx_items"]` del
+        // test de snapshot hasta limpieza manual. (`defer` no admite `await` — de ahí la estructura.)
+        struct PullIncomplete: Error, CustomStringConvertible {
+            let which: String
+            var description: String { "pull \(which) no completó" }
+        }
+        var scenarioError: Error?
+        do {
+            // ---------- DUPLICADO server-side demostrado a nivel de WIRE ----------
+            // El merge corre DENTRO de `pullAndApplyOnce` (runPostPullReconcilers) — post-apply el duplicado
+            // ya no es observable en el store (ESO es el wiring de producción funcionando). Se demuestra con
+            // un pull read-only SIN apply (idiom del sweep de zombies de I11-2): 2 filas `accounts` vivas
+            // del run en el stream.
+            var wireAccountsOfRun = 0
+            var wireCursor: Int64 = 0
+            paging: while true {
+                switch await pullA.pull(since: wireCursor, limit: 500) {
+                case .page(let page):
+                    for d in page.deltas where d.entityType == "accounts" && d.op == .upsert {
+                        if case .string(let n) = d.fields["name"] ?? .null, n.contains(run) {
+                            wireAccountsOfRun += 1
+                        }
+                    }
+                    if page.deltas.isEmpty || page.maxServerSeq <= wireCursor { break paging }
+                    wireCursor = page.maxServerSeq
+                case .sessionExpired, .accountUnavailable, .transient:
+                    throw PullIncomplete(which: "wire A (read-only)")
+                }
+            }
+            #expect(wireAccountsOfRun == 2, "el backend debe tener 2 cuentas sistema PEN del run en el wire")
+
+            // ---------- A pull+apply → el merge INTERNO del apply converge ----------
+            guard case .completed = await engineA.pullAndApplyOnce(using: pullA, context: contextA) else {
+                throw PullIncomplete(which: "A")
+            }
+            // El reconcile manual post-apply debe ser no-op (idempotencia: el pase interno ya mergeó).
+            let statsA = CloudSyncReconciler.reconcileSystemEntities(context: contextA, lastUsedDefaults: isolatedDefaults())
+            #expect(statsA.accountsMerged == 0, "el merge ya corrió dentro del apply; el manual es no-op")
+            let aliveA = try contextA.fetch(FetchDescriptor<Account>(
+                predicate: #Predicate { $0.isSystemAccount == true })).filter { $0.name.contains(run) }
+            #expect(aliveA.count == 1)
+            #expect(aliveA.first?.shortcutID == winnerShortcut, "ganador determinista = 'Groups PEN'")
+            #expect(txA.account?.shortcutID == winnerShortcut, "TX de A re-apuntada al ganador")
+            #expect(try await drainAndPush(engineA, contextA, pushA), "push del tombstone de A")
+
+            // ---------- B pull (tombstone + update) + reconcile → MISMO ganador ----------
+            guard case .completed = await engineB.pullAndApplyOnce(using: pullB, context: contextB) else {
+                throw PullIncomplete(which: "B")
+            }
+            _ = CloudSyncReconciler.reconcileSystemEntities(context: contextB, lastUsedDefaults: isolatedDefaults())
+            let aliveB = try contextB.fetch(FetchDescriptor<Account>(
+                predicate: #Predicate { $0.isSystemAccount == true })).filter { $0.name.contains(run) }
+            #expect(aliveB.count == 1, "B converge a 1 cuenta: \(aliveB.map(\.name))")
+            #expect(aliveB.first?.shortcutID == winnerShortcut)
+            #expect(try await drainAndPush(engineB, contextB, pushB), "push residual de B")
+        } catch {
+            scenarioError = error
+        }
+
+        // ---------- RP-1: cleanup a 0 VIVAS del run — corre SIEMPRE, incluso con el escenario fallido.
+        // A y B tombstonean cada uno sus filas LOCALES (accA/txA viven en A; accB/txB en B), así el cleanup
+        // no depende de que los pulls cruzados hayan completado. Residual aceptado: si el propio push del
+        // cleanup falla (red caída total), las filas quedan — remedio manual en qa/cloud/README.
+        try tombstoneRunRows(run: run, context: contextA)
+        #expect(try await drainAndPush(engineA, contextA, pushA), "push cleanup A")
+        try tombstoneRunRows(run: run, context: contextB)
+        #expect(try await drainAndPush(engineB, contextB, pushB), "push cleanup B")
+        if let scenarioError { throw scenarioError }
+
+        // Verificación en un 3er store FRESCO: 0 cuentas + 0 TXs del run vivas en el backend.
+        let dirC = freshDir(); defer { cleanup(dirC) }
+        let contextC = try makeContext(dirC)
+        let engineC = CloudSyncEngine()
+        let pullC = SyncPullClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        guard case .completed = await engineC.pullAndApplyOnce(using: pullC, context: contextC) else {
+            Issue.record("pull C no completó"); return
+        }
+        let liveAccC = try contextC.fetch(FetchDescriptor<Account>()).filter { $0.name.contains(run) }
+        #expect(liveAccC.isEmpty, "0 cuentas vivas del run tras cleanup: \(liveAccC.map(\.name))")
+        let liveTxC = try contextC.fetch(FetchDescriptor<TransactionItem>()).filter { ($0.note ?? "").contains(run) }
+        #expect(liveTxC.isEmpty, "0 TXs vivas del run tras cleanup: \(liveTxC.count)")
+    }
 }
 
 // MARK: - Sesión e2e (seam I7c stub para el runtime)

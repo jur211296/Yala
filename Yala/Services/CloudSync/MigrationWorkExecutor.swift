@@ -760,8 +760,13 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// post-`awaitingQuiescence`). Idempotente: una 2ª pasada devuelve 0. I11-2 era DETECCIÓN read-only; I11-4
     /// promueve a cura (el sub-estado ya era journaled).
     func healDuplicates() -> Int {
-        AccountTagMergeService.mergeDuplicateAccounts(in: context)
+        // `AccountTagMergeService` EXCLUYE `isSystemAccount` (mergearlas tocaría Grupos) y no cubre
+        // subcategorías → el pase de política v1 las complementa por otra vía (cuentas `Grupos [moneda]` +
+        // balanceAdjustment cross-idioma; autor DEFAULT → el tombstone viaja). Ambos son idempotentes.
+        let system = CloudSyncReconciler.reconcileSystemEntities(context: context)
+        return AccountTagMergeService.mergeDuplicateAccounts(in: context)
             + AccountTagMergeService.mergeDuplicateTags(in: context)
+            + system.accountsMerged + system.subcategoriesMerged
     }
 
     /// §h `reverseUpload`: muestreo CKIdentityCapture sobre TODAS las filas vivas. `exportPending + noMetadata
@@ -781,8 +786,63 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
                 #endif
             }
         }
+        // Canario v1 SIN reparación (§h residual): scan read-only de metadata HUÉRFANA (zombie por History
+        // purgada). SOLO informativo — NO altera `.drained`/`.pending`. Abre una 2ª conexión SQLite read-only
+        // (aceptable en la reversa; NO se refactoriza la conexión compartida en este incremento).
+        let orphanReport = CKIdentityCapture.scanOrphanMetadata(
+            liveByEntityName: Self.collectLiveByEntityName(context: context), storeURL: personalStoreURL)
+        CloudSyncBreadcrumb.reverseOrphanMetadata(count: orphanReport.orphans)
         let pending = report.exportPending + report.noMetadata
         return pending == 0 ? .drained : .pending(count: pending)
+    }
+
+    /// `[entityName: Set<Z_PK vivos>]` de las 16 entidades sync para `CKIdentityCapture.scanOrphanMetadata`.
+    /// CONTRATO (RP-4): las 16 keys SIEMPRE presentes (Set vacío si 0 filas vivas) — sin filas vivas de `Tag`,
+    /// una metadata de Tag post-purga ES huérfana real y debe contarse; y metadata de entidades NO cableadas
+    /// (p.ej. `CloudMigrationMarker`) se ignora por key AUSENTE. VIVOS = TODAS las filas vivas del store (NO se
+    /// reusa `collectIdentityPairs`: ese empareja por testigo `SyncIdentity` y una fila viva sin syncID contaría
+    /// como huérfana → falso positivo R6). `static` para que el panel DEBUG (I11-5) lo reuse.
+    static func collectLiveByEntityName(context: ModelContext) -> [String: Set<Int64>] {
+        var out: [String: Set<Int64>] = [:]
+        addLiveRows(TransactionItem.self, into: &out, context: context)
+        addLiveRows(InboxDraft.self, into: &out, context: context)
+        addLiveRows(Category.self, into: &out, context: context)
+        addLiveRows(FavoritePayment.self, into: &out, context: context)
+        addLiveRows(MerchantMemory.self, into: &out, context: context)
+        addLiveRows(ExchangeRate.self, into: &out, context: context)
+        addLiveRows(Budget.self, into: &out, context: context)
+        addLiveRows(ScheduledPayment.self, into: &out, context: context)
+        addLiveRows(Account.self, into: &out, context: context)
+        addLiveRows(Subcategory.self, into: &out, context: context)
+        addLiveRows(Tag.self, into: &out, context: context)
+        addLiveRows(NotificationItem.self, into: &out, context: context)
+        addLiveRows(CashFlowPlan.self, into: &out, context: context)
+        addLiveRows(CashFlowLine.self, into: &out, context: context)
+        addLiveRows(CashFlowOverride.self, into: &out, context: context)
+        addLiveRows(GroupBridgePreference.self, into: &out, context: context)
+        return out
+    }
+
+    /// Fetch CONCRETO por tipo (regla `#Predicate`). La key es el nombre de entidad Core Data (= nombre de
+    /// clase `@Model`) y SIEMPRE se inserta (Set vacío si 0 filas) para honrar el contrato de RP-4. El `Z_PK`
+    /// se extrae del `PersistentIdentifier` (URI → parse), consistente con el camino de captura.
+    private static func addLiveRows<M: PersistentModel>(
+        _ type: M.Type, into out: inout [String: Set<Int64>], context: ModelContext
+    ) {
+        let name = String(describing: M.self)
+        var set = out[name] ?? []
+        do {
+            for model in try context.fetch(FetchDescriptor<M>()) {
+                if let zpk = CKIdentityCapture.entityAndPK(for: model.persistentModelID)?.zpk {
+                    set.insert(zpk)
+                }
+            }
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor.collectLiveByEntityName: fetch(\(M.self)) falló: \(error)")
+            #endif
+        }
+        out[name] = set  // key SIEMPRE presente (contrato RP-4)
     }
 
     // MARK: - Heartbeat del lease (I14-pre, residual pendiente #3)

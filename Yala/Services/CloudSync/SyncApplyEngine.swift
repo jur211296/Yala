@@ -212,6 +212,19 @@ extension CloudSyncEngine {
             print("CloudSyncEngine.runPostPullReconcilers: split save falló: \(error)")
             #endif
         }
+        // Entidades de SISTEMA (política v1, residual gate de flags): GESTIONA SUS PROPIOS saves internos
+        // bajo autor DEFAULT (el CSV-mirror exige el cascade `.nullify` committeado antes del re-encode) →
+        // aquí solo se recoge el residual y se loguea un fallo del save final. Un fallo NO impide los otros.
+        do {
+            _ = CloudSyncReconciler.reconcileSystemEntities(context: context)
+            if context.hasChanges { try context.save() }
+        } catch {
+            context.rollback()
+            CloudSyncBreadcrumb.applyPageFailed(reason: "reconcilerSystem:\(error)")
+            #if DEBUG
+            print("CloudSyncEngine.runPostPullReconcilers: system save falló: \(error)")
+            #endif
+        }
     }
 
     /// Aplica UNA página en UN `saveWithAuthor` (D-5, atómico): por cada delta → apply|quarantine +
