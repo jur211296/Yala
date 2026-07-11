@@ -137,6 +137,7 @@ final class CloudSyncMigrationPanelModel {
     var reverseEligible = false
     var orphanScanLabel = "—"
     var adoptDiffLabel = "—"
+    var rebindsLabel = "—"
 
     private let context: ModelContext
     private var runner: MigrationRunner?
@@ -243,6 +244,41 @@ final class CloudSyncMigrationPanelModel {
         let liveCount = live.values.reduce(0) { $0 + $1.count }
         orphanScanLabel = "huérfanos \(report.orphans) · escaneados \(report.scanned) · failed \(report.failed) · vivos \(liveCount)"
         lastMessage = "Scan metadata huérfana (read-only): \(orphanScanLabel)"
+    }
+
+    /// HALLAZGO 4 (corrida device reversa 2026-07-11, D1 del review): listado READ-ONLY de testigos
+    /// `SyncIdentity` con `lastReboundAt != nil` (rebind-por-ancla del backfill / re-key del IdentityRemap
+    /// #29). Convierte en 1 tap la checklist del veredicto BENIGNO de `rebindsVerified` (`entityType` +
+    /// `lastReboundAt` corto, sin PII). Molde de `scanOrphanMetadata`: NO muta nada. `#Predicate` CONCRETO
+    /// sobre `SyncIdentity.lastReboundAt` (barato). El owner confirma: `entityType == inboxDraft` y
+    /// `lastReboundAt` anterior al cutover ⇒ los 2 pares byte-idénticos pre-`00439727` (benigno).
+    func listRebinds() {
+        do {
+            let rebinds = try context.fetch(
+                FetchDescriptor<SyncIdentity>(predicate: #Predicate { $0.lastReboundAt != nil }))
+            guard !rebinds.isEmpty else {
+                rebindsLabel = "0 testigos con lastReboundAt (sin rebinds)"
+                lastMessage = "Testigos rebindeados (read-only): ninguno"
+                return
+            }
+            // Cota del label (M2 del review adversarial): tras un remap masivo el listado crecería sin
+            // límite; 20 entradas bastan para la checklist del owner y el count total va delante.
+            let maxShown = 20
+            let sorted = rebinds
+                .sorted { ($0.lastReboundAt ?? .distantPast) < ($1.lastReboundAt ?? .distantPast) }
+            let lines = sorted.prefix(maxShown)
+                .map { id -> String in
+                    let when = id.lastReboundAt.map { $0.formatted(date: .abbreviated, time: .standard) } ?? "—"
+                    return "\(id.entityType) @ \(when)"
+                }
+                .joined(separator: " · ")
+            let suffix = sorted.count > maxShown ? " · …(+\(sorted.count - maxShown))" : ""
+            rebindsLabel = "\(rebinds.count): \(lines)\(suffix)"
+            lastMessage = "Testigos rebindeados (read-only): \(rebinds.count)"
+        } catch {
+            rebindsLabel = "error: \(error)"
+            lastMessage = "Testigos rebindeados falló: \(error)"
+        }
     }
 
     /// DIFERIDOS #30: diff READ-ONLY de filas huérfanas del adopt (§3.4). Pasos 1,3,4 del reconcile SIN
@@ -687,6 +723,7 @@ struct CloudSyncDebugView: View {
                     row("Origin", migration.reverseOriginLabel)
                     row("Orphan scan", migration.orphanScanLabel)
                     row("Adopt diff", migration.adoptDiffLabel)
+                    row("Rebinds", migration.rebindsLabel)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(DS.Spacing.sm)
@@ -695,6 +732,7 @@ struct CloudSyncDebugView: View {
 
                 migrationButton("Verificar elegibilidad reversa") { migration.verifyReverseEligibility() }
                 migrationButton("Scan metadata huérfana (read-only)") { migration.scanOrphanMetadata() }
+                migrationButton("Testigos rebindeados (read-only)") { migration.listRebinds() }
                 migrationButton("Diff huérfanas (adopt) (read-only)") { await migration.diffOrphansAdopt() }
                 migrationButton("Borrar marcador CloudKit (stale)") { confirmDeleteMarker = true }
                 migrationButton("Purgar ExchangeRate locales (caché)") { confirmPurgeFX = true }

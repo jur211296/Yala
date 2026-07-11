@@ -291,6 +291,91 @@ habilitar el drain, (iii) pull + `runPostPullReconcilers` post-upload (cura dupl
 **e2e `adoptOrphanReconcile_twoDevices_uploadsOnlyTheOrphanRow`:** mismo patrón de cleanup RP-1 a 0
 vivas del run que el e2e de system entities (remedio SQL manual de arriba aplica igual).
 
+## Hallazgos de la corrida device de la reversa (2026-07-11): cierres pre-flags
+
+Tres hallazgos de la corrida device VERDE de la reversa (I11). Los tres son gate de encendido de flags.
+
+### HALLAZGO 2 (CRÍTICO) — fila FX invisible al drain: CERRADO con fix + tests
+
+**Root cause:** la fila `ExchangeRate` del boot post-cutover obtuvo `syncID` + tx de History, pero
+`SyncCursor.historyTokenData` **sobrevive la transición de mount** `.icloud` (mirror ON) → `.cloud`
+(mirror OFF) sobre el mismo archivo. El predicado del drain `$0.token > staleToken` — con un token
+acuñado en el mount viejo — **excluye silenciosamente** las txs del mount nuevo (no-comparabilidad
+cross-mount de `DefaultHistoryToken`, la MISMA clase que `fastForwardHistoryBaseline` documenta ~50%).
+Una exclusión por predicado NO lanza → cero breadcrumb → `pending=0` perpetuo. El Merkle SÍ ve la fila
+(hashea vivas por syncID) → **divergencia local-ahead inconvergible** (autoridad backend→local) →
+`reverseVerify mismatch ×3 → reverseFailedRollback`.
+
+**Fix (client-side, CERO cambios wire/gateway):** `SyncCursor += lastDrainedTxAt: Date?` (timestamp de la
+última tx drenada — ancla COMPARABLE cross-mount; los timestamps de History sí lo son) + guard
+`recoverIfHistoryTokenIncomparable` en `performDrain` con **revalidación continua** por sesión: mientras
+no validado y con `lastDrainedTxAt != nil`, un fetch por timestamp (`> lastDrainedTxAt - 60s`) detecta
+txs NUEVAS (`timestamp > lastDrainedTxAt`, externas, personales) ausentes del token-fetch → re-procesa la
+UNIÓN y **re-ancla SIEMPRE a la última tx del mount actual**. Breadcrumbs `historyTokenIncomparable(missed:)`
+/ `historyTokenRecovered` (fuera de `#if DEBUG`, counts only — en producción cloud `> 0` = canario de la
+clase). `SyncCursor` vive en el store sync-meta `.none` → **el campo NO exige deploy CloudKit** (0b del
+plan: el mirror `.icloud` solo espeja el store personal `.private`).
+
+- **AJUSTE de implementación (premisa del plan corregida):** "faltantes = todo el timestamp-fetch ausente
+  del token-fetch" produciría un FALSO POSITIVO en steady-state — la última tx ya drenada
+  (`timestamp == lastDrainedTxAt`) cae en la ventana de slack pero el token válido la excluye
+  correctamente → aparecería "faltante" y dispararía recovery en cada primer drain de sesión. El
+  discriminante real de un token ROTO es una tx NUEVA (`timestamp > lastDrainedTxAt`); la frontera ya
+  drenada NO cuenta. El slack `-60s` solo ensancha el FETCH (completitud de la unión).
+- **Residual (nil-skip):** un cursor pre-schema (`lastDrainedTxAt == nil`) con token YA roto no se
+  auto-cura (nunca consume → nunca puebla el campo). Benigno hoy: 0 devices `.cloud` en producción (flags
+  DARK); el device del owner se re-migra para I14 y tiene la palanca de purga FX; el flujo NUEVO puebla
+  el campo antes del remount (`drainOnce` de `startParallelHistoryCapture`).
+- **Residual (filas YA divergidas):** una tx vieja ya no capturable no se auto-cura — palanca: botón
+  "Purgar ExchangeRate locales (caché)" del panel (`397519b8`; la caché FX es re-derivable).
+- **S1 del review adversarial (re-migración misma instalación):** `fastForwardHistoryBaseline` ahora
+  estampa `lastDrainedTxAt` JUNTO al token (mismo save). Sin eso, un re-cutover sobre una instalación que
+  ya fue `.cloud` (ancla vieja) haría que el guard viera como "faltantes" TODAS las txs que el baseline
+  salta a propósito (el snapshot full-row las cubre) → recovery masiva del corpus + canario
+  `historyTokenIncomparable` FALSO en el propio camino de I14. Token y ancla avanzan SIEMPRE juntos.
+- **Tests:** `CloudSyncEngineTests` T0-T8 (stores on-disk, `.serialized`, contenido REAL del outbox;
+  T8 = regresión del S1).
+
+### HALLAZGO 3 — zombies ni-sweep-ni-mirror-history: CERRADO como cubierto por canario
+
+El sweep NUNCA propaga vía `ckRecordName`: borra la fila viva local bajo `outboxSaveAuthor` y el MIRROR
+exporta el delete. `zombiesSwept=0` con tombstones pre-mount = **caso normal benigno** — la red PRIMARIA
+de propagación de borrados de la época nube es el **replay de la History del MIRROR al remontar**
+(I11-2/S2), no el sweep.
+
+**Matriz (tombstone pre/post-mount × History del mirror viva/purgada/token-inválido × testigo vivo/borrado):**
+
+| tombstone | History del mirror | red que lo propaga |
+|-----------|--------------------|--------------------|
+| pre-mount  | viva            | replay del mirror al remontar ✓ |
+| pre-mount  | token-inválido / re-import | el sweep (load-bearing en este edge) ✓ |
+| pre-mount  | **PURGADA** + token vivo | **NINGUNA** (celda sin red; con o sin testigo) |
+| post-mount | cualquiera      | apply normal (borra fila + testigo) ✓ |
+
+**Veredicto: CERRADO como cubierto.** La única celda sin red — tombstone pre-mount + History del mirror
+PURGADA + token vivo — es HOY **INALCANZABLE**: la única purga (`purgeHistoryOnce`) está tras doble flag
+DARK; no hay purga por tiempo/espacio. `CKIdentityCapture.scanOrphanMetadata` **delata** esa celda
+(metadata sin fila viva, indiferente al testigo); la reparación sigue diferida (**D4**, canario v1).
+Distinto de DIFERIDOS #30: aquél es un UPSERT que no subió; éste es un DELETE que no se propagó — no se
+solapan.
+
+### HALLAZGO 4 — `rebindsVerified=2`: BENIGNO (docs + panel read-only)
+
+`verifyRebinds()` es read-only: cuenta testigos `SyncIdentity` con `lastReboundAt != nil` cuya fila viva
+aún porta el syncID. Solo 2 rutas estampan `lastReboundAt`: rebind-por-ancla del backfill
+(`SyncIdentityService`) y re-key del IdentityRemap #29; la auto-cura `identityCollisionHealed` **NO** lo
+estampa. Reconstrucción: los 2 pares de `InboxDraft` byte-idénticos (bug pre-`00439727`) recibieron
+rebind-por-ancla erróneo en la era pre-guard → 1 testigo con `lastReboundAt` por par → count=2.
+
+**Checklist de confirmación del owner (1 tap: panel → "Testigos rebindeados (read-only)"):**
+- [ ] `entityType` de los 2 testigos = `inboxDraft`.
+- [ ] `lastReboundAt` anterior al cutover.
+- [ ] `identityCollisionHealed count=2` presente y repair/remap = 0 en la corrida.
+
+Panel (D1 del review): `CloudSyncMigrationPanelModel.listRebinds()` — lista `entityType + lastReboundAt`
+(corto, sin PII) de los testigos con `lastReboundAt != nil` (molde `scanOrphanMetadata`, `#Predicate`
+concreto, NO muta). Convierte la checklist en 1 tap.
+
 ## Proyecto Supabase de PRODUCCIÓN (DIFERIDOS #23 — creado 2026-07-11)
 
 Proyecto **`kefvaiymtgytemwbltlz`** (`yala-modo-nube-production`), organización dedicada

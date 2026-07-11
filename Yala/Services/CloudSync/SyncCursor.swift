@@ -60,6 +60,24 @@ final class SyncCursor {
     /// la cubriría igual el cursor si también se recreó). Additive (v1→v2). `Int64` (sin techo de 32 bits).
     var quarantinePendingCount: Int64 = 0
 
+    /// TIMESTAMP (`DefaultHistoryTransaction.timestamp`) de la última transacción de History consumida por
+    /// el drain — se persiste en el MISMO `save()` que avanza `historyTokenData`. Ancla COMPARABLE
+    /// CROSS-MOUNT del guard de validación del token (hallazgo 2, corrida device reversa 2026-07-11): el
+    /// `DefaultHistoryToken` NO es comparable de forma fiable entre montajes distintos del store
+    /// (`.icloud` mirror-ON → `.cloud` mirror-OFF sobre el mismo archivo) → un `token > staleToken` acuñado
+    /// en el mount viejo puede EXCLUIR silenciosamente las txs del mount nuevo; los timestamps SÍ son
+    /// comparables. `nil` = cursor pre-schema (aún no consumió nada bajo este campo) → el guard hace SKIP
+    /// (residual documentado: un token YA roto en un cursor pre-schema no se auto-cura hasta que un drain
+    /// puebla el campo; benigno hoy — 0 devices `.cloud` en producción, flags DARK). Additive (v2→v2
+    /// lógico; el testigo A1 `schemaVersion` NO se bumpea: el campo trae default `nil`).
+    ///
+    /// 0b (viabilidad, plan): este campo NO exige deploy de schema CloudKit. `SyncCursor` vive SIEMPRE en
+    /// `SwiftDataConfiguration.syncMetaConfiguration` con `cloudKitDatabase: .none` (metadata LOCAL por
+    /// dispositivo que NUNCA se espeja); el mirror de un device `.icloud` solo espeja el store PERSONAL
+    /// (`.private`), no el sync-meta → un campo nuevo aquí es puramente local (lightweight migration del
+    /// store `.none`, sin autocreación en CloudKit).
+    var lastDrainedTxAt: Date?
+
     /// Versión del schema bajo la que se materializó esta fila (testigo A1).
     var schemaVersion: Int = CloudSyncSchemaVersions.syncCursor
 
@@ -68,12 +86,14 @@ final class SyncCursor {
         serverSeqCursor: Int64 = 0,
         clockLatestHLC: String? = nil,
         quarantinePendingCount: Int64 = 0,
+        lastDrainedTxAt: Date? = nil,
         schemaVersion: Int = CloudSyncSchemaVersions.syncCursor
     ) {
         self.historyTokenData = historyTokenData
         self.serverSeqCursor = serverSeqCursor
         self.clockLatestHLC = clockLatestHLC
         self.quarantinePendingCount = quarantinePendingCount
+        self.lastDrainedTxAt = lastDrainedTxAt
         self.schemaVersion = schemaVersion
     }
 }

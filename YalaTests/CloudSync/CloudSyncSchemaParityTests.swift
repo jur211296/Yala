@@ -97,12 +97,15 @@ struct CloudSyncSchemaParityTests {
 
     @Test func syncCursor_hasExactPropertySet() {
         // I8f-1 añadió `serverSeqCursor` (cursor del pull) + `clockLatestHLC` (reloj durable, D-3);
-        // I9 añadió `quarantinePendingCount` (testigo lockstep de la cuarentena), todos additive.
+        // I9 añadió `quarantinePendingCount` (testigo lockstep de la cuarentena); HALLAZGO 2 (corrida
+        // device reversa 2026-07-11) añadió `lastDrainedTxAt` (ancla comparable cross-mount del guard del
+        // token), todos additive. `SyncCursor` vive en el store sync-meta `.none` → sin deploy CloudKit.
         let expected: Set<String> = [
             "historyTokenData",
             "serverSeqCursor",
             "clockLatestHLC",
             "quarantinePendingCount",
+            "lastDrainedTxAt",
             "schemaVersion",
         ]
         #expect(propertyNames(SyncCursor.self) == expected)

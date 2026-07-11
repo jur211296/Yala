@@ -66,6 +66,21 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSync historyTokenExpired — reconcile (full rescan)")
     }
 
+    /// HALLAZGO 2 (corrida device reversa 2026-07-11): el guard de validación por timestamp detectó que el
+    /// `historyTokenData` del cursor NO surfacea `missed` transacciones externas del mount actual (token
+    /// acuñado en un mount previo → no-comparable cross-mount, la MISMA clase que `fastForwardHistoryBaseline`
+    /// documenta). El drain re-procesa la unión y re-ancla el token. En producción cloud, `> 0` = canario de
+    /// esta clase de bug (fila que jamás llega al outbox → divergencia Merkle local-ahead). Sin PII (solo count).
+    static func historyTokenIncomparable(missed: Int) {
+        logger.notice("CloudSync historyTokenIncomparable missed=\(missed, privacy: .public) — token no-comparable cross-mount; re-procesando unión + re-anclando")
+    }
+
+    /// HALLAZGO 2: el guard re-ancló el `historyTokenData` a la última tx del mount actual tras un
+    /// `historyTokenIncomparable`. Par de recuperación del canario. Sin PII.
+    static func historyTokenRecovered() {
+        logger.notice("CloudSync historyTokenRecovered — token re-anclado al mount actual")
+    }
+
     /// D4 (I12): un UPDATE de History mutó el keypath de IDENTIDAD de una entidad cuya identidad de sync
     /// es su UUID persistido (p.ej. `Tag.id`/`Account.shortcutID` regenerado). El drain, ante ese UPDATE
     /// identity-only, SIGUE haciendo SKIP (el sync_id es la PK, no una columna del mapa → `changedColumns`
@@ -737,6 +752,34 @@ final class CloudSyncEngine {
     /// asertable). Acumula a lo largo de la vida de la instancia.
     private(set) var identityMutationObservedCount = 0
 
+    // MARK: Guard del token de History (HALLAZGO 2, corrida device reversa 2026-07-11)
+
+    /// El token del cursor ya se validó (o recuperó) contra el mount ACTUAL en esta sesión (instancia). Una
+    /// vez `true`, el guard de validación NO vuelve a correr (cero coste en steady-state). Empieza `false` en
+    /// cada instancia fresca (relaunch) → re-valida en el PRIMER drain de la sesión, que es cuando puede
+    /// detectarse un token acuñado en un mount previo. No se persiste (es estado de sesión).
+    /// `private(set)` para que los tests asserten la "no-validación única" (T5). Solo el motor lo escribe.
+    private(set) var historyTokenValidated = false
+
+    /// Slack fijo (segundos) del fetch por timestamp del guard: re-lee la frontera `[lastDrainedTxAt-60s, …]`
+    /// para no perder txs de la ventana del último drain. Opera sobre `cursor.lastDrainedTxAt` (dato
+    /// PERSISTIDO) — NUNCA sobre `Date()`/`Calendar.current`. La frontera re-leída la absorbe el dedup por
+    /// `(syncID,hlc,op)` + LWW HLC-idempotente en el backend (documentado en `recoverIfHistoryTokenIncomparable`).
+    /// SUPUESTO documentado (M1 del review adversarial): las txs del mount NUEVO llevan timestamps del
+    /// wall-clock del device ≥ `lastDrainedTxAt` (History es append-only y el drain estampa el ancla con la
+    /// última tx consumida) — una tx nueva >60s MÁS ANTIGUA que el ancla solo podría existir con un rewind
+    /// de reloj mayor al slack durante la ventana del remount; fuera del alcance de esta red (residual
+    /// aceptado, mismo orden de improbabilidad que N1 timestamp-exacto).
+    private static let historyTokenSlack: TimeInterval = 60
+
+    /// HALLAZGO 2: nº de veces que el guard detectó un token no-comparable cross-mount (par del breadcrumb
+    /// `historyTokenIncomparable`). Expuesto para tests (el logger no es asertable).
+    private(set) var historyTokenIncomparableCount = 0
+
+    /// HALLAZGO 2: nº de veces que el guard re-ancló el token al mount actual (par del breadcrumb
+    /// `historyTokenRecovered`). Expuesto para tests.
+    private(set) var historyTokenRecoveredCount = 0
+
     // MARK: Espejo del outbox (A1, §d.5)
 
     /// Espejo App Group del `SyncOutbox` (durabilidad ante lightweight migration). `nil` = mirroring
@@ -834,7 +877,18 @@ final class CloudSyncEngine {
             let lookups = try sweepAndBuildLookups(context)
 
             // 3) History posterior al token (o completo si nil / token expirado).
-            let txns = try fetchHistory(after: token, context: context)
+            let tokenTxns = try fetchHistory(after: token, context: context)
+
+            // 3-bis) HALLAZGO 2 — guard de validación del token por TIMESTAMP con revalidación continua.
+            //    Red redundante barata: si el token del cursor (acuñado en un mount previo) dejó de
+            //    surfacear txs nuevas del mount actual (no-comparabilidad cross-mount), re-procesa la
+            //    UNIÓN de ambos fetches y re-ancla. `guard.txns` = tokenTxns en steady-state; la unión al
+            //    recuperar. `guard.reanchor` != nil ⇒ recovery (se re-ancla SIEMPRE a la última tx de la
+            //    unión en el paso 7). Ver doc-comment de `recoverIfHistoryTokenIncomparable`.
+            let tokenGuard = recoverIfHistoryTokenIncomparable(
+                cursor: cursor, tokenTxns: tokenTxns, context: context)
+            if tokenGuard.validatedByCompare { historyTokenValidated = true }
+            let txns = tokenGuard.txns
 
             // 4) Pre-siembra del dedup con las filas de outbox YA existentes (kill-replay: absorbe las
             //    filas persistidas en un drain previo cuyo token no llegó a avanzar).
@@ -846,9 +900,11 @@ final class CloudSyncEngine {
             //    cursor) se DESCARTAN y NO avanzan el high-water → convergencia: un drain ocioso re-lee
             //    solo sus propios writes (0 filas) y no vuelve a mover/escribir el cursor. Criterio de
             //    drift: si `clock.send` lanza, NO se consume esa transacción (el high-water se queda
-            //    antes de ella) → se reintenta al próximo drain.
+            //    antes de ella) → se reintenta al próximo drain. `advancedTxAt` = timestamp de esa última
+            //    tx externa (HALLAZGO 2: ancla comparable cross-mount, persistida junto al token en 7).
             var rows: [PendingOutboxRow] = []
             var advancedToken: DefaultHistoryToken?
+            var advancedTxAt: Date?
             for tx in txns {
                 // Anti-auto-captura (echo suppression): descartar los writes del propio motor. NO
                 // avanzan el high-water (si lo hicieran, cada avance escribiría el cursor → loop).
@@ -878,6 +934,7 @@ final class CloudSyncEngine {
                 // Transacción externa consumida (produzca filas o no — p.ej. anti-fuga, syncID-only,
                 // o un gap): avanza el high-water para no re-procesarla (evita recontar gaps).
                 advancedToken = tx.token
+                advancedTxAt = tx.timestamp
             }
 
             // 6) Persistir las filas del outbox (autor del motor → anti-auto-captura + no re-lectura).
@@ -901,15 +958,36 @@ final class CloudSyncEngine {
             }
 
             // 7) Avanzar el token SOLO tras persistir el outbox (crash entre 6 y 7 → el re-drain re-crea
-            //    idempotente por el dedup), y SOLO si se consumió history externa (advancedToken != nil).
-            //    El save del cursor lleva `outboxSaveAuthor` → no se re-lee. Suprimible en tests (kill).
-            //    D-3: el reloj se PERSISTE en el MISMO save que avanza el token (crash → ambos revierten
-            //    juntos → replay determinista). Bundling seguro: todo `clock.send` de esta vuelta ocurrió
-            //    al traducir una tx externa que también fijó `advancedToken` (advance ⟹ token consumido).
-            if !_testSuppressTokenAdvance, let advancedToken {
-                try saveWithAuthor(context, Self.outboxSaveAuthor) {
-                    cursor.historyTokenData = try encodeToken(advancedToken)
-                    cursor.clockLatestHLC = clock.latest?.description
+            //    idempotente por el dedup). El save del cursor lleva `outboxSaveAuthor` → no se re-lee.
+            //    Suprimible en tests (kill). D-3: el reloj se PERSISTE en el MISMO save que avanza el token
+            //    (crash → ambos revierten juntos → replay determinista). HALLAZGO 2: `lastDrainedTxAt` se
+            //    persiste ATÓMICAMENTE con el token (misma transacción) → el ancla comparable cross-mount
+            //    nunca queda desincronizada del token.
+            if !_testSuppressTokenAdvance {
+                if let reanchor = tokenGuard.reanchor {
+                    // RECOVERY: el token era no-comparable cross-mount → re-anclar SIEMPRE a la última tx de
+                    //    la UNIÓN, AUNQUE sea del motor (`author == outboxSaveAuthor`). Difiere del invariante
+                    //    normal —que solo avanza con history EXTERNA— a propósito: para re-anclar basta un
+                    //    token del mount ACTUAL (el filtro de emisión, que sí descarta el motor, es
+                    //    independiente del avance del cursor). Sin esto el token quedaría en el mount viejo.
+                    try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                        cursor.historyTokenData = try encodeToken(reanchor.token)
+                        cursor.lastDrainedTxAt = reanchor.txAt
+                        cursor.clockLatestHLC = clock.latest?.description
+                    }
+                    historyTokenValidated = true
+                    historyTokenRecoveredCount += 1
+                    CloudSyncBreadcrumb.historyTokenRecovered()
+                } else if let advancedToken {
+                    //    Avance normal: SOLO si se consumió history externa. Bundling seguro: todo `clock.send`
+                    //    de esta vuelta ocurrió al traducir una tx externa que también fijó `advancedToken`.
+                    try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                        cursor.historyTokenData = try encodeToken(advancedToken)
+                        cursor.lastDrainedTxAt = advancedTxAt
+                        cursor.clockLatestHLC = clock.latest?.description
+                    }
+                    // Outcome (b): consumir ≥1 tx externa re-ancla el token al mount actual → validado.
+                    historyTokenValidated = true
                 }
             }
 
@@ -930,6 +1008,136 @@ final class CloudSyncEngine {
             print("CloudSyncEngine: drain error: \(error)")
             #endif
         }
+    }
+
+    // MARK: - Guard de validación del token de History (HALLAZGO 2, corrida device reversa 2026-07-11)
+
+    /// Resultado del guard: qué transacciones procesa el drain esta vuelta y, si hubo recuperación, a qué
+    /// tx re-anclar el token.
+    private struct TokenGuardResult {
+        /// Transacciones a procesar: `tokenTxns` en steady-state; la UNIÓN de ambos fetches al recuperar.
+        var txns: [DefaultHistoryTransaction]
+        /// El guard comparó y el token surfacea BIEN las txs del mount actual → marcar validado de inmediato
+        /// (validación de solo-lectura, sin persistir). Falso en recovery (validar tras persistir el re-ancla).
+        var validatedByCompare = false
+        /// Recovery: la última tx de la unión a la que el drain debe RE-ANCLAR el token (+ su timestamp).
+        /// `nil` = no hubo recuperación. Al persistir con éxito, el caller marca validado + emite el par.
+        var reanchor: (token: DefaultHistoryToken, txAt: Date)?
+    }
+
+    /// Detecta y recupera un `historyTokenData` que dejó de surfacear transacciones nuevas del mount ACTUAL
+    /// (no-comparabilidad cross-mount de `DefaultHistoryToken`) usando los TIMESTAMPS de History (SÍ
+    /// comparables cross-mount) como red redundante. Root cause (corrida device 2026-07-11): la fila
+    /// `ExchangeRate` del boot post-cutover obtuvo syncID y tx de History, pero el token del cursor —acuñado
+    /// en el mount `.icloud` (mirror ON) previo al remontaje `.cloud` (mirror OFF) sobre el MISMO archivo—
+    /// hizo que el predicado `$0.token > staleToken` EXCLUYERA silenciosamente esa tx (una exclusión por
+    /// predicado NO lanza → cero breadcrumb → `pending=0` perpetuo → divergencia Merkle local-ahead
+    /// inconvergible → `reverseVerify mismatch ×3 → reverseFailedRollback`). Es la MISMA clase que
+    /// `fastForwardHistoryBaseline` (~50% no-comparable bajo carga), pero el predicado idéntico del drain
+    /// quedó sin blindar. Este guard es agnóstico al mecanismo: recupera CUALQUIER token que deje de
+    /// surfacear txs nuevas (el remount probado Y una eventual no-comparabilidad en relaunch normal).
+    ///
+    /// Corre SOLO mientras `!historyTokenValidated` (una vez validado/recuperado en la sesión, coste cero) y
+    /// SOLO con `historyTokenData != nil && lastDrainedTxAt != nil`. `lastDrainedTxAt == nil` (cursor
+    /// pre-schema) → SKIP (residual documentado: un token YA roto en un cursor pre-schema no se auto-cura
+    /// —nunca consume → nunca puebla el campo—; benigno: 0 devices `.cloud` en producción, flags DARK; el
+    /// flujo NUEVO puebla el campo antes del remount vía el `drainOnce` de `startParallelHistoryCapture`).
+    ///
+    /// **Outcomes:**
+    /// - Faltantes > 0 (txs externas de entidad personal en la ventana de timestamp AUSENTES del token-fetch)
+    ///   → token ROTO: breadcrumb `historyTokenIncomparable`, procesar la UNIÓN, re-anclar SIEMPRE a la
+    ///   última tx de la unión (paso 7) → `historyTokenRecovered` al persistir.
+    /// - Faltantes == 0 con timestamp-fetch NO vacío → el token compara bien → `validatedByCompare`.
+    /// - timestamp-fetch vacío (nada contra qué validar) → NO valida → revalida en el próximo drain (coste:
+    ///   un fetch acotado). También valida (b): si el camino normal consume ≥1 tx externa, el avance del
+    ///   paso 7 re-ancla al mount actual → validado.
+    ///
+    /// Frontera del slack (`historyTokenSlack`): re-lee la ventana `[lastDrainedTxAt-60s, …]` → txs ya
+    /// drenadas se re-emiten con HLC fresco (el reloj de la instancia ya avanzó), pero el dedup por
+    /// `(syncID,hlc,op)` no las absorbe → filas de outbox redundantes que el backend colapsa por LWW
+    /// HLC-idempotente (mismo syncID+contenido, converge). Coste aceptado (recovery es one-shot por sesión).
+    ///
+    /// **Candidatos DESCARTADOS:**
+    /// - *Reset token→nil en `persistLocalMode`/`persistICloudMode`*: full-rescan de una History que puede
+    ///   contener el corpus completo (purga doble-DARK) → re-emisión masiva; y no cubre el relaunch normal.
+    /// - *Re-anclar baseline en boot temprano (pre-paso-2)*: pierde la cola del mount viejo (ventana
+    ///   último-drain→kill) y crea una dependencia frágil del orden de bootstrap.
+    /// - *Timestamp como cursor PRIMARIO*: wall-clock no-monótono como mecanismo primario es peor que
+    ///   token + red redundante barata.
+    ///
+    /// Sin `Date()`/`Calendar.current`: el cutoff se deriva de `cursor.lastDrainedTxAt` (dato persistido).
+    private func recoverIfHistoryTokenIncomparable(
+        cursor: SyncCursor,
+        tokenTxns: [DefaultHistoryTransaction],
+        context: ModelContext
+    ) -> TokenGuardResult {
+        // Gate: solo hasta la primera validación de la sesión, y solo con ancla poblada (cursor pre-schema → skip).
+        guard !historyTokenValidated,
+              cursor.historyTokenData != nil,
+              let lastDrainedTxAt = cursor.lastDrainedTxAt else {
+            return TokenGuardResult(txns: tokenTxns)
+        }
+        // Fetch por timestamp con slack fijo — opera sobre dato PERSISTIDO (sin Date()/Calendar.current).
+        let cutoff = lastDrainedTxAt.addingTimeInterval(-Self.historyTokenSlack)
+        let timestampTxns: [DefaultHistoryTransaction]
+        do {
+            timestampTxns = try context.fetchHistory(
+                HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp > cutoff }))
+        } catch {
+            #if DEBUG
+            print("CloudSyncEngine: guard token — fetch por timestamp falló: \(error)")
+            #endif
+            return TokenGuardResult(txns: tokenTxns)
+        }
+        // Nada en la ventana → nada contra qué validar → revalidar en el próximo drain.
+        guard !timestampTxns.isEmpty else { return TokenGuardResult(txns: tokenTxns) }
+
+        // Faltantes = txs NUEVAS del timestamp-fetch AUSENTES del token-fetch, que el drain NO filtraría
+        // igual (externas + con ≥1 change de entidad personal — espejo del filtro del paso 5). Ambos
+        // fetches son del MISMO mount → sus tokens son mutuamente comparables (identidad por token, 0c).
+        //
+        // AJUSTE de implementación (premisa del plan corregida): "ausente del token-fetch" a secas produce
+        // un FALSO POSITIVO en steady-state — la ÚLTIMA tx ya drenada (timestamp == `lastDrainedTxAt`) cae
+        // en la ventana de slack (`-60s`) pero el token VÁLIDO la excluye correctamente (`after(token)` no
+        // la incluye) → aparecería como "faltante" y dispararía recovery en CADA primer drain de sesión.
+        // El discriminante real de un token ROTO es una tx NUEVA (`timestamp > lastDrainedTxAt`) que el
+        // token no surfacea — la frontera ya drenada (`<= lastDrainedTxAt`) NO cuenta. El slack `-60s` solo
+        // ensancha el FETCH (completitud de la unión); la determinación de faltantes es estricta.
+        let tokenTokens = tokenTxns.map(\.token)
+        func tokenPresent(_ tx: DefaultHistoryTransaction) -> Bool {
+            tokenTokens.contains { $0 == tx.token }
+        }
+        let missing = timestampTxns.filter { tx in
+            guard tx.timestamp > lastDrainedTxAt else { return false }  // NUEVA, no la frontera ya drenada
+            guard tx.author != Self.outboxSaveAuthor else { return false }
+            guard tx.changes.contains(where: {
+                Self.personalEntityNames.contains($0.changedPersistentIdentifier.entityName)
+            }) else { return false }
+            return !tokenPresent(tx)
+        }
+        guard !missing.isEmpty else {
+            // El token surfacea bien las txs del mount actual → validado (solo-lectura).
+            return TokenGuardResult(txns: tokenTxns, validatedByCompare: true)
+        }
+
+        // Token ROTO. UNIÓN de ambos fetches (dedup por igualdad de token), ordenada por (timestamp, índice
+        // original) → determinista para el lockstep del replay SIN depender de `Comparable` sobre el token.
+        historyTokenIncomparableCount += 1
+        CloudSyncBreadcrumb.historyTokenIncomparable(missed: missing.count)
+        var union = tokenTxns
+        for tx in timestampTxns where !tokenPresent(tx) { union.append(tx) }
+        let orderedUnion = union.enumerated()
+            .sorted { a, b in
+                a.element.timestamp != b.element.timestamp
+                    ? a.element.timestamp < b.element.timestamp
+                    : a.offset < b.offset
+            }
+            .map(\.element)
+        guard let last = orderedUnion.last else {
+            // Inalcanzable (missing no vacío ⇒ unión no vacía), defensivo.
+            return TokenGuardResult(txns: orderedUnion)
+        }
+        return TokenGuardResult(txns: orderedUnion, reanchor: (token: last.token, txAt: last.timestamp))
     }
 
     // MARK: - Clasificación del reason de tombstone (§c.1, drain-side)
@@ -1709,9 +1917,16 @@ final class CloudSyncEngine {
             // tokens de SyncIdentity de forma rutinaria, device-probado); lo que NO era seguro es anclar a
             // la tx del PROPIO save del motor. Sin tx no-motor todavía (born-cloud), no hay ventana que
             // cerrar → return (token queda como estaba).
-            guard let lastToken = txns.last(where: { $0.author != Self.outboxSaveAuthor })?.token else { return }
+            guard let lastTx = txns.last(where: { $0.author != Self.outboxSaveAuthor }) else { return }
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
-                cursor.historyTokenData = try encodeToken(lastToken)
+                cursor.historyTokenData = try encodeToken(lastTx.token)
+                // Estampar el ancla temporal JUNTO al token (S1 del review adversarial): un fast-forward
+                // deja a propósito txs jamás drenadas por debajo del token (el snapshot las cubre full-row);
+                // sin mover `lastDrainedTxAt`, el guard de validación del primer drain (re-migración sobre
+                // la misma instalación, token viejo semanas atrás) las vería TODAS como "faltantes" →
+                // recovery masiva del corpus + canario `historyTokenIncomparable` FALSO. Token y ancla
+                // deben avanzar SIEMPRE en el mismo save.
+                cursor.lastDrainedTxAt = lastTx.timestamp
             }
         } catch {
             #if DEBUG
