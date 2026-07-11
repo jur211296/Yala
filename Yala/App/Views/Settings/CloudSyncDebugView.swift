@@ -328,11 +328,42 @@ final class CloudSyncMigrationPanelModel {
             (try? context.fetchCount(FetchDescriptor<M>())) ?? -1
         }
         let liveOutbox = (try? context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }.count) ?? -1
+        // Diagnóstico FX (hallazgo corrida reversa 2026-07-11): una fila local de ExchangeRate CON syncID
+        // que el server no conoce diverge el Merkle PARA SIEMPRE (collectLeaves salta sin-syncID; el drain
+        // no re-captura una History tx ya consumida). Esta línea muestra cada fila con [syncID/testigo]
+        // para cazarla a ojo. try? = patrón local del panel (degradación visible a "—").
+        let fxRows = (try? context.fetch(FetchDescriptor<ExchangeRate>())) ?? []
+        let witnessIDs = Set(((try? context.fetch(FetchDescriptor<SyncIdentity>())) ?? []).map(\.syncID))
+        let fxDiag = fxRows.isEmpty ? "—" : fxRows
+            .sorted { $0.dateKey < $1.dateKey }
+            .map { row in
+                let hasWitness = row.syncID.map { witnessIDs.contains($0) } == true
+                return "\(row.dateKey)[sid \(row.syncID != nil ? "sí" : "NO")·w \(hasWitness ? "sí" : "no")]"
+            }
+            .joined(separator: " ")
         dryRunSummary = """
         TX \(count(TransactionItem.self)) · Cat \(count(Category.self)) · Sub \(count(Subcategory.self)) · \
         Acc \(count(Account.self)) · Budget \(count(Budget.self)) · Sched \(count(ScheduledPayment.self))
         Identidades \(count(SyncIdentity.self)) · Outbox vivo \(liveOutbox)
+        FX \(fxRows.count): \(fxDiag)
         """
+    }
+
+    /// Purga TODAS las filas locales de `ExchangeRate` (caché re-derivable — la app re-fetchea a demanda;
+    /// cada TX guarda su propio `exchange_rate`). Higiene DEBUG de la reversa (corrida 2026-07-11): una
+    /// fila FX local con syncID que el server no conoce bloquea `reverseVerify` con mismatch perpetuo.
+    /// El delete va con autor por DEFECTO → el drain lo captura como tombstone y lo pushea (las filas ya
+    /// tombstoneadas server-side son noop idempotente).
+    func purgeLocalExchangeRates() {
+        do {
+            let rows = try context.fetch(FetchDescriptor<ExchangeRate>())
+            for row in rows { context.delete(row) }
+            if context.hasChanges { try context.save() }
+            lastMessage = "ExchangeRate purgadas: \(rows.count) filas locales. La caché se re-fetchea a demanda."
+        } catch {
+            lastMessage = "Purga ExchangeRate falló: \(error)"
+        }
+        refresh()
     }
 
     /// Lee el journal + testigos vivos (sin mutar nada).
@@ -390,6 +421,7 @@ struct CloudSyncDebugView: View {
     @State private var confirmStartReverse2 = false
     @State private var confirmEscapeHatch = false
     @State private var confirmDeleteMarker = false
+    @State private var confirmPurgeFX = false
     // Spike S7: override de fase simulada (nil = sin override = producción `.notStarted`) + quiescencia
     // viva (refrescada cada 1s) para mostrar en vivo la decisión del gate §i.9.
     @State private var selectedS7Phase: MigrationPhaseStore.SimulatedPhase?
@@ -494,6 +526,15 @@ struct CloudSyncDebugView: View {
             Button("Cancelar", role: .cancel) {}
         } message: {
             Text("Borra CD_CloudMigrationMarker del store personal; con el mirror MONTADO el delete se exporta a CloudKit. Úsalo SOLO para limpiar un marcador stale (p.ej. tras escape hatch post-cutover) antes de re-migrar.")
+        }
+        .confirmationDialog("Purgar ExchangeRate locales",
+                            isPresented: $confirmPurgeFX, titleVisibility: .visible) {
+            Button("Purgar caché FX", role: .destructive) {
+                migration?.purgeLocalExchangeRates()
+            }
+            Button("Cancelar", role: .cancel) {}
+        } message: {
+            Text("Borra TODAS las filas locales de ExchangeRate (caché re-derivable, se re-fetchea a demanda). Úsalo cuando una fila FX huérfana bloquea reverseVerify con mismatch perpetuo (hallazgo 2026-07-11).")
         }
     }
 
@@ -614,6 +655,7 @@ struct CloudSyncDebugView: View {
 
                 migrationButton("Verificar elegibilidad reversa") { migration.verifyReverseEligibility() }
                 migrationButton("Borrar marcador CloudKit (stale)") { confirmDeleteMarker = true }
+                migrationButton("Purgar ExchangeRate locales (caché)") { confirmPurgeFX = true }
 
                 Button {
                     confirmStartReverse = true
