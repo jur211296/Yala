@@ -166,27 +166,22 @@ el guard real vive en cutover/freeze/complete).
 
 Semántica de la acción (sirve a la ida Y a la reversa con UNA sola acción; `migration_in_progress OR
 reverse_in_progress`, guard líder SIN edad de lease): líder de un run activo → `UPDATE
-migration_updated_at=now()` → `ok:true`; líder distinto → `ok:false, reason:'other_leader'`; sin run (o
-sin fila) → `ok:false, reason:'not_in_progress'`. NO toca `migrated_at`/`reverse_frozen_at`/`reverted_at`/
+migration_updated_at=now()` → `ok:true`; líder distinto → `ok:false, reason:'other_leader'`; sin run
+activo → `ok:false, reason:'not_in_progress'` (la fila AUSENTE la corta el guard pre-dispatch del propio
+RPC con `no_profile`, inalcanzable para este branch). NO toca `migrated_at`/`reverse_frozen_at`/`reverted_at`/
 `claim_account`.
 
-**ESTADO: PENDIENTE DE DEPLOY (gateado al MCP de Supabase).** El cliente Swift + el set de actions del
-Worker + los goldens están en el repo, pero el RPC NO se desplegó (esta sesión no tenía el MCP; la regla
-es leer la functiondef viva y EXTENDER, jamás reescribir a ciegas). Orden EXACTO del owner:
-
-1. Aplicar `qa/cloud/pending-heartbeat-action.sql` vía MCP — **leer primero** `select
-   pg_get_functiondef('public.migration_progress(text,text)'::regprocedure)`, graftear el branch antes del
-   `else` de acción desconocida, `create or replace` con el cuerpo completo. **Staging
-   `fostjbbwstyuunmmefuk`; Production JAMÁS.**
-2. `cd gateway && npx wrangler deploy` (RPC-primero, Worker-después: pre-deploy el edge devuelve 400 a
-   `heartbeat`, protegiendo al RPC viejo).
-3. `cd gateway && npm test` → goldens **23-26** de `account.goldens.test.ts` (network ON).
-4. Re-tombstonear budgets (mismo SQL de la sección de la reversa) antes del e2e Swift.
-5. e2e Swift staging.
-
-**Nota (decisión de review-plan, sin gate silencioso):** hasta que (1)+(2) estén hechos, `npm test` tiene
-**4 rojos ESPERADOS** (goldens 23-26 activos a propósito — un gate por env var crearía el gap exacto de la
-lección `d49d2e47`; la suite es manual/network-only, así que el rojo pre-deploy es esperado y documentado).
+**ESTADO: ✅ DESPLEGADO (2026-07-11, MCP reconectado).** Migración `i14_heartbeat_action` aplicada en
+staging (`fostjbbwstyuunmmefuk`) como injerto server-side sobre la functiondef VIVA (un `DO` lee
+`pg_get_functiondef`, inserta el `elsif` ante el marcador del bloque FORWARD y ejecuta el
+`create or replace` — extensión verbatim, cero retipeo; idempotente si se re-aplica). El UPDATE del
+branch es CONDICIONAL + `FOUND` (idiom CAS de `i11_reverse_claim_cas`: un takeover que comitea entre el
+read y el write NO recibe el refresco del líder viejo). Worker redesplegado desde HEAD limpio (versión
+`55d27bb0`) y verificado por curl contra el DESPLEGADO (acción inválida → 400; `heartbeat` sin run →
+`not_in_progress` e2e). Gates post-deploy: goldens **130/130** (los 23-26 verdes, previos intactos) ·
+budgets parciales re-tombstoneados (gotcha aplicado) · e2e Swift staging **11/11** (4 suites, Merkle
+estricto). El artefacto `pending-heartbeat-action.sql` se retiró al aplicarse — el branch vivo se
+inspecciona con `pg_get_functiondef` y la migración queda en el historial de Supabase con su nombre.
 
 ## Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)
 
