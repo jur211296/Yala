@@ -526,11 +526,33 @@ async function rowExists(jwt: string, syncId: string): Promise<boolean> {
   return ((await res.json()) as unknown[]).length > 0;
 }
 
-describe("Freeze enforcement · /sync/push con reverse_frozen_at (staging real)", () => {
+/** Push de prefs (espejo mínimo de pushDeltas — /prefs/push, RPC apply_pref LWW por key). */
+async function pushPrefs(jwt: string, prefs: unknown[]): Promise<{ status: number; body: unknown }> {
+  const res = await app.fetch(
+    new Request("https://gw.local/prefs/push", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ prefs }),
+    }),
+    env,
+  );
+  return { status: res.status, body: await res.json() };
+}
+async function prefExists(jwt: string, key: string): Promise<boolean> {
+  const res = await fetch(`${URL}/rest/v1/user_preferences?key=eq.${key}&select=key`, {
+    headers: { apikey: ANON, Authorization: `Bearer ${jwt}` },
+  });
+  return ((await res.json()) as unknown[]).length > 0;
+}
+
+describe("Freeze enforcement · /sync/push + /prefs/push con reverse_frozen_at (staging real)", () => {
   const SID0 = crypto.randomUUID();
   const SID1 = crypto.randomUUID();
   const HLC0 = hlcOf(Date.UTC(2026, 6, 11, 12, 0, 0));
   const HLC1 = hlcOf(Date.UTC(2026, 6, 11, 12, 0, 1));
+  // Keys frescas por corrida (las prefs no tienen tombstone; se acumulan como los sync_id de dominio).
+  const KEY0 = `freeze-probe-0-${crypto.randomUUID()}`;
+  const KEY1 = `freeze-probe-1-${crypto.randomUUID()}`;
 
   it("19. cuenta CONGELADA → push 409 'yala_account_reverting'; leak ACOTADO al delta[0], el 2º NO entra", async () => {
     // Precondición: B tiene fila de profiles (goldens previos); un PATCH sobre fila ausente sería un
@@ -553,20 +575,48 @@ describe("Freeze enforcement · /sync/push con reverse_frozen_at (staging real)"
     expect(r1.status).toBe(409);
   });
 
-  it("20. la cuenta congelada NO bloquea pull ni merkle (la reversa §h DEPENDE del pull)", async () => {
+  it("19-bis. prefs: cuenta CONGELADA → /prefs/push 409 'yala_account_reverting'; mismo contrato de leak", async () => {
+    // Sigue congelada (estado del test 19). Mismo patrón que /sync/push: check en la sombra del primer
+    // apply_pref → pref[0] puede aterrizar (LWW-idempotente, backend muerto), la 2ª key NO entra.
+    const r = await pushPrefs(jwtB, [
+      { key: KEY0, value: "leak", hlc: HLC0 },
+      { key: KEY1, value: "blocked", hlc: HLC1 },
+    ]);
+    expect(r.status).toBe(409);
+    const err = r.body as { error?: { type?: string } };
+    expect(err.error?.type).toBe("yala_account_reverting");
+    expect(await prefExists(jwtB, KEY0)).toBe(true); // el leak documentado (pref[0])
+    expect(await prefExists(jwtB, KEY1)).toBe(false); // el gate corta antes de la 2ª key
+
+    // Caso 1-pref (el gate queda al FINAL): 409 igual — el cliente NO purga su outbox (solo en completed).
+    expect((await pushPrefs(jwtB, [{ key: KEY0, value: "leak", hlc: HLC0 }])).status).toBe(409);
+  });
+
+  it("20. la cuenta congelada NO bloquea pull/merkle ni prefs/pull (la reversa §h DEPENDE de leer)", async () => {
     // Sigue congelada (estado del test 19). El enforcement es PUSH-only: el re-drain de la reversa
     // (backend→local) y el sweep de zombies leen vía pull/merkle con el freeze YA estampado.
     expect(await getSync(jwtB, "/sync/pull?since=0&limit=1")).toBe(200);
     expect(await getSync(jwtB, "/sync/merkle")).toBe(200);
+    expect(await getSync(jwtB, "/prefs/pull?since=0")).toBe(200);
   });
 
-  it("21. DES-congelada → el MISMO batch entra 200 (noop el leak, applied el bloqueado — sin falso positivo residual)", async () => {
+  it("21. DES-congelada → los MISMOS batches entran 200 (noop el leak, applied el bloqueado — sin falso positivo residual)", async () => {
     expect(await patchProfile(jwtB, { reverse_frozen_at: null })).toBeLessThan(300);
     const r = await pushDeltas(jwtB, [txDelta(SID0, "frozen-leak", HLC0), txDelta(SID1, "frozen-blocked", HLC1)]);
     expect(r.status).toBe(200);
     const body = r.body as { results: Array<{ status: string }> };
     expect(body.results.map((x) => x.status)).toEqual(["noop", "applied"]); // SID0 ya aterrizó en el leak
     expect(await rowExists(jwtB, SID1)).toBe(true);
+
+    // Prefs: mismo contrato (KEY0 aterrizó en el leak con el MISMO hlc → noop; KEY1 entra fresca).
+    const rp = await pushPrefs(jwtB, [
+      { key: KEY0, value: "leak", hlc: HLC0 },
+      { key: KEY1, value: "blocked", hlc: HLC1 },
+    ]);
+    expect(rp.status).toBe(200);
+    const pbody = rp.body as { results: Array<{ status: string }> };
+    expect(pbody.results.map((x) => x.status)).toEqual(["noop", "applied"]);
+    expect(await prefExists(jwtB, KEY1)).toBe(true);
   });
 });
 

@@ -3,7 +3,8 @@
 //  YalaTests / CloudSync
 //
 //  Transporte de prefs (I13), sin red (URLSession stub). Cubre: clasificación de outcomes (200/401/403/
-//  5xx), decode de push (applied/noop + reason), decode de pull (envelope + cursor), y el body del push.
+//  409 yala_account_reverting (freeze §h.1)→accountUnavailable, 409 ajeno→transient/5xx), decode de push
+//  (applied/noop + reason), decode de pull (envelope + cursor), y el body del push.
 //
 
 import Foundation
@@ -98,6 +99,22 @@ struct PrefsSyncClientTests {
         let stub = PrefsStubSession(status: 403)
         let outcome = await client(stub).push([WirePref(key: "a", value: "1", hlc: "h")])
         #expect(outcome == .accountUnavailable)
+    }
+
+    @Test func push_409_reverting_accountUnavailable() async {
+        // Freeze de la reversa (§h.1): 409 con type `yala_account_reverting` → STOP como el 403; el
+        // outbox de prefs NO se purga (solo se purga en `completed`).
+        let body = Data(#"{"error":{"message":"reversa","type":"yala_account_reverting","param":null,"code":"yala_account_reverting"}}"#.utf8)
+        let stub = PrefsStubSession(status: 409, body: body)
+        let outcome = await client(stub).push([WirePref(key: "a", value: "1", hlc: "h")])
+        #expect(outcome == .accountUnavailable)
+    }
+
+    @Test func push_409_unknownBody_transient() async {
+        // Un 409 AJENO (sin el envelope del gateway) conserva el trato previo: transient.
+        let stub = PrefsStubSession(status: 409, body: Data("conflict".utf8))
+        let outcome = await client(stub).push([WirePref(key: "a", value: "1", hlc: "h")])
+        #expect(outcome == .transient)
     }
 
     @Test func push_500_transient() async {

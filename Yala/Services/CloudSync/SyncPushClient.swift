@@ -72,10 +72,22 @@ private struct SyncPushResponse: Decodable {
 }
 
 /// Envelope de error del gateway (shape OpenAI-compatible, `gateway/src/errors.ts`) — solo el `type`
-/// discriminante. Se usa para distinguir el 409 `yala_account_reverting` (freeze de la reversa §h.1).
-private struct GatewayErrorEnvelope: Decodable {
+/// discriminante. Se usa para distinguir el 409 `yala_account_reverting` (freeze de la reversa §h.1)
+/// tanto aquí como en `PrefsSyncClient` (mismo enforcement en `/prefs/push`).
+struct GatewayErrorEnvelope: Decodable {
     struct Inner: Decodable { let type: String? }
     let error: Inner?
+
+    /// `true` si el body es el 409 del freeze de la reversa (§h.1).
+    static func isAccountReverting(_ data: Data) -> Bool {
+        let decoded: GatewayErrorEnvelope?
+        do {
+            decoded = try JSONDecoder().decode(GatewayErrorEnvelope.self, from: data)
+        } catch {
+            decoded = nil // body ajeno sin envelope del gateway → no es el freeze (el caller decide).
+        }
+        return decoded?.error?.type == "yala_account_reverting"
+    }
 }
 
 // MARK: - PushOutcome
@@ -260,13 +272,7 @@ final class SyncPushClient {
             // Enforcement del freeze de la reversa (§h.1): `reverse_frozen_at` estampado → el backend ya
             // no es fuente de verdad. Mismo trato de STOP que el 403 (breadcrumb/telemetría propios para
             // distinguirlo en diagnóstico). Un 409 SIN ese type conserva el trato previo (transient).
-            let decoded: GatewayErrorEnvelope?
-            do {
-                decoded = try JSONDecoder().decode(GatewayErrorEnvelope.self, from: data)
-            } catch {
-                decoded = nil // 409 ajeno sin envelope del gateway → cae al transient de abajo (se loguea).
-            }
-            if decoded?.error?.type == "yala_account_reverting" {
+            if GatewayErrorEnvelope.isAccountReverting(data) {
                 CloudSyncBreadcrumb.pushAccountReverting()
                 TelemetryService.cloudAccountReverting()
                 return .accountUnavailable

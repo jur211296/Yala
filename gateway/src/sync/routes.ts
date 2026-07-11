@@ -95,6 +95,41 @@ async function requireUserAndAttest(c: Ctx): Promise<AuthedUser | Response> {
   return { sub: user.sub, userJWT: user.token, attest };
 }
 
+// ------------------------------------------------------------------- freeze de la reversa (§h.1)
+
+// Enforcement del freeze de la reversa (§h.1 — cierre del DIFERIDO de qa/cloud/README), compartido por
+// `/sync/push` y `/prefs/push`: con `profiles.reverse_frozen_at` estampado (`reverse_freeze`) el backend
+// DEJÓ de ser fuente de verdad (y sigue congelado tras `reverse_complete` — red §h.4, hasta un re-cutover
+// futuro). Decisiones:
+//   - REQUEST-level (409 `yala_account_reverting`), NO per-item: un `rejected` por-delta dead-letterearía
+//     en el cliente filas legítimas que deben sobrevivir en el outbox para la adopción/reversa de ese
+//     device (y meter el guard en `apply_delta`/`apply_pref` = per-item + migración SQL).
+//   - COSTO CERO de pared para el push normal: el check (1 GET a la fila propia de `profiles`, RLS/PK,
+//     POR REQUEST) se dispara EN PARALELO con el primer apply y se gatea antes del 2º item y antes de
+//     responder — medido secuencial costaba +~160ms/request (el motivo original del diferido).
+//   - LEAK ACOTADO documentado: el item[0] puede aterrizar en el backend congelado (y el batch entero en
+//     el caso 1-item). Benigno por diseño: apply HLC/LWW-idempotente, el backend congelado JAMÁS vuelve
+//     a ser fuente de verdad (la reversa dejó de pullear ANTES del freeze), y el 409 hace que el cliente
+//     pare SIN purgar → convergencia intacta. El freeze tiene TOCTOU inherente de todos modos (un push en
+//     vuelo cuando cae el freeze también aterriza). La propia reversa no se auto-bloquea: todos sus pushes
+//     de dominio (`reverseDrainOnce`) ocurren ANTES de `reverse_freeze` y NO drena prefs post-freeze (el
+//     sync de prefs solo corre en el runtime `.cloud`, gateado durante la migración/reversa).
+//   - Fail-closed: check upstream caído → 502 (cliente → transient/backoff; lo ya aplicado se re-pushea
+//     noop-idempotente). El `.catch` normaliza un reject de red a !ok — sin él, un throw del fetch
+//     mientras la promesa corre en la sombra del apply sería un unhandled rejection.
+type FreezeCheck = Promise<{ ok: boolean; status: number; rows: Record<string, unknown>[]; body: unknown }>;
+
+function beginFreezeCheck(c: Ctx, auth: AuthedUser): FreezeCheck {
+  return getRows(c.env, auth.userJWT, "profiles", "select=reverse_frozen_at&reverse_frozen_at=not.is.null&limit=1")
+    .catch(() => ({ ok: false as const, status: 0, rows: [] as Record<string, unknown>[], body: null as unknown }));
+}
+
+function rejectAccountReverting(route: string): Response {
+  // Metadata-only: el sub ya viaja en logs de auth; ningún dato de usuario.
+  console.log(`[${route}] rechazado 409: cuenta en reversa (reverse_frozen_at set)`);
+  return jsonError("yala_account_reverting", "La cuenta está en reversa a iCloud (backend congelado, §h.1) — push rechazado.", 409);
+}
+
 // --------------------------------------------------------------------------------------- /sync/push
 
 export async function handleSyncPush(c: Ctx): Promise<Response> {
@@ -111,40 +146,16 @@ export async function handleSyncPush(c: Ctx): Promise<Response> {
     return jsonError("yala_bad_request", "Se espera { deltas: [] }", 400);
   }
 
-  // Enforcement del freeze de la reversa (§h.1 — cierre del DIFERIDO de qa/cloud/README): con
-  // `profiles.reverse_frozen_at` estampado (`reverse_freeze`) el backend DEJÓ de ser fuente de verdad
-  // (y sigue congelado tras `reverse_complete` — red §h.4, hasta un re-cutover futuro). Decisiones:
-  //   - REQUEST-level (409 `yala_account_reverting`), NO per-delta: un `rejected` por-delta
-  //     dead-letterearía en el cliente filas legítimas que deben sobrevivir en el outbox para la
-  //     adopción/reversa de ese device (y meter el guard en `apply_delta` = per-delta + migración SQL).
-  //   - COSTO CERO de pared para el push normal: el check (1 GET a la fila propia de `profiles`, RLS/PK,
-  //     POR REQUEST) se dispara EN PARALELO con el primer `apply_delta` y se gatea antes del 2º delta y
-  //     antes de responder — medido secuencial costaba +~160ms/request (el motivo original del diferido).
-  //   - LEAK ACOTADO documentado: el delta[0] puede aterrizar en el backend congelado (y el batch entero
-  //     en el caso 1-delta). Benigno por diseño: apply HLC-idempotente, el backend congelado JAMÁS vuelve
-  //     a ser fuente de verdad (la reversa dejó de pullear ANTES del freeze), y el 409 hace que el
-  //     cliente pare SIN purgar → convergencia intacta. El freeze tiene TOCTOU inherente de todos modos
-  //     (un push en vuelo cuando cae el freeze también aterriza). La propia reversa no se auto-bloquea:
-  //     todos sus pushes (`reverseDrainOnce`) ocurren ANTES de `reverse_freeze`.
-  //   - Fail-closed: check upstream caído → 502 (cliente → transient/backoff; el batch ya aplicado se
-  //     re-pushea noop-idempotente).
-  // El .catch normaliza un reject de red a !ok (fail-closed 502) — sin él, un throw del fetch mientras
-  // la promesa corre en la sombra del apply sería un unhandled rejection.
-  const frozenCheck = getRows(c.env, auth.userJWT, "profiles", "select=reverse_frozen_at&reverse_frozen_at=not.is.null&limit=1")
-    .catch(() => ({ ok: false as const, status: 0, rows: [] as Record<string, unknown>[], body: null as unknown }));
-  const rejectReverting = (): Response => {
-    // Metadata-only: el sub ya viaja en logs de auth; ningún dato de usuario.
-    console.log("[sync-push] rechazado 409: cuenta en reversa (reverse_frozen_at set)");
-    return jsonError("yala_account_reverting", "La cuenta está en reversa a iCloud (backend congelado, §h.1) — push rechazado.", 409);
-  };
+  // Freeze §h.1 (ver bloque de diseño arriba): check en la sombra del primer apply.
+  const frozenCheck = beginFreezeCheck(c, auth);
 
   const results: SyncDeltaResult[] = [];
-  let frozen: Awaited<typeof frozenCheck> | null = null;
+  let frozen: Awaited<FreezeCheck> | null = null;
   for (const delta of body.deltas) {
     if (results.length > 0) {
       // Gate antes del 2º delta en adelante: el check ya corrió en la sombra del apply anterior.
       frozen ??= await frozenCheck;
-      if (frozen.ok && frozen.rows.length > 0) return rejectReverting();
+      if (frozen.ok && frozen.rows.length > 0) return rejectAccountReverting("sync-push");
     }
     results.push(await applyOneDelta(c, auth, delta));
   }
@@ -152,7 +163,7 @@ export async function handleSyncPush(c: Ctx): Promise<Response> {
   if (!frozen.ok) {
     return jsonError("yala_unavailable", `freeze check upstream ${frozen.status}`, 502);
   }
-  if (frozen.rows.length > 0) return rejectReverting();
+  if (frozen.rows.length > 0) return rejectAccountReverting("sync-push");
 
   const resp: SyncPushResponse = { results };
   return c.json(resp);
@@ -474,8 +485,18 @@ export async function handlePrefsPush(c: Ctx): Promise<Response> {
     return jsonError("yala_bad_request", "Se espera { prefs: [{key,value,hlc}] }", 400);
   }
 
+  // Freeze §h.1 (mismo patrón que /sync/push — ver bloque de diseño arriba): check en la sombra del
+  // primer apply_pref, gate antes de la 2ª key y antes de responder. En 409 el cliente NO purga su
+  // outbox de prefs (solo purga en `completed`) → nada se pierde.
+  const frozenCheck = beginFreezeCheck(c, auth);
+
   const results: PrefsPushResponse["results"] = [];
+  let frozen: Awaited<FreezeCheck> | null = null;
   for (const p of body.prefs) {
+    if (results.length > 0) {
+      frozen ??= await frozenCheck;
+      if (frozen.ok && frozen.rows.length > 0) return rejectAccountReverting("prefs-push");
+    }
     if (!p || typeof p.key !== "string" || typeof p.hlc !== "string") {
       results.push({ key: String(p?.key ?? ""), status: "noop", reason: "malformed" });
       continue;
@@ -492,6 +513,12 @@ export async function handlePrefsPush(c: Ctx): Promise<Response> {
     const applied = (out as { applied?: boolean } | null)?.applied === true;
     results.push({ key: p.key, status: applied ? "applied" : "noop" });
   }
+  frozen ??= await frozenCheck;
+  if (!frozen.ok) {
+    return jsonError("yala_unavailable", `freeze check upstream ${frozen.status}`, 502);
+  }
+  if (frozen.rows.length > 0) return rejectAccountReverting("prefs-push");
+
   const resp: PrefsPushResponse = { results };
   return c.json(resp);
 }

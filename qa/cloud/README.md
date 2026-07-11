@@ -128,12 +128,18 @@ Diseño (handler `handleSyncPush`, `gateway/src/sync/routes.ts`):
   cambiar comportamiento; I14 detectará la reversa por estado de cuenta, no por el push outcome.
 - **Fail-closed:** check upstream caído → 502 (cliente → transient/backoff; el batch aplicado se
   re-pushea noop-idempotente).
-- **Goldens 19-21** (`account.goldens.test.ts`, sub B — VIVEN ahí y no en sync.goldens porque vitest
-  corre los archivos en paralelo y congelar a sub A rompería los pushes concurrentes de sync.goldens):
-  409 + type + leak delta[0]/bloqueo delta[1]; pull/merkle 200 congelada; des-congelada → noop/applied.
-- **Residual (documentado, fuera de scope):** `/prefs/push` NO se gatea — un device rezagado puede
-  pushear prefs a un backend congelado (mismo perfil de riesgo: converge sin corromper; las prefs de la
-  época nube quedan en un backend muerto).
+- **Goldens 19-21 + 19-bis** (`account.goldens.test.ts`, sub B — VIVEN ahí y no en sync.goldens porque
+  vitest corre los archivos en paralelo y congelar a sub A rompería los pushes concurrentes de
+  sync.goldens): 409 + type + leak item[0]/bloqueo item[1] en AMBAS rutas; pull/merkle/prefs-pull 200
+  congelada; des-congelada → noop/applied.
+- **`/prefs/push` TAMBIÉN gateado (2026-07-11, mismo patrón — cierra el residual):** check compartido
+  (`beginFreezeCheck`) en la sombra del primer `apply_pref`, gate antes de la 2ª key y antes de
+  responder; 409 mismo type. Latencia medida: p50 0.525s post-gate vs 0.524s baseline (costo cero).
+  Cliente: `PrefsSyncClient` mapea 409-reverting → `.accountUnavailable` vía
+  `GatewayErrorEnvelope.isAccountReverting` (helper compartido con `SyncPushClient`); el runtime NO
+  purga el outbox de prefs en ese outcome (solo purga en `completed`) → nada se pierde, y el stop del
+  ciclo lo impone el push de dominio del mismo ciclo. La reversa no drena prefs post-freeze (el sync de
+  prefs solo corre en el runtime `.cloud`, gateado durante migración/reversa) → no se auto-bloquea.
 
 **Estado POSTERIOR que dejan los goldens de `/sync/*` (gotcha cazado 2026-07-10):** `sync.goldens.test.ts`
 re-crea en cada corrida filas PARCIALES de `budgets` (hand-crafted, `name` NULL — el golden de uuid[] `'{}'`

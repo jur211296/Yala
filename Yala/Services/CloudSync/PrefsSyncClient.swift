@@ -63,6 +63,9 @@ struct PrefsPulledPage: Equatable {
 enum PrefsPushOutcome: Equatable {
     case completed([PrefPushResult])
     case sessionExpired
+    /// 403 (cuenta suspendida) o 409 `yala_account_reverting` (freeze de la reversa §h.1 — el gateway
+    /// también gatea `/prefs/push`). El runtime NO purga el outbox de prefs (solo purga en `completed`)
+    /// → nada se pierde; el stop del ciclo lo impone el push de dominio del mismo ciclo.
     case accountUnavailable
     case transient
 }
@@ -144,6 +147,10 @@ final class PrefsSyncClient {
             }
         case 401: return .sessionExpired
         case 403: return .accountUnavailable
+        case 409:
+            // Freeze de la reversa (§h.1): mismo trato de STOP que el 403 (el outbox no se purga). Un
+            // 409 ajeno conserva el trato previo (transient). Espejo de la rama 409 de SyncPushClient.
+            return GatewayErrorEnvelope.isAccountReverting(data) ? .accountUnavailable : .transient
         default: return .transient
         }
     }
