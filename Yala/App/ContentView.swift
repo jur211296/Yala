@@ -471,10 +471,16 @@ struct ContentView: View {
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
+            showRestoreOffer: showRestoreOffer,
+            hasActiveInviteError: activeInviteError != nil,
+            hasActiveGroupSyncError: activeGroupSyncError != nil,
             activeInboxNotification: activeInboxNotification,
             showGroupInviteOnboarding: showGroupInviteOnboarding,
             showGroupReconnect: showGroupReconnect,
             showFullModeActivation: showFullModeActivation,
+            showProTrialOffer: showProTrialOffer,
+            showWhatsNew: showWhatsNew,
+            showSyncSettingsSheet: showSyncSettingsSheet,
             recompute: updateContentViewReadiness
         )
         .onChange(of: AppRouter.shared.revision) { _, _ in
@@ -535,10 +541,16 @@ struct ContentView: View {
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
+            showRestoreOffer: showRestoreOffer,
+            hasActiveInviteError: activeInviteError != nil,
+            hasActiveGroupSyncError: activeGroupSyncError != nil,
             hasActiveInboxAlert: !activeInboxNotification.isEmpty,
             showGroupInviteOnboarding: showGroupInviteOnboarding,
             showGroupReconnect: showGroupReconnect,
-            showFullModeActivation: showFullModeActivation
+            showFullModeActivation: showFullModeActivation,
+            showProTrialOffer: showProTrialOffer,
+            showWhatsNew: showWhatsNew,
+            showSyncSettingsSheet: showSyncSettingsSheet
         )
     }
 
@@ -563,7 +575,8 @@ struct ContentView: View {
                 let surfacedBlockers: Set<String> = [
                     "activeInboxAlert", "groupInviteOnboarding", "groupReconnect",
                     "fullModeActivation", "remoteWipeAlert", "iCloudRestartAlert",
-                    "freshStartWipeAlert"
+                    "freshStartWipeAlert", "restoreOffer", "inviteError",
+                    "groupSyncError"
                 ]
                 if surfacedBlockers.contains(blocker) {
                     TelemetryService.routingReadinessBlocked(blocker: blocker)

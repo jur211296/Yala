@@ -18,26 +18,48 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     let showFreshStartWipeAlert: Bool
     let showRemoteWipeAlert: Bool
     let showICloudRestartAlert: Bool
+    let showRestoreOffer: Bool
+    let hasActiveInviteError: Bool
+    let hasActiveGroupSyncError: Bool
     let activeInboxNotification: PendingInboxNotification
     let showGroupInviteOnboarding: Bool
     let showGroupReconnect: Bool
     let showFullModeActivation: Bool
+    let showProTrialOffer: Bool
+    let showWhatsNew: Bool
+    let showSyncSettingsSheet: Bool
     let recompute: () -> Void
 
     func body(content: Content) -> some View {
+        // Cadena partida en dos sub-expresiones: 18 onChange encadenados en una
+        // sola expresión exceden el presupuesto del type-checker.
+        alertObservers(sheetObservers(content))
+    }
+
+    private func sheetObservers(_ content: some View) -> some View {
         content
             .onChange(of: showOnboarding) { _, _ in recompute() }
             .onChange(of: showWelcomeFlow) { _, _ in recompute() }
             .onChange(of: showLanguageSelection) { _, _ in recompute() }
             .onChange(of: showWelcomeRestore) { _, _ in recompute() }
             .onChange(of: showInviteRecovery) { _, _ in recompute() }
-            .onChange(of: showFreshStartWipeAlert) { _, _ in recompute() }
-            .onChange(of: showRemoteWipeAlert) { _, _ in recompute() }
-            .onChange(of: showICloudRestartAlert) { _, _ in recompute() }
-            .onChange(of: activeInboxNotification) { _, _ in recompute() }
             .onChange(of: showGroupInviteOnboarding) { _, _ in recompute() }
             .onChange(of: showGroupReconnect) { _, _ in recompute() }
             .onChange(of: showFullModeActivation) { _, _ in recompute() }
+            .onChange(of: showProTrialOffer) { _, _ in recompute() }
+            .onChange(of: showWhatsNew) { _, _ in recompute() }
+            .onChange(of: showSyncSettingsSheet) { _, _ in recompute() }
+    }
+
+    private func alertObservers(_ content: some View) -> some View {
+        content
+            .onChange(of: showFreshStartWipeAlert) { _, _ in recompute() }
+            .onChange(of: showRemoteWipeAlert) { _, _ in recompute() }
+            .onChange(of: showICloudRestartAlert) { _, _ in recompute() }
+            .onChange(of: showRestoreOffer) { _, _ in recompute() }
+            .onChange(of: hasActiveInviteError) { _, _ in recompute() }
+            .onChange(of: hasActiveGroupSyncError) { _, _ in recompute() }
+            .onChange(of: activeInboxNotification) { _, _ in recompute() }
     }
 }
 
@@ -51,10 +73,16 @@ extension View {
         showFreshStartWipeAlert: Bool,
         showRemoteWipeAlert: Bool,
         showICloudRestartAlert: Bool,
+        showRestoreOffer: Bool,
+        hasActiveInviteError: Bool,
+        hasActiveGroupSyncError: Bool,
         activeInboxNotification: PendingInboxNotification,
         showGroupInviteOnboarding: Bool,
         showGroupReconnect: Bool,
         showFullModeActivation: Bool,
+        showProTrialOffer: Bool,
+        showWhatsNew: Bool,
+        showSyncSettingsSheet: Bool,
         recompute: @escaping () -> Void
     ) -> some View {
         modifier(ReadinessGateObserversModifier(
@@ -66,10 +94,16 @@ extension View {
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
+            showRestoreOffer: showRestoreOffer,
+            hasActiveInviteError: hasActiveInviteError,
+            hasActiveGroupSyncError: hasActiveGroupSyncError,
             activeInboxNotification: activeInboxNotification,
             showGroupInviteOnboarding: showGroupInviteOnboarding,
             showGroupReconnect: showGroupReconnect,
             showFullModeActivation: showFullModeActivation,
+            showProTrialOffer: showProTrialOffer,
+            showWhatsNew: showWhatsNew,
+            showSyncSettingsSheet: showSyncSettingsSheet,
             recompute: recompute
         ))
     }

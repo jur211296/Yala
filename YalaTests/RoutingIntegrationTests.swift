@@ -70,6 +70,39 @@ struct RoutingIntegrationTests {
         #expect(router.contains { if case .presentInboxSheet = $0 { return true }; return false })
     }
 
+    // MARK: - Alerts de grupos serializados por readiness (matriz completa)
+
+    /// Dos alerts async del mismo nodo (inviteError + groupSyncError): con ambos
+    /// en la matriz de readiness, el primero presentado bloquea el drain y el
+    /// segundo ESPERA en cola en vez de setearse tapado y tragarse en silencio.
+    @MainActor @Test
+    func twoContentViewAlertIntents_serializeAcrossReadiness() {
+        let router = freshRouter()
+        router.enqueue(.showInviteError("invite falló"))
+        router.enqueue(.showGroupSyncError("sync falló"))
+
+        // Consumer listo → drena el primero (inviteError, prioridad más alta).
+        router.markReady(.contentView)
+        let first = router.drainNext(for: .contentView)
+        guard case .showInviteError = first else {
+            Issue.record("Esperaba showInviteError primero, drenó \(String(describing: first))")
+            return
+        }
+
+        // El alert está visible → la matriz (hasActiveInviteError) marca unready.
+        router.markUnready(.contentView)
+        #expect(router.drainNext(for: .contentView) == nil)
+        #expect(router.contains { if case .showGroupSyncError = $0 { return true }; return false })
+
+        // OK del primer alert → flag a nil → recompute → markReady → drena el segundo.
+        router.markReady(.contentView)
+        let second = router.drainNext(for: .contentView)
+        guard case .showGroupSyncError = second else {
+            Issue.record("Esperaba showGroupSyncError segundo, drenó \(String(describing: second))")
+            return
+        }
+    }
+
     // MARK: - Dueling monetization
 
     @MainActor @Test

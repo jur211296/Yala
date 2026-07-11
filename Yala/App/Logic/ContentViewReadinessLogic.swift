@@ -30,12 +30,21 @@ struct ShellReadinessState: Equatable {
     let showFreshStartWipeAlert: Bool
     let showRemoteWipeAlert: Bool
     let showICloudRestartAlert: Bool
+    let showRestoreOffer: Bool
+    let hasActiveInviteError: Bool
+    let hasActiveGroupSyncError: Bool
 
     // Active modal payloads (block readiness while presented)
     let hasActiveInboxAlert: Bool
     let showGroupInviteOnboarding: Bool
     let showGroupReconnect: Bool
     let showFullModeActivation: Bool
+
+    // Shell sheets (same anchor as everything above — a second presentation
+    // while one is up gets silently discarded by SwiftUI, so they must block)
+    let showProTrialOffer: Bool
+    let showWhatsNew: Bool
+    let showSyncSettingsSheet: Bool
 }
 
 enum ContentViewReadinessLogic {
@@ -58,6 +67,9 @@ enum ContentViewReadinessLogic {
         if state.showRemoteWipeAlert { return "remoteWipeAlert" }
         if state.showICloudRestartAlert { return "iCloudRestartAlert" }
         if state.showFreshStartWipeAlert { return "freshStartWipeAlert" }
+        if state.showRestoreOffer { return "restoreOffer" }
+        if state.hasActiveInviteError { return "inviteError" }
+        if state.hasActiveGroupSyncError { return "groupSyncError" }
 
         // Onboarding/welcome chain (a fullScreenCover blocks subsequent presentations).
         if state.showLanguageSelection { return "languageSelection" }
@@ -70,6 +82,13 @@ enum ContentViewReadinessLogic {
         // Group flows (modal sheets/covers).
         if state.showGroupInviteOnboarding { return "groupInviteOnboarding" }
         if state.showGroupReconnect { return "groupReconnect" }
+
+        // Shell sheets: while one is presented, a drained intent that sets a
+        // second sheet/cover on this same anchor gets discarded by SwiftUI
+        // (and the intent is already consumed). Hold the queue instead.
+        if state.showProTrialOffer { return "proTrialOffer" }
+        if state.showWhatsNew { return "whatsNew" }
+        if state.showSyncSettingsSheet { return "syncSettingsSheet" }
 
         // Active inbox alert (fullScreenCover): blocks new shell presentations
         // until dismissed — root cause of the "automatizaciones" tardío bug.
@@ -118,10 +137,16 @@ extension ShellReadinessState {
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
+            showRestoreOffer: showRestoreOffer,
+            hasActiveInviteError: hasActiveInviteError,
+            hasActiveGroupSyncError: hasActiveGroupSyncError,
             hasActiveInboxAlert: hasActiveInboxAlert,
             showGroupInviteOnboarding: showGroupInviteOnboarding,
             showGroupReconnect: showGroupReconnect,
-            showFullModeActivation: showFullModeActivation
+            showFullModeActivation: showFullModeActivation,
+            showProTrialOffer: showProTrialOffer,
+            showWhatsNew: showWhatsNew,
+            showSyncSettingsSheet: showSyncSettingsSheet
         )
     }
 }

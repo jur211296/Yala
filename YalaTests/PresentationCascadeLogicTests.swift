@@ -10,13 +10,19 @@ import Foundation
 @Suite("PresentationCascadeLogic")
 struct PresentationCascadeLogicTests {
 
-    private func cleanReadiness() -> ShellReadinessState {
+    private func cleanReadiness(
+        isSplashDismissed: Bool = true,
+        hasActiveInboxAlert: Bool = false
+    ) -> ShellReadinessState {
         ShellReadinessState(
-            isSplashDismissed: true, isWipingData: false,
+            isSplashDismissed: isSplashDismissed, isWipingData: false,
             showOnboarding: false, showWelcomeFlow: false, showLanguageSelection: false,
             showWelcomeRestore: false, showInviteRecovery: false, showFreshStartWipeAlert: false,
-            showRemoteWipeAlert: false, showICloudRestartAlert: false, hasActiveInboxAlert: false,
-            showGroupInviteOnboarding: false, showGroupReconnect: false, showFullModeActivation: false
+            showRemoteWipeAlert: false, showICloudRestartAlert: false,
+            showRestoreOffer: false, hasActiveInviteError: false, hasActiveGroupSyncError: false,
+            hasActiveInboxAlert: hasActiveInboxAlert,
+            showGroupInviteOnboarding: false, showGroupReconnect: false, showFullModeActivation: false,
+            showProTrialOffer: false, showWhatsNew: false, showSyncSettingsSheet: false
         )
     }
 
@@ -163,13 +169,7 @@ struct PresentationCascadeLogicTests {
     // MARK: - Readiness gate
 
     @Test func splashStillUp_returnsNoop() {
-        let r = ShellReadinessState(
-            isSplashDismissed: false, isWipingData: false,
-            showOnboarding: false, showWelcomeFlow: false, showLanguageSelection: false,
-            showWelcomeRestore: false, showInviteRecovery: false, showFreshStartWipeAlert: false,
-            showRemoteWipeAlert: false, showICloudRestartAlert: false, hasActiveInboxAlert: false,
-            showGroupInviteOnboarding: false, showGroupReconnect: false, showFullModeActivation: false
-        )
+        let r = cleanReadiness(isSplashDismissed: false)
         let inp = CascadeInputs(
             currentShell: .none, currentPanel: .none, currentTab: .panel,
             readiness: r, lastPanelDismissalDate: nil, now: Date()
@@ -178,13 +178,7 @@ struct PresentationCascadeLogicTests {
     }
 
     @Test func activeInboxAlert_blocks_evenForSheetIntent() {
-        let r = ShellReadinessState(
-            isSplashDismissed: true, isWipingData: false,
-            showOnboarding: false, showWelcomeFlow: false, showLanguageSelection: false,
-            showWelcomeRestore: false, showInviteRecovery: false, showFreshStartWipeAlert: false,
-            showRemoteWipeAlert: false, showICloudRestartAlert: false, hasActiveInboxAlert: true,
-            showGroupInviteOnboarding: false, showGroupReconnect: false, showFullModeActivation: false
-        )
+        let r = cleanReadiness(hasActiveInboxAlert: true)
         let inp = CascadeInputs(
             currentShell: .inboxAlert(.init(automations: 1)), currentPanel: .none, currentTab: .panel,
             readiness: r, lastPanelDismissalDate: nil, now: Date()
