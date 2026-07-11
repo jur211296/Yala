@@ -320,29 +320,40 @@ final class MigrationSnapshotUploader {
             }
             let pageSlice = Array(filtered.prefix(limit))
             let inputs: [SnapshotRowInput] = pageSlice.map { entry in
-                let model = entry.model
                 let syncID = UUID(uuidString: entry.id) ?? UUID()
-                return SnapshotRowInput(syncID: syncID, entityType: className) { hlc in
-                    let result = DeltaEmitter.emit(model: model, emission: emission,
-                                                   changedColumns: emission.columns, hlc: hlc, calendar: calendar)
-                    let fieldsJSON: String
-                    do {
-                        fieldsJSON = try Canonc1Codec.encode(result.fields,
-                                                             groupedColumns: Set(emission.groupByColumn.keys))
-                    } catch {
-                        // Poison: el codec c1 rechazó la fila → canario + skip (la página CONTINÚA; el
-                        // mismatch resultante degradará a failedRollback tras topes — correcto por diseño).
-                        #if DEBUG
-                        print("MigrationSnapshotUploader: codec c1 rechazó \(className) (fila saltada): \(error)")
-                        #endif
-                        CloudSyncBreadcrumb.encodeRejected(entity: className, reason: "snapshot:\(error)")
-                        return nil
-                    }
-                    return (fieldsJSON, Self.encodeFieldHlcs(result.fieldHlcs))
-                }
+                return Self.makeSnapshotRowInput(model: entry.model, syncID: syncID,
+                                                 emission: emission, className: className, calendar: calendar)
             }
             let lastSyncID = pageSlice.last.flatMap { UUID(uuidString: $0.id) }
             return (inputs, lastSyncID, filtered.count > pageSlice.count)
+        }
+    }
+
+    /// Construye el `SnapshotRowInput` full-row de UN modelo (misma emisión `DeltaEmitter`→codec c1 que la
+    /// paginación del snapshot, extraída para que la reconciliación de huérfanas del adopt — DIFERIDOS #30,
+    /// `MigrationWorkExecutor.runAdoptOrphanReconcile` — la REUSE verbatim en vez de duplicar el baile
+    /// emisión→codec). `calendar` explícito (el llamador lo inyecta). Poison del codec c1 → canario + `nil`
+    /// (el seam `enqueueSnapshotRows` salta la fila; el mismatch resultante degrada honesto por diseño).
+    static func makeSnapshotRowInput<M: PersistentModel>(
+        model: M, syncID: UUID, emission: EntityEmission<M>, className: String, calendar: Calendar
+    ) -> SnapshotRowInput {
+        SnapshotRowInput(syncID: syncID, entityType: className) { hlc in
+            let result = DeltaEmitter.emit(model: model, emission: emission,
+                                           changedColumns: emission.columns, hlc: hlc, calendar: calendar)
+            let fieldsJSON: String
+            do {
+                fieldsJSON = try Canonc1Codec.encode(result.fields,
+                                                     groupedColumns: Set(emission.groupByColumn.keys))
+            } catch {
+                // Poison: el codec c1 rechazó la fila → canario + skip (la página CONTINÚA; el
+                // mismatch resultante degradará a failedRollback tras topes — correcto por diseño).
+                #if DEBUG
+                print("MigrationSnapshotUploader: codec c1 rechazó \(className) (fila saltada): \(error)")
+                #endif
+                CloudSyncBreadcrumb.encodeRejected(entity: className, reason: "snapshot:\(error)")
+                return nil
+            }
+            return (fieldsJSON, encodeFieldHlcs(result.fieldHlcs))
         }
     }
 

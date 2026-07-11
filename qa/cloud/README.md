@@ -241,6 +241,45 @@ WHERE user_id = (SELECT id FROM auth.users WHERE email = 'i5-user-a@test.yala')
   AND deleted=false AND note LIKE '%<run>%';
 ```
 
+## Huérfano cross-device del cutover (DIFERIDOS #30) — adopt-reconcile v1 (DARK, 2026-07-11)
+
+Residual explícito de w8: durante la ventana de cutover, un 2º device del mismo Apple ID aún `.icloud`
+puede escribir una fila a la base CloudKit compartida que el líder nunca importó antes del mirror-off —
+el barrido del líder solo responde por SUS writes (History local). Sin mecanismo, la fila queda huérfana
+para el modo nube Y todo adopt con store poblado + writes de ventana termina en **divergencia Merkle
+local-ahead PERPETUA** (clase FX — la pieza es requisito de convergencia, no solo rescate).
+
+**Mecanismo v1 elegido: adopt-reconcile del device que escribió** (`MigrationWorkExecutor.
+runAdoptOrphanReconcile()` + `AdoptOrphanDiff` pure-logic; §g.4 "Cierre del hueco multi-device" ya lo
+especificaba). Diseño (CERO cambios wire/gateway):
+- Enumera las identidades del backend (upserts Y tombstones) vía `/sync/pull` read-only (idiom del sweep
+  I11-2 — sin apply, sin cursor, sin testigos), con **completitud verificada positivamente** contra los
+  counts por tabla de `/sync/merkle` (SERIO del review adversarial: una enumeración PARCIAL con 200 OK —
+  página vacía prematura — produciría falsas huérfanas con HLC fresco que PISARÍAN contenido más nuevo;
+  riesgo INVERTIDO respecto a `sweepZombies`, donde un set parcial es benigno). Merkle DESPUÉS de la
+  enumeración (sesgo a abortar); enumerado > merkle pasa (deletes concurrentes = conservador).
+- Guard anti mass-upload ANTES de toda mutación: backend enumerado vacío + huérfanas locales →
+  `abortedEmptyBackend` sin backfill ni upload (un adopt `existing_stable` implica backend poblado; el
+  merge local-poblado-vs-nube-vacía es decisión de producto de I14).
+- Identidad a filas nil vía `SyncIdentityService.backfillIdentities` (testigos + regla 00439727) → diff
+  → upload fila-COMPLETA (`enqueueSnapshotRows` + idiom push del leader-reconcile). Idempotente (2ª
+  pasada no-op). Canarios: `cloudAdoptOrphanReconciled` + breadcrumbs (incomplete/abort).
+- Descartados: barrido del líder en la reversa (el remount del mirror ya importa la fila nativamente —
+  no aporta al modo nube) y lectura directa del CloudKit congelado por el líder (traducción
+  CD_record→dominio; candidato v2 del sub-caso "jamás adopta").
+
+**Residuales v1 (gate de flags):** (a) device que JAMÁS adopta — auto-bloqueado por
+`secondaryDeviceCloudLogin`, sin pérdida física, adopción tardía lo rescata; (b) borrados de ventana no
+propagados (resurrección benigna; el diff inverso arriesgaría tombstones de filas reales bajo
+import-lag); (c) import-lag → duplicado content-idéntico curable (dedup I11-4/`SystemEntityMergePolicy`).
+
+**PENDIENTE I14 (contrato completo en el doc-comment del método):** cablear el call-site — (i) tras
+quiescencia del import CloudKit y ANTES del runtime, (ii) fast-forward del History baseline antes de
+habilitar el drain, (iii) pull + `runPostPullReconcilers` post-upload (cura duplicados de sistema).
+
+**e2e `adoptOrphanReconcile_twoDevices_uploadsOnlyTheOrphanRow`:** mismo patrón de cleanup RP-1 a 0
+vivas del run que el e2e de system entities (remedio SQL manual de arriba aplica igual).
+
 ## Related repo artifacts
 
 - `capability_manifest.json` (repo root) — per-entity domain columns with explicit `safe` / `group_key`.

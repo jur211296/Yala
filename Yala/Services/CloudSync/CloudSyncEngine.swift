@@ -611,6 +611,34 @@ enum CloudSyncBreadcrumb {
     static func migrationLeaseHeartbeatRejected(reason: String) {
         logger.notice("CloudSyncMigration leaseHeartbeatRejected reason=\(reason, privacy: .public) — best-effort, no corta el paso")
     }
+
+    // MARK: Adopt-reconcile (DIFERIDOS #30, mecanismo v1 DARK) — sin PII (solo conteos)
+
+    /// DIFERIDOS #30: el adopt de un device `.icloud`→`.cloud` rescató `count` filas huérfanas de la ventana
+    /// de cutover (identidad local ∉ backend → upload full-row). `identityAssigned` = filas sin syncID a las
+    /// que el backfill acuñó identidad fresca (todas caen a huérfanas). >0 = la ventana multi-device existió
+    /// en la práctica (esperado raro; el canario de telemetría acompaña). Sin PII (solo conteos).
+    static func adoptOrphanReconciled(count: Int, identityAssigned: Int) {
+        logger.notice("CloudSyncAdopt orphanReconciled count=\(count, privacy: .public) identityAssigned=\(identityAssigned, privacy: .public) — el adoptador rescató writes de la ventana de cutover")
+    }
+
+    /// DIFERIDOS #30 (guard anti mass-upload): la enumeración del backend llegó VACÍA (verificada completa
+    /// contra merkle) teniendo el device huérfanas locales y/o filas sin identidad → NO se sube ni se muta
+    /// nada — el guard corre ANTES del backfill (un adopt legítimo `existing_stable` implica backend POBLADO;
+    /// backend realmente vacío = decisión de producto de I14, y el costo del falso positivo sería subir el
+    /// corpus entero). >0 = revisar sesión/pull. Sin PII (solo el conteo de filas descartadas).
+    static func adoptReconcileAbortedEmptyBackend(orphans: Int) {
+        logger.notice("CloudSyncAdopt reconcileAbortedEmptyBackend orphans=\(orphans, privacy: .public) — enumeración del backend vacía; upload abortado (anti mass-upload)")
+    }
+
+    /// DIFERIDOS #30 (SERIO 1 del review): la enumeración del backend resultó INCOMPLETA — el count de filas
+    /// VIVAS del Merkle (`/sync/merkle`) para una tabla es MAYOR que lo enumerado por el pull read-only
+    /// (página vacía prematura / paginación no-monótona con 200 OK). Sin esta verificación positiva, filas
+    /// no-enumeradas lucirían huérfanas y su re-upload con HLC fresco PISARÍA contenido más nuevo del
+    /// backend. → `.transient` retomable (sesgo a abortar, jamás a proceder). Sin PII (tabla + conteos).
+    static func adoptReconcileEnumerationIncomplete(table: String, expected: Int, got: Int) {
+        logger.notice("CloudSyncAdopt enumerationIncomplete table=\(table, privacy: .public) expected=\(expected, privacy: .public) got=\(got, privacy: .public) — merkle declara más vivas que lo enumerado; transient retomable")
+    }
 }
 
 // MARK: - CloudSyncEngine

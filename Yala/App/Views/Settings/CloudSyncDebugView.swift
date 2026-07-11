@@ -136,6 +136,7 @@ final class CloudSyncMigrationPanelModel {
     var reverseOriginLabel = "—"
     var reverseEligible = false
     var orphanScanLabel = "—"
+    var adoptDiffLabel = "—"
 
     private let context: ModelContext
     private var runner: MigrationRunner?
@@ -145,9 +146,9 @@ final class CloudSyncMigrationPanelModel {
         self.context = context
     }
 
-    /// Construye (una vez) el runner con el executor REAL (staging) + la señal de quiescencia de producción.
-    private func makeRunner() -> MigrationRunner {
-        if let runner { return runner }
+    /// Construye el executor REAL (staging). Extraído para que el dry-run de huérfanas del adopt (#30) lo
+    /// reuse sin duplicar la construcción.
+    private func makeExecutor() -> MigrationWorkExecutor {
         let session = LiveCloudSessionProvider()
         let account = CloudAccountClient()
         let engine = CloudSyncEngine()
@@ -155,11 +156,16 @@ final class CloudSyncMigrationPanelModel {
         let push = SyncPushClient(baseURL: ProxyConfig.baseURL, tokenProvider: token)
         let pull = SyncPullClient(baseURL: ProxyConfig.baseURL, tokenProvider: token)
         let merkle = SyncMerkleClient(baseURL: ProxyConfig.baseURL, tokenProvider: token)
-        let executor = MigrationWorkExecutor(
+        return MigrationWorkExecutor(
             engine: engine, pushClient: push, pullClient: pull, merkleClient: merkle,
             accountClient: account, session: session, context: context, deviceID: deviceID)
+    }
+
+    /// Construye (una vez) el runner con el executor REAL (staging) + la señal de quiescencia de producción.
+    private func makeRunner() -> MigrationRunner {
+        if let runner { return runner }
         let r = MigrationRunner(
-            context: context, executor: executor, deviceID: deviceID,
+            context: context, executor: makeExecutor(), deviceID: deviceID,
             quiescenceSignal: { iCloudSyncService.shared.isImportQuiescent })
         runner = r
         return r
@@ -237,6 +243,24 @@ final class CloudSyncMigrationPanelModel {
         let liveCount = live.values.reduce(0) { $0 + $1.count }
         orphanScanLabel = "huérfanos \(report.orphans) · escaneados \(report.scanned) · failed \(report.failed) · vivos \(liveCount)"
         lastMessage = "Scan metadata huérfana (read-only): \(orphanScanLabel)"
+    }
+
+    /// DIFERIDOS #30: diff READ-ONLY de filas huérfanas del adopt (§3.4). Pasos 1,3,4 del reconcile SIN
+    /// backfill NI upload — enumera el backend (staging), inventario local, diff. NO muta nada (molde
+    /// `scanOrphanMetadata`/`computeDryRun`). El upload real lo cablea I14 en el flujo de adopt.
+    func diffOrphansAdopt() async {
+        isWorking = true; defer { isWorking = false }
+        guard let plan = await makeExecutor().adoptOrphanDryRun() else {
+            adoptDiffLabel = "transient (red) — reintenta"
+            lastMessage = "Diff huérfanas (adopt): red caída al enumerar el backend"
+            return
+        }
+        let orphanLines = plan.orphans.sorted { $0.key < $1.key }
+            .map { "\($0.key)=\($0.value.count)" }.joined(separator: " ")
+        let needLines = plan.needsIdentity.sorted { $0.key < $1.key }
+            .map { "\($0.key)=\($0.value)" }.joined(separator: " ")
+        adoptDiffLabel = "huérfanas \(plan.uploadCount) [\(orphanLines.isEmpty ? "—" : orphanLines)] · needsIdentity \(plan.identityCount) [\(needLines.isEmpty ? "—" : needLines)]"
+        lastMessage = "Diff huérfanas (adopt) READ-ONLY: \(adoptDiffLabel)"
     }
 
     /// Diálogos-primero (obligación 5 del review POR CONSTRUCCIÓN): SOLO se invoca tras la 2ª confirmación
@@ -662,6 +686,7 @@ struct CloudSyncDebugView: View {
                     row("Elegible", migration.reverseEligibilityLabel)
                     row("Origin", migration.reverseOriginLabel)
                     row("Orphan scan", migration.orphanScanLabel)
+                    row("Adopt diff", migration.adoptDiffLabel)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(DS.Spacing.sm)
@@ -670,6 +695,7 @@ struct CloudSyncDebugView: View {
 
                 migrationButton("Verificar elegibilidad reversa") { migration.verifyReverseEligibility() }
                 migrationButton("Scan metadata huérfana (read-only)") { migration.scanOrphanMetadata() }
+                migrationButton("Diff huérfanas (adopt) (read-only)") { await migration.diffOrphansAdopt() }
                 migrationButton("Borrar marcador CloudKit (stale)") { confirmDeleteMarker = true }
                 migrationButton("Purgar ExchangeRate locales (caché)") { confirmPurgeFX = true }
 

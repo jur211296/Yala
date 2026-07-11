@@ -73,6 +73,14 @@ private func tombstone(table: String, syncID: UUID, seq: Int64) -> PulledDelta {
                 hlc: "deleted", serverSeq: seq, schemaVersion: 1, rawDelta: "{}")
 }
 
+/// Construye un upsert `PulledDelta` (para la enumeración del backend del adopt-reconcile: la enumeración
+/// colecciona syncIDs de upserts Y tombstones; solo importa el `syncID`).
+@MainActor
+private func upsertDelta(table: String, syncID: UUID, seq: Int64) -> PulledDelta {
+    PulledDelta(entityType: table, syncID: syncID, op: .upsert, fields: [:], fieldHlcs: [:],
+                hlc: "hlc", serverSeq: seq, schemaVersion: 1, rawDelta: "{}")
+}
+
 /// Enruta por path: claim / push (ecoa applied) / pull (página vacía) / merkle (body configurable).
 private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     var claimBody = Data("{\"state\":\"created\"}".utf8)
@@ -86,6 +94,9 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     var merkleBody = Data()
     private let lock = NSLock()
     private(set) var pushedSyncIDs: [String] = []
+    /// Deltas COMPLETOS del último push (para assertar contenido real — lección d49d2e47: fila full-row, no
+    /// solo identidad). Cada entry es el objeto JSON `{sync_id, entity_type, fields, client_mutation_id}`.
+    private(set) var lastPushedDeltas: [[String: Any]] = []
 
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         let path = request.url?.path ?? ""
@@ -107,6 +118,7 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
             if let json = try? JSONSerialization.jsonObject(with: request.httpBody ?? Data()) as? [String: Any],
                let deltas = json["deltas"] as? [[String: Any]] {
                 lock.lock()
+                lastPushedDeltas = deltas
                 for d in deltas {
                     let sid = d["sync_id"] as? String ?? ""
                     let cmid = d["client_mutation_id"] as? String ?? ""
@@ -856,5 +868,336 @@ struct MigrationWorkExecutorTests {
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
         await executor.sendLeaseHeartbeatIfDue()
         #expect(stub.migrationCallCount == 0)
+    }
+
+    // MARK: - Adopt-reconcile (DIFERIDOS #30, mecanismo v1 DARK)
+
+    /// Helper: crea una categoría con un syncID PRE-asignado (fila con identidad estable ya presente).
+    private func makeCategory(_ name: String, syncID: UUID, in context: ModelContext) -> Yala.Category {
+        let cat = Yala.Category(name: name, colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        cat.syncID = syncID
+        context.insert(cat)
+        return cat
+    }
+
+    /// Body `RemoteMerkle` mínimo con los counts de VIVAS por tabla — COHERENTE con las páginas del fake
+    /// (SERIO 1: el reconcile verifica positivamente la completitud de la enumeración contra estos counts).
+    private func makeMerkleBody(_ counts: [String: Int]) throws -> Data {
+        var entities: [String: Any] = [:]
+        for (table, count) in counts { entities[table] = ["count": count, "hash": "h"] }
+        return try JSONSerialization.data(withJSONObject: [
+            "canon_version": "c1", "capability_set": "v1", "root": "r", "entities": entities,
+        ])
+    }
+
+    @Test("runAdoptOrphanReconcile: sube EXACTAMENTE la huérfana (∉ backend) fila-COMPLETA; conocida y tombstone NO se suben")
+    func adoptReconcile_uploadsOnlyOrphanFullRow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        let knownID = UUID(); let tombID = UUID(); let orphanID = UUID()
+        _ = makeCategory("known", syncID: knownID, in: context)     // ∈ backend (upsert) → NO huérfana
+        _ = makeCategory("tomb", syncID: tombID, in: context)       // ∈ backend (tombstone) → zombie, NO huérfana
+        _ = makeCategory("orphan-of-window", syncID: orphanID, in: context)  // ∉ backend → huérfana
+        try context.save()
+
+        // Backend enumerado: upsert de knownID + tombstone de tombID (mezcla upsert+tombstone). Merkle
+        // COHERENTE: 1 viva en categories (el tombstone no cuenta).
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [
+            upsertDelta(table: "categories", syncID: knownID, seq: 1),
+            tombstone(table: "categories", syncID: tombID, seq: 2),
+        ], maxServerSeq: 2)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        let outcome = await executor.runAdoptOrphanReconcile()
+        #expect(outcome == .completed(uploaded: 1, identityAssigned: 0))
+
+        // EXACTAMENTE la huérfana subida (lección d49d2e47).
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [orphanID.uuidString.lowercased()])
+        #expect(!stub.pushedSyncIDs.map { $0.lowercased() }.contains(knownID.uuidString.lowercased()),
+                "la conocida NO se sube")
+        #expect(!stub.pushedSyncIDs.map { $0.lowercased() }.contains(tombID.uuidString.lowercased()),
+                "la tombstoneada NO se sube (zombie del apply)")
+
+        // Fila COMPLETA: el delta lleva `fields` poblados (no solo identidad).
+        let delta = try #require(stub.lastPushedDeltas.first { ($0["sync_id"] as? String)?.lowercased() == orphanID.uuidString.lowercased() })
+        let fields = try #require(delta["fields"] as? [String: Any])
+        #expect(!fields.isEmpty, "fila full-row: fields poblados, no solo la identidad")
+        #expect(delta["entity_type"] as? String == "categories")
+
+        // El outbox vivo quedó limpio (rescate confirmado).
+        let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(live.isEmpty)
+    }
+
+    @Test("runAdoptOrphanReconcile: fila nil-identity → backfill acuña syncID + testigo y viaja full-row")
+    func adoptReconcile_nilIdentity_backfilledAndUploaded() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        // Categoría SIN identidad (sintética; syncID nil por default).
+        let cat = Category(name: "window-nil", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        #expect(cat.syncID == nil)
+        context.insert(cat)
+        try context.save()
+
+        // Backend NO vacío (para pasar el guard anti mass-upload) pero SIN la fila local. Merkle coherente.
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        let outcome = await executor.runAdoptOrphanReconcile()
+        #expect(outcome == .completed(uploaded: 1, identityAssigned: 1))
+
+        // El backfill acuñó el syncID + su fila testigo.
+        let freshID = try #require(cat.syncID, "el backfill debe acuñar el syncID de la fila sin identidad")
+        let witnesses = try context.fetch(FetchDescriptor<SyncIdentity>())
+        #expect(witnesses.contains { $0.syncID == freshID }, "debe existir la fila testigo SyncIdentity")
+
+        // La fila viajó COMPLETA con su syncID fresco.
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() } == [freshID.uuidString.lowercased()])
+        let delta = try #require(stub.lastPushedDeltas.first)
+        let fields = try #require(delta["fields"] as? [String: Any])
+        #expect(!fields.isEmpty, "fila full-row (fieldsJSON poblado)")
+    }
+
+    @Test("runAdoptOrphanReconcile: red en el PULL (enumeración) → transient SIN mutación (backfill no corre)")
+    func adoptReconcile_pullTransient_noMutation() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        let cat = Category(name: "orphan", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        cat.syncID = UUID()
+        context.insert(cat)
+        try context.save()
+
+        let source = FakeTombstoneSource()
+        source.forced = .transient
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        #expect(await executor.runAdoptOrphanReconcile() == .transient)
+        #expect(stub.pushedSyncIDs.isEmpty, "red en la enumeración → nada se sube")
+        // El backfill NO corrió (la enumeración es el paso 1): sin testigos SyncIdentity.
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0)
+    }
+
+    @Test("runAdoptOrphanReconcile: red en el PUSH → transient; re-run completa (idempotencia kill-resume)")
+    func adoptReconcile_pushTransient_thenResumes() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        let orphanID = UUID()
+        _ = makeCategory("orphan", syncID: orphanID, in: context)
+        try context.save()
+
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        stub.pushStatus = 503   // red en el push
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        #expect(await executor.runAdoptOrphanReconcile() == .transient)
+        // El residual sigue VIVO (nada perdido) → el resume re-diffea.
+        let liveAfterFail = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(!liveAfterFail.isEmpty)
+
+        // Re-run con la red arriba → completa y limpia el outbox (LWW absorbe la re-emisión H5).
+        stub.pushStatus = 200
+        let source2 = FakeTombstoneSource()
+        source2.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        let executor2 = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: source2)
+        guard case .completed = await executor2.runAdoptOrphanReconcile() else {
+            Issue.record("el re-run debía completar"); return
+        }
+        #expect(stub.pushedSyncIDs.map { $0.lowercased() }.contains(orphanID.uuidString.lowercased()))
+        let liveAfterResume = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(liveAfterResume.isEmpty, "tras el resume el outbox vivo queda limpio")
+    }
+
+    @Test("runAdoptOrphanReconcile: 2ª pasada (huérfana ya en backend) → completed(0,0) no-op")
+    func adoptReconcile_secondPass_noop() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        let orphanID = UUID()
+        _ = makeCategory("orphan", syncID: orphanID, in: context)
+        try context.save()
+
+        // 1ª pasada: la huérfana NO está en el backend → se sube.
+        let source1 = FakeTombstoneSource()
+        source1.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])
+        let executor1 = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: source1)
+        #expect(await executor1.runAdoptOrphanReconcile() == .completed(uploaded: 1, identityAssigned: 0))
+
+        // 2ª pasada: ahora el backend YA conoce la ex-huérfana → diff vacío → no-op.
+        let stub2 = RoutingStub()
+        let source2 = FakeTombstoneSource()
+        source2.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: orphanID, seq: 5)], maxServerSeq: 5)]
+        stub2.merkleBody = try makeMerkleBody(["categories": 1])
+        let executor2 = makeExecutor(context, engine, stub2, session, FakeBeaconStore(),
+                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: source2)
+        #expect(await executor2.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0))
+        #expect(stub2.pushedSyncIDs.isEmpty, "no-op: nada que subir")
+    }
+
+    @Test("runAdoptOrphanReconcile: guard anti mass-upload — backend enumerado VACÍO + huérfanas → abortedEmptyBackend, SIN NINGUNA mutación")
+    func adoptReconcile_emptyBackend_aborts() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let engine = CloudSyncEngine()
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+
+        // Enumeración VACÍA (página vacía inmediata) + merkle en 0s COHERENTE (un backend realmente vacío
+        // pasa la completitud pero sigue abortando A PROPÓSITO — decisión de producto de I14).
+        let source = FakeTombstoneSource()
+        stub.merkleBody = try makeMerkleBody([:])
+        let executor = makeExecutor(context, engine, stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        #expect(await executor.runAdoptOrphanReconcile() == .abortedEmptyBackend)
+        #expect(stub.pushedSyncIDs.isEmpty, "guard: NO se sube el corpus entero")
+        let live = try context.fetch(FetchDescriptor<SyncOutbox>()).filter { $0.rejectedReason == nil }
+        #expect(live.isEmpty, "el guard corta ANTES del enqueue")
+        // MENOR 2 del review: el guard corre ANTES del backfill → CERO mutación (ni testigos SyncIdentity).
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0,
+                "abortedEmptyBackend sin backfill: sin testigos")
+    }
+
+    @Test("runAdoptOrphanReconcile: merkle declara MÁS vivas que lo enumerado → transient (enumeración incompleta) SIN mutación")
+    func adoptReconcile_incompleteEnumeration_transient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        let nilCat = Yala.Category(name: "window-nil", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(nilCat)
+        try context.save()
+
+        // La enumeración ve 1 viva pero el merkle declara 2 → página vacía prematura simulada: subir el diff
+        // pisaría con HLC fresco contenido más nuevo del backend → transient retomable (SERIO 1).
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 2])
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        #expect(await executor.runAdoptOrphanReconcile() == .transient)
+        #expect(stub.pushedSyncIDs.isEmpty, "enumeración incompleta → NADA se sube")
+        // Sin mutación: ni backfill (testigos) ni enqueue (outbox).
+        #expect(nilCat.syncID == nil, "el backfill NO corre con enumeración incompleta")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0)
+        #expect(try context.fetchCount(FetchDescriptor<SyncOutbox>()) == 0)
+    }
+
+    @Test("runAdoptOrphanReconcile: fetchMerkle no-snapshot (body indecodificable) → transient SIN mutación")
+    func adoptReconcile_merkleTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()   // merkleBody default = Data() → decode falla → .transient
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        _ = makeCategory("orphan", syncID: UUID(), in: context)
+        try context.save()
+
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        #expect(await executor.runAdoptOrphanReconcile() == .transient)
+        #expect(stub.pushedSyncIDs.isEmpty)
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0, "sin merkle no hay mutación")
+        #expect(try context.fetchCount(FetchDescriptor<SyncOutbox>()) == 0)
+    }
+
+    @Test("adoptOrphanDryRun: read-only por el MISMO camino verificado — diff sin mutar; merkle incompleto → nil")
+    func adoptDryRun_readOnly() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+
+        let orphanID = UUID()
+        _ = makeCategory("orphan", syncID: orphanID, in: context)
+        let nilCat = Category(name: "window-nil", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false)
+        context.insert(nilCat)
+        try context.save()
+
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        stub.merkleBody = try makeMerkleBody(["categories": 1])   // camino VERIFICADO (SERIO 1)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+
+        let plan = try #require(await executor.adoptOrphanDryRun())
+        #expect(plan.orphans["categories"] == [orphanID])   // solo la que tiene identidad ∉ backend
+        #expect(plan.needsIdentity["categories"] == 1)       // la nil (sin backfill se ve como needsIdentity)
+        // READ-ONLY: NO acuñó identidad ni testigos.
+        #expect(nilCat.syncID == nil, "el dry-run NO hace backfill")
+        #expect(try context.fetchCount(FetchDescriptor<SyncIdentity>()) == 0)
+        #expect(stub.pushedSyncIDs.isEmpty)
+
+        // El dry-run usa el MISMO guard de completitud: merkle > enumerado → nil (sin plan).
+        let stub2 = RoutingStub()
+        stub2.merkleBody = try makeMerkleBody(["categories": 3])
+        let source2 = FakeTombstoneSource()
+        source2.pages = [PulledPage(deltas: [upsertDelta(table: "categories", syncID: UUID(), seq: 1)], maxServerSeq: 1)]
+        let executor2 = makeExecutor(context, CloudSyncEngine(), stub2, session, FakeBeaconStore(),
+                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                     tombstoneSource: source2)
+        #expect(await executor2.adoptOrphanDryRun() == nil, "enumeración incompleta → el dry-run devuelve nil")
+    }
+
+    @Test("execute(.adoptBackendAccount): SIGUE notWired (el flujo de adopt completo es I14)")
+    func adoptBackendAccount_stillNotWired() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        await #expect(throws: MigrationExecutorError.self) {
+            try await executor.execute(.adoptBackendAccount)
+        }
     }
 }

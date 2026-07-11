@@ -31,12 +31,29 @@ nonisolated enum MigrationExecutorError: Error, Equatable {
     case notWired(effect: String)
 }
 
+// MARK: - AdoptReconcileOutcome (DIFERIDOS #30, mecanismo v1 DARK)
+
+/// Resultado de `runAdoptOrphanReconcile()`. `nonisolated` (lo compara la lógica de tests). Idempotente:
+/// una 2ª pasada encuentra las ex-huérfanas ya en el backend → `completed(0, 0)`.
+nonisolated enum AdoptReconcileOutcome: Equatable {
+    /// El diff corrió y (si había) subió las huérfanas. `uploaded` = filas aplicadas server-side;
+    /// `identityAssigned` = filas sin syncID a las que el backfill acuñó identidad fresca.
+    case completed(uploaded: Int, identityAssigned: Int)
+    /// Guard defensivo anti mass-upload: la enumeración del backend llegó VACÍA teniendo huérfanas locales
+    /// → NO se sube nada (un adopt legítimo implica backend POBLADO; enumeración vacía = página espuria/bug).
+    case abortedEmptyBackend
+    /// Red caída en la enumeración o el push → retomable (el re-run re-diffea; lo ya aplicado sale del diff).
+    case transient
+}
+
 // MARK: - ReverseTombstoneSource (§h.3, I11-2)
 
-/// Fuente de tombstones del backend para el barrido de zombies de la reversa (§h.3). Enumeración de LECTURA
-/// PURA: NO aplica (`applyPage`), NO avanza `SyncCursor`, NO toca testigos `SyncIdentity` — el apply normal
-/// BORRA el testigo al aplicar un tombstone y aquí NO queremos ese side-effect. Default = wrapper del
-/// `pullClient`; los tests la fakean para el golden §h.5 (no se protocoliza `SyncPullClient` entero).
+/// Fuente GENÉRICA de páginas de deltas en LECTURA PURA: NO aplica (`applyPage`), NO avanza `SyncCursor`, NO
+/// toca testigos `SyncIdentity` — el apply normal BORRA el testigo al aplicar un tombstone y aquí NO queremos
+/// ese side-effect. Consumida por el barrido de zombies de la reversa (§h.3 — enumera tombstones) Y por la
+/// reconciliación de huérfanas del adopt (DIFERIDOS #30 — enumera TODAS las identidades que el backend
+/// conoce, upserts Y tombstones). Default = wrapper del `pullClient`; los tests la fakean para el golden §h.5
+/// (no se protocoliza `SyncPullClient` entero).
 @MainActor
 protocol ReverseTombstoneSource: AnyObject {
     /// Baja UNA página de deltas desde `since` (reusa el `PullOutcome` del pull).
@@ -413,9 +430,15 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             // Una fila que el CloudKit congelado tenga y el local NO (un 2º device del mismo Apple ID,
             // aún .icloud, escribiendo a la base compartida durante la ventana — el device puede no
             // haberla importado antes del mirror-off) NO es responsabilidad de este barrido: la sube el
-            // PROPIO device que la escribió por su camino de migración/adopt (I11). RESIDUAL EXPLÍCITO
-            // de I11: un device que escribió post-cutover y JAMÁS adopta deja esa fila huérfana en
-            // CloudKit congelado — registrar en el gate de encendido de flags (cruza con #29/#30).
+            // PROPIO device que la escribió por su camino de adopt. CERRADO por `runAdoptOrphanReconcile()`
+            // (DIFERIDOS #30, DARK): el adoptador diffea su store local contra `/sync/pull` read-only y sube
+            // fila-completa cualquier identidad ∉ backend. I14 DEBE invocarlo en el flujo de adopt tras
+            // quiescencia del import + fast-forward del baseline (contrato en el doc del método). RESIDUAL v1
+            // irreducible: un device que escribió post-cutover y JAMÁS adopta deja esa fila huérfana en
+            // CloudKit congelado (auto-bloqueado por `secondaryDeviceCloudLogin`; la fila no se pierde
+            // físicamente y una adopción tardía la rescata — el diff no caduca). También v1: borrados de
+            // ventana (resurrección benigna) + import-lag (duplicado curable). Candidato v2 (device que jamás
+            // adopta) = lectura directa del CloudKit congelado por el líder (opción C, descartada v1).
             engine.drainOnce(context: context)
             let residual = liveOutboxRows()
             let (buildable, poison) = pushClient.partitionBuildable(residual)
@@ -463,6 +486,11 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             CloudSyncBreadcrumb.migrationRollbackCompleted()
 
         case .adoptBackendAccount:
+            // §k.4 — el flujo COMPLETO de adopt (consent + sign-in + claim `existing_stable` + pull del
+            // corpus + fast-forward del baseline + switch a `.cloud`) ES I14; este efecto sigue `notWired`
+            // (el runner lo deja journaled retomable). La PIEZA de reconciliación de huérfanas de la ventana
+            // ya existe DARK: `runAdoptOrphanReconcile()` — I14 la invoca tras la quiescencia del import y
+            // ANTES de arrancar el runtime (ver el contrato en su doc-comment).
             CloudSyncBreadcrumb.migrationExecutorNotWired(step: effect.rawValue)
             throw MigrationExecutorError.notWired(effect: effect.rawValue)
 
@@ -879,6 +907,261 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             CloudSyncBreadcrumb.migrationLeaseHeartbeatRejected(reason: "sessionExpired")
         case .transient:
             CloudSyncBreadcrumb.migrationLeaseHeartbeatRejected(reason: "transient")
+        }
+    }
+
+    // MARK: - Adopt-reconcile (DIFERIDOS #30, mecanismo v1 DARK)
+
+    /// Rescata al backend las filas HUÉRFANAS de la ventana de cutover (identidad local ∉ backend) cuando un
+    /// 2º device del mismo Apple ID adopta (`.icloud`→`.cloud`). Cierra el hueco multi-device de §g.4 que
+    /// `runLeaderReconcileFromFrozenCloudKit` dejaba explícito: el device que ESCRIBIÓ la fila la ve barato
+    /// (está en su store local) y la sube por `/sync/push`; sin ella, TODO adopt con writes de ventana termina
+    /// en divergencia Merkle local-ahead PERPETUA (autoridad backend→local en el pull).
+    ///
+    /// **CONTRATO I14** (el flujo de adopt COMPLETO — §k.4 — es I14; este método es su seam): I14 DEBE
+    /// (i) correr este método tras la QUIESCENCIA del import CloudKit y ANTES de arrancar el runtime de sync,
+    /// (ii) hacer FAST-FORWARD del History baseline (molde `fastForwardHistoryBaseline` de w4) ANTES de
+    /// habilitar el drain del runtime — sin (ii), el primer drain del adoptador re-emitiría el corpus ENTERO
+    /// importado de CloudKit como deltas. Este método NO drena la History (emite las huérfanas por el seam
+    /// `enqueueSnapshotRows` full-row, no por captura) → es SEGURO respecto al eco del corpus por construcción;
+    /// el punto (ii) protege al RUNTIME posterior, no a este método. Y (iii) tras el reconcile, garantizar un
+    /// pull con `runPostPullReconcilers` (`SystemEntityMergePolicy`): una ENTIDAD DE SISTEMA huérfana que este
+    /// diff suba legítimamente puede duplicar server-side la acuñada por el líder (identidad distinta,
+    /// contenido lógico idéntico) — el merge determinista-global del pull la cura (residual (c) de abajo).
+    ///
+    /// **Completitud de la enumeración VERIFICADA POSITIVAMENTE (SERIO 1 del review):** el set del backend se
+    /// cruza contra los counts de filas VIVAS por tabla de `/sync/merkle` (cero endpoints nuevos). Una
+    /// enumeración PARCIAL sin error (página vacía prematura / `maxServerSeq` no-monótono con 200 OK) haría
+    /// lucir huérfanas filas que el backend SÍ tiene → su re-upload con HLC fresco PISARÍA contenido más nuevo
+    /// (riesgo INVERTIDO respecto a `sweepZombies`, donde un set parcial solo encoge el barrido = benigno).
+    /// merkle.count > enumerado → `.transient` retomable (sesgo a abortar, jamás a proceder; un push
+    /// concurrente entre enumeración y merkle da un spurious-abort conservador — mismo espíritu que
+    /// `newDeltaDetected` del verify). El sentido inverso (enumerado > merkle) PASA: deletes concurrentes
+    /// solo encogen el diff.
+    ///
+    /// **Residuales v1** (documentados, DIFERIDOS #30): (a) un device que JAMÁS adopta deja su fila huérfana en
+    /// el CloudKit congelado (auto-bloqueado por `secondaryDeviceCloudLogin`; sin pérdida física, rescatable por
+    /// una adopción tardía — el diff no caduca; candidato v2 = opción C, lectura directa del CloudKit congelado);
+    /// (b) los BORRADOS de la ventana no se propagan (el pull del adopt re-materializa la fila = resurrección
+    /// benigna; el diff inverso backend∉local tombstonearía filas reales bajo import-lag → asimetría de riesgo
+    /// inaceptable); (c) import-lag = una fila PRE-cutover cuyo `CD_syncID` aún no llegó luce nil → identidad
+    /// fresca → DUPLICADO content-idéntico curable (clase I11-4; para system entities cura `SystemEntityMergePolicy`);
+    /// mitigado por la PRECONDICIÓN (i) de correr solo tras quiescencia del import.
+    ///
+    /// Idempotente/retomable: red → `.transient` sin marcar nada; una 2ª pasada re-diffea (lo aplicado sale
+    /// del diff → `completed(0, 0)`).
+    func runAdoptOrphanReconcile() async -> AdoptReconcileOutcome {
+        // Paso 1: enumerar el set de identidades del backend (upserts + tombstones) — read-only, idiom
+        // `sweepZombies` (SIN applyPage, SIN avance de `SyncCursor`, SIN tocar testigos). Red → `.transient`.
+        guard let enumeration = await enumerateBackendSyncIDs() else { return .transient }
+        // Verificación POSITIVA de completitud contra los counts del Merkle (SERIO 1 — ver doc del método).
+        // El merkle se consulta DESPUÉS de la enumeración: sesgo a abortar, jamás a proceder.
+        guard await verifyEnumerationComplete(enumeration) else { return .transient }
+        let backendSyncIDs = enumeration.known
+
+        // Guard anti mass-upload ANTES de toda mutación (MENOR 2 del review): diff PRELIMINAR pre-backfill.
+        // Backend enumerado VACÍO + (huérfanas ∨ filas sin identidad) = página espuria/bug/cuenta equivocada;
+        // el costo del falso positivo sería subir el corpus entero → `abortedEmptyBackend` SIN mutar nada
+        // (el backfill de abajo NO corre). NOTA: un backend REALMENTE vacío (merkle en 0s pasa la completitud)
+        // sigue abortando A PROPÓSITO — un adopt legítimo (`existing_stable`) implica backend poblado; mergear
+        // un local poblado contra una cuenta nube VACÍA es decisión de producto de I14, no de esta pieza.
+        // Residual documentado: un líder con corpus 0 filas + huérfana real del 2º device queda excluido de la
+        // auto-cura (sin datos en riesgo).
+        let prePlan = AdoptOrphanDiff.compute(inventory: collectAdoptInventory(), backendSyncIDs: backendSyncIDs)
+        if backendSyncIDs.isEmpty && (prePlan.uploadCount > 0 || prePlan.identityCount > 0) {
+            CloudSyncBreadcrumb.adoptReconcileAbortedEmptyBackend(orphans: prePlan.uploadCount + prePlan.identityCount)
+            return .abortedEmptyBackend
+        }
+
+        // Paso 2 (identityAssigned): en el adoptador la tabla de testigos arranca vacía → cada fila SIN
+        // identidad recibe UUID FRESCO (rebind no-op) y CAE a huérfana (un UUID fresco jamás está en el
+        // backend). El conteo sale del plan preliminar; el backfill las materializa (syncID + testigo
+        // SyncIdentity). El eco del drain lo previene el contrato de baseline de I14 (punto ii) — igual que
+        // en el líder.
+        let identityAssigned = prePlan.identityCount
+        SyncIdentityService.backfillIdentities(context: context, now: now())
+
+        // Pasos 3-4: inventario local POST-backfill (sin nils) → diff definitivo.
+        let inventory = collectAdoptInventory()
+        let plan = AdoptOrphanDiff.compute(inventory: inventory, backendSyncIDs: backendSyncIDs)
+        guard !plan.orphans.isEmpty else { return .completed(uploaded: 0, identityAssigned: identityAssigned) }
+
+        // Paso 6: fetch dirigido de EXACTAMENTE las huérfanas del plan → emisión fila-COMPLETA por el seam del
+        // snapshot (reusa `MigrationSnapshotUploader.makeSnapshotRowInput` — misma emisión DeltaEmitter→codec).
+        let inputs = buildOrphanRowInputs(plan.orphans)
+        do {
+            try engine.enqueueSnapshotRows(inputs, context: context, now: now())
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor.runAdoptOrphanReconcile: enqueueSnapshotRows lanzó (drift): \(error)")
+            #endif
+            return .transient
+        }
+        // Push con el idiom EXACTO del leader-reconcile: liveOutboxRows + partitionBuildable + deadLetterPoison
+        // + push + applyResults. NO se drena la History (las huérfanas ya están en el outbox por el enqueue;
+        // drenar re-emitiría el corpus importado — ver contrato).
+        let residual = liveOutboxRows()
+        let (buildable, poison) = pushClient.partitionBuildable(residual)
+        engine.deadLetterPoison(poison, context: context, now: now())
+        guard !buildable.isEmpty else { return .completed(uploaded: 0, identityAssigned: identityAssigned) }
+        guard case .completed(let results) = await pushClient.push(buildable) else { return .transient }
+        await pushClient.applyResults(results, rows: buildable, engine: engine, context: context)
+        let uploaded = results.filter { $0.status == .applied }.count
+
+        // Paso 7: canario (espejo del par del líder). `identityAssigned` viaja en el breadcrumb (sin PII).
+        if uploaded > 0 {
+            CloudSyncBreadcrumb.adoptOrphanReconciled(count: uploaded, identityAssigned: identityAssigned)
+            TelemetryService.cloudAdoptOrphanReconciled(count: uploaded)
+        }
+        return .completed(uploaded: uploaded, identityAssigned: identityAssigned)
+    }
+
+    /// DRY-RUN read-only (panel DEBUG, §3.4): pasos 1,3,4 SIN backfill (paso 2) NI upload (paso 6). Enumera el
+    /// backend (MISMO camino verificado contra merkle que el reconcile — SERIO 1), inventario local (con nils
+    /// visibles — sin backfill materializa `needsIdentity` por tabla) y diffea. NO muta nada (molde
+    /// `scanOrphanMetadata`/`computeDryRun`). `nil` = red (transient) al enumerar O enumeración incompleta.
+    func adoptOrphanDryRun() async -> AdoptOrphanDiff.Plan? {
+        guard let enumeration = await enumerateBackendSyncIDs() else { return nil }
+        guard await verifyEnumerationComplete(enumeration) else { return nil }
+        return AdoptOrphanDiff.compute(inventory: collectAdoptInventory(), backendSyncIDs: enumeration.known)
+    }
+
+    /// Enumeración del backend: `known` = TODAS las identidades (upserts Y tombstones — para el diff);
+    /// `liveByTable` = solo las VIVAS por tabla (para cruzar contra los counts del Merkle, SERIO 1).
+    private struct BackendEnumeration {
+        let known: Set<UUID>
+        let liveByTable: [String: Set<UUID>]
+    }
+
+    /// Enumera TODAS las identidades que el backend conoce (upserts Y tombstones) por páginas read-only (idiom
+    /// `sweepZombies`). `nil` = red (transient). El loop copia el shape de `sweepZombies`: cursor, high-water,
+    /// break si página vacía o sin progreso.
+    private func enumerateBackendSyncIDs() async -> BackendEnumeration? {
+        var known: Set<UUID> = []
+        var liveByTable: [String: Set<UUID>] = [:]
+        var cursor: Int64 = 0
+        while true {
+            switch await tombstoneSource.pullPage(since: cursor, limit: 500) {
+            case let .page(page):
+                for delta in page.deltas {
+                    known.insert(delta.syncID)
+                    if delta.op == .tombstone {
+                        // El wire es materialized-rows (cada fila aparece con su ESTADO final), pero el
+                        // remove es defensivo por si un upsert previo de la misma identidad ya la contó viva.
+                        liveByTable[delta.entityType]?.remove(delta.syncID)
+                    } else {
+                        liveByTable[delta.entityType, default: []].insert(delta.syncID)
+                    }
+                }
+                let next = max(page.maxServerSeq, cursor)
+                if page.deltas.isEmpty || next <= cursor {   // agotado / sin progreso
+                    return BackendEnumeration(known: known, liveByTable: liveByTable)
+                }
+                cursor = next
+            case .sessionExpired, .accountUnavailable, .transient:
+                return nil
+            }
+        }
+    }
+
+    /// SERIO 1 del review: verificación POSITIVA de completitud de la enumeración contra los counts de filas
+    /// VIVAS por tabla de `/sync/merkle` (cero endpoints nuevos — `RemoteMerkle.entities` ya los trae). Para
+    /// cada tabla del merkle: `count > enumerado` → enumeración INCOMPLETA (página vacía prematura /
+    /// paginación no-monótona con 200 OK) → breadcrumb + `false` (el llamador devuelve `.transient`
+    /// retomable). El sentido inverso (enumerado > merkle) PASA: deletes concurrentes solo encogen el diff =
+    /// conservador. Cualquier outcome no-snapshot del fetch → `false` (transient).
+    private func verifyEnumerationComplete(_ enumeration: BackendEnumeration) async -> Bool {
+        guard case .snapshot(let merkle) = await merkleClient.fetchMerkle() else { return false }
+        for (table, entity) in merkle.entities {
+            let got = enumeration.liveByTable[table]?.count ?? 0
+            if entity.count > got {
+                CloudSyncBreadcrumb.adoptReconcileEnumerationIncomplete(
+                    table: table, expected: entity.count, got: got)
+                return false
+            }
+        }
+        return true
+    }
+
+    /// Inventario `(table, syncID?)` de TODAS las filas VIVAS de las 16 entidades (manifest I12), por los
+    /// accessors de identidad existentes. La `table` es el nombre Postgres (`EntityEmission.table`), la clave
+    /// del diff contra `PulledDelta.entityType`. Fetch CONCRETO por tipo (regla `#Predicate`).
+    private func collectAdoptInventory() -> [(table: String, syncID: UUID?)] {
+        var out: [(table: String, syncID: UUID?)] = []
+        addAdoptInventory(TransactionItem.self, emission: EntityEmissionMap.transactionItem, identity: { $0.syncID }, into: &out)
+        addAdoptInventory(InboxDraft.self, emission: EntityEmissionMap.inboxDraft, identity: { $0.syncID }, into: &out)
+        addAdoptInventory(Category.self, emission: EntityEmissionMap.category, identity: { $0.syncID }, into: &out)
+        addAdoptInventory(FavoritePayment.self, emission: EntityEmissionMap.favoritePayment, identity: { $0.syncID }, into: &out)
+        addAdoptInventory(MerchantMemory.self, emission: EntityEmissionMap.merchantMemory, identity: { $0.syncID }, into: &out)
+        addAdoptInventory(ExchangeRate.self, emission: EntityEmissionMap.exchangeRate, identity: { $0.syncID }, into: &out)
+        addAdoptInventory(Budget.self, emission: EntityEmissionMap.budget, identity: { $0.id }, into: &out)
+        addAdoptInventory(ScheduledPayment.self, emission: EntityEmissionMap.scheduledPayment, identity: { $0.id }, into: &out)
+        addAdoptInventory(Account.self, emission: EntityEmissionMap.account, identity: { $0.shortcutID }, into: &out)
+        addAdoptInventory(Subcategory.self, emission: EntityEmissionMap.subcategory, identity: { $0.shortcutID }, into: &out)
+        addAdoptInventory(Tag.self, emission: EntityEmissionMap.tag, identity: { $0.id }, into: &out)
+        addAdoptInventory(NotificationItem.self, emission: EntityEmissionMap.notificationItem, identity: { $0.id }, into: &out)
+        addAdoptInventory(CashFlowPlan.self, emission: EntityEmissionMap.cashFlowPlan, identity: { $0.id }, into: &out)
+        addAdoptInventory(CashFlowLine.self, emission: EntityEmissionMap.cashFlowLine, identity: { $0.id }, into: &out)
+        addAdoptInventory(CashFlowOverride.self, emission: EntityEmissionMap.cashFlowOverride, identity: { $0.id }, into: &out)
+        addAdoptInventory(GroupBridgePreference.self, emission: EntityEmissionMap.groupBridgePreference, identity: { $0.id }, into: &out)
+        return out
+    }
+
+    private func addAdoptInventory<M: PersistentModel>(
+        _ type: M.Type, emission: EntityEmission<M>, identity: (M) -> UUID?,
+        into out: inout [(table: String, syncID: UUID?)]
+    ) {
+        do {
+            for model in try context.fetch(FetchDescriptor<M>()) {
+                out.append((emission.table, identity(model)))
+            }
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor.collectAdoptInventory: fetch(\(M.self)) falló: \(error)")
+            #endif
+        }
+    }
+
+    /// Construye los `SnapshotRowInput` full-row de EXACTAMENTE las filas huérfanas del plan (fetch dirigido +
+    /// filtro por el set de identidades objetivo, por tabla). Reusa el builder per-row del uploader (misma
+    /// emisión). Fetch CONCRETO por tipo (regla `#Predicate`).
+    private func buildOrphanRowInputs(_ orphans: [String: [UUID]]) -> [SnapshotRowInput] {
+        var inputs: [SnapshotRowInput] = []
+        addOrphanInputs(TransactionItem.self, emission: EntityEmissionMap.transactionItem, className: SyncEntityType.transactionItem, identity: { $0.syncID }, orphans: orphans, into: &inputs)
+        addOrphanInputs(InboxDraft.self, emission: EntityEmissionMap.inboxDraft, className: SyncEntityType.inboxDraft, identity: { $0.syncID }, orphans: orphans, into: &inputs)
+        addOrphanInputs(Category.self, emission: EntityEmissionMap.category, className: SyncEntityType.category, identity: { $0.syncID }, orphans: orphans, into: &inputs)
+        addOrphanInputs(FavoritePayment.self, emission: EntityEmissionMap.favoritePayment, className: SyncEntityType.favoritePayment, identity: { $0.syncID }, orphans: orphans, into: &inputs)
+        addOrphanInputs(MerchantMemory.self, emission: EntityEmissionMap.merchantMemory, className: SyncEntityType.merchantMemory, identity: { $0.syncID }, orphans: orphans, into: &inputs)
+        addOrphanInputs(ExchangeRate.self, emission: EntityEmissionMap.exchangeRate, className: SyncEntityType.exchangeRate, identity: { $0.syncID }, orphans: orphans, into: &inputs)
+        addOrphanInputs(Budget.self, emission: EntityEmissionMap.budget, className: SyncEntityType.budget, identity: { $0.id }, orphans: orphans, into: &inputs)
+        addOrphanInputs(ScheduledPayment.self, emission: EntityEmissionMap.scheduledPayment, className: SyncEntityType.scheduledPayment, identity: { $0.id }, orphans: orphans, into: &inputs)
+        addOrphanInputs(Account.self, emission: EntityEmissionMap.account, className: SyncEntityType.account, identity: { $0.shortcutID }, orphans: orphans, into: &inputs)
+        addOrphanInputs(Subcategory.self, emission: EntityEmissionMap.subcategory, className: SyncEntityType.subcategory, identity: { $0.shortcutID }, orphans: orphans, into: &inputs)
+        addOrphanInputs(Tag.self, emission: EntityEmissionMap.tag, className: SyncEntityType.tag, identity: { $0.id }, orphans: orphans, into: &inputs)
+        addOrphanInputs(NotificationItem.self, emission: EntityEmissionMap.notificationItem, className: SyncEntityType.notificationItem, identity: { $0.id }, orphans: orphans, into: &inputs)
+        addOrphanInputs(CashFlowPlan.self, emission: EntityEmissionMap.cashFlowPlan, className: SyncEntityType.cashFlowPlan, identity: { $0.id }, orphans: orphans, into: &inputs)
+        addOrphanInputs(CashFlowLine.self, emission: EntityEmissionMap.cashFlowLine, className: SyncEntityType.cashFlowLine, identity: { $0.id }, orphans: orphans, into: &inputs)
+        addOrphanInputs(CashFlowOverride.self, emission: EntityEmissionMap.cashFlowOverride, className: SyncEntityType.cashFlowOverride, identity: { $0.id }, orphans: orphans, into: &inputs)
+        addOrphanInputs(GroupBridgePreference.self, emission: EntityEmissionMap.groupBridgePreference, className: SyncEntityType.groupBridgePreference, identity: { $0.id }, orphans: orphans, into: &inputs)
+        return inputs
+    }
+
+    private func addOrphanInputs<M: PersistentModel>(
+        _ type: M.Type, emission: EntityEmission<M>, className: String, identity: (M) -> UUID?,
+        orphans: [String: [UUID]], into inputs: inout [SnapshotRowInput]
+    ) {
+        guard let ids = orphans[emission.table], !ids.isEmpty else { return }
+        let targetSet = Set(ids)
+        do {
+            for model in try context.fetch(FetchDescriptor<M>()) {
+                guard let sid = identity(model), targetSet.contains(sid) else { continue }
+                inputs.append(MigrationSnapshotUploader.makeSnapshotRowInput(
+                    model: model, syncID: sid, emission: emission, className: className, calendar: calendar))
+            }
+        } catch {
+            #if DEBUG
+            print("MigrationWorkExecutor.buildOrphanRowInputs: fetch(\(M.self)) falló: \(error)")
+            #endif
         }
     }
 }

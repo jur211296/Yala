@@ -824,6 +824,149 @@ struct CloudSyncE2EStagingTests {
         let liveTxC = try contextC.fetch(FetchDescriptor<TransactionItem>()).filter { ($0.note ?? "").contains(run) }
         #expect(liveTxC.isEmpty, "0 TXs vivas del run tras cleanup: \(liveTxC.count)")
     }
+
+    // MARK: - Adopt-reconcile de huérfanas (DIFERIDOS #30)
+
+    private struct AdoptWirePullFailed: Error, CustomStringConvertible {
+        var description: String { "pull read-only del wire no completó" }
+    }
+    private struct AdoptReconcileNotCompleted: Error, CustomStringConvertible {
+        let outcome: String
+        var description: String { "runAdoptOrphanReconcile no completó: \(outcome)" }
+    }
+
+    /// Cuenta las cuentas VIVAS del `run` a nivel de WIRE (pull read-only SIN apply, idiom I11-2): identidades
+    /// distintas de `accounts` con `op == .upsert` cuyo `name` porta el marcador del run.
+    private func countRunAccountsAtWire(run: String, pull: SyncPullClient) async throws -> Int {
+        var ids: Set<UUID> = []
+        var cursor: Int64 = 0
+        while true {
+            switch await pull.pull(since: cursor, limit: 500) {
+            case .page(let page):
+                for d in page.deltas where d.entityType == "accounts" && d.op == .upsert {
+                    if case .string(let n) = d.fields["name"] ?? .null, n.contains(run) {
+                        ids.insert(d.syncID)
+                    }
+                }
+                if page.deltas.isEmpty || page.maxServerSeq <= cursor { return ids.count }
+                cursor = page.maxServerSeq
+            case .sessionExpired, .accountUnavailable, .transient:
+                throw AdoptWirePullFailed()
+            }
+        }
+    }
+
+    /// Device A (líder simulado) pushea 1 cuenta del run. Device B (adoptador, store propio) materializa el
+    /// backend por pull, CREA una cuenta local que JAMÁS pushea (la "huérfana de ventana") y corre
+    /// `runAdoptOrphanReconcile()`. A nivel de WIRE (read-only): antes = 1 cuenta del run, después = 2 → el
+    /// backend GANÓ exactamente la huérfana, y B NO re-subió el corpus pulleado (el guard anti mass-upload
+    /// funciona en la práctica). 2ª pasada = no-op. **RP-1: cleanup a 0 VIVAS del run** en closure con re-throw
+    /// (una cuenta viva del user A rompería el `diverged == ["tx_items"]` estricto del snapshot test).
+    @Test(.enabled(if: CloudSyncE2EStagingTests.isEnabled))
+    func adoptOrphanReconcile_twoDevices_uploadsOnlyTheOrphanRow() async throws {
+        let jwt = try await login()
+        let tokenProvider: () async -> String? = { jwt }
+        let run = String(UUID().uuidString.prefix(8))
+        let pushA = SyncPushClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let pushB = SyncPushClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let pullB = SyncPullClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        let merkleB = SyncMerkleClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+
+        func makeAccount(_ name: String) -> Account {
+            Account(name: name, currencyCode: "PEN", colorHex: "#111111", iconName: "creditcard", type: "checking")
+        }
+
+        // ---------- Device A: pushea 1 cuenta del run ----------
+        let dirA = freshDir(); defer { cleanup(dirA) }
+        let contextA = try makeContext(dirA)
+        let engineA = CloudSyncEngine()
+        let accA = makeAccount("adopt-a-\(run)")
+        contextA.insert(accA)
+        try contextA.save()
+        #expect(try await drainAndPush(engineA, contextA, pushA), "push A")
+
+        // ---------- Device B: adoptador — materializa por pull + huérfana local jamás pusheada ----------
+        let dirB = freshDir(); defer { cleanup(dirB) }
+        let contextB = try makeContext(dirB)
+        let engineB = CloudSyncEngine()
+        guard case .completed = await engineB.pullAndApplyOnce(using: pullB, context: contextB) else {
+            Issue.record("pull inicial de B no completó"); return
+        }
+        let orphan = makeAccount("adopt-orphan-\(run)")
+        contextB.insert(orphan)
+        try contextB.save()
+        let orphanShortcut = orphan.shortcutID
+
+        var scenarioError: Error?
+        do {
+            // Pre-reconcile: el backend tiene 1 cuenta del run (la de A).
+            #expect(try await countRunAccountsAtWire(run: run, pull: pullB) == 1,
+                    "pre-reconcile: solo la cuenta de A en el wire")
+
+            let sessionB = E2ECloudSession(userID: "adopt-b-\(run)")
+            let executorB = MigrationWorkExecutor(
+                engine: engineB, pushClient: pushB, pullClient: pullB, merkleClient: merkleB,
+                accountClient: CloudAccountClient(baseURL: Self.workerURL), session: sessionB,
+                context: contextB, storageDefaults: isolatedDefaults())
+
+            // Reconcile: uploaded == 1 EXACTO — B no drena y su outbox solo lleva el enqueue del diff, así
+            // que ==1 prueba que en ESTE push no viajó nada más que la huérfana. (La selectividad exacta del
+            // diff — conocidas/tombstones fuera — la prueban los unit tests del executor.)
+            switch await executorB.runAdoptOrphanReconcile() {
+            case .completed(let uploaded, _):
+                #expect(uploaded == 1, "exactamente la huérfana de ventana debe subirse")
+            case .abortedEmptyBackend:
+                throw AdoptReconcileNotCompleted(outcome: "abortedEmptyBackend")
+            case .transient:
+                throw AdoptReconcileNotCompleted(outcome: "transient")
+            }
+
+            // Wire (read-only): el backend GANÓ la huérfana → 2 cuentas del run.
+            #expect(try await countRunAccountsAtWire(run: run, pull: pullB) == 2,
+                    "post-reconcile: A + huérfana de B en el wire")
+
+            // La huérfana viva en el wire porta el shortcutID de B (identidad preservada).
+            var wireHasOrphanShortcut = false
+            var cursor: Int64 = 0
+            paging: while true {
+                switch await pullB.pull(since: cursor, limit: 500) {
+                case .page(let page):
+                    for d in page.deltas where d.entityType == "accounts" && d.op == .upsert && d.syncID == orphanShortcut {
+                        wireHasOrphanShortcut = true
+                    }
+                    if page.deltas.isEmpty || page.maxServerSeq <= cursor { break paging }
+                    cursor = page.maxServerSeq
+                case .sessionExpired, .accountUnavailable, .transient:
+                    throw AdoptWirePullFailed()
+                }
+            }
+            #expect(wireHasOrphanShortcut, "la huérfana viaja con el shortcutID de B")
+
+            // 2ª pasada: la ex-huérfana ya está en el backend → diff vacío → no-op.
+            #expect(await executorB.runAdoptOrphanReconcile() == .completed(uploaded: 0, identityAssigned: 0),
+                    "2ª pasada idempotente = no-op")
+        } catch {
+            scenarioError = error
+        }
+
+        // ---------- RP-1: cleanup a 0 VIVAS del run — corre SIEMPRE (incl. escenario fallido). ----------
+        try tombstoneRunRows(run: run, context: contextA)
+        #expect(try await drainAndPush(engineA, contextA, pushA), "push cleanup A")
+        try tombstoneRunRows(run: run, context: contextB)
+        #expect(try await drainAndPush(engineB, contextB, pushB), "push cleanup B")
+        if let scenarioError { throw scenarioError }
+
+        // Verificación en un 3er store FRESCO: 0 cuentas del run vivas en el backend.
+        let dirC = freshDir(); defer { cleanup(dirC) }
+        let contextC = try makeContext(dirC)
+        let engineC = CloudSyncEngine()
+        let pullC = SyncPullClient(baseURL: Self.workerURL, tokenProvider: tokenProvider)
+        guard case .completed = await engineC.pullAndApplyOnce(using: pullC, context: contextC) else {
+            Issue.record("pull C no completó"); return
+        }
+        let liveAccC = try contextC.fetch(FetchDescriptor<Account>()).filter { $0.name.contains(run) }
+        #expect(liveAccC.isEmpty, "0 cuentas del run vivas tras cleanup: \(liveAccC.map(\.name))")
+    }
 }
 
 // MARK: - Sesión e2e (seam I7c stub para el runtime)
