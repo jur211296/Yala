@@ -376,7 +376,9 @@ struct ContentView: View {
             // onChange(of:) fires synchronously on @State change — always reliable.
             guard oldValue && !newValue && hasCompletedOnboarding else { return }
             if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
-                SessionState.shared.needsPostOnboardingTrial = false
+                // El flag persistido se limpia en el DRAIN (presentación real),
+                // no aquí: el intent es transient (drop en background) y limpiarlo
+                // al emitir perdía la oferta sin re-emisión posible.
                 Task {
                     // Wait for fullScreenCover dismiss animation (~0.35s, UX)
                     try? await Task.sleep(for: .seconds(0.8))
@@ -604,8 +606,15 @@ struct ContentView: View {
         switch intent {
         case .showInboxAlert(let notif):
             activeInboxNotification = notif
+            // Presentación real → recién ahora se queman las firmas de los drafts
+            // (consume-once persistente). Ver commitPendingInboxAlertSignatures.
+            AppBootstrapper.shared.commitPendingInboxAlertSignatures()
         case .presentTrialOffer:
             showProTrialOffer = true
+            // Drain == presentación real (mismo nodo que ancla el sheet, y con la
+            // matriz completa solo drena con el anchor libre). Limpiar aquí — y no
+            // en los productores — permite re-emitir tras un drop transient.
+            SessionState.shared.needsPostOnboardingTrial = false
         case .presentWhatsNew(let features, let version):
             whatsNewData = (features: features, version: version)
             showWhatsNew = true
@@ -835,7 +844,7 @@ struct ContentView: View {
         // GC-08: Skip trial/What's New for groupInvite users — they have no context yet
         if !SessionState.shared.isGroupInviteMode {
             if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
-                SessionState.shared.needsPostOnboardingTrial = false
+                // Flag limpiado en el drain (presentación real) — ver onChange(showOnboarding).
                 Task {
                     await waitForBootstrap()
                     RouterEntryGate.shared.submit(.presentTrialOffer)
@@ -1224,6 +1233,11 @@ struct MainTabView: View {
             }
             .sheet(isPresented: $showTrialExpired) {
                 UpgradePromptSheet(feature: .voiceInput, context: .trialExpired, source: "trialExpired")
+                    // One-shot quemado al PRESENTARSE de verdad (no en el drain):
+                    // si el sheet queda tapado por un cover superior, el flag sigue
+                    // false y el productor re-emite en el próximo foreground.
+                    // En el callsite (no dentro de UpgradePromptSheet: multi-contexto).
+                    .onAppear { ProUpsellService.shared.markTrialExpiredSheetShown() }
             }
             .sheet(item: Binding(
                 get: { activeMilestone.map(MilestoneIdentifier.init) },
@@ -1294,8 +1308,10 @@ struct MainTabView: View {
                 #endif
             }
         case .presentTrialExpired:
+            // El one-shot se quema en el onAppear del sheet, no aquí: .mainTab
+            // drena aunque un cover superior lo tape y quemarlo drenado-tapado
+            // perdía el aviso de expiración PARA SIEMPRE.
             showTrialExpired = true
-            ProUpsellService.shared.markTrialExpiredSheetShown()
         case .presentMilestoneUpgrade(let milestone):
             activeMilestone = milestone
         case .requestAppStoreReview:

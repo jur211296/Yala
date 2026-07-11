@@ -11,7 +11,14 @@ import Foundation
 final class ProUpsellService {
 
     static let shared = ProUpsellService()
-    private init() {}
+
+    /// Defaults inyectables para testear la semántica one-shot sin
+    /// `UserDefaults.standard` (regla del repo). Producción usa `.standard`.
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
 
     // MARK: - In-Memory State
 
@@ -43,12 +50,12 @@ final class ProUpsellService {
 
         // Monthly cap: max 4
         resetMonthlyCountIfNeeded()
-        guard UserDefaults.standard.integer(forKey: monthlyShownCountKey) < 4 else { return false }
+        guard defaults.integer(forKey: monthlyShownCountKey) < 4 else { return false }
 
         // Cooldown: 5 days base + 2 per dismiss
-        let dismissCount = UserDefaults.standard.integer(forKey: dismissCountKey)
+        let dismissCount = defaults.integer(forKey: dismissCountKey)
         let cooldownDays = 5 + (dismissCount * 2)
-        if let lastShown = UserDefaults.standard.object(forKey: lastShownDateKey) as? Date {
+        if let lastShown = defaults.object(forKey: lastShownDateKey) as? Date {
             let daysSince = Calendar.current.dateComponents([.day], from: lastShown, to: .now).day ?? 0
             guard daysSince >= cooldownDays else { return false }
         }
@@ -59,8 +66,8 @@ final class ProUpsellService {
     /// Whether the trial-expired sheet should appear (once per lifetime).
     func shouldShowTrialExpiredSheet() -> Bool {
         guard !FeatureGateService.shared.isProUser else { return false }
-        guard UserDefaults.standard.bool(forKey: wasInTrialKey) else { return false }
-        guard !UserDefaults.standard.bool(forKey: trialExpiredSheetShownKey) else { return false }
+        guard defaults.bool(forKey: wasInTrialKey) else { return false }
+        guard !defaults.bool(forKey: trialExpiredSheetShownKey) else { return false }
         return true
     }
 
@@ -68,19 +75,19 @@ final class ProUpsellService {
     func shouldShowMilestone(transactionCount: Int) -> Bool {
         guard !FeatureGateService.shared.isProUser else { return false }
         guard !shownThisSession else { return false }
-        let lastShown = UserDefaults.standard.integer(forKey: lastMilestoneShownKey)
+        let lastShown = defaults.integer(forKey: lastMilestoneShownKey)
         return milestones.contains(transactionCount) && transactionCount > lastShown
     }
 
     /// Next milestone that hasn't been shown yet.
     var nextMilestone: Int? {
-        let lastShown = UserDefaults.standard.integer(forKey: lastMilestoneShownKey)
+        let lastShown = defaults.integer(forKey: lastMilestoneShownKey)
         return milestones.first { $0 > lastShown }
     }
 
     /// Computes the next milestone for a given transaction count.
     func nextMilestone(for transactionCount: Int) -> Int? {
-        let lastShown = UserDefaults.standard.integer(forKey: lastMilestoneShownKey)
+        let lastShown = defaults.integer(forKey: lastMilestoneShownKey)
         return milestones.first { $0 > lastShown && $0 == transactionCount }
     }
 
@@ -88,32 +95,32 @@ final class ProUpsellService {
 
     func recordShown(source: String) {
         shownThisSession = true
-        UserDefaults.standard.set(Date.now, forKey: lastShownDateKey)
+        defaults.set(Date.now, forKey: lastShownDateKey)
         resetMonthlyCountIfNeeded()
-        let count = UserDefaults.standard.integer(forKey: monthlyShownCountKey) + 1
-        UserDefaults.standard.set(count, forKey: monthlyShownCountKey)
+        let count = defaults.integer(forKey: monthlyShownCountKey) + 1
+        defaults.set(count, forKey: monthlyShownCountKey)
     }
 
     func recordDismissed() {
-        let count = UserDefaults.standard.integer(forKey: dismissCountKey) + 1
-        UserDefaults.standard.set(count, forKey: dismissCountKey)
+        let count = defaults.integer(forKey: dismissCountKey) + 1
+        defaults.set(count, forKey: dismissCountKey)
     }
 
     func recordTrialStarted() {
-        UserDefaults.standard.set(true, forKey: wasInTrialKey)
+        defaults.set(true, forKey: wasInTrialKey)
     }
 
     func incrementSessionCount() {
-        let count = UserDefaults.standard.integer(forKey: sessionCountKey) + 1
-        UserDefaults.standard.set(count, forKey: sessionCountKey)
+        let count = defaults.integer(forKey: sessionCountKey) + 1
+        defaults.set(count, forKey: sessionCountKey)
     }
 
     func markTrialExpiredSheetShown() {
-        UserDefaults.standard.set(true, forKey: trialExpiredSheetShownKey)
+        defaults.set(true, forKey: trialExpiredSheetShownKey)
     }
 
     func markMilestoneShown(_ milestone: Int) {
-        UserDefaults.standard.set(milestone, forKey: lastMilestoneShownKey)
+        defaults.set(milestone, forKey: lastMilestoneShownKey)
         shownThisSession = true
     }
 
@@ -123,18 +130,18 @@ final class ProUpsellService {
     private var isVoluntaryChurn: Bool {
         StoreKitManager.shared.wasProUser
             && !StoreKitManager.shared.isProUser
-            && !UserDefaults.standard.bool(forKey: wasInTrialKey)
+            && !defaults.bool(forKey: wasInTrialKey)
     }
 
     private func resetMonthlyCountIfNeeded() {
         let calendar = Calendar.current
-        if let resetDate = UserDefaults.standard.object(forKey: monthlyResetDateKey) as? Date {
+        if let resetDate = defaults.object(forKey: monthlyResetDateKey) as? Date {
             if !calendar.isDate(resetDate, equalTo: .now, toGranularity: .month) {
-                UserDefaults.standard.set(0, forKey: monthlyShownCountKey)
-                UserDefaults.standard.set(Date.now, forKey: monthlyResetDateKey)
+                defaults.set(0, forKey: monthlyShownCountKey)
+                defaults.set(Date.now, forKey: monthlyResetDateKey)
             }
         } else {
-            UserDefaults.standard.set(Date.now, forKey: monthlyResetDateKey)
+            defaults.set(Date.now, forKey: monthlyResetDateKey)
         }
     }
 }

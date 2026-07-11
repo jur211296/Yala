@@ -115,6 +115,10 @@ struct MilestoneUpgradeSheet: View {
             }
         }
         .onAppear {
+            // One-shot quemado al presentarse de verdad — los productores solo
+            // emiten el intent; si el sheet nunca aparece, el milestone no se
+            // pierde (markMilestoneShown es idempotente ante doble onAppear).
+            ProUpsellService.shared.markMilestoneShown(milestone)
             TelemetryService.track(.proUpsellShown, parameters: TelemetryService.upsellParameters(source: "milestone"))
         }
         .sheet(isPresented: $showSubscription) {

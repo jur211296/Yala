@@ -1464,6 +1464,7 @@
         "Yala/App/Views/Shared/MilestoneUpgradeSheet.swift",
         "Yala/App/Views/Shared/UpgradePromptSheet.swift",
         "Yala/App/Services/FeatureGateService.swift",
+        "Yala/App/Services/ProUpsellService.swift",
         "Yala/Services/TelemetryService.swift"
       ],
       "scenarioIDs": [
@@ -1472,9 +1473,9 @@
         "F-PRO-04"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/ProConversionUpsellsUITests",
+      "coverage": "xcuitest:YalaUITests/ProConversionUpsellsUITests + unit:YalaTests/ProUpsellServiceOneShotTests (semántica one-shot: consultar no quema, solo mark* quema — invariante del burn-en-presentación-real)",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-07-11"
     },
     {
       "area": "records-duplicate-detection",

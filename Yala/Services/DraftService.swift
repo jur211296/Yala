@@ -352,8 +352,9 @@ final class DraftService {
         if !FeatureGateService.shared.isProUser,
            ProUpsellService.shared.shouldShowMilestone(transactionCount: txCount),
            let milestone = ProUpsellService.shared.nextMilestone(for: txCount) {
+            // El one-shot lo quema MilestoneUpgradeSheet.onAppear (ver
+            // NewTransactionViewModel — mismo racional anti-pérdida).
             RouterEntryGate.shared.submit(.presentMilestoneUpgrade(milestone))
-            ProUpsellService.shared.markMilestoneShown(milestone)
         }
 
         // Update widgets

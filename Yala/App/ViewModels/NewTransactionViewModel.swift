@@ -577,8 +577,10 @@ final class NewTransactionViewModel {
                 if !FeatureGateService.shared.isProUser,
                    ProUpsellService.shared.shouldShowMilestone(transactionCount: count),
                    let milestone = ProUpsellService.shared.nextMilestone(for: count) {
+                    // El one-shot lo quema MilestoneUpgradeSheet.onAppear: quemarlo
+                    // aquí (antes de presentar) perdía el milestone si el sheet
+                    // quedaba tapado. Dedup en cola por id "milestone:n".
                     RouterEntryGate.shared.submit(.presentMilestoneUpgrade(milestone))
-                    ProUpsellService.shared.markMilestoneShown(milestone)
                 }
             }
 

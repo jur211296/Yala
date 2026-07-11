@@ -1804,6 +1804,9 @@ final class AppBootstrapper {
     private static let processedSignaturesKey = "processedInboxDraftSignatures"
     private static let processedSignaturesCap = 500
 
+    /// Firmas del último check, pendientes de quemar al presentarse el alert.
+    private var pendingInboxSignaturesToBurn: [String] = []
+
     private func inboxDraftSignature(_ draft: InboxDraft) -> String {
         "\(draft.createdAt.timeIntervalSince1970)-\(draft.sourceTypeRaw)"
     }
@@ -1860,16 +1863,29 @@ final class AppBootstrapper {
             #endif
         }
 
-        if !newSignatures.isEmpty {
-            var all = loadProcessedInboxSignatures()
-            all.append(contentsOf: newSignatures)
-            saveProcessedInboxSignatures(all)
-        }
+        // Las firmas se queman en el DRAIN (presentación real del alert), no aquí:
+        // quemarlas al emitir perdía la alerta para siempre si el intent transient
+        // se dropeaba en background o el cover colisionaba. Retenidas en memoria;
+        // una re-corrida del productor antes del drain recomputa el mismo set.
+        pendingInboxSignaturesToBurn = newSignatures
 
         if !notification.isEmpty {
             // Enqueue — readiness gating handles splash timing.
             RouterEntryGate.shared.submit(.showInboxAlert(notification))
         }
+    }
+
+    /// Quema las firmas del último `checkForPendingInboxDrafts` — llamado por el
+    /// drain de `.showInboxAlert` en ContentView cuando el alert SÍ se presenta.
+    /// Residual aceptado: si el gate dropea el alert (inbox sheet visible /
+    /// supersession por navigate(.inbox)), las firmas no se queman y drafts aún
+    /// `pending` pueden re-alertar en el próximo foreground (molestia > pérdida).
+    func commitPendingInboxAlertSignatures() {
+        guard !pendingInboxSignaturesToBurn.isEmpty else { return }
+        var all = loadProcessedInboxSignatures()
+        all.append(contentsOf: pendingInboxSignaturesToBurn)
+        saveProcessedInboxSignatures(all)
+        pendingInboxSignaturesToBurn = []
     }
 
     private func seedDefaultNotifications(context: ModelContext) {
