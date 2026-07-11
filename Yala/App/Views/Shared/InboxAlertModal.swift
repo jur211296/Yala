@@ -54,6 +54,9 @@ struct InboxAlertModal: View {
             Color.black
                 .opacity(isVisible ? 0.4 : 0)
                 .ignoresSafeArea()
+                // opacity(0) NO desactiva hit-testing: sin este gate el backdrop
+                // invisible seguiría capturando todos los taps de la app.
+                .allowsHitTesting(isVisible)
                 .onTapGesture {
                     dismissWithAnimation()
                 }
@@ -152,10 +155,16 @@ struct InboxAlertModal: View {
         dsWithAnimation(reduceMotion) {
             isVisible = false
         }
-        Task {
-            try? await Task.sleep(for: .seconds(0.2))
+        if reduceMotion {
+            // Sin animación no hay salida que esperar — reset inmediato.
             onDismiss()
             completion?()
+        } else {
+            Task {
+                try? await Task.sleep(for: .seconds(0.2))
+                onDismiss()
+                completion?()
+            }
         }
     }
 }

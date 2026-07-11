@@ -415,10 +415,16 @@ struct ContentView: View {
         }
         // Inbox alert as fullScreenCover (appears over any sheet).
         // Driven by @State set by the .contentView drain handler.
+        // Setter real + onDismiss son la red contra teardowns externos (p.ej.
+        // UIKit tumba la cadena al cerrar un sheet debajo): sin ellos el estado
+        // queda pegado → cover fantasma invisible que bloquea toda la UI y
+        // congela la readiness del router (hasActiveInboxAlert).
         .fullScreenCover(isPresented: Binding(
             get: { !activeInboxNotification.isEmpty },
-            set: { _ in }
-        )) {
+            set: { if !$0 { activeInboxNotification = .init() } }
+        ), onDismiss: {
+            activeInboxNotification = .init()
+        }) {
             InboxAlertModal(
                 notification: activeInboxNotification,
                 onViewInbox: {
