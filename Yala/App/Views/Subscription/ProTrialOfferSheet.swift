@@ -99,6 +99,7 @@ struct ProTrialOfferSheet: View {
                     ) {
                         Task { await purchaseSelected() }
                     }
+                    .accessibilityIdentifier("trial_offer_cta")
 
                     Button {
                         onDismiss()
@@ -107,6 +108,7 @@ struct ProTrialOfferSheet: View {
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.thSecondaryText)
                     }
+                    .accessibilityIdentifier("trial_offer_dismiss")
 
                     Button {
                         Task { await store.restorePurchases() }

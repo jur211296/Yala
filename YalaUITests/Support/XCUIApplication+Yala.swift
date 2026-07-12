@@ -23,6 +23,7 @@ extension XCUIApplication {
         seedDesync: Bool = false,
         onboarding: Bool = false,
         inboxAlert: Bool = false,
+        trialOffer: Bool = false,
         forceUpdate: Bool = false,
         aiConsent: Bool = false,
         groupInvite: Bool = false,
@@ -50,6 +51,7 @@ extension XCUIApplication {
         }
         if onboarding { args.append("-uitest-onboarding") }
         if inboxAlert { args.append("-uitest-inbox-alert") }
+        if trialOffer { args.append("-uitest-trial-offer") }
         if forceUpdate { args.append("-uitest-force-update") }
         if aiConsent { args.append("-uitest-ai-consent") }
         if groupInvite { args.append("-uitest-group-invite") }

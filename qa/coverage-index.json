@@ -696,9 +696,9 @@
         "F-PRO-02"
       ],
       "classification": "manual",
-      "coverage": "manual",
+      "coverage": "manual + xcuitest:YalaUITests/PaywallInboxAlertRoutingUITests (presentación/dismiss del ProTrialOfferSheet vía hook -uitest-trial-offer)",
       "owner": "",
-      "lastVerified": "2026-06-10"
+      "lastVerified": "2026-07-12"
     },
     {
       "area": "group-scheduled-payments",
@@ -1177,9 +1177,9 @@
         "F-INB-05"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/InboxNewItemsModalUITests",
+      "coverage": "xcuitest:YalaUITests/InboxNewItemsModalUITests + xcuitest:YalaUITests/PaywallInboxAlertRoutingUITests (serialización alert↔paywall mismo anchor + toolbar viva post-dismiss — regresión del bug TestFlight 2.0.5)",
       "owner": "",
-      "lastVerified": "2026-07-11"
+      "lastVerified": "2026-07-12"
     },
     {
       "area": "inbox-success-screens",

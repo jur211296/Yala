@@ -60,6 +60,12 @@ final class UITestHooks {
     /// muestra para presentar el InboxAlertModal sin depender del sync de CloudKit.
     nonisolated static var showInboxAlert: Bool { hasArg("-uitest-inbox-alert") }
 
+    /// `-uitest-trial-offer`: tras el seed, encola `.presentTrialOffer` para presentar
+    /// el ProTrialOfferSheet sin depender de StoreKit ni del post-onboarding real —
+    /// las emisiones AUTOMÁTICAS de monetización están suprimidas en uitest, este
+    /// hook explícito es el único camino (escenario paywall + alert en cola).
+    nonisolated static var showTrialOffer: Bool { hasArg("-uitest-trial-offer") }
+
     /// `-uitest-force-update`: fuerza el estado "hay update disponible" en AppUpdateService
     /// (sin red) para testear el UpdateAvailableBanner del Panel.
     nonisolated static var forceUpdateBanner: Bool { hasArg("-uitest-force-update") }

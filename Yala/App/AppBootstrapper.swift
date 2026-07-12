@@ -580,6 +580,10 @@ final class AppBootstrapper {
                 PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
             ))
         }
+        // ProTrialOfferSheet simulado en uitest (escenario paywall + alert en cola).
+        if UITestHooks.showTrialOffer {
+            RouterEntryGate.shared.submit(.presentTrialOffer)
+        }
         // UpdateAvailableBanner simulado en uitest: fuerza el estado sin red.
         if UITestHooks.forceUpdateBanner {
             AppUpdateService.shared.forceUpdateAvailableForUITest()
@@ -1084,6 +1088,9 @@ final class AppBootstrapper {
                 RouterEntryGate.shared.submit(.showInboxAlert(
                     PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
                 ))
+            }
+            if UITestHooks.showTrialOffer {
+                RouterEntryGate.shared.submit(.presentTrialOffer)
             }
         } else {
             checkForPendingInboxDrafts(context: context)
