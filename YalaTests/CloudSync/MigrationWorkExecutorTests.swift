@@ -178,7 +178,9 @@ struct MigrationWorkExecutorTests {
         storageDefaults: UserDefaults? = nil,
         now: (() -> Date)? = nil,
         heartbeatInterval: TimeInterval = 60,
-        tombstoneSource: ReverseTombstoneSource? = nil
+        tombstoneSource: ReverseTombstoneSource? = nil,
+        adoptQuiescenceSignal: @escaping () -> Bool = { true },
+        claimStore: CloudClaimActionStore? = nil
     ) -> MigrationWorkExecutor {
         let token: () async -> String? = { "jwt" }
         let account = CloudAccountClient(baseURL: workerURL, urlSession: stub)
@@ -193,7 +195,9 @@ struct MigrationWorkExecutorTests {
             personalStoreURL: personalStoreURL,
             storageDefaults: storageDefaults ?? makeIsolatedDefaults(prefix: "mwe.storage"),
             snapshotPageSize: 200, heartbeatInterval: heartbeatInterval,
-            reverseTombstoneSource: tombstoneSource)
+            reverseTombstoneSource: tombstoneSource,
+            adoptQuiescenceSignal: adoptQuiescenceSignal,
+            claimStore: claimStore)
     }
 
     // MARK: - Claim
@@ -1189,15 +1193,78 @@ struct MigrationWorkExecutorTests {
         #expect(await executor2.adoptOrphanDryRun() == nil, "enumeración incompleta → el dry-run devuelve nil")
     }
 
-    @Test("execute(.adoptBackendAccount): SIGUE notWired (el flujo de adopt completo es I14)")
-    func adoptBackendAccount_stillNotWired() async throws {
+    // MARK: - Adopt flow (I14 P6, #30)
+
+    @Test("execute(.adoptBackendAccount): reconcile transient (merkle indecodificable) → THROW retomable (journaled)")
+    func adoptFlow_transientReconcile_throws() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let session = FakeSession(token: "jwt", userID: "sub-1")
+        // RoutingStub default: merkleBody vacío → fetchMerkle no-snapshot → reconcile transient → adopt throw.
         let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
                                     personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
         await #expect(throws: MigrationExecutorError.self) {
             try await executor.execute(.adoptBackendAccount)
         }
+    }
+
+    @Test("runAdoptFlow: no quiescente → THROW SIN mutar el modo (retomable)")
+    func adoptFlow_notQuiescent_throwsWithoutMutating() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.q")
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults, adoptQuiescenceSignal: { false })
+        await #expect(throws: MigrationExecutorError.self) { try await executor.runAdoptFlow() }
+        #expect(StorageModePersistence.read(storageDefaults) == .icloud, "no quiescente → NO persiste .cloud")
+        #expect(storageDefaults.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey) == false)
+    }
+
+    @Test("runAdoptFlow: backend vacío + merkle coherente → persiste PAR .cloud+armed + estampa claim-store routeReturningUser")
+    func adoptFlow_happy_persistsCloudArmedAndClaimStore() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-adopt")
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody([:])   // enumeración vacía coherente (0 vivas) → reconcile completa
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [], maxServerSeq: 0)]
+
+        let storageDefaults = makeIsolatedDefaults(prefix: "mwe.adopt.ok")
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.adopt.claim"))
+        // Rutea `PreferenceSyncService.set` por el outbox (no iKV): `.cloud` override + userID nil → sin
+        // enqueue; solo escribe las 2 keys de consent a standard, que se limpian abajo.
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags._testResetStorageModeOverride()
+            UserDefaults.standard.removeObject(forKey: PrefSyncKey.cloudConsentAcceptedAt.rawValue)
+            UserDefaults.standard.removeObject(forKey: PrefSyncKey.cloudConsentTextVersion.rawValue)
+        }
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: storageDefaults, tombstoneSource: source,
+                                    claimStore: claimStore)
+
+        try await executor.runAdoptFlow()
+
+        #expect(StorageModePersistence.read(storageDefaults) == .cloud, "persiste el modo nube")
+        #expect(storageDefaults.bool(forKey: MigrationWorkExecutor.relaunchRequestedKey) == true, "arma el mirror-off")
+        #expect(claimStore.action(forUserID: "sub-adopt") == .routeReturningUser, "estampa el claim-store")
+    }
+
+    @Test("performClaim: 200 created → estampa el claim-store con proceedMigration (branch migración)")
+    func performClaim_stampsClaimStore() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-claim")
+        let claimStore = CloudClaimActionStore(defaults: makeIsolatedDefaults(prefix: "mwe.claim.stamp"))
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    claimStore: claimStore)
+        #expect(await executor.performClaim() == .success(.created))
+        #expect(claimStore.action(forUserID: "sub-claim") == .proceedMigration,
+                "created + branch migración → proceedMigration persistido (contenido real, lección d49d2e47)")
     }
 }

@@ -127,13 +127,81 @@ struct CloudSyncRuntimeTests {
     @Test func start_noSession_idleSignedOut() async throws {
         let prev = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.syncRuntimeEnabled = true
-        defer { CloudSyncFlags.syncRuntimeEnabled = prev }
+        let prevMode = CloudSyncFlags.storageMode
+        // P0 (I14): en `.icloud` el domain-gate corta ANTES del chequeo de sesión → este test exige `.cloud`.
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags.syncRuntimeEnabled = prev
+            CloudSyncFlags.storageMode = prevMode
+        }
 
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         let runtime = makeRuntime(session: StubCloudSession(userID: nil))
         await runtime.start(context: context)
         #expect(runtime.state == .idleSignedOut)
+    }
+
+    // MARK: - P0/P6 (I14): gates del DOMINIO y de IDENTIDAD cableados en start()
+
+    /// P0 cableado: `.icloud` (default de TODO device de producción post-encendido del flag) con sesión
+    /// y claim VÁLIDOS → `.idle` sin tocar sesión/red/store — la prueba de que encender
+    /// `syncRuntimeEnabled` no cambia el comportamiento de los usuarios actuales.
+    /// (El caso `.cloud`+fase TRANSICIONAL comparte esta misma línea de guard; su matriz de fases es
+    /// exhaustiva en `CloudMigrationI14Tests.isDomainStablePhase` — no se re-ejercita aquí porque el
+    /// override de fase del singleton escribe `UserDefaults.standard`, prohibido en tests.)
+    @Test func start_icloudMode_domainGateIdles() async throws {
+        let prev = CloudSyncFlags.syncRuntimeEnabled
+        CloudSyncFlags.syncRuntimeEnabled = true
+        defer { CloudSyncFlags.syncRuntimeEnabled = prev }
+        // storageMode queda en su default `.icloud` — ES el caso bajo test.
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let runtime = makeRuntime(session: StubCloudSession(userID: "u1", claim: .proceedMigration))
+        await runtime.start(context: context)
+        #expect(runtime.state == .idle)
+        #expect(outbox(context).isEmpty)  // ni rehydrate ni drain corrieron
+    }
+
+    /// P6 cableado (guard de IDENTIDAD): `.cloud` + sesión SIN registro de claim (`claimAction == nil`,
+    /// el user-switch de un Apple ID ajeno en un device migrado) → `.idle`, jamás arranca.
+    @Test func start_cloudUnclaimedIdentity_idles() async throws {
+        let prev = CloudSyncFlags.syncRuntimeEnabled
+        CloudSyncFlags.syncRuntimeEnabled = true
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags.syncRuntimeEnabled = prev
+            CloudSyncFlags.storageMode = prevMode
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let runtime = makeRuntime(session: StubCloudSession(userID: "user-b", claim: nil))
+        await runtime.start(context: context)
+        #expect(runtime.state == .idle)
+    }
+
+    /// Positivo: `.cloud` + fase estable (`.notStarted` sin journal) + sesión con claim proceed-like →
+    /// el runtime ARRANCA (cadencia viva).
+    @Test func start_cloudStableWithClaim_runs() async throws {
+        let prev = CloudSyncFlags.syncRuntimeEnabled
+        CloudSyncFlags.syncRuntimeEnabled = true
+        let prevMode = CloudSyncFlags.storageMode
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags.syncRuntimeEnabled = prev
+            CloudSyncFlags.storageMode = prevMode
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let runtime = makeRuntime(pull: StubSession(body: emptyPageJSON()),
+                                  session: StubCloudSession(userID: "u1", claim: .routeReturningUser))
+        await runtime.start(context: context)
+        #expect(runtime.state == .running)
+        runtime.teardownGuestSession()  // detener la cadencia async
     }
 
     // MARK: - S1 (review I13): el paso de prefs del ciclo está gateado por storageMode
@@ -207,7 +275,13 @@ struct CloudSyncRuntimeTests {
     @Test func start_rehydratesOutboxFromMirror() async throws {
         let prev = CloudSyncFlags.syncRuntimeEnabled
         CloudSyncFlags.syncRuntimeEnabled = true
-        defer { CloudSyncFlags.syncRuntimeEnabled = prev }
+        let prevMode = CloudSyncFlags.storageMode
+        // P0/P6 (I14): el arranque exige `.cloud` + claim proceed-like para llegar al rehydrate.
+        CloudSyncFlags.storageMode = .cloud
+        defer {
+            CloudSyncFlags.syncRuntimeEnabled = prev
+            CloudSyncFlags.storageMode = prevMode
+        }
 
         let dir = freshDir(); defer { cleanup(dir) }
         let mirrorDir = dir.appendingPathComponent("mirror", isDirectory: true)
@@ -221,7 +295,8 @@ struct CloudSyncRuntimeTests {
 
         let context = try makeContext(dir)
         let runtime = makeRuntime(pull: StubSession(body: emptyPageJSON()),
-                                  mirror: mirror, session: StubCloudSession(userID: "u1"))
+                                  mirror: mirror,
+                                  session: StubCloudSession(userID: "u1", claim: .proceedMigration))
         await runtime.start(context: context)
         runtime.teardownGuestSession()  // detener la cadencia async
 

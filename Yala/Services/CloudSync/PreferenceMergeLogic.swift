@@ -62,8 +62,8 @@ nonisolated enum PrefSideSignal {
 /// Las keys sincronizadas cross-device (SSOT único: el service itera `allCases`). `rawValue` = la key
 /// EXACTA de UserDefaults / iKV / backend (no renombrar: rompería la persistencia y el matching).
 ///
-/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es 34
-/// (el doc de inventario dijo 33 antes de añadirse `bridgeGroupExpensesToPersonalAccounts`).
+/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es 36
+/// (34 hasta I13; I14 P5 añadió `cloudConsentAcceptedAt` + `cloudConsentTextVersion`).
 nonisolated enum PrefSyncKey: String, CaseIterable {
     // Strings guard no-vacío (12)
     case defaultCurrencyCode
@@ -101,10 +101,15 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
     case includeGroupsInPanelTotal
     case includeGroupTransactionsInStats
     case bridgeGroupExpensesToPersonalAccounts
-    // Ints por presencia (3)
+    // Ints por presencia (5 — +2 en I14 P5)
     case firstWeekday
     case decimalPlaces
     case averageLineMode
+    // Consent del Modo Nube (§2.8/§e.6, I14 P5): epoch de aceptación + versión del texto aceptado.
+    // Sincronizadas para trazabilidad GDPR — en `.icloud` van a iKV y el drenaje del cutover las lleva
+    // al backend; en `.cloud` (adopt) van directo al outbox de prefs. rawValue = key de UserDefaults.
+    case cloudConsentAcceptedAt
+    case cloudConsentTextVersion
 
     /// La familia de merge de esta key.
     var family: PrefFamily {
@@ -126,7 +131,8 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
              .panelAccountsCollapsed, .includeGroupTransactionsInFeed, .includeGroupsInPanelTotal,
              .includeGroupTransactionsInStats, .bridgeGroupExpensesToPersonalAccounts:
             return .boolPresence
-        case .firstWeekday, .decimalPlaces, .averageLineMode:
+        case .firstWeekday, .decimalPlaces, .averageLineMode,
+             .cloudConsentAcceptedAt, .cloudConsentTextVersion:
             return .intPresence
         }
     }

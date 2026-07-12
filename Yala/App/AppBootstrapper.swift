@@ -247,7 +247,17 @@ final class AppBootstrapper {
         // cuyo splitExpenseID ya tiene TX cuenta real (race resuelto por sync).
         observeTransactionsImportedFromSync(context: context)
 
-        // 14.7 Modo Nube runtime (I9, DARK). INERTE con `CloudSyncFlags.syncRuntimeEnabled == false`
+        // 14.6 Modo Nube — coordinator de migración (I14, P4). Dueño único del `MigrationRunner`. Gateado
+        // por `CloudBackendConfig.isConfigured` (staging/DEV; prod placeholder = no-op). Retoma una
+        // migración/reversa matada a medias (journal transicional o efectos pendientes) ANTES del 14.7 y,
+        // al quedar la fase estable, re-arranca el runtime del dominio (que P0 pudo cortar por fase
+        // transicional). `startShared` del 14.7 es idempotente (no re-arranca si ya corre).
+        if CloudBackendConfig.isConfigured {
+            CloudMigrationController.configureShared(context: context)
+            Task { await CloudMigrationController.shared?.resumeIfNeeded() }
+        }
+
+        // 14.7 Modo Nube runtime (I9). El gate del dominio (P0) lo corta en `.icloud` o en fase transicional
         // (default de producción HOY): ni observer, ni arranque, ni red. Va ANTES del paso 15 de Grupos
         // (no toca Grupos). El fan-out post-apply se cablea a la UI vía `.cloudSyncAppliedRemoteChanges`
         // (espejo del observer de CloudKit del paso 13 — `markRemoteChangePending`).

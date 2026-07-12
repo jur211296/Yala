@@ -291,9 +291,17 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncRuntime started")
     }
 
-    /// El runtime no arranca cadencia (sin sesión / gate de claim no proceed-like). `reason` sin PII.
+    /// El runtime no arranca cadencia (sin sesión / gate de claim no proceed-like / gate del dominio).
+    /// `reason` sin PII.
     static func runtimeIdle(reason: String) {
         logger.notice("CloudSyncRuntime idle reason=\(reason, privacy: .public)")
+    }
+
+    /// CANARIO (I14, P6): en `.cloud` el `currentUserID` NO tiene registro de claim → el runtime queda
+    /// `.idle` (identidad no-claimeada: un Apple ID distinto en un device migrado no debe pushear el
+    /// corpus del dueño). En producción cloud >0 = user-switch cross-cuenta a vigilar. Sin PII.
+    static func runtimeBlockedByUnclaimedIdentity() {
+        logger.notice("CloudSyncRuntime idle reason=unclaimed-identity")
     }
 
     /// El runtime DETUVO la cadencia (401 sesión, 403 cuenta, attest terminal, transporte). `reason` sin PII.

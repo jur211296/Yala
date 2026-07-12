@@ -73,16 +73,23 @@ nonisolated enum CloudSyncFlags {
     /// Cuando `true`, los hubs de creación de las 6 entidades sincronizables asignan un `syncID`
     /// (identidad estable de sync) al nacer la fila (born-cloud). HOY es `false` y NUNCA se activa
     /// en producción: la población masiva de identidades para datos preexistentes la hace la
-    /// migración (I10, vía `SyncIdentityService.backfillIdentities`), no este flag. Lo encenderá el
-    /// Modo Nube en I12/I14. Es una `var` (no `let`) solo para que los tests puedan togglearlo con
+    /// migración (I10, vía `SyncIdentityService.backfillIdentities`), no este flag. La VENTANA en que
+    /// debe estar ON la deriva al boot `MigrationPhaseStore.configure` (journal ≥ `assigningIdentity`);
+    /// en el estado estable `.cloud` lo cubre el barrido defensivo del drain (I14: se deja como está — no
+    /// se enciende globalmente). Es una `var` (no `let`) solo para que los tests puedan togglearlo con
     /// `defer { restore }`.
     static var identityCaptureEnabled = false
 
-    /// Gate ÚNICO del wiring runtime del motor (I9). Cuando `false` (default, PRODUCCIÓN HOY) el
-    /// `CloudSyncRuntime` no arranca ninguna cadencia, no toca la red y no muta el store: el
-    /// comportamiento es EXACTAMENTE el de antes de I9. Lo encenderá el Modo Nube en un incremento
-    /// posterior. `var` (no `let`) solo para que los tests lo togglean con `defer { restore }`.
-    static var syncRuntimeEnabled = false
+    /// Gate del wiring runtime del motor (I9). ENCENDIDO en I14 (P1). Seguridad demostrable de que
+    /// encenderlo NO cambia el comportamiento de los usuarios actuales (todos `.icloud`):
+    ///  (a) scheme de PRODUCCIÓN → `CloudBackendConfig.isConfigured == false` → `NoopCloudSessionProvider`
+    ///      → `start()` cae en `idleSignedOut` sin tocar nada;
+    ///  (b) TODOS los devices en producción son `.icloud` → el guard de `storageMode` de `start()` (P0)
+    ///      corta ANTES de cualquier red/mutación;
+    ///  (c) staging/DEV: el runtime solo corre en `.cloud` con sesión + un claim que pasa
+    ///      `shouldStartSync` + registro de identidad (P6).
+    /// `var` (no `let`) solo para que los tests lo togglean con `defer { restore }`.
+    static var syncRuntimeEnabled = true
 
     /// SSOT del modo de almacenamiento. Getter: `override de tests ?? StorageModePersistence.read()`
     /// (I10-wiring w6). HOY, sin override ni key persistida, es SIEMPRE `.icloud` (ningún path de

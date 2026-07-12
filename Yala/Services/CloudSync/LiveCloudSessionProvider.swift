@@ -18,15 +18,19 @@ import Foundation
 final class LiveCloudSessionProvider: CloudSyncSessionProviding {
 
     private let auth: CloudAuthService
+    private let claimStore: CloudClaimActionStore
 
     /// Producción: usa la instancia `shared` (MainActor-aislada — el default no puede vivir en la firma).
     init() {
         self.auth = .shared
+        self.claimStore = .shared
     }
 
-    /// Inyectable para tests.
-    init(auth: CloudAuthService) {
+    /// Inyectable para tests. `claimStore` nil → `.shared` (resuelto en el cuerpo @MainActor: un default
+    /// `.shared` en la firma se evalúa nonisolated → warning Swift 6).
+    init(auth: CloudAuthService, claimStore: CloudClaimActionStore? = nil) {
         self.auth = auth
+        self.claimStore = claimStore ?? .shared
     }
 
     /// El `sub` de la sesión de Supabase (lowercase). `nil` = sin sesión.
@@ -44,11 +48,13 @@ final class LiveCloudSessionProvider: CloudSyncSessionProviding {
         try await AppAttestClient.shared.currentSessionToken()
     }
 
-    /// COMENTARIO-GUARDIA (contrato I14): `nil` = "sin claim → proceed" para el gate de arranque del
-    /// runtime. Aceptable SOLO mientras el runtime está DARK (`syncRuntimeEnabled == false`) — I14 DEBE
-    /// cablear aquí el `AuthAction` resuelto por `AccountClaimDecision.decide(...)` tras el claim
-    /// post-sign-in (regla C4: claim ANTES de cualquier save de onboarding). Encender el runtime en
-    /// producción con este `nil` dejaría arrancar el sync sin pasar por el gate de claim. Override
-    /// EXPLÍCITO (no la herencia silenciosa del default del protocolo) para que I14 lo encuentre.
-    var claimAction: AccountClaimDecision.AuthAction? { nil }
+    /// I14 (P6): el `AuthAction` resuelto tras el claim post-sign-in (§f.1), LEÍDO del `CloudClaimActionStore`
+    /// para el `currentUserID` actual. Los write-sites lo estampan (`MigrationWorkExecutor.performClaim` en
+    /// la migración; `runAdoptFlow` en el adopt). `nil` = sin sesión O identidad no-claimeada → en `.cloud`
+    /// el guard de identidad del runtime lo deja `.idle` (regla C4: el sync no arranca sin pasar por el
+    /// contrato de claim; un Apple ID distinto en un device migrado no pushea el corpus del dueño).
+    var claimAction: AccountClaimDecision.AuthAction? {
+        guard let userID = auth.currentUserID else { return nil }
+        return claimStore.action(forUserID: userID)
+    }
 }

@@ -153,6 +153,7 @@ enum AnalyticsEvent: String {
     case cloudSyncOutboxMirrorDivergence = "Diagnóstico · Divergencia del espejo del outbox"  // params: delta — CANARIO (Modo Nube I8d/A1, §d.5): delta = |espejo del userID| − |store SyncOutbox| en cada arranque; >0 persistente SIN migración = crash entre purga y remove no reconciliado, o vaciado parcial (el modo de fallo que ni el Merkle ve). La DISPARA CloudSyncEngine.rehydrateOutboxFromMirror
     case cloudCutoverLeaderOrphanReconciled = "Diagnóstico · Cutover: writes huérfanos rescatados"  // params: count — CANARIO (Modo Nube I10 w8, §g.4 SERIO 1 v3): la capa de RED del líder rescató writes de la ventana localModeSet→mirrorOff que la capa primaria no había subido. >0 = la ventana existió en la práctica (esperado raro). Sin PII (solo el conteo)
     case cloudAdoptOrphanReconciled = "Diagnóstico · Adopt: filas huérfanas rescatadas"  // params: count — CANARIO (Modo Nube DIFERIDOS #30, mecanismo v1 DARK): el device que adopta (.icloud→.cloud) subió filas de la ventana de cutover cuya identidad no existía en el backend (espejo del par del líder). >0 = la ventana multi-device existió en la práctica (esperado raro). La DISPARA MigrationWorkExecutor.runAdoptOrphanReconcile. Sin PII (solo el conteo)
+    case cloudConsentAccepted = "Diagnóstico · Consent nube aceptado"  // params: path (migration|adopt) — MÉTRICA (Modo Nube I14, §2.8/§j.4): el usuario aceptó el consentimiento informado de privacidad y activó la nube (por migración o por adopt de una cuenta existente). Sin PII (solo la ruta)
     case cloudSyncMutationRejected = "Diagnóstico · Mutación de sync rechazada"  // params: reason — CANARIO (Modo Nube I8e, §d.5): el backend RECHAZÓ un delta (status rejected). El delta queda en dead-letter (SyncOutbox.rejectedReason), NO se pierde. >0 = write-site sin auditar / grupo de coherencia parcial (bug de emisión, debe ser 0). La DISPARA SyncPushClient.applyResults. Sin PII (solo el motivo)
     case cloudAccountUnavailable = "Diagnóstico · Cuenta no disponible"  // BREADCRUMB (Modo Nube I8e, §d.5): el backend respondió 403 (autenticado pero prohibido) → cuenta suspendida/deshabilitada, distinto del 401 (sesión expirada). >0 = revisar estado de la cuenta. La DISPARA SyncPushClient.push. Sin PII
     case cloudAccountReverting = "Diagnóstico · Cuenta en reversa"  // BREADCRUMB (freeze §h.1): el backend respondió 409 yala_account_reverting → la cuenta está en/tras una reversa a iCloud (reverse_frozen_at estampado; el backend ya no es fuente de verdad). El device deja de pushear (stop hasta relanzar, mismo trato que 403) y sus deltas quedan en el outbox para su propia reversa/adopción (I14). La DISPARA SyncPushClient.push. Sin PII
@@ -446,6 +447,15 @@ enum TelemetryService {
     static func cloudAdoptOrphanReconciled(count: Int) {
         track(.cloudAdoptOrphanReconciled, parameters: [
             "count": String(count)
+        ])
+    }
+
+    /// MÉTRICA Modo Nube (I14, §2.8/§j.4): el usuario aceptó el consentimiento informado y activó la nube.
+    /// `path` = `migration` (usuario iCloud migrando) | `adopt` (returning-user sobre cuenta poblada, #30).
+    /// Privacy-first: solo la ruta, sin IDs ni PII.
+    static func cloudConsentAccepted(path: String) {
+        track(.cloudConsentAccepted, parameters: [
+            "path": path
         ])
     }
 

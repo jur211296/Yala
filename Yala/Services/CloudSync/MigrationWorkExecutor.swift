@@ -29,6 +29,10 @@ import UIKit
 /// que lanza → lo deja journaled (retomable). `nonisolated` (lo compara la lógica pura de tests).
 nonisolated enum MigrationExecutorError: Error, Equatable {
     case notWired(effect: String)
+    /// Condición TRANSITORIA de un efecto YA cableado (I14, M2 del review): "reintentar en el próximo
+    /// resume" (quiescencia no alcanzada, red del reconcile). Mismo tratamiento del runner que `notWired`
+    /// (throw → journaled retomable), pero el log no miente diciendo que falta wiring.
+    case adoptRetry(reason: String)
 }
 
 // MARK: - AdoptReconcileOutcome (DIFERIDOS #30, mecanismo v1 DARK)
@@ -121,6 +125,14 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     /// Ventana mínima entre heartbeats del lease (I14-pre). El runner llama `sendLeaseHeartbeatIfDue()` por
     /// PROGRESO (por página del snapshot, por drain de la reversa); este throttle lo capa a 1 request/ventana.
     private let heartbeatInterval: TimeInterval
+    /// Señal de quiescencia del import CloudKit para el flujo de ADOPT (#30, I14). El adopt persiste `.cloud`
+    /// sobre un store que se está importando → DEBE correr solo con el import asentado (contrato de
+    /// `runAdoptOrphanReconcile`). Default `{ true }` (fakes/tests que no lo ejercitan); producción inyecta
+    /// `{ iCloudSyncService.shared.isImportQuiescent }`.
+    private let adoptQuiescenceSignal: () -> Bool
+    /// Persistencia del `AuthAction` resuelto (P6). El `performClaim`/`runAdoptFlow` lo estampan → el gate
+    /// de arranque del runtime (`LiveCloudSessionProvider.claimAction`) lo lee. Inyectable para tests.
+    private let claimStore: CloudClaimActionStore
     /// Instante del último heartbeat EMITIDO (I14-pre). IN-MEMORY, NO journaled: un kill+resume lo resetea →
     /// a lo sumo UN heartbeat extra por relanzamiento (idempotente, 1 request). Se arma también en rechazo/red
     /// para no martillar el endpoint por-página cuando el server rechaza o la red está caída.
@@ -160,7 +172,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         storageDefaults: UserDefaults = .standard,
         snapshotPageSize: Int = 200,
         heartbeatInterval: TimeInterval = 60,
-        reverseTombstoneSource: ReverseTombstoneSource? = nil
+        reverseTombstoneSource: ReverseTombstoneSource? = nil,
+        adoptQuiescenceSignal: @escaping () -> Bool = { true },
+        claimStore: CloudClaimActionStore? = nil
     ) {
         self.engine = engine
         self.pushClient = pushClient
@@ -178,6 +192,8 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         self.personalStoreURL = personalStoreURL ?? SwiftDataConfiguration.personalConfiguration.url
         self.storageDefaults = storageDefaults
         self.heartbeatInterval = heartbeatInterval
+        self.adoptQuiescenceSignal = adoptQuiescenceSignal
+        self.claimStore = claimStore ?? .shared
         self.uploader = MigrationSnapshotUploader(
             engine: engine, pushClient: pushClient, context: context,
             calendar: calendar, now: now, pageSize: snapshotPageSize)
@@ -195,7 +211,24 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // `migration: true` ES OBLIGATORIO (bug device 2026-07-10): arma `migration_in_progress=true` en
         // el INSERT atómico → el guard de `migration_progress('cutover')` (exige mip) pasa. Sin él, el
         // claim crea la fila con mip=false y el cutover se clava en `not_in_progress` para siempre.
-        return await accountClient.claim(jwt: jwt, deviceID: deviceID, provider: provider, migration: true)
+        let outcome = await accountClient.claim(jwt: jwt, deviceID: deviceID, provider: provider, migration: true)
+        // P6: estampar el `AuthAction` resuelto en el claim-store (branch `.migration`) → el gate de
+        // arranque del runtime (`LiveCloudSessionProvider.claimAction`) lo lee. El faro cloud + provider
+        // no aplican a la rama migración (variante B es born-cloud/returning) → `false`/`true` neutros.
+        if case .success(let claimState) = outcome {
+            if let userID = session.currentUserID {
+                let action = AccountClaimDecision.decide(
+                    state: claimState, branch: .migration,
+                    beaconSaysCloudActivated: false, providerMatchesBeacon: true)
+                claimStore.record(action, forUserID: userID)
+            } else {
+                // M1 del review: claim exitoso con userID nil (casi imposible — el claim usó la sesión).
+                // Sin estampado, el guard de identidad P6 dejaría al dueño en `.idle` post-cutover; ruido
+                // explícito para diagnosticarlo (el re-claim idempotente del resume lo re-estampa).
+                CloudSyncBreadcrumb.migrationEffectFailed(effect: "performClaim", reason: "claim-stamp skipped: nil userID")
+            }
+        }
+        return outcome
     }
 
     // MARK: - Identidad (w3)
@@ -486,13 +519,10 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             CloudSyncBreadcrumb.migrationRollbackCompleted()
 
         case .adoptBackendAccount:
-            // §k.4 — el flujo COMPLETO de adopt (consent + sign-in + claim `existing_stable` + pull del
-            // corpus + fast-forward del baseline + switch a `.cloud`) ES I14; este efecto sigue `notWired`
-            // (el runner lo deja journaled retomable). La PIEZA de reconciliación de huérfanas de la ventana
-            // ya existe DARK: `runAdoptOrphanReconcile()` — I14 la invoca tras la quiescencia del import y
-            // ANTES de arrancar el runtime (ver el contrato en su doc-comment).
-            CloudSyncBreadcrumb.migrationExecutorNotWired(step: effect.rawValue)
-            throw MigrationExecutorError.notWired(effect: effect.rawValue)
+            // §k.4 — CABLEADO en I14 (P6): el flujo de adopt (returning-user sobre cuenta poblada, #30).
+            // La máquina ya rutea `existing_stable`/`leaderCompleted` → `notStarted` + este efecto; aquí se
+            // ejecuta el trabajo retomable. Ver `runAdoptFlow()`.
+            try await runAdoptFlow()
 
         // Reversa (§h, I11-2) — efectos LOCALES cableados. mountMirrorAndRelaunch cruza el process boundary
         // (espeja disableMirrorAndRelaunch): DESARMA el flag manteniendo `.cloud` → `personalStoreDecision`
@@ -1014,6 +1044,85 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             TelemetryService.cloudAdoptOrphanReconciled(count: uploaded)
         }
         return .completed(uploaded: uploaded, identityAssigned: identityAssigned)
+    }
+
+    /// Flujo de ADOPT (§k.4, #30 — I14 P6), retomable/idempotente. Invocado por `execute(.adoptBackendAccount)`
+    /// cuando la máquina rutea `existing_stable`/`leaderCompleted` → `notStarted` + adopt. ORDEN EXACTO
+    /// (contrato de `runAdoptOrphanReconcile`): quiescencia del import → reconcile de huérfanas de ventana →
+    /// fast-forward del History baseline (sin él el primer drain del runtime re-emitiría el corpus importado)
+    /// → verificación del marcador local (belt) → persistir el PAR `.cloud`+`mirrorOffArmed` + estampar el
+    /// claim-store (`routeReturningUser`) → re-persistir las 2 keys de consent al outbox de prefs
+    /// (trazabilidad backend del adoptador — el drenaje iKV es LÍDER-only y jamás las llevaría). El
+    /// relaunch asistido NO se hace aquí: la UI lo deriva del par persistido (`mirrorOffArmed` + mount
+    /// `.icloud` → `needsRelaunch(.toCloud)`). Post-relaunch el runtime arranca en `.cloud`+`notStarted`.
+    ///
+    /// Todo fallo (quiescencia no alcanzada / red del reconcile) → THROW → el runner lo deja journaled
+    /// pendiente y el próximo `resume()` lo reintenta (tras su propia espera de quiescencia). Idempotente:
+    /// una 2ª pasada re-diffea (lo aplicado sale del diff) y re-persiste (LWW/no-op).
+    func runAdoptFlow() async throws {
+        // 1) Quiescencia del import (el adopt persiste `.cloud` sobre un store en importación — DEBE
+        //    asentarse antes). El runner ya gatea sus entradas por quiescencia; esta es la red específica
+        //    del contrato por si el drive alcanzó el efecto lejos de la entrada.
+        guard adoptQuiescenceSignal() else {
+            CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "import not quiescent")
+            throw MigrationExecutorError.adoptRetry(reason: "quiescence")
+        }
+
+        // 2) Reconcile de huérfanas de la ventana de cutover (identidad local ∉ backend). `.transient` →
+        //    retomable; `.completed`/`.abortedEmptyBackend` → continuar (best-effort; el guard vacío es
+        //    benigno para el switch de modo).
+        switch await runAdoptOrphanReconcile() {
+        case .transient:
+            throw MigrationExecutorError.adoptRetry(reason: "reconcileTransient")
+        case .completed, .abortedEmptyBackend:
+            break
+        }
+
+        // 3) Fast-forward del History baseline: sin él el primer drain del runtime post-relaunch re-emitiría
+        //    el corpus ENTERO importado de CloudKit como deltas (contrato (ii)).
+        engine.fastForwardHistoryBaseline(context: context)
+
+        // 4) Belt: el marcador del líder debe haber llegado por el mirror (la card de adopt se disparó por
+        //    `secondaryDeviceCloudLogin`). Ausente = no bloquea (solo diagnóstico) — la ruta ya validó el
+        //    marcador al abrir la pantalla.
+        let markerCount = (try? context.fetchCount(FetchDescriptor<CloudMigrationMarker>())) ?? 0
+        if markerCount == 0 {
+            CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "marker absent (belt)")
+        }
+
+        // 5) Persistir el PAR `.cloud` + `mirrorOffArmed` JUNTOS (invariante SERIO 1). El marcador ya está
+        //    exportado por el LÍDER → la razón del par en la IDA (el gate de export) no aplica igual aquí,
+        //    pero se conserva el par para que `personalStoreDecision` monte mirror-OFF al relanzar. Estampa
+        //    el claim-store (`routeReturningUser`) → el gate de arranque del runtime deja arrancar el sync.
+        StorageModePersistence.write(.cloud, defaults: storageDefaults)
+        storageDefaults.set(true, forKey: Self.relaunchRequestedKey)
+        if let userID = session.currentUserID {
+            claimStore.record(.routeReturningUser, forUserID: userID)
+        } else {
+            // M1 del review: sin userID no hay estampado → el guard de identidad dejaría al DUEÑO en
+            // `.idle` post-relaunch sin auto-cura. Improbable (el claim que trajo aquí usó la sesión);
+            // ruido explícito para diagnosticarlo si ocurre.
+            CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "claim-stamp skipped: nil userID")
+        }
+
+        // 5-bis) Re-persistir las 2 keys de consent (AJUSTE review #4): ya en `.cloud` van al outbox de
+        //    prefs → trazabilidad backend del adoptador (el drenaje iKV es LÍDER-only). Idempotente (LWW).
+        //    S1 del review: se re-emite el timestamp PERSISTIDO por `CloudConsentView` (T0, la hora de
+        //    aceptación real) — jamás `now()` (falsearía la traza GDPR con la hora de FIN del adopt).
+        //    `PreferenceSyncService.set` espeja en el mismo `UserDefaults.standard` que `storageDefaults`
+        //    en producción; el fallback `now()` es defensivo (consent ausente = camino anómalo, ruidoso).
+        let persistedConsentAt = storageDefaults.object(forKey: PrefSyncKey.cloudConsentAcceptedAt.rawValue) as? Int
+        if persistedConsentAt == nil {
+            CloudSyncBreadcrumb.migrationEffectFailed(effect: "adoptBackendAccount", reason: "consent timestamp absent — fallback now()")
+        }
+        PreferenceSyncService.shared.set(
+            int: persistedConsentAt ?? Int(now().timeIntervalSince1970),
+            forKey: PrefSyncKey.cloudConsentAcceptedAt.rawValue)
+        PreferenceSyncService.shared.set(
+            int: CloudConsentText.version,
+            forKey: PrefSyncKey.cloudConsentTextVersion.rawValue)
+
+        CloudSyncBreadcrumb.migrationLocalModePersisted()
     }
 
     /// DRY-RUN read-only (panel DEBUG, §3.4): pasos 1,3,4 SIN backfill (paso 2) NI upload (paso 6). Enumera el

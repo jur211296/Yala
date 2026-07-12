@@ -6003,6 +6003,104 @@ enum L10n {
         static var mismatchAction: String { ls("icloud.mismatch.action", comment: "") }
     }
 
+    // MARK: - Modo Nube (I14): almacenamiento / migración / consentimiento
+
+    enum Storage {
+        static var title: String { ls("storage.title", comment: "") }
+        static var waitingForLeader: String { ls("storage.waitingForLeader", comment: "") }
+
+        enum Status {
+            static var icloudTitle: String { ls("storage.status.icloudTitle", comment: "") }
+            static var icloudBody: String { ls("storage.status.icloudBody", comment: "") }
+            static var cloudTitle: String { ls("storage.status.cloudTitle", comment: "") }
+            static var cloudBody: String { ls("storage.status.cloudBody", comment: "") }
+        }
+
+        enum Migrate {
+            static var title: String { ls("storage.migrate.title", comment: "") }
+            static var body: String { ls("storage.migrate.body", comment: "") }
+            static var button: String { ls("storage.migrate.button", comment: "") }
+            static var previewButton: String { ls("storage.migrate.previewButton", comment: "") }
+            /// "%1$lld movimientos · %2$lld categorías · %3$lld cuentas · %4$lld presupuestos".
+            static func previewResult(_ tx: Int, _ cat: Int, _ acc: Int, _ budgets: Int) -> String {
+                String(format: ls("storage.migrate.previewResult", comment: ""), tx, cat, acc, budgets)
+            }
+        }
+
+        enum Adopt {
+            static var title: String { ls("storage.adopt.title", comment: "") }
+            static var body: String { ls("storage.adopt.body", comment: "") }
+            static var button: String { ls("storage.adopt.button", comment: "") }
+        }
+
+        enum Revert {
+            static var title: String { ls("storage.revert.title", comment: "") }
+            static var body: String { ls("storage.revert.body", comment: "") }
+            static var button: String { ls("storage.revert.button", comment: "") }
+            static var ineligible: String { ls("storage.revert.ineligible", comment: "") }
+        }
+
+        enum Sync {
+            static var title: String { ls("storage.sync.title", comment: "") }
+            static var upToDate: String { ls("storage.sync.upToDate", comment: "") }
+            static func needsSignIn(_ count: Int) -> String {
+                String(format: ls("storage.sync.needsSignIn", comment: ""), count)
+            }
+            static var signInButton: String { ls("storage.sync.signInButton", comment: "") }
+        }
+
+        enum Progress {
+            static var migrating: String { ls("storage.progress.migrating", comment: "") }
+            static var reverting: String { ls("storage.progress.reverting", comment: "") }
+            static var resume: String { ls("storage.progress.resume", comment: "") }
+            static var retry: String { ls("storage.progress.retry", comment: "") }
+        }
+
+        enum Relaunch {
+            static var title: String { ls("storage.relaunch.title", comment: "") }
+            static var body: String { ls("storage.relaunch.body", comment: "") }
+        }
+
+        enum Failed {
+            static var migration: String { ls("storage.failed.migration", comment: "") }
+            static var reverse: String { ls("storage.failed.reverse", comment: "") }
+        }
+
+        enum Confirm {
+            static var migrateTitle: String { ls("storage.confirm.migrateTitle", comment: "") }
+            static var migrateBody: String { ls("storage.confirm.migrateBody", comment: "") }
+            static var migrateContinue: String { ls("storage.confirm.migrateContinue", comment: "") }
+            static var migrate2Title: String { ls("storage.confirm.migrate2Title", comment: "") }
+            static var migrate2Body: String { ls("storage.confirm.migrate2Body", comment: "") }
+            static var migrate2Confirm: String { ls("storage.confirm.migrate2Confirm", comment: "") }
+            static var revertTitle: String { ls("storage.confirm.revertTitle", comment: "") }
+            static var revertBody: String { ls("storage.confirm.revertBody", comment: "") }
+            static var revertContinue: String { ls("storage.confirm.revertContinue", comment: "") }
+            static var revert2Title: String { ls("storage.confirm.revert2Title", comment: "") }
+            static var revert2Body: String { ls("storage.confirm.revert2Body", comment: "") }
+            static var revert2Confirm: String { ls("storage.confirm.revert2Confirm", comment: "") }
+        }
+
+        enum Errors {
+            static var title: String { ls("storage.errors.title", comment: "") }
+            static var generic: String { ls("storage.errors.generic", comment: "") }
+            static var signIn: String { ls("storage.errors.signIn", comment: "") }
+        }
+
+        enum Consent {
+            static var title: String { ls("storage.consent.title", comment: "") }
+            static var point1: String { ls("storage.consent.point1", comment: "") }
+            static var point2: String { ls("storage.consent.point2", comment: "") }
+            static var point3: String { ls("storage.consent.point3", comment: "") }
+            static var point4: String { ls("storage.consent.point4", comment: "") }
+            static var point5: String { ls("storage.consent.point5", comment: "") }
+            static var point6: String { ls("storage.consent.point6", comment: "") }
+            static var point7: String { ls("storage.consent.point7", comment: "") }
+            static var accept: String { ls("storage.consent.accept", comment: "") }
+            static var privacyLink: String { ls("storage.consent.privacyLink", comment: "") }
+        }
+    }
+
     // MARK: - Shortcut Notifications
 
     enum Shortcut {

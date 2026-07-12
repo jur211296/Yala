@@ -30,4 +30,7 @@ enum ProfileDestination: Hashable {
     case iCloudSync
     case siriShortcuts
     case aiPrivacy
+    /// Modo Nube (I14): elección/gestión de almacenamiento (iCloud privado ↔ nube). Solo visible si
+    /// `CloudBackendConfig.isConfigured` (staging/DEV; prod placeholder sin cambios).
+    case storageMode
 }

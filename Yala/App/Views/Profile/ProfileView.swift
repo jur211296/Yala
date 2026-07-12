@@ -250,6 +250,8 @@ struct ProfileView: View {
                     SiriShortcutsView()
                 case .aiPrivacy:
                     AIPrivacySettingsView()
+                case .storageMode:
+                    StorageSettingsView()
                 }
             }
             .onAppear {
@@ -523,12 +525,30 @@ struct ProfileView: View {
     private var datosSection: some View {
         SectionBox(title: L10n.Settings.data) {
             VStack(spacing: DS.Spacing.none) {
-                profileRow(
-                    icon: "icloud.fill",
-                    title: L10n.iCloud.title,
-                    iconColor: .blue,
-                    destination: .iCloudSync
-                )
+                // La fila "iCloud" se oculta en Modo Nube (`.cloud`): `iCloudSyncSettingsView` mentiría
+                // (el store personal ya no lo espeja el mirror). La vista completa bifurcada por modo es
+                // I12; aquí basta ocultarla (R12 mínimo).
+                if CloudSyncFlags.storageMode != .cloud {
+                    profileRow(
+                        icon: "icloud.fill",
+                        title: L10n.iCloud.title,
+                        iconColor: .blue,
+                        destination: .iCloudSync
+                    )
+                }
+
+                // Modo Nube (I14): fila "Almacenamiento" — solo si el backend está configurado
+                // (staging/DEV; prod placeholder no muestra nada).
+                if CloudBackendConfig.isConfigured {
+                    if CloudSyncFlags.storageMode != .cloud { SubsectionDivider() }
+                    profileRow(
+                        icon: "externaldrive.badge.icloud",
+                        title: L10n.Storage.title,
+                        iconColor: .indigo,
+                        destination: .storageMode
+                    )
+                    .accessibilityIdentifier("storage_settings_row")
+                }
 
                 // Importar/exportar operan sobre transacciones personales: ocultos en
                 // solo-grupos (solo existen movimientos virtuales de grupo).

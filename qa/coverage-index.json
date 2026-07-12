@@ -2145,6 +2145,22 @@
       "coverage": "unit:YalaTests/CloudSync/PrefValueCodecTests,PreferenceMergeLogicTests,PrefsOutboxTests,PrefsSyncClientTests (I13: codec round-trip por tipo, merge oráculo-primero [never-downgrade todos los pares de rank, vacío-válido Panel, guard no-vacío, appLanguage remove-on-empty], outbox durable [enqueue sobrescribe/HLC monótono/owner-scoping/purga], transporte URLProtocol stub) + e2e:YalaTests/CloudSync/PrefsSyncE2EStagingTests (push 3 tipos→pull→merge + LWW stale→noop contra Worker staging real, gate YALA_CLOUD_E2E) — I13 DARK (storageMode siempre .icloud; el refactor de applyRemoteValues es extracción byte-idéntica). Rama .cloud del set()/bootstrap/runtime sin wiring de producción hasta I10/I14 + freeze §h.1 (2026-07-11): PrefsSyncClient mapea 409 yala_account_reverting → accountUnavailable (push_409_reverting/push_409_unknownBody; el runtime no purga el outbox en ese outcome — ver área cloud-backend-schema)",
       "owner": "",
       "lastVerified": "2026-07-11"
+    },
+    {
+      "area": "cloud-migration-ui",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/CloudMigrationController.swift",
+        "Yala/Services/CloudSync/MigrationBootDecision.swift",
+        "Yala/Services/CloudSync/CloudClaimActionStore.swift",
+        "Yala/Services/CloudSync/CloudConsentText.swift",
+        "Yala/App/Views/Settings/StorageSettingsView.swift",
+        "Yala/App/Views/Settings/CloudConsentView.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/CloudSync/CloudMigrationI14Tests (runtime gate P0 · boot decision P4 · UIState derive P2 · claim-store P6) + MigrationWorkExecutorTests (runAdoptFlow order + performClaim estampa claim-store) + guion device planning/MODO-NUBE-I14-GUION-DEVICE.md",
+      "owner": "",
+      "lastVerified": "2026-07-11"
     }
   ]
 }

@@ -147,23 +147,17 @@ final class CloudSyncMigrationPanelModel {
         self.context = context
     }
 
-    /// Construye el executor REAL (staging). Extraído para que el dry-run de huérfanas del adopt (#30) lo
-    /// reuse sin duplicar la construcción.
+    /// Construye el executor REAL (staging) vía el factory COMPARTIDO con producción (I14 P2) — para el
+    /// dry-run de huérfanas del adopt (#30), read-only.
     private func makeExecutor() -> MigrationWorkExecutor {
-        let session = LiveCloudSessionProvider()
-        let account = CloudAccountClient()
-        let engine = CloudSyncEngine()
-        let token: () async -> String? = { await CloudAuthService.shared.accessToken() }
-        let push = SyncPushClient(baseURL: ProxyConfig.baseURL, tokenProvider: token)
-        let pull = SyncPullClient(baseURL: ProxyConfig.baseURL, tokenProvider: token)
-        let merkle = SyncMerkleClient(baseURL: ProxyConfig.baseURL, tokenProvider: token)
-        return MigrationWorkExecutor(
-            engine: engine, pushClient: push, pullClient: pull, merkleClient: merkle,
-            accountClient: account, session: session, context: context, deviceID: deviceID)
+        CloudMigrationController.makeExecutor(context: context, deviceID: deviceID)
     }
 
-    /// Construye (una vez) el runner con el executor REAL (staging) + la señal de quiescencia de producción.
+    /// El runner de producción (I14 P2): consume el runner ÚNICO de `CloudMigrationController` — evita DOS
+    /// runners vivos sobre el mismo journal single-row (doble ejecución de efectos). Fallback local solo si
+    /// el controller no está configurado (backend placeholder — improbable en DEV_BUILD staging).
     private func makeRunner() -> MigrationRunner {
+        if let shared = CloudMigrationController.shared { return shared.runner }
         if let runner { return runner }
         let r = MigrationRunner(
             context: context, executor: makeExecutor(), deviceID: deviceID,

@@ -436,3 +436,61 @@ cambio o anotarse aquí como drift pendiente (el MCP autoriza una org a la vez �
 - `capability_manifest.json` (repo root) — per-entity domain columns with explicit `safe` / `group_key`.
 - `supabase-staging.ddl` (repo root) — snapshot-contract of the live schema.
 - `YalaTests/CloudSync/CloudCapabilityManifestParityTests.swift` — parity: manifest ↔ frozen coherence groups ↔ snapshot (runs offline in CI).
+
+## I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags
+
+Último incremento de la Fase 4 del Modo Nube. Cierra el gate de flags: `syncRuntimeEnabled = true` con
+las redes que hacen su encendido demostrablemente inerte para los usuarios actuales.
+
+**Gate del runtime del dominio (P0, `CloudSyncRuntime.start()` + `handleBecameActive`).** El runtime del
+dominio solo corre con `canRunDomain()` == true: `storageMode == .cloud` **Y** la fase de migración
+ESTABLE (`MigrationRuntimeGate.isDomainStablePhase` = `done`/`notStarted`). Seguridad de encender el flag:
+(a) prod placeholder → `CloudBackendConfig.isConfigured == false` → `NoopCloudSessionProvider` → `start()`
+cae en `idleSignedOut`; (b) TODOS los devices de producción son `.icloud` → el guard de `storageMode`
+corta antes de tocar red/store; (c) staging/DEV: solo `.cloud`+fase estable+sesión+claim proceed-like.
+En fase transicional quien conduce es el `MigrationRunner`; el coordinator de boot (P4) re-arranca el
+runtime al quedar estable (`startShared` es idempotente — no-op si ya corre).
+
+**Guard de IDENTIDAD (P6).** En `.cloud`, un `currentUserID` SIN registro de claim → runtime `.idle` +
+canario `cloudSyncBlockedByUnclaimedIdentity`. El registro lo estampa `CloudClaimActionStore` (UserDefaults,
+keyed por userID) en `MigrationWorkExecutor.performClaim` (migración) y en `runAdoptFlow` (adopt).
+`LiveCloudSessionProvider.claimAction` lo LEE para el userID actual → el gate `shouldStartSync` deja de
+recibir el `nil`-inseguro. `signOut` NO borra los registros (keyed por userID → re-sign-in del MISMO usuario
+no se bloquea; un Apple ID DISTINTO en un device migrado no pushea el corpus del dueño).
+
+**Adopt (#30, P6).** `execute(.adoptBackendAccount)` ya NO es `notWired`: llama `runAdoptFlow()`, ORDEN
+EXACTO — quiescencia del import → `runAdoptOrphanReconcile` (`.transient` → THROW retomable) →
+`fastForwardHistoryBaseline` (sin él el primer drain re-emitiría el corpus importado) → verificación del
+marcador local (belt, no bloquea) → persistir el PAR `.cloud`+`mirrorOffArmed` + estampar el claim-store
+(`routeReturningUser`) → re-persistir las 2 keys de consent al outbox de prefs (el drenaje iKV es
+LÍDER-only y jamás las llevaría). El relaunch asistido lo deriva la UI del par persistido (mirror armado +
+mount `.icloud` → `needsRelaunch(.toCloud)`); NUNCA `exit()`. La entrada del adopt en la UI SIEMPRE fluye
+por `startMigration` (consent → SIWA → claim `existing_stable` → la máquina rutea a `notStarted` + adopt);
+el marcador (`secondaryDeviceCloudLogin` vía `markerReconciliation`) solo cambia el COPY de la card, sin
+doble confirmación destructiva extra.
+
+**Consent (§2.8/§k.6, P5).** `CloudConsentView` (los 7 puntos: qué sale incl. texto de recibos NO imagen,
+chat IA ~13 meses, equipo puede leer, servidores en EE.UU., "mientras conserves ese login" + export, reversa
+sin perder nada). Al aceptar registra `cloudConsentAcceptedAt` + `cloudConsentTextVersion`
+(`CloudConsentText.version = 1`) — keys nuevas en `PrefSyncKey` (34→36, familia `intPresence`) → en `.icloud`
+van a iKV y el drenaje del cutover las lleva al backend; en `.cloud` (adopt) directo al outbox de prefs.
+Métrica `cloudConsentAccepted(path: migration|adopt)`.
+
+**Visibilidad (P3).** La fila "Almacenamiento" de Ajustes → Datos aparece SOLO si
+`CloudBackendConfig.isConfigured` (prod placeholder sin cambios visibles). La fila "iCloud" se oculta en
+`.cloud` (`iCloudSyncSettingsView` mentiría — la vista bifurcada por modo es I12). `checkForICloudMismatch`
+ya era `storageMode`-aware (w6) — en `.cloud` tener cuenta iCloud NO es mismatch.
+
+**DIFERIDOS #33 (veredicto I14).** `historyPurgeEnabled` se queda `true` (S2 device-verde; sin purga la
+History crece sin cota). El hazard #33 (token in-decodificable + purga activa → full-rescan re-emite el
+corpus con HLC fresco) es de COSTO, no de corrección (LWW-idempotente server-side), y v1 = dogfooding
+single-device del owner. **Gatillo movido al escalón de beta cerrada:** acotar el full-rescan antes de beta.
+
+**DIFERIDO NUEVO — `cloudModeEnabled` remote-config (kill-switch sin release, §j.1):** requisito ANTES del
+rollout público; v1-dogfooding lo sustituye `CloudBackendConfig.isConfigured` (prod DARK).
+
+**Tests (P8).** `YalaTests/CloudSync/CloudMigrationI14Tests.swift` (gate P0 · boot decision P4 · UIState
+derive P2 · claim-store round-trip + gate de arranque P6) + `MigrationWorkExecutorTests` (runAdoptFlow orden
+persiste `.cloud`+armed+claim-store; performClaim estampa `proceedMigration` — contenido real, lección
+`d49d2e47`) + `PreferenceMergeLogicTests.taxonomy_36Keys`. l10n: 55 keys `storage.*` en los 16 locales
+(`LocalizationParityTests` verde).

@@ -193,6 +193,14 @@ final class CloudSyncRuntime {
         }
     }
 
+    /// P0: ¿puede correr el runtime del DOMINIO? Solo en `.cloud` y con la fase de migración ESTABLE
+    /// (`done`/`notStarted`). Consultado por `start()` y por `handleBecameActive` (re-arranques). En
+    /// `.icloud` (todo device de producción HOY) o en una fase transicional → `false`.
+    static func canRunDomain() -> Bool {
+        CloudSyncFlags.storageMode == .cloud
+            && MigrationRuntimeGate.isDomainStablePhase(MigrationPhaseStore.shared.currentPhase)
+    }
+
     // MARK: - Wiring de producción (DARK)
 
     /// Construye (perezosamente) e inicia la instancia `shared`. No-op si el flag está apagado. Con el
@@ -201,6 +209,9 @@ final class CloudSyncRuntime {
         guard CloudSyncFlags.syncRuntimeEnabled else { return }
         let runtime = shared ?? makeDefault()
         shared = runtime
+        // P4: idempotente — si la instancia ya está corriendo su cadencia, no re-arrancar (el paso 14.7
+        // del boot y el coordinator de migración P4 pueden ambos llamar aquí; el segundo debe ser no-op).
+        if runtime.state == .running { return }
         await runtime.start(context: context)
     }
 
@@ -246,9 +257,29 @@ final class CloudSyncRuntime {
         guard CloudSyncFlags.syncRuntimeEnabled else { return }
         self.context = context
 
+        // P0: DOBLE guard del DOMINIO (además del de flag). El corpus NUNCA sube en `.icloud` (espeja el
+        // S1 de prefs, ahora para todo el ciclo) y el runtime NO compite con un cutover/reversa/adopt en
+        // vuelo (en `.cloud` con fase transicional quien conduce es el `MigrationRunner`; el coordinator
+        // de boot re-arranca el runtime al quedar la fase estable).
+        guard Self.canRunDomain() else {
+            state = .idle
+            CloudSyncBreadcrumb.runtimeIdle(reason: "domain-gate")
+            return
+        }
+
         guard let userID = session.currentUserID else {
             state = .idleSignedOut
             CloudSyncBreadcrumb.runtimeIdle(reason: "signed-out")
+            return
+        }
+        // P6 (AJUSTE review #1, guard de IDENTIDAD): en `.cloud`, un `currentUserID` SIN registro de claim
+        // deja el runtime `.idle` — todo camino legítimo a `.cloud` estampa el claim-store (migración o
+        // adopt); un Apple ID DISTINTO en un device migrado (reinstalación borra `storageMode` → vuelve
+        // `.icloud`, pero un user-switch sin reinstalar no) NO debe pushear el corpus del dueño a otra
+        // cuenta. `claimAction == nil` en `.cloud` = identidad no-claimeada.
+        if CloudSyncFlags.storageMode == .cloud, session.claimAction == nil {
+            state = .idle
+            CloudSyncBreadcrumb.runtimeBlockedByUnclaimedIdentity()
             return
         }
         if let action = session.claimAction, !Self.shouldStartSync(after: action) {
@@ -285,6 +316,9 @@ final class CloudSyncRuntime {
     /// re-evalúa la sesión y DESPIERTA si el usuario re-firmó; `stoppedUntilRelaunch` queda pegado (S6).
     func handleBecameActive() {
         guard CloudSyncFlags.syncRuntimeEnabled else { return }
+        // P0: re-verifica el gate del dominio antes de re-arrancar la cadencia (un cutover/reversa pudo
+        // haber empezado mientras la app estaba en background — no competir con el runner).
+        guard Self.canRunDomain() else { return }
         switch state {
         case .stoppedUntilRelaunch, .idle, .idleSignedOut:
             // Relaunch pegado (403/attest terminal); idle sin sesión → el arranque/sign-in (I7c) lo mueve.
