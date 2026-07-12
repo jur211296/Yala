@@ -32,7 +32,8 @@ struct ContentViewReadinessLogicTests {
         showFullModeActivation: Bool = false,
         showProTrialOffer: Bool = false,
         showWhatsNew: Bool = false,
-        showSyncSettingsSheet: Bool = false
+        showSyncSettingsSheet: Bool = false,
+        isMainTabModalVisible: Bool = false
     ) -> ShellReadinessState {
         ShellReadinessState(
             isSplashDismissed: isSplashDismissed, isWipingData: isWipingData,
@@ -45,7 +46,8 @@ struct ContentViewReadinessLogicTests {
             hasActiveInboxAlert: hasActiveInboxAlert, showGroupInviteOnboarding: showGroupInviteOnboarding,
             showGroupReconnect: showGroupReconnect, showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer, showWhatsNew: showWhatsNew,
-            showSyncSettingsSheet: showSyncSettingsSheet
+            showSyncSettingsSheet: showSyncSettingsSheet,
+            isMainTabModalVisible: isMainTabModalVisible
         )
     }
 
@@ -132,6 +134,11 @@ struct ContentViewReadinessLogicTests {
 
     @Test func syncSettingsSheet_blocks() {
         #expect(ContentViewReadinessLogic.blocker(state: make(showSyncSettingsSheet: true)) == "syncSettingsSheet")
+    }
+
+    // Cross-node: sheet de MainTabView visible → el shell no presenta encima.
+    @Test func mainTabModal_blocks() {
+        #expect(ContentViewReadinessLogic.blocker(state: make(isMainTabModalVisible: true)) == "mainTabModal")
     }
 
     // Los dos alerts de grupos ya no pueden coexistir: el primero bloquea el

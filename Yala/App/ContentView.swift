@@ -461,6 +461,10 @@ struct ContentView: View {
             }
         }
         .onChange(of: SessionState.shared.isWipingData) { _, _ in updateContentViewReadiness() }
+        // Cross-node: un sheet de MainTabView visible bloquea las presentaciones
+        // del shell (el cover del inbox alert no debe montarse encima y ser
+        // tumbado por su dismiss — variante cross-node del bug TestFlight).
+        .onChange(of: SessionState.shared.isMainTabModalVisible) { _, _ in updateContentViewReadiness() }
         // Shell-level modal flags gate readiness via pure-logic
         // ContentViewReadinessLogic. Encapsulated in a ViewModifier to keep
         // ContentView's body within the type-checker's budget.
@@ -552,7 +556,8 @@ struct ContentView: View {
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,
-            showSyncSettingsSheet: showSyncSettingsSheet
+            showSyncSettingsSheet: showSyncSettingsSheet,
+            isMainTabModalVisible: SessionState.shared.isMainTabModalVisible
         )
     }
 
@@ -563,12 +568,19 @@ struct ContentView: View {
     @MainActor
     private func updateContentViewReadiness() {
         let state = currentShellReadinessState()
-        let ready = ContentViewReadinessLogic.isReady(state: state)
+        let currentBlocker = ContentViewReadinessLogic.blocker(state: state)
+        // Publica el blocker para los guards de drain de .mainTab/.panel
+        // (Clase D): con el shell tapado, sus intents esperan en cola.
+        // Choke point único — SessionState.shellModalBlocker no tiene otro escritor.
+        if SessionState.shared.shellModalBlocker != currentBlocker {
+            SessionState.shared.shellModalBlocker = currentBlocker
+        }
+        let ready = currentBlocker == nil
         if ready {
             AppRouter.shared.markReady(.contentView)
         } else {
             AppRouter.shared.markUnready(.contentView)
-            if let blocker = ContentViewReadinessLogic.blocker(state: state) {
+            if let blocker = currentBlocker {
                 #if DEBUG
                 print("ContentView readiness blocked by: \(blocker)")
                 #endif
@@ -1246,10 +1258,52 @@ struct MainTabView: View {
                 MilestoneUpgradeSheet(milestone: wrapper.value)
             }
             .routerConsumer(.mainTab) {
-                guard let intent = AppRouter.shared.drainNext(for: .mainTab) else { return }
-                handleMainTabIntent(intent)
+                drainMainTabIntents()
             }
+            // Re-drain al liberarse el shell (cerrar un cover superior no bumpea
+            // revision — mismo racional que el gate del ChatSheet en PanelShell).
+            .onChange(of: sessionState.shellModalBlocker) { _, newBlocker in
+                if newBlocker == nil { drainMainTabIntents() }
+            }
+            .onChange(of: showDowngradeResolution) { _, _ in publishMainTabModalVisibilityAndRedrain() }
+            .onChange(of: showTrialExpired) { _, _ in publishMainTabModalVisibilityAndRedrain() }
+            .onChange(of: activeMilestone) { _, _ in publishMainTabModalVisibilityAndRedrain() }
         }
+    }
+
+    /// True mientras un sheet propio de MainTabView está presentado.
+    private var ownModalVisible: Bool {
+        showDowngradeResolution || showTrialExpired || activeMilestone != nil
+    }
+
+    /// Publica la visibilidad para el guard de `.panel` y la matriz del shell,
+    /// y re-drena al cerrar un sheet propio (el siguiente intent retenido entra).
+    private func publishMainTabModalVisibilityAndRedrain() {
+        if sessionState.isMainTabModalVisible != ownModalVisible {
+            sessionState.isMainTabModalVisible = ownModalVisible
+        }
+        if !ownModalVisible { drainMainTabIntents() }
+    }
+
+    /// Drain peek-first de `.mainTab` (Clase D): un intent que presenta un sheet
+    /// propio se RETIENE en cola mientras el shell esté tapado o ya haya un
+    /// sheet propio arriba — antes se consumía a ciegas y el sheet se seteaba
+    /// tapado (one-shots quemados sin verse, presentaciones "que saltan").
+    private func drainMainTabIntents() {
+        guard let next = AppRouter.shared.peekNext(for: .mainTab) else { return }
+        let decision = RouterConsumerGateLogic.mainTabDecision(
+            intent: next,
+            shellBlocker: sessionState.shellModalBlocker,
+            ownModalVisible: ownModalVisible
+        )
+        guard decision == .drain else {
+            #if DEBUG
+            print("MainTabView drain hold: \(next.id) por \(sessionState.shellModalBlocker ?? "ownModal")")
+            #endif
+            return
+        }
+        guard let intent = AppRouter.shared.drainNext(for: .mainTab) else { return }
+        handleMainTabIntent(intent)
     }
 
     private func handleMainTabIntent(_ intent: RouterIntent) {

@@ -422,6 +422,20 @@ class SessionState {
     /// `.showInboxAlert` raised AFTER the sheet opened.
     var isInboxSheetVisible: Bool = false
 
+    /// Blocker de nivel shell (ContentView) activo, `nil` si el shell está libre.
+    /// Escrito SOLO por `ContentView.updateContentViewReadiness` (choke point
+    /// único). Los consumidores inferiores (.mainTab/.panel) lo consultan como
+    /// guard de drain: con el shell tapado, un intent que setee un sheet propio
+    /// ESPERA en cola en vez de consumirse tapado (Clase D). Default "splash":
+    /// el splash siempre cubre el boot antes del primer recompute.
+    var shellModalBlocker: String? = "splash"
+
+    /// True mientras MainTabView tiene un sheet propio presentado (downgrade /
+    /// trialExpired / milestone). Escrito SOLO por MainTabView. Consultado por
+    /// el guard de `.panel` y por la matriz de readiness del shell (cross-node:
+    /// el cover del inbox alert no debe montarse encima de un sheet de MainTab).
+    var isMainTabModalVisible: Bool = false
+
     /// Version counter for formatting settings (rounded amounts, etc.)
     /// Increment this to force views to re-render with new formatting
     var formattingVersion: Int = 0

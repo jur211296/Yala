@@ -45,6 +45,11 @@ struct ShellReadinessState: Equatable {
     let showProTrialOffer: Bool
     let showWhatsNew: Bool
     let showSyncSettingsSheet: Bool
+
+    // Cross-node: sheet de MainTabView visible (downgrade/trialExpired/
+    // milestone). Presentar el cover del inbox alert ENCIMA de uno y que su
+    // dismiss lo tumbe es la variante cross-node del bug TestFlight.
+    let isMainTabModalVisible: Bool
 }
 
 enum ContentViewReadinessLogic {
@@ -89,6 +94,7 @@ enum ContentViewReadinessLogic {
         if state.showProTrialOffer { return "proTrialOffer" }
         if state.showWhatsNew { return "whatsNew" }
         if state.showSyncSettingsSheet { return "syncSettingsSheet" }
+        if state.isMainTabModalVisible { return "mainTabModal" }
 
         // Active inbox alert (fullScreenCover): blocks new shell presentations
         // until dismissed — root cause of the "automatizaciones" tardío bug.
@@ -146,7 +152,8 @@ extension ShellReadinessState {
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,
-            showSyncSettingsSheet: showSyncSettingsSheet
+            showSyncSettingsSheet: showSyncSettingsSheet,
+            isMainTabModalVisible: isMainTabModalVisible
         )
     }
 }

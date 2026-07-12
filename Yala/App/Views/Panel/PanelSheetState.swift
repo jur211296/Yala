@@ -65,4 +65,35 @@ struct PanelSheetState {
     var isImageSetupTrial = false
     var setupTrialExampleImages: [UIImage]? = nil
     var practiceCleanupItem: PracticeCleanupItem? = nil
+
+    /// True si algún sheet/alert PROPIO del panel ocupa el presentation slot.
+    /// Usado por el guard de drain de `.panel` (RouterConsumerGateLogic): con
+    /// uno visible, drenar otro intent que setee un sheet lo descartaría.
+    /// NO incluye flags de coordinación post-dismiss (`navigateToInboxAfter*`,
+    /// `switchToImageAfterVoice`, `pendingOpenChatAfterOnboarding`) ni estado
+    /// de setup trial (`isVoiceSetupTrial`, `setupTrialExampleImages`,
+    /// `practiceCleanupItem`) — no presentan nada por sí mismos.
+    /// Al añadir un sheet nuevo a este struct, añadirlo AQUÍ (test tabla en
+    /// PanelSheetStateTests lo documenta).
+    var hasActivePresentation: Bool {
+        isPresentingSettings
+            || accountFormSheet != nil
+            || sectionPrefsPresentation != nil
+            || showSectionsConfig
+            || showNewTransaction
+            || showVoiceRecording
+            || showImageSelection
+            || showCustomPeriodPicker
+            || showBudgetFavoritesSettings
+            || showInbox
+            || showUpgradeForVoice
+            || showUpgradeForImage
+            || showUpgradeForAccounts
+            || showSubscriptionFromBanner
+            || showChatSheet
+            || showUpgradeForChat
+            || showChatConsentAlert
+            || showYalaAIOnboarding
+            || showAIConsentAlert
+    }
 }

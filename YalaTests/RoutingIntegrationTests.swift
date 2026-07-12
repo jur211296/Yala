@@ -103,6 +103,66 @@ struct RoutingIntegrationTests {
         }
     }
 
+    // MARK: - Clase D: intents retenidos (no consumidos) con el nodo tapado
+
+    /// El repro del bug TestFlight a nivel motor: `.presentInboxSheet` encolado
+    /// con el shell tapado (paywall) NO se consume — el consumidor hace peek y
+    /// el gate decide hold; al liberar el shell, drena y la Bandeja abre.
+    @MainActor @Test
+    func panelIntent_heldWhileGateClosed_persistsInQueue() {
+        let router = freshRouter()
+        router.enqueue(.presentInboxSheet)
+        router.markReady(.panel)
+
+        // Gate cerrado (paywall del shell arriba): el consumidor no drena.
+        #expect(!RouterConsumerGateLogic.panelCanDrain(
+            selectedTab: .panel, chatSheetOpen: false,
+            shellBlocker: "proTrialOffer", mainTabModalVisible: false, panelModalVisible: false
+        ))
+        #expect(router.peekNext(for: .panel) != nil)
+        #expect(router.contains { if case .presentInboxSheet = $0 { return true }; return false })
+
+        // Paywall cierra → gate abierto → el intent retenido drena AHORA.
+        #expect(RouterConsumerGateLogic.panelCanDrain(
+            selectedTab: .panel, chatSheetOpen: false,
+            shellBlocker: nil, mainTabModalVisible: false, panelModalVisible: false
+        ))
+        let drained = router.drainNext(for: .panel)
+        guard case .presentInboxSheet = drained else {
+            Issue.record("Esperaba presentInboxSheet, drenó \(String(describing: drained))")
+            return
+        }
+        #expect(!router.contains { if case .presentInboxSheet = $0 { return true }; return false })
+    }
+
+    /// Peek-first de `.mainTab`: un intent modal en hold NO se remueve de la
+    /// cola (antes el drain ciego lo consumía y el one-shot se quemaba tapado).
+    @MainActor @Test
+    func mainTabModalIntent_peekFirst_doesNotConsumeOnHold() {
+        let router = freshRouter()
+        router.enqueue(.presentTrialExpired)
+        router.markReady(.mainTab)
+
+        guard let next = router.peekNext(for: .mainTab) else {
+            Issue.record("Cola vacía tras enqueue")
+            return
+        }
+        #expect(RouterConsumerGateLogic.mainTabDecision(
+            intent: next, shellBlocker: "whatsNew", ownModalVisible: false
+        ) == .hold)
+        // Peek no removió: el intent sobrevive al hold.
+        #expect(router.contains { if case .presentTrialExpired = $0 { return true }; return false })
+
+        #expect(RouterConsumerGateLogic.mainTabDecision(
+            intent: next, shellBlocker: nil, ownModalVisible: false
+        ) == .drain)
+        let drained = router.drainNext(for: .mainTab)
+        guard case .presentTrialExpired = drained else {
+            Issue.record("Esperaba presentTrialExpired, drenó \(String(describing: drained))")
+            return
+        }
+    }
+
     // MARK: - Dueling monetization
 
     @MainActor @Test

@@ -53,11 +53,43 @@ struct PanelShell: View {
                     drainPanelIfActive()
                 }
             }
+            // Re-drains de Clase D: liberar un blocker superior (cover del shell,
+            // sheet de MainTab) o cerrar un sheet propio no bumpea revision — cada
+            // dimensión del gate re-drena explícitamente (molde del ChatSheet).
+            .onChange(of: sessionState.shellModalBlocker) { _, newBlocker in
+                if newBlocker == nil { drainPanelIfActive() }
+            }
+            .onChange(of: sessionState.isMainTabModalVisible) { _, visible in
+                if !visible { drainPanelIfActive() }
+            }
+            .onChange(of: sheets.hasActivePresentation) { _, active in
+                if !active { drainPanelIfActive() }
+            }
+            .onChange(of: sessionState.showNewTransactionFromChat) { _, showing in
+                if !showing { drainPanelIfActive() }
+            }
     }
 
     private func drainPanelIfActive() {
-        guard sessionState.selectedMainTab == .panel else { return }
-        guard !sheets.showChatSheet else { return }
+        // Clase D: con cualquier nodo superior tapando (o un sheet propio ya
+        // arriba), el intent ESPERA en cola en vez de consumirse tapado —
+        // `sheets.showInbox = true` bajo un paywall jamás presentaba (bug
+        // TestFlight: tap de notificación que nunca abría la Bandeja).
+        guard RouterConsumerGateLogic.panelCanDrain(
+            selectedTab: sessionState.selectedMainTab,
+            chatSheetOpen: sheets.showChatSheet,
+            shellBlocker: sessionState.shellModalBlocker,
+            mainTabModalVisible: sessionState.isMainTabModalVisible,
+            panelModalVisible: sheets.hasActivePresentation
+                || sessionState.showNewTransactionFromChat
+        ) else {
+            #if DEBUG
+            if let pending = AppRouter.shared.peekNext(for: .panel) {
+                print("PanelShell drain hold: \(pending.id) por \(sessionState.shellModalBlocker ?? "modal visible")")
+            }
+            #endif
+            return
+        }
         guard let intent = AppRouter.shared.drainNext(for: .panel) else { return }
         handlePanelIntent(intent)
     }

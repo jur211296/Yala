@@ -22,7 +22,8 @@ struct PresentationCascadeLogicTests {
             showRestoreOffer: false, hasActiveInviteError: false, hasActiveGroupSyncError: false,
             hasActiveInboxAlert: hasActiveInboxAlert,
             showGroupInviteOnboarding: false, showGroupReconnect: false, showFullModeActivation: false,
-            showProTrialOffer: false, showWhatsNew: false, showSyncSettingsSheet: false
+            showProTrialOffer: false, showWhatsNew: false, showSyncSettingsSheet: false,
+            isMainTabModalVisible: false
         )
     }
 
