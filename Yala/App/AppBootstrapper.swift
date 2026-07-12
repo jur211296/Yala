@@ -1061,7 +1061,20 @@ final class AppBootstrapper {
         }
         // Refrescar la caché de contexto del intent de Siri (subcategorías/divisa/cuentas).
         SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
-        checkForPendingInboxDrafts(context: context)
+        // Espeja el gate de bootstrap (paso del check inicial): en UITest el
+        // alert de inbox solo se dispara vía el hook explícito -uitest-inbox-alert.
+        // La re-emisión del hook aquí es load-bearing: el intent es transient y
+        // la emisión temprana del bootstrap puede caer en un blip de scenePhase
+        // (resetTransients) antes del primer drain — dedup por id cubre duplicados.
+        if UITestHooks.isActive {
+            if UITestHooks.showInboxAlert {
+                RouterEntryGate.shared.submit(.showInboxAlert(
+                    PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
+                ))
+            }
+        } else {
+            checkForPendingInboxDrafts(context: context)
+        }
 
         checkForPendingControlAction()
 
@@ -1744,8 +1757,12 @@ final class AppBootstrapper {
             ProUpsellService.shared.recordTrialStarted()
         }
 
-        // Check for trial expired (shows sheet once)
-        if ProUpsellService.shared.shouldShowTrialExpiredSheet() {
+        // Check for trial expired (shows sheet once). Suprimido en UITest: las
+        // emisiones automáticas de monetización presentan sheets no deterministas
+        // sobre los flujos bajo test (mismo precedente que checkForPendingInboxDrafts
+        // en bootstrap). Post-gate Clase D estos intents encolados SÍ presentan —
+        // en baseline quedaban en cola sin drenar y los tests pasaban de suerte.
+        if ProUpsellService.shared.shouldShowTrialExpiredSheet(), !UITestHooks.isActive {
             RouterEntryGate.shared.submit(.presentTrialExpired)
         }
     }
@@ -1766,7 +1783,10 @@ final class AppBootstrapper {
 
         // Mark that we need to show downgrade resolution
         // The actual resolution sheet is shown from ContentView which has access to data
-        RouterEntryGate.shared.submit(.presentDowngradeResolution)
+        // (suprimido en UITest — ver nota en refreshSubscriptionStatus).
+        if !UITestHooks.isActive {
+            RouterEntryGate.shared.submit(.presentDowngradeResolution)
+        }
     }
 
     /// Reset Pro theme to System if user downgraded from Pro
