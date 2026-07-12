@@ -2138,6 +2138,16 @@ enum L10n {
             static var waitingApprovalBanner: String { ls("groups.invite.waitingApproval.banner", comment: "") }
             static var rejectedTitle: String { ls("groups.invite.rejected.title", comment: "") }
             static var rejectedBody: String { ls("groups.invite.rejected.body", comment: "") }
+            static var joiningTitle: String { ls("groups.invite.joining.title", comment: "") }
+            static var joiningBody: String { ls("groups.invite.joining.body", comment: "") }
+            static var slowTitle: String { ls("groups.invite.slow.title", comment: "") }
+            static var slowBody: String { ls("groups.invite.slow.body", comment: "") }
+            static var slowContinueButton: String { ls("groups.invite.slow.continueButton", comment: "") }
+            static var errorTitle: String { ls("groups.invite.error.title", comment: "") }
+            static var errorBody: String { ls("groups.invite.error.body", comment: "") }
+            static var errorExitButton: String { ls("groups.invite.error.exitButton", comment: "") }
+            static var syncBanner: String { ls("groups.invite.syncBanner", comment: "") }
+            static var expiredBanner: String { ls("groups.invite.expired.banner", comment: "") }
         }
 
         enum Reconnect {

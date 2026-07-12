@@ -103,6 +103,9 @@ final class SplitSyncManager {
     // syncNow gated), so these are defence-in-depth: buffer the event, re-apply on promotion.
     private var deferredFetchedRecordZoneEvents: [(event: CKSyncEngine.Event.FetchedRecordZoneChanges, engineName: String)] = []
     private var deferredFetchedDatabaseEvents: [(event: CKSyncEngine.Event.FetchedDatabaseChanges, engineName: String)] = []
+    /// Zonas cuyo `didFetchRecordZoneChanges` llegó durante la ventana export-only:
+    /// el cierre del baseline de primer import se drena DESPUÉS de los record events.
+    private var deferredZoneFetchCompletions: [String] = []
     /// Sign-out/switch during the export-only window: run `clearAllLocalGroupData` after promotion
     /// (clearing supersedes any buffered fetched data — buffers are discarded).
     private var deferredClearAllRequested = false
@@ -623,18 +626,34 @@ final class SplitSyncManager {
     /// Accept a CKShare invitation (called from AppDelegate).
     /// - Parameter skipNavigation: When true, accepts share but does NOT navigate (used for invite onboarding).
     func acceptShare(metadata: CKShare.Metadata, skipNavigation: Bool = false) async {
+        let zoneID = metadata.share.recordID.zoneID
         guard let container else {
             #if DEBUG
             logger.error("Cannot accept share: container not initialized")
             #endif
+            GroupJoinIntentTracker.shared.noteAcceptFailed(zoneName: zoneID.zoneName, recoverable: false)
             return
         }
+
+        GroupJoinIntentTracker.shared.noteAcceptStarted(zoneName: zoneID.zoneName)
 
         do {
             _ = try await container.accept(metadata)
             #if DEBUG
             logger.info("Share accepted — shared engine will fetch zone data automatically")
             #endif
+
+            // Join intent PERSISTENTE: "acepté la zona X; mi member debe nacer".
+            // El member ya no es un one-shot gateado por `if let group` (bug
+            // 2026-07-11: si la zona no había bajado, se saltaba EN SILENCIO y
+            // nadie lo reintentaba) — GroupJoinReconciler lo reconcilia aquí y
+            // en remoteInsert/boot/foreground hasta lograrlo (TTL 7d).
+            PendingJoinStore.save(PendingJoinEntry(
+                zoneName: zoneID.zoneName,
+                zoneOwnerName: zoneID.ownerName
+            ))
+            TelemetryService.track(.groupJoinIntentPersisted)
+            GroupJoinIntentTracker.shared.noteAcceptSucceeded(zoneName: zoneID.zoneName)
 
             // Force immediate fetch so the group appears quickly — but only once auto-sync is on.
             // During the export-only window a fetch would run the fetch handler (a save on the
@@ -648,18 +667,10 @@ final class SplitSyncManager {
                 }
             }
 
-            // Ensure the current iCloud user has a member record in the joined group.
-            let zoneName = metadata.share.recordID.zoneID.zoneName
-            if let group = group(for: zoneName) {
-                do {
-                    _ = try await GroupService.shared.ensureCurrentUserMemberExists(in: group, context: modelContext)
-                } catch {
-                    logger.error("Failed to ensure current user member after share acceptance: \(error.localizedDescription, privacy: .public)")
-                    RouterEntryGate.shared.submit(.showGroupSyncError(
-                        String(localized: "groups.sync.errorMemberSetup")
-                    ))
-                }
-            }
+            // Ensure the current iCloud user has a member record in the joined
+            // group. Si la zona aún no materializó, el reconciliador loguea el
+            // motivo (waitForGroup) y reintenta en los triggers posteriores.
+            await GroupJoinReconciler.reconcile(trigger: .acceptShare, context: modelContext)
 
             // Recompute local isCurrentUser flags (device-specific; not synced).
             await GroupService.shared.refreshCurrentUserFlags(context: modelContext)
@@ -672,6 +683,10 @@ final class SplitSyncManager {
             }
         } catch {
             logger.error("Share acceptance failed: \(error.localizedDescription, privacy: .public)")
+            GroupJoinIntentTracker.shared.noteAcceptFailed(
+                zoneName: zoneID.zoneName,
+                recoverable: AppBootstrapper.isRecoverableInviteFetchError(error)
+            )
             RouterEntryGate.shared.submit(.showGroupSyncError(
                 String(localized: "groups.sync.errorAcceptShare")
             ))
@@ -891,13 +906,25 @@ final class SplitSyncManager {
     // MARK: - Pending Changes (Low-Level)
 
     func markPendingChange(for recordID: CKRecord.ID, in engine: CKSyncEngine?) {
-        guard let engine else { return }
+        guard let engine else {
+            // Fuera de #if DEBUG a propósito (excepción SplitSync, sin PII —
+            // recordName/zoneName son UUIDs): un enqueue con engine nil es un
+            // DROP definitivo (pre-initialize / post-signOut) que antes era
+            // invisible. Canario en telemetría: >0 en prod = incidente.
+            logger.error("SplitSync markPendingChange DROPPED — engine nil, record \(recordID.recordName, privacy: .public) zone \(recordID.zoneID.zoneName, privacy: .public)")
+            TelemetryService.track(.cloudkitGroupEnqueueDroppedNoEngine, parameters: ["op": "save"])
+            return
+        }
         engine.state.add(pendingRecordZoneChanges: [.saveRecord(recordID)])
         pendingRecordSaves.insert(recordID)
     }
 
     func markPendingDeletion(for recordID: CKRecord.ID, in engine: CKSyncEngine?) {
-        guard let engine else { return }
+        guard let engine else {
+            logger.error("SplitSync markPendingDeletion DROPPED — engine nil, record \(recordID.recordName, privacy: .public) zone \(recordID.zoneID.zoneName, privacy: .public)")
+            TelemetryService.track(.cloudkitGroupEnqueueDroppedNoEngine, parameters: ["op": "delete"])
+            return
+        }
         engine.state.add(pendingRecordZoneChanges: [.deleteRecord(recordID)])
         pendingRecordSaves.remove(recordID)
     }
@@ -941,6 +968,13 @@ final class SplitSyncManager {
         } else {
             enqueueSharedSave(modelID: modelID, groupZoneID: group.cloudKitZoneID, groupZoneOwnerName: resolvedOwnerName(for: group))
         }
+    }
+
+    /// `true` si el engine que le tocaría a un grupo (private para owner, shared
+    /// para invitado) existe. Guard del reconciliador de join intents: un enqueue
+    /// contra engine nil es un drop definitivo.
+    func hasEngine(forOwned isOwner: Bool) -> Bool {
+        (isOwner ? privateEngine : sharedEngine) != nil
     }
 
     /// Enqueue a deletion, auto-routing to the correct engine based on group ownership.
@@ -998,8 +1032,14 @@ final class SplitSyncManager {
         case .didFetchChanges:
             syncStatus = .idle
 
-        case .willFetchRecordZoneChanges, .didFetchRecordZoneChanges:
+        case .willFetchRecordZoneChanges:
             break
+
+        case .didFetchRecordZoneChanges(let event):
+            // Señal "el engine terminó de fetchear TODOS los cambios de esta zona
+            // en este ciclo" — cierra la ventana de supresión del primer import
+            // (inmune a multi-batch, a diferencia de contar batches).
+            handleDidFetchRecordZoneChanges(event)
 
         case .willSendChanges:
             syncStatus = .syncing
@@ -1039,15 +1079,20 @@ final class SplitSyncManager {
             deferredClearAllRequested = false
             deferredFetchedDatabaseEvents.removeAll()
             deferredFetchedRecordZoneEvents.removeAll()
+            deferredZoneFetchCompletions.removeAll()
             clearAllLocalGroupData()
             return
         }
-        guard !deferredFetchedDatabaseEvents.isEmpty || !deferredFetchedRecordZoneEvents.isEmpty else { return }
+        guard !deferredFetchedDatabaseEvents.isEmpty || !deferredFetchedRecordZoneEvents.isEmpty
+            || !deferredZoneFetchCompletions.isEmpty
+        else { return }
 
         let dbEvents = deferredFetchedDatabaseEvents
         let recordEvents = deferredFetchedRecordZoneEvents
+        let zoneCompletions = deferredZoneFetchCompletions
         deferredFetchedDatabaseEvents.removeAll()
         deferredFetchedRecordZoneEvents.removeAll()
+        deferredZoneFetchCompletions.removeAll()
 
         logger.notice("SplitSync draining deferred fetch events — db=\(dbEvents.count, privacy: .public), recordZone=\(recordEvents.count, privacy: .public)")
 
@@ -1058,9 +1103,48 @@ final class SplitSyncManager {
         for (event, name) in recordEvents {
             handleFetchedRecordZoneChanges(event, engineName: name)
         }
+        // DESPUÉS de los record events: cerrar el baseline de primer import de las
+        // zonas cuyo ciclo completó en la ventana. Si dos ciclos se intercalaron,
+        // el peor caso es suprimir de más (dirección segura).
+        for zoneName in zoneCompletions {
+            completeInitialMemberImport(zoneName: zoneName)
+        }
     }
 
     // MARK: - Event Handlers
+
+    /// Cierra la ventana de supresión de notifs de membership al completar el
+    /// ciclo de fetch de una zona (sin error). Durante export-only se difiere
+    /// (el save tocaría el mainContext compartido) y se drena tras los record
+    /// events en `drainDeferredFetchEvents`.
+    private func handleDidFetchRecordZoneChanges(_ event: CKSyncEngine.Event.DidFetchRecordZoneChanges) {
+        guard event.error == nil else { return }
+        let zoneName = event.zoneID.zoneName
+        if deferMainContextWork("didFetchRecordZoneChanges") {
+            deferredZoneFetchCompletions.append(zoneName)
+            return
+        }
+        completeInitialMemberImport(zoneName: zoneName)
+    }
+
+    /// Limpia `initialMemberImportStartedAt` del SplitGroup de la zona. No-op si
+    /// el grupo no existe o el baseline ya estaba cerrado (evita saves gratuitos
+    /// en cada ciclo de fetch).
+    private func completeInitialMemberImport(zoneName: String) {
+        guard let context = modelContext,
+              let group = group(for: zoneName),
+              group.initialMemberImportStartedAt != nil
+        else { return }
+        group.initialMemberImportStartedAt = nil
+        do {
+            SaveBreadcrumb.willSave("SplitSyncManager.completeInitialMemberImport")
+            try context.save()
+            SaveBreadcrumb.didSave("SplitSyncManager.completeInitialMemberImport")
+        } catch {
+            // El baseline queda vigente; la ventana de 15 min lo auto-sana.
+            logger.error("completeInitialMemberImport save failed for \(zoneName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        }
+    }
 
     private func handleFetchedDatabaseChanges(_ fetched: CKSyncEngine.Event.FetchedDatabaseChanges, engineName: String, engine: CKSyncEngine) {
         #if DEBUG
@@ -1232,6 +1316,21 @@ final class SplitSyncManager {
 
         // cache `isCurrentUserAdmin` por zoneID dentro del batch — evita fetch repetido.
         var adminCache: [String: Bool] = [:]
+        // cache del baseline de primer import por zona (misma razón). Seguro por
+        // batch: el baseline solo puede moverse hacia initialImport (insert de
+        // GroupMeta mid-batch), nunca al revés.
+        var baselineCache: [String: MemberChangeNotificationLogic.ZoneBaseline] = [:]
+        func zoneBaseline(for zoneName: String) -> MemberChangeNotificationLogic.ZoneBaseline {
+            if let cached = baselineCache[zoneName] { return cached }
+            let localGroup = group(for: zoneName)
+            let baseline = MemberChangeNotificationLogic.zoneBaseline(
+                groupExistsLocally: localGroup != nil,
+                importStartedAt: localGroup?.initialMemberImportStartedAt,
+                now: .now
+            )
+            baselineCache[zoneName] = baseline
+            return baseline
+        }
 
         for modification in fetched.modifications {
             let record = modification.record
@@ -1255,15 +1354,24 @@ final class SplitSyncManager {
                         // Clasifica el member nuevo. Solo `active` notifica "se unió";
                         // pending solo notifica al admin; un pending recibido por un
                         // no-admin (o un estado terminal) NO dispara notif espuria.
+                        // Guards previos (bug "Jür se unió al grupo"): autoexclusión
+                        // por identidad + supresión durante el primer import de la zona.
                         let zoneName = record.recordID.zoneID.zoneName
                         let rawStatus = record[CKConstants.MemberField.status] as? String
                         // admin solo importa para pending — compútalo lazy para no fetchear de más.
                         let isPending = rawStatus == SplitMemberStatus.pendingApproval.rawValue
                         let isAdmin = isPending && isCurrentUserAdminOfGroup(zoneName: zoneName, context: modelContext, cache: &adminCache)
+                        let baseline = zoneBaseline(for: zoneName)
                         #if DEBUG
-                        print("SplitSync[#16-debug]: splitMember zone=\(zoneName) modelID=\(modelID) status=\(rawStatus ?? "nil") isPending=\(isPending) isAdmin=\(isAdmin)")
+                        print("SplitSync[#16-debug]: splitMember zone=\(zoneName) modelID=\(modelID) status=\(rawStatus ?? "nil") isPending=\(isPending) isAdmin=\(isAdmin) baseline=\(baseline)")
                         #endif
-                        switch MemberChangeNotificationLogic.classifyNewMember(rawStatus: rawStatus, isCurrentUserAdmin: isAdmin) {
+                        switch MemberChangeNotificationLogic.classifyNewMember(
+                            rawStatus: rawStatus,
+                            isCurrentUserAdmin: isAdmin,
+                            memberUserRecordID: record[CKConstants.MemberField.memberID] as? String,
+                            currentUserRecordID: GroupUserIdentityService.shared.cachedRecordName,
+                            zoneBaseline: baseline
+                        ) {
                         case .pendingRequestForAdmin:
                             changeSet.newPendingMembers.append((modelID, groupID))
                         case .joined:
@@ -1356,6 +1464,21 @@ final class SplitSyncManager {
             GroupNotificationService.shared.processRemoteChanges(accumulated)
         }
         SessionState.shared.markRemoteChangePending()
+
+        // Join intents: si una zona aceptada acaba de materializar (GroupMeta en
+        // este batch o en cualquier fetch posterior), asegurar el member del
+        // current user. Guard barato: sin intents → una lectura de UserDefaults.
+        if !PendingJoinStore.all().isEmpty {
+            await GroupJoinReconciler.reconcile(trigger: .remoteInsert, context: modelContext)
+        }
+        // Con el cover del onboarding abierto en "esperando aprobación", detectar
+        // la aprobación del admin sin depender de dataVersion.
+        if GroupJoinIntentTracker.shared.phase == .pendingApproval,
+           let trackedZone = GroupJoinIntentTracker.shared.zoneName,
+           let status = currentMemberStatus(zoneName: trackedZone)
+        {
+            GroupJoinIntentTracker.shared.noteMemberResolved(zoneName: trackedZone, status: status)
+        }
 
         // Bridge (personal models): gate by import quiescence.
         let expenseIDs = pendingBridgeExpenseIDs
@@ -1777,6 +1900,14 @@ final class SplitSyncManager {
                 }
             } else if let newGroup = CKRecordTranslator.group(from: record) {
                 newGroup.isOwner = (engineName == "private")
+                // Baseline de primer import (bug "Jür se unió al grupo"): un
+                // SplitGroup que llega por FETCH implica que sus members
+                // preexistentes están por llegar — suprimir sus notifs de
+                // membership hasta que el ciclo de fetch de la zona complete
+                // (didFetchRecordZoneChanges) o venza la ventana de 15 min.
+                // Aplica a AMBOS engines: shared = invitado recién unido;
+                // private = reinstalación/segundo device del owner.
+                newGroup.initialMemberImportStartedAt = .now
                 context.insert(newGroup)
                 // Initial-fetch del invitado fresh-install POST soft-delete: el SplitGroup llega
                 // ya con isHiddenForAll=true → encolar (idempotente, no-op si no hay TX).

@@ -2,13 +2,15 @@
 //  GroupInviteOnboardingView.swift
 //  Yala
 //
-//  2-step onboarding for users arriving via group invitation link.
-//  Step 1: Welcome + name input. Step 2: Navigate to group.
-//  Silent setup: categories, account, currency, onboardingMode.
-//
-//  GC-08.4 will implement the full UI. This is the structural placeholder.
+//  Onboarding para usuarios que llegan por enlace de invitación a un grupo.
+//  El step visible se deriva de la fase REAL del join intent
+//  (`GroupJoinIntentTracker.phase` → `GroupInviteOnboardingLogic.step`) —
+//  nunca un fallback optimista: el "¡Todo listo!" solo aparece con member
+//  confirmado (bug 2026-07-11: el fallback defensivo mostraba éxito sin
+//  member ni solicitud, y el owner nunca se enteraba).
 //
 
+import CloudKit
 import SwiftData
 import SwiftUI
 
@@ -18,17 +20,31 @@ struct GroupInviteOnboardingView: View {
     @Environment(\.yalaTheme) private var theme
 
     @State private var userName: String = ""
-    @State private var currentStep: Int = 1
-    @State private var isProcessing: Bool = false
+    @State private var hasTappedJoin: Bool = false
+    @State private var hitSoftTimeout: Bool = false
+    @State private var timeoutTask: Task<Void, Never>?
+
+    private var tracker: GroupJoinIntentTracker { .shared }
 
     /// #22: metadata branded del invite (nombre/icono/color del grupo) para
     /// personalizar el banner. Si nil → fallback al copy/visual genérico.
     let inviteMetadata: InviteMetadata?
-    var onComplete: () -> Void
+    var onComplete: (GroupInviteOnboardingOutcome) -> Void
 
-    init(inviteMetadata: InviteMetadata? = nil, onComplete: @escaping () -> Void) {
+    init(
+        inviteMetadata: InviteMetadata? = nil,
+        onComplete: @escaping (GroupInviteOnboardingOutcome) -> Void
+    ) {
         self.inviteMetadata = inviteMetadata
         self.onComplete = onComplete
+    }
+
+    private var step: GroupInviteOnboardingLogic.Step {
+        GroupInviteOnboardingLogic.step(
+            hasTappedJoin: hasTappedJoin,
+            phase: tracker.phase,
+            hitSoftTimeout: hitSoftTimeout
+        )
     }
 
     var body: some View {
@@ -37,15 +53,31 @@ struct GroupInviteOnboardingView: View {
                 PanelBackgroundView()
 
                 VStack(spacing: DS.Spacing.xxl) {
-                    switch currentStep {
-                    case 1: welcomeStep
-                    case 2: completionStep
-                    case 3: pendingApprovalStep
-                    default: completionStep
+                    switch step {
+                    case .welcome: welcomeStep
+                    case .joining: joiningStep
+                    case .takingLong: takingLongStep
+                    case .pendingApproval: pendingApprovalStep
+                    case .active: completionStep
+                    case .failed(let reason): failedStep(reason)
                     }
                 }
                 .padding(.horizontal, DS.Spacing.xxl)
             }
+        }
+        .onChange(of: tracker.phase) { _, newPhase in
+            // Fase terminal → el soft-timeout deja de tener sentido.
+            switch newPhase {
+            case .pendingApproval, .active, .failed:
+                timeoutTask?.cancel()
+                timeoutTask = nil
+            default:
+                break
+            }
+        }
+        .onDisappear {
+            timeoutTask?.cancel()
+            timeoutTask = nil
         }
     }
 
@@ -96,7 +128,7 @@ struct GroupInviteOnboardingView: View {
             YalaPrimaryButton(L10n.Groups.Invite.joinButton) {
                 handleJoinTap()
             }
-            .disabled(isProcessing)
+            .accessibilityIdentifier("invite_join_button")
             .padding(.bottom, DS.Spacing.xxl)
         }
         .dismissKeyboardOnTap()
@@ -127,14 +159,9 @@ struct GroupInviteOnboardingView: View {
             Spacer()
 
             YalaPrimaryButton(L10n.Action.continueAction) {
-                TelemetryService.track(.groupInviteOnboardingCompleted)
-                NudgeService.shared.recordGroupJoinIfNeeded()
-                onComplete()
-                Task {
-                    try? await Task.sleep(for: .milliseconds(300))
-                    RouterEntryGate.shared.submit(.navigate(.groups))
-                }
+                complete(.pendingApproval)
             }
+            .accessibilityIdentifier("invite_pending_continue")
             .padding(.bottom, DS.Spacing.xxl)
         }
     }
@@ -142,35 +169,168 @@ struct GroupInviteOnboardingView: View {
     // MARK: - Join handler (A3)
 
     private func handleJoinTap() {
-        guard !isProcessing else { return }
+        guard !hasTappedJoin else { return }
         performSilentSetup()
-        isProcessing = true
+        withAnimation { hasTappedJoin = true }
+        // Camino rápido: si la zona ya materializó, el member nace ahora mismo y
+        // la fase salta a pending/active sin esperar el próximo fetch.
+        Task { @MainActor in
+            await GroupJoinReconciler.reconcile(trigger: .acceptShare)
+        }
+        startSoftTimeout()
+    }
+
+    private func startSoftTimeout() {
+        timeoutTask?.cancel()
+        hitSoftTimeout = false
+        timeoutTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(softTimeoutSeconds))
+            guard !Task.isCancelled else { return }
+            withAnimation { hitSoftTimeout = true }
+        }
+    }
+
+    private var softTimeoutSeconds: TimeInterval {
+        #if DEBUG
+        if let override = UITestHooks.shared.joinSoftTimeoutOverride { return override }
+        #endif
+        return GroupInviteOnboardingLogic.softTimeout
+    }
+
+    /// Cierre único del onboarding: telemetría + policy de limpieza + navegación.
+    private func complete(_ outcome: GroupInviteOnboardingOutcome) {
+        switch outcome {
+        case .joined, .pendingApproval:
+            TelemetryService.track(.groupInviteOnboardingCompleted)
+            NudgeService.shared.recordGroupJoinIfNeeded()
+        case .closedWhileSyncing, .abandonedAfterFailure:
+            break
+        }
+        // El tracker se consume al confirmar unión o al abandonar sin recovery;
+        // en pending/closedWhileSyncing sigue vivo alimentando el banner del tab.
+        switch outcome {
+        case .joined, .abandonedAfterFailure(recoverable: false):
+            tracker.clear()
+        default:
+            break
+        }
+        onComplete(outcome)
+        // Navigate to groups after dismiss (UX delay for animation, not sync)
         Task {
-            let nextStep = await detectFinalStep()
-            await MainActor.run {
-                withAnimation { currentStep = nextStep }
-                isProcessing = false
+            try? await Task.sleep(for: .milliseconds(300))
+            RouterEntryGate.shared.submit(.navigate(.groups))
+        }
+    }
+
+    // MARK: - Step: Joining (spinner honesto)
+
+    private var joiningStep: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            Spacer()
+
+            ProgressView()
+                .controlSize(.large)
+                .accessibilityIdentifier("invite_joining_spinner")
+
+            VStack(spacing: DS.Spacing.sm) {
+                Text(L10n.Groups.Invite.joiningTitle)
+                    .font(DS.Typography.title2)
+                    .multilineTextAlignment(.center)
+
+                Text(L10n.Groups.Invite.joiningBody)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.lg)
             }
+
+            Spacer()
         }
     }
 
-    /// tras setup, detecta si el SplitMember quedó en `.pendingApproval` (step 3)
-    /// o `.active` (step 2). Defensive: cualquier error → step 2 para no bloquear al user.
-    private func detectFinalStep() async -> Int {
-        // `mostRecentGroup()` y `ensureCurrentUserMemberExists` operan ambos sobre el mainContext
-        // compartido (el sync ya no usa un contexto dedicado) → mismo contexto, sin riesgo cross-context.
-        guard let group = SplitSyncManager.shared.mostRecentGroup() else { return 2 }
-        do {
-            let member = try await GroupService.shared.ensureCurrentUserMemberExists(
-                in: group, reactivateInactive: true
-            )
-            return member.isPendingApproval ? 3 : 2
-        } catch {
-            return 2
+    // MARK: - Step: Taking long (salida digna, NO error)
+
+    private var takingLongStep: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            Spacer()
+
+            ProgressView()
+                .controlSize(.large)
+
+            VStack(spacing: DS.Spacing.sm) {
+                Text(L10n.Groups.Invite.slowTitle)
+                    .font(DS.Typography.title2)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("invite_slow_title")
+
+                Text(L10n.Groups.Invite.slowBody)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.lg)
+            }
+
+            Spacer()
+
+            YalaPrimaryButton(L10n.Groups.Invite.slowContinueButton) {
+                complete(.closedWhileSyncing)
+            }
+            .accessibilityIdentifier("invite_slow_continue")
+            .padding(.bottom, DS.Spacing.xxl)
         }
     }
 
-    // MARK: - Step 2: Completion
+    // MARK: - Step: Failed (retry visible)
+
+    private func failedStep(_ reason: JoinFailureReason) -> some View {
+        VStack(spacing: DS.Spacing.xl) {
+            Spacer()
+
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 56)) // A11Y-DT: decorative hero icon, fixed size
+                .foregroundStyle(DS.Semantic.warningForeground)
+
+            VStack(spacing: DS.Spacing.sm) {
+                Text(L10n.Groups.Invite.errorTitle)
+                    .font(DS.Typography.title2)
+                    .multilineTextAlignment(.center)
+
+                Text(reason == .expired
+                    ? String(localized: "groups.invite.linkInvalidDetail")
+                    : L10n.Groups.Invite.errorBody)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.lg)
+            }
+
+            Spacer()
+
+            if reason != .expired {
+                YalaPrimaryButton(L10n.Action.retry) {
+                    startSoftTimeout()
+                    Task { @MainActor in
+                        await tracker.retry()
+                    }
+                }
+                .accessibilityIdentifier("invite_retry_button")
+            }
+
+            Button(L10n.Groups.Invite.errorExitButton) {
+                let recoverable: Bool = {
+                    if case .acceptFailed(let r) = reason { return r }
+                    return reason == .memberSaveFailed
+                }()
+                complete(.abandonedAfterFailure(recoverable: recoverable && reason != .expired))
+            }
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier("invite_error_exit")
+            .padding(.bottom, DS.Spacing.xxl)
+        }
+    }
+
+    // MARK: - Step: Completion (SOLO con member confirmado activo)
 
     private var completionStep: some View {
         VStack(spacing: DS.Spacing.xl) {
@@ -183,18 +343,12 @@ struct GroupInviteOnboardingView: View {
             Text(L10n.Groups.Invite.ready)
                 .font(DS.Typography.title2)
                 .multilineTextAlignment(.center)
+                .accessibilityIdentifier("invite_ready_title")
 
             Spacer()
 
             YalaPrimaryButton(L10n.Groups.Invite.goToGroup) {
-                TelemetryService.track(.groupInviteOnboardingCompleted)
-                NudgeService.shared.recordGroupJoinIfNeeded()
-                onComplete()
-                // Navigate to groups after dismiss (UX delay for animation, not sync)
-                Task {
-                    try? await Task.sleep(for: .milliseconds(300))
-                    RouterEntryGate.shared.submit(.navigate(.groups))
-                }
+                complete(.joined)
             }
             .padding(.bottom, DS.Spacing.xxl)
         }
@@ -213,11 +367,24 @@ struct GroupInviteOnboardingView: View {
         // 2. Save user name
         sync.set(string: effectiveName, forKey: AppPreferences.Keys.userName)
 
+        // 2.5. El nombre viaja también en el join intent persistente: si el
+        // member aún no nació (zona sin materializar), GroupJoinReconciler lo
+        // aplica al crearlo — cubre el catch vacío del paso 7.5 y el kill-app.
+        PendingJoinStore.updateDisplayName(effectiveName)
+
         // 3. Detect currency (from group if available, else region)
-        let currency = detectCurrencyFromGroup() ?? CurrencyDefaults.detectCurrencyFromRegion()
+        let groupCurrency = detectCurrencyFromGroup()
+        let currency = groupCurrency ?? CurrencyDefaults.detectCurrencyFromRegion()
         sync.set(string: currency.rawValue, forKey: "defaultCurrencyCode")
         sync.set(string: DetailPeriod.thisMonth.rawValue, forKey: "defaultPeriod")
         sessionState.selectedPeriod = .thisMonth
+
+        // 3.5. Si la moneda salió de la REGIÓN (el grupo no había llegado por la
+        // ventana export-only), registrarla en el intent: al reconciliar, si la
+        // pref no cambió a mano, se re-aplica la moneda real del grupo.
+        if groupCurrency == nil, let zoneName = inviteMetadata?.shareMetadata.share.recordID.zoneID.zoneName {
+            PendingJoinStore.updateRegionFallbackCurrency(currency.rawValue, zoneName: zoneName)
+        }
 
         // 4-6. Seeds + save del store personal. Si el invite se acepta DURANTE el import del restore,
         // este `save()` dispararía el `_assertionFailure`. Gatear por quiescencia: las prefs de arriba

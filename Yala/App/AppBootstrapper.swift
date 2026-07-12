@@ -354,6 +354,19 @@ final class AppBootstrapper {
             await retryPendingLeaveShares()
         }
 
+        // 16.8. Reconciliar join intents pendientes (PendingJoinStore): members de
+        // zonas aceptadas cuyo SplitMember no llegó a nacer (kill-app / zona que
+        // materializó tarde). El save del ensure comitea el mainContext compartido
+        // → gated por quiescencia (patrón retryPendingBridges). Idempotente: si no
+        // asienta, el propio reconciler difiere y reintenta en foreground/fetch.
+        Task { @MainActor in
+            guard await awaitPersonalStoreReady() else {
+                SaveBreadcrumb.deferred("AppBootstrapper.groupJoinReconcile", "import not quiescent")
+                return
+            }
+            await GroupJoinReconciler.reconcile(trigger: .boot, context: context)
+        }
+
         // Seed current iCloud user identity for groups and refresh local membership flags.
         Task { @MainActor in
             _ = try? await GroupUserIdentityService.shared.currentUserRecordName()

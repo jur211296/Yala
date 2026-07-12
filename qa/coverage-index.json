@@ -823,9 +823,9 @@
         "F-GRP-FETCH-02"
       ],
       "classification": "manual",
-      "coverage": "unit:YalaTests/SplitSyncStartGateTests,YalaTests/CloudKitGroupsSchemaParityTests + manual",
+      "coverage": "unit:YalaTests/SplitSyncStartGateTests,YalaTests/CloudKitGroupsSchemaParityTests + manual (2026-07-11: markPendingChange/Deletion con engine nil dejó de ser no-op silencioso — log fuera de DEBUG + canario cloudkitGroupEnqueueDroppedNoEngine)",
       "owner": "",
-      "lastVerified": "2026-07-01"
+      "lastVerified": "2026-07-11"
     },
     {
       "area": "groups-crud-balances-settlements",
@@ -910,7 +910,8 @@
         "Yala/App/Logic/GroupNotificationRecipientLogic.swift",
         "Yala/App/Views/Groups/GroupNudgeBanner.swift",
         "Yala/App/Models/AppRouter.swift",
-        "Yala/App/Models/RouterEntryGate.swift"
+        "Yala/App/Models/RouterEntryGate.swift",
+        "Yala/App/Logic/MemberChangeNotificationLogic.swift"
       ],
       "scenarioIDs": [
         "F-S4-01",
@@ -920,9 +921,9 @@
         "F-GRP-NOTIF-03"
       ],
       "classification": "manual",
-      "coverage": "unit:YalaTests/GroupNotificationRecipientLogicTests + manual",
+      "coverage": "unit:YalaTests/GroupNotificationServiceTests,YalaTests/GroupNotificationRecipientLogicTests,YalaTests/MemberChangeNotificationLogicTests (2026-07-11: autoexclusión por identidad + baseline de primer import — la notif 'X se unió' ya no dispara por members preexistentes al unirse a un grupo ni al reinstalar; ventana 15min auto-sana vía SplitGroup.initialMemberImportStartedAt + didFetchRecordZoneChanges) + manual",
       "owner": "",
-      "lastVerified": "2026-07-01"
+      "lastVerified": "2026-07-11"
     },
     {
       "area": "groups-onboarding-tutorial-visual",
@@ -976,7 +977,12 @@
         "Yala/Services/Groups/InviteLinkService.swift",
         "Yala/Services/Groups/PendingInviteStore.swift",
         "Yala/App/Services/CKShareEntryHandler.swift",
-        "Yala/Models/SplitMember.swift"
+        "Yala/Models/SplitMember.swift",
+        "Yala/Services/Groups/PendingJoinStore.swift",
+        "Yala/Services/Groups/GroupJoinReconciler.swift",
+        "Yala/Services/Groups/GroupJoinIntentTracker.swift",
+        "Yala/App/Logic/GroupJoinReconcileLogic.swift",
+        "Yala/App/Logic/GroupInviteOnboardingLogic.swift"
       ],
       "scenarioIDs": [
         "F-S3-02",
@@ -989,9 +995,9 @@
         "F-S4-05"
       ],
       "classification": "agentic",
-      "coverage": "none",
+      "coverage": "unit:YalaTests/PendingJoinStoreTests,YalaTests/GroupJoinReconcileLogicTests,YalaTests/GroupJoinReconcilerTests,YalaTests/GroupInviteOnboardingLogicTests + xcuitest:GroupInviteOnboardingUITests (steps del onboarding honesto con fase congelada -uitest-join-phase; invariante: jamás '¡Todo listo!' sin member confirmado) + agentic/device (accept real de CKShare es device-only — guion cross-device en el vault Bugs/qa_groups-join-intent-reconciler.md). Fix 2026-07-11: join intent persistente (PendingJoinStore TTL 7d) + GroupJoinReconciler en 4 triggers reemplaza el one-shot silencioso de acceptShare (member del invitado jamás nacía si la zona no había bajado)",
       "owner": "",
-      "lastVerified": "2026-06-08"
+      "lastVerified": "2026-07-11"
     },
     {
       "area": "groups-stats-multicurrency",

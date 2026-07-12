@@ -456,6 +456,12 @@ struct ContentView: View {
                 AppBootstrapper.shared.reEmitPendingInviteIfNeeded(
                     isPresenting: showGroupInviteOnboarding || showGroupReconnect || showRestoreOffer
                 )
+                // Cinturón del join intent: cubre "grupo ya local pero el reconcile
+                // de boot se difirió por quiescencia". El propio reconciler gatea
+                // por quiescencia y hace no-op sin intents.
+                Task { @MainActor in
+                    await GroupJoinReconciler.reconcile(trigger: .foreground)
+                }
             default:
                 break
             }
@@ -891,6 +897,16 @@ struct ContentView: View {
             showOnboarding = true
             return
         }
+        // uitest: presentar el cover de GroupInviteOnboarding directo (CKShare no
+        // funciona en sim). `-uitest-join-phase` congela la fase del tracker para
+        // testear cada step determinista.
+        if UITestHooks.startAtInviteOnboarding {
+            if let phase = UITestHooks.joinPhaseOverride {
+                GroupJoinIntentTracker.shared._uitestForcePhase(named: phase)
+            }
+            showGroupInviteOnboarding = true
+            return
+        }
         #endif
         if needsLanguageSelection {
             showLanguageSelection = true
@@ -1106,10 +1122,15 @@ private struct GroupInviteModifier: ViewModifier {
                 Text(activeGroupSyncError ?? "")
             }
             .fullScreenCover(isPresented: $showGroupInviteOnboarding) {
-                GroupInviteOnboardingView(inviteMetadata: pendingInviteMetadata) {
-                    // Consumo del invite pendiente: el flujo se completó → no debe
-                    // re-emerger en el próximo cold launch / foreground.
-                    PendingInviteStore.clear()
+                GroupInviteOnboardingView(inviteMetadata: pendingInviteMetadata) { outcome in
+                    // Consumo del invite pendiente según el outcome: en abandono con
+                    // error RECUPERABLE se conserva para que el re-emit de cold
+                    // launch/foreground reintente el accept (TTL 24h).
+                    if GroupInviteOnboardingLogic.shouldClearPendingInvite(outcome: outcome) {
+                        PendingInviteStore.clear()
+                    }
+                    // El setup silencioso ya corrió (nombre/moneda): no re-onboardear
+                    // en ningún outcome; el join intent sigue trabajando en background.
                     hasCompletedOnboarding = true
                     showGroupInviteOnboarding = false
                     pendingInviteMetadata = nil

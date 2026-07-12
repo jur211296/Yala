@@ -154,6 +154,8 @@ final class AppRouter {
         revision = 0
         DeferredIntentBuffer.shared.clear()
         PendingInviteStore.clear()
+        PendingJoinStore.clearAll()
+        GroupJoinIntentTracker.shared.clear()
     }
 
     // MARK: - Internals

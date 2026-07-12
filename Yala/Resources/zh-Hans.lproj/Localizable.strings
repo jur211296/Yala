@@ -4718,3 +4718,33 @@
 "storage.consent.point7" = "您可以随时切换回私密模式，不会丢失任何内容。";
 "storage.consent.accept" = "我已了解并希望启用云端";
 "storage.consent.privacyLink" = "查看隐私政策";
+
+/* Invite onboarding: spinner title while zone/member sync */
+"groups.invite.joining.title" = "正在连接你的群组…";
+
+/* Invite onboarding: spinner body */
+"groups.invite.joining.body" = "我们正在准备一切，以便你分摊支出。这可能需要一点时间。";
+
+/* Invite onboarding: soft-timeout state title */
+"groups.invite.slow.title" = "比平时花的时间稍长";
+
+/* Invite onboarding: soft-timeout body, honest copy */
+"groups.invite.slow.body" = "我们正在后台继续连接你的群组。你可以先使用 Yala，群组准备好后会出现在“群组”标签页中。";
+
+/* Invite onboarding: exit CTA from soft-timeout state */
+"groups.invite.slow.continueButton" = "继续使用应用";
+
+/* Invite onboarding: join failure title */
+"groups.invite.error.title" = "无法将你加入群组";
+
+/* Invite onboarding: join failure body */
+"groups.invite.error.body" = "请检查网络连接后重试。";
+
+/* Invite onboarding: secondary exit from failure state */
+"groups.invite.error.exitButton" = "暂时退出";
+
+/* Groups tab banner while join intent syncs in background */
+"groups.invite.syncBanner" = "正在连接你的群组…";
+
+/* Groups tab banner when join intent TTL expired */
+"groups.invite.expired.banner" = "无法连接到群组。请向管理员索取新的邀请链接。";

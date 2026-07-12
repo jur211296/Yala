@@ -4712,3 +4712,33 @@
 "storage.consent.point7" = "You can switch back to private mode whenever you want, without losing anything.";
 "storage.consent.accept" = "I understand and want to turn on the cloud";
 "storage.consent.privacyLink" = "View the privacy policy";
+
+/* Invite onboarding: spinner title while zone/member sync */
+"groups.invite.joining.title" = "Connecting to your group…";
+
+/* Invite onboarding: spinner body */
+"groups.invite.joining.body" = "We're getting everything ready so you can split expenses. This may take a moment.";
+
+/* Invite onboarding: soft-timeout state title */
+"groups.invite.slow.title" = "This is taking a bit longer than usual";
+
+/* Invite onboarding: soft-timeout body, honest copy */
+"groups.invite.slow.body" = "We're still connecting to your group in the background. You can use Yala in the meantime — the group will show up in the Groups tab as soon as it's ready.";
+
+/* Invite onboarding: exit CTA from soft-timeout state */
+"groups.invite.slow.continueButton" = "Continue to the app";
+
+/* Invite onboarding: join failure title */
+"groups.invite.error.title" = "We couldn't add you to the group";
+
+/* Invite onboarding: join failure body */
+"groups.invite.error.body" = "Check your internet connection and try again.";
+
+/* Invite onboarding: secondary exit from failure state */
+"groups.invite.error.exitButton" = "Exit for now";
+
+/* Groups tab banner while join intent syncs in background */
+"groups.invite.syncBanner" = "Connecting to your group…";
+
+/* Groups tab banner when join intent TTL expired */
+"groups.invite.expired.banner" = "We couldn't connect to the group. Ask the admin for a new link.";

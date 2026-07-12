@@ -143,6 +143,7 @@ enum AnalyticsEvent: String {
     case cloudkitGroupZoneRecovered = "Diagnóstico · Zona de grupo recuperada"  // params: count — zonas owner sin GroupMeta subido re-encoladas al arrancar
     case cloudkitGroupRecordsRecovered = "Diagnóstico · Records de grupo recuperados"  // params: count — records con ckSystemFieldsData nil (nunca subieron, p.ej. rechazados por schema) re-encolados al arrancar
     case cloudkitGroupRecordSaveRejected = "Diagnóstico · Save de grupo rechazado"  // params: code, recordType — CANARIO: >0 en prod = incidente de schema/permisos en el container de grupos (el server descarta el record; la recovery lo re-encola al próximo launch)
+    case cloudkitGroupEnqueueDroppedNoEngine = "Diagnóstico · Enqueue de grupo dropeado sin engine"  // params: op (save|delete) — CANARIO: markPendingChange/Deletion con engine nil = drop definitivo e invisible (pre-initialize / post-signOut); antes era un no-op SILENCIOSO
     case iCloudRestoreOutcome = "Diagnóstico · Resultado de restore"  // params: phase (completed|partial), destination (groupsOnly|directToApp|onboarding)
     case cloudSyncIdentityGapObserved = "Diagnóstico · Gap de identidad de sync"  // params: entityType — CANARIO (Modo Nube I3): un delete cuyo tombstone NO trae syncID preservado → el outbox no pudo emitir el tombstone; >0 = revisar la captura de identidad (barrido/born-cloud)
     case cloudSyncCoherenceGroupPartial = "Diagnóstico · Grupo de coherencia parcial"  // params: entity, group — CANARIO (Modo Nube I8c, §d.4bis): el emisor produjo un grupo de coherencia (money/split/budget/tx_split) INCOMPLETO tras la expansión (bug del emisor; no debe ocurrir por construcción). >0 = revisar EntityEmissionMap/DeltaEmitter
@@ -167,6 +168,10 @@ enum AnalyticsEvent: String {
     case routingWelcomeChainSuperseded = "Diagnóstico · Routing welcome supersedido"  // welcome chain dismissed to let a superseding intent drain (B4-04)
     case inviteReEmittedFromStore = "Diagnóstico · Invitación re-emitida"  // a persisted group invite was re-emitted after the transient intent was dropped
     case invitePendingExpired = "Diagnóstico · Invitación pendiente expirada"  // a persisted group invite was purged by TTL (24h) before presenting
+    case groupJoinIntentPersisted = "Diagnóstico · Join intent persistido"  // acceptShare OK → intent guardado en PendingJoinStore; el member se reconcilia cuando la zona materialice
+    case groupJoinIntentReconciled = "Diagnóstico · Join intent reconciliado"  // params: trigger (acceptShare|remoteInsert|boot|foreground), status (pendingApproval|active) — el SplitMember del current user quedó asegurado y encolado
+    case groupJoinIntentDeferred = "Diagnóstico · Join intent diferido"  // params: reason (waitForGroup|enginesNotReady|importNotQuiescent) — el reconcile no pudo correr aún; reintenta en el próximo trigger (antes esto era un skip SILENCIOSO en acceptShare)
+    case groupJoinIntentExpired = "Diagnóstico · Join intent expirado"  // CANARIO: una entry de PendingJoinStore venció su TTL (7d) sin lograr member — el invitado quedó fuera del grupo pese a aceptar; >0 = revisar la materialización de zonas compartidas
 
     // MARK: Telemetría 2.0 — eventos nuevos
     // Activación (primeras veces) · sesión · fin de suscripción

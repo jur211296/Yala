@@ -315,6 +315,9 @@ final class GroupService {
 
         try cascadeDeleteGroupData(zoneName: group.cloudKitZoneID, context: context)
         GroupPersonalPreferences.removeAll(for: group.cloudKitZoneID)
+        // Un join intent vivo para una zona que deja de existir localmente es
+        // obsoleto (reconciliarlo re-crearía el member recién borrado).
+        PendingJoinStore.clear(zoneName: group.cloudKitZoneID)
         context.delete(group)
 
         do {
@@ -568,6 +571,9 @@ final class GroupService {
         }
         try cascadeDeleteGroupData(zoneName: group.cloudKitZoneID, context: context)
         GroupPersonalPreferences.removeAll(for: group.cloudKitZoneID)
+        // Un join intent vivo para una zona que deja de existir localmente es
+        // obsoleto (reconciliarlo re-crearía el member recién borrado).
+        PendingJoinStore.clear(zoneName: group.cloudKitZoneID)
         do {
             try BridgeModeResolver.shared.clearOverride(forZoneID: group.cloudKitZoneID, in: context)
         } catch {

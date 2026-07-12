@@ -122,6 +122,7 @@ struct GroupsContainerView: View {
                     newGroupFAB
                 }
             }
+            .safeAreaInset(edge: .top) { joinIntentBanner }
             .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Groups.title)
             .navigationBarTitleDisplayMode(.large)
@@ -430,6 +431,81 @@ struct GroupsContainerView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Join intent banner
+
+    /// Continuidad visible del join intent a nivel tab: el onboarding puede
+    /// cerrarse en "está tardando" y el reconciliador sigue trabajando detrás —
+    /// esta strip informa el estado real (conectando / esperando aprobación /
+    /// error con retry / expirado) alimentada por `GroupJoinIntentTracker`.
+    @ViewBuilder
+    private var joinIntentBanner: some View {
+        let tracker = GroupJoinIntentTracker.shared
+        switch tracker.phase {
+        case .idle, .active:
+            EmptyView()
+
+        case .accepting, .waitingForZone, .creatingMember:
+            joinBannerChip(accessibilityID: "invite_sync_banner") {
+                ProgressView()
+                    .controlSize(.small)
+                Text(L10n.Groups.Invite.syncBanner)
+                    .font(DS.Typography.caption)
+            }
+
+        case .pendingApproval:
+            joinBannerChip(accessibilityID: "invite_pending_banner") {
+                Image(systemName: "clock.arrow.circlepath")
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                Text(L10n.Groups.Invite.waitingApprovalBanner)
+                    .font(DS.Typography.caption)
+            }
+
+        case .failed(let reason):
+            switch reason {
+            case .acceptFailed(recoverable: true), .memberSaveFailed:
+                joinBannerChip(accessibilityID: "invite_failed_banner") {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                    Text(L10n.Groups.Invite.errorTitle)
+                        .font(DS.Typography.caption)
+                    Button(L10n.Action.retry) {
+                        Task { @MainActor in await tracker.retry() }
+                    }
+                    .font(DS.Typography.caption.weight(.semibold))
+                }
+            case .acceptFailed(recoverable: false), .expired:
+                joinBannerChip(accessibilityID: "invite_expired_banner") {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                    Text(L10n.Groups.Invite.expiredBanner)
+                        .font(DS.Typography.caption)
+                    Button {
+                        tracker.clear()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.caption)
+                            .accessibilityLabel(L10n.Action.cancel)
+                    }
+                }
+            }
+        }
+    }
+
+    private func joinBannerChip(
+        accessibilityID: String,
+        @ViewBuilder content: () -> some View
+    ) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            content()
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.sm)
+        .glassEffect()
+        .accessibilityIdentifier(accessibilityID)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.xs)
     }
 
     // MARK: - FAB

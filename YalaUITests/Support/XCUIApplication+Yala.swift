@@ -26,7 +26,10 @@ extension XCUIApplication {
         forceUpdate: Bool = false,
         aiConsent: Bool = false,
         groupInvite: Bool = false,
-        fakeICloud: Bool = false
+        fakeICloud: Bool = false,
+        inviteOnboarding: Bool = false,
+        joinPhase: String? = nil,
+        joinSoftTimeout: String? = nil
     ) -> XCUIApplication {
         var args = ["-uitest"]
         if reset { args.append("-uitest-reset") }
@@ -51,6 +54,15 @@ extension XCUIApplication {
         if aiConsent { args.append("-uitest-ai-consent") }
         if groupInvite { args.append("-uitest-group-invite") }
         if fakeICloud { args.append("-uitest-fake-icloud") }
+        if inviteOnboarding { args.append("-uitest-invite-onboarding") }
+        if let joinPhase {
+            args.append("-uitest-join-phase")
+            args.append(joinPhase)
+        }
+        if let joinSoftTimeout {
+            args.append("-uitest-join-soft-timeout")
+            args.append(joinSoftTimeout)
+        }
         launchArguments = args
         launch()
         return self

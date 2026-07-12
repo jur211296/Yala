@@ -69,6 +69,35 @@ final class UITestHooks {
     /// transcribe — solo destraba la navegación a la vista.
     nonisolated static var aiConsent: Bool { hasArg("-uitest-ai-consent") }
 
+    /// `-uitest-invite-onboarding`: presenta el cover de GroupInviteOnboarding directo
+    /// (sin CKShare real — no funciona en sim). Combinar con `-uitest-join-phase` para
+    /// congelar la fase del GroupJoinIntentTracker y testear cada step determinista.
+    nonisolated static var startAtInviteOnboarding: Bool { hasArg("-uitest-invite-onboarding") }
+
+    /// Valor de `-uitest-join-phase <waitingForZone|creatingMember|pendingApproval|active|failed>`:
+    /// congela la fase del tracker para los XCUI del onboarding de invitación.
+    nonisolated static var joinPhaseOverride: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-join-phase", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-join-soft-timeout <segundos>`: acorta el soft-timeout del
+    /// onboarding de invitación (default 20s) para no dormir en los XCUI.
+    var joinSoftTimeoutOverride: TimeInterval? {
+        #if DEBUG
+        guard Self.isActive,
+              let raw = Self.parseValue(after: "-uitest-join-soft-timeout", from: ProcessInfo.processInfo.arguments)
+        else { return nil }
+        return TimeInterval(raw)
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-seed-desync`: siembra un set MÍNIMO y determinista de transacciones
     /// "desincronizadas" (categoría income con monto NEGATIVO y categoría expense con
     /// monto POSITIVO) para el XCUI de clasificación income/expense por CATEGORÍA

@@ -29,6 +29,13 @@ final class SplitGroup {
     var defaultSplitType: String = "equal" // "equal" | "percentage" | "exact" | "shares"
     var membersCanInvite: Bool = false
     var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
+    /// Baseline del primer import de la zona (bug "Jür se unió al grupo"):
+    /// seteado al INSERTAR el grupo vía fetch (applyGroupMeta rama NUEVO — invitado
+    /// recién unido o reinstalación), limpiado cuando el engine completa el ciclo
+    /// de fetch de la zona (`didFetchRecordZoneChanges`). Mientras esté vigente
+    /// (< 15 min, auto-sana) se suprimen las notifs de membership de la zona.
+    /// LOCAL-ONLY: no se mapea en CKRecordTranslator (store `.none`, sin deploy).
+    var initialMemberImportStartedAt: Date?
 
     init(
         name: String = "",

@@ -49,6 +49,15 @@ final class GroupUserIdentityService {
         UserDefaults.standard.removeObject(forKey: defaultsKey)
     }
 
+    #if DEBUG
+    /// Test-only: fija la identidad cacheada sin tocar CKContainer (los tests de
+    /// GroupJoinReconciler necesitan que `currentUserRecordName()` resuelva
+    /// determinístico y offline). No persiste en UserDefaults.
+    func _testSetCachedRecordName(_ name: String?) {
+        cachedRecordName = name
+    }
+    #endif
+
     func deterministicMemberID(groupZoneID: String) async throws -> UUID {
         let recordName = try await currentUserRecordName()
         return Self.deterministicUUID(namespace: "SplitMember", name: "\(groupZoneID):\(recordName)")
