@@ -139,13 +139,24 @@ final class SyncPushClient {
         baseURL: URL = ProxyConfig.baseURL,
         tokenProvider: @escaping () async -> String?,
         attestProvider: @escaping () async -> String? = { nil },
-        urlSession: SyncHTTPSession = URLSession.shared
+        urlSession: SyncHTTPSession = URLSession.shared,
+        pushChunkSize: Int = 50
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
         self.attestProvider = attestProvider
         self.urlSession = urlSession
+        self.pushChunkSize = max(1, pushChunkSize)
     }
+
+    /// Máximo de deltas por REQUEST (I14-H2, corrida device 2026-07-12): el Worker aplica los
+    /// `apply_delta` SECUENCIALMENTE (~300ms c/u) → un batch sin cap (p.ej. el backlog de ~800 filas sin
+    /// confirmar que deja un kill a mitad del snapshot) excede el timeout del URLSession (`-1001` a ~60s)
+    /// con ~200 aplicadas server-side → `.transient` → `applyResults` nunca corre → nada se purga → el
+    /// próximo intento re-manda el MISMO backlog en el mismo orden = re-upserts idempotentes en LOOP sin
+    /// progreso (heartbeat congelado, cursor clavado). 50 deltas ≈ 15s de Worker (margen 4× bajo el
+    /// timeout). El progreso es INCREMENTAL por chunk (ver `push`).
+    private let pushChunkSize: Int
 
     // MARK: buildDelta
 
@@ -202,8 +213,15 @@ final class SyncPushClient {
 
     // MARK: push
 
-    /// Sube `rows` a `POST /sync/push`. NO purga nada (eso es `applyResults`). Devuelve un `PushOutcome`
-    /// estructurado — nunca lanza por un fallo de red/HTTP (se mapea a `.transient`).
+    /// Sube `rows` a `POST /sync/push` en CHUNKS de `pushChunkSize` (I14-H2). NO purga nada (eso es
+    /// `applyResults`). Nunca lanza por un fallo de red/HTTP (se mapea a `.transient`).
+    ///
+    /// **Progreso incremental (I14-H2):** si un chunk falla tras chunks ya confirmados, devuelve
+    /// `.completed(resultadosParciales)` — el caller (`applyResults`) purga LO CONFIRMADO y el próximo
+    /// intento re-emite solo el resto (el criterio "outbox vacío" del uploader clasifica el intento como
+    /// transient y reintenta con backlog MENOR → converge). Un outcome TERMINAL (401/403/409-reverting)
+    /// en un chunk tardío resurfacea en el PRIMER chunk del próximo intento — la semántica de STOP se
+    /// conserva con un ciclo de retraso, sin perder el progreso ya aplicado.
     func push(_ rows: [SyncOutbox]) async -> PushOutcome {
         guard !rows.isEmpty else { return .completed([]) }
 
@@ -225,12 +243,39 @@ final class SyncPushClient {
             return .transient
         }
 
+        // Attest UNA vez para todos los chunks (TTL de sesión ≫ duración del push).
+        let attest = await attestProvider()
+
+        var confirmed: [SyncDeltaResult] = []
+        var index = 0
+        while index < deltas.count {
+            let upper = min(index + pushChunkSize, deltas.count)
+            let outcome = await pushBatch(
+                Array(deltas[index..<upper]), token: token, attest: attest, totalPending: rows.count)
+            switch outcome {
+            case .completed(let results):
+                confirmed.append(contentsOf: results)
+                index = upper
+            case .sessionExpired, .accountUnavailable, .transient:
+                // Progreso parcial: lo confirmado se entrega para purgarse; sin nada confirmado, el
+                // outcome del chunk fallido sube tal cual (conserva la clasificación 401/403/transient).
+                return confirmed.isEmpty ? outcome : .completed(confirmed)
+            }
+        }
+        return .completed(confirmed)
+    }
+
+    /// UN request `POST /sync/push` con un chunk de deltas. Extraído de `push` (I14-H2) sin cambios de
+    /// mapeo: la clasificación de status es EXACTAMENTE la previa.
+    private func pushBatch(
+        _ deltas: [SyncDelta], token: String, attest: String?, totalPending: Int
+    ) async -> PushOutcome {
         let body = wireBody(deltas)
         var request = URLRequest(url: baseURL.appendingPathComponent("sync/push"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        if let attest = await attestProvider(), !attest.isEmpty {
+        if let attest, !attest.isEmpty {
             request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
         }
         request.httpBody = body
@@ -261,9 +306,9 @@ final class SyncPushClient {
                 return .transient
             }
         case 401:
-            CloudSyncBreadcrumb.pushBlockedNoSession(pending: rows.count)
-            TelemetryService.cloudSyncBlockedByExpiredSession(pending: rows.count)
-            return .sessionExpired(pending: rows.count)
+            CloudSyncBreadcrumb.pushBlockedNoSession(pending: totalPending)
+            TelemetryService.cloudSyncBlockedByExpiredSession(pending: totalPending)
+            return .sessionExpired(pending: totalPending)
         case 403:
             CloudSyncBreadcrumb.pushAccountUnavailable()
             TelemetryService.cloudAccountUnavailable()

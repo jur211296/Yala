@@ -45,6 +45,25 @@ private final class StubHTTPSession: SyncHTTPSession, @unchecked Sendable {
     }
 }
 
+/// Stub SECUENCIAL (I14-H2): una respuesta por llamada, en orden; registra CADA request para assertar
+/// el chunking (nº de requests + tamaño real de cada body). Agotadas las respuestas → 500 (falla ruidoso).
+private final class SequencedHTTPSession: SyncHTTPSession, @unchecked Sendable {
+    struct Step { let status: Int; let body: Data; let error: Error? }
+    private var steps: [Step]
+    private(set) var requests: [URLRequest] = []
+    init(_ steps: [Step]) { self.steps = steps }
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        requests.append(request)
+        let step = steps.isEmpty ? Step(status: 500, body: Data(), error: nil) : steps.removeFirst()
+        if let error = step.error { throw error }
+        let response = HTTPURLResponse(
+            url: request.url!, statusCode: step.status, httpVersion: nil, headerFields: nil
+        )!
+        return (step.body, response)
+    }
+}
+
 @Suite("SyncPushClient · sender I8e", .serialized)
 @MainActor
 struct SyncPushClientTests {
@@ -265,6 +284,89 @@ struct SyncPushClientTests {
         let outcome = await client.push([row])
         #expect(outcome == .sessionExpired(pending: 1))
         #expect(session.lastRequest == nil)               // no red sin sesión.
+    }
+
+    // MARK: - Chunking (I14-H2, corrida device 2026-07-12)
+
+    /// Body 200-OK con `n` results applied (cmids arbitrarios — push solo decodifica, no correlaciona).
+    private func okBody(_ n: Int) -> Data {
+        let items = (0..<n).map { _ in
+            #"{"sync_id":"\#(UUID().uuidString.lowercased())","client_mutation_id":"\#(UUID().uuidString.lowercased())","status":"applied"}"#
+        }
+        return Data(#"{"results":[\#(items.joined(separator: ","))]}"#.utf8)
+    }
+
+    private func makeRows(_ n: Int, context: ModelContext) -> [SyncOutbox] {
+        (0..<n).map { i in
+            makeUpsertRow(fieldsJSON: #"{"note":"r\#(i)"}"#, fieldHlcsJSON: #"{"note":"h"}"#,
+                          hlc: "h\(i)", context: context)
+        }
+    }
+
+    @Test func push_chunks_splitsRequests_andAggregatesResults() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let rows = makeRows(5, context: context)
+        let session = SequencedHTTPSession([
+            .init(status: 200, body: okBody(2), error: nil),
+            .init(status: 200, body: okBody(2), error: nil),
+            .init(status: 200, body: okBody(1), error: nil),
+        ])
+        let client = SyncPushClient(
+            baseURL: URL(string: "https://example.test")!,
+            tokenProvider: { "jwt" }, urlSession: session, pushChunkSize: 2)
+
+        let outcome = await client.push(rows)
+        guard case .completed(let results) = outcome else {
+            Issue.record("expected .completed, got \(outcome)"); return
+        }
+        #expect(results.count == 5)                       // agregado de los 3 chunks
+        #expect(session.requests.count == 3)              // 2+2+1
+        // Cada BODY lleva exactamente su chunk (contenido REAL del wire, lección d49d2e47).
+        let sizes = session.requests.map { req -> Int in
+            let body = String(data: req.httpBody ?? Data(), encoding: .utf8) ?? ""
+            return body.components(separatedBy: "\"client_mutation_id\"").count - 1
+        }
+        #expect(sizes == [2, 2, 1])
+    }
+
+    /// Chunk que falla TRAS chunks confirmados → `.completed(parciales)`: el caller purga lo confirmado
+    /// y el próximo intento re-emite solo el resto (progreso incremental — el corazón del fix H2).
+    @Test func push_chunkFailureAfterProgress_returnsPartialCompleted() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let rows = makeRows(4, context: context)
+        let session = SequencedHTTPSession([
+            .init(status: 200, body: okBody(2), error: nil),
+            .init(status: 0, body: Data(), error: URLError(.timedOut)),   // el -1001 real del device
+        ])
+        let client = SyncPushClient(
+            baseURL: URL(string: "https://example.test")!,
+            tokenProvider: { "jwt" }, urlSession: session, pushChunkSize: 2)
+
+        let outcome = await client.push(rows)
+        guard case .completed(let results) = outcome else {
+            Issue.record("expected .completed(parciales), got \(outcome)"); return
+        }
+        #expect(results.count == 2)                       // SOLO el chunk confirmado
+        #expect(session.requests.count == 2)              // no siguió empujando tras el fallo
+    }
+
+    /// Primer chunk falla → el outcome del fallo sube TAL CUAL (conserva la clasificación).
+    @Test func push_firstChunkFails_preservesOutcome() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let rows = makeRows(4, context: context)
+        let session = SequencedHTTPSession([
+            .init(status: 0, body: Data(), error: URLError(.timedOut)),
+        ])
+        let client = SyncPushClient(
+            baseURL: URL(string: "https://example.test")!,
+            tokenProvider: { "jwt" }, urlSession: session, pushChunkSize: 2)
+
+        let outcome = await client.push(rows)
+        #expect(outcome == .transient)
+        #expect(session.requests.count == 1)
     }
 
     @Test func push_sendsAuthorizationHeader() async throws {
