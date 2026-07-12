@@ -1318,12 +1318,19 @@ struct MainTabView: View {
             ownModalVisible: ownModalVisible
         )
         guard decision == .drain else {
+            // Canario D4: solo los flags PUBLICADOS pueden quedar pegados
+            // (shellModalBlocker); ownModalVisible es @State local atado a
+            // sheets reales que SwiftUI resetea en el dismiss.
+            if let blocker = sessionState.shellModalBlocker {
+                RouterHoldCanary.shared.noteHold(intentID: next.id, blocker: blocker, consumer: "mainTab")
+            }
             #if DEBUG
             print("MainTabView drain hold: \(next.id) por \(sessionState.shellModalBlocker ?? "ownModal")")
             #endif
             return
         }
         guard let intent = AppRouter.shared.drainNext(for: .mainTab) else { return }
+        RouterHoldCanary.shared.noteDrained(intentID: intent.id)
         handleMainTabIntent(intent)
     }
 

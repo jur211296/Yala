@@ -527,6 +527,7 @@
         "Yala/App/Models/SessionState.swift",
         "Yala/App/Logic/MainTabSelectionLogic.swift",
         "Yala/App/Logic/RouterConsumerGateLogic.swift",
+        "Yala/App/Logic/RouterHoldCanary.swift",
         "Yala/App/Models/AppRouter.swift"
       ],
       "scenarioIDs": [
@@ -536,9 +537,9 @@
         "F-NAV-07"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/DeeplinkRoutingUITests + unit:YalaTests/RouterConsumerGateLogicTests,RoutingIntegrationTests (gate Clase D: intents de .mainTab/.panel retenidos en cola con un nodo superior tapando — peek-first, jamás consumidos tapados)",
+      "coverage": "xcuitest:YalaUITests/DeeplinkRoutingUITests,PaywallInboxAlertRoutingUITests + unit:YalaTests/RouterConsumerGateLogicTests,RoutingIntegrationTests,RouterHoldCanaryTests (gate Clase D: intents de .mainTab/.panel retenidos en cola con un nodo superior tapando — peek-first, jamás consumidos tapados; canario D4 routingDrainHoldSustained para flags publicados pegados >45s)",
       "owner": "",
-      "lastVerified": "2026-07-11"
+      "lastVerified": "2026-07-12"
     },
     {
       "area": "deferred-filters-apply-discard",

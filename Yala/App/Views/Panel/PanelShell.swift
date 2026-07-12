@@ -83,14 +83,25 @@ struct PanelShell: View {
             panelModalVisible: sheets.hasActivePresentation
                 || sessionState.showNewTransactionFromChat
         ) else {
-            #if DEBUG
-            if let pending = AppRouter.shared.peekNext(for: .panel) {
+            // Canario D4: solo con el tab correcto y por flags PUBLICADOS
+            // (shellModalBlocker / isMainTabModalVisible) — tab equivocado,
+            // chat abierto o sheet propio del panel son estado local real
+            // del usuario, no un flag pegado.
+            if sessionState.selectedMainTab == .panel,
+               let pending = AppRouter.shared.peekNext(for: .panel) {
+                if let blocker = sessionState.shellModalBlocker {
+                    RouterHoldCanary.shared.noteHold(intentID: pending.id, blocker: blocker, consumer: "panel")
+                } else if sessionState.isMainTabModalVisible {
+                    RouterHoldCanary.shared.noteHold(intentID: pending.id, blocker: "mainTabModal", consumer: "panel")
+                }
+                #if DEBUG
                 print("PanelShell drain hold: \(pending.id) por \(sessionState.shellModalBlocker ?? "modal visible")")
+                #endif
             }
-            #endif
             return
         }
         guard let intent = AppRouter.shared.drainNext(for: .panel) else { return }
+        RouterHoldCanary.shared.noteDrained(intentID: intent.id)
         handlePanelIntent(intent)
     }
 

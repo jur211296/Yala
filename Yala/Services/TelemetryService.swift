@@ -165,6 +165,7 @@ enum AnalyticsEvent: String {
     case routingIntentSuperseded = "Diagnóstico · Routing supersedido"  // a queued intent was dropped by an incoming one
     case routingIntentDeferred = "Diagnóstico · Routing diferido"  // an incoming intent was persisted to DeferredIntentBuffer
     case routingReadinessBlocked = "Diagnóstico · Routing bloqueado"  // a drain was blocked because a modal was visible
+    case routingDrainHoldSustained = "Diagnóstico · Routing hold sostenido"  // params: blocker, consumer — CANARIO (D4, gate Clase D): un intent de .mainTab/.panel lleva >45s retenido Y sigue en cola → flag publicado pegado (shellModalBlocker/isMainTabModalVisible/hasActivePresentation stale). >0 sostenido = presentaciones congeladas en producción. La DISPARA RouterHoldCanary. Sin PII
     case routingWelcomeChainSuperseded = "Diagnóstico · Routing welcome supersedido"  // welcome chain dismissed to let a superseding intent drain (B4-04)
     case inviteReEmittedFromStore = "Diagnóstico · Invitación re-emitida"  // a persisted group invite was re-emitted after the transient intent was dropped
     case invitePendingExpired = "Diagnóstico · Invitación pendiente expirada"  // a persisted group invite was purged by TTL (24h) before presenting
@@ -321,6 +322,15 @@ enum TelemetryService {
     static func routingReadinessBlocked(blocker: String) {
         track(.routingReadinessBlocked, parameters: [
             "blocker": blocker
+        ])
+    }
+
+    /// CANARIO D4: un intent de .mainTab/.panel retenido por el gate Clase D
+    /// superó el umbral sostenido Y sigue en cola — flag publicado pegado.
+    static func routingDrainHoldSustained(blocker: String, consumer: String) {
+        track(.routingDrainHoldSustained, parameters: [
+            "blocker": blocker,
+            "consumer": consumer
         ])
     }
 
