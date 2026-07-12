@@ -1144,8 +1144,7 @@
       "codeGlobs": [
         "Yala/App/Views/Shared/InboxAlertModal.swift",
         "Yala/App/Intents/QuickExpenseIntent.swift",
-        "Yala/Shared/ControlCenterIntents.swift",
-        "Yala/App/Models/PresentationCoordinator.swift"
+        "Yala/Shared/ControlCenterIntents.swift"
       ],
       "scenarioIDs": [
         "F-INB-01",
@@ -1163,9 +1162,7 @@
       "area": "inbox-new-items-modal",
       "codeGlobs": [
         "Yala/App/Views/Shared/InboxAlertModal.swift",
-        "Yala/App/Models/PresentationCoordinator.swift",
         "Yala/App/Models/RouterEntryGate.swift",
-        "Yala/App/Logic/PresentationCascadeLogic.swift",
         "Yala/App/ContentView.swift",
         "Yala/App/ViewModels/InboxViewModel.swift"
       ],
