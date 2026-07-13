@@ -601,6 +601,10 @@ final class CloudSyncRuntime {
         // backend mientras las escrituras van a iKV = split-brain (y los markers de test de staging
         // pisarían prefs reales del user de spike). El sync de prefs solo existe en `.cloud`.
         guard CloudSyncFlags.storageMode == .cloud else { return }
+        // M1 (decisión 7): en sesión SECUNDARIA el paso 5.5 NO corre — ni push (el outbox local no
+        // recibe prefs de la invitada, behavior localOnly) ni pull (pisaría las prefs device-local
+        // del dueño con las de la cuenta entrante). Espeja `PrefsSyncBehavior.resolve`.
+        guard !SecondarySessionStore.isActive() else { return }
         guard let prefsClient, let prefsOutbox, let userID = session.currentUserID else { return }
 
         // Push: subir las entries del owner actual (owner-scoping M1).
