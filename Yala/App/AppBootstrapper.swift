@@ -1024,6 +1024,13 @@ final class AppBootstrapper {
 
     /// Llamar cuando la app se activa (scenePhase == .active)
     func handleBecameActive(context: ModelContext) {
+        // H4 (S2 del review): con el wipe de sign-out ARMADO (sesión cerrada, esperando
+        // relaunch) NADA debe escribir en el store — el boot siguiente lo BORRA y el
+        // runtime ya está muerto (nadie pushearía lo escrito). Congela los drains de
+        // intents App Group (Apple Pay/Siri), reconciles y demás side-effects de
+        // foreground. Las colas App Group NO se consumen (drenan tras el relaunch).
+        guard !StorageModePersistence.isSignOutWipeArmed() else { return }
+
         // Warm-start telemetry
         if hasSeenInitialActive {
             TelemetryService.track(.appResumed)

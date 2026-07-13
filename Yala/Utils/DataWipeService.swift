@@ -214,6 +214,26 @@ final class DataWipeService {
         }
     }
 
+    // MARK: - Reset del boot-cleanup de cierre de sesión (H4)
+
+    /// Reset a "recién instalada" SIN ModelContext — para el boot-cleanup del sign-out en `.cloud`
+    /// (`SwiftDataConfiguration.performSignOutWipeIfArmed`), donde los datos mueren por borrado de
+    /// ARCHIVOS del store, no por deletes de filas. Reusa el mismo reset de prefs/caches del wipe
+    /// normal (onboarding, seeds, router, checklist, widgets, TipKit, imagen de perfil).
+    /// Corre PRE-UI en el arranque: solo toca UserDefaults, archivos y singletons de estado.
+    static func resetForSignOutWipe() {
+        ProfileImageStorage.shared.delete()
+        resetAllUserPreferences()
+        WidgetDataCache.clearCache()
+        do {
+            try Tips.resetDatastore()
+        } catch {
+            #if DEBUG
+            print("DataWipeService: TipKit reset failed: \(error)")
+            #endif
+        }
+    }
+
     // MARK: - Reset de preferencias de usuario
     private static func resetAllUserPreferences() {
         let defaults = UserDefaults.standard

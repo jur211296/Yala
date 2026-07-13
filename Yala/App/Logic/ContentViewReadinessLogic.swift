@@ -25,6 +25,13 @@ struct ShellReadinessState: Equatable {
     let showLanguageSelection: Bool
     let showWelcomeRestore: Bool
     let showInviteRecovery: Bool
+    /// H4: cover de sign-in a cuenta nube desde el Welcome. NO está en
+    /// `welcomeChainBlockers` a propósito: un adopt en vuelo no debe tumbarse
+    /// por un intent superseding (los intents se RETIENEN hasta que termine).
+    let showWelcomeCloudSignIn: Bool
+    /// H4: cover terminal del cierre de sesión `.cloud` (wipe armado, esperando
+    /// relaunch). Severidad máxima tras wipingData: nada debe presentarse debajo.
+    let showSignOutRelaunch: Bool
 
     // System alerts (block readiness — alert → would collide with subsequent intent)
     let showFreshStartWipeAlert: Bool
@@ -66,6 +73,8 @@ enum ContentViewReadinessLogic {
     static func blocker(state: ShellReadinessState) -> String? {
         // Order = severity. Wipe trumps everything.
         if state.isWipingData { return "wipingData" }
+        // H4: sesión cerrada + wipe de boot ARMADO — terminal, nada presenta debajo.
+        if state.showSignOutRelaunch { return "signOutRelaunch" }
         if !state.isSplashDismissed { return "splash" }
 
         // System alerts: must clear before the next router intent presents.
@@ -81,6 +90,7 @@ enum ContentViewReadinessLogic {
         if state.showWelcomeFlow { return "welcomeFlow" }
         if state.showWelcomeRestore { return "welcomeRestore" }
         if state.showInviteRecovery { return "inviteRecovery" }
+        if state.showWelcomeCloudSignIn { return "welcomeCloudSignIn" }
         if state.showOnboarding { return "onboarding" }
         if state.showFullModeActivation { return "fullModeActivation" }
 
@@ -140,6 +150,8 @@ extension ShellReadinessState {
             showLanguageSelection: false,
             showWelcomeRestore: false,
             showInviteRecovery: false,
+            showWelcomeCloudSignIn: showWelcomeCloudSignIn,
+            showSignOutRelaunch: showSignOutRelaunch,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,

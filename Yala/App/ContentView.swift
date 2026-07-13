@@ -19,6 +19,13 @@ struct ContentView: View {
     @State private var showOnboarding: Bool = false
     @State private var showLanguageSelection: Bool = false
     @State private var showWelcomeRestore: Bool = false
+    // H4: re-entrada a cuenta del Modo Nube desde el Welcome (SIWA → exists → adopt).
+    @State private var showWelcomeCloudSignIn: Bool = false
+    // H4 (C1 del review adversarial): red DURABLE del cover de relaunch del sign-out
+    // `.cloud`. ProfileView (sheet dismissible) presenta el suyo encima del sheet; este
+    // flag garantiza que con el wipe ARMADO la app jamás quede usable aunque el sheet
+    // muera — SwiftUI materializa la presentación pendiente al despejarse el anchor.
+    @State private var showSignOutRelaunchCover: Bool = false
     @State private var showInviteRecovery: Bool = false
     /// Prefilled summary from iCloud restore (rama B). Pasado a OnboardingView
     /// como `prefilledData`. Reseteado tras data wipe para evitar values stale.
@@ -353,12 +360,17 @@ struct ContentView: View {
             showOnboarding: $showOnboarding,
             showWelcomeRestore: $showWelcomeRestore,
             showInviteRecovery: $showInviteRecovery,
+            showWelcomeCloudSignIn: $showWelcomeCloudSignIn,
             prefilledOnboardingData: $prefilledOnboardingData,
             hasShownWelcomeChooser: $hasShownWelcomeChooser,
             hasCompletedOnboarding: $hasCompletedOnboarding,
             showFreshStartWipeAlert: $showFreshStartWipeAlert,
             hasExistingData: hasExistingData,
+            hasLocalDataNow: { checkHasExistingData() },
             showGroupInviteOnboarding: showGroupInviteOnboarding
+        ))
+        .modifier(SignOutRelaunchNetModifier(
+            showRelaunchCover: $showSignOutRelaunchCover
         ))
         .modifier(GroupInviteModifier(
             showGroupInviteOnboarding: $showGroupInviteOnboarding,
@@ -480,6 +492,8 @@ struct ContentView: View {
             showLanguageSelection: showLanguageSelection,
             showWelcomeRestore: showWelcomeRestore,
             showInviteRecovery: showInviteRecovery,
+            showWelcomeCloudSignIn: showWelcomeCloudSignIn,
+            showSignOutRelaunch: showSignOutRelaunchCover,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
@@ -550,6 +564,8 @@ struct ContentView: View {
             showLanguageSelection: showLanguageSelection,
             showWelcomeRestore: showWelcomeRestore,
             showInviteRecovery: showInviteRecovery,
+            showWelcomeCloudSignIn: showWelcomeCloudSignIn,
+            showSignOutRelaunch: showSignOutRelaunchCover,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
@@ -942,11 +958,16 @@ private struct WelcomeFlowModifier: ViewModifier {
     @Binding var showOnboarding: Bool
     @Binding var showWelcomeRestore: Bool
     @Binding var showInviteRecovery: Bool
+    @Binding var showWelcomeCloudSignIn: Bool
     @Binding var prefilledOnboardingData: ICloudAccountSummary?
     @Binding var hasShownWelcomeChooser: Bool
     @Binding var hasCompletedOnboarding: Bool
     @Binding var showFreshStartWipeAlert: Bool
     let hasExistingData: Bool
+    /// S5 del review adversarial: el guard cross-cuenta evalúa datos locales EN el
+    /// momento de la decisión (fetch vivo), no el snapshot `hasExistingData` — el
+    /// mirror de iCloud puede estar re-importando en background durante el Welcome.
+    let hasLocalDataNow: @MainActor () -> Bool
     let showGroupInviteOnboarding: Bool
 
     func body(content: Content) -> some View {
@@ -993,9 +1014,88 @@ private struct WelcomeFlowModifier: ViewModifier {
                         hasShownWelcomeChooser = true
                         showWelcomeFlow = false
                         showWelcomeRestore = true
+                    },
+                    onSelectExistingOption: { option in
+                        // H4: sub-elección de "Ya tengo una cuenta" (o su bypass — hoy en
+                        // prod DARK siempre .restoreICloud = flujo restore actual intacto).
+                        hasShownWelcomeChooser = true
+                        switch option {
+                        case .restoreICloud:
+                            showWelcomeFlow = false
+                            showWelcomeRestore = true
+                        case .cloudSignIn:
+                            showWelcomeFlow = false
+                            showWelcomeCloudSignIn = true
+                        }
                     }
                 )
                 .environment(SessionState.shared)
+            }
+            // H4: re-entrada a una cuenta del Modo Nube (SIWA → exists → adopt).
+            // Gate group-invite (mismo patrón que el cover del flow) + onDismiss de
+            // respaldo (C2): si UIKit tumba el cover sin terminal, reabrir el chooser
+            // — jamás dejar al usuario en pantalla vacía con onboarding incompleto.
+            .fullScreenCover(
+                isPresented: $showWelcomeCloudSignIn.gated(by: showGroupInviteOnboarding),
+                onDismiss: {
+                    if !hasCompletedOnboarding && !showGroupInviteOnboarding {
+                        welcomeFlowInitialStep = .chooser
+                        showWelcomeFlow = true
+                    }
+                }
+            ) {
+                WelcomeCloudSignInView(
+                    hasLocalDataNow: hasLocalDataNow,
+                    onAdoptStarted: {
+                        // TEMPRANO (antes de conducir la máquina): cierra el hazard
+                        // kill-mid-adopt → el seed del onboarding jamás corre sobre una
+                        // cuenta existente; un kill aterriza en MainTab con la card de
+                        // Almacenamiento reflejando el estado real del adopt.
+                        completeOnboardingAsRestoreSkip()
+                        hasCompletedOnboarding = true
+                    },
+                    onFinishedToApp: {
+                        showWelcomeCloudSignIn = false
+                    },
+                    onBack: {
+                        showWelcomeCloudSignIn = false
+                        welcomeFlowInitialStep = .chooser
+                        showWelcomeFlow = true
+                    }
+                )
+            }
+    }
+}
+
+// MARK: - Sign-out relaunch net (H4, C1 del review adversarial)
+
+/// Red DURABLE del estado PELIGROSO del cierre de sesión `.cloud` (`awaitingRelaunch`
+/// = wipe de boot ARMADO): el cover primario vive en ProfileView (encima de su sheet),
+/// pero si el sheet muere por cualquier vía, este anchor re-presenta el cover terminal.
+/// `signOutRelaunch` es además blocker de la matriz de readiness (nada presenta debajo).
+private struct SignOutRelaunchNetModifier: ViewModifier {
+    @Binding var showRelaunchCover: Bool
+
+    private var phase: CloudSessionSignOut.Phase { CloudSessionSignOut.shared.phase }
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                if phase == .awaitingRelaunch { showRelaunchCover = true }
+            }
+            .onChange(of: phase) { _, newPhase in
+                if newPhase == .awaitingRelaunch { showRelaunchCover = true }
+            }
+            .fullScreenCover(
+                isPresented: $showRelaunchCover,
+                onDismiss: {
+                    // Terminal: si UIKit lo tumbara, re-presentar (regla toolbar-muerta).
+                    if CloudSessionSignOut.shared.phase == .awaitingRelaunch {
+                        showRelaunchCover = true
+                    }
+                }
+            ) {
+                SignOutRelaunchView()
             }
     }
 }

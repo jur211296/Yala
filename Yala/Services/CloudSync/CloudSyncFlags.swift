@@ -65,6 +65,28 @@ nonisolated enum StorageModePersistence {
     static func isMirrorOffArmed(_ defaults: UserDefaults = .standard) -> Bool {
         defaults.bool(forKey: mirrorOffArmedKey)
     }
+
+    /// Flag "wipe de cierre de sesión ARMADO" (H4 — "Cerrar sesión" en `.cloud`). Lo escribe el
+    /// coordinador de sign-out DESPUÉS de subir todo el outbox y cerrar la sesión; el BOOT siguiente
+    /// (pre-mount, `SwiftDataConfiguration.performSignOutWipeIfArmed`) borra los ARCHIVOS de los
+    /// stores personal + sync-meta y devuelve el device a `.icloud` fresh. Se borra ARCHIVOS y no
+    /// FILAS porque los deletes de filas quedan en la History y el remount mirror-ON los REPLAYARÍA
+    /// hacia iCloud (qa/cloud/README HALLAZGO 3 — la red primaria de propagación de borrados).
+    /// El par `.cloud`+mirrorOffArmed NO se toca al armar (invariante SERIO-1): lo resuelve el boot.
+    static let signOutWipeArmedKey = "cloudSync.signOutWipeArmed"
+
+    static func armSignOutWipe(_ defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: signOutWipeArmedKey)
+    }
+
+    static func isSignOutWipeArmed(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: signOutWipeArmedKey)
+    }
+
+    /// Desarmar — SIEMPRE el ÚLTIMO paso del boot-cleanup (un kill a mitad re-entra idempotente).
+    static func clearSignOutWipeArm(_ defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: signOutWipeArmedKey)
+    }
 }
 
 /// Flags del Modo Nube. DARK por defecto.

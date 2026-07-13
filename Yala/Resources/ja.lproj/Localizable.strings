@@ -4748,3 +4748,84 @@
 
 /* Groups tab banner when join intent TTL expired */
 "groups.invite.expired.banner" = "グループに接続できませんでした。管理者に新しいリンクをもらってください。";
+
+/* Row label in Settings > Security to sign out of the account session */
+"settings.signOut" = "サインアウト";
+
+/* Confirmation dialog title for sign out */
+"settings.signOutConfirmTitle" = "このデバイスからサインアウトしますか？";
+
+/* Destructive confirm button in sign out dialog */
+"settings.signOutConfirmAction" = "サインアウト";
+
+/* Sign out dialog message when in cloud storage mode */
+"settings.signOutConfirmMessageCloud" = "まず保留中の変更をクラウドにアップロードします。データはアカウントに安全に保存されたまま、このデバイスはインストール直後の状態で開始画面に戻ります。";
+
+/* Sign out dialog message when in private iCloud mode */
+"settings.signOutConfirmMessageICloud" = "データは削除されません。このデバイスとiCloudに残ります。開始画面に戻り、いつでもまたサインインできます。";
+
+/* Alert title when pending uploads block sign out */
+"settings.signOutBlockedTitle" = "サインアウトできませんでした";
+
+/* Alert message when pending uploads block sign out */
+"settings.signOutBlockedMessage" = "まだクラウドにアップロードされていない変更があります。大切なデータを失わないよう、接続を確認してからもう一度お試しください。";
+
+/* Subtitle of the existing-account sub-chooser in Welcome */
+"welcome.existing.subtitle" = "データの復元方法を選んでください。";
+
+/* Card title: restore from iCloud */
+"welcome.existing.restoreTitle" = "iCloudから復元";
+
+/* Card body: restore from iCloud */
+"welcome.existing.restoreBody" = "iCloudに保存されたデータがこのデバイスに戻ります。";
+
+/* Card title: sign in to cloud account */
+"welcome.existing.cloudTitle" = "Appleでサインイン";
+
+/* Card body: sign in to cloud account */
+"welcome.existing.cloudBody" = "クラウド上のYalaアカウントに、どのデバイスからでも。";
+
+/* Cloud sign-in screen title */
+"welcome.cloud.title" = "アカウントにサインイン";
+
+/* Cloud sign-in screen subtitle */
+"welcome.cloud.subtitle" = "クラウドアカウントを作成したときと同じApple IDを使ってください。";
+
+/* Progress label while checking account exists */
+"welcome.cloud.checking" = "アカウントを確認しています…";
+
+/* Progress label while adopt flow runs */
+"welcome.cloud.adopting" = "アカウントに接続しています…";
+
+/* Hint under adopt progress */
+"welcome.cloud.adoptingHint" = "数分かかることがあります。Yalaを開いたままにしてください。";
+
+/* Title when Apple ID has no cloud account */
+"welcome.cloud.notFoundTitle" = "アカウントが見つかりませんでした";
+
+/* Body when Apple ID has no cloud account */
+"welcome.cloud.notFoundBody" = "このApple IDにはまだYalaのクラウドアカウントがありません。";
+
+/* Title when foreign local data blocks sign-in */
+"welcome.cloud.blockedTitle" = "このデバイスには別のアカウントのデータがあります";
+
+/* Body when foreign local data blocks sign-in */
+"welcome.cloud.blockedBody" = "データ保護のため、ここでは別のアカウントを接続できません。持ち主はいつでも再度サインインできます。";
+
+/* Title for cloud sign-in error */
+"welcome.cloud.errorTitle" = "問題が発生しました";
+
+/* Body for cloud sign-in error */
+"welcome.cloud.errorBody" = "アカウントを確認できませんでした。接続を確認してからもう一度お試しください。";
+
+/* Retry button */
+"welcome.cloud.retry" = "もう一度試す";
+
+/* Title for waiting-for-leader state */
+"welcome.cloud.waitingTitle" = "別のデバイスでアカウントを準備しています";
+
+/* Body for waiting-for-leader state */
+"welcome.cloud.waitingBody" = "ここで待つか、アプリに進むこともできます。引き続き試行します。";
+
+/* Secondary action in waiting-for-leader state */
+"welcome.cloud.continueToApp" = "アプリに進む";

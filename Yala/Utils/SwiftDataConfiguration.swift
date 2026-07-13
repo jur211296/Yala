@@ -242,6 +242,74 @@ enum SwiftDataConfiguration {
         personalStoreMountedMode = mode
     }
 
+    // MARK: - Sign-out wipe (H4 — "Cerrar sesión" en `.cloud`)
+
+    /// BOOT-CLEANUP del cierre de sesión en `.cloud`. DEBE correr ANTES de construir el
+    /// ModelContainer (pre-mount): borra los ARCHIVOS de los stores personal y sync-meta y deja el
+    /// device como recién instalado. Se borran ARCHIVOS y no FILAS a propósito — los deletes de
+    /// filas quedan en la SwiftData History y el remount mirror-ON los REPLAYARÍA hacia iCloud
+    /// destruyendo el backup congelado pre-migración (qa/cloud/README HALLAZGO 3). Un archivo
+    /// nuevo no tiene History: el remount hace fresh import de iCloud = semántica de reinstalación.
+    ///
+    /// Precondiciones: el coordinador de sign-out ya subió TODO el outbox (verificado), cerró la
+    /// sesión y armó `signOutWipeArmed`. El store de GRUPOS no se toca (CKSyncEngine propio, sigue
+    /// atado al iCloud del OS). El claim-store (UserDefaults keyed por userID) sobrevive → la misma
+    /// cuenta re-entra por adopt sin migración.
+    ///
+    /// Orden IDEMPOTENTE ante kill a mitad (el arm se limpia AL FINAL; re-entrada re-ejecuta:
+    /// archivos ya ausentes = no-op, escrituras de flags idempotentes):
+    /// 1) archivos personal + sync-meta → 2) par storageMode/mirrorOffArmed a `.icloud` fresh
+    /// (invariante SERIO-1: juntos) → 3) prefs/caches/onboarding a estado recién instalada →
+    /// 4) desarmar.
+    static func performSignOutWipeIfArmed() {
+        guard !isRunningTests, !isUITesting else { return }
+        guard StorageModePersistence.isSignOutWipeArmed() else { return }
+
+        // S3 del review: si el borrado del archivo BASE falla (≠ no-existe), ABORTAR sin
+        // escribir `.icloud` ni desarmar — continuar remontaría el mirror SOBRE el archivo
+        // de la época `.cloud` y el replay de su History destruiría el backup de iCloud
+        // (exactamente el fallo que el borrado-por-archivos existe para impedir). El arm
+        // persiste → el próximo boot reintenta; mientras tanto el par SERIO-1 sigue
+        // consistente (`.cloud`+mirrorOffArmed → mount mirror-OFF, sin riesgo).
+        guard deleteStoreFiles(named: databaseName, schema: personalSchema),
+              deleteStoreFiles(named: syncMetaDatabaseName, schema: syncMetaSchema) else {
+            CloudSyncBreadcrumb.signOutWipeAborted(reason: "store file deletion failed")
+            return
+        }
+
+        StorageModePersistence.write(.icloud)
+        UserDefaults.standard.removeObject(forKey: StorageModePersistence.mirrorOffArmedKey)
+
+        DataWipeService.resetForSignOutWipe()
+
+        StorageModePersistence.clearSignOutWipeArm()
+        CloudSyncBreadcrumb.signOutWipeExecuted()
+    }
+
+    /// Borra el trío de archivos SQLite de un store (base + -wal + -shm). La URL se deriva de una
+    /// ModelConfiguration efímera (misma name+schema ⇒ misma URL) SIN pasar por `personalConfiguration`
+    /// para no capturar el testigo `personalStoreMountedMode` antes del wipe.
+    /// Devuelve `false` solo si el archivo BASE no pudo borrarse (≠ no-existe) — los sidecars
+    /// -wal/-shm huérfanos sin base son inertes (SQLite los descarta al recrear el store).
+    private static func deleteStoreFiles(named name: String, schema: Schema) -> Bool {
+        let url = ModelConfiguration(name, schema: schema, cloudKitDatabase: .none).url
+        var baseDeleted = true
+        for (index, path) in [url.path, url.path + "-wal", url.path + "-shm"].enumerated() {
+            do {
+                try FileManager.default.removeItem(atPath: path)
+            } catch let error as NSError
+                where error.domain == NSCocoaErrorDomain && error.code == NSFileNoSuchFileError {
+                // Ya ausente (re-entrada idempotente tras kill a mitad) — no-op.
+            } catch {
+                #if DEBUG
+                print("SwiftDataConfiguration: Error borrando store \(name): \(error)")
+                #endif
+                if index == 0 { baseDeleted = false }
+            }
+        }
+        return baseDeleted
+    }
+
     // MARK: - Container CloudKit State
 
     private static let containerCloudKitKey = "containerCreatedWithCloudKit"

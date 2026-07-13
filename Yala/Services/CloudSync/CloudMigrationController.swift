@@ -239,6 +239,79 @@ final class CloudMigrationController {
         refresh()
     }
 
+    /// Adopt desde el Welcome (H4/pieza 2): conduce la máquina asumiendo una sesión SIWA YA viva —
+    /// el Welcome corrió `signInWithApple()` + `GET /account/exists` (read-only) ANTES de llamar aquí,
+    /// así que NO se re-lanza SIWA (evita el doble Face ID). Las fases `consent`/`authenticating` son
+    /// no-durables: un kill entre submits normaliza a `notStarted` vía `resume` sin riesgo.
+    /// Precondición: `CloudAuthService.shared.hasSession`.
+    func startAdoptWithExistingSession() async {
+        isWorking = true
+        defer { isWorking = false }
+        lastError = nil
+        let r = runner
+        // S4 del review: un journal en failedRollback IGNORA startMigration → el retry
+        // del Welcome sería un loop muerto (SIWA repetido sin progreso). Reset explícito
+        // primero — espejo del botón "Reintentar" de Ajustes.
+        refresh()
+        if case .failed = uiState {
+            await r.resetAfterRollback()
+        }
+        await r.startMigration(dryRun: false)   // notStarted → consent
+        await r.submit(.consentAccepted)         // consent → authenticating
+        await r.submit(.signInSucceeded)         // authenticating → claimingMigration → drive
+        refresh()
+    }
+
+    /// Push-all del cierre de sesión (H4, camino `.cloud`): cicla el runtime (drain + push + prefs,
+    /// paso 5.5 incluido) hasta que el outbox vivo quede en 0 VERIFICADO por fetch, o bloquea. Los
+    /// pendientes JAMÁS se descartan — `.blocked` aborta el cierre y el usuario reintenta con red.
+    /// `.coalesced` cuenta como ciclo sano (sin señal de fallo); el tope corta backends caídos.
+    func pushAllPendingForSignOut(maxIterations: Int = 20) async -> CloudSignOutFlowLogic.PushAllVerdict {
+        guard let runtime = CloudSyncRuntime.shared else {
+            // Sin runtime en `.cloud` solo es seguro cerrar si no hay nada pendiente.
+            let live = livePendingUploadCount()
+            return live == 0 ? .drained : .blocked(pendingCount: live)
+        }
+        for iteration in 1...maxIterations {
+            let outcome = await runtime.syncCycle(context: context)
+            let succeeded = outcome == .completed || outcome == .coalesced
+            if let verdict = CloudSignOutFlowLogic.pushAllVerdict(
+                livePendingCount: livePendingUploadCount(),
+                cycleSucceeded: succeeded,
+                iteration: iteration,
+                maxIterations: maxIterations
+            ) {
+                return verdict
+            }
+            // S1 del review: un ciclo de la cadencia EN VUELO devuelve `.coalesced`
+            // SINCRÓNICO — sin esta pausa el loop quemaría las 20 iteraciones en
+            // microsegundos y bloquearía con red sana. La pausa deja terminar el
+            // ciclo en vuelo; la siguiente iteración corre un ciclo real.
+            do {
+                try await Task.sleep(for: .milliseconds(250))
+            } catch {
+                break  // cancelación del caller
+            }
+        }
+        return .blocked(pendingCount: livePendingUploadCount())
+    }
+
+    /// Filas vivas del outbox (`rejectedReason == nil`) — mismo criterio que el banner S11.
+    /// Interno (no private): el coordinador de sign-out re-verifica JUSTO antes de armar
+    /// el wipe (S2 — ventana post-drain).
+    func livePendingUploadCount() -> Int {
+        do {
+            return try context.fetch(FetchDescriptor<SyncOutbox>())
+                .filter { $0.rejectedReason == nil }.count
+        } catch {
+            #if DEBUG
+            print("CloudMigrationController: Error contando outbox vivo: \(error)")
+            #endif
+            // Conservador: un conteo ilegible jamás debe habilitar un cierre con pendientes.
+            return Int.max
+        }
+    }
+
     /// Volver a iCloud (reversa §h). El gate `ReverseEligibility` ya lo validó la vista (diálogos-primero);
     /// se emiten `reverseActivated` + `reverseConfirmed` JUNTOS (un kill entre ambos lo normaliza `resume`).
     func startReverse() async {

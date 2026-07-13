@@ -4748,3 +4748,84 @@
 
 /* Groups tab banner when join intent TTL expired */
 "groups.invite.expired.banner" = "Nie udało się połączyć z grupą. Poproś administratora o nowy link.";
+
+/* Row label in Settings > Security to sign out of the account session */
+"settings.signOut" = "Wyloguj się";
+
+/* Confirmation dialog title for sign out */
+"settings.signOutConfirmTitle" = "Wylogować się na tym urządzeniu?";
+
+/* Destructive confirm button in sign out dialog */
+"settings.signOutConfirmAction" = "Wyloguj się";
+
+/* Sign out dialog message when in cloud storage mode */
+"settings.signOutConfirmMessageCloud" = "Najpierw prześlemy Twoje oczekujące zmiany do chmury. Twoje dane pozostaną bezpieczne na koncie; to urządzenie wróci do ekranu startowego jak po świeżej instalacji.";
+
+/* Sign out dialog message when in private iCloud mode */
+"settings.signOutConfirmMessageICloud" = "Twoje dane nie zostaną usunięte: pozostaną na tym urządzeniu i w iCloud. Wrócisz do ekranu startowego i możesz zalogować się ponownie, kiedy zechcesz.";
+
+/* Alert title when pending uploads block sign out */
+"settings.signOutBlockedTitle" = "Nie udało się wylogować";
+
+/* Alert message when pending uploads block sign out */
+"settings.signOutBlockedMessage" = "Niektóre zmiany nie zostały jeszcze przesłane do chmury, a nie chcemy, żeby coś przepadło. Sprawdź połączenie i spróbuj ponownie.";
+
+/* Subtitle of the existing-account sub-chooser in Welcome */
+"welcome.existing.subtitle" = "Wybierz, jak chcesz odzyskać swoje dane.";
+
+/* Card title: restore from iCloud */
+"welcome.existing.restoreTitle" = "Przywróć z iCloud";
+
+/* Card body: restore from iCloud */
+"welcome.existing.restoreBody" = "Twoje dane zapisane w iCloud wrócą na to urządzenie.";
+
+/* Card title: sign in to cloud account */
+"welcome.existing.cloudTitle" = "Zaloguj się przez Apple";
+
+/* Card body: sign in to cloud account */
+"welcome.existing.cloudBody" = "Twoje konto Yala w chmurze, z dowolnego urządzenia.";
+
+/* Cloud sign-in screen title */
+"welcome.cloud.title" = "Zaloguj się na swoje konto";
+
+/* Cloud sign-in screen subtitle */
+"welcome.cloud.subtitle" = "Użyj tego samego Apple ID, którym utworzono konto w chmurze.";
+
+/* Progress label while checking account exists */
+"welcome.cloud.checking" = "Sprawdzanie konta…";
+
+/* Progress label while adopt flow runs */
+"welcome.cloud.adopting" = "Łączenie z kontem…";
+
+/* Hint under adopt progress */
+"welcome.cloud.adoptingHint" = "To może potrwać kilka minut. Nie zamykaj Yali.";
+
+/* Title when Apple ID has no cloud account */
+"welcome.cloud.notFoundTitle" = "Nie znaleźliśmy konta";
+
+/* Body when Apple ID has no cloud account */
+"welcome.cloud.notFoundBody" = "To Apple ID nie ma jeszcze konta Yala w chmurze.";
+
+/* Title when foreign local data blocks sign-in */
+"welcome.cloud.blockedTitle" = "To urządzenie zawiera dane innego konta";
+
+/* Body when foreign local data blocks sign-in */
+"welcome.cloud.blockedBody" = "Aby chronić te dane, nie możemy tu połączyć innego konta. Właściciel może zalogować się ponownie w każdej chwili.";
+
+/* Title for cloud sign-in error */
+"welcome.cloud.errorTitle" = "Coś poszło nie tak";
+
+/* Body for cloud sign-in error */
+"welcome.cloud.errorBody" = "Nie udało się zweryfikować konta. Sprawdź połączenie i spróbuj ponownie.";
+
+/* Retry button */
+"welcome.cloud.retry" = "Spróbuj ponownie";
+
+/* Title for waiting-for-leader state */
+"welcome.cloud.waitingTitle" = "Twoje konto jest konfigurowane na innym urządzeniu";
+
+/* Body for waiting-for-leader state */
+"welcome.cloud.waitingBody" = "Możesz poczekać tutaj lub przejść do aplikacji; będziemy próbować dalej.";
+
+/* Secondary action in waiting-for-leader state */
+"welcome.cloud.continueToApp" = "Przejdź do aplikacji";

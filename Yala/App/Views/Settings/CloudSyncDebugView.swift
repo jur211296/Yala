@@ -790,6 +790,12 @@ struct CloudSyncDebugView: View {
             actionButton("Sign out", disabled: !model.isConfigured) {
                 await model.signOut()
             }
+            // H4: arma el boot-cleanup del sign-out SIN pasar por SIWA/push-all — única forma de
+            // verificar `performSignOutWipeIfArmed` en sim (SIWA no funciona ahí). RELANZA después.
+            actionButton("Arm sign-out wipe (borra stores al relanzar)", disabled: false) {
+                StorageModePersistence.armSignOutWipe()
+                model.lastMessage = "signOutWipeArmed=true. RELANZA: el boot borra YalaModel+YalaSyncMeta y resetea a .icloud fresh."
+            }
         }
         .padding(.horizontal, DS.Spacing.lg)
     }

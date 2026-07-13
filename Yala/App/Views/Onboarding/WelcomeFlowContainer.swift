@@ -16,6 +16,9 @@ import SwiftUI
 enum WelcomeFlowStep {
     case hero
     case chooser
+    /// 2º nivel de "Ya tengo una cuenta" (H4): Restaurar iCloud | Sign in with Apple.
+    /// Solo alcanzable con >1 opción visible (bypass en `handleExistingBranch`).
+    case existingChooser
 }
 
 struct WelcomeFlowContainer: View {
@@ -25,6 +28,8 @@ struct WelcomeFlowContainer: View {
 
     var onSelectBranch: (WelcomeChooserView.Branch) -> Void
     var onLoadMyData: () -> Void
+    /// Sub-elección de "Ya tengo una cuenta" (también el resultado del bypass).
+    var onSelectExistingOption: (WelcomeAccountChoiceLogic.ExistingOption) -> Void
 
     @State private var step: WelcomeFlowStep = .hero
     @State private var showDetectedDataAlert: Bool = false
@@ -34,12 +39,20 @@ struct WelcomeFlowContainer: View {
     init(
         initialStep: WelcomeFlowStep = .hero,
         onSelectBranch: @escaping (WelcomeChooserView.Branch) -> Void,
-        onLoadMyData: @escaping () -> Void
+        onLoadMyData: @escaping () -> Void,
+        onSelectExistingOption: @escaping (WelcomeAccountChoiceLogic.ExistingOption) -> Void
     ) {
         self.initialStep = initialStep
         self.onSelectBranch = onSelectBranch
         self.onLoadMyData = onLoadMyData
+        self.onSelectExistingOption = onSelectExistingOption
         self._step = State(initialValue: initialStep)
+    }
+
+    private var visibleExistingOptions: [WelcomeAccountChoiceLogic.ExistingOption] {
+        WelcomeAccountChoiceLogic.visibleExistingOptions(
+            isConfigured: CloudBackendConfig.isConfigured,
+            isUITest: SwiftDataConfiguration.isUITesting)
     }
 
     var body: some View {
@@ -52,8 +65,23 @@ struct WelcomeFlowContainer: View {
                 .transition(.opacity)
             case .chooser:
                 WelcomeChooserView(
-                    onSelect: { branch in onSelectBranch(branch) },
+                    onSelect: { branch in
+                        // "Ya tengo una cuenta" abre el 2º nivel (o bypass con 1 opción —
+                        // hoy en prod DARK equivale exactamente al flujo restore actual).
+                        if branch == .restore {
+                            handleExistingBranch()
+                        } else {
+                            onSelectBranch(branch)
+                        }
+                    },
                     onBack: { goTo(.hero) }
+                )
+                .transition(.opacity)
+            case .existingChooser:
+                WelcomeExistingChooserView(
+                    options: visibleExistingOptions,
+                    onSelect: { option in onSelectExistingOption(option) },
+                    onBack: { goTo(.chooser) }
                 )
                 .transition(.opacity)
             }
@@ -86,6 +114,17 @@ struct WelcomeFlowContainer: View {
             goTo(.chooser)
         case .proceedWithData:
             showDetectedDataAlert = true
+        }
+    }
+
+    /// "Ya tengo una cuenta": con una sola opción visible (prod DARK / uitest) hace
+    /// bypass directo — comportamiento idéntico al flujo restore de hoy; con ambas,
+    /// muestra el 2º nivel.
+    private func handleExistingBranch() {
+        if let single = WelcomeAccountChoiceLogic.bypass(visibleExistingOptions) {
+            onSelectExistingOption(single)
+        } else {
+            goTo(.existingChooser)
         }
     }
 

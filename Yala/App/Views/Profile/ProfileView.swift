@@ -68,6 +68,23 @@ struct ProfileView: View {
     @State private var showSeedProgress = false
     #endif
 
+    // H4: cierre de sesión universal (privada y nube). El coordinador es @Observable;
+    // los covers/alerts se materializan en @State propio vía onChange (regla toolbar-muerta:
+    // jamás un binding de presentación con setter no-op). La red DURABLE del cover de
+    // relaunch vive además en ContentView (C1) — este anchor es un sheet dismissible.
+    private var signOutCoordinator: CloudSessionSignOut { CloudSessionSignOut.shared }
+    @State private var showCloudSignOutConfirm = false
+    @State private var showSignOutBlockedAlert = false
+    @State private var showSignOutRelaunchCover = false
+
+    private func syncSignOutUI(from phase: CloudSessionSignOut.Phase) {
+        switch phase {
+        case .blocked: showSignOutBlockedAlert = true
+        case .awaitingRelaunch: showSignOutRelaunchCover = true
+        case .idle, .working: break
+        }
+    }
+
     private var isProUser: Bool {
         FeatureGateService.shared.isProUser
     }
@@ -196,6 +213,47 @@ struct ProfileView: View {
             } message: { result in
                 Text(result.message)
             }
+            // H4: cierre de sesión — confirmación destructiva con copy honesto por modo.
+            .confirmationDialog(
+                L10n.Settings.signOutConfirmTitle,
+                isPresented: $showCloudSignOutConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Settings.signOutConfirmAction, role: .destructive) {
+                    Task { await CloudSessionSignOut.shared.signOut() }
+                }
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(CloudSyncFlags.storageMode == .cloud
+                    ? L10n.Settings.signOutConfirmMessageCloud
+                    : L10n.Settings.signOutConfirmMessageICloud)
+            }
+            .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
+                Button(L10n.Common.ok, role: .cancel) {
+                    CloudSessionSignOut.shared.acknowledgeBlocked()
+                }
+            } message: {
+                Text(L10n.Settings.signOutBlockedMessage)
+            }
+            .fullScreenCover(
+                isPresented: $showSignOutRelaunchCover,
+                onDismiss: {
+                    // Terminal: el wipe está armado y la sesión cerrada — si UIKit tumbara el
+                    // cover (regla toolbar-muerta: onDismiss de respaldo), se re-presenta.
+                    if CloudSessionSignOut.shared.phase == .awaitingRelaunch {
+                        showSignOutRelaunchCover = true
+                    }
+                }
+            ) {
+                SignOutRelaunchView()
+            }
+            .onChange(of: signOutCoordinator.phase) { _, newPhase in
+                syncSignOutUI(from: newPhase)
+            }
+            // Recuperación de estados huérfanos (C1): si el sheet se cerró mientras el
+            // coordinator trabajaba, al reabrir Ajustes se re-presenta el alert/cover
+            // correspondiente (el estado .blocked es SEGURO — nada armado, solo informar).
+            .onAppear { syncSignOutUI(from: signOutCoordinator.phase) }
             .onAppear {
                 // Auto-navigate to destination passed by caller (e.g. sync settings sheet).
                 if let dest = initialDestination {
@@ -649,6 +707,22 @@ struct ProfileView: View {
                         iconColor: .yellow)
                 }
                 .buttonStyle(.plain)
+                // H4: cerrar sesión — SIEMPRE al final (privada y nube; oculta solo en
+                // modo group-invite, como el resto de filas personales).
+                if CloudSignOutFlowLogic.shouldShowRow(isGroupInviteMode: isGroupInviteMode) {
+                    SubsectionDivider()
+                    Button {
+                        showCloudSignOutConfirm = true
+                    } label: {
+                        settingsRowContent(
+                            icon: "rectangle.portrait.and.arrow.right",
+                            title: L10n.Settings.signOut,
+                            iconColor: .red)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(signOutCoordinator.phase == .working)
+                    .accessibilityIdentifier("profile_security_signout")
+                }
             }
         }
         .padding(.horizontal, DS.Spacing.lg)

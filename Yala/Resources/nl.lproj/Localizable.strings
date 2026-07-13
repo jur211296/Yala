@@ -4748,3 +4748,84 @@
 
 /* Groups tab banner when join intent TTL expired */
 "groups.invite.expired.banner" = "We konden geen verbinding maken met de groep. Vraag de beheerder om een nieuwe link.";
+
+/* Row label in Settings > Security to sign out of the account session */
+"settings.signOut" = "Uitloggen";
+
+/* Confirmation dialog title for sign out */
+"settings.signOutConfirmTitle" = "Uitloggen op dit apparaat?";
+
+/* Destructive confirm button in sign out dialog */
+"settings.signOutConfirmAction" = "Uitloggen";
+
+/* Sign out dialog message when in cloud storage mode */
+"settings.signOutConfirmMessageCloud" = "We uploaden eerst je openstaande wijzigingen naar de cloud. Je gegevens blijven veilig in je account; dit apparaat keert terug naar het startscherm alsof het net is geïnstalleerd.";
+
+/* Sign out dialog message when in private iCloud mode */
+"settings.signOutConfirmMessageICloud" = "Je gegevens worden niet verwijderd: ze blijven op dit apparaat en in iCloud. Je keert terug naar het startscherm en kunt opnieuw inloggen wanneer je wilt.";
+
+/* Alert title when pending uploads block sign out */
+"settings.signOutBlockedTitle" = "Uitloggen is niet gelukt";
+
+/* Alert message when pending uploads block sign out */
+"settings.signOutBlockedMessage" = "Sommige wijzigingen zijn nog niet naar de cloud geüpload en we willen niet dat je iets kwijtraakt. Controleer je verbinding en probeer het opnieuw.";
+
+/* Subtitle of the existing-account sub-chooser in Welcome */
+"welcome.existing.subtitle" = "Kies hoe je je gegevens wilt terughalen.";
+
+/* Card title: restore from iCloud */
+"welcome.existing.restoreTitle" = "Herstellen vanuit iCloud";
+
+/* Card body: restore from iCloud */
+"welcome.existing.restoreBody" = "Je gegevens die met iCloud zijn bewaard komen terug op dit apparaat.";
+
+/* Card title: sign in to cloud account */
+"welcome.existing.cloudTitle" = "Inloggen met Apple";
+
+/* Card body: sign in to cloud account */
+"welcome.existing.cloudBody" = "Je Yala-account in de cloud, vanaf elk apparaat.";
+
+/* Cloud sign-in screen title */
+"welcome.cloud.title" = "Log in op je account";
+
+/* Cloud sign-in screen subtitle */
+"welcome.cloud.subtitle" = "Gebruik dezelfde Apple ID waarmee je je cloudaccount hebt gemaakt.";
+
+/* Progress label while checking account exists */
+"welcome.cloud.checking" = "Je account wordt gecontroleerd…";
+
+/* Progress label while adopt flow runs */
+"welcome.cloud.adopting" = "Verbinden met je account…";
+
+/* Hint under adopt progress */
+"welcome.cloud.adoptingHint" = "Dit kan een paar minuten duren. Houd Yala open.";
+
+/* Title when Apple ID has no cloud account */
+"welcome.cloud.notFoundTitle" = "We konden geen account vinden";
+
+/* Body when Apple ID has no cloud account */
+"welcome.cloud.notFoundBody" = "Deze Apple ID heeft nog geen Yala-cloudaccount.";
+
+/* Title when foreign local data blocks sign-in */
+"welcome.cloud.blockedTitle" = "Dit apparaat bevat gegevens van een ander account";
+
+/* Body when foreign local data blocks sign-in */
+"welcome.cloud.blockedBody" = "Om die gegevens te beschermen kunnen we hier geen ander account koppelen. De eigenaar kan altijd weer inloggen.";
+
+/* Title for cloud sign-in error */
+"welcome.cloud.errorTitle" = "Er ging iets mis";
+
+/* Body for cloud sign-in error */
+"welcome.cloud.errorBody" = "We konden je account niet verifiëren. Controleer je verbinding en probeer het opnieuw.";
+
+/* Retry button */
+"welcome.cloud.retry" = "Opnieuw proberen";
+
+/* Title for waiting-for-leader state */
+"welcome.cloud.waitingTitle" = "Je account wordt op een ander apparaat ingesteld";
+
+/* Body for waiting-for-leader state */
+"welcome.cloud.waitingBody" = "Je kunt hier wachten of doorgaan naar de app; we blijven het proberen.";
+
+/* Secondary action in waiting-for-leader state */
+"welcome.cloud.continueToApp" = "Doorgaan naar de app";

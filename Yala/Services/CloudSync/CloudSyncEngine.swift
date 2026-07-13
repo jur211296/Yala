@@ -314,6 +314,42 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncRuntime teardownGuestSession")
     }
 
+    // MARK: Cierre de sesión (H4) — sin PII
+
+    /// El usuario inició el cierre de sesión. `path` = "private-reset" | "cloud-secure".
+    static func signOutStarted(path: String) {
+        logger.notice("CloudSignOut started path=\(path, privacy: .public)")
+    }
+
+    /// El push-all previo al cierre en `.cloud` NO logró vaciar el outbox → cierre ABORTADO
+    /// (jamás se descartan pendientes). `pending` = filas vivas restantes.
+    static func signOutPushBlocked(pending: Int) {
+        logger.notice("CloudSignOut push blocked pending=\(pending, privacy: .public)")
+    }
+
+    /// Camino privado (`.icloud`): sesión cerrada + reset a Welcome SIN tocar datos.
+    static func signOutPrivateReset() {
+        logger.notice("CloudSignOut private reset completed")
+    }
+
+    /// Camino `.cloud`: outbox vacío verificado + sesión cerrada + wipe ARMADO → esperando relaunch.
+    static func signOutWipeArmed() {
+        logger.notice("CloudSignOut wipe armed — awaiting relaunch")
+    }
+
+    /// BOOT: el wipe armado se ejecutó (archivos personal+sync-meta borrados, device `.icloud` fresh).
+    static func signOutWipeExecuted() {
+        logger.notice("CloudSignOut wipe executed at boot — device fresh")
+    }
+
+    /// BOOT: el wipe armado ABORTÓ (borrado de archivo base falló ≠ no-existe). El arm
+    /// persiste → reintento en el próximo boot; el par storageMode/mirrorOffArmed queda
+    /// intacto (mount mirror-OFF, sin riesgo de replay hacia iCloud). >0 sostenido = disco/
+    /// permisos — investigar.
+    static func signOutWipeAborted(reason: String) {
+        logger.error("CloudSignOut wipe ABORTED reason=\(reason, privacy: .public)")
+    }
+
     /// Guard de recreación (§d.5 A1): la tabla `SyncQuarantine` se recreó vacía (testigo>0, count==0) →
     /// serverSeqCursor forzado a 0 (re-pull completo).
     static func quarantineTableRecreated() {

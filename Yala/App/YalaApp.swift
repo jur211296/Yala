@@ -52,6 +52,10 @@ struct YalaApp: App {
     /// container en el host de tests es barato y NO toca CloudKit.
     var sharedModelContainer: ModelContainer = {
         do {
+            // H4: si el cierre de sesión en `.cloud` dejó armado el wipe, ejecutarlo AHORA
+            // (pre-mount) — borra archivos de los stores personal+sync-meta y devuelve el
+            // device a `.icloud` fresh ANTES de que exista cualquier container.
+            SwiftDataConfiguration.performSignOutWipeIfArmed()
             let iCloudWasAvailable = SwiftDataConfiguration.isICloudAvailable()
             SwiftDataConfiguration.markContainerCloudKitState(iCloudWasAvailable)
             return try ModelContainer(

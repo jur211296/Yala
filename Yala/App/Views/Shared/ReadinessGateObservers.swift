@@ -15,6 +15,8 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     let showLanguageSelection: Bool
     let showWelcomeRestore: Bool
     let showInviteRecovery: Bool
+    let showWelcomeCloudSignIn: Bool
+    let showSignOutRelaunch: Bool
     let showFreshStartWipeAlert: Bool
     let showRemoteWipeAlert: Bool
     let showICloudRestartAlert: Bool
@@ -43,6 +45,8 @@ private struct ReadinessGateObserversModifier: ViewModifier {
             .onChange(of: showLanguageSelection) { _, _ in recompute() }
             .onChange(of: showWelcomeRestore) { _, _ in recompute() }
             .onChange(of: showInviteRecovery) { _, _ in recompute() }
+            .onChange(of: showWelcomeCloudSignIn) { _, _ in recompute() }
+            .onChange(of: showSignOutRelaunch) { _, _ in recompute() }
             .onChange(of: showGroupInviteOnboarding) { _, _ in recompute() }
             .onChange(of: showGroupReconnect) { _, _ in recompute() }
             .onChange(of: showFullModeActivation) { _, _ in recompute() }
@@ -70,6 +74,8 @@ extension View {
         showLanguageSelection: Bool,
         showWelcomeRestore: Bool,
         showInviteRecovery: Bool,
+        showWelcomeCloudSignIn: Bool,
+        showSignOutRelaunch: Bool,
         showFreshStartWipeAlert: Bool,
         showRemoteWipeAlert: Bool,
         showICloudRestartAlert: Bool,
@@ -91,6 +97,8 @@ extension View {
             showLanguageSelection: showLanguageSelection,
             showWelcomeRestore: showWelcomeRestore,
             showInviteRecovery: showInviteRecovery,
+            showWelcomeCloudSignIn: showWelcomeCloudSignIn,
+            showSignOutRelaunch: showSignOutRelaunch,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,

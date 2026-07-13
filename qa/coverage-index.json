@@ -1630,9 +1630,9 @@
         "F-SET-03"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/ProfileSettingsUITests, YalaUITests/ProfileGroupInviteUITests",
+      "coverage": "xcuitest:YalaUITests/ProfileSettingsUITests, YalaUITests/ProfileGroupInviteUITests — fila 'Cerrar sesion' (H4, siempre visible salvo group-invite; profile_security_signout) cubierta por unit CloudSignOutFlowLogicTests + device-qa; XCUITests existentes no asertan conteo de filas",
       "owner": "",
-      "lastVerified": "2026-06-08"
+      "lastVerified": "2026-07-12"
     },
     {
       "area": "settings-theme-visual",
@@ -2007,7 +2007,12 @@
         "Yala/App/Views/Onboarding/WelcomeHeroView.swift",
         "Yala/App/Views/Onboarding/WelcomeChooserView.swift",
         "Yala/App/Views/Onboarding/WelcomeRestoreView.swift",
-        "Yala/App/Views/Onboarding/InviteRecoveryView.swift"
+        "Yala/App/Views/Onboarding/InviteRecoveryView.swift",
+        "Yala/App/Views/Onboarding/WelcomeExistingChooserView.swift",
+        "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift",
+        "Yala/App/Logic/WelcomeAccountChoiceLogic.swift",
+        "Yala/App/Logic/CloudWelcomeSignInFlow.swift",
+        "Yala/App/Logic/CrossAccountEntryGuardLogic.swift"
       ],
       "scenarioIDs": [
         "F-WEL-01",
@@ -2018,9 +2023,9 @@
         "F-WEL-06"
       ],
       "classification": "agentic",
-      "coverage": "device-qa",
+      "coverage": "device-qa + unit:YalaTests/WelcomeAccountChoiceLogicTests (sub-chooser 2 niveles + bypass), CloudWelcomeSignInFlowTests (ruteo exists + fase por uiState), CrossAccountEntryGuardLogicTests (guard F0-C). SIWA/adopt desde Welcome = device-only (SIWA no corre en sim); en prod DARK y bajo -uitest el sub-chooser hace bypass a restore (flujo actual intacto).",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-07-12"
     },
     {
       "area": "welcome-universal-link-icloud",
@@ -2165,9 +2170,22 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/CloudSync/CloudMigrationI14Tests (runtime gate P0 · boot decision P4 · UIState derive P2 · claim-store P6) + MigrationWorkExecutorTests (runAdoptFlow order + performClaim estampa claim-store) + guion device planning/MODO-NUBE-I14-GUION-DEVICE.md",
+      "coverage": "unit:YalaTests/CloudSync/CloudMigrationI14Tests (runtime gate P0 · boot decision P4 · UIState derive P2 · claim-store P6) + MigrationWorkExecutorTests (runAdoptFlow order + performClaim estampa claim-store) + guion device planning/MODO-NUBE-I14-GUION-DEVICE.md + H4: startAdoptWithExistingSession (adopt desde Welcome sin re-SIWA) y pushAllPendingForSignOut (loop syncCycle verificado por fetch) — logica decidible en CloudSignOutFlowLogicTests; e2e device en guion MODO-NUBE-SIGNOUT-WELCOME-GUION-DEVICE.md",
       "owner": "",
-      "lastVerified": "2026-07-11"
+      "lastVerified": "2026-07-12"
+    },
+    {
+      "area": "session-sign-out",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/CloudSessionSignOut.swift",
+        "Yala/App/Logic/CloudSignOutFlowLogic.swift",
+        "Yala/App/Views/Settings/SignOutRelaunchView.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "agentic",
+      "coverage": "unit:YalaTests/CloudSignOutFlowLogicTests (camino por modo + visibilidad + veredicto push-all) — orquestacion (CloudSessionSignOut) y boot-cleanup (SwiftDataConfiguration.performSignOutWipeIfArmed, guardado por !isRunningTests A PROPOSITO: un test jamas debe borrar stores reales) son device/sim-only: boton DEBUG 'Arm sign-out wipe' en CloudSyncDebugView + guion device MODO-NUBE-SIGNOUT-WELCOME-GUION-DEVICE.md. Camino privado (.icloud) verificable en sim (reset a Welcome sin wipe).",
+      "owner": "",
+      "lastVerified": "2026-07-12"
     }
   ]
 }

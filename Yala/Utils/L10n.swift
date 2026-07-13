@@ -3934,6 +3934,18 @@ enum L10n {
         static var deleteDataWarningGroupsOnly: String {
             ls("settings.deleteDataWarningGroupsOnly", comment: "")
         }
+        // Cierre de sesión universal (H4 — privada y nube)
+        static var signOut: String { ls("settings.signOut", comment: "") }
+        static var signOutConfirmTitle: String { ls("settings.signOutConfirmTitle", comment: "") }
+        static var signOutConfirmAction: String { ls("settings.signOutConfirmAction", comment: "") }
+        static var signOutConfirmMessageCloud: String {
+            ls("settings.signOutConfirmMessageCloud", comment: "")
+        }
+        static var signOutConfirmMessageICloud: String {
+            ls("settings.signOutConfirmMessageICloud", comment: "")
+        }
+        static var signOutBlockedTitle: String { ls("settings.signOutBlockedTitle", comment: "") }
+        static var signOutBlockedMessage: String { ls("settings.signOutBlockedMessage", comment: "") }
         static var delete: String { ls("settings.delete", comment: "") }
         static var cancel: String { ls("settings.cancel", comment: "") }
         static var iconOriginal: String { ls("settings.iconOriginal", comment: "") }
@@ -4525,6 +4537,34 @@ enum L10n {
             static var optionExistingBody: String { ls("welcome.chooser.optionExisting.body", comment: "") }
             static var optionInviteTitle: String { ls("welcome.chooser.optionInvite.title", comment: "") }
             static var optionInviteBody: String { ls("welcome.chooser.optionInvite.body", comment: "") }
+        }
+
+        /// Sub-chooser de "Ya tengo una cuenta" (2º nivel, H4).
+        enum Existing {
+            static var subtitle: String { ls("welcome.existing.subtitle", comment: "") }
+            static var restoreTitle: String { ls("welcome.existing.restoreTitle", comment: "") }
+            static var restoreBody: String { ls("welcome.existing.restoreBody", comment: "") }
+            static var cloudTitle: String { ls("welcome.existing.cloudTitle", comment: "") }
+            static var cloudBody: String { ls("welcome.existing.cloudBody", comment: "") }
+        }
+
+        /// Pantalla de sign-in a cuenta del Modo Nube (H4).
+        enum Cloud {
+            static var title: String { ls("welcome.cloud.title", comment: "") }
+            static var subtitle: String { ls("welcome.cloud.subtitle", comment: "") }
+            static var checking: String { ls("welcome.cloud.checking", comment: "") }
+            static var adopting: String { ls("welcome.cloud.adopting", comment: "") }
+            static var adoptingHint: String { ls("welcome.cloud.adoptingHint", comment: "") }
+            static var notFoundTitle: String { ls("welcome.cloud.notFoundTitle", comment: "") }
+            static var notFoundBody: String { ls("welcome.cloud.notFoundBody", comment: "") }
+            static var blockedTitle: String { ls("welcome.cloud.blockedTitle", comment: "") }
+            static var blockedBody: String { ls("welcome.cloud.blockedBody", comment: "") }
+            static var errorTitle: String { ls("welcome.cloud.errorTitle", comment: "") }
+            static var errorBody: String { ls("welcome.cloud.errorBody", comment: "") }
+            static var retry: String { ls("welcome.cloud.retry", comment: "") }
+            static var waitingTitle: String { ls("welcome.cloud.waitingTitle", comment: "") }
+            static var waitingBody: String { ls("welcome.cloud.waitingBody", comment: "") }
+            static var continueToApp: String { ls("welcome.cloud.continueToApp", comment: "") }
         }
 
         enum Restore {

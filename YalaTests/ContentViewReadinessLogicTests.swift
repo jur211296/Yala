@@ -20,6 +20,8 @@ struct ContentViewReadinessLogicTests {
         showLanguageSelection: Bool = false,
         showWelcomeRestore: Bool = false,
         showInviteRecovery: Bool = false,
+        showWelcomeCloudSignIn: Bool = false,
+        showSignOutRelaunch: Bool = false,
         showFreshStartWipeAlert: Bool = false,
         showRemoteWipeAlert: Bool = false,
         showICloudRestartAlert: Bool = false,
@@ -39,7 +41,10 @@ struct ContentViewReadinessLogicTests {
             isSplashDismissed: isSplashDismissed, isWipingData: isWipingData,
             showOnboarding: showOnboarding, showWelcomeFlow: showWelcomeFlow,
             showLanguageSelection: showLanguageSelection, showWelcomeRestore: showWelcomeRestore,
-            showInviteRecovery: showInviteRecovery, showFreshStartWipeAlert: showFreshStartWipeAlert,
+            showInviteRecovery: showInviteRecovery,
+            showWelcomeCloudSignIn: showWelcomeCloudSignIn,
+            showSignOutRelaunch: showSignOutRelaunch,
+            showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert, showICloudRestartAlert: showICloudRestartAlert,
             showRestoreOffer: showRestoreOffer, hasActiveInviteError: hasActiveInviteError,
             hasActiveGroupSyncError: hasActiveGroupSyncError,
@@ -54,6 +59,30 @@ struct ContentViewReadinessLogicTests {
     @Test func allClean_isReady() {
         #expect(ContentViewReadinessLogic.isReady(state: make()))
         #expect(ContentViewReadinessLogic.blocker(state: make()) == nil)
+    }
+
+    // H4: los 2 blockers nuevos del cierre de sesión / sign-in de nube.
+
+    @Test func welcomeCloudSignIn_blocks() {
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(showWelcomeCloudSignIn: true)) == "welcomeCloudSignIn")
+    }
+
+    @Test func welcomeCloudSignIn_isNotTearableWelcomeChain() {
+        // El adopt en vuelo NO se tumba por un intent superseding — se retiene.
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
+            state: make(showWelcomeCloudSignIn: true)))
+    }
+
+    @Test func signOutRelaunch_blocks_aboveEverythingButWipe() {
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(showSignOutRelaunch: true)) == "signOutRelaunch")
+        // Solo wipingData lo supera en severidad.
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(isWipingData: true, showSignOutRelaunch: true)) == "wipingData")
+        // Gana incluso al splash (terminal: nada presenta debajo).
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(isSplashDismissed: false, showSignOutRelaunch: true)) == "signOutRelaunch")
     }
 
     @Test func splashStillUp_notReady() {

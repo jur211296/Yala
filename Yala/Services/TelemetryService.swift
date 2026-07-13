@@ -36,6 +36,7 @@ enum AnalyticsEvent: String {
     case onboardingBackTapped = "Activación · Onboarding atrás"  // params: fromStep, mode
     case onboardingCancelled = "Activación · Onboarding abandonado"  // params: atStep, mode
     case welcomeChooserBranchSelected = "Activación · Camino elegido"  // A4 — params: branch (new|restore|invite)
+    case welcomeCloudSignInOutcome = "Activación · Sign-in nube"  // H4 — params: outcome (found|notFound|blocked|error|leaderWait)
     case purchaseAttempted = "Pro · Compra intentada"
     case featureGateHit = "Pro · Tope de función Free"
     case reviewPromptShown = "App · Pidió reseña"

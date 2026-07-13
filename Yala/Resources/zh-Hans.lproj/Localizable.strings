@@ -4748,3 +4748,84 @@
 
 /* Groups tab banner when join intent TTL expired */
 "groups.invite.expired.banner" = "无法连接到群组。请向管理员索取新的邀请链接。";
+
+/* Row label in Settings > Security to sign out of the account session */
+"settings.signOut" = "退出登录";
+
+/* Confirmation dialog title for sign out */
+"settings.signOutConfirmTitle" = "要在此设备上退出登录吗？";
+
+/* Destructive confirm button in sign out dialog */
+"settings.signOutConfirmAction" = "退出登录";
+
+/* Sign out dialog message when in cloud storage mode */
+"settings.signOutConfirmMessageCloud" = "我们会先将待同步的更改上传到云端。你的数据会安全地保存在账户中；此设备将恢复到刚安装时的开始屏幕。";
+
+/* Sign out dialog message when in private iCloud mode */
+"settings.signOutConfirmMessageICloud" = "你的数据不会被删除：仍保留在此设备和 iCloud 中。你将回到开始屏幕，随时可以重新登录。";
+
+/* Alert title when pending uploads block sign out */
+"settings.signOutBlockedTitle" = "无法退出登录";
+
+/* Alert message when pending uploads block sign out */
+"settings.signOutBlockedMessage" = "还有更改尚未上传到云端，我们不希望你丢失任何内容。请检查网络连接后重试。";
+
+/* Subtitle of the existing-account sub-chooser in Welcome */
+"welcome.existing.subtitle" = "选择找回数据的方式。";
+
+/* Card title: restore from iCloud */
+"welcome.existing.restoreTitle" = "从 iCloud 恢复";
+
+/* Card body: restore from iCloud */
+"welcome.existing.restoreBody" = "使用 iCloud 保存的数据将恢复到此设备。";
+
+/* Card title: sign in to cloud account */
+"welcome.existing.cloudTitle" = "通过 Apple 登录";
+
+/* Card body: sign in to cloud account */
+"welcome.existing.cloudBody" = "云端的 Yala 账户，任何设备均可使用。";
+
+/* Cloud sign-in screen title */
+"welcome.cloud.title" = "登录你的账户";
+
+/* Cloud sign-in screen subtitle */
+"welcome.cloud.subtitle" = "请使用创建云端账户时的同一个 Apple ID。";
+
+/* Progress label while checking account exists */
+"welcome.cloud.checking" = "正在核对你的账户…";
+
+/* Progress label while adopt flow runs */
+"welcome.cloud.adopting" = "正在连接你的账户…";
+
+/* Hint under adopt progress */
+"welcome.cloud.adoptingHint" = "这可能需要几分钟。请保持 Yala 处于打开状态。";
+
+/* Title when Apple ID has no cloud account */
+"welcome.cloud.notFoundTitle" = "未找到账户";
+
+/* Body when Apple ID has no cloud account */
+"welcome.cloud.notFoundBody" = "此 Apple ID 还没有 Yala 云端账户。";
+
+/* Title when foreign local data blocks sign-in */
+"welcome.cloud.blockedTitle" = "此设备上有另一个账户的数据";
+
+/* Body when foreign local data blocks sign-in */
+"welcome.cloud.blockedBody" = "为保护这些数据，无法在此连接其他账户。数据所有者可以随时重新登录。";
+
+/* Title for cloud sign-in error */
+"welcome.cloud.errorTitle" = "出了点问题";
+
+/* Body for cloud sign-in error */
+"welcome.cloud.errorBody" = "无法核对你的账户。请检查网络连接后重试。";
+
+/* Retry button */
+"welcome.cloud.retry" = "重试";
+
+/* Title for waiting-for-leader state */
+"welcome.cloud.waitingTitle" = "你的账户正在另一台设备上完成设置";
+
+/* Body for waiting-for-leader state */
+"welcome.cloud.waitingBody" = "你可以在此等待，也可以继续使用应用；我们会继续尝试。";
+
+/* Secondary action in waiting-for-leader state */
+"welcome.cloud.continueToApp" = "继续使用应用";

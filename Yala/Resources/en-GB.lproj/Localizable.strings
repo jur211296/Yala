@@ -3999,3 +3999,84 @@
 
 /* Groups tab banner when join intent TTL expired */
 "groups.invite.expired.banner" = "We couldn't connect to the group. Ask the admin for a new link.";
+
+/* Row label in Settings > Security to sign out of the account session */
+"settings.signOut" = "Sign out";
+
+/* Confirmation dialog title for sign out */
+"settings.signOutConfirmTitle" = "Sign out on this device?";
+
+/* Destructive confirm button in sign out dialog */
+"settings.signOutConfirmAction" = "Sign out";
+
+/* Sign out dialog message when in cloud storage mode */
+"settings.signOutConfirmMessageCloud" = "We'll upload your pending changes to the cloud first. Your data stays safe in your account; this device will return to the start screen as if freshly installed.";
+
+/* Sign out dialog message when in private iCloud mode */
+"settings.signOutConfirmMessageICloud" = "Your data isn't deleted: it stays on this device and in iCloud. You'll return to the start screen and can sign back in whenever you want.";
+
+/* Alert title when pending uploads block sign out */
+"settings.signOutBlockedTitle" = "We couldn't sign you out";
+
+/* Alert message when pending uploads block sign out */
+"settings.signOutBlockedMessage" = "Some changes haven't been uploaded to the cloud yet and we don't want you to lose anything. Check your connection and try again.";
+
+/* Subtitle of the existing-account sub-chooser in Welcome */
+"welcome.existing.subtitle" = "Choose how you want to get your data back.";
+
+/* Card title: restore from iCloud */
+"welcome.existing.restoreTitle" = "Restore from iCloud";
+
+/* Card body: restore from iCloud */
+"welcome.existing.restoreBody" = "Your data saved with your iCloud comes back to this device.";
+
+/* Card title: sign in to cloud account */
+"welcome.existing.cloudTitle" = "Sign in with Apple";
+
+/* Card body: sign in to cloud account */
+"welcome.existing.cloudBody" = "Your Yala account in the cloud, from any device.";
+
+/* Cloud sign-in screen title */
+"welcome.cloud.title" = "Sign in to your account";
+
+/* Cloud sign-in screen subtitle */
+"welcome.cloud.subtitle" = "Use the same Apple ID you created your cloud account with.";
+
+/* Progress label while checking account exists */
+"welcome.cloud.checking" = "Checking your account…";
+
+/* Progress label while adopt flow runs */
+"welcome.cloud.adopting" = "Connecting to your account…";
+
+/* Hint under adopt progress */
+"welcome.cloud.adoptingHint" = "This can take a few minutes. Keep Yala open.";
+
+/* Title when Apple ID has no cloud account */
+"welcome.cloud.notFoundTitle" = "We couldn't find an account";
+
+/* Body when Apple ID has no cloud account */
+"welcome.cloud.notFoundBody" = "This Apple ID doesn't have a Yala cloud account yet.";
+
+/* Title when foreign local data blocks sign-in */
+"welcome.cloud.blockedTitle" = "This device has data from another account";
+
+/* Body when foreign local data blocks sign-in */
+"welcome.cloud.blockedBody" = "To protect that data, we can't connect a different account here. Its owner can sign back in anytime.";
+
+/* Title for cloud sign-in error */
+"welcome.cloud.errorTitle" = "Something didn't go right";
+
+/* Body for cloud sign-in error */
+"welcome.cloud.errorBody" = "We couldn't verify your account. Check your connection and try again.";
+
+/* Retry button */
+"welcome.cloud.retry" = "Try again";
+
+/* Title for waiting-for-leader state */
+"welcome.cloud.waitingTitle" = "Your account is being set up on another device";
+
+/* Body for waiting-for-leader state */
+"welcome.cloud.waitingBody" = "You can wait here or continue to the app; we'll keep trying.";
+
+/* Secondary action in waiting-for-leader state */
+"welcome.cloud.continueToApp" = "Continue to the app";
