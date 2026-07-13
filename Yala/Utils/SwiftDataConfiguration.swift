@@ -205,6 +205,10 @@ enum SwiftDataConfiguration {
     /// de iCloud: tener cuenta iCloud NO importa (Grupos la usa, pero el store personal ya NO lo espeja
     /// el mirror).
     enum PersonalStoreDecision: Equatable {
+        /// Sesión SECUNDARIA activa (M1) → `cloudKitDatabase: .none` sobre el archivo SECUNDARIO
+        /// (`YalaModel-Secondary`). Gana ANTES que todo — el archivo del dueño ni se lee ni se
+        /// escribe, y el mirror JAMÁS se adjunta al secundario.
+        case secondaryCloudSession
         /// `.cloud` + mirror-off ARMADO → `cloudKitDatabase: .none` sobre el MISMO archivo (mirror OFF).
         case cloudMirrorOff
         /// iCloud disponible → mirror `NSPersistentCloudKitContainer` (`.private`) — comportamiento de HOY.
@@ -220,9 +224,15 @@ enum SwiftDataConfiguration {
     /// El montaje mirror-OFF exige el par COMPLETO: `.cloud` Y `mirrorOffArmed` (que el executor arma
     /// SOLO tras `isMarkerExported()`). Un kill pre-armado → mirror remonta ON → el marcador exporta en
     /// el resume → recién el relaunch posterior apaga el mirror. R9: JAMÁS caer a `.automatic`.
+    ///
+    /// M1: `secondarySessionActive` (descriptor de `SecondarySessionStore`) gana ANTES que todo —
+    /// SIN acoplarse a `mirrorOffArmed` (ese par protege el kill-window del cutover de MIGRACIÓN;
+    /// la sesión secundaria no migra, adopta sobre un archivo propio que nunca tuvo mirror).
     static func personalStoreDecision(
-        storageMode: StorageMode, mirrorOffArmed: Bool, iCloudAvailable: Bool
+        storageMode: StorageMode, mirrorOffArmed: Bool, iCloudAvailable: Bool,
+        secondarySessionActive: Bool = false
     ) -> PersonalStoreDecision {
+        if secondarySessionActive { return .secondaryCloudSession }
         if storageMode == .cloud && mirrorOffArmed { return .cloudMirrorOff }
         return iCloudAvailable ? .iCloudMirror : .localNoMirror
     }
@@ -236,10 +246,19 @@ enum SwiftDataConfiguration {
     nonisolated(unsafe) static private(set) var personalStoreMountedMode: StorageMode = .icloud
     nonisolated(unsafe) private static var personalStoreMountedModeCaptured = false
 
-    private static func capturePersonalStoreMountedModeOnce(_ mode: StorageMode) {
+    /// Testigo M1: ¿ESTE proceso montó el store SECUNDARIO? Capturado junto al modo, misma
+    /// semántica una-sola-vez. Es el árbitro de la VENTANA DE ENTRADA (descriptor persistido pero
+    /// proceso viejo con el store del DUEÑO montado): el guard de mount-mismatch del runtime y el
+    /// blocker `secondaryEntryRelaunch` lo consultan — `SecondarySessionStore.isActive() && !este
+    /// testigo` ⇒ nada puede sincronizar ni presentarse hasta el relaunch. Default `false` (paths
+    /// test/uitest no lo capturan).
+    nonisolated(unsafe) static private(set) var secondaryStoreMounted = false
+
+    private static func capturePersonalStoreMountedModeOnce(_ mode: StorageMode, secondary: Bool = false) {
         guard !personalStoreMountedModeCaptured else { return }
         personalStoreMountedModeCaptured = true
         personalStoreMountedMode = mode
+        secondaryStoreMounted = secondary
     }
 
     // MARK: - Sign-out wipe (H4 — "Cerrar sesión" en `.cloud`)
@@ -344,12 +363,18 @@ enum SwiftDataConfiguration {
         // ADEMÁS por el flag mirror-off-ARMADO (SERIO 1 — ver doc de
         // `personalStoreDecision`). DARK: nadie escribe `storageMode=.cloud` ni arma el flag en
         // producción hasta que el cutover de una migración real ejecute sus pasos.
+        // M1: el descriptor de sesión secundaria gana ANTES que todo (archivo propio, JAMÁS `.private`).
         let decision = personalStoreDecision(
             storageMode: CloudSyncFlags.storageMode,
             mirrorOffArmed: StorageModePersistence.isMirrorOffArmed(),
-            iCloudAvailable: isICloudAvailable())
-        capturePersonalStoreMountedModeOnce(decision == .cloudMirrorOff ? .cloud : .icloud)
+            iCloudAvailable: isICloudAvailable(),
+            secondarySessionActive: SecondarySessionStore.isActive())
+        capturePersonalStoreMountedModeOnce(
+            decision == .cloudMirrorOff || decision == .secondaryCloudSession ? .cloud : .icloud,
+            secondary: decision == .secondaryCloudSession)
         switch decision {
+        case .secondaryCloudSession:
+            return ModelConfiguration(secondaryDatabaseName, schema: personalSchema, cloudKitDatabase: .none)
         case .cloudMirrorOff:
             return ModelConfiguration(databaseName, schema: personalSchema, cloudKitDatabase: .none)
         case .iCloudMirror:
@@ -361,6 +386,19 @@ enum SwiftDataConfiguration {
         case .localNoMirror:
             return ModelConfiguration(databaseName, schema: personalSchema)
         }
+    }
+
+    /// M1 — nombres de los stores SECUNDARIOS (1 slot ⇒ nombre FIJO; el `userID` del descriptor
+    /// valida la identidad del ocupante). Derivados de `databaseName` ⇒ heredan la variante `-Dev`.
+    static var secondaryDatabaseName: String {
+        databaseName + "-Secondary"
+    }
+
+    /// El sync-meta secundario es OBLIGATORIO: cursor/journal/identidades/outbox de la cuenta
+    /// invitada jamás deben caer en el `YalaSyncMeta` del dueño (contaminación silenciosa de
+    /// Merkle y del journal de migración del dueño).
+    static var secondarySyncMetaDatabaseName: String {
+        syncMetaDatabaseName + "-Secondary"
     }
 
     /// Group data — local only (CKSyncEngine syncs via groups container).
@@ -400,6 +438,11 @@ enum SwiftDataConfiguration {
         }
         if isUITesting {
             return ModelConfiguration("YalaSyncMeta-UITest", schema: syncMetaSchema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
+        }
+        // M1: en sesión secundaria el sync-meta TAMBIÉN es un archivo propio — misma condición que
+        // el mount personal (ambas se evalúan una vez, al construir el container en el boot).
+        if SecondarySessionStore.isActive() {
+            return ModelConfiguration(secondarySyncMetaDatabaseName, schema: syncMetaSchema, cloudKitDatabase: .none)
         }
         return ModelConfiguration(syncMetaDatabaseName, schema: syncMetaSchema, cloudKitDatabase: .none)
     }

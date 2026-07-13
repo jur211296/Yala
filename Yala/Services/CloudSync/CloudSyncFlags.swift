@@ -131,6 +131,18 @@ nonisolated enum CloudSyncFlags {
         storageModeTestOverride = nil
     }
 
+    /// Flag del feature "sesión secundaria" (M1 multi-cuenta). DARK: gatea ÚNICAMENTE la ENTRADA
+    /// (la tercera salida de `CrossAccountEntryGuardLogic`) — el mount y el wipe honran el
+    /// descriptor (`SecondarySessionStore`) incondicionalmente, para que una sesión YA activa
+    /// jamás quede brickeada si el flag se apagara. `var` solo para tests (`defer { restore }`).
+    static var secondarySessionEnabled = false
+
+    /// Composición completa del gate de ENTRADA secundaria: el feature requiere backend
+    /// configurado (sin auth no hay sesión nube) y el wiring del motor encendido.
+    static var secondarySessionEntryAvailable: Bool {
+        secondarySessionEnabled && syncRuntimeEnabled && CloudBackendConfig.isConfigured
+    }
+
     /// SUB-flag de la purga de SwiftData History tras un ciclo completo del runtime (sigue DOBLE-DARK:
     /// exige además `syncRuntimeEnabled`, hoy `false` → la purga NO corre en producción todavía).
     /// `true` desde el veredicto del spike device S2 (owner, 2026-07-08, iPhone real con datos +

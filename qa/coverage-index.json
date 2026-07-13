@@ -2186,6 +2186,17 @@
       "coverage": "unit:YalaTests/CloudSignOutFlowLogicTests (camino por modo + visibilidad + veredicto push-all) — orquestacion (CloudSessionSignOut) y boot-cleanup (SwiftDataConfiguration.performSignOutWipeIfArmed, guardado por !isRunningTests A PROPOSITO: un test jamas debe borrar stores reales) son device/sim-only: boton DEBUG 'Arm sign-out wipe' en CloudSyncDebugView + guion device MODO-NUBE-SIGNOUT-WELCOME-GUION-DEVICE.md. Camino privado (.icloud) verificable en sim (reset a Welcome sin wipe).",
       "owner": "",
       "lastVerified": "2026-07-12"
+    },
+    {
+      "area": "secondary-session",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/SecondarySessionStore.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "agentic",
+      "coverage": "unit:YalaTests/SecondarySessionStoreTests (descriptor 1-slot + arm wipe + marker purga + override) + YalaTests/StorageModePersistenceTests (tabla de verdad personalStoreDecision con secundaria: gana en las 8 combos, jamas .private; nombres derivados). Mount real y fronteras (wipe/purga) son device/sim-only via panel DEBUG (llega en Inc 8 del plan M1) + guion device MODO-NUBE-M1-GUION-DEVICE.md (pendiente). Feature DARK (secondarySessionEnabled=false).",
+      "owner": "",
+      "lastVerified": "2026-07-13"
     }
   ]
 }

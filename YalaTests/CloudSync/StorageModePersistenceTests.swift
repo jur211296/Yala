@@ -65,4 +65,47 @@ struct StorageModePersistenceTests {
                 storageMode: .icloud, mirrorOffArmed: armed, iCloudAvailable: false) == .localNoMirror)
         }
     }
+
+    // MARK: - M1 sesión secundaria (gana ANTES que todo; jamás `.private`)
+
+    @Test func decision_secondaryActive_winsOverEverything() {
+        // Las 8 combinaciones de (storageMode × mirrorOffArmed × iCloudAvailable): el descriptor
+        // secundario gana SIEMPRE — el archivo del dueño ni se toca y el mirror jamás se adjunta.
+        for mode in [StorageMode.icloud, .cloud] {
+            for armed in [true, false] {
+                for icloud in [true, false] {
+                    #expect(SwiftDataConfiguration.personalStoreDecision(
+                        storageMode: mode, mirrorOffArmed: armed, iCloudAvailable: icloud,
+                        secondarySessionActive: true) == .secondaryCloudSession)
+                }
+            }
+        }
+    }
+
+    @Test func decision_secondaryInactive_legacyTableIntact() {
+        // Con el param explícito en `false`, la tabla legacy es EXACTAMENTE la de siempre
+        // (regresión del dueño — los otros tests cubren el default omitido).
+        #expect(SwiftDataConfiguration.personalStoreDecision(
+            storageMode: .cloud, mirrorOffArmed: true, iCloudAvailable: true,
+            secondarySessionActive: false) == .cloudMirrorOff)
+        #expect(SwiftDataConfiguration.personalStoreDecision(
+            storageMode: .cloud, mirrorOffArmed: false, iCloudAvailable: true,
+            secondarySessionActive: false) == .iCloudMirror)
+        #expect(SwiftDataConfiguration.personalStoreDecision(
+            storageMode: .icloud, mirrorOffArmed: false, iCloudAvailable: false,
+            secondarySessionActive: false) == .localNoMirror)
+    }
+
+    @Test func secondaryStoreNames_deriveFromOwnerNames() {
+        // Nombre FIJO (1 slot) derivado del databaseName ⇒ hereda la variante -Dev del build.
+        #expect(SwiftDataConfiguration.secondaryDatabaseName
+            == SwiftDataConfiguration.databaseName + "-Secondary")
+        #expect(SwiftDataConfiguration.secondarySyncMetaDatabaseName
+            == SwiftDataConfiguration.syncMetaDatabaseName + "-Secondary")
+        // Los tríos de archivos jamás colisionan con los del dueño.
+        #expect(SwiftDataConfiguration.secondaryDatabaseName != SwiftDataConfiguration.databaseName)
+        #expect(SwiftDataConfiguration.secondarySyncMetaDatabaseName
+            != SwiftDataConfiguration.syncMetaDatabaseName)
+        #expect(SwiftDataConfiguration.secondarySyncMetaDatabaseName.contains("YalaSyncMeta"))
+    }
 }
