@@ -142,8 +142,26 @@ nonisolated enum CloudSyncFlags {
     /// Flag del feature "sesión secundaria" (M1 multi-cuenta). DARK: gatea ÚNICAMENTE la ENTRADA
     /// (la tercera salida de `CrossAccountEntryGuardLogic`) — el mount y el wipe honran el
     /// descriptor (`SecondarySessionStore`) incondicionalmente, para que una sesión YA activa
-    /// jamás quede brickeada si el flag se apagara. `var` solo para tests (`defer { restore }`).
-    static var secondarySessionEnabled = false
+    /// jamás quede brickeada si el flag se apagara. En builds DEV, la key
+    /// `debugSecondarySessionEnabledKey` (panel DEBUG) enciende la entrada sin recompilar (QA
+    /// device); producción IGNORA la key (sigue DARK). Setter = override en memoria (tests).
+    static var secondarySessionEnabled: Bool {
+        get {
+            if let override = secondarySessionEnabledTestOverride { return override }
+            #if DEV_BUILD
+            if UserDefaults.standard.bool(forKey: debugSecondarySessionEnabledKey) { return true }
+            #endif
+            return false
+        }
+        set { secondarySessionEnabledTestOverride = newValue }
+    }
+    static let debugSecondarySessionEnabledKey = "cloudSync.debug.secondarySessionEnabled"
+    nonisolated(unsafe) private static var secondarySessionEnabledTestOverride: Bool?
+
+    /// Solo tests: vuelve el getter a la lectura real (mismo racional que `_testResetStorageModeOverride`).
+    static func _testResetSecondarySessionEnabledOverride() {
+        secondarySessionEnabledTestOverride = nil
+    }
 
     /// Composición completa del gate de ENTRADA secundaria: el feature requiere backend
     /// configurado (sin auth no hay sesión nube) y el wiring del motor encendido.

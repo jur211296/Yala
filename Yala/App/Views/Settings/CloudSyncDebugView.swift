@@ -504,6 +504,7 @@ struct CloudSyncDebugView: View {
                 actionsCard
                 migrationCard
                 reverseCard
+                secondarySessionCard
                 spikeS7Card
                 if let message = model.lastMessage {
                     Text(message)
@@ -798,6 +799,61 @@ struct CloudSyncDebugView: View {
                 model.lastMessage = "signOutWipeArmed=true. RELANZA: el boot borra YalaModel+YalaSyncMeta y resetea a .icloud fresh."
             }
         }
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    // MARK: - Sesión secundaria (M1)
+
+    /// Única vía de verificación EN SIM del mount/wipe/purga de la sesión secundaria (SIWA no corre
+    /// en sim — la entrada real es device-only). Botones idempotentes; JAMÁS un forzado destructivo
+    /// sobre los archivos del dueño (el wipe secundario solo borra `-Secondary`).
+    private var secondarySessionCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Text("Sesión secundaria (M1)")
+                .font(DS.Typography.body.weight(.semibold))
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                row("Descriptor", SecondarySessionStore.activeUserID().map { "\($0.prefix(12))…" } ?? "inactivo")
+                row("Modo persistido (dueño)", StorageModePersistence.read().rawValue)
+                row("Modo efectivo", CloudSyncFlags.storageMode.rawValue)
+                row("Mount secundario (testigo)", SwiftDataConfiguration.secondaryStoreMounted ? "SÍ" : "no")
+                row("Entry purge done", SecondarySessionStore.isEntryPurgeDone() ? "sí" : "no")
+                row("Wipe secundario armado", SecondarySessionStore.isWipeArmed() ? "SÍ" : "no")
+                row("Flag entrada (debug)", UserDefaults.standard.bool(
+                    forKey: CloudSyncFlags.debugSecondarySessionEnabledKey) ? "ON" : "off (DARK)")
+            }
+            actionButton("Toggle flag de entrada (QA device sin recompilar)", disabled: false) {
+                let key = CloudSyncFlags.debugSecondarySessionEnabledKey
+                let next = !UserDefaults.standard.bool(forKey: key)
+                UserDefaults.standard.set(next, forKey: key)
+                model.lastMessage = "secondarySessionEnabled(debug)=\(next). Solo builds Dev; prod sigue DARK."
+            }
+            actionButton("Activar descriptor FAKE (guest-debug) — relanzar monta -Secondary", disabled: false) {
+                SecondarySessionStore.activate(userID: "guest-debug")
+                model.lastMessage = "Descriptor=guest-debug. RELANZA: el boot monta YalaModel-Secondary "
+                    + "(testigo secundario=SÍ) y corre la purga de entrada. Mientras tanto: runtime "
+                    + "bloqueado por mount-mismatch + blocker secondaryEntryRelaunch."
+            }
+            actionButton("Limpiar descriptor (deshace el fake SIN wipe)", disabled: false) {
+                SecondarySessionStore.clear()
+                SecondarySessionStore.clearEntryPurgeMark()
+                model.lastMessage = "Descriptor limpiado. RELANZA para volver al mount del dueño "
+                    + "(los archivos -Secondary quedan huérfanos inertes; usa el wipe para borrarlos)."
+            }
+            actionButton("Armar wipe secundario (borra -Secondary al relanzar)", disabled: false) {
+                SecondarySessionStore.armWipe()
+                model.lastMessage = "secondaryWipeArmed=true. RELANZA: el boot borra los archivos "
+                    + "-Secondary + purga + resetea flags de onboarding → Welcome. El YalaModel del "
+                    + "dueño y storageMode NO se tocan."
+            }
+            actionButton("Re-correr purga de entrada (limpia el marker)", disabled: false) {
+                SecondarySessionStore.clearEntryPurgeMark()
+                model.lastMessage = "entryPurgeDone limpiado — el próximo boot con descriptor re-purga."
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.lg)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
         .padding(.horizontal, DS.Spacing.lg)
     }
 
