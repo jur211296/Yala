@@ -4844,3 +4844,9 @@
 
 /* Chip shown while the secondary (guest) session pulls its account data after relaunch */
 "welcome.cloud.secondaryHydrationBanner" = "データをダウンロード中…";
+
+/* Shown when a group invite is opened while a secondary (guest) session is active — groups only work in the owner's primary session */
+"groups.sync.errorAcceptShareSecondary" = "グループへの招待はメインセッションでのみ承認できます。セッションを切り替えて、もう一度招待を開いてください。";
+
+/* Shown when accepting a group invite fails because the device has no iCloud account (CKError.notAuthenticated) */
+"groups.sync.errorAcceptShareNoICloud" = "グループに参加するには iCloud にサインインする必要があります。設定からサインインして、もう一度招待を開いてください。";

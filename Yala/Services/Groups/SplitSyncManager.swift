@@ -632,6 +632,19 @@ final class SplitSyncManager {
             logger.error("Cannot accept share: container not initialized")
             #endif
             GroupJoinIntentTracker.shared.noteAcceptFailed(zoneName: zoneID.zoneName, recoverable: false)
+            // Solo la sesión secundaria ALERTA: es un estado permanente sin retry (el
+            // engine jamás arranca ahí). Container nil fuera de secundaria es una
+            // ventana transitoria (cold launch pre-initialize) cubierta por el retry de
+            // PendingInviteStore — alertar sería un error espurio (ver la logic).
+            if GroupAcceptShareErrorLogic.classify(
+                containerAvailable: false,
+                isSecondarySession: SecondarySessionStore.isActive(),
+                ckErrorCode: nil
+            ) == .secondarySession {
+                RouterEntryGate.shared.submit(.showGroupSyncError(
+                    String(localized: "groups.sync.errorAcceptShareSecondary")
+                ))
+            }
             return
         }
 
@@ -687,9 +700,17 @@ final class SplitSyncManager {
                 zoneName: zoneID.zoneName,
                 recoverable: AppBootstrapper.isRecoverableInviteFetchError(error)
             )
-            RouterEntryGate.shared.submit(.showGroupSyncError(
-                String(localized: "groups.sync.errorAcceptShare")
-            ))
+            // `.notAuthenticated` = sin sesión de iCloud en el device: copy específico
+            // "necesitas iCloud" en vez del genérico de sync (endurecimiento Grupos-v1).
+            let kind = GroupAcceptShareErrorLogic.classify(
+                containerAvailable: true,
+                isSecondarySession: false,
+                ckErrorCode: (error as? CKError)?.code
+            )
+            let message = kind == .noICloudAccount
+                ? String(localized: "groups.sync.errorAcceptShareNoICloud")
+                : String(localized: "groups.sync.errorAcceptShare")
+            RouterEntryGate.shared.submit(.showGroupSyncError(message))
         }
     }
 

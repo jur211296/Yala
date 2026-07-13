@@ -790,6 +790,7 @@
       "codeGlobs": [
         "Yala/Services/Groups/SplitSyncManager.swift",
         "Yala/App/Logic/SplitSyncStartGate.swift",
+        "Yala/App/Logic/GroupAcceptShareErrorLogic.swift",
         "Yala/Services/Groups/SplitZoneManager.swift",
         "Yala/Services/Groups/CKRecordTranslator.swift",
         "Yala/Services/Groups/CloudKitConstants.swift",
@@ -824,9 +825,9 @@
         "F-GRP-FETCH-02"
       ],
       "classification": "manual",
-      "coverage": "unit:YalaTests/SplitSyncStartGateTests,YalaTests/CloudKitGroupsSchemaParityTests + manual (2026-07-11: markPendingChange/Deletion con engine nil dejó de ser no-op silencioso — log fuera de DEBUG + canario cloudkitGroupEnqueueDroppedNoEngine)",
+      "coverage": "unit:YalaTests/SplitSyncStartGateTests,YalaTests/CloudKitGroupsSchemaParityTests,YalaTests/GroupAcceptShareErrorLogicTests + manual (2026-07-11: markPendingChange/Deletion con engine nil dejó de ser no-op silencioso — log fuera de DEBUG + canario cloudkitGroupEnqueueDroppedNoEngine; 2026-07-13: acceptShare alerta en secundaria [permanente] y con .notAuthenticated [copy 'necesitas iCloud']; container-nil transitorio sigue silencioso por diseño)",
       "owner": "",
-      "lastVerified": "2026-07-11"
+      "lastVerified": "2026-07-13"
     },
     {
       "area": "groups-crud-balances-settlements",
