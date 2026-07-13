@@ -1339,6 +1339,10 @@ struct MainTabView: View {
     /// Gate beta de Grupos (validación v2.0.1). @AppStorage directo: reacciona al
     /// desbloqueo desde la card de "Más", el gate o `CKShareEntryHandler` (invitados).
     @AppStorage(AppPreferences.Keys.groupsBetaUnlocked) private var groupsBetaUnlocked = false
+    /// Gate "Grupos necesita iCloud" (§i.8(c)2): singleton observado — leer `status`
+    /// (stored) en el branch `.groups` registra la dependencia; `isAccountAvailable`
+    /// es computed y @Observable no la trackea. Patrón iCloudSyncSettingsView.
+    @State private var syncService = iCloudSyncService.shared
 
     // On-demand data for downgrade resolution (replaces @Query to prevent 0x8BADF00D)
     @State private var downgradeAccounts: [Account] = []
@@ -1585,9 +1589,18 @@ struct MainTabView: View {
         case .reports:
             FinancialReportView()
         case .groups:
+            // `isAccountAvailable` es COMPUTED (@Observable no la trackea); `status` es
+            // stored y transiciona vía NSUbiquityIdentityDidChange → leerlo registra la
+            // dependencia que re-evalúa este branch cuando la cuenta iCloud cambia.
+            let _ = syncService.status
             if GroupsBetaGateLogic.shouldShowGate(isUnlocked: groupsBetaUnlocked,
                                                   isGroupInviteMode: sessionState.isGroupInviteMode) {
                 GroupsBetaGateView()
+            } else if GroupsICloudAvailabilityGateLogic.shouldShowGate(
+                isAccountAvailable: syncService.isAccountAvailable,
+                isUITest: UITestHooks.isActive
+            ) {
+                GroupsICloudUnavailableView()
             } else {
                 GroupsContainerView()
             }

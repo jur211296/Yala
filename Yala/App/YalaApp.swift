@@ -40,6 +40,15 @@ struct YalaApp: App {
             if UITestHooks.isActive {
                 bootstrapper.applyUITestHooksEarly(context: sharedModelContainer.mainContext)
             }
+            // `-fake-icloud` (standalone, SIN `-uitest`): mismo seam de cuenta simulada
+            // para el device-qa AGENTIC en sim — agent-device/XcodeBuildMCP lanzan la app
+            // sin `-uitest` (applyUITestHooksEarly no corre) y el sim no tiene cuenta
+            // iCloud, así que el gate "Grupos necesita iCloud" (§i.8(c)2) taparía todo el
+            // QA de Grupos. Fuerza también hasCompletedFirstImport=true
+            // (SplitSyncStartGate → .startNow) — deseable en QA. No-op en release.
+            if ProcessInfo.processInfo.arguments.contains("-fake-icloud") {
+                iCloudSyncService.shared._uiTestSimulateAvailableAccount()
+            }
             #endif
         }
     }

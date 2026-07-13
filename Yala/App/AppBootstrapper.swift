@@ -515,7 +515,9 @@ final class AppBootstrapper {
         // ejercitar en sim los flujos gated por `isAccountAvailable` (onboarding "Solo
         // grupos", prompts de restore). Debe aplicarse ANTES de `bootstrap()` (este método
         // corre desde `YalaApp.init`) para que el guard del onboarding y los gates de boot
-        // lo vean. No habilita CloudKit real (el store uitest es `.none`).
+        // lo vean. No habilita CloudKit real (el store uitest es `.none`). La variante
+        // standalone `-fake-icloud` (sin `-uitest`, para device-qa agentic) vive en
+        // `YalaApp.init` — este método SOLO corre bajo `-uitest`.
         #if DEBUG
         if UITestHooks.fakeICloudAvailable {
             iCloudSyncService.shared._uiTestSimulateAvailableAccount()

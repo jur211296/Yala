@@ -906,6 +906,18 @@
       "lastVerified": "2026-06-25"
     },
     {
+      "area": "groups-icloud-availability-gate",
+      "codeGlobs": [
+        "Yala/App/Logic/GroupsICloudAvailabilityGateLogic.swift",
+        "Yala/App/Views/Groups/GroupsICloudUnavailableView.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/GroupsICloudAvailabilityGateLogicTests + manual:device-sin-cuenta-icloud (el estado real 'sin iCloud' solo es honesto en device; en sim se verifica con/sin -fake-icloud). Exención uitest por diseño — un XCUITest exigiría un tercer modo de lanzamiento.",
+      "owner": "",
+      "lastVerified": "2026-07-13"
+    },
+    {
       "area": "groups-notifications-deeplinks",
       "codeGlobs": [
         "Yala/Services/Groups/GroupNotificationService.swift",

@@ -4838,3 +4838,12 @@
 
 /* Shown when accepting a group invite fails because the device has no iCloud account (CKError.notAuthenticated) */
 "groups.sync.errorAcceptShareNoICloud" = "Um einer Gruppe beizutreten, musst du dich bei iCloud anmelden. Mach das in den Einstellungen und öffne die Einladung erneut.";
+
+/* Title of the proactive gate shown in the Groups tab when the device has no iCloud account */
+"groups.icloud.gate.title" = "Gruppen benötigt iCloud";
+
+/* Body of the Groups-needs-iCloud gate; [tu nombre] refers to the user's name row at the top of iOS Settings */
+"groups.icloud.gate.message" = "Deine Gruppen werden über dein iCloud-Konto geteilt und synchronisiert. Melde dich unter Einstellungen → [dein Name] → iCloud an und komm hierher zurück.";
+
+/* CTA of the Groups-needs-iCloud gate; opens the app's Settings page (cannot deep-link to iCloud directly) */
+"groups.icloud.gate.openSettings" = "Einstellungen öffnen";

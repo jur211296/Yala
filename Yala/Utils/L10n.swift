@@ -2221,6 +2221,14 @@ enum L10n {
             static var wrongCode: String { ls("groups.beta.gate.wrongCode", comment: "") }
         }
 
+        // MARK: iCloud Availability Gate (§i.8(c)2 — endurecimiento Grupos-v1)
+
+        enum ICloudGate {
+            static var title: String { ls("groups.icloud.gate.title", comment: "") }
+            static var message: String { ls("groups.icloud.gate.message", comment: "") }
+            static var openSettings: String { ls("groups.icloud.gate.openSettings", comment: "") }
+        }
+
         // MARK: Nudge (GC-09)
 
         enum Nudge {
