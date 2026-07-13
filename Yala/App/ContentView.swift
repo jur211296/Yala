@@ -1298,9 +1298,12 @@ struct MainTabView: View {
 
     /// Tabs to show: mode-aware config + temporary tab (if set and not already active)
     private var visibleTabs: [ConfigurableTab] {
-        let modeConfig = TabBarConfiguration.forMode(sessionState.onboardingMode, stored: tabConfig)
+        let secondary = SecondarySessionStore.isActive()
+        let modeConfig = TabBarConfiguration.forMode(
+            sessionState.onboardingMode, stored: tabConfig, secondarySessionActive: secondary)
         var tabs = modeConfig.activeTabs
-        if let temp = sessionState.temporaryTab, !tabs.contains(temp) {
+        // M1: el temporaryTab tampoco puede colar `.groups` en secundaria (grupos = iCloud del dueño).
+        if let temp = sessionState.temporaryTab, !tabs.contains(temp), !(secondary && temp == .groups) {
             tabs.append(temp)
         }
         return tabs

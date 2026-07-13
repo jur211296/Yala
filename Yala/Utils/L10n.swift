@@ -3944,6 +3944,9 @@ enum L10n {
         static var signOutConfirmMessageICloud: String {
             ls("settings.signOutConfirmMessageICloud", comment: "")
         }
+        static var signOutConfirmMessageSecondary: String {
+            ls("settings.signOutConfirmMessageSecondary", comment: "")
+        }
         static var signOutBlockedTitle: String { ls("settings.signOutBlockedTitle", comment: "") }
         static var signOutBlockedMessage: String { ls("settings.signOutBlockedMessage", comment: "") }
         static var delete: String { ls("settings.delete", comment: "") }

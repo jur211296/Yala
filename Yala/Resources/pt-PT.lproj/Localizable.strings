@@ -4085,3 +4085,6 @@
 
 /* Secondary action in waiting-for-leader state */
 "welcome.cloud.continueToApp" = "Continuar para a app";
+
+/* Sign-out confirm message for a secondary (guest) cloud session — guest data leaves the device, owner data untouched */
+"settings.signOutConfirmMessageSecondary" = "Primeiro vamos enviar as tuas alterações pendentes para a tua conta. Os teus dados serão removidos deste dispositivo (continuam seguros na tua conta); os dados do dono do dispositivo não são alterados.";

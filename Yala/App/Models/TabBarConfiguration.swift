@@ -98,13 +98,23 @@ struct TabBarConfiguration: Codable, Equatable {
 
     /// Returns the appropriate tab configuration for the given onboarding mode.
     /// For groupInvite: fixed config (ignores stored JSON). For full/completed: stored config.
-    static func forMode(_ mode: OnboardingMode, stored: TabBarConfiguration) -> TabBarConfiguration {
+    /// M1: en sesión SECUNDARIA el tab Grupos se FILTRA siempre — el CKSyncEngine de grupos está
+    /// atado al Apple ID del OS (el DUEÑO): la invitada vería SUS grupos y montos. Param explícito
+    /// (sin default) para que todo call-site decida conscientemente.
+    static func forMode(
+        _ mode: OnboardingMode, stored: TabBarConfiguration, secondarySessionActive: Bool
+    ) -> TabBarConfiguration {
+        var config: TabBarConfiguration
         switch mode {
         case .groupInvite:
-            return .groupInvite
+            config = .groupInvite
         case .full, .completed:
-            return stored
+            config = stored
         }
+        if secondarySessionActive {
+            config.activeTabs.removeAll { $0 == .groups }
+        }
+        return config
     }
 
     /// Valida y corrige la configuración para asegurar que .panel esté siempre primero

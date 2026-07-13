@@ -4080,3 +4080,6 @@
 
 /* Secondary action in waiting-for-leader state */
 "welcome.cloud.continueToApp" = "Continue to the app";
+
+/* Sign-out confirm message for a secondary (guest) cloud session — guest data leaves the device, owner data untouched */
+"settings.signOutConfirmMessageSecondary" = "We'll upload your pending changes to your account first. Your data will be removed from this device (it stays safe in your account); the device owner's data is not touched.";

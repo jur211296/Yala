@@ -224,9 +224,13 @@ struct ProfileView: View {
                 }
                 Button(L10n.Common.cancel, role: .cancel) {}
             } message: {
-                Text(CloudSyncFlags.storageMode == .cloud
-                    ? L10n.Settings.signOutConfirmMessageCloud
-                    : L10n.Settings.signOutConfirmMessageICloud)
+                // M1: la secundaria tiene copy propio ("los datos del dueño no se tocan") — el copy
+                // .cloud a secas confundiría sobre qué datos deja el device.
+                Text(SecondarySessionStore.isActive()
+                    ? L10n.Settings.signOutConfirmMessageSecondary
+                    : (CloudSyncFlags.storageMode == .cloud
+                        ? L10n.Settings.signOutConfirmMessageCloud
+                        : L10n.Settings.signOutConfirmMessageICloud))
             }
             .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
                 Button(L10n.Common.ok, role: .cancel) {
@@ -596,8 +600,9 @@ struct ProfileView: View {
                 }
 
                 // Modo Nube (I14): fila "Almacenamiento" — solo si el backend está configurado
-                // (staging/DEV; prod placeholder no muestra nada).
-                if CloudBackendConfig.isConfigured {
+                // (staging/DEV; prod placeholder no muestra nada). M1: oculta en sesión SECUNDARIA —
+                // la pantalla describe/opera la migración del DUEÑO (la invitada ni la ve).
+                if CloudBackendConfig.isConfigured && !SecondarySessionStore.isActive() {
                     if CloudSyncFlags.storageMode != .cloud { SubsectionDivider() }
                     profileRow(
                         icon: "externaldrive.badge.icloud",

@@ -588,7 +588,9 @@ class SessionState {
         }
 
         let stored = TabBarConfiguration.loadFromStandardDefaults()
-        let config = TabBarConfiguration.forMode(onboardingMode, stored: stored)
+        let config = TabBarConfiguration.forMode(
+            onboardingMode, stored: stored,
+            secondarySessionActive: SecondarySessionStore.isActive())
         let decision = MainTabSelectionLogic.decide(requested: tab, config: config)
 
         pendingTabSelectionTask?.cancel()

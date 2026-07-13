@@ -273,8 +273,11 @@ final class AppBootstrapper {
         }
 
         // 15. Initialize CKSyncEngine for shared group data (separate groups store)
+        // M1: Grupos NO arranca en sesión secundaria — su CKSyncEngine está atado al Apple ID
+        // del OS (el DUEÑO); arrancarlo mostraría/sincronizaría SUS grupos bajo la sesión de la
+        // invitada. El tab Grupos también se filtra (TabBarConfiguration.forMode).
         SplitSyncManager.shared.setContext(context)
-        if !uiTestActive { SplitSyncManager.shared.initialize() }
+        if !uiTestActive && !SecondarySessionStore.isActive() { SplitSyncManager.shared.initialize() }
 
         // 16. Initialize Group Services (GC-03)
         GroupService.shared.setContext(context)
@@ -1064,7 +1067,10 @@ final class AppBootstrapper {
         // without a handled push). Debounced + quiescence-gated inside syncNow. This pulls the data
         // down; a mounted Groups view refreshes it on its next appear / pull-to-refresh (the fetch
         // handler's markRemoteChangePending drives the deferred refresh, same as the rest of the app).
-        Task { await SplitSyncManager.shared.syncNow() }
+        // M1: no en secundaria (los engines de Grupos ni arrancaron — simetría con el gate del boot).
+        if !SecondarySessionStore.isActive() {
+            Task { await SplitSyncManager.shared.syncNow() }
+        }
 
         // Check if iCloud became available after container was created without it
         checkForICloudMismatch()
