@@ -759,9 +759,9 @@
         "F-S3-04"
       ],
       "classification": "agentic",
-      "coverage": "none",
+      "coverage": "unit:YalaTests/CloudSync/GroupBridgeCloudSyncIntegrationTests (e2e bridge→drain→outbox Caso A/B, columnas split_* con contenido real)",
       "owner": "",
-      "lastVerified": "2026-06-26"
+      "lastVerified": "2026-07-13"
     },
     {
       "area": "groups-bridge-settings-optout",

@@ -759,10 +759,9 @@ final class CloudSyncEngine {
     /// un solo ModelContainer), así que este filtro es PERMANENTE (no una optimización): sin él, los
     /// cambios de los `Split*` (store de grupos) se colarían al backend personal.
     ///
-    /// De estos 16, SOLO 6 llevan `syncID` y se TRADUCEN a outbox en I3 (ver `SyncEntityType`); los
-    /// otros 10 pasan el filtro anti-fuga pero aún no tienen identidad de sync → se ignoran en la
-    /// traducción (incrementos posteriores los añaden). Anclado contra `personalSchema` por
-    /// `CloudSyncSchemaParityTests`.
+    /// Las 16 tienen identidad de sync y se TRADUCEN a outbox (I12 cableó las 10 restantes sobre las
+    /// 6 originales de I3 — ver `SyncEntityType` y `EntityEmissionMap`). Anclado contra
+    /// `personalSchema` por `CloudSyncSchemaParityTests`.
     static let personalEntityNames: Set<String> = [
         "Category",
         "Subcategory",
