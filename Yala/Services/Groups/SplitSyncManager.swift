@@ -1549,28 +1549,43 @@ final class SplitSyncManager {
         let settlementIDs = pendingBridgeSettlementIDs
         guard (!expenseIDs.isEmpty || !settlementIDs.isEmpty), GroupTransactionBridge.shared.isReady else { return }
 
-        // Gate by `isImporting` (not `isSyncing`): only a half-applied IMPORT crashes the personal
-        // save; exports don't, so don't block the bridge during the user's normal exports.
-        let decision = SubcategoryDedupGate.decide(
-            now: .now,
-            lastImportDate: iCloudSyncService.shared.lastSuccessfulImportDate,
-            isSyncing: iCloudSyncService.shared.status.isImporting,
-            lastDedupRunAt: nil
-        )
-        guard decision == .run else {
-            // Import not quiescent → defer the bridge. The pending IDs stay in memory
-            // (`pendingBridgeExpenseIDs`/`pendingBridgeSettlementIDs` are cleared only on the success
-            // path below), and `scheduleBridgeRetry` re-runs this after the quiet window. We do NOT
-            // persist `bridgePending` here: that `save()` would flush the half-imported personal graph
-            // on the shared mainContext and trip SwiftData's `_assertionFailure`. (The dedicated group
-            // context that once made it safe was removed — its `#Predicate` keypaths crashed record
-            // export.) Accepted residual: killing the app during the rare incremental-import window
-            // before the retry loses in-session recovery; CKSyncEngine re-delivers the change later.
-            let retryAfter: TimeInterval
-            if case .waitQuiescence(let t) = decision { retryAfter = max(t, 1) } else { retryAfter = 8 }
-            logger.notice("SplitSync bridge deferred (import not quiescent: \(String(describing: decision), privacy: .public)) — retry in \(Int(retryAfter), privacy: .public)s")
-            scheduleBridgeRetry(after: retryAfter)
-            return
+        // Autoridad de quiescencia enrutada por storageMode (endurecimiento Grupos-v1):
+        // en `.cloud` el mirror de CloudKit personal está OFF — la señal de
+        // iCloudSyncService queda perpetuamente quieta (el gate de abajo pasaba "por
+        // accidente afortunado"); la autoridad real es el propio motor
+        // (SyncQuiescenceCoordinator, molde awaitPersonalStoreReady). En `.icloud` el
+        // bloque vigente queda byte-idéntico.
+        switch StorageModeSignalRouter.quiescenceSource(mode: CloudSyncFlags.storageMode) {
+        case .cloudEngine:
+            guard SyncQuiescenceCoordinator.shared.isQuiescentForEngineSaves else {
+                logger.notice("SplitSync bridge deferred (cloud engine apply in flight) — retry in 8s")
+                scheduleBridgeRetry(after: 8)
+                return
+            }
+        case .icloudImport:
+            // Gate by `isImporting` (not `isSyncing`): only a half-applied IMPORT crashes the personal
+            // save; exports don't, so don't block the bridge during the user's normal exports.
+            let decision = SubcategoryDedupGate.decide(
+                now: .now,
+                lastImportDate: iCloudSyncService.shared.lastSuccessfulImportDate,
+                isSyncing: iCloudSyncService.shared.status.isImporting,
+                lastDedupRunAt: nil
+            )
+            guard decision == .run else {
+                // Import not quiescent → defer the bridge. The pending IDs stay in memory
+                // (`pendingBridgeExpenseIDs`/`pendingBridgeSettlementIDs` are cleared only on the success
+                // path below), and `scheduleBridgeRetry` re-runs this after the quiet window. We do NOT
+                // persist `bridgePending` here: that `save()` would flush the half-imported personal graph
+                // on the shared mainContext and trip SwiftData's `_assertionFailure`. (The dedicated group
+                // context that once made it safe was removed — its `#Predicate` keypaths crashed record
+                // export.) Accepted residual: killing the app during the rare incremental-import window
+                // before the retry loses in-session recovery; CKSyncEngine re-delivers the change later.
+                let retryAfter: TimeInterval
+                if case .waitQuiescence(let t) = decision { retryAfter = max(t, 1) } else { retryAfter = 8 }
+                logger.notice("SplitSync bridge deferred (import not quiescent: \(String(describing: decision), privacy: .public)) — retry in \(Int(retryAfter), privacy: .public)s")
+                scheduleBridgeRetry(after: retryAfter)
+                return
+            }
         }
 
         pendingBridgeExpenseIDs.removeAll()

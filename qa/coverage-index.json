@@ -759,7 +759,7 @@
         "F-S3-04"
       ],
       "classification": "agentic",
-      "coverage": "unit:YalaTests/CloudSync/GroupBridgeCloudSyncIntegrationTests (e2e bridge→drain→outbox Caso A/B, columnas split_* con contenido real)",
+      "coverage": "unit:YalaTests/CloudSync/GroupBridgeCloudSyncIntegrationTests (e2e bridge→drain→outbox Caso A/B, columnas split_* con contenido real). 2026-07-13: gate de quiescencia del bridge remoto enrutado por StorageModeSignalRouter (.cloud → SyncQuiescenceCoordinator; .icloud byte-idéntico) — antes pasaba bajo .cloud por accidente (señal de CloudKit perpetuamente quieta)",
       "owner": "",
       "lastVerified": "2026-07-13"
     },
