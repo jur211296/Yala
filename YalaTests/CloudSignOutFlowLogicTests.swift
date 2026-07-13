@@ -13,12 +13,21 @@ struct CloudSignOutFlowLogicTests {
 
     @Test
     func icloud_usesPrivateReset() {
-        #expect(CloudSignOutFlowLogic.path(for: .icloud) == .privateReset)
+        #expect(CloudSignOutFlowLogic.path(for: .icloud, secondarySessionActive: false) == .privateReset)
     }
 
     @Test
     func cloud_usesCloudSecureSignOut() {
-        #expect(CloudSignOutFlowLogic.path(for: .cloud) == .cloudSecureSignOut)
+        #expect(CloudSignOutFlowLogic.path(for: .cloud, secondarySessionActive: false) == .cloudSecureSignOut)
+    }
+
+    @Test
+    func secondarySession_winsOverBothModes() {
+        // M1 — la trampa de la atomicidad: en secundaria el modo EFECTIVO es `.cloud`; sin esta
+        // rama el sign-out iría a `.cloudSecureSignOut` → armSignOutWipe → el boot borraría el
+        // YalaModel del DUEÑO. La secundaria gana sobre cualquier modo.
+        #expect(CloudSignOutFlowLogic.path(for: .cloud, secondarySessionActive: true) == .secondaryCloudSignOut)
+        #expect(CloudSignOutFlowLogic.path(for: .icloud, secondarySessionActive: true) == .secondaryCloudSignOut)
     }
 
     @Test

@@ -1030,6 +1030,11 @@ final class AppBootstrapper {
         // intents App Group (Apple Pay/Siri), reconciles y demás side-effects de
         // foreground. Las colas App Group NO se consumen (drenan tras el relaunch).
         guard !StorageModePersistence.isSignOutWipeArmed() else { return }
+        // M1: mismo freeze para el wipe SECUNDARIO armado (store condenado) y para la
+        // VENTANA DE ENTRADA (descriptor activo con el store del DUEÑO montado — los drains
+        // materializarían pendientes en el store del dueño pre-relaunch).
+        guard !SecondarySessionStore.isWipeArmed() else { return }
+        if SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted { return }
 
         // Warm-start telemetry
         if hasSeenInitialActive {

@@ -329,7 +329,8 @@ final class CloudSyncMigrationPanelModel {
             reverseOriginLabel = "—"
         }
         let decision = ReverseEligibility.decide(
-            storageMode: CloudSyncFlags.storageMode, hasCKMap: hasCKMap, journaledPhase: journaledPhase)
+            // M1: modo PERSISTIDO (diagnóstico de la travesía del device, no el efectivo).
+            storageMode: StorageModePersistence.read(), hasCKMap: hasCKMap, journaledPhase: journaledPhase)
         reverseEligible = decision == .eligible
         switch decision {
         case .eligible:

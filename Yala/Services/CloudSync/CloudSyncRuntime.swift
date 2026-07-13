@@ -196,10 +196,29 @@ final class CloudSyncRuntime {
     /// P0: ¿puede correr el runtime del DOMINIO? Solo en `.cloud` y con la fase de migración ESTABLE
     /// (`done`/`notStarted`). Consultado por `start()` y por `handleBecameActive` (re-arranques). En
     /// `.icloud` (todo device de producción HOY) o en una fase transicional → `false`.
+    ///
+    /// M1 — GUARD DE MOUNT-MISMATCH (crítico, /review-plan): en la VENTANA DE ENTRADA de la sesión
+    /// secundaria (descriptor persistido, relaunch pendiente) el proceso vivo tiene montado el store
+    /// del DUEÑO mirror-ON, pero el getter efectivo ya deriva `.cloud`, la sesión SIWA de la invitada
+    /// está viva y su claim registrado — sin este guard, cualquier re-arranque (startShared desde
+    /// handleBecameActive, startRuntimeIfStable) drenaría la History del DUEÑO y pushearía sus filas
+    /// a la cuenta entrante. Choke point único: TODOS los paths de arranque pasan por aquí.
     static func canRunDomain() -> Bool {
-        CloudSyncFlags.storageMode == .cloud
+        if SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted {
+            CloudSyncBreadcrumb.runtimeBlockedByMountMismatch()
+            if !mountMismatchCanaryFired {
+                mountMismatchCanaryFired = true
+                TelemetryService.cloudSecondaryMountMismatchBlocked()
+            }
+            return false
+        }
+        return CloudSyncFlags.storageMode == .cloud
             && MigrationRuntimeGate.isDomainStablePhase(MigrationPhaseStore.shared.currentPhase)
     }
+
+    /// Canario D3 una-vez-por-proceso (el guard se consulta en cada becameActive — sin dedup
+    /// spamearía; el breadcrumb local sí suena cada vez, es barato y secuencia el diagnóstico).
+    nonisolated(unsafe) private static var mountMismatchCanaryFired = false
 
     // MARK: - Wiring de producción (DARK)
 

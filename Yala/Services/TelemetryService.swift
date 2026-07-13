@@ -160,6 +160,7 @@ enum AnalyticsEvent: String {
     case cloudAccountUnavailable = "Diagnóstico · Cuenta no disponible"  // BREADCRUMB (Modo Nube I8e, §d.5): el backend respondió 403 (autenticado pero prohibido) → cuenta suspendida/deshabilitada, distinto del 401 (sesión expirada). >0 = revisar estado de la cuenta. La DISPARA SyncPushClient.push. Sin PII
     case cloudAccountReverting = "Diagnóstico · Cuenta en reversa"  // BREADCRUMB (freeze §h.1): el backend respondió 409 yala_account_reverting → la cuenta está en/tras una reversa a iCloud (reverse_frozen_at estampado; el backend ya no es fuente de verdad). El device deja de pushear (stop hasta relanzar, mismo trato que 403) y sus deltas quedan en el outbox para su propia reversa/adopción (I14). La DISPARA SyncPushClient.push. Sin PII
     case cloudSyncClockReceiveRejected = "Diagnóstico · HLC remoto rechazado por el reloj"  // params: reason — CANARIO (Modo Nube I8f-1, F-5): `HLCClock.receive` RECHAZÓ un HLC remoto (drift >5min futuro / counter overflow) al aplicar deltas del pull → el reloj local NO se envenena pero pierde causalidad con ese emisor bajo skew extremo (residual documentado; el server lo vigila con cloudSyncSuspectClockWin). La DISPARA CloudSyncEngine.receiveRemoteClock. Sin PII (solo el motivo)
+    case cloudSecondaryMountMismatchBlocked = "Diagnóstico · Secundaria bloqueada por mount-mismatch"  // CANARIO (M1, D3 del /review-plan): canRunDomain bloqueó el runtime porque el descriptor de sesión secundaria está activo pero el proceso montó el store del DUEÑO (ventana de entrada pre-relaunch). Esperado a lo sumo UNA ventana corta por entrada; >0 SOSTENIDO en un mismo device = la ventana se está pisando (usuario operando sin relanzar) — sin el guard eso pushearía la History del dueño a la cuenta entrante. Dedupeado por proceso. La DISPARA CloudSyncRuntime.canRunDomain. Sin PII
     case cloudSyncMerkleDivergence = "Diagnóstico · Divergencia Merkle de sync"  // params: entity — CANARIO (Modo Nube I8f-3, §d.7 Canal 1): el entityHash local de una tabla ≠ el del backend CON quiescencia local (outbox vivo vacío + pull completado, guard A-3) → infidelidad del apply/canon vs la verdad server-side. >0 = incidente de fidelidad del sync (remediación v1: re-pull completo, wiring I9). La DISPARA CloudSyncEngine.verifyIntegrity. Sin PII (solo el nombre de tabla o "root")
 
     // Routing observability (F9 — privacy-first: only intent IDs, no payloads)
@@ -316,6 +317,13 @@ enum TelemetryService {
             "intent": intentID,
             "reason": reason
         ])
+    }
+
+    /// CANARIO M1 (D3): el guard de mount-mismatch de `CloudSyncRuntime.canRunDomain` bloqueó un
+    /// arranque del runtime en la ventana de entrada de la sesión secundaria (molde
+    /// `routingReadinessBlocked` — producción sin PII, fuera de `#if DEBUG`).
+    static func cloudSecondaryMountMismatchBlocked() {
+        track(.cloudSecondaryMountMismatchBlocked)
     }
 
     /// Fires when the .contentView consumer is unable to drain because a

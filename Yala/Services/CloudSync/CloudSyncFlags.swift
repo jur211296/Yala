@@ -113,13 +113,21 @@ nonisolated enum CloudSyncFlags {
     /// `var` (no `let`) solo para que los tests lo togglean con `defer { restore }`.
     static var syncRuntimeEnabled = true
 
-    /// SSOT del modo de almacenamiento. Getter: `override de tests ?? StorageModePersistence.read()`
-    /// (I10-wiring w6). HOY, sin override ni key persistida, es SIEMPRE `.icloud` (ningún path de
-    /// producción escribe la key hasta el cutover de una migración real, DARK). El setter guarda un
-    /// override EN MEMORIA → los tests que asignan `.cloud` con `defer { restore }` siguen funcionando
+    /// SSOT del modo de almacenamiento EFECTIVO. Getter: override de tests > sesión secundaria
+    /// (M1: descriptor activo ⇒ `.cloud` — el store montado es el secundario, sincronizado por el
+    /// motor; la key PERSISTIDA `cloudSync.storageMode` conserva SIEMPRE el modo del DUEÑO y
+    /// durante una secundaria es `.icloud` por invariante estructural) > `StorageModePersistence.
+    /// read()`. Los consumidores que necesitan el modo PERSISTIDO del device (UI de migración del
+    /// dueño, elegibilidad de reversa, panel DEBUG) leen `StorageModePersistence.read()` directo.
+    /// HOY, sin override/descriptor/key, es SIEMPRE `.icloud` (DARK). El setter guarda un override
+    /// EN MEMORIA → los tests que asignan `.cloud` con `defer { restore }` siguen funcionando
     /// sin tocar `UserDefaults` (la persistencia real la escribe `StorageModePersistence.write`).
     static var storageMode: StorageMode {
-        get { storageModeTestOverride ?? StorageModePersistence.read() }
+        get {
+            if let override = storageModeTestOverride { return override }
+            if SecondarySessionStore.isActive() { return .cloud }
+            return StorageModePersistence.read()
+        }
         set { storageModeTestOverride = newValue }
     }
     nonisolated(unsafe) private static var storageModeTestOverride: StorageMode?

@@ -371,6 +371,14 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSecondary entry purge executed — App Group surfaces cleared")
     }
 
+    /// GUARD de mount-mismatch (M1, crítico): el runtime intentó arrancar con el descriptor
+    /// secundario activo pero el proceso montó el store del DUEÑO (ventana de entrada pre-relaunch)
+    /// → bloqueado. Sin el guard, el drain pushearía la History del dueño a la cuenta entrante.
+    /// Par del canario TelemetryDeck `cloudSecondaryMountMismatchBlocked` (dedupeado por proceso).
+    static func runtimeBlockedByMountMismatch() {
+        logger.error("CloudSecondary runtime BLOCKED by mount-mismatch — descriptor active, owner store mounted (awaiting relaunch)")
+    }
+
     /// Guard de recreación (§d.5 A1): la tabla `SyncQuarantine` se recreó vacía (testigo>0, count==0) →
     /// serverSeqCursor forzado a 0 (re-pull completo).
     static func quarantineTableRecreated() {

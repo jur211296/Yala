@@ -43,11 +43,16 @@ final class CloudSessionSignOut {
 
     func signOut() async {
         guard phase == .idle else { return }
-        switch CloudSignOutFlowLogic.path(for: CloudSyncFlags.storageMode) {
+        switch CloudSignOutFlowLogic.path(
+            for: CloudSyncFlags.storageMode,
+            secondarySessionActive: SecondarySessionStore.isActive()
+        ) {
         case .privateReset:
             await performPrivateReset()
         case .cloudSecureSignOut:
             await performCloudSecureSignOut()
+        case .secondaryCloudSignOut:
+            await performSecondaryCloudSignOut()
         }
     }
 
@@ -116,6 +121,44 @@ final class CloudSessionSignOut {
             }
             await CloudAuthService.shared.signOut()
             StorageModePersistence.armSignOutWipe()
+            CloudSyncBreadcrumb.signOutWipeArmed()
+            phase = .awaitingRelaunch
+        }
+    }
+
+    // MARK: - Camino secundario (M1) — push-all verificado + wipe SECUNDARIO armado
+
+    /// Clon del camino `.cloud` con dos diferencias EXACTAS: arma `SecondarySessionStore.armWipe`
+    /// (el boot borra SOLO los archivos `-Secondary`; los del dueño y sus keys `storageMode`/
+    /// `mirrorOffArmed` jamás se tocan) y NO resetea los flags de onboarding IN-SESSION — lo hace
+    /// el boot wipe (resetearlos con el proceso vivo montaría la cadena Welcome DEBAJO del cover
+    /// de relaunch: doble presentación en el mismo anchor, clase toolbar-muerta). Reusa la fase
+    /// `.awaitingRelaunch` ⇒ el cover durable C1 y el blocker de la matriz funcionan sin cambios.
+    private func performSecondaryCloudSignOut() async {
+        phase = .working
+        CloudSyncBreadcrumb.signOutStarted(path: "secondary")
+
+        guard let controller = CloudMigrationController.shared else {
+            phase = .blocked(pendingCount: 0)
+            CloudSyncBreadcrumb.signOutPushBlocked(pending: 0)
+            return
+        }
+
+        switch await controller.pushAllPendingForSignOut() {
+        case .blocked(let pending):
+            phase = .blocked(pendingCount: pending)
+            CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+        case .drained:
+            CloudSyncRuntime.shared?.teardownGuestSession()
+            // S2: re-verificar el outbox con la sesión AÚN viva (mismo racional que el camino .cloud).
+            let residual = controller.livePendingUploadCount()
+            guard residual == 0 else {
+                phase = .blocked(pendingCount: residual)
+                CloudSyncBreadcrumb.signOutPushBlocked(pending: residual)
+                return
+            }
+            await CloudAuthService.shared.signOut()
+            SecondarySessionStore.armWipe()
             CloudSyncBreadcrumb.signOutWipeArmed()
             phase = .awaitingRelaunch
         }

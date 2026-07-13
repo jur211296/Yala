@@ -395,7 +395,9 @@ final class CloudMigrationController {
         let mountedMode = SwiftDataConfiguration.personalStoreMountedMode
         let mirrorOffArmed = StorageModePersistence.isMirrorOffArmed()
         uiState = CloudMigrationUIStateDeriver.derive(
-            storageMode: CloudSyncFlags.storageMode,
+            // M1: modo PERSISTIDO del dueño, no el efectivo — la UI de migración describe la
+            // travesía del DEVICE (un `.cloud` efectivo espurio de una sesión secundaria mentiría).
+            storageMode: StorageModePersistence.read(),
             phase: phase,
             mirrorOffArmed: mirrorOffArmed,
             mountedMode: mountedMode)
@@ -461,7 +463,9 @@ final class CloudMigrationController {
         let hasCKMap = ((try? context.fetchCount(
             FetchDescriptor<SyncIdentity>(predicate: #Predicate { $0.ckRecordName != nil }))) ?? 0) > 0
         return ReverseEligibility.decide(
-            storageMode: CloudSyncFlags.storageMode,
+            // M1: modo PERSISTIDO del dueño — la reversa es SU travesía; una sesión secundaria
+            // jamás debe volverse elegible por el `.cloud` efectivo derivado del descriptor.
+            storageMode: StorageModePersistence.read(),
             hasCKMap: hasCKMap,
             journaledPhase: journaledPhase)
     }

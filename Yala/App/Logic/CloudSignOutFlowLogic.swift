@@ -25,12 +25,20 @@ nonisolated enum CloudSignOutFlowLogic {
         /// `.cloud`: push-all (bloquear si falla, jamás descartar) → signOut +
         /// teardown → armar `signOutWipeArmed` → relaunch asistido (NUNCA auto-kill).
         case cloudSecureSignOut
+        /// Sesión SECUNDARIA (M1): push-all verificado idéntico al camino `.cloud`, pero
+        /// arma `SecondarySessionStore.armWipe` (borra SOLO los archivos `-Secondary` en el
+        /// boot; los del dueño intactos) y JAMÁS `armSignOutWipe` ni el reset masivo de prefs.
+        case secondaryCloudSignOut
     }
 
-    static func path(for storageMode: StorageMode) -> Path {
+    /// M1 — ATOMICIDAD con el getter efectivo: `secondarySessionActive` gana PRIMERO. Sin esta
+    /// rama, el `.cloud` EFECTIVO derivado del descriptor enrutaría el sign-out de la invitada a
+    /// `.cloudSecureSignOut` → `armSignOutWipe` → el boot borraría el `YalaModel` del DUEÑO.
+    static func path(for storageMode: StorageMode, secondarySessionActive: Bool) -> Path {
+        if secondarySessionActive { return .secondaryCloudSignOut }
         switch storageMode {
-        case .icloud: .privateReset
-        case .cloud: .cloudSecureSignOut
+        case .icloud: return .privateReset
+        case .cloud: return .cloudSecureSignOut
         }
     }
 
