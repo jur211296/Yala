@@ -350,6 +350,27 @@ enum CloudSyncBreadcrumb {
         logger.error("CloudSignOut wipe ABORTED reason=\(reason, privacy: .public)")
     }
 
+    // MARK: Sesión secundaria (M1) — sin PII
+
+    /// BOOT: el wipe secundario armado se ejecutó (archivos `-Secondary` borrados, descriptor
+    /// limpiado, flags de onboarding reseteados → Welcome; los archivos del DUEÑO intactos).
+    static func secondaryWipeExecuted() {
+        logger.notice("CloudSecondary wipe executed at boot — secondary files deleted, owner intact")
+    }
+
+    /// BOOT: el wipe secundario ABORTÓ (borrado del archivo base `-Secondary` falló ≠ no-existe).
+    /// El arm y el descriptor persisten → reintento en el próximo boot (mientras tanto el mount
+    /// sigue siendo el secundario — sin riesgo para el dueño). >0 sostenido = disco/permisos.
+    static func secondaryWipeAborted(reason: String) {
+        logger.error("CloudSecondary wipe ABORTED reason=\(reason, privacy: .public)")
+    }
+
+    /// BOOT: la purga de ENTRADA de la sesión secundaria corrió (superficies App Group limpiadas,
+    /// notificaciones del dueño canceladas, healing de flags si un kill se comió la ventana 2→3).
+    static func secondaryEntryPurged() {
+        logger.notice("CloudSecondary entry purge executed — App Group surfaces cleared")
+    }
+
     /// Guard de recreación (§d.5 A1): la tabla `SyncQuarantine` se recreó vacía (testigo>0, count==0) →
     /// serverSeqCursor forzado a 0 (re-pull completo).
     static func quarantineTableRecreated() {

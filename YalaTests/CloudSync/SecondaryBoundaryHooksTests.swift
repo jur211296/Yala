@@ -1,0 +1,161 @@
+//
+//  SecondaryBoundaryHooksTests.swift
+//  YalaTests / CloudSync
+//
+//  Hooks de frontera de la sesión secundaria (M1 Inc 2) — kill-safety del wipe de SALIDA
+//  (patrón S3: abort si el archivo BASE falla, arm persiste, reintento completa) y one-shot
+//  idempotente de la ENTRADA (purga + healing de flags, marker AL FINAL). Variantes inyectables:
+//  ni archivos reales ni NotificationCenter. UserDefaults aislado (regla del repo).
+//
+
+import Foundation
+import Testing
+
+@testable import Yala
+
+@Suite("SecondaryBoundaryHooks · wipe de salida (M1 Inc 2)")
+struct SecondaryWipeHookTests {
+
+    private func armedDefaults(prefix: String) -> UserDefaults {
+        let defaults = makeIsolatedDefaults(prefix: prefix)
+        SecondarySessionStore.activate(userID: "guest-1", defaults)
+        SecondarySessionStore.markEntryPurgeDone(defaults)
+        SecondarySessionStore.armWipe(defaults)
+        // Estado de una sesión secundaria viva: flags de onboarding puestos.
+        defaults.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        defaults.set(true, forKey: "hasShownWelcomeChooser")
+        return defaults
+    }
+
+    @Test func notArmed_isNoOp() {
+        let defaults = makeIsolatedDefaults(prefix: "swipe.noop")
+        SecondarySessionStore.activate(userID: "guest-1", defaults)
+        var touched = false
+        SwiftDataConfiguration.performSecondaryWipeIfArmed(
+            defaults: defaults,
+            deleteFiles: { _, _ in touched = true; return true },
+            purge: { touched = true })
+        #expect(touched == false)
+        #expect(SecondarySessionStore.isActive(defaults))
+    }
+
+    @Test func baseDeleteFails_abortsPreservingArmAndDescriptor() {
+        let defaults = armedDefaults(prefix: "swipe.abort")
+        var purged = false
+        SwiftDataConfiguration.performSecondaryWipeIfArmed(
+            defaults: defaults,
+            deleteFiles: { _, _ in false },   // kill-simulado: el BASE no se pudo borrar
+            purge: { purged = true })
+        // NADA más se limpió: arm + descriptor persisten (el próximo boot reintenta),
+        // los flags de onboarding siguen puestos y la purga no corrió.
+        #expect(purged == false)
+        #expect(SecondarySessionStore.isWipeArmed(defaults))
+        #expect(SecondarySessionStore.isActive(defaults))
+        #expect(defaults.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding))
+    }
+
+    @Test func retryAfterAbort_completesFullOrder_armClearedLast() {
+        let defaults = armedDefaults(prefix: "swipe.retry")
+        // 1ª pasada: abort.
+        SwiftDataConfiguration.performSecondaryWipeIfArmed(
+            defaults: defaults, deleteFiles: { _, _ in false }, purge: {})
+        // 2ª pasada (reintento del boot siguiente): completa en ORDEN.
+        var events: [String] = []
+        SwiftDataConfiguration.performSecondaryWipeIfArmed(
+            defaults: defaults,
+            deleteFiles: { name, _ in events.append("delete:\(name)"); return true },
+            purge: { events.append("purge") })
+        #expect(events == [
+            "delete:\(SwiftDataConfiguration.secondaryDatabaseName)",
+            "delete:\(SwiftDataConfiguration.secondarySyncMetaDatabaseName)",
+            "purge",
+        ])
+        #expect(SecondarySessionStore.isActive(defaults) == false)
+        #expect(SecondarySessionStore.isEntryPurgeDone(defaults) == false)
+        #expect(SecondarySessionStore.isWipeArmed(defaults) == false)
+        // 3.5: flags de onboarding reseteados EN EL BOOT → el device vuelve al Welcome.
+        #expect(defaults.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) == false)
+        #expect(defaults.bool(forKey: "hasShownWelcomeChooser") == false)
+    }
+
+    @Test func neverTouchesOwnerStorageModeKeys() {
+        let defaults = armedDefaults(prefix: "swipe.owner")
+        // Estado del dueño simulado: modo persistido explícito.
+        StorageModePersistence.write(.icloud, defaults: defaults)
+        SwiftDataConfiguration.performSecondaryWipeIfArmed(
+            defaults: defaults, deleteFiles: { _, _ in true }, purge: {})
+        // Las keys del dueño NI se leen ni se escriben: el modo persiste tal cual y el
+        // arm del wipe del DUEÑO jamás aparece.
+        #expect(StorageModePersistence.read(defaults) == .icloud)
+        #expect(StorageModePersistence.isSignOutWipeArmed(defaults) == false)
+        #expect(StorageModePersistence.isMirrorOffArmed(defaults) == false)
+    }
+}
+
+@Suite("SecondaryBoundaryHooks · tareas de entrada (M1 Inc 2)")
+struct SecondaryEntryTasksTests {
+
+    @Test func inactive_isNoOp() {
+        let defaults = makeIsolatedDefaults(prefix: "sentry.noop")
+        var ran = false
+        SwiftDataConfiguration.performSecondaryEntryTasksIfNeeded(
+            defaults: defaults, purge: { ran = true }, cancelNotifications: { ran = true })
+        #expect(ran == false)
+        #expect(SecondarySessionStore.isEntryPurgeDone(defaults) == false)
+    }
+
+    @Test func active_runsOnce_marksAtEnd_andIsIdempotent() {
+        let defaults = makeIsolatedDefaults(prefix: "sentry.once")
+        SecondarySessionStore.activate(userID: "guest-1", defaults)
+        defaults.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        var purges = 0
+        var cancels = 0
+        let run = {
+            SwiftDataConfiguration.performSecondaryEntryTasksIfNeeded(
+                defaults: defaults, purge: { purges += 1 }, cancelNotifications: { cancels += 1 })
+        }
+        run()
+        #expect(purges == 1 && cancels == 1)
+        #expect(SecondarySessionStore.isEntryPurgeDone(defaults))
+        // Re-boot: el marker lo hace no-op.
+        run()
+        #expect(purges == 1 && cancels == 1)
+    }
+
+    @Test func killBeforeMarker_rerunsFullPurge() {
+        let defaults = makeIsolatedDefaults(prefix: "sentry.kill")
+        SecondarySessionStore.activate(userID: "guest-1", defaults)
+        defaults.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        var purges = 0
+        SwiftDataConfiguration.performSecondaryEntryTasksIfNeeded(
+            defaults: defaults, purge: { purges += 1 }, cancelNotifications: {})
+        // Kill-simulado ANTES del marker: lo borramos como si el proceso hubiera muerto
+        // entre la purga y el marker → el boot siguiente re-purga completo.
+        SecondarySessionStore.clearEntryPurgeMark(defaults)
+        SwiftDataConfiguration.performSecondaryEntryTasksIfNeeded(
+            defaults: defaults, purge: { purges += 1 }, cancelNotifications: {})
+        #expect(purges == 2)
+    }
+
+    @Test func healing_writesFlags_onlyWhenMissing() {
+        // Kill entre descriptor y flags (ventana 2→3 de la entrada): el healing los escribe.
+        let defaults = makeIsolatedDefaults(prefix: "sentry.heal")
+        SecondarySessionStore.activate(userID: "guest-1", defaults)
+        SwiftDataConfiguration.performSecondaryEntryTasksIfNeeded(
+            defaults: defaults, purge: {}, cancelNotifications: {})
+        #expect(defaults.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding))
+        #expect(defaults.bool(forKey: "hasShownWelcomeChooser"))
+    }
+
+    @Test func healing_skipsWhenFlagsPresent() {
+        // Entrada normal (los flags los puso el paso 3): el healing NO re-escribe nada —
+        // hasShownWelcomeChooser conserva su valor real.
+        let defaults = makeIsolatedDefaults(prefix: "sentry.nohealing")
+        SecondarySessionStore.activate(userID: "guest-1", defaults)
+        defaults.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        defaults.set(false, forKey: "hasShownWelcomeChooser")
+        SwiftDataConfiguration.performSecondaryEntryTasksIfNeeded(
+            defaults: defaults, purge: {}, cancelNotifications: {})
+        #expect(defaults.bool(forKey: "hasShownWelcomeChooser") == false)
+    }
+}

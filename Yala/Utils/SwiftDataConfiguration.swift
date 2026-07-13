@@ -305,6 +305,94 @@ enum SwiftDataConfiguration {
         CloudSyncBreadcrumb.signOutWipeExecuted()
     }
 
+    // MARK: - Sesión secundaria (M1) — hooks de frontera pre-mount
+
+    /// BOOT-CLEANUP de la SALIDA de la sesión secundaria. Molde de `performSignOutWipeIfArmed`
+    /// (incl. patrón S3 de abort) pero sobre los archivos `-Secondary` — **JAMÁS toca**
+    /// `storageMode`/`mirrorOffArmed`, los archivos del dueño ni `DataWipeService.resetForSignOutWipe`
+    /// (nukearía las prefs del DUEÑO, que sobreviven por decisión 7 del diseño M1).
+    ///
+    /// Orden idempotente ante kill a mitad (el arm se limpia AL FINAL):
+    /// 1) archivos secundarios (abort si el BASE falla — el arm y el descriptor persisten, el mount
+    ///    sigue siendo el secundario y el próximo boot reintenta) → 2) purga E2E-M1 → 3) descriptor
+    ///    + marker de entrada → 3.5) los 3 flags de onboarding a `false` (EN EL BOOT y jamás
+    ///    in-session: con el proceso vivo montaría la cadena Welcome DEBAJO del cover de relaunch —
+    ///    doble presentación mismo anchor, clase toolbar-muerta) → 4) desarmar.
+    static func performSecondaryWipeIfArmed() {
+        guard !isRunningTests, !isUITesting else { return }
+        performSecondaryWipeIfArmed(
+            defaults: .standard,
+            deleteFiles: { deleteStoreFiles(named: $0, schema: $1) },
+            purge: { SecondarySessionBoundaryPurge.purge() })
+    }
+
+    /// Variante inyectable (tests del ORDEN sin archivos reales — el wrapper de producción
+    /// mantiene los guards de test/uitest).
+    static func performSecondaryWipeIfArmed(
+        defaults: UserDefaults,
+        deleteFiles: (String, Schema) -> Bool,
+        purge: () -> Void
+    ) {
+        guard SecondarySessionStore.isWipeArmed(defaults) else { return }
+
+        guard deleteFiles(secondaryDatabaseName, personalSchema),
+              deleteFiles(secondarySyncMetaDatabaseName, syncMetaSchema) else {
+            CloudSyncBreadcrumb.secondaryWipeAborted(reason: "store file deletion failed")
+            return
+        }
+
+        purge()
+
+        SecondarySessionStore.clear(defaults)
+        SecondarySessionStore.clearEntryPurgeMark(defaults)
+
+        defaults.set(false, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        defaults.set(false, forKey: "hasShownWelcomeChooser")
+        defaults.set(false, forKey: AppPreferences.Keys.hasShownYalaAIOnboarding)
+
+        SecondarySessionStore.clearWipeArm(defaults)
+        CloudSyncBreadcrumb.secondaryWipeExecuted()
+    }
+
+    /// Tareas de ENTRADA de la sesión secundaria (one-shot idempotente, pre-mount): purga las
+    /// superficies App Group del dueño (sus colas Apple Pay/Siri/imágenes no deben materializarse
+    /// en el store de la invitada), cancela sus notificaciones locales pendientes (se reprograman
+    /// con sus boot-reconcilers cuando vuelva) y sana los flags de onboarding si un kill se comió
+    /// la ventana descriptor→flags de la entrada (sin el healing, el boot mostraría el Welcome
+    /// sobre el store secundario vacío y un re-sign-in caería en el adopt CLÁSICO, que escribe el
+    /// PAR global `.cloud`+`mirrorOffArmed` del dueño). Marker AL FINAL (kill a mitad ⇒ re-purga
+    /// completa, todo idempotente).
+    static func performSecondaryEntryTasksIfNeeded() {
+        guard !isRunningTests, !isUITesting else { return }
+        performSecondaryEntryTasksIfNeeded(
+            defaults: .standard,
+            purge: { SecondarySessionBoundaryPurge.purge() },
+            cancelNotifications: { NotificationService.shared.cancelAllNotifications() })
+    }
+
+    /// Variante inyectable (tests). El healing escribe DIRECTO el mínimo (no
+    /// `completeOnboardingAsRestoreSkip`, que es de ContentView y setea el trial): perder el
+    /// trial-offer en este camino de kill-recovery es aceptable — un brick no.
+    static func performSecondaryEntryTasksIfNeeded(
+        defaults: UserDefaults,
+        purge: () -> Void,
+        cancelNotifications: () -> Void
+    ) {
+        guard SecondarySessionStore.isActive(defaults),
+              !SecondarySessionStore.isEntryPurgeDone(defaults) else { return }
+
+        purge()
+        cancelNotifications()
+
+        if !defaults.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) {
+            defaults.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+            defaults.set(true, forKey: "hasShownWelcomeChooser")
+        }
+
+        SecondarySessionStore.markEntryPurgeDone(defaults)
+        CloudSyncBreadcrumb.secondaryEntryPurged()
+    }
+
     /// Borra el trío de archivos SQLite de un store (base + -wal + -shm). La URL se deriva de una
     /// ModelConfiguration efímera (misma name+schema ⇒ misma URL) SIN pasar por `personalConfiguration`
     /// para no capturar el testigo `personalStoreMountedMode` antes del wipe.
