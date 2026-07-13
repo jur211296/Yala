@@ -49,6 +49,15 @@ final class GroupUserIdentityService {
         UserDefaults.standard.removeObject(forKey: defaultsKey)
     }
 
+    /// Boot-guard GAP 1: fetch DIRECTO a CKContainer que NO lee ni escribe el cache.
+    /// El boot-guard compara el valor fresco CONTRA `cachedRecordName` — si este
+    /// método actualizara el cache, la limpieza correría con el cache ya renovado
+    /// (orden roto: `decide` vería match). Tras la limpieza, `clearCache()` deja que
+    /// `currentUserRecordName()` repueble lazy bajo la identidad nueva.
+    func fetchFreshRecordName() async throws -> String {
+        try await CKContainer(identifier: CKConstants.containerID).userRecordID().recordName
+    }
+
     #if DEBUG
     /// Test-only: fija la identidad cacheada sin tocar CKContainer (los tests de
     /// GroupJoinReconciler necesitan que `currentUserRecordName()` resuelva

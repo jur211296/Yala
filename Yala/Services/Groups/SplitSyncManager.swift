@@ -185,6 +185,39 @@ final class SplitSyncManager {
             startEngines(autoSync: false)
             observeFirstImportThenStart()
         }
+
+        // Boot-guard GAP 1: el Apple ID del OS pudo cambiar con la app CERRADA — la
+        // limpieza reactiva (.accountChange del engine) no está garantizada en ese
+        // camino. Async post-arranque: `initialize()` es síncrona, el Task corre
+        // después SIEMPRE; correr con engines vivos tiene el mismo precedente que el
+        // `.switchAccounts` reactivo (además CKSyncEngine entregará su propio evento
+        // si también lo detecta — camino idempotente). No corre en secundaria/uitest
+        // (initialize() no corre ahí — AppBootstrapper gatea, y es lo correcto:
+        // en secundaria el engine jamás toca datos de Grupos).
+        Task { @MainActor in await self.runIdentityBootGuard() }
+    }
+
+    /// GAP 1 (gap-estados.md): compara la identidad de Grupos PERSISTIDA contra la
+    /// cuenta iCloud actual y, en mismatch, corre la limpieza de account-switch.
+    /// Un fetch fallido (red / sin cuenta) JAMÁS limpia — reintento en el próximo boot.
+    private func runIdentityBootGuard() async {
+        guard let cached = GroupUserIdentityService.shared.cachedRecordName, !cached.isEmpty else {
+            return  // Primera instalación / cache limpio: nada que comparar.
+        }
+        let fresh: String?
+        do {
+            fresh = try await GroupUserIdentityService.shared.fetchFreshRecordName()
+        } catch {
+            logger.notice("SplitSync identityBootGuard: fetch failed — skip (no evidence): \(error.localizedDescription, privacy: .public)")
+            return
+        }
+        guard GroupsIdentityBootGuardLogic.decide(cached: cached, fresh: fresh) == .runSwitchCleanup else {
+            return
+        }
+        // Sin PII: JAMÁS loguear los recordNames.
+        logger.notice("SplitSync identityBootGuard: MISMATCH — running account-switch cleanup")
+        TelemetryService.track(.groupsIdentityBootMismatch)
+        performAccountSwitchCleanup()
     }
 
     /// Cheap, no-network setup: CKContainer, one-time state migration, delegate.
@@ -1242,10 +1275,7 @@ final class SplitSyncManager {
 
         case .switchAccounts:
             syncStatus = .idle
-            clearAllLocalGroupData()
-            clearState(name: "private")
-            clearState(name: "shared")
-            GroupUserIdentityService.shared.clearCache()
+            performAccountSwitchCleanup()
             #if DEBUG
             logger.info("iCloud account switched — cleared data + state for re-fetch")
             #endif
@@ -1253,6 +1283,19 @@ final class SplitSyncManager {
         @unknown default:
             break
         }
+    }
+
+    /// Limpieza de "cambió el Apple ID" — reusada por `handleAccountChange(.switchAccounts)`
+    /// (reactivo, evento del engine) y por `runIdentityBootGuard()` (proactivo, GAP 1).
+    /// `clearAllLocalGroupData` auto-difiere en la ventana export-only
+    /// (`deferredClearAllRequested`); borrar los state files con engines vivos tiene el
+    /// mismo precedente que el switch reactivo (los engines ya cargaron su
+    /// stateSerialization en memoria — el re-fetch bajo la identidad nueva lo regenera).
+    private func performAccountSwitchCleanup() {
+        clearAllLocalGroupData()
+        clearState(name: "private")
+        clearState(name: "shared")
+        GroupUserIdentityService.shared.clearCache()
     }
 
     /// Delete all local group data (used on sign-out and account switch for privacy).

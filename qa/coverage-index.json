@@ -791,6 +791,8 @@
         "Yala/Services/Groups/SplitSyncManager.swift",
         "Yala/App/Logic/SplitSyncStartGate.swift",
         "Yala/App/Logic/GroupAcceptShareErrorLogic.swift",
+        "Yala/App/Logic/GroupsIdentityBootGuardLogic.swift",
+        "Yala/Services/Groups/GroupUserIdentityService.swift",
         "Yala/Services/Groups/SplitZoneManager.swift",
         "Yala/Services/Groups/CKRecordTranslator.swift",
         "Yala/Services/Groups/CloudKitConstants.swift",
@@ -825,7 +827,7 @@
         "F-GRP-FETCH-02"
       ],
       "classification": "manual",
-      "coverage": "unit:YalaTests/SplitSyncStartGateTests,YalaTests/CloudKitGroupsSchemaParityTests,YalaTests/GroupAcceptShareErrorLogicTests + manual (2026-07-11: markPendingChange/Deletion con engine nil dejó de ser no-op silencioso — log fuera de DEBUG + canario cloudkitGroupEnqueueDroppedNoEngine; 2026-07-13: acceptShare alerta en secundaria [permanente] y con .notAuthenticated [copy 'necesitas iCloud']; container-nil transitorio sigue silencioso por diseño)",
+      "coverage": "unit:YalaTests/SplitSyncStartGateTests,YalaTests/CloudKitGroupsSchemaParityTests,YalaTests/GroupAcceptShareErrorLogicTests,YalaTests/GroupsIdentityBootGuardLogicTests + manual (2026-07-11: markPendingChange/Deletion con engine nil dejó de ser no-op silencioso — log fuera de DEBUG + canario cloudkitGroupEnqueueDroppedNoEngine; 2026-07-13: acceptShare alerta en secundaria [permanente] y con .notAuthenticated; boot-guard GAP 1 [identidad persistida vs userRecordID al boot, canario groupsIdentityBootMismatch] — verificación real solo device físico [cambio de Apple ID], fase pendiente del guion device)",
       "owner": "",
       "lastVerified": "2026-07-13"
     },
