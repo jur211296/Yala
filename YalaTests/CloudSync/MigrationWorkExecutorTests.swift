@@ -255,6 +255,23 @@ struct MigrationWorkExecutorTests {
         #expect(beaconStore.string(forKey: CloudBeacon.Keys.accountHash) != "sub-abc-123")
     }
 
+    @Test("execute(.writeBeacon) en sesión SECUNDARIA: SUPRIMIDO — cero writes al KV del dueño (M1)")
+    func execute_writeBeacon_suppressedInSecondarySession() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-abc-123")
+        let beaconStore = FakeBeaconStore()
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, beaconStore,
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"))
+        SecondarySessionStore._testSetActiveOverride(true)
+        defer { SecondarySessionStore._testSetActiveOverride(nil) }
+        try await executor.execute(.writeBeacon)
+        // El faro vive en el iCloud KV del DUEÑO — la secundaria jamás lo toca.
+        #expect(beaconStore.bool(forKey: CloudBeacon.Keys.linked) == false)
+        #expect(beaconStore.string(forKey: CloudBeacon.Keys.provider) == nil)
+        #expect(beaconStore.string(forKey: CloudBeacon.Keys.accountHash) == nil)
+    }
+
     @Test("execute(.rollback): no-op REAL (device intacto pre-cutover) — no lanza y desarma mirror-off")
     func execute_rollback_isRealNoop() async throws {
         let dir = freshDir(); defer { cleanup(dir) }

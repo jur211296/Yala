@@ -425,7 +425,15 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
     func execute(_ effect: MigrationEffect) async throws {
         switch effect {
         case .writeBeacon:
-            beacon.writeCloudAccountLinked(provider: provider, accountSub: session.currentUserID, now: now())
+            // M1 belt: la sesión SECUNDARIA jamás escribe el faro — vive en el iCloud KV del
+            // Apple ID del OS (el DUEÑO); escribirlo auto-encaminaría SUS otros devices a la
+            // cuenta de la invitada. Inalcanzable por diseño (la entrada secundaria no pasa por
+            // claim de migración: el adopt de existing_stable no emite .writeBeacon), belt barato.
+            if SecondarySessionStore.isActive() {
+                CloudSyncBreadcrumb.secondaryBeaconWriteSuppressed()
+            } else {
+                beacon.writeCloudAccountLinked(provider: provider, accountSub: session.currentUserID, now: now())
+            }
 
         case .startParallelHistoryCapture:
             // La CAPTURA continua ES el History (token-based): cualquier write de la ventana

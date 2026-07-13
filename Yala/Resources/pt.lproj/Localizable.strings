@@ -4837,3 +4837,6 @@
 
 /* CTA of the secondary-session confirm step */
 "welcome.cloud.secondaryConfirmCta" = "Entrar com minha conta";
+
+/* Chip shown while the secondary (guest) session pulls its account data after relaunch */
+"welcome.cloud.secondaryHydrationBanner" = "Baixando seus dados…";

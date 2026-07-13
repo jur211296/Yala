@@ -4841,3 +4841,6 @@
 
 /* CTA of the secondary-session confirm step */
 "welcome.cloud.secondaryConfirmCta" = "Inloggen met mijn account";
+
+/* Chip shown while the secondary (guest) session pulls its account data after relaunch */
+"welcome.cloud.secondaryHydrationBanner" = "Je gegevens worden gedownload…";

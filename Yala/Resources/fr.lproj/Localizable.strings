@@ -4830,3 +4830,6 @@
 
 /* CTA of the secondary-session confirm step */
 "welcome.cloud.secondaryConfirmCta" = "Entrer avec mon compte";
+
+/* Chip shown while the secondary (guest) session pulls its account data after relaunch */
+"welcome.cloud.secondaryHydrationBanner" = "Téléchargement de tes données…";

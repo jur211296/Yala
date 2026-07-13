@@ -74,6 +74,18 @@ struct CrossAccountEntryGuardLogicTests {
     }
 }
 
+@Suite("SecondaryHydrationLogic · visibilidad del banner (M1)")
+struct SecondaryHydrationLogicTests {
+
+    @Test func table() {
+        // Solo (secundaria && sin primer pull) muestra el banner.
+        #expect(SecondaryHydrationLogic.showBanner(secondaryActive: true, firstPullCompleted: false))
+        #expect(!SecondaryHydrationLogic.showBanner(secondaryActive: true, firstPullCompleted: true))
+        #expect(!SecondaryHydrationLogic.showBanner(secondaryActive: false, firstPullCompleted: false))
+        #expect(!SecondaryHydrationLogic.showBanner(secondaryActive: false, firstPullCompleted: true))
+    }
+}
+
 @Suite("SecondaryEntryLogic · orden de escrituras (M1)")
 struct SecondaryEntryLogicTests {
 

@@ -4572,6 +4572,7 @@ enum L10n {
             static var secondaryConfirmTitle: String { ls("welcome.cloud.secondaryConfirmTitle", comment: "") }
             static var secondaryConfirmBody: String { ls("welcome.cloud.secondaryConfirmBody", comment: "") }
             static var secondaryConfirmCta: String { ls("welcome.cloud.secondaryConfirmCta", comment: "") }
+            static var secondaryHydrationBanner: String { ls("welcome.cloud.secondaryHydrationBanner", comment: "") }
         }
 
         enum Restore {

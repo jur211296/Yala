@@ -377,6 +377,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSecondary entry ARMED — descriptor persisted, awaiting relaunch")
     }
 
+    /// BELT (M1): el efecto `.writeBeacon` se SUPRIMIÓ porque hay sesión secundaria activa —
+    /// el faro vive en el iCloud KV del DUEÑO. Inalcanzable por diseño; si suena, un path de
+    /// claim de migración corrió bajo la secundaria (bug — investigar).
+    static func secondaryBeaconWriteSuppressed() {
+        logger.error("CloudSecondary beacon write SUPPRESSED — migration claim path ran under secondary session (bug)")
+    }
+
     /// GUARD de mount-mismatch (M1, crítico): el runtime intentó arrancar con el descriptor
     /// secundario activo pero el proceso montó el store del DUEÑO (ventana de entrada pre-relaunch)
     /// → bloqueado. Sin el guard, el drain pushearía la History del dueño a la cuenta entrante.

@@ -1416,6 +1416,8 @@ struct MainTabView: View {
             .tint(theme.accent)
             .tabBarMinimizeBehavior(.onScrollDown)
             .transaction { $0.animation = nil }
+            // M1: fase real de la hidratación de la sesión secundaria (no-op para el dueño).
+            .overlay(alignment: .top) { SecondaryHydrationBanner() }
             .sheet(isPresented: $showDowngradeResolution) {
                 DowngradeResolutionSheet(
                     accounts: downgradeAccounts,
