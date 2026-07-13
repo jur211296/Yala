@@ -4832,3 +4832,12 @@
 
 /* Sign-out confirm message for a secondary (guest) cloud session — guest data leaves the device, owner data untouched */
 "settings.signOutConfirmMessageSecondary" = "まず、保留中の変更をあなたのアカウントにアップロードします。あなたのデータはこのデバイスから削除されます（アカウント内には安全に保存されたままです）。デバイスの所有者のデータには影響しません。";
+
+/* Title of the secondary-session confirm step (guest entering own cloud account on someone else's device) */
+"welcome.cloud.secondaryConfirmTitle" = "自分のアカウントで入る";
+
+/* Body of the secondary-session confirm step */
+"welcome.cloud.secondaryConfirmBody" = "このデバイスには他の人のデータがあります。あなたは自分のアカウントで別の領域に入ります。表示されるのはあなたのデータだけで、所有者のデータには影響しません。サインアウトすると、あなたのデータはデバイスから削除されます。";
+
+/* CTA of the secondary-session confirm step */
+"welcome.cloud.secondaryConfirmCta" = "自分のアカウントで入る";

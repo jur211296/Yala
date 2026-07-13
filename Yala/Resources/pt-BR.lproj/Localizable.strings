@@ -4820,3 +4820,12 @@
 
 /* Sign-out confirm message for a secondary (guest) cloud session — guest data leaves the device, owner data untouched */
 "settings.signOutConfirmMessageSecondary" = "Primeiro vamos enviar suas alterações pendentes para a sua conta. Seus dados serão removidos deste dispositivo (continuam seguros na sua conta); os dados do dono do dispositivo não são tocados.";
+
+/* Title of the secondary-session confirm step (guest entering own cloud account on someone else's device) */
+"welcome.cloud.secondaryConfirmTitle" = "Entrar com a sua conta";
+
+/* Body of the secondary-session confirm step */
+"welcome.cloud.secondaryConfirmBody" = "Este dispositivo tem dados de outra pessoa. Você entrará com a sua própria conta em um espaço separado: verá apenas os seus dados, e os dados do dono não são tocados. Ao sair, seus dados serão removidos do dispositivo.";
+
+/* CTA of the secondary-session confirm step */
+"welcome.cloud.secondaryConfirmCta" = "Entrar com minha conta";

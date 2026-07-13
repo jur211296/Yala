@@ -4088,3 +4088,12 @@
 
 /* Sign-out confirm message for a secondary (guest) cloud session — guest data leaves the device, owner data untouched */
 "settings.signOutConfirmMessageSecondary" = "Primeiro vamos enviar as tuas alterações pendentes para a tua conta. Os teus dados serão removidos deste dispositivo (continuam seguros na tua conta); os dados do dono do dispositivo não são alterados.";
+
+/* Title of the secondary-session confirm step (guest entering own cloud account on someone else's device) */
+"welcome.cloud.secondaryConfirmTitle" = "Entrar com a tua conta";
+
+/* Body of the secondary-session confirm step */
+"welcome.cloud.secondaryConfirmBody" = "Este dispositivo tem dados de outra pessoa. Vais entrar com a tua própria conta num espaço separado: verás apenas os teus dados, e os dados do dono não são alterados. Ao terminares sessão, os teus dados serão removidos do dispositivo.";
+
+/* CTA of the secondary-session confirm step */
+"welcome.cloud.secondaryConfirmCta" = "Entrar com a minha conta";

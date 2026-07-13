@@ -4832,3 +4832,12 @@
 
 /* Sign-out confirm message for a secondary (guest) cloud session — guest data leaves the device, owner data untouched */
 "settings.signOutConfirmMessageSecondary" = "We uploaden eerst je openstaande wijzigingen naar je account. Je gegevens worden van dit apparaat verwijderd (ze blijven veilig in je account); de gegevens van de eigenaar van het apparaat blijven onaangeroerd.";
+
+/* Title of the secondary-session confirm step (guest entering own cloud account on someone else's device) */
+"welcome.cloud.secondaryConfirmTitle" = "Inloggen met je account";
+
+/* Body of the secondary-session confirm step */
+"welcome.cloud.secondaryConfirmBody" = "Dit apparaat bevat gegevens van iemand anders. Je logt in met je eigen account in een aparte ruimte: je ziet alleen je eigen gegevens en die van de eigenaar blijven onaangeroerd. Als je uitlogt, worden je gegevens van het apparaat verwijderd.";
+
+/* CTA of the secondary-session confirm step */
+"welcome.cloud.secondaryConfirmCta" = "Inloggen met mijn account";

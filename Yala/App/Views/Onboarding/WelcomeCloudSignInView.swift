@@ -25,6 +25,10 @@ struct WelcomeCloudSignInView: View {
     let hasLocalDataNow: @MainActor () -> Bool
     /// ContentView marca onboarding completado (restore-skip) ANTES del adopt.
     var onAdoptStarted: () -> Void
+    /// M1 (D1): variante para la ENTRADA SECUNDARIA — marca los flags SIN trial pendiente
+    /// (la invitada no recibe la oferta del device del dueño) ni `markAsNewInstall` (el
+    /// checklist es estado device-global del dueño).
+    var onSecondaryEntryFlagsMarked: () -> Void
     /// Salida a la app (waitingLeader → "Continuar a la app").
     var onFinishedToApp: () -> Void
     /// Volver al chooser (solo en fases no comprometidas: intro/notFound/blocked/error).
@@ -72,10 +76,12 @@ struct WelcomeCloudSignInView: View {
     }
 
     /// Back solo en fases donde nada está comprometido; adopt en vuelo o relaunch = sin salida.
+    /// `.secondaryConfirm` usa su botón Cancelar propio (suelta la sesión SIWA — el back genérico
+    /// la dejaría colgada); `.relaunchSecondary` es terminal como `.relaunch`.
     private var canGoBack: Bool {
         switch phase {
         case .intro, .notFound, .blockedForeignData, .error: true
-        case .checking, .adopting, .waitingLeader, .relaunch: false
+        case .checking, .adopting, .waitingLeader, .relaunch, .secondaryConfirm, .relaunchSecondary: false
         }
     }
 
@@ -94,6 +100,10 @@ struct WelcomeCloudSignInView: View {
             waitingLeaderContent
         case .relaunch:
             relaunchContent
+        case .secondaryConfirm:
+            secondaryConfirmContent
+        case .relaunchSecondary:
+            secondaryRelaunchContent
         case .notFound:
             messageContent(
                 icon: "person.crop.circle.badge.questionmark",
@@ -219,6 +229,49 @@ struct WelcomeCloudSignInView: View {
         .accessibilityIdentifier("welcome_cloud_relaunch")
     }
 
+    private var secondaryConfirmContent: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            messageContent(
+                icon: "person.2.badge.key",
+                title: L10n.Welcome.Cloud.secondaryConfirmTitle,
+                body: L10n.Welcome.Cloud.secondaryConfirmBody)
+            YalaPrimaryButton(L10n.Welcome.Cloud.secondaryConfirmCta) {
+                confirmSecondaryEntry()
+            }
+            .padding(.horizontal, DS.Spacing.xl)
+            .accessibilityIdentifier("welcome_cloud_secondary_confirm_cta")
+            Button(L10n.Common.cancel) {
+                // Suelta la sesión SIWA (no dejarla colgada) y vuelve al intro.
+                launchFlow {
+                    await CloudAuthService.shared.signOut()
+                    phase = .intro
+                }
+            }
+            .font(DS.Typography.subheadline)
+            .foregroundStyle(.white.opacity(0.8))
+            .accessibilityIdentifier("welcome_cloud_secondary_confirm_cancel")
+        }
+    }
+
+    private var secondaryRelaunchContent: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
+                .font(.system(size: 44))
+                .foregroundStyle(.white.opacity(0.8))
+                .accessibilityHidden(true)
+            Text(L10n.Storage.Relaunch.title)
+                .font(DS.Typography.title2)
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+            Text(L10n.Storage.Relaunch.body)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DS.Spacing.xl)
+        }
+        .accessibilityIdentifier("welcome_cloud_secondary_relaunch")
+    }
+
     private func messageContent(icon: String, title: String, body bodyText: String) -> some View {
         VStack(spacing: DS.Spacing.md) {
             Image(systemName: icon)
@@ -275,12 +328,26 @@ struct WelcomeCloudSignInView: View {
         case .accountFound:
             let decision = CrossAccountEntryGuardLogic.decide(
                 hasLocalData: hasLocalDataNow(),
-                sameAccountClaimExists: CloudClaimActionStore.shared.action(forUserID: userID) != nil)
+                sameAccountClaimExists: CloudClaimActionStore.shared.action(forUserID: userID) != nil,
+                accountExists: true,
+                secondarySessionEnabled: CloudSyncFlags.secondarySessionEntryAvailable)
             switch decision {
             case .blockedForeignData:
                 await CloudAuthService.shared.signOut()
                 phase = .blockedForeignData
                 track(outcome: "blocked")
+            case .proceedSecondarySession:
+                // M1 belt: invariante estructural — durante el Welcome post sign-out la key
+                // PERSISTIDA es `.icloud` (el sign-out cloud siempre la resetea antes de llegar
+                // aquí). Si no lo es, hay estado corrupto: delatarlo temprano, jamás armar.
+                guard StorageModePersistence.read() == .icloud else {
+                    await CloudAuthService.shared.signOut()
+                    phase = .error(retryable: false)
+                    track(outcome: "secondaryInvariantViolated")
+                    return
+                }
+                track(outcome: "secondaryOffered")
+                phase = .secondaryConfirm
             case .proceed:
                 track(outcome: "found")
                 onAdoptStarted()
@@ -289,6 +356,26 @@ struct WelcomeCloudSignInView: View {
                 await pollAdoptProgress()
             }
         }
+    }
+
+    /// M1: la invitada confirmó — arma la sesión secundaria EN ORDEN (claim → descriptor →
+    /// flags, kill-safety en `SecondaryEntryLogic`) y muestra el relaunch terminal. JAMÁS
+    /// adopt aquí (correría sobre el store del DUEÑO montado) ni signOut (el runtime necesita
+    /// la sesión SIWA post-relaunch).
+    private func confirmSecondaryEntry() {
+        guard let userID = CloudAuthService.shared.currentUserID else {
+            phase = .error(retryable: true)
+            track(outcome: "error")
+            return
+        }
+        SecondaryEntryLogic.begin(
+            userID: userID,
+            recordClaim: { CloudClaimActionStore.shared.record(.routeReturningUser, forUserID: $0) },
+            activateDescriptor: { SecondarySessionStore.activate(userID: $0) },
+            markOnboardingFlags: onSecondaryEntryFlagsMarked)
+        CloudSyncBreadcrumb.secondaryEntryArmed()
+        track(outcome: "secondaryArmed")
+        phase = .relaunchSecondary
     }
 
     /// Deriva la fase de pantalla del uiState de la máquina cada segundo

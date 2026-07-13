@@ -26,6 +26,10 @@ struct ContentView: View {
     // flag garantiza que con el wipe ARMADO la app jamás quede usable aunque el sheet
     // muera — SwiftUI materializa la presentación pendiente al despejarse el anchor.
     @State private var showSignOutRelaunchCover: Bool = false
+    /// M1: red DURABLE de la VENTANA DE ENTRADA secundaria (descriptor persistido, store del
+    /// DUEÑO montado, relaunch pendiente). El cover primario es la fase `.relaunchSecondary`
+    /// del welcome; si ese cover muere, este re-presenta (regla toolbar-muerta).
+    @State private var showSecondaryEntryRelaunchCover: Bool = false
     @State private var showInviteRecovery: Bool = false
     /// Prefilled summary from iCloud restore (rama B). Pasado a OnboardingView
     /// como `prefilledData`. Reseteado tras data wipe para evitar values stale.
@@ -372,6 +376,10 @@ struct ContentView: View {
         .modifier(SignOutRelaunchNetModifier(
             showRelaunchCover: $showSignOutRelaunchCover
         ))
+        .modifier(SecondaryEntryRelaunchNetModifier(
+            showRelaunchCover: $showSecondaryEntryRelaunchCover,
+            welcomeCloudCoverVisible: showWelcomeCloudSignIn
+        ))
         .modifier(GroupInviteModifier(
             showGroupInviteOnboarding: $showGroupInviteOnboarding,
             pendingInviteMetadata: $pendingInviteMetadata,
@@ -494,6 +502,9 @@ struct ContentView: View {
             showInviteRecovery: showInviteRecovery,
             showWelcomeCloudSignIn: showWelcomeCloudSignIn,
             showSignOutRelaunch: showSignOutRelaunchCover,
+            // M1: la condición viva (statics) ES el blocker; el @State del cover es la red visual.
+            secondaryEntryRelaunch: showSecondaryEntryRelaunchCover
+                || (SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted),
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
@@ -566,6 +577,9 @@ struct ContentView: View {
             showInviteRecovery: showInviteRecovery,
             showWelcomeCloudSignIn: showWelcomeCloudSignIn,
             showSignOutRelaunch: showSignOutRelaunchCover,
+            // M1: la condición viva (statics) ES el blocker; el @State del cover es la red visual.
+            secondaryEntryRelaunch: showSecondaryEntryRelaunchCover
+                || (SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted),
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,
@@ -1054,6 +1068,13 @@ private struct WelcomeFlowModifier: ViewModifier {
                         completeOnboardingAsRestoreSkip()
                         hasCompletedOnboarding = true
                     },
+                    onSecondaryEntryFlagsMarked: {
+                        // M1 (D1, decisión owner): flags SÍ, trial NO (la invitada no recibe
+                        // la oferta del device del dueño) ni markAsNewInstall (el checklist
+                        // es estado device-global del dueño).
+                        UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
+                        hasCompletedOnboarding = true
+                    },
                     onFinishedToApp: {
                         showWelcomeCloudSignIn = false
                     },
@@ -1093,6 +1114,42 @@ private struct SignOutRelaunchNetModifier: ViewModifier {
                     if CloudSessionSignOut.shared.phase == .awaitingRelaunch {
                         showRelaunchCover = true
                     }
+                }
+            ) {
+                SignOutRelaunchView()
+            }
+    }
+}
+
+// MARK: - Secondary entry relaunch net (M1, molde C1)
+
+/// Red DURABLE de la VENTANA DE ENTRADA secundaria (descriptor persistido, store del DUEÑO
+/// montado): el cover primario es la fase `.relaunchSecondary` DENTRO del welcome cloud cover;
+/// si ese cover muere por cualquier vía (con los flags de onboarding ya puestos, el onDismiss
+/// del container no reabre nada → la app quedaría usable sobre el store del dueño), este anchor
+/// re-presenta el cover terminal. `secondaryEntryRelaunch` es además blocker de la matriz.
+private struct SecondaryEntryRelaunchNetModifier: ViewModifier {
+    @Binding var showRelaunchCover: Bool
+    /// El flag del welcome cloud cover — su caída con la ventana armada dispara la red.
+    let welcomeCloudCoverVisible: Bool
+
+    private var isArmedUnmounted: Bool {
+        SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                if isArmedUnmounted { showRelaunchCover = true }
+            }
+            .onChange(of: welcomeCloudCoverVisible) { _, visible in
+                if !visible && isArmedUnmounted { showRelaunchCover = true }
+            }
+            .fullScreenCover(
+                isPresented: $showRelaunchCover,
+                onDismiss: {
+                    // Terminal: si UIKit lo tumbara, re-presentar (regla toolbar-muerta).
+                    if isArmedUnmounted { showRelaunchCover = true }
                 }
             ) {
                 SignOutRelaunchView()

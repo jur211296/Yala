@@ -17,6 +17,7 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     let showInviteRecovery: Bool
     let showWelcomeCloudSignIn: Bool
     let showSignOutRelaunch: Bool
+    let secondaryEntryRelaunch: Bool
     let showFreshStartWipeAlert: Bool
     let showRemoteWipeAlert: Bool
     let showICloudRestartAlert: Bool
@@ -47,6 +48,7 @@ private struct ReadinessGateObserversModifier: ViewModifier {
             .onChange(of: showInviteRecovery) { _, _ in recompute() }
             .onChange(of: showWelcomeCloudSignIn) { _, _ in recompute() }
             .onChange(of: showSignOutRelaunch) { _, _ in recompute() }
+            .onChange(of: secondaryEntryRelaunch) { _, _ in recompute() }
             .onChange(of: showGroupInviteOnboarding) { _, _ in recompute() }
             .onChange(of: showGroupReconnect) { _, _ in recompute() }
             .onChange(of: showFullModeActivation) { _, _ in recompute() }
@@ -76,6 +78,7 @@ extension View {
         showInviteRecovery: Bool,
         showWelcomeCloudSignIn: Bool,
         showSignOutRelaunch: Bool,
+        secondaryEntryRelaunch: Bool,
         showFreshStartWipeAlert: Bool,
         showRemoteWipeAlert: Bool,
         showICloudRestartAlert: Bool,
@@ -99,6 +102,7 @@ extension View {
             showInviteRecovery: showInviteRecovery,
             showWelcomeCloudSignIn: showWelcomeCloudSignIn,
             showSignOutRelaunch: showSignOutRelaunch,
+            secondaryEntryRelaunch: secondaryEntryRelaunch,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,

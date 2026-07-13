@@ -25,6 +25,12 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     case waitingLeader
     /// Adopt completo — TERMINAL: "Cierra y reabre Yala" (NUNCA auto-kill).
     case relaunch
+    /// M1: confirmación explícita ANTES de escribir nada de la sesión secundaria
+    /// ("entrarás con tu cuenta; los datos del dueño no se tocan").
+    case secondaryConfirm
+    /// M1: descriptor + claim armados — TERMINAL: "Cierra y reabre Yala" (el boot
+    /// monta el store secundario). Sin auto-kill, igual que `.relaunch`.
+    case relaunchSecondary
     /// El Apple ID firmado no tiene cuenta Yala en la nube.
     case notFound
     /// Fallo de red/sesión del `exists` o de la máquina.

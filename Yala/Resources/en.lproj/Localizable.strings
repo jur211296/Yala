@@ -4826,3 +4826,12 @@
 
 /* Sign-out confirm message for a secondary (guest) cloud session — guest data leaves the device, owner data untouched */
 "settings.signOutConfirmMessageSecondary" = "We'll upload your pending changes to your account first. Your data will be removed from this device (it stays safe in your account); the device owner's data is not touched.";
+
+/* Title of the secondary-session confirm step (guest entering own cloud account on someone else's device) */
+"welcome.cloud.secondaryConfirmTitle" = "Sign in with your account";
+
+/* Body of the secondary-session confirm step */
+"welcome.cloud.secondaryConfirmBody" = "This device has someone else's data. You'll sign in with your own account in a separate space: you'll see only your data, and the owner's data is not touched. When you sign out, your data will be removed from the device.";
+
+/* CTA of the secondary-session confirm step */
+"welcome.cloud.secondaryConfirmCta" = "Sign in with my account";

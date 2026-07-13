@@ -32,6 +32,11 @@ struct ShellReadinessState: Equatable {
     /// H4: cover terminal del cierre de sesión `.cloud` (wipe armado, esperando
     /// relaunch). Severidad máxima tras wipingData: nada debe presentarse debajo.
     let showSignOutRelaunch: Bool
+    /// M1: VENTANA DE ENTRADA de la sesión secundaria — descriptor persistido pero este
+    /// proceso montó el store del DUEÑO (relaunch pendiente). Mismo tier terminal que
+    /// `signOutRelaunch`: la app JAMÁS queda usable debajo (el runtime ya está bloqueado
+    /// por el guard de mount-mismatch; esto tapa la UI).
+    let secondaryEntryRelaunch: Bool
 
     // System alerts (block readiness — alert → would collide with subsequent intent)
     let showFreshStartWipeAlert: Bool
@@ -75,6 +80,8 @@ enum ContentViewReadinessLogic {
         if state.isWipingData { return "wipingData" }
         // H4: sesión cerrada + wipe de boot ARMADO — terminal, nada presenta debajo.
         if state.showSignOutRelaunch { return "signOutRelaunch" }
+        // M1: entrada secundaria armada con el store del dueño aún montado — terminal.
+        if state.secondaryEntryRelaunch { return "secondaryEntryRelaunch" }
         if !state.isSplashDismissed { return "splash" }
 
         // System alerts: must clear before the next router intent presents.
@@ -152,6 +159,7 @@ extension ShellReadinessState {
             showInviteRecovery: false,
             showWelcomeCloudSignIn: showWelcomeCloudSignIn,
             showSignOutRelaunch: showSignOutRelaunch,
+            secondaryEntryRelaunch: secondaryEntryRelaunch,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert,
             showICloudRestartAlert: showICloudRestartAlert,

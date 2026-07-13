@@ -22,6 +22,7 @@ struct ContentViewReadinessLogicTests {
         showInviteRecovery: Bool = false,
         showWelcomeCloudSignIn: Bool = false,
         showSignOutRelaunch: Bool = false,
+        secondaryEntryRelaunch: Bool = false,
         showFreshStartWipeAlert: Bool = false,
         showRemoteWipeAlert: Bool = false,
         showICloudRestartAlert: Bool = false,
@@ -44,6 +45,7 @@ struct ContentViewReadinessLogicTests {
             showInviteRecovery: showInviteRecovery,
             showWelcomeCloudSignIn: showWelcomeCloudSignIn,
             showSignOutRelaunch: showSignOutRelaunch,
+            secondaryEntryRelaunch: secondaryEntryRelaunch,
             showFreshStartWipeAlert: showFreshStartWipeAlert,
             showRemoteWipeAlert: showRemoteWipeAlert, showICloudRestartAlert: showICloudRestartAlert,
             showRestoreOffer: showRestoreOffer, hasActiveInviteError: hasActiveInviteError,
@@ -72,6 +74,29 @@ struct ContentViewReadinessLogicTests {
         // El adopt en vuelo NO se tumba por un intent superseding — se retiene.
         #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
             state: make(showWelcomeCloudSignIn: true)))
+    }
+
+    // M1: blocker de la VENTANA DE ENTRADA secundaria (descriptor armado, store del dueño montado).
+
+    @Test func secondaryEntryRelaunch_blocks_tierTerminal() {
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(secondaryEntryRelaunch: true)) == "secondaryEntryRelaunch")
+        // Cede solo ante wipingData y signOutRelaunch (mismo tier terminal, orden fijo).
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(isWipingData: true, secondaryEntryRelaunch: true)) == "wipingData")
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(showSignOutRelaunch: true, secondaryEntryRelaunch: true)) == "signOutRelaunch")
+        // Gana al splash y a toda la cadena welcome.
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(isSplashDismissed: false, secondaryEntryRelaunch: true)) == "secondaryEntryRelaunch")
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(showWelcomeFlow: true, secondaryEntryRelaunch: true)) == "secondaryEntryRelaunch")
+    }
+
+    @Test func secondaryEntryRelaunch_isNotTearableWelcomeChain() {
+        // La ventana armada JAMÁS se tumba por un intent superseding.
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
+            state: make(showWelcomeFlow: true, secondaryEntryRelaunch: true)))
     }
 
     @Test func signOutRelaunch_blocks_aboveEverythingButWipe() {

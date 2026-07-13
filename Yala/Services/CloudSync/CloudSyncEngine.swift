@@ -371,6 +371,12 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSecondary entry purge executed — App Group surfaces cleared")
     }
 
+    /// ENTRADA armada (M1): claim + descriptor + flags escritos en orden — la sesión secundaria
+    /// queda pendiente del relaunch (el boot siguiente monta el store `-Secondary`).
+    static func secondaryEntryArmed() {
+        logger.notice("CloudSecondary entry ARMED — descriptor persisted, awaiting relaunch")
+    }
+
     /// GUARD de mount-mismatch (M1, crítico): el runtime intentó arrancar con el descriptor
     /// secundario activo pero el proceso montó el store del DUEÑO (ventana de entrada pre-relaunch)
     /// → bloqueado. Sin el guard, el drain pushearía la History del dueño a la cuenta entrante.

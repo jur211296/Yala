@@ -4568,6 +4568,10 @@ enum L10n {
             static var waitingTitle: String { ls("welcome.cloud.waitingTitle", comment: "") }
             static var waitingBody: String { ls("welcome.cloud.waitingBody", comment: "") }
             static var continueToApp: String { ls("welcome.cloud.continueToApp", comment: "") }
+            // M1 — sesión secundaria (confirmación explícita antes de armar).
+            static var secondaryConfirmTitle: String { ls("welcome.cloud.secondaryConfirmTitle", comment: "") }
+            static var secondaryConfirmBody: String { ls("welcome.cloud.secondaryConfirmBody", comment: "") }
+            static var secondaryConfirmCta: String { ls("welcome.cloud.secondaryConfirmCta", comment: "") }
         }
 
         enum Restore {
