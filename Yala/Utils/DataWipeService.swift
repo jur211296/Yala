@@ -236,14 +236,50 @@ final class DataWipeService {
 
     // MARK: - Reset de preferencias de usuario
     private static func resetAllUserPreferences() {
-        let defaults = UserDefaults.standard
-
         // --- Routing state ---
         // Clear both the in-memory AppRouter queue AND the persistent
         // DeferredIntentBuffer. Without this, queued / deferred intents
         // survive the wipe and replay against the reseeded data.
         AppRouter.shared.resetAll()
 
+        removeUserPreferenceKeys(from: .standard)
+
+        ProTourManager.shared.reset()                                // Re-show pro tour
+
+        // --- Setup Checklist ---
+        SetupChecklistManager.shared.resetAll()
+
+        // --- Espejos App Group (cross-process: widgets/intents) ---
+        // Solo keys que llevan datos/preferencias de la CUENTA. `isProUser` NO se toca
+        // (sigue a la suscripción del Apple ID de App Store del device; StoreKitManager
+        // la re-deriva y re-escribe); `pendingControlAction` tampoco (transient, se
+        // drena en cada activación y no lleva datos de cuenta).
+        if let appGroup = UserDefaults(suiteName: SharedContainerService.appGroupIdentifier) {
+            appGroup.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)   // espejo del didSet de SessionState (widgets)
+            appGroup.removeObject(forKey: "firstWeekday")                         // espejo de PreferenceSyncService (widgets)
+            appGroup.removeObject(forKey: AppPreferences.Keys.lastUsedAccountID)  // shortcutID de una Account ya borrada
+        }
+    }
+
+    /// Barrido de las keys de preferencias de usuario en `defaults`. Separado de
+    /// `resetAllUserPreferences` para poder testearse con un `UserDefaults` aislado
+    /// (el reset completo toca singletons que escriben en `.standard`).
+    ///
+    /// EXCLUSIONES deliberadas (auditoría 2026-07-14 — NO añadir sin razonar):
+    /// - `lastKnownWipeTimestamp` — protege de reaccionar a la señal del propio wipe.
+    /// - `groupsBetaUnlocked` — gate beta per-device (documentado en AppPreferences.Keys).
+    /// - `isProUser` / `pro.upsell.*` / `pro.trial.*` / `review*` — siguen a la suscripción
+    ///   y al pacing de monetización/review del Apple ID de App Store del DEVICE, no a la
+    ///   cuenta Yala; resetearlos re-mostraría sheets one-shot al mismo suscriptor.
+    /// - `hasMigratedToLiveBalance` / `biometricKeychainCleanedV1` — sentinels de migración
+    ///   de datos LEGACY: post-wipe no existen datos legacy que migrar.
+    /// - keys `cloudSync.*` / storageMode / arms de wipe — infra del propio sign-out/wipe,
+    ///   las gestiona StorageModePersistence en el orden kill-safe del boot. JAMÁS aquí.
+    /// - `groupPrefs_*` y estado de Grupos — el dominio Grupos sobrevive el wipe por diseño
+    ///   (store propio, CKSyncEngine); sus prefs se limpian en leaveGroup/deleteGroup.
+    /// - override de idioma (App Group de LanguageManager) — preferencia del DEVICE
+    ///   compartida con widgets/extensiones, no de la cuenta.
+    static func removeUserPreferenceKeys(from defaults: UserDefaults) {
         // --- Personalización ---
         defaults.removeObject(forKey: "defaultPeriod")          // Default: DetailPeriod.allTime.rawValue
         defaults.removeObject(forKey: "userTheme")              // Default: resolved by ThemeManager (liquidGlass for new users)
@@ -252,11 +288,17 @@ final class DataWipeService {
         defaults.removeObject(forKey: "firstWeekday")           // Default: 2 (Monday)
         defaults.removeObject(forKey: "showWidgetHints")        // Default: true
         defaults.removeObject(forKey: "defaultCurrencyCode")    // Default: "PEN"
+        defaults.removeObject(forKey: AppPreferences.Keys.tabConfigJSON)  // Layout custom de tabs ("tabBarConfiguration")
+        defaults.removeObject(forKey: "customPeriodStart")      // Rango del período .custom (SessionState)
+        defaults.removeObject(forKey: "customPeriodEnd")
 
         // --- Visualización ---
         defaults.removeObject(forKey: "showVariations")         // Default: true
         defaults.removeObject(forKey: "decimalPlaces")          // Default: 2
         defaults.removeObject(forKey: "currencyDisplayFormat")  // Default: "symbol"
+        defaults.removeObject(forKey: "useRoundedAmounts")      // Legacy pre-decimalPlaces: YalaFormatterStatic cae a esta key si decimalPlaces falta → resucitaría el redondeo de la cuenta anterior
+        defaults.removeObject(forKey: AppPreferences.Keys.averageLineMode)  // Default: 1
+        defaults.removeObject(forKey: AppPreferences.Keys.sankeyLabelMode)  // Default: .amount
 
         // --- Perfil de usuario ---
         defaults.removeObject(forKey: "userName")               // Default: "Usuario"
@@ -276,7 +318,20 @@ final class DataWipeService {
         defaults.removeObject(forKey: "aiChatConsentAccepted")  // Default: false
         defaults.removeObject(forKey: "chatAssistantEnabled")   // Default: false
         defaults.removeObject(forKey: "chatFABVisible")         // Default: true
+        defaults.removeObject(forKey: AppPreferences.Keys.cashFlowAIEnabled)  // Default: false
+        defaults.removeObject(forKey: AppPreferences.Keys.insightsTone)       // Default: .normal
+        defaults.removeObject(forKey: AppPreferences.Keys.insightsFocus)      // Default: .balanced
+        defaults.removeObject(forKey: AppPreferences.Keys.autoFocusField)     // Default: .none
         defaults.removeObject(forKey: "financialMindset")          // Default: "cashFlow"
+        // PAR de financialMindset: el pre-fill de OnboardingView exige AMBAS keys presentes —
+        // dejar esta viva re-activaba la selección "Solo gastos" de la cuenta anterior
+        // (hallazgo device 2026-07-14, HALLAZGO 3 del guion SIGNOUT-WELCOME).
+        defaults.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)    // Default: false
+
+        // --- Rate-limit y señales del chat ---
+        defaults.removeObject(forKey: "chatQuestionsToday")     // Contador diario del rate-limit
+        defaults.removeObject(forKey: "chatLastQuestionDate")
+        defaults.removeObject(forKey: "chat_draft_saved_signal") // Señal draft→TX de la sesión anterior
 
         // --- Orden de listas ---
         defaults.removeObject(forKey: "accountsSortOrderNames") // Default: ""
@@ -286,6 +341,24 @@ final class DataWipeService {
         defaults.removeObject(forKey: "panel_widget_configs_v1") // Key real usada por WidgetConfigManager
         defaults.removeObject(forKey: "panelHeroAIMessage_v1")   // Cache 24h del mensaje IA del hero
 
+        // --- Panel 2.0 (orden/ocultos por sección + hero KPIs) ---
+        defaults.removeObject(forKey: AppPreferences.Keys.panelTendenciasOrder)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelTendenciasHidden)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelDistribucionOrder)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelDistribucionHidden)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelPlanificacionOrder)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelPlanificacionHidden)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelSectionsHidden)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelSectionsOrder)
+        defaults.removeObject(forKey: AppPreferences.Keys.moreSectionOrder)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelAccountsCollapsed)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelHeroKPIsOrder)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelHeroKPIsHidden)
+        defaults.removeObject(forKey: AppPreferences.Keys.panelHeroKPIsCustomized)
+        // Sentinel (como seedCategoriesExecuted): re-permite el seed fresh de
+        // PanelPreferencesMigration para el próximo usuario.
+        defaults.removeObject(forKey: AppPreferences.Keys.panelPrefsMigratedV2)
+
         // --- Estado del servicio de tipos de cambio ---
         defaults.removeObject(forKey: "exchangeRate_lastHistoricalLoad")
         defaults.removeObject(forKey: "exchangeRate_lastTodayUpdate")
@@ -294,6 +367,26 @@ final class DataWipeService {
         defaults.removeObject(forKey: "budgets.hideInactive")   // Default: false
         defaults.removeObject(forKey: "budgetAlertsEnabled")    // Default: false
 
+        // --- Grupos (toggles personales de visibilidad/bridge) ---
+        defaults.removeObject(forKey: AppPreferences.Keys.includeGroupTransactionsInFeed)   // Default: true
+        defaults.removeObject(forKey: AppPreferences.Keys.includeGroupsInPanelTotal)        // Default: true
+        defaults.removeObject(forKey: AppPreferences.Keys.includeGroupTransactionsInStats)  // Default: true
+        defaults.removeObject(forKey: AppPreferences.Keys.bridgeGroupExpensesToPersonalAccounts)  // Default: true
+        defaults.removeObject(forKey: AppPreferences.Keys.hasShownGroupsOnboarding)
+        defaults.removeObject(forKey: AppPreferences.Keys.hasSeenGroupsNotificationPrompt)
+
+        // --- Sync (toggle de usuario en iCloudSyncSettingsView) ---
+        defaults.removeObject(forKey: AppPreferences.Keys.subcatDedupRemoteHookDisabled)  // Default: false (hook activo)
+
+        // --- Visibilidad de secciones de Insights ---
+        defaults.removeObject(forKey: AppPreferences.Keys.insightsShowQuickStats)
+        defaults.removeObject(forKey: AppPreferences.Keys.insightsShowPendingPayments)
+        defaults.removeObject(forKey: AppPreferences.Keys.insightsShowSubscriptions)
+        defaults.removeObject(forKey: AppPreferences.Keys.insightsShowBudgetsAtRisk)
+        defaults.removeObject(forKey: AppPreferences.Keys.insightsShowWeekday)
+        defaults.removeObject(forKey: AppPreferences.Keys.insightsShowNature)
+        defaults.removeObject(forKey: AppPreferences.Keys.insightsShowTexts)
+
         // --- Onboarding ---
         defaults.removeObject(forKey: "hasCompletedOnboarding") // Default: false (triggers onboarding)
         defaults.removeObject(forKey: "hasShownWelcomeChooser") // A4: tras wipe vuelve a mostrarse el chooser
@@ -301,6 +394,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "onboardingMode")         // Default: .full (normal onboarding)
         defaults.removeObject(forKey: "sessionTimestamps")      // Default: [] (UserSegmentService sessions)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)
+        defaults.removeObject(forKey: "needsPostOnboardingTrial") // One-shot del trial post-onboarding
 
         // --- Cross-device wipe coordination ---
         // DO NOT clear lastKnownWipeTimestamp — it protects against reacting to our own wipe signal
@@ -318,17 +412,23 @@ final class DataWipeService {
         defaults.removeObject(forKey: "hasSeenCashFlowSetupTour")  // Re-show cash flow setup tour
         defaults.removeObject(forKey: "hasSeenCashFlowTableTour")  // Re-show cash flow table tour
         defaults.removeObject(forKey: "hasSeenChatContextHint")     // Re-show chat context hint
+        defaults.removeObject(forKey: AppPreferences.Keys.hasSeenTodayFXCoachMark)
+        defaults.removeObject(forKey: AppPreferences.Keys.showSiriTip)
+        defaults.removeObject(forKey: "hasSeenNotificationPrimer")  // Primer de notifs (NewTransactionViewModel)
+
+        // --- Contadores/señales derivados de los datos borrados ---
+        defaults.removeObject(forKey: "transactionsSavedCount")   // Alimenta primer/review/milestones
+        defaults.removeObject(forKey: "pro.milestone.lastShown")  // Derivado de transactionsSavedCount — sin reset, la cuenta siguiente no ve milestones hasta superar el conteo anterior
+        defaults.removeObject(forKey: "hasExportedData")          // Señal de segmento (UserSegmentService)
+        defaults.removeObject(forKey: "processedInboxDraftSignatures")  // Firmas de drafts ya borrados
+        defaults.removeObject(forKey: "lastSplitType")            // Memoria del split del formulario de TX
+        defaults.removeObject(forKey: "lastSplitPercentage")
 
         // Persistencia día calendario del chat + cache diario de sugerencias LLM
         for key in defaults.dictionaryRepresentation().keys
         where key.hasPrefix("chat_session_") || key.hasPrefix("chat_suggestions_") {
             defaults.removeObject(forKey: key)
         }
-
-        ProTourManager.shared.reset()                                // Re-show pro tour
-
-        // --- Setup Checklist ---
-        SetupChecklistManager.shared.resetAll()
 
         // --- Contextual Guides ---
         let guideIDs = ["panel", "trends", "categories", "records", "budgets", "scheduled",
@@ -341,6 +441,7 @@ final class DataWipeService {
         // --- Seed guards ---
         defaults.removeObject(forKey: "seedCategoriesExecuted") // Allow re-seed after wipe
         defaults.removeObject(forKey: "notificationsSeeded")    // Allow re-seed after wipe
+        defaults.removeObject(forKey: "devSeedDataExecuted")    // DEV — simetría con seedCategoriesExecuted
 
         // --- AppEntity shortcutID / CSV mirror migration sentinels ---
         // Re-correr migración contra entidades recién sembradas.

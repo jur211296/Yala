@@ -17,68 +17,134 @@ struct DataWipeServiceTests {
 
     // MARK: - Preference Keys Coverage
 
-    /// All keys that resetAllUserPreferences must clear
+    /// Keys que `removeUserPreferenceKeys(from:)` DEBE borrar (auditoría 2026-07-14).
+    /// Espejo del contrato en DataWipeService — si añades una key persistida de usuario
+    /// nueva a AppPreferences.Keys, debe entrar al reset Y a esta lista.
     private static let expectedResetKeys: [String] = [
+        // Personalización
         "defaultPeriod", "userTheme", "translucentVariant", "colorfulIcons", "firstWeekday",
-        "showWidgetHints", "defaultCurrencyCode", "showVariations",
-        "decimalPlaces", "currencyDisplayFormat", "userName", "userAlias",
-        "userProfileImageData", "userProfileIcon", "voiceInputEnabled",
-        "voiceLanguage", "imageInputEnabled", "aiDataConsentAccepted",
-        "aiInsightsConsentAccepted", "aiInsightsEnabled", "aiInsightsMigratedV1", "financialMindset",
+        "showWidgetHints", "defaultCurrencyCode", "tabBarConfiguration",
+        "customPeriodStart", "customPeriodEnd",
+        // Visualización
+        "showVariations", "decimalPlaces", "currencyDisplayFormat", "useRoundedAmounts",
+        "averageLineMode", "sankeyLabelMode",
+        // Perfil
+        "userName", "userAlias", "userProfileImageData", "userProfileIcon",
+        // Features de entrada / AI
+        "voiceInputEnabled", "voiceLanguage", "imageInputEnabled", "aiDataConsentAccepted",
+        "aiInsightsConsentAccepted", "aiInsightsEnabled", "aiInsightsMigratedV1",
+        "aiTogglesRemovedV2", "aiChatConsentAccepted", "chatAssistantEnabled", "chatFABVisible",
+        "cashFlowAIEnabled", "insightsTone", "insightsFocus", "autoFocusField",
+        "financialMindset", "expensesOnlyMode",
+        // Chat
+        "chatQuestionsToday", "chatLastQuestionDate", "chat_draft_saved_signal",
+        // Orden de listas
         "accountsSortOrderNames", "tagsSortOrderNames",
-        "panel_widget_configs_v1", "exchangeRate_lastHistoricalLoad",
-        "exchangeRate_lastTodayUpdate", "budgets.hideInactive", "budgetAlertsEnabled",
-        "hasCompletedOnboarding", "secondaryCurrencies",
-        "lastKnownOnboardingTimestamp", "lastSeenAppVersion",
-        "appUpdate.latestVersion", "appUpdate.lastChecked",
+        // Widgets / Panel 2.0
+        "panel_widget_configs_v1", "panelHeroAIMessage_v1",
+        "panelTendenciasOrder", "panelTendenciasHidden", "panelDistribucionOrder",
+        "panelDistribucionHidden", "panelPlanificacionOrder", "panelPlanificacionHidden",
+        "panelSectionsHidden", "panelSectionsOrder", "moreSectionOrder",
+        "panelAccountsCollapsed", "panelHeroKPIsOrder", "panelHeroKPIsHidden",
+        "panelHeroKPIsCustomized", "panelPrefsMigratedV2",
+        // Exchange rate
+        "exchangeRate_lastHistoricalLoad", "exchangeRate_lastTodayUpdate",
+        // Presupuestos
+        "budgets.hideInactive", "budgetAlertsEnabled",
+        // Grupos (toggles personales)
+        "includeGroupTransactionsInFeed", "includeGroupsInPanelTotal",
+        "includeGroupTransactionsInStats", "bridgeGroupExpensesToPersonalAccounts",
+        "hasShownGroupsOnboarding", "hasSeenGroupsNotificationPrompt",
+        // Sync
+        "subcatDedupRemoteHookDisabled",
+        // Insights visibilidad
+        "insightsShowQuickStats", "insightsShowPendingPayments", "insightsShowSubscriptions",
+        "insightsShowBudgetsAtRisk", "insightsShowWeekday", "insightsShowNature",
+        "insightsShowTexts",
+        // Onboarding
+        "hasCompletedOnboarding", "hasShownWelcomeChooser", "hasShownYalaAIOnboarding",
+        "onboardingMode", "sessionTimestamps", "secondaryCurrencies", "needsPostOnboardingTrial",
+        "lastKnownOnboardingTimestamp",
+        // What's New / App Update
+        "lastSeenAppVersion", "appUpdate.latestVersion", "appUpdate.lastChecked",
+        // Tours / one-shots
         "hasSeenSettingsTour", "hasSeenCashFlowSetupTour", "hasSeenCashFlowTableTour",
-        "hasCompletedProTour", "proTourPendingPhase", "proTourTriggered",
-        "seedCategoriesExecuted", "notificationsSeeded", "preferredCurrency",
+        "hasSeenChatContextHint", "hasSeenTodayFXCoachMark", "showSiriTip",
+        "hasSeenNotificationPrimer",
+        // Contadores derivados de datos
+        "transactionsSavedCount", "pro.milestone.lastShown", "hasExportedData",
+        "processedInboxDraftSignatures", "lastSplitType", "lastSplitPercentage",
+        // Seeds
+        "seedCategoriesExecuted", "notificationsSeeded", "devSeedDataExecuted",
+        // Legacy
+        "preferredCurrency",
     ]
 
-    @Test func resetKeys_allPresent_afterWipeAllCleared() {
-        // Set all keys, call wipe preferences, verify cleared
-        let defaults = UserDefaults.standard
+    /// Keys que el reset debe PRESERVAR (exclusiones deliberadas — ver doc de
+    /// `removeUserPreferenceKeys`).
+    private static let preservedKeys: [String] = [
+        "lastKnownWipeTimestamp",      // anti-eco de la señal de wipe cross-device
+        "groupsBetaUnlocked",          // gate beta per-device (doc en AppPreferences.Keys)
+        "pro.upsell.sessionCount",     // pacing de monetización del device/App Store
+        "pro.trial.wasInTrial",
+        "pro.trial.expiredSheetShown",
+        "reviewFirstLaunchDate",       // pacing del review prompt (per-device)
+        "hasMigratedToLiveBalance",    // migración de datos legacy — post-wipe no hay legacy
+    ]
+
+    @Test func removeUserPreferenceKeys_clearsAllExpectedKeys() {
+        let defaults = makeIsolatedDefaults()
         for key in Self.expectedResetKeys {
             defaults.set("testValue", forKey: key)
         }
+        // Keys de prefijo dinámico (chat + guides) también deben caer
+        defaults.set("x", forKey: "chat_session_2026-07-14")
+        defaults.set("x", forKey: "chat_suggestions_2026-07-14")
+        defaults.set(true, forKey: "guide.panel.dismissed")
 
-        // Call the private method indirectly — wipe on empty context
-        // Since wipeAllUserData calls resetAllUserPreferences internally,
-        // we verify the contract: after wipe, these keys must be nil
-        for key in Self.expectedResetKeys {
-            // Manually reset to simulate what resetAllUserPreferences does
-            defaults.removeObject(forKey: key)
-        }
+        DataWipeService.removeUserPreferenceKeys(from: defaults)
 
         for key in Self.expectedResetKeys {
-            // After removeObject, the user-set value must be gone.
-            // The host app may re-register defaults via @AppStorage, so nil
-            // is not guaranteed — verify the test sentinel was actually cleared.
-            let current = defaults.object(forKey: key)
             #expect(
-                (current as? String) != "testValue",
-                "Key '\(key)' should be cleared after reset but still has testValue"
+                defaults.object(forKey: key) == nil,
+                "Key '\(key)' debería quedar borrada tras el reset"
             )
         }
+        #expect(defaults.object(forKey: "chat_session_2026-07-14") == nil)
+        #expect(defaults.object(forKey: "chat_suggestions_2026-07-14") == nil)
+        #expect(defaults.object(forKey: "guide.panel.dismissed") == nil)
     }
 
-    @Test func lastKnownWipeTimestamp_notCleared() {
-        // This key must survive wipe to prevent reacting to own signal
-        let defaults = UserDefaults.standard
-        defaults.set(Date.now.timeIntervalSince1970, forKey: "lastKnownWipeTimestamp")
+    /// Regresión del hallazgo device 2026-07-14 (HALLAZGO 3, guion SIGNOUT-WELCOME):
+    /// el pre-fill de OnboardingView exige `expensesOnlyMode` Y `financialMindset`
+    /// presentes JUNTAS. El reset debe borrar AMBAS — dejar `expensesOnlyMode` viva
+    /// re-activaba la selección "Solo anotar mis gastos" de la cuenta anterior.
+    @Test func signOutWipe_clearsOnboardingPrefillPair() {
+        let defaults = makeIsolatedDefaults()
+        defaults.set(true, forKey: AppPreferences.Keys.expensesOnlyMode)
+        defaults.set("cashFlow", forKey: AppPreferences.Keys.financialMindset)
 
-        // Simulate reset of all expected keys
-        for key in Self.expectedResetKeys {
-            defaults.removeObject(forKey: key)
+        DataWipeService.removeUserPreferenceKeys(from: defaults)
+
+        #expect(defaults.object(forKey: AppPreferences.Keys.expensesOnlyMode) == nil)
+        #expect(defaults.object(forKey: AppPreferences.Keys.financialMindset) == nil)
+    }
+
+    @Test func preservedKeys_surviveReset() {
+        let defaults = makeIsolatedDefaults()
+        for key in Self.preservedKeys {
+            defaults.set("keepMe", forKey: key)
         }
 
-        // lastKnownWipeTimestamp should NOT be in the reset list
-        #expect(!Self.expectedResetKeys.contains("lastKnownWipeTimestamp"))
-        #expect(defaults.object(forKey: "lastKnownWipeTimestamp") != nil)
+        DataWipeService.removeUserPreferenceKeys(from: defaults)
 
-        // Cleanup
-        defaults.removeObject(forKey: "lastKnownWipeTimestamp")
+        for key in Self.preservedKeys {
+            #expect(!Self.expectedResetKeys.contains(key), "'\(key)' no debe estar en la lista de reset")
+            #expect(
+                defaults.string(forKey: key) == "keepMe",
+                "Key '\(key)' debe sobrevivir el reset (exclusión deliberada)"
+            )
+        }
     }
 
     // MARK: - Deletion Order Contract
