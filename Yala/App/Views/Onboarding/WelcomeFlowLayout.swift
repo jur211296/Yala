@@ -30,6 +30,35 @@ enum WelcomeFlowLayout {
     }
 }
 
+// MARK: - Estilo fijo de cards del WelcomeFlow
+
+/// Colores FIJOS para cards sobre el fondo hero (gradient indigo→negro constante).
+/// Los tokens del tema (`.thCard`, `solidCard`) siguen la preferencia del user:
+/// con tema Claro persistido (p.ej. sign-out privado que conserva prefs) resolvían
+/// casi-blanco bajo textos `.white` → texto invisible (HALLAZGO 4, device 2026-07-14).
+/// Decisión owner: el WelcomeFlow se ve IGUAL siempre, independiente del tema.
+/// Valores = los del tema default `.liquidGlass` (el look shippeado de fresh install).
+enum WelcomeFlowStyle {
+    // A11Y-DM: colores fijos por diseño — el fondo hero es oscuro constante,
+    // no adapta a Dark Mode ni al tema del user.
+    static let cardFill = Color.white.opacity(0.04)
+    static let cardStroke = Color.white.opacity(0.1)
+}
+
+extension View {
+    /// Reemplazo de `.solidCard` para cards sobre el fondo hero: mismo shape,
+    /// pero con los colores fijos de `WelcomeFlowStyle` en vez de los del tema.
+    func welcomeFlowCard(radius: CGFloat) -> some View {
+        self
+            .background(WelcomeFlowStyle.cardFill)
+            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(WelcomeFlowStyle.cardStroke, lineWidth: 1)
+            )
+    }
+}
+
 /// Wrapper compartido por Hero y Chooser que encapsula el background gradient
 /// indigo→negro, el `GeometryReader` root, y el cálculo del `logoTopSpacing`.
 /// El content recibe el spacing como parámetro y lo aplica al primer Spacer

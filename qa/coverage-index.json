@@ -1396,9 +1396,9 @@
         "F-WEL-06"
       ],
       "classification": "agentic",
-      "coverage": "device-qa",
+      "coverage": "device-qa (fix HALLAZGO 4 2026-07-14: cards del flow .heroFlow con cardFill FIJO bifurcado por backgroundStyle — con tema Claro persistido .thCard resolvia casi-blanco bajo textos .white; .themedPanel intacto. Verificado sim ambos temas: steps name/purpose/accounts/balance/confirmation)",
       "owner": "",
-      "lastVerified": "2026-06-02"
+      "lastVerified": "2026-07-14"
     },
     {
       "area": "panel-dashboard-logic",
@@ -2025,6 +2025,7 @@
         "Yala/App/Views/Onboarding/InviteRecoveryView.swift",
         "Yala/App/Views/Onboarding/WelcomeExistingChooserView.swift",
         "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift",
+        "Yala/App/Views/Onboarding/WelcomeFlowLayout.swift",
         "Yala/App/Logic/WelcomeAccountChoiceLogic.swift",
         "Yala/App/Logic/CloudWelcomeSignInFlow.swift",
         "Yala/App/Logic/CrossAccountEntryGuardLogic.swift"
@@ -2038,9 +2039,9 @@
         "F-WEL-06"
       ],
       "classification": "agentic",
-      "coverage": "device-qa + unit:YalaTests/WelcomeAccountChoiceLogicTests (sub-chooser 2 niveles + bypass), CloudWelcomeSignInFlowTests (ruteo exists + fase por uiState), CrossAccountEntryGuardLogicTests (guard F0-C). SIWA/adopt desde Welcome = device-only (SIWA no corre en sim); en prod DARK y bajo -uitest el sub-chooser hace bypass a restore (flujo actual intacto).",
+      "coverage": "device-qa + unit:YalaTests/WelcomeAccountChoiceLogicTests (sub-chooser 2 niveles + bypass), CloudWelcomeSignInFlowTests (ruteo exists + fase por uiState), CrossAccountEntryGuardLogicTests (guard F0-C). SIWA/adopt desde Welcome = device-only (SIWA no corre en sim); en prod DARK y bajo -uitest el sub-chooser hace bypass a restore (flujo actual intacto). Fix HALLAZGO 4 2026-07-14: cards del Welcome con colores FIJOS (WelcomeFlowStyle en WelcomeFlowLayout, valores del tema default liquidGlass) — con tema Claro persistido .thCard/solidCard resolvian casi-blanco bajo textos .white (texto invisible); verificado sim Hero/Chooser en tema Claro y Oscuro (pixel-identicos).",
       "owner": "",
-      "lastVerified": "2026-07-13"
+      "lastVerified": "2026-07-14"
     },
     {
       "area": "welcome-universal-link-icloud",

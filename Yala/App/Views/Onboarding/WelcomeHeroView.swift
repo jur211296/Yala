@@ -204,8 +204,9 @@ struct WelcomeHeroView: View {
         static let hidden = CardPosition(scale: 0.6, offsetX: 0, offsetY: 0, rotation: 0, opacity: 0, zIndex: 0)
     }
 
-    /// Card translúcida estilo widgets del Panel: `.thCard` + stroke `cardBorder`
-    /// del theme, padding compacto. Icono mantiene gradient brand para diferenciar.
+    /// Card translúcida estilo widgets del Panel, con colores FIJOS de
+    /// `WelcomeFlowStyle` (el fondo hero no adapta al tema — ver WelcomeFlowLayout).
+    /// Icono mantiene gradient brand para diferenciar.
     private func heroCardView(_ card: HeroCard) -> some View {
         VStack(spacing: DS.Spacing.sm) {
             ZStack {
@@ -240,12 +241,7 @@ struct WelcomeHeroView: View {
         .padding(DS.Spacing.md)
         .frame(width: Self.cardWidth)
         .frame(idealHeight: Self.cardIdealHeight, maxHeight: Self.cardMaxHeight)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Panel.widgetRadius, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: DS.Panel.widgetRadius, style: .continuous)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-        )
+        .welcomeFlowCard(radius: DS.Panel.widgetRadius)
     }
 
     // MARK: Page indicator

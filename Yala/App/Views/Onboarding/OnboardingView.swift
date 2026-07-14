@@ -211,8 +211,19 @@ struct OnboardingView: View {
 
     private var cardStroke: Color {
         switch backgroundStyle {
-        case .heroFlow:    return Color.white.opacity(0.1)
+        case .heroFlow:    return WelcomeFlowStyle.cardStroke
         case .themedPanel: return theme.cardBorder
+        }
+    }
+
+    /// Fondo de cards bifurcado. En `.heroFlow` el token del tema rompía con
+    /// tema Claro persistido (card casi-blanca bajo textos `.white` → invisible,
+    /// HALLAZGO 4 device 2026-07-14) → color FIJO de `WelcomeFlowStyle`;
+    /// `.themedPanel` conserva el token temático (equivale a `.thCard`).
+    private var cardFill: Color {
+        switch backgroundStyle {
+        case .heroFlow:    return WelcomeFlowStyle.cardFill
+        case .themedPanel: return theme.card
         }
     }
 
@@ -463,7 +474,7 @@ struct OnboardingView: View {
                         .font(DS.Typography.body)
                         .foregroundStyle(primaryTextStyle)
                         .padding(DS.Spacing.md)
-                        .background(.thCard)
+                        .background(cardFill)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                         .accessibilityIdentifier("onboarding_name_field")
                         .overlay(
@@ -642,8 +653,9 @@ struct OnboardingView: View {
 
     /// Card de selección estilo capabilityCard del AI Onboarding: icono con halo
     /// gradient, sin checkmark/circle, selección visualizada con stroke 2pt
-    /// `styleAccentColor`. Background siempre `.thCard` — bifurca correctamente
-    /// entre `.heroFlow` (translúcido sobre dark) y `.themedPanel` (themed).
+    /// `styleAccentColor`. Background `cardFill` bifurcado — fijo en `.heroFlow`
+    /// (el token del tema rompía con tema Claro), token en `.themedPanel`.
+    /// No usa `.selectableCard` porque ese modifier pone `.thCard` sin bifurcar.
     private func binaryCard(
         isSelected: Bool,
         icon: String,
@@ -679,11 +691,14 @@ struct OnboardingView: View {
             }
             .padding(DS.Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .selectableCard(
-                isSelected: isSelected,
-                radius: DS.Radius.xl,
-                activeColor: styleAccentColor,
-                inactiveColor: cardStroke
+            .background(cardFill)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                    .stroke(
+                        isSelected ? styleAccentColor : cardStroke,
+                        lineWidth: isSelected ? 2 : 1
+                    )
             )
         }
         .buttonStyle(.plain)
@@ -808,7 +823,9 @@ struct OnboardingView: View {
                 if !groupsOnlyMode {
                     OnboardingFieldSection(
                         title: L10n.Onboarding.accountNameLabel,
-                        titleStyle: secondaryTextStyle
+                        titleStyle: secondaryTextStyle,
+                        cardFill: cardFill,
+                        cardStroke: cardStroke
                     ) {
                         HStack(spacing: DS.Spacing.md) {
                             Image(systemName: "pencil")
@@ -826,7 +843,9 @@ struct OnboardingView: View {
                 // Currency
                 OnboardingFieldSection(
                     title: L10n.Onboarding.accountCurrencyLabel,
-                    titleStyle: secondaryTextStyle
+                    titleStyle: secondaryTextStyle,
+                    cardFill: cardFill,
+                    cardStroke: cardStroke
                 ) {
                     Button {
                         accountNameFocused = false
@@ -1039,7 +1058,9 @@ struct OnboardingView: View {
 
         return OnboardingFieldSection(
             title: L10n.Onboarding.accountBalanceLabel,
-            titleStyle: secondaryTextStyle
+            titleStyle: secondaryTextStyle,
+            cardFill: cardFill,
+            cardStroke: cardStroke
         ) {
             HStack(spacing: DS.Spacing.md) {
                 HStack(spacing: DS.Spacing.xs) {
@@ -1087,7 +1108,9 @@ struct OnboardingView: View {
     private var manualBalanceForm: some View {
         OnboardingFieldSection(
             title: L10n.Onboarding.accountBalanceLabel,
-            titleStyle: secondaryTextStyle
+            titleStyle: secondaryTextStyle,
+            cardFill: cardFill,
+            cardStroke: cardStroke
         ) {
             VStack(spacing: DS.Spacing.none) {
                 HStack(spacing: DS.Spacing.md) {
@@ -1257,7 +1280,7 @@ struct OnboardingView: View {
                 )
             }
         }
-        .background(.thCard)
+        .background(cardFill)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
@@ -1293,7 +1316,7 @@ struct OnboardingView: View {
     }
 
     /// Row individual de la lista compacta — sin background propio (la card
-    /// `confirmItemsCard` lo envuelve con `.thCard` + cardStroke).
+    /// `confirmItemsCard` lo envuelve con `cardFill` + cardStroke).
     private func confirmItem(icon: String, color: Color, value: String) -> some View {
         HStack(spacing: DS.Spacing.md) {
             ZStack {
@@ -1513,7 +1536,7 @@ struct OnboardingView: View {
     // MARK: - Reusable Components
 
     /// Mini-card del grid 2x2 de privacidad — VStack icon + text breve, card
-    /// individual `.thCard` + cardStroke. Iconos privacidad mantienen tints
+    /// individual `cardFill` + cardStroke. Iconos privacidad mantienen tints
     /// neutros (no aplica R3 — son contexto distinto a las cards de selección).
     private func privacyCard(icon: String, text: String) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
@@ -1530,7 +1553,7 @@ struct OnboardingView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.md)
-        .background(.thCard)
+        .background(cardFill)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.md)
@@ -2051,10 +2074,14 @@ struct OnboardingView: View {
 
 /// Sustituto de `SectionBox(title:)` para el flow Onboarding. Label arriba con
 /// estilo proporcionado por el owner (background-aware) + content envuelto en
-/// `.solidCard()` modifier para fondo consistente con el resto de cards.
+/// card con colores también inyectados por el owner (`cardFill`/`cardStroke`
+/// bifurcados por backgroundStyle — `.solidCard` ponía `.thCard` sin bifurcar
+/// y rompía en `.heroFlow` con tema Claro).
 fileprivate struct OnboardingFieldSection<Content: View>: View {
     let title: String
     let titleStyle: Color
+    let cardFill: Color
+    let cardStroke: Color
     @ViewBuilder let content: () -> Content
 
     var body: some View {
@@ -2065,7 +2092,12 @@ fileprivate struct OnboardingFieldSection<Content: View>: View {
                 .padding(.horizontal, DS.Spacing.xs)
 
             content()
-                .solidCard(padding: 0, radius: DS.Radius.lg)
+                .background(cardFill)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                        .stroke(cardStroke, lineWidth: 1)
+                )
         }
     }
 }

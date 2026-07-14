@@ -154,7 +154,7 @@ struct WelcomeChooserView: View {
             .padding(.vertical, DS.Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
-            .solidCard(padding: 0, radius: DS.Radius.xl)
+            .welcomeFlowCard(radius: DS.Radius.xl)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
