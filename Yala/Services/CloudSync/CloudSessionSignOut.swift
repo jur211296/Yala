@@ -41,6 +41,15 @@ final class CloudSessionSignOut {
         if case .blocked = phase { phase = .idle }
     }
 
+    #if DEBUG
+    /// Seam de verificación EN SIM (fix carrera 2026-07-14): fuerza la fase terminal SIN armar
+    /// el wipe real ni tocar credenciales — única forma de probar en sim la presentación del
+    /// cover terminal (dueño único + verify loop) y el exit-on-background (SIWA no corre ahí).
+    func _debugForceAwaitingRelaunch() {
+        phase = .awaitingRelaunch
+    }
+    #endif
+
     func signOut() async {
         guard phase == .idle else { return }
         switch CloudSignOutFlowLogic.path(

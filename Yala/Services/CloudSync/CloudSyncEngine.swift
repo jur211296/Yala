@@ -350,6 +350,28 @@ enum CloudSyncBreadcrumb {
         logger.error("CloudSignOut wipe ABORTED reason=\(reason, privacy: .public)")
     }
 
+    /// Fix carrera 2026-07-14: la red del cover terminal reintentó presentar (el intento
+    /// anterior no confirmó onAppear — p.ej. la sheet de Profile aún se cerraba).
+    /// `net` = "signout" | "secondaryEntry". attempt=1 ocasional es NORMAL (timing del dismiss).
+    static func relaunchNetRetried(net: String, attempt: Int) {
+        logger.notice("CloudSignOut relaunchNet retried net=\(net, privacy: .public) attempt=\(attempt, privacy: .public)")
+    }
+
+    /// Fix carrera 2026-07-14 — RUIDOSO (error-level): la red agotó el cap del ciclo sin
+    /// confirmar presentación (algo tapa el anchor perpetuamente). El blocker vivo de la
+    /// matriz sigue conteniendo el router y el exit-on-background es la red final.
+    /// Par TelemetryDeck: `.relaunchNetExhausted` (canario de prod).
+    static func relaunchNetExhausted(net: String) {
+        logger.error("CloudSignOut relaunchNet EXHAUSTED net=\(net, privacy: .public) — cover terminal sin presentar tras el cap del ciclo")
+    }
+
+    /// Decisión owner UX 2026-07-14: la app fue a background con un relaunch terminal
+    /// pendiente → el proceso termina limpio (`exit(0)`); el próximo launch corre el
+    /// cleanup pre-mount. Último rastro del proceso — se emite ANTES del exit.
+    static func relaunchExitOnBackground() {
+        logger.notice("CloudSignOut relaunch exit-on-background — proceso terminado limpio; el próximo launch corre el cleanup")
+    }
+
     // MARK: Sesión secundaria (M1) — sin PII
 
     /// BOOT: el wipe secundario armado se ejecutó (archivos `-Secondary` borrados, descriptor

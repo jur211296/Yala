@@ -4876,3 +4876,6 @@
 
 /* CTA of the Groups-needs-iCloud gate; opens the app's Settings page (cannot deep-link to iCloud directly) */
 "groups.icloud.gate.openSettings" = "Abrir Configuración";
+
+/* Terminal relaunch cover body when auto-exit-on-background is active (sign-out/secondary entry): user only needs to go Home; the app exits itself and next launch lands fresh */
+"storage.relaunch.bodyAutoExit" = "Ve a la pantalla de inicio y vuelve a abrir Yala — todo quedará listo.";

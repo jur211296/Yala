@@ -6125,6 +6125,10 @@ enum L10n {
         enum Relaunch {
             static var title: String { ls("storage.relaunch.title", comment: "") }
             static var body: String { ls("storage.relaunch.body", comment: "") }
+            /// Cover terminal con auto-exit en background (sign-out/entrada secundaria):
+            /// basta ir al inicio — la app se cierra sola. `body` (compartido con la
+            /// relaunchCard de migración/reversa, que NO auto-exita) queda intacto.
+            static var bodyAutoExit: String { ls("storage.relaunch.bodyAutoExit", comment: "") }
         }
 
         enum Failed {

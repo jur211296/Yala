@@ -49,6 +49,10 @@ struct StorageSettingsView: View {
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, DS.Spacing.lg)
                 }
+
+                #if DEV_BUILD
+                cloudDebugPanel
+                #endif
             }
             .padding(.vertical, DS.Spacing.xxl)
         }
@@ -328,6 +332,39 @@ struct StorageSettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .storageCardStyle()
     }
+
+    // MARK: - Panel DEBUG (DEV_BUILD only)
+
+    #if DEV_BUILD
+    /// Acceso al panel DEBUG del Modo Nube desde la fila Almacenamiento — en `.cloud` la fila iCloud
+    /// de Profile está oculta (R12 mínimo de I14) y sin esto el panel queda inalcanzable en device Dev.
+    /// Mismo patrón que `cloudAuthPanel` de iCloudSyncSettingsView.
+    private var cloudDebugPanel: some View {
+        NavigationLink {
+            CloudSyncDebugView()
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "key.icloud")
+                    .foregroundStyle(DS.Semantic.infoForeground)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text("Modo Nube · Auth")
+                        .font(DS.Typography.body.weight(.medium))
+                        .foregroundStyle(.primary)
+                    Text("Panel DEBUG (solo Yala Dev)")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+            .storageCardStyle()
+        }
+        .buttonStyle(.plain)
+    }
+    #endif
 
     // MARK: - Consent aceptado
 

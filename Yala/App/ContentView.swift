@@ -21,10 +21,10 @@ struct ContentView: View {
     @State private var showWelcomeRestore: Bool = false
     // H4: re-entrada a cuenta del Modo Nube desde el Welcome (SIWA → exists → adopt).
     @State private var showWelcomeCloudSignIn: Bool = false
-    // H4 (C1 del review adversarial): red DURABLE del cover de relaunch del sign-out
-    // `.cloud`. ProfileView (sheet dismissible) presenta el suyo encima del sheet; este
-    // flag garantiza que con el wipe ARMADO la app jamás quede usable aunque el sheet
-    // muera — SwiftUI materializa la presentación pendiente al despejarse el anchor.
+    // H4 + fix carrera 2026-07-14: DUEÑO ÚNICO del cover de relaunch del sign-out
+    // `.cloud`/secundario. ProfileView ya NO presenta (ante la fase cierra su sheet) —
+    // dos anchors ante el mismo observable tumbaban ambas cadenas. La presentación se
+    // VERIFICA por onAppear del contenido real y se reintenta (SignOutRelaunchNetModifier).
     @State private var showSignOutRelaunchCover: Bool = false
     /// M1: red DURABLE de la VENTANA DE ENTRADA secundaria (descriptor persistido, store del
     /// DUEÑO montado, relaunch pendiente). El cover primario es la fase `.relaunchSecondary`
@@ -482,11 +482,19 @@ struct ContentView: View {
                 Task { @MainActor in
                     await GroupJoinReconciler.reconcile(trigger: .foreground)
                 }
+            // El exit-on-background del relaunch terminal (decisión owner UX 2026-07-14)
+            // vive en YalaApp, NO aquí: el `\.scenePhase` de ContentView es POR-ESCENA
+            // (iPad multi-ventana: ocultar una ventana mataría el proceso con otra
+            // visible); el de YalaApp es el AGREGADO del proceso y ya guarda tests.
             default:
                 break
             }
         }
         .onChange(of: SessionState.shared.isWipingData) { _, _ in updateContentViewReadiness() }
+        // Fix carrera 2026-07-14: la fase de sign-out alimenta el blocker `signOutRelaunch`
+        // como condición viva — cinturón explícito de recompute (leerla en el snapshot ya
+        // registra el tracking @Observable; esto la hace grep-able junto a isWipingData).
+        .onChange(of: CloudSessionSignOut.shared.phase) { _, _ in updateContentViewReadiness() }
         // Cross-node: un sheet de MainTabView visible bloquea las presentaciones
         // del shell (el cover del inbox alert no debe montarse encima y ser
         // tumbado por su dismiss — variante cross-node del bug TestFlight).
@@ -501,7 +509,10 @@ struct ContentView: View {
             showWelcomeRestore: showWelcomeRestore,
             showInviteRecovery: showInviteRecovery,
             showWelcomeCloudSignIn: showWelcomeCloudSignIn,
-            showSignOutRelaunch: showSignOutRelaunchCover,
+            // Fix carrera 2026-07-14: la condición viva (la FASE) ES el blocker; el @State del
+            // cover es la red visual — si la presentación tarda/falla, el router queda contenido igual.
+            showSignOutRelaunch: showSignOutRelaunchCover
+                || CloudSessionSignOut.shared.phase == .awaitingRelaunch,
             // M1: la condición viva (statics) ES el blocker; el @State del cover es la red visual.
             secondaryEntryRelaunch: showSecondaryEntryRelaunchCover
                 || (SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted),
@@ -576,7 +587,10 @@ struct ContentView: View {
             showWelcomeRestore: showWelcomeRestore,
             showInviteRecovery: showInviteRecovery,
             showWelcomeCloudSignIn: showWelcomeCloudSignIn,
-            showSignOutRelaunch: showSignOutRelaunchCover,
+            // Fix carrera 2026-07-14: la condición viva (la FASE) ES el blocker; el @State del
+            // cover es la red visual — si la presentación tarda/falla, el router queda contenido igual.
+            showSignOutRelaunch: showSignOutRelaunchCover
+                || CloudSessionSignOut.shared.phase == .awaitingRelaunch,
             // M1: la condición viva (statics) ES el blocker; el @State del cover es la red visual.
             secondaryEntryRelaunch: showSecondaryEntryRelaunchCover
                 || (SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted),
@@ -1088,36 +1102,73 @@ private struct WelcomeFlowModifier: ViewModifier {
     }
 }
 
-// MARK: - Sign-out relaunch net (H4, C1 del review adversarial)
+// MARK: - Sign-out relaunch net (H4, C1 del review adversarial + fix carrera 2026-07-14)
 
-/// Red DURABLE del estado PELIGROSO del cierre de sesión `.cloud` (`awaitingRelaunch`
-/// = wipe de boot ARMADO): el cover primario vive en ProfileView (encima de su sheet),
-/// pero si el sheet muere por cualquier vía, este anchor re-presenta el cover terminal.
-/// `signOutRelaunch` es además blocker de la matriz de readiness (nada presenta debajo).
+/// DUEÑO ÚNICO del cover terminal del cierre de sesión `.cloud`/secundario (`awaitingRelaunch`
+/// = wipe de boot ARMADO). ProfileView ya NO presenta (ante la fase solo cierra su sheet):
+/// dos anchors ante el mismo observable eran una carrera de reconciliación — UIKit no
+/// presenta dos veces y tumbaba AMBAS cadenas dejando el flag en `true` sin onDismiss
+/// (red muerta, app usable con el wipe armado; bug device 2026-07-14).
+///
+/// Verificación de presentación EFECTIVA: el flag NO prueba nada — solo el `onAppear` del
+/// contenido real (`coverDidAppear`) confirma que UIKit presentó. El primer intento puede
+/// caer con la sheet de Profile aún cerrándose → el verify loop reintenta (toggle
+/// false→true, cadencias en `RelaunchNetLogic`) hasta `satisfied` o el cap del ciclo.
+/// `signOutRelaunch` es además blocker de la matriz por CONDICIÓN VIVA (la fase, no este
+/// flag) — el router queda contenido desde la transición aunque el cover tarde en llegar.
 private struct SignOutRelaunchNetModifier: ViewModifier {
     @Binding var showRelaunchCover: Bool
+
+    /// true SOLO cuando el onAppear del contenido real disparó (única prueba de presentación).
+    @State private var coverDidAppear = false
+    @State private var verifyTask: Task<Void, Never>?
+    @Environment(\.scenePhase) private var scenePhase
 
     private var phase: CloudSessionSignOut.Phase { CloudSessionSignOut.shared.phase }
 
     func body(content: Content) -> some View {
         content
             .onAppear {
-                if phase == .awaitingRelaunch { showRelaunchCover = true }
+                if phase == .awaitingRelaunch { arm() }
             }
             .onChange(of: phase) { _, newPhase in
-                if newPhase == .awaitingRelaunch { showRelaunchCover = true }
+                if newPhase == .awaitingRelaunch { arm() }
+            }
+            // Ciclo FRESCO al volver a foreground con la condición armada y sin cover
+            // (el cap de intentos es por-ciclo, no de por vida).
+            .onChange(of: scenePhase) { _, newScene in
+                if newScene == .active && phase == .awaitingRelaunch && !coverDidAppear { arm() }
             }
             .fullScreenCover(
                 isPresented: $showRelaunchCover,
                 onDismiss: {
                     // Terminal: si UIKit lo tumbara, re-presentar (regla toolbar-muerta).
-                    if CloudSessionSignOut.shared.phase == .awaitingRelaunch {
-                        showRelaunchCover = true
-                    }
+                    coverDidAppear = false
+                    if CloudSessionSignOut.shared.phase == .awaitingRelaunch { arm() }
                 }
             ) {
                 SignOutRelaunchView()
+                    .onAppear {
+                        // Presentación REAL confirmada (dispara al inicio de la animación;
+                        // idempotente ante doble onAppear). Jamás se toggla un cover vivo.
+                        coverDidAppear = true
+                        verifyTask?.cancel()
+                        verifyTask = nil
+                    }
             }
+    }
+
+    private func arm() {
+        showRelaunchCover = true
+        // Cancel-before-start: un solo verify loop vivo — dos loops togglando el mismo
+        // binding reproducirían la carrera que este fix mata.
+        verifyTask?.cancel()
+        verifyTask = runRelaunchNetVerifyLoop(
+            net: "signout",
+            armed: { CloudSessionSignOut.shared.phase == .awaitingRelaunch },
+            coverDidAppear: { coverDidAppear },
+            setCover: { showRelaunchCover = $0 }
+        )
     }
 }
 
@@ -1128,10 +1179,19 @@ private struct SignOutRelaunchNetModifier: ViewModifier {
 /// si ese cover muere por cualquier vía (con los flags de onboarding ya puestos, el onDismiss
 /// del container no reabre nada → la app quedaría usable sobre el store del dueño), este anchor
 /// re-presenta el cover terminal. `secondaryEntryRelaunch` es además blocker de la matriz.
+/// Mismo hardening de presentación efectiva que `SignOutRelaunchNetModifier` (la ENTRADA M1
+/// comparte la suposición refutada en device: "SwiftUI materializa la presentación pendiente
+/// al despejarse el anchor" — falso). Triggers propios (statics + señal del welcome cover);
+/// lo compartido es la decisión pura (`RelaunchNetLogic`) y el loop (`runRelaunchNetVerifyLoop`).
 private struct SecondaryEntryRelaunchNetModifier: ViewModifier {
     @Binding var showRelaunchCover: Bool
     /// El flag del welcome cloud cover — su caída con la ventana armada dispara la red.
     let welcomeCloudCoverVisible: Bool
+
+    /// true SOLO cuando el onAppear del contenido real disparó (única prueba de presentación).
+    @State private var coverDidAppear = false
+    @State private var verifyTask: Task<Void, Never>?
+    @Environment(\.scenePhase) private var scenePhase
 
     private var isArmedUnmounted: Bool {
         SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted
@@ -1140,20 +1200,91 @@ private struct SecondaryEntryRelaunchNetModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onAppear {
-                if isArmedUnmounted { showRelaunchCover = true }
+                if isArmedUnmounted { arm() }
             }
             .onChange(of: welcomeCloudCoverVisible) { _, visible in
-                if !visible && isArmedUnmounted { showRelaunchCover = true }
+                if !visible && isArmedUnmounted { arm() }
+            }
+            // Ciclo FRESCO al volver a foreground (cap por-ciclo, no de por vida).
+            .onChange(of: scenePhase) { _, newScene in
+                if newScene == .active && isArmedUnmounted && !coverDidAppear
+                    && !welcomeCloudCoverVisible { arm() }
             }
             .fullScreenCover(
                 isPresented: $showRelaunchCover,
                 onDismiss: {
                     // Terminal: si UIKit lo tumbara, re-presentar (regla toolbar-muerta).
-                    if isArmedUnmounted { showRelaunchCover = true }
+                    coverDidAppear = false
+                    if isArmedUnmounted { arm() }
                 }
             ) {
                 SignOutRelaunchView()
+                    .onAppear {
+                        // Presentación REAL confirmada (idempotente). Jamás togglar un cover vivo.
+                        coverDidAppear = true
+                        verifyTask?.cancel()
+                        verifyTask = nil
+                    }
             }
+    }
+
+    private func arm() {
+        showRelaunchCover = true
+        // Cancel-before-start: un solo verify loop vivo.
+        verifyTask?.cancel()
+        verifyTask = runRelaunchNetVerifyLoop(
+            net: "secondaryEntry",
+            armed: {
+                SecondarySessionStore.isActive()
+                    && !SwiftDataConfiguration.secondaryStoreMounted
+            },
+            coverDidAppear: { coverDidAppear },
+            setCover: { showRelaunchCover = $0 }
+        )
+    }
+}
+
+/// Verify loop COMPARTIDO de las dos redes de relaunch terminal (un solo punto de verdad
+/// del reintento — la decisión pura vive en `RelaunchNetLogic`, los triggers en cada
+/// modifier). El closure `coverDidAppear` lee el `@State` del modifier en el momento de
+/// cada chequeo; `setCover` escribe su binding.
+@MainActor
+fileprivate func runRelaunchNetVerifyLoop(
+    net: String,
+    armed: @escaping @MainActor () -> Bool,
+    coverDidAppear: @escaping @MainActor () -> Bool,
+    setCover: @escaping @MainActor (Bool) -> Void
+) -> Task<Void, Never> {
+    Task { @MainActor in
+        try? await Task.sleep(for: RelaunchNetLogic.initialVerifyDelay)
+        var attempt = 0
+        while !Task.isCancelled {
+            switch RelaunchNetLogic.verdict(
+                armed: armed(),
+                coverDidAppear: coverDidAppear(),
+                attempt: attempt
+            ) {
+            case .standDown, .satisfied:
+                return
+            case .exhausted:
+                CloudSyncBreadcrumb.relaunchNetExhausted(net: net)
+                TelemetryService.track(.relaunchNetExhausted, parameters: ["net": net])
+                return
+            case .retry:
+                // Cede un runloop y re-chequea antes de togglar: el onAppear del cover
+                // pudo encolarse justo antes del verdict (presentación aceptada a ~ms del
+                // deadline) — jamás tumbar un cover recién vivo.
+                await Task.yield()
+                guard !Task.isCancelled, !coverDidAppear() else { return }
+                attempt += 1
+                CloudSyncBreadcrumb.relaunchNetRetried(net: net, attempt: attempt)
+                setCover(false)
+                try? await Task.sleep(for: RelaunchNetLogic.toggleGap)
+                guard !Task.isCancelled else { return }
+                setCover(true)
+                try? await Task.sleep(for: RelaunchNetLogic.retryInterval)
+            }
+        }
     }
 }
 

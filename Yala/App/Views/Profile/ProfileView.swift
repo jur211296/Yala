@@ -69,18 +69,20 @@ struct ProfileView: View {
     #endif
 
     // H4: cierre de sesión universal (privada y nube). El coordinador es @Observable;
-    // los covers/alerts se materializan en @State propio vía onChange (regla toolbar-muerta:
-    // jamás un binding de presentación con setter no-op). La red DURABLE del cover de
-    // relaunch vive además en ContentView (C1) — este anchor es un sheet dismissible.
+    // los alerts se materializan en @State propio vía onChange (regla toolbar-muerta:
+    // jamás un binding de presentación con setter no-op). El cover terminal de relaunch
+    // tiene DUEÑO ÚNICO en el root (SignOutRelaunchNetModifier, ContentView) — presentar
+    // también desde este sheet creaba una carrera de anchors ante la misma fase y UIKit
+    // tumbaba AMBAS cadenas (bug device 2026-07-14). Ante `.awaitingRelaunch` este sheet
+    // solo se CIERRA; el root verifica presentación efectiva y reintenta.
     private var signOutCoordinator: CloudSessionSignOut { CloudSessionSignOut.shared }
     @State private var showCloudSignOutConfirm = false
     @State private var showSignOutBlockedAlert = false
-    @State private var showSignOutRelaunchCover = false
 
     private func syncSignOutUI(from phase: CloudSessionSignOut.Phase) {
         switch phase {
         case .blocked: showSignOutBlockedAlert = true
-        case .awaitingRelaunch: showSignOutRelaunchCover = true
+        case .awaitingRelaunch: dismiss()
         case .idle, .working: break
         }
     }
@@ -239,24 +241,13 @@ struct ProfileView: View {
             } message: {
                 Text(L10n.Settings.signOutBlockedMessage)
             }
-            .fullScreenCover(
-                isPresented: $showSignOutRelaunchCover,
-                onDismiss: {
-                    // Terminal: el wipe está armado y la sesión cerrada — si UIKit tumbara el
-                    // cover (regla toolbar-muerta: onDismiss de respaldo), se re-presenta.
-                    if CloudSessionSignOut.shared.phase == .awaitingRelaunch {
-                        showSignOutRelaunchCover = true
-                    }
-                }
-            ) {
-                SignOutRelaunchView()
-            }
             .onChange(of: signOutCoordinator.phase) { _, newPhase in
                 syncSignOutUI(from: newPhase)
             }
-            // Recuperación de estados huérfanos (C1): si el sheet se cerró mientras el
-            // coordinator trabajaba, al reabrir Ajustes se re-presenta el alert/cover
-            // correspondiente (el estado .blocked es SEGURO — nada armado, solo informar).
+            // Recuperación de estados huérfanos: si el sheet se cerró mientras el coordinator
+            // trabajaba, al reabrir Ajustes se re-presenta el alert `.blocked` (SEGURO — nada
+            // armado, solo informar); con `.awaitingRelaunch` el sheet se cierra solo para
+            // despejar el anchor del cover terminal del root (dueño único).
             .onAppear { syncSignOutUI(from: signOutCoordinator.phase) }
             .onAppear {
                 // Auto-navigate to destination passed by caller (e.g. sync settings sheet).

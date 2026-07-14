@@ -141,6 +141,27 @@ struct YalaApp: App {
             if newPhase == .active {
                 bootstrapper.handleBecameActive(context: sharedModelContainer.mainContext)
             } else if newPhase == .background {
+                // Decisión owner UX 2026-07-14: con un relaunch terminal pendiente (sign-out
+                // `.cloud`/secundario o ventana de ENTRADA secundaria — todo lo persistente ya
+                // se escribió), terminar el proceso al ir a background: el próximo launch corre
+                // el cleanup pre-mount y aterriza en Welcome sin pedir matar la app a mano.
+                // También es la red FINAL del cover terminal (la ventana peligrosa no sobrevive
+                // un background). Vive AQUÍ y no en ContentView porque este scenePhase es el
+                // AGREGADO del proceso (en ContentView es por-escena — iPad multi-ventana:
+                // ocultar una ventana mataría el proceso con otra visible) y el guard
+                // isRunningTests de arriba aplica (jamás exit(0) bajo tests). exit(0)
+                // programático está desaconsejado por Apple pero es práctica aceptada en
+                // background para reinicios obligatorios; JAMÁS en foreground
+                // (RelaunchNetLogic solo lo permite en `.background`, no `.inactive`).
+                if RelaunchNetLogic.shouldExitOnBackground(
+                    scenePhase: newPhase,
+                    signOutPhase: CloudSessionSignOut.shared.phase,
+                    secondaryEntryArmedUnmounted: SecondarySessionStore.isActive()
+                        && !SwiftDataConfiguration.secondaryStoreMounted
+                ) {
+                    CloudSyncBreadcrumb.relaunchExitOnBackground()
+                    exit(0)
+                }
                 // Drop transient router intents. Persistence-backed intents
                 // re-emit on next .active via handleBecameActive().
                 AppRouter.shared.resetTransients()

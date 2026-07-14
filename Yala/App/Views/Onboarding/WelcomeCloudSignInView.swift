@@ -263,7 +263,10 @@ struct WelcomeCloudSignInView: View {
                 .font(DS.Typography.title2)
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
-            Text(L10n.Storage.Relaunch.body)
+            // La ventana de ENTRADA secundaria auto-exita en background (ContentView) —
+            // el copy refleja que basta ir al inicio. El `.relaunch` del adopt (arriba)
+            // NO auto-exita y conserva `body`.
+            Text(L10n.Storage.Relaunch.bodyAutoExit)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)

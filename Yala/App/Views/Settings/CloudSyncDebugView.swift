@@ -798,6 +798,12 @@ struct CloudSyncDebugView: View {
                 StorageModePersistence.armSignOutWipe()
                 model.lastMessage = "signOutWipeArmed=true. RELANZA: el boot borra YalaModel+YalaSyncMeta y resetea a .icloud fresh."
             }
+            // Fix carrera 2026-07-14: fuerza la fase terminal SIN armar el wipe ni tocar
+            // credenciales — verifica en sim el cover de dueño único (esta sheet debe
+            // cerrarse sola, el cover del root presentar) y el exit(0) al ir a background.
+            actionButton("Force awaitingRelaunch (solo fase, sin wipe)", disabled: false) {
+                CloudSessionSignOut.shared._debugForceAwaitingRelaunch()
+            }
         }
         .padding(.horizontal, DS.Spacing.lg)
     }

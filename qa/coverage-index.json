@@ -2194,11 +2194,12 @@
       "codeGlobs": [
         "Yala/Services/CloudSync/CloudSessionSignOut.swift",
         "Yala/App/Logic/CloudSignOutFlowLogic.swift",
+        "Yala/App/Logic/RelaunchNetLogic.swift",
         "Yala/App/Views/Settings/SignOutRelaunchView.swift"
       ],
       "scenarioIDs": [],
       "classification": "agentic",
-      "coverage": "unit:YalaTests/CloudSignOutFlowLogicTests (camino por modo + visibilidad + veredicto push-all) — orquestacion (CloudSessionSignOut) y boot-cleanup (SwiftDataConfiguration.performSignOutWipeIfArmed, guardado por !isRunningTests A PROPOSITO: un test jamas debe borrar stores reales) son device/sim-only: boton DEBUG 'Arm sign-out wipe' en CloudSyncDebugView + guion device MODO-NUBE-SIGNOUT-WELCOME-GUION-DEVICE.md. Camino privado (.icloud) verificable en sim (reset a Welcome sin wipe).",
+      "coverage": "unit:YalaTests/CloudSignOutFlowLogicTests (camino por modo + visibilidad + veredicto push-all) + unit:YalaTests/RelaunchNetLogicTests (verify loop de presentacion efectiva + exit-on-background; fix carrera de anchors 2026-07-14: dueno unico del cover terminal en root, ProfileView cede) — orquestacion (CloudSessionSignOut) y boot-cleanup (SwiftDataConfiguration.performSignOutWipeIfArmed, guardado por !isRunningTests A PROPOSITO: un test jamas debe borrar stores reales) son device/sim-only: botones DEBUG 'Arm sign-out wipe' + 'Force awaitingRelaunch' en CloudSyncDebugView + guion device MODO-NUBE-SIGNOUT-WELCOME-GUION-DEVICE.md (re-verificacion device del race pendiente del owner). Camino privado (.icloud) verificable en sim (reset a Welcome sin wipe). XCUITest determinista del cover posible via el seam DEBUG — diferido hasta plan CI (runner roto en la Mac local, Lista Negra M1).",
       "owner": "",
       "lastVerified": "2026-07-13"
     },

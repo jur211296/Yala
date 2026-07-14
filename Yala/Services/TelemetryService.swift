@@ -176,6 +176,7 @@ enum AnalyticsEvent: String {
     case groupJoinIntentDeferred = "Diagnóstico · Join intent diferido"  // params: reason (waitForGroup|enginesNotReady|importNotQuiescent) — el reconcile no pudo correr aún; reintenta en el próximo trigger (antes esto era un skip SILENCIOSO en acceptShare)
     case groupJoinIntentExpired = "Diagnóstico · Join intent expirado"  // CANARIO: una entry de PendingJoinStore venció su TTL (7d) sin lograr member — el invitado quedó fuera del grupo pese a aceptar; >0 = revisar la materialización de zonas compartidas
     case groupsIdentityBootMismatch = "Diagnóstico · Identidad de grupos no coincide al arrancar"  // CANARIO (GAP 1): el boot-guard detectó groups_currentUserRecordName ≠ userRecordID actual y corrió la limpieza de account-switch. >0 sostenido = falso positivo del guard (revisar) o churn real de Apple ID en devices compartidos
+    case relaunchNetExhausted = "Diagnóstico · Red de relaunch agotada"  // params: net (signout|secondaryEntry) — CANARIO (fix carrera 2026-07-14): la red del cover terminal agotó su ciclo de reintentos sin confirmar presentación (onAppear del contenido real). >0 = algo tapa el anchor del root con el wipe/entrada armados; el blocker de la matriz contiene el router y el exit-on-background es la red final. La DISPARAN los nets de ContentView. Sin PII
 
     // MARK: Telemetría 2.0 — eventos nuevos
     // Activación (primeras veces) · sesión · fin de suscripción
