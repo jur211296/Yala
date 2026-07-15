@@ -11,9 +11,9 @@
  */
 import type { Context } from "hono";
 import type { Env } from "../env";
-import { jsonError } from "../errors";
+import { errorBody, jsonError } from "../errors";
 import { gateRequest } from "../ratelimit";
-import type { SessionClaims } from "../attest/session";
+import { verifySessionToken, type SessionClaims } from "../attest/session";
 import { bearerToken, callRpc, getRows, verifyUserToken } from "./userauth";
 
 type Ctx = Context<{ Bindings: Env }>;
@@ -21,6 +21,10 @@ type Ctx = Context<{ Bindings: Env }>;
 interface AuthedUser {
   sub: string;
   userJWT: string;
+}
+
+interface AuthedUserAttest extends AuthedUser {
+  attest: SessionClaims | null;
 }
 
 /**
@@ -148,6 +152,74 @@ export async function handleAccountMigration(c: Ctx): Promise<Response> {
   if (!ok) {
     console.log(`[account-migration] migration_progress upstream ${status}`);
     return jsonError("yala_unavailable", `migration upstream ${status}`, 502);
+  }
+  return c.json((out ?? {}) as Record<string, unknown>);
+}
+
+// ---------------------------------------------------------------------------------- /account/delete
+
+/**
+ * Auth de `/account/delete`: JWT de usuario + **App Attest** + rate-limit. Espejo exacto de
+ * `groups/rpc::requireUserAndAttest` (NO del `requireUser` del resto de `/account/*`).
+ *
+ * ASIMETRÍA DELIBERADA (decisión CONGELADA G5-D1): las demás rutas `/account/*` (claim/exists/migration)
+ * usan `requireUser` — SIN attest — porque el claim PRECEDE al `/attest/bind` (el device aún no tiene una
+ * sesión de attest). `/account/delete` es lo contrario: es la operación MÁS DESTRUCTIVA del canal (hard
+ * delete de todo el corpus personal), la ejecuta un device ya establecido (con sesión de attest viva), y
+ * exigir attest sube la barra contra un JWT robado sin device atestado. En `ENFORCE=observe` el attest
+ * es opcional (igual que las rutas de sync en staging); en `ENFORCE=enforce` es obligatorio.
+ */
+async function requireUserAndAttest(c: Ctx): Promise<AuthedUserAttest | Response> {
+  const token = bearerToken(c.req.header("Authorization"));
+  if (!token) return jsonError("yala_attest_required", "Falta el JWT de usuario (Authorization: Bearer).", 401);
+  const user = await verifyUserToken(c.env, token);
+  if (!user) return jsonError("yala_attest_invalid", "JWT de usuario inválido o expirado.", 401);
+
+  const attestTok = bearerToken(c.req.header("X-Yala-Attest-Session")) ?? c.req.header("X-Yala-Attest-Session") ?? null;
+  const attest = attestTok ? await verifySessionToken(c.env, attestTok) : null;
+  const enforce = c.env.ENFORCE === "enforce";
+  if (enforce && !attest) {
+    return jsonError("yala_attest_required", "Falta el token de sesión de App Attest.", 401);
+  }
+  if (c.env.RATE_LIMITER) {
+    const claims: SessionClaims = attest ?? { keyId: `sub:${user.sub}`, tier: "free" };
+    const blocked = await gateRequest(c.env, claims, "sync");
+    if (blocked) return blocked;
+  }
+  return { sub: user.sub, userJWT: user.token, attest };
+}
+
+/**
+ * Borrado GDPR del corpus PERSONAL (§15, contraparte de `groups_forget_user`). Passthrough al RPC
+ * `delete_personal_account` (SECURITY DEFINER, `auth.uid()` adentro) — TODA la lógica (hard delete de las
+ * 16 tablas de dominio + prefs + counters + attest_keys + report_claims + la fila profiles, counts por
+ * tabla) vive en el RPC. El JWT del usuario se reenvía VERBATIM a PostgREST; JAMÁS service_role. El `sub`
+ * SIEMPRE del JWT (RLS + `auth.uid()`); no lee body. Errores del RPC (`yala_not_authorized` sanitizado,
+ * errcode P0001) → 400 con el código preservado; cualquier otro fallo upstream → 502 yala_unavailable.
+ *
+ * NO borra las tablas de GRUPOS (el cliente llama `groups_forget_user` APARTE ANTES) ni `auth.users`
+ * (residual owner: Admin API/service_role). Ver qa/cloud/g5_01_delete_personal_account.sql.
+ */
+export async function handleAccountDelete(c: Ctx): Promise<Response> {
+  const auth = await requireUserAndAttest(c);
+  if (auth instanceof Response) return auth;
+
+  const { ok, status, body: out } = await callRpc(c.env, auth.userJWT, "delete_personal_account", {});
+  if (!ok) {
+    const message =
+      out && typeof out === "object" && typeof (out as { message?: unknown }).message === "string"
+        ? ((out as { message: string }).message)
+        : null;
+    // Errores del RPC son constantes yala_* sanitizadas (P0001) → 400 con el código preservado.
+    if (message && /^yala_[a-z_]+$/.test(message)) {
+      console.log(`[account-delete] delete_personal_account rejected: ${message}`);
+      return new Response(JSON.stringify(errorBody("yala_rpc_error", message, message)), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    console.log(`[account-delete] delete_personal_account upstream ${status}`);
+    return jsonError("yala_unavailable", `delete upstream ${status}`, 502);
   }
   return c.json((out ?? {}) as Record<string, unknown>);
 }

@@ -200,6 +200,78 @@ budgets parciales re-tombstoneados (gotcha aplicado) · e2e Swift staging **11/1
 estricto). El artefacto `pending-heartbeat-action.sql` se retiró al aplicarse — el branch vivo se
 inspecciona con `pg_get_functiondef` y la migración queda en el historial de Supabase con su nombre.
 
+## delete_personal_account (G5-D1) — borrado GDPR del corpus personal + verificación WIRE one-shot
+
+Función NUEVA `qa/cloud/g5_01_delete_personal_account.sql` (`security definer`, `set search_path = public`,
+guard `auth.uid()` NULL → `yala_not_authorized`, grants REVOKE public/anon + GRANT authenticated). **HARD
+DELETE** de todas las filas `user_id = auth.uid()` en las 16 tablas de dominio + `user_preferences` +
+`sync_seq_counters` + `attest_keys` + `report_claims` + la fila `profiles` (PK `id`); devuelve counts por
+tabla en jsonb. NO toca grupos (`groups_forget_user` lo hace aparte) ni `auth.users` (residual owner). Ruta
+`POST /account/delete` (`requireUserAndAttest` — asimetría deliberada con el resto de `/account/*`, que usa
+`requireUser` sin attest). Semántica HARD DELETE = **decisión de sesión, a RATIFICAR por el owner**.
+
+**Aplicación (loop principal, MCP, contexto service):** aplicar el `.sql` verbatim como migración
+`g5_01_delete_personal_account`. Registrar el md5 real tras aplicar:
+
+```sql
+select md5(pg_get_functiondef('public.delete_personal_account()'::regprocedure));
+-- md5 esperado: f1ab01670a85d3d72860b5aeae6cfe2b  (aplicada 2026-07-16, migración g5_01_delete_personal_account)
+```
+
+**Regla anti-drift:** re-aplicar a prod (`kefvaiymtgytemwbltlz`) en el mismo cambio o anotar drift pendiente.
+
+### Verificación WIRE one-shot (por qué NO hay golden network-ON, ver account.goldens.test.ts)
+
+Destructivo + irreversible → jamás sobre los users compartidos A/B de la suite (borrar `sync_seq_counters`
+resetea seq→1 sin re-seed; `profiles[A]` lo exige el golden 11; `profiles[B]` lo mutan los goldens 6-26).
+Verificación one-shot con el JWT de **sub B** (aislado del push paralelo de sync.goldens, que es solo-A),
+CORRIDA MANUAL DESPUÉS de `npm test` (no antes — dejaría a B sin fila para los goldens de reversa):
+
+1. **Sembrar filas frescas** de B vía PostgREST con su JWT (o vía RPCs). El JWT de B:
+   `POST {SUPABASE_URL}/auth/v1/token?grant_type=password` con `i5-user-b@test.yala` / `I5-Passw0rd-B!`
+   (mismo helper `login()` del test). Con ese `access_token` como Bearer + `apikey: ANON`:
+
+   ```
+   POST /rest/v1/tx_items       body: {"sync_id":"<uuid1>","user_id":"<subB>","note":"g5-wire","hlc":"<hlc>", ...cols NOT NULL...}
+   POST /rest/v1/accounts       body: {"sync_id":"<uuid2>","user_id":"<subB>", ...}
+   POST /rest/v1/user_preferences body: {"user_id":"<subB>","key":"g5-wire","value":"x","hlc":"<hlc>"}
+   -- Alternativa robusta: un push real vía POST /sync/push (arma sync_seq_counters por el trigger) —
+   -- basta con que haya ≥1 fila en varias tablas para probar el borrado.
+   ```
+   Confirmar `GET /account/exists` (Bearer B) → `{"exists": true}` (B ya tiene fila profiles de los goldens).
+
+2. **Ejecutar el borrado** con el JWT de B (attest opcional en staging, `ENFORCE=observe`):
+   ```
+   POST {WORKER}/account/delete   headers: { Authorization: Bearer <jwtB> }
+   → 200 { accounts, budgets, ..., tx_items, user_preferences, sync_seq_counters, attest_keys,
+           report_claims, profiles }  (counts > 0 en las tablas sembradas + profiles:1)
+   ```
+   (O directo al RPC en contexto service para aislar del edge: `POST /rest/v1/rpc/delete_personal_account`
+   Bearer B, body `{}`.)
+
+3. **Verificar vacío** (Bearer B, RLS filtra a las filas de B):
+   ```
+   GET /rest/v1/tx_items?user_id=eq.<subB>&select=sync_id        → []
+   GET /rest/v1/accounts?user_id=eq.<subB>&select=sync_id        → []
+   GET /rest/v1/user_preferences?user_id=eq.<subB>&select=key    → []
+   GET /rest/v1/sync_seq_counters?user_id=eq.<subB>&select=seq   → []
+   GET {WORKER}/account/exists   Bearer B                        → { "exists": false }   (profiles borrada)
+   ```
+
+4. **Re-claim a estado estable** (para no dejar a B sin fila — la suite lo re-crea igual en su próxima
+   corrida, pero se restaura explícitamente):
+   ```
+   POST {WORKER}/account/claim   Bearer B   body: {"device_id":"device-B-01","provider":"google"}
+   → { "state": "created" }        (la fila renace limpia)
+   ```
+   Nota: los counters de B renacen en seq=1 tras el re-claim — igual que un usuario nuevo; los goldens de B
+   fijan su estado por PATCH y no dependen del valor de seq, así que es inocuo.
+
+**CORRIDA 2026-07-16 (G5-D1, loop principal vía MCP+curl): VERDE** — seed 201 → delete 200 con counts
+reales (`tx_items:53, user_preferences:41, sync_seq_counters:1, profiles:1`) → verificación post-delete
+`[]` en prefs/counters (Bearer B) → re-claim `{"state":"created"}`. Suite gateway re-corrida tras el WIRE
+para confirmar B estable.
+
 ## Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)
 
 `push-e2e-test.sh` ejerce `POST /sync/push` con EL MISMO envelope JSON que arma `SyncPushClient`

@@ -10,6 +10,18 @@
  * está revocado). Limpia con `DELETE FROM profiles WHERE id IN (<subA>,<subB>)` en contexto service
  * (SQL editor / MCP) ANTES de correr — ver qa/cloud/README. Los tests que necesitan estado in-progress lo
  * fijan por un PATCH directo a PostgREST con el JWT del propio dueño (RLS UPDATE lo permite; sin service_role).
+ *
+ * EXCLUSIÓN DOCUMENTADA — `delete_personal_account` (G5-D1) NO tiene golden network-ON aquí (mismo criterio
+ * que `groups_forget_user` en groups.goldens.test.ts): es DESTRUCTIVO e IRREVERSIBLE (hard delete de TODO
+ * el corpus + la fila profiles del caller). No es escribible sobre los users COMPARTIDOS de la suite:
+ *   - sub A está PROHIBIDO — sync.goldens.test.ts pushea como A en PARALELO (vitest corre los archivos a la
+ *     vez) y el golden 11 de este archivo exige `profiles[subA]` estable; borrarlo rompería ambos cross-file.
+ *   - sub B tampoco: borrar `sync_seq_counters[B]` RESETEA su seq→1 sin re-seed documentado, y la fila
+ *     `profiles[B]` que los goldens 6-26 mutan por PATCH dejaría de existir.
+ * La verificación es WIRE ONE-SHOT vía MCP (loop principal): sembrar filas frescas en un sub aislado →
+ * `POST /account/delete` con su JWT → verificar tablas vacías + `exists=false` → re-claim a estado estable.
+ * Guion exacto en qa/cloud/README (sección "delete_personal_account"). Los guards del handler + el
+ * passthrough del RPC quedan cubiertos OFFLINE en account.delete.test.ts (corre en CI).
  */
 import { beforeAll, describe, expect, it } from "vitest";
 import app from "../src/index";

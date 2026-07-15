@@ -13,7 +13,7 @@ import {
   handleSyncPull,
   handleSyncPush,
 } from "./sync/routes";
-import { handleAccountClaim, handleAccountExists, handleAccountMigration } from "./sync/account";
+import { handleAccountClaim, handleAccountDelete, handleAccountExists, handleAccountMigration } from "./sync/account";
 import { handleGroupsMerkle, handleGroupsPull, handleGroupsPush } from "./groups/routes";
 import { handleGroupsRpc } from "./groups/rpc";
 import { handleDebugPush } from "./push/routes";
@@ -65,6 +65,7 @@ app.get("/prefs/pull", handlePrefsPull);
 app.post("/account/claim", handleAccountClaim); // reserva atómica; estado de 3 valores
 app.get("/account/exists", handleAccountExists); // hint de encaminamiento (no la garantía anti-doble-siembra)
 app.post("/account/migration", handleAccountMigration); // cutover/complete §g.4 + reverse_* §h + heartbeat I14-pre (guard líder)
+app.post("/account/delete", handleAccountDelete); // G5-D1: borrado GDPR del corpus personal (requireUserAndAttest — asimetría documentada)
 
 // --- Grupos->backend (G2): canal de sync de grupos (apply_group_delta SECURITY INVOKER; RLS por membership) ---
 app.post("/groups/push", handleGroupsPush);
