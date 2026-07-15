@@ -30,7 +30,7 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 # APNs (spike G0 Grupos→backend). Key ID de 10 chars (no secreto); vacío = /v1/debug/push responde 503.
 # El secret se sube con:  npx wrangler secret put APNS_AUTH_KEY < AuthKey_<KEYID>.p8
 # (stdin preserva los saltos de línea del PEM; SIN --env: staging es el env default). NUNCA commitear la .p8.
-APNS_KEY_ID = ""
+APNS_KEY_ID = "7H6BUZWKKS"
 
 [[d1_databases]]
 binding = "DB"

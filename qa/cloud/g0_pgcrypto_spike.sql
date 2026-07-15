@@ -27,12 +27,12 @@ create policy spike_enc_update_own on public.spike_enc
 
 -- Hash canónico: función ÚNICA = una sola definición de canonicalización.
 create or replace function public.spike_canonical_hash(p_plaintext text)
-returns text language sql immutable set search_path = public
+returns text language sql immutable set search_path = public, extensions
 as $$ select encode(digest(convert_to(p_plaintext, 'UTF8'), 'sha256'), 'hex') $$;
 
 -- RPC 1: write (llave como ARGUMENTO — variante base).
 create or replace function public.spike_enc_write(p_plaintext text, p_key text)
-returns uuid language plpgsql security invoker set search_path = public as $$
+returns uuid language plpgsql security invoker set search_path = public, extensions as $$
 declare v_id uuid;
 begin
   insert into spike_enc (ciphertext, content_hash)
@@ -43,7 +43,7 @@ end $$;
 
 -- RPC 2: read con error SANITIZADO (jamás interpolar p_key ni sqlerrm crudo).
 create or replace function public.spike_enc_read(p_id uuid, p_key text)
-returns text language plpgsql security invoker set search_path = public as $$
+returns text language plpgsql security invoker set search_path = public, extensions as $$
 declare v_plain text;
 begin
   select pgp_sym_decrypt(ciphertext, p_key) into v_plain
@@ -59,7 +59,7 @@ end $$;
 
 -- RPC 3: rekey — re-cifra con llave nueva SIN tocar content_hash (la prueba de estabilidad).
 create or replace function public.spike_enc_rekey(p_id uuid, p_old_key text, p_new_key text)
-returns void language plpgsql security invoker set search_path = public as $$
+returns void language plpgsql security invoker set search_path = public, extensions as $$
 begin
   update spike_enc
      set ciphertext = pgp_sym_encrypt(pgp_sym_decrypt(ciphertext, p_old_key), p_new_key),
@@ -74,7 +74,7 @@ end $$;
 -- RPC 4: verificación de hash (stored vs recomputado sobre el plaintext descifrado).
 create or replace function public.spike_enc_hash(p_id uuid, p_key text)
 returns table (stored_hash text, computed_hash text, matches boolean)
-language sql security invoker set search_path = public as $$
+language sql security invoker set search_path = public, extensions as $$
   select content_hash,
          spike_canonical_hash(pgp_sym_decrypt(ciphertext, p_key)),
          content_hash = spike_canonical_hash(pgp_sym_decrypt(ciphertext, p_key))
@@ -86,7 +86,7 @@ $$;
 -- como argumento; la variante solo mide si el GUC aporta algo (hipótesis: solo ergonomía
 -- interna para triggers/funciones anidadas, cero aislamiento extra de logs).
 create or replace function public.spike_enc_read_local(p_id uuid, p_key text)
-returns text language plpgsql security invoker set search_path = public as $$
+returns text language plpgsql security invoker set search_path = public, extensions as $$
 declare v_plain text;
 begin
   perform set_config('yala.enc_key', p_key, true);
