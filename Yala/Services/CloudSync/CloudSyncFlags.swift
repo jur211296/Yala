@@ -87,6 +87,45 @@ nonisolated enum StorageModePersistence {
     static func clearSignOutWipeArm(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: signOutWipeArmedKey)
     }
+
+    /// Marker "el wipe de sign-out en `.cloud` DEBE incluir el store de GRUPOS" (G5-B, camino `.cloud`
+    /// ampliado). Lo escribe el coordinador ANTES de `armSignOutWipe` (CR-4: el arm es el disparador y
+    /// va ÚLTIMO — kill entre marker y arm = no-op re-armable; kill entre arm y marker habría dejado un
+    /// wipe personal SIN grupos). SOLO se escribe con `groupsBackendEnabled == true` ⇒ con el flag OFF
+    /// (TODO device prod) el marker jamás existe y `performSignOutWipeIfArmed` es byte-idéntico.
+    /// Lo lee y limpia el boot hook `performSignOutWipeIfArmed` JUNTO al arm (orden kill-safe existente).
+    static let signOutWipeIncludesGroupsKey = "cloudSync.signOutWipeIncludesGroups"
+
+    static func markSignOutWipeIncludesGroups(_ defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: signOutWipeIncludesGroupsKey)
+    }
+
+    static func signOutWipeIncludesGroups(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: signOutWipeIncludesGroupsKey)
+    }
+
+    static func clearSignOutWipeIncludesGroups(_ defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: signOutWipeIncludesGroupsKey)
+    }
+
+    /// Marker "wipe de sesión SOLO-GRUPOS ARMADO" (G5-B, camino `groupsOnlySignOut`). Lo escribe el
+    /// coordinador como ÚLTIMO write del cierre solo-grupos (kill-safe); el BOOT siguiente (pre-mount,
+    /// `SwiftDataConfiguration.performGroupsOnlySignOutWipeIfArmed`) borra SOLO los archivos del store de
+    /// GRUPOS — NO toca `YalaModel`/`YalaSyncMeta`, NO resetea onboarding/prefs personales, NO escribe
+    /// `storageMode` (el device sigue en `.icloud`). Se limpia AL FINAL del boot-cleanup (idempotente).
+    static let groupsOnlyWipeArmedKey = "cloudSync.groupsOnlyWipeArmed"
+
+    static func armGroupsOnlyWipe(_ defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: groupsOnlyWipeArmedKey)
+    }
+
+    static func isGroupsOnlyWipeArmed(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: groupsOnlyWipeArmedKey)
+    }
+
+    static func clearGroupsOnlyWipeArm(_ defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: groupsOnlyWipeArmedKey)
+    }
 }
 
 /// Flags del Modo Nube. DARK por defecto.

@@ -294,16 +294,19 @@ struct GroupsSyncHardeningTests {
         #expect(!client.didRemediateGroupMerkleThisSession)  // frontera de sesión re-armada (B1)
     }
 
-    /// Los 3 paths de `CloudSessionSignOut` llaman al teardown del canal de Grupos junto a cada
-    /// `teardownGuestSession` (source-scan — el wiring real no es ejecutable en unit test: toca
-    /// CloudAuthService/controllers reales).
+    /// Los paths de `CloudSessionSignOut` llaman al teardown del canal de Grupos (source-scan — el
+    /// wiring real no es ejecutable en unit test: toca CloudAuthService/controllers reales). G5-B añade
+    /// el path solo-grupos, que TAMBIÉN corta el canal (pero NO el runtime personal → `teardowns` sigue 3).
     @Test func signOut_allThreePaths_wireGroupsTeardown() throws {
         let source = try String(contentsOf: Self.repoRoot
             .appendingPathComponent("Yala/Services/CloudSync/CloudSessionSignOut.swift"), encoding: .utf8)
         let teardowns = source.components(separatedBy: "CloudSyncRuntime.shared?.teardownGuestSession()").count - 1
         let groupsTeardowns = source.components(separatedBy: "GroupsSyncClient.shared.teardownForSignOut()").count - 1
+        // El runtime PERSONAL solo se derriba en los 3 paths que lo montan (privateReset/cloud/secondary).
+        // El solo-grupos NO conoce el runtime personal → sigue 3.
         #expect(teardowns == 3)
-        #expect(groupsTeardowns == 3)  // uno por path: privateReset / cloudSecureSignOut / secondary
+        // El canal de grupos se corta en los 4 paths: privateReset / cloudSecureSignOut / secondary / groupsOnly.
+        #expect(groupsTeardowns == 4)
     }
 
     /// Rehydrate: re-inserta por DIFF owner-scoped las entries que el outbox perdió (valores ORIGINALES),

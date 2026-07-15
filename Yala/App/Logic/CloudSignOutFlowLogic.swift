@@ -29,16 +29,50 @@ nonisolated enum CloudSignOutFlowLogic {
         /// arma `SecondarySessionStore.armWipe` (borra SOLO los archivos `-Secondary` en el
         /// boot; los del dueño intactos) y JAMÁS `armSignOutWipe` ni el reset masivo de prefs.
         case secondaryCloudSignOut
+        /// SESIÓN SOLO-GRUPOS (G5-B): sesión backend viva + personal aún en `.icloud`. NO es
+        /// `.cloud` (el store personal no se sincroniza por el motor) ni secundaria. Cierra la
+        /// sesión backend limpiamente: push-all VERIFICADO del outbox de GRUPOS → teardown del
+        /// canal → purga in-session del outbox/cursor de grupos → limpieza del consent → wipe
+        /// ARMADO SOLO del store de grupos al boot (jamás del personal). Datos personales intactos.
+        case groupsOnlySignOut
     }
 
-    /// M1 — ATOMICIDAD con el getter efectivo: `secondarySessionActive` gana PRIMERO. Sin esta
-    /// rama, el `.cloud` EFECTIVO derivado del descriptor enrutaría el sign-out de la invitada a
-    /// `.cloudSecureSignOut` → `armSignOutWipe` → el boot borraría el `YalaModel` del DUEÑO.
-    static func path(for storageMode: StorageMode, secondarySessionActive: Bool) -> Path {
+    /// Precedencia CONGELADA (G5-B):
+    ///  1. `secondarySessionActive` — M1 gana SIEMPRE (ATOMICIDAD con el getter efectivo: en
+    ///     secundaria el modo EFECTIVO es `.cloud`; sin esta rama primero el sign-out de la
+    ///     invitada iría a `.cloudSecureSignOut` → `armSignOutWipe` → el boot borraría el
+    ///     `YalaModel` del DUEÑO).
+    ///  2. `.cloud` — el store personal lo sincroniza el motor; el wipe seguro es por archivos.
+    ///  3. `groupsBackendEnabled && hasLiveSession` — sesión solo-grupos (personal `.icloud`).
+    ///  4. else — `.privateReset` (datos intactos, reset a Welcome).
+    ///
+    /// Con el flag OFF o sin sesión backend (TODO device prod hoy) las filas 1/2/4 son la matriz
+    /// EXACTA de antes: la fila 3 solo se alcanza con `groupsBackendEnabled == true`.
+    static func path(for storageMode: StorageMode,
+                     secondarySessionActive: Bool,
+                     hasLiveSession: Bool,
+                     groupsBackendEnabled: Bool) -> Path {
         if secondarySessionActive { return .secondaryCloudSignOut }
-        switch storageMode {
-        case .icloud: return .privateReset
-        case .cloud: return .cloudSecureSignOut
+        if storageMode == .cloud { return .cloudSecureSignOut }
+        if groupsBackendEnabled && hasLiveSession { return .groupsOnlySignOut }
+        return .privateReset
+    }
+
+    /// Copy honesto del confirmationDialog por camino (G5-B). Extraído para testear la precedencia
+    /// (idéntica a `path`); el mapeo enum → string localizado vive en `ProfileView`.
+    enum ConfirmMessage: Equatable {
+        case icloud
+        case cloud
+        case secondary
+        case groupsOnly
+    }
+
+    static func confirmMessage(for path: Path) -> ConfirmMessage {
+        switch path {
+        case .privateReset: return .icloud
+        case .cloudSecureSignOut: return .cloud
+        case .secondaryCloudSignOut: return .secondary
+        case .groupsOnlySignOut: return .groupsOnly
         }
     }
 

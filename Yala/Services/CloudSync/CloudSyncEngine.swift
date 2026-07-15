@@ -342,6 +342,24 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSignOut wipe executed at boot — device fresh")
     }
 
+    /// G5-B: cierre de sesión SOLO-GRUPOS — outbox de grupos drenado, canal en teardown, consent
+    /// limpiado, sesión cerrada + wipe del store de grupos ARMADO → esperando relaunch.
+    static func signOutGroupsOnlyWipeArmed() {
+        logger.notice("CloudSignOut groups-only wipe armed — awaiting relaunch (personal intact)")
+    }
+
+    /// BOOT (G5-B): el wipe solo-grupos armado se ejecutó (archivos del store de grupos borrados; el
+    /// personal, sync-meta, onboarding, prefs y storageMode NO se tocaron — device sigue en `.icloud`).
+    static func signOutGroupsOnlyWipeExecuted() {
+        logger.notice("CloudSignOut groups-only wipe executed at boot — groups store cleared, personal intact")
+    }
+
+    /// BOOT (G5-B): el wipe solo-grupos ABORTÓ (borrado del archivo base del store de grupos falló ≠
+    /// no-existe). El arm persiste → reintento en el próximo boot; el personal jamás corrió riesgo.
+    static func signOutGroupsOnlyWipeAborted(reason: String) {
+        logger.error("CloudSignOut groups-only wipe ABORTED reason=\(reason, privacy: .public)")
+    }
+
     /// BOOT: el wipe armado ABORTÓ (borrado de archivo base falló ≠ no-existe). El arm
     /// persiste → reintento en el próximo boot; el par storageMode/mirrorOffArmed queda
     /// intacto (mount mirror-OFF, sin riesgo de replay hacia iCloud). >0 sostenido = disco/

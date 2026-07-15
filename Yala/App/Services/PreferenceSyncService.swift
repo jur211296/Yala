@@ -198,6 +198,27 @@ final class PreferenceSyncService {
         }
     }
 
+    /// Elimina una pref (G5-B — limpieza del consent de grupos en el sign-out solo-grupos). Cubre las
+    /// 3 ramas de `PrefsSyncBehavior` para que el borrado no reviva:
+    ///  - `.icloudKeyValue`: `removeObject` local + iKV + `synchronize()` — CR-2: sin limpiar el iKV,
+    ///    `applyRemoteValues()` del próximo boot RESUCITARÍA el consent (el iKV es la fuente en `.icloud`).
+    ///  - `.cloudOutbox`: `removeObject` local + encola el valor CLEARED al outbox. El wire de prefs no
+    ///    tiene tombstone; las únicas keys que se borran hoy son `intPresence` (consent), donde `0` ≡
+    ///    ausencia (`isAccepted` es `> 0`) → encolar `.int(0)` limpia la fuente backend de forma honesta.
+    ///  - `.localOnly` (secundaria): solo local — ni iKV ni outbox tocan la cuenta ajena.
+    func remove(forKey key: String) {
+        local.removeObject(forKey: key)
+        switch behavior {
+        case .icloudKeyValue:
+            iKV.removeObject(forKey: key)
+            iKV.synchronize()
+        case .cloudOutbox:
+            enqueuePref(key: key, value: .int(0))
+        case .localOnly:
+            break
+        }
+    }
+
     /// Encola una pref en el outbox durable (`.cloud`). El HLC se estampa en el outbox (verdad temporal).
     /// Latencia de subida = cadencia del `CloudSyncRuntime` (≈60s foreground) — decisión v1 (paridad con
     /// la latencia de dominio; NO se hace un push inmediato fuera de diseño).

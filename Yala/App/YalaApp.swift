@@ -70,6 +70,10 @@ struct YalaApp: App {
             // (pre-mount) — borra archivos de los stores personal+sync-meta y devuelve el
             // device a `.icloud` fresh ANTES de que exista cualquier container.
             SwiftDataConfiguration.performSignOutWipeIfArmed()
+            // G5-B: si el cierre de sesión SOLO-GRUPOS dejó armado su wipe, borrar AHORA (pre-mount)
+            // los archivos del store de grupos ÚNICAMENTE — el personal, sync-meta, onboarding, prefs
+            // y storageMode no se tocan (device sigue en `.icloud`). Con el flag OFF el arm jamás existe.
+            SwiftDataConfiguration.performGroupsOnlySignOutWipeIfArmed()
             // M1: primer boot de una sesión secundaria — purga E2E-M1 de las superficies App
             // Group del dueño + cancelación de sus notifs + healing de flags (one-shot).
             SwiftDataConfiguration.performSecondaryEntryTasksIfNeeded()

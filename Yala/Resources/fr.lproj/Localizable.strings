@@ -4881,3 +4881,12 @@
 
 /* G4 sign-in error */
 "groups.signin.error" = "Hmm, nous n'avons pas pu connecter ton compte. Réessaie.";
+
+/* Confirm message for groups-only sign-out (G5-B) */
+"settings.signOutConfirmMessageGroupsOnly" = "Nous te déconnectons et cet appareil oubliera tes groupes (ils restent dans le cloud de Yala ; reconnecte-toi pour les revoir). Tes données personnelles ne sont pas touchées.";
+
+/* Groups account informational row title (G5-B) */
+"settings.groupsAccountRowTitle" = "Compte de groupes";
+
+/* Groups account informational row subtitle (G5-B) */
+"settings.groupsAccountRowSubtitle" = "Session active";

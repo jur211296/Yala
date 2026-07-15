@@ -8,17 +8,24 @@ import Testing
 
 @testable import Yala
 
-@Suite("Cerrar sesión — camino por modo y visibilidad (H4)")
+@Suite("Cerrar sesión — camino por modo y visibilidad (H4 + G5-B)")
 struct CloudSignOutFlowLogicTests {
+
+    // Helper: la matriz de HOY (flag OFF, sin sesión backend = TODO device prod) debe ser byte-idéntica.
+    private func path(_ mode: StorageMode, secondary: Bool) -> CloudSignOutFlowLogic.Path {
+        CloudSignOutFlowLogic.path(
+            for: mode, secondarySessionActive: secondary,
+            hasLiveSession: false, groupsBackendEnabled: false)
+    }
 
     @Test
     func icloud_usesPrivateReset() {
-        #expect(CloudSignOutFlowLogic.path(for: .icloud, secondarySessionActive: false) == .privateReset)
+        #expect(path(.icloud, secondary: false) == .privateReset)
     }
 
     @Test
     func cloud_usesCloudSecureSignOut() {
-        #expect(CloudSignOutFlowLogic.path(for: .cloud, secondarySessionActive: false) == .cloudSecureSignOut)
+        #expect(path(.cloud, secondary: false) == .cloudSecureSignOut)
     }
 
     @Test
@@ -26,8 +33,55 @@ struct CloudSignOutFlowLogicTests {
         // M1 — la trampa de la atomicidad: en secundaria el modo EFECTIVO es `.cloud`; sin esta
         // rama el sign-out iría a `.cloudSecureSignOut` → armSignOutWipe → el boot borraría el
         // YalaModel del DUEÑO. La secundaria gana sobre cualquier modo.
-        #expect(CloudSignOutFlowLogic.path(for: .cloud, secondarySessionActive: true) == .secondaryCloudSignOut)
-        #expect(CloudSignOutFlowLogic.path(for: .icloud, secondarySessionActive: true) == .secondaryCloudSignOut)
+        #expect(path(.cloud, secondary: true) == .secondaryCloudSignOut)
+        #expect(path(.icloud, secondary: true) == .secondaryCloudSignOut)
+    }
+
+    // MARK: - Fila NUEVA (G5-B): solo-grupos + precedencias
+
+    @Test
+    func groupsOnly_whenFlagOnAndLiveSessionAndICloud() {
+        #expect(CloudSignOutFlowLogic.path(
+            for: .icloud, secondarySessionActive: false,
+            hasLiveSession: true, groupsBackendEnabled: true) == .groupsOnlySignOut)
+    }
+
+    @Test
+    func groupsOnly_requiresBothFlagAndSession() {
+        // Flag ON pero sin sesión → privado (no hay sesión que cerrar).
+        #expect(CloudSignOutFlowLogic.path(
+            for: .icloud, secondarySessionActive: false,
+            hasLiveSession: false, groupsBackendEnabled: true) == .privateReset)
+        // Sesión viva pero flag OFF (TODO device prod) → privado byte-idéntico.
+        #expect(CloudSignOutFlowLogic.path(
+            for: .icloud, secondarySessionActive: false,
+            hasLiveSession: true, groupsBackendEnabled: false) == .privateReset)
+    }
+
+    @Test
+    func cloud_winsOverGroupsOnly() {
+        // Precedencia 2 > 3: en `.cloud` el store personal lo sincroniza el motor → wipe por archivos.
+        #expect(CloudSignOutFlowLogic.path(
+            for: .cloud, secondarySessionActive: false,
+            hasLiveSession: true, groupsBackendEnabled: true) == .cloudSecureSignOut)
+    }
+
+    @Test
+    func secondary_winsOverGroupsOnly() {
+        // Precedencia 1 > 3.
+        #expect(CloudSignOutFlowLogic.path(
+            for: .icloud, secondarySessionActive: true,
+            hasLiveSession: true, groupsBackendEnabled: true) == .secondaryCloudSignOut)
+    }
+
+    // MARK: - Copy honesto (mapeo path → mensaje)
+
+    @Test
+    func confirmMessage_mapsEachPath() {
+        #expect(CloudSignOutFlowLogic.confirmMessage(for: .privateReset) == .icloud)
+        #expect(CloudSignOutFlowLogic.confirmMessage(for: .cloudSecureSignOut) == .cloud)
+        #expect(CloudSignOutFlowLogic.confirmMessage(for: .secondaryCloudSignOut) == .secondary)
+        #expect(CloudSignOutFlowLogic.confirmMessage(for: .groupsOnlySignOut) == .groupsOnly)
     }
 
     @Test

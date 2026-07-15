@@ -31,7 +31,13 @@ struct IdentityRemapEmissionTests {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }
-    private func cleanup(_ dir: URL) { try? FileManager.default.removeItem(at: dir) }
+    /// NO borra el dir (2026-07-16): borrar los .sqlite bajo un container on-disk VIVO cuyo SUT dejó
+    /// Tasks huérfanos de save genera una tormenta de IO errors ("disk I/O error"/"misuse") minutos
+    /// después, que bajo suite completa puede COLGAR un test víctima arbitrario (cazado: el run de G5-B
+    /// mató a SyncPullClientTests.pull_403 — arrancó y jamás terminó; la clase está en la Lista Negra de
+    /// TESTING-STRATEGY). El tmp del sim es efímero (se vacía en erase/boot) — dejar los archivos es
+    /// gratis y los saves huérfanos aterrizan en archivos vivos sin reventar.
+    private func cleanup(_ dir: URL) { /* intencionalmente no-op — ver doc-comment */ }
 
     private func makeContext(_ dir: URL) throws -> ModelContext {
         let personalCfg = ModelConfiguration(

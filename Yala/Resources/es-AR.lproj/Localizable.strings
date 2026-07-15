@@ -4143,3 +4143,12 @@
 
 /* G4 sign-in error */
 "groups.signin.error" = "Hmm, no pudimos conectar tu cuenta. Intentalo de nuevo.";
+
+/* Confirm message for groups-only sign-out (G5-B) */
+"settings.signOutConfirmMessageGroupsOnly" = "Cerraremos tu sesión y este dispositivo se olvidará de tus grupos (siguen en la nube de Yala; volvé a iniciar sesión para verlos). Tus datos personales no se tocan.";
+
+/* Groups account informational row title (G5-B) */
+"settings.groupsAccountRowTitle" = "Cuenta de grupos";
+
+/* Groups account informational row subtitle (G5-B) */
+"settings.groupsAccountRowSubtitle" = "Sesión activa";

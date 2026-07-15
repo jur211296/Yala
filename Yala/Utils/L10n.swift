@@ -3974,6 +3974,15 @@ enum L10n {
         static var signOutConfirmMessageSecondary: String {
             ls("settings.signOutConfirmMessageSecondary", comment: "")
         }
+        static var signOutConfirmMessageGroupsOnly: String {
+            ls("settings.signOutConfirmMessageGroupsOnly", comment: "")
+        }
+        static var groupsAccountRowTitle: String {
+            ls("settings.groupsAccountRowTitle", comment: "")
+        }
+        static var groupsAccountRowSubtitle: String {
+            ls("settings.groupsAccountRowSubtitle", comment: "")
+        }
         static var signOutBlockedTitle: String { ls("settings.signOutBlockedTitle", comment: "") }
         static var signOutBlockedMessage: String { ls("settings.signOutBlockedMessage", comment: "") }
         static var delete: String { ls("settings.delete", comment: "") }

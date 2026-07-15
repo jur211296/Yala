@@ -43,4 +43,12 @@ enum GroupsConsentState {
             int: textVersion,
             forKey: PrefSyncKey.groupsConsentTextVersion.rawValue)
     }
+
+    /// Limpia el consent de grupos (G5-B — sign-out solo-grupos). Usa `PreferenceSyncService.remove`
+    /// para las 2 keys → cubre las 3 ramas de storageMode (CR-2: en `.icloud` DEBE limpiar el iKV o
+    /// `applyRemoteValues()` del próximo boot resucitaría el consent). Idempotente.
+    static func clear() {
+        PreferenceSyncService.shared.remove(forKey: PrefSyncKey.groupsConsentAcceptedAt.rawValue)
+        PreferenceSyncService.shared.remove(forKey: PrefSyncKey.groupsConsentTextVersion.rawValue)
+    }
 }

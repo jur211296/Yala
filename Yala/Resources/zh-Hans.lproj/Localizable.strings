@@ -4892,3 +4892,12 @@
 
 /* G4 sign-in error */
 "groups.signin.error" = "嗯，我们没能关联你的账户。请再试一次。";
+
+/* Confirm message for groups-only sign-out (G5-B) */
+"settings.signOutConfirmMessageGroupsOnly" = "我们会将你退出登录，此设备将忘记你的群组（群组仍保留在 Yala 云端；重新登录即可查看）。你的个人数据不会受到影响。";
+
+/* Groups account informational row title (G5-B) */
+"settings.groupsAccountRowTitle" = "群组账户";
+
+/* Groups account informational row subtitle (G5-B) */
+"settings.groupsAccountRowSubtitle" = "当前会话";

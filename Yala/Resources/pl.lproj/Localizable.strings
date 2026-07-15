@@ -4892,3 +4892,12 @@
 
 /* G4 sign-in error */
 "groups.signin.error" = "Hmm, nie udało się połączyć twojego konta. Spróbuj ponownie.";
+
+/* Confirm message for groups-only sign-out (G5-B) */
+"settings.signOutConfirmMessageGroupsOnly" = "Wylogujemy Cię, a to urządzenie zapomni Twoje grupy (pozostają w chmurze Yala; zaloguj się ponownie, aby je zobaczyć). Twoje dane osobiste nie zostaną naruszone.";
+
+/* Groups account informational row title (G5-B) */
+"settings.groupsAccountRowTitle" = "Konto grup";
+
+/* Groups account informational row subtitle (G5-B) */
+"settings.groupsAccountRowSubtitle" = "Aktywna sesja";

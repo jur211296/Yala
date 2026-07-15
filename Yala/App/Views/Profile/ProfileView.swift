@@ -87,6 +87,22 @@ struct ProfileView: View {
         }
     }
 
+    /// Copy del confirmationDialog de cierre de sesión — misma precedencia que `path()`
+    /// (secundaria → nube → solo-grupos → privado), vía `CloudSignOutFlowLogic`.
+    private var signOutConfirmMessage: String {
+        let path = CloudSignOutFlowLogic.path(
+            for: CloudSyncFlags.storageMode,
+            secondarySessionActive: SecondarySessionStore.isActive(),
+            hasLiveSession: CloudAuthService.shared.hasSession,
+            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled)
+        switch CloudSignOutFlowLogic.confirmMessage(for: path) {
+        case .icloud: return L10n.Settings.signOutConfirmMessageICloud
+        case .cloud: return L10n.Settings.signOutConfirmMessageCloud
+        case .secondary: return L10n.Settings.signOutConfirmMessageSecondary
+        case .groupsOnly: return L10n.Settings.signOutConfirmMessageGroupsOnly
+        }
+    }
+
     private var isProUser: Bool {
         FeatureGateService.shared.isProUser
     }
@@ -222,17 +238,13 @@ struct ProfileView: View {
                 titleVisibility: .visible
             ) {
                 Button(L10n.Settings.signOutConfirmAction, role: .destructive) {
-                    Task { await CloudSessionSignOut.shared.signOut() }
+                    Task { await CloudSessionSignOut.shared.signOut(context: modelContext) }
                 }
                 Button(L10n.Common.cancel, role: .cancel) {}
             } message: {
-                // M1: la secundaria tiene copy propio ("los datos del dueño no se tocan") — el copy
-                // .cloud a secas confundiría sobre qué datos deja el device.
-                Text(SecondarySessionStore.isActive()
-                    ? L10n.Settings.signOutConfirmMessageSecondary
-                    : (CloudSyncFlags.storageMode == .cloud
-                        ? L10n.Settings.signOutConfirmMessageCloud
-                        : L10n.Settings.signOutConfirmMessageICloud))
+                // El copy honesto sigue la MISMA precedencia que `path()`: secundaria → nube →
+                // solo-grupos → privado (extraído a `CloudSignOutFlowLogic.confirmMessage`).
+                Text(signOutConfirmMessage)
             }
             .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
                 Button(L10n.Common.ok, role: .cancel) {
@@ -578,6 +590,19 @@ struct ProfileView: View {
     private var datosSection: some View {
         SectionBox(title: L10n.Settings.data) {
             VStack(spacing: DS.Spacing.none) {
+                // G5-B: fila informativa "Cuenta de grupos" — SOLO en sesión solo-grupos (backend viva,
+                // personal `.icloud`, flag ON, no secundaria). Reconoce que hay una sesión de grupos
+                // activa en el device. Texto genérico: `CloudAuthService` no expone email/nombre
+                // públicamente (no se añade accessor). NO mueve las filas existentes (va primero; su
+                // divisor la separa de la fila iCloud, que se muestra con la misma condición `!= .cloud`).
+                if CloudSyncFlags.groupsBackendEnabled
+                    && CloudAuthService.shared.hasSession
+                    && CloudSyncFlags.storageMode != .cloud
+                    && !SecondarySessionStore.isActive() {
+                    groupsAccountRow
+                    SubsectionDivider()
+                }
+
                 // La fila "iCloud" se oculta en Modo Nube (`.cloud`): `iCloudSyncSettingsView` mentiría
                 // (el store personal ya no lo espeja el mirror). La vista completa bifurcada por modo es
                 // I12; aquí basta ocultarla (R12 mínimo).
@@ -894,6 +919,43 @@ struct ProfileView: View {
     // MARK: - Reference Builder
 
     @ViewBuilder
+    /// G5-B: fila informativa (no navegable) que reconoce una sesión de grupos activa. Sin chevron
+    /// (no navega) y con subtítulo genérico — el coordinador de sign-out cierra esa sesión.
+    private var groupsAccountRow: some View {
+        HStack(spacing: DS.Spacing.md) {
+            if effectiveColorfulIcons {
+                Image(systemName: "person.crop.circle.badge.checkmark")
+                    .font(DS.Typography.subheadline).fontWeight(.medium)
+                    .foregroundStyle(.white)
+                    .frame(width: 28, height: 28)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.indigo))
+                    .accessibilityHidden(true)
+            } else {
+                Image(systemName: "person.crop.circle.badge.checkmark")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                    .frame(width: 28)
+                    .accessibilityHidden(true)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(L10n.Settings.groupsAccountRowTitle)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                Text(L10n.Settings.groupsAccountRowSubtitle)
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.FormRow.paddingV)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("profile_groups_account_row")
+    }
+
     private func profileRow(
         icon: String,
         title: String,

@@ -276,9 +276,12 @@ enum SwiftDataConfiguration {
     /// nuevo no tiene History: el remount hace fresh import de iCloud = semántica de reinstalación.
     ///
     /// Precondiciones: el coordinador de sign-out ya subió TODO el outbox (verificado), cerró la
-    /// sesión y armó `signOutWipeArmed`. El store de GRUPOS no se toca (CKSyncEngine propio, sigue
-    /// atado al iCloud del OS). El claim-store (UserDefaults keyed por userID) sobrevive → la misma
-    /// cuenta re-entra por adopt sin migración.
+    /// sesión y armó `signOutWipeArmed`. El store de GRUPOS legacy (CKSyncEngine, atado al iCloud del
+    /// OS) NO se toca por defecto; SOLO si el sign-out marcó `signOutWipeIncludesGroups` (G5-B — flag
+    /// `groupsBackendEnabled` ON, canal de grupos→backend: el store de grupos es re-descargable desde
+    /// el backend y debe olvidarse junto a la sesión). Con el flag OFF (TODO device prod) el marker
+    /// jamás existe ⇒ este hook es byte-idéntico. El claim-store (UserDefaults keyed por userID)
+    /// sobrevive → la misma cuenta re-entra por adopt sin migración.
     ///
     /// Orden IDEMPOTENTE ante kill a mitad (el arm se limpia AL FINAL; re-entrada re-ejecuta:
     /// archivos ya ausentes = no-op, escrituras de flags idempotentes):
@@ -301,13 +304,57 @@ enum SwiftDataConfiguration {
             return
         }
 
+        // G5-B: si el sign-out marcó incluir grupos (canal grupos→backend, flag ON), borrar TAMBIÉN el
+        // trío de archivos del store de grupos. Un fallo aquí NO aborta el wipe personal (ya consumado);
+        // el trío -wal/-shm huérfano es inerte y el store se recrea vacío al montar. El marker se limpia
+        // JUNTO al arm (AL FINAL, orden kill-safe existente).
+        if StorageModePersistence.signOutWipeIncludesGroups() {
+            _ = deleteStoreFiles(named: groupsDatabaseName, schema: groupsSchema)
+        }
+
         StorageModePersistence.write(.icloud)
         UserDefaults.standard.removeObject(forKey: StorageModePersistence.mirrorOffArmedKey)
 
         DataWipeService.resetForSignOutWipe()
 
+        StorageModePersistence.clearSignOutWipeIncludesGroups()
         StorageModePersistence.clearSignOutWipeArm()
         CloudSyncBreadcrumb.signOutWipeExecuted()
+    }
+
+    // MARK: - Sign-out solo-grupos (G5-B) — hook de frontera pre-mount
+
+    /// BOOT-CLEANUP de la salida de una sesión SOLO-GRUPOS (personal `.icloud`, sesión backend viva,
+    /// flag `groupsBackendEnabled` ON). Borra SOLO los archivos del store de GRUPOS — NUNCA `YalaModel`
+    /// ni `YalaSyncMeta`, NO resetea onboarding ni prefs personales, NO escribe `storageMode` (el device
+    /// sigue en `.icloud`). El store de grupos→backend es re-descargable: un archivo nuevo sin History
+    /// re-importa del backend al re-iniciar sesión (semántica de reinstalación del canal de grupos).
+    ///
+    /// Idempotente / kill-safe: el arm se limpia AL FINAL; una re-entrada tras kill re-ejecuta (archivos
+    /// ya ausentes = no-op). Un fallo del borrado del archivo BASE conserva el arm → reintento en el
+    /// próximo boot; el personal jamás corre riesgo (solo se tocan archivos de grupos).
+    static func performGroupsOnlySignOutWipeIfArmed() {
+        guard !isRunningTests, !isUITesting else { return }
+        performGroupsOnlySignOutWipeIfArmed(
+            defaults: .standard,
+            deleteFiles: { deleteStoreFiles(named: $0, schema: $1) })
+    }
+
+    /// Variante inyectable (tests del ORDEN/idempotencia sin archivos reales; el wrapper de producción
+    /// mantiene los guards de test/uitest).
+    static func performGroupsOnlySignOutWipeIfArmed(
+        defaults: UserDefaults,
+        deleteFiles: (String, Schema) -> Bool
+    ) {
+        guard StorageModePersistence.isGroupsOnlyWipeArmed(defaults) else { return }
+
+        guard deleteFiles(groupsDatabaseName, groupsSchema) else {
+            CloudSyncBreadcrumb.signOutGroupsOnlyWipeAborted(reason: "groups store file deletion failed")
+            return
+        }
+
+        StorageModePersistence.clearGroupsOnlyWipeArm(defaults)
+        CloudSyncBreadcrumb.signOutGroupsOnlyWipeExecuted()
     }
 
     // MARK: - Sesión secundaria (M1) — hooks de frontera pre-mount
