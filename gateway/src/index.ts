@@ -14,6 +14,7 @@ import {
   handleSyncPush,
 } from "./sync/routes";
 import { handleAccountClaim, handleAccountExists, handleAccountMigration } from "./sync/account";
+import { handleDebugPush } from "./push/routes";
 
 /**
  * Yala Gateway — entrada del Worker.
@@ -35,6 +36,9 @@ app.post("/v1/attest/challenge", handleChallenge);
 app.post("/v1/attest/register", handleRegister);
 app.post("/v1/attest/assert", handleAssert);
 app.post("/v1/attest/dev", handleDevToken); // bypass dev/test (solo staging + DEV_SHARED_SECRET)
+
+// --- Push (spike G0 Grupos→backend): prueba de APNs desde el Worker — mismo gate que /v1/attest/dev ---
+app.post("/v1/debug/push", handleDebugPush);
 
 // --- Proxy OpenAI (task #5): chat + vision + transcripción ---
 app.post("/v1/chat/completions", handleChatCompletions);

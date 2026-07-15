@@ -2219,6 +2219,21 @@
       "coverage": "unit:YalaTests/SecondarySessionStoreTests + SecondaryBoundaryHooksTests (orden/kill-safety de fronteras) + CloudSyncFlagsEffectiveModeTests (modo efectivo + guard mount-mismatch canRunDomain) + CrossAccountEntryGuardLogicTests (matriz 16 combos, flag OFF = v1) + SecondaryEntryLogicTests (orden claim->descriptor->flags) + PrefsSyncBehaviorTests (localOnly) + TabBarConfigurationSecondaryTests (filtro Grupos) + MigrationWorkExecutorTests (writeBeacon suprimido) + SecondaryHydrationLogicTests. Mount/wipe/purga reales = sim via panel DEBUG CloudSyncDebugView seccion 'Sesion secundaria (M1)' (activar descriptor fake -> relanzar -> testigo secundario / armar wipe -> boot limpia y restaura al dueno). Entrada SIWA real e2e = device-only (guion MODO-NUBE-M1-GUION-DEVICE.md, 2 cuentas TestFlight). Feature DARK (secondarySessionEnabled=false; toggle DEV en el panel para QA device).",
       "owner": "",
       "lastVerified": "2026-07-13"
+    },
+    {
+      "area": "groups-backend-g0-spikes",
+      "codeGlobs": [
+        "gateway/src/push/**",
+        "gateway/test/apns.sign.test.ts",
+        "Yala/App/Logic/PushBreadcrumb.swift",
+        "Yala/App/YalaAppDelegate.swift",
+        "qa/cloud/pgcrypto-spike-test.sh"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:gateway/test/apns.sign.test.ts (9: firma ES256/claims, PEM con \\n literales, cache TTL+rotacion keyId, guards 404/401/503/400 via app.request, transportError sin reject) + manual:qa/cloud/pgcrypto-spike-test.sh (staging: round-trip, llave mala sanitizada, hash estable tras rekey, RLS directa+via RPC, variante GUC; auditoria de logs manual impresa al final) + manual:MODO-NUBE-G0-GUION-DEVICE.md (matriz de entrega del silent push, device fisico; pushCard en CloudSyncDebugView). Spike G0 de Grupos->backend: la prueba live HTTP/2 (paso 7 del plan) espera la .p8 del owner. Todo gateado: /v1/debug/push 404 en prod, cliente #if DEBUG/DEV_BUILD, tabla spike_enc staging con cleanup.",
+      "owner": "",
+      "lastVerified": "2026-07-14"
     }
   ]
 }

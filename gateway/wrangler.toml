@@ -27,6 +27,10 @@ TRUST_ATTESTED_AS_PRO = "true"   # SOLO staging — QA del chat sin suscripción
 # viaja en Authorization y RLS es el árbitro. NUNCA service_role.
 SUPABASE_URL = "https://fostjbbwstyuunmmefuk.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg"
+# APNs (spike G0 Grupos→backend). Key ID de 10 chars (no secreto); vacío = /v1/debug/push responde 503.
+# El secret se sube con:  npx wrangler secret put APNS_AUTH_KEY < AuthKey_<KEYID>.p8
+# (stdin preserva los saltos de línea del PEM; SIN --env: staging es el env default). NUNCA commitear la .p8.
+APNS_KEY_ID = ""
 
 [[d1_databases]]
 binding = "DB"

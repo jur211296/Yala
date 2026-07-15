@@ -22,6 +22,54 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
+    // MARK: - Remote Notifications (spike G0 Grupos→backend — semilla de G8)
+
+    /// Key DEBUG-only con el device token hex para el panel CloudSyncDebugView (spike G0).
+    /// Deliberadamente FUERA de la auditoría del wipe (`removeUserPreferenceKeys`): es
+    /// diagnóstica y solo existe en builds DEBUG lanzados por Xcode.
+    static let debugDeviceTokenKey = "debug.apnsDeviceToken"
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        let token = deviceToken.map { String(format: "%02hhx", $0) }.joined()
+        PushBreadcrumb.tokenRegistered(token)
+        #if DEBUG
+        UserDefaults.standard.set(token, forKey: Self.debugDeviceTokenKey)
+        #endif
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        PushBreadcrumb.tokenFailed(error)
+    }
+
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        // 1) ¿Es de CloudKit? Clasificar PRIMERO y NO tocarlo: CKSyncEngine recibe sus push
+        //    por su canal interno (CKDatabaseSubscription) — este handler no debe procesarlos.
+        if CKNotification(fromRemoteNotificationDictionary: userInfo) != nil {
+            PushBreadcrumb.received(kind: .cloudKit)
+            completionHandler(.noData)
+            return
+        }
+        // 2) ¿Es nuestro? Contrato con el gateway: key top-level "yala" (jamás "ck").
+        if let yala = userInfo["yala"] as? [AnyHashable: Any] {
+            PushBreadcrumb.received(kind: .yala(kind: yala["kind"] as? String))
+            completionHandler(.newData)
+            return
+        }
+        // 3) Desconocido.
+        PushBreadcrumb.received(kind: .unknown)
+        completionHandler(.noData)
+    }
+
     // MARK: - Universal Link Handling (GC-11)
 
     func application(

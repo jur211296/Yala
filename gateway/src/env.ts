@@ -17,6 +17,10 @@ export interface Env {
   SUPABASE_URL: string; // p.ej. https://fostjbbwstyuunmmefuk.supabase.co
   SUPABASE_ANON_KEY: string; // apikey de PostgREST; el JWT del USUARIO va en Authorization (RLS activa)
 
+  // --- APNs (spike G0 Grupos→backend) — ausentes hasta configurar; /v1/debug/push responde 503 ---
+  APNS_KEY_ID?: string; // Var (wrangler.toml): Key ID de 10 chars. NO es secreto (viaja en el header kid del JWT).
+  APNS_AUTH_KEY?: string; // Secret (wrangler secret put): contenido PEM del AuthKey_<KEYID>.p8.
+
   // --- Secrets (wrangler secret put — NUNCA en el repo) ---
   OPENAI_API_KEY: string;
   EXCHANGE_RATE_API_KEY: string;

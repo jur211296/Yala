@@ -78,8 +78,25 @@ npm run deploy:production    # wrangler deploy --env production
 | `POST` | `/sync/push` · `GET` `/sync/pull` · `GET` `/sync/merkle` | I6 (Modo Nube) |
 | `POST` | `/attest/bind` | I6 (Modo Nube) |
 | `POST` | `/prefs/push` · `GET` `/prefs/pull` | I6 (Modo Nube) |
+| `POST` | `/v1/debug/push` | spike G0 (staging-only, ver abajo) |
 
 Privacidad: el Worker **no loguea bodies** (contexto financiero/audio/imagen); solo metadata operativa.
+
+## APNs (spike G0 — Grupos→backend)
+
+`POST /v1/debug/push` envía un push silencioso de prueba vía APNs (`gateway/src/push/apns.ts`).
+Gateado como `/v1/attest/dev`: **404 en producción** (`allowsDevBypass`) + header `X-Yala-Dev-Secret`.
+Sin secrets configurados responde **503** (estado deployable pre-.p8). Configuración:
+
+```sh
+# APNS_KEY_ID (10 chars, no secreto) va en wrangler.toml [vars].
+# La .p8 se sube como secret — stdin preserva los saltos del PEM; SIN --env (staging es el default):
+npx wrangler secret put APNS_AUTH_KEY < AuthKey_<KEYID>.p8
+```
+
+Body: `{"deviceToken": "<hex64>", "sandbox": true}`. La respuesta 200 es el diagnóstico completo
+(`delivered/status/apnsId/body/transportError`) — `transportError` = el fetch no negoció el
+transporte con APNs (la incógnita HTTP/2 que este spike decide). JAMÁS commitear la .p8.
 
 ## Sync API (Modo Nube) — I6
 

@@ -104,6 +104,42 @@ final class CloudSyncDebugModel {
     func refreshCredential() async {
         credentialStatus = await auth.credentialStateDescription() ?? "no apple user captured"
     }
+
+    // MARK: - Push (spike G0 Grupos→backend)
+
+    /// Token APNs capturado por `YalaAppDelegate` (key DEBUG-only; en device real por Xcode).
+    var deviceTokenHex: String? {
+        UserDefaults.standard.string(forKey: YalaAppDelegate.debugDeviceTokenKey)
+    }
+
+    /// Llama `/v1/debug/push` del gateway staging. URLRequest inline A PROPÓSITO: es tooling
+    /// DEV_BUILD de un solo endpoint — NO sienta precedente para código de producción (el
+    /// registro real de tokens es G8 y tendrá su cliente propio).
+    func sendTestPush() async {
+        guard let token = deviceTokenHex else {
+            lastMessage = "Push: sin device token (corre en device real para registrarlo)"
+            return
+        }
+        let secret = ProxyConfig.devSharedSecret
+        guard !secret.isEmpty else {
+            lastMessage = "Push: define YALA_DEV_SHARED_SECRET en el scheme (Xcode) o usa curl con el token copiado"
+            return
+        }
+        isWorking = true; defer { isWorking = false }
+        var request = URLRequest(url: ProxyConfig.baseURL.appending(path: "v1/debug/push"))
+        request.httpMethod = "POST"
+        request.setValue(secret, forHTTPHeaderField: "X-Yala-Dev-Secret")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["deviceToken": token, "sandbox": true])
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? -1
+            let body = String(data: data, encoding: .utf8) ?? "<binario>"
+            lastMessage = "Push → HTTP \(status): \(body)"
+        } catch {
+            lastMessage = "Push: request falló — \(error.localizedDescription)"
+        }
+    }
 }
 
 // MARK: - Migración I10 (panel DEBUG A2 §m.6)
@@ -502,6 +538,7 @@ struct CloudSyncDebugView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xl) {
                 stateCard
                 actionsCard
+                pushCard
                 migrationCard
                 reverseCard
                 secondarySessionCard
@@ -805,6 +842,40 @@ struct CloudSyncDebugView: View {
                 CloudSessionSignOut.shared._debugForceAwaitingRelaunch()
             }
         }
+        .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    // MARK: - Push (spike G0)
+
+    /// Spike G0: token APNs del device + push de prueba vía el gateway staging. La entrega
+    /// real solo se observa en device físico (Console.app, `category:Push`).
+    private var pushCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            if let token = model.deviceTokenHex {
+                row("APNs token", "\(token.prefix(8))… (\(token.count) chars)")
+                Button {
+                    UIPasteboard.general.string = token
+                    model.lastMessage = "Push: token copiado al portapapeles"
+                } label: {
+                    Text("Copiar token")
+                        .font(DS.Typography.body.weight(.medium))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.sm)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.bordered)
+                .disabled(model.isWorking)
+            } else {
+                row("APNs token", "sin registrar (device real requerido)")
+            }
+            actionButton("Enviar push de prueba (staging)", disabled: model.deviceTokenHex == nil) {
+                await model.sendTestPush()
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.lg)
+        .background(.thCard)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
         .padding(.horizontal, DS.Spacing.lg)
     }
 
