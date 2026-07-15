@@ -334,6 +334,49 @@ describe("G2 goldens · /groups/* contra staging real", () => {
     expect(mA2.entities.split_expenses.count).toBe(mA.entities.split_expenses.count);
   }, 90_000);
 
+  it("7. paginación: pull limit=1 partiendo del baseline recorre los 3 expenses nuevos del gid sin duplicar; página vacía = done, cursor no avanza", async () => {
+    const { gid } = await setupGroup("paginate");
+
+    // Baseline: siembra el max de TODOS los grupos históricos de A (incl. meta+members del gid nuevo).
+    // A partir de aquí, lo ÚNICO nuevo del gid serán los 3 expenses que empujamos.
+    const baseline = (await pull(jwtA, {}, 1000)).cursors;
+
+    // Push de 3 expenses al gid (sync_ids distintos).
+    const expIds = [uuid(), uuid(), uuid()];
+    const h = hlc(T0 + 600);
+    for (const sid of expIds) {
+      const r = await push(jwtA, [
+        { entity_type: "split_expenses", group_id: gid, sync_id: sid, op: "upsert", fields: { ...gmoney(11), note: "paginate" }, field_hlcs: { gmoney: h, note: h }, hlc: h, client_mutation_id: uuid() },
+      ]);
+      expect(r.body.results[0].status).toBe("applied");
+    }
+
+    // Iterar pull con limit=1 partiendo del baseline. Cada página trae ≤1 delta DEL gid.
+    let cursors: Record<string, number> = { ...baseline };
+    const collected = new Set<string>();
+    let iterations = 0;
+    for (; iterations < 15; iterations++) {
+      const p = await pull(jwtA, cursors, 1);
+      const forGid = p.deltas.filter((d) => d.group_id === gid);
+      expect(forGid.length).toBeLessThanOrEqual(1);
+      for (const d of forGid) if (d.entity_type === "split_expenses") collected.add(d.sync_id as string);
+      cursors = { ...cursors, ...p.cursors };
+      if (forGid.length === 0) break; // página vacía POR GRUPO = terminación del cliente
+    }
+    expect(iterations).toBeLessThan(15); // no se agotó el cap → terminó por página vacía
+
+    // La unión recolectada == los 3 esperados, sin duplicados (el Set ya garantiza unicidad).
+    expect(collected.size).toBe(3);
+    expect([...collected].sort()).toEqual([...expIds].sort());
+
+    // Pull final de confirmación: 0 deltas del gid y el cursor del gid no avanza respecto al acumulado.
+    const cursorAtDone = cursors[gid];
+    const confirm = await pull(jwtA, cursors, 1);
+    expect(confirm.deltas.filter((d) => d.group_id === gid).length).toBe(0);
+    const confirmCursor = confirm.cursors[gid];
+    if (confirmCursor !== undefined) expect(confirmCursor).toBe(cursorAtDone); // ausente o sin avance
+  }, 360_000); // 6 pulls (baseline + 4 loop + confirm) × ~42s: A acumula 76 grupos históricos y el pull fan-out'ea 5 tablas × grupo secuencialmente (sin cleanup por diseño).
+
   it("auth: sin JWT → 401 en push/pull/merkle", async () => {
     const rPush = await app.fetch(new Request("https://gw.local/groups/push", { method: "POST", body: "{}" }), env);
     expect(rPush.status).toBe(401);

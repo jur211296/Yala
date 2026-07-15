@@ -91,6 +91,46 @@ struct GroupsSyncClientTests {
         }
     }
 
+    /// Stub que devuelve una SECUENCIA de respuestas (una por request). Al agotar la secuencia repite la
+    /// última. Para el pull iterado (2 páginas con deltas + 1 vacía).
+    final class SequenceStubHTTPSession: SyncHTTPSession, @unchecked Sendable {
+        struct Reply { let data: Data; let status: Int }
+        private var replies: [Reply]
+        private let fallback: Reply
+        var callCount = 0
+        var requests: [URLRequest] = []
+
+        init(_ replies: [Reply], fallback: Reply) {
+            self.replies = replies
+            self.fallback = fallback
+        }
+
+        func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+            callCount += 1
+            requests.append(request)
+            let reply = replies.isEmpty ? fallback : replies.removeFirst()
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: reply.status, httpVersion: nil, headerFields: nil)!
+            return (reply.data, response)
+        }
+    }
+
+    /// Contador por referencia para el sleeper inyectado del loop (evita capturar un `var` local en una
+    /// closure escapante bajo Swift 6).
+    final class SleeperCounter: @unchecked Sendable { var count = 0 }
+
+    // MARK: - Helpers de página del pull
+
+    private func pageJSON(shareID: UUID, group: String, serverSeq: Int64, cursor: Int64) -> Data {
+        Data("""
+        {"deltas":[{"entity_type":"split_shares","group_id":"\(group)","sync_id":"\(shareID.uuidString.lowercased())","op":"upsert","fields":{"expense_id":"\(UUID().uuidString.lowercased())","member_key":"m1","amount":"10.0000","is_paid":false},"field_hlcs":{},"hlc":"2026-07-15T00:00:00.000Z-0000-00000000000000aa","server_seq":\(serverSeq),"schema_version":1}],"cursors":{"\(group)":\(cursor)},"memberships":["\(group)"]}
+        """.utf8)
+    }
+
+    private var emptyPageJSON: Data {
+        Data("{\"deltas\":[],\"cursors\":{},\"memberships\":[]}".utf8)
+    }
+
     // MARK: - Test 1 · Partición del muro
 
     @Test func partition_groupEntityNames_matchGroupsSchema_disjointFromPersonal() {
@@ -578,5 +618,289 @@ struct GroupsSyncClientTests {
                         "\(table).\(column): group_key manifest=\(manifestGroup ?? "nil") emisión=\(spec.groups[column] ?? "nil")")
             }
         }
+    }
+
+    // MARK: - Test 7 · Pull hasta agotar (pieza 1 / A1)
+
+    /// 2 páginas con deltas + 1 vacía → 3 requests, outcome `.completed(pages:2, deltas:2)`, cursores
+    /// finales correctos. La señal de terminación es PÁGINA VACÍA (no `deltas.count < limit`).
+    @Test func pullUntilExhausted_stopsOnEmptyPage_aggregatesPagesAndDeltas() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let s1 = UUID(); let s2 = UUID()
+        let stub = SequenceStubHTTPSession([
+            .init(data: pageJSON(shareID: s1, group: "SplitGroup-A", serverSeq: 5, cursor: 5), status: 200),
+            .init(data: pageJSON(shareID: s2, group: "SplitGroup-A", serverSeq: 9, cursor: 9), status: 200),
+            .init(data: emptyPageJSON, status: 200),
+        ], fallback: .init(data: emptyPageJSON, status: 200))
+
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub)
+        let outcome = await client.pullUntilExhausted(context: context, limit: 1)
+
+        #expect(outcome == .completed(pages: 2, deltasApplied: 2))
+        #expect(stub.callCount == 3)  // 2 con deltas + 1 vacía (terminación)
+
+        // Los 2 shares se materializaron; el cursor del grupo quedó en 9 (el máximo aplicado).
+        #expect(try context.fetch(FetchDescriptor<SplitShare>()).count == 2)
+        let cursor = try client.loadOrCreateCursor(context)
+        let map = try JSONDecoder().decode([String: Int64].self, from: Data(cursor.groupCursorsJSON.utf8))
+        #expect(map["SplitGroup-A"] == 9)
+    }
+
+    /// A1: un pull que nunca devuelve página vacía (server que no converge) se corta en el CAP de 20
+    /// iteraciones con outcome `.transient` (no gira para siempre).
+    @Test func pullUntilExhausted_cap_returnsTransient() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        // Fallback = SIEMPRE una página con deltas (jamás vacía).
+        let stub = SequenceStubHTTPSession(
+            [], fallback: .init(data: pageJSON(shareID: UUID(), group: "SplitGroup-A", serverSeq: 1, cursor: 1), status: 200))
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub)
+
+        let outcome = await client.pullUntilExhausted(context: context, limit: 1)
+        #expect(outcome == .transient)
+        #expect(stub.callCount == 20)  // tope duro
+    }
+
+    // MARK: - Test 8 · Dead-letter para upstream_400 (pieza 2 / A2)
+
+    private func seedOutbox(
+        _ context: ModelContext, group: String = "SplitGroup-A",
+        mid: UUID, rejectedReason: String? = nil
+    ) throws -> GroupSyncOutbox {
+        let row = GroupSyncOutbox(
+            syncID: UUID(), groupID: group, entityType: GroupSyncEntityType.splitExpense,
+            op: .upsert, hlc: "2026-07-15T00:00:00.000Z-0000-00000000000000aa",
+            clientMutationID: mid, fieldsJSON: "{\"amount\":\"1.0000\"}", author: "",
+            rejectedReason: rejectedReason)
+        context.insert(row)
+        try context.save()
+        return row
+    }
+
+    private func pushResultJSON(mid: UUID, status: String, reason: String, outcome: String) -> Data {
+        Data("""
+        {"results":[{"sync_id":"s","client_mutation_id":"\(mid.uuidString.lowercased())","status":"\(status)","reason":"\(reason)","outcome":\(outcome)}]}
+        """.utf8)
+    }
+
+    @Test func push_upstream400_deadLettersWithSanitizedCode_excludedFromNextPush() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let mid = UUID()
+        _ = try seedOutbox(context, mid: mid)
+
+        let stub = StubHTTPSession(
+            responseData: pushResultJSON(mid: mid, status: "rejected", reason: "upstream_400",
+                                         outcome: "{\"code\":\"P0001\",\"message\":\"yala_not_authorized\"}"),
+            statusCode: 200)
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub)
+
+        _ = await client.pushPending(context: context)
+
+        let rows = try groupOutbox(context)
+        #expect(rows.count == 1)
+        #expect(rows.first?.rejectedReason == "upstream_400:yala_not_authorized")
+        #expect(rows.first?.rejectedAt != nil)
+
+        // Siguiente push: la fila dead-lettered queda EXCLUIDA (predicate rejectedReason == nil) → sin request.
+        _ = await client.pushPending(context: context)
+        #expect(stub.callCount == 1)
+    }
+
+    @Test func push_upstream503_isTransient_rowStaysAlive() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let mid = UUID()
+        _ = try seedOutbox(context, mid: mid)
+
+        let stub = StubHTTPSession(
+            responseData: pushResultJSON(mid: mid, status: "rejected", reason: "upstream_503",
+                                         outcome: "null"),
+            statusCode: 200)
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub)
+
+        _ = await client.pushPending(context: context)
+
+        let rows = try groupOutbox(context)
+        #expect(rows.count == 1)
+        #expect(rows.first?.rejectedReason == nil)  // viva → retriable
+
+        // Siguiente push SÍ la reintenta (sigue pendiente) → segundo request.
+        _ = await client.pushPending(context: context)
+        #expect(stub.callCount == 2)
+    }
+
+    @Test func push_noopGroupNotFound_purgesRow() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let mid = UUID()
+        _ = try seedOutbox(context, mid: mid)
+
+        let stub = StubHTTPSession(
+            responseData: pushResultJSON(mid: mid, status: "noop", reason: "group_not_found",
+                                         outcome: "{\"op\":\"upsert\",\"noop\":true,\"reason\":\"group_not_found\"}"),
+            statusCode: 200)
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub)
+
+        _ = await client.pushPending(context: context)
+        // La purga del noop group_not_found SE MANTIENE (decisión G3).
+        #expect(try groupOutbox(context).isEmpty)
+    }
+
+    // MARK: - Test 9 · RE-DRIVE del dead-letter al aprobar al member (A2)
+
+    /// Un member `pendingApproval` que escribió contenido fue rechazado (upstream_400:yala_not_authorized).
+    /// Al bajar por pull su fila con status "active" siendo el PROPIO usuario, sus filas dead-lettered de ese
+    /// grupo se REVIVEN (rejectedReason = nil) → reintento natural. Otros códigos permanentes NO se re-driven.
+    @Test func apply_member_becomingActiveCurrentUser_revivesNotAuthorizedDeadLetters() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let notAuthMid = UUID(); let badRequestMid = UUID(); let otherGroupMid = UUID()
+        let notAuth = try seedOutbox(context, group: "zone-1", mid: notAuthMid,
+                                     rejectedReason: "upstream_400:yala_not_authorized")
+        let badRequest = try seedOutbox(context, group: "zone-1", mid: badRequestMid,
+                                        rejectedReason: "upstream_400:yala_bad_request")
+        let otherGroup = try seedOutbox(context, group: "zone-2", mid: otherGroupMid,
+                                        rejectedReason: "upstream_400:yala_not_authorized")
+
+        // currentUserID == el userID del member que se aprueba.
+        let client = GroupsSyncClient(currentUserIDProvider: { "auth-uid-1" })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta(group: "zone-1")], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        // Solo el not_authorized de ESE grupo se revive.
+        #expect(notAuth.rejectedReason == nil)
+        #expect(notAuth.rejectedAt == nil)
+        // Otros códigos permanentes y otros grupos NO se tocan.
+        #expect(badRequest.rejectedReason == "upstream_400:yala_bad_request")
+        #expect(otherGroup.rejectedReason == "upstream_400:yala_not_authorized")
+    }
+
+    /// El member que se aprueba es OTRO usuario (userID != currentUserID) → NO se revive nada (evita revivir
+    /// por la aprobación de un compañero).
+    @Test func apply_member_becomingActive_otherUser_doesNotRevive() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let mid = UUID()
+        let row = try seedOutbox(context, group: "zone-1", mid: mid,
+                                 rejectedReason: "upstream_400:yala_not_authorized")
+
+        let client = GroupsSyncClient(currentUserIDProvider: { "someone-else" })
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta(group: "zone-1")], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        #expect(row.rejectedReason == "upstream_400:yala_not_authorized")  // intacto
+    }
+
+    // MARK: - Test 10 · Loop de cadencia (pieza 4b / A5 / A6) — sin sleeps reales
+
+    @Test func loop_terminatesOnSessionExpired_noRealSleeps() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let prevFlag = CloudSyncFlags.groupsBackendEnabled
+        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        CloudSyncFlags.groupsBackendEnabled = true
+
+        // 401 en cualquier request → el pull (outbox vacío ⇒ el push no manda) devuelve sessionExpired.
+        let stub = StubHTTPSession(statusCode: 401)
+        let sleeper = SleeperCounter()
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true })
+        client.sleeper = { _ in sleeper.count += 1 }
+
+        client.startIfEligible(context: context)
+        await client._testLoopTask?.value
+
+        #expect(stub.callCount == 1)   // 1 pull → 401 → loop termina
+        #expect(sleeper.count == 0)    // sessionExpired rompe ANTES del sleeper
+    }
+
+    /// Un 403 (cuenta no disponible) arma `stoppedUntilRelaunch` y TERMINA el loop; un `startIfEligible`
+    /// posterior en el MISMO proceso es NO-OP (no re-arranca — `_testLoopTask` nil, callCount estable).
+    @Test func loop_403_armsStopUntilRelaunch_subsequentStartIsNoOp() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let prevFlag = CloudSyncFlags.groupsBackendEnabled
+        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        CloudSyncFlags.groupsBackendEnabled = true
+
+        // 403 en el pull (outbox vacío ⇒ el push no manda) → accountUnavailable → stopUntilRelaunch.
+        let stub = StubHTTPSession(statusCode: 403)
+        let sleeper = SleeperCounter()
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true })
+        client.sleeper = { _ in sleeper.count += 1 }
+
+        client.startIfEligible(context: context)
+        await client._testLoopTask?.value
+
+        #expect(stub.callCount == 1)   // 1 pull → 403 → loop termina
+        #expect(sleeper.count == 0)    // accountUnavailable rompe ANTES del sleeper
+
+        // startIfEligible posterior = NO-OP (stoppedUntilRelaunch armado): no re-arranca el loop.
+        client.startIfEligible(context: context)
+        #expect(client._testLoopTask == nil)
+        #expect(stub.callCount == 1)   // callCount estable (loop no re-arrancó)
+    }
+
+    @Test func loop_singleInstance_secondStartIsNoOpWhileAlive() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let prevFlag = CloudSyncFlags.groupsBackendEnabled
+        defer { CloudSyncFlags.groupsBackendEnabled = prevFlag }
+        CloudSyncFlags.groupsBackendEnabled = true
+
+        let stub = StubHTTPSession(statusCode: 401)
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true })
+
+        client.startIfEligible(context: context)
+        let task = client._testLoopTask
+        client.startIfEligible(context: context)  // segundo arranque = no-op (loop vivo)
+        await task?.value
+        #expect(stub.callCount == 1)  // una sola vuelta corrió (no se duplicó el loop)
+    }
+
+    // MARK: - Test 11 · Mapeo de outcomes del canal → CadenceOutcome (A4, uso de SyncCadencePolicy)
+
+    @Test func cadenceMapping_pushOutcomes() {
+        #expect(GroupsSyncCadence.stopOutcome(push: .completed([])) == nil)
+        #expect(GroupsSyncCadence.stopOutcome(push: .sessionExpired(pending: 3)) == .sessionExpired)
+        #expect(GroupsSyncCadence.stopOutcome(push: .accountUnavailable) == .accountUnavailable)
+        #expect(GroupsSyncCadence.stopOutcome(push: .transient) == .transient)
+    }
+
+    @Test func cadenceMapping_pullOutcomes() {
+        #expect(GroupsSyncCadence.outcome(pull: .completed(pages: 2, deltasApplied: 4)) == .completed)
+        #expect(GroupsSyncCadence.outcome(pull: .sessionExpired) == .sessionExpired)
+        #expect(GroupsSyncCadence.outcome(pull: .accountUnavailable) == .accountUnavailable)
+        #expect(GroupsSyncCadence.outcome(pull: .transient) == .transient)
+    }
+
+    /// El USO de la política reutilizada (A4): los outcomes del canal producen las acciones esperadas —
+    /// completed → 60s, transient → backoff exponencial con cap, stops.
+    @Test func cadenceMapping_usesSyncCadencePolicyActions() {
+        #expect(SyncCadencePolicy.nextAction(outcome: .completed, consecutiveTransients: 0)
+                == .scheduleNext(60))
+        #expect(SyncCadencePolicy.nextAction(outcome: .transient, consecutiveTransients: 1)
+                == .backoff(5))
+        #expect(SyncCadencePolicy.nextAction(outcome: .transient, consecutiveTransients: 3)
+                == .backoff(20))
+        #expect(SyncCadencePolicy.nextAction(outcome: .sessionExpired, consecutiveTransients: 0)
+                == .stopUntilSignIn)
+        #expect(SyncCadencePolicy.nextAction(outcome: .accountUnavailable, consecutiveTransients: 0)
+                == .stopUntilRelaunch)
     }
 }

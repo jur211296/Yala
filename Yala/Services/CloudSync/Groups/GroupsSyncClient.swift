@@ -60,6 +60,9 @@ final class GroupsSyncClient {
     private let attestProvider: @MainActor () async -> String?
     private let urlSession: SyncHTTPSession
     private let sessionCheck: @MainActor () -> Bool
+    /// El `sub` de la sesión (auth uid). Inyectable para el RE-DRIVE del dead-letter (A2). Default: el
+    /// singleton de sesión. `@MainActor` (el cliente ya lo es → no cruza actor).
+    private let currentUserIDProvider: @MainActor () -> String?
     private let now: () -> Date
 
     // MARK: Estado
@@ -68,6 +71,25 @@ final class GroupsSyncClient {
     private var isDraining = false
     private var pendingDrain = false
     private var bridgeRetryTask: Task<Void, Never>?
+
+    // MARK: Ciclo de vida del loop (G4)
+
+    /// Tarea del loop de cadencia (single-instance: `startIfEligible` no re-arranca si vive). `nil` fuera
+    /// del loop (se limpia en el `defer` de `runLoop`).
+    private var loopTask: Task<Void, Never>?
+    /// A5: un 403 (cuenta no disponible) → `stopUntilRelaunch`. Este flag impide re-arrancar el loop en el
+    /// MISMO proceso (mirror de la semántica del personal `SyncCadencePolicy.stopUntilRelaunch`).
+    private var stoppedUntilRelaunch = false
+    /// Contador de transitorios consecutivos para el backoff exponencial (reset al `.completed`/stop).
+    private var consecutiveTransients = 0
+    /// Sleep INYECTABLE entre vueltas del loop (default `Task.sleep`) — los tests inyectan uno que no
+    /// duerme de verdad (regla: jamás `Task.sleep > 0.5s` en tests).
+    var sleeper: (TimeInterval) async -> Void = { seconds in
+        try? await Task.sleep(for: .seconds(seconds))
+    }
+
+    /// Tope de iteraciones del pull de una vuelta (server que no converge → breadcrumb + transitorio).
+    private static let pullMaxIterations = 20
 
     // MARK: Guard del token de History (molde HALLAZGO 2)
 
@@ -90,6 +112,7 @@ final class GroupsSyncClient {
         attestProvider: @escaping @MainActor () async -> String? = { nil },
         urlSession: SyncHTTPSession = URLSession.shared,
         sessionCheck: @escaping @MainActor () -> Bool = { CloudAuthService.shared.hasSession },
+        currentUserIDProvider: @escaping @MainActor () -> String? = { CloudAuthService.shared.currentUserID },
         now: @escaping () -> Date = { .now },
         nodeID: NodeID = NodeID.generate()
     ) {
@@ -98,27 +121,86 @@ final class GroupsSyncClient {
         self.attestProvider = attestProvider
         self.urlSession = urlSession
         self.sessionCheck = sessionCheck
+        self.currentUserIDProvider = currentUserIDProvider
         self.now = now
         self.clock = HLCClock(nodeID: nodeID)
     }
 
     // MARK: - Arranque (DARK)
 
-    /// Arranca el canal de Grupos SOLO si `groupsBackendEnabled && hasSession` (SESIÓN VIVA, no
-    /// storageMode — la persona solo-grupos). Con el flag `false` (SIEMPRE esta fase) es un NO-OP TOTAL:
-    /// retorna ANTES de tocar la red o crear modelos. Call-site DARK en `AppBootstrapper`.
+    /// Arranca el LOOP de cadencia del canal de Grupos SOLO si `groupsBackendEnabled && hasSession`
+    /// (SESIÓN VIVA, no storageMode — la persona solo-grupos). Con el flag `false` (SIEMPRE esta fase) es
+    /// un NO-OP TOTAL: retorna ANTES de tocar la red o crear modelos. Call-site DARK en `AppBootstrapper`.
+    /// Single-instance (no re-arranca si el loop vive); un 403 previo (`stoppedUntilRelaunch`) tampoco
+    /// re-arranca en este proceso (A5).
     func startIfEligible(context: ModelContext) {
         guard CloudSyncFlags.groupsBackendEnabled, sessionCheck() else { return }
-        // Ciclo de vida real (cadencia/backoff/observadores) diferido a G4+: por ahora una vuelta única.
-        Task { @MainActor in await self.syncCycleOnce(context: context) }
+        guard !stoppedUntilRelaunch else { return }   // A5: 403 → no re-arrancar en este proceso
+        guard loopTask == nil else { return }          // single-instance
+        // A7: canario de push fallando permanente (filas ya en dead-letter al arrancar el loop).
+        let deadLettered = (try? deadLetteredCount(context)) ?? 0
+        if deadLettered > 0 { GroupsSyncBreadcrumb.groupsDeadLetteredCount(deadLettered) }
+        loopTask = Task { @MainActor in await self.runLoop(context: context) }
     }
 
-    /// UNA vuelta del ciclo: captura local → push → pull → apply. DARK (solo corre con el flag ON).
-    func syncCycleOnce(context: ModelContext) async {
-        drainOnce(context: context)
-        _ = await pushPending(context: context)
-        _ = await pullAndApplyOnce(context: context)
+    /// El loop de cadencia: cada vuelta = `syncCycleOnce` → delay por `SyncCadencePolicy` → repetir.
+    /// `sessionExpired` (401) TERMINA el loop (re-arrancable por el próximo `startIfEligible`);
+    /// `accountUnavailable` (403) TERMINA + arma `stoppedUntilRelaunch` (no re-arranca en este proceso).
+    private func runLoop(context: ModelContext) async {
+        defer { loopTask = nil }                        // A6: liberar el single-instance al salir
+        loop: while true {
+            // A6: cinturón contra store muerto en la ventana wipe→token-nil (sesión caída entre vueltas).
+            guard sessionCheck() else { break loop }
+
+            let outcome = await syncCycleOnce(context: context)
+            if outcome == .transient { consecutiveTransients += 1 } else { consecutiveTransients = 0 }
+
+            let action = SyncCadencePolicy.nextAction(
+                outcome: outcome, consecutiveTransients: consecutiveTransients)
+            let delay: TimeInterval
+            switch action {
+            case .scheduleNext(let t), .backoff(let t):
+                delay = t
+            case .stopUntilSignIn:
+                break loop                               // A5: re-arrancable por próximo startIfEligible
+            case .stopUntilRelaunch:
+                stoppedUntilRelaunch = true              // A5: no re-arranca este proceso
+                break loop
+            }
+
+            await sleeper(delay)
+            guard !Task.isCancelled else { break loop }  // A6: cancelado durante el sleep → salir
+        }
     }
+
+    /// Cancela el loop (para el sign-out futuro). Su wiring a sign-out es cierre PRE-FLAG documentado (no
+    /// de G4): hoy NO se llama desde ningún call-site de producción.
+    func stopLoop() {
+        loopTask?.cancel()
+        loopTask = nil
+    }
+
+    /// UNA vuelta del ciclo: captura local → push → pull-hasta-agotar → apply. Devuelve el
+    /// `CadenceOutcome` NORMALIZADO que consume el loop. DARK (solo corre con el flag ON).
+    @discardableResult
+    func syncCycleOnce(context: ModelContext) async -> SyncCadencePolicy.CadenceOutcome {
+        drainOnce(context: context)
+        let push = await pushPending(context: context)
+        if let stop = GroupsSyncCadence.stopOutcome(push: push) { return stop }
+        let pull = await pullUntilExhausted(context: context)
+        return GroupsSyncCadence.outcome(pull: pull)
+    }
+
+    /// Nº de filas de outbox en dead-letter (rechazo permanente). Canario A7 al arrancar el loop.
+    private func deadLetteredCount(_ context: ModelContext) throws -> Int {
+        try context.fetchCount(
+            FetchDescriptor<GroupSyncOutbox>(predicate: #Predicate { $0.rejectedReason != nil }))
+    }
+
+    // MARK: - Seams de test del loop
+
+    /// La tarea del loop en vuelo (para que los tests la aguarden sin dormir). SOLO tests.
+    var _testLoopTask: Task<Void, Never>? { loopTask }
 
     // MARK: - Drain (captura del History → GroupSyncOutbox)
 
@@ -193,6 +275,7 @@ final class GroupsSyncClient {
                     }
                     historyTokenValidated = true
                     historyTokenRecoveredCount += 1
+                    GroupsSyncBreadcrumb.groupsHistoryTokenRecovered()
                 } else if let advancedToken {
                     try saveWithAuthor(context) {
                         cursor.historyTokenData = try encodeToken(advancedToken)
@@ -532,6 +615,7 @@ final class GroupsSyncClient {
         }
 
         historyTokenIncomparableCount += 1
+        GroupsSyncBreadcrumb.groupsHistoryTokenIncomparable(missed: missing.count)
         var union = tokenTxns
         for tx in timestampTxns where !tokenPresent(tx) { union.append(tx) }
         let orderedUnion = union.enumerated()
@@ -604,7 +688,11 @@ final class GroupsSyncClient {
         case 200:
             do {
                 let decoded = try JSONDecoder().decode(GroupPushResponse.self, from: data)
-                applyResults(decoded.results, rows: rows, context: context)
+                // El `SyncDeltaResult` local descarta `outcome`; se decodifica APARTE para leer el código
+                // SANITIZADO (`outcome.message` = yala_*) del rechazo y el `reason` del noop group_not_found
+                // — SIN tocar el `SyncPushClient` del personal (A2).
+                let outcomeInfo = Self.decodeOutcomeInfo(data)
+                applyResults(decoded.results, outcomeInfo: outcomeInfo, rows: rows, context: context)
                 return .completed(decoded.results)
             } catch {
                 return .transient
@@ -642,26 +730,60 @@ final class GroupsSyncClient {
         )
     }
 
-    /// Aplica los resultados del push: `applied`/`noop` → purga la fila; `rejected` → dead-letter (salvo
-    /// `upstream_*`, transitorio). Correlación por `client_mutation_id` (unívoco por mutación).
-    private func applyResults(_ results: [SyncDeltaResult], rows: [GroupSyncOutbox], context: ModelContext) {
+    /// `outcome` decodificado APARTE por `client_mutation_id`: `message` = código SANITIZADO del rechazo
+    /// upstream (yala_*); `reason` = motivo del noop (group_not_found). Ambos sin PII (constantes del RPC).
+    struct OutcomeInfo: Equatable {
+        let message: String?
+        let reason: String?
+    }
+
+    /// Aplica los resultados del push: `applied` → purga; `noop` → purga (con breadcrumb agregado para el
+    /// noop group_not_found, anti retry-storm de meta legacy); `rejected` → dead-letter con el código
+    /// sanitizado, salvo `upstream_5xx/429` que sigue transitorio (reintento). Correlación por
+    /// `client_mutation_id` (unívoco por mutación).
+    private func applyResults(
+        _ results: [SyncDeltaResult], outcomeInfo: [String: OutcomeInfo],
+        rows: [GroupSyncOutbox], context: ModelContext
+    ) {
         guard !results.isEmpty else { return }
         var byMutation: [String: GroupSyncOutbox] = [:]
         for row in rows { byMutation[row.clientMutationID.uuidString.lowercased()] = row }
 
+        var groupNotFoundPurged = 0
         do {
             try saveWithAuthor(context) {
                 for result in results {
-                    guard let mutationID = result.clientMutationID,
-                          let row = byMutation[mutationID.lowercased()] else { continue }
+                    guard let mutationID = result.clientMutationID?.lowercased(),
+                          let row = byMutation[mutationID] else { continue }
+                    let info = outcomeInfo[mutationID]
                     switch result.status {
-                    case .applied, .noop:
+                    case .applied:
+                        context.delete(row)
+                    case .noop:
+                        // La PURGA del noop group_not_found SE MANTIENE (decisión G3: anti retry-storm de
+                        // meta de grupos legacy no migrados) — deja de ser silenciosa (breadcrumb al final).
+                        if info?.reason == "group_not_found" { groupNotFoundPurged += 1 }
                         context.delete(row)
                     case .rejected:
                         let reason = result.reason ?? "rejected"
-                        if reason.hasPrefix("upstream_") { continue }
-                        row.rejectedReason = reason
-                        row.rejectedAt = now()
+                        if reason == "upstream_400" {
+                            // P0001 de los RPCs (yala_*): dead-letter con el código SANITIZADO. El server NO
+                            // garantiza que un 400 sea un slug yala_* — el bloque exception de apply_group_delta
+                            // solo captura insufficient_privilege; una data-exception (22P02) propagaría un
+                            // mensaje que ECOA el valor del cliente → PII a telemetría/persistencia. Solo se
+                            // acepta si matchea el patrón slug del gateway (^yala_[a-z_]+$); si no, "upstream_400"
+                            // pelado en AMBOS. El re-drive de `applyMember` revive `upstream_400:yala_not_authorized`.
+                            let slug = Self.sanitizedYalaSlug(info?.message)
+                            let stored = slug.map { "upstream_400:\($0)" } ?? "upstream_400"
+                            markDeadLetter(row, reason: stored, telemetryReason: slug ?? "upstream_400")
+                        } else if reason.hasPrefix("upstream_") {
+                            // 5xx / 429: transitorio (reintento en el próximo push).
+                            continue
+                        } else {
+                            // Rechazos locales del gateway (malformed_delta, unknown_entity, coherence_*,
+                            // pull_only…): dead-letter (ya era el comportamiento).
+                            markDeadLetter(row, reason: reason, telemetryReason: reason)
+                        }
                     }
                 }
             }
@@ -670,6 +792,40 @@ final class GroupsSyncClient {
             logger.error("GroupsSync: applyResults save falló: \(error)")
             #endif
         }
+        if groupNotFoundPurged > 0 {
+            GroupsSyncBreadcrumb.groupsMetaPurgedGroupNotFound(count: groupNotFoundPurged)
+        }
+    }
+
+    /// Sanitiza el `message` del outcome upstream: SOLO acepta un slug `yala_*` (réplica exacta del regex
+    /// del gateway `^yala_[a-z_]+$`) — cualquier otro contenido puede ECOAR el valor del cliente (data-
+    /// exception que el RPC no captura) y NO debe persistirse ni llegar a telemetría. `nil` si no matchea.
+    static func sanitizedYalaSlug(_ message: String?) -> String? {
+        guard let message, message.hasPrefix("yala_"), message.count > 5 else { return nil }
+        guard message.allSatisfy({ $0 == "_" || ($0 >= "a" && $0 <= "z") }) else { return nil }
+        return message
+    }
+
+    /// Marca una fila como dead-letter + breadcrumb + telemetría (canario `groupPushRejected`). El `reason`
+    /// persistido puede portar el código sanitizado (`upstream_400:yala_*`); `telemetryReason` es un slug
+    /// sin PII para el canario.
+    private func markDeadLetter(_ row: GroupSyncOutbox, reason: String, telemetryReason: String) {
+        row.rejectedReason = reason
+        row.rejectedAt = now()
+        GroupsSyncBreadcrumb.groupsPushDeadLettered(reason: reason)
+        TelemetryService.track(.groupPushRejected, parameters: ["reason": telemetryReason])
+    }
+
+    /// Decodifica el `outcome` de cada resultado del push APARTE (el `SyncDeltaResult` local lo descarta),
+    /// indexado por `client_mutation_id` lowercased. Tolerante a bodies sin `outcome`.
+    static func decodeOutcomeInfo(_ data: Data) -> [String: OutcomeInfo] {
+        guard let decoded = try? JSONDecoder().decode(RawOutcomeResponse.self, from: data) else { return [:] }
+        var map: [String: OutcomeInfo] = [:]
+        for r in decoded.results {
+            guard let mid = r.clientMutationID?.lowercased() else { continue }
+            map[mid] = OutcomeInfo(message: r.outcome?.message, reason: r.outcome?.reason)
+        }
+        return map
     }
 
     // MARK: - Wire body (RawJSON crudo, molde SyncPushClient)
@@ -701,8 +857,35 @@ final class GroupsSyncClient {
 
     // MARK: - Pull (GET /groups/pull) + apply
 
-    /// Baja UNA página de deltas remotos y la aplica. Devuelve el `PullOutcome`.
-    func pullAndApplyOnce(context: ModelContext, limit: Int = 500) async -> PullOutcome {
+    /// Itera `pullAndApplyOnce` hasta AGOTAR la cola. TERMINA cuando la página aplicada trae 0 deltas (única
+    /// señal válida — el `limit` del gateway es POR GRUPO, así que el atajo `deltas.count < limit → done`
+    /// del canal personal NO aplica). Cap duro de `pullMaxIterations` (server que no converge) → breadcrumb
+    /// `groupsPullExhaustedCap` + `.transient`. A1: si el save de una página FALLÓ (cursor no avanzó), corta
+    /// como `.transient` INMEDIATAMENTE — jamás re-pide el mismo `since` en el mismo ciclo (evitando 20
+    /// round-trips por un save atascado). Acumula pages/deltas.
+    func pullUntilExhausted(context: ModelContext, limit: Int = 500) async -> GroupsPullOutcome {
+        var pages = 0
+        var totalDeltas = 0
+        for _ in 0..<Self.pullMaxIterations {
+            let page = await pullAndApplyOnce(context: context, limit: limit)
+            switch page {
+            case .applied(let deltas, let saved):
+                guard saved else { return .transient }             // A1: cursor no avanzó → cortar
+                if deltas == 0 { return .completed(pages: pages, deltasApplied: totalDeltas) }
+                pages += 1
+                totalDeltas += deltas
+            case .sessionExpired: return .sessionExpired
+            case .accountUnavailable: return .accountUnavailable
+            case .transient: return .transient
+            }
+        }
+        GroupsSyncBreadcrumb.groupsPullExhaustedCap(pages: pages)
+        return .transient
+    }
+
+    /// Baja UNA página de deltas remotos y la aplica. Devuelve el resultado POR-PÁGINA (`deltas` bajados +
+    /// si el save de la página tuvo éxito) que `pullUntilExhausted` agrega.
+    func pullAndApplyOnce(context: ModelContext, limit: Int = 500) async -> GroupsPullPageOutcome {
         let cursor: GroupSyncCursor
         do { cursor = try loadOrCreateCursor(context) } catch { return .transient }
 
@@ -731,8 +914,8 @@ final class GroupsSyncClient {
         case 200:
             do {
                 let page = try Self.decodePage(data)
-                applyPulledPage(page, cursor: cursor, context: context)
-                return .page(PulledPage(deltas: [], maxServerSeq: 0))
+                let saved = applyPulledPage(page, cursor: cursor, context: context)
+                return .applied(deltas: page.deltas.count, saved: saved)
             } catch {
                 return .transient
             }
@@ -758,11 +941,20 @@ final class GroupsSyncClient {
 
     /// Aplica una `GroupPulledPage` a los `@Model` `Split*` bajo `Self.outboxSaveAuthor`, avanza los
     /// cursores por grupo, y al cierre dispara `markRemoteChangePending` + el gate 5/5 del bridge remoto.
-    /// `internal` para tests (cursores).
-    func applyPulledPage(_ page: GroupPulledPage, cursor: GroupSyncCursor, context: ModelContext) {
+    /// Devuelve `true` si el `saveWithAuthor` tuvo éxito (mirror de `SyncApplyEngine.applyPage`, A1): un
+    /// `false` = el cursor NO avanzó → `pullUntilExhausted` corta. `internal` para tests (cursores).
+    @discardableResult
+    func applyPulledPage(_ page: GroupPulledPage, cursor: GroupSyncCursor, context: ModelContext) -> Bool {
         var bridgeExpenseIDs: [UUID] = []
         var bridgeSettlementIDs: [UUID] = []
         var maxSeqByGroup = decodeCursors(cursor.groupCursorsJSON)
+
+        // Ciclo idle (60s): página SIN deltas Y sin cursor que avance → NO escribir (evita una transacción
+        // de History no-op por vuelta, que re-drenaría groupCursorsJSON/clockLatestHLC idénticos). Si
+        // `page.cursors` trae un avance (grupo nuevo descubierto por memberships con cursor pero sin deltas
+        // en esta página) SÍ hay que persistir → no cortar.
+        let cursorsAdvance = page.cursors.contains { gid, seq in seq > (maxSeqByGroup[gid] ?? 0) }
+        if page.deltas.isEmpty, !cursorsAdvance { return true }
 
         do {
             try saveWithAuthor(context) {
@@ -786,11 +978,12 @@ final class GroupsSyncClient {
             #if DEBUG
             logger.error("GroupsSync: applyPulledPage save falló: \(error)")
             #endif
-            return
+            return false
         }
 
         SessionState.shared.markRemoteChangePending()
         scheduleBridge(expenseIDs: bridgeExpenseIDs, settlementIDs: bridgeSettlementIDs)
+        return true
     }
 
     private func applyDelta(
@@ -801,19 +994,26 @@ final class GroupsSyncClient {
     ) throws {
         switch delta.entityType {
         case GroupEntityEmissionMap.splitExpense.table:
-            guard let id = delta.syncID else { return }
+            guard let id = delta.syncID else {
+                GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType); return
+            }
             try applyExpense(delta, id: id, context: context, bridgeExpenseIDs: &bridgeExpenseIDs)
         case GroupEntityEmissionMap.splitShare.table:
-            guard let id = delta.syncID else { return }
+            guard let id = delta.syncID else {
+                GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType); return
+            }
             try applyShare(delta, id: id, context: context)
         case GroupEntityEmissionMap.splitSettlement.table:
-            guard let id = delta.syncID else { return }
+            guard let id = delta.syncID else {
+                GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType); return
+            }
             try applySettlement(delta, id: id, context: context, bridgeSettlementIDs: &bridgeSettlementIDs)
         case GroupEntityEmissionMap.splitGroup.table:
             try applyGroupMeta(delta, context: context)
         case "group_members":
             try applyMember(delta, context: context)
         default:
+            GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType)
             return  // entidad no cableada al apply
         }
     }
@@ -914,13 +1114,17 @@ final class GroupsSyncClient {
         // PULL-ONLY: identidad server-side = member_key (string, en el `sync_id` del wire; el
         // `cloudKitUserRecordID` es su ESPACIO paralelo solo para members preexistentes del mundo CloudKit).
         // El sentinel '__deleted_user__' NO se traduce aquí (l10n de UI, G4+).
-        guard let memberKey = delta.rawSyncID else { return }
+        guard let memberKey = delta.rawSyncID else {
+            GroupsSyncBreadcrumb.groupsApplySkippedDelta(entity: delta.entityType)
+            return
+        }
         let existing = try fetchSplitMember(zoneID: delta.groupID, memberKey: memberKey, context: context)
         if delta.op == .tombstone {
             if let existing { context.delete(existing) }
             return
         }
         let model = existing ?? SplitMember()
+        let priorStatus = existing?.status
         if existing == nil {
             // Born-remote: id LOCAL determinista del namespace BACKEND (paralelo al CloudKit) → dedup
             // estable cross-device sin depender del path CloudKit (G3).
@@ -944,6 +1148,37 @@ final class GroupsSyncClient {
         // `note`; ausente = no tocar (PATCH parcial). Cierra el residual documentado del commit G2.
         if let v = f["user_id"] { model.userID = wireString(v) }
         if existing == nil { context.insert(model) }
+
+        // A2 RE-DRIVE: si el member aplicado es el PROPIO usuario (userID == auth uid) y su status
+        // TRANSICIONA a "active", revivir las filas dead-lettered por "upstream_400:yala_not_authorized"
+        // de ESTE grupo. RATIONALE: un member `pendingApproval` que escribió contenido fue rechazado por
+        // WITH CHECK (yala_not_authorized transitorio-DE-ESTADO) — al ser APROBADO el MISMO delta aplicaría.
+        // Otros códigos permanentes (yala_bad_request) NO se re-driven. Corre DENTRO del `saveWithAuthor`
+        // de `applyPulledPage` → sin save extra.
+        if model.status == "active", priorStatus != "active",
+           let uid = model.userID, let current = currentUserIDProvider(),
+           uid.lowercased() == current.lowercased() {
+            reviveDeadLetteredNotAuthorized(groupID: delta.groupID, context: context)
+        }
+    }
+
+    /// Revive (dead-letter → pendiente) las filas de outbox de un grupo rechazadas por
+    /// `upstream_400:yala_not_authorized` — el próximo push las reintenta (A2). Sin save propio (corre
+    /// dentro del `saveWithAuthor` del apply). `#Predicate` concreto + igualdad exacta sobre el opcional.
+    private func reviveDeadLetteredNotAuthorized(groupID: String, context: ModelContext) {
+        let target = "upstream_400:yala_not_authorized"
+        let descriptor = FetchDescriptor<GroupSyncOutbox>(
+            predicate: #Predicate { $0.groupID == groupID && $0.rejectedReason == target })
+        do {
+            for row in try context.fetch(descriptor) {
+                row.rejectedReason = nil
+                row.rejectedAt = nil
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: revive dead-lettered falló: \(error)")
+            #endif
+        }
     }
 
     // MARK: fetch por identidad (concreto por tipo — regla `#Predicate`)
@@ -1130,6 +1365,49 @@ private struct PendingGroupRow {
     }
 }
 
+// MARK: - Outcomes del ciclo de vida (G4)
+
+/// Resultado de UNA página del pull (lo agrega `pullUntilExhausted`). `saved == false` = el save de la
+/// página falló → el cursor NO avanzó (A1).
+enum GroupsPullPageOutcome: Equatable {
+    case applied(deltas: Int, saved: Bool)
+    case sessionExpired
+    case accountUnavailable
+    case transient
+}
+
+/// Resultado de una vuelta COMPLETA del pull (hasta agotar). El loop lo mapea a `CadenceOutcome`.
+enum GroupsPullOutcome: Equatable {
+    case completed(pages: Int, deltasApplied: Int)
+    case sessionExpired
+    case accountUnavailable
+    case transient
+}
+
+/// Mapeo PURO de los outcomes del canal de Grupos al `CadenceOutcome` común de `SyncCadencePolicy` (A4:
+/// se REUTILIZA la política del personal — sin `GroupsSyncCadencePolicy` propio; esto solo traduce el eje).
+nonisolated enum GroupsSyncCadence {
+    /// `PushOutcome` → `CadenceOutcome` de STOP/transitorio. `nil` = push OK (`.completed`): seguir al pull.
+    static func stopOutcome(push: PushOutcome) -> SyncCadencePolicy.CadenceOutcome? {
+        switch push {
+        case .completed: return nil
+        case .sessionExpired: return .sessionExpired
+        case .accountUnavailable: return .accountUnavailable
+        case .transient: return .transient
+        }
+    }
+
+    /// `GroupsPullOutcome` → `CadenceOutcome`.
+    static func outcome(pull: GroupsPullOutcome) -> SyncCadencePolicy.CadenceOutcome {
+        switch pull {
+        case .completed: return .completed
+        case .sessionExpired: return .sessionExpired
+        case .accountUnavailable: return .accountUnavailable
+        case .transient: return .transient
+        }
+    }
+}
+
 // MARK: - Wire types (Grupos)
 
 /// Delta de wire de Grupos (espeja `SyncDelta` + `group_id`; `sync_id` nullable para `split_groups`).
@@ -1148,6 +1426,28 @@ struct GroupSyncDelta: Equatable {
 /// Respuesta de `POST /groups/push`.
 private struct GroupPushResponse: Decodable {
     let results: [SyncDeltaResult]
+}
+
+/// Vista PARALELA de la respuesta del push SOLO para el `outcome` (el `SyncDeltaResult` local lo descarta).
+/// `outcome.message` = código sanitizado del rechazo upstream (yala_*); `outcome.reason` = motivo del noop
+/// (group_not_found). Ambos son constantes del RPC (sin PII).
+private struct RawOutcomeResponse: Decodable {
+    let results: [RawOutcomeResult]
+}
+
+private struct RawOutcomeResult: Decodable {
+    let clientMutationID: String?
+    let outcome: RawOutcome?
+
+    struct RawOutcome: Decodable {
+        let message: String?
+        let reason: String?
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case clientMutationID = "client_mutation_id"
+        case outcome
+    }
 }
 
 /// Delta bajado del pull de Grupos (ya decodificado). `rawSyncID` = el `sync_id` crudo del wire (member_key
