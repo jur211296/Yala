@@ -67,6 +67,10 @@ final class GroupsSyncClient {
     /// Cliente del snapshot Merkle de Grupos (`GET /groups/merkle`) — endurecimiento B1. Inyectable para
     /// tests (stub HTTP). Solo se usa con el flag ON (la verificación se cablea en `syncCycleOnce`).
     private let merkleClient: GroupsMerkleClient
+    /// Espejo App Group del `GroupSyncOutbox` (durabilidad ante lightweight migration — B2, molde
+    /// `SyncOutboxMirror` del personal). `nil` = mirroring deshabilitado (App Group no disponible /
+    /// tests que no lo ejercitan). SOLO espeja filas PENDIENTES (dead-letters excluidas).
+    private let outboxMirror: GroupsOutboxMirror?
 
     // MARK: Estado
 
@@ -74,6 +78,23 @@ final class GroupsSyncClient {
     private var isDraining = false
     private var pendingDrain = false
     private var bridgeRetryTask: Task<Void, Never>?
+
+    /// B2: anti-solape del CICLO "one in-flight, one queued" (molde `CloudSyncRuntime.
+    /// performCycleCoalesced`). Con el piggyback 5.6 hay DOS callers posibles de un ciclo (el loop
+    /// propio y el runtime personal) — sin este guard, dos ciclos concurrentes drenarían/pushearían
+    /// el mismo outbox en paralelo.
+    private var isCycling = false
+    private var pendingCycle = false
+
+    /// B2 (MEDIA del review adversarial — guardia de GENERACIÓN, molde `sessionEpoch` del runtime
+    /// personal): la cancelación del loop es COOPERATIVA (solo se chequea al tope y post-sleep) — un
+    /// ciclo suspendido en el `await` del push/pull RESUME después de `teardownForSignOut` y, sin esta
+    /// guardia, su vuelta encolada correría `drainOnce → writeMirror → save` REPOBLANDO el espejo recién
+    /// purgado (archivos con montos sobreviven la purga de sign-out — el boot-wipe NO borra el dir del
+    /// espejo → minaría la garantía M1). `teardownForSignOut` lo incrementa; el ciclo lo captura al
+    /// entrar y lo RE-VERIFICA tras cada await mayor (post-push, post-pull, pre-apply de cada request)
+    /// — generación cambiada ⇒ abortar SIN escribir.
+    private(set) var teardownGeneration = 0
 
     // MARK: Ciclo de vida del loop (G4)
 
@@ -132,7 +153,8 @@ final class GroupsSyncClient {
         currentUserIDProvider: @escaping @MainActor () -> String? = { CloudAuthService.shared.currentUserID },
         now: @escaping () -> Date = { .now },
         nodeID: NodeID = NodeID.generate(),
-        merkleClient: GroupsMerkleClient? = nil
+        merkleClient: GroupsMerkleClient? = nil,
+        outboxMirror: GroupsOutboxMirror? = GroupsOutboxMirror()
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
@@ -147,6 +169,7 @@ final class GroupsSyncClient {
         self.merkleClient = merkleClient ?? GroupsMerkleClient(
             baseURL: baseURL, tokenProvider: tokenProvider, attestProvider: attestProvider,
             urlSession: urlSession)
+        self.outboxMirror = outboxMirror
     }
 
     // MARK: - Arranque (DARK)
@@ -156,9 +179,27 @@ final class GroupsSyncClient {
     /// un NO-OP TOTAL: retorna ANTES de tocar la red o crear modelos. Call-site DARK en `AppBootstrapper`.
     /// Single-instance (no re-arranca si el loop vive); un 403 previo (`stoppedUntilRelaunch`) tampoco
     /// re-arranca en este proceso (A5).
+    ///
+    /// **[R3] Coordinación anti-doble-loop (B2):** si el runtime PERSONAL va a cadenciar
+    /// (`syncRuntimeEnabled && CloudSyncRuntime.canRunDomain()`), Grupos NO arranca loop propio — el
+    /// ciclo de Grupos corre como paso 5.6 (piggyback) de `CloudSyncRuntime.performCycle` (un solo
+    /// `fetchHistory` cadenciado del container, sin dos loops de 60s sin coordinación). NO es `.cloud`
+    /// a secas: `canRunDomain()` exige además fase de migración ESTABLE + sin mount-mismatch — en
+    /// `.cloud` con fase TRANSICIONAL el personal NO cadencia y Grupos DEBE correr su loop propio o
+    /// quedaría sin sync toda la migración. Residual documentado: las TRANSICIONES (sign-out, cambio
+    /// de modo, fin de migración) las media el relaunch en v1 — el modo elegido aquí no se re-evalúa
+    /// en caliente. El rehydrate del espejo (B2) corre en AMBOS modos (es red de boot, no de loop).
     func startIfEligible(context: ModelContext) {
         guard CloudSyncFlags.groupsBackendEnabled, sessionCheck() else { return }
+        // B2 (cinturón del call-site de AppBootstrapper G2): en sesión SECUNDARIA el canal de Grupos NO
+        // corre — ni loop ni rehydrate (el espejo del dueño no debe re-insertarse bajo la invitada; el
+        // owner-scoping ya lo filtraría, pero aquí ni se lee).
+        guard !SecondarySessionStore.isActive() else { return }
         guard !stoppedUntilRelaunch else { return }   // A5: 403 → no re-arrancar en este proceso
+        // B2: red de boot — re-insertar del espejo App Group lo que una lightweight migration se llevó.
+        rehydrateOutboxFromMirror(context: context)
+        // [R3] Personal cadencia ⇒ grupos piggyback (paso 5.6); si no ⇒ loop propio.
+        if CloudSyncFlags.syncRuntimeEnabled && CloudSyncRuntime.canRunDomain() { return }
         guard loopTask == nil else { return }          // single-instance
         // A7: canario de push fallando permanente (filas ya en dead-letter al arrancar el loop).
         let deadLettered = (try? deadLetteredCount(context)) ?? 0
@@ -175,8 +216,12 @@ final class GroupsSyncClient {
             // A6: cinturón contra store muerto en la ventana wipe→token-nil (sesión caída entre vueltas).
             guard sessionCheck() else { break loop }
 
-            let outcome = await syncCycleOnce(context: context)
-            if outcome == .transient { consecutiveTransients += 1 } else { consecutiveTransients = 0 }
+            let outcome = await syncCycleOnceCoalesced(context: context)
+            switch outcome {
+            case .transient: consecutiveTransients += 1
+            case .coalesced: break  // sin señal de red — contador INTACTO (molde runtime personal)
+            default: consecutiveTransients = 0
+            }
 
             let action = SyncCadencePolicy.nextAction(
                 outcome: outcome, consecutiveTransients: consecutiveTransients)
@@ -196,22 +241,62 @@ final class GroupsSyncClient {
         }
     }
 
-    /// Cancela el loop (para el sign-out futuro). Su wiring a sign-out es cierre PRE-FLAG documentado (no
-    /// de G4): hoy NO se llama desde ningún call-site de producción.
+    /// Cancela el loop. B2: cableado a los 3 paths de `CloudSessionSignOut` vía `teardownForSignOut()`.
     func stopLoop() {
         loopTask?.cancel()
         loopTask = nil
         resetMerkleSessionState()  // B1: frontera de sesión → re-armar la remediación (una-vez-por-sesión)
     }
 
+    /// Teardown del canal de Grupos en el sign-out (B2): detiene el loop + purga el espejo App Group
+    /// (contiene MONTOS — red M1(a), espejo del `mirror?.purgeAll()` de `teardownGuestSession` del
+    /// personal). Lo llaman los 3 paths de `CloudSessionSignOut` EXPLÍCITAMENTE junto a cada
+    /// `teardownGuestSession()` — decisión B2 documentada: NO va dentro de `teardownGuestSession` para
+    /// no acoplar el runtime personal al canal de Grupos (el runtime no debe conocer grupos).
+    /// Idempotente; seguro con el flag OFF (loop nil + espejo vacío → no-ops).
+    func teardownForSignOut() {
+        teardownGeneration += 1  // aborta el ciclo EN VUELO en su próximo re-chequeo post-await (MEDIA)
+        stopLoop()
+        outboxMirror?.purgeAll()
+    }
+
+    /// Anti-solape del ciclo "one in-flight, one queued" (B2, molde `performCycleCoalesced` del runtime):
+    /// si ya hay un ciclo en vuelo, encola a lo sumo UNO y devuelve `.coalesced` (sin señal de red — el
+    /// caller no lo cuenta como transitorio). Con el piggyback 5.6 este es el punto de entrada de AMBOS
+    /// callers (loop propio Y runtime personal). La vuelta ENCOLADA re-verifica la generación: un
+    /// teardown durante el ciclo en vuelo la descarta (arrancarla drenaría → writeMirror sobre el espejo
+    /// recién purgado).
+    @discardableResult
+    func syncCycleOnceCoalesced(context: ModelContext) async -> SyncCadencePolicy.CadenceOutcome {
+        if isCycling {
+            pendingCycle = true
+            return .coalesced
+        }
+        isCycling = true
+        defer { isCycling = false }
+        let generation = teardownGeneration
+        var last: SyncCadencePolicy.CadenceOutcome = .coalesced
+        repeat {
+            pendingCycle = false
+            guard generation == teardownGeneration else { return .coalesced }  // teardown → ni la encolada
+            last = await syncCycleOnce(context: context)
+        } while pendingCycle
+        return last
+    }
+
     /// UNA vuelta del ciclo: captura local → push → pull-hasta-agotar → apply. Devuelve el
     /// `CadenceOutcome` NORMALIZADO que consume el loop. DARK (solo corre con el flag ON).
     @discardableResult
     func syncCycleOnce(context: ModelContext) async -> SyncCadencePolicy.CadenceOutcome {
+        // Guardia de generación (MEDIA): capturada al entrar (el drain de abajo es SÍNCRONO — la
+        // generación no puede cambiar entre la captura y su writeMirror), re-verificada tras cada await.
+        let generation = teardownGeneration
         drainOnce(context: context)
         let push = await pushPending(context: context)
+        guard generation == teardownGeneration else { return .coalesced }  // teardown durante el push
         if let stop = GroupsSyncCadence.stopOutcome(push: push) { return stop }
         let pull = await pullUntilExhausted(context: context)
+        guard generation == teardownGeneration else { return .coalesced }  // teardown durante el pull
 
         // B1: cadencia Merkle — tras un pull COMPLETO (guard A-3), avanza el contador y, si
         // `SyncCadencePolicy.shouldRunMerkle` (reusada TAL CUAL) lo pide, verifica TODOS los grupos con cursor.
@@ -304,6 +389,9 @@ final class GroupsSyncClient {
             }
 
             if !rows.isEmpty {
+                // B2 (regla Q3): espejo App Group ANTES del insert+save, en la MISMA vuelta síncrona
+                // (sin `await` entremedias — autosave no puede invertir el orden fila-durable-sin-espejo).
+                writeMirror(rows: rows)
                 try saveWithAuthor(context) {
                     for row in rows { context.insert(row.makeModel()) }
                 }
@@ -610,6 +698,92 @@ final class GroupsSyncClient {
         }
     }
 
+    // MARK: - Espejo del outbox (B2, molde CloudSyncEngine A1/§d.5)
+
+    /// Escribe el espejo `.atomic` de cada fila NUEVA de un drain, ANTES del insert+save (mismo cuerpo
+    /// síncrono, regla Q3). Best-effort: un fallo se loguea y NO aborta el drain (la History es backup
+    /// redundante). No-op sin espejo o sin `sub` de sesión (owner-scoping M1: sin identidad no se sella).
+    private func writeMirror(rows: [PendingGroupRow]) {
+        guard let mirror = outboxMirror, let userID = currentUserIDProvider() else { return }
+        for row in rows {
+            do {
+                try mirror.write(row.mirrorEntry(userID: userID))
+            } catch {
+                #if DEBUG
+                logger.error("GroupsSync: espejo write falló para \(row.entityType, privacy: .public): \(error)")
+                #endif
+            }
+        }
+    }
+
+    /// Espeja una fila de outbox YA materializada (`@Model`) — para el RE-DRIVE (una dead-letter revivida
+    /// vuelve a ser pendiente y re-entra al espejo). Mismo best-effort que `writeMirror(rows:)`.
+    private func writeMirrorEntry(for row: GroupSyncOutbox) {
+        guard let mirror = outboxMirror, let userID = currentUserIDProvider() else { return }
+        do {
+            try mirror.write(GroupsOutboxMirrorEntry(
+                userID: userID, syncID: row.syncID, groupID: row.groupID, entityType: row.entityType,
+                op: row.opRaw, hlc: row.hlc, clientMutationID: row.clientMutationID,
+                fieldsJSON: row.fieldsJSON, fieldHlcsJSON: row.fieldHlcsJSON,
+                tombstoneReason: row.tombstoneReason, author: GroupsOutboxMirror.author,
+                createdAt: row.createdAt))
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: espejo write (revive) falló: \(error)")
+            #endif
+        }
+    }
+
+    /// Re-hidrata el `GroupSyncOutbox` desde el espejo App Group tras una lightweight migration que
+    /// recreó la tabla (B2, molde `CloudSyncEngine.rehydrateOutboxFromMirror`). DIFF INCONDICIONAL con
+    /// owner-scoping DURO: solo procesa `entriesForUser(sub actual)` (las de otra identidad se IGNORAN);
+    /// por cada entry cuyo `(syncID, hlc, op)` NO tiene fila en el outbox (vivas Y dead-letter — una
+    /// dead-letter presente NO se revive por esta vía), re-inserta con los valores ORIGINALES bajo
+    /// `outboxSaveAuthor` (el drain no re-captura el save). Idempotente. Un archivo huérfano (crash entre
+    /// purga y remove) es benigno: se re-sube y el backend deduplica por `client_mutation_id`.
+    func rehydrateOutboxFromMirror(context: ModelContext) {
+        guard let mirror = outboxMirror, let userID = currentUserIDProvider() else { return }
+        let entries = mirror.entriesForUser(userID)
+        guard !entries.isEmpty else { return }
+
+        let liveKeys: Set<String>
+        do { liveKeys = try existingOutboxKeys(context) } catch {
+            #if DEBUG
+            logger.error("GroupsSync: rehydrate fetch(GroupSyncOutbox) falló: \(error)")
+            #endif
+            return
+        }
+
+        var missing: [GroupsOutboxMirrorEntry] = []
+        for entry in entries {
+            guard let op = SyncOutboxOp(rawValue: entry.op) else { continue }
+            if !liveKeys.contains(dedupKey(syncID: entry.syncID, hlc: entry.hlc, op: op)) {
+                missing.append(entry)
+            }
+        }
+        guard !missing.isEmpty else { return }
+
+        do {
+            try saveWithAuthor(context) {
+                for entry in missing {
+                    guard let op = SyncOutboxOp(rawValue: entry.op) else { continue }
+                    context.insert(GroupSyncOutbox(
+                        syncID: entry.syncID, groupID: entry.groupID, entityType: entry.entityType,
+                        op: op, hlc: entry.hlc, clientMutationID: entry.clientMutationID,
+                        fieldsJSON: entry.fieldsJSON, fieldHlcsJSON: entry.fieldHlcsJSON,
+                        author: entry.author, tombstoneReason: entry.tombstoneReason,
+                        createdAt: entry.createdAt))
+                }
+            }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: rehydrate save falló: \(error)")
+            #endif
+            return
+        }
+        GroupsSyncBreadcrumb.groupsMirrorRehydrated(count: missing.count)
+    }
+
     // MARK: - Guard del token de History (molde HALLAZGO 2)
 
     private struct TokenGuardResult {
@@ -676,8 +850,19 @@ final class GroupsSyncClient {
 
     // MARK: - Push (POST /groups/push)
 
-    /// Sube el outbox pendiente (filas sin dead-letter) al gateway y purga/marca según los resultados.
-    /// Devuelve el `PushOutcome` (molde del canal personal). NO purga si la sesión está caída.
+    /// Máximo de deltas por REQUEST (B2, molde `SyncPushClient.pushChunkSize` / anti-patrón I14-H2 del
+    /// personal): el Worker aplica los `apply_group_delta` SECUENCIALMENTE — un batch sin cap (backlog
+    /// grande tras un kill/offline) excede el timeout del URLSession → `.transient` → nada se purga →
+    /// loop sin progreso. 50 deltas deja margen 4× bajo el timeout.
+    static let pushChunkSize = 50
+
+    /// Sube el outbox pendiente (filas sin dead-letter) al gateway en CHUNKS de `pushChunkSize` con
+    /// PROGRESO INCREMENTAL (molde `SyncPushClient.push` I14-H2): cada chunk confirmado se purga/marca
+    /// vía `applyResults` **POR CHUNK con las filas de ESE chunk** ([R8] — la correlación por
+    /// `client_mutation_id` es chunk-independiente) ANTES de pedir el siguiente. Un chunk fallido tras
+    /// confirmados → `.completed(parciales)` (lo confirmado ya se aplicó; el próximo ciclo re-emite solo
+    /// el resto — un outcome TERMINAL 401/403 resurfacea en el PRIMER chunk del próximo intento).
+    /// NO purga si la sesión está caída.
     func pushPending(context: ModelContext) async -> PushOutcome {
         let rows: [GroupSyncOutbox]
         do {
@@ -696,12 +881,44 @@ final class GroupsSyncClient {
         guard let token = await tokenProvider(), !token.isEmpty else {
             return .sessionExpired(pending: rows.count)
         }
+        // Attest UNA vez para todos los chunks (TTL de sesión ≫ duración del push, molde personal).
         let attest = await attestProvider()
 
+        var confirmed: [SyncDeltaResult] = []
+        var index = 0
+        while index < rows.count {
+            let upper = min(index + Self.pushChunkSize, rows.count)
+            let chunk = Array(rows[index..<upper])
+            let outcome = await pushChunk(chunk, token: token, attest: attest,
+                                          totalPending: rows.count, context: context)
+            switch outcome {
+            case .completed(let results):
+                confirmed.append(contentsOf: results)
+                index = upper
+            case .sessionExpired, .accountUnavailable, .transient:
+                // Progreso parcial: lo confirmado YA se aplicó por chunk; sin nada confirmado, el outcome
+                // del chunk fallido sube tal cual (conserva la clasificación 401/403/transitorio).
+                return confirmed.isEmpty ? outcome : .completed(confirmed)
+            }
+        }
+        return .completed(confirmed)
+    }
+
+    /// UN request `POST /groups/push` con un chunk de filas. Mapeo de status EXACTAMENTE el previo al
+    /// chunking; al 200 aplica los resultados DEL CHUNK ([R8]) antes de devolver.
+    private func pushChunk(
+        _ chunk: [GroupSyncOutbox], token: String, attest: String?,
+        totalPending: Int, context: ModelContext
+    ) async -> PushOutcome {
+        let generation = teardownGeneration  // guardia MEDIA: no aplicar resultados post-teardown
         let deltas: [GroupSyncDelta]
         do {
-            deltas = try rows.map { try buildDelta(from: $0) }
+            deltas = try chunk.map { try buildDelta(from: $0) }
         } catch {
+            // LOW aceptado (review adversarial, follow-up): una fila poison hace transitorio el CHUNK
+            // entero en vez de aislarse con un `partitionBuildable` como el personal (DIFERIDOS #26).
+            // NO-REGRESIÓN vs pre-B2: antes del chunking, la misma fila hacía transitorio el batch
+            // COMPLETO. El canal de Grupos solo emite las 4 clases cableadas → poison requiere drift.
             #if DEBUG
             logger.error("GroupsSync: buildDelta falló: \(error)")
             #endif
@@ -729,19 +946,23 @@ final class GroupsSyncClient {
 
         switch http.statusCode {
         case 200:
+            // Guardia MEDIA: un teardown durante el request suspendido → NO aplicar resultados (ni purga
+            // ni dead-letter ni removals del espejo bajo una sesión que ya no existe). `.transient` es
+            // seguro: nada se confirmó localmente; el server deduplica por client_mutation_id.
+            guard generation == teardownGeneration else { return .transient }
             do {
                 let decoded = try JSONDecoder().decode(GroupPushResponse.self, from: data)
                 // El `SyncDeltaResult` local descarta `outcome`; se decodifica APARTE para leer el código
                 // SANITIZADO (`outcome.message` = yala_*) del rechazo y el `reason` del noop group_not_found
                 // — SIN tocar el `SyncPushClient` del personal (A2).
                 let outcomeInfo = Self.decodeOutcomeInfo(data)
-                applyResults(decoded.results, outcomeInfo: outcomeInfo, rows: rows, context: context)
+                applyResults(decoded.results, outcomeInfo: outcomeInfo, rows: chunk, context: context)
                 return .completed(decoded.results)
             } catch {
                 return .transient
             }
         case 401:
-            return .sessionExpired(pending: rows.count)
+            return .sessionExpired(pending: totalPending)
         case 403:
             return .accountUnavailable
         case 409:
@@ -793,6 +1014,15 @@ final class GroupsSyncClient {
         for row in rows { byMutation[row.clientMutationID.uuidString.lowercased()] = row }
 
         var groupNotFoundPurged = 0
+        // B2: pares (syncID, hlc) cuyo archivo espejo debe borrarse — purgas (applied/noop) Y dead-letters
+        // (excluidas del espejo). Se borra DESPUÉS del save exitoso (orden fila-primero, molde
+        // `confirmUploaded` del personal); si el save falla, el espejo queda consistente con el store.
+        // LOW aceptado (review adversarial): una dead-letter REVIVIBLE (`upstream_400:yala_not_authorized`
+        // — member en pendingApproval) queda SIN red de espejo durante esa ventana: si una lightweight
+        // migration recrea la tabla ANTES de la aprobación, ese delta se pierde. Consecuencia asumida de
+        // la decisión dead-letters-excluidas (el espejo es red de PENDIENTES); el contenido es recuperable
+        // re-escribiéndolo tras el re-join/aprobación, y el re-drive re-espeja las que sobreviven.
+        var mirrorRemovals: [(syncID: UUID, hlc: String)] = []
         do {
             try saveWithAuthor(context) {
                 for result in results {
@@ -801,11 +1031,13 @@ final class GroupsSyncClient {
                     let info = outcomeInfo[mutationID]
                     switch result.status {
                     case .applied:
+                        mirrorRemovals.append((row.syncID, row.hlc))
                         context.delete(row)
                     case .noop:
                         // La PURGA del noop group_not_found SE MANTIENE (decisión G3: anti retry-storm de
                         // meta de grupos legacy no migrados) — deja de ser silenciosa (breadcrumb al final).
                         if info?.reason == "group_not_found" { groupNotFoundPurged += 1 }
+                        mirrorRemovals.append((row.syncID, row.hlc))
                         context.delete(row)
                     case .rejected:
                         let reason = result.reason ?? "rejected"
@@ -819,13 +1051,15 @@ final class GroupsSyncClient {
                             let slug = Self.sanitizedYalaSlug(info?.message)
                             let stored = slug.map { "upstream_400:\($0)" } ?? "upstream_400"
                             markDeadLetter(row, reason: stored, telemetryReason: slug ?? "upstream_400")
+                            mirrorRemovals.append((row.syncID, row.hlc))
                         } else if reason.hasPrefix("upstream_") {
-                            // 5xx / 429: transitorio (reintento en el próximo push).
+                            // 5xx / 429: transitorio (reintento en el próximo push). El espejo se conserva.
                             continue
                         } else {
                             // Rechazos locales del gateway (malformed_delta, unknown_entity, coherence_*,
                             // pull_only…): dead-letter (ya era el comportamiento).
                             markDeadLetter(row, reason: reason, telemetryReason: reason)
+                            mirrorRemovals.append((row.syncID, row.hlc))
                         }
                     }
                 }
@@ -834,6 +1068,10 @@ final class GroupsSyncClient {
             #if DEBUG
             logger.error("GroupsSync: applyResults save falló: \(error)")
             #endif
+            return  // save fallido → NO tocar el espejo (queda consistente con el store)
+        }
+        for removal in mirrorRemovals {
+            outboxMirror?.remove(syncID: removal.syncID, hlc: removal.hlc)
         }
         if groupNotFoundPurged > 0 {
             GroupsSyncBreadcrumb.groupsMetaPurgedGroupNotFound(count: groupNotFoundPurged)
@@ -929,6 +1167,7 @@ final class GroupsSyncClient {
     /// Baja UNA página de deltas remotos y la aplica. Devuelve el resultado POR-PÁGINA (`deltas` bajados +
     /// si el save de la página tuvo éxito) que `pullUntilExhausted` agrega.
     func pullAndApplyOnce(context: ModelContext, limit: Int = 500) async -> GroupsPullPageOutcome {
+        let generation = teardownGeneration  // guardia MEDIA: no aplicar una página post-teardown
         let cursor: GroupSyncCursor
         do { cursor = try loadOrCreateCursor(context) } catch { return .transient }
 
@@ -955,6 +1194,10 @@ final class GroupsSyncClient {
 
         switch http.statusCode {
         case 200:
+            // Guardia MEDIA: un teardown durante el request suspendido → NO aplicar la página (el apply
+            // escribe Split*/cursor y el re-drive haría `writeMirrorEntry` sobre el espejo recién
+            // purgado). `.transient` corta el pull sin avanzar cursor.
+            guard generation == teardownGeneration else { return .transient }
             do {
                 let page = try Self.decodePage(data)
                 let saved = applyPulledPage(page, cursor: cursor, context: context)
@@ -1216,6 +1459,9 @@ final class GroupsSyncClient {
             for row in try context.fetch(descriptor) {
                 row.rejectedReason = nil
                 row.rejectedAt = nil
+                // B2: la fila vuelve a ser PENDIENTE → re-entra al espejo (las dead-letter están
+                // excluidas; el dead-letter borró su archivo). Misma vuelta síncrona del save del apply.
+                writeMirrorEntry(for: row)
             }
         } catch {
             #if DEBUG
@@ -1559,6 +1805,18 @@ private struct PendingGroupRow {
             clientMutationID: clientMutationID, fieldsJSON: fieldsJSON, fieldHlcsJSON: fieldHlcsJSON,
             author: author, tombstoneReason: op == .tombstone ? SyncTombstoneReason.user.rawValue : nil,
             createdAt: createdAt
+        )
+    }
+
+    /// DTO del espejo App Group (B2). `author` = la CONSTANTE de re-inserción del canal (echo-suppression),
+    /// NO el autor de la transacción de origen (diagnóstico que no viaja en la identidad — molde personal).
+    func mirrorEntry(userID: String) -> GroupsOutboxMirrorEntry {
+        GroupsOutboxMirrorEntry(
+            userID: userID, syncID: syncID, groupID: groupID, entityType: entityType,
+            op: op.rawValue, hlc: hlc, clientMutationID: clientMutationID,
+            fieldsJSON: fieldsJSON, fieldHlcsJSON: fieldHlcsJSON,
+            tombstoneReason: op == .tombstone ? SyncTombstoneReason.user.rawValue : nil,
+            author: GroupsOutboxMirror.author, createdAt: createdAt
         )
     }
 }

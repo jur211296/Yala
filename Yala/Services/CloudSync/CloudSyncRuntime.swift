@@ -121,6 +121,13 @@ final class CloudSyncRuntime {
     /// El contexto sobre el que opera (el `mainContext` compartido en prod). Se fija en `start()`.
     private var context: ModelContext?
 
+    /// B2 (paso 5.6): runner del ciclo de GRUPOS en piggyback. Default = el singleton del canal
+    /// (`syncCycleOnceCoalesced` — re-entrante ante el loop propio de Grupos si ambos corrieran por una
+    /// carrera de arranque). Inyectable SOLO para tests (contar invocaciones sin tocar el singleton).
+    var groupsSyncCycleRunner: @MainActor (ModelContext) async -> Void = { context in
+        await GroupsSyncClient.shared.syncCycleOnceCoalesced(context: context)
+    }
+
     // MARK: Estado interno de cadencia / anti-solape
 
     private var isCycling = false
@@ -538,6 +545,21 @@ final class CloudSyncRuntime {
         //      tras el push/pull de dominio. Aborta limpio si un teardown cambió la época.
         await syncPrefsOnce(epoch: epoch)
         guard epoch == sessionEpoch else { return .coalesced }
+
+        // 5.6) Grupos piggyback (B2 [R3]): con el canal de Grupos encendido, su ciclo corre AQUÍ (misma
+        //      cadencia que el dominio) y `GroupsSyncClient.startIfEligible` se ABSTIENE de su loop propio
+        //      (guard espejo: syncRuntimeEnabled && canRunDomain()) — un solo loop cadenciado, sin dos
+        //      fetchHistory del mismo container sin coordinación. Flag OFF (SIEMPRE en producción esta
+        //      fase) = byte-idéntico: ni await ni llamada. **Guard de secundaria OBLIGATORIO** ([R3]): en
+        //      sesión secundaria este runtime SÍ cadencia (canRunDomain → .cloud efectivo con
+        //      secondaryStoreMounted) — sin el guard, el piggyback reintroduciría el sync de grupos en la
+        //      sesión de la invitada por la puerta de atrás (lo que el guard de AppBootstrapper G2 impide).
+        //      El resultado del ciclo de Grupos NO contamina la cadencia personal (canal aparte con su
+        //      propio dead-letter/backoff interno; el outcome se descarta a propósito).
+        if CloudSyncFlags.groupsBackendEnabled, !SecondarySessionStore.isActive() {
+            await groupsSyncCycleRunner(context)
+            guard epoch == sessionEpoch else { return .coalesced }  // teardown durante el ciclo de Grupos
+        }
 
         // 6) Primer pull completado + contador de Merkle (solo avanza en ciclos `.completed`) + purga
         //    de history (DOBLE-DARK: syncRuntimeEnabled gatea todo el runtime Y historyPurgeEnabled

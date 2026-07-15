@@ -28,7 +28,12 @@ struct GroupsMembershipClientTests {
     private func client(
         _ session: GroupsSyncClientTests.StubHTTPSession, token: String? = "jwt-token"
     ) -> GroupsMembershipClient {
-        GroupsMembershipClient(baseURL: base, tokenProvider: { token }, urlSession: session)
+        let client = GroupsMembershipClient(baseURL: base, tokenProvider: { token }, urlSession: session)
+        // B2: el retry de transitorios ([R5]) duerme 1s/3s con el sleeper real — aquí se anula (regla:
+        // jamás sleeps reales en tests). Los outcomes finales de estos tests no cambian (el retry agota
+        // contra el mismo stub); el comportamiento del retry se cubre en GroupsSyncHardeningTests.
+        client.sleeper = { _ in }
+        return client
     }
 
     /// Decodifica el body enviado a `[String: Any]` para aserción campo a campo.

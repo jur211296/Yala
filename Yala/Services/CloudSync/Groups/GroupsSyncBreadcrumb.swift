@@ -62,6 +62,15 @@ enum GroupsSyncBreadcrumb {
         logger.notice("GroupsSync applySkippedDelta entity=\(entity, privacy: .public) — delta descartado; cursor avanza sin aplicar")
     }
 
+    // MARK: - Espejo del outbox (endurecimiento B2)
+
+    /// El rehydrate del boot re-insertó `count` filas del espejo App Group que el `GroupSyncOutbox` había
+    /// perdido (lightweight migration que recreó la tabla / vaciado parcial). `> 0` esporádico = la red
+    /// funcionó; sostenido = investigar la migración. Sin PII (solo el count).
+    static func groupsMirrorRehydrated(count: Int) {
+        logger.notice("GroupsSync mirrorRehydrated count=\(count, privacy: .public) — filas re-insertadas desde el espejo App Group")
+    }
+
     // MARK: - Merkle (endurecimiento B1)
 
     /// El fetch de `/groups/merkle` falló (transporte / respuesta no-HTTP / decode / HTTP 5xx). `reason` =

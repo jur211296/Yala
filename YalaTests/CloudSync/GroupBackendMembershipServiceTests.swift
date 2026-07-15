@@ -51,6 +51,7 @@ struct GroupBackendMembershipServiceTests {
         _ session: GroupsSyncClientTests.StubHTTPSession, session live: Bool = true
     ) -> GroupBackendMembershipService {
         let client = GroupsMembershipClient(baseURL: base, tokenProvider: { "jwt-token" }, urlSession: session)
+        client.sleeper = { _ in }  // B2: sin sleeps reales si un stub clasificara transitorio
         return GroupBackendMembershipService(client: client, sessionCheck: { live })
     }
 

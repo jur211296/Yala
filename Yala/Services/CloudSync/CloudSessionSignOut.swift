@@ -73,6 +73,10 @@ final class CloudSessionSignOut {
 
         // Teardown del runtime si existe (post-reversa / spikes): idempotente, purga espejo+prefs.
         CloudSyncRuntime.shared?.teardownGuestSession()
+        // B2: canal de Grupos→backend — loop fuera + espejo App Group purgado (montos). Explícito AQUÍ
+        // (no dentro de teardownGuestSession: el runtime personal no debe conocer grupos). Idempotente
+        // y seguro con el flag OFF (no-ops).
+        GroupsSyncClient.shared.teardownForSignOut()
         await CloudAuthService.shared.signOut()
 
         resetOnboardingFlagsPreservingData()
@@ -116,6 +120,8 @@ final class CloudSessionSignOut {
         case .drained:
             // Orden: primero el motor (epoch++ aborta ciclos en vuelo, nada nuevo cicla).
             CloudSyncRuntime.shared?.teardownGuestSession()
+            // B2: canal de Grupos→backend — loop fuera + espejo purgado (mismo racional que privateReset).
+            GroupsSyncClient.shared.teardownForSignOut()
             // S2 del review: re-verificar el outbox tras cortar el motor y ANTES de soltar
             // credenciales — si un save concurrente encoló filas durante el push-all, se
             // bloquea con la sesión AÚN viva (reintentar funciona). Residual documentado:
@@ -159,6 +165,9 @@ final class CloudSessionSignOut {
             CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
         case .drained:
             CloudSyncRuntime.shared?.teardownGuestSession()
+            // B2: canal de Grupos→backend — loop fuera + espejo purgado (en secundaria el canal ni corre,
+            // pero el teardown es idempotente y la purga del espejo es red M1 obligatoria).
+            GroupsSyncClient.shared.teardownForSignOut()
             // S2: re-verificar el outbox con la sesión AÚN viva (mismo racional que el camino .cloud).
             let residual = controller.livePendingUploadCount()
             guard residual == 0 else {
