@@ -1,0 +1,49 @@
+//
+//  GroupBackendIdentityLogic.swift
+//  Yala
+//
+//  Lógica PURA de identidad del canal de sync de GRUPOS → backend (incremento G3, DARK). Sin estado,
+//  sin `ModelContext`, sin CloudKit → testeable en aislamiento total. `nonisolated`: se consume tanto
+//  desde el apply `@MainActor` de `GroupsSyncClient` como desde `refreshCurrentUserFlags` (main actor),
+//  pero no toca estado del actor.
+//
+//  Provee dos primitivas del canal backend, PARALELAS a la identidad CloudKit vigente (no la reemplazan;
+//  el path CloudKit por `cloudKitUserRecordID`/record-name sigue vivo como fallback para members mixtos):
+//
+//   1. `deterministicMemberID(groupID:memberKey:)` — id LOCAL estable de un `SplitMember` nacido del
+//      backend, derivado del `group_id` + `member_key` del wire. Usa un NAMESPACE PROPIO
+//      (`memberIDNamespace`), DISTINTO del namespace `"SplitMember"` del path CloudKit
+//      (`GroupUserIdentityService.deterministicMemberID`) → para los MISMOS inputs produce un UUID
+//      distinto, por diseño: el canal backend no reusa la identidad CloudKit, la re-deriva de su propia
+//      autoridad (el `member_key` del server).
+//
+//   2. `isCurrentUser(memberUserID:currentUserID:)` — ¿este member soy yo? Comparación del auth `uid`
+//      (`SplitMember.userID` local vs `CloudAuthService.currentUserID`), lowercase y nil-safe: un lado
+//      `nil`/vacío NUNCA matchea (un member sin `userID` cae al path CloudKit, no a un falso match).
+//
+
+import Foundation
+
+nonisolated enum GroupBackendIdentityLogic {
+
+    /// Namespace del id determinista de member del canal BACKEND. Distinto de `"SplitMember"` (namespace
+    /// del path CloudKit) a propósito — garantiza que el UUID derivado JAMÁS colisione con el CloudKit
+    /// para los mismos inputs (el canal re-deriva su identidad de la autoridad del server, no la reusa).
+    static let memberIDNamespace = "SplitMemberBackend"
+
+    /// UUID LOCAL estable de un `SplitMember` nacido del backend. `= SHA256("SplitMemberBackend:{groupID}:
+    /// {memberKey}")` truncado a 16 bytes. Determinista: el mismo par `(groupID, memberKey)` → el mismo
+    /// UUID en todos los devices → dedup del member sin depender de la identidad CloudKit.
+    static func deterministicMemberID(groupID: String, memberKey: String) -> UUID {
+        GroupUserIdentityService.deterministicUUID(
+            namespace: memberIDNamespace, name: "\(groupID):\(memberKey)")
+    }
+
+    /// ¿El member (por su auth `uid` del backend) es el usuario de la sesión actual? Lowercase + nil-safe:
+    /// cualquier lado `nil` o vacío ⇒ `false` (jamás un falso positivo por ausencia de identidad).
+    static func isCurrentUser(memberUserID: String?, currentUserID: String?) -> Bool {
+        guard let memberUserID, let currentUserID,
+              !memberUserID.isEmpty, !currentUserID.isEmpty else { return false }
+        return memberUserID.lowercased() == currentUserID.lowercased()
+    }
+}

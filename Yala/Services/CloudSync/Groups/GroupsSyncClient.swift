@@ -920,6 +920,12 @@ final class GroupsSyncClient {
             return
         }
         let model = existing ?? SplitMember()
+        if existing == nil {
+            // Born-remote: id LOCAL determinista del namespace BACKEND (paralelo al CloudKit) → dedup
+            // estable cross-device sin depender del path CloudKit (G3).
+            model.id = GroupBackendIdentityLogic.deterministicMemberID(
+                groupID: delta.groupID, memberKey: memberKey)
+        }
         model.groupZoneID = delta.groupID
         model.cloudKitUserRecordID = memberKey
         let f = delta.fields
@@ -927,8 +933,10 @@ final class GroupsSyncClient {
         if let v = wireString(f["role"]) { model.role = v }
         if let v = wireString(f["status"]) { model.status = v }
         if let v = wireDate(f["joined_at"]) { model.joinedAt = v }
-        // `user_id` (auth uid del wire) no tiene columna local en SplitMember → no se aplica (member_key
-        // ES la identidad local vía cloudKitUserRecordID). Documentado en A.5.
+        // `user_id` = auth uid del wire → `SplitMember.userID` (LOCAL-only del canal backend; nunca CKRecord).
+        // Presente-y-null (anonimización del server) NULLea el campo (`wireString(.null) == nil`), igual que
+        // `note`; ausente = no tocar (PATCH parcial). Cierra el residual documentado del commit G2.
+        if let v = f["user_id"] { model.userID = wireString(v) }
         if existing == nil { context.insert(model) }
     }
 

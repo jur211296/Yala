@@ -72,7 +72,9 @@ final class GroupUserIdentityService {
         return Self.deterministicUUID(namespace: "SplitMember", name: "\(groupZoneID):\(recordName)")
     }
 
-    static func deterministicUUID(namespace: String, name: String) -> UUID {
+    /// `nonisolated`: primitiva pura (solo CryptoKit, sin estado del actor). Compartida con
+    /// `GroupBackendIdentityLogic` (canal backend), que corre fuera del main actor.
+    nonisolated static func deterministicUUID(namespace: String, name: String) -> UUID {
         let data = Data("\(namespace):\(name)".utf8)
         let digest = SHA256.hash(data: data)
         let bytes = Array(digest.prefix(16))

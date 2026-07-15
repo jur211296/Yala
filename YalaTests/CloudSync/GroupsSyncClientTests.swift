@@ -251,6 +251,115 @@ struct GroupsSyncClientTests {
         #expect(try context.fetch(FetchDescriptor<GroupSyncOutbox>()).isEmpty)
     }
 
+    // MARK: - Test 5b · Apply de group_members (pull-only): userID + born-remote id determinista
+
+    private func memberDelta(
+        group: String = "SplitGroup-A", memberKey: String = "member-rec-1",
+        userID: WireValue? = .string("auth-uid-1"), op: SyncOutboxOp = .upsert,
+        serverSeq: Int64 = 3
+    ) -> GroupPulledDelta {
+        var fields: [String: WireValue] = [
+            "display_name": .string("Alice"),
+            "role": .string("admin"),
+            "status": .string("active"),
+            "joined_at": .string("2026-07-15T00:00:00.000Z"),
+        ]
+        if let userID { fields["user_id"] = userID }
+        return GroupPulledDelta(
+            entityType: "group_members", groupID: group, rawSyncID: memberKey, syncID: nil,
+            op: op, fields: fields, fieldHlcs: [:],
+            hlc: "2026-07-15T00:00:00.000Z-0000-000000000000000b",
+            serverSeq: serverSeq, schemaVersion: 1)
+    }
+
+    @Test func apply_member_writesUserID_andDeterministicBornRemoteID() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        let page = GroupPulledPage(
+            deltas: [memberDelta()], cursors: ["SplitGroup-A": 3], memberships: ["SplitGroup-A"])
+        client.applyPulledPage(page, cursor: cursor, context: context)
+
+        let members = try context.fetch(FetchDescriptor<SplitMember>())
+        let member = try #require(members.first)
+        // El `user_id` del wire aterrizó en la columna LOCAL `userID` (cierra el residual de G2).
+        #expect(member.userID == "auth-uid-1")
+        #expect(member.cloudKitUserRecordID == "member-rec-1")
+        #expect(member.displayName == "Alice")
+        // Born-remote: id LOCAL = namespace backend determinista (NO un UUID() aleatorio).
+        #expect(member.id == GroupBackendIdentityLogic.deterministicMemberID(
+            groupID: "SplitGroup-A", memberKey: "member-rec-1"))
+    }
+
+    @Test func apply_member_nullUserID_isAnonymization_nullsColumn() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+
+        // Primer apply: llega con user_id.
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+        #expect(try context.fetch(FetchDescriptor<SplitMember>()).first?.userID == "auth-uid-1")
+
+        // Segundo apply del MISMO member con user_id = null (anonimización del server) → NULLea la columna.
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta(userID: .null, serverSeq: 4)], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+        let members = try context.fetch(FetchDescriptor<SplitMember>())
+        #expect(members.count == 1)  // mismo member (dedup por id determinista), no duplicado
+        #expect(members.first?.userID == nil)
+    }
+
+    // MARK: - Test 5c · refreshCurrentUserFlags con flag OFF = byte-idéntico (path CloudKit, ignora userID)
+
+    /// Con `groupsBackendEnabled == false` (SIEMPRE en producción hoy), `refreshCurrentUserFlags` deriva
+    /// `isCurrentUser` EXCLUSIVAMENTE por el path CloudKit (`cloudKitUserRecordID == recordName`) e IGNORA
+    /// `SplitMember.userID`. Toca los singletons `GroupService.shared`/`GroupUserIdentityService.shared`
+    /// → suite `.serialized` + restore. No dispara `enqueueSave` (members con record-id no vacío, grupo
+    /// no-owner) → sin acoplar `SplitSyncManager`.
+    @Test func refreshCurrentUserFlags_flagOff_usesCloudKitPath_ignoresUserID() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let prevFlag = CloudSyncFlags.groupsBackendEnabled
+        let prevCache = GroupUserIdentityService.shared.cachedRecordName
+        defer {
+            CloudSyncFlags.groupsBackendEnabled = prevFlag
+            GroupUserIdentityService.shared._testSetCachedRecordName(prevCache)
+        }
+        CloudSyncFlags.groupsBackendEnabled = false
+        GroupUserIdentityService.shared._testSetCachedRecordName("rec-current")
+
+        let group = SplitGroup(name: "Trip")
+        group.cloudKitZoneID = "zone-1"
+        group.isOwner = false
+        context.insert(group)
+
+        // memberA: match por record-name → debe volverse current. Su `userID` apunta a OTRO uid: con flag
+        // OFF NO se consulta → no altera la decisión.
+        let memberA = SplitMember(groupZoneID: "zone-1", displayName: "Me",
+                                  cloudKitUserRecordID: "rec-current")
+        memberA.userID = "someone-else-uid"
+        // memberB: sin match por record-name, pero su `userID` == "rec-current". Con flag OFF NO debe
+        // volverse current (el path backend está apagado).
+        let memberB = SplitMember(groupZoneID: "zone-1", displayName: "Other",
+                                  cloudKitUserRecordID: "rec-other")
+        memberB.userID = "rec-current"
+        context.insert(memberA)
+        context.insert(memberB)
+        try context.save()
+
+        await GroupService.shared.refreshCurrentUserFlags(context: context)
+
+        #expect(memberA.isCurrentUser == true)   // match por record-name (path CloudKit)
+        #expect(memberB.isCurrentUser == false)  // userID ignorado con flag OFF
+    }
+
     // MARK: - Test 6 · Emisión canon c1 (gmoney junto; gshare trío)
 
     @Test func emission_expense_gmoneyTogether_partialUpdateExpandsGroup() throws {

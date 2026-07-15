@@ -30,6 +30,16 @@ final class SplitMember {
     var joinedAt: Date = Date.now
     var ckSystemFieldsData: Data?            // CKRecord system fields for conflict-free uploads
 
+    /// Auth `uid` del backend (canal Grupos → backend, incremento G3). **LOCAL-only del canal backend**:
+    /// lo escribe SOLO el apply del pull de `GroupsSyncClient` (proyección del `user_id` del wire) y JAMÁS
+    /// viaja en un CKRecord (el sync de Grupos vigente es CKSyncEngine y este campo no está en
+    /// `CKRecordTranslator`/`CKConstants` — no forma parte del schema del container de Grupos). Sirve para
+    /// derivar `isCurrentUser` contra `CloudAuthService.currentUserID` cuando el canal backend está
+    /// encendido (DARK hoy); `nil` en members legacy/CloudKit → el path por `cloudKitUserRecordID` sigue
+    /// siendo el fallback. Anonimización del server (`user_id` null) → este campo también se NULLea.
+    /// CloudKit-safe: opcional, default `nil`, sin `.unique`.
+    var userID: String?
+
     var memberStatus: SplitMemberStatus {
         get { SplitMemberStatus(rawValue: status) ?? .active }
         set { status = newValue.rawValue }

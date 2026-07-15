@@ -778,6 +778,13 @@ final class GroupService {
             let membersByZone = Dictionary(grouping: members, by: \.groupZoneID)
             var changed = false
 
+            // Canal Grupos → backend (G3, DARK): con el flag ON, la identidad AUTORITATIVA de "soy yo" es
+            // el auth `uid` (`SplitMember.userID` vs `CloudAuthService.currentUserID`). Con el flag OFF
+            // (SIEMPRE en producción hoy) `backendEnabled` es `false` → NUNCA se lee `currentUserID` y la
+            // rama de decisión de `isCurrentUser` es BYTE-IDÉNTICA al path CloudKit por record-name de abajo.
+            let backendEnabled = CloudSyncFlags.groupsBackendEnabled
+            let currentUserID: String? = backendEnabled ? CloudAuthService.shared.currentUserID : nil
+
             // Migration: older builds could create current-user members without `cloudKitUserRecordID`.
             // Try to infer and backfill once per group, so other devices can identify the same user.
             let localDisplayName = currentUserDisplayName()
@@ -818,7 +825,18 @@ final class GroupService {
                     changed = true
                 }
 
-                let shouldBeCurrent = !recordName.isEmpty && member.cloudKitUserRecordID == recordName
+                // Path CloudKit (fallback y único camino con flag OFF): match por record-name.
+                let cloudKitMatch = !recordName.isEmpty && member.cloudKitUserRecordID == recordName
+                let shouldBeCurrent: Bool
+                if backendEnabled, let uid = member.userID, !uid.isEmpty {
+                    // Canal backend: identidad autoritativa = auth uid del member vs sesión actual.
+                    shouldBeCurrent = GroupBackendIdentityLogic.isCurrentUser(
+                        memberUserID: uid, currentUserID: currentUserID)
+                } else {
+                    // Sin `userID` backend (legacy/mixto) o flag OFF → path CloudKit. Con flag OFF, ESTA es
+                    // la única rama y `shouldBeCurrent == cloudKitMatch` (comportamiento sin cambios).
+                    shouldBeCurrent = cloudKitMatch
+                }
                 if member.isCurrentUser != shouldBeCurrent {
                     member.isCurrentUser = shouldBeCurrent
                     changed = true
