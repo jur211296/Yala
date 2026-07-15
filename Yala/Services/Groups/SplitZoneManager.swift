@@ -24,6 +24,12 @@ final class SplitZoneManager {
 
     /// Creates a CKRecordZone for a new group and enqueues a GroupMeta root record.
     func createZone(for group: SplitGroup) {
+        // C2 defensive guard: un grupo backend no tiene zona CloudKit (nace vía RPC). Con el routing de
+        // C3/C4 no debería alcanzarse; si se alcanza, breadcrumb + no-op (jamás encolar su zona a CKSyncEngine).
+        guard !group.isBackendGroup else {
+            GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "createZone")
+            return
+        }
         guard let engine = syncManager.privateEngine else {
             #if DEBUG
             logger.error("Cannot create zone: private engine not initialized")
@@ -132,6 +138,13 @@ final class SplitZoneManager {
     /// Creates or retrieves a CKShare for a group zone, enabling invitation by link.
     /// If a share already exists, returns it — the URL is stable until explicitly deleted.
     func createShare(for group: SplitGroup) async throws -> (CKShare, URL?) {
+        // C2 defensive guard: un grupo backend invita por token RPC (GroupBackendInviteService), no por
+        // CKShare. Con el routing de C4 no debería alcanzarse; si se alcanza, breadcrumb + throw (jamás
+        // mintear un CKShare para un grupo sin zona CloudKit).
+        guard !group.isBackendGroup else {
+            GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "createShare")
+            throw SplitZoneError.backendGroup
+        }
         guard group.isOwner else { throw SplitZoneError.notOwner }
         guard let engine = syncManager.privateEngine else {
             throw SplitZoneError.engineNotInitialized
@@ -275,6 +288,7 @@ final class SplitZoneManager {
 enum SplitZoneError: LocalizedError {
     case engineNotInitialized
     case notOwner
+    case backendGroup
 
     var errorDescription: String? {
         switch self {
@@ -284,6 +298,10 @@ enum SplitZoneError: LocalizedError {
             return L10n.Groups.Errors.syncPreparing
         case .notOwner:
             // Defensive — a non-owner never sees the invite button; reuse the generic copy.
+            return L10n.Groups.Errors.actionFailed
+        case .backendGroup:
+            // C2 defensive: un grupo backend nunca debería llegar a la creación de CKShare (C4 lo rutea al
+            // token RPC). Reusa la copy genérica — no debería mostrarse jamás con el routing correcto.
             return L10n.Groups.Errors.actionFailed
         }
     }

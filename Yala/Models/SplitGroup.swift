@@ -40,6 +40,17 @@ final class SplitGroup {
     /// LOCAL-ONLY: no se mapea en CKRecordTranslator (store `.none`, sin deploy).
     var initialMemberImportStartedAt: Date?
 
+    /// Discriminador de canal (G5-A): `true` = grupo del canal BACKEND (nace vía
+    /// `GroupBackendMembershipService.createGroup` o el pull de `GroupsSyncClient.applyGroupMeta`);
+    /// `false` = grupo CloudKit (CKSyncEngine). Particiona POR-GRUPO el enqueue a CKSyncEngine (C2), el
+    /// drain del canal backend (C2-bis) y el routing de crear/invitar/membership (C3-C5) — con el flag
+    /// `groupsBackendEnabled` OFF SIEMPRE es `false` (nadie lo pone `true`) → byte-idéntico.
+    /// LOCAL-ONLY: JAMÁS en `CKRecordTranslator`/`CKConstants` (store `.none`, sin deploy CloudKit;
+    /// precedente `SplitMember.userID`/`memberKey` de G3). NUNCA se emite al canal backend (no está en
+    /// `GroupEntityEmissionMap.splitGroup` ni en `GroupMerkleProjection` — ambos son listas explícitas de
+    /// columnas, no reflexión). CloudKit-safe: opcional-por-default `false`, sin `.unique`.
+    var isBackendGroup: Bool = false
+
     init(
         name: String = "",
         iconName: String = "person.2.fill",

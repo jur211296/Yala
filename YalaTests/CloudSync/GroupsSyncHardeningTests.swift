@@ -173,6 +173,11 @@ struct GroupsSyncHardeningTests {
         let context = try makeContext(dir)
         let client = makeClient(session: StubSession(emptyPageJSON), mirrorDir: mirrorDir)
 
+        // C2-bis: la zona debe ser de un grupo BACKEND o el drain la salta (partición POR-GRUPO).
+        let group = SplitGroup(name: "G")
+        group.cloudKitZoneID = "SplitGroup-A"
+        group.isBackendGroup = true
+        context.insert(group)
         let expense = SplitExpense(groupZoneID: "SplitGroup-A", amount: 12.5, currencyCode: "USD",
                                    expenseDescription: "Dinner", paidByMemberID: "m1")
         context.insert(expense)

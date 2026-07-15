@@ -117,4 +117,21 @@ enum GroupsSyncBreadcrumb {
     static func groupsMerkleRemediated(groups: Int) {
         logger.notice("GroupsSync merkleRemediated groups=\(groups, privacy: .public)")
     }
+
+    // MARK: - Partición POR-GRUPO (G5-A)
+
+    /// [C2] Un enqueue a CKSyncEngine se SALTÓ porque el grupo es del canal BACKEND (`isBackendGroup`) — sus
+    /// records NUNCA deben ir a CloudKit (sync por el canal backend). `site` = slug del choke point
+    /// (`enqueueSave`/`enqueueDeletion`/`createZone`/`createShare`/`zoneRecovery`/`recordRecovery`). Sin PII.
+    static func groupsCkEnqueueSkippedBackendGroup(site: String) {
+        logger.notice("GroupsSync ckEnqueueSkippedBackendGroup site=\(site, privacy: .public)")
+    }
+
+    /// [C2-bis] El drain del canal backend SALTÓ un change porque su `group_id` NO pertenece a un grupo
+    /// backend (grupo CloudKit vivo bajo flag ON, o tombstone de un grupo ya borrado localmente) — evita
+    /// dead-letters permanentes (`group_id` inexistente server-side) y el doble-sync CKSyncEngine∥backend.
+    /// `entity` = slug del `entity_type` (tabla/clase, sin PII). El group_id JAMÁS se loguea.
+    static func groupsDrainSkippedNonBackendGroup(entity: String) {
+        logger.notice("GroupsSync drainSkippedNonBackendGroup entity=\(entity, privacy: .public)")
+    }
 }

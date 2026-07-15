@@ -77,6 +77,8 @@ final class GroupBackendMembershipService {
             defaultSplitType: defaultSplitType,
             membersCanInvite: membersCanInvite
         )
+        // C1 write-site (1): grupo del canal BACKEND → particiona enqueue/drain/routing (C2-C5).
+        group.isBackendGroup = true
         let zoneID = group.cloudKitZoneID
 
         // RPC PRIMERO. Un throw aquí NO ha tocado el contexto todavía.

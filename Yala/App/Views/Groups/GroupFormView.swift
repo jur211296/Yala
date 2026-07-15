@@ -266,17 +266,57 @@ struct GroupFormView: View {
                     membersCanInvite: false
                 )
             } else {
-                // Create
-                try await GroupService.shared.createGroup(
-                    name: trimmedName,
-                    iconName: iconName,
-                    colorHex: colorHex,
-                    currencyCode: currencyCode,
-                    simplifyDebts: simplifyDebts,
-                    showDebtsInSingleCurrency: showDebtsInSingleCurrency,
-                    defaultSplitType: defaultSplitType.rawValue,
-                    membersCanInvite: false
-                )
+                // Create — C3: routing CloudKit vs backend. El gate consent/sign-in ya corrió en el call-site
+                // que abrió el form (GroupsContainerView.requestCreateGroup); las ramas needs* aquí son belt
+                // defensivo (no deberían alcanzarse) — ceden el anchor con dismiss() PRIMERO.
+                switch GroupCreateRoutingLogic.route(
+                    flagOn: CloudSyncFlags.groupsBackendEnabled,
+                    hasSession: CloudAuthService.shared.hasSession,
+                    consentAccepted: GroupsConsentState.isAccepted
+                ) {
+                case .cloudKit:
+                    try await GroupService.shared.createGroup(
+                        name: trimmedName,
+                        iconName: iconName,
+                        colorHex: colorHex,
+                        currencyCode: currencyCode,
+                        simplifyDebts: simplifyDebts,
+                        showDebtsInSingleCurrency: showDebtsInSingleCurrency,
+                        defaultSplitType: defaultSplitType.rawValue,
+                        membersCanInvite: false
+                    )
+                case .backend:
+                    // `displayName` no-vacío (patrón defaultName R1: `join`/`create_group` hacen btrim=''
+                    // → yala_bad_input permanente si vacío).
+                    let profile = UserDefaults.standard.string(forKey: "userName") ?? ""
+                    let displayName = profile.isEmpty ? L10n.Profile.defaultName : profile
+                    _ = try await GroupBackendMembershipService(client: GroupsMembershipClient())
+                        .createGroup(
+                            name: trimmedName,
+                            iconName: iconName,
+                            colorHex: colorHex,
+                            currencyCode: currencyCode,
+                            displayName: displayName,
+                            defaultSplitType: defaultSplitType.rawValue,
+                            simplifyDebts: simplifyDebts,
+                            showDebtsInSingleCurrency: showDebtsInSingleCurrency,
+                            membersCanInvite: false,
+                            context: modelContext
+                        )
+                    // Paridad de side-effects: el servicio backend NO los emite (a diferencia de
+                    // GroupService.createGroup) — replicarlos aquí para no regresionar la UX.
+                    SessionState.shared.incrementDataVersion()
+                    TelemetryService.track(.groupCreated, parameters: ["memberCount": "1"])
+                    NudgeService.shared.recordGroupJoinIfNeeded()
+                case .needsConsent:
+                    dismiss()
+                    RouterEntryGate.shared.submit(.presentGroupsConsent(pendingJoin: ""))
+                    return
+                case .needsSignIn:
+                    dismiss()
+                    RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: ""))
+                    return
+                }
             }
             DS.Haptic.success()
             dismiss()

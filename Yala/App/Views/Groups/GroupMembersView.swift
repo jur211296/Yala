@@ -247,23 +247,27 @@ struct GroupMembersView: View {
         guard let member = pendingActionMember else { return }
         let memberID = member.id.uuidString
         let memberName = member.displayName
-        do {
-            try GroupService.shared.approveMember(member, in: group)
-            viewModel.loadData()
-            pendingActionMember = nil
-            // Atajo (owner-only): ofrecer crear un saldo inicial para el miembro recién aprobado.
-            if group.isOwner {
-                openingBalancePrefillDebtor = memberID
-                approvedMemberName = memberName
-                showOpeningBalanceApprovalPrompt = true
+        // `approveMember` es `async` (C5: grupo backend rutea a un RPC). Con flag OFF no suspende — el camino
+        // CloudKit corre igual, solo envuelto en un Task (MainActor heredado).
+        Task {
+            do {
+                try await GroupService.shared.approveMember(member, in: group)
+                viewModel.loadData()
+                pendingActionMember = nil
+                // Atajo (owner-only): ofrecer crear un saldo inicial para el miembro recién aprobado.
+                if group.isOwner {
+                    openingBalancePrefillDebtor = memberID
+                    approvedMemberName = memberName
+                    showOpeningBalanceApprovalPrompt = true
+                }
+            } catch {
+                pendingErrorMessage = error.localizedDescription
+                showPendingError = true
+                pendingActionMember = nil
+                #if DEBUG
+                print("GroupMembersView: approveMember failed: \(error)")
+                #endif
             }
-        } catch {
-            pendingErrorMessage = error.localizedDescription
-            showPendingError = true
-            pendingActionMember = nil
-            #if DEBUG
-            print("GroupMembersView: approveMember failed: \(error)")
-            #endif
         }
     }
 
@@ -445,9 +449,20 @@ struct GroupMembersView: View {
 
         isCreatingShare = true
         do {
-            let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
-            if let ckURL {
-                shareURL = buildBrandedInviteURL(from: ckURL)
+            if CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup {
+                // C4: grupo backend → invite por TOKEN RPC (link ya branded). Cache in-VM (`shareURL != nil`,
+                // arriba) conservado. Nota A1: el flag cubre "no emitir hasta que el parser esté desplegado".
+                let name = UserDefaults.standard.string(forKey: "userName") ?? ""
+                let inviterName = name.isEmpty ? L10n.Profile.defaultName : name
+                shareURL = try await GroupBackendInviteService(
+                    membership: GroupBackendMembershipService(client: GroupsMembershipClient())
+                ).createInviteLink(for: group, inviterName: inviterName, members: viewModel.activeMembers)
+            } else {
+                // Grupo CloudKit (flag OFF o grupo no-backend) → CKShare byte-idéntico.
+                let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
+                if let ckURL {
+                    shareURL = buildBrandedInviteURL(from: ckURL)
+                }
             }
             isCreatingShare = false
             if shareURL != nil {
@@ -486,14 +501,17 @@ struct GroupMembersView: View {
 
     private func removeMember() {
         guard let member = memberToRemove else { return }
-        do {
-            try GroupService.shared.removeMember(member, from: group)
-            viewModel.loadData()
-            DS.Haptic.warning()
-        } catch {
-            actionErrorMessage = error.localizedDescription
-            showActionError = true
-        }
         memberToRemove = nil
+        // `removeMember` es `async` (C5: grupo backend rutea a un RPC). Con flag OFF no suspende.
+        Task {
+            do {
+                try await GroupService.shared.removeMember(member, from: group)
+                viewModel.loadData()
+                DS.Haptic.warning()
+            } catch {
+                actionErrorMessage = error.localizedDescription
+                showActionError = true
+            }
+        }
     }
 }

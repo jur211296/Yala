@@ -41,6 +41,20 @@ final class GroupService {
         return context
     }
 
+    // MARK: - Backend channel routing (G5-A / C5)
+
+    /// `true` si esta op de membership debe ir por el canal BACKEND (RPC) en vez de CKSyncEngine:
+    /// flag `groupsBackendEnabled` ON Y el grupo es del canal backend. Con el flag OFF SIEMPRE `false`
+    /// → camino CloudKit byte-idéntico.
+    private func routesMembershipToBackend(_ group: SplitGroup) -> Bool {
+        CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup
+    }
+
+    /// Servicio de membership del canal backend (RPC tipado). Inyectable para tests (`.shared` es singleton).
+    var backendMembershipFactory: @MainActor () -> GroupBackendMembershipService = {
+        GroupBackendMembershipService(client: GroupsMembershipClient())
+    }
+
     // MARK: - Group CRUD
 
     /// Create a new group with the current user as admin.
@@ -367,7 +381,22 @@ final class GroupService {
     }
 
     /// Remove a member from a group.
-    func removeMember(_ member: SplitMember, from group: SplitGroup) throws {
+    ///
+    /// C5: grupo backend + flag ON → RPC `remove_member` SERVER-FIRST; a éxito, la mutación local optimista
+    /// corre por `removeMemberLocal` (su `enqueueSave` queda no-op por C2). RPC falla → throw, local INTACTO.
+    /// Flag OFF → camino CloudKit byte-idéntico.
+    func removeMember(_ member: SplitMember, from group: SplitGroup) async throws {
+        if routesMembershipToBackend(group) {
+            guard let memberKey = member.memberKey else { throw GroupServiceError.missingMemberKey }
+            _ = try await backendMembershipFactory().remove(
+                groupID: group.cloudKitZoneID, memberKey: memberKey)
+        }
+        try removeMemberLocal(member, from: group)
+    }
+
+    /// Cuerpo local (síncrono) de `removeMember`: validación + `.removed` + save + enqueue. Extraído para
+    /// que la rama backend de C5 lo reuse tras el RPC (el `enqueueSave` queda no-op por el guard C2).
+    private func removeMemberLocal(_ member: SplitMember, from group: SplitGroup) throws {
         let context = try requireContext()
         try requireCurrentUserAdmin(in: group, context: context)
 
@@ -403,12 +432,25 @@ final class GroupService {
     }
 
     /// admin approves a pending member, marking them as active and enqueuing sync.
-    func approveMember(_ member: SplitMember, in group: SplitGroup) throws {
+    ///
+    /// C5: grupo backend + flag ON → RPC `approve_member` SERVER-FIRST (RLS lo autoriza); a éxito, la
+    /// mutación local optimista corre por el MISMO `transitionPendingMember` (su `enqueueSave` queda no-op
+    /// por el guard C2 — el pull confirma). RPC falla → throw ANTES de tocar el contexto → alert del
+    /// call-site, local INTACTO. Flag OFF → camino CloudKit byte-idéntico.
+    func approveMember(_ member: SplitMember, in group: SplitGroup) async throws {
+        if routesMembershipToBackend(group) {
+            // El RPC espera `member.memberKey` (String?) + `group.cloudKitZoneID` — JAMÁS `member.id`.
+            guard let memberKey = member.memberKey else { throw GroupServiceError.missingMemberKey }
+            _ = try await backendMembershipFactory().approve(
+                groupID: group.cloudKitZoneID, memberKey: memberKey)
+        }
         try transitionPendingMember(member, to: .active, in: group)
     }
 
     /// admin rejects a pending member's request, marking them as rejected and enqueuing sync.
     func rejectMember(_ member: SplitMember, in group: SplitGroup) throws {
+        // Guard defensivo (review G5-A): sin routing backend para reject — evitar falso éxito local.
+        guard !routesMembershipToBackend(group) else { throw GroupServiceError.backendActionUnavailable }
         try transitionPendingMember(member, to: .rejected, in: group)
     }
 
@@ -437,6 +479,8 @@ final class GroupService {
 
     /// Change a member's role.
     func changeRole(_ member: SplitMember, to newRole: String, in group: SplitGroup) throws {
+        // Guard defensivo (review G5-A): no existe RPC de cambio de rol — evitar falso éxito local.
+        guard !routesMembershipToBackend(group) else { throw GroupServiceError.backendActionUnavailable }
         let context = try requireContext()
         try requireCurrentUserAdmin(in: group, context: context)
 
@@ -468,6 +512,24 @@ final class GroupService {
         let context = try requireContext()
 
         guard !group.isOwner else { throw GroupServiceError.ownerCannotLeave }
+
+        // C5: grupo backend + flag ON → RPC `leave_group` (server-first, deja la fila `status='left'`) +
+        // limpieza local existente. SIN `leaveShare`/`PendingLeaveShareTracker` (no hay CKShare) y SIN
+        // `ensureCurrentUserMemberExists` (PROHIBIDO para backend — regla A1: encolaría a CKSyncEngine). Los
+        // tombstones del cascade de `performLocalCleanupAndDelete` NO se emiten (C2-bis: la zona sale del set
+        // backend al borrar el SplitGroup). RPC falla → throw ANTES de tocar el contexto → local INTACTO.
+        if routesMembershipToBackend(group) {
+            _ = try await backendMembershipFactory().leave(groupID: group.cloudKitZoneID)
+            TelemetryService.track(.groupLeft)
+            try performLocalCleanupAndDelete(group: group, context: context)
+            do {
+                try context.save()
+            } catch {
+                throw GroupServiceError.saveFailed(error)
+            }
+            SessionState.shared.incrementDataVersion()
+            return
+        }
 
         // El usuario puede salir aunque tenga saldo pendiente. La UI muestra warning
         // explícito en el confirmation dialog antes de invocar este método.
@@ -1017,6 +1079,8 @@ enum GroupServiceError: LocalizedError {
     case notPendingApproval
     case currentUserPendingApproval
     case outstandingBalance
+    case missingMemberKey
+    case backendActionUnavailable
     case saveFailed(Error)
 
     var errorDescription: String? {
@@ -1055,6 +1119,15 @@ enum GroupServiceError: LocalizedError {
             return "GroupService: Your membership is pending admin approval"
         case .outstandingBalance:
             return "GroupService: Cannot proceed while members have outstanding balances"
+        case .missingMemberKey:
+            // C5 defensive: un member del canal backend sin `member_key` (no debería ocurrir en born-backend
+            // — el materializador siempre lo setea). Reusa la copy genérica de acción fallida.
+            return L10n.Groups.Errors.actionFailed
+        case .backendActionUnavailable:
+            // Guard defensivo (review G5-A, lente CloudKit #3): reject/changeRole NO están ruteados al
+            // backend (no existe RPC de cambio de rol; el reject se ruteará junto al resto en G6) — sin
+            // este guard mutarían local sin sync, dando falsa sensación de éxito hasta que el pull revierta.
+            return L10n.Groups.Errors.actionFailed
         case .saveFailed(let error):
             return "GroupService: Save failed - \(error.localizedDescription)"
         }

@@ -410,9 +410,21 @@ final class GroupDetailViewModel {
         if shareURL != nil { return }
         isCreatingShare = true
         do {
-            let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
-            if let ckURL {
-                shareURL = buildBrandedInviteURL(from: ckURL)
+            if CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup {
+                // C4: grupo backend → invite por TOKEN RPC. El link vuelve YA branded (buildBackendInviteURL) →
+                // se asigna directo (sin buildBrandedInviteURL, que envuelve un CKShare URL). El cache in-VM
+                // (`shareURL != nil`, arriba) SE CONSERVA para backend: evita mintear un token nuevo por re-tap
+                // en la misma sesión de la vista (tokens múltiples son válidos igual). Nota A1: no emitir links
+                // backend hasta que la base instalada tenga el parser — el flag lo cubre por construcción.
+                shareURL = try await GroupBackendInviteService(
+                    membership: GroupBackendMembershipService(client: GroupsMembershipClient())
+                ).createInviteLink(for: group, inviterName: currentInviterName, members: activeMembers)
+            } else {
+                // Grupo CloudKit (flag OFF o grupo no-backend) → CKShare byte-idéntico.
+                let (_, ckURL) = try await SplitZoneManager(syncManager: .shared).createShare(for: group)
+                if let ckURL {
+                    shareURL = buildBrandedInviteURL(from: ckURL)
+                }
             }
         } catch {
             #if DEBUG
@@ -427,14 +439,18 @@ final class GroupDetailViewModel {
         isCreatingShare = false
     }
 
-    private func buildBrandedInviteURL(from ckURL: URL) -> URL {
+    /// Nombre del invitador para el link (perfil o `defaultName`). Compartido por el CKShare y el token backend.
+    private var currentInviterName: String {
         let name = UserDefaults.standard.string(forKey: "userName") ?? ""
-        let inviterName = name.isEmpty ? L10n.Profile.defaultName : name
+        return name.isEmpty ? L10n.Profile.defaultName : name
+    }
+
+    private func buildBrandedInviteURL(from ckURL: URL) -> URL {
         return InviteLinkService.buildInviteURL(
             shareURL: ckURL,
             group: group,
             members: activeMembers,
-            inviterName: inviterName
+            inviterName: currentInviterName
         ) ?? ckURL
     }
 }

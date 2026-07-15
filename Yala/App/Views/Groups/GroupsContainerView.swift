@@ -32,6 +32,7 @@ struct GroupsContainerView: View {
     /// Drives el alert "¿Salir del grupo?" cuando un current user `.rejected`
     /// toca su card. Single-modal global vs N alerts montados por card.
     @State private var rejectedGroupPendingLeave: SplitGroup?
+    @State private var leaveErrorMessage: String?
     /// Payload del composer "Nuevo gasto": captura los grupos elegibles AL MOMENTO del tap.
     /// Evita que un `loadData()` remoto entre el tap y la presentación deje el sheet en blanco.
     @State private var expenseComposerPayload: ExpenseComposerPayload?
@@ -49,14 +50,14 @@ struct GroupsContainerView: View {
                         .accessibilityIdentifier("groups_loading_spinner")
                 } else if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty {
                     YalaEmptyState.noGroups {
-                        viewModel.showCreateGroup = true
+                        requestCreateGroup()
                     }
                     .accessibilityIdentifier("groups_empty_state")
                 } else if viewModel.activeGroups.isEmpty {
                     // Only archived groups exist
                     VStack(spacing: DS.Spacing.xl) {
                         YalaEmptyState.noGroups {
-                            viewModel.showCreateGroup = true
+                            requestCreateGroup()
                         }
                         archivedGroupsSection
                             .padding(.horizontal, DS.Spacing.lg)
@@ -262,9 +263,13 @@ struct GroupsContainerView: View {
                                 try await GroupService.shared.leaveGroup(group)
                                 viewModel.loadData()
                             } catch {
+                                // H1 review G5-A: el leave backend es RPC server-first — un fallo
+                                // (sesión/red) deja el grupo local intacto y DEBE verse (cero silencios).
                                 #if DEBUG
                                 print("GroupsContainerView: leaveGroup failed: \(error)")
                                 #endif
+                                DS.Haptic.warning()
+                                leaveErrorMessage = error.localizedDescription
                             }
                             rejectedGroupPendingLeave = nil
                         }
@@ -275,6 +280,17 @@ struct GroupsContainerView: View {
                 }
             } message: {
                 Text(L10n.Groups.Card.leaveGroupAlertBody)
+            }
+            .alert(
+                L10n.Common.error,
+                isPresented: Binding(
+                    get: { leaveErrorMessage != nil },
+                    set: { if !$0 { leaveErrorMessage = nil } }
+                )
+            ) {
+                Button(L10n.Common.ok) { leaveErrorMessage = nil }
+            } message: {
+                Text(leaveErrorMessage ?? "")
             }
         }
     }
@@ -508,6 +524,31 @@ struct GroupsContainerView: View {
         .padding(.top, DS.Spacing.xs)
     }
 
+    // MARK: - Create-group routing (G5-A / C3)
+
+    /// Gate consent/sign-in ANTES de abrir el form. El form es sheet de ESTE anchor (GroupsContainerView),
+    /// distinto del ContentView que posee `GroupsBackendInviteModifier` — emitir el intent con el form
+    /// abierto lo dejaría RETENIDO por peek-first ("el save no haría nada"). Con el flag OFF SIEMPRE abre el
+    /// form (byte-idéntico). Residual documentado: sin auto-continuación — tras la chain (consent/sign-in) el
+    /// usuario re-tapea "crear grupo".
+    private func requestCreateGroup() {
+        switch GroupCreateRoutingLogic.route(
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasSession: CloudAuthService.shared.hasSession,
+            consentAccepted: GroupsConsentState.isAccepted
+        ) {
+        case .cloudKit, .backend:
+            // El anchor de ESTA vista abre el form; la rama backend la resuelve `GroupFormView.saveAsync`.
+            viewModel.showCreateGroup = true
+        case .needsConsent:
+            // Ceder el anchor: ContentView (libre) presenta el consent de inmediato. Sentinel "" ⇒
+            // `continueFlow` no-op (no hay PendingJoin para la creación — verificado en el handler).
+            RouterEntryGate.shared.submit(.presentGroupsConsent(pendingJoin: ""))
+        case .needsSignIn:
+            RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: ""))
+        }
+    }
+
     // MARK: - FAB
 
     private var newGroupFAB: some View {
@@ -532,7 +573,7 @@ struct GroupsContainerView: View {
                 accessibilityLabel: L10n.Groups.newGroup,
                 accessibilityIdentifier: "groups_fab_new"
             ) {
-                viewModel.showCreateGroup = true
+                requestCreateGroup()
             }
             .dsFloatingShadow()
         } else {
@@ -546,7 +587,7 @@ struct GroupsContainerView: View {
                         color: .electricIndigo,
                         accessibilityIdentifier: "groups_fab_new_group"
                     ) {
-                        viewModel.showCreateGroup = true
+                        requestCreateGroup()
                     },
                     ExpandableFABAction(
                         id: "newExpense",

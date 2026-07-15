@@ -353,6 +353,12 @@ final class GroupsSyncClient {
             let token = decodeToken(cursor.historyTokenData)
 
             let lookups = try buildLookups(context)
+            // C2-bis (CRÍTICO #1): partición POR-GRUPO simétrica del push. Solo los grupos del canal BACKEND
+            // (`isBackendGroup`) drenan al outbox — sin este muro, editar un grupo CloudKit bajo flag ON
+            // drenaría sus filas al backend (`group_id` inexistente server-side → dead-letters permanentes +
+            // doble-sync CKSyncEngine∥backend). El PULL ya está scoped por cursores/memberships; la asimetría
+            // era solo del push.
+            let backendZoneIDs = try backendGroupZoneIDs(context)
             let tokenTxns = try fetchHistory(after: token, context: context)
 
             let tokenGuard = recoverIfHistoryTokenIncomparable(
@@ -375,7 +381,7 @@ final class GroupsSyncClient {
                         // Muro anti-fuga: solo entidades del store de Grupos (personal lo captura el otro canal).
                         guard Self.groupEntityNames.contains(entityName) else { continue }
                         try translate(change, entityName: entityName, tx: tx, lookups: lookups,
-                                      rows: &rows, seen: &seen)
+                                      backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
                     }
                 } catch {
                     // `clock.send` lanzó (drift/overflow): abortar en la FRONTERA de esta transacción.
@@ -432,11 +438,19 @@ final class GroupsSyncClient {
         var splitSettlement: [PersistentIdentifier: SplitSettlement] = [:]
     }
 
+    /// C2-bis: conjunto de `group_id` (= `cloudKitZoneID`) de los grupos del canal BACKEND. `#Predicate`
+    /// CONCRETO por tipo (regla del repo — nada de genéricos-protocolo).
+    private func backendGroupZoneIDs(_ context: ModelContext) throws -> Set<String> {
+        let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.isBackendGroup == true })
+        return Set(try context.fetch(descriptor).map(\.cloudKitZoneID))
+    }
+
     private func translate(
         _ change: HistoryChange,
         entityName: String,
         tx: DefaultHistoryTransaction,
         lookups: Lookups,
+        backendZoneIDs: Set<String>,
         rows: inout [PendingGroupRow],
         seen: inout Set<String>
     ) throws {
@@ -448,7 +462,7 @@ final class GroupsSyncClient {
                                 tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
                                 tombstoneGroupID: { $0.tombstone[\.groupZoneID] as? String },
                                 updateOnly: false, lookup: lookups.splitExpense, tx: tx,
-                                rows: &rows, seen: &seen)
+                                backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
         case GroupSyncEntityType.splitShare:
             try translateChange(change, type: SplitShare.self, entityType: entityName,
                                 emission: GroupEntityEmissionMap.splitShare,
@@ -456,7 +470,7 @@ final class GroupsSyncClient {
                                 tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
                                 tombstoneGroupID: { $0.tombstone[\.groupZoneID] as? String },
                                 updateOnly: false, lookup: lookups.splitShare, tx: tx,
-                                rows: &rows, seen: &seen)
+                                backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
         case GroupSyncEntityType.splitSettlement:
             try translateChange(change, type: SplitSettlement.self, entityType: entityName,
                                 emission: GroupEntityEmissionMap.splitSettlement,
@@ -464,7 +478,7 @@ final class GroupsSyncClient {
                                 tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
                                 tombstoneGroupID: { $0.tombstone[\.groupZoneID] as? String },
                                 updateOnly: false, lookup: lookups.splitSettlement, tx: tx,
-                                rows: &rows, seen: &seen)
+                                backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
         case GroupSyncEntityType.splitGroup:
             // UPDATE-only: el grupo nace vía RPC create_group (G3+) → NO se emite su INSERT. `group_id` del
             // wire = `cloudKitZoneID` (la identidad server-side); `syncID` local = `id` (dedup).
@@ -474,7 +488,7 @@ final class GroupsSyncClient {
                                 tombstoneSyncID: { $0.tombstone[\.id] as? UUID },
                                 tombstoneGroupID: { $0.tombstone[\.cloudKitZoneID] as? String },
                                 updateOnly: true, lookup: lookups.splitGroup, tx: tx,
-                                rows: &rows, seen: &seen)
+                                backendZoneIDs: backendZoneIDs, rows: &rows, seen: &seen)
         default:
             // SplitMember (pull-only) y cualquier otro: sin emisión.
             return
@@ -493,6 +507,7 @@ final class GroupsSyncClient {
         updateOnly: Bool,
         lookup: [PersistentIdentifier: T],
         tx: DefaultHistoryTransaction,
+        backendZoneIDs: Set<String>,
         rows: inout [PendingGroupRow],
         seen: inout Set<String>
     ) throws {
@@ -501,13 +516,25 @@ final class GroupsSyncClient {
             guard !updateOnly else { return }  // split_groups: el INSERT nace vía RPC → no emitir
             guard insert is DefaultHistoryInsert<T> else { return }
             guard let model = lookup[insert.changedPersistentIdentifier] else { return }
+            let groupID = liveGroupID(model)
+            // C2-bis: solo drena si el grupo es del canal backend (el push de grupos CloudKit iría a un
+            // `group_id` inexistente server-side → dead-letter permanente).
+            guard backendZoneIDs.contains(groupID) else {
+                GroupsSyncBreadcrumb.groupsDrainSkippedNonBackendGroup(entity: entityType)
+                return
+            }
             try appendUpsert(model: model, emission: emission, syncID: liveSyncID(model),
-                             groupID: liveGroupID(model), entityType: entityType,
+                             groupID: groupID, entityType: entityType,
                              changedColumns: emission.columns, tx: tx, rows: &rows, seen: &seen)
 
         case .update(let update):
             guard let typed = update as? DefaultHistoryUpdate<T> else { return }
             guard let model = lookup[typed.changedPersistentIdentifier] else { return }
+            let groupID = liveGroupID(model)
+            guard backendZoneIDs.contains(groupID) else {
+                GroupsSyncBreadcrumb.groupsDrainSkippedNonBackendGroup(entity: entityType)
+                return
+            }
             var changedColumns: Set<String> = []
             for keyPath in typed.updatedAttributes {
                 if let columns = emission.columnKeyPaths[keyPath as PartialKeyPath<T>] {
@@ -516,7 +543,7 @@ final class GroupsSyncClient {
             }
             guard !changedColumns.isEmpty else { return }
             try appendUpsert(model: model, emission: emission, syncID: liveSyncID(model),
-                             groupID: liveGroupID(model), entityType: entityType,
+                             groupID: groupID, entityType: entityType,
                              changedColumns: changedColumns, tx: tx, rows: &rows, seen: &seen)
 
         case .delete(let delete):
@@ -525,6 +552,16 @@ final class GroupsSyncClient {
                 #if DEBUG
                 logger.error("GroupsSync: tombstone sin identidad preservada para \(entityType, privacy: .public)")
                 #endif
+                return
+            }
+            // C2-bis: un tombstone cuyo grupo NO está en el set backend se salta. Incluye el cascade de leave
+            // de un grupo backend (`performLocalCleanupAndDelete` ya borró el SplitGroup → su zona salió del
+            // set): CORRECTO — el server aplica el leave vía RPC y RLS rechazaría esos tombstones igual.
+            // H3 (review): el mismo skip también salta UPSERTS previos aún no drenados de ese grupo
+            // (crear→gastar→salir antes del primer drain) — correcto igual: tras el leave, RLS rechazaría
+            // esas filas (`not_authorized`), solo se ahorra el round-trip al dead-letter.
+            guard backendZoneIDs.contains(groupID) else {
+                GroupsSyncBreadcrumb.groupsDrainSkippedNonBackendGroup(entity: entityType)
                 return
             }
             try appendRow(op: .tombstone, syncID: syncID, groupID: groupID, entityType: entityType,
@@ -1393,7 +1430,13 @@ final class GroupsSyncClient {
         if let v = wireBool(f["is_archived"]) { model.isArchived = v }
         if let v = wireBool(f["is_hidden_for_all"]) { model.isHiddenForAll = v }
         if let v = wireDate(f["created_at"]) { model.createdAt = v }
-        if existing == nil { context.insert(model) }
+        if existing == nil {
+            // C1 write-site (2): born-remote del pull backend → marca el grupo como del canal backend.
+            // Un SplitGroup CloudKit PREEXISTENTE que aparezca en el pull (migración G6) NO se marca aquí
+            // — llega por `existing != nil` y conserva su `isBackendGroup` actual (`false`); es territorio G6.
+            model.isBackendGroup = true
+            context.insert(model)
+        }
     }
 
     private func applyMember(_ delta: GroupPulledDelta, context: ModelContext) throws {

@@ -68,6 +68,18 @@ struct GroupsSyncClientTests {
         return e
     }
 
+    /// C2-bis: el drain solo emite filas de grupos del canal BACKEND (`isBackendGroup`). Los tests de drain
+    /// deben materializar un `SplitGroup` backend cuyo `cloudKitZoneID` = el `groupZoneID` de sus entidades,
+    /// o el muro POR-GRUPO las salta. `group.name` no importa (no se emite).
+    @discardableResult
+    private func makeBackendGroup(zoneID: String, context: ModelContext) -> SplitGroup {
+        let g = SplitGroup(name: "G")
+        g.cloudKitZoneID = zoneID
+        g.isBackendGroup = true
+        context.insert(g)
+        return g
+    }
+
     // MARK: - Stub HTTP session (sin red)
 
     final class StubHTTPSession: SyncHTTPSession, @unchecked Sendable {
@@ -155,6 +167,7 @@ struct GroupsSyncClientTests {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
 
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)  // C2-bis: la zona debe ser backend
         _ = makeExpense(context: context)
         let tx = TransactionItem(date: Date(timeIntervalSince1970: 1_700_000_000), amount: 3, currencyCode: "USD")
         context.insert(tx)
@@ -181,6 +194,7 @@ struct GroupsSyncClientTests {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
 
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)  // C2-bis: la zona debe ser backend
         let expense = makeExpense(context: context)
         try context.save()
 
@@ -197,6 +211,56 @@ struct GroupsSyncClientTests {
 
         client.drainOnce(context: context)
         #expect(try groupOutbox(context).count == 1)  // el cambio bajo el autor propio se suprimió
+    }
+
+    // MARK: - Test 3-bis · Partición POR-GRUPO del drain (C2-bis, CRÍTICO #1)
+
+    /// Grupo BACKEND y grupo CloudKit coexistiendo, con un expense en cada uno: SOLO la fila del backend
+    /// llega al outbox. Sin C2-bis, editar un grupo CloudKit bajo flag ON drenaría a un `group_id`
+    /// inexistente server-side → dead-letter permanente.
+    @Test func drain_partitionsBackendVsCloudKit_onlyBackendRowsEmitted() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        makeBackendGroup(zoneID: "SplitGroup-Backend", context: context)
+        let ckGroup = SplitGroup(name: "CK")
+        ckGroup.cloudKitZoneID = "SplitGroup-CloudKit"  // isBackendGroup == false (default)
+        context.insert(ckGroup)
+        _ = makeExpense(group: "SplitGroup-Backend", desc: "BackendDinner", context: context)
+        _ = makeExpense(group: "SplitGroup-CloudKit", desc: "CloudKitDinner", context: context)
+        try context.save()
+
+        GroupsSyncClient().drainOnce(context: context)
+
+        let rows = try groupOutbox(context)
+        #expect(rows.count == 1)
+        #expect(rows.first?.groupID == "SplitGroup-Backend")
+        #expect(!rows.contains { $0.groupID == "SplitGroup-CloudKit" })
+    }
+
+    /// Los tombstones del cascade de un `leave` (el SplitGroup backend se borra localmente → su zona sale del
+    /// set) NO se emiten: el server aplica el leave vía RPC y RLS rechazaría esos tombstones igual.
+    @Test func drain_leaveCascadeTombstones_ofDeletedBackendGroup_notEmitted() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let group = makeBackendGroup(zoneID: "SplitGroup-Leave", context: context)
+        let expense = makeExpense(group: "SplitGroup-Leave", desc: "Dinner", context: context)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        client.drainOnce(context: context)
+        #expect(try groupOutbox(context).count == 1)  // el upsert del expense sí viajó (grupo en el set)
+
+        // Leave: cascade-borra el expense + el SplitGroup. La zona SALE del set backend.
+        context.delete(expense)
+        context.delete(group)
+        try context.save()
+        client.drainOnce(context: context)
+
+        let rows = try groupOutbox(context)
+        #expect(rows.count == 1)  // sin filas nuevas
+        #expect(!rows.contains { $0.opRaw == SyncOutboxOp.tombstone.rawValue })
     }
 
     // MARK: - Test 4 · Cursores por grupo + URL del pull (assert del request generado, lección d49d2e47)
@@ -529,6 +593,7 @@ struct GroupsSyncClientTests {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
 
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)  // C2-bis: la zona debe ser backend
         let expense = makeExpense(amount: 12.5, currency: "USD", desc: "Dinner", context: context)
         try context.save()
 
@@ -563,6 +628,7 @@ struct GroupsSyncClientTests {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
 
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)  // C2-bis: la zona debe ser backend
         let share = SplitShare(expenseID: UUID(), memberID: "member-1", amount: 6.25,
                                groupZoneID: "SplitGroup-A")
         context.insert(share)

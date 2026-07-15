@@ -380,7 +380,13 @@ final class SplitSyncManager {
         let toRecover: [SplitGroup]
         do {
             toRecover = try modelContext.fetch(descriptor).filter {
-                SplitSyncStartGate.needsZoneRecovery(isOwner: $0.isOwner, hasSystemFields: $0.ckSystemFieldsData != nil)
+                // C2: un grupo backend sin zona CloudKit es LEGÍTIMO (nace vía RPC), no "grupo roto" — sin
+                // este guard el recovery re-encolaría su zona + records a CKSyncEngine (createZone directo).
+                guard !$0.isBackendGroup else {
+                    GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "zoneRecovery")
+                    return false
+                }
+                return SplitSyncStartGate.needsZoneRecovery(isOwner: $0.isOwner, hasSystemFields: $0.ckSystemFieldsData != nil)
             }
         } catch {
             logger.error("SplitSync zone recovery fetch failed: \(error.localizedDescription, privacy: .public)")
@@ -452,6 +458,13 @@ final class SplitSyncManager {
 
         var recovered = 0
         for group in groups {
+            // C2: los records de un grupo backend SIEMPRE tienen `ckSystemFieldsData == nil` (jamás hicieron
+            // round-trip CloudKit — viven en el backend) → sin este skip, `needsRecordRecovery` los re-encolaría
+            // TODOS a CKSyncEngine al boot. Excluir el grupo entero (más barato que filtrar cada record).
+            if group.isBackendGroup {
+                GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "recordRecovery")
+                continue
+            }
             // Soft-deleted for everyone → its zone is on the way out; don't resurrect records.
             if group.isHiddenForAll { continue }
             // Owner groups with no uploaded GroupMeta are FULLY re-enqueued (zone + all records)
@@ -1017,6 +1030,13 @@ final class SplitSyncManager {
 
     /// Enqueue a save, auto-routing to the correct engine based on group ownership.
     func enqueueSave(modelID: UUID, group: SplitGroup) {
+        // C2 choke point: un grupo del canal BACKEND no sincroniza por CKSyncEngine — sus records viven en el
+        // backend (sync vía GroupsSyncClient). Este guard cubre de un golpe los ~30 call-sites de
+        // GroupService/GroupExpenseService/GroupJoinReconciler/backfills que enrutan por esta variante `group:`.
+        guard !group.isBackendGroup else {
+            GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "enqueueSave")
+            return
+        }
         if group.isOwner {
             enqueueSave(modelID: modelID, groupID: group.id)
         } else {
@@ -1033,6 +1053,11 @@ final class SplitSyncManager {
 
     /// Enqueue a deletion, auto-routing to the correct engine based on group ownership.
     func enqueueDeletion(modelID: UUID, group: SplitGroup) {
+        // C2 choke point (par de enqueueSave): grupo backend → jamás a CKSyncEngine.
+        guard !group.isBackendGroup else {
+            GroupsSyncBreadcrumb.groupsCkEnqueueSkippedBackendGroup(site: "enqueueDeletion")
+            return
+        }
         if group.isOwner {
             enqueueDeletion(modelID: modelID, groupID: group.id)
         } else {

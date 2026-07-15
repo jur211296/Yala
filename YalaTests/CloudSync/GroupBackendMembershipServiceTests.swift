@@ -87,6 +87,7 @@ struct GroupBackendMembershipServiceTests {
         #expect(sentJSON["p_show_debts_in_single_currency"] as? Bool == true)
         #expect(sentJSON["p_members_can_invite"] as? Bool == true)
         #expect(group.isOwner == true)
+        #expect(group.isBackendGroup == true)   // C1 write-site (1): grupo del canal backend
 
         let groups = try context.fetch(FetchDescriptor<SplitGroup>())
         #expect(groups.count == 1)
