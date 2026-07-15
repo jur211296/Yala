@@ -218,5 +218,24 @@ Ver notas ⏸ en [[MODO-NUBE-M1-GUION-DEVICE]] y [[MODO-NUBE-SIGNOUT-WELCOME-GUI
   (esta G4 nocturna = los residuales del canal, NO el "G4 invites+consent" del plan — ese sigue
   pendiente junto con G5 cutover/M1, G6 migración de grupos vivos, G7 pgcrypto, G8 APNs).
 - **Pendientes owner acumulados:** claim de migración sobre profile creado por grupos (delta con el
-  owner); chip de perf del pull; reconciliar al vault la corrección del diseño §2 (FKs =
-  id.uuidString) + el riesgo G6 de namespaces; cleanup del Spike B al cierre formal de G0.
+  owner); ~~chip de perf del pull~~ (cerrado `68f5555d`, ver entrada siguiente); reconciliar al vault
+  la corrección del diseño §2 (FKs = id.uuidString) + el riesgo G6 de namespaces; cleanup del Spike B
+  al cierre formal de G0.
+
+### 2026-07-15 — perf del pull CERRADO (`68f5555d`) — el hallazgo de G4 resuelto pre-flags
+
+- **Fix:** el fan-out O(grupos×5) de `handleGroupsPull` deja de ser secuencial — las 5 queries de cada
+  grupo en `Promise.all` + pool de grupos con `PULL_GROUP_CONCURRENCY=6` (≤30 fetches en vuelo; Workers
+  capa ~6 conexiones por invocación y encola el resto). Queries a PostgREST **byte-idénticas** (mismo
+  shape y count de subrequests — 381 con 76 grupos, bajo el cap 1000 del plan paid) y respuesta
+  indistinguible: filas por entidad en orden `GROUP_ENTITIES` antes del sort ESTABLE por `server_seq`,
+  deltas en orden `memberGroupIds`, primer error upstream gana con el mismo 502.
+- **Descartado el batch `group_id=in.(...)`** (documentado en el comentario del handler): el cursor
+  `server_seq.gt` es POR GRUPO (cadenas `or=(and(...))` de URL sin cota) y el `limit` de PostgREST es
+  GLOBAL por query → una truncación dejaría grupos de la cola sin filas de una tabla mientras el merge
+  avanza el cursor con filas de otras tablas de `server_seq` mayor = **deltas perdidos silenciosos**.
+- **Medido:** ~42s → ~2.5s por pull con los 76 grupos de i5-user-a; golden 7 entero (6 pulls) 15.3s vs
+  ~250s. **Residual:** el count de subrequests sigue O(grupos×5) — con ~200 grupos el cap de 1000 de
+  Workers sería el límite (batch con rediseño de cursor + detección de truncación; no aplica a v1).
+- Gates: typecheck limpio · goldens grupos 16/16 · gateway 154 passed + los 2 preexistentes de
+  account.goldens.
