@@ -40,6 +40,66 @@ struct GroupJoinReconcileLogicTests {
             hasIntent: true, groupExistsLocally: true, engineReady: true) == .reconcile)
     }
 
+    // MARK: - decideBackend (G4-invites, tabla)
+
+    @Test func decideBackend_flagOff_skipsRegardlessOfState() {
+        // R5: prioridad sobre el flag — jamás cae al camino CloudKit.
+        #expect(GroupJoinReconcileLogic.decideBackend(
+            flagEnabled: false, hasSession: true, isConsented: true, memberLocallyPresent: false) == .skipFlagOff)
+        #expect(GroupJoinReconcileLogic.decideBackend(
+            flagEnabled: false, hasSession: false, isConsented: false, memberLocallyPresent: true) == .skipFlagOff)
+    }
+
+    @Test func decideBackend_memberPresent_correctsAndClears() {
+        // Member local ya materializó (pull) → limpia intent (gana sobre sesión/consent).
+        #expect(GroupJoinReconcileLogic.decideBackend(
+            flagEnabled: true, hasSession: false, isConsented: false, memberLocallyPresent: true) == .correctAndClear)
+    }
+
+    @Test func decideBackend_noSession_presentsSignIn() {
+        #expect(GroupJoinReconcileLogic.decideBackend(
+            flagEnabled: true, hasSession: false, isConsented: false, memberLocallyPresent: false) == .presentSignIn)
+    }
+
+    @Test func decideBackend_sessionNoConsent_presentsConsent() {
+        #expect(GroupJoinReconcileLogic.decideBackend(
+            flagEnabled: true, hasSession: true, isConsented: false, memberLocallyPresent: false) == .presentConsent)
+    }
+
+    @Test func decideBackend_ready_joins() {
+        #expect(GroupJoinReconcileLogic.decideBackend(
+            flagEnabled: true, hasSession: true, isConsented: true, memberLocallyPresent: false) == .join)
+    }
+
+    @Test func shouldClearBackendIntent_onlyWhenMemberPresent() {
+        #expect(GroupJoinReconcileLogic.shouldClearBackendIntent(memberLocallyPresent: true))
+        #expect(!GroupJoinReconcileLogic.shouldClearBackendIntent(memberLocallyPresent: false))
+    }
+
+    // MARK: - backendMemberMatchesCurrentUser (S1: match sin isCurrentUser)
+
+    @Test func backendMatch_byUserID_caseInsensitive() {
+        #expect(GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+            memberUserID: "SUB-abc", memberKey: nil, currentUserID: "sub-ABC"))
+    }
+
+    @Test func backendMatch_fallbackByMemberKey() {
+        // Anonimización server-side NULLea userID; memberKey (== sub para el propio member) aún matchea.
+        #expect(GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+            memberUserID: nil, memberKey: "sub-abc", currentUserID: "sub-abc"))
+    }
+
+    @Test func backendMatch_noMatchOrNoSession_false() {
+        #expect(!GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+            memberUserID: "sub-other", memberKey: "sub-other", currentUserID: "sub-abc"))
+        #expect(!GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+            memberUserID: "sub-abc", memberKey: "sub-abc", currentUserID: nil))
+        #expect(!GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+            memberUserID: "sub-abc", memberKey: "sub-abc", currentUserID: ""))
+        #expect(!GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+            memberUserID: nil, memberKey: nil, currentUserID: "sub-abc"))
+    }
+
     // MARK: - shouldClearIntent
 
     @Test func shouldClearIntent_onlyWhenEnsuredAndEnqueued() {

@@ -228,8 +228,8 @@ struct PreferenceMergeLogicTests {
 
     // MARK: - Taxonomía completa (guardas de conteo/kind)
 
-    @Test func taxonomy_36Keys() {
-        #expect(PrefSyncKey.allCases.count == 36)
+    @Test func taxonomy_38Keys() {
+        #expect(PrefSyncKey.allCases.count == 38)
     }
 
     @Test func taxonomy_kindMatchesFamily() {

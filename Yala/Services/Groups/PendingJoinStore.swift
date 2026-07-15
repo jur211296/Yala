@@ -39,19 +39,35 @@ struct PendingJoinEntry: Codable, Equatable {
     /// la pref actual sigue siendo esta, se re-aplica la moneda del grupo.
     var regionFallbackCurrency: String?
     let createdAt: Date
+    /// C3 (G4-invites): `group_id` backend de un join por TOKEN. Para una entry backend
+    /// `zoneName == backendGroupID` (el group_id ES el zone name preservado — mismo string,
+    /// D7/§3) → reusa el keying y el tracker sin fork. `nil` en entries CKShare.
+    var backendGroupID: String?
+    /// C3: token hex del invite backend (`create_group_invite`). Presencia ⇒ join backend
+    /// (`isBackendJoin`). `nil` en entries CKShare. Opcional Codable back-compat
+    /// (decodeIfPresent sintetizado): JSON viejo sin estos campos decodifica a `nil`.
+    var inviteToken: String?
+
+    /// `true` si esta entry es un join backend por token (contrato C3). El discriminador
+    /// backend↔CloudKit del reconciler tiene PRIORIDAD sobre el flag (R5).
+    var isBackendJoin: Bool { inviteToken != nil }
 
     init(
         zoneName: String,
         zoneOwnerName: String,
         displayName: String? = nil,
         regionFallbackCurrency: String? = nil,
-        createdAt: Date = .now
+        createdAt: Date = .now,
+        backendGroupID: String? = nil,
+        inviteToken: String? = nil
     ) {
         self.zoneName = zoneName
         self.zoneOwnerName = zoneOwnerName
         self.displayName = displayName
         self.regionFallbackCurrency = regionFallbackCurrency
         self.createdAt = createdAt
+        self.backendGroupID = backendGroupID
+        self.inviteToken = inviteToken
     }
 }
 

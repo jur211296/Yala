@@ -1510,6 +1510,36 @@ final class AppBootstrapper {
     /// Procesa un universal link de invitación de grupo.
     /// Acceso internal para que YalaAppDelegate pueda llamarlo.
     func handleInviteLink(_ url: URL) {
+        // C2 (G4-invites, DARK): con `groupsBackendEnabled` ON, un link BACKEND (`g`+`t`) se enruta al
+        // handler nuevo ANTES del camino CKShare. Con el flag OFF ni se evalúa el parser → byte-idéntico.
+        if CloudSyncFlags.groupsBackendEnabled,
+           let backendInvite = InviteLinkService.extractBackendInvite(from: url) {
+            if !isInitialized {
+                // R4: persistir el intent backend y RETORNAR — el trigger boot del reconciler lo completa
+                // (el link backend JAMÁS cae al deferral CKShare de abajo). M1: alineado con el warm
+                // handle() — desbloquea beta + canario, o el invitado cold-launch quedaría detrás del
+                // beta gate sin ver su grupo.
+                UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
+                GroupBackendInviteEntryHandler.persistIntent(
+                    groupID: backendInvite.groupID, token: backendInvite.token)
+                TelemetryService.track(.groupJoinIntentPersisted)
+                #if DEBUG
+                print("AppBootstrapper: Deferring BACKEND invite (persisted) — not yet initialized")
+                #endif
+                return
+            }
+            let branded = InviteLinkService.extractMetadata(from: url)
+            Task { @MainActor in
+                await GroupBackendInviteEntryHandler.handle(
+                    groupID: backendInvite.groupID,
+                    token: backendInvite.token,
+                    branded: branded,
+                    source: .universalLink
+                )
+            }
+            return
+        }
+
         guard let shareURL = InviteLinkService.extractShareURL(from: url) else {
             logger.error("Invalid invite link: \(url.absoluteString, privacy: .public)")
             RouterEntryGate.shared.submit(.showInviteError(

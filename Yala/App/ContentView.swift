@@ -701,6 +701,16 @@ struct ContentView: View {
             handleRemoteOnboardingCompleted()
         case .presentFullModeActivation:
             showFullModeActivation = true
+        case .presentGroupsConsent, .presentGroupsSignIn:
+            // A1/A2 SEAM (G4-invites, DARK): A1 define y submitea estos intents desde el
+            // handler backend (flag `groupsBackendEnabled` OFF → JAMÁS se submitean hoy).
+            // A2 conecta aquí las vistas reales (GroupsConsentView / GroupsSignInView) con
+            // sus @State covers + blockers de `ShellReadinessState`. Hasta entonces es un
+            // no-op consciente: el intent se drena sin presentar (inalcanzable con flag OFF).
+            // ⚠️ GATE DE ENCENDIDO: `groupsBackendEnabled` NO debe encenderse antes de A2 —
+            // con el flag ON este drain no-op CONSUMIRÍA el intent sin presentar nada
+            // (presentación perdida, la clase-D exacta del bug TestFlight 2.0.5).
+            break
         default:
             break
         }

@@ -62,8 +62,9 @@ nonisolated enum PrefSideSignal {
 /// Las keys sincronizadas cross-device (SSOT único: el service itera `allCases`). `rawValue` = la key
 /// EXACTA de UserDefaults / iKV / backend (no renombrar: rompería la persistencia y el matching).
 ///
-/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es 36
-/// (34 hasta I13; I14 P5 añadió `cloudConsentAcceptedAt` + `cloudConsentTextVersion`).
+/// El orden de los cases NO importa para el merge (cada key es independiente). El conteo actual es 38
+/// (34 hasta I13; I14 P5 añadió `cloudConsentAcceptedAt` + `cloudConsentTextVersion`; G4 añadió
+/// `groupsConsentAcceptedAt` + `groupsConsentTextVersion`).
 nonisolated enum PrefSyncKey: String, CaseIterable {
     // Strings guard no-vacío (12)
     case defaultCurrencyCode
@@ -110,6 +111,11 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
     // al backend; en `.cloud` (adopt) van directo al outbox de prefs. rawValue = key de UserDefaults.
     case cloudConsentAcceptedAt
     case cloudConsentTextVersion
+    // Consent de GRUPOS (§C5, G4-invites): mismo molde que cloudConsent* — epoch + versión del texto.
+    // DARK: solo se escriben vía `GroupsConsentState.register()` (flag-gated); con el flag OFF quedan nil
+    // → skip en merge/outbox, cero tráfico nuevo.
+    case groupsConsentAcceptedAt
+    case groupsConsentTextVersion
 
     /// La familia de merge de esta key.
     var family: PrefFamily {
@@ -132,7 +138,8 @@ nonisolated enum PrefSyncKey: String, CaseIterable {
              .includeGroupTransactionsInStats, .bridgeGroupExpensesToPersonalAccounts:
             return .boolPresence
         case .firstWeekday, .decimalPlaces, .averageLineMode,
-             .cloudConsentAcceptedAt, .cloudConsentTextVersion:
+             .cloudConsentAcceptedAt, .cloudConsentTextVersion,
+             .groupsConsentAcceptedAt, .groupsConsentTextVersion:
             return .intPresence
         }
     }

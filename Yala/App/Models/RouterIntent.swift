@@ -111,6 +111,14 @@ enum RouterIntent: Identifiable, Equatable {
     case showInviteError(String)
     case showGroupSyncError(String)
     case presentFullModeActivation
+    /// G4-invites (DARK): un link backend llegó con sesión pero sin consentimiento de
+    /// grupos → presentar la pantalla de consent. Payload = keying `zoneName`
+    /// (== group_id backend). La VISTA la conecta A2; A1 define+drena el intent.
+    case presentGroupsConsent(pendingJoin: String)
+    /// G4-invites (DARK): un link backend (g+t) llegó sin sesión Nube → presentar el
+    /// sign-in solo-grupos. El intent de join ya está persistido en `PendingJoinStore`;
+    /// al firmar, el reconciler/handler completa el join. Mismo payload/keying.
+    case presentGroupsSignIn(pendingJoin: String)
 
     // D) Tab navigation
     case navigate(DeepLinkDestination)
@@ -140,6 +148,7 @@ extension RouterIntent {
         switch self {
         case .showInboxAlert, .presentTrialOffer, .presentWhatsNew,
              .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite,
+             .presentGroupsConsent, .presentGroupsSignIn,
              .showInviteError,
              .showGroupSyncError,
              .iCloudMismatch, .remoteWipe, .remoteOnboardingCompleted,
@@ -177,6 +186,7 @@ extension RouterIntent {
              .presentMilestoneUpgrade,
              .presentFullModeActivation, .navigate,
              .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite,
+             .presentGroupsConsent, .presentGroupsSignIn,
              .presentTrialOffer, .autoOpenBudgetEditor, .autoOpenScheduledEditor:
             return .normal
         case .requestAppStoreReview, .presentWhatsNew:
@@ -228,6 +238,10 @@ extension RouterIntent {
             return "groupSyncError:\(detail.hashValue)"
         case .presentFullModeActivation:
             return "fullMode"
+        case .presentGroupsConsent(let pendingJoin):
+            return "groupsConsent:\(pendingJoin)"
+        case .presentGroupsSignIn(let pendingJoin):
+            return "groupsSignIn:\(pendingJoin)"
         case .navigate(let dest):
             return "navigate:\(dest.routerKey)"
         case .autoOpenBudgetEditor:
@@ -264,7 +278,8 @@ extension RouterIntent {
     /// reemplazaría (deadlock B4-04).
     var supersedesWelcomeChain: Bool {
         switch self {
-        case .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite:
+        case .presentGroupInviteOnboarding, .presentGroupReconnect, .offerRestoreBeforeInvite,
+             .presentGroupsConsent, .presentGroupsSignIn:
             return true
         default:
             return false

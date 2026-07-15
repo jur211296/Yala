@@ -46,6 +46,62 @@ enum GroupJoinReconcileLogic {
         memberEnsured && enqueueReachedEngine
     }
 
+    // MARK: - Modo backend (G4-invites, DARK)
+
+    /// Qué hacer con un join intent BACKEND (`entry.isBackendJoin`) en un trigger. Discriminado por
+    /// `entry.isBackendJoin` con PRIORIDAD sobre el flag (R5): una entry backend con el flag rolled-back
+    /// (`.skipFlagOff`) JAMÁS cae al camino CloudKit (mis-enqueue) — se conserva hasta TTL.
+    enum BackendDecision: Equatable {
+        /// Flag OFF (rollback): conservar el intent sin procesar por NINGÚN canal (R5).
+        case skipFlagOff
+        /// El member local ya materializó (pull llegó): corregir displayName si procede + limpiar intent.
+        case correctAndClear
+        /// Sin sesión Nube → presentar sign-in; el intent se conserva.
+        case presentSignIn
+        /// Sesión pero sin consent de grupos → presentar consent; el intent se conserva.
+        case presentConsent
+        /// Listo (sesión + consent, member aún no local) → (re)intentar el join RPC (idempotente server).
+        case join
+    }
+
+    static func decideBackend(
+        flagEnabled: Bool,
+        hasSession: Bool,
+        isConsented: Bool,
+        memberLocallyPresent: Bool
+    ) -> BackendDecision {
+        guard flagEnabled else { return .skipFlagOff }       // R5: prioridad sobre el flag
+        if memberLocallyPresent { return .correctAndClear }
+        if !hasSession { return .presentSignIn }
+        if !isConsented { return .presentConsent }
+        return .join
+    }
+
+    /// Backend: el intent solo se limpia cuando el member local ya materializó (pull) — NO el
+    /// `enqueueReachedEngine` de CloudKit (el server crea la membresía síncronamente; el intent solo
+    /// cubre el reintento de join transitorio y la aplicación de displayName/currency al materializar).
+    static func shouldClearBackendIntent(memberLocallyPresent: Bool) -> Bool {
+        memberLocallyPresent
+    }
+
+    /// S1: ¿este SplitMember materializado por el PULL backend es el current user? Match directo por
+    /// `userID == sub` (lo escribe `applyMember` desde el wire `user_id`) con fallback `memberKey == sub`
+    /// (identidad server-side; para un member propio ambos son el sub). JAMÁS por `isCurrentUser` —
+    /// `applyMember` NUNCA lo setea, así que depender de él dejaría `memberLocallyPresent` false para
+    /// siempre (intent nunca limpiado + falso canario `groupJoinIntentExpired` a los 7d).
+    /// Case-insensitive (paridad con el re-drive A2 de `applyMember`).
+    static func backendMemberMatchesCurrentUser(
+        memberUserID: String?,
+        memberKey: String?,
+        currentUserID: String?
+    ) -> Bool {
+        guard let currentUserID, !currentUserID.isEmpty else { return false }
+        let current = currentUserID.lowercased()
+        if let uid = memberUserID?.lowercased(), uid == current { return true }
+        if let key = memberKey?.lowercased(), key == current { return true }
+        return false
+    }
+
     /// El displayName del intent solo se aplica si no pisa un rename manual:
     /// member recién nacido o displayName actual vacío/default.
     static func shouldApplyIntentDisplayName(

@@ -207,4 +207,60 @@ struct GroupJoinReconcilerTests {
         // Member activo → tracker en fase active y el intent consumido.
         #expect(PendingJoinStore.entry(zoneName: zoneName, now: ref) == nil)
     }
+
+    // MARK: - S1: presencia del member BACKEND sin isCurrentUser (materializado por applyMember)
+
+    @Test func backendMember_materializedByApplyWithoutIsCurrentUser_isDetected() async throws {
+        let cleanup = makeEnvironment(); defer { cleanup() }
+        let context = try makeTestContext()
+        let zoneName = "SplitGroup-\(UUID().uuidString)"
+        let sub = "aaaa1111-2222-3333-4444-555566667777"
+
+        // Member EXACTAMENTE como lo materializa GroupsSyncClient.applyMember: id determinista backend,
+        // memberKey + userID = sub del wire, isCurrentUser NUNCA seteado (false), cloudKitUserRecordID "".
+        let member = SplitMember()
+        member.id = GroupBackendIdentityLogic.deterministicMemberID(groupID: zoneName, memberKey: sub)
+        member.groupZoneID = zoneName
+        member.memberKey = sub
+        member.userID = sub
+        member.displayName = "Usuario"
+        member.status = SplitMemberStatus.pendingApproval.rawValue
+        context.insert(member)
+        try context.save()
+
+        let previous = GroupJoinReconciler.backendUserIDProvider
+        GroupJoinReconciler.backendUserIDProvider = { sub.uppercased() }  // case-insensitive
+        defer { GroupJoinReconciler.backendUserIDProvider = previous }
+
+        // S1: el helper backend lo detecta SIN isCurrentUser…
+        let found = GroupJoinReconciler.backendCurrentUserMember(zoneName: zoneName, context: context)
+        #expect(found?.id == member.id)
+        // …y con esa presencia decideBackend cae en correctAndClear (intent limpiable + corrección R1).
+        #expect(GroupJoinReconcileLogic.decideBackend(
+            flagEnabled: true, hasSession: true, isConsented: true,
+            memberLocallyPresent: found != nil) == .correctAndClear)
+
+        // Contraste (el bug S1 exacto): un check que exija isCurrentUser NO ve este member.
+        #expect(found?.isCurrentUser == false)
+    }
+
+    @Test func backendMember_otherUsersMember_notDetected() async throws {
+        let cleanup = makeEnvironment(); defer { cleanup() }
+        let context = try makeTestContext()
+        let zoneName = "SplitGroup-\(UUID().uuidString)"
+
+        // Member de OTRO usuario (el owner del grupo, p.ej.) materializado por el pull.
+        let other = SplitMember()
+        other.groupZoneID = zoneName
+        other.memberKey = "sub-owner"
+        other.userID = "sub-owner"
+        context.insert(other)
+        try context.save()
+
+        let previous = GroupJoinReconciler.backendUserIDProvider
+        GroupJoinReconciler.backendUserIDProvider = { "sub-invitee" }
+        defer { GroupJoinReconciler.backendUserIDProvider = previous }
+
+        #expect(GroupJoinReconciler.backendCurrentUserMember(zoneName: zoneName, context: context) == nil)
+    }
 }

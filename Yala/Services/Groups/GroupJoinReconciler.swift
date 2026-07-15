@@ -30,6 +30,9 @@ enum GroupJoinReconciler {
 
     private static let logger = Logger(subsystem: "com.yala", category: "SplitSync")
 
+    /// S1 (G4): `sub` de la sesión Nube para el match de members backend. Inyectable para tests.
+    static var backendUserIDProvider: @MainActor () -> String? = { CloudAuthService.shared.currentUserID }
+
     /// Recorre los intents vigentes y reconcilia los que ya tienen zona local.
     /// - Parameters:
     ///   - context/groupLookup/engineReady: inyectables para tests; defaults de
@@ -54,6 +57,14 @@ enum GroupJoinReconciler {
         }
 
         for entry in entries {
+            // R5: discriminador backend↔CloudKit por `isBackendJoin` (token presente) con PRIORIDAD
+            // sobre el flag — una entry backend JAMÁS se procesa por el camino CloudKit (mis-enqueue de
+            // un grupo sin zona). El flag se re-chequea DENTRO (skipFlagOff conserva el intent).
+            if entry.isBackendJoin {
+                await reconcileBackendEntry(entry, trigger: trigger, context: providedContext)
+                continue
+            }
+
             let group = groupLookup?(entry.zoneName) ?? SplitSyncManager.shared.group(for: entry.zoneName)
             let engineIsReady: Bool = {
                 guard let group else { return false }
@@ -82,6 +93,99 @@ enum GroupJoinReconciler {
                 GroupJoinIntentTracker.shared.noteGroupInserted(zoneName: entry.zoneName)
                 await reconcileEntry(entry, group: group, trigger: trigger, context: providedContext)
             }
+        }
+    }
+
+    // MARK: - Reconcile de una entry BACKEND (G4-invites, DARK)
+
+    /// Camino backend (R5): NUNCA `ensureCurrentUserMemberExists` (crearía un SplitMember + enqueueSave
+    /// al CKSyncEngine de un grupo sin zona CloudKit). El server crea la membresía síncronamente vía el
+    /// `join_group` RPC; el intent solo cubre (i) reintento de join transitorio, (ii) presentación
+    /// encadenada sign-in/consent y (iii) aplicar displayName/currency al materializar por pull.
+    private static func reconcileBackendEntry(
+        _ entry: PendingJoinEntry,
+        trigger: Trigger,
+        context providedContext: ModelContext?
+    ) async {
+        guard let groupID = entry.backendGroupID, let token = entry.inviteToken else {
+            logger.error("JoinReconcile[\(trigger.rawValue, privacy: .public)]: backend intent \(entry.zoneName, privacy: .public) sin groupID/token — conservado")
+            return
+        }
+        // S1: la presencia del member backend se detecta por match directo userID/memberKey == sub —
+        // JAMÁS por `isCurrentUser` (`GroupsSyncClient.applyMember` nunca lo setea → con el check de
+        // CloudKit `memberLocallyPresent` sería false para siempre: intent nunca limpiado, corrección R1
+        // nunca corrida, y falso `groupJoinIntentExpired` a los 7 días).
+        let backendMember = backendCurrentUserMember(zoneName: entry.zoneName, context: providedContext)
+
+        switch GroupJoinReconcileLogic.decideBackend(
+            flagEnabled: CloudSyncFlags.groupsBackendEnabled,
+            hasSession: CloudAuthService.shared.hasSession,
+            isConsented: GroupsConsentState.isAccepted,
+            memberLocallyPresent: backendMember != nil
+        ) {
+        case .skipFlagOff:
+            // R5: flag rolled back — conservar hasta TTL, jamás procesar por CloudKit.
+            logger.notice("JoinReconcile[\(trigger.rawValue, privacy: .public)]: backend intent \(entry.zoneName, privacy: .public) skip — flag OFF (conservado)")
+
+        case .correctAndClear:
+            await GroupBackendInviteEntryHandler.correctDisplayNameIfNeeded(
+                groupID: groupID, intentName: entry.displayName,
+                currentMemberDisplayName: backendMember?.displayName ?? "")
+            if let group = SplitSyncManager.shared.group(for: entry.zoneName) {
+                applyGroupCurrencyIfNeeded(entry: entry, group: group)
+            }
+            if GroupJoinReconcileLogic.shouldClearBackendIntent(memberLocallyPresent: true) {
+                PendingJoinStore.clear(zoneName: entry.zoneName)
+            }
+            if let status = backendMember?.memberStatus {
+                GroupJoinIntentTracker.shared.rehydrate(zoneName: entry.zoneName)
+                GroupJoinIntentTracker.shared.noteMemberResolved(zoneName: entry.zoneName, status: status)
+            }
+            TelemetryService.track(.groupJoinIntentReconciled, parameters: [
+                "trigger": trigger.rawValue, "status": "backendMemberPresent",
+            ])
+            logger.notice("JoinReconcile[\(trigger.rawValue, privacy: .public)]: backend member present for \(entry.zoneName, privacy: .public) → intent cleared")
+
+        case .presentSignIn, .presentConsent, .join:
+            // El driver del handler re-evalúa las mismas condiciones vivas y presenta o (re)intenta join.
+            await GroupBackendInviteEntryHandler.drive(
+                groupID: groupID, token: token, source: mapTrigger(trigger))
+        }
+    }
+
+    /// S1: el SplitMember del current user materializado por el PULL backend, o nil. Match por
+    /// `userID`/`memberKey == sub` (pure logic `backendMemberMatchesCurrentUser`) — SIN depender de
+    /// `isCurrentUser`, que `applyMember` no setea. Contexto: el inyectado (tests) o el del propio
+    /// `SplitGroup` local (mismo mainContext donde el pull materializa; sin grupo local tampoco hay
+    /// member local — el pull trae ambos). Internal para test directo.
+    static func backendCurrentUserMember(
+        zoneName: String,
+        context providedContext: ModelContext?
+    ) -> SplitMember? {
+        guard let context = providedContext
+            ?? SplitSyncManager.shared.group(for: zoneName)?.modelContext
+        else { return nil }
+        let descriptor = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneName }
+        )
+        do {
+            let members = try context.fetch(descriptor)
+            let currentID = backendUserIDProvider()
+            return members.first {
+                GroupJoinReconcileLogic.backendMemberMatchesCurrentUser(
+                    memberUserID: $0.userID, memberKey: $0.memberKey, currentUserID: currentID)
+            }
+        } catch {
+            logger.error("JoinReconcile: backend member fetch failed for \(zoneName, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    private static func mapTrigger(_ trigger: Trigger) -> GroupBackendInviteEntryHandler.Source {
+        switch trigger {
+        case .acceptShare, .foreground: return .foreground
+        case .boot: return .boot
+        case .remoteInsert: return .remoteInsert
         }
     }
 

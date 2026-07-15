@@ -488,4 +488,64 @@ describe("G3 goldens · /groups/rpc/* contra staging real", () => {
     );
     expect(res.status).toBe(401);
   });
+
+  // Golden 3-bis (G4-invites, C7): el invite COMPLETO del lado wire — is_group_writer transiciona con
+  // status='active'. B en pendingApproval NO puede pushear; tras approve SÍ; el pull ve el grupo en
+  // memberships + group_members con B active. Cubre lo que G3-2 (create_invite→join→approve, sin
+  // pull ni write) NO cubría.
+  it("3-bis. writer transiciona con status: B pendingApproval NO pushea; approve → active → pushea; pull ve membership+active", async () => {
+    const gid = freshGid();
+    const cg = await rpcGw(jwtA, "create_group", {
+      p_group_id: gid, p_name: "G4 writer-transition", p_currency_code: "PEN", p_icon_name: "star",
+      p_color_hex: "#112233", p_display_name: "Alice", p_default_split_type: "equal",
+    });
+    expect(cg.status).toBe(200);
+
+    const inv = await rpcGw(jwtA, "create_group_invite", { p_group_id: gid, p_ttl_seconds: 3600, p_max_uses: null });
+    expect(inv.status).toBe(200);
+    const token = inv.body as string;
+
+    const joined = await rpcGw(jwtB, "join_group", { p_token: token, p_display_name: "Bob", p_legacy_member_key: null });
+    expect(joined.status).toBe(200);
+    expect(joined.body.status).toBe("pendingApproval");
+    const memberKeyB = joined.body.member_key as string;
+    expect(memberKeyB).toBe(subB);
+
+    // ASSERT CENTRAL 1: B en pendingApproval NO es writer → push de expense RECHAZADO (RLS is_group_writer).
+    const hBefore = hlc(T0 + 700);
+    const expId = uuid();
+    const rBefore = await push(jwtB, [
+      { entity_type: "split_expenses", group_id: gid, sync_id: expId, op: "upsert", fields: { ...gmoney(25), note: "pre-approve" }, field_hlcs: { gmoney: hBefore, note: hBefore }, hlc: hBefore, client_mutation_id: uuid() },
+    ]);
+    expect(rBefore.body.results[0].status).toBe("rejected");
+    expect((rBefore.body.results[0].outcome as { message?: string })?.message ?? "").toContain("not_authorized");
+    // Nada se escribió (A no ve la fila).
+    const noRow = await readGroupRow(jwtA, "split_expenses", gid, expId);
+    expect(noRow).toBeNull();
+
+    // A aprueba → B pasa a active.
+    const ap = await rpcGw(jwtA, "approve_member", { p_group_id: gid, p_member_key: memberKeyB });
+    expect(ap.status).toBe(200);
+    expect(ap.body.status).toBe("active");
+
+    // B pull: el grupo en memberships + group_members con B status active.
+    const p = await pull(jwtB, {});
+    expect(p.memberships).toContain(gid);
+    const meB = p.deltas
+      .filter((d) => d.group_id === gid && d.entity_type === "group_members")
+      .find((d) => d.sync_id === subB);
+    expect(meB?.fields.status).toBe("active");
+    expect(meB?.fields.display_name).toBe("Bob");
+
+    // ASSERT CENTRAL 2: B ahora ES writer (status active) → el MISMO push queda APPLIED.
+    const hAfter = hlc(T0 + 710);
+    const rAfter = await push(jwtB, [
+      { entity_type: "split_expenses", group_id: gid, sync_id: expId, op: "upsert", fields: { ...gmoney(25), note: "post-approve" }, field_hlcs: { gmoney: hAfter, note: hAfter }, hlc: hAfter, client_mutation_id: uuid() },
+    ]);
+    expect(rAfter.body.results[0].status).toBe("applied");
+    const expRow = await readGroupRow(jwtA, "split_expenses", gid, expId);
+    expect(expRow?.sync_id).toBe(expId);
+    expect(expRow?.note).toBe("post-approve");
+    expect(Number(expRow?.amount)).toBe(25);
+  }, 120_000);
 });
