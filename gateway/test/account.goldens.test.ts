@@ -706,3 +706,36 @@ describe("I14-pre goldens · /account/migration heartbeat (staging real, REQUIER
     await patchProfile(jwtB, { reverse_in_progress: false, leader_device_id: null });
   });
 });
+
+describe("g3_02 goldens · claim promociona fila LIGERA de grupos (staging real)", () => {
+  // El claim LIGERO de create_group/join_group (G1) inserta profiles(id) sin vida personal
+  // (personal_claimed_at NULL). g3_02: claim_account PROMOCIONA esa fila a 'created' — el camino
+  // del usuario solo-grupos que activa Yala completo (antes: existing_stable → migración bloqueada).
+  // AUTOSUFICIENTE: simula la fila ligera con patchProfile (RLS own-row) y el propio claim la
+  // devuelve al estado reclamado — robusto en corridas repetidas, sin seed externo.
+  it("claim sobre fila ligera → created (promoción, estampa personal_claimed_at) y re-claim → existing_stable", async () => {
+    // Garantiza fila presente (si una limpieza previa la dejó ausente, este claim la crea).
+    await claim(jwtA, { device_id: "g3-02-pre", provider: "apple" });
+    // Simula la fila LIGERA del claim ligero de grupos (provider/leader/mip como los deja G1).
+    expect(
+      await patchProfile(jwtA, {
+        personal_claimed_at: null,
+        provider: null,
+        leader_device_id: null,
+        migration_in_progress: false,
+        migration_updated_at: null,
+      }),
+    ).toBeLessThan(300);
+
+    const r1 = await claim(jwtA, { device_id: "g3-02-dev", provider: "apple" });
+    expect(r1.status).toBe(200);
+    expect(r1.body.state).toBe("created"); // promoción: para lo PERSONAL la cuenta nace ahora
+
+    const r2 = await claim(jwtA, { device_id: "g3-02-dev", provider: "apple" });
+    expect(r2.status).toBe(200);
+    expect(r2.body.state).toBe("existing_stable"); // idempotente post-promoción (pca estampado)
+
+    // Restaura el estado estable de A (leader era NULL; provider quedó "apple" por el claim).
+    await patchProfile(jwtA, { leader_device_id: null });
+  });
+});

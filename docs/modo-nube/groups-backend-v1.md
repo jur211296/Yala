@@ -239,3 +239,28 @@ Ver notas ⏸ en [[MODO-NUBE-M1-GUION-DEVICE]] y [[MODO-NUBE-SIGNOUT-WELCOME-GUI
   Workers sería el límite (batch con rediseño de cursor + detección de truncación; no aplica a v1).
 - Gates: typecheck limpio · goldens grupos 16/16 · gateway 154 passed + los 2 preexistentes de
   account.goldens.
+
+### 2026-07-15 (mañana, owner en sesión) — DECISIÓN + CIERRE del pendiente "claim sobre profile creado por grupos" ✅
+
+**Decisión owner (AskUserQuestion): Opción A — promoción a `created`, implementada de inmediato** (autorización
+explícita para tocar claim_account). Migración `g3_02_claim_promotes_groups_lite_profile` APLICADA en staging
+(SQL versionado en `qa/cloud/`): columna `profiles.personal_claimed_at` + backfill one-shot (todo lo
+preexistente = reclamado; verificado: las 4 filas reales eran cuentas personales legítimas) + rama de
+PROMOCIÓN en claim_account — fila con `personal_claimed_at` NULL (el claim ligero de create_group/join_group)
+y sin mip → estampa provider/leader/lease exactamente como el INSERT y devuelve **`created`** (TOCTOU-safe:
+UPDATE con WHERE pca IS NULL; el perdedor de una carrera re-clasifica). **Cero cambios de wire ni de cliente**
+— la máquina §g y FullModeActivation funcionan tal cual (`created` ya significa "siembra/migra").
+- Review adversarial PRE-aplicación (Opus): **APLICAR** — trazó los goldens de claim uno a uno (sin regresión:
+  la rama nueva no la ejercita ninguno), verificó paridad INVOKER/search_path/grants (or-replace con firma
+  idéntica los preserva), TOCTOU serializado por EvalPlanQual, y confirmó que `AccountClaimDecision.decide`
+  nunca trata `created` como anomalía (migración → proceedMigration; bornCloud → seedBornCloud).
+- Verificación WIRE real one-shot: fila de A reseteada a ligera vía MCP → claim → `created` + pca/provider/
+  leader estampados → re-claim → `existing_stable` → snapshot restaurado.
+- Golden NUEVO autosuficiente en account.goldens.test.ts (simula la fila ligera con patchProfile own-row;
+  robusto en corridas repetidas): 27 passed + los 2 preexistentes de exists (sin relación).
+- **NOTA para el deploy a PROD** (del review): el backfill es correcto hoy porque grupos-backend está DARK —
+  antes de promover esta migración a producción, verificar que no existan filas ligeras reales (no las habrá
+  mientras el flag siga OFF).
+- **NOTA G5**: el adopt del Welcome debe aceptar `created` como resultado válido cuando la cuenta era
+  solo-grupos (semánticamente correcto: lo personal nace ahí); y `/account/exists` puede enriquecerse con
+  `{personal_claimed, has_groups}` (aditivo) para el copy del solo-grupos que reinstala.
