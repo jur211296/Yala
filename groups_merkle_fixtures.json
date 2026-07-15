@@ -1,0 +1,208 @@
+{
+  "description": "Golden cross-lenguaje de la PROYECCIÓN Merkle del canal de GRUPOS (B1, regla A-4 canal 1). Generado por gateway/scripts/generate-groups-merkle-fixtures.mjs importando canonRowC1Group/merkleColumnsGroup/leafChannel1/entityHash/merkleRoot de gateway/src SIN modificarlos. Consumido por GroupMerkleFixtureTests (Swift): reproyecta cada `model` con GroupMerkleProjection+Canonc1Codec y compara payload_c1/leaf_hex/entity_hash_hex/root byte a byte. Montos: ::text de numeric(_,4) (escala exacta). Timestamps: epoch ms.",
+  "empty_entity_hash_hex": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "empty_root_hex": "005906de4d6be47d525c5e24730822e154d08d4b3395a0bf184ff57a10a025b6",
+  "root_hex": "62c8ed3663bbff161330f7fac2ddaed44c79889b48f6299330808eb20e0e1249",
+  "entities": {
+    "split_groups": {
+      "entity_hash_hex": "549d1a444f720ce917a190a7667c19e7519f9fd1077b2edbb9676f2e1f4fa62e",
+      "samples": [
+        {
+          "identity": "splitgroup-a1b2c3d4",
+          "group_id": "SplitGroup-A1B2C3D4",
+          "model": {
+            "name": "Casa 🏠",
+            "icon_name": "house.fill",
+            "color_hex": "#8B5CF6",
+            "currency_code": "PEN",
+            "simplify_debts": true,
+            "show_debts_in_single_currency": false,
+            "members_can_invite": true,
+            "default_split_type": "equal",
+            "is_archived": false,
+            "is_hidden_for_all": false,
+            "created_at_ms": 1784116800123
+          },
+          "payload_c1": "{\"color_hex\":\"#8B5CF6\",\"created_at\":\"2026-07-15T12:00:00.123Z\",\"currency_code\":\"PEN\",\"default_split_type\":\"equal\",\"icon_name\":\"house.fill\",\"is_archived\":false,\"is_hidden_for_all\":false,\"members_can_invite\":true,\"name\":\"Casa 🏠\",\"show_debts_in_single_currency\":false,\"simplify_debts\":true}",
+          "leaf_hex": "eca2ce2a1f72359b4fa58773adf37b65924e1c2b30285a9b5710f07be8e03545"
+        },
+        {
+          "identity": "splitgroup-zebra9",
+          "group_id": "SplitGroup-Zebra9",
+          "model": {
+            "name": "Viaje ✈️ 2026",
+            "icon_name": "airplane",
+            "color_hex": "#112233",
+            "currency_code": "USD",
+            "simplify_debts": false,
+            "show_debts_in_single_currency": true,
+            "members_can_invite": false,
+            "default_split_type": "percentage",
+            "is_archived": true,
+            "is_hidden_for_all": false,
+            "created_at_ms": 1769903999999
+          },
+          "payload_c1": "{\"color_hex\":\"#112233\",\"created_at\":\"2026-01-31T23:59:59.999Z\",\"currency_code\":\"USD\",\"default_split_type\":\"percentage\",\"icon_name\":\"airplane\",\"is_archived\":true,\"is_hidden_for_all\":false,\"members_can_invite\":false,\"name\":\"Viaje ✈️ 2026\",\"show_debts_in_single_currency\":true,\"simplify_debts\":false}",
+          "leaf_hex": "c1e08d04184a9fbe6ed46e6ec74217add45b396f750c35586ef2383a20799d1a"
+        }
+      ]
+    },
+    "group_members": {
+      "entity_hash_hex": "ae02a570716fba4e3368b1551460014f2949b63946f687625626fdb368354dbd",
+      "samples": [
+        {
+          "identity": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+          "member_key": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+          "model": {
+            "user_id": "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+            "display_name": "Alicia ✨",
+            "role": "admin",
+            "status": "active",
+            "joined_at_ms": 1784116800123
+          },
+          "payload_c1": "{\"display_name\":\"Alicia ✨\",\"joined_at\":\"2026-07-15T12:00:00.123Z\",\"role\":\"admin\",\"status\":\"active\",\"user_id\":\"3f2504e0-4f89-41d3-9a0c-0305e82c3301\"}",
+          "leaf_hex": "acdff551524221cac6f892940c91df484639bf9416afbde2fe06433a94d12caa"
+        },
+        {
+          "identity": "member-legacy-recordname",
+          "member_key": "member-legacy-recordname",
+          "model": {
+            "user_id": null,
+            "display_name": "Bob",
+            "role": "member",
+            "status": "left",
+            "joined_at_ms": 1780302615000
+          },
+          "payload_c1": "{\"display_name\":\"Bob\",\"joined_at\":\"2026-06-01T08:30:15.000Z\",\"role\":\"member\",\"status\":\"left\",\"user_id\":null}",
+          "leaf_hex": "676dc5c5c12d14f5789d224330996a458903b33c5bc8f1cbddb7b23ccb3631bc"
+        }
+      ]
+    },
+    "split_expenses": {
+      "entity_hash_hex": "628c1b020a54dfdf1395d17016f41a9461130eb491d136f7b8ba2c119114d3dc",
+      "samples": [
+        {
+          "identity": "c0ffee00-1111-2222-3333-444444444444",
+          "sync_id": "c0ffee00-1111-2222-3333-444444444444",
+          "model": {
+            "amount": 19.99,
+            "currency_code": "USD",
+            "expense_description": "Café ☕ del día",
+            "note": "propina 15% 🎉",
+            "date_ms": 1784116800123,
+            "created_at_ms": 1784116800123,
+            "paid_by_member_key": "member-abc",
+            "split_type": "equal",
+            "is_settled": false,
+            "is_opening_balance": false,
+            "subcategory_name": "Comida"
+          },
+          "payload_c1": "{\"amount\":\"19.9900\",\"created_at\":\"2026-07-15T12:00:00.123Z\",\"currency_code\":\"USD\",\"date\":\"2026-07-15T12:00:00.123Z\",\"expense_description\":\"Café ☕ del día\",\"is_opening_balance\":false,\"is_settled\":false,\"note\":\"propina 15% 🎉\",\"paid_by_member_key\":\"member-abc\",\"split_type\":\"equal\",\"subcategory_name\":\"Comida\"}",
+          "leaf_hex": "25415138529ba18ce1c1a91f786322900fd4b6d0a5c497245fa6e52a1e5be764"
+        },
+        {
+          "identity": "1a2b3c4d-5e6f-7788-99aa-bbccddeeff00",
+          "sync_id": "1a2b3c4d-5e6f-7788-99aa-bbccddeeff00",
+          "model": {
+            "amount": 1234.5678,
+            "currency_code": "PEN",
+            "expense_description": "Groceries",
+            "note": null,
+            "date_ms": 1780302615000,
+            "created_at_ms": 1780302615000,
+            "paid_by_member_key": "member-2",
+            "split_type": "exact",
+            "is_settled": true,
+            "is_opening_balance": true,
+            "subcategory_name": null
+          },
+          "payload_c1": "{\"amount\":\"1234.5678\",\"created_at\":\"2026-06-01T08:30:15.000Z\",\"currency_code\":\"PEN\",\"date\":\"2026-06-01T08:30:15.000Z\",\"expense_description\":\"Groceries\",\"is_opening_balance\":true,\"is_settled\":true,\"note\":null,\"paid_by_member_key\":\"member-2\",\"split_type\":\"exact\",\"subcategory_name\":null}",
+          "leaf_hex": "8154fff10fe8cd84b0a4da548bed07393b9a6df81be6914c5c50281fe9cf021b"
+        },
+        {
+          "identity": "ffffffff-eeee-dddd-cccc-bbbbbbbbbbbb",
+          "sync_id": "ffffffff-eeee-dddd-cccc-bbbbbbbbbbbb",
+          "model": {
+            "amount": 0,
+            "currency_code": "EUR",
+            "expense_description": "Ñoño 日本語 test",
+            "note": "",
+            "date_ms": 1769903999999,
+            "created_at_ms": 1769903999999,
+            "paid_by_member_key": "member-3",
+            "split_type": "shares",
+            "is_settled": false,
+            "is_opening_balance": false,
+            "subcategory_name": null
+          },
+          "payload_c1": "{\"amount\":\"0.0000\",\"created_at\":\"2026-01-31T23:59:59.999Z\",\"currency_code\":\"EUR\",\"date\":\"2026-01-31T23:59:59.999Z\",\"expense_description\":\"Ñoño 日本語 test\",\"is_opening_balance\":false,\"is_settled\":false,\"note\":\"\",\"paid_by_member_key\":\"member-3\",\"split_type\":\"shares\",\"subcategory_name\":null}",
+          "leaf_hex": "a9475c5732e0bfa88b3948e712089ff67f001ebe3e6fe1d95f0c024db52b2a5d"
+        }
+      ]
+    },
+    "split_shares": {
+      "entity_hash_hex": "380febfffd25361beea1d5efad3a3a74f9f913d0a3dde59e777dfd20a3a72dac",
+      "samples": [
+        {
+          "identity": "aaaa0000-1111-2222-3333-444455556666",
+          "sync_id": "aaaa0000-1111-2222-3333-444455556666",
+          "model": {
+            "expense_id": "c0ffee00-1111-2222-3333-444444444444",
+            "member_key": "member-abc",
+            "amount": 6.66,
+            "is_paid": false
+          },
+          "payload_c1": "{\"amount\":\"6.6600\",\"expense_id\":\"c0ffee00-1111-2222-3333-444444444444\",\"is_paid\":false,\"member_key\":\"member-abc\"}",
+          "leaf_hex": "06ad79382ceb244764381be4d658436bc96006a0d1ba23c1b2910e188ca89e10"
+        },
+        {
+          "identity": "bbbb1111-2222-3333-4444-555566667777",
+          "sync_id": "bbbb1111-2222-3333-4444-555566667777",
+          "model": {
+            "expense_id": "c0ffee00-1111-2222-3333-444444444444",
+            "member_key": "member-xyz",
+            "amount": 6.665,
+            "is_paid": true
+          },
+          "payload_c1": "{\"amount\":\"6.6650\",\"expense_id\":\"c0ffee00-1111-2222-3333-444444444444\",\"is_paid\":true,\"member_key\":\"member-xyz\"}",
+          "leaf_hex": "24c62b19c859470a98381e83113eedbdfb97b2d4dd8388ec6962e1724cc9d30b"
+        }
+      ]
+    },
+    "split_settlements": {
+      "entity_hash_hex": "c4c2d4522ae231a0ebd64303ccf996adfc2d2a447ced38751928f9df48e84c43",
+      "samples": [
+        {
+          "identity": "5e771e00-0000-1111-2222-333344445555",
+          "sync_id": "5e771e00-0000-1111-2222-333344445555",
+          "model": {
+            "from_member_key": "member-abc",
+            "to_member_key": "member-xyz",
+            "amount": 25,
+            "currency_code": "USD",
+            "note": "saldado ✅",
+            "date_ms": 1784116800123,
+            "is_confirmed": true
+          },
+          "payload_c1": "{\"amount\":\"25.0000\",\"currency_code\":\"USD\",\"date\":\"2026-07-15T12:00:00.123Z\",\"from_member_key\":\"member-abc\",\"is_confirmed\":true,\"note\":\"saldado ✅\",\"to_member_key\":\"member-xyz\"}",
+          "leaf_hex": "532949a40ec577e57ff464229e1e5f148cb7df88152576c5d1ef1df5776f8245"
+        },
+        {
+          "identity": "5e771e11-1111-2222-3333-444455556666",
+          "sync_id": "5e771e11-1111-2222-3333-444455556666",
+          "model": {
+            "from_member_key": "member-3",
+            "to_member_key": "member-abc",
+            "amount": 0.5,
+            "currency_code": "PEN",
+            "note": null,
+            "date_ms": 1780302615000,
+            "is_confirmed": false
+          },
+          "payload_c1": "{\"amount\":\"0.5000\",\"currency_code\":\"PEN\",\"date\":\"2026-06-01T08:30:15.000Z\",\"from_member_key\":\"member-3\",\"is_confirmed\":false,\"note\":null,\"to_member_key\":\"member-abc\"}",
+          "leaf_hex": "79727cc8d4b4177b28950647520c386696c934903fad7587afa1bf1f38f709af"
+        }
+      ]
+    }
+  }
+}

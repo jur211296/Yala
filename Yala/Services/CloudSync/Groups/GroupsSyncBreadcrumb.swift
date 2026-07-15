@@ -61,4 +61,51 @@ enum GroupsSyncBreadcrumb {
     static func groupsApplySkippedDelta(entity: String) {
         logger.notice("GroupsSync applySkippedDelta entity=\(entity, privacy: .public) — delta descartado; cursor avanza sin aplicar")
     }
+
+    // MARK: - Merkle (endurecimiento B1)
+
+    /// El fetch de `/groups/merkle` falló (transporte / respuesta no-HTTP / decode / HTTP 5xx). `reason` =
+    /// slug sanitizado (`transport`/`non-http`/`decode-200`/`http-<code>`), sin PII. El verificador lo trata
+    /// como `.skipped` (jamás canario).
+    static func groupsMerkleFetchFailed(reason: String) {
+        logger.notice("GroupsSync merkleFetchFailed reason=\(reason, privacy: .public)")
+    }
+
+    /// La verificación Merkle de un grupo se SALTÓ por una precondición no satisfecha (outbox vivo, dead-
+    /// letters, sin pull completado, canon-mismatch, sin sesión, 401/403). `reason` = slug (puede llevar un
+    /// count, `outbox-pending:N`), JAMÁS el group_id. NUNCA canario.
+    static func groupsMerkleSkipped(reason: String) {
+        logger.notice("GroupsSync merkleSkipped reason=\(reason, privacy: .public)")
+    }
+
+    /// [R4] El root remoto de un grupo es el de un corpus VACÍO (todas las entities count 0) mientras el
+    /// local NO lo está → firma de REMOCIÓN de membership vía RLS (el server responde tablas vacías al
+    /// no-member). NO es divergencia: skip SIN canario ni remediación (la limpieza llega por memberships del
+    /// pull). Sin PII.
+    static func groupsMerkleEmptyRemote() {
+        logger.notice("GroupsSync merkleEmptyRemote — root remoto vacío + local no-vacío; remoción de membership (no divergencia)")
+    }
+
+    /// [R6] Una fila `group_members` local NO pudo keyear su leaf Merkle (member_key nil/vacío — CloudKit
+    /// preexistente no adoptado). Se SALTA del árbol (jamás crash). `> 0` en born-backend = revisar adopción.
+    static func groupsMerkleMemberKeyMissing() {
+        logger.notice("GroupsSync merkleMemberKeyMissing — member sin member_key; leaf saltado")
+    }
+
+    /// La verificación Merkle de la corrida CONVERGIÓ (`groups` grupos verificados sin divergencia). Sin PII.
+    static func groupsMerkleConverged(groups: Int) {
+        logger.notice("GroupsSync merkleConverged groups=\(groups, privacy: .public)")
+    }
+
+    /// La verificación Merkle detectó DIVERGENCIA en `groups` grupos de la corrida (par del canario
+    /// `groupMerkleDivergence`). `groups` = count, JAMÁS los group_ids. Sin PII.
+    static func groupsMerkleDivergence(groups: Int) {
+        logger.notice("GroupsSync merkleDivergence groups=\(groups, privacy: .public) — infidelidad de sync; remediando una vez por sesión")
+    }
+
+    /// La remediación Merkle (reset de cursor + re-pull) corrió sobre `groups` grupos divergentes, UNA vez
+    /// por sesión. Par de recuperación del canario. Sin PII.
+    static func groupsMerkleRemediated(groups: Int) {
+        logger.notice("GroupsSync merkleRemediated groups=\(groups, privacy: .public)")
+    }
 }

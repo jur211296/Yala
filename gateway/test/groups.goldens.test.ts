@@ -12,6 +12,17 @@ import { beforeAll, describe, expect, it } from "vitest";
 import app from "../src/index";
 import type { Env } from "../src/env";
 import type { GroupPushResponse, GroupPullResponse, GroupMerkleResponse } from "../src/groups/types";
+import { GROUP_ENTITIES } from "../src/groups/manifest";
+import { entityHash, hex, merkleRoot } from "../src/sync/merkle";
+
+/** Root del canal 1 de un corpus VACÍO (las 5 tablas con entityHash de "" = sha256("")). Lo que ve un
+ *  no-member (RLS filtra todas las tablas). Determinista — se recomputa con las MISMAS primitivas del Worker. */
+async function emptyCorpusRoot(): Promise<string> {
+  const eh = await entityHash([]); // sha256("")
+  const map = new Map<string, Uint8Array>();
+  for (const e of GROUP_ENTITIES) map.set(e, eh);
+  return hex(await merkleRoot(map));
+}
 
 // Staging (mismo target que sync.goldens). Anon key + 2 JWTs de usuario; NUNCA service_role.
 const URL = "https://fostjbbwstyuunmmefuk.supabase.co";
@@ -376,6 +387,45 @@ describe("G2 goldens · /groups/* contra staging real", () => {
     const confirmCursor = confirm.cursors[gid];
     if (confirmCursor !== undefined) expect(confirmCursor).toBe(cursorAtDone); // ausente o sin avance
   }, 360_000); // 6 pulls (baseline + 4 loop + confirm): A acumula 76+ grupos históricos (sin cleanup por diseño). Con el fan-out paralelo del pull (pool de 6 grupos × 5 tablas) cada pull baja de ~42s a segundos; el timeout holgado queda como red.
+
+  it("8. merkle autosuficiente: root ESTABLE sobre filas conocidas (2 fetches idénticos, != vacío) + no-member ve root de corpus VACÍO", async () => {
+    // Grupo A-ONLY (create_group sin invitar): B NUNCA es member → RLS le oculta TODO.
+    const gid = freshGid();
+    const cg = await rpc(jwtA, "create_group", {
+      p_group_id: gid,
+      p_name: "G2 merkle-standalone",
+      p_currency_code: "PEN",
+      p_icon_name: "star",
+      p_color_hex: "#445566",
+      p_display_name: "Alice",
+      p_default_split_type: "equal",
+    });
+    expect(cg.status).toBe(200);
+
+    // Filas CONOCIDAS: un expense gmoney.
+    const expId = uuid();
+    const h = hlc(T0 + 800);
+    const r = await push(jwtA, [
+      { entity_type: "split_expenses", group_id: gid, sync_id: expId, op: "upsert", fields: { ...gmoney(42), expense_description: "Known" }, field_hlcs: { gmoney: h, expense_description: h }, hlc: h },
+    ]);
+    expect(r.body.results[0].status).toBe("applied");
+
+    const empty = await emptyCorpusRoot();
+
+    // A: root ESTABLE (2 fetches del mismo corpus == byte-idénticos) y NO vacío (tiene contenido).
+    const mA1 = await merkle(jwtA, gid);
+    const mA2 = await merkle(jwtA, gid);
+    expect(mA1.root).toBe(mA2.root);
+    expect(mA1.canon_version).toBe("c1");
+    expect(Object.keys(mA1.entities).length).toBe(5);
+    expect(mA1.entities.split_expenses.count).toBeGreaterThanOrEqual(1);
+    expect(mA1.root).not.toBe(empty);
+
+    // B (NO member): todas las tablas vacías por RLS → root == corpus vacío.
+    const mB = await merkle(jwtB, gid);
+    expect(mB.root).toBe(empty);
+    for (const e of Object.values(mB.entities)) expect(e.count).toBe(0);
+  }, 90_000);
 
   it("auth: sin JWT → 401 en push/pull/merkle", async () => {
     const rPush = await app.fetch(new Request("https://gw.local/groups/push", { method: "POST", body: "{}" }), env);

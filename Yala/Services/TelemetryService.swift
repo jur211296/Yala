@@ -162,6 +162,7 @@ enum AnalyticsEvent: String {
     case cloudSyncClockReceiveRejected = "Diagnóstico · HLC remoto rechazado por el reloj"  // params: reason — CANARIO (Modo Nube I8f-1, F-5): `HLCClock.receive` RECHAZÓ un HLC remoto (drift >5min futuro / counter overflow) al aplicar deltas del pull → el reloj local NO se envenena pero pierde causalidad con ese emisor bajo skew extremo (residual documentado; el server lo vigila con cloudSyncSuspectClockWin). La DISPARA CloudSyncEngine.receiveRemoteClock. Sin PII (solo el motivo)
     case cloudSecondaryMountMismatchBlocked = "Diagnóstico · Secundaria bloqueada por mount-mismatch"  // CANARIO (M1, D3 del /review-plan): canRunDomain bloqueó el runtime porque el descriptor de sesión secundaria está activo pero el proceso montó el store del DUEÑO (ventana de entrada pre-relaunch). Esperado a lo sumo UNA ventana corta por entrada; >0 SOSTENIDO en un mismo device = la ventana se está pisando (usuario operando sin relanzar) — sin el guard eso pushearía la History del dueño a la cuenta entrante. Dedupeado por proceso. La DISPARA CloudSyncRuntime.canRunDomain. Sin PII
     case cloudSyncMerkleDivergence = "Diagnóstico · Divergencia Merkle de sync"  // params: entity — CANARIO (Modo Nube I8f-3, §d.7 Canal 1): el entityHash local de una tabla ≠ el del backend CON quiescencia local (outbox vivo vacío + pull completado, guard A-3) → infidelidad del apply/canon vs la verdad server-side. >0 = incidente de fidelidad del sync (remediación v1: re-pull completo, wiring I9). La DISPARA CloudSyncEngine.verifyIntegrity. Sin PII (solo el nombre de tabla o "root")
+    case groupMerkleDivergence = "Diagnóstico · Divergencia Merkle de grupos"  // params: groupCount — CANARIO (Grupos→backend B1, §d.7 Canal 1): UNA señal por corrida — N grupos cuyo árbol Merkle LOCAL ≠ el del backend CON quiescencia del grupo (outbox vivo del grupo vacío + dead-letters 0 + pull completado + canon c1) → infidelidad del apply/canon del canal de Grupos. Excluye el corpus-vacío-remoto (remoción de membership por RLS, breadcrumb merkleEmptyRemote). >0 = incidente de fidelidad. Remediación: reset del cursor de cada grupo divergente + re-pull, UNA vez por sesión. La DISPARA GroupsSyncClient.runGroupMerkleVerification. Sin PII (solo el COUNT de grupos, jamás group_ids)
     case groupPushRejected = "Diagnóstico · Push de grupo rechazado"  // params: reason — CANARIO (Grupos→backend G4, §12): el backend RECHAZÓ un delta de grupo (dead-letter en GroupSyncOutbox.rejectedReason, NO se pierde). yala_not_authorized es transitorio-DE-ESTADO (se re-drivea al aprobar el member); el resto (malformed_delta, coherence_*, yala_bad_request…) es permanente. >0 sostenido = write-site de grupo sin auditar / permisos. La DISPARA GroupsSyncClient.applyResults. Sin PII (solo el slug)
 
     // Routing observability (F9 — privacy-first: only intent IDs, no payloads)
@@ -521,6 +522,17 @@ enum TelemetryService {
     static func cloudSyncMerkleDivergence(entity: String) {
         track(.cloudSyncMerkleDivergence, parameters: [
             "entity": entity
+        ])
+    }
+
+    /// CANARIO Grupos→backend (B1, §d.7 Canal 1): UNA señal por corrida de verificación — `groupCount`
+    /// grupos cuyo árbol Merkle LOCAL difiere del backend CON quiescencia del grupo. Excluye el corpus-vacío-
+    /// remoto (remoción de membership por RLS). Remediación v1 = reset del cursor de cada grupo divergente +
+    /// re-pull, una vez por sesión. La dispara `GroupsSyncClient.runGroupMerkleVerification`. Privacy-first:
+    /// SOLO el count de grupos, jamás group_ids ni hashes.
+    static func groupMerkleDivergence(groupCount: Int) {
+        track(.groupMerkleDivergence, parameters: [
+            "groupCount": String(groupCount)
         ])
     }
 

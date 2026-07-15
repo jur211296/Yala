@@ -64,6 +64,9 @@ final class GroupsSyncClient {
     /// singleton de sesión. `@MainActor` (el cliente ya lo es → no cruza actor).
     private let currentUserIDProvider: @MainActor () -> String?
     private let now: () -> Date
+    /// Cliente del snapshot Merkle de Grupos (`GET /groups/merkle`) — endurecimiento B1. Inyectable para
+    /// tests (stub HTTP). Solo se usa con el flag ON (la verificación se cablea en `syncCycleOnce`).
+    private let merkleClient: GroupsMerkleClient
 
     // MARK: Estado
 
@@ -91,6 +94,20 @@ final class GroupsSyncClient {
     /// Tope de iteraciones del pull de una vuelta (server que no converge → breadcrumb + transitorio).
     private static let pullMaxIterations = 20
 
+    // MARK: Merkle (endurecimiento B1)
+
+    /// `true` cuando la ÚLTIMA vuelta de `pullUntilExhausted` terminó `.completed` (guard A-3 del Merkle:
+    /// molde `CloudSyncEngine.lastPullCycleCompleted`). Un pull transitorio/expirado lo deja `false`.
+    private(set) var lastPullCycleCompleted = false
+    /// Pulls COMPLETOS desde la última verificación Merkle (avanza SOLO en ciclos `.completed`, como el
+    /// personal). La cadencia usa `SyncCadencePolicy.shouldRunMerkle` TAL CUAL.
+    private(set) var completedPullsSinceMerkle = 0
+    /// Reloj de la última verificación Merkle (condición temporal de la cadencia). `nil` = nunca verificado.
+    private(set) var lastMerkleAt: Date?
+    /// La remediación (reset de cursor + re-pull) corre UNA vez por sesión — molde
+    /// `CloudSyncRuntime.didRemediateMerkleThisSession`. Se resetea en `resetMerkleSessionState` (teardown).
+    private(set) var didRemediateGroupMerkleThisSession = false
+
     // MARK: Guard del token de History (molde HALLAZGO 2)
 
     private(set) var historyTokenValidated = false
@@ -114,7 +131,8 @@ final class GroupsSyncClient {
         sessionCheck: @escaping @MainActor () -> Bool = { CloudAuthService.shared.hasSession },
         currentUserIDProvider: @escaping @MainActor () -> String? = { CloudAuthService.shared.currentUserID },
         now: @escaping () -> Date = { .now },
-        nodeID: NodeID = NodeID.generate()
+        nodeID: NodeID = NodeID.generate(),
+        merkleClient: GroupsMerkleClient? = nil
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
@@ -124,6 +142,11 @@ final class GroupsSyncClient {
         self.currentUserIDProvider = currentUserIDProvider
         self.now = now
         self.clock = HLCClock(nodeID: nodeID)
+        // Default: mismo baseURL + los providers de sesión del canal (el Merkle de Grupos NO manda
+        // capability-set). Los tests inyectan uno con `StubHTTPSession`.
+        self.merkleClient = merkleClient ?? GroupsMerkleClient(
+            baseURL: baseURL, tokenProvider: tokenProvider, attestProvider: attestProvider,
+            urlSession: urlSession)
     }
 
     // MARK: - Arranque (DARK)
@@ -178,6 +201,7 @@ final class GroupsSyncClient {
     func stopLoop() {
         loopTask?.cancel()
         loopTask = nil
+        resetMerkleSessionState()  // B1: frontera de sesión → re-armar la remediación (una-vez-por-sesión)
     }
 
     /// UNA vuelta del ciclo: captura local → push → pull-hasta-agotar → apply. Devuelve el
@@ -188,6 +212,21 @@ final class GroupsSyncClient {
         let push = await pushPending(context: context)
         if let stop = GroupsSyncCadence.stopOutcome(push: push) { return stop }
         let pull = await pullUntilExhausted(context: context)
+
+        // B1: cadencia Merkle — tras un pull COMPLETO (guard A-3), avanza el contador y, si
+        // `SyncCadencePolicy.shouldRunMerkle` (reusada TAL CUAL) lo pide, verifica TODOS los grupos con cursor.
+        // Un ciclo INCOMPLETO (transient/401/403) deja el flag en false → la verificación se salta (molde
+        // `SyncApplyEngine`: divergencia esperada, no incidente).
+        if case .completed = pull {
+            lastPullCycleCompleted = true
+            completedPullsSinceMerkle += 1
+            if SyncCadencePolicy.shouldRunMerkle(
+                completedPullsSinceMerkle: completedPullsSinceMerkle, lastMerkleAt: lastMerkleAt, now: now()) {
+                await runGroupMerkleVerification(context: context, now: now())
+            }
+        } else {
+            lastPullCycleCompleted = false
+        }
         return GroupsSyncCadence.outcome(pull: pull)
     }
 
@@ -201,6 +240,10 @@ final class GroupsSyncClient {
 
     /// La tarea del loop en vuelo (para que los tests la aguarden sin dormir). SOLO tests.
     var _testLoopTask: Task<Void, Never>? { loopTask }
+
+    /// Marca el gate A-3 del Merkle "último pull completado" (que en producción solo setea un pull
+    /// `.completed`) para probar `verifyGroupIntegrity` sin correr un ciclo entero. SOLO tests.
+    func _testMarkPullCompleted() { lastPullCycleCompleted = true }
 
     // MARK: - Drain (captura del History → GroupSyncOutbox)
 
@@ -1336,6 +1379,161 @@ final class GroupsSyncClient {
     private func wireDate(_ v: WireValue?) -> Date? {
         guard let s = wireString(v) else { return nil }
         return WireValueDecoder.date(.string(s))
+    }
+}
+
+// MARK: - Merkle client-side (endurecimiento B1)
+
+extension GroupsSyncClient {
+
+    /// Verifica la integridad Merkle de TODOS los grupos con cursor y, si hay divergencia, emite UNA señal
+    /// de canario por corrida (`groupMerkleDivergence` con el COUNT) + remedia UNA vez por sesión (reset del
+    /// cursor de cada grupo divergente + re-pull). `now` inyectado (cadencia). O(grupos): un fetch Merkle por
+    /// grupo, secuencial — el corpus real es pequeño; residual documentado ~200 grupos.
+    func runGroupMerkleVerification(context: ModelContext, now: Date) async {
+        let cursor: GroupSyncCursor
+        do {
+            cursor = try loadOrCreateCursor(context)
+        } catch {
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "cursor-load-failed")
+            return
+        }
+        let groupIDs = decodeCursors(cursor.groupCursorsJSON).keys.sorted()
+
+        var divergentGroups: [String] = []
+        var verifiedGroups = 0
+        for gid in groupIDs {
+            switch await verifyGroupIntegrity(groupID: gid, context: context) {
+            case .converged:
+                verifiedGroups += 1
+            case .diverged:
+                verifiedGroups += 1
+                divergentGroups.append(gid)
+            case .skipped:
+                continue  // precondición no satisfecha (breadcrumb ya emitido); no cuenta ni remedia
+            }
+        }
+
+        // La cadencia se re-arma tras CUALQUIER verificación intentada (molde personal: reset del contador +
+        // sello temporal aunque todos hayan sido skip — evita reintentar cada 60s).
+        lastMerkleAt = now
+        completedPullsSinceMerkle = 0
+
+        guard !divergentGroups.isEmpty else {
+            if verifiedGroups > 0 { GroupsSyncBreadcrumb.groupsMerkleConverged(groups: verifiedGroups) }
+            return
+        }
+
+        // UNA señal por corrida (params: count de grupos divergentes) — jamás por-grupo (evita PII y ruido).
+        TelemetryService.groupMerkleDivergence(groupCount: divergentGroups.count)
+        GroupsSyncBreadcrumb.groupsMerkleDivergence(groups: divergentGroups.count)
+
+        // Remediación UNA vez por sesión: reset del cursor de cada grupo divergente + un re-pull.
+        guard !didRemediateGroupMerkleThisSession else { return }
+        didRemediateGroupMerkleThisSession = true
+        resetGroupCursors(divergentGroups, context: context)
+        _ = await pullUntilExhausted(context: context)
+        GroupsSyncBreadcrumb.groupsMerkleRemediated(groups: divergentGroups.count)
+    }
+
+    /// Verifica la integridad Merkle de UN grupo. Guards EN ORDEN (molde `CloudSyncEngine.verifyIntegrity`,
+    /// adaptado por-grupo): (1) outbox VIVO del grupo == 0; (2) dead-letters del grupo == 0 ([R7]: un
+    /// dead-letter PERMANENTE deshabilita el Merkle de ESE grupo para siempre — aceptado; solo
+    /// `yala_not_authorized` revive vía re-drive al aprobar al member); (3) último pull del canal completado;
+    /// (4) canon `c1`; ([R4]) corpus-vacío-remoto + local no-vacío → remoción de membership (skip, sin
+    /// canario). Divergencia real → `.diverged` (el canario/remediación los agrega el caller).
+    func verifyGroupIntegrity(groupID gid: String, context: ModelContext) async -> MerkleVerdict {
+        // (1) outbox VIVO del grupo.
+        let liveOutbox: Int
+        do { liveOutbox = try liveOutboxCount(groupID: gid, context: context) }
+        catch { return .skipped(reason: "outbox-fetch-failed") }
+        guard liveOutbox == 0 else {
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "outbox-pending:\(liveOutbox)")
+            return .skipped(reason: "outbox-pending")
+        }
+        // (2) dead-letters del grupo ([R7]).
+        let deadLetters: Int
+        do { deadLetters = try groupDeadLetteredCount(groupID: gid, context: context) }
+        catch { return .skipped(reason: "dead-letter-fetch-failed") }
+        guard deadLetters == 0 else {
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "dead-letters:\(deadLetters)")
+            return .skipped(reason: "dead-letters")
+        }
+        // (3) último pull del canal completado.
+        guard lastPullCycleCompleted else {
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "no-completed-pull")
+            return .skipped(reason: "no-completed-pull")
+        }
+
+        // Snapshot remoto.
+        let outcome = await merkleClient.fetchMerkle(groupID: gid)
+        guard case .snapshot(let remote) = outcome else {
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "fetch:\(outcome)")
+            return .skipped(reason: "fetch-failed")
+        }
+        // (4) canon (nunca comparar contratos distintos — divergencia FALSA permanente).
+        guard remote.canonVersion == "c1" else {
+            GroupsSyncBreadcrumb.groupsMerkleSkipped(reason: "canon:\(remote.canonVersion)")
+            return .skipped(reason: "canon-version-mismatch")
+        }
+
+        let local = GroupMerkleProjection.computeLocalMerkle(groupID: gid, context: context)
+
+        // [R4] Política remoto-vacío: root remoto de corpus VACÍO (todas las entities count 0) + local no
+        // vacío → NO es divergencia, es la firma de remoción de membership vía RLS (el server responde tablas
+        // vacías al no-member). Skip SIN canario ni remediación; la limpieza llega por memberships del pull.
+        let remoteEmpty = remote.entities.values.allSatisfy { $0.count == 0 }
+        let localEmpty = local.entities.values.allSatisfy { $0.count == 0 }
+        if remoteEmpty && !localEmpty {
+            GroupsSyncBreadcrumb.groupsMerkleEmptyRemote()
+            return .skipped(reason: "empty-remote")
+        }
+
+        // Comparación por entidad (las 5 SIEMPRE — grupos no tiene cuarentena ni tablas sin cablear) + root.
+        var diverged: [String] = []
+        for table in GroupMerkleProjection.entityTables.sorted() {
+            guard let localEntity = local.entities[table] else { continue }
+            if remote.entities[table]?.hash != localEntity.hashHex { diverged.append(table) }
+        }
+        if diverged.isEmpty, remote.root != local.rootHex { diverged.append("root") }
+
+        return diverged.isEmpty ? .converged : .diverged(entities: diverged)
+    }
+
+    /// Filas de outbox VIVAS (no dead-letter) de un grupo. Cero → el grupo está quiescente para el Merkle.
+    private func liveOutboxCount(groupID gid: String, context: ModelContext) throws -> Int {
+        try context.fetchCount(FetchDescriptor<GroupSyncOutbox>(
+            predicate: #Predicate { $0.groupID == gid && $0.rejectedReason == nil }))
+    }
+
+    /// Filas de outbox en DEAD-LETTER de un grupo ([R7]). Cero → sin rechazo permanente pendiente.
+    private func groupDeadLetteredCount(groupID gid: String, context: ModelContext) throws -> Int {
+        try context.fetchCount(FetchDescriptor<GroupSyncOutbox>(
+            predicate: #Predicate { $0.groupID == gid && $0.rejectedReason != nil }))
+    }
+
+    /// Resetea a 0 el cursor de pull de los grupos dados (remediación: fuerza re-pull completo del grupo).
+    /// Los que no estén en el mapa se dejan intactos. Persiste bajo `outboxSaveAuthor`.
+    private func resetGroupCursors(_ gids: [String], context: ModelContext) {
+        do {
+            let cursor = try loadOrCreateCursor(context)
+            var map = decodeCursors(cursor.groupCursorsJSON)
+            for gid in gids { map[gid] = 0 }
+            try saveWithAuthor(context) { cursor.groupCursorsJSON = encodeCursors(map) }
+        } catch {
+            #if DEBUG
+            logger.error("GroupsSync: resetGroupCursors falló: \(error)")
+            #endif
+        }
+    }
+
+    /// Re-arma el estado Merkle POR SESIÓN (una nueva sesión debe poder remediar de nuevo). Lo llama
+    /// `stopLoop()` (frontera de sesión). No toca cursores persistidos — solo el estado en-memoria.
+    func resetMerkleSessionState() {
+        completedPullsSinceMerkle = 0
+        lastMerkleAt = nil
+        lastPullCycleCompleted = false
+        didRemediateGroupMerkleThisSession = false
     }
 }
 
