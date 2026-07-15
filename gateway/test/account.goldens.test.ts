@@ -634,8 +634,9 @@ describe("Freeze enforcement · /sync/push + /prefs/push con reverse_frozen_at (
 // paso largo (upload/drain) progresa, para que el líder no quede usurpable a mitad. Usan sub B.
 // REQUIEREN el deploy `i14_heartbeat_action` (RPC) + el redeploy del Worker: pre-deploy el edge devuelve
 // 400 a `heartbeat` (protege al RPC viejo) y estos 4 goldens FALLAN RUIDOSO — es el rojo ESPERADO
-// documentado en qa/cloud/README (sin gate silencioso por env var, lección d49d2e47). Ver
-// qa/cloud/pending-heartbeat-action.sql para el injerto SQL.
+// documentado en qa/cloud/README (sin gate silencioso por env var, lección d49d2e47). El deploy se
+// APLICÓ el 2026-07-11 (migración i14_heartbeat_action en el historial de Supabase staging; el .sql
+// pendiente se retiró al aplicarse — el SQL vivo se inspecciona con pg_get_functiondef vía MCP).
 const DEV_HB = "device-B-hb-leader";
 const DEV_HB_OTHER = "device-hb-usurper";
 

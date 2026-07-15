@@ -265,6 +265,76 @@ UPDATE con WHERE pca IS NULL; el perdedor de una carrera re-clasifica). **Cero c
   solo-grupos (semánticamente correcto: lo personal nace ahí); y `/account/exists` puede enriquecerse con
   `{personal_claimed, has_groups}` (aditivo) para el copy del solo-grupos que reinstala.
 
+### 2026-07-15/16 — SESIÓN NOCTURNA (3ª noche): G4-INVITES/CONSENT ✅ + ENDURECIMIENTO PRE-FLAGS ✅ + CAS reverse_claim VERIFICADO YA-CERRADO — ⚠️ reconciliar al vault
+
+> 4 commits (`09a66cbd` A1 · `d1395866` A2 · `b101f2c8` B1 · `53fe10d7` B2). Método íntegro: exploradores → briefs con
+> contrato congelado → /review-plan Opus por brief (17 ajustes entre ambos, 4 CRÍTICOS/ALTOS reales) → impl Opus →
+> reviews adversariales Opus (doble lente donde B2 tocó el canal personal) → fixes pre-commit → gates → commit+push.
+> Con esto, **el "G4 invites+consent" del plan §11 (la fila real, no el lifecycle de la 2ª noche) queda COMPLETO** y
+> el canal tiene TODAS sus redes pre-flags. TODO DARK tras `groupsBackendEnabled`.
+
+- **A1 — invite por TOKEN (`09a66cbd`):** link `g=&t=` + `s` SIEMPRE presente como base64URL self-referential —
+  hallazgo del explorador que corrigió el chip: el AASA (`?s=*`) exige la PRESENCIA de `s`, un link solo-g/t NO abre
+  la app; el formato elegido no toca AASA/invite.astro y preserva g/t por el camino custom-scheme. Handler
+  `GroupBackendInviteEntryHandler` (intent persistente ANTES de todo await; cold-launch persiste y retorna; el bug
+  de Pia muere por construcción — join RPC síncrono), reconciler re-targeteado (`ensureCurrentUserMemberExists`
+  PROHIBIDO para entries backend; `isBackendJoin` prioridad sobre el flag — rollback del flag jamás mis-enruta;
+  FIX S1 del adversarial: la detección del member backend por `userID==sub`/`memberKey==sub`, NUNCA `isCurrentUser`
+  que applyMember no setea — sin él el intent jamás se limpiaba y el canario `groupJoinIntentExpired` daba falso
+  positivo), `GroupBackendAcceptErrorLogic` (12 casos → 5 kinds), canarios `groupJoinFailed`/`groupLegacyRebindFailed`,
+  golden TS 3-bis (fija que `is_group_writer` transiciona con `status='active'`). displayName SIEMPRE no-vacío
+  (btrim='' = `yala_bad_input` permanente) + corrección posterior vía `update_member_display_name`.
+- **A2 — consent §8 + sign-in solo-grupos §16d (`d1395866`):** `GroupsConsentView` (BRAND-VOICE, "protegidos" sin
+  prometer cifrado pre-G7; registro por `PrefSyncKey` nuevas ×2 — el review-plan verificó que el server de prefs es
+  KV puro sin allowlist, cero cambios server-side; gate 36→38 del count test) + `GroupsSignInView` (SIWA que
+  autentica y NADA MÁS — verificado que `signInWithApple()` no toca migración/adopt/StorageMode; R9: sesión viva
+  jamás re-ofrece) + seam de presentación cerrado (`GroupsBackendInviteModifier`, continuación en `onDismiss`,
+  blockers en la matriz de readiness, NO welcome-chain-tearable — las 4 reglas de presentaciones auditadas limpias)
+  + onboarding del invitado fresco (GroupInviteOnboardingView reusada con metadata nil; intent nuevo
+  `.presentGroupBackendInviteOnboarding`) + 10 keys l10n ×16 (voseo es-AR a mano).
+- **B1 — Merkle client-side (`b101f2c8`), LA red anti-divergencia:** el /review-plan cazó DOS críticos que habrían
+  invalidado el diseño: (1) reusar la proyección de EMISIÓN habría divergido en CADA grupo para siempre (la emisión
+  omite `split_groups.created_at` por el column-grant y `group_members` entero es pull-only — el server hashea TODAS
+  las columnas del manifest) → `GroupMerkleProjection` SEPARADA; (2) `merkle_fixtures.json` del personal es un golden
+  del ENSAMBLADO, no de la PROYECCIÓN — la paridad de proyección no tenía red unit en NINGÚN canal (así se cazó la
+  divergencia FX de I11, en device) → fixtures de PROYECCIÓN generadas ejecutando el código REAL del gateway
+  (esbuild bundle de `canonRowC1Group` y cía.) + test Swift byte a byte. Guards en orden + política remoto-VACÍO
+  (root vacío remoto = firma de remoción vía RLS, jamás falso canario) + canario `groupMerkleDivergence(groupCount)`
+  + remediación por-grupo una-vez-por-sesión + cadencia `shouldRunMerkle` reusada. Golden TS 8.
+- **B2 — resto del endurecimiento (`53fe10d7`):** `GroupsOutboxMirror` (durabilidad A1, Q3 byte-molde, dead-letters
+  excluidas, re-drive re-espeja, rehydrate diff owner-scoped) · push chunking 50 con applyResults POR CHUNK ·
+  `teardownForSignOut` en los 3 paths de CloudSessionSignOut (stopLoop deja de tener 0 call-sites) · **guardia de
+  generación** (hallazgo MEDIA del lente-personal: un ciclo en vuelo resumía post-teardown y REPOBLABA el espejo
+  recién purgado — montos sobreviviendo la purga M1) · piggyback paso 5.6 en `CloudSyncRuntime.performCycle` con las
+  2 correcciones del review-plan (guard de SECUNDARIA — sin él el piggyback reintroducía grupos en la sesión de la
+  invitada; abstención del loop propio por `canRunDomain()` — con `.cloud` a secas, grupos moría durante toda la
+  migración transicional) · backoff RPC con exclusión TOTAL de retry para los one-shots creadores (hallazgo MEDIUM-1
+  del lente-grupos: un 502 post-COMMIT reintentado en `create_group_invite` = token huérfano VÁLIDO; verificado
+  contra el DDL que `join_group` reintentado NO doble-consume uso). Flag OFF: `performCycle` byte-idéntico
+  (verificado línea a línea por el lente-personal; CloudSyncRuntimeTests 19/19 intactos).
+- **CAS del `reverse_claim` + enforcement del freeze — AMBOS YA ESTABAN CERRADOS pre-sesión (verificado, no asumido):**
+  la migración `i11_reverse_claim_cas` está aplicada en staging desde el 2026-07-11 (md5 de la función viva
+  `1768ad02de1cb25bf3fbfe458d22771e` matchea el contrato de qa/cloud/README:427) con el golden 22 concurrente
+  (dos `reverse_claim` por `Promise.all` → exactamente uno `ok:true`) verde en el baseline de hoy; el freeze
+  enforcement vive en `handleSyncPush`/`handlePrefsPush` (check en la sombra del primer apply, fail-closed 502,
+  409 `yala_account_reverting`) con los goldens 19-21 verdes — **los 2 pendientes del gate de flags personal se
+  marcan CERRADOS con esta evidencia** (el chip nocturno tenía contexto stale de I11-3). Leak acotado del `delta[0]`
+  = diseño aceptado documentado.
+- **Residuales que quedan para el gate de flags / G5+:** semántica `status='left'` server-side vs vivo-local del
+  Merkle (validar antes de encender) · fixture sin regeneración CI ni montos negativos · poison-en-chunk sin
+  partitionBuildable (follow-up) · dead-letter revivible sin red de espejo en pendingApproval · transiciones de
+  modo loop↔piggyback → relaunch media · branded params n/i/c no mostrados en el onboarding backend ·
+  regionFallbackCurrency saltado en silent-setup backend (cosmético) · **no emitir links backend hasta que la base
+  instalada tenga el parser (nota G5)** · el flag NO debe encenderse sin A2 ya mergeado (cerrado — A2 está en el
+  mismo tren).
+- Gates de cada commit: suite YalaTests completa 0 fallos · builds ambas schemes 0 warnings nuevos · gateway
+  157 passed/2 skip (eran 155 al abrir — +3 goldens nuevos: 3-bis y 8; los 2 skip son los stateful condicionales) ·
+  validate-coverage OK. Baseline del Paso 0: preventivo ProUpsell 4/4 (sin erase), gateway re-deployado a staging
+  (`59971c70`) para paridad repo↔Worker.
+- **Estado del plan §11 tras esta noche: G0 ✅ · G1 ✅ · G2 ✅ · G3 ✅ · canal-lifecycle ✅ · G4-invites/consent ✅ ·
+  endurecimiento pre-flags ✅ — quedan G5 (cutover+M1/wipes+gestión de datos), G6 (migración grupos vivos + R10),
+  G7 (pgcrypto), G8 (APNs).**
+
 ### 2026-07-15 (mañana) — Reconciliación §2 + R10 escrita en la COPIA DEL REPO del diseño
 
 Las notas fechadas están en `MODO-NUBE-GRUPOS-BACKEND-V1-DISENO.md` (copia repo): corrección de §2
