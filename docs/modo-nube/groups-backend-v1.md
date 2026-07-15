@@ -264,3 +264,13 @@ UPDATE con WHERE pca IS NULL; el perdedor de una carrera re-clasifica). **Cero c
 - **NOTA G5**: el adopt del Welcome debe aceptar `created` como resultado válido cuando la cuenta era
   solo-grupos (semánticamente correcto: lo personal nace ahí); y `/account/exists` puede enriquecerse con
   `{personal_claimed, has_groups}` (aditivo) para el copy del solo-grupos que reinstala.
+
+### 2026-07-15 (mañana) — Reconciliación §2 + R10 escrita en la COPIA DEL REPO del diseño
+
+Las notas fechadas están en `MODO-NUBE-GRUPOS-BACKEND-V1-DISENO.md` (copia repo): corrección de §2
+(las FKs del historial = `SplitMember.id.uuidString` derivado de `(groupID, member_key)`, no
+`cloudKitUserRecordID` crudo; el desacople sigue en pie con el eslabón del id determinista; las columnas
+wire `*_member_key` transportan uuidStrings — contrato congelado), residual §9.3(d) (decisión pendiente
+de G6: namespace-aware en el apply vs remap en el uploader) y fila R10 en §13. **⚠️ El diseño sigue SIN
+sincronizar al vault de esta Mac vía iCloud (crear el archivo aquí generaría conflicto) → REPLICAR las 3
+notas al vault desde la máquina principal** (protocolo del README de docs/modo-nube/).
