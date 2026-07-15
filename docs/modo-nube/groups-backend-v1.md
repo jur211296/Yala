@@ -271,6 +271,6 @@ Las notas fechadas están en `MODO-NUBE-GRUPOS-BACKEND-V1-DISENO.md` (copia repo
 (las FKs del historial = `SplitMember.id.uuidString` derivado de `(groupID, member_key)`, no
 `cloudKitUserRecordID` crudo; el desacople sigue en pie con el eslabón del id determinista; las columnas
 wire `*_member_key` transportan uuidStrings — contrato congelado), residual §9.3(d) (decisión pendiente
-de G6: namespace-aware en el apply vs remap en el uploader) y fila R10 en §13. **⚠️ El diseño sigue SIN
-sincronizar al vault de esta Mac vía iCloud (crear el archivo aquí generaría conflicto) → REPLICAR las 3
-notas al vault desde la máquina principal** (protocolo del README de docs/modo-nube/).
+de G6: namespace-aware en el apply vs remap en el uploader) y fila R10 en §13. **RESUELTO mismo día: el atasco era `cloudd` de ESTA Mac (vacuum SQLite perpetuo de una cloudd_db de 8 GB)
+— daemon reiniciado + DB apartada → los archivos del vault materializaron y las notas quedaron REPLICADAS
+al vault (repo → vault, superset verificado por diff).**
