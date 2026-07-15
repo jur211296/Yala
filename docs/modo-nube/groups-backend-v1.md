@@ -155,3 +155,68 @@ APNs Auth Key `7H6BUZWKKS` creada por el owner → secret subido vía stdin (jam
 ## Estado parkeado del QA (para retomar después)
 
 Ver notas ⏸ en [[MODO-NUBE-M1-GUION-DEVICE]] y [[MODO-NUBE-SIGNOUT-WELCOME-GUION-DEVICE]]. Device QA: dueño A_QA `.icloud` (5 cuentas/2257 registros), cuenta B en staging (`0e5e8585`), FAKE secundaria pendiente de destrabar (M1-4). Pendientes ajenos a grupos que se retoman tal cual: guion sign-out formal (fix `c174a663` re-verificación device), repro routing TestFlight, fix `expensesOnlyMode` (en curso).
+
+### 2026-07-15 — SESIÓN NOCTURNA (2ª noche): G3 COMPLETO ✅ (`e22a991d`) — G4 en curso
+
+> Reconciliación del PASO 0.5: verificada punto por punto contra el diseño — el owner ya había foldeado
+> los ⚠️ (S1/S2/S3, unidades, smoney, namespace, sentinel); cero migraciones de reconciliación. El LOG
+> nocturno del vault (`groups-backend-v1-LOG-NOCHE-2026-07-14.md`) se BORRÓ (ya fusionado aquí).
+
+- **HALLAZGO QUE CORRIGE EL DISEÑO §2** (verificado en código): las FKs del historial
+  (`paidByMemberID`/`SplitShare.memberID`/`from-toMemberID`) apuntan a **`SplitMember.id.uuidString`**,
+  NO a `cloudKitUserRecordID` (MemberPickerView:26, GroupBalanceService:63, CKRecordTranslator las pasa
+  crudas). Como `id` es determinista por (groupID, member_key) dentro de cada mundo, la convergencia
+  cross-device se sostiene — pero las columnas wire `*_member_key` transportan id.uuidString (naming
+  engañoso; contrato G2 congelado, no se renombra). **Riesgo NUEVO para G6:** el historial migrado lleva
+  ids del namespace CloudKit ("SplitMember") y un device fresco born-backend derivaría el namespace
+  backend ("SplitMemberBackend") → los balances de un grupo migrado en device fresco NO matchearían.
+  G6 debe decidir: derivación namespace-aware en el apply o remap en el uploader. ⚠️ Sincronizar esta
+  corrección al diseño §2 del vault.
+- **G3 (`e22a991d`)** — migración `g3_01_create_group_full_meta` (create_group +3 params default —
+  cierra divergencia Merkle de simplify/show/members_can_invite; DDL contrato actualizado con el drop);
+  gateway `/groups/rpc/:fn` (allowlist de 9 fns + params por fn, JWT verbatim, errores yala_* preservados
+  como `yala_rpc_error` con code, 6 goldens nuevos → 15/15); Swift `GroupsMembershipClient` (9 métodos
+  tipados, errores tipados con `.permanentRejected` para códigos desconocidos) +
+  `GroupBackendMembershipService` (createGroup SERVER-FIRST: RPC → solo a éxito materializa grupo+owner
+  con id determinista backend, memberKey=userID=sub, cloudKitUserRecordID="" — separación; resto de ops
+  passthrough, el pull materializa); `SplitMember.memberKey` LOCAL-only + applyMember/fetchSplitMember
+  dual-match con adopción legacy; guard A1 en los 2 backfills de refreshCurrentUserFlags (sin él, flag ON
+  = fuga cross-canal a CKSyncEngine). Residual create→drain CERRADO por diseño server-first (la purga del
+  noop group_not_found se queda como anti-storm legacy; G4 le pone breadcrumb). Método: review-plan Opus
+  (3 SERIOS) → 2 impl paralelos → 2 reviews adversariales (seguridad SÓLIDO; correctness cazó el test
+  tautológico de echo-suppression → fix discriminante por autor de History). Gates: suite 4306
+  (4294 pass/0 fail/12 skip) · builds 0 warnings · gateway 153+2 preexistentes · validate-coverage OK.
+- **Residuales documentados:** coexistencia flag-ON (SplitSyncManager podría encolar el SplitGroup del
+  servicio backend — partición por-grupo en G5); 502→transient del cliente RPC (retry-loop latente de
+  call-sites malformados futuros); backfill de userID en members CloudKit preexistentes DIFERIDO;
+  **claim de migración sobre profile creado por grupos SIGUE PENDIENTE DEL OWNER** (no tocado).
+- **Gotchas entorno:** ProUpsellServiceOneShot ×2 reaparecieron (StoreKit sandbox persistido en el sim) →
+  `simctl erase 9D0F6D32` los curó; XCUITests (GroupsSmoke/IncomeExpense/ProfileSettings) fallan por el
+  gotcha ambiental 2026-07-13 → gates locales con `-only-testing:YalaTests`. El MCP de Supabase tardó en
+  conectar al arranque de la sesión — verificar `list_projects` antes de cada migración sigue vigente.
+
+### 2026-07-15 — G4 ✅ (`2a2cf471`) — el canal queda funcionalmente completo DARK
+
+- **G4 (ciclo de vida del canal)** — pull hasta agotar (terminación página-vacía + guard cursor-no-avanzó
+  mirror del personal; cap 20 con breadcrumb; early-return idle anti-churn de History); dead-letter de
+  `upstream_400` con código SANITIZADO slug yala_* (el adversarial cazó que `outcome.message` no está
+  garantizado como slug — una data-exception 22P02 del RPC ecoaría el valor del cliente hasta
+  TelemetryDeck) + **re-drive**: al aprobar al member propio (pendingApproval→active en el apply del
+  pull) reviven las filas `upstream_400:yala_not_authorized` de ese grupo — la premisa "P0001 =
+  permanente" era falsa para el pending que escribe contenido; purga del noop `group_not_found` se
+  mantiene (anti-storm legacy) ya con breadcrumb; `GroupsSyncBreadcrumb` completo (token guard,
+  dead-letter, deadLetteredCount al arrancar, apply-skips); loop de cadencia single-instance
+  reutilizando `SyncCadencePolicy` (401 re-arrancable / 403 stopUntilRelaunch; sleeper inyectable;
+  stopLoop sin wiring = cierre pre-flag); telemetría canario `groupPushRejected` (diseño §12, primera
+  de las 5). Golden 7 TS de paginación (16/16) fija el contrato de terminación.
+- **HALLAZGO DE PERF (chip de tarea creado):** `/groups/pull` es O(grupos×5 tablas) SECUENCIAL —
+  ~42s/pull medidos con los 76 grupos del user de test. Paralelizar/batchear el fan-out del gateway
+  ANTES de encender flags (wire congelado por los goldens).
+- Gates: suite 4319 (4307 pass/0 fail/12 skip) · builds 0 warnings · gateway 154+2 preexistentes ·
+  goldens grupos 16/16 · validate-coverage OK.
+- **Estado del plan §11 tras esta noche:** G0 ✅ (veredictos) · G1 ✅ · G2 ✅ · G3 ✅ · canal-lifecycle ✅
+  (esta G4 nocturna = los residuales del canal, NO el "G4 invites+consent" del plan — ese sigue
+  pendiente junto con G5 cutover/M1, G6 migración de grupos vivos, G7 pgcrypto, G8 APNs).
+- **Pendientes owner acumulados:** claim de migración sobre profile creado por grupos (delta con el
+  owner); chip de perf del pull; reconciliar al vault la corrección del diseño §2 (FKs =
+  id.uuidString) + el riesgo G6 de namespaces; cleanup del Spike B al cierre formal de G0.
