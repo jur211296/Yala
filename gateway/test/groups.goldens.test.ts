@@ -375,7 +375,7 @@ describe("G2 goldens · /groups/* contra staging real", () => {
     expect(confirm.deltas.filter((d) => d.group_id === gid).length).toBe(0);
     const confirmCursor = confirm.cursors[gid];
     if (confirmCursor !== undefined) expect(confirmCursor).toBe(cursorAtDone); // ausente o sin avance
-  }, 360_000); // 6 pulls (baseline + 4 loop + confirm) × ~42s: A acumula 76 grupos históricos y el pull fan-out'ea 5 tablas × grupo secuencialmente (sin cleanup por diseño).
+  }, 360_000); // 6 pulls (baseline + 4 loop + confirm): A acumula 76+ grupos históricos (sin cleanup por diseño). Con el fan-out paralelo del pull (pool de 6 grupos × 5 tablas) cada pull baja de ~42s a segundos; el timeout holgado queda como red.
 
   it("auth: sin JWT → 401 en push/pull/merkle", async () => {
     const rPush = await app.fetch(new Request("https://gw.local/groups/push", { method: "POST", body: "{}" }), env);

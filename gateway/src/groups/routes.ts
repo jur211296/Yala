@@ -204,6 +204,10 @@ function redactGroupUpstream(body: unknown): unknown {
 
 // -------------------------------------------------------------------------------------- /groups/pull
 
+// Grupos procesados en paralelo por el pull (cada uno abre 5 fetches simultáneos → ≤30 en vuelo).
+// Workers capa ~6 conexiones simultáneas por invocación y encola el resto — subirlo no acelera más.
+const PULL_GROUP_CONCURRENCY = 6;
+
 export async function handleGroupsPull(c: Ctx): Promise<Response> {
   const auth = await requireUserAndAttest(c);
   if (auth instanceof Response) return auth;
@@ -236,25 +240,60 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
   const deltas: PulledGroupDelta[] = [];
 
   // 2. Por cada grupo del que soy member: fan-out por las 5 tablas, merge + sort por server_seq DENTRO
-  //    del grupo, corte al `limit` por grupo.
-  for (const gid of memberGroupIds) {
+  //    del grupo, corte al `limit` por grupo. Las 5 queries de un grupo van en paralelo y los grupos en
+  //    un pool acotado (≤ PULL_GROUP_CONCURRENCY×5 fetches simultáneos; el runtime de Workers encola por
+  //    encima de su cap de conexiones). Las queries son byte-idénticas a la versión secuencial — mismo
+  //    count de subrequests, solo cambia la orquestación. NO se batchea con group_id=in.(...): el cursor
+  //    server_seq es POR GRUPO y el limit de PostgREST es global por query — una truncación dejaría
+  //    grupos de la cola sin filas de una tabla mientras el merge avanza el cursor con filas de otras
+  //    tablas de server_seq mayor → deltas perdidos silenciosos.
+  interface Raw {
+    entity: string;
+    row: Record<string, unknown>;
+    server_seq: number;
+  }
+  const fetchGroupPage = async (gid: string): Promise<{ page: Raw[] } | { error: Response }> => {
     const since = cursors[gid] ?? 0;
-    interface Raw {
-      entity: string;
-      row: Record<string, unknown>;
-      server_seq: number;
-    }
+    const perEntity = await Promise.all(
+      GROUP_ENTITIES.map((entity) => {
+        const q = `select=*&group_id=eq.${gid}&server_seq=gt.${since}&order=server_seq.asc&limit=${limit}`;
+        return getRows(c.env, auth.userJWT, entity, q);
+      }),
+    );
+    // Filas en orden GROUP_ENTITIES (Promise.all preserva el orden de entrada) + sort ESTABLE por
+    // server_seq → página idéntica a la del bucle secuencial original.
     const collected: Raw[] = [];
-    for (const entity of GROUP_ENTITIES) {
-      const q = `select=*&group_id=eq.${gid}&server_seq=gt.${since}&order=server_seq.asc&limit=${limit}`;
-      const { ok, status, rows } = await getRows(c.env, auth.userJWT, entity, q);
+    for (let i = 0; i < GROUP_ENTITIES.length; i++) {
+      const entity = GROUP_ENTITIES[i];
+      const { ok, status, rows } = perEntity[i];
       if (!ok) {
-        return jsonError("yala_unavailable", `pull upstream ${status} (${entity})`, 502);
+        return { error: jsonError("yala_unavailable", `pull upstream ${status} (${entity})`, 502) };
       }
       for (const row of rows) collected.push({ entity, row, server_seq: Number(row.server_seq) });
     }
     collected.sort((a, b) => a.server_seq - b.server_seq);
-    const page = collected.slice(0, limit);
+    return { page: collected.slice(0, limit) };
+  };
+
+  const pages = new Array<{ page: Raw[] } | { error: Response }>(memberGroupIds.length);
+  let nextGroup = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(PULL_GROUP_CONCURRENCY, memberGroupIds.length) }, async () => {
+      for (;;) {
+        const i = nextGroup++;
+        if (i >= memberGroupIds.length) return;
+        pages[i] = await fetchGroupPage(memberGroupIds[i]);
+      }
+    }),
+  );
+
+  // Ensamblado en orden memberGroupIds (mismo orden de salida que la versión secuencial); el primer
+  // error upstream gana, como antes (solo que ya no aborta los fetches de los demás grupos).
+  for (let i = 0; i < memberGroupIds.length; i++) {
+    const gid = memberGroupIds[i];
+    const result = pages[i];
+    if ("error" in result) return result.error;
+    const page = result.page;
     if (page.length === 0) continue;
 
     for (const { entity, row, server_seq } of page) {
