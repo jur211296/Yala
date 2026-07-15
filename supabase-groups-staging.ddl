@@ -265,14 +265,23 @@ set local check_function_bodies = off;
 -- ============================================================================
 -- 1. create_group — crea el grupo y su fila owner (admin/active). Claim ligero de profiles.
 -- ============================================================================
-create or replace function public.create_group(
+-- g3_01_create_group_full_meta (2026-07-15): +3 params con DEFAULT (simplify/show/members_can_invite)
+-- — la firma previa dejaba simplify/show en NULL y members_can_invite fijo, y como split_groups es
+-- push:update_only el INSERT local jamás emite → divergencia local↔server permanente (clase Merkle-FX).
+-- DROP de la firma de 7 args primero (create-or-replace con firma distinta = OVERLOAD → PGRST203).
+-- coalesce(_, false): columnas sin NULL para que el Merkle canónico no distinga null-vs-false.
+drop function if exists public.create_group(text, text, text, text, text, text, text);
+create function public.create_group(
   p_group_id text,
   p_name text,
   p_currency_code text,
   p_icon_name text,
   p_color_hex text,
   p_display_name text,
-  p_default_split_type text
+  p_default_split_type text,
+  p_simplify_debts boolean default false,
+  p_show_debts_in_single_currency boolean default false,
+  p_members_can_invite boolean default false
 ) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
@@ -319,7 +328,8 @@ begin
       created_at, field_hlcs, hlc, deleted, schema_version
     ) values (
       p_group_id, v_name, p_icon_name, p_color_hex, p_currency_code,
-      null, null, false,                    -- el cliente decide simplify/show; members_can_invite conservador
+      coalesce(p_simplify_debts, false), coalesce(p_show_debts_in_single_currency, false),
+      coalesce(p_members_can_invite, false),
       p_default_split_type, false, false, v_uid,
       now(), jsonb_build_object('meta', v_hlc), v_hlc, false, 1
     );
@@ -794,7 +804,7 @@ create policy split_settlements_select on public.split_settlements for select to
 -- Grants de EXECUTE: revocar de public/anon, otorgar solo a authenticated.
 -- ============================================================================
 revoke all on function
-  public.create_group(text, text, text, text, text, text, text),
+  public.create_group(text, text, text, text, text, text, text, boolean, boolean, boolean),
   public.create_group_invite(text, integer, integer),
   public.join_group(text, text, text),
   public.approve_member(text, text),
@@ -805,7 +815,7 @@ revoke all on function
   public.groups_forget_user()
   from public, anon;
 grant execute on function
-  public.create_group(text, text, text, text, text, text, text),
+  public.create_group(text, text, text, text, text, text, text, boolean, boolean, boolean),
   public.create_group_invite(text, integer, integer),
   public.join_group(text, text, text),
   public.approve_member(text, text),

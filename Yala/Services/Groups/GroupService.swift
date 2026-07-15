@@ -792,7 +792,14 @@ final class GroupService {
                 guard let zoneMembers = membersByZone[group.cloudKitZoneID] else { continue }
                 guard !zoneMembers.contains(where: { $0.cloudKitUserRecordID == recordName }) else { continue }
 
-                let candidates = zoneMembers.filter { $0.cloudKitUserRecordID.isEmpty }
+                // A1 (G3): EXCLUIR los members del canal Grupos → backend (born-backend tienen
+                // `cloudKitUserRecordID == ""` por diseño, pero `memberKey`/`userID` seteados). Sin este
+                // filtro, con el flag ON un member backend recibiría un record-name de CloudKit Y se
+                // encolaría a CKSyncEngine (fuga cross-canal). Flag-OFF es seguro: todos los members reales
+                // de hoy tienen `memberKey == nil && userID == nil`.
+                let candidates = zoneMembers.filter {
+                    $0.cloudKitUserRecordID.isEmpty && $0.memberKey == nil && $0.userID == nil
+                }
                 guard !candidates.isEmpty else { continue }
 
                 // Safe heuristic for any group: unique displayName match.
@@ -817,7 +824,10 @@ final class GroupService {
 
             for member in members {
                 // Backfill legacy "current user" members that were created without a CloudKit identity.
-                if member.isCurrentUser && member.cloudKitUserRecordID.isEmpty {
+                // A1 (G3): EXCLUIR los members del canal backend (`memberKey`/`userID` seteados) — su
+                // `cloudKitUserRecordID == ""` es intencional; backfillearlo + encolarlo sería fuga cross-canal.
+                if member.isCurrentUser && member.cloudKitUserRecordID.isEmpty
+                    && member.memberKey == nil && member.userID == nil {
                     member.cloudKitUserRecordID = recordName
                     if let group = groupsByZone[member.groupZoneID] {
                         SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)

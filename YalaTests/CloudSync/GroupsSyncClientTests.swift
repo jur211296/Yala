@@ -286,11 +286,50 @@ struct GroupsSyncClientTests {
         let member = try #require(members.first)
         // El `user_id` del wire aterrizó en la columna LOCAL `userID` (cierra el residual de G2).
         #expect(member.userID == "auth-uid-1")
-        #expect(member.cloudKitUserRecordID == "member-rec-1")
+        // Separación de canales (G3): el `member_key` aterriza en `memberKey`; `cloudKitUserRecordID` se
+        // queda VACÍO (el sub del backend nunca contamina el campo CloudKit).
+        #expect(member.memberKey == "member-rec-1")
+        #expect(member.cloudKitUserRecordID == "")
         #expect(member.displayName == "Alice")
         // Born-remote: id LOCAL = namespace backend determinista (NO un UUID() aleatorio).
         #expect(member.id == GroupBackendIdentityLogic.deterministicMemberID(
             groupID: "SplitGroup-A", memberKey: "member-rec-1"))
+    }
+
+    /// Apply sobre una fila SplitMember PREEXISTENTE del mundo CloudKit (grupo migrado G6-era): su
+    /// `cloudKitUserRecordID` ES el `member_key` server-side y su `memberKey` es `nil`. El dual-match cae al
+    /// fallback por `cloudKitUserRecordID`, ADOPTA `memberKey`, NO duplica y CONSERVA el `id` original.
+    @Test func apply_member_adoptsLegacyCloudKitRow_noDuplicate_keepsID() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        // Fila preexistente del mundo CloudKit: matchea por record-name, sin memberKey backend.
+        let legacy = SplitMember(groupZoneID: "SplitGroup-A", displayName: "Bob",
+                                 cloudKitUserRecordID: "member-rec-1")
+        let legacyID = legacy.id
+        context.insert(legacy)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta()], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        let members = try context.fetch(FetchDescriptor<SplitMember>())
+        #expect(members.count == 1)                                    // adoptó, no duplicó
+        let member = try #require(members.first)
+        #expect(member.id == legacyID)                                 // conservó el id original
+        #expect(member.memberKey == "member-rec-1")                    // adopción: escribió memberKey
+        #expect(member.cloudKitUserRecordID == "member-rec-1")         // no se toca (fila legacy)
+        #expect(member.userID == "auth-uid-1")                         // proyección del user_id del wire
+        #expect(member.displayName == "Alice")                         // PATCH aplicado
+
+        // Un segundo apply matchea ya por el path directo (memberKey) → sigue sin duplicar.
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta(serverSeq: 4)], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+        #expect(try context.fetch(FetchDescriptor<SplitMember>()).count == 1)
     }
 
     @Test func apply_member_nullUserID_isAnonymization_nullsColumn() throws {
@@ -358,6 +397,90 @@ struct GroupsSyncClientTests {
 
         #expect(memberA.isCurrentUser == true)   // match por record-name (path CloudKit)
         #expect(memberB.isCurrentUser == false)  // userID ignorado con flag OFF
+    }
+
+    // MARK: - Test 5d · A1: el backfill de cloudKitUserRecordID EXCLUYE members del canal backend
+
+    /// Un member del canal backend tiene `cloudKitUserRecordID == ""` POR DISEÑO (su identidad es
+    /// `memberKey`/`userID`, no el record-name). El backfill de `refreshCurrentUserFlags` NO debe adoptarlo
+    /// (con el flag ON le pondría un record-name de CloudKit Y lo encolaría a CKSyncEngine → fuga
+    /// cross-canal). Prueba observable: su `cloudKitUserRecordID` sigue VACÍO tras el refresh (no
+    /// backfilleado → no encolado). Grupo NO-owner para evitar el enqueue de la promoción a owner.
+    @Test func refreshCurrentUserFlags_doesNotBackfillBackendMember() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let prevFlag = CloudSyncFlags.groupsBackendEnabled
+        let prevCache = GroupUserIdentityService.shared.cachedRecordName
+        defer {
+            CloudSyncFlags.groupsBackendEnabled = prevFlag
+            GroupUserIdentityService.shared._testSetCachedRecordName(prevCache)
+        }
+        CloudSyncFlags.groupsBackendEnabled = false
+        GroupUserIdentityService.shared._testSetCachedRecordName("rec-current")
+
+        let group = SplitGroup(name: "Trip")
+        group.cloudKitZoneID = "zone-1"
+        group.isOwner = false
+        context.insert(group)
+
+        // Member del canal backend: cloudKitUserRecordID vacío, pero memberKey/userID seteados.
+        let backendMember = SplitMember(groupZoneID: "zone-1", displayName: "Me",
+                                        cloudKitUserRecordID: "")
+        backendMember.memberKey = "mk-1"
+        backendMember.userID = "uid-1"
+        backendMember.isCurrentUser = true
+        context.insert(backendMember)
+        try context.save()
+
+        await GroupService.shared.refreshCurrentUserFlags(context: context)
+
+        // A1: NO backfilleado (sigue vacío) → no se encoló a CKSyncEngine.
+        #expect(backendMember.cloudKitUserRecordID == "")
+        #expect(backendMember.memberKey == "mk-1")
+    }
+
+    /// A1 sobre el BLOQUE 1 de `refreshCurrentUserFlags` (candidates + rama `group.isOwner == true`,
+    /// GroupService.swift:800-822): el test A1 anterior usa un grupo NO-owner → nunca alcanza la rama del
+    /// owner (admins / earliest-join). Aquí el grupo ES owner y el ÚNICO member es del canal backend
+    /// (`memberKey`/`userID` seteados, `cloudKitUserRecordID == ""`, `role == "admin"`). SIN el guard A1
+    /// (el filtro `memberKey == nil && userID == nil` de los candidates), ese member entraría a candidates,
+    /// sería el único admin, y la rama del owner le backfillearía el record-name + lo encolaría a
+    /// CKSyncEngine (fuga cross-canal). CON el guard, candidates queda VACÍO → nada se toca. `displayName`
+    /// que NO matchee `currentUserDisplayName()` para forzar la rama del owner (no la de nameMatches).
+    @Test func refreshCurrentUserFlags_ownerBranch_doesNotBackfillBackendAdmin() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let prevFlag = CloudSyncFlags.groupsBackendEnabled
+        let prevCache = GroupUserIdentityService.shared.cachedRecordName
+        defer {
+            CloudSyncFlags.groupsBackendEnabled = prevFlag
+            GroupUserIdentityService.shared._testSetCachedRecordName(prevCache)
+        }
+        CloudSyncFlags.groupsBackendEnabled = false
+        GroupUserIdentityService.shared._testSetCachedRecordName("rec-current")
+
+        let group = SplitGroup(name: "Trip")
+        group.cloudKitZoneID = "zone-1"
+        group.isOwner = true
+        context.insert(group)
+
+        // Member backend admin: cloudKitUserRecordID vacío, memberKey/userID seteados, role admin.
+        // displayName improbable de matchear `currentUserDisplayName()` → fuerza la rama del owner (814-822).
+        let backendAdmin = SplitMember(groupZoneID: "zone-1", displayName: "ZZ-Backend-Admin",
+                                       cloudKitUserRecordID: "")
+        backendAdmin.memberKey = "mk-owner"
+        backendAdmin.userID = "uid-owner"
+        backendAdmin.role = "admin"
+        context.insert(backendAdmin)
+        try context.save()
+
+        await GroupService.shared.refreshCurrentUserFlags(context: context)
+
+        // A1 en la rama del owner: candidates vacío → NO backfilleado (sigue "") → no se encoló.
+        #expect(backendAdmin.cloudKitUserRecordID == "")
+        #expect(backendAdmin.memberKey == "mk-owner")
     }
 
     // MARK: - Test 6 · Emisión canon c1 (gmoney junto; gshare trío)

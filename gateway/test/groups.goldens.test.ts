@@ -343,3 +343,106 @@ describe("G2 goldens · /groups/* contra staging real", () => {
     expect(rMerkle.status).toBe(401);
   });
 });
+
+// --- Endpoint del gateway para los RPCs de membresía (G3): POST /groups/rpc/:fn. ---
+async function rpcGw(jwt: string | null, fn: string, body: unknown): Promise<{ status: number; body: any }> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (jwt) headers.Authorization = `Bearer ${jwt}`;
+  const res = await app.fetch(
+    new Request(`https://gw.local/groups/rpc/${fn}`, { method: "POST", headers, body: JSON.stringify(body ?? {}) }),
+    env,
+  );
+  const text = await res.text();
+  return { status: res.status, body: text ? JSON.parse(text) : null };
+}
+
+describe("G3 goldens · /groups/rpc/* contra staging real", () => {
+  it("1. create_group vía gateway → 200 {group_id, member_key==sub}; meta completa (simplify/show/members_can_invite) escrita", async () => {
+    const gid = freshGid();
+    // Los 3 params nuevos (A3, g3_01) con valores NO-default (true) para probar que el gateway los pasa.
+    const cg = await rpcGw(jwtA, "create_group", {
+      p_group_id: gid,
+      p_name: "G3 create",
+      p_currency_code: "PEN",
+      p_icon_name: "star",
+      p_color_hex: "#112233",
+      p_display_name: "Alice",
+      p_default_split_type: "equal",
+      p_simplify_debts: true,
+      p_show_debts_in_single_currency: true,
+      p_members_can_invite: true,
+    });
+    expect(cg.status).toBe(200);
+    expect(cg.body.group_id).toBe(gid);
+    expect(cg.body.member_key).toBe(subA); // member_key == sub del JWT (auth.uid())
+
+    // BODY assertion (lección d49d2e47): la fila porta los 3 flags NO-null con los valores enviados.
+    const row = await readGroupRow(jwtA, "split_groups", gid);
+    expect(row?.group_id).toBe(gid);
+    expect(row?.simplify_debts).toBe(true);
+    expect(row?.show_debts_in_single_currency).toBe(true);
+    expect(row?.members_can_invite).toBe(true);
+  }, 60_000);
+
+  it("2. flujo invite vía gateway: create_group_invite → token; join_group(B) pendingApproval; approve_member(A) active", async () => {
+    const gid = freshGid();
+    const cg = await rpcGw(jwtA, "create_group", {
+      p_group_id: gid, p_name: "G3 invite", p_currency_code: "PEN", p_icon_name: "star",
+      p_color_hex: "#112233", p_display_name: "Alice", p_default_split_type: "equal",
+    });
+    expect(cg.status).toBe(200);
+
+    const inv = await rpcGw(jwtA, "create_group_invite", { p_group_id: gid, p_ttl_seconds: 3600, p_max_uses: null });
+    expect(inv.status).toBe(200);
+    // create_group_invite devuelve el token como JSON string escalar (no objeto).
+    expect(typeof inv.body).toBe("string");
+    const token = inv.body as string;
+
+    const joined = await rpcGw(jwtB, "join_group", { p_token: token, p_display_name: "Bob", p_legacy_member_key: null });
+    expect(joined.status).toBe(200);
+    expect(joined.body.status).toBe("pendingApproval");
+    expect(joined.body.rebound).toBe(false);
+    const memberKeyB = joined.body.member_key as string;
+    expect(memberKeyB).toBe(subB);
+
+    const ap = await rpcGw(jwtA, "approve_member", { p_group_id: gid, p_member_key: memberKeyB });
+    expect(ap.status).toBe(200);
+    expect(ap.body.status).toBe("active");
+  }, 90_000);
+
+  it("3. error preservado: join_group con token falso → 400 y error.code == yala_invalid_invite", async () => {
+    const bad = await rpcGw(jwtB, "join_group", { p_token: "deadbeefdeadbeef", p_display_name: "Bob", p_legacy_member_key: null });
+    expect(bad.status).toBe(400);
+    expect(bad.body.error.type).toBe("yala_rpc_error");
+    expect(bad.body.error.code).toBe("yala_invalid_invite");
+    expect(bad.body.error.message).toBe("yala_invalid_invite");
+  }, 30_000);
+
+  it("4. allowlist: fake_fn → 404; apply_group_delta (solo va por /groups/push) → 404", async () => {
+    const fake = await rpcGw(jwtA, "fake_fn", {});
+    expect(fake.status).toBe(404);
+    const agd = await rpcGw(jwtA, "apply_group_delta", { p_entity: "split_expenses" });
+    expect(agd.status).toBe(404);
+  }, 30_000);
+
+  it("5. param extra descartado: create_group con args basura/user_id inyectado → 200; member_key sigue siendo el sub", async () => {
+    const gid = freshGid();
+    const cg = await rpcGw(jwtA, "create_group", {
+      p_group_id: gid, p_name: "G3 extra", p_currency_code: "PEN", p_icon_name: "star",
+      p_color_hex: "#112233", p_display_name: "Alice", p_default_split_type: "equal",
+      // Params desconocidos: se descartan silenciosamente (sin PGRST202) y NUNCA se inyectan.
+      p_garbage: "should-be-dropped", user_id: "00000000-0000-0000-0000-000000000000", sub: "injected",
+    });
+    expect(cg.status).toBe(200);
+    expect(cg.body.group_id).toBe(gid);
+    expect(cg.body.member_key).toBe(subA); // el sub del JWT, NO el user_id inyectado
+  }, 60_000);
+
+  it("6. sin JWT → 401", async () => {
+    const res = await app.fetch(
+      new Request("https://gw.local/groups/rpc/create_group", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }),
+      env,
+    );
+    expect(res.status).toBe(401);
+  });
+});

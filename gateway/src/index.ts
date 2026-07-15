@@ -15,6 +15,7 @@ import {
 } from "./sync/routes";
 import { handleAccountClaim, handleAccountExists, handleAccountMigration } from "./sync/account";
 import { handleGroupsMerkle, handleGroupsPull, handleGroupsPush } from "./groups/routes";
+import { handleGroupsRpc } from "./groups/rpc";
 import { handleDebugPush } from "./push/routes";
 
 /**
@@ -69,6 +70,9 @@ app.post("/account/migration", handleAccountMigration); // cutover/complete §g.
 app.post("/groups/push", handleGroupsPush);
 app.get("/groups/pull", handleGroupsPull);
 app.get("/groups/merkle", handleGroupsMerkle);
+
+// --- Grupos->backend (G3): RPCs de membresía (allowlist de 9; params filtrados por fn; RLS arbitra) ---
+app.post("/groups/rpc/:fn", handleGroupsRpc);
 
 app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
 

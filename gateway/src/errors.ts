@@ -17,7 +17,8 @@ export type YalaErrorType =
   | "yala_quota_burst"
   | "yala_unavailable"
   | "yala_bad_request"
-  | "yala_account_reverting";
+  | "yala_account_reverting"
+  | "yala_rpc_error";
 
 interface OpenAIErrorBody {
   error: {

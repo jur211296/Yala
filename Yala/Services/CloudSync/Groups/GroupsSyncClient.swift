@@ -911,7 +911,8 @@ final class GroupsSyncClient {
     }
 
     private func applyMember(_ delta: GroupPulledDelta, context: ModelContext) throws {
-        // PULL-ONLY: identidad = member_key (= `cloudKitUserRecordID`, string, en el `sync_id` del wire).
+        // PULL-ONLY: identidad server-side = member_key (string, en el `sync_id` del wire; el
+        // `cloudKitUserRecordID` es su ESPACIO paralelo solo para members preexistentes del mundo CloudKit).
         // El sentinel '__deleted_user__' NO se traduce aquí (l10n de UI, G4+).
         guard let memberKey = delta.rawSyncID else { return }
         let existing = try fetchSplitMember(zoneID: delta.groupID, memberKey: memberKey, context: context)
@@ -927,7 +928,12 @@ final class GroupsSyncClient {
                 groupID: delta.groupID, memberKey: memberKey)
         }
         model.groupZoneID = delta.groupID
-        model.cloudKitUserRecordID = memberKey
+        // Separación de canales (G3): el `member_key` del backend aterriza en `SplitMember.memberKey`, NUNCA
+        // en `cloudKitUserRecordID` (el `sub` no debe contaminar el campo CloudKit). Al ADOPTAR una fila
+        // CloudKit preexistente por fallback (member_key == su `cloudKitUserRecordID`) también se escribe el
+        // `memberKey` — a partir de ahí matchea por el path directo. En born-remote `cloudKitUserRecordID`
+        // se queda "" (nunca lo tocamos aquí).
+        model.memberKey = memberKey
         let f = delta.fields
         if let v = wireString(f["display_name"]) { model.displayName = v }
         if let v = wireString(f["role"]) { model.role = v }
@@ -958,11 +964,22 @@ final class GroupsSyncClient {
         var d = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID }); d.fetchLimit = 1
         return try context.fetch(d).first
     }
+    /// Dual-match del `member_key` (G3): PRIMERO por el campo directo `SplitMember.memberKey` (members del
+    /// canal backend — born-remote y ya-adoptados); si no matchea, FALLBACK por `cloudKitUserRecordID` para
+    /// una fila preexistente del mundo CloudKit (grupos migrados G6-era, cuyo `member_key` server-side ES su
+    /// viejo record-name). El caller (applyMember) escribe `memberKey` al adoptar → el próximo apply matchea
+    /// por el path directo y no re-cae al fallback. `#Predicate` CONCRETO por tipo + igualdad exacta sobre el
+    /// opcional (patrón seguro, regla inviolable — nada de `localizedStandardContains`/coalesce sobre opcional).
     private func fetchSplitMember(zoneID: String, memberKey: String, context: ModelContext) throws -> SplitMember? {
-        var d = FetchDescriptor<SplitMember>(
+        var direct = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneID && $0.memberKey == memberKey })
+        direct.fetchLimit = 1
+        if let hit = try context.fetch(direct).first { return hit }
+
+        var legacy = FetchDescriptor<SplitMember>(
             predicate: #Predicate { $0.groupZoneID == zoneID && $0.cloudKitUserRecordID == memberKey })
-        d.fetchLimit = 1
-        return try context.fetch(d).first
+        legacy.fetchLimit = 1
+        return try context.fetch(legacy).first
     }
 
     // MARK: - Gate 5/5 del bridge remoto (molde SplitSyncManager.processPendingRemoteChanges)
