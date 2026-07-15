@@ -279,6 +279,13 @@ final class AppBootstrapper {
         SplitSyncManager.shared.setContext(context)
         if !uiTestActive && !SecondarySessionStore.isActive() { SplitSyncManager.shared.initialize() }
 
+        // G2 (DARK): canal de sync de Grupos → backend. NO-OP salvo con `groupsBackendEnabled` ON (jamás
+        // en producción esta fase) — el guard interno retorna antes de tocar red o modelos. Mismo guard
+        // uitest/secundaria que el CKSyncEngine de arriba (la persona solo-grupos entra por hasSession).
+        if !uiTestActive && !SecondarySessionStore.isActive() {
+            GroupsSyncClient.shared.startIfEligible(context: context)
+        }
+
         // 16. Initialize Group Services (GC-03)
         GroupService.shared.setContext(context)
         GroupExpenseService.shared.setContext(context)

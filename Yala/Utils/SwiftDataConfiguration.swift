@@ -83,6 +83,8 @@ enum SwiftDataConfiguration {
             SyncDanglingRef.self,
             SyncUnitClock.self,
             MigrationState.self,
+            GroupSyncOutbox.self,
+            GroupSyncCursor.self,
         ])
     }
 
@@ -138,6 +140,9 @@ enum SwiftDataConfiguration {
             SyncDanglingRef.self,
             SyncUnitClock.self,
             MigrationState.self,
+            // G2: cola + cursor del canal de sync de Grupos → backend (DARK; store `.none`, sin deploy).
+            GroupSyncOutbox.self,
+            GroupSyncCursor.self,
         ])
     }
 

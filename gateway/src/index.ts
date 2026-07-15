@@ -14,6 +14,7 @@ import {
   handleSyncPush,
 } from "./sync/routes";
 import { handleAccountClaim, handleAccountExists, handleAccountMigration } from "./sync/account";
+import { handleGroupsMerkle, handleGroupsPull, handleGroupsPush } from "./groups/routes";
 import { handleDebugPush } from "./push/routes";
 
 /**
@@ -63,6 +64,11 @@ app.get("/prefs/pull", handlePrefsPull);
 app.post("/account/claim", handleAccountClaim); // reserva atómica; estado de 3 valores
 app.get("/account/exists", handleAccountExists); // hint de encaminamiento (no la garantía anti-doble-siembra)
 app.post("/account/migration", handleAccountMigration); // cutover/complete §g.4 + reverse_* §h + heartbeat I14-pre (guard líder)
+
+// --- Grupos->backend (G2): canal de sync de grupos (apply_group_delta SECURITY INVOKER; RLS por membership) ---
+app.post("/groups/push", handleGroupsPush);
+app.get("/groups/pull", handleGroupsPull);
+app.get("/groups/merkle", handleGroupsMerkle);
 
 app.notFound(() => jsonError("yala_bad_request", "Not found", 404));
 

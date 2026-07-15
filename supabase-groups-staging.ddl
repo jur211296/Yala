@@ -3,18 +3,21 @@
 -- axis is PER GROUP (group_seq_counters / stamp_group_seq), the PK is (group_id, sync_id) / (group_id, member_key),
 -- and RLS is by MEMBERSHIP (is_group_member / is_group_writer / is_group_admin) instead of (auth.uid() = user_id).
 --
--- This file is the OFFLINE mold of the live staging schema and is composed of two applied migrations, verbatim:
+-- This file is the OFFLINE mold of the live staging schema and is composed of three applied migrations, verbatim:
 --   §1 g1_01_groups_infra_tables  — tables, per-group seq trigger, membership helpers, RLS policies, grants.
 --   §2 g1_02_groups_rpcs          — the 9 membership/invite/rename RPCs + the column-level UPDATE grants (hallazgo #1).
--- Regenerate on any groups-schema change by concatenating the two applied migrations (keep §1 verbatim from the
--- live g1_01, minus the re-apply prelude/incident header; append the full g1_02). Staging-only until the flag gate.
+--   §3 g2_01_apply_group_delta    — the push RPC of the sync channel (LWW per coherence unit, tombstone, group-scoped key).
+-- Regenerate on any groups-schema change by concatenating the applied migrations (keep §1 verbatim from the
+-- live g1_01, minus the re-apply prelude/incident header; append the full g1_02, then g2_01). Staging-only until the flag gate.
 -- Vocabulary parity with the app (SplitMember.swift): status ∈ {active,pendingApproval,rejected,left,removed}; role ∈ {admin,member}.
 --
--- SYNC NOTE (G2): group_members is PULL-ONLY on the sync channel — the client NEVER pushes it (no PATCH, no
--- apply_group_delta write). §2 revokes ALL direct UPDATE on group_members from authenticated; the only client
--- write path is the RPC update_member_display_name (rename, unidad 'profile'); every membership mutation goes
--- through the SECURITY DEFINER RPCs. Financial content SELECT (split_expenses/shares/settlements) is gated to
--- ACTIVE writers (is_group_writer), not is_group_member — a pendingApproval member cannot read group content.
+-- SYNC NOTE (G2): the client PUSHES only split_groups (meta, update-only) + the 3 content tables via apply_group_delta
+-- (§3, SECURITY INVOKER — RLS + column grants arbitrate); group_members is PULL-ONLY (the client NEVER pushes it: no
+-- PATCH, no apply_group_delta write — the RPC rejects it with yala_bad_request). §2 revokes ALL direct UPDATE on
+-- group_members from authenticated; the only client write path is the RPC update_member_display_name (rename, unidad
+-- 'profile'); every membership mutation goes through the SECURITY DEFINER RPCs. Financial content SELECT
+-- (split_expenses/shares/settlements) is gated to ACTIVE writers (is_group_writer), not is_group_member — a
+-- pendingApproval member cannot read group content.
 
 
 -- ============================================================================
@@ -861,3 +864,243 @@ revoke update on public.split_settlements from authenticated;
 grant update (from_member_key, to_member_key, amount, currency_code, note, date, is_confirmed,
               field_hlcs, hlc, deleted, deleted_hlc, schema_version, updated_at)
   on public.split_settlements to authenticated;
+
+
+-- ============================================================================
+-- §3 — g2_01_apply_group_delta (RPC de push del canal de sync Grupos→backend)
+-- ============================================================================
+-- g2_01_apply_group_delta — RPC del canal de sync Grupos→backend (G2).
+-- Gemelo ESTRUCTURAL de apply_delta (canal personal): PATCH por unidad de coherencia con field_hlcs,
+-- LWW por HLC textual (>), tombstone row-level con guard delete-vs-upsert §d.4bis, jsonb_populate_record
+-- para castear fields. Diferencias vs el molde:
+--   1. clave (group_id, sync_id) para las 3 tablas de CONTENIDO (split_expenses/shares/settlements).
+--   2. rama ESPECIAL split_groups: clave group_id (p_sync_id se IGNORA, puede venir null); UPDATE-ONLY —
+--      los grupos nacen SOLO vía create_group, JAMÁS por INSERT aquí (upsert/tombstone de inexistente = noop).
+--   3. group_members (pull-only) y cualquier otra entidad → yala_bad_request (sin interpolar p_entity).
+--   4. GET DIAGNOSTICS tras CADA UPDATE dinámico: bajo la RLS de grupos un UPDATE puede afectar 0 filas
+--      aunque el SELECT viera la fila (split_groups: SELECT es is_group_member pero UPDATE exige is_group_admin
+--      → un member no-admin vería la meta pero el UPDATE la excluiría en silencio) → noop not_authorized_or_gone.
+--   5. La RLS decide en silencio: INSERT que viola WITH CHECK lanza 42501 (insufficient_privilege); se
+--      envuelve el cuerpo de escritura y se sanitiza a yala_not_authorized (sin oráculo de existencia).
+-- SECURITY INVOKER (implícito, igual que apply_delta): la RLS de membership + los column grants de G1 arbitran.
+
+create or replace function public.apply_group_delta(
+  p_entity text, p_group_id text, p_sync_id uuid, p_op text,
+  p_fields jsonb, p_field_hlcs jsonb,
+  p_row_hlc text default null, p_schema_version integer default 1)
+ returns jsonb
+ language plpgsql
+ set search_path to 'public'
+as $function$
+declare
+  c_tables constant text[] := array['split_expenses','split_shares','split_settlements'];
+  v_uid           uuid := auth.uid();
+  v_is_group_meta boolean := (p_entity = 'split_groups');
+  v_found         boolean;
+  v_exists        boolean := false;
+  v_deleted       boolean;
+  v_deleted_hlc   text;
+  v_row_hlc       text;
+  v_stored_fh     jsonb;
+  v_delta_hlc     text;
+  v_reinstates    boolean;
+  v_unit          text;
+  v_uhlc          text;
+  v_floor         text;
+  v_win_fields    jsonb := '{}'::jsonb;
+  v_new_fh        jsonb;
+  v_applied       text[] := array[]::text[];
+  v_cols          text[];
+  v_collist       text;
+  v_vallist       text;
+  v_rowcount      bigint;
+begin
+  -- Auth guard (SECURITY INVOKER requiere un JWT de usuario). Sanitizado.
+  if v_uid is null then
+    raise exception 'yala_not_authorized' using errcode = 'P0001';
+  end if;
+
+  -- Dispatch: split_groups (rama especial) o una de las 3 de contenido. group_members (pull-only) y cualquier
+  -- otra entidad → yala_bad_request SIN interpolar p_entity (sin oráculo del schema).
+  if not v_is_group_meta and not (p_entity = any (c_tables)) then
+    raise exception 'yala_bad_request' using errcode = 'P0001';
+  end if;
+
+  -- Cuerpo de escritura: si el caller no es writer/admin, el INSERT viola WITH CHECK (42501) → se sanitiza a
+  -- yala_not_authorized; el UPDATE no ve la fila (0 filas, capturado por GET DIAGNOSTICS).
+  begin
+    -------------------------------------------------- estado actual (la RLS restringe la visibilidad)
+    -- EXECUTE no setea FOUND → un literal `true` como columna centinela (NULL sin fila) es el flag de existencia.
+    if v_is_group_meta then
+      execute
+        'select true, deleted, deleted_hlc, hlc, field_hlcs from public.split_groups where group_id = $1'
+        into v_found, v_deleted, v_deleted_hlc, v_row_hlc, v_stored_fh
+        using p_group_id;
+    else
+      execute format(
+        'select true, deleted, deleted_hlc, hlc, field_hlcs from public.%I where group_id = $1 and sync_id = $2',
+        p_entity)
+        into v_found, v_deleted, v_deleted_hlc, v_row_hlc, v_stored_fh
+        using p_group_id, p_sync_id;
+    end if;
+    v_exists := coalesce(v_found, false);
+
+    ------------------------------------------------------------------------ TOMBSTONE (row-level)
+    if p_op = 'tombstone' then
+      if not v_exists then
+        -- split_groups: los grupos nacen SOLO vía create_group; tombstone de inexistente = noop.
+        if v_is_group_meta then
+          return jsonb_build_object('op','tombstone','noop',true,'reason','group_not_found');
+        end if;
+        execute format(
+          'insert into public.%I (group_id, sync_id, deleted, deleted_hlc, hlc, field_hlcs, schema_version)
+           values ($1, $2, true, $3, coalesce($3, ''''), ''{}''::jsonb, $4)', p_entity)
+          using p_group_id, p_sync_id, p_row_hlc, p_schema_version;
+        return jsonb_build_object('op','tombstone','inserted',true,'applied',true,'noop',false);
+      end if;
+      if p_row_hlc > coalesce(v_row_hlc, '') then
+        if v_is_group_meta then
+          execute
+            'update public.split_groups set deleted = true, deleted_hlc = $2, updated_at = now()
+             where group_id = $1'
+            using p_group_id, p_row_hlc;
+        else
+          execute format(
+            'update public.%I set deleted = true, deleted_hlc = $3, updated_at = now()
+             where group_id = $1 and sync_id = $2', p_entity)
+            using p_group_id, p_sync_id, p_row_hlc;
+        end if;
+        get diagnostics v_rowcount = row_count;
+        if v_rowcount = 0 then
+          return jsonb_build_object('op','tombstone','noop',true,'reason','not_authorized_or_gone');
+        end if;
+        return jsonb_build_object('op','tombstone','applied',true,'noop',false);
+      end if;
+      return jsonb_build_object('op','tombstone','applied',false,'noop',true,'reason','stale_tombstone');
+    end if;
+
+    ------------------------------------------------------------------------------- UPSERT
+    v_delta_hlc := (select max(value) from jsonb_each_text(p_field_hlcs));
+    if v_delta_hlc is null then
+      raise exception 'yala_bad_request' using errcode = 'P0001';
+    end if;
+
+    -------- fila INEXISTENTE
+    if not v_exists then
+      -- split_groups: NUNCA insert aquí (create_group es el único nacimiento del grupo).
+      if v_is_group_meta then
+        return jsonb_build_object('op','upsert','noop',true,'reason','group_not_found');
+      end if;
+      -- fresh INSERT: cada unidad aplica (no hay estado previo que perder).
+      for v_unit in select key from jsonb_each_text(p_field_hlcs) loop
+        v_win_fields := v_win_fields || coalesce(p_fields -> v_unit, '{}'::jsonb);
+        v_applied := array_append(v_applied, v_unit);
+      end loop;
+      select array_agg(k) into v_cols from jsonb_object_keys(v_win_fields) k;
+
+      if v_cols is null then
+        execute format(
+          'insert into public.%I (group_id, sync_id, field_hlcs, hlc, deleted, deleted_hlc, schema_version)
+           values ($1, $2, $3, $4, false, null, $5)', p_entity)
+          using p_group_id, p_sync_id, p_field_hlcs, v_delta_hlc, p_schema_version;
+      else
+        v_collist := (select string_agg(format('%I', k), ', ') from unnest(v_cols) k);
+        v_vallist := (select string_agg(format('r.%I', k), ', ') from unnest(v_cols) k);
+        execute format(
+          'insert into public.%I (group_id, sync_id, %s, field_hlcs, hlc, deleted, deleted_hlc, schema_version)
+           select $1, $2, %s, $4, $5, false, null, $6
+           from jsonb_populate_record(null::public.%I, $3) r',
+          p_entity, v_collist, v_vallist, p_entity)
+          using p_group_id, p_sync_id, v_win_fields, p_field_hlcs, v_delta_hlc, p_schema_version;
+      end if;
+      return jsonb_build_object('op','upsert','inserted',true,'applied_units',to_jsonb(v_applied),'noop',false);
+    end if;
+
+    -------- fila EXISTENTE: guard delete-vs-upsert ROW-LEVEL (§d.4bis congelado)
+    v_reinstates := (v_delta_hlc > coalesce(v_deleted_hlc, ''));
+    if v_deleted and not v_reinstates then
+      return jsonb_build_object('op','upsert','noop',true,'reason','stale_over_tombstone');
+    end if;
+
+    for v_unit, v_uhlc in select key, value from jsonb_each_text(p_field_hlcs) loop
+      v_floor := coalesce(v_stored_fh ->> v_unit, '');
+      if v_deleted then v_floor := greatest(v_floor, coalesce(v_deleted_hlc, '')); end if;
+      if v_uhlc > v_floor then
+        v_win_fields := v_win_fields || coalesce(p_fields -> v_unit, '{}'::jsonb);
+        v_applied := array_append(v_applied, v_unit);
+      end if;
+    end loop;
+
+    if array_length(v_applied, 1) is null and not (v_deleted and v_reinstates) then
+      return jsonb_build_object('op','upsert','noop',true,'reason','all_units_stale');
+    end if;
+
+    v_new_fh := coalesce(v_stored_fh, '{}'::jsonb);
+    foreach v_unit in array v_applied loop
+      v_new_fh := v_new_fh || jsonb_build_object(v_unit, p_field_hlcs ->> v_unit);
+    end loop;
+
+    select array_agg(k) into v_cols from jsonb_object_keys(v_win_fields) k;
+
+    if v_cols is null then
+      if v_is_group_meta then
+        execute
+          'update public.split_groups set deleted = false, deleted_hlc = null,
+             field_hlcs = $2, hlc = coalesce((select max(value) from jsonb_each_text($2)), $3),
+             schema_version = $4, updated_at = now()
+           where group_id = $1'
+          using p_group_id, v_new_fh, v_delta_hlc, p_schema_version;
+      else
+        execute format(
+          'update public.%I set deleted = false, deleted_hlc = null,
+             field_hlcs = $3, hlc = coalesce((select max(value) from jsonb_each_text($3)), $4),
+             schema_version = $5, updated_at = now()
+           where group_id = $1 and sync_id = $2', p_entity)
+          using p_group_id, p_sync_id, v_new_fh, v_delta_hlc, p_schema_version;
+      end if;
+      get diagnostics v_rowcount = row_count;
+    else
+      v_collist := (select string_agg(format('%I', k), ', ') from unnest(v_cols) k);
+      v_vallist := (select string_agg(format('r.%I', k), ', ') from unnest(v_cols) k);
+      if v_is_group_meta then
+        execute format(
+          'update public.split_groups as t set (%s) = (select %s from jsonb_populate_record(null::public.split_groups, $2) r),
+             field_hlcs = $3, hlc = (select max(value) from jsonb_each_text($3)),
+             deleted = case when $4 then false else t.deleted end,
+             deleted_hlc = case when $4 then null else t.deleted_hlc end,
+             schema_version = $5, updated_at = now()
+           where t.group_id = $1',
+          v_collist, v_vallist)
+          using p_group_id, v_win_fields, v_new_fh, (v_deleted and v_reinstates), p_schema_version;
+      else
+        execute format(
+          'update public.%I as t set (%s) = (select %s from jsonb_populate_record(null::public.%I, $3) r),
+             field_hlcs = $4, hlc = (select max(value) from jsonb_each_text($4)),
+             deleted = case when $5 then false else t.deleted end,
+             deleted_hlc = case when $5 then null else t.deleted_hlc end,
+             schema_version = $6, updated_at = now()
+           where t.group_id = $1 and t.sync_id = $2',
+          p_entity, v_collist, v_vallist, p_entity)
+          using p_group_id, p_sync_id, v_win_fields, v_new_fh, (v_deleted and v_reinstates), p_schema_version;
+      end if;
+      get diagnostics v_rowcount = row_count;
+    end if;
+
+    if v_rowcount = 0 then
+      return jsonb_build_object('op','upsert','noop',true,'reason','not_authorized_or_gone');
+    end if;
+
+    return jsonb_build_object(
+      'op','upsert','applied_units',to_jsonb(v_applied),
+      'resurrected', (v_deleted and v_reinstates), 'noop', false);
+
+  exception
+    when insufficient_privilege then
+      raise exception 'yala_not_authorized' using errcode = 'P0001';
+  end;
+end;
+$function$;
+
+-- Grants: revocar de public/anon, otorgar solo a authenticated (la RLS de membership arbitra dentro).
+revoke all on function public.apply_group_delta(text, text, uuid, text, jsonb, jsonb, text, integer) from public, anon;
+grant execute on function public.apply_group_delta(text, text, uuid, text, jsonb, jsonb, text, integer) to authenticated;

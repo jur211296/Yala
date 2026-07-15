@@ -2246,6 +2246,21 @@
       "coverage": "manual:qa/cloud/cross-member-rls-test.sh (GATE DE RELEASE, 71 asserts contra staging: no-miembro sin acceso a las 5 tablas; pendingApproval lee grupo/roster pero NO contenido financiero ni escribe; approve habilita escritura; escalada role/status/field_hlcs BLOQUEADA por revoke total de UPDATE en group_members (rename solo via RPC update_member_display_name); remove/leave/re-join(revive)/re-approve; invites revocado/agotado/ttl-fuera-de-rango/expirado(seed MCP); owner no se va ni se auto-remueve; DELETE revocado; rebind legacy pendingApproval-first + approve recupera historial; groups_forget_user transfer/tombstone/anonimizacion sentinel __deleted_user__). Corrida: --prepare-legacy + 2 seeds MCP execute_sql (impresos por el script) + corrida normal. Contrato offline supabase-groups-staging.ddl = g1_01 (infra re-aplicada como g1_01b tras drop accidental de la sesion 'limpiar residuos') + g1_02 (9 RPCs SECURITY DEFINER, errores yala_*, field_hlcs por unidad profile/membership/meta, column-level grants).",
       "owner": "",
       "lastVerified": "2026-07-15"
+    },
+    {
+      "area": "groups-backend-g2-sync-channel",
+      "codeGlobs": [
+        "group_capability_manifest.json",
+        "gateway/src/groups/**",
+        "gateway/test/groups.goldens.test.ts",
+        "Yala/Services/CloudSync/Groups/**",
+        "YalaTests/CloudSync/GroupsSyncClientTests.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/CloudSync/GroupsSyncClientTests (9, DARK: particion de muros groupEntityNames vs personalEntityNames [ambos drains sobre un save mixto], echo-suppression por autor propio, cursores por grupo, query del pull assertada URL real [leccion d49d2e47], no-op con flag off, emision gmoney/gshare con expansion de unidad, paridad emision<->group_capability_manifest.json con la resta exacta split_groups.created_at no-grantable [guard nacido del review adversarial]) + unit:gateway/test/groups.goldens.test.ts (9 network-ON contra staging: push/pull/merkle, convergencia en ordenes inversos, idempotencia, pull_only rechazado, group_not_found, not-writer rejected, merkle A/B mismo root) + los parity anchors de CloudSyncSchemaParityTests (GroupSyncOutbox/GroupSyncCursor en sync-meta). Canal TODO DARK tras CloudSyncFlags.groupsBackendEnabled=false; residuales G4 documentados en el commit (paginacion del pull sin re-pull, upstream_400 sin dead-letter, breadcrumbs del token guard ausentes, noop group_not_found purga outbox de meta).",
+      "owner": "",
+      "lastVerified": "2026-07-15"
     }
   ]
 }

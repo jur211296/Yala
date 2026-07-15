@@ -11,8 +11,10 @@ import SwiftData
 
 @Model
 final class SplitSettlement {
-    var id: UUID = UUID()
-    var groupZoneID: String = ""
+    // `.preserveValueOnDeletion`: G2 usa `id` como sync_id y `groupZoneID` como `group_id` del wire → el
+    // history tombstone debe conservarlos para emitir el borrado (metadata local; groups store `.none`).
+    @Attribute(.preserveValueOnDeletion) var id: UUID = UUID()
+    @Attribute(.preserveValueOnDeletion) var groupZoneID: String = ""
     var fromMemberID: String = ""
     var toMemberID: String = ""
     var amount: Double = 0

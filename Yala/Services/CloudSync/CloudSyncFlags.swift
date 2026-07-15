@@ -169,6 +169,15 @@ nonisolated enum CloudSyncFlags {
         secondarySessionEnabled && syncRuntimeEnabled && CloudBackendConfig.isConfigured
     }
 
+    /// Gate del canal de sync de GRUPOS → backend (incremento G2). Cuando `true` (JAMÁS en producción
+    /// esta fase), `GroupsSyncClient.startIfEligible()` arranca el drain/push/pull del store de Grupos
+    /// contra el gateway (`/groups/*`). HOY es SIEMPRE `false` — ningún path de producción lo activa: el
+    /// canal de Grupos vive DARK detrás de este flag, sin comportamiento nuevo en runtime. El sync de
+    /// Grupos vigente lo sigue haciendo CKSyncEngine (`SplitSyncManager`); este canal es la CLASE NUEVA
+    /// (backend propio) que lo reemplazará cuando el Modo Nube de Grupos encienda (G4+). `var` (no `let`)
+    /// solo para que los tests lo togglean con `defer { restore }`.
+    static var groupsBackendEnabled = false
+
     /// SUB-flag de la purga de SwiftData History tras un ciclo completo del runtime (sigue DOBLE-DARK:
     /// exige además `syncRuntimeEnabled`, hoy `false` → la purga NO corre en producción todavía).
     /// `true` desde el veredicto del spike device S2 (owner, 2026-07-08, iPhone real con datos +

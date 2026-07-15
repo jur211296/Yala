@@ -11,8 +11,12 @@ import SwiftData
 
 @Model
 final class SplitExpense {
-    var id: UUID = UUID()
-    var groupZoneID: String = ""
+    // `.preserveValueOnDeletion`: el canal de sync de Grupos (G2) usa `id` como sync_id y `groupZoneID`
+    // como `group_id` del wire → el history tombstone debe conservarlos para emitir el borrado. Metadata
+    // de History local; el groups store es `.none` (CKSyncEngine usa CKRecordTranslator, no History) → sin
+    // efecto en CloudKit ni deploy.
+    @Attribute(.preserveValueOnDeletion) var id: UUID = UUID()
+    @Attribute(.preserveValueOnDeletion) var groupZoneID: String = ""
     var amount: Double = 0
     var currencyCode: String = "USD"
     var expenseDescription: String = ""    // "description" colisiona con CustomStringConvertible

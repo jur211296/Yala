@@ -12,8 +12,11 @@ import SwiftData
 @Model
 final class SplitGroup {
     // CloudKit: all properties must have defaults, no @Attribute(.unique)
-    var id: UUID = UUID()
-    var cloudKitZoneID: String = ""       // "SplitGroup-{uuid}"
+    // `.preserveValueOnDeletion`: G2 usa `id` como sync_id local (dedup) y `cloudKitZoneID` como
+    // `group_id` del wire (la identidad server-side de `split_groups`) → el history tombstone debe
+    // conservarlos para emitir el borrado del grupo (metadata local; groups store `.none`, sin deploy).
+    @Attribute(.preserveValueOnDeletion) var id: UUID = UUID()
+    @Attribute(.preserveValueOnDeletion) var cloudKitZoneID: String = ""       // "SplitGroup-{uuid}"
     var cloudKitZoneOwnerName: String = ""
     var name: String = ""
     var iconName: String = "person.2.fill"

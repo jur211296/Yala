@@ -198,6 +198,56 @@ struct CloudSyncSchemaParityTests {
         #expect(CloudSyncSchemaVersions.migrationState == 2)
     }
 
+    // MARK: - (b·G2) GroupSyncOutbox / GroupSyncCursor (canal de Grupos → backend)
+
+    @Test func groupSyncOutbox_entityName_isAnchoredLiteral() {
+        #expect(entity(GroupSyncOutbox.self)?.name == "GroupSyncOutbox")
+    }
+
+    @Test func groupSyncOutbox_hasExactPropertySet() {
+        // Molde de `SyncOutbox` + `groupID` (el `group_id` del wire de Grupos, §A).
+        let expected: Set<String> = [
+            "syncID",
+            "groupID",
+            "entityType",
+            "opRaw",
+            "hlc",
+            "clientMutationID",
+            "fieldsJSON",
+            "fieldHlcsJSON",
+            "tombstoneReason",
+            "author",
+            "createdAt",
+            "rejectedReason",
+            "rejectedAt",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(GroupSyncOutbox.self) == expected)
+    }
+
+    @Test func groupSyncOutbox_schemaVersion_isOne() {
+        #expect(CloudSyncSchemaVersions.groupSyncOutbox == 1)
+    }
+
+    @Test func groupSyncCursor_entityName_isAnchoredLiteral() {
+        #expect(entity(GroupSyncCursor.self)?.name == "GroupSyncCursor")
+    }
+
+    @Test func groupSyncCursor_hasExactPropertySet() {
+        let expected: Set<String> = [
+            "historyTokenData",
+            "lastDrainedTxAt",
+            "clockLatestHLC",
+            "groupCursorsJSON",
+            "schemaVersion",
+        ]
+        #expect(propertyNames(GroupSyncCursor.self) == expected)
+    }
+
+    @Test func groupSyncCursor_schemaVersion_isOne() {
+        #expect(CloudSyncSchemaVersions.groupSyncCursor == 1)
+    }
+
     // MARK: - (c) Membresía de stores
 
     @Test func personalStore_doesNotContain_syncMetaEntities() {
@@ -212,8 +262,11 @@ struct CloudSyncSchemaParityTests {
     }
 
     @Test func syncMetaStore_containsExactly_syncMetaEntities_andIsCloudKitNone() {
+        // G2 añadió el canal de Grupos → backend: `GroupSyncOutbox` + `GroupSyncCursor` (cola + cursor,
+        // store `.none`, sin deploy CloudKit).
         let expected: Set<String> = ["SyncIdentity", "SyncOutbox", "SyncCursor", "SyncQuarantine",
-                                     "SyncDanglingRef", "SyncUnitClock", "MigrationState"]
+                                     "SyncDanglingRef", "SyncUnitClock", "MigrationState",
+                                     "GroupSyncOutbox", "GroupSyncCursor"]
         #expect(entityNames(SwiftDataConfiguration.syncMetaSchema) == expected)
 
         let config = SwiftDataConfiguration.syncMetaConfiguration

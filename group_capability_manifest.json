@@ -1,0 +1,269 @@
+{
+  "manifest_version": 1,
+  "canon_version": "c1",
+  "description": "SSOT of the Grupos->backend (G2) cloud sync capability-set. SEPARATE channel from capability_manifest.json (personal): PK is (group_id, sync_id) / (group_id, member_key), RLS is by MEMBERSHIP, the seq axis is PER GROUP. Copied to gateway/ via npm run sync:manifest. Entity flags EXTEND the personal manifest schema: split_groups declares push:\"update_only\" (born only via create_group RPC); group_members declares pull_only:true (the client NEVER pushes it, the RPC rejects it). Loaders read those flags with defaults (false / \"upsert_insert\"). Columns in a coherence group carry group_key and NO safe; every other column is safe:true. Append-only: a column never leaves nor changes its type/scale/group.",
+  "server_only_columns": [
+    "server_seq",
+    "hlc",
+    "field_hlcs",
+    "deleted",
+    "deleted_hlc",
+    "schema_version",
+    "updated_at"
+  ],
+  "identity_columns": [
+    "group_id",
+    "sync_id"
+  ],
+  "coherence_groups": {
+    "gmoney": {
+      "entity": "split_expenses",
+      "columns": [
+        "amount",
+        "currency_code"
+      ]
+    },
+    "gshare": {
+      "entity": "split_shares",
+      "columns": [
+        "expense_id",
+        "member_key",
+        "amount"
+      ]
+    },
+    "smoney": {
+      "entity": "split_settlements",
+      "columns": [
+        "amount",
+        "currency_code"
+      ]
+    }
+  },
+  "entities": {
+    "split_groups": {
+      "table": "split_groups",
+      "sync_id_source": "SplitGroup.cloudKitZoneID",
+      "push": "update_only",
+      "columns": {
+        "name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "icon_name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "color_hex": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "currency_code": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "simplify_debts": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "show_debts_in_single_currency": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "members_can_invite": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "default_split_type": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "is_archived": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "is_hidden_for_all": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "created_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        }
+      }
+    },
+    "group_members": {
+      "table": "group_members",
+      "sync_id_source": "member_key",
+      "pull_only": true,
+      "columns": {
+        "user_id": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "safe": true
+        },
+        "display_name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "role": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "status": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "joined_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        }
+      }
+    },
+    "split_expenses": {
+      "table": "split_expenses",
+      "sync_id_source": "SplitExpense.id",
+      "columns": {
+        "amount": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "group_key": "gmoney"
+        },
+        "currency_code": {
+          "pg_type": "text",
+          "format": "utf8",
+          "group_key": "gmoney"
+        },
+        "expense_description": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "note": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "date": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "created_at": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "paid_by_member_key": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "split_type": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "is_settled": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "is_opening_balance": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        },
+        "subcategory_name": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        }
+      }
+    },
+    "split_shares": {
+      "table": "split_shares",
+      "sync_id_source": "SplitShare.id",
+      "columns": {
+        "expense_id": {
+          "pg_type": "uuid",
+          "format": "uuid_lower",
+          "group_key": "gshare"
+        },
+        "member_key": {
+          "pg_type": "text",
+          "format": "utf8",
+          "group_key": "gshare"
+        },
+        "amount": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "group_key": "gshare"
+        },
+        "is_paid": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        }
+      }
+    },
+    "split_settlements": {
+      "table": "split_settlements",
+      "sync_id_source": "SplitSettlement.id",
+      "columns": {
+        "from_member_key": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "to_member_key": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "amount": {
+          "pg_type": "numeric",
+          "scale": 4,
+          "format": "decimal_fixed",
+          "group_key": "smoney"
+        },
+        "currency_code": {
+          "pg_type": "text",
+          "format": "utf8",
+          "group_key": "smoney"
+        },
+        "note": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true
+        },
+        "date": {
+          "pg_type": "timestamptz",
+          "format": "iso8601_ms_utc",
+          "safe": true
+        },
+        "is_confirmed": {
+          "pg_type": "boolean",
+          "format": "bool_tristate",
+          "safe": true
+        }
+      }
+    }
+  }
+}
