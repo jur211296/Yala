@@ -4113,3 +4113,33 @@
 
 /* Terminal relaunch cover body when auto-exit-on-background is active (sign-out/secondary entry): user only needs to go Home; the app exits itself and next launch lands fresh */
 "storage.relaunch.bodyAutoExit" = "Go to your Home Screen, then open Yala again — everything will be ready.";
+
+/* G4 groups consent screen title */
+"groups.consent.title" = "Groups in the cloud";
+
+/* G4 consent point 1 */
+"groups.consent.point1" = "Groups are shared by nature: they live in Yala's cloud so everyone sees the same expenses, up to date.";
+
+/* G4 consent point 2 */
+"groups.consent.point2" = "Only the minimum is shared: your alias and the group's expenses. Your email never leaves your device.";
+
+/* G4 consent point 3 */
+"groups.consent.point3" = "Your personal finances don't move: they stay where you chose, private as always.";
+
+/* G4 consent point 4 */
+"groups.consent.point4" = "Group data travels and is stored protected, and you can leave a group whenever you want.";
+
+/* G4 consent accept CTA */
+"groups.consent.accept" = "Accept and continue";
+
+/* G4 groups-only sign-in title */
+"groups.signin.title" = "Connect your account";
+
+/* G4 sign-in body */
+"groups.signin.body" = "To join the group you need a Yala account. Sign in with your Apple ID and carry on with your invitation.";
+
+/* G4 sign-in R9 account note */
+"groups.signin.accountNote" = "This will be your Yala account: if you ever move your personal data to the cloud, you'll use this same one.";
+
+/* G4 sign-in error */
+"groups.signin.error" = "Hmm, we couldn't connect your account. Please try again.";

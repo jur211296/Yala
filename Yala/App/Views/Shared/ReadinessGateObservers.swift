@@ -27,6 +27,8 @@ private struct ReadinessGateObserversModifier: ViewModifier {
     let activeInboxNotification: PendingInboxNotification
     let showGroupInviteOnboarding: Bool
     let showGroupReconnect: Bool
+    let showGroupsConsent: Bool
+    let showGroupsSignIn: Bool
     let showFullModeActivation: Bool
     let showProTrialOffer: Bool
     let showWhatsNew: Bool
@@ -51,6 +53,8 @@ private struct ReadinessGateObserversModifier: ViewModifier {
             .onChange(of: secondaryEntryRelaunch) { _, _ in recompute() }
             .onChange(of: showGroupInviteOnboarding) { _, _ in recompute() }
             .onChange(of: showGroupReconnect) { _, _ in recompute() }
+            .onChange(of: showGroupsConsent) { _, _ in recompute() }
+            .onChange(of: showGroupsSignIn) { _, _ in recompute() }
             .onChange(of: showFullModeActivation) { _, _ in recompute() }
             .onChange(of: showProTrialOffer) { _, _ in recompute() }
             .onChange(of: showWhatsNew) { _, _ in recompute() }
@@ -88,6 +92,8 @@ extension View {
         activeInboxNotification: PendingInboxNotification,
         showGroupInviteOnboarding: Bool,
         showGroupReconnect: Bool,
+        showGroupsConsent: Bool,
+        showGroupsSignIn: Bool,
         showFullModeActivation: Bool,
         showProTrialOffer: Bool,
         showWhatsNew: Bool,
@@ -112,6 +118,8 @@ extension View {
             activeInboxNotification: activeInboxNotification,
             showGroupInviteOnboarding: showGroupInviteOnboarding,
             showGroupReconnect: showGroupReconnect,
+            showGroupsConsent: showGroupsConsent,
+            showGroupsSignIn: showGroupsSignIn,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,

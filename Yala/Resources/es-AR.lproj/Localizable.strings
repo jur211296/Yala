@@ -4113,3 +4113,33 @@
 
 /* Terminal relaunch cover body when auto-exit-on-background is active (sign-out/secondary entry): user only needs to go Home; the app exits itself and next launch lands fresh */
 "storage.relaunch.bodyAutoExit" = "Andá a la pantalla de inicio y volvé a abrir Yala — todo va a quedar listo.";
+
+/* G4 groups consent screen title */
+"groups.consent.title" = "Grupos en la nube";
+
+/* G4 consent point 1 */
+"groups.consent.point1" = "Los grupos son compartidos por naturaleza: viven en la nube de Yala para que todos vean los mismos gastos, al día.";
+
+/* G4 consent point 2 */
+"groups.consent.point2" = "Solo se comparte lo mínimo: tu alias y los gastos del grupo. Tu correo no sale de tu dispositivo.";
+
+/* G4 consent point 3 */
+"groups.consent.point3" = "Tus finanzas personales no se mueven: siguen donde vos elegiste, privadas como siempre.";
+
+/* G4 consent point 4 */
+"groups.consent.point4" = "Los datos del grupo viajan y se guardan protegidos, y podés salir del grupo cuando quieras.";
+
+/* G4 consent accept CTA */
+"groups.consent.accept" = "Aceptar y continuar";
+
+/* G4 groups-only sign-in title */
+"groups.signin.title" = "Conectá tu cuenta";
+
+/* G4 sign-in body */
+"groups.signin.body" = "Para unirte al grupo necesitás una cuenta de Yala. Entrá con tu Apple ID y seguí con tu invitación.";
+
+/* G4 sign-in R9 account note */
+"groups.signin.accountNote" = "Esta será tu cuenta de Yala: si algún día llevás tus datos personales a la nube, vas a usar esta misma.";
+
+/* G4 sign-in error */
+"groups.signin.error" = "Hmm, no pudimos conectar tu cuenta. Intentalo de nuevo.";

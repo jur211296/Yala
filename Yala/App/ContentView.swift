@@ -61,6 +61,13 @@ struct ContentView: View {
     /// personalizar el welcome de `GroupInviteOnboardingView`.
     @State private var pendingInviteMetadata: InviteMetadata?
     @State private var showGroupReconnect: Bool = false
+    /// G4-invites (A2): sheets del flujo backend sign-in → consent → join, drenados de
+    /// `.presentGroupsConsent` / `.presentGroupsSignIn`. DARK: con `groupsBackendEnabled`
+    /// OFF los intents jamás se submitean.
+    @State private var showGroupsConsent: Bool = false
+    @State private var showGroupsSignIn: Bool = false
+    /// Keying `zoneName` (== group_id backend) del join pendiente que abrió el sheet.
+    @State private var pendingGroupsJoinZone: String?
     @State private var showFullModeActivation: Bool = false
     /// Parte F: oferta "cargar tus datos antes de unirte" cuando un returning user
     /// con datos en iCloud (sin wipe) abre un link de invitación.
@@ -380,6 +387,11 @@ struct ContentView: View {
             showRelaunchCover: $showSecondaryEntryRelaunchCover,
             welcomeCloudCoverVisible: showWelcomeCloudSignIn
         ))
+        .modifier(GroupsBackendInviteModifier(
+            showGroupsConsent: $showGroupsConsent,
+            showGroupsSignIn: $showGroupsSignIn,
+            pendingGroupsJoinZone: $pendingGroupsJoinZone
+        ))
         .modifier(GroupInviteModifier(
             showGroupInviteOnboarding: $showGroupInviteOnboarding,
             pendingInviteMetadata: $pendingInviteMetadata,
@@ -525,6 +537,8 @@ struct ContentView: View {
             activeInboxNotification: activeInboxNotification,
             showGroupInviteOnboarding: showGroupInviteOnboarding,
             showGroupReconnect: showGroupReconnect,
+            showGroupsConsent: showGroupsConsent,
+            showGroupsSignIn: showGroupsSignIn,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,
@@ -603,6 +617,8 @@ struct ContentView: View {
             hasActiveInboxAlert: !activeInboxNotification.isEmpty,
             showGroupInviteOnboarding: showGroupInviteOnboarding,
             showGroupReconnect: showGroupReconnect,
+            showGroupsConsent: showGroupsConsent,
+            showGroupsSignIn: showGroupsSignIn,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,
@@ -701,16 +717,28 @@ struct ContentView: View {
             handleRemoteOnboardingCompleted()
         case .presentFullModeActivation:
             showFullModeActivation = true
-        case .presentGroupsConsent, .presentGroupsSignIn:
-            // A1/A2 SEAM (G4-invites, DARK): A1 define y submitea estos intents desde el
-            // handler backend (flag `groupsBackendEnabled` OFF → JAMÁS se submitean hoy).
-            // A2 conecta aquí las vistas reales (GroupsConsentView / GroupsSignInView) con
-            // sus @State covers + blockers de `ShellReadinessState`. Hasta entonces es un
-            // no-op consciente: el intent se drena sin presentar (inalcanzable con flag OFF).
-            // ⚠️ GATE DE ENCENDIDO: `groupsBackendEnabled` NO debe encenderse antes de A2 —
-            // con el flag ON este drain no-op CONSUMIRÍA el intent sin presentar nada
-            // (presentación perdida, la clase-D exacta del bug TestFlight 2.0.5).
-            break
+        // G4-invites (A2): flujo backend sign-in → consent → (onboarding fresco) → join.
+        // DARK: con `groupsBackendEnabled` OFF los intents jamás se submitean. Las vistas
+        // (GroupsBackendInviteModifier) son sheets del MISMO anchor — entran a la matriz
+        // (`groupsConsent`/`groupsSignIn`) y el drain se retiene mientras un nodo superior tape.
+        case .presentGroupsConsent(let zone):
+            pendingGroupsJoinZone = zone
+            showGroupsConsent = true
+        case .presentGroupsSignIn(let zone):
+            pendingGroupsJoinZone = zone
+            showGroupsSignIn = true
+        case .presentGroupBackendInviteOnboarding(let zone):
+            // Condición viva al drenar (regla del repo): el intent pudo quedar retenido bajo
+            // un cover; si el onboarding YA se completó mientras tanto, no re-presentar —
+            // continuar el flujo directo (join).
+            if !hasCompletedOnboarding {
+                pendingInviteMetadata = nil  // backend: sin CKShare metadata — visual genérico
+                showGroupInviteOnboarding = true
+            } else {
+                Task { @MainActor in
+                    await GroupBackendInviteEntryHandler.continueFlow(zoneName: zone)
+                }
+            }
         default:
             break
         }

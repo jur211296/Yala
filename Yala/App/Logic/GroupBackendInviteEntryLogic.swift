@@ -14,17 +14,33 @@ import Foundation
 nonisolated enum GroupBackendInviteEntryLogic {
 
     /// El siguiente paso del flujo encadenado. Cada llamada re-evalúa condiciones VIVAS (no one-shots
-    /// quemados en el productor — regla del repo): sin sesión → sign-in; con sesión sin consent → consent;
-    /// listo → join.
+    /// quemados en el productor — regla del repo): sin sesión → sign-in; con sesión sin consent →
+    /// consent; usuario FRESCO (sin onboarding) → invite onboarding (captura el nombre ANTES del join,
+    /// paridad con `inviteRouteDecision.acceptAndShowInviteOnboarding`); listo → join.
     enum Step: Equatable {
         case presentSignIn
         case presentConsent
+        /// A2 (paso 6 de A1): usuario fresco — presentar `GroupInviteOnboardingView` (metadata nil,
+        /// visual genérico); el JOIN lo dispara su CTA vía el reconciler (source `.userAction`).
+        case presentInviteOnboarding
         case join
     }
 
-    static func nextStep(hasSession: Bool, isConsented: Bool) -> Step {
+    /// - Parameters:
+    ///   - hasCompletedOnboarding: señal de routing actual (UserDefaults) — un fresco pasa por el
+    ///     invite onboarding para capturar su nombre antes del join (R1: jamás join con placeholder
+    ///     si podemos capturar el real primero).
+    ///   - canPresentOnboarding: `false` cuando el paso viene del CTA del PROPIO onboarding
+    ///     (source `.userAction`) — sin este discriminador el tap de "unirme" re-presentaría la vista.
+    static func nextStep(
+        hasSession: Bool,
+        isConsented: Bool,
+        hasCompletedOnboarding: Bool = true,
+        canPresentOnboarding: Bool = true
+    ) -> Step {
         if !hasSession { return .presentSignIn }
         if !isConsented { return .presentConsent }
+        if !hasCompletedOnboarding && canPresentOnboarding { return .presentInviteOnboarding }
         return .join
     }
 

@@ -4862,3 +4862,33 @@
 
 /* Terminal relaunch cover body when auto-exit-on-background is active (sign-out/secondary entry): user only needs to go Home; the app exits itself and next launch lands fresh */
 "storage.relaunch.bodyAutoExit" = "返回主屏幕，然后重新打开 Yala——一切就绪。";
+
+/* G4 groups consent screen title */
+"groups.consent.title" = "云端群组";
+
+/* G4 consent point 1 */
+"groups.consent.point1" = "群组天生就是共享的：它们保存在 Yala 云端，让每个成员都能看到同样的最新支出。";
+
+/* G4 consent point 2 */
+"groups.consent.point2" = "只分享最少的信息：你的昵称和群组的支出。你的邮箱不会离开你的设备。";
+
+/* G4 consent point 3 */
+"groups.consent.point3" = "你的个人财务不会移动：它们留在你选择的地方，一如既往地私密。";
+
+/* G4 consent point 4 */
+"groups.consent.point4" = "群组数据在传输和存储时都受到保护，你随时可以退出群组。";
+
+/* G4 consent accept CTA */
+"groups.consent.accept" = "接受并继续";
+
+/* G4 groups-only sign-in title */
+"groups.signin.title" = "关联你的账户";
+
+/* G4 sign-in body */
+"groups.signin.body" = "加入群组需要一个 Yala 账户。用你的 Apple ID 登录，继续你的邀请吧。";
+
+/* G4 sign-in R9 account note */
+"groups.signin.accountNote" = "这将是你的 Yala 账户：如果有一天你把个人数据迁移到云端，用的也是这个账户。";
+
+/* G4 sign-in error */
+"groups.signin.error" = "嗯，我们没能关联你的账户。请再试一次。";

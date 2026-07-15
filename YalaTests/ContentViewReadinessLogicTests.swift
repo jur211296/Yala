@@ -32,6 +32,8 @@ struct ContentViewReadinessLogicTests {
         hasActiveInboxAlert: Bool = false,
         showGroupInviteOnboarding: Bool = false,
         showGroupReconnect: Bool = false,
+        showGroupsConsent: Bool = false,
+        showGroupsSignIn: Bool = false,
         showFullModeActivation: Bool = false,
         showProTrialOffer: Bool = false,
         showWhatsNew: Bool = false,
@@ -51,7 +53,9 @@ struct ContentViewReadinessLogicTests {
             showRestoreOffer: showRestoreOffer, hasActiveInviteError: hasActiveInviteError,
             hasActiveGroupSyncError: hasActiveGroupSyncError,
             hasActiveInboxAlert: hasActiveInboxAlert, showGroupInviteOnboarding: showGroupInviteOnboarding,
-            showGroupReconnect: showGroupReconnect, showFullModeActivation: showFullModeActivation,
+            showGroupReconnect: showGroupReconnect,
+            showGroupsConsent: showGroupsConsent, showGroupsSignIn: showGroupsSignIn,
+            showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer, showWhatsNew: showWhatsNew,
             showSyncSettingsSheet: showSyncSettingsSheet,
             isMainTabModalVisible: isMainTabModalVisible
@@ -61,6 +65,29 @@ struct ContentViewReadinessLogicTests {
     @Test func allClean_isReady() {
         #expect(ContentViewReadinessLogic.isReady(state: make()))
         #expect(ContentViewReadinessLogic.blocker(state: make()) == nil)
+    }
+
+    // G4-invites (A2): los 2 sheets del flujo backend bloquean el drain mientras están arriba.
+
+    @Test func groupsConsent_blocks() {
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(showGroupsConsent: true)) == "groupsConsent")
+        #expect(!ContentViewReadinessLogic.isReady(state: make(showGroupsConsent: true)))
+    }
+
+    @Test func groupsSignIn_blocks() {
+        #expect(ContentViewReadinessLogic.blocker(
+            state: make(showGroupsSignIn: true)) == "groupsSignIn")
+        #expect(!ContentViewReadinessLogic.isReady(state: make(showGroupsSignIn: true)))
+    }
+
+    @Test func groupsSheets_areNotTearableWelcomeChain() {
+        // Un sheet del flujo backend arriba NO es cadena welcome — jamás se tumba por un
+        // intent superseding (se retiene, molde welcomeCloudSignIn).
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
+            state: make(showGroupsConsent: true)))
+        #expect(!ContentViewReadinessLogic.isBlockedSolelyByWelcomeChain(
+            state: make(showGroupsSignIn: true)))
     }
 
     // H4: los 2 blockers nuevos del cierre de sesión / sign-in de nube.

@@ -183,7 +183,10 @@ enum GroupJoinReconciler {
 
     private static func mapTrigger(_ trigger: Trigger) -> GroupBackendInviteEntryHandler.Source {
         switch trigger {
-        case .acceptShare, .foreground: return .foreground
+        // .acceptShare = user-tap (CTA del invite onboarding / retry del tracker) → el drive NO debe
+        // re-presentar el onboarding (discriminador canPresentOnboarding de A2).
+        case .acceptShare: return .userAction
+        case .foreground: return .foreground
         case .boot: return .boot
         case .remoteInsert: return .remoteInsert
         }

@@ -19,12 +19,16 @@ import OSLog
 @MainActor
 enum GroupBackendInviteEntryHandler {
 
-    /// Origen de la invocación (telemetría/logs).
+    /// Origen de la invocación (telemetría/logs + discriminador de presentación).
     enum Source: String {
         case universalLink   // tap de un universal link (warm, initialized)
         case boot            // reconciler trigger boot
         case foreground      // reconciler trigger foreground
         case remoteInsert    // reconciler trigger remoteInsert
+        /// CTA del propio GroupInviteOnboardingView (join tap / retry) — JAMÁS re-presenta onboarding.
+        case userAction
+        /// Continuación post sign-in/consent desde los sheets de ContentView (A2).
+        case continuation
     }
 
     private static let logger = Logger(subsystem: "com.yala", category: "SplitSync")
@@ -33,6 +37,11 @@ enum GroupBackendInviteEntryHandler {
 
     static var hasSessionProvider: @MainActor () -> Bool = { CloudAuthService.shared.hasSession }
     static var isConsentedProvider: @MainActor () -> Bool = { GroupsConsentState.isAccepted }
+    /// Señal de routing del invitado fresco (paso 6 §A1 / A2): sin onboarding → invite onboarding
+    /// primero (captura el nombre antes del join).
+    static var hasCompletedOnboardingProvider: @MainActor () -> Bool = {
+        UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+    }
     static var profileNameProvider: @MainActor () -> String = {
         UserDefaults.standard.string(forKey: "userName") ?? ""
     }
@@ -83,20 +92,41 @@ enum GroupBackendInviteEntryHandler {
 
     // MARK: - Driver compartido (handler + reconciler)
 
-    /// Decide el siguiente paso (sign-in / consent / join) re-evaluando condiciones VIVAS y lo ejecuta.
-    /// Reusado por el reconciler backend (§A1 pasos 3-4).
+    /// Decide el siguiente paso (sign-in / consent / invite-onboarding / join) re-evaluando condiciones
+    /// VIVAS y lo ejecuta. Reusado por el reconciler backend (§A1 pasos 3-4) y por la continuación de
+    /// los sheets de A2.
     static func drive(groupID: String, token: String, source: Source) async {
         switch GroupBackendInviteEntryLogic.nextStep(
-            hasSession: hasSessionProvider(), isConsented: isConsentedProvider()) {
+            hasSession: hasSessionProvider(),
+            isConsented: isConsentedProvider(),
+            hasCompletedOnboarding: hasCompletedOnboardingProvider(),
+            canPresentOnboarding: source != .userAction
+        ) {
         case .presentSignIn:
             RouterEntryGate.shared.submit(.presentGroupsSignIn(pendingJoin: groupID))
             logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: no session → present sign-in for \(groupID, privacy: .public)")
         case .presentConsent:
             RouterEntryGate.shared.submit(.presentGroupsConsent(pendingJoin: groupID))
             logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: no consent → present consent for \(groupID, privacy: .public)")
+        case .presentInviteOnboarding:
+            RouterEntryGate.shared.submit(.presentGroupBackendInviteOnboarding(pendingJoin: groupID))
+            logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: fresh user → present invite onboarding for \(groupID, privacy: .public)")
         case .join:
             await attemptJoin(groupID: groupID, token: token, source: source, legacyMemberKey: nil)
         }
+    }
+
+    /// Continuación del flujo encadenado desde los sheets de A2 (sign-in OK / consent aceptado) o desde
+    /// el drain con condición viva stale: re-lee el intent persistido y re-evalúa el siguiente paso.
+    static func continueFlow(zoneName: String) async {
+        guard let entry = PendingJoinStore.entry(zoneName: zoneName),
+              let groupID = entry.backendGroupID,
+              let token = entry.inviteToken
+        else {
+            logger.notice("BackendInvite[continuation]: no live backend intent for \(zoneName, privacy: .public) — nothing to continue")
+            return
+        }
+        await drive(groupID: groupID, token: token, source: .continuation)
     }
 
     /// Ejecuta el `join_group` RPC + clasifica el resultado. `legacyMemberKey` hoy siempre nil en el
@@ -161,7 +191,10 @@ enum GroupBackendInviteEntryHandler {
                 "reason": GroupBackendAcceptErrorLogic.slug(for: error),
             ])
             PendingJoinStore.clear(zoneName: groupID)
-            GroupJoinIntentTracker.shared.clear()
+            // Señala el fallo a la vista de onboarding (failedStep) en vez de dejarla en
+            // joining/takingLong con el alert retenido detrás del cover; recoverable: false
+            // porque el intent ya se limpió (invalidInvite/permanente no se reintenta).
+            GroupJoinIntentTracker.shared.noteAcceptFailed(zoneName: groupID, recoverable: false)
             if kind == .invalidInvite {
                 RouterEntryGate.shared.submit(.showInviteError(String(localized: "groups.invite.linkInvalidDetail")))
             } else {

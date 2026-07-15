@@ -4862,3 +4862,33 @@
 
 /* Terminal relaunch cover body when auto-exit-on-background is active (sign-out/secondary entry): user only needs to go Home; the app exits itself and next launch lands fresh */
 "storage.relaunch.bodyAutoExit" = "ホーム画面に戻り、もう一度 Yala を開いてください。これで完了です。";
+
+/* G4 groups consent screen title */
+"groups.consent.title" = "クラウドのグループ";
+
+/* G4 consent point 1 */
+"groups.consent.point1" = "グループはもともと共有のもの。全員が同じ支出を最新の状態で見られるよう、Yalaのクラウドに保存されます。";
+
+/* G4 consent point 2 */
+"groups.consent.point2" = "共有されるのは最小限だけ：あなたのニックネームとグループの支出。メールアドレスがデバイスの外に出ることはありません。";
+
+/* G4 consent point 3 */
+"groups.consent.point3" = "あなた個人の家計データは動きません。選んだ場所に、これまでどおりプライベートなまま残ります。";
+
+/* G4 consent point 4 */
+"groups.consent.point4" = "グループのデータは保護されて送信・保存されます。グループはいつでも退出できます。";
+
+/* G4 consent accept CTA */
+"groups.consent.accept" = "同意して続ける";
+
+/* G4 groups-only sign-in title */
+"groups.signin.title" = "アカウントを連携";
+
+/* G4 sign-in body */
+"groups.signin.body" = "グループに参加するにはYalaアカウントが必要です。Apple IDでサインインして、招待を続けましょう。";
+
+/* G4 sign-in R9 account note */
+"groups.signin.accountNote" = "これがあなたのYalaアカウントになります。いつか個人データをクラウドに移すときも、この同じアカウントを使います。";
+
+/* G4 sign-in error */
+"groups.signin.error" = "アカウントを連携できませんでした。もう一度お試しください。";

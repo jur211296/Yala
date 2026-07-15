@@ -50,6 +50,10 @@ struct ShellReadinessState: Equatable {
     let hasActiveInboxAlert: Bool
     let showGroupInviteOnboarding: Bool
     let showGroupReconnect: Bool
+    /// G4-invites (A2): sheets del flujo backend sign-in → consent → join. Mismo anchor
+    /// que todo lo demás — mientras uno está arriba, el drain se retiene (peek-first).
+    let showGroupsConsent: Bool
+    let showGroupsSignIn: Bool
     let showFullModeActivation: Bool
 
     // Shell sheets (same anchor as everything above — a second presentation
@@ -104,6 +108,8 @@ enum ContentViewReadinessLogic {
         // Group flows (modal sheets/covers).
         if state.showGroupInviteOnboarding { return "groupInviteOnboarding" }
         if state.showGroupReconnect { return "groupReconnect" }
+        if state.showGroupsConsent { return "groupsConsent" }
+        if state.showGroupsSignIn { return "groupsSignIn" }
 
         // Shell sheets: while one is presented, a drained intent that sets a
         // second sheet/cover on this same anchor gets discarded by SwiftUI
@@ -169,6 +175,8 @@ extension ShellReadinessState {
             hasActiveInboxAlert: hasActiveInboxAlert,
             showGroupInviteOnboarding: showGroupInviteOnboarding,
             showGroupReconnect: showGroupReconnect,
+            showGroupsConsent: showGroupsConsent,
+            showGroupsSignIn: showGroupsSignIn,
             showFullModeActivation: showFullModeActivation,
             showProTrialOffer: showProTrialOffer,
             showWhatsNew: showWhatsNew,

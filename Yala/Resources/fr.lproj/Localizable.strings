@@ -4851,3 +4851,33 @@
 
 /* Terminal relaunch cover body when auto-exit-on-background is active (sign-out/secondary entry): user only needs to go Home; the app exits itself and next launch lands fresh */
 "storage.relaunch.bodyAutoExit" = "Reviens à l’écran d’accueil puis rouvre Yala — tout sera prêt.";
+
+/* G4 groups consent screen title */
+"groups.consent.title" = "Groupes dans le cloud";
+
+/* G4 consent point 1 */
+"groups.consent.point1" = "Les groupes sont partagés par nature : ils vivent dans le cloud de Yala pour que tout le monde voie les mêmes dépenses, à jour.";
+
+/* G4 consent point 2 */
+"groups.consent.point2" = "Seul le minimum est partagé : ton alias et les dépenses du groupe. Ton e-mail ne quitte pas ton appareil.";
+
+/* G4 consent point 3 */
+"groups.consent.point3" = "Tes finances personnelles ne bougent pas : elles restent là où tu as choisi, privées comme toujours.";
+
+/* G4 consent point 4 */
+"groups.consent.point4" = "Les données du groupe voyagent et sont stockées protégées, et tu peux quitter un groupe quand tu veux.";
+
+/* G4 consent accept CTA */
+"groups.consent.accept" = "Accepter et continuer";
+
+/* G4 groups-only sign-in title */
+"groups.signin.title" = "Connecte ton compte";
+
+/* G4 sign-in body */
+"groups.signin.body" = "Pour rejoindre le groupe, il te faut un compte Yala. Connecte-toi avec ton identifiant Apple et poursuis ton invitation.";
+
+/* G4 sign-in R9 account note */
+"groups.signin.accountNote" = "Ce sera ton compte Yala : si un jour tu déplaces tes données personnelles vers le cloud, tu utiliseras ce même compte.";
+
+/* G4 sign-in error */
+"groups.signin.error" = "Hmm, nous n'avons pas pu connecter ton compte. Réessaie.";

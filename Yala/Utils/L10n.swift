@@ -1933,6 +1933,25 @@ enum L10n {
             static var iCloudRequiredBody: String { ls("groups.errors.iCloudRequiredBody", comment: "") }
         }
 
+        /// G4-invites (A2, §8): consentimiento informado de grupos (molde Storage.Consent).
+        enum Consent {
+            static var title: String { ls("groups.consent.title", comment: "") }
+            static var point1: String { ls("groups.consent.point1", comment: "") }
+            static var point2: String { ls("groups.consent.point2", comment: "") }
+            static var point3: String { ls("groups.consent.point3", comment: "") }
+            static var point4: String { ls("groups.consent.point4", comment: "") }
+            static var accept: String { ls("groups.consent.accept", comment: "") }
+        }
+
+        /// G4-invites (A2, §16d): sign-in solo-grupos (SIWA para unirse por link backend).
+        enum SignIn {
+            static var title: String { ls("groups.signin.title", comment: "") }
+            static var body: String { ls("groups.signin.body", comment: "") }
+            /// Invariante R9: esta será LA cuenta si algún día migra lo personal.
+            static var accountNote: String { ls("groups.signin.accountNote", comment: "") }
+            static var error: String { ls("groups.signin.error", comment: "") }
+        }
+
         /// #26: chips mostrados en GroupCardView cuando el current user está
         /// en estado pendingApproval o rejected (en lugar del balance trailing).
         enum Card {
