@@ -2234,6 +2234,18 @@
       "coverage": "unit:gateway/test/apns.sign.test.ts (9: firma ES256/claims, PEM con \\n literales, cache TTL+rotacion keyId, guards 404/401/503/400 via app.request, transportError sin reject) + manual:qa/cloud/pgcrypto-spike-test.sh (staging: round-trip, llave mala sanitizada, hash estable tras rekey, RLS directa+via RPC, variante GUC; auditoria de logs manual impresa al final) + manual:MODO-NUBE-G0-GUION-DEVICE.md (matriz de entrega del silent push, device fisico; pushCard en CloudSyncDebugView). Spike G0 de Grupos->backend: la prueba live HTTP/2 (paso 7 del plan) espera la .p8 del owner. Todo gateado: /v1/debug/push 404 en prod, cliente #if DEBUG/DEV_BUILD, tabla spike_enc staging con cleanup.",
       "owner": "",
       "lastVerified": "2026-07-14"
+    },
+    {
+      "area": "groups-backend-g1-server",
+      "codeGlobs": [
+        "supabase-groups-staging.ddl",
+        "qa/cloud/cross-member-rls-test.sh"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "manual:qa/cloud/cross-member-rls-test.sh (GATE DE RELEASE, 71 asserts contra staging: no-miembro sin acceso a las 5 tablas; pendingApproval lee grupo/roster pero NO contenido financiero ni escribe; approve habilita escritura; escalada role/status/field_hlcs BLOQUEADA por revoke total de UPDATE en group_members (rename solo via RPC update_member_display_name); remove/leave/re-join(revive)/re-approve; invites revocado/agotado/ttl-fuera-de-rango/expirado(seed MCP); owner no se va ni se auto-remueve; DELETE revocado; rebind legacy pendingApproval-first + approve recupera historial; groups_forget_user transfer/tombstone/anonimizacion sentinel __deleted_user__). Corrida: --prepare-legacy + 2 seeds MCP execute_sql (impresos por el script) + corrida normal. Contrato offline supabase-groups-staging.ddl = g1_01 (infra re-aplicada como g1_01b tras drop accidental de la sesion 'limpiar residuos') + g1_02 (9 RPCs SECURITY DEFINER, errores yala_*, field_hlcs por unidad profile/membership/meta, column-level grants).",
+      "owner": "",
+      "lastVerified": "2026-07-15"
     }
   ]
 }
