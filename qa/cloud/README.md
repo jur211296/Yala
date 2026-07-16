@@ -886,9 +886,9 @@ server-side de DIFERIDOS #23 (racional en el vault, `MODO-NUBE-DIFERIDOS.md` §2
 key reales). ~~El Worker de producción NO está desplegado~~ **DESPLEGADO 2026-07-16 (gate §12
 Bloque A, pedido explícito del owner)** — primer deploy en la historia del Worker
 `yala-gateway-production` (la app de PRODUCCIÓN ya apuntaba a él vía `ProxyConfig` #else). Secrets
-cargados (7): `OPENAI_API_KEY` + `EXCHANGE_RATE_API_KEY` (los de `Secrets.xcconfig` — ⚠️
-pendiente-owner: ROTAR la de OpenAI, viajó extraíble en el archive del build 18, nota del propio
-xcconfig) · `JWT_SIGNING_SECRET` PROPIO de prod (generado 2026-07-16, copia en
+cargados (7): `OPENAI_API_KEY` + `EXCHANGE_RATE_API_KEY` (los de `Secrets.xcconfig` — la de OpenAI YA ES LA
+ROTADA, confirmado por el owner 2026-07-16: la extraíble del archive del build 18 fue revocada;
+el comentario del xcconfig quedó desactualizado) · `JWT_SIGNING_SECRET` PROPIO de prod (generado 2026-07-16, copia en
 `~/Secrets/yala-gateway/prod-jwt-signing-secret`) · `GROUPS_ENC_KEY` de prod
 (`~/Secrets/yala-groups-enc/prod.key`, DISTINTA de staging) · `PUSH_ROLE_JWT` de prod (acuñado con
 `mint-push-role-jwt.mjs` + legacy secret de prod; verificado 200 [] contra PostgREST prod, y el

@@ -479,8 +479,9 @@ UPDATE con WHERE pca IS NULL; el perdedor de una carrera re-clasifica). **Cero c
 - **DEL GATE §12 QUEDA SOLO EL BLOQUE C (owner):** device-QA G6 ([[MODO-NUBE-G6-GUION-DEVICE]] con
   apéndice G7) + device-QA G8 ([[MODO-NUBE-G8-GUION-DEVICE]] incl. multi-device G8-3) + canarios en
   cero durante dogfooding → ENCENDIDO (cloudModeEnabled + groupsBackendEnabled, sesión propia D9).
-  Pendientes-owner nuevos de hoy: ROTAR OPENAI_API_KEY · APP_STORE_API_KEY de prod si el webhook lo
-  usa · residual GDPR de auth.audit_log_entries.
+  Pendientes-owner nuevos de hoy: ~~ROTAR OPENAI_API_KEY~~ (CERRADO mismo día: la subida a prod YA
+  era la rotada, confirmación owner) · APP_STORE_API_KEY de prod si el webhook lo usa · residual
+  GDPR de auth.audit_log_entries.
 
 ### 2026-07-16 (sesión nocturna, 6ª) — G7 pgcrypto ✅ + G8 APNs ✅ — EL PLAN §11 (G0–G8) QUEDA COMPLETO EN CÓDIGO — ⚠️ reconciliar al vault
 
