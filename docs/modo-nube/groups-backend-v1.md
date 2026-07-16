@@ -335,6 +335,95 @@ UPDATE con WHERE pca IS NULL; el perdedor de una carrera re-clasifica). **Cero c
   endurecimiento pre-flags ✅ — quedan G5 (cutover+M1/wipes+gestión de datos), G6 (migración grupos vivos + R10),
   G7 (pgcrypto), G8 (APNs).**
 
+### 2026-07-15/16 — SESIÓN NOCTURNA (4ª noche): G5 COMPLETO ✅ (cutover + sign-out ×4 + M1/wipes + gestión de datos) — ⚠️ reconciliar al vault
+
+> 6 commits (`e3af04ab` D1a-server · `a7de7cec` G5-A · `3e23acf1` G5-B · `7b5ff216` G5-C · `97e5c280` D1b/c ·
+> `b63bbb90` D2). Método íntegro de las noches anteriores: 4 exploradores paralelos → 4 briefs con contrato
+> congelado → /review-plan Opus por brief (los 4 dieron NECESITA AJUSTES — 12 críticos/altos reales foldeados
+> ANTES de implementar, incl. la partición simétrica del drain que el brief de A omitía y la fuente del
+> ModelContext de B) → implementadores Opus secuenciales (D1a-server en paralelo con A: gateway-only, cero
+> solape) → reviews adversariales por incremento (DOBLE lente en A/B/C/D1 — canal personal, sign-out/wipes,
+> multi-usuario) → fixes pre-commit → gates completos → commit+push verificado. **La fila G5 del plan §11
+> queda COMPLETA.** TODO DARK tras `groupsBackendEnabled`.
+
+- **G5-A (`a7de7cec`) — cutover interno de escritura:** `SplitGroup.isBackendGroup` LOCAL-only + partición
+  POR-GRUPO **BIDIRECCIONAL**: guards hacia CKSyncEngine (enqueue*/createZone/createShare/zoneRecovery/
+  `recoverUnsyncedRecordsIfNeeded` — un grupo backend siempre tiene `ckSystemFieldsData==nil`, el recovery
+  del boot lo habría re-encolado) **+ el hallazgo CRÍTICO del /review-plan: el drain del canal backend no
+  filtraba por-grupo** — con flag ON, editar un grupo CLOUDKIT habría drenado filas a un `group_id`
+  inexistente (dead-letters permanentes + doble-sync) → `backendGroupZoneIDs` una vez por drain + skip en
+  las 3 ramas. Routing: crear grupo (gate consent/sign-in ANTES de abrir el form — anchors distintos, el
+  intent con el form abierto quedaría retenido peek-first), invitar (por `isBackendGroup`; CloudKit sigue
+  CKShare hasta G6), membership SERVER-FIRST por `memberKey` (JAMÁS `member.id`). Guards defensivos en
+  reject/changeRole (sin RPC de rol — evitar falso éxito). **NOTA G6 (del lente CloudKit): la adopción de
+  un grupo CloudKit en pull backend DEBE setear `isBackendGroup=true` ATÓMICO o drain+Merkle lo pierden en
+  silencio para siempre.**
+- **G5-B (`3e23acf1`) — matriz de sign-out ×4:** fila NUEVA `.groupsOnlySignOut` (sesión viva + no-.cloud +
+  flag ON) con push-all verificado de grupos (con el FIX SEV-2 del lente-grupos: `drainOnce` ANTES del
+  pre-check — outbox vacío ≠ History drenada; sin él una mutación de segundos antes se perdía PARA SIEMPRE)
+  + **gate de QUIESCENCIA a la entrada (HIGH del lente-personal: el path corre en `.icloud` con el mirror
+  VIVO — la purga salvaba al mainContext compartido sin gate = la clase exacta del crash-loop de restore)**
+  + teardown→purga de outbox/cursores (leak cross-cuenta)→consent clear (con la API NUEVA
+  `PreferenceSyncService.remove(forKey:)` 3 ramas — sin limpiar iKV el consent RESUCITABA al boot)→signOut→
+  wipe del store de grupos ARMADO al boot (4º hook, kill-safe, marker ÚLTIMO). `.cloud` AMPLIADO: push-all
+  de grupos + re-verify S2 doble + marker `includesGroups` (marker-PRIMERO/arm-ÚLTIMO + clear incondicional
+  del huérfano). Copy honesto + fila de cuenta. R9 RECORTADO (migrar-con-sesión re-pide SIWA — gap
+  documentado, incremento propio). Seam `PushTokenSignOutSeam` (G8) en los 4 paths. **Flaky de ENTORNO
+  cazado y arreglado de raíz:** víctima itinerante (pull_403/backfill colgaban sin terminar) por la tormenta
+  IO de los containers on-disk `IdRemap-*` (cleanup en defer con Tasks huérfanos de save — ruido presente ya
+  en el baseline verde) → cleanup no-op documentado; corrida post-fix sin UNA línea de tormenta.
+- **G5-C (`7b5ff216`) — grupos por sesión (M1/D8):** `YalaGroups-Secondary` vía `GroupsStoreDecision`
+  (espeja syncMeta — lectura directa de `isActive()`, jamás el testigo); wipe secundario con grupos (3ª
+  condición del abort-S3); outbox/cursores per-sesión GRATIS vía `YalaSyncMeta-Secondary` (verificado + test
+  de aislamiento por archivo); guards de arranque/cinturón B2/piggyback 5.6/tab/temporaryTab relajados bajo
+  flag (5.6 ELIMINA la cláusula, no OR — el flag ya estaba ANDeado); gates 3/5 y 4/5 retirados DETRÁS del
+  flag (tipos vivos). **HIGH del lente-ON: las superficies de JOIN-INTENT (`PendingJoinStore`/tracker/
+  consent, `UserDefaults.standard` sin scoping) cruzaban la frontera secundaria — el intent de la invitada
+  se habría presentado/ejecutado bajo el DUEÑO (redimir SU token con la cuenta equivocada)** → purga de
+  frontera exhaustiva en ambas direcciones. ⚠️ CONDICIÓN DE ENCENDIDO documentada (H2): flag ON pre-G6 con
+  grupos CloudKit vivos pierde el belt de account-switch (el encendido único D9 post-G6 lo hace seguro).
+- **G5-D1a (`e3af04ab`) — /account/delete server-side (método g3_02):** RPC `delete_personal_account()`
+  HARD DELETE de las 20 tablas per-user + `profiles` (WHERE `auth.uid()` en cada delete), APLICADO en
+  staging tras review adversarial PRE-aplicación (veredicto APLICAR; SEV-3 pre-apply: enumeración VIVA de
+  columnas `user_id` = 22, las 2 extra son del canal de grupos ya cubiertas por `groups_forget_user`).
+  Ruta `POST /account/delete` con `requireUserAndAttest` (asimetría DELIBERADA con el resto de /account —
+  la op más destructiva del canal). md5 registrado (`f1ab01670a85d3d72860b5aeae6cfe2b`). **Verificación
+  WIRE one-shot VERDE sobre sub B** (seed→delete con counts reales tx:53/prefs:41/profiles:1→post-delete
+  vacío→re-claim `created`) + suite gateway re-corrida (164/2). Golden network-ON EXCLUIDO por diseño
+  (destructivo sobre users compartidos; sub A prohibido — sync.goldens pushea como A en paralelo; NO existe
+  re-seed de counters documentado). Gateway re-deployado a staging (paridad).
+- **G5-D1b/c (`97e5c280`) — eliminar-cuenta cliente:** `AccountDeletionService` con ORDEN ANTI-ZOMBIE
+  (forget→teardowns [paran loops SIN matar la auth — un push en vuelo re-crearía corpus en el backend
+  recién vaciado]→delete→seam SIWA→cierre local por modo reusando la red terminal por FASE VIVA); residual
+  push-sobre-sentinel VERIFICADO IMPOSIBLE (`group_members` pull-only en ambos canales). Fila destructiva
+  con doble confirmación. Sentinel `__deleted_user__`→`resolvedDisplayName` en los 12 sitios + builders de
+  diccionario **+ FIX H1 del lente-GDPR: `GroupBalanceService` filtraba el sentinel crudo a la pestaña
+  Balances (superficie fuera de la lista, cazada por el review)**. D1c: copy de vaciar verificado ×16 +
+  test model-level `wipeAllUserData` preserva los 5 `Split*` (harness nuevo).
+- **G5-D2 (`b63bbb90`) — export ampliado:** toggle "Incluir mis grupos" → CSV separado (10 columnas:
+  gastos con MI parte, settlements, MI balance por moneda vía el MISMO `calculateBalances` de la pestaña —
+  patrón `isCurrentUser`, jamás userID); SIN gate por flag (grupos CloudKit existen hoy, read-only);
+  export personal BYTE-IDÉNTICO (invariante testeada); FIX F1 (cero-silencios: fallo del CSV de grupos
+  AVISA en el alert de éxito); headers localizados (no se re-importa — documentado).
+- **RESIDUAL 'status=left' VALIDADO CERRADO (lo pedía el gate):** el server deja la fila `deleted=false`
+  con `status='left'`; los demás members la APLICAN como campo (fila viva → proyección Merkle converge);
+  el que SALE pierde membership → el grupo desaparece de su pull → limpieza local + Merkle skip por
+  política remoto-vacío. `removeMember` local también conserva la fila (`.removed`). Sin divergencia.
+- **Pendientes que G5 DEJA para el gate de flags / G6+:** copy 401-vs-transient del delete (H2, retry
+  engañoso con sesión muerta) · SIWA token revocation (Apple 5.1.1(v) — necesita el .p8 de SIWA en el
+  Worker, decisión owner) · `auth.users` sobrevive al delete (PII de identidad — Admin API, decisión
+  owner) · espejo D1 de attest sobrevive · **ratificación owner del HARD DELETE personal (decisión de
+  SESIÓN, no estaba en §15)** · re-aplicar `g5_01` a PROD con los gates SEV-1/SEV-2 · adopción G6 setea
+  `isBackendGroup` atómico · guard R9 de migrar-con-sesión (startAdoptWithExistingSession en
+  StorageSettings) · branded params n/i/c del onboarding backend y regionFallbackCurrency (cosméticos,
+  sin cambios) · transiciones loop↔piggyback → relaunch media (sin tocar — G5-B no cambió los modos).
+- Gates de cada commit: suite YalaTests completa 0 fallos (creció 4402→4470 / 400→409 suites) · builds
+  ambas schemes 0 warnings nuevos · gateway 164 passed/2 skip (+7) · validate-coverage OK (áreas nuevas
+  `groups-backend-g5-cutover` + `account-deletion`; bumps session-sign-out/secondary-session/export-wizard).
+- **Estado del plan §11 tras esta noche: G0 ✅ · G1 ✅ · G2 ✅ · G3 ✅ · canal-lifecycle ✅ ·
+  G4-invites/consent ✅ · endurecimiento pre-flags ✅ · G5 ✅ — quedan G6 (migración grupos vivos + R10),
+  G7 (pgcrypto), G8 (APNs).**
+
 ### 2026-07-15 (mañana) — Reconciliación §2 + R10 escrita en la COPIA DEL REPO del diseño
 
 Las notas fechadas están en `MODO-NUBE-GRUPOS-BACKEND-V1-DISENO.md` (copia repo): corrección de §2
