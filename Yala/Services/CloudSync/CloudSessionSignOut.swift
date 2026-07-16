@@ -88,7 +88,7 @@ final class CloudSessionSignOut {
         // (no dentro de teardownGuestSession: el runtime personal no debe conocer grupos). Idempotente
         // y seguro con el flag OFF (no-ops).
         GroupsSyncClient.shared.teardownForSignOut()
-        PushTokenSignOutSeam.clearForSignOut()  // G8 (no-op hoy)
+        await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
         await CloudAuthService.shared.signOut()
 
         resetOnboardingFlagsPreservingData()
@@ -155,7 +155,7 @@ final class CloudSessionSignOut {
         // 3) Teardown: primero el motor personal (epoch++ aborta ciclos en vuelo), luego el canal de grupos.
         CloudSyncRuntime.shared?.teardownGuestSession()
         GroupsSyncClient.shared.teardownForSignOut()
-        PushTokenSignOutSeam.clearForSignOut()  // G8 (no-op hoy)
+        await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
 
         // 4) S2 del review: re-verificar AMBOS outboxes tras cortar los motores y ANTES de soltar
         // credenciales — si un save concurrente encoló filas durante el push-all, se bloquea con la
@@ -210,7 +210,7 @@ final class CloudSessionSignOut {
             // B2: canal de Grupos→backend — loop fuera + espejo purgado (en secundaria el canal ni corre,
             // pero el teardown es idempotente y la purga del espejo es red M1 obligatoria).
             GroupsSyncClient.shared.teardownForSignOut()
-            PushTokenSignOutSeam.clearForSignOut()  // G8 (no-op hoy)
+            await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
             // S2: re-verificar el outbox con la sesión AÚN viva (mismo racional que el camino .cloud).
             let residual = controller.livePendingUploadCount()
             guard residual == 0 else {
@@ -261,7 +261,7 @@ final class CloudSessionSignOut {
 
         // 3) Teardown del canal: stop loop + generation++ (aborta cualquier ciclo en vuelo) + purga espejo.
         GroupsSyncClient.shared.teardownForSignOut()
-        PushTokenSignOutSeam.clearForSignOut()  // G8 (no-op hoy)
+        await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
 
         // 4) Purga IN-SESSION del outbox + cursor de grupos (TODAS las filas, incl. dead-letters). Razón
         // congelada: el archivo YalaSyncMeta NO se borra en esta fila (es personal); filas huérfanas de la
@@ -311,7 +311,7 @@ final class CloudSessionSignOut {
         // Teardowns idempotentes (paran los loops; ya corridos por el service, re-ejecutar es no-op seguro).
         CloudSyncRuntime.shared?.teardownGuestSession()
         GroupsSyncClient.shared.teardownForSignOut()
-        PushTokenSignOutSeam.clearForSignOut()  // G8 (no-op hoy)
+        await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
 
         await CloudAuthService.shared.signOut()
 
@@ -344,7 +344,7 @@ final class CloudSessionSignOut {
 
         // Teardown del canal (idempotente) → purga in-session (bajo el gate de quiescencia) → consent.
         GroupsSyncClient.shared.teardownForSignOut()
-        PushTokenSignOutSeam.clearForSignOut()  // G8 (no-op hoy)
+        await PushTokenSignOutSeam.clearForSignOut()  // G8-2: desregistro best-effort del push token
         Self.purgeGroupsSyncState(context: context)
         GroupsConsentState.clear()
 

@@ -290,6 +290,10 @@ final class AppBootstrapper {
             GroupsSyncClient.shared.startIfEligible(context: context)
         }
 
+        // G8-2 (DARK): re-registro del push token de grupos al arrancar el canal (cubre el orden
+        // token-antes-de-sesión y el boot). Self-gateado por flag+sesión → no-op total con el flag OFF.
+        if !uiTestActive { PushTokenRegistrar.shared.attemptUpload() }
+
         // 16. Initialize Group Services (GC-03)
         GroupService.shared.setContext(context)
         GroupExpenseService.shared.setContext(context)

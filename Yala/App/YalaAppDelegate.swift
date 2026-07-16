@@ -38,6 +38,9 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         #if DEBUG
         UserDefaults.standard.set(token, forKey: Self.debugDeviceTokenKey)
         #endif
+        // G8-2: capturar el token para el canal de Grupos → backend (persiste local + dispara la subida
+        // self-gateada por flag+sesión). Fuera del `#if DEBUG` — vive en prod DARK detrás del flag.
+        Task { @MainActor in PushTokenRegistrar.shared.capture(token: token) }
     }
 
     func application(
@@ -62,7 +65,16 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         // 2) ¿Es nuestro? Contrato con el gateway: key top-level "yala" (jamás "ck").
         if let yala = userInfo["yala"] as? [AnyHashable: Any] {
             PushBreadcrumb.received(kind: .yala(kind: yala["kind"] as? String))
-            completionHandler(.newData)
+            // G8-2: disparar UN ciclo del canal, acotado por timeout (iOS da ~30s; 20s de margen).
+            // Con el flag OFF / sin sesión / canal no arrancado, `syncNowFromPush` retorna rápido →
+            // `.noData`. ⚠️ Cambio observable byte-consciente: HOY esta rama devolvía `.newData`
+            // incondicional; con flag OFF pasa a `.noData` — aceptable porque NINGÚN push con key `yala`
+            // existe en producción con el flag OFF (solo el gateway los emite, fan-out staging-only). El
+            // breadcrumb se conserva idéntico.
+            Task { @MainActor in
+                let result = await GroupsSyncClient.shared.syncNowFromPush(timeout: .seconds(20))
+                completionHandler(result ? .newData : .noData)
+            }
             return
         }
         // 3) Desconocido.

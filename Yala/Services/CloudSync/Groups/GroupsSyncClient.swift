@@ -79,6 +79,12 @@ final class GroupsSyncClient {
     private var pendingDrain = false
     private var bridgeRetryTask: Task<Void, Never>?
 
+    /// G8-2 (AJUSTE review #3): el `mainContext` compartido retenido en `startIfEligible` para que
+    /// `syncNowFromPush` (invocado desde el AppDelegate SIN un `ModelContext` del caller) pueda ciclar el
+    /// canal. STRONG (molde `SplitSyncManager.swift:54` / `CloudSyncRuntime.swift:122` — es el contexto de
+    /// vida de proceso; `weak` arriesgaría un nil espurio). `nil` = el canal no arrancó en este proceso.
+    private var context: ModelContext?
+
     /// B2: anti-solape del CICLO "one in-flight, one queued" (molde `CloudSyncRuntime.
     /// performCycleCoalesced`). Con el piggyback 5.6 hay DOS callers posibles de un ciclo (el loop
     /// propio y el runtime personal) — sin este guard, dos ciclos concurrentes drenarían/pushearían
@@ -142,6 +148,10 @@ final class GroupsSyncClient {
     /// entre el save del outbox y el avance del token). SOLO tests.
     var _testSuppressTokenAdvance = false
 
+    /// Fija el `context` retenido sin correr el gate/loop de `startIfEligible` (para probar
+    /// `syncNowFromPush` aislado). SOLO tests.
+    func _testSetContext(_ ctx: ModelContext) { self.context = ctx }
+
     // MARK: Init
 
     init(
@@ -191,6 +201,10 @@ final class GroupsSyncClient {
     /// en caliente. El rehydrate del espejo (B2) corre en AMBOS modos (es red de boot, no de loop).
     func startIfEligible(context: ModelContext) {
         guard CloudSyncFlags.groupsBackendEnabled, sessionCheck() else { return }
+        // G8-2 (AJUSTE review #3): retener el context AQUÍ — DESPUÉS del guard flag+sesión, ANTES del
+        // return del piggyback (:209). Sin esto, en modo piggyback (personal cadencia) el context quedaría
+        // sin fijar y `syncNowFromPush` devolvería siempre false.
+        self.context = context
         // B2 (cinturón del call-site de AppBootstrapper G2) — M1/D8 (G5-C): con el flag ON la sesión
         // SECUNDARIA SÍ corre el canal de Grupos (loop + rehydrate) sobre SU store `YalaGroups-Secondary`
         // y su `sub`; el rehydrate del espejo App Group filtra DURO por `userID` (owner-scoping) → las
@@ -289,6 +303,40 @@ final class GroupsSyncClient {
             last = await syncCycleOnce(context: context)
         } while pendingCycle
         return last
+    }
+
+    /// G8-2: dispara UN ciclo del canal desde un silent push (`didReceiveRemoteNotification`, rama `yala`),
+    /// carreado contra `timeout` (iOS da ~30s de background; el caller pasa 20s de margen). SIN `ModelContext`
+    /// del caller — usa el `context` retenido en `startIfEligible`. Devuelve `true` si el ciclo COMPLETÓ
+    /// dentro del timeout (→ `.newData`), `false` en cualquier gate no satisfecho / timeout / ciclo
+    /// no-completado (→ `.noData`). Gates SIN red: flag OFF, sin sesión, `stoppedUntilRelaunch`, o `context`
+    /// nil (el canal no arrancó en este proceso). Idempotente con la doble fuente CloudKit (§16d): el
+    /// coalescing anti-solape de `syncCycleOnceCoalesced` ya lo garantiza.
+    ///
+    /// Residual documentado (AJUSTE review #5): un launch puramente en BACKGROUND por silent push puede no
+    /// ejecutar el `.task` del bootstrap (YalaApp) ⇒ el canal no arranca en ese proceso, `context` es nil y
+    /// esto devuelve false (.noData); el pull real ocurre al próximo foreground (consistencia eventual v1).
+    @discardableResult
+    func syncNowFromPush(timeout: Duration) async -> Bool {
+        guard CloudSyncFlags.groupsBackendEnabled, sessionCheck(), !stoppedUntilRelaunch,
+              context != nil else { return false }
+        // Lanza AMBOS hijos ANTES del primer `next()` (AJUSTE review #7). El hijo del ciclo puede sobrevivir
+        // al timeout tras `cancelAll` — benigno: el push es chunked con dedupe por `client_mutation_id` y el
+        // próximo ciclo re-emite. `self` (clase @MainActor) es Sendable; el hijo lee `self.context` en el
+        // MainActor (NO captura el `ModelContext` no-Sendable a través de la frontera del task).
+        return await withTaskGroup(of: Bool.self) { group in
+            group.addTask { @MainActor [weak self] in
+                guard let self, let ctx = self.context else { return false }
+                return await self.syncCycleOnceCoalesced(context: ctx) == .completed
+            }
+            group.addTask {
+                try? await Task.sleep(for: timeout)
+                return false
+            }
+            let first = await group.next() ?? false
+            group.cancelAll()
+            return first
+        }
     }
 
     /// UNA vuelta del ciclo: captura local → push → pull-hasta-agotar → apply. Devuelve el

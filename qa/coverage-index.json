@@ -2332,6 +2332,23 @@
       "lastVerified": "2026-07-16"
     },
     {
+      "area": "groups-backend-g8-push",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/Groups/PushTokenRegistrationClient.swift",
+        "Yala/Services/CloudSync/Groups/PushTokenRegistrar.swift",
+        "Yala/Services/CloudSync/Groups/PushTokenSignOutSeam.swift",
+        "YalaTests/CloudSync/PushTokenRegistrationClientTests.swift",
+        "YalaTests/CloudSync/PushTokenRegistrarTests.swift",
+        "YalaTests/CloudSync/PushTokenSignOutSeamTests.swift",
+        "YalaTests/CloudSync/GroupsSyncClientPushTests.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "agentic",
+      "coverage": "G8-2 cliente APNs (DARK tras CloudSyncFlags.groupsBackendEnabled=false): subida del device token (/push/register), seam de desregistro en sign-out (/push/unregister, best-effort timeout-acotado), y recepción→sync (AppDelegate rama 'yala' → GroupsSyncClient.syncNowFromPush con context retenido). unit:PushTokenRegistrationClientTests (6: body JSON exacto register/unregister, 200/401→sessionExpired/400→serverRejected/5xx→transient, token nil sin request) + PushTokenRegistrarTests (4: capture persiste+dispara, attemptUpload gateado por flag OFF y sesion ausente cero-red, platform por build) + PushTokenSignOutSeamTests (4: flag OFF/sin sesion no-op, con sesion+token unregister invocado, error del cliente NO propaga) + GroupsSyncClientPushTests (2: flag OFF false sin red, timeout dispara). El push real (entrega APNs) es device-only → agentic. PENDIENTE: device-QA del silent push del gateway (Console.app subsystem:com.yala category:Push) + encendido del flag.",
+      "owner": "",
+      "lastVerified": "2026-07-16"
+    },
+    {
       "area": "account-deletion",
       "codeGlobs": [
         "Yala/Services/CloudSync/AccountDeletionService.swift",

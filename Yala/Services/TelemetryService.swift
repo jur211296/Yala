@@ -185,6 +185,7 @@ enum AnalyticsEvent: String {
     case accountDeletionFailed = "Diagnóstico · Borrado de cuenta falló"  // params: step (groups|delete|localClose) — CANARIO (G5-D1b): un paso del borrado falló; NADA local se armó, la sesión sigue viva, el usuario reintenta. >0 sostenido = revisar el RPC/gateway del step. La DISPARA AccountDeletionService. Sin PII
     case groupMigrationCompleted = "Diagnóstico · Migración de grupo completada"  // params: count — Grupos→backend G6-3: el owner migró `count` grupos vivos de CloudKit al backend (marcador estampado, congelado para los members). La DISPARA GroupMigrationUploader. Sin PII
     case groupMigrationFailed = "Diagnóstico · Migración de grupo falló"  // params: step (migrate|invite|freeze|seed|push|marker) — CANARIO (G6-3): un paso de la migración falló; el grupo NO quedó marcado, reintenta en el próximo boot (todos los pasos idempotentes). >0 sostenido = revisar el RPC/gateway del step. La DISPARA GroupMigrationUploader. Sin PII
+    case groupPushTokenRegisterFailed = "Diagnóstico · Registro de push token de grupo falló"  // CANARIO (Grupos→backend G8-2): el registro del device token APNs contra /push/register fue RECHAZADO por el server (4xx ≠ 401) → este device no recibirá silent push de grupos hasta el próximo boot que reintente. NO se dispara en offline transitorio ni 401 (sesión). >0 sostenido = revisar el endpoint/credenciales de push. La DISPARA PushTokenRegistrar. Sin PII
 
     // MARK: Telemetría 2.0 — eventos nuevos
     // Activación (primeras veces) · sesión · fin de suscripción
