@@ -65,4 +65,26 @@ struct GroupBackendIdentityLogicTests {
         #expect(!GroupBackendIdentityLogic.isCurrentUser(memberUserID: "", currentUserID: "abc"))
         #expect(!GroupBackendIdentityLogic.isCurrentUser(memberUserID: "abc", currentUserID: ""))
     }
+
+    // MARK: - isLegacyMemberKey (R10, C1) — discriminador namespace-aware
+
+    /// Un `sub` del backend SIEMPRE parsea UUID → NO es legacy (deriva en el namespace propio del canal).
+    @Test func isLegacyMemberKey_falseForSubUUID() {
+        #expect(!GroupBackendIdentityLogic.isLegacyMemberKey("11111111-1111-1111-1111-111111111111"))
+        // UUID(uuidString:) es case-insensitive → un UUID en MAYÚSCULAS tampoco es legacy.
+        #expect(!GroupBackendIdentityLogic.isLegacyMemberKey("ABCDEF01-2345-6789-ABCD-EF0123456789"))
+    }
+
+    /// Un recordName de CloudKit (`"_…"`) JAMÁS parsea UUID → ES legacy (namespace CloudKit-era).
+    @Test func isLegacyMemberKey_trueForCloudKitRecordName() {
+        #expect(GroupBackendIdentityLogic.isLegacyMemberKey("_recordName123"))
+        #expect(GroupBackendIdentityLogic.isLegacyMemberKey("not-a-uuid"))
+    }
+
+    /// Guards defensivos: vacío y el sentinel de cuenta-eliminada NUNCA son legacy (el sentinel jamás llega
+    /// por `member_key` — verificado en DDL; guard defensivo por si el campo cambiara).
+    @Test func isLegacyMemberKey_falseForEmptyAndSentinel() {
+        #expect(!GroupBackendIdentityLogic.isLegacyMemberKey(""))
+        #expect(!GroupBackendIdentityLogic.isLegacyMemberKey(SplitMember.deletedUserSentinel))
+    }
 }

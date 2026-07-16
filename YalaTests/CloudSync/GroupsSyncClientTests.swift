@@ -376,14 +376,18 @@ struct GroupsSyncClientTests {
             serverSeq: serverSeq, schemaVersion: 1)
     }
 
+    /// R10 (C2/C4 ajuste #2): un `member_key` = sub UUID (born-remote del backend) → id LOCAL en el namespace
+    /// PROPIO del canal. El fixture usa un sub UUID (NO el default `"member-rec-1"` del helper, que con R10
+    /// derivaría CloudKit-era y del que depende el test de adopción :406).
     @Test func apply_member_writesUserID_andDeterministicBornRemoteID() throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
 
+        let subUUID = "11111111-1111-1111-1111-111111111111"
         let client = GroupsSyncClient()
         let cursor = try client.loadOrCreateCursor(context)
         let page = GroupPulledPage(
-            deltas: [memberDelta()], cursors: ["SplitGroup-A": 3], memberships: ["SplitGroup-A"])
+            deltas: [memberDelta(memberKey: subUUID)], cursors: ["SplitGroup-A": 3], memberships: ["SplitGroup-A"])
         client.applyPulledPage(page, cursor: cursor, context: context)
 
         let members = try context.fetch(FetchDescriptor<SplitMember>())
@@ -392,12 +396,37 @@ struct GroupsSyncClientTests {
         #expect(member.userID == "auth-uid-1")
         // Separación de canales (G3): el `member_key` aterriza en `memberKey`; `cloudKitUserRecordID` se
         // queda VACÍO (el sub del backend nunca contamina el campo CloudKit).
-        #expect(member.memberKey == "member-rec-1")
+        #expect(member.memberKey == subUUID)
         #expect(member.cloudKitUserRecordID == "")
         #expect(member.displayName == "Alice")
-        // Born-remote: id LOCAL = namespace backend determinista (NO un UUID() aleatorio).
+        // Born-remote de un sub UUID (NO legacy): id LOCAL = namespace BACKEND determinista.
         #expect(member.id == GroupBackendIdentityLogic.deterministicMemberID(
-            groupID: "SplitGroup-A", memberKey: "member-rec-1"))
+            groupID: "SplitGroup-A", memberKey: subUUID))
+    }
+
+    /// R10 (C2): un `member_key` LEGACY (recordName de CloudKit, no parsea UUID) born-remote → id LOCAL en el
+    /// namespace CloudKit-era `"SplitMember"` — BYTE-IDÉNTICO al id del owner (`GroupService`), preservando la
+    /// identidad del mundo CloudKit del grupo migrado. NO usa el namespace propio del canal.
+    @Test func apply_member_bornRemoteLegacyKey_usesCloudKitEraNamespace() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let legacyKey = "_legacyRecordName"
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [memberDelta(memberKey: legacyKey)], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        let member = try #require(try context.fetch(FetchDescriptor<SplitMember>()).first)
+        #expect(member.memberKey == legacyKey)
+        // Id EXACTO calculado con la primitiva CloudKit-era (namespace "SplitMember", group_id == zoneID).
+        let cloudKitEraID = GroupUserIdentityService.deterministicUUID(
+            namespace: "SplitMember", name: "SplitGroup-A:\(legacyKey)")
+        #expect(member.id == cloudKitEraID)
+        // Y los DOS namespaces difieren para el MISMO par → el legacy JAMÁS cae en el id del canal backend.
+        #expect(member.id != GroupBackendIdentityLogic.deterministicMemberID(
+            groupID: "SplitGroup-A", memberKey: legacyKey))
     }
 
     /// Apply sobre una fila SplitMember PREEXISTENTE del mundo CloudKit (grupo migrado G6-era): su
@@ -434,6 +463,66 @@ struct GroupsSyncClientTests {
             GroupPulledPage(deltas: [memberDelta(serverSeq: 4)], cursors: [:], memberships: []),
             cursor: cursor, context: context)
         #expect(try context.fetch(FetchDescriptor<SplitMember>()).count == 1)
+    }
+
+    // MARK: - Test 5b-bis · applyGroupMeta: adopción ATÓMICA de un grupo CloudKit migrado (C3, G6-2)
+
+    private func groupMetaDelta(
+        group: String = "SplitGroup-A", op: SyncOutboxOp = .upsert, serverSeq: Int64 = 5
+    ) -> GroupPulledDelta {
+        GroupPulledDelta(
+            entityType: GroupEntityEmissionMap.splitGroup.table, groupID: group,
+            rawSyncID: nil, syncID: nil, op: op,
+            fields: ["name": .string("Viaje")],
+            fieldHlcs: [:], hlc: "2026-07-15T00:00:00.000Z-0000-000000000000000c",
+            serverSeq: serverSeq, schemaVersion: 1)
+    }
+
+    /// Un SplitGroup CloudKit PREEXISTENTE (isBackendGroup=false, con ckSystemFieldsData) que aparece en el
+    /// pull backend (mismo group_id) = grupo MIGRADO cuyo member re-entró → se flipea a backend DENTRO del
+    /// mismo apply (sin save extra). Congela CloudKit y activa el drain backend en UN commit.
+    @Test func applyGroupMeta_adoptsPreexistingCloudKitGroup_flipsToBackend() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let ckGroup = SplitGroup(name: "CK")
+        ckGroup.cloudKitZoneID = "SplitGroup-A"
+        ckGroup.isBackendGroup = false
+        ckGroup.ckSystemFieldsData = Data([0x01, 0x02])
+        context.insert(ckGroup)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [groupMetaDelta()], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        let groups = try context.fetch(FetchDescriptor<SplitGroup>())
+        #expect(groups.count == 1)                       // adoptó, no duplicó
+        let group = try #require(groups.first)
+        #expect(group.isBackendGroup)                    // flip atómico a backend
+        #expect(group.name == "Viaje")                   // PATCH aplicado
+    }
+
+    /// Un grupo born-backend PREEXISTENTE (isBackendGroup=true) permanece true tras el apply (el guard
+    /// `!isBackendGroup` evita un write espurio; sin regresión de estado).
+    @Test func applyGroupMeta_bornBackendGroup_staysBackend() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        makeBackendGroup(zoneID: "SplitGroup-A", context: context)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [groupMetaDelta()], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        let group = try #require(try context.fetch(FetchDescriptor<SplitGroup>()).first)
+        #expect(group.isBackendGroup)
+        #expect(group.name == "Viaje")
     }
 
     @Test func apply_member_nullUserID_isAnonymization_nullsColumn() throws {

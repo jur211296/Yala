@@ -15,6 +15,7 @@
 
 import Foundation
 import OSLog
+import SwiftData
 
 @MainActor
 enum GroupBackendInviteEntryHandler {
@@ -77,17 +78,49 @@ enum GroupBackendInviteEntryHandler {
     }
 
     /// Upsert del join intent backend (keying `zoneName == groupID`). Preserva displayName/currency ya
-    /// capturados (silent-setup) en un re-tap.
+    /// capturados (silent-setup) en un re-tap. G6-2: captura el `legacyMemberKey` del device (member local del
+    /// grupo migrado) para un RE-JOIN — `SplitSyncManager` da el grupo + su `ModelContext` (persistIntent no
+    /// tiene contexto propio); si el grupo no está local aún, preserva el ya capturado en un re-tap.
     static func persistIntent(groupID: String, token: String) {
         let existing = PendingJoinStore.entry(zoneName: groupID)
+        var legacyMemberKey: String?
+        if let group = SplitSyncManager.shared.group(for: groupID),
+           let context = group.modelContext {
+            legacyMemberKey = legacyMemberKeyForRejoin(group: group, context: context)
+        }
         PendingJoinStore.save(PendingJoinEntry(
             zoneName: groupID,
             zoneOwnerName: "",
             displayName: existing?.displayName,
             regionFallbackCurrency: existing?.regionFallbackCurrency,
             backendGroupID: groupID,
-            inviteToken: token
+            inviteToken: token,
+            legacyMemberKey: legacyMemberKey ?? existing?.legacyMemberKey
         ))
+    }
+
+    /// FUENTE del legacy recordName de CloudKit para un RE-JOIN de grupo migrado (G6-2): (1º) el `SplitMember`
+    /// local del grupo con `isCurrentUser == true` → su `cloudKitUserRecordID` si no está vacío; (2º fallback)
+    /// `GroupUserIdentityService.cachedRecordName`. Device fresco sin ninguno → `nil` (entra como member
+    /// nuevo — residual §9.3b documentado). `#Predicate` CONCRETO por tipo (regla inviolable).
+    static func legacyMemberKeyForRejoin(group: SplitGroup, context: ModelContext) -> String? {
+        let zoneID = group.cloudKitZoneID
+        var descriptor = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneID && $0.isCurrentUser == true })
+        descriptor.fetchLimit = 1
+        do {
+            if let member = try context.fetch(descriptor).first,
+               !member.cloudKitUserRecordID.isEmpty {
+                return member.cloudKitUserRecordID
+            }
+        } catch {
+            // Cero silencios: la fila del current user no fue legible → cae al fallback del cache.
+            logger.error("BackendInvite: legacyMemberKeyForRejoin fetch failed for \(zoneID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        }
+        if let cached = GroupUserIdentityService.shared.cachedRecordName, !cached.isEmpty {
+            return cached
+        }
+        return nil
     }
 
     // MARK: - Driver compartido (handler + reconciler)
@@ -112,7 +145,7 @@ enum GroupBackendInviteEntryHandler {
             RouterEntryGate.shared.submit(.presentGroupBackendInviteOnboarding(pendingJoin: groupID))
             logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: fresh user → present invite onboarding for \(groupID, privacy: .public)")
         case .join:
-            await attemptJoin(groupID: groupID, token: token, source: source, legacyMemberKey: nil)
+            await attemptJoin(groupID: groupID, token: token, source: source)
         }
     }
 
@@ -129,15 +162,17 @@ enum GroupBackendInviteEntryHandler {
         await drive(groupID: groupID, token: token, source: .continuation)
     }
 
-    /// Ejecuta el `join_group` RPC + clasifica el resultado. `legacyMemberKey` hoy siempre nil en el
-    /// flujo de token normal (el campo existe para G6; el canario de rebind queda cableado).
+    /// Ejecuta el `join_group` RPC + clasifica el resultado. G6-2: el `legacyMemberKey` se LEE del intent
+    /// persistido (lo capturó `persistIntent` con el member local del grupo migrado) — cubre el warm path y el
+    /// reconciler de un golpe; `nil` en un join normal (token fresco). Presencia ⇒ RE-JOIN: el server rebindea
+    /// la membresía CloudKit-era; el canario `groupLegacyRebindFailed` se dispara si se envió y no matcheó.
     static func attemptJoin(
         groupID: String,
         token: String,
-        source: Source,
-        legacyMemberKey: String?
+        source: Source
     ) async {
         let intent = PendingJoinStore.entry(zoneName: groupID)
+        let legacyMemberKey = intent?.legacyMemberKey
         // R1: displayName SIEMPRE no-vacío (btrim='' → yala_bad_input permanente).
         let displayName = GroupBackendInviteEntryLogic.resolveJoinDisplayName(
             intentName: intent?.displayName,

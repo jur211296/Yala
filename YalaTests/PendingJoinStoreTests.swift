@@ -58,6 +58,36 @@ struct PendingJoinStoreTests {
         #expect(loaded?.regionFallbackCurrency == "PEN")
     }
 
+    /// C4 (G6-2): round-trip Codable de una entry backend CON `legacyMemberKey` (RE-JOIN de grupo migrado).
+    @Test func saveThenRead_roundTripsLegacyMemberKey() {
+        let cleanup = makeStore(); defer { cleanup() }
+        let entry = PendingJoinEntry(
+            zoneName: "SplitGroup-BACKEND", zoneOwnerName: "",
+            createdAt: ref, backendGroupID: "SplitGroup-BACKEND",
+            inviteToken: "deadbeef", legacyMemberKey: "_legacyRec")
+        PendingJoinStore.save(entry)
+        let loaded = PendingJoinStore.entry(zoneName: "SplitGroup-BACKEND", now: ref)
+        #expect(loaded == entry)
+        #expect(loaded?.legacyMemberKey == "_legacyRec")
+        #expect(loaded?.isBackendJoin == true)
+    }
+
+    /// Back-compat: un JSON viejo SIN el campo `legacyMemberKey` decodifica a `nil` (decodeIfPresent
+    /// sintetizado) — no rompe entries persistidas antes de G6-2.
+    @Test func decode_legacyJSON_withoutLegacyMemberKey_isNil() throws {
+        let cleanup = makeStore(); defer { cleanup() }
+        // JSON sin `legacyMemberKey` (ni `inviteToken`/`backendGroupID`) — forma de una entry CKShare vieja.
+        let json = """
+        {"SplitGroup-OLD":{"zoneName":"SplitGroup-OLD","zoneOwnerName":"_owner","createdAt":"2023-11-14T22:13:20Z"}}
+        """
+        PendingJoinStore.defaults.set(Data(json.utf8), forKey: PendingJoinStore.userDefaultsKey)
+        let loaded = PendingJoinStore.entry(zoneName: "SplitGroup-OLD", now: ref)
+        #expect(loaded != nil)
+        #expect(loaded?.legacyMemberKey == nil)
+        #expect(loaded?.inviteToken == nil)
+        #expect(loaded?.isBackendJoin == false)
+    }
+
     // MARK: - TTL (7 días)
 
     @Test func read_withinTTL_returnsEntry() {

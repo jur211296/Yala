@@ -46,4 +46,17 @@ nonisolated enum GroupBackendIdentityLogic {
               !memberUserID.isEmpty, !currentUserID.isEmpty else { return false }
         return memberUserID.lowercased() == currentUserID.lowercased()
     }
+
+    /// R10 (G6-2): ¿este `member_key` es de un member LEGACY del mundo CloudKit (grupo migrado) en vez de un
+    /// `sub` nacido del backend? El `sub` del auth SIEMPRE parsea como UUID (`v_uid::text`, lowercase-hyphenated);
+    /// un recordName de CloudKit (`"_…"`) JAMÁS parsea. El discriminador decide en qué NAMESPACE derivar el id
+    /// LOCAL del `SplitMember` born-remote: legacy → namespace CloudKit-era `"SplitMember"` (byte-idéntico al id
+    /// del owner en `GroupService`, preserva la identidad del mundo CloudKit); backend → namespace propio del
+    /// canal (`deterministicMemberID`).
+    static func isLegacyMemberKey(_ key: String) -> Bool {
+        // Guard del sentinel = DEFENSIVO (verificado en DDL: `groups_forget_user` anonimiza `display_name`,
+        // JAMÁS `member_key` — el sentinel no llega por este campo). Vacío y sentinel NUNCA son legacy.
+        guard !key.isEmpty, key != SplitMember.deletedUserSentinel else { return false }
+        return UUID(uuidString: key) == nil
+    }
 }

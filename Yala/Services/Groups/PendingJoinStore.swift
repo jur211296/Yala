@@ -47,6 +47,12 @@ struct PendingJoinEntry: Codable, Equatable {
     /// (`isBackendJoin`). `nil` en entries CKShare. Opcional Codable back-compat
     /// (decodeIfPresent sintetizado): JSON viejo sin estos campos decodifica a `nil`.
     var inviteToken: String?
+    /// G6-2 (RE-JOIN de grupo migrado): recordName legacy de CloudKit del device — se envía como
+    /// `legacyMemberKey` al `join_group` RPC para que el server rebindee la membresía CloudKit-era en vez de
+    /// crear una nueva. Lo captura `GroupBackendInviteEntryHandler.legacyMemberKeyForRejoin` al persistir el
+    /// intent (device con member local del grupo). `nil` en un device fresco / join normal. Opcional Codable
+    /// back-compat (decodeIfPresent sintetizado): JSON viejo sin este campo decodifica a `nil`.
+    var legacyMemberKey: String?
 
     /// `true` si esta entry es un join backend por token (contrato C3). El discriminador
     /// backend↔CloudKit del reconciler tiene PRIORIDAD sobre el flag (R5).
@@ -59,7 +65,8 @@ struct PendingJoinEntry: Codable, Equatable {
         regionFallbackCurrency: String? = nil,
         createdAt: Date = .now,
         backendGroupID: String? = nil,
-        inviteToken: String? = nil
+        inviteToken: String? = nil,
+        legacyMemberKey: String? = nil
     ) {
         self.zoneName = zoneName
         self.zoneOwnerName = zoneOwnerName
@@ -68,6 +75,7 @@ struct PendingJoinEntry: Codable, Equatable {
         self.createdAt = createdAt
         self.backendGroupID = backendGroupID
         self.inviteToken = inviteToken
+        self.legacyMemberKey = legacyMemberKey
     }
 }
 

@@ -1439,10 +1439,20 @@ final class GroupsSyncClient {
         if let v = wireDate(f["created_at"]) { model.createdAt = v }
         if existing == nil {
             // C1 write-site (2): born-remote del pull backend → marca el grupo como del canal backend.
-            // Un SplitGroup CloudKit PREEXISTENTE que aparezca en el pull (migración G6) NO se marca aquí
-            // — llega por `existing != nil` y conserva su `isBackendGroup` actual (`false`); es territorio G6.
             model.isBackendGroup = true
             context.insert(model)
+        } else if !model.isBackendGroup {
+            // C3 (G6-2) ADOPCIÓN ATÓMICA: un SplitGroup CloudKit PREEXISTENTE que aparece en el pull backend
+            // (mismo `group_id`) = grupo MIGRADO cuyo member local re-entró por el backend. Flipear a backend
+            // DENTRO del mismo `saveWithAuthor` del apply (sin save extra, molde del re-drive A2) es el
+            // interruptor que congela CloudKit (choke-points de G5-A) y activa el drain backend en UN commit;
+            // sin atomicidad habría una ventana de doble-verdad. Un grupo born-backend (`isBackendGroup` ya
+            // `true`) permanece intacto (guard `!isBackendGroup` → sin write espurio).
+            //
+            // FORWARD-COMPAT G6-3 (ajuste #4 del review): este flip puede correr ANTES del paso-3 del uploader
+            // del owner si el pull de membership discovery llega primero (post-`migrate_group`) → el
+            // resume-predicado del uploader NO puede depender de `!isBackendGroup` a secas; G6-3 lo resuelve.
+            model.isBackendGroup = true
         }
     }
 
@@ -1462,10 +1472,18 @@ final class GroupsSyncClient {
         let model = existing ?? SplitMember()
         let priorStatus = existing?.status
         if existing == nil {
-            // Born-remote: id LOCAL determinista del namespace BACKEND (paralelo al CloudKit) → dedup
-            // estable cross-device sin depender del path CloudKit (G3).
-            model.id = GroupBackendIdentityLogic.deterministicMemberID(
-                groupID: delta.groupID, memberKey: memberKey)
+            // Born-remote: id LOCAL determinista. R10 (G6-2, namespace-aware): un `member_key` LEGACY
+            // (recordName de CloudKit — el member de un grupo MIGRADO que re-entró por el backend) deriva en
+            // el namespace CloudKit-era `"SplitMember"` con `delta.groupID` (== `cloudKitZoneID` == `zoneID` de
+            // la derivación CloudKit-era) → BYTE-IDÉNTICO al id que ya usa el owner (`GroupService`), preservando
+            // la identidad del mundo CloudKit sin remap. Un `sub` UUID nacido del backend deriva en el namespace
+            // PROPIO del canal. El discriminador es puro (parseabilidad de UUID). Dedup estable cross-device en
+            // ambos casos, sin depender del path CloudKit (G3).
+            model.id = GroupBackendIdentityLogic.isLegacyMemberKey(memberKey)
+                ? GroupUserIdentityService.deterministicUUID(
+                    namespace: "SplitMember", name: "\(delta.groupID):\(memberKey)")
+                : GroupBackendIdentityLogic.deterministicMemberID(
+                    groupID: delta.groupID, memberKey: memberKey)
         }
         model.groupZoneID = delta.groupID
         // Separación de canales (G3): el `member_key` del backend aterriza en `SplitMember.memberKey`, NUNCA
