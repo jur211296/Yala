@@ -188,11 +188,12 @@ Post-G8: retiro del código CloudKit de grupos (SplitSyncManager/CKRecordTransla
 
 ## 12. Gate de flags de v1 (ampliado, D9)
 
-El encendido de `cloudModeEnabled` (beta) pasa a exigir, ADEMÁS de lo ya listado (IdentityRemap #29 ✅, huérfano #30, CAS reverse_claim, enforcement freeze, bug FX ✅):
-- G1–G8 completos, con el test-gate **cross-member** al rango de gate de release.
-- Device-QA de G6 (migración de grupos vivos) y G8 (push) VERDES en TestFlight.
-- Canarios nuevos en TelemetryDeck: `groupPushRejected(code)`, `groupJoinFailed(reason)`, `groupMerkleDivergence(groupCount)`, `groupApnsSendFailed`, `groupLegacyRebindFailed` — todos 0 en dogfooding antes de abrir cohorte.
+El encendido de `cloudModeEnabled` (beta) pasa a exigir, ADEMÁS de lo ya listado (IdentityRemap #29 ✅, huérfano #30, CAS reverse_claim ✅ [verificado cerrado 3ª noche], enforcement freeze ✅ [ídem], bug FX ✅):
+- G1–G8 completos ✅ **(2026-07-16, 6ª sesión nocturna: G0–G8 COMPLETOS EN CÓDIGO)**, con el test-gate **cross-member** al rango de gate de release ✅ (71/0 post-G7).
+- Device-QA de G6 (migración de grupos vivos) y G8 (push) VERDES en TestFlight — **PENDIENTE owner** (guiones [[MODO-NUBE-G6-GUION-DEVICE]] ⚠️ con apéndice G7-descifrado, y G8 sobre la base de la fase C de G0).
+- Canarios nuevos en TelemetryDeck: `groupPushRejected(code)`, `groupJoinFailed(reason)`, `groupMerkleDivergence(groupCount)`, `groupApnsSendFailed` [server-side: log del Worker; cliente: `groupPushTokenRegisterFailed`], `groupLegacyRebindFailed` — todos 0 en dogfooding antes de abrir cohorte.
 - Los guiones de QA parkeados se retoman re-evaluados: del guion M1 caen las fases G1–G3 viejas (gates iCloud) y entra la matriz secundaria-con-grupos; el guion sign-out incorpora el wipe de grupos.
+- **NUEVOS del cierre G7/G8 (2026-07-16) — pendientes owner pre-encendido:** ratificar las 2 columnas † extra de G7 (`split_shares.amount`, `split_settlements.note`) y el modelo de amenaza de tokens de G8 (co-members enumeran device tokens — estructural con jamás-service_role, token inerte sin Auth Key) · llave `GROUPS_ENC_KEY` PROPIA de producción + re-aplicar g7_01/g7_02(+recrypt)/g8_01 a prod (drift anotado en qa/cloud/README) · `APNS_KEY_ID`/`APNS_AUTH_KEY` en el bloque production de wrangler.toml (hoy el fan-out en prod es no-op).
 
 ## 13. Riesgos y residuales del diseño
 

@@ -424,6 +424,67 @@ UPDATE con WHERE pca IS NULL; el perdedor de una carrera re-clasifica). **Cero c
   G4-invites/consent ✅ · endurecimiento pre-flags ✅ · G5 ✅ — quedan G6 (migración grupos vivos + R10),
   G7 (pgcrypto), G8 (APNs).**
 
+### 2026-07-16 (sesión nocturna, 6ª) — G7 pgcrypto ✅ + G8 APNs ✅ — EL PLAN §11 (G0–G8) QUEDA COMPLETO EN CÓDIGO — ⚠️ reconciliar al vault
+
+> 3 commits (`cdd2b849` G7 · `fa7cb4cd` G8-2 cliente · `802e6a3e` G8-1 server). Método íntegro ×6ª sesión:
+> 3 exploradores Opus → 3 briefs congelados (en `docs/modo-nube/briefs/`, gitignored) → 3 /review-plan Opus
+> (G7 NECESITA AJUSTES con 5 CRÍTICOS [el estrella C1: el Merkle vía RPC lector habría recibido amounts como
+> número JS → rama double del canon → divergencia LATENTE que ningún gate cazaba]; G8-server 2 CRÍTICOS
+> [c.executionCtx lanza sin ctx → ~10 goldens a 500; modelo de amenaza de tokens FALSO en el brief];
+> G8-client 2 CRÍTICOS [seam sin gate por flag = divergencia flag-OFF; unregister sin timeout = sign-out
+> colgado offline]) → implementadores Opus (G7 gateway ∥ G8-2 Swift; G8-1 secuencial tras G7 por routes.ts)
+> → reviews adversariales (G7-SQL PRE-aplicación con verificación EMPÍRICA read-only contra staging:
+> APLICAR 0 críticos/serios; G8-2: COMMIT 0 críticos/serios) → aplicación ordenada → gates → commits.
+
+- **G7 (`cdd2b849`):** 8 columnas † a bytea con pgp_sym_* (las del diseño + `split_settlements.note` [† genérico]
+  + `split_shares.amount` [sin ella un dump reconstruye expenses.amount sumando shares] — ambas a RATIFICAR
+  owner). Llave-como-argumento (§16e; residente-en-DB descartada: aparece en dumps). Migración SIN fuga: 2 DDL
+  sin llave + recrypt intermedio vía execute_sql (336 names/592 display_names/239+59+3 amounts/186+45 notes;
+  roundtrip 239/239 PRE-cutover; belt m12 en 0). Readers `groups_pull_rows_*` SECURITY INVOKER (RLS antes de
+  descifrar) con amounts como TEXT escala-4 (resolución C1 — el canon toma la rama string decimal-exacta; el
+  wire pasa de número a string, ÚNICO cambio de shape, WireValueDecoder compatible, cliente Swift INTOCADO,
+  fixtures B1 intactas); `yala_try_decrypt` tolerante-POR-FILA (anti-DoS de bytea basura → NULL + Merkle
+  divergence lo delata); cirugía de apply_group_delta († fuera de jsonb_populate_record, tri-estado NULL);
+  column-UPDATE grants REGENERADOS (C5: atan por attnum — sin regenerar, push en noop SILENCIOSO); gate §16e
+  AUTOMATIZADO (golden g7-logging-settings asserta ddl/-1/0 vía `yala_logging_settings()`). Worker:
+  GROUPS_ENC_KEY secret (staging; llave en `~/Secrets/yala-groups-enc/staging.key` + `gateway/.dev.vars`;
+  PROD necesita llave PROPIA), pull/merkle a callRpc POST (fan-out 68f5555d conservado 1:1; merkle keyset
+  server_seq — entityHash ordena por syncId, verificado), guard 503 sin llave. Goldens con
+  `readGroupRowDecrypted` + p_key de process.env (fail-fast; JAMÁS hardcodeada); cross-member adaptado
+  (writes † vía apply_group_delta; asserts RLS re-apuntados a columnas no-†). md5s ×14 en qa/cloud/README.
+  Endurecimiento gratis: el write directo PostgREST de † muere de facto.
+- **G8-1 (`802e6a3e`):** RPCs `get_group_push_tokens` (co-members ACTIVOS, caller excluido, pendingApproval
+  fuera) + `prune_push_token` (par exacto, guard de radio grupo-activo-compartido). ⚠️ Modelo de amenaza REAL
+  documentado (RATIFICAR owner): un co-member puede ENUMERAR tokens de co-members vía PostgREST (estructural
+  con jamás-service_role; token APNs inerte sin la Auth Key; griefing del prune auto-sana por re-registro al
+  boot). Gateway: POST /push/register|unregister (upsert merge-duplicates, user_id DEL JWT) + FAN-OUT en
+  handleGroupsPush (waitUntil sin bloquear; group_ids de applied por zip de índice; dedup cross-grupo; cap 50;
+  sendPush content-available:1 priority 5, sandbox por platform del token; BadDeviceToken → prune; canario
+  `[canary] groupApnsSendFailed`, token prefijo ≤8). Prod = no-op hasta APNS keys del owner. Goldens fan-out
+  semi-WIRE (interceptor selectivo de fetch a Apple, PEM ES256 de test) 2/2 verdes tras aplicar. Residual
+  multi-device del autor documentado (su 2º device espera cadencia).
+- **G8-2 (`fa7cb4cd`):** PushTokenRegistrationClient + PushTokenRegistrar (inyectables molde ProUpsell;
+  capture siempre-local, upload gateado flag&&sesión, canario groupPushTokenRegisterFailed solo en rechazo
+  servidor; platform ios-sandbox/#if DEBUG vs ios-prod) + seam `PushTokenSignOutSeam.clearForSignOut()`
+  RELLENO (async, DOBLE gate flag&&sesión [crítico byte-identidad: los paths .cloud son alcanzables con flag
+  OFF y sesión viva], timeout 4s anti-cuelgue-offline, 6 call-sites con JWT vivo) + recepción push key `yala`
+  → `GroupsSyncClient.syncNowFromPush(timeout: 20s)` (context STRONG retenido molde SplitSyncManager, asignado
+  también en el path piggyback; completionHandler exactamente-una-vez; idempotente con la doble fuente
+  CloudKit §16d — clasificación CK-primero intacta). Residual: launch puramente-background puede no ejecutar
+  el .task del bootstrap → pull al próximo foreground (consistencia eventual v1). 16 tests/4 suites.
+- **Gates finales:** gateway npm test **183/2 skipped** (14 files) · cross-member **71/0** (G7, con bloque
+  legacy re-sembrado vía MCP) y 62/0 --skip-legacy (G8-1) · suite YalaTests **4531/418** TEST SUCCEEDED ×3
+  corridas · builds ambas schemes ×3 (solo el warning preexistente) · validate-coverage OK (área nueva
+  `groups-backend-g8-push`).
+- **PENDIENTES OWNER (acumulados, para el gate §12):** ratificar columnas † extra (G7) + modelo de amenaza
+  de tokens (G8) · llave GROUPS_ENC_KEY PROPIA de prod (+ re-aplicar g7/g8 a prod con sus gates — anotado
+  drift pendiente) · APNS_KEY_ID/AUTH_KEY en el bloque production de wrangler.toml · device-QA G6 (guion
+  [[MODO-NUBE-G6-GUION-DEVICE]] — ⚠️ CON APÉNDICE G7: los checks SQL de la Fase A ven bytea, usar
+  `yala_try_decrypt`) · device-QA G8 (notif real 2 devices, guion base fase C de G0) · los previos (SIWA
+  revoke, auth.users Admin API, ratificar HARD DELETE, g5_01/g6_01 a prod).
+- **Estado del plan §11: G0–G8 ✅ COMPLETOS EN CÓDIGO.** Lo único restante para el encendido es el gate §12
+  (device-QAs + pendientes owner + canarios en cero).
+
 ### 2026-07-16 — G6 COMPLETO EN CÓDIGO ✅ (migración de grupos vivos D7) — schema CloudKit DESPLEGADO; queda el gate device-QA del owner — ⚠️ reconciliar al vault
 
 > 4 commits (`658643f0` G6-1 · `0f6d5f42` G6-2 · `c1ad72d4` docs decisiones · `dac0042d` G6-3). Método íntegro:
