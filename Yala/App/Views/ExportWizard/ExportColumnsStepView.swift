@@ -5,10 +5,12 @@
 //  Created by Yala Refactoring.
 //
 
+import SwiftData
 import SwiftUI
 
 struct ExportColumnsStepView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     // MARK: - Properties
 
@@ -18,6 +20,13 @@ struct ExportColumnsStepView: View {
     /// Estado local de las columnas seleccionadas.
     /// Se inicializa con todas las columnas activas por defecto.
     @State private var exportColumns: ExportColumns = .default
+
+    /// G5-D2: incluir un CSV aparte con los grupos del usuario. Default OFF.
+    @State private var includeGroups: Bool = false
+
+    /// G5-D2: `true` si hay grupos activos que exportar (gate de visibilidad del toggle).
+    /// Los grupos existen HOY vía CloudKit (sin gate por flag — el export es read-only).
+    @State private var hasExportableGroups: Bool = false
 
     /// Callback opcional para cuando el usuario termina el asistente.
     let onFinish: (() -> Void)?
@@ -36,6 +45,10 @@ struct ExportColumnsStepView: View {
                 headerSection
 
                 columnsListSection
+
+                if hasExportableGroups {
+                    groupsSection
+                }
             }
             .padding(.vertical, DS.Spacing.xxl)
             .padding(.horizontal, DS.Spacing.lg)
@@ -45,6 +58,9 @@ struct ExportColumnsStepView: View {
         .navigationBarTitleDisplayMode(.inline)
         // Botón "Atrás" estándar del NavigationStack
         .swipeBack()
+        .onAppear {
+            hasExportableGroups = GroupsExportBuilder.hasExportableGroups(in: modelContext)
+        }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
@@ -56,6 +72,7 @@ struct ExportColumnsStepView: View {
                     ExportSummaryStepView(
                         exportFilters: exportFilters,
                         exportColumns: exportColumns,
+                        includeGroups: hasExportableGroups && includeGroups,
                         onFinish: onFinish
                     )
                 } label: {
@@ -95,6 +112,26 @@ struct ExportColumnsStepView: View {
                     }
                 }
             }
+        }
+    }
+
+    /// G5-D2: toggle para añadir un CSV aparte con los grupos del usuario.
+    private var groupsSection: some View {
+        SectionBox(title: L10n.Tab.groups) {
+            Toggle(isOn: $includeGroups) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Text(L10n.Export.includeGroups)
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(.primary)
+
+                    Text(L10n.Export.includeGroupsDescription)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, DS.Spacing.md)
+            }
+            .toggleStyle(.switch)
+            .padding(.horizontal, DS.Spacing.lg)
         }
     }
 

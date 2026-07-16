@@ -3380,6 +3380,10 @@ enum L10n {
         static var csvGeneratedSuccess: String {
             ls("export.csvGeneratedSuccess", comment: "")
         }
+        /// F1 review G5-D2: el usuario pidió incluir grupos y el CSV de grupos falló — cero silencios.
+        static var groupsExportFailedNote: String {
+            ls("export.groupsExportFailedNote", comment: "")
+        }
         static var confirmExport: String { ls("export.confirmExport", comment: "") }
         static var selectColumns: String {
             ls("export.selectColumns", comment: "")
@@ -3489,6 +3493,29 @@ enum L10n {
         static var columnNoteDesc: String { ls("export.column.note.description", comment: "") }
         static var columnSplitTotalDesc: String { ls("export.column.splitTotal.description", comment: "") }
         static var columnSplitPortionDesc: String { ls("export.column.splitPortion.description", comment: "") }
+
+        // G5-D2: export ampliado con grupos (archivo CSV aparte)
+        static var includeGroups: String { ls("export.includeGroups", comment: "") }
+        static var includeGroupsDescription: String { ls("export.includeGroups.description", comment: "") }
+
+        enum Groups {
+            // Headers de columnas del CSV de grupos
+            static var headerGroup: String { ls("export.groups.header.group", comment: "") }
+            static var headerType: String { ls("export.groups.header.type", comment: "") }
+            static var headerDate: String { ls("export.groups.header.date", comment: "") }
+            static var headerDescription: String { ls("export.groups.header.description", comment: "") }
+            static var headerFrom: String { ls("export.groups.header.from", comment: "") }
+            static var headerTo: String { ls("export.groups.header.to", comment: "") }
+            static var headerPaidBy: String { ls("export.groups.header.paidBy", comment: "") }
+            static var headerAmount: String { ls("export.groups.header.amount", comment: "") }
+            static var headerMyShare: String { ls("export.groups.header.myShare", comment: "") }
+            static var headerCurrency: String { ls("export.groups.header.currency", comment: "") }
+
+            // Valores de la columna "tipo"
+            static var typeExpense: String { ls("export.groups.type.expense", comment: "") }
+            static var typeSettlement: String { ls("export.groups.type.settlement", comment: "") }
+            static var typeBalance: String { ls("export.groups.type.balance", comment: "") }
+        }
     }
 
     // MARK: - Favorites

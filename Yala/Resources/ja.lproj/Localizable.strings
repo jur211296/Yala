@@ -4926,3 +4926,22 @@
 "settings.deleteAccountErrorMessage" = "問題が発生し、削除が完了しませんでした。データはそのまま残っています。しばらくしてからもう一度お試しください。";
 /* G5-D1b: acción de reintento */
 "settings.deleteAccountRetry" = "再試行";
+/* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
+"export.includeGroups" = "グループを含める";
+"export.includeGroups.description" = "各グループの支出、支払い、あなたの残高を別ファイルで追加します。";
+"export.groups.header.group" = "グループ";
+"export.groups.header.type" = "種類";
+"export.groups.header.date" = "日付";
+"export.groups.header.description" = "説明";
+"export.groups.header.from" = "支払元";
+"export.groups.header.to" = "支払先";
+"export.groups.header.paidBy" = "支払者";
+"export.groups.header.amount" = "金額";
+"export.groups.header.myShare" = "自分の負担";
+"export.groups.header.currency" = "通貨";
+"export.groups.type.expense" = "支出";
+"export.groups.type.settlement" = "支払い";
+"export.groups.type.balance" = "自分の残高";
+
+/* Shown in the export success alert when the optional groups CSV failed */
+"export.groupsExportFailedNote" = "個人ファイルは正常に書き出されましたが、今回はグループを含められませんでした。後でもう一度お試しください。";

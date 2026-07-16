@@ -4177,3 +4177,22 @@
 "settings.deleteAccountErrorMessage" = "Something went wrong and the deletion didn't finish. Your data is still intact. Try again in a moment.";
 /* G5-D1b: acción de reintento */
 "settings.deleteAccountRetry" = "Try again";
+/* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
+"export.includeGroups" = "Include my groups";
+"export.includeGroups.description" = "Adds a separate file with each group's expenses, payments and your balance.";
+"export.groups.header.group" = "Group";
+"export.groups.header.type" = "Type";
+"export.groups.header.date" = "Date";
+"export.groups.header.description" = "Description";
+"export.groups.header.from" = "From";
+"export.groups.header.to" = "To";
+"export.groups.header.paidBy" = "Paid by";
+"export.groups.header.amount" = "Amount";
+"export.groups.header.myShare" = "My share";
+"export.groups.header.currency" = "Currency";
+"export.groups.type.expense" = "Expense";
+"export.groups.type.settlement" = "Payment";
+"export.groups.type.balance" = "My balance";
+
+/* Shown in the export success alert when the optional groups CSV failed */
+"export.groupsExportFailedNote" = "Your personal file exported fine, but we couldn't include your groups this time. Try again later.";

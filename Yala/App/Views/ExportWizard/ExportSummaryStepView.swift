@@ -18,6 +18,10 @@ struct ExportSummaryStepView: View {
     let exportFilters: ExportFilters
     let exportColumns: ExportColumns
 
+    /// G5-D2: si `true`, genera un CSV APARTE con los grupos y lo comparte junto al export
+    /// personal. Con `false` el comportamiento es BYTE-IDÉNTICO al export personal previo.
+    let includeGroups: Bool
+
     /// Callback opcional para cuando el usuario termina el asistente.
     /// El contenedor puede usarlo para volver al inicio (por ejemplo, Ajustes).
     let onFinish: (() -> Void)?
@@ -25,10 +29,12 @@ struct ExportSummaryStepView: View {
     init(
         exportFilters: ExportFilters,
         exportColumns: ExportColumns,
+        includeGroups: Bool = false,
         onFinish: (() -> Void)? = nil
     ) {
         self.exportFilters = exportFilters
         self.exportColumns = exportColumns
+        self.includeGroups = includeGroups
         self.onFinish = onFinish
     }
 
@@ -39,6 +45,9 @@ struct ExportSummaryStepView: View {
     @State private var showErrorAlert = false
     @State private var exportedFile: ExportedFile?
     @State private var showSuccessAlert = false
+    /// F1 review G5-D2 (cero silencios): el usuario activó "Incluir mis grupos" y el CSV de grupos
+    /// falló — el export personal se comparte igual, pero el alert de éxito lo AVISA.
+    @State private var groupsExportFailed = false
 
     // MARK: - Body
 
@@ -73,7 +82,9 @@ struct ExportSummaryStepView: View {
                 closeToRoot()
             }
         } message: {
-            Text(L10n.Export.csvGeneratedSuccess)
+            Text(groupsExportFailed
+                ? "\(L10n.Export.csvGeneratedSuccess)\n\n\(L10n.Export.groupsExportFailedNote)"
+                : L10n.Export.csvGeneratedSuccess)
         }
         .sheet(
             item: $exportedFile,
@@ -83,7 +94,7 @@ struct ExportSummaryStepView: View {
                 showSuccessAlert = true
             }
         ) { file in
-            ShareSheet(activityItems: [file.url])
+            ShareSheet(activityItems: file.urls)
                 .presentationDetents(DS.Adaptive.sheetDetents([.medium, .large]))
                 .interactiveDismissDisabled(false)
         }
@@ -299,9 +310,30 @@ struct ExportSummaryStepView: View {
                     in: modelContext
                 )
 
+                // G5-D2: si el usuario activó "Incluir mis grupos", generamos un CSV APARTE y lo
+                // compartimos junto al archivo personal. El export personal queda byte-idéntico.
+                // Un fallo al generar el CSV de grupos NO aborta el export personal (best-effort).
+                var urls: [URL] = [result.fileURL]
+                var groupsFailed = false
+                if includeGroups {
+                    do {
+                        if let groupsURL = try GroupsExportBuilder.exportGroupsCSV(in: modelContext) {
+                            urls.append(groupsURL)
+                        }
+                    } catch {
+                        // F1 (cero silencios): el personal se comparte igual; el alert de éxito avisa.
+                        groupsFailed = true
+                        #if DEBUG
+                        print("ExportSummaryStepView: CSV de grupos falló (se comparte solo el personal): \(error)")
+                        #endif
+                    }
+                }
+                let didGroupsFail = groupsFailed
+
                 await MainActor.run {
                     self.isExporting = false
-                    self.exportedFile = ExportedFile(url: result.fileURL)
+                    self.groupsExportFailed = didGroupsFail
+                    self.exportedFile = ExportedFile(urls: urls)
                 }
             } catch {
                 await MainActor.run {
@@ -318,7 +350,9 @@ struct ExportSummaryStepView: View {
 
 struct ExportedFile: Identifiable {
     let id = UUID()
-    let url: URL
+    /// Uno o más archivos a compartir. Con el export personal solo = `[personal]`; con
+    /// "Incluir mis grupos" activo = `[personal, grupos]` (G5-D2).
+    let urls: [URL]
 }
 
 // MARK: - Share Sheet Helper

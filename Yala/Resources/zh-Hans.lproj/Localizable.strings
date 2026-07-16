@@ -4926,3 +4926,22 @@
 "settings.deleteAccountErrorMessage" = "出了点问题，删除未能完成。你的数据仍然完好。请稍后再试。";
 /* G5-D1b: acción de reintento */
 "settings.deleteAccountRetry" = "重试";
+/* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
+"export.includeGroups" = "包含我的群组";
+"export.includeGroups.description" = "添加一个单独的文件，包含每个群组的支出、付款和你的余额。";
+"export.groups.header.group" = "群组";
+"export.groups.header.type" = "类型";
+"export.groups.header.date" = "日期";
+"export.groups.header.description" = "描述";
+"export.groups.header.from" = "付款方";
+"export.groups.header.to" = "收款方";
+"export.groups.header.paidBy" = "付款人";
+"export.groups.header.amount" = "金额";
+"export.groups.header.myShare" = "我的份额";
+"export.groups.header.currency" = "货币";
+"export.groups.type.expense" = "支出";
+"export.groups.type.settlement" = "付款";
+"export.groups.type.balance" = "我的余额";
+
+/* Shown in the export success alert when the optional groups CSV failed */
+"export.groupsExportFailedNote" = "你的个人文件已成功导出，但这次未能包含你的群组。请稍后再试。";

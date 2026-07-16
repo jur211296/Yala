@@ -4914,3 +4914,22 @@
 "settings.deleteAccountErrorMessage" = "Etwas ist schiefgelaufen und die Löschung wurde nicht abgeschlossen. Deine Daten sind weiterhin intakt. Versuch es gleich noch einmal.";
 /* G5-D1b: acción de reintento */
 "settings.deleteAccountRetry" = "Erneut versuchen";
+/* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
+"export.includeGroups" = "Meine Gruppen einbeziehen";
+"export.includeGroups.description" = "Fügt eine separate Datei mit den Ausgaben, Zahlungen und deinem Saldo jeder Gruppe hinzu.";
+"export.groups.header.group" = "Gruppe";
+"export.groups.header.type" = "Typ";
+"export.groups.header.date" = "Datum";
+"export.groups.header.description" = "Beschreibung";
+"export.groups.header.from" = "Von";
+"export.groups.header.to" = "An";
+"export.groups.header.paidBy" = "Bezahlt von";
+"export.groups.header.amount" = "Betrag";
+"export.groups.header.myShare" = "Mein Anteil";
+"export.groups.header.currency" = "Währung";
+"export.groups.type.expense" = "Ausgabe";
+"export.groups.type.settlement" = "Zahlung";
+"export.groups.type.balance" = "Mein Saldo";
+
+/* Shown in the export success alert when the optional groups CSV failed */
+"export.groupsExportFailedNote" = "Deine persönliche Datei wurde exportiert, aber deine Gruppen konnten diesmal nicht aufgenommen werden. Versuche es später erneut.";

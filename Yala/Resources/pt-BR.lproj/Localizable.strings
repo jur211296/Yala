@@ -4914,3 +4914,22 @@
 "settings.deleteAccountErrorMessage" = "Algo deu errado e a exclusão não foi concluída. Seus dados continuam intactos. Tente de novo em um instante.";
 /* G5-D1b: acción de reintento */
 "settings.deleteAccountRetry" = "Tentar de novo";
+/* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
+"export.includeGroups" = "Incluir meus grupos";
+"export.includeGroups.description" = "Adiciona um arquivo separado com as despesas, os pagamentos e o seu saldo de cada grupo.";
+"export.groups.header.group" = "Grupo";
+"export.groups.header.type" = "Tipo";
+"export.groups.header.date" = "Data";
+"export.groups.header.description" = "Descrição";
+"export.groups.header.from" = "De";
+"export.groups.header.to" = "Para";
+"export.groups.header.paidBy" = "Pago por";
+"export.groups.header.amount" = "Valor";
+"export.groups.header.myShare" = "Minha parte";
+"export.groups.header.currency" = "Moeda";
+"export.groups.type.expense" = "Despesa";
+"export.groups.type.settlement" = "Pagamento";
+"export.groups.type.balance" = "Meu saldo";
+
+/* Shown in the export success alert when the optional groups CSV failed */
+"export.groupsExportFailedNote" = "Seu arquivo pessoal foi exportado, mas não conseguimos incluir seus grupos desta vez. Tente novamente mais tarde.";

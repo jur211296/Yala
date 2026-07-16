@@ -4926,3 +4926,22 @@
 "settings.deleteAccountErrorMessage" = "Er ging iets mis en het verwijderen is niet voltooid. Je gegevens zijn nog intact. Probeer het zo opnieuw.";
 /* G5-D1b: acción de reintento */
 "settings.deleteAccountRetry" = "Opnieuw proberen";
+/* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
+"export.includeGroups" = "Mijn groepen opnemen";
+"export.includeGroups.description" = "Voegt een apart bestand toe met de uitgaven, betalingen en jouw saldo van elke groep.";
+"export.groups.header.group" = "Groep";
+"export.groups.header.type" = "Type";
+"export.groups.header.date" = "Datum";
+"export.groups.header.description" = "Omschrijving";
+"export.groups.header.from" = "Van";
+"export.groups.header.to" = "Naar";
+"export.groups.header.paidBy" = "Betaald door";
+"export.groups.header.amount" = "Bedrag";
+"export.groups.header.myShare" = "Mijn aandeel";
+"export.groups.header.currency" = "Valuta";
+"export.groups.type.expense" = "Uitgave";
+"export.groups.type.settlement" = "Betaling";
+"export.groups.type.balance" = "Mijn saldo";
+
+/* Shown in the export success alert when the optional groups CSV failed */
+"export.groupsExportFailedNote" = "Je persoonlijke bestand is geëxporteerd, maar we konden je groepen deze keer niet meenemen. Probeer het later opnieuw.";
