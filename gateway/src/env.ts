@@ -21,6 +21,11 @@ export interface Env {
   APNS_KEY_ID?: string; // Var (wrangler.toml): Key ID de 10 chars. NO es secreto (viaja en el header kid del JWT).
   APNS_AUTH_KEY?: string; // Secret (wrangler secret put): contenido PEM del AuthKey_<KEYID>.p8.
 
+  // --- Sign in with Apple (B1, gate §12 — revoke 5.1.1(v)): canje del authorization_code + revoke ---
+  // Ausentes → /account/siwa/exchange y /account/siwa/revoke responden 503 yala_siwa_not_configured.
+  SIWA_KEY_ID?: string; // Var (wrangler.toml): Key ID de la .p8 de SIWA (PQ53RQ5D3G). NO es secreto (viaja en el kid).
+  SIWA_AUTH_KEY?: string; // Secret (wrangler secret put): PEM de la .p8 de SIWA (~/Secrets/yala-siwa/). JAMÁS en el repo.
+
   // --- Secrets (wrangler secret put — NUNCA en el repo) ---
   OPENAI_API_KEY: string;
   EXCHANGE_RATE_API_KEY: string;

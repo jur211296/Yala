@@ -53,6 +53,27 @@ enum DeleteOutcome: Equatable {
     case transient(detail: String)
 }
 
+/// Resultado ESTRUCTURADO de `POST /account/siwa/exchange` (B1, 5.1.1(v)). El `refreshToken` es el de
+/// APPLE (no el de Supabase) — el Worker es stateless y lo devuelve para custodia en el Keychain del
+/// cliente. NUNCA lanza; el token JAMÁS aparece en `detail` (los errores traen solo el envelope del Worker).
+enum SiwaExchangeOutcome: Equatable {
+    /// 200 `{ refresh_token }` → custodiar el PAR (token, appleUserID) en el Keychain.
+    case success(refreshToken: String)
+    /// 401: JWT ausente/inválido/expirado.
+    case sessionExpired(detail: String)
+    /// 5xx / 503 no-configurado / 400 shape / red caída / respuesta no decodificable → best-effort, sin token.
+    case transient(detail: String)
+}
+
+/// Resultado ESTRUCTURADO de `POST /account/siwa/revoke` (B1, 5.1.1(v)). Best-effort por contrato: el
+/// borrado de cuenta JAMÁS se bloquea por un fallo aquí.
+enum SiwaRevokeOutcome: Equatable {
+    /// 200 `{ revoked: true }` → limpiar el PAR del Keychain.
+    case success
+    case sessionExpired(detail: String)
+    case transient(detail: String)
+}
+
 /// Resultado ESTRUCTURADO de `POST /account/migration` (I10-wiring w6, cutover §g.4). `ok:true` → `.ok`;
 /// `ok:false` con `reason=='other_leader'` → `.otherLeader` (el líder fue usurpado — el runner corta
 /// retomable y converge a follower); cualquier otro `ok:false` → `.rejected(reason)`.
@@ -79,10 +100,11 @@ final class CloudAccountClient {
     /// - Parameters:
     ///   - baseURL: gateway (default `ProxyConfig.baseURL`, per-scheme).
     ///   - urlSession: inyectable para tests (reusa `SyncHTTPSession` del push client).
-    ///   - attestProvider: token de sesión de App Attest. Default `{ nil }` ⇒ claim/exists/migration
-    ///     NO envían attest (asimetría deliberada — el gate de cuenta precede al `/attest/bind`). SOLO
-    ///     `deleteAccount` (G5-D1) lo adjunta (`requireUserAndAttest`, molde `/groups/rpc`); en producción
-    ///     se inyecta `{ try? await AppAttestClient.shared.currentSessionToken() }`.
+    ///   - attestProvider: token de sesión de App Attest. Default `{ nil }` ⇒ claim/exists/migration/
+    ///     siwaExchange NO envían attest (asimetría deliberada — el gate de cuenta y el sign-in preceden
+    ///     al `/attest/bind`). Lo adjuntan `deleteAccount` (G5-D1) y `siwaRevoke` (B1) — ambos pasos del
+    ///     mismo flujo destructivo (`requireUserAndAttest`, molde `/groups/rpc`); en producción se
+    ///     inyecta `{ try? await AppAttestClient.shared.currentSessionToken() }`.
     init(
         baseURL: URL = ProxyConfig.baseURL,
         urlSession: SyncHTTPSession = URLSession.shared,
@@ -279,6 +301,96 @@ final class CloudAccountClient {
             return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
         default:
             // 400 yala_* (auth.uid null defensivo) / 502 upstream / cualquier otro → reintentable.
+            return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
+        }
+    }
+
+    // MARK: - POST /account/siwa/exchange (B1)
+
+    /// Canje del `authorization_code` de Apple → refresh token de Apple, vía el Worker (que firma el
+    /// `client_secret` con la .p8 — jamás client-side). SIN attest (como claim/exists/migration: el
+    /// sign-in PRECEDE al `/attest/bind`). Corre best-effort en el hook post-sign-in — NUNCA lanza.
+    /// El refresh token devuelto no se loguea (solo viaja al Keychain).
+    func siwaExchange(jwt: String, authorizationCode: String) async -> SiwaExchangeOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/siwa/exchange"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        do {
+            request.httpBody = try JSONSerialization.data(
+                withJSONObject: ["authorization_code": authorizationCode]
+            )
+        } catch {
+            return .transient(detail: "encode failed")
+        }
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch {
+            return .transient(detail: "network: \(error.localizedDescription)")
+        }
+        guard let http = response as? HTTPURLResponse else {
+            return .transient(detail: "non-HTTP response")
+        }
+        switch http.statusCode {
+        case 200:
+            guard
+                let decoded = try? JSONDecoder().decode(SiwaExchangeResponse.self, from: data),
+                let token = decoded.refresh_token, !token.isEmpty
+            else {
+                // NO volcar el body de un 200 (portaría el token si el shape cambió): solo el hecho.
+                return .transient(detail: "HTTP 200 undecodable (body omitido — puede portar token)")
+            }
+            return .success(refreshToken: token)
+        case 401:
+            return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
+        default:
+            // 503 yala_siwa_not_configured / 400 shape / 502 upstream Apple → best-effort, sin token.
+            return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
+        }
+    }
+
+    private struct SiwaExchangeResponse: Decodable {
+        let refresh_token: String?
+    }
+
+    // MARK: - POST /account/siwa/revoke (B1)
+
+    /// Revocación 5.1.1(v) del refresh token de Apple — paso 4a del borrado de cuenta. CON attest
+    /// (`requireUserAndAttest`, coherencia con `/account/delete`: mismo flujo destructivo), de ahí el
+    /// header `X-Yala-Attest-Session` vía el `attestProvider` del init. NUNCA lanza.
+    func siwaRevoke(jwt: String, refreshToken: String) async -> SiwaRevokeOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/siwa/revoke"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        if let attest = await attestProvider(), !attest.isEmpty {
+            request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
+        }
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["refresh_token": refreshToken])
+        } catch {
+            return .transient(detail: "encode failed")
+        }
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch {
+            return .transient(detail: "network: \(error.localizedDescription)")
+        }
+        guard let http = response as? HTTPURLResponse else {
+            return .transient(detail: "non-HTTP response")
+        }
+        switch http.statusCode {
+        case 200:
+            return .success
+        case 401:
+            return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
+        default:
             return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
         }
     }

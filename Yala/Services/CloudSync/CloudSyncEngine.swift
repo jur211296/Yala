@@ -486,6 +486,42 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAuth accessTokenUnavailable")
     }
 
+    // MARK: SIWA revoke 5.1.1(v) (B1) — canje/custodia/revocación del refresh token de Apple (sin PII:
+    // JAMÁS el code/token — solo motivos)
+
+    /// El canje post-sign-in quedó custodiado (par token+appleUserID en el Keychain).
+    static func siwaExchangeStored() {
+        logger.notice("CloudSyncAuth siwaExchangeStored")
+    }
+
+    /// El canje falló (`no-code` / `no-jwt` / `exchange` / `keychain`) → este sign-in queda sin token
+    /// revocable (best-effort; re-sign-in lo cura). Par del canario TelemetryDeck `siwaExchangeFailed`.
+    static func siwaExchangeFailed(reason: String) {
+        logger.notice("CloudSyncAuth siwaExchangeFailed reason=\(reason, privacy: .public)")
+    }
+
+    /// Revoke saltado: no hay par custodiado (sesión previa al capture — población cero — o canje fallido).
+    static func siwaRevokeSkippedNoToken() {
+        logger.notice("CloudSyncAuth siwaRevokeSkippedNoToken")
+    }
+
+    /// Revoke saltado: el par pertenece a OTRO appleUserID (AJUSTE #1 — hazard cross-cuenta M1). Ni POST
+    /// ni limpieza: el par sigue siendo válido para su dueño.
+    static func siwaRevokeSkippedStaleToken() {
+        logger.notice("CloudSyncAuth siwaRevokeSkippedStaleToken")
+    }
+
+    /// Revocación 5.1.1(v) completada (Apple 200) + par limpiado del Keychain.
+    static func siwaRevoked() {
+        logger.notice("CloudSyncAuth siwaRevoked")
+    }
+
+    /// El revoke falló (`no-jwt` / `revoke` [timeout/red/502]) — best-effort: el borrado NO se bloquea;
+    /// el par NO se limpia (un retry del borrado lo reintenta). Par del canario `siwaRevokeFailed`.
+    static func siwaRevokeFailed(reason: String) {
+        logger.notice("CloudSyncAuth siwaRevokeFailed reason=\(reason, privacy: .public)")
+    }
+
     // MARK: Migración (I10-wiring) — journal + orquestador (sin PII: solo fases, motivos, contadores)
 
     /// Una transición se journaleó (fase + efectos pendientes). `phase` es el `MigrationPhase` (sin PII).

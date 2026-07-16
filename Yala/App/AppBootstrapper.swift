@@ -247,6 +247,15 @@ final class AppBootstrapper {
         // cuyo splitExpenseID ya tiene TX cuenta real (race resuelto por sync).
         observeTransactionsImportedFromSync(context: context)
 
+        // 14.55 B1 (SIWA revoke 5.1.1(v)): composición de PRODUCCIÓN del hook de canje — el ÚNICO punto
+        // que instala el closure real (AJUSTE #2 del brief: CloudAuthService no depende de
+        // CloudAccountClient; el default nil = no-op). Gateado como 14.6: con prod placeholder
+        // (isConfigured=false) no existe sign-in → sin hook, byte-idéntico. ContentView espera este
+        // bootstrap antes de mostrar UI → el hook está instalado antes de cualquier sign-in interactivo.
+        if CloudBackendConfig.isConfigured {
+            SIWAExchangeSeam.installProductionHook()
+        }
+
         // 14.6 Modo Nube — coordinator de migración (I14, P4). Dueño único del `MigrationRunner`. Gateado
         // por `CloudBackendConfig.isConfigured` (staging/DEV; prod placeholder = no-op). Retoma una
         // migración/reversa matada a medias (journal transicional o efectos pendientes) ANTES del 14.7 y,

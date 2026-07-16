@@ -67,6 +67,38 @@ nonisolated enum CloudAuthProfileCapture {
     }
 }
 
+/// Lógica post-credencial del canje SIWA (B1, 5.1.1(v)) — extraída para testear SIN instanciar el
+/// delegate de ASAuthorization: decodifica el `authorizationCode` (UTF-8, no vacío) y decide invocar el
+/// hook. Hook `nil` (default — producción sin componer / tests) = no-op ANTES de mirar el code (byte-
+/// idéntico). Hook instalado pero sin code utilizable → canario `siwaExchangeFailed` (Apple no entregó
+/// el code → no habrá token revocable de este sign-in; población cero pre-feature, ver el brief B1).
+@MainActor
+enum SIWAExchangeCapture {
+
+    /// Decodifica el `credential.authorizationCode` (Data UTF-8) a String no vacío. Pura.
+    nonisolated static func code(from data: Data?) -> String? {
+        guard let data, let code = String(data: data, encoding: .utf8), !code.isEmpty else { return nil }
+        return code
+    }
+
+    /// Invoca el hook con el code decodificado + el appleUserID de ESTE sign-in (AJUSTE #1: el par
+    /// viaja junto hasta el Keychain). El sign-in JAMÁS falla ni se retrasa por esto: el hook real
+    /// lanza su propio Task best-effort (composición en `SIWAExchangeSeam`).
+    static func dispatch(
+        hook: (@MainActor (_ authorizationCode: String, _ appleUserID: String) -> Void)?,
+        codeData: Data?,
+        appleUserID: String
+    ) {
+        guard let hook else { return }
+        guard let code = code(from: codeData) else {
+            CloudSyncBreadcrumb.siwaExchangeFailed(reason: "no-code")
+            TelemetryService.siwaExchangeFailed(reason: "no-code")
+            return
+        }
+        hook(code, appleUserID)
+    }
+}
+
 /// Errores tipados del flujo de auth (sin PII).
 enum CloudAuthError: Error, Equatable {
     /// El subsistema no está configurado (producción placeholder) → no hay `AuthClient`.
@@ -96,6 +128,13 @@ final class CloudAuthService: NSObject {
     private var authController: ASAuthorizationController?
 
     private var didRegisterRevocationObserver = false
+
+    /// Hook INYECTADO del canje SIWA (B1, AJUSTE #2 del review — layering): la composición de producción
+    /// (`SIWAExchangeSeam.installProductionHook()`, un ÚNICO punto en AppBootstrapper) instala el closure
+    /// real que canjea el `authorizationCode` por el refresh token de Apple vía el Worker y persiste el
+    /// PAR (token, appleUserID) en el Keychain. Default `nil` = no-op (tests byte-idénticos; sin
+    /// dependencia CloudAuthService→CloudAccountClient — molde `deviceTokenProvider` de G8-3).
+    var siwaExchangeHook: (@MainActor (_ authorizationCode: String, _ appleUserID: String) -> Void)?
 
     // Keys del perfil capturado (accounts dentro del service del `profileStore`).
     private static let keyCapturedEmail = "cloudauth.captured.email"
@@ -164,6 +203,10 @@ final class CloudAuthService: NSObject {
             return nil
         }
     }
+
+    /// appleUserID capturado del último sign-in (para el match del PAR SIWA — AJUSTE #1 del brief B1 —
+    /// y `getCredentialState`). `nil` = nunca hubo sign-in en este device.
+    func storedAppleUserID() -> String? { readProfileString(Self.keyAppleUserID) }
 
     /// Email capturado en el primer sign-in (para I14). `nil` si Apple nunca lo entregó / sin captura.
     func capturedEmail() -> String? { readProfileString(Self.keyCapturedEmail) }
@@ -402,12 +445,20 @@ extension CloudAuthService: ASAuthorizationControllerDelegate {
                 return
             }
             captureProfileIfPresent(credential)
+            // B1 (5.1.1(v)): capturar TAMBIÉN el authorizationCode — es de un solo uso y expira en ~5 min,
+            // por eso el canje corre EN el sign-in (hook best-effort), no al borrar la cuenta.
+            let siwaCodeData = credential.authorizationCode
+            let appleUserID = credential.user
             Task { @MainActor in
                 do {
                     _ = try await self.client?.signInWithIdToken(
                         credentials: .init(provider: .apple, idToken: idToken, nonce: nonce)
                     )
                     CloudSyncBreadcrumb.authSignedIn()
+                    // Tras el exchange EXITOSO (hay JWT de Supabase para el Worker). Jamás bloquea/retrasa.
+                    SIWAExchangeCapture.dispatch(
+                        hook: self.siwaExchangeHook, codeData: siwaCodeData, appleUserID: appleUserID
+                    )
                     self.finishSignIn(.success(()))
                 } catch {
                     CloudSyncBreadcrumb.authSignInFailed(reason: "idtoken-exchange")

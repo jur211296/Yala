@@ -15,6 +15,10 @@
 #   push usa para llamar get_group_push_tokens / prune_push_token (revocados de authenticated en g8_02). Se
 #   acuña con `node scripts/mint-push-role-jwt.mjs <path-legacy-secret> | npx wrangler secret put PUSH_ROLE_JWT`
 #   (staging) / `--env production`. Ausente → el fan-out es no-op silencioso. Ver README §APNs y g8_02.
+#   SIWA_AUTH_KEY (B1, revoke 5.1.1(v)): PEM de la .p8 de Sign in with Apple (~/Secrets/yala-siwa/). Se sube con
+#   `npx wrangler secret put SIWA_AUTH_KEY < AuthKey_PQ53RQ5D3G.p8` (staging) / `--env production` (ENCADENADO
+#   al runbook del Bloque A — el Worker de prod no existe hasta su primer deploy). Ausente → /account/siwa/*
+#   responde 503 yala_siwa_not_configured. NUNCA commitear la .p8.
 
 name = "yala-gateway-staging"
 main = "src/index.ts"
@@ -38,6 +42,9 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 # El secret se sube con:  npx wrangler secret put APNS_AUTH_KEY < AuthKey_<KEYID>.p8
 # (stdin preserva los saltos de línea del PEM; SIN --env: staging es el env default). NUNCA commitear la .p8.
 APNS_KEY_ID = "7H6BUZWKKS"
+# SIWA (B1, revoke 5.1.1(v)). Key ID de la .p8 de Sign in with Apple (no secreto — viaja en el kid del
+# client_secret). El secret par: npx wrangler secret put SIWA_AUTH_KEY < AuthKey_PQ53RQ5D3G.p8
+SIWA_KEY_ID = "PQ53RQ5D3G"
 
 [[d1_databases]]
 binding = "DB"
@@ -76,6 +83,9 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 # el fan-out de silent push de Grupos es NO-OP silencioso en prod (log 1 vez en wrangler tail). Descomentar y
 # cargar la Key ID de prod (10 chars, no secreto) + subir la .p8 como secret para encenderlo:
 # APNS_KEY_ID = "<KEY_ID_PROD>"
+# SIWA (B1): la Key ID es la MISMA que staging (una sola .p8 de SIWA por team). INERTE hasta subir el secret
+# `wrangler secret put SIWA_AUTH_KEY --env production` (encadenado al runbook del Bloque A); sin él → 503.
+SIWA_KEY_ID = "PQ53RQ5D3G"
 
 [[env.production.d1_databases]]
 binding = "DB"

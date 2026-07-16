@@ -206,9 +206,10 @@ Función NUEVA `qa/cloud/g5_01_delete_personal_account.sql` (`security definer`,
 guard `auth.uid()` NULL → `yala_not_authorized`, grants REVOKE public/anon + GRANT authenticated). **HARD
 DELETE** de todas las filas `user_id = auth.uid()` en las 16 tablas de dominio + `user_preferences` +
 `sync_seq_counters` + `attest_keys` + `report_claims` + la fila `profiles` (PK `id`); devuelve counts por
-tabla en jsonb. NO toca grupos (`groups_forget_user` lo hace aparte) ni `auth.users` (residual owner). Ruta
-`POST /account/delete` (`requireUserAndAttest` — asimetría deliberada con el resto de `/account/*`, que usa
-`requireUser` sin attest). Semántica HARD DELETE = **decisión de sesión, a RATIFICAR por el owner**.
+tabla en jsonb. NO toca grupos (`groups_forget_user` lo hace aparte). ~~Ni `auth.users` (residual owner)~~
+**SUPERSEDED por g12_01 (2026-07-16, §g12_01 abajo): el RPC ahora TAMBIÉN borra `auth.users` del caller** —
+HARD DELETE **RATIFICADO por el owner (2026-07-16)**. Ruta `POST /account/delete` (`requireUserAndAttest` —
+asimetría deliberada con el resto de `/account/*`, que usa `requireUser` sin attest).
 
 **Aplicación (loop principal, MCP, contexto service):** aplicar el `.sql` verbatim como migración
 `g5_01_delete_personal_account`. Registrar el md5 real tras aplicar:
@@ -271,6 +272,65 @@ CORRIDA MANUAL DESPUÉS de `npm test` (no antes — dejaría a B sin fila para l
 reales (`tx_items:53, user_preferences:41, sync_seq_counters:1, profiles:1`) → verificación post-delete
 `[]` en prefs/counters (Bearer B) → re-claim `{"state":"created"}`. Suite gateway re-corrida tras el WIRE
 para confirmar B estable.
+
+⚠️ **El runbook WIRE de arriba (pasos 1-4) queda SUPERSEDED por g12_01** — con el borrado de `auth.users`,
+el paso 4 (re-claim con el mismo JWT) VIOLARÍA `profiles_id_fkey` (409 → 502) y el password grant del user
+borrado MUERE permanentemente. El método vigente está en §g12_01 (sub DESECHABLE + restore por signup).
+
+## g12_01 — delete_personal_account TAMBIÉN borra `auth.users` (gate §12, Bloque B2)
+
+Migración `qa/cloud/g12_01_delete_account_auth_users.sql` (2026-07-16; HARD DELETE + dirección RATIFICADOS
+por el owner; review adversarial PRE-aplicación: APLICAR CON AJUSTES, todos aplicados). `create or replace`
+VERBATIM sobre g5_01 + `delete from auth.users where id = v_uid` AL FINAL + key `auth_users` en el jsonb.
+Por qué esta vía (y no Admin API [service_role todo-o-nada en el Worker: DESCARTADA] ni rol de máquina
+[borraría cualquier uuid: DESCARTADO]): el borrado queda atado al `auth.uid()` del caller POR CONSTRUCCIÓN,
+cero credencial nueva, invariante intacto. Detalle completo (PoC, cascadas, supuesto load-bearing) en el
+header del `.sql`.
+
+**Supuesto LOAD-BEARING (assert al promover a CUALQUIER entorno):** `auth.users` tiene RLS habilitado con
+CERO policies → el DELETE funciona SOLO porque `postgres` (owner de la función) tiene `rolbypassrls=true`:
+
+```sql
+select rolbypassrls from pg_roles where rolname='postgres';  -- debe ser true (verificado staging 2026-07-16)
+```
+
+Efectos verificados en vivo: `profiles` cascadea desde auth.users (el delete explícito queda como belt);
+GoTrue cascadea identities/sessions/refresh_tokens/mfa/oauth/webauthn; sesión NO refrescable post-RPC (el
+access token en vuelo vale hasta exp — suficiente para el paso 4a SIWA revoke, stateless); un re-`claim`
+del JWT en vuelo ya NO puede renacer la cuenta (violaría la FK — cierre de la resurrección que g5 permitía).
+Residual-owner documentado: `auth.audit_log_entries`/`auth.flow_state` (sin FK) sobreviven — mismo residual
+que el Admin API.
+
+**Aplicación (loop principal, MCP, contexto service):** aplicar el `.sql` verbatim como migración
+`g12_01_delete_account_auth_users`. Registrar el md5 real tras aplicar:
+
+```sql
+select md5(pg_get_functiondef('public.delete_personal_account()'::regprocedure));
+-- md5 esperado: 6bafd85a2f9349e98af30ca48c53bdd9  (aplicada 2026-07-16, migración g12_01_delete_account_auth_users;
+-- ACL verificado {postgres,authenticated,service_role}; rolbypassrls(postgres)=true verificado)
+```
+
+**Verificación WIRE one-shot (método VIGENTE — sub DESECHABLE, A/B intactos):**
+1. Sembrar un tercer usuario efímero C. ⚠️ GoTrue RECHAZA el signup de dominios no-reales
+   (`email_address_invalid` para `@test.yala` — así se descubrió que A/B fueron sembrados, no
+   registrados): crear C vía MCP (contexto service) con INSERT a `auth.users` (molde: copiar
+   instance_id/aud/role/raw_app_meta_data de la fila de A; `encrypted_password = crypt('<pass>',
+   gen_salt('bf'))`; email_confirmed_at now(); tokens '' ) + su fila `auth.identities` (provider
+   'email', provider_id = id, identity_data con sub/email/email_verified). Password grant → JWT C.
+2. Sembrar 1-2 filas con el JWT de C (PostgREST directo o `POST /sync/push`) + `POST /account/claim`.
+3. `POST /rest/v1/rpc/delete_personal_account` (Bearer C) → 200 con counts y **assert `auth_users: 1`**
+   (el ÚNICO observable de que el delete matcheó — un 0 aquí = el gap sigue abierto).
+4. Verificar: password grant de C → FALLA (usuario muerto); `GET /account/exists` con el JWT C en vuelo →
+   `{"exists": false}`; las filas de C → `[]`.
+5. Sin restore: C era desechable. A/B jamás se tocan con este método.
+
+**CORRIDA 2026-07-16 (g12_01, loop principal vía MCP+curl): VERDE** — C sembrado por SQL → login OK →
+seed pref 201 + claim `created` → delete 200 con `auth_users: 1, profiles: 1, user_preferences: 1,
+sync_seq_counters: 1` → re-login 400 (usuario MUERTO) · prefs `[]` · `exists:false` con el JWT en vuelo
+(la verificación stateless post-delete confirmada — el paso 4a de B1 [SIWA revoke] funciona tras el RPC).
+
+**Regla anti-drift:** re-aplicar a prod (`kefvaiymtgytemwbltlz`) en el mismo cambio o anotar drift
+pendiente — CON el assert de `rolbypassrls` contra prod ANTES de aplicar.
 
 ## migrate_group (G6-1) — migración de grupos VIVOS de CloudKit al backend (§9 D7)
 
@@ -530,6 +590,80 @@ select md5(pg_get_functiondef('public.prune_push_token(uuid, text)'::regprocedur
   un authenticated que llame los RPCs DIRECTO con la firma NUEVA COMPLETA recibe **403 + code 42501**. Caso multi-device:
   header device1 → APNs recibe device2 (otro device de A) + B; sin header → solo B (fallback G8-1).
 - `YalaTests/CloudSync/GroupsSyncClientTests.swift` — header presente con provider, ausente con default `{ nil }`.
+
+## B1 (gate §12) — SIWA revoke 5.1.1(v): canje + revocación del refresh token de Apple
+
+**Requisito:** App Store Guideline 5.1.1(v) — al ofrecer "eliminar cuenta" con Sign in with Apple, la app DEBE
+revocar los tokens vía la REST API de Apple. Diseño (brief congelado `docs/modo-nube/briefs/BRIEF-B1-SIWA-REVOKE.md`,
+5 ajustes del /review-plan incorporados): **canje EN el sign-in vía Worker; custodia del refresh token de Apple en
+el Keychain del CLIENTE; revoke vía Worker al borrar**. El Worker es STATELESS (jamás persiste tokens de nadie) y
+la .p8 de SIWA jamás sale del server → el invariante multi-sitio se conserva (el Worker no gana credencial que lea
+datos de usuario; el refresh token de Apple ni siquiera pasa por reposo server-side).
+
+**Endpoints** (`gateway/src/sync/siwa.ts`):
+- `POST /account/siwa/exchange` — auth `requireUser` (SIN attest — el sign-in PRECEDE al `/attest/bind`, la
+  asimetría documentada de `/account/*`). Body `{authorization_code}` con shape-check `[A-Za-z0-9._-]{10,2048}`
+  (400 `yala_bad_input`). Canjea contra `appleid.apple.com/auth/token` (form-urlencoded, **SIN `redirect_uri`** —
+  solo aplica al flujo web; con un code de ASAuthorizationController produce `invalid_grant`) y devuelve SOLO
+  `{refresh_token}` (id_token/access_token de Apple NO se reenvían — minimización). Error Apple → 502 SIN volcar
+  el body de Apple a logs/respuesta (puede portar tokens); el code solo como prefijo ≤8.
+- `POST /account/siwa/revoke` — auth `requireUserAndAttest` (molde `/account/delete`: mismo flujo destructivo;
+  en staging `observe` el attest es opcional). Body `{refresh_token}` → `auth/revoke` con
+  `token_type_hint=refresh_token`. 200 → `{revoked:true}`; fallo → 502 (cliente best-effort).
+- `client_secret`: JWT ES256 firmado por-request (exp 5 min, sin cache) con la .p8 — claims iss=Team,
+  sub=client_id (primer elemento de `APPLE_BUNDLE_IDS` — single-valued por env hoy), aud=appleid.apple.com.
+- **D3 (rate-limit) VERIFICADO:** ambos endpoints pasan por el paraguas existente — `requireUser`/
+  `requireUserAndAttest` invocan `gateRequest(env, claims, "sync")` con el binding `RATE_LIMITER`, ANTES de
+  cualquier fetch a Apple. Sin residual.
+
+**Secrets/vars:** `SIWA_KEY_ID = "PQ53RQ5D3G"` en `wrangler.toml` (ambos bloques; inerte en prod hasta su primer
+deploy) + secret `SIWA_AUTH_KEY` (PEM de `~/Secrets/yala-siwa/AuthKey_PQ53RQ5D3G.p8`, `wrangler secret put
+SIWA_AUTH_KEY < AuthKey_PQ53RQ5D3G.p8`). **Staging se aplica en B1; el `--env production` se ENCADENA al runbook
+del Bloque A** (el Worker de prod no existe hasta su primer deploy). Sin el secret → 503
+`yala_siwa_not_configured` en los 2 endpoints y NADA más cambia.
+
+**Cliente Swift:**
+- Capture: el delegate de `CloudAuthService` extrae `credential.authorizationCode` (de un solo uso, ~5 min — por
+  eso el canje corre EN el sign-in, no al borrar) y tras el `signInWithIdToken` EXITOSO invoca
+  `siwaExchangeHook?(code, appleUserID)` — closure INYECTADA default `nil` (AJUSTE #2: sin dependencia
+  CloudAuthService→CloudAccountClient; tests byte-idénticos). Composición única en AppBootstrapper (14.55):
+  `SIWAExchangeSeam.installProductionHook()` — Task best-effort, timeout 4s (molde `PushTokenSignOutSeam`); el
+  sign-in JAMÁS falla ni se retrasa por esto.
+- Custodia: el PAR `cloudauth.appleRefreshToken` + `cloudauth.appleRefreshToken.user` (= appleUserID de ESE
+  sign-in, AJUSTE #1) en `CloudAuthKeychainStorage` (service `com.yala.cloudauth`, AfterFirstUnlock). Writer
+  con CLEAR del par previo ANTES de escribir + user-primero/token-después (SERIO #1 del review adversarial:
+  sin el clear, una sobrescritura matada entre writes dejaba `(token del DUEÑO, user de la SECUNDARIA)` — par
+  CRUZADO que el match no detecta); reader exige AMBAS keys (par a medias = ausencia). Sobrevive el sign-out normal
+  (credencial de APPLE, no de la sesión Supabase) — verificado 2026-07-16: ni la matriz de sign-out ×4 (M1) ni
+  la purga de frontera de secundaria barren estas keys, y el match por appleUserID hace el residuo inofensivo.
+- Revoke: `SIWATokenRevocation.revokeIfNeeded()` (paso 4a del borrado, orden congelado intacto) — par ausente →
+  skip (`siwaRevokeSkippedNoToken`); **par de OTRO appleUserID → skip SIN POST y SIN limpiar**
+  (`siwaRevokeSkippedStaleToken`, AJUSTE #1 — cierra el hazard cross-cuenta M1: borrar la secundaria jamás
+  revoca la autorización del dueño); match → POST con el JWT vivo (verificación stateless del Worker), timeout
+  4s; 200 → limpia el par (`siwaRevoked`); fallo → canario `siwaRevokeFailed`, NUNCA lanza (contrato best-effort
+  — el borrado no se bloquea). Canarios TelemetryDeck: `siwaExchangeFailed` (no-code|no-jwt|exchange|keychain) y
+  `siwaRevokeFailed` (no-jwt|revoke) — ambos en CERO es parte del gate §12.
+
+**Residuales (con argumento, del brief):**
+- **Población-cero:** los flags están DARK — no existe usuario de producción con sesión SIWA previa al capture.
+  El único residual (sesión creada antes de B1 → sin token custodiado al borrar → `siwaRevokeSkippedNoToken`)
+  aplica solo a devices de dogfooding/staging del owner, que puede re-sign-in. NO se implementa fallback de
+  re-auth interactiva en el flujo de borrado (fricción UX sin población real).
+- **D1/D2 descartados** (decisión del /review-plan del brief): D1 — persistir el `authorization_code` para
+  canjearlo al borrar es inviable (expira en ~5 min, un solo uso); D2 — canjear-y-revocar al vuelo en el borrado
+  exigiría re-auth interactiva de Apple en medio de un flujo destructivo. El canje-en-sign-in es el único diseño
+  que deja SIEMPRE un token revocable.
+- Kill de la app en los ~4s del canje → sin token custodiado (misma clase que población-cero; re-sign-in cura).
+
+**Tests:**
+- `gateway/test/siwa.unit.test.ts` — OFFLINE (CI-safe, molde account.delete.test.ts): exchange happy (form
+  EXACTO sin `redirect_uri`; client_secret decodificado kid/iss/sub/aud/exp), revoke happy
+  (`token_type_hint=refresh_token`), 503 sin secret, 401 sin JWT, 400 shape, error Apple → 502 sin leak. NO hay
+  golden WIRE contra Apple real (un code real solo existe en un device tras sign-in interactivo — paridad APNs).
+- `YalaTests/CloudSync/SIWATokenRevocationTests.swift` — revocación con deps inyectadas (par válido / nil /
+  STALE / fallo), composición del canje, capture post-credencial (hook nil = no-op), roundtrip Keychain del PAR
+  (service único por test). `YalaTests/AccountDeletionServiceTests` conserva el ancla de orden
+  `forget→teardown→delete→siwa→close` INTACTA.
 
 ## Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)
 

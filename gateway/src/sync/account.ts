@@ -18,12 +18,12 @@ import { bearerToken, callRpc, getRows, verifyUserToken } from "./userauth";
 
 type Ctx = Context<{ Bindings: Env }>;
 
-interface AuthedUser {
+export interface AuthedUser {
   sub: string;
   userJWT: string;
 }
 
-interface AuthedUserAttest extends AuthedUser {
+export interface AuthedUserAttest extends AuthedUser {
   attest: SessionClaims | null;
 }
 
@@ -32,8 +32,11 @@ interface AuthedUserAttest extends AuthedUser {
  * rutas de sync NO exige App Attest — el claim precede al `/attest/bind`, así que el device todavía
  * no tiene una sesión de attest. El bucket de rate-limit usa el `sub` (reusa el limiter `sync`, la
  * categoría existente del Modo Nube; en tests sin Durable Object se omite).
+ *
+ * EXPORTADA (B1 SIWA): `/account/siwa/exchange` reusa esta auth (sin 3ª copia — precedente G8-1 con
+ * el `requireUserAndAttest` de groups/routes).
  */
-async function requireUser(c: Ctx): Promise<AuthedUser | Response> {
+export async function requireUser(c: Ctx): Promise<AuthedUser | Response> {
   const token = bearerToken(c.req.header("Authorization"));
   if (!token) return jsonError("yala_attest_required", "Falta el JWT de usuario (Authorization: Bearer).", 401);
   const user = await verifyUserToken(c.env, token);
@@ -168,8 +171,11 @@ export async function handleAccountMigration(c: Ctx): Promise<Response> {
  * delete de todo el corpus personal), la ejecuta un device ya establecido (con sesión de attest viva), y
  * exigir attest sube la barra contra un JWT robado sin device atestado. En `ENFORCE=observe` el attest
  * es opcional (igual que las rutas de sync en staging); en `ENFORCE=enforce` es obligatorio.
+ *
+ * EXPORTADA (B1 SIWA): `/account/siwa/revoke` reusa esta auth — mismo molde que `/account/delete`
+ * (ambos son pasos del mismo flujo destructivo de borrado de cuenta).
  */
-async function requireUserAndAttest(c: Ctx): Promise<AuthedUserAttest | Response> {
+export async function requireUserAndAttest(c: Ctx): Promise<AuthedUserAttest | Response> {
   const token = bearerToken(c.req.header("Authorization"));
   if (!token) return jsonError("yala_attest_required", "Falta el JWT de usuario (Authorization: Bearer).", 401);
   const user = await verifyUserToken(c.env, token);
@@ -197,8 +203,10 @@ async function requireUserAndAttest(c: Ctx): Promise<AuthedUserAttest | Response
  * SIEMPRE del JWT (RLS + `auth.uid()`); no lee body. Errores del RPC (`yala_not_authorized` sanitizado,
  * errcode P0001) → 400 con el código preservado; cualquier otro fallo upstream → 502 yala_unavailable.
  *
- * NO borra las tablas de GRUPOS (el cliente llama `groups_forget_user` APARTE ANTES) ni `auth.users`
- * (residual owner: Admin API/service_role). Ver qa/cloud/g5_01_delete_personal_account.sql.
+ * NO borra las tablas de GRUPOS (el cliente llama `groups_forget_user` APARTE ANTES). Desde g12_01
+ * (gate §12 B2) el RPC TAMBIÉN borra la fila `auth.users` del caller (atado a auth.uid(); cascadas
+ * verificadas; la respuesta gana la key `auth_users`) — ver qa/cloud/g12_01_delete_account_auth_users.sql
+ * (histórico: g5_01_delete_personal_account.sql).
  */
 export async function handleAccountDelete(c: Ctx): Promise<Response> {
   const auth = await requireUserAndAttest(c);

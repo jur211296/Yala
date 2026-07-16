@@ -14,6 +14,7 @@ import {
   handleSyncPush,
 } from "./sync/routes";
 import { handleAccountClaim, handleAccountDelete, handleAccountExists, handleAccountMigration } from "./sync/account";
+import { handleSiwaExchange, handleSiwaRevoke } from "./sync/siwa";
 import { handleGroupsMerkle, handleGroupsPull, handleGroupsPush } from "./groups/routes";
 import { handleGroupsRpc } from "./groups/rpc";
 import { handleDebugPush } from "./push/routes";
@@ -71,6 +72,12 @@ app.post("/account/claim", handleAccountClaim); // reserva atómica; estado de 3
 app.get("/account/exists", handleAccountExists); // hint de encaminamiento (no la garantía anti-doble-siembra)
 app.post("/account/migration", handleAccountMigration); // cutover/complete §g.4 + reverse_* §h + heartbeat I14-pre (guard líder)
 app.post("/account/delete", handleAccountDelete); // G5-D1: borrado GDPR del corpus personal (requireUserAndAttest — asimetría documentada)
+
+// --- SIWA revoke 5.1.1(v) (B1, gate §12): canje del authorization_code EN el sign-in (requireUser — precede
+// al bind) + revoke del refresh_token al borrar la cuenta (requireUserAndAttest, molde /account/delete).
+// Worker STATELESS: el refresh token de Apple vive en el Keychain del CLIENTE. Sin SIWA_AUTH_KEY → 503.
+app.post("/account/siwa/exchange", handleSiwaExchange);
+app.post("/account/siwa/revoke", handleSiwaRevoke);
 
 // --- Grupos->backend (G2): canal de sync de grupos (apply_group_delta SECURITY INVOKER; RLS por membership) ---
 app.post("/groups/push", handleGroupsPush);

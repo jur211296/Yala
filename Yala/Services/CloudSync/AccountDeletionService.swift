@@ -12,8 +12,9 @@
 //    2. Teardowns (`CloudSyncRuntime.teardownGuestSession` + `GroupsSyncClient.teardownForSignOut`): paran
 //       los ciclos; sin esto un push en vuelo RE-SUBIRÍA filas al backend recién vaciado.
 //    3. `POST /account/delete` (attest). Falla ⇒ `.failed(.delete)`, reintentable (teardowns idempotentes).
-//    4. Éxito ⇒ SIWA revoke (seam no-op, pendiente-owner) + cierre LOCAL por modo, reusando la red terminal
-//       de `CloudSessionSignOut` (fase viva `.awaitingRelaunch` ⇒ cero red duplicada). SIN push-all (los
+//    4. Éxito ⇒ SIWA revoke REAL (B1, 5.1.1(v) — `SIWATokenRevocation.revokeIfNeeded()`, best-effort:
+//       jamás bloquea el borrado) + cierre LOCAL por modo, reusando la red terminal de
+//       `CloudSessionSignOut` (fase viva `.awaitingRelaunch` ⇒ cero red duplicada). SIN push-all (los
 //       datos ya murieron server-side).
 //
 //  DECISIÓN de sesión (documentada): el paso 1 es CONDICIONAL a `groupsBackendEnabled`. Con el flag OFF el
@@ -153,7 +154,14 @@ final class AccountDeletionService {
             return
         }
 
-        // 4a) SIWA revoke (seam no-op, pendiente-owner 5.1.1(v)).
+        // 4a) SIWA revoke REAL (B1, 5.1.1(v)) — best-effort: jamás lanza ni bloquea el cierre. El orden
+        // congelado (revoke DESPUÉS del delete: jamás revocar si el borrado falló) SIGUE siendo válido con
+        // B2 (el RPC `delete_personal_account` ahora borra también `auth.users`): la verificación del JWT
+        // en el Worker es STATELESS (jose + JWKS, `gateway/src/sync/userauth.ts` — no consulta GoTrue) y
+        // el revoke contra Apple no toca Supabase; borrar la fila de GoTrue NO invalida el JWT en vuelo.
+        // Matiz del retry (INFO #7 del review): si el revoke falla pero el cierre local COMPLETA
+        // (`.awaitingRelaunch`), no hay retry — el par queda custodiado en el Keychain (jamás filtrado) y
+        // el próximo sign-in lo sobreescribe; el retry solo existe si el flujo cae a `.failed(.localClose)`.
         await deps.revokeSIWA()
 
         // 4b) Cierre LOCAL por modo, reusando la red terminal de CloudSessionSignOut.
