@@ -108,4 +108,30 @@ struct StorageModePersistenceTests {
             != SwiftDataConfiguration.syncMetaDatabaseName)
         #expect(SwiftDataConfiguration.secondarySyncMetaDatabaseName.contains("YalaSyncMeta"))
     }
+
+    // MARK: - GroupsStoreDecision (M1 / D8 — G5-C, tabla flag × secundaria)
+
+    @Test func groupsDecision_secondaryOnlyWhenFlagOnAndSecondaryActive() {
+        // Único caso `.secondary`: flag ON Y sesión secundaria activa.
+        #expect(SwiftDataConfiguration.GroupsStoreDecision.decide(
+            flagOn: true, secondaryActive: true) == .secondary)
+        // Los otros 3 casos → `.primary` (byte-idéntico a hoy; flag OFF = TODO device prod).
+        #expect(SwiftDataConfiguration.GroupsStoreDecision.decide(
+            flagOn: false, secondaryActive: true) == .primary)
+        #expect(SwiftDataConfiguration.GroupsStoreDecision.decide(
+            flagOn: true, secondaryActive: false) == .primary)
+        #expect(SwiftDataConfiguration.GroupsStoreDecision.decide(
+            flagOn: false, secondaryActive: false) == .primary)
+    }
+
+    @Test func secondaryGroupsStoreName_derivesFromGroupsName() {
+        #expect(SwiftDataConfiguration.secondaryGroupsDatabaseName
+            == SwiftDataConfiguration.groupsDatabaseName + "-Secondary")
+        // Jamás colisiona con el store de grupos del dueño ni con el personal secundario.
+        #expect(SwiftDataConfiguration.secondaryGroupsDatabaseName
+            != SwiftDataConfiguration.groupsDatabaseName)
+        #expect(SwiftDataConfiguration.secondaryGroupsDatabaseName
+            != SwiftDataConfiguration.secondaryDatabaseName)
+        #expect(SwiftDataConfiguration.secondaryGroupsDatabaseName.contains("YalaGroups"))
+    }
 }

@@ -2216,9 +2216,9 @@
    ],
    "scenarioIDs": [],
    "classification": "agentic",
-   "coverage": "unit:YalaTests/SecondarySessionStoreTests + SecondaryBoundaryHooksTests (orden/kill-safety de fronteras) + CloudSyncFlagsEffectiveModeTests (modo efectivo + guard mount-mismatch canRunDomain) + CrossAccountEntryGuardLogicTests (matriz 16 combos, flag OFF = v1) + SecondaryEntryLogicTests (orden claim->descriptor->flags) + PrefsSyncBehaviorTests (localOnly) + TabBarConfigurationSecondaryTests (filtro Grupos) + MigrationWorkExecutorTests (writeBeacon suprimido) + SecondaryHydrationLogicTests. Mount/wipe/purga reales = sim via panel DEBUG CloudSyncDebugView seccion 'Sesion secundaria (M1)' (activar descriptor fake -> relanzar -> testigo secundario / armar wipe -> boot limpia y restaura al dueno). Entrada SIWA real e2e = device-only (guion MODO-NUBE-M1-GUION-DEVICE.md, 2 cuentas TestFlight). Feature DARK (secondarySessionEnabled=false; toggle DEV en el panel para QA device).",
+   "coverage": "unit:YalaTests/SecondarySessionStoreTests + SecondaryBoundaryHooksTests (orden/kill-safety de fronteras) + CloudSyncFlagsEffectiveModeTests (modo efectivo + guard mount-mismatch canRunDomain) + CrossAccountEntryGuardLogicTests (matriz 16 combos, flag OFF = v1) + SecondaryEntryLogicTests (orden claim->descriptor->flags) + PrefsSyncBehaviorTests (localOnly) + TabBarConfigurationSecondaryTests (filtro Grupos) + MigrationWorkExecutorTests (writeBeacon suprimido) + SecondaryHydrationLogicTests. Mount/wipe/purga reales = sim via panel DEBUG CloudSyncDebugView seccion 'Sesion secundaria (M1)' (activar descriptor fake -> relanzar -> testigo secundario / armar wipe -> boot limpia y restaura al dueno). Entrada SIWA real e2e = device-only (guion MODO-NUBE-M1-GUION-DEVICE.md, 2 cuentas TestFlight). Feature DARK (secondarySessionEnabled=false; toggle DEV en el panel para QA device). + G5-C grupos por sesion bajo flag (YalaGroups-Secondary via GroupsStoreDecision, wipe de frontera con grupos + espejo + join-intents [PendingJoinStore/GroupJoinIntentTracker/consent — HIGH del review], guards de arranque/piggyback/tab relajados bajo groupsBackendEnabled; flag OFF byte-identico)",
    "owner": "",
-   "lastVerified": "2026-07-13"
+   "lastVerified": "2026-07-16"
   },
   {
    "area": "groups-backend-g0-spikes",

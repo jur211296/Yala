@@ -590,7 +590,8 @@ class SessionState {
         let stored = TabBarConfiguration.loadFromStandardDefaults()
         let config = TabBarConfiguration.forMode(
             onboardingMode, stored: stored,
-            secondarySessionActive: SecondarySessionStore.isActive())
+            secondarySessionActive: SecondarySessionStore.isActive(),
+            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled)
         let decision = MainTabSelectionLogic.decide(requested: tab, config: config)
 
         pendingTabSelectionTask?.cancel()

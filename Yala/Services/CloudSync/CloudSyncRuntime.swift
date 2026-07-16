@@ -550,13 +550,15 @@ final class CloudSyncRuntime {
         //      cadencia que el dominio) y `GroupsSyncClient.startIfEligible` se ABSTIENE de su loop propio
         //      (guard espejo: syncRuntimeEnabled && canRunDomain()) — un solo loop cadenciado, sin dos
         //      fetchHistory del mismo container sin coordinación. Flag OFF (SIEMPRE en producción esta
-        //      fase) = byte-idéntico: ni await ni llamada. **Guard de secundaria OBLIGATORIO** ([R3]): en
-        //      sesión secundaria este runtime SÍ cadencia (canRunDomain → .cloud efectivo con
-        //      secondaryStoreMounted) — sin el guard, el piggyback reintroduciría el sync de grupos en la
-        //      sesión de la invitada por la puerta de atrás (lo que el guard de AppBootstrapper G2 impide).
-        //      El resultado del ciclo de Grupos NO contamina la cadencia personal (canal aparte con su
-        //      propio dead-letter/backoff interno; el outcome se descarta a propósito).
-        if CloudSyncFlags.groupsBackendEnabled, !SecondarySessionStore.isActive() {
+        //      fase) = byte-idéntico: ni await ni llamada.
+        //      M1 / D8 (G5-C): el guard de secundaria YA NO aplica. Con el flag ON la invitada corre grupos
+        //      en SU ciclo (sobre `YalaGroups-Secondary` bajo su `sub`) — el piggyback DEBE alcanzarla, no
+        //      excluirla. Este runtime solo cadencia en secundaria cuando `canRunDomain()` es true, y su
+        //      guard de mount-mismatch (`isActive && !secondaryStoreMounted`) ya congela la ventana de
+        //      entrada (proceso viejo con el store del dueño montado). El resultado del ciclo de Grupos NO
+        //      contamina la cadencia personal (canal aparte con su propio dead-letter/backoff interno; el
+        //      outcome se descarta a propósito).
+        if CloudSyncFlags.groupsBackendEnabled {
             await groupsSyncCycleRunner(context)
             guard epoch == sessionEpoch else { return .coalesced }  // teardown durante el ciclo de Grupos
         }

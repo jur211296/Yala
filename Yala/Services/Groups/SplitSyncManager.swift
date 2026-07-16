@@ -201,6 +201,16 @@ final class SplitSyncManager {
     /// cuenta iCloud actual y, en mismatch, corre la limpieza de account-switch.
     /// Un fetch fallido (red / sin cuenta) JAMÁS limpia — reintento en el próximo boot.
     private func runIdentityBootGuard() async {
+        // M1 / D8 (G5-C): bajo el canal grupos→backend, la identidad de Grupos es el `sub` de la sesión,
+        // NO el recordName del Apple ID del OS — este boot-guard CloudKit-era se RETIRA. Con flag OFF
+        // (TODO device prod hoy) es byte-idéntico. `GroupsIdentityBootGuardLogic`/`performAccountSwitch
+        // Cleanup` NO se borran (retiro real post-G6).
+        // ⚠️ CONDICIÓN DE ENCENDIDO (H2 del review G5-C): encender el flag ANTES de G6 (p.ej. QA) con
+        // grupos CloudKit legacy VIVOS pierde este belt — un cambio de Apple ID del OS dejaría solo la
+        // limpieza reactiva `.accountChange` del engine (no garantizada) y las zonas del ID viejo
+        // podrían re-encolarse a la private DB del nuevo (la partición de G5-A NO cubre legacy). El
+        // encendido único D9 (post-G6) lo hace seguro — anotado en el gate de flags §12.
+        guard !CloudSyncFlags.groupsBackendEnabled else { return }
         guard let cached = GroupUserIdentityService.shared.cachedRecordName, !cached.isEmpty else {
             return  // Primera instalación / cache limpio: nada que comparar.
         }

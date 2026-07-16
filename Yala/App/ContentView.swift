@@ -1530,10 +1530,13 @@ struct MainTabView: View {
     private var visibleTabs: [ConfigurableTab] {
         let secondary = SecondarySessionStore.isActive()
         let modeConfig = TabBarConfiguration.forMode(
-            sessionState.onboardingMode, stored: tabConfig, secondarySessionActive: secondary)
+            sessionState.onboardingMode, stored: tabConfig, secondarySessionActive: secondary,
+            groupsBackendEnabled: CloudSyncFlags.groupsBackendEnabled)
         var tabs = modeConfig.activeTabs
-        // M1: el temporaryTab tampoco puede colar `.groups` en secundaria (grupos = iCloud del dueño).
-        if let temp = sessionState.temporaryTab, !tabs.contains(temp), !(secondary && temp == .groups) {
+        // M1 / D8: el temporaryTab tampoco puede colar `.groups` en secundaria con el canal backend
+        // APAGADO (grupos = iCloud del dueño); con el flag ON la invitada ve sus propios grupos ⇒ se permite.
+        if let temp = sessionState.temporaryTab, !tabs.contains(temp),
+           !(secondary && temp == .groups && !CloudSyncFlags.groupsBackendEnabled) {
             tabs.append(temp)
         }
         return tabs
@@ -1765,10 +1768,14 @@ struct MainTabView: View {
             if GroupsBetaGateLogic.shouldShowGate(isUnlocked: groupsBetaUnlocked,
                                                   isGroupInviteMode: sessionState.isGroupInviteMode) {
                 GroupsBetaGateView()
-            } else if GroupsICloudAvailabilityGateLogic.shouldShowGate(
-                isAccountAvailable: syncService.isAccountAvailable,
-                isUITest: UITestHooks.isActive
-            ) {
+            } else if !CloudSyncFlags.groupsBackendEnabled,
+                      GroupsICloudAvailabilityGateLogic.shouldShowGate(
+                          isAccountAvailable: syncService.isAccountAvailable,
+                          isUITest: UITestHooks.isActive
+                      ) {
+                // M1 / D8 (G5-C): el gate CloudKit-era (sin iCloud del OS) se RETIRA bajo el flag — el
+                // canal grupos→backend no exige la cuenta iCloud del sistema. Con flag OFF (TODO device
+                // prod hoy) es byte-idéntico. La lógica pura y la vista NO se borran (retiro real post-G6).
                 GroupsICloudUnavailableView()
             } else {
                 GroupsContainerView()

@@ -242,6 +242,26 @@ enum SwiftDataConfiguration {
         return iCloudAvailable ? .iCloudMirror : .localNoMirror
     }
 
+    // MARK: - Groups store mount decision (M1 / D8 — G5-C)
+
+    /// Decisión PURA de qué store de GRUPOS montar. Simetría con `PersonalStoreDecision`, pero BINARIA:
+    /// el store de grupos es SECUNDARIO solo cuando el canal grupos→backend está encendido (`flagOn`) Y hay
+    /// sesión secundaria activa. Con el flag OFF (TODO device de producción esta fase) es SIEMPRE `.primary`
+    /// — el store del dueño (`YalaGroups`), byte-idéntico a hoy: en secundaria+flag OFF el tab de Grupos
+    /// está filtrado y el canal backend NO corre (`AppBootstrapper`/`GroupsSyncClient` lo gatean), así que
+    /// el archivo del dueño queda inerte (nunca se lee ni se escribe). Con flag ON la invitada monta SU
+    /// propio `YalaGroups-Secondary` y el canal backend corre bajo su sesión (mueren M1-2/M1-3 por
+    /// construcción). Espeja `syncMetaConfiguration` pero ANDeado por el flag (el sync-meta secundario es
+    /// obligatorio SIEMPRE; el store de grupos solo cuando el canal backend participa).
+    enum GroupsStoreDecision: Equatable {
+        case primary
+        case secondary
+
+        static func decide(flagOn: Bool, secondaryActive: Bool) -> GroupsStoreDecision {
+            (flagOn && secondaryActive) ? .secondary : .primary
+        }
+    }
+
     /// Testigo de QUÉ modo montó realmente ESTE proceso el store personal (NO lo persistido). Lo captura
     /// UNA sola vez, en la PRIMERA evaluación de `personalConfiguration` en el path de producción (= el
     /// build de `sharedModelContainer` al arrancar). Es el árbitro de `isMirrorConfirmedOff()`: en-sesión,
@@ -365,11 +385,13 @@ enum SwiftDataConfiguration {
     /// (nukearía las prefs del DUEÑO, que sobreviven por decisión 7 del diseño M1).
     ///
     /// Orden idempotente ante kill a mitad (el arm se limpia AL FINAL):
-    /// 1) archivos secundarios (abort si el BASE falla — el arm y el descriptor persisten, el mount
-    ///    sigue siendo el secundario y el próximo boot reintenta) → 2) purga E2E-M1 → 3) descriptor
-    ///    + marker de entrada → 3.5) los 3 flags de onboarding a `false` (EN EL BOOT y jamás
-    ///    in-session: con el proceso vivo montaría la cadena Welcome DEBAJO del cover de relaunch —
-    ///    doble presentación mismo anchor, clase toolbar-muerta) → 4) desarmar.
+    /// 1) los 3 archivos secundarios EN ORDEN — personal → sync-meta → GRUPOS (M1/D8: `YalaGroups-Secondary`
+    ///    con montos de la invitada; borrado INCONDICIONAL, no-op real si no existe [flag OFF] ⇒ byte-idéntico;
+    ///    el guard abort-S3 cubre los 3: fallo en el BASE de CUALQUIERA aborta, el arm y el descriptor
+    ///    persisten, el mount sigue siendo el secundario y el próximo boot reintenta) → 2) purga E2E-M1
+    ///    (incl. el espejo App Group de grupos) → 3) descriptor + marker de entrada → 3.5) los 3 flags de
+    ///    onboarding a `false` (EN EL BOOT y jamás in-session: con el proceso vivo montaría la cadena Welcome
+    ///    DEBAJO del cover de relaunch — doble presentación mismo anchor, clase toolbar-muerta) → 4) desarmar.
     static func performSecondaryWipeIfArmed() {
         guard !isRunningTests, !isUITesting else { return }
         performSecondaryWipeIfArmed(
@@ -388,7 +410,8 @@ enum SwiftDataConfiguration {
         guard SecondarySessionStore.isWipeArmed(defaults) else { return }
 
         guard deleteFiles(secondaryDatabaseName, personalSchema),
-              deleteFiles(secondarySyncMetaDatabaseName, syncMetaSchema) else {
+              deleteFiles(secondarySyncMetaDatabaseName, syncMetaSchema),
+              deleteFiles(secondaryGroupsDatabaseName, groupsSchema) else {
             CloudSyncBreadcrumb.secondaryWipeAborted(reason: "store file deletion failed")
             return
         }
@@ -560,12 +583,30 @@ enum SwiftDataConfiguration {
         // duplicadas por mismo `cloudKitZoneID`, resurrección de borrados, doble cuota).
         // Grupos sincroniza SOLO vía CKSyncEngine en `iCloud.com.jurgenschmidt.yala.groups`
         // (ver Services/Groups/). Espeja la decisión de las ramas de test/UITest de arriba.
-        return ModelConfiguration(groupsDatabaseName, schema: groupsSchema, cloudKitDatabase: .none)
+        //
+        // M1 / D8 (G5-C): en sesión secundaria + canal grupos→backend ENCENDIDO, la invitada monta su
+        // propio archivo `YalaGroups-Secondary` (los grupos de SU cuenta bajan del backend bajo su
+        // sesión). Lectura DIRECTA de `SecondarySessionStore.isActive()` (NO `capturePersonalStore...`:
+        // ese testigo lo captura SOLO el mount personal). Con flag OFF → `.primary` = byte-idéntico.
+        switch GroupsStoreDecision.decide(
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            secondaryActive: SecondarySessionStore.isActive()) {
+        case .secondary:
+            return ModelConfiguration(secondaryGroupsDatabaseName, schema: groupsSchema, cloudKitDatabase: .none)
+        case .primary:
+            return ModelConfiguration(groupsDatabaseName, schema: groupsSchema, cloudKitDatabase: .none)
+        }
     }
 
     /// Database name for groups store, derived from personal databaseName.
     static var groupsDatabaseName: String {
         databaseName.replacing("YalaModel", with: "YalaGroups")
+    }
+
+    /// M1 / D8 — nombre del store de GRUPOS SECUNDARIO (1 slot ⇒ nombre FIJO; el `userID` del descriptor
+    /// valida la identidad del ocupante). Derivado de `groupsDatabaseName` ⇒ hereda la variante `-Dev`.
+    static var secondaryGroupsDatabaseName: String {
+        groupsDatabaseName + "-Secondary"
     }
 
     /// Sync-meta store (Modo Nube, I2) — `SyncIdentity` local, NUNCA CloudKit.

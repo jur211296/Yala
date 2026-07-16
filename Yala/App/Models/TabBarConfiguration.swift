@@ -98,11 +98,14 @@ struct TabBarConfiguration: Codable, Equatable {
 
     /// Returns the appropriate tab configuration for the given onboarding mode.
     /// For groupInvite: fixed config (ignores stored JSON). For full/completed: stored config.
-    /// M1: en sesión SECUNDARIA el tab Grupos se FILTRA siempre — el CKSyncEngine de grupos está
-    /// atado al Apple ID del OS (el DUEÑO): la invitada vería SUS grupos y montos. Param explícito
+    /// M1 / D8: en sesión SECUNDARIA el tab Grupos se FILTRA SOLO con el canal grupos→backend APAGADO —
+    /// ahí el CKSyncEngine de grupos está atado al Apple ID del OS (el DUEÑO) y la invitada vería SUS
+    /// grupos y montos. Con el flag ON (`groupsBackendEnabled`) la invitada ve el tab con los grupos de
+    /// SU cuenta (canal backend, store `YalaGroups-Secondary`) ⇒ NO se filtra. Ambos params explícitos
     /// (sin default) para que todo call-site decida conscientemente.
     static func forMode(
-        _ mode: OnboardingMode, stored: TabBarConfiguration, secondarySessionActive: Bool
+        _ mode: OnboardingMode, stored: TabBarConfiguration,
+        secondarySessionActive: Bool, groupsBackendEnabled: Bool
     ) -> TabBarConfiguration {
         var config: TabBarConfiguration
         switch mode {
@@ -111,7 +114,7 @@ struct TabBarConfiguration: Codable, Equatable {
         case .full, .completed:
             config = stored
         }
-        if secondarySessionActive {
+        if secondarySessionActive && !groupsBackendEnabled {
             config.activeTabs.removeAll { $0 == .groups }
         }
         return config

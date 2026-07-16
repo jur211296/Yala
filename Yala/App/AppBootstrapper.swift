@@ -273,16 +273,20 @@ final class AppBootstrapper {
         }
 
         // 15. Initialize CKSyncEngine for shared group data (separate groups store)
-        // M1: Grupos NO arranca en sesión secundaria — su CKSyncEngine está atado al Apple ID
-        // del OS (el DUEÑO); arrancarlo mostraría/sincronizaría SUS grupos bajo la sesión de la
-        // invitada. El tab Grupos también se filtra (TabBarConfiguration.forMode).
+        // M1 / D8: el CKSyncEngine de grupos JAMÁS arranca en sesión secundaria — SIN CAMBIO con o sin
+        // el flag `groupsBackendEnabled`. Está atado al Apple ID del OS (el DUEÑO): arrancarlo mostraría/
+        // sincronizaría SUS grupos por CloudKit bajo la sesión de la invitada. Con el flag ON la invitada
+        // ve sus grupos por el canal BACKEND (`GroupsSyncClient`, abajo), NO por este engine CloudKit.
         SplitSyncManager.shared.setContext(context)
         if !uiTestActive && !SecondarySessionStore.isActive() { SplitSyncManager.shared.initialize() }
 
         // G2 (DARK): canal de sync de Grupos → backend. NO-OP salvo con `groupsBackendEnabled` ON (jamás
-        // en producción esta fase) — el guard interno retorna antes de tocar red o modelos. Mismo guard
-        // uitest/secundaria que el CKSyncEngine de arriba (la persona solo-grupos entra por hasSession).
-        if !uiTestActive && !SecondarySessionStore.isActive() {
+        // en producción esta fase) — el guard interno retorna antes de tocar red o modelos.
+        // M1 / D8 (G5-C): con el flag ON la sesión secundaria SÍ arranca el canal backend (sus grupos, su
+        // sesión; el `currentUserIDProvider` = sub de la invitada + el espejo owner-scoped la aíslan).
+        // `startIfEligible` re-gatea por flag+sesión internamente; con flag OFF la condición reproduce el
+        // guard de secundaria de antes (byte-idéntico).
+        if !uiTestActive && (CloudSyncFlags.groupsBackendEnabled || !SecondarySessionStore.isActive()) {
             GroupsSyncClient.shared.startIfEligible(context: context)
         }
 

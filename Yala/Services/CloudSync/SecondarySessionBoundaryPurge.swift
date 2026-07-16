@@ -18,8 +18,9 @@ import Foundation
 
 enum SecondarySessionBoundaryPurge {
 
-    /// Purga las 6 superficies. Segunda red además de esta purga: `rehydrateOutboxFromMirror`
-    /// aplica owner-scoping DURO por `userID` (ya implementado — defensa en profundidad).
+    /// Purga las superficies durables del App Group. Segunda red además de esta purga:
+    /// `rehydrateOutboxFromMirror` (personal y grupos) aplica owner-scoping DURO por `userID` (ya
+    /// implementado — defensa en profundidad).
     static func purge() {
         WidgetDataCache.clearCache()
 
@@ -32,5 +33,20 @@ enum SecondarySessionBoundaryPurge {
 
         SyncOutboxMirror()?.purgeAll()
         PrefsOutbox()?.purgeAll()
+        // M1/D8 (G5-C): el espejo App Group del outbox de GRUPOS lleva `fieldsJSON` con MONTOS del dueño
+        // → no debe sobrevivir la frontera de la sesión secundaria. El owner-scoping por `userID` del
+        // rehydrate es la primera línea; esta purga es la segunda (belt ratificado por el brief).
+        GroupsOutboxMirror()?.purgeAll()
+
+        // HALLAZGO 1 del review G5-C (HIGH): las superficies de JOIN-INTENT viven en
+        // `UserDefaults.standard` SIN scoping por sesión (`PendingJoinStore` key compartida,
+        // `GroupJoinIntentTracker`, consent de grupos). Con grupos habilitados en secundaria (flag ON),
+        // la invitada puede crear intents de invite; un intent que sobreviva la frontera se ejecutaría
+        // bajo el DUEÑO al volver (reconcile(.boot) → presentGroupsSignIn del grupo de la invitada →
+        // redimir SU token con la cuenta equivocada). La purga corre en AMBAS fronteras (entrada y
+        // salida), idempotente; el dueño en `.icloud` no tiene consent backend legítimo que pisar.
+        PendingJoinStore.clearAll()
+        GroupJoinIntentTracker.shared.clear()
+        GroupsConsentState.clear()
     }
 }

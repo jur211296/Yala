@@ -68,6 +68,7 @@ struct SecondaryWipeHookTests {
         #expect(events == [
             "delete:\(SwiftDataConfiguration.secondaryDatabaseName)",
             "delete:\(SwiftDataConfiguration.secondarySyncMetaDatabaseName)",
+            "delete:\(SwiftDataConfiguration.secondaryGroupsDatabaseName)",  // M1/D8 (G5-C): grupos tras syncMeta
             "purge",
         ])
         #expect(SecondarySessionStore.isActive(defaults) == false)
@@ -76,6 +77,24 @@ struct SecondaryWipeHookTests {
         // 3.5: flags de onboarding reseteados EN EL BOOT → el device vuelve al Welcome.
         #expect(defaults.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding) == false)
         #expect(defaults.bool(forKey: "hasShownWelcomeChooser") == false)
+    }
+
+    @Test func wipe_includesGroupsStore_neverTouchesOwnerStores() {
+        // M1 / D8 (G5-C): el wipe de salida borra el store de GRUPOS secundario (tras personal y sync-meta)
+        // y JAMÁS toca los stores del DUEÑO (personal ni grupos).
+        let defaults = armedDefaults(prefix: "swipe.groups")
+        var deleted: [String] = []
+        SwiftDataConfiguration.performSecondaryWipeIfArmed(
+            defaults: defaults,
+            deleteFiles: { name, _ in deleted.append(name); return true },
+            purge: {})
+        #expect(deleted == [
+            SwiftDataConfiguration.secondaryDatabaseName,
+            SwiftDataConfiguration.secondarySyncMetaDatabaseName,
+            SwiftDataConfiguration.secondaryGroupsDatabaseName,
+        ])
+        #expect(!deleted.contains(SwiftDataConfiguration.databaseName))         // YalaModel del dueño intacto
+        #expect(!deleted.contains(SwiftDataConfiguration.groupsDatabaseName))   // YalaGroups del dueño intacto
     }
 
     @Test func neverTouchesOwnerStorageModeKeys() {

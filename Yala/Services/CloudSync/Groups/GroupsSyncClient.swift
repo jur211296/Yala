@@ -191,10 +191,17 @@ final class GroupsSyncClient {
     /// en caliente. El rehydrate del espejo (B2) corre en AMBOS modos (es red de boot, no de loop).
     func startIfEligible(context: ModelContext) {
         guard CloudSyncFlags.groupsBackendEnabled, sessionCheck() else { return }
-        // B2 (cinturón del call-site de AppBootstrapper G2): en sesión SECUNDARIA el canal de Grupos NO
-        // corre — ni loop ni rehydrate (el espejo del dueño no debe re-insertarse bajo la invitada; el
-        // owner-scoping ya lo filtraría, pero aquí ni se lee).
-        guard !SecondarySessionStore.isActive() else { return }
+        // B2 (cinturón del call-site de AppBootstrapper G2) — M1/D8 (G5-C): con el flag ON la sesión
+        // SECUNDARIA SÍ corre el canal de Grupos (loop + rehydrate) sobre SU store `YalaGroups-Secondary`
+        // y su `sub`; el rehydrate del espejo App Group filtra DURO por `userID` (owner-scoping) → las
+        // entries del dueño se ignoran. Con el flag OFF esta condición reproduce el guard de secundaria
+        // de antes (byte-idéntico: por 193 ya retornó, pero se conserva por simetría/documentación).
+        // INVARIANTE (D8): el loop propio NO tiene guard de mount-mismatch (a diferencia de
+        // `CloudSyncRuntime.canRunDomain`) — depende de que `startIfEligible` SOLO se invoque en cold
+        // boot (`AppBootstrapper`), donde el mount del store es coherente con `isActive()`. JAMÁS
+        // llamarlo mid-session en secundaria durante la ventana de entrada (proceso viejo con el store
+        // del dueño montado + descriptor secundario ya persistido).
+        guard CloudSyncFlags.groupsBackendEnabled || !SecondarySessionStore.isActive() else { return }
         guard !stoppedUntilRelaunch else { return }   // A5: 403 → no re-arrancar en este proceso
         // B2: red de boot — re-insertar del espejo App Group lo que una lightweight migration se llevó.
         rehydrateOutboxFromMirror(context: context)

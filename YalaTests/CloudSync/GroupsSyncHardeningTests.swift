@@ -309,6 +309,51 @@ struct GroupsSyncHardeningTests {
         #expect(groupsTeardowns == 4)
     }
 
+    /// M1 / D8 (G5-C): la purga de frontera de la sesión secundaria incluye el espejo App Group de GRUPOS
+    /// (`fieldsJSON` lleva montos del dueño → no debe sobrevivir la frontera). Source-scan (la purga usa el
+    /// App Group de producción, no ejecutable determinista en unit test); el mecanismo `purgeAll` lo cubre
+    /// `teardownForSignOut_stopsLoop_purgesMirror`.
+    @Test func boundaryPurge_wiresGroupsMirrorPurge() throws {
+        let source = try String(contentsOf: Self.repoRoot
+            .appendingPathComponent("Yala/Services/CloudSync/SecondarySessionBoundaryPurge.swift"),
+            encoding: .utf8)
+        #expect(source.contains("GroupsOutboxMirror()?.purgeAll()"))
+    }
+
+    // MARK: - (7) M1 / D8 (G5-C): aislamiento del store de grupos por sesión
+
+    /// `GroupSyncOutbox`/`GroupSyncCursor` viven en el `syncMetaSchema` → en sesión secundaria caen en el
+    /// archivo `YalaSyncMeta-Secondary` (ya aislado por `syncMetaConfiguration`), SIN scope-arlos. Fija el
+    /// contrato a nivel de schema + aislamiento por-archivo: un insert en el store secundario NO es visible
+    /// en el del dueño.
+    @Test func groupSyncOutbox_livesInSyncMeta_isolatedPerSessionFile() throws {
+        let names = Set(SwiftDataConfiguration.syncMetaSchema.entities.map(\.name))
+        #expect(names.contains("GroupSyncOutbox"))
+        #expect(names.contains("GroupSyncCursor"))
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let ownerCfg = ModelConfiguration(
+            "SyncMeta-owner", schema: SwiftDataConfiguration.syncMetaSchema,
+            url: dir.appendingPathComponent("owner.sqlite"), cloudKitDatabase: .none)
+        let secondaryCfg = ModelConfiguration(
+            "SyncMeta-secondary", schema: SwiftDataConfiguration.syncMetaSchema,
+            url: dir.appendingPathComponent("secondary.sqlite"), cloudKitDatabase: .none)
+        let ownerCtx = ModelContext(
+            try ModelContainer(for: SwiftDataConfiguration.syncMetaSchema, configurations: ownerCfg))
+        let secondaryCtx = ModelContext(
+            try ModelContainer(for: SwiftDataConfiguration.syncMetaSchema, configurations: secondaryCfg))
+
+        let row = GroupSyncOutbox(
+            syncID: UUID(), groupID: "g", entityType: GroupSyncEntityType.splitExpense,
+            op: .upsert, hlc: "h1", clientMutationID: UUID(),
+            fieldsJSON: "{\"amount\":\"1.0000\"}", author: "", createdAt: .now)
+        secondaryCtx.insert(row)
+        try secondaryCtx.save()
+
+        #expect(try secondaryCtx.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == 1)
+        #expect(try ownerCtx.fetchCount(FetchDescriptor<GroupSyncOutbox>()) == 0)  // aislado por archivo
+    }
+
     /// Rehydrate: re-inserta por DIFF owner-scoped las entries que el outbox perdió (valores ORIGINALES),
     /// IGNORA las de otra identidad, e idempotente (segunda pasada no duplica).
     @Test func rehydrate_diffOwnerScoped_idempotent() throws {
@@ -534,10 +579,11 @@ struct GroupsSyncHardeningTests {
         #expect(stub.callCount >= 1)          // y cicló de verdad
     }
 
-    /// Secundaria: NI loop propio (guard del cliente) NI piggyback (guard del paso 5.6).
-    @Test func secondarySession_neitherLoopNorPiggyback() async throws {
+    /// M1 / D8 (G5-C) — flag OFF: secundaria NI loop propio (guard del cliente) NI piggyback (guard del
+    /// paso 5.6). Byte-idéntico al mundo M1 pre-G5-C.
+    @Test func secondarySession_flagOff_neitherLoopNorPiggyback() async throws {
         let prevGroups = CloudSyncFlags.groupsBackendEnabled
-        CloudSyncFlags.groupsBackendEnabled = true
+        CloudSyncFlags.groupsBackendEnabled = false
         SecondarySessionStore._testSetActiveOverride(true)
         defer {
             CloudSyncFlags.groupsBackendEnabled = prevGroups
@@ -548,9 +594,9 @@ struct GroupsSyncHardeningTests {
         let context = try makeContext(dir)
         let client = makeClient(session: StubSession(emptyPageJSON), userID: nil)
         client.startIfEligible(context: context)
-        #expect(client._testLoopTask == nil)  // ni loop
+        #expect(client._testLoopTask == nil)  // ni loop (retorna en el guard de flag)
 
-        // Piggyback: el paso 5.6 NO invoca al runner en secundaria.
+        // Piggyback: el paso 5.6 NO invoca al runner con flag OFF.
         let counter = Counter()
         let runtime = makeRuntime(pullBody: emptyRuntimePullJSON)
         runtime.groupsSyncCycleRunner = { _ in counter.count += 1 }
@@ -558,6 +604,39 @@ struct GroupsSyncHardeningTests {
         defer { CloudSyncFlags._testResetStorageModeOverride() }
         _ = await runtime.syncCycle(context: context)
         #expect(counter.count == 0)
+    }
+
+    /// M1 / D8 (G5-C) — flag ON: la secundaria SÍ participa. El loop propio arranca (sessionCheck true,
+    /// canRunDomain false por mount-mismatch en test) Y el piggyback del paso 5.6 alcanza a la invitada.
+    @Test func secondarySession_flagOn_runsLoopAndPiggyback() async throws {
+        let prevGroups = CloudSyncFlags.groupsBackendEnabled
+        CloudSyncFlags.groupsBackendEnabled = true
+        SecondarySessionStore._testSetActiveOverride(true)
+        defer {
+            CloudSyncFlags.groupsBackendEnabled = prevGroups
+            SecondarySessionStore._testSetActiveOverride(nil)
+        }
+
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        // 401 → el loop termina solo tras la primera vuelta (sin sleeps reales).
+        let stub = StubSession(emptyPageJSON, status: 401)
+        let client = makeClient(session: stub, userID: nil)
+        client.sleeper = { _ in }
+        client.startIfEligible(context: context)
+        let task = client._testLoopTask
+        #expect(task != nil)                  // loop PROPIO arrancó bajo la invitada
+        await task?.value
+        #expect(stub.callCount >= 1)          // y cicló de verdad
+
+        // Piggyback: el paso 5.6 SÍ invoca al runner en secundaria con flag ON.
+        let counter = Counter()
+        let runtime = makeRuntime(pullBody: emptyRuntimePullJSON)
+        runtime.groupsSyncCycleRunner = { _ in counter.count += 1 }
+        CloudSyncFlags.storageMode = .cloud
+        defer { CloudSyncFlags._testResetStorageModeOverride() }
+        _ = await runtime.syncCycle(context: context)
+        #expect(counter.count == 1)
     }
 
     /// Paso 5.6: con flag ON (y no-secundaria) el performCycle del runtime personal invoca el ciclo de
