@@ -272,6 +272,41 @@ reales (`tx_items:53, user_preferences:41, sync_seq_counters:1, profiles:1`) →
 `[]` en prefs/counters (Bearer B) → re-claim `{"state":"created"}`. Suite gateway re-corrida tras el WIRE
 para confirmar B estable.
 
+## migrate_group (G6-1) — migración de grupos VIVOS de CloudKit al backend (§9 D7)
+
+Función NUEVA `qa/cloud/g6_01_migrate_group.sql` (`security definer`, `set search_path = public`, guard
+`auth.uid()` NULL → `yala_not_authorized`, grants REVOKE public/anon + GRANT authenticated). Crea EN UNA
+TRANSACCIÓN ATÓMICA `split_groups` con META HISTÓRICA (`created_at` del payload, NO `now()`) + los N
+`group_members` migrados TAL CUAL (member_key legacy, status/role/joined_at históricos): el owner
+(`is_owner=true`) con `user_id = auth.uid()`, el resto placeholders `user_id NULL` reclamables por el rebind
+legacy de `join_group`. NO extiende `create_group` (que forzaría owner `member_key=sub` → rompería las FKs
+del historial del owner, y `created_at=now()`). IDEMPOTENTE-SUAVE (el uploader one-shot reintenta): mismo
+owner → `{already:true, group_id, owner_user_id, server_seq}` sin tocar nada (ignora `p_members` del
+reintento; sin reconciliación de drift); otro owner → `yala_group_exists`. member_key duplicado en el payload
+→ `yala_bad_input` ANTES del PK (evita el `unique_violation` crudo → 502 → retry-loop eterno) + cinturón
+`exception when unique_violation`. Riesgo ACEPTADO documentado en el `.sql`: squat de group_id (DoS
+insider-only). Los RPCs existentes (`create_group`/`join_group`) quedan INTACTOS (el rebind ya vive en
+`join_group`, DDL L442-461).
+
+**Aplicación (loop principal, MCP, contexto service):** aplicar el `.sql` verbatim como migración
+`g6_01_migrate_group`. Registrar el md5 real tras aplicar:
+
+```sql
+select md5(pg_get_functiondef('public.migrate_group(text, jsonb, jsonb)'::regprocedure));
+-- md5 esperado: e7863927e5cb58398ae1e36b84f268f9  (aplicada 2026-07-16: g6_01_migrate_group + g6_01b verbatim-comments; fix P2 de casts incluido)  (aplicada 2026-07-16, migración g6_01_migrate_group)
+```
+
+**Regla anti-drift:** re-aplicar a prod (`kefvaiymtgytemwbltlz`) en el mismo cambio o anotar drift pendiente.
+
+**Goldens (`gateway/test/groups.goldens.test.ts`, describe G6):** 3 goldens (prefijo `g6-migrate-`) — (1)
+migrate atómico + filas exactas + re-intento `already:true` + otro caller `yala_group_exists`; (2) E2E R10
+server-side (push del historial con FKs legacy `*_member_key` = uuidStrings CloudKit-era → pull de B tras
+join+approve las ve byte-idénticas); (3) rebind vía gateway (`join_group(legacy_member_key)` → `rebound:true`;
+re-join de la fila ya reclamada → `rebound:false`, no re-bindea). **Marcados `describe.skip` hasta la
+aplicación** (dejan la suite VERDE hoy). TRAS aplicar la migración: cambiar `describe.skip(` → `describe(` en
+ese bloque y re-correr `npm test` (3/3 verdes). Usan solo los users A/B compartidos; sin cleanup (gid único
+por corrida, DELETE revocado — las filas se acumulan, se limpian por `group_id` en contexto service si hace falta).
+
 ## Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)
 
 `push-e2e-test.sh` ejerce `POST /sync/push` con EL MISMO envelope JSON que arma `SyncPushClient`

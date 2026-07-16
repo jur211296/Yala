@@ -48,6 +48,9 @@ const PARAM_ALLOWLIST: Record<string, Set<string>> = {
   revoke_invite: new Set(["p_token"]),
   update_member_display_name: new Set(["p_group_id", "p_display_name"]),
   groups_forget_user: new Set<string>(),
+  // G6-1: migración de un grupo VIVO de CloudKit al backend. p_meta/p_members viajan como jsonb intactos
+  // (la allowlist filtra por NOMBRE y copia el valor verbatim vía JSON.stringify — objetos/arrays inclusive).
+  migrate_group: new Set(["p_group_id", "p_meta", "p_members"]),
 };
 
 interface AuthedUser {

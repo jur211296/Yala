@@ -1114,3 +1114,141 @@ $function$;
 -- Grants: revocar de public/anon, otorgar solo a authenticated (la RLS de membership arbitra dentro).
 revoke all on function public.apply_group_delta(text, text, uuid, text, jsonb, jsonb, text, integer) from public, anon;
 grant execute on function public.apply_group_delta(text, text, uuid, text, jsonb, jsonb, text, integer) to authenticated;
+
+-- ============================================================================
+-- §4 — g6_01_migrate_group (Grupos→backend G6-1, migración de grupos VIVOS de CloudKit al backend)
+-- ============================================================================
+-- migrate_group(p_group_id, p_meta, p_members) — crea EN UNA TRANSACCIÓN ATÓMICA el split_groups con su META
+-- HISTÓRICA (created_at del payload, NO now()) + los N group_members TAL CUAL (member_key legacy, status/role/
+-- joined_at históricos). Cierra §9 (D7: el OWNER migra el grupo entero y luego RE-INVITA — el rebind por
+-- legacy_member_key de join_group [L442-461] reclama las filas placeholder user_id NULL). NO extiende
+-- create_group (fuerza owner member_key=sub → rompería las FKs del historial del owner; fuerza created_at=now()).
+-- IDEMPOTENTE-SUAVE: el uploader one-shot reintenta tras timeout → si el grupo existe con ESTE owner,
+-- {already:true, group_id, owner_user_id, server_seq} SIN tocar nada (ignora p_members del reintento; gana el
+-- 1er intento, sin reconciliación de drift); con OTRO owner → yala_group_exists. member_key duplicado en el
+-- payload → yala_bad_input ANTES del PK (evita el unique_violation crudo → 502 → retry-loop eterno del
+-- uploader) + cinturón exception when unique_violation. Riesgo ACEPTADO: squat de group_id (DoS insider-only —
+-- exige el zoneID de 128 bits visible solo para members; placeholders reclamables solo con token del caller).
+-- server_seq lo pone SIEMPRE el trigger stamp_group_seq. Contrato completo + decisiones owner (R10 / token-en-
+-- marcador / drift / squat / owner-debe-traer-member_key-legacy) en qa/cloud/g6_01_migrate_group.sql (2026-07-16).
+create or replace function public.migrate_group(
+  p_group_id text,
+  p_meta jsonb,
+  p_members jsonb
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_uid       uuid := (select auth.uid());
+  v_hlc       text;
+  v_existing  record;
+  v_owners    integer;
+  v_total     integer;
+  v_distinct  integer;
+  v_name      text;
+  v_currency  text;
+  v_member    jsonb;
+  v_mkey      text;
+  v_role      text;
+  v_status    text;
+  v_display   text;
+  v_is_owner  boolean;
+begin
+  if v_uid is null then
+    raise exception 'yala_not_authorized' using errcode = 'P0001';
+  end if;
+
+  if p_group_id is null or length(p_group_id) < 8 or length(p_group_id) > 120 then
+    raise exception 'yala_invalid_group_id' using errcode = 'P0001';
+  end if;
+
+  select owner_user_id, server_seq into v_existing
+    from split_groups where group_id = p_group_id;
+  if found then
+    if v_existing.owner_user_id = v_uid then
+      return jsonb_build_object('already', true, 'group_id', p_group_id,
+                                'owner_user_id', v_existing.owner_user_id, 'server_seq', v_existing.server_seq);
+    else
+      raise exception 'yala_group_exists' using errcode = 'P0001';
+    end if;
+  end if;
+
+  v_name     := btrim(coalesce(p_meta->>'name', ''));
+  v_currency := coalesce(p_meta->>'currency_code', '');
+  if v_name = '' or length(v_name) > 120 or length(v_currency) <> 3 then
+    raise exception 'yala_bad_input' using errcode = 'P0001';
+  end if;
+
+  if p_members is null or jsonb_typeof(p_members) <> 'array' or jsonb_array_length(p_members) = 0 then
+    raise exception 'yala_bad_input' using errcode = 'P0001';
+  end if;
+  select count(*) filter (where coalesce((e->>'is_owner')::boolean, false)) into v_owners
+    from jsonb_array_elements(p_members) e;
+  if v_owners <> 1 then
+    raise exception 'yala_bad_input' using errcode = 'P0001';
+  end if;
+  select count(*), count(distinct e->>'member_key') into v_total, v_distinct
+    from jsonb_array_elements(p_members) e;
+  if v_total <> v_distinct then
+    raise exception 'yala_bad_input' using errcode = 'P0001';
+  end if;
+
+  v_hlc := server_hlc();
+
+  insert into profiles (id) values (v_uid) on conflict (id) do nothing;
+
+  begin
+    insert into split_groups (
+      group_id, name, icon_name, color_hex, currency_code,
+      simplify_debts, show_debts_in_single_currency, members_can_invite,
+      default_split_type, is_archived, is_hidden_for_all, owner_user_id,
+      created_at, field_hlcs, hlc, deleted, schema_version
+    ) values (
+      p_group_id, v_name, p_meta->>'icon_name', p_meta->>'color_hex', v_currency,
+      coalesce((p_meta->>'simplify_debts')::boolean, false),
+      coalesce((p_meta->>'show_debts_in_single_currency')::boolean, false),
+      coalesce((p_meta->>'members_can_invite')::boolean, false),
+      p_meta->>'default_split_type', false, false, v_uid,
+      coalesce((p_meta->>'created_at')::timestamptz, now()),
+      jsonb_build_object('meta', v_hlc), v_hlc, false, 1
+    );
+  exception when unique_violation then
+    raise exception 'yala_group_exists' using errcode = 'P0001';
+  end;
+
+  for v_member in select value from jsonb_array_elements(p_members)
+  loop
+    v_mkey     := btrim(coalesce(v_member->>'member_key', ''));
+    v_role     := coalesce(v_member->>'role', '');
+    v_status   := coalesce(v_member->>'status', '');
+    v_display  := btrim(coalesce(v_member->>'display_name', ''));
+    v_is_owner := coalesce((v_member->>'is_owner')::boolean, false);
+    if v_mkey = '' or v_display = '' or length(v_display) > 80
+       or v_role not in ('admin', 'member')
+       or v_status not in ('active', 'pendingApproval', 'left', 'removed') then
+      raise exception 'yala_bad_input' using errcode = 'P0001';
+    end if;
+    insert into group_members (
+      group_id, member_key, user_id, display_name, role, status,
+      joined_at, field_hlcs, hlc, deleted, schema_version
+    ) values (
+      p_group_id, v_mkey,
+      case when v_is_owner then v_uid else null end,
+      v_display, v_role, v_status,
+      coalesce((v_member->>'joined_at')::timestamptz, now()),
+      jsonb_build_object('profile', v_hlc, 'membership', v_hlc), v_hlc, false, 1
+    );
+  end loop;
+
+  return jsonb_build_object('already', false, 'group_id', p_group_id, 'owner_user_id', v_uid);
+
+exception
+  when unique_violation then
+    raise exception 'yala_bad_input' using errcode = 'P0001';
+  -- Fix P2: casts malformados del jsonb (22007/22008/22P02) = payload permanentemente-malo → error PERMANENTE
+  -- (sin esto escaparían crudos → 502 "transitorio" → retry-loop eterno del uploader).
+  when invalid_datetime_format or datetime_field_overflow or invalid_text_representation then
+    raise exception 'yala_bad_input' using errcode = 'P0001';
+end $$;
+
+revoke all on function public.migrate_group(text, jsonb, jsonb) from public, anon;
+grant execute on function public.migrate_group(text, jsonb, jsonb) to authenticated;
