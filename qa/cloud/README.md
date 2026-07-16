@@ -883,8 +883,38 @@ configurado; **inactivity-timeout 720 h (30 días)** + **time-box 0 (never)** �
 server-side de DIFERIDOS #23 (racional en el vault, `MODO-NUBE-DIFERIDOS.md` §23).
 
 **Gateway:** `gateway/wrangler.toml` `[env.production.vars]` apunta a este proyecto (URL + anon
-key reales). El Worker de producción **NO está desplegado** — deploy solo con pedido explícito del
-owner.
+key reales). ~~El Worker de producción NO está desplegado~~ **DESPLEGADO 2026-07-16 (gate §12
+Bloque A, pedido explícito del owner)** — primer deploy en la historia del Worker
+`yala-gateway-production` (la app de PRODUCCIÓN ya apuntaba a él vía `ProxyConfig` #else). Secrets
+cargados (7): `OPENAI_API_KEY` + `EXCHANGE_RATE_API_KEY` (los de `Secrets.xcconfig` — ⚠️
+pendiente-owner: ROTAR la de OpenAI, viajó extraíble en el archive del build 18, nota del propio
+xcconfig) · `JWT_SIGNING_SECRET` PROPIO de prod (generado 2026-07-16, copia en
+`~/Secrets/yala-gateway/prod-jwt-signing-secret`) · `GROUPS_ENC_KEY` de prod
+(`~/Secrets/yala-groups-enc/prod.key`, DISTINTA de staging) · `PUSH_ROLE_JWT` de prod (acuñado con
+`mint-push-role-jwt.mjs` + legacy secret de prod; verificado 200 [] contra PostgREST prod, y el
+golden invertido anon → 42501) · `APNS_AUTH_KEY` (7H6BUZWKKS reusada, decisión owner) ·
+`SIWA_AUTH_KEY` (PQ53RQ5D3G, B1). `APNS_KEY_ID = "7H6BUZWKKS"` como var. `DEV_SHARED_SECRET` NO
+existe en prod (a propósito). `APP_STORE_API_KEY` NO cargado (pendiente-owner si el webhook de prod
+lo necesita). Smoke post-deploy: GET /groups/pull|/groups/merkle y POST /groups/push|/sync/push|
+/account/siwa/exchange sin JWT → 401; /account/exists sin JWT → 401.
+
+**PROMOCIÓN DEL STACK DE GRUPOS + g12 (2026-07-16, gate §12 Bloque A) — DRIFT CERRADO:** las 13
+migraciones aplicadas EN ORDEN con el diff DERIVADO de list_migrations (jamás asumido) y el SQL
+extraído BYTE-EXACTO del historial de staging (md5 por archivo == md5(statements[1]) 17/17):
+g1_01b_reapply_groups_infra_after_drop (≡ g1_01 + RLS fix — la terna del incidente g1_01/enable_rls/
+drop_spike se NETEA a ella, probado por construcción; los spikes g0_* se saltaron [la extensión
+pgcrypto ya estaba: `extensions` v1.3 = staging]) · g1_02 · g2_01 · g3_01 · g3_02 · g5_01 · g6_01 ·
+g6_01b · g7_01 → **sandwich recrypt ×2 con la llave PROPIA de prod (corpus vacío → 8 columnas en 0)**
+→ g7_02 · g8_01 · g8_02 · **g12_01** (con el assert previo `rolbypassrls(postgres)=true` ✓).
+Verificación post-aplicación: **md5(pg_get_functiondef) idéntico staging↔prod en las 33 funciones**
+(incl. delete_personal_account post-g12 `6bafd85a…`) · rol `yala_push` (nologin, sin BYPASSRLS,
+grantado a authenticator) · proacl de los 2 RPCs de push = `{postgres, service_role, yala_push}` ·
+`yala_logging_settings()` = ddl/-1/0 (§16e — prod ya venía correcto) · estructural: 29 tablas
+(21+8) TODAS con RLS, 96 policies (78+18), 22 triggers (17+5), 55 índices (40+15) — cuadre exacto ·
+security advisors: hallazgos = los by-design (RPCs SECURITY DEFINER expuestos a authenticated SON la
+API; deny-all de group_seq_counters) + 1 WARN de higiene en `stamp_group_seq` (EXECUTE default
+PUBLIC — inofensivo: Postgres rechaza invocar trigger functions directamente; chip aparte para
+lockdownearlo molde i5_11 en AMBOS envs).
 
 **Paridad de funciones VERIFICADA byte-exacta (2026-07-11):** `md5(pg_get_functiondef)` idéntico
 staging↔prod en las 6 — apply_delta `7f8cb94d32f3976b6a9b0ade8f165b73`, apply_pref

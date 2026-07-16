@@ -424,6 +424,64 @@ UPDATE con WHERE pca IS NULL; el perdedor de una carrera re-clasifica). **Cero c
   G4-invites/consent ✅ · endurecimiento pre-flags ✅ · G5 ✅ — quedan G6 (migración grupos vivos + R10),
   G7 (pgcrypto), G8 (APNs).**
 
+### 2026-07-16 (sesión gate §12, 7ª) — BLOQUES A+B DEL GATE COMPLETOS: PROD PROMOVIDA (13 migraciones, paridad 33/33) + Worker prod DESPLEGADO + SIWA revoke 5.1.1(v) REAL + auth.users muere con la cuenta — ⚠️ reconciliar al vault
+
+> Chip `CHIP-GATE-12-ENCENDIDO.md` CONSUMIDO (retirado con este commit). Commits `8ed3f47f`+`c2725354`
+> (Bloques B) + el de cierre. Decisiones owner del día (AskUserQuestion ×4): HARD DELETE RATIFICADO ·
+> APNs prod REUSA `7H6BUZWKKS` · dirección B2 RATIFICADA (extender el RPC, no credencial de máquina) ·
+> MCP re-conmutado a `yala-production` para la fase 2. Método íntegro: exploradores → briefs congelados →
+> /review-plan → implementadores → reviews adversariales (4 en total, TODOS cazaron algo real) → gates.
+
+- **BLOQUE B1 — SIWA revoke 5.1.1(v)** (`8ed3f47f`+`c2725354`): la app NO poseía token revocable (el
+  delegate descartaba `authorizationCode`; expira ~5min) ⇒ canje EN el sign-in vía Worker
+  (`/account/siwa/exchange`, requireUser — load-bearing: el sign-in precede al /attest/bind) + custodia
+  del refresh token de Apple en Keychain del CLIENTE como PAR (token, appleUserID) + revoke al borrar
+  (`/account/siwa/revoke`, requireUserAndAttest) con MATCH obligatorio del par (2 hazards cross-cuenta
+  M1 cazados por los reviews: exchange-fallido-de-secundaria [par del dueño] y kill-entre-writes de una
+  sobrescritura [(tokenDUEÑO, userSECUNDARIA)] → match + clear-antes-de-write). client_secret ES256
+  molde apns.ts, SIN redirect_uri (flujo nativo). Best-effort ≤4s TODO dentro de la carrera. Residual
+  población-CERO argumentado (flags DARK ⇒ nadie con sesión SIWA pre-capture). Worker staging
+  redesplegado; `SIWA_AUTH_KEY` en AMBOS envs. 10 tests wire clase d49d2e47 + test de tabla del
+  invariante del par + 8 units gateway offline.
+- **BLOQUE B2 — `auth.users` muere con la cuenta** (`g12_01_delete_account_auth_users`, aplicada en
+  staging Y prod): `delete_personal_account()` borra TAMBIÉN `auth.users where id = auth.uid()` AL
+  FINAL — cierra el gap GDPR (email/nombre SIWA sobrevivían). Vía RATIFICADA tras PoC en vivo: Admin
+  API descartada (service_role todo-o-nada en el Worker), rol de máquina descartado (borraría cualquier
+  uuid); el RPC ata el borrado al caller POR CONSTRUCCIÓN. ⚠️ SUPUESTO LOAD-BEARING (review adversarial):
+  `auth.users` tiene RLS sin policies — funciona por `rolbypassrls=true` de postgres (assert registrado,
+  verificado en ambos envs). Hallazgos: `profiles` SÍ tiene FK CASCADE a auth.users (el explorador creía
+  que no); el re-claim del JWT en vuelo ya NO renace la cuenta (violaría la FK — cierre de la
+  resurrección que g5 permitía); JWT stateless post-delete verificado e2e (el revoke 4a sigue
+  funcionando). WIRE one-shot VERDE con sub C DESECHABLE (A/B intactos; gotcha: GoTrue rechaza signups
+  @test.yala → C se siembra por SQL molde A/B; el runbook viejo de re-claim quedó SUPERSEDED — violaría
+  la FK). md5 nuevo `6bafd85a…`. Residual-owner: auth.audit_log_entries/flow_state sobreviven (= Admin API).
+- **BLOQUE A — PROMOCIÓN A PROD (`kefvaiymtgytemwbltlz`) — DRIFT CERRADO:** fase 1 (extractor, org
+  staging): SQL de las 17 migraciones candidatas extraído BYTE-EXACTO del historial
+  (md5==md5(statements) 17/17); la terna del incidente (g1_01/enable_rls/drop_spike) se NETEA a g1_01b
+  (probado por construcción); locales idénticos al historial (g5_01/g6_01 solo-comentarios). Fase 2
+  (org prod): pre-flight baseline = solo los 3 bootstraps + §16e ya correcto (ddl/-1/0) +
+  rolbypassrls ✓ → **13 migraciones aplicadas en orden** (g1_01b→g8_02 + g12_01) con **sandwich G7**
+  (recrypt ×2 con la llave PROPIA de prod — `~/Secrets/yala-groups-enc/prod.key`, DISTINTA de staging;
+  corpus vacío → 0s) → verificación: **paridad md5 33/33 funciones staging↔prod** · rol yala_push +
+  proacl `{postgres,service_role,yala_push}` · estructural 29/96/22/55 cuadre EXACTO · golden invertido
+  anon→42501 · advisors solo by-design (+1 WARN higiene stamp_group_seq → chip aparte). **Worker
+  `yala-gateway-production` DESPLEGADO POR PRIMERA VEZ** (la app prod ya apuntaba a él): 7 secrets
+  (OpenAI+ExchangeRate de Secrets.xcconfig [⚠️ pendiente-owner ROTAR la de OpenAI — extraíble en el
+  archive del build 18], JWT_SIGNING_SECRET PROPIO de prod, GROUPS_ENC_KEY, PUSH_ROLE_JWT [acuñado y
+  verificado 200 contra PostgREST prod], APNS_AUTH_KEY 7H6BUZWKKS, SIWA_AUTH_KEY) + `APNS_KEY_ID` var +
+  smoke 401 en toda la superficie. `DEV_SHARED_SECRET` NO existe en prod.
+- **Gotcha de método NUEVO:** el MCP de Supabase de esta sesión llegó tarde y conmutado a UNA org —
+  la fase 1 se hizo con la org free (staging) y la 2 con `yala-production`; el runbook de 2 fases
+  (briefs/RUNBOOK-BLOQUE-A-PROMOCION-PROD.md, gitignored) queda como molde para futuras promociones.
+- **Gates:** gateway npm test **196/2 skipped** (15 files — nuevo baseline, +8 units siwa) · suite
+  YalaTests **4563/422** TEST SUCCEEDED (nuevo baseline, +30/+4 de B1) · builds ambas schemes ·
+  validate-coverage OK · budgets del gotcha re-tombstoneados ×2 (24+1, vía apply_delta sin service).
+- **DEL GATE §12 QUEDA SOLO EL BLOQUE C (owner):** device-QA G6 ([[MODO-NUBE-G6-GUION-DEVICE]] con
+  apéndice G7) + device-QA G8 ([[MODO-NUBE-G8-GUION-DEVICE]] incl. multi-device G8-3) + canarios en
+  cero durante dogfooding → ENCENDIDO (cloudModeEnabled + groupsBackendEnabled, sesión propia D9).
+  Pendientes-owner nuevos de hoy: ROTAR OPENAI_API_KEY · APP_STORE_API_KEY de prod si el webhook lo
+  usa · residual GDPR de auth.audit_log_entries.
+
 ### 2026-07-16 (sesión nocturna, 6ª) — G7 pgcrypto ✅ + G8 APNs ✅ — EL PLAN §11 (G0–G8) QUEDA COMPLETO EN CÓDIGO — ⚠️ reconciliar al vault
 
 > 3 commits (`cdd2b849` G7 · `fa7cb4cd` G8-2 cliente · `802e6a3e` G8-1 server). Método íntegro ×6ª sesión:

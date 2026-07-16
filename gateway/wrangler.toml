@@ -79,10 +79,10 @@ TRUST_ATTESTED_AS_PRO = "false"   # EXPLÍCITO: jamás Pro-trust en prod (cierra
 # del USUARIO viaja en Authorization y RLS es el árbitro. NUNCA service_role.
 SUPABASE_URL = "https://kefvaiymtgytemwbltlz.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtlZnZhaXltdGd5dGVtd2JsdGx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTg0MDYsImV4cCI6MjA5OTM3NDQwNn0.H8P3-kNUjeK8CTNZHwhfkqwqeflrNXLGvNa7OGGXkAk"
-# APNs (G8-1) — PENDIENTE-OWNER: sin `APNS_KEY_ID` aquí + `wrangler secret put APNS_AUTH_KEY --env production`,
-# el fan-out de silent push de Grupos es NO-OP silencioso en prod (log 1 vez en wrangler tail). Descomentar y
-# cargar la Key ID de prod (10 chars, no secreto) + subir la .p8 como secret para encenderlo:
-# APNS_KEY_ID = "<KEY_ID_PROD>"
+# APNs (G8-1, encendido 2026-07-16 gate §12 Bloque A): Auth Key team-wide 7H6BUZWKKS REUSADA de staging
+# (decisión owner — las Auth Keys de APNs sirven sandbox y prod; Apple limita 2 por team). La .p8 vive en
+# ~/Secrets/yala-apns/ y está subida como secret APNS_AUTH_KEY en AMBOS envs.
+APNS_KEY_ID = "7H6BUZWKKS"
 # SIWA (B1): la Key ID es la MISMA que staging (una sola .p8 de SIWA por team). INERTE hasta subir el secret
 # `wrangler secret put SIWA_AUTH_KEY --env production` (encadenado al runbook del Bloque A); sin él → 503.
 SIWA_KEY_ID = "PQ53RQ5D3G"
