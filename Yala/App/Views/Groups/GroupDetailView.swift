@@ -94,8 +94,12 @@ struct GroupDetailView: View {
                     .padding(.top, DS.Spacing.sm)
                 }
 
-                // banner pending/rejected. Refresh ya cubierto por onChange(dataVersion) abajo.
-                if viewModel.currentUserMember?.isPendingApproval == true {
+                // banner pending/rejected/migrado. Refresh ya cubierto por onChange(dataVersion) abajo.
+                if group.isMigratedFrozen {
+                    // G6-3: grupo congelado por migración → banner "se movió" + CTA re-join (la RED es el guard
+                    // service-level; esto es la UX primaria — los botones de escritura se ocultan abajo).
+                    MigratedGroupBanner(onRejoin: { handleMigratedRejoin() })
+                } else if viewModel.currentUserMember?.isPendingApproval == true {
                     PendingApprovalBanner(state: .pending, onLeave: nil)
                 } else if viewModel.currentUserMember?.isRejected == true {
                     PendingApprovalBanner(state: .rejected, onLeave: {
@@ -107,8 +111,8 @@ struct GroupDetailView: View {
                     .yalaSkeleton(!viewModel.isReady)
             }
 
-            // FAB — new expense (only on records tab)
-            if selectedTab == .records && viewModel.canCurrentUserParticipate {
+            // FAB — new expense (only on records tab). G6-3: oculto en grupos congelados (sin escrituras).
+            if selectedTab == .records && viewModel.canCurrentUserParticipate && !group.isMigratedFrozen {
                 newExpenseFAB
             }
         }
@@ -463,6 +467,21 @@ struct GroupDetailView: View {
         }
     }
 
+    /// G6-3 (C4, CTA re-join desde el detalle): dispara el flujo de re-entrada por el seam de G6-2 (token del
+    /// marcador). Token nil → alert genérico vía el viewModel.
+    private func handleMigratedRejoin() {
+        guard let token = group.backendReInviteToken, !token.isEmpty else {
+            DS.Haptic.warning()
+            viewModel.actionErrorMessage = L10n.Groups.Errors.actionFailed
+            viewModel.showActionError = true
+            return
+        }
+        let groupID = group.cloudKitZoneID
+        Task { @MainActor in
+            await GroupBackendInviteEntryHandler.handle(groupID: groupID, token: token, source: .userAction)
+        }
+    }
+
     // MARK: - FAB
 
     private var newExpenseFAB: some View {
@@ -493,6 +512,37 @@ struct GroupDetailView: View {
 }
 
 // MARK: - A3: Pending Approval Banner
+
+/// G6-3: banner del grupo CONGELADO por migración a backend. Título + copy "se movió" + CTA "vuelve a entrar".
+private struct MigratedGroupBanner: View {
+    let onRejoin: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            Image(systemName: "icloud.and.arrow.up")
+                .font(DS.Typography.title2)
+                .foregroundStyle(DS.Semantic.warningForeground)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(L10n.Groups.Migrated.bannerTitle)
+                    .font(DS.Typography.subheadlineEmphasized)
+                Text(L10n.Groups.Migrated.bannerBody)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button(L10n.Groups.Migrated.rejoinCTA, action: onRejoin)
+                .font(DS.Typography.label)
+                .foregroundStyle(DS.Semantic.warningForeground)
+        }
+        .padding(DS.Spacing.md)
+        .background(DS.Semantic.warningBackground, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.sm)
+    }
+}
 
 private struct PendingApprovalBanner: View {
     enum BannerState { case pending, rejected }

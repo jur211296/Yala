@@ -381,6 +381,29 @@ final class AppBootstrapper {
             await GroupJoinReconciler.reconcile(trigger: .boot, context: context)
         }
 
+        // 16.8.5. Grupos→backend G6-3: migración de los grupos vivos CloudKit del OWNER al backend + boot-
+        // reconciler del marcador. DARK: no-op salvo con `groupsBackendEnabled` ON. GATE CRÍTICO 2: gateado por
+        // QUIESCENCIA del import (el uploader/reconciler salvan el mainContext compartido → sin el gate
+        // reintroducen el crash-loop de restore) + flag/sesión/consent (dentro de `run`). Idempotente: un
+        // grupo que no completa reintenta en el próximo boot; el reconciler re-encola solo los marcadores a
+        // medio armar. No bloquea la app (Task del boot; el uploader es secuencial por grupo).
+        if CloudSyncFlags.groupsBackendEnabled && !uiTestActive {
+            Task { @MainActor in
+                guard await awaitPersonalStoreReady() else {
+                    SaveBreadcrumb.deferred("AppBootstrapper.groupMigrationUploader", "import not quiescent")
+                    return
+                }
+                // H4 review: el reconciler comparte el gate de consent con el uploader (consistencia con el
+                // gate CRÍTICO 2 — re-encolar marcadores también es actividad del canal; sin consent, difiere).
+                guard GroupsConsentState.isAccepted else {
+                    SaveBreadcrumb.deferred("AppBootstrapper.groupMigrationUploader", "no groups consent")
+                    return
+                }
+                GroupMigrationUploader.reconcileMarkers(context: context)
+                await GroupMigrationUploader(context: context).run()
+            }
+        }
+
         // Seed current iCloud user identity for groups and refresh local membership flags.
         Task { @MainActor in
             _ = try? await GroupUserIdentityService.shared.currentUserRecordName()

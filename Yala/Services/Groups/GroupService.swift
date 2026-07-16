@@ -126,6 +126,14 @@ final class GroupService {
     }
 
     /// Update group metadata.
+    /// G6-3 (C4, FREEZE — RED de correctness): un grupo migrado y congelado (`movedToBackendAt != nil &&
+    /// !isBackendGroup`, con la mitigación #9 del owner reinstall) NO acepta escrituras — sus records irían a
+    /// la zona CloudKit congelada y se perderían. Lanza `.movedToBackend`. `leaveGroup` NUNCA se congela (salir
+    /// de la copia muerta es lo deseado).
+    func validateGroupIsWritable(_ group: SplitGroup) throws {
+        if group.isMigratedFrozen { throw GroupServiceError.movedToBackend }
+    }
+
     func updateGroup(
         _ group: SplitGroup,
         name: String,
@@ -138,6 +146,7 @@ final class GroupService {
         membersCanInvite: Bool
     ) throws {
         let context = try requireContext()
+        try validateGroupIsWritable(group)
         try requireCurrentUserAdmin(in: group, context: context)
 
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -171,6 +180,7 @@ final class GroupService {
         defaultSplitType: String
     ) throws {
         let context = try requireContext()
+        try validateGroupIsWritable(group)
         try requireCurrentUserActiveMember(in: group, context: context)
 
         group.simplifyDebts = simplifyDebts
@@ -189,6 +199,7 @@ final class GroupService {
     /// Archive or unarchive a group.
     func setArchived(_ group: SplitGroup, isArchived: Bool) throws {
         let context = try requireContext()
+        try validateGroupIsWritable(group)
         try requireCurrentUserAdmin(in: group, context: context)
         group.isArchived = isArchived
 
@@ -786,8 +797,13 @@ final class GroupService {
         }
 
         for member in pending {
+            let group = groupByZoneID[member.groupZoneID]
+            // G6-3 (C4): SALTAR los grupos congelados (member-reachable, cross-group) — escribir el displayName
+            // a la zona CloudKit congelada se perdería. El displayName de la copia backend lo corrige el
+            // re-join (update_member_display_name). Guard per-grupo (NO throw global: la acción es multi-grupo).
+            if let group, group.isMigratedFrozen { continue }
             member.displayName = trimmed
-            if let group = groupByZoneID[member.groupZoneID] {
+            if let group {
                 SplitSyncManager.shared.enqueueSave(modelID: member.id, group: group)
             }
         }
@@ -1081,6 +1097,8 @@ enum GroupServiceError: LocalizedError {
     case outstandingBalance
     case missingMemberKey
     case backendActionUnavailable
+    /// G6-3: el grupo se migró a la nube de Yala y está congelado en este device — hay que volver a entrar.
+    case movedToBackend
     case saveFailed(Error)
 
     var errorDescription: String? {
@@ -1128,6 +1146,8 @@ enum GroupServiceError: LocalizedError {
             // backend (no existe RPC de cambio de rol; el reject se ruteará junto al resto en G6) — sin
             // este guard mutarían local sin sync, dando falsa sensación de éxito hasta que el pull revierta.
             return L10n.Groups.Errors.actionFailed
+        case .movedToBackend:
+            return L10n.Groups.Errors.movedToBackend
         case .saveFailed(let error):
             return "GroupService: Save failed - \(error.localizedDescription)"
         }

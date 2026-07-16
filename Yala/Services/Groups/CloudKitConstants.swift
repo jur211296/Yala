@@ -30,6 +30,10 @@ enum CKConstants {
     enum GroupMetaField {
         // Encrypted (sensitive)
         static let name = "name"
+        // G6-3: token de re-invite backend, ESTAMPADO en el marcador de migración (viaja con
+        // `movedToBackendAt`). ENCRYPTED (molde `name`): legible por members de la shared zone, higiénico y
+        // gratis. Field key NUEVO → exige deploy del schema a Production + .ckdb en el mismo commit.
+        static let backendReInviteToken = "backendReInviteToken"
         // Plain (queryable)
         static let currencyCode = "currencyCode"
         static let createdAt = "createdAt"
@@ -41,6 +45,9 @@ enum CKConstants {
         static let membersCanInvite = "membersCanInvite"
         static let isArchived = "isArchived"
         static let isHiddenForAll = "isHiddenForAll"
+        // G6-3: marca del CONGELAMIENTO por migración a backend (timestamp informativo, truthy-por-presencia).
+        // Viaja por CloudKit para que los members deriven el estado congelado. Field key NUEVO → deploy +.ckdb.
+        static let movedToBackendAt = "movedToBackendAt"
     }
 
     // MARK: - SplitExpense Fields

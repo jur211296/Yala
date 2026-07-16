@@ -32,6 +32,8 @@ struct GroupsContainerView: View {
     /// Drives el alert "¿Salir del grupo?" cuando un current user `.rejected`
     /// toca su card. Single-modal global vs N alerts montados por card.
     @State private var rejectedGroupPendingLeave: SplitGroup?
+    /// G6-3 (C3): estado observable del uploader de migración (banner de progreso).
+    @State private var migrationProgress = GroupMigrationProgress.shared
     @State private var leaveErrorMessage: String?
     /// Payload del composer "Nuevo gasto": captura los grupos elegibles AL MOMENTO del tap.
     /// Evita que un `loadData()` remoto entre el tap y la presentación deje el sheet en blanco.
@@ -68,6 +70,20 @@ struct GroupsContainerView: View {
                             // Global summary
                             if let summary = viewModel.globalSummary {
                                 GroupSummaryHeader(summary: summary)
+                            }
+
+                            // G6-3 (C3): progreso simple mientras el uploader migra los grupos del owner al
+                            // backend (DARK: solo puede ser true con `groupsBackendEnabled` ON). No bloquea.
+                            if migrationProgress.isMigrating {
+                                HStack(spacing: DS.Spacing.sm) {
+                                    ProgressView()
+                                    Text(L10n.Groups.Migrated.migratingBanner)
+                                        .font(DS.Typography.caption)
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                }
+                                .padding(DS.Spacing.md)
+                                .solidCard(radius: DS.Radius.md)
                             }
 
                             // Nudge banner
@@ -304,12 +320,31 @@ struct GroupsContainerView: View {
             pendingCount: viewModel.pendingMemberCount(for: group),
             debts: viewModel.currentUserDebts(for: group),
             displayMode: GroupCardDisplayLogic.displayMode(
-                memberStatus: viewModel.currentMemberStatus(for: group)
+                memberStatus: viewModel.currentMemberStatus(for: group),
+                isMigratedFrozen: group.isMigratedFrozen
             ),
             action: { viewModel.openDetail(for: group) },
-            onRejectedTap: { rejectedGroupPendingLeave = group }
+            onRejectedTap: { rejectedGroupPendingLeave = group },
+            onMigratedTap: { handleMigratedRejoin(group) }
         )
         .accessibilityIdentifier("group_card")
+    }
+
+    /// G6-3 (C4, CTA re-join): un grupo congelado se toca → dispara el flujo de re-entrada por el seam de G6-2.
+    /// `GroupBackendInviteEntryHandler.handle` persiste el intent (capturando el `legacyMemberKey` del member
+    /// local del grupo migrado → rebind server-side) y dispara la cadena consent/sign-in/join (source
+    /// `.userAction` — nunca re-presenta onboarding). Token nil (no debería: viaja con `movedToBackendAt`) →
+    /// alert genérico.
+    private func handleMigratedRejoin(_ group: SplitGroup) {
+        guard let token = group.backendReInviteToken, !token.isEmpty else {
+            DS.Haptic.warning()
+            leaveErrorMessage = L10n.Groups.Errors.actionFailed
+            return
+        }
+        Task { @MainActor in
+            await GroupBackendInviteEntryHandler.handle(
+                groupID: group.cloudKitZoneID, token: token, source: .userAction)
+        }
     }
 
     private func evaluateNudge() {

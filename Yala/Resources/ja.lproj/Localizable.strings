@@ -4945,3 +4945,36 @@
 
 /* Shown in the export success alert when the optional groups CSV failed */
 "export.groupsExportFailedNote" = "個人ファイルは正常に書き出されましたが、今回はグループを含められませんでした。後でもう一度お試しください。";
+
+/* G6-3: freeze error surfaced when writing to a migrated group */
+"groups.errors.movedToBackend" = "このグループはYalaのクラウドに移動しました。引き続き使うには、もう一度サインインしてください。";
+
+/* G6-3: card chip for a migrated frozen group */
+"groups.card.movedChip" = "移動済み";
+
+/* G6-3: detail banner title for a migrated group */
+"groups.migrated.bannerTitle" = "このグループはYalaのクラウドに移動しました";
+
+/* G6-3: detail banner body for a migrated group */
+"groups.migrated.bannerBody" = "支出の表示と編集を続けるには、もう一度サインインしてください。";
+
+/* G6-3: re-join CTA button on a migrated group */
+"groups.migrated.rejoinCTA" = "もう一度サインイン";
+
+/* G6-3: settings row to delete the frozen CloudKit copy */
+"groups.migrated.deleteCopyRow" = "凍結されたコピーを削除";
+
+/* G6-3: hint under the delete-copy row */
+"groups.migrated.deleteCopyHint" = "このグループはYalaのクラウドにあります。古いiCloudのコピーは、何も失わずに削除できます。";
+
+/* G6-3: delete-copy confirmation title */
+"groups.migrated.deleteCopyConfirmTitle" = "古いコピーを削除しますか？";
+
+/* G6-3: delete-copy confirmation body */
+"groups.migrated.deleteCopyConfirmBody" = "グループはYalaのクラウドに残ります。このデバイスのiCloudコピーだけが削除されます。";
+
+/* G6-3: delete-copy confirmation button */
+"groups.migrated.deleteCopyConfirmButton" = "コピーを削除";
+
+/* G6-3: progress banner while the owner's groups migrate to backend */
+"groups.migrated.migratingBanner" = "グループをYalaのクラウドに移動しています…";

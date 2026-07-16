@@ -24,14 +24,22 @@ enum GroupCardDisplayMode: Equatable {
     /// Member en estado `.rejected`: chip "Solicitud rechazada" + tap dispara
     /// alert "¿Salir del grupo?" en lugar de abrir el detalle.
     case rejected
+    /// G6-3: grupo migrado y CONGELADO en este device (member no re-joineado):
+    /// chip "se movió" + tap dispara el CTA "vuelve a entrar".
+    case migratedFrozen
 }
 
 enum GroupCardDisplayLogic {
-    /// Decide el modo de display según el status del current member en el grupo.
-    /// `.left` y `.removed` se tratan como `.active` (caso edge: el grupo igual
-    /// debe ser navegable por si tiene historial; el filtro upstream debe
-    /// evitar que aparezcan, pero la card NO bloquea por defensa-en-profundidad).
-    static func displayMode(memberStatus: SplitMemberStatus?) -> GroupCardDisplayMode {
+    /// Decide el modo de display según el status del current member en el grupo y si el grupo está congelado
+    /// por migración a backend. El freeze tiene PRIORIDAD sobre el status (un grupo migrado ya no acepta la
+    /// interacción normal). `.left` y `.removed` se tratan como `.active` (caso edge: el grupo igual debe ser
+    /// navegable por si tiene historial; el filtro upstream debe evitar que aparezcan, pero la card NO bloquea
+    /// por defensa-en-profundidad).
+    static func displayMode(
+        memberStatus: SplitMemberStatus?,
+        isMigratedFrozen: Bool = false
+    ) -> GroupCardDisplayMode {
+        if isMigratedFrozen { return .migratedFrozen }
         switch memberStatus {
         case .pendingApproval: return .pendingApproval
         case .rejected: return .rejected

@@ -93,6 +93,15 @@ enum CKRecordTranslator {
         // app abierta reciban el flip vía sync normal.
         record[F.isArchived] = ckBool(group.isArchived)
         record[F.isHiddenForAll] = ckBool(group.isHiddenForAll)
+        // G6-3: campos del MARCADOR de migración — OPCIONALES (molde `note`/`subcategoryName`: `if let`,
+        // NUNCA `as CKRecordValue` directo sobre el opcional). `backendReInviteToken` ENCRYPTED (molde `name`);
+        // `movedToBackendAt` plano. Solo se escriben cuando el owner estampa el marcador (paso 6 del uploader).
+        if let movedAt = group.movedToBackendAt {
+            record[F.movedToBackendAt] = movedAt as CKRecordValue
+        }
+        if let token = group.backendReInviteToken {
+            record.encryptedValues[F.backendReInviteToken] = token as CKRecordValue
+        }
     }
 
     static func group(from record: CKRecord) -> SplitGroup? {
@@ -114,6 +123,9 @@ enum CKRecordTranslator {
         // Default false si el record viejo en CloudKit no tenía el field (race-tolerant).
         group.isArchived = readBool(record, key: F.isArchived, default: false)
         group.isHiddenForAll = readBool(record, key: F.isHiddenForAll, default: false)
+        // G6-3: campos del marcador — nil-safe (`as? T`): un record viejo sin ellos → nil (grupo no migrado).
+        group.movedToBackendAt = record[F.movedToBackendAt] as? Date
+        group.backendReInviteToken = record.encryptedValues[F.backendReInviteToken] as? String
         group.ckSystemFieldsData = encodeSystemFields(of: record)
         return group
     }
@@ -134,6 +146,10 @@ enum CKRecordTranslator {
         // Default a local si el record viejo no tenía el field (race-tolerant).
         group.isArchived = readBool(record, key: F.isArchived, default: group.isArchived)
         group.isHiddenForAll = readBool(record, key: F.isHiddenForAll, default: group.isHiddenForAll)
+        // G6-3: campos del marcador — fallback al valor LOCAL si el record no los trae (race-tolerant, molde
+        // `isArchived`): un member que YA supo que el grupo se congeló no lo des-congela por un record stale.
+        group.movedToBackendAt = record[F.movedToBackendAt] as? Date ?? group.movedToBackendAt
+        group.backendReInviteToken = record.encryptedValues[F.backendReInviteToken] as? String ?? group.backendReInviteToken
         group.ckSystemFieldsData = encodeSystemFields(of: record)
     }
 

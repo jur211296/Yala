@@ -505,6 +505,42 @@ struct GroupsSyncClientTests {
         #expect(group.name == "Viaje")                   // PATCH aplicado
     }
 
+    /// G6-3 (CRÍTICO 3, defensa extra): un grupo del OWNER con la MIGRACIÓN EN CURSO (candidato del uploader:
+    /// isOwner && movedToBackendAt == nil && ckSystemFieldsData != nil) NO se flipea por el pull — el uploader
+    /// es el dueño del flip (su paso 3); flipear aquí activaría el drain backend antes del seed del historial.
+    @Test func applyGroupMeta_ownerMigrationInFlight_doesNotFlip() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        let ownerGroup = SplitGroup(name: "CK")
+        ownerGroup.cloudKitZoneID = "SplitGroup-A"
+        ownerGroup.isOwner = true
+        ownerGroup.isBackendGroup = false
+        ownerGroup.movedToBackendAt = nil
+        ownerGroup.ckSystemFieldsData = Data([0x01, 0x02])
+        context.insert(ownerGroup)
+        try context.save()
+
+        let client = GroupsSyncClient()
+        let cursor = try client.loadOrCreateCursor(context)
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [groupMetaDelta()], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+
+        let group = try #require(try context.fetch(FetchDescriptor<SplitGroup>()).first)
+        #expect(group.isBackendGroup == false)   // el flip es del uploader (paso 3), no del pull
+        #expect(group.name == "Viaje")           // el PATCH de meta SÍ aplica
+
+        // Owner ya MARCADO (movedToBackendAt != nil, p.ej. tras reinstall que perdió isBackendGroup):
+        // el pull SÍ re-adopta (la mitigación del residual #9).
+        group.movedToBackendAt = .now
+        try context.save()
+        client.applyPulledPage(
+            GroupPulledPage(deltas: [groupMetaDelta(serverSeq: 6)], cursors: [:], memberships: []),
+            cursor: cursor, context: context)
+        #expect(group.isBackendGroup == true)
+    }
+
     /// Un grupo born-backend PREEXISTENTE (isBackendGroup=true) permanece true tras el apply (el guard
     /// `!isBackendGroup` evita un write espurio; sin regresión de estado).
     @Test func applyGroupMeta_bornBackendGroup_staysBackend() throws {

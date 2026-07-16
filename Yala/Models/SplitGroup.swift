@@ -51,6 +51,28 @@ final class SplitGroup {
     /// columnas, no reflexión). CloudKit-safe: opcional-por-default `false`, sin `.unique`.
     var isBackendGroup: Bool = false
 
+    /// G6-3 (marcador CloudKit): timestamp del CONGELAMIENTO del grupo tras la migración a backend
+    /// (informativo — "cuándo se movió"; truthy-por-presencia). Lo escribe el owner en el paso 6 del
+    /// `GroupMigrationUploader` y viaja por CloudKit (GroupMeta) para que los DEVICES DE LOS MIEMBROS lo
+    /// reciban vía el pull normal de CKSyncEngine → derivan el estado CONGELADO (freeze + tarjeta "se movió").
+    /// CloudKit-mapeado en `CKRecordTranslator` (viaja) — a diferencia de `isBackendGroup` (LOCAL-only).
+    /// Freeze del MIEMBRO = `movedToBackendAt != nil && !isBackendGroup`; en el OWNER (`isBackendGroup=true`)
+    /// NO congela (sus writes van al backend). CloudKit-safe: opcional.
+    var movedToBackendAt: Date?
+
+    /// G6-3: token de RE-INVITE (`create_group_invite`) que el owner minta al migrar y ESTAMPA en el marcador
+    /// → viaja con `movedToBackendAt` para que el CTA "volver a entrar" del miembro tenga el token sin
+    /// coordinación humana (decisión owner 2026-07-16; legible-por-members aceptable — el rebind cae en
+    /// pendingApproval S1). ENCRYPTED en CloudKit (molde `name`). CloudKit-safe: opcional.
+    var backendReInviteToken: String?
+
+    /// G6-3 (C2, boot-reconciler ACOTADO): señal LOCAL-only del paso 6 del uploader — `false` mientras el
+    /// marcador aún no quedó encolado a `engine.state` (durable en stateSerialization), `true` una vez
+    /// encolado. El reconciler del boot re-encola SOLO `movedToBackendAt != nil && !markerEnqueuedFlag`
+    /// (vacío en estado estable → sin write redundante del GroupMeta en cada boot). LOCAL-ONLY: JAMÁS en
+    /// `CKRecordTranslator`/`CKConstants` (store `.none`, sin deploy). CloudKit-safe: opcional-por-default.
+    var markerEnqueuedFlag: Bool = false
+
     init(
         name: String = "",
         iconName: String = "person.2.fill",

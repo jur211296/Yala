@@ -134,4 +134,36 @@ enum GroupsSyncBreadcrumb {
     static func groupsDrainSkippedNonBackendGroup(entity: String) {
         logger.notice("GroupsSync drainSkippedNonBackendGroup entity=\(entity, privacy: .public)")
     }
+
+    /// [G6-3 C2] El uploader encoló el MARCADOR de migración (`GroupMeta` con `movedToBackendAt` +
+    /// `backendReInviteToken`) a CKSyncEngine — la ÚNICA escritura CloudKit legítima sobre un grupo
+    /// `isBackendGroup=true`. Sin PII (jamás el group_id ni el token).
+    static func groupsCkMigrationMarkerEnqueued() {
+        logger.notice("GroupsSync ckMigrationMarkerEnqueued — marcador de migración encolado (única escritura CK legítima post-freeze)")
+    }
+
+    /// [G6-3 C2] El GUARD SIMÉTRICO de PULL saltó aplicar un record CloudKit fetcheado cuyo grupo local es
+    /// `isBackendGroup=true` (ya migrado) — la zona CloudKit queda como red de SOLO-LECTURA: un miembro
+    /// rezagado o el eco del propio marcador NO pisa las ediciones backend post-migración. `site` =
+    /// `applyRemote`/`conflict`/`bridge`. Sin PII.
+    static func groupsCkPullSkippedBackendGroup(site: String) {
+        logger.notice("GroupsSync ckPullSkippedBackendGroup site=\(site, privacy: .public)")
+    }
+
+    /// [G6-3 C3] El `GroupMigrationUploader` completó la migración de `count` grupos vivos al backend.
+    static func groupsMigrationCompleted(count: Int) {
+        logger.notice("GroupsSync migrationCompleted count=\(count, privacy: .public)")
+    }
+
+    /// [G6-3 C3] Un paso del `GroupMigrationUploader` falló (reintenta en el próximo boot). `step` = slug del
+    /// paso (`migrate`/`invite`/`freeze`/`seed`/`push`/`marker`). Sin PII.
+    static func groupsMigrationFailed(step: String) {
+        logger.notice("GroupsSync migrationFailed step=\(step, privacy: .public)")
+    }
+
+    /// [G6-3 C2] El boot-reconciler re-encoló el marcador de `count` grupos `movedToBackendAt != nil &&
+    /// !markerEnqueuedFlag` (kill entre el save del marcador y el flag). Vacío en estado estable.
+    static func groupsMigrationMarkerReconciled(count: Int) {
+        logger.notice("GroupsSync migrationMarkerReconciled count=\(count, privacy: .public)")
+    }
 }

@@ -4201,3 +4201,36 @@
 
 /* Shown in the export success alert when the optional groups CSV failed */
 "export.groupsExportFailedNote" = "O teu ficheiro pessoal foi exportado, mas não conseguimos incluir os teus grupos desta vez. Tenta novamente mais tarde.";
+
+/* G6-3: freeze error surfaced when writing to a migrated group */
+"groups.errors.movedToBackend" = "Este grupo foi movido para a nuvem da Yala. Inicia sessão novamente para continuar a usá-lo.";
+
+/* G6-3: card chip for a migrated frozen group */
+"groups.card.movedChip" = "Movido";
+
+/* G6-3: detail banner title for a migrated group */
+"groups.migrated.bannerTitle" = "Este grupo foi movido para a nuvem da Yala";
+
+/* G6-3: detail banner body for a migrated group */
+"groups.migrated.bannerBody" = "Inicia sessão novamente para continuar a ver e editar as despesas.";
+
+/* G6-3: re-join CTA button on a migrated group */
+"groups.migrated.rejoinCTA" = "Iniciar sessão novamente";
+
+/* G6-3: settings row to delete the frozen CloudKit copy */
+"groups.migrated.deleteCopyRow" = "Eliminar a minha cópia congelada";
+
+/* G6-3: hint under the delete-copy row */
+"groups.migrated.deleteCopyHint" = "Este grupo vive agora na nuvem da Yala. Podes eliminar a cópia antiga do iCloud sem perder nada.";
+
+/* G6-3: delete-copy confirmation title */
+"groups.migrated.deleteCopyConfirmTitle" = "Eliminar a cópia antiga?";
+
+/* G6-3: delete-copy confirmation body */
+"groups.migrated.deleteCopyConfirmBody" = "O grupo continuará na nuvem da Yala. Apenas a cópia do iCloud deste dispositivo é eliminada.";
+
+/* G6-3: delete-copy confirmation button */
+"groups.migrated.deleteCopyConfirmButton" = "Eliminar cópia";
+
+/* G6-3: progress banner while the owner's groups migrate to backend */
+"groups.migrated.migratingBanner" = "A mover os teus grupos para a nuvem da Yala…";

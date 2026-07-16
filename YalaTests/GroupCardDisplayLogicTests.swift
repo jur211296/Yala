@@ -40,4 +40,64 @@ struct GroupCardDisplayLogicTests {
         // Caso edge: similar a .left.
         #expect(GroupCardDisplayLogic.displayMode(memberStatus: .removed) == .active)
     }
+
+    // MARK: - G6-3: migratedFrozen
+
+    @Test func displayMode_returnsMigratedFrozen_whenFrozen() {
+        #expect(GroupCardDisplayLogic.displayMode(memberStatus: .active, isMigratedFrozen: true) == .migratedFrozen)
+    }
+
+    @Test func displayMode_migratedFrozen_hasPriorityOverStatus() {
+        // El freeze gana sobre pending/rejected (un grupo migrado ya no acepta la interacción normal).
+        #expect(GroupCardDisplayLogic.displayMode(memberStatus: .pendingApproval, isMigratedFrozen: true) == .migratedFrozen)
+        #expect(GroupCardDisplayLogic.displayMode(memberStatus: .rejected, isMigratedFrozen: true) == .migratedFrozen)
+    }
+
+    @Test func displayMode_notFrozen_fallsThroughToStatus() {
+        #expect(GroupCardDisplayLogic.displayMode(memberStatus: .active, isMigratedFrozen: false) == .active)
+        #expect(GroupCardDisplayLogic.displayMode(memberStatus: .pendingApproval, isMigratedFrozen: false) == .pendingApproval)
+    }
+}
+
+// MARK: - G6-3: GroupFreezeLogic
+
+struct GroupFreezeLogicTests {
+
+    @Test func member_isFrozen_whenMarkerSetAndNotBackend() {
+        #expect(GroupFreezeLogic.isFrozen(
+            movedToBackendAt: .now, isBackendGroup: false, isOwner: false, hasCKSystemFields: true) == true)
+    }
+
+    @Test func notFrozen_whenMarkerNil() {
+        #expect(GroupFreezeLogic.isFrozen(
+            movedToBackendAt: nil, isBackendGroup: false, isOwner: false, hasCKSystemFields: true) == false)
+    }
+
+    @Test func owner_notFrozen_whenAdopted() {
+        // Owner ya adoptado (isBackendGroup=true) → nunca congelado (sus writes van al backend).
+        #expect(GroupFreezeLogic.isFrozen(
+            movedToBackendAt: .now, isBackendGroup: true, isOwner: true, hasCKSystemFields: true) == false)
+    }
+
+    @Test func owner_reinstallMitigation_notFrozen() {
+        // Mitigación #9: owner que perdió isBackendGroup (LOCAL-only) en un reinstall pero conserva
+        // movedToBackendAt (viaja) + ckSystemFieldsData → NO congelado (el pull re-adopta).
+        #expect(GroupFreezeLogic.isFrozen(
+            movedToBackendAt: .now, isBackendGroup: false, isOwner: true, hasCKSystemFields: true) == false)
+    }
+
+    @Test func owner_withoutCKSystemFields_frozen() {
+        // Owner sin ckSystemFieldsData → la mitigación NO aplica (borde teórico).
+        #expect(GroupFreezeLogic.isFrozen(
+            movedToBackendAt: .now, isBackendGroup: false, isOwner: true, hasCKSystemFields: false) == true)
+    }
+
+    @Test func bornBackend_neverFrozen() {
+        // H5 review: un grupo born-backend (isBackendGroup=true, jamás vivió en CloudKit) NUNCA se congela,
+        // aunque un estado imposible le pusiera el marcador.
+        #expect(GroupFreezeLogic.isFrozen(
+            movedToBackendAt: nil, isBackendGroup: true, isOwner: false, hasCKSystemFields: false) == false)
+        #expect(GroupFreezeLogic.isFrozen(
+            movedToBackendAt: .now, isBackendGroup: true, isOwner: false, hasCKSystemFields: false) == false)
+    }
 }

@@ -361,6 +361,7 @@ final class GroupExpenseService {
     /// NO usa el guard global de `deleteExpense` (que bloquearía con cualquier liquidación,
     /// porque los saldos van fechados en `group.createdAt`).
     func removeOpeningBalance(_ expense: SplitExpense, in group: SplitGroup) throws {
+        try validateGroupIsWritable(group)   // G6-3: no pasa por validateCurrentUserCanWrite (guard explícito).
         guard group.isOwner else { throw GroupExpenseServiceError.notOwner }
         let context = try requireContext()
 
@@ -574,7 +575,18 @@ final class GroupExpenseService {
         }
     }
 
+    /// G6-3 (C4, FREEZE — RED de correctness): un grupo migrado y CONGELADO (`movedToBackendAt != nil &&
+    /// !isBackendGroup`, con la mitigación #9 del owner reinstall) NO acepta escrituras: sus records irían a la
+    /// zona CloudKit congelada y se perderían (R4). El guard central lo lanza ANTES de cualquier check de
+    /// participación. Punto de inserción óptimo (ajuste #6): al TOP de `validateCurrentUserCanWrite` (cubre
+    /// create/update/deleteExpense/createSettlement/confirmSettlement/deleteSettlement) + `removeOpeningBalance`.
+    /// El trío opening-balance es owner-only ⇒ el freeze es inerte para él (defensa en profundidad).
+    func validateGroupIsWritable(_ group: SplitGroup) throws {
+        if group.isMigratedFrozen { throw GroupExpenseServiceError.movedToBackend }
+    }
+
     private func validateCurrentUserCanWrite(in group: SplitGroup) throws {
+        try validateGroupIsWritable(group)
         let members = try GroupService.shared.fetchMembers(for: group)
         guard let current = members.first(where: { $0.isCurrentUser }) else {
             if group.isOwner { return }
@@ -639,6 +651,8 @@ enum GroupExpenseServiceError: LocalizedError {
     case notOwner
     /// Un saldo inicial necesita dos miembros distintos (deudor ≠ acreedor).
     case invalidOpeningBalanceMembers
+    /// G6-3: el grupo se migró a la nube de Yala y está congelado en este device — hay que volver a entrar.
+    case movedToBackend
     case saveFailed(Error)
 
     var errorDescription: String? {
@@ -665,6 +679,8 @@ enum GroupExpenseServiceError: LocalizedError {
             return L10n.Groups.OpeningBalance.errorNotOwner
         case .invalidOpeningBalanceMembers:
             return L10n.Groups.OpeningBalance.errorSameMember
+        case .movedToBackend:
+            return L10n.Groups.Errors.movedToBackend
         case .saveFailed(let error):
             return "GroupExpenseService: Save failed - \(error.localizedDescription)"
         }

@@ -183,6 +183,8 @@ enum AnalyticsEvent: String {
     case relaunchNetExhausted = "Diagnóstico · Red de relaunch agotada"  // params: net (signout|secondaryEntry) — CANARIO (fix carrera 2026-07-14): la red del cover terminal agotó su ciclo de reintentos sin confirmar presentación (onAppear del contenido real). >0 = algo tapa el anchor del root con el wipe/entrada armados; el blocker de la matriz contiene el router y el exit-on-background es la red final. La DISPARAN los nets de ContentView. Sin PII
     case accountDeletionCompleted = "Diagnóstico · Cuenta eliminada"  // params: step (cloud|groupsOnly) — el borrado GDPR (G5-D1b) completó el server-side + cierre local armado. La DISPARA AccountDeletionService. Sin PII
     case accountDeletionFailed = "Diagnóstico · Borrado de cuenta falló"  // params: step (groups|delete|localClose) — CANARIO (G5-D1b): un paso del borrado falló; NADA local se armó, la sesión sigue viva, el usuario reintenta. >0 sostenido = revisar el RPC/gateway del step. La DISPARA AccountDeletionService. Sin PII
+    case groupMigrationCompleted = "Diagnóstico · Migración de grupo completada"  // params: count — Grupos→backend G6-3: el owner migró `count` grupos vivos de CloudKit al backend (marcador estampado, congelado para los members). La DISPARA GroupMigrationUploader. Sin PII
+    case groupMigrationFailed = "Diagnóstico · Migración de grupo falló"  // params: step (migrate|invite|freeze|seed|push|marker) — CANARIO (G6-3): un paso de la migración falló; el grupo NO quedó marcado, reintenta en el próximo boot (todos los pasos idempotentes). >0 sostenido = revisar el RPC/gateway del step. La DISPARA GroupMigrationUploader. Sin PII
 
     // MARK: Telemetría 2.0 — eventos nuevos
     // Activación (primeras veces) · sesión · fin de suscripción

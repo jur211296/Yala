@@ -2312,6 +2312,26 @@
       "lastVerified": "2026-07-16"
     },
     {
+      "area": "groups-backend-g6-migration",
+      "codeGlobs": [
+        "Yala/Services/CloudSync/Groups/GroupMigrationUploader.swift",
+        "Yala/Services/CloudSync/Groups/GroupMigrationPayloadBuilder.swift",
+        "Yala/Services/CloudSync/Groups/GroupMigrationProgress.swift",
+        "Yala/App/Logic/GroupFreezeLogic.swift",
+        "Yala/App/Logic/GroupCardDisplayLogic.swift",
+        "Yala/Services/Groups/CKRecordTranslator.swift",
+        "Yala/Services/Groups/CloudKitConstants.swift",
+        "YalaTests/CloudSync/GroupMigrationUploaderTests.swift",
+        "YalaTests/GroupMigrationPayloadBuilderTests.swift",
+        "YalaTests/GroupFreezeGuardTests.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "G6-3 marcador CloudKit + freeze + uploader del owner + UI 'se movió' (DARK tras CloudSyncFlags.groupsBackendEnabled=false). unit:GroupMigrationUploaderTests (5: orden migrate→invite→freeze→seed→push→marker con mocks; already:true sigue; resume tras push fallido conserva el candidato [predicado movedToBackendAt, JAMÁS !isBackendGroup] y re-minta token; flag OFF no-op; boot-reconciler re-encola SOLO movedToBackendAt!=nil && !markerEnqueuedFlag; enqueueSnapshotRows fila-completa/dedupe-por-syncID/cero-eco) + GroupMigrationPayloadBuilderTests (9: payload migrate_group — 1 owner exacto, skip member sin recordName/rejected, dedupe member_key, meta invalida → nil anti-retry-eterno) + GroupFreezeLogicTests (5: isFrozen member/owner-adoptado/mitigación-reinstall-#9) + GroupFreezeGuardTests (6: validateGroupIsWritable lanza para congelado, owner migrado NO bloqueado, sin marcador byte-idéntico) + GroupCardDisplayLogicTests +3 (.migratedFrozen prioridad) + GroupMetaTranslatorTests +4 (round-trip movedToBackendAt/backendReInviteToken, nil-safe, update race-tolerant preserva local) + GroupsSyncClientTests +1 (applyGroupMeta NO flipea owner con migración en curso — CRÍTICO 3). Guard SIMÉTRICO de PULL en SplitSyncManager (applyRemote/deletions/conflict/zoneDeletion/zoneNotFound saltan grupos isBackendGroup; excepción quirúrgica: conflicto del MARCADOR rebasea system fields + re-encola). CloudKitGroupsSchemaParityTests verde con los 2 field keys nuevos en yala_groups-production.ckdb (movedToBackendAt TIMESTAMP + backendReInviteToken ENCRYPTED STRING) — DEPLOY a Production pendiente ANTES del push. Canarios: groupMigrationCompleted/groupMigrationFailed. PENDIENTE: device-QA cross-device del flujo migración+re-join + encendido del flag.",
+      "owner": "",
+      "lastVerified": "2026-07-16"
+    },
+    {
       "area": "account-deletion",
       "codeGlobs": [
         "Yala/Services/CloudSync/AccountDeletionService.swift",

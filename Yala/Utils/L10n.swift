@@ -1931,6 +1931,22 @@ enum L10n {
             /// El usuario elige "Solo grupos" sin cuenta iCloud activa (grupos exige iCloud).
             static var iCloudRequiredTitle: String { ls("groups.errors.iCloudRequiredTitle", comment: "") }
             static var iCloudRequiredBody: String { ls("groups.errors.iCloudRequiredBody", comment: "") }
+            /// G6-3: el grupo se migró a la nube de Yala y está congelado en este device (hay que re-entrar).
+            static var movedToBackend: String { ls("groups.errors.movedToBackend", comment: "") }
+        }
+
+        /// G6-3: grupo migrado a la nube de Yala (congelado en CloudKit) — banner/CTA/borrar copia.
+        enum Migrated {
+            /// Banner de progreso del uploader ("moviendo tus grupos a la nube de Yala…").
+            static var migratingBanner: String { ls("groups.migrated.migratingBanner", comment: "") }
+            static var bannerTitle: String { ls("groups.migrated.bannerTitle", comment: "") }
+            static var bannerBody: String { ls("groups.migrated.bannerBody", comment: "") }
+            static var rejoinCTA: String { ls("groups.migrated.rejoinCTA", comment: "") }
+            static var deleteCopyRow: String { ls("groups.migrated.deleteCopyRow", comment: "") }
+            static var deleteCopyHint: String { ls("groups.migrated.deleteCopyHint", comment: "") }
+            static var deleteCopyConfirmTitle: String { ls("groups.migrated.deleteCopyConfirmTitle", comment: "") }
+            static var deleteCopyConfirmBody: String { ls("groups.migrated.deleteCopyConfirmBody", comment: "") }
+            static var deleteCopyConfirmButton: String { ls("groups.migrated.deleteCopyConfirmButton", comment: "") }
         }
 
         /// G4-invites (A2, §8): consentimiento informado de grupos (molde Storage.Consent).
@@ -1957,6 +1973,8 @@ enum L10n {
         enum Card {
             static var pendingApprovalChip: String { ls("groups.card.pendingApprovalChip", comment: "") }
             static var rejectedChip: String { ls("groups.card.rejectedChip", comment: "") }
+            /// G6-3: chip "se movió" en la card de un grupo migrado y congelado.
+            static var movedChip: String { ls("groups.card.movedChip", comment: "") }
             static var leaveGroupAlertTitle: String { ls("groups.card.leaveGroupAlertTitle", comment: "") }
             static var leaveGroupAlertBody: String { ls("groups.card.leaveGroupAlertBody", comment: "") }
             // M6 D3: chip overflow cuando hay más de 3 deudas en la card.

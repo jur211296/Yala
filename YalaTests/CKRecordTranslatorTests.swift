@@ -101,6 +101,65 @@ struct GroupMetaTranslatorTests {
         #expect(group.currencyCode == "EUR")
         #expect(group.simplifyDebts == true)
     }
+
+    // MARK: - G6-3: marcador de migración (movedToBackendAt + backendReInviteToken)
+
+    @Test func markerFields_roundTrip_recordToGroupToRecord() {
+        let movedAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let group = SplitGroup(name: "Depa", currencyCode: "PEN", isOwner: true)
+        group.movedToBackendAt = movedAt
+        group.backendReInviteToken = "tok_abc123"
+
+        let record = CKRecordTranslator.record(from: group, in: zoneID)
+        #expect(record["movedToBackendAt"] as? Date == movedAt)
+        #expect(record.encryptedValues["backendReInviteToken"] as? String == "tok_abc123")
+
+        let restored = CKRecordTranslator.group(from: record)
+        #expect(restored?.movedToBackendAt == movedAt)
+        #expect(restored?.backendReInviteToken == "tok_abc123")
+    }
+
+    @Test func markerFields_nilSafe_absentFromRecord() {
+        // Grupo NO migrado: los campos son opcionales → no se escriben; group(from:) los lee como nil.
+        let group = SplitGroup(name: "Sin migrar", currencyCode: "PEN", isOwner: true)
+        let record = CKRecordTranslator.record(from: group, in: zoneID)
+        #expect(record["movedToBackendAt"] == nil)
+        #expect(record.encryptedValues["backendReInviteToken"] == nil)
+
+        let restored = CKRecordTranslator.group(from: record)
+        #expect(restored?.movedToBackendAt == nil)
+        #expect(restored?.backendReInviteToken == nil)
+    }
+
+    @Test func markerFields_update_raceTolerant_preservesLocalWhenAbsent() {
+        // update(): un record STALE sin los campos NO des-congela un grupo que ya los tenía (fallback a local).
+        let movedAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let group = SplitGroup(name: "Old", currencyCode: "PEN")
+        group.movedToBackendAt = movedAt
+        group.backendReInviteToken = "tok_keep"
+
+        let record = CKRecord(recordType: "GroupMeta",
+                              recordID: CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID))
+        record.encryptedValues["name"] = "New" as CKRecordValue
+        // El record NO trae movedToBackendAt ni backendReInviteToken.
+
+        CKRecordTranslator.update(group, from: record)
+        #expect(group.movedToBackendAt == movedAt)       // preservado (race-tolerant)
+        #expect(group.backendReInviteToken == "tok_keep")
+    }
+
+    @Test func markerFields_update_appliesWhenPresent() {
+        let group = SplitGroup(name: "Old", currencyCode: "PEN")
+        let movedAt = Date(timeIntervalSince1970: 1_900_000_000)
+        let record = CKRecord(recordType: "GroupMeta",
+                              recordID: CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID))
+        record["movedToBackendAt"] = movedAt as CKRecordValue
+        record.encryptedValues["backendReInviteToken"] = "tok_new" as CKRecordValue
+
+        CKRecordTranslator.update(group, from: record)
+        #expect(group.movedToBackendAt == movedAt)
+        #expect(group.backendReInviteToken == "tok_new")
+    }
 }
 
 // MARK: - SplitExpense Translation

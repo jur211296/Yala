@@ -76,7 +76,10 @@ final class GroupDetailViewModel {
     }
 
     var canCurrentUserParticipate: Bool {
-        currentUserMember?.isActive == true
+        // G6-3 (C4): grupo migrado y CONGELADO → sin escrituras (oculta FAB/editar/borrar/liquidar/confirmar
+        // de un golpe — la UX primaria del freeze; el guard service-level es la RED).
+        if group.isMigratedFrozen { return false }
+        return currentUserMember?.isActive == true
     }
 
     var isCurrentUserAdmin: Bool {

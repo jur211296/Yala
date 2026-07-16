@@ -4945,3 +4945,36 @@
 
 /* Shown in the export success alert when the optional groups CSV failed */
 "export.groupsExportFailedNote" = "你的个人文件已成功导出，但这次未能包含你的群组。请稍后再试。";
+
+/* G6-3: freeze error surfaced when writing to a migrated group */
+"groups.errors.movedToBackend" = "该群组已迁移到 Yala 云端。请重新登录以继续使用。";
+
+/* G6-3: card chip for a migrated frozen group */
+"groups.card.movedChip" = "已迁移";
+
+/* G6-3: detail banner title for a migrated group */
+"groups.migrated.bannerTitle" = "该群组已迁移到 Yala 云端";
+
+/* G6-3: detail banner body for a migrated group */
+"groups.migrated.bannerBody" = "请重新登录以继续查看和编辑支出。";
+
+/* G6-3: re-join CTA button on a migrated group */
+"groups.migrated.rejoinCTA" = "重新登录";
+
+/* G6-3: settings row to delete the frozen CloudKit copy */
+"groups.migrated.deleteCopyRow" = "删除我的冻结副本";
+
+/* G6-3: hint under the delete-copy row */
+"groups.migrated.deleteCopyHint" = "该群组现已存放在 Yala 云端。你可以删除旧的 iCloud 副本，不会丢失任何内容。";
+
+/* G6-3: delete-copy confirmation title */
+"groups.migrated.deleteCopyConfirmTitle" = "删除旧副本？";
+
+/* G6-3: delete-copy confirmation body */
+"groups.migrated.deleteCopyConfirmBody" = "群组将保留在 Yala 云端。仅删除本设备的 iCloud 副本。";
+
+/* G6-3: delete-copy confirmation button */
+"groups.migrated.deleteCopyConfirmButton" = "删除副本";
+
+/* G6-3: progress banner while the owner's groups migrate to backend */
+"groups.migrated.migratingBanner" = "正在将你的群组迁移到 Yala 云端…";

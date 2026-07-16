@@ -787,6 +787,20 @@ final class SplitSyncManager {
     /// Fetch the local SplitGroup for a given zone ID (resolved after sync).
     /// Sorted by `createdAt asc` so the canonical (oldest) group wins consistently
     /// if a CloudKit sync race produced duplicates sharing the same `cloudKitZoneID`.
+    /// G6-3 (C2): zone names de los grupos LOCALES `isBackendGroup=true` (ya migrados al backend). El guard
+    /// simétrico de PULL salta todo record/deletion CloudKit de estas zonas. `#Predicate` CONCRETO por tipo.
+    func backendGroupZoneNames(context: ModelContext) -> Set<String> {
+        let descriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.isBackendGroup == true })
+        do {
+            return Set(try context.fetch(descriptor).map(\.cloudKitZoneID))
+        } catch {
+            #if DEBUG
+            logger.error("backendGroupZoneNames fetch failed: \(error.localizedDescription, privacy: .public)")
+            #endif
+            return []
+        }
+    }
+
     func group(for zoneID: String) -> SplitGroup? {
         guard let context = modelContext else { return nil }
         let descriptor = FetchDescriptor<SplitGroup>(
@@ -1013,6 +1027,18 @@ final class SplitSyncManager {
         let zoneID = CKConstants.zoneID(for: groupID)
         let recordID = CKConstants.recordID(for: modelID, in: zoneID)
         markPendingChange(for: recordID, in: privateEngine)
+    }
+
+    /// G6-3 (C2): encola el MARCADOR de migración (`GroupMeta` con `movedToBackendAt` +
+    /// `backendReInviteToken` YA escritos en el `SplitGroup`) a CKSyncEngine. Llama al primitivo
+    /// guard-free `enqueueSave(modelID:groupID:)` (owner→private engine; el GroupMeta se identifica con
+    /// `modelID == group.id`, como createZone/updateGroup) — DELIBERADAMENTE sin el guard `isBackendGroup`
+    /// de la variante `group:`: es la ÚNICA escritura CloudKit legítima sobre un grupo `isBackendGroup=true`
+    /// (el marcador debe viajar a los devices de los members para que deriven el estado congelado). El grupo
+    /// migrado es del owner ⇒ private engine.
+    func enqueueMigrationMarker(group: SplitGroup) {
+        enqueueSave(modelID: group.id, groupID: group.id)
+        GroupsSyncBreadcrumb.groupsCkMigrationMarkerEnqueued()
     }
 
     /// Enqueue a model deletion for a group I own (private engine).
@@ -1251,6 +1277,20 @@ final class SplitSyncManager {
             let zoneName = deletion.zoneID.zoneName
             guard let groupID = CKConstants.groupID(from: zoneName) else { continue }
 
+            // G6-3 (C2/C5): la zona de un grupo MIGRADO puede borrarse legítimamente (C5 "borrar mi copia
+            // congelada" del owner) — el borrado de la zona CloudKit NO debe destruir los datos locales:
+            // (a) member ya RE-JOINEADO (isBackendGroup=true): su verdad vive en el backend — nuke aquí
+            //     borraría el grupo backend entero de su device; (b) member NO re-joineado (congelado,
+            //     movedToBackendAt != nil): su copia congelada porta el TOKEN del CTA de re-join — borrarla
+            //     lo dejaría fuera sin camino de vuelta (el path del member queda FUERA de v1 en C5).
+            // Solo se purgan los pending changes del engine (no debería haber).
+            if let localGroup = group(for: zoneName),
+               localGroup.isBackendGroup || localGroup.movedToBackendAt != nil {
+                GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "zoneDeletion")
+                purgePendingChanges(for: deletion.zoneID, engine: engine)
+                continue
+            }
+
             switch deletion.reason {
             case .deleted:
                 #if DEBUG
@@ -1392,6 +1432,14 @@ final class SplitSyncManager {
 
         var changeSet = RemoteChangeSet()
 
+        // G6-3 (C2, GUARD SIMÉTRICO de PULL): grupos YA migrados (`isBackendGroup=true`) tienen su verdad en
+        // el backend — la zona CloudKit sigue VIVA (deleteZone es opcional) y un miembro rezagado o el eco del
+        // propio marcador escribiría records STALE. Aplicarlos PISARÍA las ediciones backend post-migración
+        // Y bridgearía datos viejos al store personal. FIX: saltar TODO record/deletion cuyo grupo local sea
+        // backend (la zona CloudKit queda como red de SOLO-LECTURA de verdad; el owner adoptado no necesita
+        // NADA de CloudKit). Set computado una vez por batch.
+        let backendZoneNames = backendGroupZoneNames(context: modelContext)
+
         // Pre-fetch existing IDs scoped to affected zones (GC-06)
         let batchZoneNames = Set(fetched.modifications.map { $0.record.recordID.zoneID.zoneName })
         var existingExpenseIDs: Set<UUID> = []
@@ -1433,6 +1481,13 @@ final class SplitSyncManager {
 
         for modification in fetched.modifications {
             let record = modification.record
+
+            // G6-3 (C2): grupo migrado → red de solo-lectura. Saltar TODO (incl. clasificación de notifs y
+            // bridge — un miembro adoptado ya no necesita nada de CloudKit).
+            if backendZoneNames.contains(record.recordID.zoneID.zoneName) {
+                GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "applyRemote")
+                continue
+            }
 
             // GC-06: Classify changes for notifications
             if let modelID = CKConstants.modelID(from: record.recordID),
@@ -1487,6 +1542,11 @@ final class SplitSyncManager {
         }
 
         for deletion in fetched.deletions {
+            // G6-3 (C2): grupo migrado → no aplicar borrados CloudKit (la verdad vive en el backend).
+            if backendZoneNames.contains(deletion.recordID.zoneID.zoneName) {
+                GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "applyRemote")
+                continue
+            }
             applyRemoteDeletion(recordID: deletion.recordID, recordType: deletion.recordType, context: modelContext)
         }
 
@@ -1764,6 +1824,42 @@ final class SplitSyncManager {
             return
         }
 
+        // G6-3 (C2, GUARD SIMÉTRICO de PULL en la rama de conflicto): si el grupo ya está migrado
+        // (`isBackendGroup=true`), NO aplicar el server record — su verdad vive en el backend y aceptarlo
+        // (server-wins) pisaría las ediciones backend post-migración. La zona CloudKit es solo-lectura.
+        //
+        // EXCEPCIÓN QUIRÚRGICA (el MARCADOR): si el record en conflicto es el GroupMeta del propio grupo y el
+        // marcador YA está estampado localmente (`movedToBackendAt != nil`), el conflicto significa que el save
+        // del marcador PERDIÓ contra un changeTag más nuevo (p.ej. una edición de un member pre-freeze).
+        // Dropearlo dejaría el marcador SIN subir para siempre (markerEnqueuedFlag=true → el boot-reconciler no
+        // re-encola) → los members jamás sabrían que el grupo se movió. FIX: adoptar SOLO los system fields del
+        // server record (changeTag fresco, SIN aplicar sus valores de campo — la verdad backend no se pisa) y
+        // RE-ENCOLAR el marcador (el translator re-arma el CKRecord desde los system fields nuevos + los campos
+        // locales, incluido el marcador → el próximo send gana).
+        if backendGroupZoneNames(context: modelContext).contains(serverRecord.recordID.zoneID.zoneName) {
+            if serverRecord.recordType == CKConstants.RecordType.groupMeta,
+               let group = group(for: serverRecord.recordID.zoneID.zoneName),
+               group.movedToBackendAt != nil,
+               CKConstants.modelID(from: serverRecord.recordID) == group.id {
+                group.ckSystemFieldsData = CKRecordTranslator.encodeSystemFields(of: serverRecord)
+                do {
+                    SaveBreadcrumb.willSave("SplitSync.conflict.markerRebase")
+                    try modelContext.save()
+                    SaveBreadcrumb.didSave("SplitSync.conflict.markerRebase")
+                } catch {
+                    #if DEBUG
+                    logger.error("[\(engineName)] marker rebase save failed: \(error)")
+                    #endif
+                }
+                enqueueMigrationMarker(group: group)
+                pendingRecordSaves.remove(failure.record.recordID)
+                return
+            }
+            GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "conflict")
+            pendingRecordSaves.remove(failure.record.recordID)
+            return
+        }
+
         // Race fix para serverRecordChanged en SplitGroup. Si el local tenía
         // isHiddenForAll/isArchived=true y server retorna stale false (otro device editó
         // metadata simultáneo), el server-wins default revertiría el flag. Mitigación:
@@ -1850,6 +1946,15 @@ final class SplitSyncManager {
 
         let zoneName = recordID.zoneID.zoneName
         guard let groupID = CKConstants.groupID(from: zoneName) else { return }
+
+        // G6-3 (C5): un save pendiente que racea con el borrado de la zona de un grupo MIGRADO (owner que
+        // borró su copia congelada) NO debe destruir los datos locales — la verdad vive en el backend.
+        if let localGroup = group(for: zoneName),
+           localGroup.isBackendGroup || localGroup.movedToBackendAt != nil {
+            GroupsSyncBreadcrumb.groupsCkPullSkippedBackendGroup(site: "zoneNotFound")
+            pendingRecordSaves.remove(recordID)
+            return
+        }
 
         // Delete all local data for this group
         deleteGroupCache(groupID: groupID, context: modelContext)

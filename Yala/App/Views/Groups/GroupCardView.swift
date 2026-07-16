@@ -23,6 +23,8 @@ struct GroupCardView: View {
     /// Disparado cuando current user `.rejected` toca la card. El padre
     /// presenta el alert "¿Salir del grupo?" (un solo modal global).
     var onRejectedTap: (() -> Void)?
+    /// G6-3: disparado cuando un grupo `.migratedFrozen` se toca — el padre dispara el CTA "vuelve a entrar".
+    var onMigratedTap: (() -> Void)?
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -34,7 +36,8 @@ struct GroupCardView: View {
         debts: [GroupsViewModel.DebtRow],
         displayMode: GroupCardDisplayMode = .active,
         action: @escaping () -> Void,
-        onRejectedTap: (() -> Void)? = nil
+        onRejectedTap: (() -> Void)? = nil,
+        onMigratedTap: (() -> Void)? = nil
     ) {
         self.group = group
         self.memberCount = memberCount
@@ -43,6 +46,7 @@ struct GroupCardView: View {
         self.displayMode = displayMode
         self.action = action
         self.onRejectedTap = onRejectedTap
+        self.onMigratedTap = onMigratedTap
     }
 
     var body: some View {
@@ -105,6 +109,13 @@ struct GroupCardView: View {
                 text: L10n.Groups.Card.rejectedChip,
                 foregroundColor: DS.Semantic.errorForeground,
                 backgroundColor: DS.Semantic.errorBackground
+            )
+        case .migratedFrozen:
+            StatusChip(
+                icon: "icloud.and.arrow.up",
+                text: L10n.Groups.Card.movedChip,
+                foregroundColor: DS.Semantic.warningForeground,
+                backgroundColor: DS.Semantic.warningBackground
             )
         case .active:
             debtsTrailing
@@ -208,6 +219,8 @@ struct GroupCardView: View {
             break
         case .rejected:
             onRejectedTap?()
+        case .migratedFrozen:
+            onMigratedTap?()
         case .active:
             action()
         }
@@ -221,6 +234,8 @@ struct GroupCardView: View {
             parts.append(L10n.Groups.Card.pendingApprovalChip)
         case .rejected:
             parts.append(L10n.Groups.Card.rejectedChip)
+        case .migratedFrozen:
+            parts.append(L10n.Groups.Card.movedChip)
         case .active:
             let grouped = GroupsViewModel.groupDebtsByDirection(debts)
             if !grouped.owedToMe.isEmpty {
