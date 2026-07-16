@@ -424,6 +424,60 @@ UPDATE con WHERE pca IS NULL; el perdedor de una carrera re-clasifica). **Cero c
   G4-invites/consent ✅ · endurecimiento pre-flags ✅ · G5 ✅ — quedan G6 (migración grupos vivos + R10),
   G7 (pgcrypto), G8 (APNs).**
 
+### 2026-07-16 — G6 COMPLETO EN CÓDIGO ✅ (migración de grupos vivos D7) — schema CloudKit DESPLEGADO; queda el gate device-QA del owner — ⚠️ reconciliar al vault
+
+> 4 commits (`658643f0` G6-1 · `0f6d5f42` G6-2 · `c1ad72d4` docs decisiones · `dac0042d` G6-3). Método íntegro:
+> 3 exploradores → 3 briefs congelados → 3 /review-plan Opus (G6-server NECESITA AJUSTES [crítico: dup
+> member_key → 502 retry-eterno]; G6-identity LISTO con 4 menores; G6-marker NECESITA AJUSTES [4 CRÍTICOS:
+> guard simétrico de PULL, quiescencia del uploader, resume sin !isBackendGroup, lectura VIVA del seed]) →
+> impl Opus (server en paralelo con identity; marker tras ambos) → review adversarial PRE-aplicación del SQL
+> (APLICAR + fix P2 casts) + adversarial de G6-2 (COMMIT limpio) + DOBLE lente de G6-3 (ambos COMMIT; fixes
+> LOW aplicados) → gates → commits. La sesión sufrió una caída de la Mac a mitad de G6-3 — el implementador
+> se REANUDÓ desde su transcript con el working tree intacto, cero pérdida.
+
+- **Decisiones owner del arranque (AskUserQuestion ×3):** R10 = derivación NAMESPACE-AWARE en applyMember
+  (remap descartado — pisaría FKs locales de devices preexistentes, clase IdentityRemap) · el marcador
+  PORTA el token de re-invite · deploy CloudKit coordinado (preparar → avisar → owner despliega → commit).
+- **G6-1 (`658643f0`):** RPC `migrate_group(p_group_id, p_meta, p_members)` — grupo con meta HISTÓRICA +
+  members legacy `user_id NULL` atómico; idempotente-suave (`{already, owner_user_id, server_seq}`);
+  validaciones anti-retry-eterno (dup member_key + casts malformados → `yala_bad_input`); riesgo aceptado
+  squat insider-only documentado. APLICADO en staging (md5 `e7863927e5cb58398ae1e36b84f268f9`, reproducible
+  del archivo versionado). Goldens 3 nuevos ACTIVADOS (21/21): atómico+already+group_exists · **E2E R10
+  server-side** (historial con FKs legacy byte-idénticas en el pull de B) · rebind + fila-reclamada
+  idempotente. Gotcha del golden: settlements usan la unidad `smoney` (no gmoney).
+- **G6-2 (`0f6d5f42`):** `isLegacyMemberKey` (UUID-parse — un sub siempre parsea, un recordName jamás) +
+  rama R10 en applyMember (id BYTE-IDÉNTICO al del owner CloudKit-era ⇒ balances correctos en device
+  fresco — CIERRA R10) + **adopción ATÓMICA de isBackendGroup** en applyGroupMeta existing≠nil (cierra la
+  NOTA de G5-A: congela CloudKit + activa drain en UN commit) + seam legacyMemberKey completo
+  (PendingJoinEntry back-compat; attemptJoin lo lee del entry). 65 tests/5 suites.
+- **G6-3 (`dac0042d`):** los 2 field keys en GroupMeta (`movedToBackendAt` TIMESTAMP + `backendReInviteToken`
+  ENCRYPTED, molde name/isArchived; ambos .ckdb actualizados, parity verde) + **GUARD SIMÉTRICO DE PULL**
+  (crítico del review-plan: G6 estrena grupo simultáneamente en zona CloudKit VIVA e isBackendGroup=true —
+  sin el guard, un member rezagado pisaría las ediciones backend del owner y el deleteZone del owner
+  NUKEARÍA los datos del member re-joineado; skip en modifications/deletions/conflict/zoneDeletion con
+  excepción quirúrgica para el conflicto del PROPIO marcador [rebase de system fields + re-encolar — sin
+  ella el marcador se dropearía para siempre]) + seam `enqueueMigrationMarker` guard-free + boot-reconciler
+  acotado por `markerEnqueuedFlag` + **UPLOADER kill-safe** (gate quiescencia+flag+sesión+consent; candidatos
+  `isOwner && movedToBackendAt==nil && ckSystemFieldsData!=nil` — jamás !isBackendGroup [la adopción puede
+  flipear antes]; orden migrate_group→invite[1 año, one-shot sin retry]→freeze→seed LECTURA VIVA
+  [edición concurrente GANA por LWW]→push drenado[transient aborta SIN marcador]→marcador; resume por
+  predicados sin journal) + FREEZE service-level (`GroupFreezeLogic`; mitigación #9: owner post-reinstall
+  no-congelado) + tarjeta `.migratedFrozen` + CTA re-join (intent sintético → chain A2) + banner de
+  progreso + C5 "borrar copia congelada" owner-only. 11 keys l10n ×16. Residuales aceptados: R2 rebase sin
+  tope (converge post-freeze), R4 members sin recordName fuera del payload, R8 dead-letters no bloquean el
+  marcador (Merkle degrada honesto), R3 deleteZone fire-and-forget.
+- **DEPLOY CloudKit Production HECHO (owner, 2026-07-16):** los 2 field keys importados vía .ckdb en ambos
+  containers (`iCloud.com.jurgenschmidt.yala.groups` y `.groups.dev`) ANTES del merge — el .ckdb del repo
+  jamás mintió sobre Production (logística rama `g6-3-marker` + commit retenido, la clase isOpeningBalance
+  cerrada por construcción).
+- **PENDIENTE owner (gate §11 de G6): device-QA cross-device TestFlight** — guion NUEVO
+  [[MODO-NUBE-G6-GUION-DEVICE]] (build QA con flag ON local; fases: migración owner + kill-test → marcador/
+  freeze en member → re-join/rebind/aprobación → **R10 en device FRESCO (la prueba reina)** → borrar copia
+  congelada → canarios). ⚠️ nota H2 del guion: no cambiar Apple ID del OS durante la corrida.
+- **Estado del plan §11: G0-G6 ✅ EN CÓDIGO — quedan G7 (pgcrypto, con la condición §16e de assertar los
+  settings de logging) y G8 (APNs, spikes ya verdes). El gate de flags §12 exige además el device-QA de
+  G6 y G8.**
+
 ### 2026-07-15 (mañana) — Reconciliación §2 + R10 escrita en la COPIA DEL REPO del diseño
 
 Las notas fechadas están en `MODO-NUBE-GRUPOS-BACKEND-V1-DISENO.md` (copia repo): corrección de §2
