@@ -4901,3 +4901,28 @@
 
 /* Groups account informational row subtitle (G5-B) */
 "settings.groupsAccountRowSubtitle" = "Actieve sessie";
+
+/* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
+"groups.member.deletedUser" = "Verwijderde gebruiker";
+/* G5-D1b: fila destructiva de borrado de cuenta */
+"settings.deleteAccount" = "Mijn account verwijderen";
+/* G5-D1b: título del primer diálogo */
+"settings.deleteAccountConfirmTitle" = "Je Yala-account verwijderen?";
+/* G5-D1b: primer diálogo, modo nube */
+"settings.deleteAccountConfirmMessageCloud" = "Je Yala-cloudgegevens (rekeningen, uitgaven, budgetten en meer) en de gegevens op dit apparaat worden voorgoed verwijderd. In de groepen die je deelt, verschijn je als “Verwijderde gebruiker”. Dit kan niet ongedaan worden gemaakt.";
+/* G5-D1b: primer diálogo, modo solo-grupos */
+"settings.deleteAccountConfirmMessageGroupsOnly" = "Je Yala-cloudaccount wordt verwijderd en je verlaat je groepen: je verschijnt als “Verwijderde gebruiker”. Je persoonlijke gegevens op dit apparaat blijven onaangeroerd. Dit kan niet ongedaan worden gemaakt.";
+/* G5-D1b: acción del primer diálogo */
+"settings.deleteAccountContinue" = "Doorgaan";
+/* G5-D1b: título de la alerta irreversible */
+"settings.deleteAccountFinalTitle" = "Dit is definitief";
+/* G5-D1b: mensaje irreversible */
+"settings.deleteAccountFinalMessage" = "Er is geen weg terug: je account en je gegevens worden volledig verwijderd.";
+/* G5-D1b: acción destructiva final */
+"settings.deleteAccountFinalAction" = "Mijn account verwijderen";
+/* G5-D1b: título del alert de error */
+"settings.deleteAccountErrorTitle" = "We konden je account niet verwijderen";
+/* G5-D1b: mensaje de error reintentable */
+"settings.deleteAccountErrorMessage" = "Er ging iets mis en het verwijderen is niet voltooid. Je gegevens zijn nog intact. Probeer het zo opnieuw.";
+/* G5-D1b: acción de reintento */
+"settings.deleteAccountRetry" = "Opnieuw proberen";

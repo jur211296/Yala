@@ -4890,3 +4890,28 @@
 
 /* Groups account informational row subtitle (G5-B) */
 "settings.groupsAccountRowSubtitle" = "Session active";
+
+/* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
+"groups.member.deletedUser" = "Utilisateur supprimé";
+/* G5-D1b: fila destructiva de borrado de cuenta */
+"settings.deleteAccount" = "Supprimer mon compte";
+/* G5-D1b: título del primer diálogo */
+"settings.deleteAccountConfirmTitle" = "Supprimer ton compte Yala ?";
+/* G5-D1b: primer diálogo, modo nube */
+"settings.deleteAccountConfirmMessageCloud" = "Tes données Yala dans le cloud (comptes, dépenses, budgets et plus) et celles de cet appareil seront supprimées définitivement. Dans les groupes que tu partages, tu apparaîtras comme « Utilisateur supprimé ». C'est irréversible.";
+/* G5-D1b: primer diálogo, modo solo-grupos */
+"settings.deleteAccountConfirmMessageGroupsOnly" = "Ton compte Yala dans le cloud sera supprimé et tu quitteras tes groupes : tu apparaîtras comme « Utilisateur supprimé ». Tes données personnelles sur cet appareil ne sont pas touchées. C'est irréversible.";
+/* G5-D1b: acción del primer diálogo */
+"settings.deleteAccountContinue" = "Continuer";
+/* G5-D1b: título de la alerta irreversible */
+"settings.deleteAccountFinalTitle" = "C'est définitif";
+/* G5-D1b: mensaje irreversible */
+"settings.deleteAccountFinalMessage" = "Aucun retour en arrière : ton compte et tes données seront entièrement supprimés.";
+/* G5-D1b: acción destructiva final */
+"settings.deleteAccountFinalAction" = "Supprimer mon compte";
+/* G5-D1b: título del alert de error */
+"settings.deleteAccountErrorTitle" = "Impossible de supprimer ton compte";
+/* G5-D1b: mensaje de error reintentable */
+"settings.deleteAccountErrorMessage" = "Un problème est survenu et la suppression n'a pas abouti. Tes données sont intactes. Réessaie dans un instant.";
+/* G5-D1b: acción de reintento */
+"settings.deleteAccountRetry" = "Réessayer";

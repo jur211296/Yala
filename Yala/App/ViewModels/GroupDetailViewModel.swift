@@ -197,7 +197,7 @@ final class GroupDetailViewModel {
 
             members = fetchedMembers
             memberNameLookup = Dictionary(
-                fetchedMembers.map { ($0.id.uuidString, $0.displayName) },
+                fetchedMembers.map { ($0.id.uuidString, $0.resolvedDisplayName) },
                 uniquingKeysWith: { first, _ in first }
             )
             expenses = fetchedExpenses

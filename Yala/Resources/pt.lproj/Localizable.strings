@@ -4897,3 +4897,28 @@
 
 /* Groups account informational row subtitle (G5-B) */
 "settings.groupsAccountRowSubtitle" = "Sessão ativa";
+
+/* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
+"groups.member.deletedUser" = "Usuário excluído";
+/* G5-D1b: fila destructiva de borrado de cuenta */
+"settings.deleteAccount" = "Excluir minha conta";
+/* G5-D1b: título del primer diálogo */
+"settings.deleteAccountConfirmTitle" = "Excluir sua conta Yala?";
+/* G5-D1b: primer diálogo, modo nube */
+"settings.deleteAccountConfirmMessageCloud" = "Seus dados da nuvem Yala (contas, gastos, orçamentos e mais) e os deste dispositivo serão apagados para sempre. Nos grupos que você compartilha, você aparecerá como “Usuário excluído”. Não dá para desfazer.";
+/* G5-D1b: primer diálogo, modo solo-grupos */
+"settings.deleteAccountConfirmMessageGroupsOnly" = "Sua conta da nuvem Yala será excluída e você sairá dos seus grupos: você passará a aparecer como “Usuário excluído”. Seus dados pessoais deste dispositivo não são tocados. Não dá para desfazer.";
+/* G5-D1b: acción del primer diálogo */
+"settings.deleteAccountContinue" = "Continuar";
+/* G5-D1b: título de la alerta irreversible */
+"settings.deleteAccountFinalTitle" = "Isto é definitivo";
+/* G5-D1b: mensaje irreversible */
+"settings.deleteAccountFinalMessage" = "Não tem volta: sua conta e seus dados serão apagados por completo.";
+/* G5-D1b: acción destructiva final */
+"settings.deleteAccountFinalAction" = "Excluir minha conta";
+/* G5-D1b: título del alert de error */
+"settings.deleteAccountErrorTitle" = "Não conseguimos excluir sua conta";
+/* G5-D1b: mensaje de error reintentable */
+"settings.deleteAccountErrorMessage" = "Algo deu errado e a exclusão não foi concluída. Seus dados continuam intactos. Tente de novo em um instante.";
+/* G5-D1b: acción de reintento */
+"settings.deleteAccountRetry" = "Tentar de novo";

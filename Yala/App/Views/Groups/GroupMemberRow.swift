@@ -27,7 +27,7 @@ struct GroupMemberRow: View {
             // Name + role
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 HStack(spacing: DS.Spacing.xs) {
-                    Text(member.displayName)
+                    Text(member.resolvedDisplayName)
                         .font(DS.Typography.body)
                         .foregroundStyle(member.isActive ? .primary : .secondary)
 
@@ -156,6 +156,6 @@ struct GroupMemberRow: View {
     }
 
     private var initialLetter: String {
-        String(member.displayName.prefix(1)).uppercased()
+        String(member.resolvedDisplayName.prefix(1)).uppercased()
     }
 }

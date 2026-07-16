@@ -41,6 +41,18 @@ enum ExistsOutcome: Equatable {
     case transient(detail: String)
 }
 
+/// Resultado ESTRUCTURADO de `POST /account/delete` (G5-D1 — borrado GDPR del corpus personal). Solo
+/// interesa éxito/no-éxito: los counts por tabla del RPC NO se consumen client-side (la cuenta muere).
+/// NUNCA lanza — traduce todo a este enum (estilo `ClaimOutcome`).
+enum DeleteOutcome: Equatable {
+    /// 200 OK → el HARD DELETE server-side se aplicó.
+    case success
+    /// 401: JWT o token de attest ausente/inválido/expirado → la sesión no está viva → re-firmar.
+    case sessionExpired(detail: String)
+    /// 5xx / red caída / 400 yala_* / respuesta no-HTTP → reintentable (los teardowns son idempotentes).
+    case transient(detail: String)
+}
+
 /// Resultado ESTRUCTURADO de `POST /account/migration` (I10-wiring w6, cutover §g.4). `ok:true` → `.ok`;
 /// `ok:false` con `reason=='other_leader'` → `.otherLeader` (el líder fue usurpado — el runner corta
 /// retomable y converge a follower); cualquier otro `ok:false` → `.rejected(reason)`.
@@ -62,13 +74,23 @@ final class CloudAccountClient {
 
     private let baseURL: URL
     private let urlSession: SyncHTTPSession
+    private let attestProvider: @MainActor () async -> String?
 
     /// - Parameters:
     ///   - baseURL: gateway (default `ProxyConfig.baseURL`, per-scheme).
     ///   - urlSession: inyectable para tests (reusa `SyncHTTPSession` del push client).
-    init(baseURL: URL = ProxyConfig.baseURL, urlSession: SyncHTTPSession = URLSession.shared) {
+    ///   - attestProvider: token de sesión de App Attest. Default `{ nil }` ⇒ claim/exists/migration
+    ///     NO envían attest (asimetría deliberada — el gate de cuenta precede al `/attest/bind`). SOLO
+    ///     `deleteAccount` (G5-D1) lo adjunta (`requireUserAndAttest`, molde `/groups/rpc`); en producción
+    ///     se inyecta `{ try? await AppAttestClient.shared.currentSessionToken() }`.
+    init(
+        baseURL: URL = ProxyConfig.baseURL,
+        urlSession: SyncHTTPSession = URLSession.shared,
+        attestProvider: @escaping @MainActor () async -> String? = { nil }
+    ) {
         self.baseURL = baseURL
         self.urlSession = urlSession
+        self.attestProvider = attestProvider
     }
 
     // MARK: - Decoder puro (testeable sin red)
@@ -219,6 +241,44 @@ final class CloudAccountClient {
         case 401:
             return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
         default:
+            return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
+        }
+    }
+
+    // MARK: - POST /account/delete (G5-D1)
+
+    /// `POST /account/delete` — HARD DELETE del corpus personal server-side (`delete_personal_account`,
+    /// GDPR). ASIMETRÍA DELIBERADA con el resto de `/account/*`: esta ruta EXIGE App Attest
+    /// (`requireUserAndAttest`, molde de `/groups/rpc`) por ser la operación más destructiva del canal —
+    /// de ahí el header `X-Yala-Attest-Session` que los hermanos (claim/exists/migration) NO envían. Body
+    /// vacío (`{}`; el RPC no toma args, usa `auth.uid()`). NUNCA lanza — traduce a `DeleteOutcome`.
+    func deleteAccount(jwt: String) async -> DeleteOutcome {
+        var request = URLRequest(url: baseURL.appendingPathComponent("account/delete"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(jwt)", forHTTPHeaderField: "Authorization")
+        if let attest = await attestProvider(), !attest.isEmpty {
+            request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
+        }
+        request.httpBody = Data("{}".utf8)
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(for: request)
+        } catch {
+            return .transient(detail: "network: \(error.localizedDescription)")
+        }
+        guard let http = response as? HTTPURLResponse else {
+            return .transient(detail: "non-HTTP response")
+        }
+        switch http.statusCode {
+        case 200:
+            return .success
+        case 401:
+            return .sessionExpired(detail: "HTTP 401: \(Self.bodyString(data))")
+        default:
+            // 400 yala_* (auth.uid null defensivo) / 502 upstream / cualquier otro → reintentable.
             return .transient(detail: "HTTP \(http.statusCode): \(Self.bodyString(data))")
         }
     }

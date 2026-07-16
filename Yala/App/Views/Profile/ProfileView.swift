@@ -103,6 +103,31 @@ struct ProfileView: View {
         }
     }
 
+    // G5-D1b: eliminar cuenta (DARK — fila visible solo con sesión backend viva). Doble confirmación:
+    // el primer diálogo explica la matriz por modo, el segundo es el irreversible. Misma disciplina de
+    // presentación que el cierre de sesión (bindings reales + onChange; el cover terminal lo dueña el root
+    // vía CloudSessionSignOut.phase — el cierre local del borrado entra en esa misma fase viva).
+    private var deletionService: AccountDeletionService { AccountDeletionService.shared }
+    @State private var showDeleteAccountConfirm = false
+    @State private var showDeleteAccountFinal = false
+    @State private var showDeleteAccountError = false
+
+    /// Copy del PRIMER diálogo — explica qué se borra y dónde según el modo (misma decisión que
+    /// `AccountDeletionService`: `.cloud` vs solo-grupos).
+    private var deleteAccountConfirmMessage: String {
+        CloudSyncFlags.storageMode == .cloud
+            ? L10n.Settings.deleteAccountConfirmMessageCloud
+            : L10n.Settings.deleteAccountConfirmMessageGroupsOnly
+    }
+
+    private func syncDeletionUI(from phase: AccountDeletionService.Phase) {
+        switch phase {
+        case .failed: showDeleteAccountError = true
+        case .awaitingRelaunch: dismiss()  // belt: el root ya cerró vía CloudSessionSignOut.phase
+        case .idle, .working: break
+        }
+    }
+
     private var isProUser: Bool {
         FeatureGateService.shared.isProUser
     }
@@ -261,6 +286,43 @@ struct ProfileView: View {
             // armado, solo informar); con `.awaitingRelaunch` el sheet se cierra solo para
             // despejar el anchor del cover terminal del root (dueño único).
             .onAppear { syncSignOutUI(from: signOutCoordinator.phase) }
+            // G5-D1b: eliminar cuenta — DOBLE confirmación. Diálogo 1 (matriz por modo) → alerta 2
+            // (irreversible) → borrado. Diálogo (step 1) y alerta (step 2) usan contenedores de
+            // presentación DISTINTOS ⇒ el segundo presenta tras cerrarse el primero sin carrera same-anchor.
+            .confirmationDialog(
+                L10n.Settings.deleteAccountConfirmTitle,
+                isPresented: $showDeleteAccountConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Settings.deleteAccountContinue, role: .destructive) {
+                    showDeleteAccountFinal = true
+                }
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(deleteAccountConfirmMessage)
+            }
+            .alert(L10n.Settings.deleteAccountFinalTitle, isPresented: $showDeleteAccountFinal) {
+                Button(L10n.Settings.deleteAccountFinalAction, role: .destructive) {
+                    Task { await AccountDeletionService.shared.deleteAccount(context: modelContext) }
+                }
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Settings.deleteAccountFinalMessage)
+            }
+            .alert(L10n.Settings.deleteAccountErrorTitle, isPresented: $showDeleteAccountError) {
+                Button(L10n.Settings.deleteAccountRetry) {
+                    Task { await AccountDeletionService.shared.deleteAccount(context: modelContext) }
+                }
+                Button(L10n.Common.cancel, role: .cancel) {
+                    AccountDeletionService.shared.acknowledgeFailure()
+                }
+            } message: {
+                Text(L10n.Settings.deleteAccountErrorMessage)
+            }
+            .onChange(of: deletionService.phase) { _, newPhase in
+                syncDeletionUI(from: newPhase)
+            }
+            .onAppear { syncDeletionUI(from: deletionService.phase) }
             .onAppear {
                 // Auto-navigate to destination passed by caller (e.g. sync settings sheet).
                 if let dest = initialDestination {
@@ -743,6 +805,27 @@ struct ProfileView: View {
                     .buttonStyle(.plain)
                     .disabled(signOutCoordinator.phase == .working)
                     .accessibilityIdentifier("profile_security_signout")
+                }
+                // G5-D1b: eliminar cuenta — tras "Cerrar sesión", solo con sesión backend viva y fuera de
+                // secundaria (RESIDUAL v1) / group-invite. DARK hoy (hasSession imposible en prod).
+                if AccountDeletionRowLogic.shouldShow(
+                    hasSession: CloudAuthService.shared.hasSession,
+                    secondaryActive: SecondarySessionStore.isActive(),
+                    isGroupInviteMode: isGroupInviteMode) {
+                    SubsectionDivider()
+                    Button {
+                        showDeleteAccountConfirm = true
+                    } label: {
+                        settingsRowContent(
+                            icon: "trash",
+                            title: L10n.Settings.deleteAccount,
+                            iconColor: .red)
+                    }
+                    .buttonStyle(.plain)
+                    // Deshabilitada si CUALQUIER coordinador trabaja (borrado o cierre de sesión) —
+                    // acciones mutuamente excluyentes que comparten la fase terminal de relaunch.
+                    .disabled(deletionService.phase == .working || signOutCoordinator.phase == .working)
+                    .accessibilityIdentifier("profile_security_delete_account")
                 }
             }
         }

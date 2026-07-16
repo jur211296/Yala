@@ -299,7 +299,7 @@ final class GroupStatsViewModel {
     /// Gasto total pagado por cada miembro, descendente.
     private func computeMemberSpending(from expenses: [SplitExpense]) -> [MemberSpending] {
         let memberNameLookup = Dictionary(
-            allMembers.map { ($0.id.uuidString, $0.displayName) },
+            allMembers.map { ($0.id.uuidString, $0.resolvedDisplayName) },
             uniquingKeysWith: { first, _ in first }
         )
         let grouped = Dictionary(grouping: expenses, by: \.paidByMemberID)

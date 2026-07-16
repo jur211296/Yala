@@ -102,3 +102,19 @@ final class SplitMember {
         self.joinedAt = Date.now
     }
 }
+
+// MARK: - Nombre a mostrar (sentinel de cuenta eliminada, G5-D1b)
+
+extension SplitMember {
+    /// Sentinel server-side de `groups_forget_user`: al eliminar su cuenta, el `display_name` del member se
+    /// anonimiza a este valor exacto. La UI lo mapea a un texto localizado (la capa de sync lo deja crudo —
+    /// ver `GroupsSyncClient`). NO usar para lógica de balances/identidad (esa va por IDs).
+    static let deletedUserSentinel = "__deleted_user__"
+
+    /// Nombre a MOSTRAR: mapea el sentinel de cuenta-eliminada a la key l10n; en cualquier otro caso devuelve
+    /// el `displayName` crudo. Usar en TODA superficie de UI que muestre nombres de member, INCLUIDOS los
+    /// diccionarios `id→displayName` (si no, el sentinel crudo se filtra por el lookup).
+    var resolvedDisplayName: String {
+        displayName == Self.deletedUserSentinel ? L10n.Groups.Member.deletedUser : displayName
+    }
+}

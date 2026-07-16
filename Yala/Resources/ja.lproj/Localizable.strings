@@ -4901,3 +4901,28 @@
 
 /* Groups account informational row subtitle (G5-B) */
 "settings.groupsAccountRowSubtitle" = "アクティブなセッション";
+
+/* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
+"groups.member.deletedUser" = "削除されたユーザー";
+/* G5-D1b: fila destructiva de borrado de cuenta */
+"settings.deleteAccount" = "アカウントを削除";
+/* G5-D1b: título del primer diálogo */
+"settings.deleteAccountConfirmTitle" = "Yalaアカウントを削除しますか？";
+/* G5-D1b: primer diálogo, modo nube */
+"settings.deleteAccountConfirmMessageCloud" = "Yalaのクラウドデータ（口座、支出、予算など）とこの端末のデータが完全に削除されます。共有しているグループでは「削除されたユーザー」と表示されます。この操作は取り消せません。";
+/* G5-D1b: primer diálogo, modo solo-grupos */
+"settings.deleteAccountConfirmMessageGroupsOnly" = "Yalaのクラウドアカウントが削除され、グループから退出します。「削除されたユーザー」と表示されるようになります。この端末の個人データはそのまま残ります。この操作は取り消せません。";
+/* G5-D1b: acción del primer diálogo */
+"settings.deleteAccountContinue" = "続ける";
+/* G5-D1b: título de la alerta irreversible */
+"settings.deleteAccountFinalTitle" = "これは取り消せません";
+/* G5-D1b: mensaje irreversible */
+"settings.deleteAccountFinalMessage" = "後戻りはできません。アカウントとデータは完全に削除されます。";
+/* G5-D1b: acción destructiva final */
+"settings.deleteAccountFinalAction" = "アカウントを削除";
+/* G5-D1b: título del alert de error */
+"settings.deleteAccountErrorTitle" = "アカウントを削除できませんでした";
+/* G5-D1b: mensaje de error reintentable */
+"settings.deleteAccountErrorMessage" = "問題が発生し、削除が完了しませんでした。データはそのまま残っています。しばらくしてからもう一度お試しください。";
+/* G5-D1b: acción de reintento */
+"settings.deleteAccountRetry" = "再試行";

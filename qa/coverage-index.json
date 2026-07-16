@@ -2309,6 +2309,18 @@
    "coverage": "G5-A cutover interno de escritura (DARK tras CloudSyncFlags.groupsBackendEnabled=false): particion POR-GRUPO bidireccional (SplitGroup.isBackendGroup LOCAL-only; guards CKSyncEngine en enqueueSave/enqueueDeletion/createZone/createShare/zoneRecovery/recoverUnsynced + filtro simetrico del drain backendGroupZoneIDs) y routing de create/invite/membership. unit:YalaTests/GroupCreateRoutingLogicTests (4) + YalaTests/CloudSync/GroupChannelRoutingTests (6) + particion del drain en GroupsSyncClientTests. Encendido real = gate de flags §12 con device-QA G6/G8.",
    "owner": "",
    "lastVerified": "2026-07-16"
+  },
+  {
+   "area": "account-deletion",
+   "codeGlobs": [
+    "Yala/Services/CloudSync/AccountDeletionService.swift",
+    "Yala/Services/CloudSync/SIWATokenRevocation.swift"
+   ],
+   "scenarioIDs": [],
+   "classification": "manual",
+   "coverage": "G5-D1 eliminar-cuenta GDPR (DARK: fila visible solo con sesion backend, imposible en prod hoy): RPC groups_forget_user + POST /account/delete (hard delete personal server-side, staging) + cierre local por modo con relaunch. unit:YalaTests/AccountDeletionServiceTests (orden anti-zombie forget→teardown→delete→siwa→close, matriz por modo, fallo por paso reintentable) + AccountDeletionRowLogicTests + SplitMemberResolvedDisplayNameTests (sentinel __deleted_user__) + DataWipePreservesGroupsTests (wipeAllUserData preserva Split*). Server: gateway/test/account.delete.test.ts (7) + verificacion WIRE one-shot documentada en qa/cloud/README. Pendientes pre-flag: SIWA revoke, auth.users, copy 401-vs-transient (H2).",
+   "owner": "",
+   "lastVerified": "2026-07-16"
   }
  ]
 }

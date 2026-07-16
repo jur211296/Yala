@@ -1977,6 +1977,7 @@ enum L10n {
             static var admin: String { ls("groups.member.admin", comment: "") }
             static var member: String { ls("groups.member.member", comment: "") }
             static var you: String { ls("groups.member.you", comment: "") }
+            static var deletedUser: String { ls("groups.member.deletedUser", comment: "") }
             static var left: String { ls("groups.member.left", comment: "") }
             static var removed: String { ls("groups.member.removed", comment: "") }
             static var changeRole: String { ls("groups.member.changeRole", comment: "") }
@@ -3985,6 +3986,22 @@ enum L10n {
         }
         static var signOutBlockedTitle: String { ls("settings.signOutBlockedTitle", comment: "") }
         static var signOutBlockedMessage: String { ls("settings.signOutBlockedMessage", comment: "") }
+        // Eliminar mi cuenta (G5-D1b — borrado GDPR, DARK)
+        static var deleteAccount: String { ls("settings.deleteAccount", comment: "") }
+        static var deleteAccountConfirmTitle: String { ls("settings.deleteAccountConfirmTitle", comment: "") }
+        static var deleteAccountConfirmMessageCloud: String {
+            ls("settings.deleteAccountConfirmMessageCloud", comment: "")
+        }
+        static var deleteAccountConfirmMessageGroupsOnly: String {
+            ls("settings.deleteAccountConfirmMessageGroupsOnly", comment: "")
+        }
+        static var deleteAccountContinue: String { ls("settings.deleteAccountContinue", comment: "") }
+        static var deleteAccountFinalTitle: String { ls("settings.deleteAccountFinalTitle", comment: "") }
+        static var deleteAccountFinalMessage: String { ls("settings.deleteAccountFinalMessage", comment: "") }
+        static var deleteAccountFinalAction: String { ls("settings.deleteAccountFinalAction", comment: "") }
+        static var deleteAccountErrorTitle: String { ls("settings.deleteAccountErrorTitle", comment: "") }
+        static var deleteAccountErrorMessage: String { ls("settings.deleteAccountErrorMessage", comment: "") }
+        static var deleteAccountRetry: String { ls("settings.deleteAccountRetry", comment: "") }
         static var delete: String { ls("settings.delete", comment: "") }
         static var cancel: String { ls("settings.cancel", comment: "") }
         static var iconOriginal: String { ls("settings.iconOriginal", comment: "") }

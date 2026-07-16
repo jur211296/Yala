@@ -181,6 +181,8 @@ enum AnalyticsEvent: String {
     case groupLegacyRebindFailed = "Diagnóstico · Rebind legacy de grupo falló"  // CANARIO (Grupos→backend G4/G6, C6): se ENVIÓ un legacyMemberKey al join y el resultado vino rebound==false → el rebind no matcheó una fila migrada de CloudKit (relevante para G6). Hoy nil en el flujo de token normal — el canario queda cableado. La DISPARA GroupBackendInviteEntryHandler. Sin PII
     case groupsIdentityBootMismatch = "Diagnóstico · Identidad de grupos no coincide al arrancar"  // CANARIO (GAP 1): el boot-guard detectó groups_currentUserRecordName ≠ userRecordID actual y corrió la limpieza de account-switch. >0 sostenido = falso positivo del guard (revisar) o churn real de Apple ID en devices compartidos
     case relaunchNetExhausted = "Diagnóstico · Red de relaunch agotada"  // params: net (signout|secondaryEntry) — CANARIO (fix carrera 2026-07-14): la red del cover terminal agotó su ciclo de reintentos sin confirmar presentación (onAppear del contenido real). >0 = algo tapa el anchor del root con el wipe/entrada armados; el blocker de la matriz contiene el router y el exit-on-background es la red final. La DISPARAN los nets de ContentView. Sin PII
+    case accountDeletionCompleted = "Diagnóstico · Cuenta eliminada"  // params: step (cloud|groupsOnly) — el borrado GDPR (G5-D1b) completó el server-side + cierre local armado. La DISPARA AccountDeletionService. Sin PII
+    case accountDeletionFailed = "Diagnóstico · Borrado de cuenta falló"  // params: step (groups|delete|localClose) — CANARIO (G5-D1b): un paso del borrado falló; NADA local se armó, la sesión sigue viva, el usuario reintenta. >0 sostenido = revisar el RPC/gateway del step. La DISPARA AccountDeletionService. Sin PII
 
     // MARK: Telemetría 2.0 — eventos nuevos
     // Activación (primeras veces) · sesión · fin de suscripción
@@ -494,6 +496,23 @@ enum TelemetryService {
     /// La dispara `SyncPushClient.push`. Privacy-first: sin IDs ni PII.
     static func cloudAccountUnavailable() {
         track(.cloudAccountUnavailable)
+    }
+
+    /// MÉTRICA Modo Nube (G5-D1b): el borrado GDPR de la cuenta completó server-side + cierre local armado.
+    /// `step` = `cloud` | `groupsOnly`. La dispara `AccountDeletionService`. Sin PII.
+    static func accountDeletionCompleted(step: String) {
+        track(.accountDeletionCompleted, parameters: [
+            "step": step
+        ])
+    }
+
+    /// CANARIO Modo Nube (G5-D1b): un paso del borrado de cuenta falló. `step` = `groups` (forget_user) |
+    /// `delete` (/account/delete) | `localClose` (quiescencia del cierre solo-grupos). NADA local se armó, la
+    /// sesión sigue viva, el usuario reintenta. La dispara `AccountDeletionService`. Sin PII.
+    static func accountDeletionFailed(step: String) {
+        track(.accountDeletionFailed, parameters: [
+            "step": step
+        ])
     }
 
     /// BREADCRUMB Modo Nube (freeze §h.1): el backend respondió 409 `yala_account_reverting` → la cuenta

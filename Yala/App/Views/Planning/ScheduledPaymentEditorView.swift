@@ -1262,7 +1262,7 @@ struct ScheduledPaymentEditorView: View {
     private func buildTransientVM() {
         guard let group = selectedGroup else { splitExpenseVM = nil; return }
         let lookup = Dictionary(
-            groupMembers.map { ($0.id.uuidString, $0.displayName) },
+            groupMembers.map { ($0.id.uuidString, $0.resolvedDisplayName) },
             uniquingKeysWith: { first, _ in first }
         )
         let vm = GroupExpenseViewModel(group: group, members: groupMembers, memberNameLookup: lookup)

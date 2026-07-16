@@ -4889,3 +4889,28 @@
 
 /* Groups account informational row subtitle (G5-B) */
 "settings.groupsAccountRowSubtitle" = "Aktive Sitzung";
+
+/* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
+"groups.member.deletedUser" = "Gelöschter Nutzer";
+/* G5-D1b: fila destructiva de borrado de cuenta */
+"settings.deleteAccount" = "Mein Konto löschen";
+/* G5-D1b: título del primer diálogo */
+"settings.deleteAccountConfirmTitle" = "Yala-Konto löschen?";
+/* G5-D1b: primer diálogo, modo nube */
+"settings.deleteAccountConfirmMessageCloud" = "Deine Yala-Cloud-Daten (Konten, Ausgaben, Budgets und mehr) und die Daten auf diesem Gerät werden dauerhaft gelöscht. In geteilten Gruppen erscheinst du als „Gelöschter Nutzer“. Das lässt sich nicht rückgängig machen.";
+/* G5-D1b: primer diálogo, modo solo-grupos */
+"settings.deleteAccountConfirmMessageGroupsOnly" = "Dein Yala-Cloud-Konto wird gelöscht und du verlässt deine Gruppen: Du erscheinst als „Gelöschter Nutzer“. Deine persönlichen Daten auf diesem Gerät bleiben unberührt. Das lässt sich nicht rückgängig machen.";
+/* G5-D1b: acción del primer diálogo */
+"settings.deleteAccountContinue" = "Weiter";
+/* G5-D1b: título de la alerta irreversible */
+"settings.deleteAccountFinalTitle" = "Das ist endgültig";
+/* G5-D1b: mensaje irreversible */
+"settings.deleteAccountFinalMessage" = "Es gibt kein Zurück: Dein Konto und deine Daten werden vollständig gelöscht.";
+/* G5-D1b: acción destructiva final */
+"settings.deleteAccountFinalAction" = "Mein Konto löschen";
+/* G5-D1b: título del alert de error */
+"settings.deleteAccountErrorTitle" = "Wir konnten dein Konto nicht löschen";
+/* G5-D1b: mensaje de error reintentable */
+"settings.deleteAccountErrorMessage" = "Etwas ist schiefgelaufen und die Löschung wurde nicht abgeschlossen. Deine Daten sind weiterhin intakt. Versuch es gleich noch einmal.";
+/* G5-D1b: acción de reintento */
+"settings.deleteAccountRetry" = "Erneut versuchen";

@@ -303,7 +303,7 @@ final class GroupsViewModel {
         }
         let currentMemberID = currentMember.id.uuidString
         let nameLookup = Dictionary(
-            members.map { ($0.id.uuidString, $0.displayName) },
+            members.map { ($0.id.uuidString, $0.resolvedDisplayName) },
             uniquingKeysWith: { first, _ in first }
         )
 
@@ -455,7 +455,7 @@ final class GroupsViewModel {
     /// lookup de `GroupDetailViewModel` para resolver nombres en el form de gasto.
     func memberNameLookup(for group: SplitGroup) -> [String: String] {
         Dictionary(
-            (membersByGroup[group.cloudKitZoneID] ?? []).map { ($0.id.uuidString, $0.displayName) },
+            (membersByGroup[group.cloudKitZoneID] ?? []).map { ($0.id.uuidString, $0.resolvedDisplayName) },
             uniquingKeysWith: { first, _ in first }
         )
     }

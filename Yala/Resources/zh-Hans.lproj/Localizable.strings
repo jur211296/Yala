@@ -4901,3 +4901,28 @@
 
 /* Groups account informational row subtitle (G5-B) */
 "settings.groupsAccountRowSubtitle" = "当前会话";
+
+/* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
+"groups.member.deletedUser" = "已删除的用户";
+/* G5-D1b: fila destructiva de borrado de cuenta */
+"settings.deleteAccount" = "删除我的账户";
+/* G5-D1b: título del primer diálogo */
+"settings.deleteAccountConfirmTitle" = "删除你的 Yala 账户？";
+/* G5-D1b: primer diálogo, modo nube */
+"settings.deleteAccountConfirmMessageCloud" = "你在 Yala 云端的数据（账户、支出、预算等）以及本设备上的数据将被永久删除。在你共享的群组中，你会显示为“已删除的用户”。此操作无法撤销。";
+/* G5-D1b: primer diálogo, modo solo-grupos */
+"settings.deleteAccountConfirmMessageGroupsOnly" = "你的 Yala 云端账户将被删除，你也会退出所有群组：你会显示为“已删除的用户”。本设备上的个人数据不受影响。此操作无法撤销。";
+/* G5-D1b: acción del primer diálogo */
+"settings.deleteAccountContinue" = "继续";
+/* G5-D1b: título de la alerta irreversible */
+"settings.deleteAccountFinalTitle" = "此操作无法撤销";
+/* G5-D1b: mensaje irreversible */
+"settings.deleteAccountFinalMessage" = "没有回头路：你的账户和数据将被彻底删除。";
+/* G5-D1b: acción destructiva final */
+"settings.deleteAccountFinalAction" = "删除我的账户";
+/* G5-D1b: título del alert de error */
+"settings.deleteAccountErrorTitle" = "无法删除你的账户";
+/* G5-D1b: mensaje de error reintentable */
+"settings.deleteAccountErrorMessage" = "出了点问题，删除未能完成。你的数据仍然完好。请稍后再试。";
+/* G5-D1b: acción de reintento */
+"settings.deleteAccountRetry" = "重试";

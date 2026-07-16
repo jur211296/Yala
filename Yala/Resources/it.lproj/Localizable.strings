@@ -4899,3 +4899,28 @@
 
 /* Groups account informational row subtitle (G5-B) */
 "settings.groupsAccountRowSubtitle" = "Sessione attiva";
+
+/* G5-D1b: member cuya cuenta fue eliminada (sentinel __deleted_user__) */
+"groups.member.deletedUser" = "Utente eliminato";
+/* G5-D1b: fila destructiva de borrado de cuenta */
+"settings.deleteAccount" = "Elimina il mio account";
+/* G5-D1b: título del primer diálogo */
+"settings.deleteAccountConfirmTitle" = "Eliminare il tuo account Yala?";
+/* G5-D1b: primer diálogo, modo nube */
+"settings.deleteAccountConfirmMessageCloud" = "I tuoi dati Yala nel cloud (conti, spese, budget e altro) e quelli su questo dispositivo verranno eliminati per sempre. Nei gruppi che condividi apparirai come “Utente eliminato”. Non è reversibile.";
+/* G5-D1b: primer diálogo, modo solo-grupos */
+"settings.deleteAccountConfirmMessageGroupsOnly" = "Il tuo account Yala nel cloud verrà eliminato e uscirai dai tuoi gruppi: apparirai come “Utente eliminato”. I tuoi dati personali su questo dispositivo non vengono toccati. Non è reversibile.";
+/* G5-D1b: acción del primer diálogo */
+"settings.deleteAccountContinue" = "Continua";
+/* G5-D1b: título de la alerta irreversible */
+"settings.deleteAccountFinalTitle" = "Questo è definitivo";
+/* G5-D1b: mensaje irreversible */
+"settings.deleteAccountFinalMessage" = "Non si torna indietro: il tuo account e i tuoi dati verranno eliminati completamente.";
+/* G5-D1b: acción destructiva final */
+"settings.deleteAccountFinalAction" = "Elimina il mio account";
+/* G5-D1b: título del alert de error */
+"settings.deleteAccountErrorTitle" = "Non siamo riusciti a eliminare il tuo account";
+/* G5-D1b: mensaje de error reintentable */
+"settings.deleteAccountErrorMessage" = "Qualcosa è andato storto e l'eliminazione non è stata completata. I tuoi dati sono ancora intatti. Riprova tra poco.";
+/* G5-D1b: acción de reintento */
+"settings.deleteAccountRetry" = "Riprova";

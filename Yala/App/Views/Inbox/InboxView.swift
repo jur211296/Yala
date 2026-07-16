@@ -108,7 +108,7 @@ struct InboxView: View {
             return nil
         }
         guard !members.isEmpty else { return nil }
-        let lookup = Dictionary(members.map { ($0.id.uuidString, $0.displayName) }, uniquingKeysWith: { first, _ in first })
+        let lookup = Dictionary(members.map { ($0.id.uuidString, $0.resolvedDisplayName) }, uniquingKeysWith: { first, _ in first })
 
         let template = GroupExpensePrefillTemplate(
             totalAmount: payment.splitTotalAmount ?? abs(payment.amount),
@@ -189,7 +189,7 @@ struct InboxView: View {
         }
         let activeMembers = members.filter(\.isActive)
         guard !activeMembers.isEmpty else { return nil }
-        let lookup = Dictionary(members.map { ($0.id.uuidString, $0.displayName) }, uniquingKeysWith: { first, _ in first })
+        let lookup = Dictionary(members.map { ($0.id.uuidString, $0.resolvedDisplayName) }, uniquingKeysWith: { first, _ in first })
         let template = DraftToGroupExpenseTemplateLogic.buildTemplate(
             amount: draft.amount ?? 0,
             cachedCurrencyCode: draft.cachedCurrencyCode,

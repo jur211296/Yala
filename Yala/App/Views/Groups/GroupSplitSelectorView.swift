@@ -213,7 +213,7 @@ struct GroupSplitSelectorView: View {
     @ViewBuilder
     private func memberName(_ member: SplitMember, id: String) -> some View {
         HStack(spacing: DS.Spacing.xs) {
-            Text(viewModel.memberNameLookup[id] ?? member.displayName)
+            Text(viewModel.memberNameLookup[id] ?? member.resolvedDisplayName)
                 .font(DS.Typography.body)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
@@ -231,7 +231,7 @@ struct GroupSplitSelectorView: View {
             Circle()
                 .fill(Color(hex: hex).opacity(0.2))
                 .frame(width: avatarSize, height: avatarSize)
-            Text(String(member.displayName.prefix(1)).uppercased())
+            Text(String(member.resolvedDisplayName.prefix(1)).uppercased())
                 .font(DS.Typography.label)
                 .foregroundStyle(Color(hex: hex))
         }

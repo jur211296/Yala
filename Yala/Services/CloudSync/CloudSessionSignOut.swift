@@ -291,6 +291,71 @@ final class CloudSessionSignOut {
         phase = .awaitingRelaunch
     }
 
+    // MARK: - Cierre LOCAL tras un borrado de cuenta (G5-D1b) — SIN push-all
+
+    /// Cierre LOCAL del camino `.cloud` tras un `delete_personal_account` EXITOSO server-side. A diferencia
+    /// de `performCloudSecureSignOut` NO hay push-all NI re-verify de outbox: los datos YA murieron en el
+    /// backend, no hay nada que preservar (subirlos sería un corpus-zombie). Métodos DEDICADOS (no un
+    /// `skipPushAll` sobre el sign-out) para NO tocar el código de sign-out — su garantía flag-OFF
+    /// byte-idéntica queda intacta. Mismo tail-end kill-safe: marker `includesGroups` PRIMERO (solo con el
+    /// flag ON), `armSignOutWipe` ÚLTIMO (disparador). Reusa el cover terminal por FASE VIVA
+    /// (`.awaitingRelaunch`) — cero red duplicada. El `AccountDeletionService` ya corrió los teardowns
+    /// antes del borrado; aquí se re-ejecutan por idempotencia (self-contained, correcto si se invoca solo).
+    func closeLocalAfterAccountDeletionCloud() async {
+        phase = .working
+        CloudSyncBreadcrumb.signOutStarted(path: "account-delete-cloud")
+
+        // Higiene molde `performCloudSecureSignOut`: limpiar un marker `includesGroups` huérfano.
+        StorageModePersistence.clearSignOutWipeIncludesGroups()
+
+        // Teardowns idempotentes (paran los loops; ya corridos por el service, re-ejecutar es no-op seguro).
+        CloudSyncRuntime.shared?.teardownGuestSession()
+        GroupsSyncClient.shared.teardownForSignOut()
+        PushTokenSignOutSeam.clearForSignOut()  // G8 (no-op hoy)
+
+        await CloudAuthService.shared.signOut()
+
+        // Marker ANTES del arm (kill-safe). Solo con el flag ON ⇒ boot byte-idéntico con flag OFF.
+        if CloudSyncFlags.groupsBackendEnabled {
+            StorageModePersistence.markSignOutWipeIncludesGroups()
+        }
+        StorageModePersistence.armSignOutWipe()
+        CloudSyncBreadcrumb.signOutWipeArmed()
+        phase = .awaitingRelaunch
+    }
+
+    /// Cierre LOCAL del camino solo-grupos tras un `delete_personal_account` EXITOSO. Espeja el tail-end de
+    /// `performGroupsOnlySignOut` SIN el push-all (datos muertos server-side). El GATE DE QUIESCENCIA es
+    /// OBLIGATORIO: la purga in-session salva al mainContext COMPARTIDO por los 3 stores (mismo trap de
+    /// SwiftData que en el sign-out solo-grupos). Timeout ⇒ devuelve `false` SIN cerrar la sesión ni armar
+    /// nada — el caller marca fallo y el usuario reintenta (`groups_forget_user`/`/account/delete` son
+    /// idempotentes; los teardowns también). Éxito ⇒ arma `groupsOnlyWipeArmed`, entra en
+    /// `.awaitingRelaunch` (reusa el cover terminal) y devuelve `true`.
+    func closeLocalAfterAccountDeletionGroupsOnly(context: ModelContext) async -> Bool {
+        phase = .working
+        CloudSyncBreadcrumb.signOutStarted(path: "account-delete-groups-only")
+
+        guard await Self.awaitPersonalQuiescenceForGroupsSignOut() else {
+            let pending = Self.liveGroupsPendingCount(context: context)
+            CloudSyncBreadcrumb.signOutPushBlocked(pending: pending)
+            phase = .idle  // jamás dejar el coordinador pegado en `.working`; el service marca el fallo.
+            return false
+        }
+
+        // Teardown del canal (idempotente) → purga in-session (bajo el gate de quiescencia) → consent.
+        GroupsSyncClient.shared.teardownForSignOut()
+        PushTokenSignOutSeam.clearForSignOut()  // G8 (no-op hoy)
+        Self.purgeGroupsSyncState(context: context)
+        GroupsConsentState.clear()
+
+        await CloudAuthService.shared.signOut()
+
+        StorageModePersistence.armGroupsOnlyWipe()
+        CloudSyncBreadcrumb.signOutGroupsOnlyWipeArmed()
+        phase = .awaitingRelaunch
+        return true
+    }
+
     // MARK: - Helpers del canal de Grupos (G5-B)
 
     /// Push-all VERIFICADO del outbox de GRUPOS (molde `CloudMigrationController.pushAllPendingForSignOut`):

@@ -302,11 +302,13 @@ struct GroupsSyncHardeningTests {
             .appendingPathComponent("Yala/Services/CloudSync/CloudSessionSignOut.swift"), encoding: .utf8)
         let teardowns = source.components(separatedBy: "CloudSyncRuntime.shared?.teardownGuestSession()").count - 1
         let groupsTeardowns = source.components(separatedBy: "GroupsSyncClient.shared.teardownForSignOut()").count - 1
-        // El runtime PERSONAL solo se derriba en los 3 paths que lo montan (privateReset/cloud/secondary).
-        // El solo-grupos NO conoce el runtime personal → sigue 3.
-        #expect(teardowns == 3)
-        // El canal de grupos se corta en los 4 paths: privateReset / cloudSecureSignOut / secondary / groupsOnly.
-        #expect(groupsTeardowns == 4)
+        // El runtime PERSONAL se derriba en los 3 paths de sign-out que lo montan (privateReset/cloud/
+        // secondary) + el cierre .cloud de ELIMINAR-CUENTA (G5-D1, belt idempotente — el service ya lo
+        // derribó en su paso 2). El solo-grupos NO conoce el runtime personal.
+        #expect(teardowns == 4)
+        // El canal de grupos se corta en los 4 paths de sign-out (privateReset/cloud/secondary/groupsOnly)
+        // + los 2 cierres de eliminar-cuenta (closeLocalAfterAccountDeletion Cloud/GroupsOnly — belts).
+        #expect(groupsTeardowns == 6)
     }
 
     /// M1 / D8 (G5-C): la purga de frontera de la sesión secundaria incluye el espejo App Group de GRUPOS

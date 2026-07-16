@@ -246,7 +246,7 @@ struct GroupMembersView: View {
     private func performApprove() {
         guard let member = pendingActionMember else { return }
         let memberID = member.id.uuidString
-        let memberName = member.displayName
+        let memberName = member.resolvedDisplayName
         // `approveMember` es `async` (C5: grupo backend rutea a un RPC). Con flag OFF no suspende — el camino
         // CloudKit corre igual, solo envuelto en un Task (MainActor heredado).
         Task {
