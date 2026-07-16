@@ -38,7 +38,11 @@ final class GroupsSyncClient {
 
     // MARK: Singleton (DARK)
 
-    static let shared = GroupsSyncClient()
+    // COMPOSICIÓN de producción (AJUSTE review #7): inyecta el provider registrar-backed del device token para
+    // el header `X-Yala-Device-Token` del push (G8-3). El init designado tiene default `{ nil }` (los tests no
+    // se acoplan al singleton); solo aquí, en el `.shared`, se ata a `PushTokenRegistrar.shared.storedToken`.
+    static let shared = GroupsSyncClient(
+        deviceTokenProvider: { PushTokenRegistrar.shared.storedToken })
 
     // MARK: Constantes
 
@@ -63,6 +67,12 @@ final class GroupsSyncClient {
     /// El `sub` de la sesión (auth uid). Inyectable para el RE-DRIVE del dead-letter (A2). Default: el
     /// singleton de sesión. `@MainActor` (el cliente ya lo es → no cruza actor).
     private let currentUserIDProvider: @MainActor () -> String?
+    /// G8-3: el device token APNs local para el header `X-Yala-Device-Token` del push (el server excluye SOLO
+    /// este device del autor del fan-out → el 2º device del autor SÍ recibe el silent push). Provider inyectado;
+    /// el DEFAULT del init es `{ nil }` (AJUSTE review #7 — NO acoplar los tests existentes a
+    /// `PushTokenRegistrar.shared`/UserDefaults, que viola la regla de singletons). La COMPOSICIÓN de producción
+    /// (`.shared`) inyecta el provider registrar-backed. El header solo se añade si non-nil.
+    private let deviceTokenProvider: @MainActor () -> String?
     private let now: () -> Date
     /// Cliente del snapshot Merkle de Grupos (`GET /groups/merkle`) — endurecimiento B1. Inyectable para
     /// tests (stub HTTP). Solo se usa con el flag ON (la verificación se cablea en `syncCycleOnce`).
@@ -164,7 +174,8 @@ final class GroupsSyncClient {
         now: @escaping () -> Date = { .now },
         nodeID: NodeID = NodeID.generate(),
         merkleClient: GroupsMerkleClient? = nil,
-        outboxMirror: GroupsOutboxMirror? = GroupsOutboxMirror()
+        outboxMirror: GroupsOutboxMirror? = GroupsOutboxMirror(),
+        deviceTokenProvider: @escaping @MainActor () -> String? = { nil }
     ) {
         self.baseURL = baseURL
         self.tokenProvider = tokenProvider
@@ -172,6 +183,7 @@ final class GroupsSyncClient {
         self.urlSession = urlSession
         self.sessionCheck = sessionCheck
         self.currentUserIDProvider = currentUserIDProvider
+        self.deviceTokenProvider = deviceTokenProvider
         self.now = now
         self.clock = HLCClock(nodeID: nodeID)
         // Default: mismo baseURL + los providers de sesión del canal (el Merkle de Grupos NO manda
@@ -1127,6 +1139,12 @@ final class GroupsSyncClient {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         if let attest, !attest.isEmpty {
             request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
+        }
+        // G8-3: el device token local (header opcional) → el server excluye SOLO este device del autor del
+        // fan-out. Solo se añade si el provider da un token non-nil/no-vacío (default `{ nil }` → header AUSENTE,
+        // byte-idéntico al pre-G8-3). Flag OFF: pushChunk solo corre con el canal activo — sin divergencia.
+        if let deviceToken = deviceTokenProvider(), !deviceToken.isEmpty {
+            request.setValue(deviceToken, forHTTPHeaderField: "X-Yala-Device-Token")
         }
         request.httpBody = body
 

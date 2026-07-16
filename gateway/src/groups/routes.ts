@@ -113,7 +113,19 @@ export async function handleGroupsPush(c: Ctx): Promise<Response> {
     if (typeof gid === "string" && gid.length > 0) groupIds.add(gid);
   }
   if (groupIds.size > 0) {
-    c.executionCtx.waitUntil(fanOutGroupPush(c.env, auth, Array.from(groupIds)));
+    // G8-3: el device emisor viaja en `X-Yala-Device-Token` (opcional). hex-64 o se ignora con log (NUNCA se
+    // persiste ni se loggea completo — prefijo ≤8 como los demás tokens). Presente → el fan-out excluye SOLO
+    // ese device del autor (los otros devices del autor SÍ reciben push); ausente/ inválido → fallback G8-1.
+    const rawDeviceToken = c.req.header("X-Yala-Device-Token");
+    let excludeDeviceToken: string | null = null;
+    if (typeof rawDeviceToken === "string" && rawDeviceToken.length > 0) {
+      if (/^[0-9a-f]{64}$/i.test(rawDeviceToken)) {
+        excludeDeviceToken = rawDeviceToken;
+      } else {
+        console.log(`[groups-fanout] X-Yala-Device-Token inválido (no hex-64) — ignorado token=${rawDeviceToken.slice(0, 8)}`);
+      }
+    }
+    c.executionCtx.waitUntil(fanOutGroupPush(c.env, auth, Array.from(groupIds), excludeDeviceToken));
   }
 
   const resp: GroupPushResponse = { results };
@@ -128,22 +140,41 @@ const FANOUT_TOKEN_CAP = 50;
 
 /**
  * Despierta con un silent push (`content-available:1`) a los co-members ACTIVOS de los grupos tocados por un
- * push APPLIED, para que hagan pull del contenido nuevo. Usa el JWT del AUTOR (válido: get_group_push_tokens
- * exige membership del caller). Best-effort TOTAL: cualquier fallo (JWT expirado en la ventana, APNs caído,
- * token muerto) se traga con un log — la respuesta del push ya se envió y la cadencia de pull es la red.
+ * push APPLIED, para que hagan pull del contenido nuevo. G8-3: los RPCs de push se llaman con la CREDENCIAL DE
+ * MÁQUINA `env.PUSH_ROLE_JWT` (rol `yala_push`, el único con EXECUTE tras g8_02) — NO con el JWT del autor. El
+ * autor viaja solo como `p_exclude_user_id: auth.sub` (a quién NO despertar) + `excludeDeviceToken` (su device
+ * emisor). Best-effort TOTAL: cualquier fallo (secret ausente/revocado → 401, APNs caído, token muerto) se traga
+ * con un log — la respuesta del push ya se envió y la cadencia de pull es la red. ⚠️ un 401 recurrente en el log
+ * `upstream 401` = legacy secret revocado → re-acuñar PUSH_ROLE_JWT (mint-push-role-jwt.mjs). Ver g8_02.
  */
-export async function fanOutGroupPush(env: Env, auth: { userJWT: string }, groupIds: string[]): Promise<void> {
+export async function fanOutGroupPush(
+  env: Env,
+  auth: { userJWT: string; sub: string },
+  groupIds: string[],
+  excludeDeviceToken: string | null = null,
+): Promise<void> {
   // Short-circuit si APNs no está configurado (espejo del 503 de /v1/debug/push; aquí silencioso, 1 log).
   // Prod arranca así hasta que el owner cargue APNS_KEY_ID/APNS_AUTH_KEY (pendiente-owner en wrangler.toml).
   if (!env.APNS_AUTH_KEY || !env.APNS_KEY_ID) {
     console.log("[groups-fanout] APNs no configurado (sin APNS_KEY_ID/APNS_AUTH_KEY) — fan-out no-op");
     return;
   }
+  // Short-circuit si falta la credencial de máquina (G8-3): sin PUSH_ROLE_JWT los RPCs responden 403 (los
+  // revocamos de authenticated) → el fan-out no puede resolver tokens. Mismo trato que el de APNs (1 log).
+  if (!env.PUSH_ROLE_JWT) {
+    console.log("[groups-fanout] PUSH_ROLE_JWT ausente — fan-out no-op (credencial de máquina no configurada)");
+    return;
+  }
+  const machineJWT = env.PUSH_ROLE_JWT;
 
   // Recolectar tokens de todos los grupos del batch; dedup por device_token (un member en 2 grupos → 1 push).
   const targets = new Map<string, { userId: string; deviceToken: string; platform: string }>();
   for (const gid of groupIds) {
-    const { ok, status, body } = await callRpc(env, auth.userJWT, "get_group_push_tokens", { p_group_id: gid });
+    const { ok, status, body } = await callRpc(env, machineJWT, "get_group_push_tokens", {
+      p_group_id: gid,
+      p_exclude_user_id: auth.sub,
+      p_exclude_device_token: excludeDeviceToken,
+    });
     if (!ok) {
       console.log(`[groups-fanout] get_group_push_tokens upstream ${status} group=${gid}`);
       continue;
@@ -173,8 +204,9 @@ export async function fanOutGroupPush(env: Env, auth: { userJWT: string }, group
 
     const reason = apnsReason(result.body);
     if (reason === "BadDeviceToken" || reason === "Unregistered") {
-      // Token muerto → prune best-effort (el guard de radio del RPC exige co-membership con p_user_id).
-      const pruned = await callRpc(env, auth.userJWT, "prune_push_token", { p_user_id: t.userId, p_device_token: t.deviceToken });
+      // Token muerto → prune best-effort con la credencial de máquina (G8-3: prune_push_token solo callable
+      // por yala_push tras g8_02; el guard de radio de G8-1 se retiró — solo el Worker confiable la llama).
+      const pruned = await callRpc(env, machineJWT, "prune_push_token", { p_user_id: t.userId, p_device_token: t.deviceToken });
       if (!pruned.ok) console.log(`[groups-fanout] prune upstream ${pruned.status} token=${t.deviceToken.slice(0, 8)}`);
     } else {
       // Canario §12 (server-side): observable en wrangler tail. SIN el token completo (prefijo ≤8 chars).

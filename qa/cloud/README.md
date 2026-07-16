@@ -378,6 +378,14 @@ migraciones (contra el schema viejo pegarían ciphertext/errores).
 
 ## G8-1 — APNs server-side: registro de tokens + fan-out de silent push
 
+> ⚠️ **SUPERSEDED por g8_02 (G8-3, decisión owner 2026-07-16) — ver §G8-3 abajo.** El MODELO DE AMENAZA de
+> abajo ("cualquier co-member puede enumerar los device_tokens de sus co-members bajo demanda") YA NO APLICA:
+> g8_02 movió los 2 RPCs a un rol de máquina `yala_push` (REVOKE de `authenticated`) → un cliente authenticated
+> recibe 403+42501. La ENUMERACIÓN muere; el griefing del prune muere; el residual multi-device del autor se
+> cierra (exclusión por DEVICE emisor). El registro/unregister (`/push/register`, `/push/unregister`) y la
+> mecánica del fan-out siguen VIGENTES; solo cambió CÓMO el fan-out autentica los 2 RPCs (JWT de máquina, no del
+> autor) y su FIRMA. Lo de esta sección se conserva como historia; la postura vigente es §G8-3.
+
 Un `.sql` NUEVO (`qa/cloud/g8_01_push_fanout.sql`, 2 RPCs) + gateway TS (registro + fan-out). `push_tokens` YA
 EXISTE en el DDL contrato (:247-260, PK `(user_id, device_token)`, RLS per-user, limpiada por
 `groups_forget_user`) — el `.sql` NO la recrea.
@@ -450,6 +458,78 @@ select md5(pg_get_functiondef('public.prune_push_token(uuid, text)'::regprocedur
 **Pendiente-owner:** cargar `APNS_KEY_ID` + secret `APNS_AUTH_KEY` en el bloque `[env.production]` de
 `wrangler.toml` — sin ellos el fan-out es no-op silencioso en prod (log 1 vez). El canario TelemetryDeck
 `groupApnsSendFailed` del §12 es server-side aquí (log del Worker en `wrangler tail`); el lado cliente va en G8-2.
+
+## G8-3 — credencial de máquina `yala_push` (supersede el modelo de amenaza de G8-1)
+
+Un `.sql` NUEVO (`qa/cloud/g8_02_push_machine_role.sql`) + gateway TS + un cambio Swift mínimo. **Decisión owner
+(2026-07-16):** RECHAZA el modelo "co-members enumeran device_tokens" de G8-1 y pide la arquitectura robusta.
+
+**SQL (g8_02):**
+- Rol `yala_push` (nologin) — scope MÍNIMO: `usage on schema public` + EXECUTE sobre 2 funciones. CERO grants de
+  tabla, sin BYPASSRLS. `grant yala_push to authenticator` (para el `SET ROLE` que dispara el claim `role` del JWT).
+- `get_group_push_tokens` RE-FIRMADA → `(p_group_id text, p_exclude_user_id uuid, p_exclude_device_token text
+  default null)` (DROP de la vieja `(text)` primero). **SIN guard de auth/rol en el cuerpo** (SECURITY DEFINER →
+  `current_user`=OWNER, no el caller; un guard por current_user rompería la función para el Worker — los GRANTS son
+  el ÚNICO control, AJUSTE #1). Exclusión del emisor: token NON-NULL → excluye SOLO ese `(user, token)` par (los
+  otros devices del autor SÍ entran, cierra el residual multi-device); NULL → fallback G8-1 (excluye todos los del autor).
+- `prune_push_token(uuid, text)` — firma sin cambio (`create or replace`, sin DROP); cuerpo grants-only (sin radio ni auth.uid()).
+- **Grants (AJUSTE #4):** `revoke all … from public, anon, authenticated` (nombra `public` explícito — authenticated es
+  miembro de PUBLIC; corre DESPUÉS del CREATE) + `grant execute … to yala_push`. `notify pgrst, 'reload schema'`.
+
+**Cambio de postura vs G8-1:** la ENUMERACIÓN por co-members MUERE (los RPCs ya no son callable con el JWT del usuario
+→ 403+42501); el griefing del prune muere; el fan-out deja de depender del JWT del autor (residual JWT-expiry cerrado).
+El invariante multi-sitio se REFINA: "el Worker jamás posee credencial que pueda leer DATOS DE USUARIO; sí una
+credencial de máquina acotada a infraestructura de push (2 funciones)". `yala_push` no lee datos de usuario.
+
+**⚠️ Durabilidad (AJUSTE #5):** `PUSH_ROLE_JWT` es HS256 firmado con el LEGACY secret del proyecto (los users usan
+ES256/JWKS). Si el owner completa la rotación y REVOCA el legacy secret, el fan-out muere EN SILENCIO (401 best-effort;
+la cadencia de pull cubre — sin pérdida de datos). Canario: el `console.log "[groups-fanout] … upstream 401"` recurrente
+= re-acuñar con el signing key vigente (`mint-push-role-jwt.mjs`).
+
+**Gateway TS:**
+- `env.ts`: `PUSH_ROLE_JWT?: string`. `fanOutGroupPush(env, {userJWT, sub}, groupIds, excludeDeviceToken?)`: short-circuit
+  si falta el secret (junto al de APNs, 1 log); los 2 `callRpc` usan `env.PUSH_ROLE_JWT` (no el JWT del autor);
+  `get_group_push_tokens` recibe `p_exclude_user_id: auth.sub` + `p_exclude_device_token`.
+- `handleGroupsPush` lee `X-Yala-Device-Token` (opcional; hex-64 o se ignora con log; prefijo ≤8 en logs) → fan-out.
+- `mint-push-role-jwt.mjs` (NUEVO): lee el legacy secret de un path por argv, firma `{role:'yala_push', iss:'yala-gateway'}`
+  exp 10 años, imprime SOLO el JWT a stdout (pipe a `wrangler secret put PUSH_ROLE_JWT`).
+
+**Cliente Swift (mínimo):** `GroupsSyncClient.pushChunk` añade el header `X-Yala-Device-Token` vía provider inyectado
+`deviceTokenProvider: () -> String?` — default `{ nil }` (los tests reciben el default; NO se acoplan al singleton,
+AJUSTE #7); la COMPOSICIÓN de producción (`.shared`) inyecta `{ PushTokenRegistrar.shared.storedToken }`. Header solo
+si non-nil (flag OFF / default = header AUSENTE, byte-idéntico al pre-G8-3).
+
+**Aplicación (loop principal):** aplicar `g8_02_push_machine_role.sql` verbatim; acuñar el JWT + `wrangler secret put
+PUSH_ROLE_JWT`; desplegar el Worker (kill-safe: el Worker viejo con g8_02 aplicada → fan-out 403 best-effort, cadencia
+cubre). Registrar los md5 reales tras aplicar:
+
+```sql
+select md5(pg_get_functiondef('public.get_group_push_tokens(text, uuid, text)'::regprocedure));
+select md5(pg_get_functiondef('public.prune_push_token(uuid, text)'::regprocedure));
+-- md5 esperados (aplicada 2026-07-16, migración g8_02_push_machine_role):
+--   get_group_push_tokens(text,uuid,text)  942a8531f6f3c642d5a0a767e3250a1d
+--   prune_push_token(uuid,text)            6ee533ae818ff77d902ad8cfd011e621
+-- Verificar además el rol: select rolname, rolbypassrls, rolcanlogin from pg_roles where rolname='yala_push';
+--   (verificado 2026-07-16: yala_push, rolbypassrls=false, rolcanlogin=false)
+-- Y el ACL final de ambas funciones (assert del review adversarial — caza drift de grants):
+--   select proname, proacl::text from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+--     where n.nspname='public' and proname in ('get_group_push_tokens','prune_push_token');
+--   (verificado 2026-07-16, ambas: {postgres=X/postgres,service_role=X/postgres,yala_push=X/postgres} —
+--    authenticated/anon/PUBLIC FUERA; service_role conserva su default-grant, consistente con todo el
+--    codebase e inofensivo: ya tiene BYPASSRLS y jamás la usa el Worker)
+```
+
+**Regla anti-drift:** re-aplicar a prod (`kefvaiymtgytemwbltlz`) en el mismo cambio o anotar drift pendiente.
+
+**Tests:**
+- `gateway/test/push.fanout.unit.test.ts` — OFFLINE (CI-safe): + short-circuit sin `PUSH_ROLE_JWT`; `get_group_push_tokens`
+  recibe `p_exclude_user_id`/`p_exclude_device_token` (con y sin device emisor). `AUTH` gana `sub`; `makeFanoutEnv` lleva
+  `PUSH_ROLE_JWT` por default.
+- `gateway/test/push.fanout.test.ts` — WIRE, bloque fan-out `describe.skip` HASTA g8_02 aplicada + `PUSH_ROLE_JWT` en env
+  (**ACTIVACIÓN POR EL LOOP: `describe.skip(`→`describe(` + `export PUSH_ROLE_JWT=<jwt>`**). Golden de la decisión owner:
+  un authenticated que llame los RPCs DIRECTO con la firma NUEVA COMPLETA recibe **403 + code 42501**. Caso multi-device:
+  header device1 → APNs recibe device2 (otro device de A) + B; sin header → solo B (fallback G8-1).
+- `YalaTests/CloudSync/GroupsSyncClientTests.swift` — header presente con provider, ausente con default `{ nil }`.
 
 ## Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)
 

@@ -31,6 +31,13 @@ export interface Env {
   // ARGUMENTO de request a los RPCs de grupos (p_key) — JAMÁS a URL/query. Ausente → /groups/pull responde 503.
   // staging y PROD llevan llaves DISTINTAS; la de prod la genera el owner. `.dev.vars` (gitignored) para dev local.
   GROUPS_ENC_KEY?: string;
+  // Grupos→backend G8-3 (credencial de máquina `yala_push`): JWT HS256 firmado con el LEGACY secret del
+  // proyecto, con claim `role: yala_push` → PostgREST hace SET ROLE yala_push, el ÚNICO rol con EXECUTE sobre
+  // get_group_push_tokens / prune_push_token (revocados de authenticated en g8_02). El fan-out lo usa en vez del
+  // JWT del autor. exp 10 años; se acuña con gateway/scripts/mint-push-role-jwt.mjs → `wrangler secret put
+  // PUSH_ROLE_JWT`. Ausente → el fan-out es no-op silencioso (log 1 vez, junto al de APNs). ⚠️ si el owner
+  // revoca el legacy secret (rotación de firmas), el fan-out muere en silencio (401) → re-acuñar. NUNCA a URL.
+  PUSH_ROLE_JWT?: string;
 }
 
 /** true solo en el entorno no-prod, donde se acepta el bypass de dev/test. */

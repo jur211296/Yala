@@ -18,7 +18,9 @@ async function makePem(): Promise<string> {
   return exportPKCS8(privateKey);
 }
 
-/** Env base para el fan-out. Sin RATE_LIMITER (skip del rate-limit); ENFORCE observe (attest opcional). */
+/** Env base para el fan-out. Sin RATE_LIMITER (skip del rate-limit); ENFORCE observe (attest opcional).
+ *  G8-3: PUSH_ROLE_JWT presente por default (el stub de fetch NO lo verifica) — el fan-out lo exige tras g8_02;
+ *  para probar el short-circuit se pasa `{ PUSH_ROLE_JWT: undefined }` en overrides. */
 function makeFanoutEnv(pem: string | undefined, overrides: Partial<Env> = {}): Env {
   return {
     ENVIRONMENT: "staging",
@@ -29,11 +31,12 @@ function makeFanoutEnv(pem: string | undefined, overrides: Partial<Env> = {}): E
     APNS_AUTH_KEY: pem,
     SUPABASE_URL: RPC_URL,
     SUPABASE_ANON_KEY: "anon-stub",
+    PUSH_ROLE_JWT: "machine.jwt.token",
     ...overrides,
   } as unknown as Env;
 }
 
-const AUTH = { userJWT: "dummy.jwt.token" };
+const AUTH = { userJWT: "dummy.jwt.token", sub: "u-a" };
 
 interface Recorded {
   url: string;
@@ -70,6 +73,51 @@ describe("fanOutGroupPush — units offline", () => {
     stubFetch(() => APPLE_OK(), calls);
     await fanOutGroupPush(makeFanoutEnv(undefined), AUTH, ["g-1"]);
     expect(calls.length).toBe(0);
+  });
+
+  it("short-circuit sin PUSH_ROLE_JWT (G8-3): cero fetches (credencial de máquina ausente)", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch(() => APPLE_OK(), calls);
+    // APNs SÍ configurado (pem) pero sin PUSH_ROLE_JWT → short-circuit tras el guard de APNs.
+    await fanOutGroupPush(makeFanoutEnv(pem, { PUSH_ROLE_JWT: undefined }), AUTH, ["g-1"]);
+    expect(calls.length).toBe(0);
+  });
+
+  it("G8-3: get_group_push_tokens se llama con p_exclude_user_id=auth.sub + p_exclude_device_token (device emisor)", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch((url) => {
+      if (url.includes("/rpc/get_group_push_tokens")) return tokensResponse([]);
+      if (url.includes("push.apple.com")) return APPLE_OK();
+      return new Response("{}", { status: 200 });
+    }, calls);
+
+    const emitter = "e".repeat(64);
+    await fanOutGroupPush(makeFanoutEnv(pem), AUTH, ["g-1"], emitter);
+
+    const rpc = calls.find((c) => c.url.includes("/rpc/get_group_push_tokens"));
+    expect(rpc).toBeDefined();
+    const args = JSON.parse(rpc!.init?.body as string);
+    expect(args.p_group_id).toBe("g-1");
+    expect(args.p_exclude_user_id).toBe("u-a"); // auth.sub
+    expect(args.p_exclude_device_token).toBe(emitter);
+  });
+
+  it("G8-3: sin device emisor → p_exclude_device_token null (fallback G8-1: excluye TODOS los devices del autor)", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch((url) => {
+      if (url.includes("/rpc/get_group_push_tokens")) return tokensResponse([]);
+      if (url.includes("push.apple.com")) return APPLE_OK();
+      return new Response("{}", { status: 200 });
+    }, calls);
+
+    await fanOutGroupPush(makeFanoutEnv(pem), AUTH, ["g-1"]); // sin 4º arg → default null
+
+    const rpc = calls.find((c) => c.url.includes("/rpc/get_group_push_tokens"));
+    const args = JSON.parse(rpc!.init?.body as string);
+    expect(args.p_exclude_device_token).toBeNull();
   });
 
   it("happy path: 1 grupo → get_group_push_tokens + 1 push a Apple (host por platform, payload yala)", async () => {

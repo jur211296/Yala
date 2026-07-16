@@ -32,10 +32,17 @@ Proxy seguro de Yala a **OpenAI** y al proveedor de **tasas de cambio**. Las API
    npx wrangler secret put DEV_SHARED_SECRET           # solo staging
    npx wrangler secret put APP_STORE_API_KEY
    npx wrangler secret put GROUPS_ENC_KEY              # G7: cifrado at-rest de columnas † de grupos (pgcrypto)
+   # PUSH_ROLE_JWT (G8-3): credencial de máquina `yala_push` del fan-out de silent push. NO se teclea a mano:
+   node scripts/mint-push-role-jwt.mjs <path-al-legacy-jwt-secret> | npx wrangler secret put PUSH_ROLE_JWT
    # repetir con --env production donde aplique (sin DEV_SHARED_SECRET en prod)
    # GROUPS_ENC_KEY: staging y PROD llevan llaves DISTINTAS. Sin ella, /groups/pull responde 503 (jamás
    # sirve ciphertext). La de prod la genera el owner; el gateway de prod devuelve 503 en pull de grupos
    # hasta configurarla (irrelevante hoy — flag de grupos→backend OFF).
+   # PUSH_ROLE_JWT: JWT HS256 firmado con el legacy secret del proyecto (claim role=yala_push) → SET ROLE
+   # yala_push, el único rol con EXECUTE sobre get_group_push_tokens/prune_push_token (revocados de
+   # authenticated en g8_02). exp 10 años. Ausente → fan-out no-op silencioso. mint-push-role-jwt.mjs lee el
+   # legacy secret de un path (NUNCA a stdout) e imprime SOLO el JWT para el pipe. Rotación: re-acuñar + re-put.
+   # ⚠️ si el owner revoca el legacy secret, el fan-out muere en silencio (401) — canario: log "upstream 401".
    ```
 4. **Device físico** para QA de App Attest (no corre en simulador).
 

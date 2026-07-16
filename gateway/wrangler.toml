@@ -11,6 +11,10 @@
 #   GROUPS_ENC_KEY (G7 pgcrypto): llave simétrica del cifrado at-rest de columnas † de grupos. Viaja como
 #   argumento de request a los RPCs de grupos (p_key) — JAMÁS a URL/query. staging y PROD llevan llaves
 #   DISTINTAS. `npx wrangler secret put GROUPS_ENC_KEY` (staging) / `--env production` (llave de prod del owner).
+#   PUSH_ROLE_JWT (G8-3): JWT de MÁQUINA (HS256, legacy secret, claim role=yala_push) que el fan-out de silent
+#   push usa para llamar get_group_push_tokens / prune_push_token (revocados de authenticated en g8_02). Se
+#   acuña con `node scripts/mint-push-role-jwt.mjs <path-legacy-secret> | npx wrangler secret put PUSH_ROLE_JWT`
+#   (staging) / `--env production`. Ausente → el fan-out es no-op silencioso. Ver README §APNs y g8_02.
 
 name = "yala-gateway-staging"
 main = "src/index.ts"

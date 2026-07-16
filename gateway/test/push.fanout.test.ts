@@ -21,6 +21,9 @@ const URL = "https://fostjbbwstyuunmmefuk.supabase.co";
 const ANON =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg";
 const ENC_KEY = process.env.GROUPS_ENC_KEY ?? "";
+// G8-3: la credencial de máquina `yala_push` (JWT HS256 firmado por el loop con el legacy secret). Fail-fast en
+// el beforeAll del bloque fan-out (NO al importar — así el subset offline no se rompe), igual que GROUPS_ENC_KEY.
+const PUSH_ROLE_JWT = process.env.PUSH_ROLE_JWT ?? "";
 
 // Env base (register/unregister no necesitan APNs ni enc key). El PEM APNs se inyecta en el bloque fan-out.
 const env = {
@@ -140,8 +143,11 @@ describe("G8 goldens · /push/register + /push/unregister contra staging real", 
 });
 
 // ============================================================================
-// Fan-out semi-WIRE · REQUIERE g8_01 aplicada (get_group_push_tokens / prune_push_token).
-// ⚠️ ACTIVACIÓN POR EL LOOP: tras aplicar g8_01, cambiar `describe.skip(` → `describe(` y re-correr npm test.
+// Fan-out semi-WIRE · REQUIERE g8_02 aplicada (get_group_push_tokens firma NUEVA + revoke a authenticated +
+// prune_push_token) Y `PUSH_ROLE_JWT` acuñado en el entorno (credencial de máquina `yala_push`).
+// ⚠️ ACTIVACIÓN POR EL LOOP: tras aplicar g8_02 + acuñar PUSH_ROLE_JWT (export PUSH_ROLE_JWT=<jwt> antes de
+// npm test, junto a GROUPS_ENC_KEY), cambiar `describe.skip(` → `describe(` y re-correr npm test.
+// (Con g8_02 aplicada, los goldens de fan-out de g8_01 ya NO pasarían: los RPCs pasaron a machine-role.)
 // Interceptor SELECTIVO de fetch: *.push.apple.com → mock; el resto → fetch REAL (staging). Teardown en
 // afterEach restaura el fetch original (sin él, el stub se filtra a los goldens hermanos que pegan a staging).
 // ============================================================================
@@ -150,12 +156,15 @@ async function makeApnsPem(): Promise<string> {
   return exportPKCS8(privateKey);
 }
 
-describe("G8 goldens · fan-out de silent push (post-aplicación g8_01)", () => {
+describe("G8 goldens · fan-out machine-role + revoke (post-aplicación g8_02)", () => {
   let apnsEnv: Env;
   let appleHits: Array<{ url: string; init?: RequestInit }>;
   let appleResponder: () => Response;
 
   beforeAll(async () => {
+    if (!PUSH_ROLE_JWT) {
+      throw new Error("G8-3: falta PUSH_ROLE_JWT en el entorno — export PUSH_ROLE_JWT=<jwt yala_push> antes de npm test");
+    }
     const pem = await makeApnsPem();
     apnsEnv = {
       ...env,
@@ -163,6 +172,7 @@ describe("G8 goldens · fan-out de silent push (post-aplicación g8_01)", () => 
       APPLE_BUNDLE_IDS: "com.jurgenschmidt.yala.dev",
       APNS_KEY_ID: "TESTKEYID1",
       APNS_AUTH_KEY: pem,
+      PUSH_ROLE_JWT,
     } as unknown as Env;
   });
 
@@ -182,22 +192,34 @@ describe("G8 goldens · fan-out de silent push (post-aplicación g8_01)", () => 
     });
   }
 
-  /** push con ctx COLECTOR: junta las promesas de waitUntil (el fan-out) para poder awaitarlas. */
-  async function pushCollect(jwt: string, deltas: unknown[]): Promise<GroupPushResponse> {
+  /** push con ctx COLECTOR: junta las promesas de waitUntil (el fan-out) para poder awaitarlas.
+   *  `deviceToken` (opcional) viaja como `X-Yala-Device-Token` (G8-3: excluir SOLO el device emisor del autor). */
+  async function pushCollect(jwt: string, deltas: unknown[], deviceToken?: string): Promise<GroupPushResponse> {
     const promises: Promise<unknown>[] = [];
     const ctx = { waitUntil(p: Promise<unknown>) { promises.push(p); }, passThroughOnException() {} } as unknown as ExecutionContext;
+    const headers: Record<string, string> = { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" };
+    if (deviceToken) headers["X-Yala-Device-Token"] = deviceToken;
     const res = await app.fetch(
-      new Request("https://gw.local/groups/push", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ deltas }),
-      }),
+      new Request("https://gw.local/groups/push", { method: "POST", headers, body: JSON.stringify({ deltas }) }),
       apnsEnv,
       ctx,
     );
     const body = (await res.json()) as GroupPushResponse;
     await Promise.all(promises); // esperar el fan-out (waitUntil) ANTES de assertar
     return body;
+  }
+
+  /** Llama un RPC de PostgREST DIRECTO con el JWT del usuario (para el golden del revoke: 403 + 42501). */
+  async function rpcDirect(jwt: string, fn: string, args: Record<string, unknown>): Promise<{ status: number; code?: string }> {
+    const res = await fetch(`${URL}/rest/v1/rpc/${fn}`, {
+      method: "POST",
+      headers: { apikey: ANON, Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
+      body: JSON.stringify(args),
+    });
+    const text = await res.text();
+    let code: string | undefined;
+    try { code = (JSON.parse(text) as { code?: string }).code; } catch { /* body no-JSON */ }
+    return { status: res.status, code };
   }
 
   // Setup de grupo compartido A+B (create/invite/join/approve) directo por RPC.
@@ -271,4 +293,63 @@ describe("G8 goldens · fan-out de silent push (post-aplicación g8_01)", () => 
     // El prune (best-effort, dentro del waitUntil ya awaited) borró el token muerto de B.
     expect(await countToken(jwtB, subB, tokB)).toBe(0);
   }, 120_000);
+
+  // EL golden de la decisión owner (AJUSTE #2): tras el revoke, un cliente `authenticated` (JWT de A) que llame
+  // los RPCs DIRECTO con la FIRMA NUEVA COMPLETA recibe 403 + code 42501 (insufficient_privilege — el JWT es
+  // válido y la función existe, pero el EXECUTE está denegado; solo yala_push puede). Con la firma VIEJA daría
+  // 404 PGRST202 (no-match de args) = falso positivo que pasaría en verde SIN el revoke — por eso firma completa.
+  it("REVOKE: get_group_push_tokens / prune_push_token dan 403 + 42501 a un authenticated (solo yala_push)", async () => {
+    const g = await rpcDirect(jwtA, "get_group_push_tokens", { p_group_id: "g8-revoke-probe", p_exclude_user_id: subA });
+    expect(g.status).toBe(403);
+    expect(g.code).toBe("42501");
+
+    const p = await rpcDirect(jwtA, "prune_push_token", { p_user_id: subA, p_device_token: dummyToken("revoke") });
+    expect(p.status).toBe(403);
+    expect(p.code).toBe("42501");
+  }, 60_000);
+
+  // Multi-device del AUTOR (G8-3, cierra el residual de G8-1): A tiene device1 + device2; con header
+  // X-Yala-Device-Token=device1 el fan-out excluye SOLO device1 → despierta device2 (el otro device de A) Y B;
+  // sin header → fallback G8-1 (excluye TODOS los devices de A → solo B).
+  it("multi-device: header device1 → APNs recibe device2 (otro device de A) + B; sin header → solo B", async () => {
+    const gid = await setupSharedGroup();
+    const dev1 = dummyToken("mdA1");
+    const dev2 = dummyToken("mdA2");
+    const tokB = dummyToken("mdB");
+    expect(await register(jwtA, dev1, "ios-sandbox")).toBe(200);
+    expect(await register(jwtA, dev2, "ios-sandbox")).toBe(200);
+    expect(await register(jwtB, tokB, "ios-sandbox")).toBe(200);
+
+    appleResponder = () => new Response("{}", { status: 200, headers: { "apns-id": "ok" } });
+
+    // (1) CON header device1 → excluye solo dev1: APNs golpea dev2 (A) + tokB (B), nunca dev1.
+    installApnsInterceptor();
+    const h1 = `${new Date(Date.UTC(2026, 6, 15, 13, 0, 0)).toISOString()}-0001-000000000000000a`;
+    const r1 = await pushCollect(jwtA, [
+      { entity_type: "split_expenses", group_id: gid, sync_id: crypto.randomUUID(), op: "upsert", fields: { amount: 30, currency_code: "PEN", note: "md1" }, field_hlcs: { gmoney: h1, note: h1 }, hlc: h1, client_mutation_id: crypto.randomUUID() },
+    ], dev1);
+    expect(r1.results[0].status).toBe("applied");
+    const urls1 = appleHits.map((x) => x.url).join(" | ");
+    expect(appleHits.length).toBe(2);
+    expect(urls1).toContain(dev2);
+    expect(urls1).toContain(tokB);
+    expect(urls1).not.toContain(dev1);
+
+    // (2) SIN header → fallback G8-1: excluye TODOS los devices de A → solo B (ni dev1 ni dev2).
+    installApnsInterceptor();
+    const h2 = `${new Date(Date.UTC(2026, 6, 15, 13, 30, 0)).toISOString()}-0001-000000000000000a`;
+    const r2 = await pushCollect(jwtA, [
+      { entity_type: "split_expenses", group_id: gid, sync_id: crypto.randomUUID(), op: "upsert", fields: { amount: 40, currency_code: "PEN", note: "md2" }, field_hlcs: { gmoney: h2, note: h2 }, hlc: h2, client_mutation_id: crypto.randomUUID() },
+    ]);
+    expect(r2.results[0].status).toBe("applied");
+    const urls2 = appleHits.map((x) => x.url).join(" | ");
+    expect(appleHits.length).toBe(1);
+    expect(urls2).toContain(tokB);
+    expect(urls2).not.toContain(dev1);
+    expect(urls2).not.toContain(dev2);
+
+    await unregister(jwtA, dev1);
+    await unregister(jwtA, dev2);
+    await unregister(jwtB, tokB);
+  }, 180_000);
 });

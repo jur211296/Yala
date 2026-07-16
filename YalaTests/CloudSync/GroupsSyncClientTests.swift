@@ -944,6 +944,44 @@ struct GroupsSyncClientTests {
         #expect(try groupOutbox(context).isEmpty)
     }
 
+    // MARK: - Test 8b · Header X-Yala-Device-Token del push (G8-3)
+
+    /// Con un provider registrar-backed (non-nil), el push lleva el header `X-Yala-Device-Token` → el server
+    /// excluye SOLO este device del autor del fan-out (el 2º device del autor SÍ recibe el silent push).
+    @Test func push_includesDeviceTokenHeader_whenProviderGivesToken() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let mid = UUID()
+        _ = try seedOutbox(context, mid: mid)
+
+        let deviceToken = String(repeating: "a", count: 64)
+        let stub = StubHTTPSession(
+            responseData: pushResultJSON(mid: mid, status: "applied", reason: "", outcome: "null"),
+            statusCode: 200)
+        let client = GroupsSyncClient(
+            tokenProvider: { "jwt" }, urlSession: stub,
+            deviceTokenProvider: { deviceToken })
+
+        _ = await client.pushPending(context: context)
+        #expect(stub.lastRequest?.value(forHTTPHeaderField: "X-Yala-Device-Token") == deviceToken)
+    }
+
+    /// Con el DEFAULT del init (`{ nil }`), el header queda AUSENTE (byte-idéntico al pre-G8-3 / flag OFF).
+    @Test func push_omitsDeviceTokenHeader_withDefaultNilProvider() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let mid = UUID()
+        _ = try seedOutbox(context, mid: mid)
+
+        let stub = StubHTTPSession(
+            responseData: pushResultJSON(mid: mid, status: "applied", reason: "", outcome: "null"),
+            statusCode: 200)
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub)
+
+        _ = await client.pushPending(context: context)
+        #expect(stub.lastRequest?.value(forHTTPHeaderField: "X-Yala-Device-Token") == nil)
+    }
+
     // MARK: - Test 9 · RE-DRIVE del dead-letter al aprobar al member (A2)
 
     /// Un member `pendingApproval` que escribió contenido fue rechazado (upstream_400:yala_not_authorized).
