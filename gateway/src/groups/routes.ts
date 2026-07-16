@@ -39,6 +39,7 @@ import type {
   PulledGroupDelta,
 } from "./types";
 import type { SyncDeltaResult } from "../sync/types";
+import { sendPush } from "../push/apns";
 
 type Ctx = Context<{ Bindings: Env }>;
 
@@ -53,14 +54,15 @@ const SERVER_ONLY_GROUP = new Set([
   "owner_user_id",
 ]);
 
-interface AuthedUser {
+export interface AuthedUser {
   sub: string;
   userJWT: string;
   attest: SessionClaims | null;
 }
 
-/** Auth compartida (espejo de sync/routes::requireUserAndAttest): JWT Supabase + App Attest + rate-limit. */
-async function requireUserAndAttest(c: Ctx): Promise<AuthedUser | Response> {
+/** Auth compartida (espejo de sync/routes::requireUserAndAttest): JWT Supabase + App Attest + rate-limit.
+ *  Exportada para que las rutas de push (`push/register.ts`) la reusen sin una 3ª copia (brief G8 §rutas). */
+export async function requireUserAndAttest(c: Ctx): Promise<AuthedUser | Response> {
   const token = bearerToken(c.req.header("Authorization"));
   if (!token) return jsonError("yala_attest_required", "Falta el JWT de usuario (Authorization: Bearer).", 401);
   const user = await verifyUserToken(c.env, token);
@@ -100,8 +102,97 @@ export async function handleGroupsPush(c: Ctx): Promise<Response> {
   for (const delta of body.deltas) {
     results.push(await applyOneGroupDelta(c, auth, delta));
   }
+
+  // Fan-out de silent push (G8): por cada delta APPLIED, su group_id. SyncDeltaResult NO porta group_id →
+  // zip index-alineado con body.deltas (mismo largo, mismo orden). El fan-out corre EN waitUntil y JAMÁS
+  // bloquea ni afecta la respuesta (ya respondida): un fallo de APNs es best-effort, la cadencia de pull cubre.
+  const groupIds = new Set<string>();
+  for (let i = 0; i < results.length; i++) {
+    if (results[i].status !== "applied") continue;
+    const gid = body.deltas[i]?.group_id;
+    if (typeof gid === "string" && gid.length > 0) groupIds.add(gid);
+  }
+  if (groupIds.size > 0) {
+    c.executionCtx.waitUntil(fanOutGroupPush(c.env, auth, Array.from(groupIds)));
+  }
+
   const resp: GroupPushResponse = { results };
   return c.json(resp);
+}
+
+// ----------------------------------------------------------------------------- fan-out de silent push (G8)
+
+// Cap de sanidad: máx tokens por invocación del fan-out (un push a decenas de devices en un waitUntil de
+// segundos). Si se recorta se loguea — señal de un grupo anormalmente grande.
+const FANOUT_TOKEN_CAP = 50;
+
+/**
+ * Despierta con un silent push (`content-available:1`) a los co-members ACTIVOS de los grupos tocados por un
+ * push APPLIED, para que hagan pull del contenido nuevo. Usa el JWT del AUTOR (válido: get_group_push_tokens
+ * exige membership del caller). Best-effort TOTAL: cualquier fallo (JWT expirado en la ventana, APNs caído,
+ * token muerto) se traga con un log — la respuesta del push ya se envió y la cadencia de pull es la red.
+ */
+export async function fanOutGroupPush(env: Env, auth: { userJWT: string }, groupIds: string[]): Promise<void> {
+  // Short-circuit si APNs no está configurado (espejo del 503 de /v1/debug/push; aquí silencioso, 1 log).
+  // Prod arranca así hasta que el owner cargue APNS_KEY_ID/APNS_AUTH_KEY (pendiente-owner en wrangler.toml).
+  if (!env.APNS_AUTH_KEY || !env.APNS_KEY_ID) {
+    console.log("[groups-fanout] APNs no configurado (sin APNS_KEY_ID/APNS_AUTH_KEY) — fan-out no-op");
+    return;
+  }
+
+  // Recolectar tokens de todos los grupos del batch; dedup por device_token (un member en 2 grupos → 1 push).
+  const targets = new Map<string, { userId: string; deviceToken: string; platform: string }>();
+  for (const gid of groupIds) {
+    const { ok, status, body } = await callRpc(env, auth.userJWT, "get_group_push_tokens", { p_group_id: gid });
+    if (!ok) {
+      console.log(`[groups-fanout] get_group_push_tokens upstream ${status} group=${gid}`);
+      continue;
+    }
+    for (const row of Array.isArray(body) ? (body as Record<string, unknown>[]) : []) {
+      const deviceToken = typeof row.device_token === "string" ? row.device_token : "";
+      const userId = typeof row.user_id === "string" ? row.user_id : "";
+      const platform = typeof row.platform === "string" ? row.platform : "ios-prod";
+      if (!deviceToken || !userId) continue;
+      if (!targets.has(deviceToken)) targets.set(deviceToken, { userId, deviceToken, platform });
+    }
+  }
+
+  let list = Array.from(targets.values());
+  if (list.length > FANOUT_TOKEN_CAP) {
+    console.log(`[groups-fanout] recortando ${list.length} → ${FANOUT_TOKEN_CAP} tokens`);
+    list = list.slice(0, FANOUT_TOKEN_CAP);
+  }
+
+  for (const t of list) {
+    const result = await sendPush(env, {
+      deviceToken: t.deviceToken,
+      sandbox: t.platform === "ios-sandbox",
+      payload: { aps: { "content-available": 1 }, yala: { kind: "groups-sync" } },
+    });
+    if (result.delivered) continue;
+
+    const reason = apnsReason(result.body);
+    if (reason === "BadDeviceToken" || reason === "Unregistered") {
+      // Token muerto → prune best-effort (el guard de radio del RPC exige co-membership con p_user_id).
+      const pruned = await callRpc(env, auth.userJWT, "prune_push_token", { p_user_id: t.userId, p_device_token: t.deviceToken });
+      if (!pruned.ok) console.log(`[groups-fanout] prune upstream ${pruned.status} token=${t.deviceToken.slice(0, 8)}`);
+    } else {
+      // Canario §12 (server-side): observable en wrangler tail. SIN el token completo (prefijo ≤8 chars).
+      console.log(
+        `[canary] groupApnsSendFailed status=${result.status ?? "-"} reason=${reason ?? result.transportError?.slice(0, 40) ?? "?"} token=${t.deviceToken.slice(0, 8)}`,
+      );
+    }
+  }
+}
+
+/** Extrae el `reason` del body JSON de APNs ({"reason":"BadDeviceToken"} etc.). undefined si no parsea. */
+function apnsReason(body: string | undefined): string | undefined {
+  if (!body) return undefined;
+  try {
+    return (JSON.parse(body) as { reason?: string }).reason;
+  } catch {
+    return undefined;
+  }
 }
 
 async function applyOneGroupDelta(c: Ctx, auth: AuthedUser, delta: GroupSyncDelta): Promise<SyncDeltaResult> {

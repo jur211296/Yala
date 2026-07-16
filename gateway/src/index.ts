@@ -17,6 +17,7 @@ import { handleAccountClaim, handleAccountDelete, handleAccountExists, handleAcc
 import { handleGroupsMerkle, handleGroupsPull, handleGroupsPush } from "./groups/routes";
 import { handleGroupsRpc } from "./groups/rpc";
 import { handleDebugPush } from "./push/routes";
+import { handlePushRegister, handlePushUnregister } from "./push/register";
 
 /**
  * Yala Gateway — entrada del Worker.
@@ -41,6 +42,10 @@ app.post("/v1/attest/dev", handleDevToken); // bypass dev/test (solo staging + D
 
 // --- Push (spike G0 Grupos→backend): prueba de APNs desde el Worker — mismo gate que /v1/attest/dev ---
 app.post("/v1/debug/push", handleDebugPush);
+
+// --- Push APNs (G8-1): registro/desregistro del device token per-user (upsert/delete a push_tokens; RLS per-user) ---
+app.post("/push/register", handlePushRegister);
+app.post("/push/unregister", handlePushUnregister);
 
 // --- Proxy OpenAI (task #5): chat + vision + transcripción ---
 app.post("/v1/chat/completions", handleChatCompletions);

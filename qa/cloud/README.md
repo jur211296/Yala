@@ -376,6 +376,81 @@ key>` antes de `npm test`; fail-fast en beforeAll). `cross-member-rls-test.sh` t
 las siembras positivas vía `apply_group_delta` (las negativas con columnas NO-†). Todos corren SOLO tras aplicar las
 migraciones (contra el schema viejo pegarían ciphertext/errores).
 
+## G8-1 — APNs server-side: registro de tokens + fan-out de silent push
+
+Un `.sql` NUEVO (`qa/cloud/g8_01_push_fanout.sql`, 2 RPCs) + gateway TS (registro + fan-out). `push_tokens` YA
+EXISTE en el DDL contrato (:247-260, PK `(user_id, device_token)`, RLS per-user, limpiada por
+`groups_forget_user`) — el `.sql` NO la recrea.
+
+**Los 2 RPCs** (`security definer`, `set search_path = public`, guard `auth.uid()` NULL → `yala_not_authorized`,
+grants REVOKE public/anon + GRANT authenticated):
+- `get_group_push_tokens(p_group_id)` → `table(user_id, device_token, platform)`. Valida `is_group_member` del
+  CALLER; devuelve los device tokens de los co-members `status='active'` del grupo, EXCLUYENDO al caller
+  (`gm.user_id <> auth.uid()`). **`pendingApproval` EXCLUIDO** (no es writer → un push de contenido le
+  dispararía un pull que su RLS no materializa = ruido/batería; la meta la cubre la cadencia).
+- `prune_push_token(p_user_id, p_device_token)` → borra el PAR EXACTO (best-effort del fan-out ante
+  `BadDeviceToken`/`Unregistered`). SECURITY DEFINER bypassa la RLS delete → **guard de radio**: solo el dueño
+  del token, o un co-member de un grupo activo compartido con `p_user_id`.
+
+**⚠️ MODELO DE AMENAZA (decisión de sesión — RATIFICAR por owner):** PostgREST expone toda función
+EXECUTE-a-authenticated en `/rest/v1/rpc/` ⇒ **cualquier co-member puede enumerar los device_tokens de sus
+co-members bajo demanda** (acotado a grupos compartidos). Estructural con el invariante "el Worker jamás usa
+service_role". Impacto ACOTADO: un token APNs es inerte sin la Auth Key del developer (secret server-side); el
+único abuso práctico es el prune de un token co-member (griefing menor, auto-sanado por el re-registro de boot).
+Divulgación aceptada y documentada en el header del `.sql`. **RESIDUAL v1:** `gm.user_id <> auth.uid()` excluye
+TODOS los devices del autor → su segundo device espera a la cadencia (en CloudKit el push era per-device).
+
+**Gateway TS:**
+- `POST /push/register` (`src/push/register.ts`) — auth `requireUserAndAttest` (REUSADA de `groups/routes.ts`,
+  exportada — sin 3ª copia). Body `{device_token, platform}` (hex-64 + `ios-sandbox|ios-prod`). Upsert a
+  PostgREST con `Prefer: resolution=merge-duplicates` (PK compuesta basta, sin `on_conflict` param);
+  `user_id = auth.sub` lo pone el WORKER (jamás del body; RLS with-check lo re-valida); `updated_at` EXPLÍCITO
+  (el default `now()` no re-dispara en la rama conflict-update). 200 `{registered:true}`.
+- `POST /push/unregister` — body `{device_token}` → `DELETE push_tokens?user_id=eq.<sub>&device_token=eq.<tok>`.
+  200 `{unregistered:true}`.
+- **Fan-out** (`src/groups/routes.ts::fanOutGroupPush`): `handleGroupsPush` recolecta el `Set<group_id>` de los
+  deltas APPLIED (zip por índice — `SyncDeltaResult` no porta group_id) y dispara
+  `c.executionCtx.waitUntil(fanOutGroupPush(...))` SIN esperar. El fan-out: short-circuit sin
+  `APNS_KEY_ID/APNS_AUTH_KEY`; `get_group_push_tokens` por grupo con el JWT del AUTOR; dedup por device_token
+  cross-grupo; cap 50; `sendPush` silent (`content-available:1`, `yala:{kind:"groups-sync"}`, background/prio 5);
+  `BadDeviceToken`/`Unregistered` → `prune_push_token`; otros fallos → `console.log("[canary]
+  groupApnsSendFailed …")` (token SOLO prefijo ≤8 chars). Best-effort TOTAL: un fallo JAMÁS afecta la respuesta.
+
+**⚠️ AJUSTE #1 (crítico) del brief:** `c.executionCtx` LANZA en Hono si `app.fetch` se llama sin 3er arg. El
+helper `push()` de `groups.goldens.test.ts` ahora pasa `{ waitUntil(){}, passThroughOnException(){} }` (ctx
+no-op) — sin él los ~10 goldens de escritura reventarían a 500 al tocar el fan-out. El golden nuevo usa su
+propio ctx COLECTOR de promesas.
+
+**Aplicación (loop principal, MCP, contexto service):** aplicar el `.sql` verbatim como migración
+`g8_01_push_fanout`. Registrar los md5 reales tras aplicar:
+
+```sql
+select md5(pg_get_functiondef('public.get_group_push_tokens(text)'::regprocedure));
+select md5(pg_get_functiondef('public.prune_push_token(uuid, text)'::regprocedure));
+-- md5 esperados (aplicada 2026-07-16, migración g8_01_push_fanout; con el notify pgrst añadido post-review):
+--   get_group_push_tokens  067d9db70c85a26494d0e2ca15da770f
+--   prune_push_token       eeba6e5658a15dcd7fc801e91dce670e
+```
+
+**Regla anti-drift:** re-aplicar a prod (`kefvaiymtgytemwbltlz`) en el mismo cambio o anotar drift pendiente.
+
+**Tests:**
+- `gateway/test/push.fanout.unit.test.ts` — units OFFLINE (fetch stubbeado, CI-safe): fan-out short-circuit sin
+  APNs, happy path (host/headers/payload), dedup cross-grupo, cap 50, `BadDeviceToken`→prune, upstream error
+  sin crash, `/push/register` 401 sin JWT.
+- `gateway/test/push.fanout.test.ts` — semi-WIRE (network ON, users A/B):
+  - Bloque `/push/register`+`/push/unregister` **NO-skip** (los endpoints solo tocan `push_tokens`, que ya
+    existe → verde HOY sin g8_01): 401 sin JWT, 400 no-hex, 400 platform inválida, upsert idempotente
+    (2 registros mismo par → 1 fila), aislamiento per-user.
+  - Bloque fan-out `describe.skip` HASTA aplicar g8_01 (usa los 2 RPCs nuevos). Interceptor SELECTIVO de fetch
+    (`*.push.apple.com` → mock; el resto → staging real; teardown restaura el fetch original en afterEach).
+    Env extendido con PEM ES256 (molde `makeKeys`) + `APPLE_TEAM_ID/BUNDLE_IDS/APNS_KEY_ID`. **TRAS aplicar
+    g8_01: cambiar `describe.skip(` → `describe(` y re-correr `npm test`** (2/2 verdes).
+
+**Pendiente-owner:** cargar `APNS_KEY_ID` + secret `APNS_AUTH_KEY` en el bloque `[env.production]` de
+`wrangler.toml` — sin ellos el fan-out es no-op silencioso en prod (log 1 vez). El canario TelemetryDeck
+`groupApnsSendFailed` del §12 es server-side aquí (log del Worker en `wrangler tail`); el lado cliente va en G8-2.
+
 ## Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)
 
 `push-e2e-test.sh` ejerce `POST /sync/push` con EL MISMO envelope JSON que arma `SyncPushClient`

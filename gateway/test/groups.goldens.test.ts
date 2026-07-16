@@ -110,6 +110,10 @@ async function push(jwt: string, deltas: unknown[]): Promise<{ status: number; b
       body: JSON.stringify({ deltas }),
     }),
     env,
+    // G8 AJUSTE #1: handleGroupsPush accede a `c.executionCtx.waitUntil` (fan-out de push) cuando hay un delta
+    // APPLIED — sin 3er arg, Hono LANZA "no ExecutionContext" → 500. En el runtime real el ctx SIEMPRE existe;
+    // aquí un ctx no-op basta (estos goldens no ejercen el fan-out — eso es push.fanout.test.ts).
+    { waitUntil() {}, passThroughOnException() {} } as unknown as ExecutionContext,
   );
   return { status: res.status, body: (await res.json()) as GroupPushResponse };
 }
