@@ -7,7 +7,10 @@
 #   - kv id:         `npx wrangler kv namespace create KV`
 #   - APPLE_TEAM_ID: Apple Developer → Membership → Team ID
 # Secrets (NO van aquí): `npx wrangler secret put OPENAI_API_KEY` (y EXCHANGE_RATE_API_KEY,
-#   JWT_SIGNING_SECRET, DEV_SHARED_SECRET, APP_STORE_API_KEY). Ver README.
+#   JWT_SIGNING_SECRET, DEV_SHARED_SECRET, APP_STORE_API_KEY, GROUPS_ENC_KEY). Ver README.
+#   GROUPS_ENC_KEY (G7 pgcrypto): llave simétrica del cifrado at-rest de columnas † de grupos. Viaja como
+#   argumento de request a los RPCs de grupos (p_key) — JAMÁS a URL/query. staging y PROD llevan llaves
+#   DISTINTAS. `npx wrangler secret put GROUPS_ENC_KEY` (staging) / `--env production` (llave de prod del owner).
 
 name = "yala-gateway-staging"
 main = "src/index.ts"

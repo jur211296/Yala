@@ -49,3 +49,4 @@ qa/results/
 .agents/
 .claude/skills/ui-ux-pro-max/scripts/__pycache__/
 .claude/sessions/tests-passed
+docs/modo-nube/briefs/

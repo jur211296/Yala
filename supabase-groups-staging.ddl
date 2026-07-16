@@ -3,12 +3,18 @@
 -- axis is PER GROUP (group_seq_counters / stamp_group_seq), the PK is (group_id, sync_id) / (group_id, member_key),
 -- and RLS is by MEMBERSHIP (is_group_member / is_group_writer / is_group_admin) instead of (auth.uid() = user_id).
 --
--- This file is the OFFLINE mold of the live staging schema and is composed of three applied migrations, verbatim:
+-- This file is the OFFLINE mold of the live staging schema, composed of the applied migrations, verbatim:
 --   §1 g1_01_groups_infra_tables  — tables, per-group seq trigger, membership helpers, RLS policies, grants.
 --   §2 g1_02_groups_rpcs          — the 9 membership/invite/rename RPCs + the column-level UPDATE grants (hallazgo #1).
 --   §3 g2_01_apply_group_delta    — the push RPC of the sync channel (LWW per coherence unit, tombstone, group-scoped key).
--- Regenerate on any groups-schema change by concatenating the applied migrations (keep §1 verbatim from the
--- live g1_01, minus the re-apply prelude/incident header; append the full g1_02, then g2_01). Staging-only until the flag gate.
+--   §4 g6_01_migrate_group        — the migrate_group RPC (live CloudKit groups → backend: historical meta + members).
+--   §5 g7_encrypt_groups          — pgcrypto at-rest encryption of the 8 † columns (bytea), the SECURITY INVOKER
+--                                   groups_pull_rows_* readers, g7_recrypt_corpus / yala_try_decrypt / yala_logging_settings.
+-- Applied migrations (staging): g1_01, g1_02, g2_01, g6_01, and — 2026-07-16 —
+--   g7_01_encrypt_groups_columns + g7_02_encrypt_groups_cutover (the G7 cutover: the 8 † columns become bytea NULLABLE,
+--   and create_group / join_group / groups_forget_user / update_member_display_name / migrate_group / apply_group_delta
+--   gain a p_key text argument). The G7 changes are woven IN-PLACE into §1–§4 plus the new §5.
+-- Regenerate on any groups-schema change by concatenating the applied migrations. Staging-only until the flag gate.
 -- Vocabulary parity with the app (SplitMember.swift): status ∈ {active,pendingApproval,rejected,left,removed}; role ∈ {admin,member}.
 --
 -- SYNC NOTE (G2): the client PUSHES only split_groups (meta, update-only) + the 3 content tables via apply_group_delta
@@ -62,10 +68,16 @@ $$;
 revoke all on function public.is_group_member(text), public.is_group_writer(text), public.is_group_admin(text), public.server_hlc() from public, anon;
 grant execute on function public.is_group_member(text), public.is_group_writer(text), public.is_group_admin(text) to authenticated;
 
+-- G7 (g7_02 cutover, 2026-07-16): the 8 columns marked `-- †` below are `bytea` at-rest (pgp_sym_encrypt; the key is
+-- passed per-request, never resident). Physically the cutover DROP+RENAME moved each renamed column to the END of its
+-- table's ordinal order; this legible mold keeps them IN-PLACE in the original semantic order — which is also the order
+-- the groups_pull_rows_* readers (§5) return (they decrypt † back to text / decimal-scale-4, so the wire shape is
+-- unchanged). See §5 for the extension, readers and helpers.
+
 -- ============ split_groups (meta del grupo; group_id PRESERVA el string cloudKitZoneID) ============
 create table public.split_groups (
   group_id text primary key,
-  name text,
+  name bytea,  -- † G7: bytea at-rest (was text)
   icon_name text,
   color_hex text,
   currency_code text,
@@ -99,7 +111,7 @@ create table public.group_members (
   group_id text not null,
   member_key text not null,
   user_id uuid references auth.users(id) on delete set null,
-  display_name text,
+  display_name bytea,  -- † G7: bytea at-rest (was text)
   role text,
   status text,
   joined_at timestamptz,
@@ -127,10 +139,10 @@ grant select, update on public.group_members to authenticated; -- INSERT y mutac
 create table public.split_expenses (
   group_id text not null,
   sync_id uuid not null,
-  amount numeric(18,4),
+  amount bytea,  -- † G7: bytea at-rest (was numeric(18,4); reader decrypts to text decimal scale-4)
   currency_code text,
-  expense_description text,
-  note text,
+  expense_description bytea,  -- † G7: bytea at-rest (was text)
+  note bytea,  -- † G7: bytea at-rest (was text)
   date timestamptz,
   created_at timestamptz,
   paid_by_member_key text,
@@ -163,7 +175,7 @@ create table public.split_shares (
   sync_id uuid not null,
   expense_id uuid,
   member_key text,
-  amount numeric(18,4),
+  amount bytea,  -- † G7: bytea at-rest (was numeric(18,4); reader decrypts to text decimal scale-4)
   is_paid boolean,
   field_hlcs jsonb,
   hlc text not null,
@@ -190,9 +202,9 @@ create table public.split_settlements (
   sync_id uuid not null,
   from_member_key text,
   to_member_key text,
-  amount numeric(18,4),
+  amount bytea,  -- † G7: bytea at-rest (was numeric(18,4); reader decrypts to text decimal scale-4)
   currency_code text,
-  note text,
+  note bytea,  -- † G7: bytea at-rest (was text)
   date timestamptz,
   is_confirmed boolean,
   field_hlcs jsonb,
@@ -270,7 +282,9 @@ set local check_function_bodies = off;
 -- push:update_only el INSERT local jamás emite → divergencia local↔server permanente (clase Merkle-FX).
 -- DROP de la firma de 7 args primero (create-or-replace con firma distinta = OVERLOAD → PGRST203).
 -- coalesce(_, false): columnas sin NULL para que el Merkle canónico no distinga null-vs-false.
-drop function if exists public.create_group(text, text, text, text, text, text, text);
+-- G7 (g7_02): +p_key text (before the 3 booleans) — name/display_name are now encrypted with pgp_sym_encrypt; DROP the
+-- 10-arg signature first (create-or-replace with a new signature = OVERLOAD → PGRST203) + search_path adds `extensions`.
+drop function if exists public.create_group(text, text, text, text, text, text, text, boolean, boolean, boolean);
 create function public.create_group(
   p_group_id text,
   p_name text,
@@ -279,11 +293,12 @@ create function public.create_group(
   p_color_hex text,
   p_display_name text,
   p_default_split_type text,
+  p_key text,
   p_simplify_debts boolean default false,
   p_show_debts_in_single_currency boolean default false,
   p_members_can_invite boolean default false
 ) returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_uid     uuid := (select auth.uid());
   v_hlc     text;
@@ -294,7 +309,6 @@ begin
     raise exception 'yala_not_authorized' using errcode = 'P0001';
   end if;
 
-  -- Validación de LONGITUD/PRESENCIA (el cliente es SSOT de divisas/contenido).
   if p_group_id is null or length(p_group_id) < 8 or length(p_group_id) > 120 then
     raise exception 'yala_invalid_group_id' using errcode = 'P0001';
   end if;
@@ -306,20 +320,14 @@ begin
     raise exception 'yala_bad_input' using errcode = 'P0001';
   end if;
 
-  -- Ya existe (aunque esté deleted): NO reusar group_id.
   if exists (select 1 from split_groups where group_id = p_group_id) then
     raise exception 'yala_group_exists' using errcode = 'P0001';
   end if;
 
   v_hlc := server_hlc();
 
-  -- Claim LIGERO: soporta la persona solo-grupos sin cuenta personal claimeada.
-  -- profiles solo tiene `id` NOT NULL sin default (verificado) → on conflict do nothing es seguro (no pisa datos).
   insert into profiles (id) values (v_uid) on conflict (id) do nothing;
 
-  -- TOCTOU: el `if exists` de arriba es un fast-path; dos create_group concurrentes con el mismo group_id
-  -- lo esquivan → el PK de split_groups lanza unique_violation, que traducimos al MISMO yala_group_exists
-  -- sanitizado (JAMÁS filtramos el sqlerrm crudo).
   begin
     insert into split_groups (
       group_id, name, icon_name, color_hex, currency_code,
@@ -327,7 +335,7 @@ begin
       default_split_type, is_archived, is_hidden_for_all, owner_user_id,
       created_at, field_hlcs, hlc, deleted, schema_version
     ) values (
-      p_group_id, v_name, p_icon_name, p_color_hex, p_currency_code,
+      p_group_id, pgp_sym_encrypt(v_name, p_key), p_icon_name, p_color_hex, p_currency_code,
       coalesce(p_simplify_debts, false), coalesce(p_show_debts_in_single_currency, false),
       coalesce(p_members_can_invite, false),
       p_default_split_type, false, false, v_uid,
@@ -341,7 +349,7 @@ begin
     group_id, member_key, user_id, display_name, role, status,
     joined_at, field_hlcs, hlc, deleted, schema_version
   ) values (
-    p_group_id, v_uid::text, v_uid, v_display, 'admin', 'active',
+    p_group_id, v_uid::text, v_uid, pgp_sym_encrypt(v_display, p_key), 'admin', 'active',
     now(), jsonb_build_object('profile', v_hlc, 'membership', v_hlc), v_hlc, false, 1
   );
 
@@ -390,12 +398,16 @@ end $$;
 -- ============================================================================
 -- 3. join_group — orden exacto: invite → validar → claim → rebind legacy → ya-member → insert.
 -- ============================================================================
-create or replace function public.join_group(
+-- G7 (g7_02): +p_key text — display_name is encrypted with pgp_sym_encrypt in the rebind/revive/insert branches; DROP
+-- the 3-arg signature first + search_path adds `extensions`.
+drop function if exists public.join_group(text, text, text);
+create function public.join_group(
   p_token text,
   p_display_name text,
+  p_key text,
   p_legacy_member_key text default null
 ) returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_uid      uuid := (select auth.uid());
   v_hlc      text;
@@ -408,7 +420,6 @@ begin
     raise exception 'yala_not_authorized' using errcode = 'P0001';
   end if;
 
-  -- 1. Lookup invite FOR UPDATE (serializa el conteo de uses). Cualquier fallo → yala_invalid_invite uniforme.
   select * into v_inv from group_invites where token = p_token for update;
   if v_inv.token is null
      or v_inv.revoked = true
@@ -417,12 +428,10 @@ begin
     raise exception 'yala_invalid_invite' using errcode = 'P0001';
   end if;
   v_group := v_inv.group_id;
-  -- El grupo del invite debe existir y no estar tombstoneado (token viejo de un grupo olvidado → invalid).
   if not exists (select 1 from split_groups where group_id = v_group and deleted = false) then
     raise exception 'yala_invalid_invite' using errcode = 'P0001';
   end if;
 
-  -- 2. Validar display_name.
   v_display := btrim(coalesce(p_display_name, ''));
   if v_display = '' or length(v_display) > 80 then
     raise exception 'yala_bad_input' using errcode = 'P0001';
@@ -430,22 +439,16 @@ begin
 
   v_hlc := server_hlc();
 
-  -- 3. Claim ligero de profiles. profiles solo tiene `id` NOT NULL sin default → on conflict do nothing es seguro.
   insert into profiles (id) values (v_uid) on conflict (id) do nothing;
 
-  -- 4. REBIND legacy: la fila del member migrado de CloudKit existe SIN reclamar (user_id null, cualquier status/deleted).
-  --    La fila rebindeada queda 'pendingApproval', NUNCA 'active': el member_key legacy es ENUMERABLE por
-  --    cualquier pending member (group_members_select usa is_group_member, que incluye pending), así que
-  --    activar directo sería un bypass de la aprobación + impersonación del historial del member migrado.
-  --    El historial se recupera igual (member_key preservado → shares/expenses/settlements viejos siguen
-  --    apuntando a él); el admin aprueba después con approve_member.
+  -- 4. REBIND legacy: la fila del member migrado existe SIN reclamar (user_id null). Queda pendingApproval.
   if p_legacy_member_key is not null then
     select * into v_row from group_members
       where group_id = v_group and member_key = p_legacy_member_key for update;
     if v_row.member_key is not null and v_row.user_id is null then
       update group_members set
         user_id      = v_uid,
-        display_name = v_display,
+        display_name = pgp_sym_encrypt(v_display, p_key),
         status       = 'pendingApproval',
         deleted      = false,
         deleted_hlc  = null,
@@ -467,16 +470,14 @@ begin
     order by member_key asc limit 1 for update;
   if v_row.member_key is not null then
     if v_row.deleted = false and v_row.status in ('active', 'pendingApproval') then
-      -- IDEMPOTENTE: no muta, no consume uso.
       return jsonb_build_object('group_id', v_group, 'member_key', v_row.member_key,
                                 'status', v_row.status, 'rebound', false);
     else
-      -- REVIVIR (left/removed/rejected o deleted): vuelve a pendingApproval.
       update group_members set
         status       = 'pendingApproval',
         deleted      = false,
         deleted_hlc  = null,
-        display_name = v_display,
+        display_name = pgp_sym_encrypt(v_display, p_key),
         hlc          = v_hlc,
         updated_at   = now(),
         field_hlcs   = jsonb_set(
@@ -489,12 +490,12 @@ begin
     end if;
   end if;
 
-  -- 6. INSERT nuevo member (pendingApproval — paridad con el flujo de aprobación).
+  -- 6. INSERT nuevo member (pendingApproval).
   insert into group_members (
     group_id, member_key, user_id, display_name, role, status,
     joined_at, field_hlcs, hlc, deleted, schema_version
   ) values (
-    v_group, v_uid::text, v_uid, v_display, 'member', 'pendingApproval',
+    v_group, v_uid::text, v_uid, pgp_sym_encrypt(v_display, p_key), 'member', 'pendingApproval',
     now(), jsonb_build_object('profile', v_hlc, 'membership', v_hlc), v_hlc, false, 1
   );
   update group_invites set uses = uses + 1 where token = p_token;
@@ -652,8 +653,11 @@ end $$;
 -- ============================================================================
 -- 8. groups_forget_user — borrado de Grupos (privacidad). Loop1 ownership, luego Loop2 anonimización.
 -- ============================================================================
-create or replace function public.groups_forget_user() returns jsonb
-language plpgsql security definer set search_path = public as $$
+-- G7 (g7_02): +p_key text — the sentinel display_name '__deleted_user__' is ALSO encrypted (the column is uniformly
+-- bytea); DROP the 0-arg signature first + search_path adds `extensions`.
+drop function if exists public.groups_forget_user();
+create function public.groups_forget_user(p_key text) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_uid         uuid := (select auth.uid());
   v_hlc         text;
@@ -668,14 +672,11 @@ begin
   end if;
   v_hlc := server_hlc();
 
-  -- LOOP 1 — resolver ownership de CADA grupo que posee v_uid (split_groups.owner_user_id es la autoridad).
   for v_grp in
     select group_id from split_groups
       where owner_user_id = v_uid and deleted = false
       order by group_id asc
   loop
-    -- Candidato: activo, user_id no null, != v_uid; primero admin más antiguo (tiebreak member_key),
-    -- si no hay admin → el member activo más antiguo (se promueve a admin).
     select * into v_cand from group_members
       where group_id = v_grp.group_id and deleted = false and status = 'active'
         and user_id is not null and user_id <> v_uid
@@ -699,8 +700,6 @@ begin
         where group_id = v_grp.group_id;
       v_transferred := v_transferred + 1;
     else
-      -- Sin candidato → TOMBSTONE grupo + TODOS sus members. (split_expenses/shares/settlements NO se
-      -- tocan: quedan inalcanzables vía RLS al no quedar members — residual documentado, G7 crypto los cubre.)
       update split_groups set
         deleted     = true,
         deleted_hlc = v_hlc,
@@ -719,12 +718,10 @@ begin
     end if;
   end loop;
 
-  -- LOOP 2 — anonimizar TODAS las filas de v_uid (cualquier status/deleted). Sentinel '__deleted_user__'
-  -- que el cliente localiza (decisión owner). DESPUÉS de resolver ownership.
   with anonymized as (
     update group_members set
       user_id      = null,
-      display_name = '__deleted_user__',
+      display_name = pgp_sym_encrypt('__deleted_user__', p_key),
       status       = 'removed',
       hlc          = v_hlc,
       updated_at   = now(),
@@ -749,8 +746,11 @@ end $$;
 -- 9. update_member_display_name — rename de la fila propia (unidad 'profile'). group_members pierde TODO
 --    update directo (revoke total abajo); el rename del cliente pasa SOLO por aquí (PULL-ONLY en G2).
 -- ============================================================================
-create or replace function public.update_member_display_name(p_group_id text, p_display_name text) returns jsonb
-language plpgsql security definer set search_path = public as $$
+-- G7 (g7_02): +p_key text — display_name is encrypted with pgp_sym_encrypt; DROP the 2-arg signature first +
+-- search_path adds `extensions`.
+drop function if exists public.update_member_display_name(text, text);
+create function public.update_member_display_name(p_group_id text, p_display_name text, p_key text) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_uid     uuid := (select auth.uid());
   v_hlc     text;
@@ -766,7 +766,6 @@ begin
     raise exception 'yala_bad_input' using errcode = 'P0001';
   end if;
 
-  -- Fila propia (activa o pendingApproval), bloqueada FOR UPDATE.
   select * into v_target from group_members
     where group_id = p_group_id and user_id = v_uid
       and deleted = false and status in ('active', 'pendingApproval')
@@ -777,7 +776,7 @@ begin
 
   v_hlc := server_hlc();
   update group_members set
-    display_name = v_display,
+    display_name = pgp_sym_encrypt(v_display, p_key),
     hlc          = v_hlc,
     updated_at   = now(),
     field_hlcs   = jsonb_set(coalesce(field_hlcs, '{}'::jsonb), '{profile}', to_jsonb(v_hlc))
@@ -803,27 +802,30 @@ create policy split_settlements_select on public.split_settlements for select to
 -- ============================================================================
 -- Grants de EXECUTE: revocar de public/anon, otorgar solo a authenticated.
 -- ============================================================================
+-- G7 (g7_02): EXECUTE grants regenerados con las firmas NUEVAS (create_group / join_group / update_member_display_name
+-- / groups_forget_user ganaron p_key text). create_group_invite / approve_member / remove_member / leave_group /
+-- revoke_invite SIN cambios (no escriben columnas †).
 revoke all on function
-  public.create_group(text, text, text, text, text, text, text, boolean, boolean, boolean),
+  public.create_group(text, text, text, text, text, text, text, text, boolean, boolean, boolean),
   public.create_group_invite(text, integer, integer),
-  public.join_group(text, text, text),
+  public.join_group(text, text, text, text),
   public.approve_member(text, text),
   public.remove_member(text, text),
   public.leave_group(text),
   public.revoke_invite(text),
-  public.update_member_display_name(text, text),
-  public.groups_forget_user()
+  public.update_member_display_name(text, text, text),
+  public.groups_forget_user(text)
   from public, anon;
 grant execute on function
-  public.create_group(text, text, text, text, text, text, text, boolean, boolean, boolean),
+  public.create_group(text, text, text, text, text, text, text, text, boolean, boolean, boolean),
   public.create_group_invite(text, integer, integer),
-  public.join_group(text, text, text),
+  public.join_group(text, text, text, text),
   public.approve_member(text, text),
   public.remove_member(text, text),
   public.leave_group(text),
   public.revoke_invite(text),
-  public.update_member_display_name(text, text),
-  public.groups_forget_user()
+  public.update_member_display_name(text, text, text),
+  public.groups_forget_user(text)
   to authenticated;
 
 -- ============================================================================
@@ -835,6 +837,9 @@ grant execute on function
 -- de sync G2 necesita. Los RPCs SECURITY DEFINER corren como owner de la función (bypass de column
 -- privileges), así que approve/remove/leave/join/forget/rename siguen funcionando.
 -- server_seq queda FUERA de todos los grants (el trigger stamp_group_seq lo pisa igual — defensa doble).
+-- G7 (g7_02): estos column-UPDATE grants fueron REGENERADOS VERBATIM (mismas columnas) tras el DROP+RENAME de las 8
+-- columnas † — el DROP mata el grant por-columna (ata por attnum) y el RENAME del `_enc` NO lo resucita; sin
+-- regenerarlos apply_group_delta (INVOKER) recibiría insufficient_privilege → push en NOOP silencioso.
 -- ============================================================================
 
 -- group_members: FREEZE TOTAL de la unidad membership — el cliente PIERDE todo update directo. No se
@@ -894,13 +899,22 @@ grant update (from_member_key, to_member_key, amount, currency_code, note, date,
 --      envuelve el cuerpo de escritura y se sanitiza a yala_not_authorized (sin oráculo de existencia).
 -- SECURITY INVOKER (implícito, igual que apply_delta): la RLS de membership + los column grants de G1 arbitran.
 
-create or replace function public.apply_group_delta(
+-- === G7 (g7_02) — cirugía de apply_group_delta (AJUSTE review C2a) ===
+--   +p_key text (7ª posición, tras p_field_hlcs). Las columnas † se QUITAN del jsonb ANTES de jsonb_populate_record
+--   (su columna física es bytea → un populate desde el JSON plaintext fallaría) en AMBAS ramas (INSERT-fresh y UPDATE)
+--   y en la value-list se emite pgp_sym_encrypt(...) con tri-estado NULL explícito: un unit que setea note=null → NULL
+--   bytea (jamás cifrar la string "null"); columna ausente de la unit → no se toca. Los AMOUNTS se cifran como
+--   ((v_win->>'amount')::numeric(18,4))::text — normaliza la escala ("30" → "30.0000"), byte-idéntico al recrypt de la
+--   fase intermedia y a lo que el Merkle servía pre-G7. 'amount' es la ÚNICA columna † numérica. DROP de la firma de 8
+--   args primero (C4); search_path adds `extensions` (C3: pgp_sym_* no resuelve con `public` pelado).
+drop function if exists public.apply_group_delta(text, text, uuid, text, jsonb, jsonb, text, integer);
+create function public.apply_group_delta(
   p_entity text, p_group_id text, p_sync_id uuid, p_op text,
-  p_fields jsonb, p_field_hlcs jsonb,
+  p_fields jsonb, p_field_hlcs jsonb, p_key text,
   p_row_hlc text default null, p_schema_version integer default 1)
  returns jsonb
  language plpgsql
- set search_path to 'public'
+ set search_path = public, extensions
 as $function$
 declare
   c_tables constant text[] := array['split_expenses','split_shares','split_settlements'];
@@ -924,23 +938,31 @@ declare
   v_collist       text;
   v_vallist       text;
   v_rowcount      bigint;
+  -- G7: columnas † (cifradas at-rest) por entidad + set derivado por delta.
+  v_tcols         text[];
+  v_enc_cols      text[];
+  v_plain_fields  jsonb;
+  v_plain_cols    text[];
 begin
-  -- Auth guard (SECURITY INVOKER requiere un JWT de usuario). Sanitizado.
   if v_uid is null then
     raise exception 'yala_not_authorized' using errcode = 'P0001';
   end if;
 
-  -- Dispatch: split_groups (rama especial) o una de las 3 de contenido. group_members (pull-only) y cualquier
-  -- otra entidad → yala_bad_request SIN interpolar p_entity (sin oráculo del schema).
   if not v_is_group_meta and not (p_entity = any (c_tables)) then
     raise exception 'yala_bad_request' using errcode = 'P0001';
   end if;
 
-  -- Cuerpo de escritura: si el caller no es writer/admin, el INSERT viola WITH CHECK (42501) → se sanitiza a
-  -- yala_not_authorized; el UPDATE no ve la fila (0 filas, capturado por GET DIAGNOSTICS).
+  -- G7: columnas † de esta entidad (group_members es pull-only → jamás llega aquí).
+  v_tcols := case p_entity
+               when 'split_expenses'    then array['amount','expense_description','note']
+               when 'split_shares'      then array['amount']
+               when 'split_settlements' then array['amount','note']
+               when 'split_groups'      then array['name']
+               else array[]::text[]
+             end;
+
   begin
     -------------------------------------------------- estado actual (la RLS restringe la visibilidad)
-    -- EXECUTE no setea FOUND → un literal `true` como columna centinela (NULL sin fila) es el flag de existencia.
     if v_is_group_meta then
       execute
         'select true, deleted, deleted_hlc, hlc, field_hlcs from public.split_groups where group_id = $1'
@@ -956,9 +978,9 @@ begin
     v_exists := coalesce(v_found, false);
 
     ------------------------------------------------------------------------ TOMBSTONE (row-level)
+    -- Los tombstones NO escriben columnas † (solo deleted/deleted_hlc) → sin cirugía.
     if p_op = 'tombstone' then
       if not v_exists then
-        -- split_groups: los grupos nacen SOLO vía create_group; tombstone de inexistente = noop.
         if v_is_group_meta then
           return jsonb_build_object('op','tombstone','noop',true,'reason','group_not_found');
         end if;
@@ -997,11 +1019,9 @@ begin
 
     -------- fila INEXISTENTE
     if not v_exists then
-      -- split_groups: NUNCA insert aquí (create_group es el único nacimiento del grupo).
       if v_is_group_meta then
         return jsonb_build_object('op','upsert','noop',true,'reason','group_not_found');
       end if;
-      -- fresh INSERT: cada unidad aplica (no hay estado previo que perder).
       for v_unit in select key from jsonb_each_text(p_field_hlcs) loop
         v_win_fields := v_win_fields || coalesce(p_fields -> v_unit, '{}'::jsonb);
         v_applied := array_append(v_applied, v_unit);
@@ -1014,14 +1034,27 @@ begin
            values ($1, $2, $3, $4, false, null, $5)', p_entity)
           using p_group_id, p_sync_id, p_field_hlcs, v_delta_hlc, p_schema_version;
       else
-        v_collist := (select string_agg(format('%I', k), ', ') from unnest(v_cols) k);
-        v_vallist := (select string_agg(format('r.%I', k), ', ') from unnest(v_cols) k);
+        -- G7: separar † del resto (las † NO pasan por jsonb_populate_record — su columna física es bytea).
+        v_enc_cols     := (select array_agg(c) from unnest(v_tcols) c where v_win_fields ? c);
+        v_plain_fields := case when v_enc_cols is null then v_win_fields else v_win_fields - v_enc_cols end;
+        select array_agg(k) into v_plain_cols from jsonb_object_keys(v_plain_fields) k;
+        v_collist := concat_ws(', ',
+          (select string_agg(format('%I', k), ', ') from unnest(coalesce(v_plain_cols, array[]::text[])) k),
+          (select string_agg(format('%I', c), ', ') from unnest(coalesce(v_enc_cols, array[]::text[])) c));
+        v_vallist := concat_ws(', ',
+          (select string_agg(format('r.%I', k), ', ') from unnest(coalesce(v_plain_cols, array[]::text[])) k),
+          (select string_agg(
+             case when c = 'amount'
+               then format('case when ($7->>%L) is null then null else pgp_sym_encrypt((($7->>%L)::numeric(18,4))::text, $8) end', c, c)
+               else format('case when ($7->>%L) is null then null else pgp_sym_encrypt(($7->>%L), $8) end', c, c)
+             end, ', ')
+           from unnest(coalesce(v_enc_cols, array[]::text[])) c));
         execute format(
           'insert into public.%I (group_id, sync_id, %s, field_hlcs, hlc, deleted, deleted_hlc, schema_version)
            select $1, $2, %s, $4, $5, false, null, $6
            from jsonb_populate_record(null::public.%I, $3) r',
           p_entity, v_collist, v_vallist, p_entity)
-          using p_group_id, p_sync_id, v_win_fields, p_field_hlcs, v_delta_hlc, p_schema_version;
+          using p_group_id, p_sync_id, v_plain_fields, p_field_hlcs, v_delta_hlc, p_schema_version, v_win_fields, p_key;
       end if;
       return jsonb_build_object('op','upsert','inserted',true,'applied_units',to_jsonb(v_applied),'noop',false);
     end if;
@@ -1070,9 +1103,24 @@ begin
       end if;
       get diagnostics v_rowcount = row_count;
     else
-      v_collist := (select string_agg(format('%I', k), ', ') from unnest(v_cols) k);
-      v_vallist := (select string_agg(format('r.%I', k), ', ') from unnest(v_cols) k);
+      -- G7: separar † del resto. v_collist es position-independiente (se computa una vez); v_vallist se construye
+      -- POR RAMA con las posiciones EXACTAS de su USING (sin params sin referenciar): la rama split_groups omite
+      -- p_sync_id (win=$6, key=$7); la de contenido lo incluye (win=$7, key=$8).
+      v_enc_cols     := (select array_agg(c) from unnest(v_tcols) c where v_win_fields ? c);
+      v_plain_fields := case when v_enc_cols is null then v_win_fields else v_win_fields - v_enc_cols end;
+      select array_agg(k) into v_plain_cols from jsonb_object_keys(v_plain_fields) k;
+      v_collist := concat_ws(', ',
+        (select string_agg(format('%I', k), ', ') from unnest(coalesce(v_plain_cols, array[]::text[])) k),
+        (select string_agg(format('%I', c), ', ') from unnest(coalesce(v_enc_cols, array[]::text[])) c));
       if v_is_group_meta then
+        v_vallist := concat_ws(', ',
+          (select string_agg(format('r.%I', k), ', ') from unnest(coalesce(v_plain_cols, array[]::text[])) k),
+          (select string_agg(
+             case when c = 'amount'
+               then format('case when ($6->>%L) is null then null else pgp_sym_encrypt((($6->>%L)::numeric(18,4))::text, $7) end', c, c)
+               else format('case when ($6->>%L) is null then null else pgp_sym_encrypt(($6->>%L), $7) end', c, c)
+             end, ', ')
+           from unnest(coalesce(v_enc_cols, array[]::text[])) c));
         execute format(
           'update public.split_groups as t set (%s) = (select %s from jsonb_populate_record(null::public.split_groups, $2) r),
              field_hlcs = $3, hlc = (select max(value) from jsonb_each_text($3)),
@@ -1081,8 +1129,16 @@ begin
              schema_version = $5, updated_at = now()
            where t.group_id = $1',
           v_collist, v_vallist)
-          using p_group_id, v_win_fields, v_new_fh, (v_deleted and v_reinstates), p_schema_version;
+          using p_group_id, v_plain_fields, v_new_fh, (v_deleted and v_reinstates), p_schema_version, v_win_fields, p_key;
       else
+        v_vallist := concat_ws(', ',
+          (select string_agg(format('r.%I', k), ', ') from unnest(coalesce(v_plain_cols, array[]::text[])) k),
+          (select string_agg(
+             case when c = 'amount'
+               then format('case when ($7->>%L) is null then null else pgp_sym_encrypt((($7->>%L)::numeric(18,4))::text, $8) end', c, c)
+               else format('case when ($7->>%L) is null then null else pgp_sym_encrypt(($7->>%L), $8) end', c, c)
+             end, ', ')
+           from unnest(coalesce(v_enc_cols, array[]::text[])) c));
         execute format(
           'update public.%I as t set (%s) = (select %s from jsonb_populate_record(null::public.%I, $3) r),
              field_hlcs = $4, hlc = (select max(value) from jsonb_each_text($4)),
@@ -1091,7 +1147,7 @@ begin
              schema_version = $6, updated_at = now()
            where t.group_id = $1 and t.sync_id = $2',
           p_entity, v_collist, v_vallist, p_entity)
-          using p_group_id, p_sync_id, v_win_fields, v_new_fh, (v_deleted and v_reinstates), p_schema_version;
+          using p_group_id, p_sync_id, v_plain_fields, v_new_fh, (v_deleted and v_reinstates), p_schema_version, v_win_fields, p_key;
       end if;
       get diagnostics v_rowcount = row_count;
     end if;
@@ -1111,9 +1167,9 @@ begin
 end;
 $function$;
 
--- Grants: revocar de public/anon, otorgar solo a authenticated (la RLS de membership arbitra dentro).
-revoke all on function public.apply_group_delta(text, text, uuid, text, jsonb, jsonb, text, integer) from public, anon;
-grant execute on function public.apply_group_delta(text, text, uuid, text, jsonb, jsonb, text, integer) to authenticated;
+-- Grants: revocar de public/anon, otorgar solo a authenticated (la RLS de membership arbitra dentro). Firma NUEVA (+p_key).
+revoke all on function public.apply_group_delta(text, text, uuid, text, jsonb, jsonb, text, text, integer) from public, anon;
+grant execute on function public.apply_group_delta(text, text, uuid, text, jsonb, jsonb, text, text, integer) to authenticated;
 
 -- ============================================================================
 -- §4 — g6_01_migrate_group (Grupos→backend G6-1, migración de grupos VIVOS de CloudKit al backend)
@@ -1131,12 +1187,16 @@ grant execute on function public.apply_group_delta(text, text, uuid, text, jsonb
 -- exige el zoneID de 128 bits visible solo para members; placeholders reclamables solo con token del caller).
 -- server_seq lo pone SIEMPRE el trigger stamp_group_seq. Contrato completo + decisiones owner (R10 / token-en-
 -- marcador / drift / squat / owner-debe-traer-member_key-legacy) en qa/cloud/g6_01_migrate_group.sql (2026-07-16).
-create or replace function public.migrate_group(
+-- G7 (g7_02): +p_key text — la meta name y cada display_name se cifran con pgp_sym_encrypt; DROP de la firma de 3 args
+-- primero + search_path adds `extensions`.
+drop function if exists public.migrate_group(text, jsonb, jsonb);
+create function public.migrate_group(
   p_group_id text,
   p_meta jsonb,
-  p_members jsonb
+  p_members jsonb,
+  p_key text
 ) returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_uid       uuid := (select auth.uid());
   v_hlc       text;
@@ -1203,7 +1263,7 @@ begin
       default_split_type, is_archived, is_hidden_for_all, owner_user_id,
       created_at, field_hlcs, hlc, deleted, schema_version
     ) values (
-      p_group_id, v_name, p_meta->>'icon_name', p_meta->>'color_hex', v_currency,
+      p_group_id, pgp_sym_encrypt(v_name, p_key), p_meta->>'icon_name', p_meta->>'color_hex', v_currency,
       coalesce((p_meta->>'simplify_debts')::boolean, false),
       coalesce((p_meta->>'show_debts_in_single_currency')::boolean, false),
       coalesce((p_meta->>'members_can_invite')::boolean, false),
@@ -1233,7 +1293,7 @@ begin
     ) values (
       p_group_id, v_mkey,
       case when v_is_owner then v_uid else null end,
-      v_display, v_role, v_status,
+      pgp_sym_encrypt(v_display, p_key), v_role, v_status,
       coalesce((v_member->>'joined_at')::timestamptz, now()),
       jsonb_build_object('profile', v_hlc, 'membership', v_hlc), v_hlc, false, 1
     );
@@ -1244,11 +1304,225 @@ begin
 exception
   when unique_violation then
     raise exception 'yala_bad_input' using errcode = 'P0001';
-  -- Fix P2: casts malformados del jsonb (22007/22008/22P02) = payload permanentemente-malo → error PERMANENTE
-  -- (sin esto escaparían crudos → 502 "transitorio" → retry-loop eterno del uploader).
   when invalid_datetime_format or datetime_field_overflow or invalid_text_representation then
     raise exception 'yala_bad_input' using errcode = 'P0001';
 end $$;
 
-revoke all on function public.migrate_group(text, jsonb, jsonb) from public, anon;
-grant execute on function public.migrate_group(text, jsonb, jsonb) to authenticated;
+revoke all on function public.migrate_group(text, jsonb, jsonb, text) from public, anon;
+grant execute on function public.migrate_group(text, jsonb, jsonb, text) to authenticated;
+
+
+-- ============================================================================
+-- §5 — g7_encrypt_groups (g7_01_encrypt_groups_columns + g7_02_encrypt_groups_cutover, 2026-07-16)
+-- ============================================================================
+-- Cifrado pgcrypto de las 8 columnas † (bytea at-rest) — protege DUMPS/BACKUPS lógicos: una fila filtrada no revela
+-- montos ni descripciones. La llave viaja como ARGUMENTO de request (p_key text), NUNCA residente en la DB. La RLS
+-- sigue arbitrando ANTES de descifrar (los readers son SECURITY INVOKER). El cutover de columnas (DROP plaintext +
+-- RENAME _enc → nombre), los 6 RPCs escritores con p_key y los column-UPDATE grants regenerados están tejidos IN-PLACE
+-- en §1–§4. Aquí quedan: la extensión, el motor de recrypt SERVICE-ONLY, el wrapper de descifrado tolerante-por-fila,
+-- el gate de logging §16e y los 5 RPCs LECTORES groups_pull_rows_* (el Worker pasa de GET select=* a llamarlos por POST
+-- — la llave JAMÁS en URL/query). NOTA: las columnas espejo <col>_enc que g7_01 creó fueron DROPeadas por el cutover de
+-- g7_02 (ADD+RENAME), así que NO existen en el estado vivo — este mold refleja el estado FINAL.
+set local check_function_bodies = off;
+
+create extension if not exists pgcrypto with schema extensions;
+
+-- ---- g7_recrypt_corpus(p_key) — motor de re-cifrado IDEMPOTENTE, SERVICE-ONLY (g7_01) ----
+-- Copia plaintext→cifrado para las 8 columnas SOLO donde `<col>_enc is null and <col> is not null` (idempotente).
+-- Amounts como pgp_sym_encrypt(amount::text, p_key) (escala-4 preservada). Devuelve counts por columna (jsonb).
+-- REVOKE all de public/anon/authenticated → solo ejecutable en contexto SERVICE. Se aplicó vía execute_sql directo
+-- (NO migración: la llave no toca schema_migrations). NOTA: las columnas <col>_enc que referencia YA NO existen tras
+-- el cutover — la función queda como artefacto histórico del estado vivo (creada por g7_01, jamás DROPeada).
+create or replace function public.g7_recrypt_corpus(p_key text) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  v_counts jsonb := '{}'::jsonb;
+  n bigint;
+begin
+  update public.split_groups set name_enc = pgp_sym_encrypt(name, p_key)
+    where name_enc is null and name is not null;
+  get diagnostics n = row_count; v_counts := v_counts || jsonb_build_object('split_groups.name', n);
+
+  update public.group_members set display_name_enc = pgp_sym_encrypt(display_name, p_key)
+    where display_name_enc is null and display_name is not null;
+  get diagnostics n = row_count; v_counts := v_counts || jsonb_build_object('group_members.display_name', n);
+
+  update public.split_expenses set amount_enc = pgp_sym_encrypt(amount::text, p_key)
+    where amount_enc is null and amount is not null;
+  get diagnostics n = row_count; v_counts := v_counts || jsonb_build_object('split_expenses.amount', n);
+
+  update public.split_expenses set expense_description_enc = pgp_sym_encrypt(expense_description, p_key)
+    where expense_description_enc is null and expense_description is not null;
+  get diagnostics n = row_count; v_counts := v_counts || jsonb_build_object('split_expenses.expense_description', n);
+
+  update public.split_expenses set note_enc = pgp_sym_encrypt(note, p_key)
+    where note_enc is null and note is not null;
+  get diagnostics n = row_count; v_counts := v_counts || jsonb_build_object('split_expenses.note', n);
+
+  update public.split_settlements set amount_enc = pgp_sym_encrypt(amount::text, p_key)
+    where amount_enc is null and amount is not null;
+  get diagnostics n = row_count; v_counts := v_counts || jsonb_build_object('split_settlements.amount', n);
+
+  update public.split_settlements set note_enc = pgp_sym_encrypt(note, p_key)
+    where note_enc is null and note is not null;
+  get diagnostics n = row_count; v_counts := v_counts || jsonb_build_object('split_settlements.note', n);
+
+  update public.split_shares set amount_enc = pgp_sym_encrypt(amount::text, p_key)
+    where amount_enc is null and amount is not null;
+  get diagnostics n = row_count; v_counts := v_counts || jsonb_build_object('split_shares.amount', n);
+
+  return v_counts;
+end $$;
+
+revoke all on function public.g7_recrypt_corpus(text) from public, anon, authenticated;
+
+-- ---- yala_try_decrypt(p_c, p_key) — descifrado TOLERANTE POR FILA (g7_01) ----
+-- SECURITY DEFINER + search_path = public, extensions (los readers INVOKER que la invocan NO dependen de un EXECUTE de
+-- pgp_sym_decrypt concedido a authenticated). Atrapa el fallo de descifrado POR LLAMADA → NULL: una fila envenenada
+-- (bytea basura escrito por un member malicioso vía PostgREST directo) NO revienta la página del pull/merkle — devuelve
+-- NULL en esa columna y el canario de divergencia del Merkle la delata. UNA sola operación falible tras el guard de NULL.
+create or replace function public.yala_try_decrypt(p_c bytea, p_key text) returns text
+language plpgsql security definer set search_path = public, extensions as $$
+begin
+  if p_c is null then
+    return null;
+  end if;
+  return pgp_sym_decrypt(p_c, p_key);
+exception when others then
+  return null;
+end $$;
+
+revoke all on function public.yala_try_decrypt(bytea, text) from public, anon;
+grant execute on function public.yala_try_decrypt(bytea, text) to authenticated;
+
+-- ---- yala_logging_settings() — gate §16e (la llave JAMÁS en logs) (g7_02) ----
+-- Devuelve los settings de logging que garantizan que la llave (viaja como argumento) no aterrice en ningún log. El
+-- golden g7-logging-settings asserta {log_statement:"ddl", log_min_duration_statement:"-1",
+-- log_parameter_max_length_on_error:"0"}. Si el owner cambia estos settings el golden lo delata.
+create or replace function public.yala_logging_settings() returns jsonb
+language sql security definer stable set search_path = public as $$
+  select jsonb_build_object(
+    'log_statement', current_setting('log_statement', true),
+    'log_min_duration_statement', current_setting('log_min_duration_statement', true),
+    'log_parameter_max_length_on_error', current_setting('log_parameter_max_length_on_error', true)
+  )
+$$;
+revoke all on function public.yala_logging_settings() from public, anon;
+grant execute on function public.yala_logging_settings() to authenticated;
+
+-- ---- RPCs LECTORES groups_pull_rows_<tabla> — SECURITY INVOKER (RLS del caller) + descifrado de † (g7_02) ----
+-- returns table con TODAS las columnas (mismo orden/nombre que la tabla — ORDEN SEMÁNTICO), los AMOUNTS como `text`
+-- (string decimal exacto escala-4, resolución C1), los demás † descifrados a text. `where group_id = p_group_id and
+-- server_seq > p_after_seq order by server_seq asc limit p_limit`. GRANT a authenticated (un caller sin llave solo
+-- obtiene NULLs en las †, sin fuga). El Worker cambia de leer select=* (GET) a llamar estos RPCs (POST body).
+create or replace function public.groups_pull_rows_split_groups(
+  p_group_id text, p_after_seq bigint, p_limit int, p_key text
+) returns table(
+  group_id text, name text, icon_name text, color_hex text, currency_code text,
+  simplify_debts boolean, show_debts_in_single_currency boolean, members_can_invite boolean,
+  default_split_type text, is_archived boolean, is_hidden_for_all boolean, owner_user_id uuid,
+  created_at timestamptz, field_hlcs jsonb, hlc text, deleted boolean, deleted_hlc text,
+  server_seq bigint, schema_version integer, updated_at timestamptz
+) language sql security invoker stable set search_path = public, extensions as $$
+  select
+    t.group_id, public.yala_try_decrypt(t.name, p_key), t.icon_name, t.color_hex, t.currency_code,
+    t.simplify_debts, t.show_debts_in_single_currency, t.members_can_invite,
+    t.default_split_type, t.is_archived, t.is_hidden_for_all, t.owner_user_id,
+    t.created_at, t.field_hlcs, t.hlc, t.deleted, t.deleted_hlc,
+    t.server_seq, t.schema_version, t.updated_at
+  from public.split_groups t
+  where t.group_id = p_group_id and t.server_seq > p_after_seq
+  order by t.server_seq asc
+  limit p_limit
+$$;
+
+create or replace function public.groups_pull_rows_group_members(
+  p_group_id text, p_after_seq bigint, p_limit int, p_key text
+) returns table(
+  group_id text, member_key text, user_id uuid, display_name text, role text, status text,
+  joined_at timestamptz, field_hlcs jsonb, hlc text, deleted boolean, deleted_hlc text,
+  server_seq bigint, schema_version integer, updated_at timestamptz
+) language sql security invoker stable set search_path = public, extensions as $$
+  select
+    t.group_id, t.member_key, t.user_id, public.yala_try_decrypt(t.display_name, p_key), t.role, t.status,
+    t.joined_at, t.field_hlcs, t.hlc, t.deleted, t.deleted_hlc,
+    t.server_seq, t.schema_version, t.updated_at
+  from public.group_members t
+  where t.group_id = p_group_id and t.server_seq > p_after_seq
+  order by t.server_seq asc
+  limit p_limit
+$$;
+
+create or replace function public.groups_pull_rows_split_expenses(
+  p_group_id text, p_after_seq bigint, p_limit int, p_key text
+) returns table(
+  group_id text, sync_id uuid, amount text, currency_code text, expense_description text,
+  note text, date timestamptz, created_at timestamptz, paid_by_member_key text, split_type text,
+  is_settled boolean, is_opening_balance boolean, subcategory_name text, field_hlcs jsonb,
+  hlc text, deleted boolean, deleted_hlc text, server_seq bigint, schema_version integer, updated_at timestamptz
+) language sql security invoker stable set search_path = public, extensions as $$
+  select
+    t.group_id, t.sync_id,
+    public.yala_try_decrypt(t.amount, p_key), t.currency_code,
+    public.yala_try_decrypt(t.expense_description, p_key),
+    public.yala_try_decrypt(t.note, p_key),
+    t.date, t.created_at, t.paid_by_member_key, t.split_type,
+    t.is_settled, t.is_opening_balance, t.subcategory_name, t.field_hlcs,
+    t.hlc, t.deleted, t.deleted_hlc, t.server_seq, t.schema_version, t.updated_at
+  from public.split_expenses t
+  where t.group_id = p_group_id and t.server_seq > p_after_seq
+  order by t.server_seq asc
+  limit p_limit
+$$;
+
+create or replace function public.groups_pull_rows_split_shares(
+  p_group_id text, p_after_seq bigint, p_limit int, p_key text
+) returns table(
+  group_id text, sync_id uuid, expense_id uuid, member_key text, amount text, is_paid boolean,
+  field_hlcs jsonb, hlc text, deleted boolean, deleted_hlc text,
+  server_seq bigint, schema_version integer, updated_at timestamptz
+) language sql security invoker stable set search_path = public, extensions as $$
+  select
+    t.group_id, t.sync_id, t.expense_id, t.member_key,
+    public.yala_try_decrypt(t.amount, p_key), t.is_paid,
+    t.field_hlcs, t.hlc, t.deleted, t.deleted_hlc,
+    t.server_seq, t.schema_version, t.updated_at
+  from public.split_shares t
+  where t.group_id = p_group_id and t.server_seq > p_after_seq
+  order by t.server_seq asc
+  limit p_limit
+$$;
+
+create or replace function public.groups_pull_rows_split_settlements(
+  p_group_id text, p_after_seq bigint, p_limit int, p_key text
+) returns table(
+  group_id text, sync_id uuid, from_member_key text, to_member_key text, amount text, currency_code text,
+  note text, date timestamptz, is_confirmed boolean, field_hlcs jsonb, hlc text, deleted boolean,
+  deleted_hlc text, server_seq bigint, schema_version integer, updated_at timestamptz
+) language sql security invoker stable set search_path = public, extensions as $$
+  select
+    t.group_id, t.sync_id, t.from_member_key, t.to_member_key,
+    public.yala_try_decrypt(t.amount, p_key), t.currency_code,
+    public.yala_try_decrypt(t.note, p_key), t.date, t.is_confirmed, t.field_hlcs,
+    t.hlc, t.deleted, t.deleted_hlc, t.server_seq, t.schema_version, t.updated_at
+  from public.split_settlements t
+  where t.group_id = p_group_id and t.server_seq > p_after_seq
+  order by t.server_seq asc
+  limit p_limit
+$$;
+
+-- Grants de EXECUTE de los 5 RPCs lectores: revocar de public/anon, otorgar solo a authenticated.
+revoke all on function
+  public.groups_pull_rows_split_groups(text, bigint, int, text),
+  public.groups_pull_rows_group_members(text, bigint, int, text),
+  public.groups_pull_rows_split_expenses(text, bigint, int, text),
+  public.groups_pull_rows_split_shares(text, bigint, int, text),
+  public.groups_pull_rows_split_settlements(text, bigint, int, text)
+  from public, anon;
+grant execute on function
+  public.groups_pull_rows_split_groups(text, bigint, int, text),
+  public.groups_pull_rows_group_members(text, bigint, int, text),
+  public.groups_pull_rows_split_expenses(text, bigint, int, text),
+  public.groups_pull_rows_split_shares(text, bigint, int, text),
+  public.groups_pull_rows_split_settlements(text, bigint, int, text)
+  to authenticated;

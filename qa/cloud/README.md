@@ -307,6 +307,75 @@ aplicación** (dejan la suite VERDE hoy). TRAS aplicar la migración: cambiar `d
 ese bloque y re-correr `npm test` (3/3 verdes). Usan solo los users A/B compartidos; sin cleanup (gid único
 por corrida, DELETE revocado — las filas se acumulan, se limpian por `group_id` en contexto service si hace falta).
 
+## G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)
+
+Dos migraciones NUEVAS + un paso intermedio (la llave JAMÁS en schema_migrations — §6 del brief):
+`qa/cloud/g7_01_encrypt_groups_columns.sql` (FASE A: columnas `<col>_enc bytea`, `g7_recrypt_corpus(p_key)`
+SERVICE-ONLY, `yala_try_decrypt(p_c, p_key)`) y `qa/cloud/g7_02_encrypt_groups_cutover.sql` (FASE B: DROP
+plaintext + RENAME `_enc`, column-UPDATE grants regenerados, 6 RPCs escritores re-creados con `p_key`, 5 RPCs
+lectores `groups_pull_rows_<tabla>` que descifran, `yala_logging_settings()`). 8 columnas † cifradas:
+split_groups.name · group_members.display_name · split_expenses.amount/expense_description/note ·
+split_settlements.amount/note · split_shares.amount (las 2 últimas por modelo de amenaza — a RATIFICAR por el owner).
+Amounts como `pgp_sym_encrypt(amount::text, p_key)` → el reader los sirve STRING decimal exacto escala-4 (C1).
+
+**Aplicación (loop principal, MCP, contexto service):**
+1. `g7_01_encrypt_groups_columns` verbatim (DDL, sin llave).
+2. PASO INTERMEDIO (execute_sql directo, NO migración — para que la llave no toque schema_migrations/DDL log):
+   `select public.g7_recrypt_corpus('<LLAVE_STAGING>');` (idempotente).
+3. Re-ejecutar `select public.g7_recrypt_corpus('<LLAVE_STAGING>');` (cinturón m12) INMEDIATAMENTE antes de la
+   fase B — cubre writes en la ventana entre fases.
+4. `g7_02_encrypt_groups_cutover` verbatim (cutover DDL, sin llave).
+La llave se guarda en `~/Secrets/yala-groups-enc/staging.key` + `gateway/.dev.vars` (JAMÁS commiteada; prod lleva
+una llave DISTINTA que genera el owner). Regenerar el contrato `supabase-groups-staging.ddl` con `dump-schema.sh`
+TRAS aplicar.
+
+**Registrar los md5 reales tras aplicar (método g3_02):**
+
+```sql
+select md5(pg_get_functiondef('public.apply_group_delta(text, text, uuid, text, jsonb, jsonb, text, text, integer)'::regprocedure));
+select md5(pg_get_functiondef('public.create_group(text, text, text, text, text, text, text, text, boolean, boolean, boolean)'::regprocedure));
+select md5(pg_get_functiondef('public.join_group(text, text, text, text)'::regprocedure));
+select md5(pg_get_functiondef('public.groups_forget_user(text)'::regprocedure));
+select md5(pg_get_functiondef('public.update_member_display_name(text, text, text)'::regprocedure));
+select md5(pg_get_functiondef('public.migrate_group(text, jsonb, jsonb, text)'::regprocedure));
+select md5(pg_get_functiondef('public.yala_try_decrypt(bytea, text)'::regprocedure));
+select md5(pg_get_functiondef('public.yala_logging_settings()'::regprocedure));
+select md5(pg_get_functiondef('public.groups_pull_rows_split_groups(text, bigint, int, text)'::regprocedure));
+select md5(pg_get_functiondef('public.groups_pull_rows_group_members(text, bigint, int, text)'::regprocedure));
+select md5(pg_get_functiondef('public.groups_pull_rows_split_expenses(text, bigint, int, text)'::regprocedure));
+select md5(pg_get_functiondef('public.groups_pull_rows_split_shares(text, bigint, int, text)'::regprocedure));
+select md5(pg_get_functiondef('public.groups_pull_rows_split_settlements(text, bigint, int, text)'::regprocedure));
+-- g7_recrypt_corpus se ejecuta y luego se puede dropear; su md5 no es contrato de runtime.
+-- md5s esperados (aplicadas 2026-07-16, migraciones g7_01_encrypt_groups_columns + g7_02_encrypt_groups_cutover;
+-- recrypt corrido ×2 [corpus: 336 names, 592 display_names, 239+59+3 amounts, 186+45+0 notes/descr; belt m12 en 0];
+-- roundtrip verificado 239/239 pre-cutover):
+--   apply_group_delta                    8de5f51dcef93d6f83f78d075816fddc
+--   create_group                         3f2deb9df1eebdd2007fbb3cd79430b6
+--   join_group                           059fae41dd79944a1326e3f5a56aab52
+--   groups_forget_user                   22c36f83da343a53d2e53cd8f02005e8
+--   update_member_display_name           90e39a22c4668ba257ddd6c074b7909d
+--   migrate_group                        4a365198b45c5a1da52f055f417cb5d2
+--   yala_try_decrypt                     4d366c7219d0b22ae25493140e559eea
+--   yala_logging_settings                0cfd11692b7cb9ea08d591a16758032a
+--   groups_pull_rows_split_groups        88179f041d193c4158a0c532febe3f44
+--   groups_pull_rows_group_members       485dff02cffd237caaf96266918c1fd6
+--   groups_pull_rows_split_expenses      b38c3e3c68f7fc49e7c30f0586fef21d
+--   groups_pull_rows_split_shares        33edd4f26580ac66e62736403d35de15
+--   groups_pull_rows_split_settlements   6d1f3456fc0d3a402ce87c9819b1f4a1
+--   (g7_recrypt_corpus vive con md5 8a44c733e1fdcedc2491d69b8ec21886 — retenida, SERVICE-only, inofensiva)
+```
+
+**Regla anti-drift:** re-aplicar a prod (`kefvaiymtgytemwbltlz`) en el mismo cambio o anotar drift pendiente.
+
+**Goldens (`gateway/test/groups.goldens.test.ts`):** describe G7 con `g7-logging-settings` (asserta
+`{log_statement:"ddl", log_min_duration_statement:"-1", log_parameter_max_length_on_error:"0"}`) y `g7-roundtrip`
+(push amount/note → pull plaintext byte-igual con amount STRING "30.0000" → columna física bytea ≠ plaintext →
+merkle estable). Los goldens G2/G3/G6 que assertan † se adaptaron a leer vía los RPCs lectores con `p_key`
+(`readGroupRowDecrypted`/`readMember`). **REQUIEREN `GROUPS_ENC_KEY` en el entorno** (`export GROUPS_ENC_KEY=<staging
+key>` antes de `npm test`; fail-fast en beforeAll). `cross-member-rls-test.sh` también exige `GROUPS_ENC_KEY` y arma
+las siembras positivas vía `apply_group_delta` (las negativas con columnas NO-†). Todos corren SOLO tras aplicar las
+migraciones (contra el schema viejo pegarían ciphertext/errores).
+
 ## Sender e2e de I8e (`SyncPushClient` `/sync/push` contra staging)
 
 `push-e2e-test.sh` ejerce `POST /sync/push` con EL MISMO envelope JSON que arma `SyncPushClient`

@@ -27,6 +27,10 @@ export interface Env {
   JWT_SIGNING_SECRET: string;
   DEV_SHARED_SECRET: string; // bypass de dev/test; solo honrado en staging
   APP_STORE_API_KEY?: string; // App Store Server API / webhook
+  // Grupos→backend G7 (pgcrypto): llave simétrica del cifrado at-rest de columnas † de grupos. Viaja como
+  // ARGUMENTO de request a los RPCs de grupos (p_key) — JAMÁS a URL/query. Ausente → /groups/pull responde 503.
+  // staging y PROD llevan llaves DISTINTAS; la de prod la genera el owner. `.dev.vars` (gitignored) para dev local.
+  GROUPS_ENC_KEY?: string;
 }
 
 /** true solo en el entorno no-prod, donde se acepta el bypass de dev/test. */

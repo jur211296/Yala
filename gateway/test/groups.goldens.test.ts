@@ -15,6 +15,10 @@ import type { GroupPushResponse, GroupPullResponse, GroupMerkleResponse } from "
 import { GROUP_ENTITIES } from "../src/groups/manifest";
 import { entityHash, hex, merkleRoot } from "../src/sync/merkle";
 
+// Node expone `process` en runtime (vitest env node), pero el tsconfig del Worker no trae @types/node → declaración
+// mínima type-only para leer la llave G7 del entorno (nunca inline: la llave JAMÁS commiteada).
+declare const process: { env: Record<string, string | undefined> };
+
 /** Root del canal 1 de un corpus VACÍO (las 5 tablas con entityHash de "" = sha256("")). Lo que ve un
  *  no-member (RLS filtra todas las tablas). Determinista — se recomputa con las MISMAS primitivas del Worker. */
 async function emptyCorpusRoot(): Promise<string> {
@@ -29,12 +33,17 @@ const URL = "https://fostjbbwstyuunmmefuk.supabase.co";
 const ANON =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZvc3RqYmJ3c3R5dXVubW1lZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTAxNTMsImV4cCI6MjA5OTAyNjE1M30.gTWg5a8NKNuL_RhOmaaSGhnJpdV6iMXhwYwZVJb-FKg";
 
+// G7: la llave de cifrado NO puede ir inline (la anon key SÍ — es pública). Se lee del entorno; el fail-fast vive
+// en beforeAll (importar el archivo no debe lanzar — así el subset offline de la suite no se rompe).
+const ENC_KEY = process.env.GROUPS_ENC_KEY ?? "";
+
 const env = {
   ENVIRONMENT: "staging",
   ENFORCE: "observe",
   JWT_SIGNING_SECRET: "test-secret-please-change-0123456789",
   SUPABASE_URL: URL,
   SUPABASE_ANON_KEY: ANON,
+  GROUPS_ENC_KEY: ENC_KEY,
 } as unknown as Env;
 
 let jwtA = "";
@@ -71,12 +80,22 @@ function freshGid(): string {
   return `g2-goldens-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// G7: los RPCs escritores de † exigen p_key (el gateway lo inyecta; este helper directo lo añade a mano).
+const RPC_NEEDS_ENC_KEY = new Set([
+  "create_group",
+  "join_group",
+  "update_member_display_name",
+  "migrate_group",
+  "groups_forget_user",
+]);
+
 // --- RPC directo (setup de G1: create_group / invite / join / approve). JWT del caller + anon key. ---
 async function rpc(jwt: string, fn: string, args: Record<string, unknown>): Promise<{ status: number; body: any }> {
+  const finalArgs = RPC_NEEDS_ENC_KEY.has(fn) ? { ...args, p_key: ENC_KEY } : args;
   const res = await fetch(`${URL}/rest/v1/rpc/${fn}`, {
     method: "POST",
     headers: { apikey: ANON, Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
-    body: JSON.stringify(args),
+    body: JSON.stringify(finalArgs),
   });
   const text = await res.text();
   return { status: res.status, body: text ? JSON.parse(text) : null };
@@ -110,14 +129,19 @@ async function merkle(jwt: string, gid: string): Promise<GroupMerkleResponse> {
   expect(res.status).toBe(200);
   return (await res.json()) as GroupMerkleResponse;
 }
-/** Lectura directa de una fila de grupo (PostgREST) — para assertar p_group_id/p_sync_id reales. */
-async function readGroupRow(jwt: string, entity: string, gid: string, syncId?: string): Promise<Record<string, unknown> | null> {
-  const q = syncId ? `group_id=eq.${gid}&sync_id=eq.${syncId}` : `group_id=eq.${gid}`;
-  const res = await fetch(`${URL}/rest/v1/${entity}?${q}&select=*`, {
-    headers: { apikey: ANON, Authorization: `Bearer ${jwt}` },
-  });
-  const rows = (await res.json()) as Record<string, unknown>[];
-  return rows[0] ?? null;
+/**
+ * G7: lectura DESCIFRADA de una fila de grupo vía el RPC lector (con p_key) — sustituye la lectura directa
+ * PostgREST donde el
+ * assert toca una columna † (post-cifrado un select=* directo vería bytea). El reader pagina por group_id +
+ * server_seq → se filtra por identidad en JS. split_groups no lleva sync_id (una fila por grupo).
+ */
+async function readGroupRowDecrypted(jwt: string, entity: string, gid: string, syncId?: string): Promise<Record<string, unknown> | null> {
+  const r = await rpc(jwt, `groups_pull_rows_${entity}`, { p_group_id: gid, p_after_seq: 0, p_limit: 1000, p_key: ENC_KEY });
+  if (r.status !== 200 || !Array.isArray(r.body)) return null;
+  const rows = r.body as Record<string, unknown>[];
+  if (syncId === undefined) return rows[0] ?? null;
+  const idKey = entity === "group_members" ? "member_key" : "sync_id";
+  return rows.find((x) => x[idKey] === syncId) ?? null;
 }
 
 /** Setup completo de un grupo: A crea + invita, B se une, A aprueba. Devuelve gid + member_keys. */
@@ -147,6 +171,9 @@ async function setupGroup(nameSuffix: string): Promise<{ gid: string }> {
 const gmoney = (amount: number, cur = "PEN") => ({ amount, currency_code: cur });
 
 beforeAll(async () => {
+  if (!ENC_KEY) {
+    throw new Error("G7: falta GROUPS_ENC_KEY en el entorno — export GROUPS_ENC_KEY=<staging key> antes de npm test");
+  }
   jwtA = await login("i5-user-a@test.yala", "I5-Passw0rd-A!");
   jwtB = await login("i5-user-b@test.yala", "I5-Passw0rd-B!");
   subA = decodeSub(jwtA);
@@ -179,7 +206,8 @@ describe("G2 goldens · /groups/* contra staging real", () => {
     expect(r.body.results.map((x) => x.status)).toEqual(["applied", "applied", "applied"]);
 
     // BODY assertion (lección d49d2e47): el gateway envió p_group_id/p_sync_id correctos → la fila los porta.
-    const expRow = await readGroupRow(jwtA, "split_expenses", gid, expId);
+    // G7: amount es † → se lee descifrado (string decimal exacto escala-4 "30.0000"; Number("30.0000") === 30).
+    const expRow = await readGroupRowDecrypted(jwtA, "split_expenses", gid, expId);
     expect(expRow?.group_id).toBe(gid);
     expect(expRow?.sync_id).toBe(expId);
     expect(Number(expRow?.amount)).toBe(30);
@@ -224,8 +252,9 @@ describe("G2 goldens · /groups/* contra staging real", () => {
     for (const d of dX) await push(jwtA, [d]); // A, forward
     for (const d of dY) await push(jwtB, [d]); // B, reverse
 
-    const rx = await readGroupRow(jwtA, "split_expenses", gid, twinX);
-    const ry = await readGroupRow(jwtA, "split_expenses", gid, twinY);
+    // G7: note y amount son † → leer descifrado (byte-idéntico entre gemelos incl. amount "30.0000").
+    const rx = await readGroupRowDecrypted(jwtA, "split_expenses", gid, twinX);
+    const ry = await readGroupRowDecrypted(jwtA, "split_expenses", gid, twinY);
     const norm = (r: Record<string, unknown> | null) => ({
       note: r?.note,
       amount: r?.amount,
@@ -257,10 +286,11 @@ describe("G2 goldens · /groups/* contra staging real", () => {
     ];
     const first = await push(jwtA, batch);
     expect(first.body.results[0].status).toBe("applied");
-    const before = await readGroupRow(jwtA, "split_expenses", gid, expId);
+    // G7: amount/note son † → leer descifrado (el noop no re-cifra → after == before, server_seq/updated_at intactos).
+    const before = await readGroupRowDecrypted(jwtA, "split_expenses", gid, expId);
     const second = await push(jwtA, batch);
     expect(second.body.results[0].status).toBe("noop");
-    const after = await readGroupRow(jwtA, "split_expenses", gid, expId);
+    const after = await readGroupRowDecrypted(jwtA, "split_expenses", gid, expId);
     expect(after).toEqual(before); // server_seq/updated_at intactos
   }, 60_000);
 
@@ -291,7 +321,8 @@ describe("G2 goldens · /groups/* contra staging real", () => {
       { entity_type: "split_groups", group_id: gid, sync_id: null, op: "upsert", fields: { name: "Renamed Trip", is_archived: true }, field_hlcs: { name: h, is_archived: h }, hlc: h, client_mutation_id: uuid() },
     ]);
     expect(r.body.results[0].status).toBe("applied");
-    const row = await readGroupRow(jwtA, "split_groups", gid);
+    // G7: name es † → leer descifrado.
+    const row = await readGroupRowDecrypted(jwtA, "split_groups", gid);
     expect(row?.group_id).toBe(gid);
     expect(row?.name).toBe("Renamed Trip");
     expect(row?.is_archived).toBe(true);
@@ -312,11 +343,11 @@ describe("G2 goldens · /groups/* contra staging real", () => {
     ]);
     expect(r.body.results[0].status).toBe("rejected");
     expect((r.body.results[0].outcome as { message?: string })?.message ?? "").toContain("not_authorized");
-    // Nada se escribió (A no ve la fila del intruso).
-    const rows = await fetch(`${URL}/rest/v1/split_expenses?group_id=eq.${gid}&note=eq.intruder&select=sync_id`, {
-      headers: { apikey: ANON, Authorization: `Bearer ${jwtA}` },
-    });
-    expect(((await rows.json()) as unknown[]).length).toBe(0);
+    // Nada se escribió (A no ve la fila del intruso). G7: note es † → el filtro server-side `note=eq.intruder`
+    // ya no aplica sobre bytea; se lee vía el RPC lector (descifra) y se filtra por note en JS.
+    const all = await rpc(jwtA, "groups_pull_rows_split_expenses", { p_group_id: gid, p_after_seq: 0, p_limit: 1000, p_key: ENC_KEY });
+    const intruders = (Array.isArray(all.body) ? (all.body as Array<{ note?: unknown }>) : []).filter((x) => x.note === "intruder");
+    expect(intruders.length).toBe(0);
   }, 60_000);
 
   it("6. merkle: A y B ven el MISMO root del mismo grupo; el root cambia tras un write", async () => {
@@ -470,7 +501,8 @@ describe("G3 goldens · /groups/rpc/* contra staging real", () => {
     expect(cg.body.member_key).toBe(subA); // member_key == sub del JWT (auth.uid())
 
     // BODY assertion (lección d49d2e47): la fila porta los 3 flags NO-null con los valores enviados.
-    const row = await readGroupRow(jwtA, "split_groups", gid);
+    // G7: split_groups.name es † → leer vía el RPC lector (los flags no-† se sirven igual).
+    const row = await readGroupRowDecrypted(jwtA, "split_groups", gid);
     expect(row?.group_id).toBe(gid);
     expect(row?.simplify_debts).toBe(true);
     expect(row?.show_debts_in_single_currency).toBe(true);
@@ -569,8 +601,8 @@ describe("G3 goldens · /groups/rpc/* contra staging real", () => {
     ]);
     expect(rBefore.body.results[0].status).toBe("rejected");
     expect((rBefore.body.results[0].outcome as { message?: string })?.message ?? "").toContain("not_authorized");
-    // Nada se escribió (A no ve la fila).
-    const noRow = await readGroupRow(jwtA, "split_expenses", gid, expId);
+    // Nada se escribió (A no ve la fila). G7: leer vía el RPC lector (sin fila → null).
+    const noRow = await readGroupRowDecrypted(jwtA, "split_expenses", gid, expId);
     expect(noRow).toBeNull();
 
     // A aprueba → B pasa a active.
@@ -593,7 +625,8 @@ describe("G3 goldens · /groups/rpc/* contra staging real", () => {
       { entity_type: "split_expenses", group_id: gid, sync_id: expId, op: "upsert", fields: { ...gmoney(25), note: "post-approve" }, field_hlcs: { gmoney: hAfter, note: hAfter }, hlc: hAfter, client_mutation_id: uuid() },
     ]);
     expect(rAfter.body.results[0].status).toBe("applied");
-    const expRow = await readGroupRow(jwtA, "split_expenses", gid, expId);
+    // G7: note/amount son † → leer descifrado (amount "25.0000", Number === 25).
+    const expRow = await readGroupRowDecrypted(jwtA, "split_expenses", gid, expId);
     expect(expRow?.sync_id).toBe(expId);
     expect(expRow?.note).toBe("post-approve");
     expect(Number(expRow?.amount)).toBe(25);
@@ -624,14 +657,12 @@ const LEGACY_BOB = "_legacyBob";
 const HISTORIC_CREATED = "2024-01-15T10:00:00.000Z"; // fecha HISTÓRICA (≠ now()) — debe preservarse.
 const HISTORIC_JOINED = "2024-02-20T09:30:00.000Z";
 
-/** Lectura directa de una fila group_members (PK (group_id, member_key) — sin sync_id, readGroupRow no sirve). */
+/** Lectura DESCIFRADA de una fila group_members vía el RPC lector (display_name es † post-G7 → un select=*
+ *  directo vería bytea). Filtra por member_key en JS (el reader pagina por group_id + server_seq). */
 async function readMember(jwt: string, gid: string, memberKey: string): Promise<Record<string, unknown> | null> {
-  const res = await fetch(
-    `${URL}/rest/v1/group_members?group_id=eq.${gid}&member_key=eq.${encodeURIComponent(memberKey)}&select=*`,
-    { headers: { apikey: ANON, Authorization: `Bearer ${jwt}` } },
-  );
-  const rows = (await res.json()) as Record<string, unknown>[];
-  return rows[0] ?? null;
+  const r = await rpc(jwt, "groups_pull_rows_group_members", { p_group_id: gid, p_after_seq: 0, p_limit: 1000, p_key: ENC_KEY });
+  if (r.status !== 200 || !Array.isArray(r.body)) return null;
+  return (r.body as Record<string, unknown>[]).find((x) => x.member_key === memberKey) ?? null;
 }
 
 /** Migra un grupo vía migrate_group (owner=A con member_key LEGACY + N placeholders user_id NULL). */
@@ -680,7 +711,8 @@ describe("G6 goldens · migrate_group contra staging real (post-aplicación g6_0
     expect(mig.body.owner_user_id).toBe(subA);
 
     // split_groups: META HISTÓRICA preservada (created_at ≠ now()), owner=A, field_hlcs por unidad, server_seq estampado.
-    const grp = await readGroupRow(jwtA, "split_groups", gid);
+    // G7: name es † → leer descifrado.
+    const grp = await readGroupRowDecrypted(jwtA, "split_groups", gid);
     expect(grp?.group_id).toBe(gid);
     expect(grp?.name).toBe("G6 atomic");
     expect(grp?.owner_user_id).toBe(subA);
@@ -809,4 +841,69 @@ describe("G6 goldens · migrate_group contra staging real (post-aplicación g6_0
     expect(again.body.rebound).toBe(false);
     expect(again.body.member_key).toBe(LEGACY_PIA);
   }, 120_000);
+});
+
+// ============================================================================
+// G7 goldens · cifrado pgcrypto de columnas de grupos (post-aplicación g7_01 + recrypt + g7_02)
+// ============================================================================
+describe("G7 goldens · pgcrypto encryption contra staging real", () => {
+  it("g7-logging-settings: yala_logging_settings asserta el gate §16e (la llave nunca en logs)", async () => {
+    const res = await fetch(`${URL}/rest/v1/rpc/yala_logging_settings`, {
+      method: "POST",
+      headers: { apikey: ANON, Authorization: `Bearer ${jwtA}`, "Content-Type": "application/json" },
+      body: "{}",
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as Record<string, string>;
+    // Los 3 settings que garantizan que la llave (argumento de request) no aterrice en ningún log.
+    expect(body.log_statement).toBe("ddl");
+    expect(body.log_min_duration_statement).toBe("-1");
+    expect(body.log_parameter_max_length_on_error).toBe("0");
+  }, 30_000);
+
+  it("g7-roundtrip: push amount/note → pull plaintext byte-igual (amount STRING escala-4); columna física cifrada; merkle estable", async () => {
+    const { gid } = await setupGroup("g7-roundtrip");
+    const expId = uuid();
+    const h = hlc(T0 + 1000);
+    const r = await push(jwtA, [
+      {
+        entity_type: "split_expenses",
+        group_id: gid,
+        sync_id: expId,
+        op: "upsert",
+        fields: { ...gmoney(30), note: "secreto-g7" },
+        field_hlcs: { gmoney: h, note: h },
+        hlc: h,
+        client_mutation_id: uuid(),
+      },
+    ]);
+    expect(r.body.results[0].status).toBe("applied");
+
+    // Pull vía Worker: plaintext byte-igual + amount como STRING decimal exacto escala-4 (representación C1).
+    const p = await pull(jwtA, {});
+    const d = p.deltas.find((x) => x.group_id === gid && x.entity_type === "split_expenses" && x.sync_id === expId);
+    expect(d).toBeTruthy();
+    expect(d!.fields.amount).toBe("30.0000"); // STRING decimal exacto escala-4 (no número JS)
+    expect(d!.fields.note).toBe("secreto-g7");
+    expect(d!.fields.currency_code).toBe("PEN");
+
+    // Lectura PostgREST DIRECTA de la columna FÍSICA: NO es plaintext (bytea/base64 ≠ el valor).
+    const rawRes = await fetch(`${URL}/rest/v1/split_expenses?group_id=eq.${gid}&sync_id=eq.${expId}&select=amount,note`, {
+      headers: { apikey: ANON, Authorization: `Bearer ${jwtA}` },
+    });
+    const rawRows = (await rawRes.json()) as Array<{ amount: unknown; note: unknown }>;
+    expect(rawRows.length).toBe(1);
+    const physAmount = String(rawRows[0].amount ?? "");
+    const physNote = String(rawRows[0].note ?? "");
+    expect(physAmount.length).toBeGreaterThan(0); // hay ciphertext
+    expect(physAmount).not.toBe("30.0000");
+    expect(physAmount).not.toBe("30");
+    expect(physNote).not.toBe("secreto-g7");
+
+    // Merkle estable entre 2 fetches del mismo corpus (byte-idénticos).
+    const m1 = await merkle(jwtA, gid);
+    const m2 = await merkle(jwtA, gid);
+    expect(m1.root).toBe(m2.root);
+    expect(m1.channel2_root).toBe(m2.channel2_root);
+  }, 90_000);
 });

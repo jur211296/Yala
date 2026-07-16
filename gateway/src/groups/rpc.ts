@@ -53,6 +53,17 @@ const PARAM_ALLOWLIST: Record<string, Set<string>> = {
   migrate_group: new Set(["p_group_id", "p_meta", "p_members"]),
 };
 
+// G7: RPCs que escriben columnas † → se les inyecta la llave de cifrado (p_key) tras el filtro de la allowlist.
+// p_key NO está en PARAM_ALLOWLIST (el cliente jamás la manda). approve/remove/leave/revoke/create_invite NO
+// escriben † → sin llave.
+const RPC_NEEDS_ENC_KEY = new Set([
+  "create_group",
+  "join_group",
+  "update_member_display_name",
+  "migrate_group",
+  "groups_forget_user",
+]);
+
 interface AuthedUser {
   sub: string;
   userJWT: string;
@@ -107,6 +118,12 @@ export async function handleGroupsRpc(c: Ctx): Promise<Response> {
   const args: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(body)) {
     if (allowedParams.has(k)) args[k] = v;
+  }
+
+  // G7: los RPCs que escriben columnas † reciben la llave de cifrado como argumento — INYECTADA aquí (jamás por
+  // el cliente; NO está en PARAM_ALLOWLIST). Fuera de la allowlist a propósito: la llave nunca viaja en el body.
+  if (RPC_NEEDS_ENC_KEY.has(fn)) {
+    args.p_key = c.env.GROUPS_ENC_KEY;
   }
 
   const { ok, status, body: out } = await callRpc(c.env, auth.userJWT, fn, args);

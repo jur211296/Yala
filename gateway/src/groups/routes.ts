@@ -179,6 +179,7 @@ async function callApplyGroupDelta(
     p_op: delta.op,
     p_fields: nestedFields,
     p_field_hlcs: fieldHlcs,
+    p_key: c.env.GROUPS_ENC_KEY, // G7: la llave cifra las columnas † server-side (jamás en URL/query)
     p_row_hlc: rowHlc,
     p_schema_version: schemaVersion,
   });
@@ -211,6 +212,10 @@ const PULL_GROUP_CONCURRENCY = 6;
 export async function handleGroupsPull(c: Ctx): Promise<Response> {
   const auth = await requireUserAndAttest(c);
   if (auth instanceof Response) return auth;
+
+  // G7: sin la llave de cifrado no se puede descifrar el contenido † → 503 (JAMÁS servir ciphertext).
+  const encKey = c.env.GROUPS_ENC_KEY;
+  if (!encKey) return jsonError("yala_unavailable", "enc key no configurada", 503);
 
   const limit = clamp(parseIntOr(c.req.query("limit"), 500), 1, 1000);
   let cursors: Record<string, number> = {};
@@ -254,22 +259,29 @@ export async function handleGroupsPull(c: Ctx): Promise<Response> {
   }
   const fetchGroupPage = async (gid: string): Promise<{ page: Raw[] } | { error: Response }> => {
     const since = cursors[gid] ?? 0;
+    // G7: se lee vía los RPCs lectores `groups_pull_rows_<tabla>` (POST body — la llave JAMÁS en URL/query;
+    // el RPC descifra las † server-side y sirve los amounts como STRING decimal exacto escala-4). El shape del
+    // body ES el array de rows del returns-table (mismo count de subrequests y misma paginación por server_seq).
     const perEntity = await Promise.all(
-      GROUP_ENTITIES.map((entity) => {
-        const q = `select=*&group_id=eq.${gid}&server_seq=gt.${since}&order=server_seq.asc&limit=${limit}`;
-        return getRows(c.env, auth.userJWT, entity, q);
-      }),
+      GROUP_ENTITIES.map((entity) =>
+        callRpc(c.env, auth.userJWT, `groups_pull_rows_${entity}`, {
+          p_group_id: gid,
+          p_after_seq: since,
+          p_limit: limit,
+          p_key: encKey,
+        }),
+      ),
     );
     // Filas en orden GROUP_ENTITIES (Promise.all preserva el orden de entrada) + sort ESTABLE por
     // server_seq → página idéntica a la del bucle secuencial original.
     const collected: Raw[] = [];
     for (let i = 0; i < GROUP_ENTITIES.length; i++) {
       const entity = GROUP_ENTITIES[i];
-      const { ok, status, rows } = perEntity[i];
+      const { ok, status, body } = perEntity[i];
       if (!ok) {
         return { error: jsonError("yala_unavailable", `pull upstream ${status} (${entity})`, 502) };
       }
-      for (const row of rows) collected.push({ entity, row, server_seq: Number(row.server_seq) });
+      for (const row of rowsFromRpc(body)) collected.push({ entity, row, server_seq: Number(row.server_seq) });
     }
     collected.sort((a, b) => a.server_seq - b.server_seq);
     return { page: collected.slice(0, limit) };
@@ -330,6 +342,10 @@ export async function handleGroupsMerkle(c: Ctx): Promise<Response> {
   const auth = await requireUserAndAttest(c);
   if (auth instanceof Response) return auth;
 
+  // G7: sin la llave no se puede descifrar el contenido † para re-serializar el canon → 503.
+  const encKey = c.env.GROUPS_ENC_KEY;
+  if (!encKey) return jsonError("yala_unavailable", "enc key no configurada", 503);
+
   const gid = c.req.query("group_id");
   if (!gid || gid.length < 8 || gid.length > 120) {
     return jsonError("yala_bad_request", "falta group_id (8..120)", 400);
@@ -342,21 +358,25 @@ export async function handleGroupsMerkle(c: Ctx): Promise<Response> {
   try {
     for (const entity of GROUP_ENTITIES) {
       const columns = merkleColumnsGroup(entity);
-      const select = merkleSelect(entity, columns);
-      const keyCol = keysetColumn(entity);
       const leaves1: Array<{ syncId: string; leaf: Uint8Array }> = [];
       const leaves2: Array<{ syncId: string; leaf: Uint8Array }> = [];
       const pageSize = 1000;
-      let lastKey: string | null = null;
+      // G7: se lee vía el mismo RPC lector que el pull (descifra † + amounts como string exacto). Keyset por
+      // server_seq (el reader ordena por server_seq asc). entityHash ordena los leaves por syncId internamente
+      // → el orden de recolección es irrelevante (M8: no estable ante updates concurrentes a mitad de
+      // paginación — irrelevante en beta, corpus < pageSize 1000).
+      let afterSeq = 0;
       for (;;) {
-        const keyset = lastKey === null ? "" : `&${keyCol}=gt.${encodeURIComponent(lastKey)}`;
-        // gid viene CRUDO del caller (a diferencia del pull, cuyos gid son memberships server-derivadas):
-        // URL-encode para que caracteres especiales de PostgREST no rompan/alteren la query.
-        const q = `select=${select}&group_id=eq.${encodeURIComponent(gid)}&order=${keyCol}.asc&limit=${pageSize}${keyset}`;
-        const { ok, status, rows } = await getRows(c.env, auth.userJWT, entity, q);
+        const { ok, status, body } = await callRpc(c.env, auth.userJWT, `groups_pull_rows_${entity}`, {
+          p_group_id: gid,
+          p_after_seq: afterSeq,
+          p_limit: pageSize,
+          p_key: encKey,
+        });
         if (!ok) {
           return jsonError("yala_unavailable", `merkle upstream ${status} (${entity})`, 502);
         }
+        const rows = rowsFromRpc(body);
         for (const row of rows) {
           const id = rowIdentity(entity, row).toLowerCase();
           const payload = canonRowC1Group(entity, row, columns);
@@ -366,7 +386,7 @@ export async function handleGroupsMerkle(c: Ctx): Promise<Response> {
           }
         }
         if (rows.length < pageSize) break;
-        lastKey = String(rows[rows.length - 1][keyCol]);
+        afterSeq = Number(rows[rows.length - 1].server_seq);
       }
       const eh = await entityHash(leaves1);
       channel1.set(entity, eh);
@@ -391,19 +411,12 @@ export async function handleGroupsMerkle(c: Ctx): Promise<Response> {
   return c.json(resp);
 }
 
-/** Columna del keyset del Merkle por tabla: la identidad de la fila. */
-function keysetColumn(entity: string): string {
-  if (entity === "split_groups") return "group_id";
-  if (entity === "group_members") return "member_key";
-  return "sync_id";
-}
-
-/** Select del Merkle: identidad + flags server-side + columnas (NUMERIC como `::text`). */
-function merkleSelect(entity: string, columns: string[]): string {
-  const spec = groupManifest.entities[entity];
-  const cols = columns.map((c) => (spec.columns[c]?.pg_type === "numeric" ? `${c}::text` : c));
-  const idCols = entity === "group_members" ? ["group_id", "member_key"] : entity === "split_groups" ? ["group_id"] : ["group_id", "sync_id"];
-  return [...idCols, "hlc", "deleted", "deleted_hlc", ...cols].join(",");
+/**
+ * Rows de un RPC lector `groups_pull_rows_<tabla>`: `callRpc` devuelve `{ok,status,body}` donde el body ES el
+ * array de rows del returns-table (donde el pull vía `getRows` destructuraba `.rows`). Degrada a [] si no es array.
+ */
+function rowsFromRpc(body: unknown): Record<string, unknown>[] {
+  return Array.isArray(body) ? (body as Record<string, unknown>[]) : [];
 }
 
 // --------------------------------------------------------------------------------------------- utils

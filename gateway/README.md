@@ -31,7 +31,11 @@ Proxy seguro de Yala a **OpenAI** y al proveedor de **tasas de cambio**. Las API
    npx wrangler secret put JWT_SIGNING_SECRET          # aleatorio fuerte
    npx wrangler secret put DEV_SHARED_SECRET           # solo staging
    npx wrangler secret put APP_STORE_API_KEY
+   npx wrangler secret put GROUPS_ENC_KEY              # G7: cifrado at-rest de columnas † de grupos (pgcrypto)
    # repetir con --env production donde aplique (sin DEV_SHARED_SECRET en prod)
+   # GROUPS_ENC_KEY: staging y PROD llevan llaves DISTINTAS. Sin ella, /groups/pull responde 503 (jamás
+   # sirve ciphertext). La de prod la genera el owner; el gateway de prod devuelve 503 en pull de grupos
+   # hasta configurarla (irrelevante hoy — flag de grupos→backend OFF).
    ```
 4. **Device físico** para QA de App Attest (no corre en simulador).
 
@@ -50,6 +54,7 @@ OPENAI_API_KEY=sk-...
 EXCHANGE_RATE_API_KEY=...
 JWT_SIGNING_SECRET=...
 DEV_SHARED_SECRET=...
+GROUPS_ENC_KEY=...   # G7: llave del cifrado at-rest de columnas † de grupos (staging). NUNCA commitear.
 ```
 
 ## Migraciones D1
