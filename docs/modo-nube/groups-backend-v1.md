@@ -476,14 +476,35 @@ UPDATE con WHERE pca IS NULL; el perdedor de una carrera re-clasifica). **Cero c
   legacy re-sembrado vía MCP) y 62/0 --skip-legacy (G8-1) · suite YalaTests **4531/418** TEST SUCCEEDED ×3
   corridas · builds ambas schemes ×3 (solo el warning preexistente) · validate-coverage OK (área nueva
   `groups-backend-g8-push`).
-- **PENDIENTES OWNER (acumulados, para el gate §12):** ratificar columnas † extra (G7) + modelo de amenaza
-  de tokens (G8) · llave GROUPS_ENC_KEY PROPIA de prod (+ re-aplicar g7/g8 a prod con sus gates — anotado
-  drift pendiente) · APNS_KEY_ID/AUTH_KEY en el bloque production de wrangler.toml · device-QA G6 (guion
-  [[MODO-NUBE-G6-GUION-DEVICE]] — ⚠️ CON APÉNDICE G7: los checks SQL de la Fase A ven bytea, usar
-  `yala_try_decrypt`) · device-QA G8 (notif real 2 devices, guion base fase C de G0) · los previos (SIWA
-  revoke, auth.users Admin API, ratificar HARD DELETE, g5_01/g6_01 a prod).
+- **PENDIENTES OWNER (acumulados, para el gate §12):** ratificar columnas † extra (G7) + ~~modelo de amenaza
+  de tokens (G8)~~ **RECHAZADO por el owner el mismo día → resuelto por G8-3 (abajo)** · llave GROUPS_ENC_KEY
+  PROPIA de prod (+ re-aplicar g7/g8 a prod con sus gates — anotado drift pendiente) · APNS_KEY_ID/AUTH_KEY
+  en el bloque production de wrangler.toml · device-QA G6 (guion [[MODO-NUBE-G6-GUION-DEVICE]] — ⚠️ CON
+  APÉNDICE G7: los checks SQL de la Fase A ven bytea, usar `yala_try_decrypt`) · device-QA G8 (notif real
+  2 devices, guion [[MODO-NUBE-G8-GUION-DEVICE]]) · los previos (SIWA revoke, auth.users Admin API,
+  ratificar HARD DELETE, g5_01/g6_01 a prod).
 - **Estado del plan §11: G0–G8 ✅ COMPLETOS EN CÓDIGO.** Lo único restante para el encendido es el gate §12
   (device-QAs + pendientes owner + canarios en cero).
+
+### 2026-07-16 (misma sesión, owner en línea) — G8-3 ✅: credencial de máquina `yala_push` — la enumeración de tokens MUERE (decisión owner) — ⚠️ reconciliar al vault
+
+> Commit `01f2d4cb` + migración `g8_02_push_machine_role` aplicada. El owner RECHAZÓ el modelo de amenaza
+> aceptado en G8-1 ("co-members pueden enumerar device tokens") y fijó el riel "no diferir nada". Se
+> implementó la arquitectura robusta: **rol Postgres `yala_push` de scope mínimo** (nologin, sin BYPASSRLS,
+> EXECUTE sobre exactamente 2 funciones) + **JWT de máquina** (HS256 con el legacy secret del proyecto,
+> verificado válido; acuñado con `gateway/scripts/mint-push-role-jwt.mjs`, secret `PUSH_ROLE_JWT` del Worker)
+> + **REVOKE de los 2 RPCs a authenticated** (el golden se INVIERTE: authenticated → 403+42501, más fuerte).
+> El invariante se REFINA: "el Worker jamás posee credencial que lea DATOS DE USUARIO" (yala_push no puede).
+> De regalo: muere el griefing del prune, muere el residual JWT-expiry-en-waitUntil, y se CIERRA el residual
+> multi-device del autor (header `X-Yala-Device-Token` en el push → el fan-out excluye solo el device emisor
+> → el 2º device del autor SÍ recibe el silent push). El /review-plan cazó 1 BLOQUEANTE (un guard por
+> `current_user` dentro de SECURITY DEFINER habría roto la función para TODOS — grants-only es el control)
+> y el review pre-aplicación verificó EN VIVO los puntos sin precedente (primera migración del repo que crea
+> un rol; PG17 ADMIN OPTION automático; SET ROLE vía authenticator). ACL final verificado:
+> `{postgres, service_role, yala_push}`. Durabilidad documentada: si algún día se revoca el legacy secret,
+> el fan-out muere en silencio (canario = 401 recurrente en el log del fan-out → re-acuñar). Gates: gateway
+> **188/2 skipped** · suite **4533/418** · builds ×2 · validate-coverage OK. Pendiente-owner NUEVO al
+> promover a prod: acuñar el PUSH_ROLE_JWT de prod con su propio legacy secret (mismo script).
 
 ### 2026-07-16 — G6 COMPLETO EN CÓDIGO ✅ (migración de grupos vivos D7) — schema CloudKit DESPLEGADO; queda el gate device-QA del owner — ⚠️ reconciliar al vault
 
