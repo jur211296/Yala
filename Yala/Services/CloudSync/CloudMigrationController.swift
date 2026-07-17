@@ -8,7 +8,8 @@
 //  la UI real (`StorageSettingsView`) y el panel DEBUG consumen ESTE runner.
 //
 //  Responsabilidades: construir (perezosamente) el executor real + el runner con la señal de quiescencia
-//  del import; orquestar los flujos de UI (migrar con consent→SIWA→claim, revertir, retomar, reintentar);
+//  del import; orquestar los flujos de UI (migrar con consent→sign-in Apple|Google→claim, revertir,
+//  retomar, reintentar);
 //  reflejar el journal vivo como estado `@Observable` derivado (`CloudMigrationUIState`); y el coordinator
 //  de boot (`resumeIfNeeded`, P4) que retoma una migración matada a medias y re-arranca el runtime al
 //  quedar la fase estable.
@@ -229,10 +230,15 @@ final class CloudMigrationController {
     /// Ruta del consent (para la telemetría §j.4).
     enum ConsentPath: String { case migration, adopt }
 
-    /// Migrar a la nube (o ADOPTAR una cuenta ya poblada, #30 — el mismo flujo: consent → SIWA → claim).
-    /// El consent + su registro/telemetría ya ocurrieron en `CloudConsentView`; aquí se conduce la máquina:
-    /// `notStarted → consent → authenticating` (SIWA real) `→ claimingMigration` y drive autónomo.
-    func startMigration(consentPath: ConsentPath) async {
+    /// Migrar a la nube (o ADOPTAR una cuenta ya poblada, #30 — el mismo flujo: consent → sign-in → claim).
+    /// El consent + su registro/telemetría ya ocurrieron en `CloudConsentView` y el MÉTODO (Apple|Google)
+    /// lo eligió el usuario en `StorageSignInChooserView` (último paso antes de la auth — Bloque C
+    /// 2026-07-17: la entrada forzaba SIWA); aquí se conduce la máquina: `notStarted → consent →
+    /// authenticating` (auth real del provider elegido) `→ claimingMigration` y drive autónomo.
+    /// `provider` SIN default a propósito: un `.apple` implícito es exactamente el hardcode del hallazgo.
+    /// El sign-in exitoso escribe `keyProvider` ANTES de `.signInSucceeded` ⇒ el claim/faro (que leen
+    /// `storedProvider()` VIVO, I4) estampan el método real.
+    func startMigration(consentPath: ConsentPath, provider: CloudSignInProvider) async {
         isWorking = true
         defer { isWorking = false }
         lastError = nil
@@ -240,11 +246,16 @@ final class CloudMigrationController {
         await r.startMigration(dryRun: false)   // notStarted → consent
         await r.submit(.consentAccepted)         // consent → authenticating
         do {
-            try await CloudAuthService.shared.signInWithApple()
+            try await CloudAuthService.shared.signIn(with: provider)
             await r.submit(.signInSucceeded)     // authenticating → claimingMigration → drive
+        } catch CloudAuthError.cancelled {
+            // Cancel tipado (Google): volver a notStarted SIN alert — un cancel no es fallo
+            // (semántica del Welcome). El cancel de SIWA sigue llegando como error genérico
+            // (ASAuthorization no distingue) → rama de abajo, byte-idéntico con hoy.
+            await r.submit(.signInFailed)        // authenticating → notStarted
         } catch {
             #if DEBUG
-            print("CloudMigrationController.startMigration: SIWA falló: \(error)")
+            print("CloudMigrationController.startMigration: sign-in \(provider.rawValue) falló: \(error)")
             #endif
             lastError = L10n.Storage.Errors.signIn
             await r.submit(.signInFailed)        // authenticating → notStarted
@@ -497,16 +508,25 @@ final class CloudMigrationController {
         pendingUploadCount = live
     }
 
-    /// Re-firma para reanudar el sync detenido (banner S11).
+    /// Re-firma para reanudar el sync detenido (banner S11). El método NO se elige: es determinista —
+    /// el de la cuenta (`storedProvider()`, que la expiración de sesión del SDK no borra: vive en el
+    /// profileStore propio y solo lo limpia `signOut()`, y un signed-out no ve este banner). Ofrecer
+    /// chooser aquí invitaría al mismatch R9. Fallback `.apple` = el MISMO residual documentado del
+    /// claim (key perdida, población ~0): una cuenta Google re-firmaría con SIWA y GoTrue linkearía
+    /// por email verificado (H4) o el refresh seguiría detenido — jamás datos cruzados.
     func signInToResumeSync() async {
         isWorking = true
         defer { isWorking = false }
+        let provider = CloudSignInProvider(
+            rawValue: CloudAuthService.shared.storedProvider() ?? "") ?? .apple
         do {
-            try await CloudAuthService.shared.signInWithApple()
+            try await CloudAuthService.shared.signIn(with: provider)
             CloudSyncRuntime.shared?.handleBecameActive()   // re-evalúa la sesión y despierta la cadencia
+        } catch CloudAuthError.cancelled {
+            // Cancel tipado (Google): el banner sigue visible, sin alert (un cancel no es fallo).
         } catch {
             #if DEBUG
-            print("CloudMigrationController.signInToResumeSync: SIWA falló: \(error)")
+            print("CloudMigrationController.signInToResumeSync: sign-in \(provider.rawValue) falló: \(error)")
             #endif
             lastError = L10n.Storage.Errors.signIn
         }

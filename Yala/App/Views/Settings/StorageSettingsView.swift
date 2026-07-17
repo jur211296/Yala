@@ -4,8 +4,9 @@
 //
 //  UI real de migración/reversa del Modo Nube (I14 P3). Pantalla de Ajustes (stack de Profile →
 //  `.subtle`) que expone, según el estado derivado del journal (`CloudMigrationController.uiState`):
-//   - `.icloud` estable → "Migrar a la nube" (consent → SIWA → doble confirmación → progreso → relaunch)
-//     o, si el mirror trae el marcador de un líder (`secondaryDeviceCloudLogin`), el copy de ADOPT.
+//   - `.icloud` estable → "Migrar a la nube" (consent → doble confirmación → chooser Apple|Google →
+//     auth → progreso → relaunch) o, si el mirror trae el marcador de un líder
+//     (`secondaryDeviceCloudLogin`), el copy de ADOPT (consent → chooser → auth).
 //   - `.cloud` estable → "Volver a iCloud" (gate `ReverseEligibility` + doble confirmación) + estado de sync.
 //   - Fase transicional → progreso (molde `OnboardingRestoreProgress`) + "Retomar"/"Reintentar".
 //   - `needsRelaunch` → card BLOQUEANTE "cierra Yala y vuelve a abrirla" (relaunch asistido — NUNCA `exit()`).
@@ -22,6 +23,15 @@ struct StorageSettingsView: View {
 
     @State private var showConsent = false
     @State private var consentPath: CloudMigrationController.ConsentPath = .migration
+    /// One-shot del accept del consent: se quema en el callback del accept y se CONSUME en el
+    /// `onDismiss` del sheet (regla 4 de presentaciones: el paso siguiente — dialogs o chooser —
+    /// jamás se presenta con el sheet aún bajando). Drag-dismiss/Cancel no lo queman → no-op.
+    @State private var consentAccepted = false
+    /// Chooser de método (Apple | Google) — último paso antes de la auth (Bloque C 2026-07-17).
+    @State private var showSignInChooser = false
+    /// Provider elegido en el chooser; lo consume el `onDismiss` del sheet del chooser (con el
+    /// anchor YA estable — Google resuelve su presenter por topmost VC). Cancel = queda `nil` → no-op.
+    @State private var chosenProvider: CloudSignInProvider?
     @State private var confirmMigrate1 = false
     @State private var confirmMigrate2 = false
     @State private var confirmRevert1 = false
@@ -74,16 +84,22 @@ struct StorageSettingsView: View {
                 do { try await Task.sleep(for: .seconds(1)) } catch { break }
             }
         }
-        .sheet(isPresented: $showConsent) {
+        .sheet(isPresented: $showConsent, onDismiss: onConsentDismissed) {
             CloudConsentView(path: consentPath) {
+                consentAccepted = true
                 showConsent = false
-                onConsentAccepted()
+            }
+        }
+        .sheet(isPresented: $showSignInChooser, onDismiss: onChooserDismissed) {
+            StorageSignInChooserView { provider in
+                chosenProvider = provider
+                showSignInChooser = false
             }
         }
         .modifier(StorageConfirmations(
             confirmMigrate1: $confirmMigrate1, confirmMigrate2: $confirmMigrate2,
             confirmRevert1: $confirmRevert1, confirmRevert2: $confirmRevert2,
-            onMigrate: { Task { await controller?.startMigration(consentPath: .migration) } },
+            onMigrate: { showSignInChooser = true },
             onRevert: { Task { await controller?.startReverse() } }))
         .alert(L10n.Storage.Errors.title, isPresented: $showError, presenting: controller?.lastError) { _ in
             Button(L10n.Common.ok, role: .cancel) { controller?.lastError = nil }
@@ -382,17 +398,32 @@ struct StorageSettingsView: View {
     }
     #endif
 
-    // MARK: - Consent aceptado
+    // MARK: - Consent aceptado / chooser
 
-    private func onConsentAccepted() {
+    /// `onDismiss` del sheet de consent: enruta con el sheet YA abajo (presentar el chooser desde el
+    /// callback del accept sería sheet-sobre-sheet en el mismo anchor — la clase exacta de la
+    /// doble-presentación descartada). El flag es one-shot: solo el accept lo quema.
+    private func onConsentDismissed() {
+        guard consentAccepted else { return }
+        consentAccepted = false
         switch consentPath {
         case .adopt:
-            // Adopt: NO doble confirmación destructiva (no mueve datos; ya pasó consent+sign-in).
-            Task { await controller?.startMigration(consentPath: .adopt) }
+            // Adopt: NO doble confirmación destructiva (no mueve datos) — directo al chooser.
+            showSignInChooser = true
         case .migration:
             // Migración: doble confirmación sobre la ACCIÓN antes de mover datos.
             confirmMigrate1 = true
         }
+    }
+
+    /// `onDismiss` del chooser: arranca la migración/adopt con el provider elegido, con el sheet YA
+    /// abajo (Google resuelve su presenter vía topmost VC — sobre un VC a medio dismissal el sheet
+    /// se perdería). Cancel del chooser = `chosenProvider` nil → no-op limpio.
+    private func onChooserDismissed() {
+        guard let provider = chosenProvider else { return }
+        chosenProvider = nil
+        let path = consentPath
+        Task { await controller?.startMigration(consentPath: path, provider: provider) }
     }
 }
 

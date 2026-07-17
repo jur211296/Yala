@@ -6281,6 +6281,13 @@ enum L10n {
             static var accept: String { ls("storage.consent.accept", comment: "") }
             static var privacyLink: String { ls("storage.consent.privacyLink", comment: "") }
         }
+
+        /// Chooser Apple|Google de la entrada de migración/adopt (Bloque C 2026-07-17).
+        enum SignIn {
+            static var title: String { ls("storage.signin.title", comment: "") }
+            static var body: String { ls("storage.signin.body", comment: "") }
+            static var note: String { ls("storage.signin.note", comment: "") }
+        }
     }
 
     // MARK: - Shortcut Notifications

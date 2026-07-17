@@ -4658,7 +4658,7 @@
 "storage.status.cloudTitle" = "Dein Cloud-Konto";
 "storage.status.cloudBody" = "Deine Daten werden in deinem Yala-Konto gespeichert und über all deine Geräte synchronisiert.";
 "storage.migrate.title" = "In die Cloud wechseln";
-"storage.migrate.body" = "Erstelle ein Konto mit Apple und greife von jedem Gerät auf deine Daten zu – auch ohne iCloud.";
+"storage.migrate.body" = "Erstelle ein Konto mit Apple oder Google und greife von jedem Gerät auf deine Daten zu – auch ohne iCloud.";
 "storage.migrate.button" = "Cloud aktivieren";
 "storage.migrate.previewButton" = "Anzeigen, was übertragen würde";
 "storage.migrate.previewResult" = "%1$d Transaktionen · %2$d Kategorien · %3$d Konten · %4$d Budgets";
@@ -4702,7 +4702,7 @@
 "storage.consent.point3" = "Unser Team kann diese Daten lesen, um dir zu helfen, dein Konto wiederherzustellen und dir smarte Funktionen (Kategorisierung, Belegerkennung) anzubieten. Es ist keine Ende-zu-Ende-Verschlüsselung.";
 "storage.consent.point4" = "Wenn du den Chat nutzt, senden wir eine Zusammenfassung deiner Finanzen (bis zu etwa 13 Monate) an unseren KI-Anbieter, damit er dir antworten kann.";
 "storage.consent.point5" = "Deine Daten werden auf Servern in den USA gespeichert.";
-"storage.consent.point6" = "Im Gegenzug greifst du von jedem Gerät nur mit deinem Apple-Login zu, ohne von iCloud abhängig zu sein. Solange du diesen Login behältst: Es gibt keine Wiederherstellung per E-Mail oder Yala-Passwort. Wenn du also den Zugang zu deinem Apple-Konto verlierst, exportiere vorher deine Daten (Einstellungen → Meine Daten exportieren).";
+"storage.consent.point6" = "Im Gegenzug greifst du von jedem Gerät nur mit deinem Apple- oder Google-Login zu, ohne von iCloud abhängig zu sein. Solange du diesen Login behältst: Es gibt keine Wiederherstellung per E-Mail oder Yala-Passwort. Wenn du also den Zugang zu diesem Konto verlierst, exportiere vorher deine Daten (Einstellungen → Meine Daten exportieren).";
 "storage.consent.point7" = "Du kannst jederzeit in den privaten Modus zurückwechseln, ohne etwas zu verlieren.";
 "storage.consent.accept" = "Ich verstehe und möchte die Cloud aktivieren";
 "storage.consent.privacyLink" = "Datenschutzrichtlinie ansehen";
@@ -4993,3 +4993,12 @@
 
 /* Caption on the storage progress card while migration resume waits for CloudKit import quiescence */
 "storage.progress.waitingImport" = "Warten, bis iCloud die Synchronisierung abgeschlossen hat …";
+
+/* Title of the provider chooser (Apple|Google) in the cloud migration entry */
+"storage.signin.title" = "Wähle, wie du dich anmeldest";
+
+/* Body of the provider chooser in the cloud migration entry */
+"storage.signin.body" = "Um deine Daten in der Cloud zu speichern, brauchst du ein Yala-Konto. Melde dich mit Apple oder Google an.";
+
+/* Provider-binding note (R9) below the sign-in buttons */
+"storage.signin.note" = "Dein Yala-Konto ist an die gewählte Methode gebunden – nutze sie bei jeder weiteren Anmeldung.";

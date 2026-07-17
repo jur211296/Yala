@@ -4664,7 +4664,7 @@
 "storage.status.cloudTitle" = "Your cloud account";
 "storage.status.cloudBody" = "Your data is saved to your Yala account and syncs across all your devices.";
 "storage.migrate.title" = "Move to the cloud";
-"storage.migrate.body" = "Create an account with Apple and reach your data from any device, even without iCloud.";
+"storage.migrate.body" = "Create an account with Apple or Google and reach your data from any device, even without iCloud.";
 "storage.migrate.button" = "Turn on the cloud";
 "storage.migrate.previewButton" = "See what would move";
 "storage.migrate.previewResult" = "%1$d transactions · %2$d categories · %3$d accounts · %4$d budgets";
@@ -4708,7 +4708,7 @@
 "storage.consent.point3" = "Our team may read that data to give you support, recover your account and offer smart features (categorization, receipt reading). It isn’t end-to-end encrypted.";
 "storage.consent.point4" = "When you use the chat, we send a summary of your finances (up to about 13 months) to our AI provider so it can answer you.";
 "storage.consent.point5" = "Your data is stored on servers in the United States.";
-"storage.consent.point6" = "In exchange, you reach your data from any device with just your Apple login, without depending on iCloud. As long as you keep that login: there’s no email or Yala-password recovery, so if you lose access to your Apple account, export your data first (Settings → Export my data).";
+"storage.consent.point6" = "In exchange, you reach your data from any device with just your Apple or Google login, without depending on iCloud. As long as you keep that login: there’s no email or Yala-password recovery, so if you lose access to that account, export your data first (Settings → Export my data).";
 "storage.consent.point7" = "You can switch back to private mode whenever you want, without losing anything.";
 "storage.consent.accept" = "I understand and want to turn on the cloud";
 "storage.consent.privacyLink" = "View the privacy policy";
@@ -4999,3 +4999,12 @@
 
 /* Caption on the storage progress card while migration resume waits for CloudKit import quiescence */
 "storage.progress.waitingImport" = "Waiting for iCloud to finish syncing…";
+
+/* Title of the provider chooser (Apple|Google) in the cloud migration entry */
+"storage.signin.title" = "Choose how to sign in";
+
+/* Body of the provider chooser in the cloud migration entry */
+"storage.signin.body" = "To store your data in the cloud you need a Yala account. Sign in with Apple or Google.";
+
+/* Provider-binding note (R9) below the sign-in buttons */
+"storage.signin.note" = "Your Yala account is tied to the method you choose — use it whenever you sign in again.";

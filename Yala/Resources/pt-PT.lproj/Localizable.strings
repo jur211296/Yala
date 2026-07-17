@@ -3926,7 +3926,7 @@
 "storage.status.cloudTitle" = "A sua conta na nuvem";
 "storage.status.cloudBody" = "Os seus dados ficam guardados na sua conta Yala e sincronizam em todos os seus dispositivos.";
 "storage.migrate.title" = "Migrar para a nuvem";
-"storage.migrate.body" = "Crie uma conta com a Apple e aceda aos seus dados a partir de qualquer dispositivo, mesmo sem iCloud.";
+"storage.migrate.body" = "Crie uma conta com Apple ou Google e aceda aos seus dados a partir de qualquer dispositivo, mesmo sem iCloud.";
 "storage.migrate.button" = "Ativar a nuvem";
 "storage.migrate.previewButton" = "Ver o que seria migrado";
 "storage.migrate.previewResult" = "%1$d transações · %2$d categorias · %3$d contas · %4$d orçamentos";
@@ -3970,7 +3970,7 @@
 "storage.consent.point3" = "A nossa equipa pode ler esses dados para dar suporte, recuperar a sua conta e oferecer funcionalidades inteligentes (categorização, leitura de recibos). Não é encriptação de ponta a ponta.";
 "storage.consent.point4" = "Quando usa o chat, enviamos um resumo das suas finanças (até cerca de 13 meses) ao nosso fornecedor de inteligência artificial para poder responder-lhe.";
 "storage.consent.point5" = "Os seus dados ficam em servidores nos Estados Unidos.";
-"storage.consent.point6" = "Em troca, acede a partir de qualquer dispositivo apenas com o seu início de sessão Apple, sem depender do iCloud. Enquanto mantiver esse início de sessão: não há recuperação por email nem palavra-passe da Yala, por isso, se perder o acesso à sua conta Apple, exporte os seus dados antes (Definições → Exportar os meus dados).";
+"storage.consent.point6" = "Em troca, acede a partir de qualquer dispositivo apenas com o seu início de sessão Apple ou Google, sem depender do iCloud. Enquanto mantiver esse início de sessão: não há recuperação por email nem palavra-passe da Yala, por isso, se perder o acesso a essa conta, exporte os seus dados antes (Definições → Exportar os meus dados).";
 "storage.consent.point7" = "Pode voltar ao modo privado quando quiser, sem perder nada.";
 "storage.consent.accept" = "Compreendo e quero ativar a nuvem";
 "storage.consent.privacyLink" = "Ver a política de privacidade";
@@ -4261,3 +4261,12 @@
 
 /* Caption on the storage progress card while migration resume waits for CloudKit import quiescence */
 "storage.progress.waitingImport" = "A aguardar que o iCloud termine de sincronizar…";
+
+/* Title of the provider chooser (Apple|Google) in the cloud migration entry */
+"storage.signin.title" = "Escolhe como iniciar sessão";
+
+/* Body of the provider chooser in the cloud migration entry */
+"storage.signin.body" = "Para guardares os teus dados na nuvem, precisas de uma conta Yala. Inicia sessão com Apple ou Google.";
+
+/* Provider-binding note (R9) below the sign-in buttons */
+"storage.signin.note" = "A tua conta Yala fica associada ao método que escolheres — usa-o sempre que voltares a entrar.";

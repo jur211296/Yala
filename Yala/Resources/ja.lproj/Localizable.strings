@@ -4670,7 +4670,7 @@
 "storage.status.cloudTitle" = "クラウドアカウント";
 "storage.status.cloudBody" = "データは Yala アカウントに保存され、すべてのデバイスで同期されます。";
 "storage.migrate.title" = "クラウドへ移行";
-"storage.migrate.body" = "Apple でアカウントを作成すれば、iCloud がなくてもどのデバイスからでもデータにアクセスできます。";
+"storage.migrate.body" = "Apple または Google でアカウントを作成すれば、iCloud がなくてもどのデバイスからでもデータにアクセスできます。";
 "storage.migrate.button" = "クラウドを有効化";
 "storage.migrate.previewButton" = "移行される内容を見る";
 "storage.migrate.previewResult" = "取引 %1$d件 · カテゴリ %2$d件 · 口座 %3$d件 · 予算 %4$d件";
@@ -4714,7 +4714,7 @@
 "storage.consent.point3" = "サポート提供、アカウント復旧、スマート機能（自動分類、レシート読み取り）のために、当社のチームがこれらのデータを閲覧する場合があります。エンドツーエンド暗号化ではありません。";
 "storage.consent.point4" = "チャットを使うと、回答のために、あなたの家計の要約（最大約13か月分）を当社の AI プロバイダーに送信します。";
 "storage.consent.point5" = "データは米国内のサーバーに保存されます。";
-"storage.consent.point6" = "その代わり、iCloud に依存せず Apple のログインだけでどの端末からでもアクセスできます。そのログインを保持している限り有効です。メールや Yala のパスワードによる復旧はないため、Apple アカウントへのアクセスを失う前にデータを書き出してください（設定 → データを書き出す）。";
+"storage.consent.point6" = "その代わり、iCloud に依存せず Apple または Google のログインだけでどの端末からでもアクセスできます。そのログインを保持している限り有効です。メールや Yala のパスワードによる復旧はないため、そのアカウントへのアクセスを失う前にデータを書き出してください（設定 → データを書き出す）。";
 "storage.consent.point7" = "いつでもプライベートモードに戻せます。何も失われません。";
 "storage.consent.accept" = "理解したうえでクラウドを有効化します";
 "storage.consent.privacyLink" = "プライバシーポリシーを見る";
@@ -5005,3 +5005,12 @@
 
 /* Caption on the storage progress card while migration resume waits for CloudKit import quiescence */
 "storage.progress.waitingImport" = "iCloudの同期が完了するまでお待ちください…";
+
+/* Title of the provider chooser (Apple|Google) in the cloud migration entry */
+"storage.signin.title" = "サインイン方法を選択";
+
+/* Body of the provider chooser in the cloud migration entry */
+"storage.signin.body" = "データをクラウドに保存するにはYalaアカウントが必要です。AppleまたはGoogleでサインインしてください。";
+
+/* Provider-binding note (R9) below the sign-in buttons */
+"storage.signin.note" = "Yalaアカウントは選んだ方法に紐づきます。次回以降も同じ方法でサインインしてください。";

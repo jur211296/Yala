@@ -4670,7 +4670,7 @@
 "storage.status.cloudTitle" = "您的云端账户";
 "storage.status.cloudBody" = "您的数据保存在 Yala 账户中，并在所有设备间同步。";
 "storage.migrate.title" = "迁移到云端";
-"storage.migrate.body" = "使用 Apple 创建账户，即可在任何设备上访问数据，即使没有 iCloud。";
+"storage.migrate.body" = "使用 Apple 或 Google 创建账户，即可在任何设备上访问数据，即使没有 iCloud。";
 "storage.migrate.button" = "启用云端";
 "storage.migrate.previewButton" = "查看将迁移的内容";
 "storage.migrate.previewResult" = "%1$d 笔交易 · %2$d 个分类 · %3$d 个账户 · %4$d 个预算";
@@ -4714,7 +4714,7 @@
 "storage.consent.point3" = "我们的团队可能会读取这些数据，以便为您提供支持、恢复账户并提供智能功能（自动分类、收据识别）。这不是端到端加密。";
 "storage.consent.point4" = "使用聊天时，我们会将您财务的摘要（最长约 13 个月）发送给我们的 AI 提供商，以便回复您。";
 "storage.consent.point5" = "您的数据存储在位于美国的服务器上。";
-"storage.consent.point6" = "作为交换，您只需 Apple 登录即可在任何设备上访问数据，无需依赖 iCloud。前提是您保留该登录方式：没有电子邮件或 Yala 密码找回，因此如果您失去 Apple 账户的访问权限，请先导出数据（设置 → 导出我的数据）。";
+"storage.consent.point6" = "作为交换，您只需 Apple 或 Google 登录即可在任何设备上访问数据，无需依赖 iCloud。前提是您保留该登录方式：没有电子邮件或 Yala 密码找回，因此如果您失去该账户的访问权限，请先导出数据（设置 → 导出我的数据）。";
 "storage.consent.point7" = "您可以随时切换回私密模式，不会丢失任何内容。";
 "storage.consent.accept" = "我已了解并希望启用云端";
 "storage.consent.privacyLink" = "查看隐私政策";
@@ -5005,3 +5005,12 @@
 
 /* Caption on the storage progress card while migration resume waits for CloudKit import quiescence */
 "storage.progress.waitingImport" = "正在等待iCloud完成同步…";
+
+/* Title of the provider chooser (Apple|Google) in the cloud migration entry */
+"storage.signin.title" = "选择登录方式";
+
+/* Body of the provider chooser in the cloud migration entry */
+"storage.signin.body" = "要将数据保存到云端，你需要一个 Yala 账户。用 Apple 或 Google 登录。";
+
+/* Provider-binding note (R9) below the sign-in buttons */
+"storage.signin.note" = "你的 Yala 账户将与所选方式绑定——以后登录请始终使用该方式。";
