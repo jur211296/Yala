@@ -1752,7 +1752,6 @@ struct MainTabView: View {
                 try? await Task.sleep(for: .seconds(1))  // UX delay, not sync
                 action()
                 ReviewPromptService.recordPromptShown()
-                TelemetryService.track(.reviewPromptShown)
             }
         default:
             break

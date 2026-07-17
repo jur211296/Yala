@@ -45,7 +45,6 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         if let destination = userInfo["deepLink"] as? String,
            let dest = Self.parseDestination(destination) {
             Task { @MainActor in
-                TelemetryService.track(.notificationTapped, parameters: ["destino": destination.hasPrefix("groups/") ? "groups" : destination])
                 RouterEntryGate.shared.submit(.navigate(dest))
             }
         }

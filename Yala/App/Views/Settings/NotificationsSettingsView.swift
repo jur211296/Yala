@@ -107,7 +107,6 @@ struct NotificationsSettingsView: View {
             if viewModel.permissionStatus == .notDetermined {
                 let granted = await NotificationService.shared.requestPermission()
                 viewModel.permissionStatus = granted ? .authorized : .denied
-                TelemetryService.track(.notificationsPermission, parameters: ["resultado": granted ? "concedido" : "denegado"])
 
                 // If granted, schedule all active notifications
                 if granted {

@@ -30,7 +30,6 @@ struct FullModeActivationView: View {
         .onAppear {
             cleanupResidualGeneralAccount()
             if prefilledSummary == nil { prefilledSummary = buildPrefilledSummary() }
-            TelemetryService.track(.fullModeActivationStarted)
         }
     }
 
@@ -96,12 +95,6 @@ struct FullModeActivationView: View {
             forKey: TabBarConfiguration.storageKey
         )
         sessionState.selectMainTab(.panel)
-
-        // `.onboardingCompleted` lo dispara `OnboardingView.completeOnboarding`
-        // con el `mode` correcto — invariante: un solo fire por flow.
-        TelemetryService.track(.fullModeActivationCompleted, parameters: [
-            "fromSegment": UserSegmentService.shared.currentSegment.rawValue,
-        ])
 
         onComplete()
     }

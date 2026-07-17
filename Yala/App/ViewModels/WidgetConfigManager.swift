@@ -82,7 +82,6 @@ final class WidgetConfigManager {
         do {
             let encoded = try JSONEncoder().encode(configs)
             UserDefaults.standard.set(encoded, forKey: storageKey)
-            TelemetryService.track(.widgetConfigured)
         } catch {
             #if DEBUG
             print("WidgetConfigManager: Error encoding widget configs: \(error)")

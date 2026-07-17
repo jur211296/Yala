@@ -18,7 +18,7 @@
 //  NOTA — el método captura errores internamente (`do/catch`, retorna Void) y no expone su
 //  resultado, así que se verifica por efecto observable (draft ausente del store tras la llamada).
 //  Los efectos colaterales sobre singletons de sólo-lectura externa (`WidgetDataCache`,
-//  `TelemetryService`, `GroupTransactionBridge.isReady`) no son observables desde el test y
+//  `MetricsService`, `GroupTransactionBridge.isReady`) no son observables desde el test y
 //  quedan fuera de aserción.
 //
 

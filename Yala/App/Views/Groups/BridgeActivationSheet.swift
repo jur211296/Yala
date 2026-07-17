@@ -128,20 +128,11 @@ struct BridgeActivationSheet: View {
         switch selectedOption {
         case .startNow:
             // Toggle ya está ON. Próximos expenses Caso A generarán TX real automáticamente.
-            TelemetryService.track(.bridgeActivationCompleted, parameters: [
-                "scope": scope.telemetryName,
-                "option": "startNow"
-            ])
             onConfirm()
             dismiss()
         case .importAll:
             do {
-                let count = try importHistory()
-                TelemetryService.track(.bridgeActivationCompleted, parameters: [
-                    "scope": scope.telemetryName,
-                    "option": "importAll",
-                    "importedCount": String(count)
-                ])
+                _ = try importHistory()
                 onConfirm()
                 dismiss()
             } catch {

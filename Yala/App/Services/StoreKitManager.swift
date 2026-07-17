@@ -182,29 +182,18 @@ final class StoreKitManager {
                 #endif
                 await updateSubscriptionStatus()
                 didJustSubscribe = true
-                TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "success"])
-                var completionParams = TelemetryService.upsellParameters(source: "purchase")
-                completionParams["productId"] = product.id
-                completionParams["plan"] = product.id.localizedCaseInsensitiveContains("year") ? "anual" : "mensual"
-                TelemetryService.track(.purchaseCompleted, parameters: completionParams)
-                if isInTrial {
-                    TelemetryService.track(.trialStarted, parameters: completionParams)
-                }
                 return true
 
             case .userCancelled:
-                TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "cancelled"])
                 return false
 
             case .pending:
-                TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "pending"])
                 return false
 
             @unknown default:
                 return false
             }
         } catch {
-            TelemetryService.track(.purchaseAttempted, parameters: ["productId": product.id, "result": "error"])
             errorMessage = error.localizedDescription
             return false
         }
@@ -249,8 +238,6 @@ final class StoreKitManager {
         }
         #endif
 
-        let previouslyInTrial = isInTrial
-
         var foundActive: StoreKit.Transaction?
 
         for await result in StoreKit.Transaction.currentEntitlements {
@@ -288,10 +275,6 @@ final class StoreKitManager {
 
         if nowProUser && !wasAlreadyPro {
             UserDefaults.standard.set(true, forKey: "chatFABVisible")
-        }
-
-        if wasAlreadyPro && !nowProUser {
-            TelemetryService.track(.subscriptionEnded, parameters: ["era_trial": String(previouslyInTrial)])
         }
 
         // Track for downgrade detection

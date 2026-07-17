@@ -56,16 +56,6 @@ struct GroupsOnboardingView: View {
                 }
             }
         }
-        .onAppear {
-            TelemetryService.track(.groupsOnboardingShown, parameters: [
-                "launcher": GroupsOnboardingLauncher.groupsTab.rawValue
-            ])
-        }
-        .onChange(of: currentStep, initial: true) { _, newStep in
-            TelemetryService.track(.groupsOnboardingStepViewed, parameters: [
-                "step": String(newStep.rawValue)
-            ])
-        }
     }
 
     // MARK: - Toolbar
@@ -314,7 +304,6 @@ struct GroupsOnboardingView: View {
                 currentStep = next
             }
         } else {
-            TelemetryService.track(.groupsOnboardingCompleted)
             onResult(.complete)
         }
     }

@@ -306,7 +306,6 @@ struct GroupFormView: View {
                     // Paridad de side-effects: el servicio backend NO los emite (a diferencia de
                     // GroupService.createGroup) — replicarlos aquí para no regresionar la UX.
                     SessionState.shared.incrementDataVersion()
-                    TelemetryService.track(.groupCreated, parameters: ["memberCount": "1"])
                     NudgeService.shared.recordGroupJoinIfNeeded()
                 case .needsConsent:
                     dismiss()

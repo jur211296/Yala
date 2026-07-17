@@ -358,7 +358,6 @@ struct SettlementFormView: View {
             )
 
             DS.Haptic.success()
-            TelemetryService.track(.groupSettlementCreated)
             isSaving = false
 
             // Opt-out: solo Caso C (yo pago) con bridge OFF dispara el alert opt-in que crea

@@ -358,7 +358,6 @@ struct WelcomeCloudSignInView: View {
                     // Google SÍ distingue (el cancel ya salió arriba): esto es fallo REAL
                     // (red/SDK/exchange) → error visible con retry.
                     phase = .error(retryable: true)
-                    track(outcome: "error")
                 }
                 return
             }
@@ -367,7 +366,6 @@ struct WelcomeCloudSignInView: View {
         guard let userID = CloudAuthService.shared.currentUserID,
               let jwt = await CloudAuthService.shared.accessToken() else {
             phase = .error(retryable: true)
-            track(outcome: "error")
             return
         }
 
@@ -391,14 +389,11 @@ struct WelcomeCloudSignInView: View {
             case .mismatch(let knownProvider):
                 MetricsService.cloudSignInProviderMismatch()
                 phase = .providerMismatch(knownProvider: knownProvider)
-                track(outcome: "providerMismatch")
             case .proceed:
                 phase = .notFound
-                track(outcome: "notFound")
             }
         case .failed(let retryable):
             phase = .error(retryable: retryable)
-            track(outcome: "error")
         case .accountFound:
             let decision = CrossAccountEntryGuardLogic.decide(
                 hasLocalData: hasLocalDataNow(),
@@ -409,7 +404,6 @@ struct WelcomeCloudSignInView: View {
             case .blockedForeignData:
                 await CloudAuthService.shared.signOut()
                 phase = .blockedForeignData
-                track(outcome: "blocked")
             case .proceedSecondarySession:
                 // M1 belt: invariante estructural — durante el Welcome post sign-out la key
                 // PERSISTIDA es `.icloud` (el sign-out cloud siempre la resetea antes de llegar
@@ -417,13 +411,10 @@ struct WelcomeCloudSignInView: View {
                 guard StorageModePersistence.read() == .icloud else {
                     await CloudAuthService.shared.signOut()
                     phase = .error(retryable: false)
-                    track(outcome: "secondaryInvariantViolated")
                     return
                 }
-                track(outcome: "secondaryOffered")
                 phase = .secondaryConfirm
             case .proceed:
-                track(outcome: "found")
                 onAdoptStarted()
                 phase = .adopting(fraction: 0)
                 await CloudMigrationController.shared?.startAdoptWithExistingSession()
@@ -439,7 +430,6 @@ struct WelcomeCloudSignInView: View {
     private func confirmSecondaryEntry() {
         guard let userID = CloudAuthService.shared.currentUserID else {
             phase = .error(retryable: true)
-            track(outcome: "error")
             return
         }
         SecondaryEntryLogic.begin(
@@ -448,7 +438,6 @@ struct WelcomeCloudSignInView: View {
             activateDescriptor: { SecondarySessionStore.activate(userID: $0) },
             markOnboardingFlags: onSecondaryEntryFlagsMarked)
         CloudSyncBreadcrumb.secondaryEntryArmed()
-        track(outcome: "secondaryArmed")
         phase = .relaunchSecondary
     }
 
@@ -467,7 +456,6 @@ struct WelcomeCloudSignInView: View {
             case .relaunch, .error:
                 return
             case .waitingLeader:
-                track(outcome: "leaderWait")
                 return
             default:
                 break
@@ -484,10 +472,6 @@ struct WelcomeCloudSignInView: View {
         phase = .adopting(fraction: 0)
         await CloudMigrationController.shared?.pollLeader()
         await pollAdoptProgress()
-    }
-
-    private func track(outcome: String) {
-        TelemetryService.track(.welcomeCloudSignInOutcome, parameters: ["outcome": outcome])
     }
 }
 

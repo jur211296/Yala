@@ -109,9 +109,6 @@ struct WelcomeChooserView: View {
 
     private func handleSelect(_ branch: Branch) {
         DS.Haptic.selection()
-        TelemetryService.track(.welcomeChooserBranchSelected, parameters: [
-            "branch": branch.rawValue
-        ])
         onSelect(branch)
     }
 

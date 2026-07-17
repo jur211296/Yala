@@ -858,7 +858,6 @@ struct InsightsTabView: View {
             }
 
             Button {
-                TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: "insightsTeaser"))
                 showUpgradeSheet = true
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
@@ -874,9 +873,6 @@ struct InsightsTabView: View {
             }
         }
         .panelCard()
-        .onAppear {
-            TelemetryService.trackOnce(.proUpsellShown, key: "insightsTeaser", parameters: TelemetryService.upsellParameters(source: "insightsTeaser"))
-        }
     }
 
     // MARK: - Locked Fun Fact

@@ -47,9 +47,6 @@ struct GlobalSearchView: View {
             placement: .navigationBarDrawer(displayMode: .always),
             prompt: L10n.Common.search
         )
-        .onSubmit(of: .search) {
-            TelemetryService.track(.searchPerformed)
-        }
         .task {
             // Delay to let Query load, then reveal content smoothly
             do {

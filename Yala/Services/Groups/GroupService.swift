@@ -115,7 +115,6 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
-        TelemetryService.track(.groupCreated, parameters: ["memberCount": "1"])
         NudgeService.shared.recordGroupJoinIfNeeded()
 
         #if DEBUG
@@ -311,8 +310,6 @@ final class GroupService {
             logger.error("softDelete: clearOverride failed: \(error.localizedDescription, privacy: .public)")
             #endif
         }
-
-        TelemetryService.track(.groupSoftDeleted)
     }
 
     /// Delete a group permanently (owner only).
@@ -352,7 +349,6 @@ final class GroupService {
         }
 
         SessionState.shared.incrementDataVersion()
-        TelemetryService.track(.groupDeleted)
         #endif
     }
 
@@ -531,7 +527,6 @@ final class GroupService {
         // backend al borrar el SplitGroup). RPC falla → throw ANTES de tocar el contexto → local INTACTO.
         if routesMembershipToBackend(group) {
             _ = try await backendMembershipFactory().leave(groupID: group.cloudKitZoneID)
-            TelemetryService.track(.groupLeft)
             try performLocalCleanupAndDelete(group: group, context: context)
             do {
                 try context.save()
@@ -557,8 +552,6 @@ final class GroupService {
             }
             try await SplitSyncManager.shared.sendPendingChanges(for: group)
         }
-
-        TelemetryService.track(.groupLeft)
 
         // Captura (zoneName, ownerName) ANTES de borrar el SplitGroup local para que el
         // retry persistente funcione si la red falla durante `leaveShare`.

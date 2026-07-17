@@ -28,10 +28,10 @@
       "none"
     ],
     "counts": {
-      "total": 101,
+      "total": 133,
       "deterministic": 40,
       "agentic": 32,
-      "manual": 29,
+      "manual": 57,
       "deterministicSinXCUITest": 0
     }
   },
@@ -415,6 +415,18 @@
       "scenarioIDs": [],
       "classification": "manual",
       "coverage": "unit:YalaTests/CloudSync/RemoteFlagDecisionLogicTests + unit:YalaTests/CloudSync/CloudRemoteConfigTests + unit:YalaTests/StorageRowGateLogicTests + gateway/test/config.test.ts (DIFERIDOS #34: GET /config percents 0-100 fail-closed + bucket FNV-1a estable por instalación + kill-switch entrada-only [decisión owner 2026-07-17: un `.cloud` engaged conserva fila/runtime/reversa] + composición compilado&&remoto de groupsBackendEnabled). DARK: prod isConfigured=false ⇒ cero fetch/superficie; DEV default-ausente ON + staging sirve 100. Verificación e2e = curl staging + panel DEBUG (card Remote cfg + toggle simular OFF).",
+      "owner": "",
+      "lastVerified": "2026-07-17"
+    },
+    {
+      "area": "own-metrics",
+      "codeGlobs": [
+        "Yala/Services/Metrics/**",
+        "gateway/src/metrics.ts"
+      ],
+      "scenarioIDs": [],
+      "classification": "manual",
+      "coverage": "unit:YalaTests/Metrics/MetricsServiceTests (17 tests: ping UTC once-per-day, spool cap50/corrupto, cliente asserta BODY, one-shots registro cloud, drain) + gateway/test/metrics.test.ts (goldens shape writeDataPoint + tabla 400). Telemetría propia post-TelemetryDeck (2026-07-17): POST /metrics → Analytics Engine (ping diario / register local|cloud / canarios del gate). Verificación e2e = curl staging + dashboard AE (queries en qa/cloud/README § /metrics). El gate 'canarios en cero' del Bloque C se lee del dataset yala_metrics.",
       "owner": "",
       "lastVerified": "2026-07-17"
     },

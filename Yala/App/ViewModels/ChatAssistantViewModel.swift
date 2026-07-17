@@ -160,24 +160,6 @@ final class ChatAssistantViewModel {
                 allTurns.removeFirst(allTurns.count - Self.maxTurns)
             }
 
-            // Telemetry — intent clasificado + draft proposed + ambiguous repregunta
-            TelemetryService.track(.chatIntentClassified, parameters: [
-                "intent": response.intent.rawValue,
-                "used_force_intent": forceIntent != nil ? "true" : "false",
-            ])
-            if case .drafts(let drafts) = response.attachments?.first {
-                TelemetryService.track(.chatDraftProposed, parameters: [
-                    "count": String(drafts.count),
-                ])
-            }
-            if case .ambiguous = response.attachments?.first {
-                TelemetryService.track(.chatAmbiguousRepregunta)
-            }
-            TelemetryService.track(.chatQuestionAsked, parameters: [
-                "source": "typed",
-                "turn_count": String(allTurns.count),
-            ])
-
             // Autosave defensivo: persiste la sesión tras cada respuesta exitosa
             persistSession()
         } catch let error as ChatAssistantError {
@@ -190,9 +172,6 @@ final class ChatAssistantViewModel {
     }
 
     func sendSuggestion(_ suggestion: ChatSuggestion) async {
-        TelemetryService.track(.chatSuggestionTapped, parameters: [
-            "type": String(describing: suggestion.type)
-        ])
         await sendQuestion(suggestion.text)
     }
 
@@ -209,7 +188,6 @@ final class ChatAssistantViewModel {
             errorMessage = L10n.Chat.errorOffline
         case .dailyLimitReached:
             errorMessage = L10n.Chat.dailyLimitReached
-            TelemetryService.track(.chatDailyLimitReached)
         case .questionTooLong:
             errorMessage = L10n.Chat.questionTooLong
         case .rateLimited:
@@ -218,12 +196,6 @@ final class ChatAssistantViewModel {
             errorMessage = L10n.Chat.errorNoData
         default:
             errorMessage = L10n.Chat.errorGeneric
-        }
-
-        if errorMessage != nil {
-            TelemetryService.track(.chatErrorOccurred, parameters: [
-                "error": String(describing: error)
-            ])
         }
 
         // Remove the user message if we got an error (so they can retry)
@@ -312,12 +284,6 @@ final class ChatAssistantViewModel {
                 allTurns = blob.allTurns.map { Self.stripToolPayload($0) }
             }
 
-            if !messages.isEmpty {
-                TelemetryService.track(.chatPersistedSessionRehydrated, parameters: [
-                    "messageCount": String(messages.count),
-                    "turnCount": String(allTurns.count)
-                ])
-            }
         } catch {
             #if DEBUG
             print("ChatAssistantViewModel: loadPersistedSession decode failed: \(error)")
@@ -419,10 +385,6 @@ final class ChatAssistantViewModel {
             } else {
                 inputText = inputText + " " + transcribed
             }
-
-            TelemetryService.track(.chatVoiceInputUsed, parameters: [
-                "transcribedLength": String(transcribed.count)
-            ])
         } catch RecordingError.recordingTooShort {
             errorMessage = L10n.Chat.noVoiceDetected
         } catch {
@@ -572,7 +534,6 @@ final class ChatAssistantViewModel {
             draft.status = .saved
             draft.savedTransactionID = transaction.persistentModelID
             replaceDraft(draft, at: location)
-            TelemetryService.track(.chatDraftSaved)
             persistSession()
         } catch {
             #if DEBUG
@@ -607,8 +568,6 @@ final class ChatAssistantViewModel {
             tagIDs: draft.tagIDs
         )
         RouterEntryGate.shared.submit(.presentNewTransactionFromChatDraft(prefill))
-
-        TelemetryService.track(.chatDraftEditedExternally)
     }
 
     /// Update inline de un campo del draft (ej. user cambia monto en TextField, o
@@ -699,7 +658,6 @@ final class ChatAssistantViewModel {
         guard draft.status != .saved && draft.status != .discarded else { return }
         draft.status = .discarded
         replaceDraft(draft, at: location)
-        TelemetryService.track(.chatDraftDismissed)
         persistSession()
     }
 
@@ -752,14 +710,6 @@ final class ChatAssistantViewModel {
             ))
             if allTurns.count > Self.maxTurns {
                 allTurns.removeFirst(allTurns.count - Self.maxTurns)
-            }
-
-            TelemetryService.track(.chatIntentClassified, parameters: [
-                "intent": response.intent.rawValue,
-                "used_force_intent": "true",
-            ])
-            if case .drafts(let drafts) = response.attachments?.first {
-                TelemetryService.track(.chatDraftProposed, parameters: ["count": String(drafts.count)])
             }
 
             persistSession()

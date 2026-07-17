@@ -108,7 +108,7 @@ final class NudgeService {
         return true
     }
 
-    // MARK: - Recording (owns telemetry — views don't need to track)
+    // MARK: - Recording
 
     private func recordShown() {
         shownThisSession = true
@@ -122,22 +122,15 @@ final class NudgeService {
         resetMonthlyCountIfNeeded()
         let monthlyCount = UserDefaults.standard.integer(forKey: Keys.monthlyShownCount) + 1
         UserDefaults.standard.set(monthlyCount, forKey: Keys.monthlyShownCount)
-
-        if let nudge = currentNudge {
-            TelemetryService.track(.nudgeShown, parameters: telemetryParams(nudge))
-        }
     }
 
     func recordInteracted(_ nudge: NudgeType) {
         UserDefaults.standard.set(true, forKey: Keys.interacted(nudge))
-        TelemetryService.track(.nudgeTapped, parameters: telemetryParams(nudge))
         clearCurrentNudge()
     }
 
     /// Dismissed nudges can reappear next period (not permanently suppressed like interacted).
     func recordDismissed(_ nudge: NudgeType, autoDismissed: Bool = false) {
-        let event: AnalyticsEvent = autoDismissed ? .nudgeAutoDismissed : .nudgeDismissed
-        TelemetryService.track(event, parameters: telemetryParams(nudge))
         clearCurrentNudge()
     }
 
@@ -151,12 +144,6 @@ final class NudgeService {
     func recordGroupJoinIfNeeded() {
         guard UserDefaults.standard.object(forKey: Keys.firstGroupJoinDate) == nil else { return }
         UserDefaults.standard.set(Date.now, forKey: Keys.firstGroupJoinDate)
-    }
-
-    // MARK: - Telemetry
-
-    private func telemetryParams(_ nudge: NudgeType) -> [String: String] {
-        ["nudgeType": nudge.rawValue, "segment": UserSegmentService.shared.currentSegment.rawValue]
     }
 
     // MARK: - Testing Support

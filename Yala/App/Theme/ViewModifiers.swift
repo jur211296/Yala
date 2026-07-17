@@ -435,10 +435,7 @@ struct YalaAIOnboardingSheetModifier: ViewModifier {
                         onPersistFlag()
                         pendingOpenChat = true
                     case .close:
-                        TelemetryService.track(
-                            .yalaAIOnboardingDismissed,
-                            parameters: ["launcher": launcher.rawValue]
-                        )
+                        break
                     }
                     isPresented = false
                 }

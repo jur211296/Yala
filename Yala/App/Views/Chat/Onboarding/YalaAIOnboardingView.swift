@@ -54,9 +54,6 @@ struct YalaAIOnboardingView: View {
                 }
             }
         }
-        .onAppear {
-            TelemetryService.track(.yalaAIOnboardingShown, parameters: ["launcher": launcher.rawValue])
-        }
     }
 
     @ViewBuilder
@@ -244,7 +241,6 @@ struct YalaAIOnboardingView: View {
             a11yPrefix: L10n.YalaAI.Onboarding.step3Title
         ) {
             prefs.insightsTone = tone
-            trackPersonalizationPicked(prefs: prefs)
         }
     }
 
@@ -282,7 +278,6 @@ struct YalaAIOnboardingView: View {
             a11yPrefix: L10n.YalaAI.Onboarding.step4Title
         ) {
             prefs.insightsFocus = focus
-            trackPersonalizationPicked(prefs: prefs)
         }
     }
 
@@ -437,14 +432,6 @@ struct YalaAIOnboardingView: View {
         }
     }
 
-    private func trackPersonalizationPicked(prefs: AppPreferences) {
-        TelemetryService.track(.yalaAIOnboardingTonePicked, parameters: [
-            "tone": prefs.insightsTone.rawValue,
-            "focus": prefs.insightsFocus.rawValue,
-            "launcher": launcher.rawValue
-        ])
-    }
-
     // MARK: - CTA
 
     private var ctaSection: some View {
@@ -470,11 +457,6 @@ struct YalaAIOnboardingView: View {
                 currentStep = next
             }
         } else {
-            TelemetryService.track(.yalaAIOnboardingCompleted, parameters: [
-                "launcher": launcher.rawValue,
-                "tone": appPreferences.insightsTone.rawValue,
-                "focus": appPreferences.insightsFocus.rawValue
-            ])
             onResult(.complete)
         }
     }

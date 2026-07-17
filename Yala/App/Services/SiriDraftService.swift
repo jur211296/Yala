@@ -103,7 +103,6 @@ struct SiriDraftService {
         // Los descartados (sin transacción válida) se borran aunque no haya nada que guardar.
         if !droppedKeys.isEmpty {
             SiriPendingStore.remove(keys: droppedKeys)
-            TelemetryService.track(.siriPayloadDropped, parameters: ["count": String(droppedKeys.count)])
         }
 
         // Nada válido que insertar (todos los dictados sin transacción parseable): salir.
@@ -128,7 +127,6 @@ struct SiriDraftService {
         // Save OK → borrar las keys materializadas. Residual documentado: un crash entre este save y
         // el remove reprocesaría el dictado, pero el dedup del próximo pase lo absorbe.
         SiriPendingStore.remove(keys: materializedKeys)
-        TelemetryService.track(.siriPayloadMaterialized, parameters: ["count": String(accepted.count)])
         return accepted.count
     }
 

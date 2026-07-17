@@ -221,17 +221,6 @@ struct ProfileView: View {
                         accounts: viewModel.accounts,
                         categories: viewModel.categories,
                         onImportCompleted: { result in
-                            let countBucket: String
-                            switch result.count {
-                            case 0: countBucket = "0"
-                            case 1...10: countBucket = "1-10"
-                            case 11...100: countBucket = "11-100"
-                            default: countBucket = "100+"
-                            }
-                            TelemetryService.track(.dataImported, parameters: [
-                                "exito": String(result.isSuccess),
-                                "cantidad_bucket": countBucket,
-                            ])
                             // Store result and show alert after sheet animation completes
                             activeSheet = nil
                             importResult = result

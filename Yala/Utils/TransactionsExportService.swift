@@ -236,8 +236,6 @@ struct TransactionsExportService {
             exportedCount: filteredTransactions.count
         )
 
-        TelemetryService.track(.exportCompleted, parameters: ["format": format.rawValue])
-
         return result
     }
 

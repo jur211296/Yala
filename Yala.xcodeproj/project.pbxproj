@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		96CFFFC42EC3D721002AC31C /* CoreXLSX in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC32EC3D721002AC31C /* CoreXLSX */; };
 		96CFFFC52EC3D721002AC31C /* OpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = 96CFFFC72EC3D721002AC31C /* OpenAI */; };
-		AEB9EB328BE2E1077D2F522E /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = B6B43726ABA640E1D7F2C50D /* TelemetryDeck */; };
 		C97DFC7FD1F24FEC879D5C20 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 11FC810D61C746FA9D59B55A /* Auth */; };
 		87FEE9CC79174C25A83CF00E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 585462E33E8448A1A5A0C015 /* GoogleSignIn */; };
 		CFADC3C22F2A42810040D198 /* YalaShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CFADC3B82F2A42810040D198 /* YalaShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -169,7 +168,6 @@
 			files = (
 				96CFFFC42EC3D721002AC31C /* CoreXLSX in Frameworks */,
 				96CFFFC52EC3D721002AC31C /* OpenAI in Frameworks */,
-				AEB9EB328BE2E1077D2F522E /* TelemetryDeck in Frameworks */,
 				C97DFC7FD1F24FEC879D5C20 /* Auth in Frameworks */,
 				87FEE9CC79174C25A83CF00E /* GoogleSignIn in Frameworks */,
 			);
@@ -268,7 +266,6 @@
 			packageProductDependencies = (
 				96CFFFC32EC3D721002AC31C /* CoreXLSX */,
 				96CFFFC72EC3D721002AC31C /* OpenAI */,
-				B6B43726ABA640E1D7F2C50D /* TelemetryDeck */,
 				11FC810D61C746FA9D59B55A /* Auth */,
 				585462E33E8448A1A5A0C015 /* GoogleSignIn */,
 			);
@@ -414,7 +411,6 @@
 			packageReferences = (
 				96CFFFC22EC3D721002AC31C /* XCRemoteSwiftPackageReference "CoreXLSX" */,
 				96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */,
-				4E97FB9187BF6FE7F4D701D1 /* XCRemoteSwiftPackageReference "SwiftSDK" */,
 				34F31E7526F241AD90BE48C0 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				C2064AA48EB94CC391D77D75 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
@@ -1512,14 +1508,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		4E97FB9187BF6FE7F4D701D1 /* XCRemoteSwiftPackageReference "SwiftSDK" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/TelemetryDeck/SwiftSDK";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
-			};
-		};
 		96CFFFC22EC3D721002AC31C /* XCRemoteSwiftPackageReference "CoreXLSX" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/CoreOffice/CoreXLSX";
@@ -1564,11 +1552,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 96CFFFC62EC3D721002AC31C /* XCRemoteSwiftPackageReference "OpenAI" */;
 			productName = OpenAI;
-		};
-		B6B43726ABA640E1D7F2C50D /* TelemetryDeck */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4E97FB9187BF6FE7F4D701D1 /* XCRemoteSwiftPackageReference "SwiftSDK" */;
-			productName = TelemetryDeck;
 		};
 		11FC810D61C746FA9D59B55A /* Auth */ = {
 			isa = XCSwiftPackageProductDependency;

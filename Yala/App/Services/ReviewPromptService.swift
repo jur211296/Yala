@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Decides cuándo mostrar el prompt nativo de App Store review.
-//  Servicio estático (como TelemetryService) — no es @Observable.
+//  Servicio estático — no es @Observable.
 //
 
 import Foundation

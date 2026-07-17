@@ -83,10 +83,8 @@ final class ChatSuggestionsLLMService {
                 language: context.language
             )
             Self.setCached(validated, for: Date.now, language: language)
-            TelemetryService.track(.chatSuggestionsLLMSucceeded, parameters: ["count": String(validated.count)])
             return validated
         } catch {
-            TelemetryService.track(.chatSuggestionsLLMFailed, parameters: ["reason": String(describing: error)])
             return []
         }
     }

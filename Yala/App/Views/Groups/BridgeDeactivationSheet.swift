@@ -15,15 +15,6 @@ import SwiftData
 enum BridgeScope: Equatable {
     case global
     case perGroup(zoneID: String, groupName: String)
-
-    /// String estable para telemetry parameters. Single source of truth — evita drift
-    /// entre callsites que envían telemetría con scopes distintos.
-    var telemetryName: String {
-        switch self {
-        case .global: return "global"
-        case .perGroup: return "perGroup"
-        }
-    }
 }
 
 struct BridgeDeactivationSheet: View {
@@ -131,10 +122,6 @@ struct BridgeDeactivationSheet: View {
             case (.delete, .perGroup(let zoneID, _)):
                 try deleteBridgedTransactions(zoneID: zoneID)
             }
-            TelemetryService.track(.bridgeDeactivationCompleted, parameters: [
-                "scope": scope.telemetryName,
-                "option": selectedOption.rawValue
-            ])
             onConfirm()
             dismiss()
         } catch {

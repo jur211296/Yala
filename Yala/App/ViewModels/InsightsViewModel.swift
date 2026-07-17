@@ -253,7 +253,6 @@ final class InsightsViewModel {
                 focus: focus
             )
             aiInsights = response
-            TelemetryService.track(.aiInsightsGenerated)
         } catch {
             aiError = error.localizedDescription
             #if DEBUG

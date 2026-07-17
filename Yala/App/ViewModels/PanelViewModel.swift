@@ -2769,9 +2769,6 @@ final class PanelViewModel {
 
     private var lastHeroTrendContext: TrendContext?
 
-    /// Cache-key único de telemetría; `trackOnce` dedupea por sesión.
-    private static let heroTelemetryKey = "panelHero"
-
     /// Task en vuelo — permite cancelar la anterior si llega otro trigger
     /// (evita last-writer-wins stale cuando Pro/consent togglean en rápido).
     private var heroAITask: Task<Void, Never>?
@@ -2802,7 +2799,6 @@ final class PanelViewModel {
         if let cached = HeroMessageCache.read(),
            cached.hash == HeroMessageCache.contextHash(ctx) {
             heroAISubtitle = cached.text
-            TelemetryService.trackOnce(.panelHeroAICacheHit, key: Self.heroTelemetryKey)
             return
         }
 
@@ -2813,7 +2809,6 @@ final class PanelViewModel {
                 let text = try await InsightsLLMService.shared.generateHeroMessage(context: ctx)
                 guard !Task.isCancelled else { return }
                 self.heroAISubtitle = text
-                TelemetryService.track(.panelHeroAIGenerated)
             } catch {
                 guard !Task.isCancelled else { return }
                 self.heroAISubtitle = nil

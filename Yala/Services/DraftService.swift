@@ -97,21 +97,11 @@ final class DraftService {
     /// avanzar: solo se borra el draft y se refresca. NO invoca `approveDraft` (no crea una
     /// `TransactionItem` personal — el gasto ya vive en el grupo).
     func handleDraftConvertedToGroupExpense(_ draft: InboxDraft, context: ModelContext) {
-        // Capturado antes del delete (leer props de un objeto borrado da un fault).
-        let sourceRaw = draft.sourceTypeRaw
-        // Canario: si el bridge no estaba listo, el SplitExpense pudo quedar sin contraparte
-        // personal (best-effort en createExpense). Muy improbable en un user-tap del Inbox
-        // (el boot ya inyectó el context), pero lo instrumentamos por si reaparece.
-        let bridgeReady = GroupTransactionBridge.shared.isReady
         do {
             context.delete(draft)
             try context.save()
             SessionState.shared.incrementDataVersion()
             WidgetDataCache.updateCache(context: context)
-            TelemetryService.track(
-                .draftConvertedToGroupExpense,
-                parameters: ["source": sourceRaw, "bridgeReady": bridgeReady ? "true" : "false"]
-            )
         } catch {
             #if DEBUG
             print("DraftService: Error convirtiendo draft a gasto de grupo: \(error)")
@@ -167,7 +157,6 @@ final class DraftService {
                 context.delete(draft)
                 try context.save()
                 SessionState.shared.incrementDataVersion()
-                TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
                 return targetTx
             }
             // Target con subcategory==nil ausente: o el gasto ya se clasificó en otro device (y
@@ -196,7 +185,6 @@ final class DraftService {
                 logger.error(
                     "groupExpense draft for splitExpenseID=\(splitID, privacy: .public) already classified elsewhere; discarded redundant draft."
                 )
-                TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
                 return existingTx
             }
             // No existe ninguna TX → el expense desapareció. El draft stale ya se limpió arriba;
@@ -251,7 +239,6 @@ final class DraftService {
 
             SessionState.shared.incrementDataVersion()
             WidgetDataCache.updateCache(context: context)
-            TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
             return tx
         }
 
@@ -337,8 +324,6 @@ final class DraftService {
         ScheduledPaymentDraftService.handleDraftApproved(draft: draft, context: context)
 
         try context.save()
-
-        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
 
         // Count approved draft toward transaction total (for review prompt)
         let txCount = UserDefaults.standard.integer(forKey: "transactionsSavedCount") + 1
@@ -521,8 +506,6 @@ final class DraftService {
         draft.updatedAt = Date.now
 
         try context.save()
-
-        TelemetryService.track(.draftRejected, parameters: ["source": draft.sourceTypeRaw])
     }
 
     func bulkReject(_ drafts: [InboxDraft]) throws {
@@ -788,7 +771,6 @@ final class DraftService {
 
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
-        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
         return realTx
     }
 
@@ -937,7 +919,6 @@ final class DraftService {
         try context.save()
         SessionState.shared.incrementDataVersion()
         WidgetDataCache.updateCache(context: context)
-        TelemetryService.track(.draftApproved, parameters: ["source": draft.sourceTypeRaw])
         return tx
     }
 }

@@ -89,12 +89,10 @@ struct MilestoneUpgradeSheet: View {
                 // Buttons
                 VStack(spacing: DS.Spacing.md) {
                     YalaPrimaryButton(L10n.FeatureGate.upgradeToPro) {
-                        TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: "milestone"))
                         showSubscription = true
                     }
 
                     Button(L10n.Milestone.notNow) {
-                        TelemetryService.track(.proUpsellDismissed, parameters: TelemetryService.upsellParameters(source: "milestone"))
                         dismiss()
                     }
                     .font(DS.Typography.body)
@@ -108,7 +106,6 @@ struct MilestoneUpgradeSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        TelemetryService.track(.proUpsellDismissed, parameters: TelemetryService.upsellParameters(source: "milestone"))
                         dismiss()
                     }
                 }
@@ -119,7 +116,6 @@ struct MilestoneUpgradeSheet: View {
             // emiten el intent; si el sheet nunca aparece, el milestone no se
             // pierde (markMilestoneShown es idempotente ante doble onAppear).
             ProUpsellService.shared.markMilestoneShown(milestone)
-            TelemetryService.track(.proUpsellShown, parameters: TelemetryService.upsellParameters(source: "milestone"))
         }
         .sheet(isPresented: $showSubscription) {
             NavigationStack {

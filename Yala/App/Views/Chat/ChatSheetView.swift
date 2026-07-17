@@ -73,7 +73,6 @@ struct ChatSheetView: View {
         .presentationDragIndicator(.visible)
         .onAppear {
             viewModel.setContext(modelContext)
-            TelemetryService.track(.chatSheetOpened)
             // setContext ya consume el signal persistido en UserDefaults; aquí
             // cubrimos el caso del signal in-memory llegado mientras el sheet
             // estaba abierto pero antes del primer .onChange.
@@ -81,9 +80,6 @@ struct ChatSheetView: View {
         }
         .onDisappear {
             viewModel.persistSession()
-            TelemetryService.track(.chatSheetDismissed, parameters: [
-                "hadConversation": String(!viewModel.messages.isEmpty)
-            ])
         }
         .onChange(of: sessionState.chatDraftSavedSignal) { _, _ in
             consumeChatDraftSavedSignal()

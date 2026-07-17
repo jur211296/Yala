@@ -504,7 +504,6 @@ struct ChatTransactionDraftCard: View {
                 .font(DS.Typography.caption)
             Spacer()
             Button(L10n.Chat.Draft.retryButton) {
-                TelemetryService.track(.chatDraftRetried)
                 onSave(draft.id)
             }
             .font(DS.Typography.labelSmall)

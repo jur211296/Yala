@@ -194,7 +194,6 @@ struct PanelPanoramaSection: View {
 
     private var upsellCTA: some View {
         Button {
-            TelemetryService.track(.panelHeroCTATap)
             upsellDestination = FeatureGateService.shared.isProUser ? .consent : .upgrade
         } label: {
             HStack(spacing: DS.Spacing.xs) {
@@ -217,9 +216,6 @@ struct PanelPanoramaSection: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .onAppear {
-            TelemetryService.trackOnce(.panelHeroCTAImpression, key: "panelHero")
-        }
     }
 
     // MARK: - Content

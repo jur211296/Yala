@@ -434,9 +434,6 @@ struct GroupSettingsView: View {
                     // OFF estando ON → setOverride(false) (override OFF explícito).
                     let override: Bool? = newValue ? nil : false
                     try BridgeModeResolver.shared.setOverride(for: group, override: override, in: modelContext)
-                    TelemetryService.track(.bridgeOverrideSet, parameters: [
-                        "override": override == nil ? "inherit" : String(override == true)
-                    ])
                     // Si user desactivó (newValue==false) Y hay TX bridgeadas para este
                     // grupo, presenta BridgeDeactivationSheet scoped (plan F4) para que
                     // el user decida freeze vs delete.
@@ -814,7 +811,6 @@ struct GroupSettingsView: View {
     private func performArchiveToggle(isArchiving: Bool) {
         do {
             try GroupService.shared.setArchived(group, isArchived: isArchiving)
-            if isArchiving { TelemetryService.track(.groupArchived) }
             DS.Haptic.success()
             viewModel.loadData()
             if group.isArchived {

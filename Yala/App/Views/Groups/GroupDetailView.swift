@@ -368,9 +368,6 @@ struct GroupDetailView: View {
             withTransaction(transaction) {
                 selectedTab = tab
             }
-            if tab == .balances {
-                TelemetryService.track(.groupBalancesViewed)
-            }
         } label: {
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: tab.icon)
@@ -424,7 +421,6 @@ struct GroupDetailView: View {
                     var transaction = Transaction()
                     transaction.disablesAnimations = true
                     withTransaction(transaction) { selectedTab = .balances }
-                    TelemetryService.track(.groupBalancesViewed)
                 },
                 onRefresh: { await viewModel.refreshFromCloud(force: true) }
             )

@@ -115,13 +115,6 @@ final class GroupExpenseService {
 
         SessionState.shared.incrementDataVersion()
         SplitSyncManager.shared.enqueueSave(modelID: expense.id, group: group)
-        // Un saldo inicial NO es un gasto normal — su telemetría la dispara `setOpeningBalance`.
-        if !isOpeningBalance {
-            TelemetryService.track(.groupExpenseAdded, parameters: [
-                "splitType": splitType,
-                "memberCount": String(shares.count)
-            ])
-        }
 
         // Bridge to personal transaction/draft (guard: bridge may not be initialized yet)
         if GroupTransactionBridge.shared.isReady {
@@ -313,10 +306,6 @@ final class GroupExpenseService {
             accountForCurrentUser: nil,
             isOpeningBalance: true
         )
-
-        TelemetryService.track(.openingBalanceCreated, parameters: [
-            "sameCurrencyAsGroup": String(currencyCode == group.currencyCode)
-        ])
         return expense
     }
 
@@ -372,7 +361,6 @@ final class GroupExpenseService {
         }
 
         try performExpenseDeletion(expense, in: group, context: context)
-        TelemetryService.track(.openingBalanceRemoved, parameters: [:])
     }
 
     /// Guard targeted: `true` si una liquidación confirmada del grupo involucra a alguno de

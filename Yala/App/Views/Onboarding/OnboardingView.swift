@@ -75,7 +75,6 @@ struct OnboardingView: View {
     @State private var lastAutoName: String = ""
     /// Snapshot del currency cuando se abre el picker — permite detectar cambio
     /// y disparar `onboardingCurrencyPicked` solo si user efectivamente eligió.
-    @State private var currencyAtPickerOpen: CurrencyCode? = nil
 
     // Budget state (preserved for completeOnboarding — budget step removed from flow)
     @State private var wantsBudget: Bool = false
@@ -279,26 +278,6 @@ struct OnboardingView: View {
             }
         }
         .task {
-            // Telemetría de mount: started (funnel inicio) + stepViewed Step 1
-            // (drop-off por step). Por separado son correctos: started=mount,
-            // stepViewed=visit a step.
-            TelemetryService.track(
-                .onboardingStarted,
-                parameters: OnboardingTelemetryEventBuilder.paramsForStarted(
-                    mode: mode,
-                    prefilled: prefilledData != nil
-                )
-            )
-            TelemetryService.track(
-                .onboardingStepViewed,
-                parameters: OnboardingTelemetryEventBuilder.paramsForStepViewed(
-                    step: currentStep.trackingName,
-                    stepIndex: effectiveSteps.firstIndex(of: currentStep) ?? 0,
-                    totalSteps: effectiveTotalSteps,
-                    mode: mode
-                )
-            )
-
             let defaults = UserDefaults.standard
             if let name = OnboardingPrefillResolver.resolveUserName(
                 prefilled: prefilledData,
@@ -366,7 +345,6 @@ struct OnboardingView: View {
         case (.heroFlow, .name):
             if let cancel = onCancelFromStep1 {
                 YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                    trackCancelled()
                     cancel()
                 }
             }
@@ -375,45 +353,17 @@ struct OnboardingView: View {
         case (.themedPanel, _):
             if let cancel = onCancel {
                 YalaToolbarButton(systemName: "xmark", label: L10n.Action.cancel) {
-                    trackCancelled()
                     cancel()
                 }
             }
         }
     }
 
-    private func trackCancelled() {
-        TelemetryService.track(
-            .onboardingCancelled,
-            parameters: OnboardingTelemetryEventBuilder.paramsForCancelled(
-                atStep: currentStep.trackingName,
-                mode: mode
-            )
-        )
-    }
-
     /// Navega un step atrás con la animación canónica del flow Welcome.
     /// Llamado por el chevron del toolbar (`.heroFlow`) y la back capsule
-    /// del bottom (`.themedPanel`). Dispara telemetría ANTES del withAnimation.
+    /// del bottom (`.themedPanel`).
     private func goBack() {
         guard let prev = previousStep(before: currentStep) else { return }
-
-        TelemetryService.track(
-            .onboardingBackTapped,
-            parameters: OnboardingTelemetryEventBuilder.paramsForBackTapped(
-                fromStep: currentStep.trackingName,
-                mode: mode
-            )
-        )
-        TelemetryService.track(
-            .onboardingStepViewed,
-            parameters: OnboardingTelemetryEventBuilder.paramsForStepViewed(
-                step: prev.trackingName,
-                stepIndex: effectiveSteps.firstIndex(of: prev) ?? 0,
-                totalSteps: effectiveTotalSteps,
-                mode: mode
-            )
-        )
 
         navigatingForward = false
         dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
@@ -849,7 +799,6 @@ struct OnboardingView: View {
                 ) {
                     Button {
                         accountNameFocused = false
-                        currencyAtPickerOpen = accountCurrency
                         showCurrencyPicker = true
                     } label: {
                         HStack(spacing: DS.Spacing.md) {
@@ -886,16 +835,7 @@ struct OnboardingView: View {
                 lastAutoName = suggested
             }
         }
-        .sheet(isPresented: $showCurrencyPicker, onDismiss: {
-            // Track solo si user efectivamente cambió la divisa en el sheet.
-            if let initial = currencyAtPickerOpen, initial != accountCurrency {
-                TelemetryService.track(
-                    .onboardingCurrencyPicked,
-                    parameters: ["currency": accountCurrency.rawValue]
-                )
-            }
-            currencyAtPickerOpen = nil
-        }) {
+        .sheet(isPresented: $showCurrencyPicker) {
             accountCurrencyPickerSheet
         }
     }
@@ -1748,11 +1688,8 @@ struct OnboardingView: View {
     }
 
     /// Avanza al siguiente step (o completa el onboarding si es el último).
-    /// Dispara picks del step que dejamos (state final efectivo, evita ruido
-    /// de picks parciales) + stepViewed del próximo step ANTES del withAnimation.
     private func advance() {
         dismissKeyboard()
-        trackPickIfApplicable(forStep: currentStep)
 
         if currentStep == .confirmation {
             // Sync currency before completing
@@ -1774,52 +1711,12 @@ struct OnboardingView: View {
 
         guard let next = nextStep(after: currentStep) else { return }
 
-        TelemetryService.track(
-            .onboardingStepViewed,
-            parameters: OnboardingTelemetryEventBuilder.paramsForStepViewed(
-                step: next.trackingName,
-                stepIndex: effectiveSteps.firstIndex(of: next) ?? 0,
-                totalSteps: effectiveTotalSteps,
-                mode: mode
-            )
-        )
-
         navigatingForward = true
         dsWithAnimation(reduceMotion, .easeInOut(duration: 0.3)) {
             currentStep = next
         }
         if next == .categories {
             triggerCategoryAnimation()
-        }
-    }
-
-    /// Dispara el evento de pick del step que estamos dejando, leyendo el state
-    /// final del view (no el handler — evita disparar 3 veces si user toca
-    /// `control → expenses → control` antes de avanzar).
-    private func trackPickIfApplicable(forStep step: Step) {
-        switch step {
-        case .purpose:
-            TelemetryService.track(
-                .onboardingPurposePicked,
-                parameters: ["purpose": selectedUsageMode.rawValue]
-            )
-        case .accounts:
-            TelemetryService.track(
-                .onboardingAccountsPicked,
-                parameters: ["accounts": wantsSeparateAccounts ? "multiple" : "single"]
-            )
-        case .accountType:
-            TelemetryService.track(
-                .onboardingAccountTypePicked,
-                parameters: ["type": selectedAccountType.rawValue]
-            )
-        case .categories:
-            TelemetryService.track(
-                .onboardingCategoriesPicked,
-                parameters: ["loadSeed": String(loadSeedCategories)]
-            )
-        default:
-            break
         }
     }
 

@@ -352,9 +352,6 @@ final class AccountFormViewModel {
             }
         }
 
-        // Track new account creation (before save, after insert)
-        let isNewAccount = accountToEdit == nil
-
         // Force save to ensure @Query observers are notified of changes
         do {
             try context.save()
@@ -363,10 +360,6 @@ final class AccountFormViewModel {
         } catch {
             isShowingSaveError = true
             return false
-        }
-
-        if isNewAccount {
-            TelemetryService.track(.accountCreated)
         }
 
         // Suggest adding currency as secondary if applicable

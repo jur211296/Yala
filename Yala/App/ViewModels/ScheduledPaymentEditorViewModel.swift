@@ -196,16 +196,6 @@ final class ScheduledPaymentEditorViewModel {
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
 
-            TelemetryService.track(.scheduledPaymentSaved, parameters: [
-                "recurrence": recurrenceType.rawValue,
-                "category": paymentCategory.rawValue,
-                "isNew": String(existing == nil),
-            ])
-
-            if existing == nil, (try? context.fetchCount(FetchDescriptor<ScheduledPayment>())) == 1 {
-                TelemetryService.track(.firstScheduledPayment, parameters: ["recurrencia": recurrenceType.rawValue])
-            }
-
             return paymentID
         } catch {
             #if DEBUG
@@ -226,7 +216,6 @@ final class ScheduledPaymentEditorViewModel {
             try service.deleteScheduledPayment(payment)
             WidgetDataCache.updateCache(context: context)
             SessionState.shared.incrementDataVersion()
-            TelemetryService.track(.scheduledPaymentDeleted)
             return true
         } catch {
             #if DEBUG

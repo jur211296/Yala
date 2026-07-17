@@ -180,7 +180,6 @@ struct DetailContainerView: View {
                 if selectedTab != newValue { selectedTab = newValue }
             }
             .onChange(of: selectedTab) { _, newTab in
-                TelemetryService.track(.statsTabViewed, parameters: ["tab": newTab.rawValue])
                 if newTab != .records {
                     recordsViewModel.exitDuplicateMode()   // modo efímero: se apaga al salir del tab Registros
                 }
@@ -826,17 +825,9 @@ private struct DetailContainerObservers: ViewModifier {
             ))
             // isAggregatedView is local to StatisticsViewModel (not a SessionState proxy)
             .onChange(of: trendsViewModel.isAggregatedView) { _, _ in recalculateData() }
-            // "Identificar duplicados": recompute al togglear modo/criterios + telemetría al activar.
-            .onChange(of: recordsViewModel.duplicateModeActive) { _, isActive in
+            // "Identificar duplicados": recompute al togglear modo/criterios.
+            .onChange(of: recordsViewModel.duplicateModeActive) { _, _ in
                 recalculateData()
-                if isActive {
-                    TelemetryService.track(.recordsDuplicateModeActivated, parameters: [
-                        "byAmount": String(recordsViewModel.duplicateCriteria.amount),
-                        "byNote": String(recordsViewModel.duplicateCriteria.note),
-                        "bySubcategory": String(recordsViewModel.duplicateCriteria.subcategory),
-                        "byDate": String(recordsViewModel.duplicateCriteria.date),
-                    ])
-                }
             }
             .onChange(of: recordsViewModel.duplicateCriteria) { _, _ in
                 recalculateData()

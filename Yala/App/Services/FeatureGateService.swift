@@ -115,11 +115,6 @@ final class FeatureGateService {
     func canAccess(_ feature: ProFeature) -> Bool {
         if isProUser { return true }
         if setupTrialFeatures.contains(feature) { return true }
-        if feature.isProOnly {
-            var params = TelemetryService.upsellParameters(source: "featureGate")
-            params["feature"] = feature.rawValue
-            TelemetryService.trackOnce(.featureGateHit, key: feature.rawValue, parameters: params)
-        }
         return !feature.isProOnly
     }
 

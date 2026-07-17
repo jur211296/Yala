@@ -86,11 +86,7 @@ struct GroupMembersView: View {
             }
             .sheet(isPresented: $showShareSheet) {
                 if let url = shareURL {
-                    ActivityView(activityItems: [url]) { completed in
-                        if completed {
-                            TelemetryService.track(.groupInviteSent, parameters: ["via": "link"])
-                        }
-                    }
+                    ActivityView(activityItems: [url])
                 }
             }
             .sheet(isPresented: $showOpeningBalanceEditor, onDismiss: { viewModel.loadData() }) {

@@ -142,7 +142,6 @@ struct ApplePayDraftService {
         // Los descartados (corruptos/cero) se borran aunque no haya nada que guardar (no reintentar).
         if !droppedKeys.isEmpty {
             ApplePayPendingStore.remove(keys: droppedKeys, defaults: pendingStoreDefaults)
-            TelemetryService.track(.applePayPayloadDropped, parameters: ["count": String(droppedKeys.count)])
         }
 
         guard !createdDrafts.isEmpty else { return 0 }
@@ -164,7 +163,6 @@ struct ApplePayDraftService {
         // Save OK → borrar las keys materializadas. Residual documentado: un crash entre este save
         // y el remove reprocesaría los pagos → borrador duplicado (recuperable), nunca pérdida.
         ApplePayPendingStore.remove(keys: materializedKeys, defaults: pendingStoreDefaults)
-        TelemetryService.track(.applePayPayloadMaterialized, parameters: ["count": String(createdDrafts.count)])
         return createdDrafts.count
     }
 

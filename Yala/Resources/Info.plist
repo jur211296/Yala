@@ -20,8 +20,6 @@
 	<string>$(URL_SCHEME)</string>
 	<key>GIDClientID</key>
 	<string>$(GID_CLIENT_ID)</string>
-	<key>TELEMETRY_DECK_APP_ID</key>
-	<string>9D2922BB-2BCB-4B63-A0EB-B3AAD33CD6CA</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Yala uses the microphone to record voice input for creating transactions. Your audio is sent to OpenAI for transcription.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

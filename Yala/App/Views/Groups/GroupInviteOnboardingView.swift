@@ -197,11 +197,10 @@ struct GroupInviteOnboardingView: View {
         return GroupInviteOnboardingLogic.softTimeout
     }
 
-    /// Cierre único del onboarding: telemetría + policy de limpieza + navegación.
+    /// Cierre único del onboarding: policy de limpieza + navegación.
     private func complete(_ outcome: GroupInviteOnboardingOutcome) {
         switch outcome {
         case .joined, .pendingApproval:
-            TelemetryService.track(.groupInviteOnboardingCompleted)
             NudgeService.shared.recordGroupJoinIfNeeded()
         case .closedWhileSyncing, .abandonedAfterFailure:
             break

@@ -67,7 +67,6 @@ struct GroupTwoPersonSplitView: View {
         let subtitle = debtSubtitle(for: choice)
         return Button {
             viewModel.applyTwoPersonChoice(choice)
-            TelemetryService.track(.groupTwoPersonSplitChosen, parameters: ["choice": choice.rawValue])
             dismiss()
         } label: {
             HStack(spacing: DS.Spacing.md) {
@@ -100,7 +99,6 @@ struct GroupTwoPersonSplitView: View {
 
     private var moreOptionsButton: some View {
         Button {
-            TelemetryService.track(.groupTwoPersonSplitChosen, parameters: ["choice": "moreOptions"])
             onMoreOptions()
         } label: {
             HStack(spacing: DS.Spacing.xs) {

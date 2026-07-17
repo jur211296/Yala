@@ -385,33 +385,21 @@ struct PanelView: View {
                             TrialBanner(
                                 daysRemaining: StoreKitManager.shared.trialDaysRemaining
                             ) {
-                                TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: "trialBanner"))
                                 sheets.subscriptionBannerSource = "trialBanner"
                                 sheets.showSubscriptionFromBanner = true
-                            }
-                            .onAppear {
-                                var params = TelemetryService.upsellParameters(source: "trialBanner")
-                                params["daysRemaining"] = String(StoreKitManager.shared.trialDaysRemaining)
-                                TelemetryService.trackOnce(.proUpsellShown, key: "trialBanner", parameters: params)
-                                if StoreKitManager.shared.isTrialExpiringSoon {
-                                    TelemetryService.trackOnce(.trialExpiring, key: "trialExpiring", parameters: params)
-                                }
                             }
                         } else if !FeatureGateService.shared.isProUser && showPeriodicBanner {
                             ProUpgradeBanner(
                                 onUpgrade: {
-                                    TelemetryService.track(.proUpsellTapped, parameters: TelemetryService.upsellParameters(source: "periodicBanner"))
                                     sheets.subscriptionBannerSource = "periodicBanner"
                                     sheets.showSubscriptionFromBanner = true
                                 },
                                 onDismiss: {
-                                    TelemetryService.track(.proUpsellDismissed, parameters: TelemetryService.upsellParameters(source: "periodicBanner"))
                                     ProUpsellService.shared.recordDismissed()
                                     showPeriodicBanner = false
                                 }
                             )
                             .onAppear {
-                                TelemetryService.trackOnce(.proUpsellShown, key: "periodicBanner", parameters: TelemetryService.upsellParameters(source: "periodicBanner"))
                                 ProUpsellService.shared.recordShown(source: "periodicBanner")
                             }
                         }

@@ -47,7 +47,6 @@ struct SubscriptionView: View {
         .task {
             await store.loadProducts()
             await store.updateSubscriptionStatus()
-            TelemetryService.trackOnce(.paywallViewed, key: "paywall", parameters: TelemetryService.upsellParameters(source: source))
         }
         .alert(L10n.Subscription.errorTitle, isPresented: $showError) {
             Button(L10n.Common.ok, role: .cancel) {}

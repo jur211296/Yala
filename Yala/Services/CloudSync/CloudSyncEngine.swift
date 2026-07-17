@@ -246,7 +246,7 @@ enum CloudSyncBreadcrumb {
     }
 
     /// F-5: `clock.receive` RECHAZÓ un HLC remoto (drift >5min / counter overflow) → el reloj conserva
-    /// su `latest` previo y el apply continúa. Par del canario TelemetryDeck
+    /// su `latest` previo y el apply continúa. Par del canario MetricsService
     /// `cloudSyncClockReceiveRejected`.
     static func clockReceiveRejected(reason: String) {
         logger.notice("CloudSyncApply clockReceiveRejected reason=\(reason, privacy: .public)")
@@ -293,7 +293,7 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMerkle entitySkipped=quarantined \(entity, privacy: .public)")
     }
 
-    /// El entityHash local ≠ remoto para `entity` (o `"root"`). Par del canario TelemetryDeck
+    /// El entityHash local ≠ remoto para `entity` (o `"root"`). Par del canario MetricsService
     /// `cloudSyncMerkleDivergence`.
     static func merkleDivergence(entity: String) {
         logger.notice("CloudSyncMerkle divergence entity=\(entity, privacy: .public)")
@@ -398,7 +398,7 @@ enum CloudSyncBreadcrumb {
     /// Fix carrera 2026-07-14 — RUIDOSO (error-level): la red agotó el cap del ciclo sin
     /// confirmar presentación (algo tapa el anchor perpetuamente). El blocker vivo de la
     /// matriz sigue conteniendo el router y el exit-on-background es la red final.
-    /// Par TelemetryDeck: `.relaunchNetExhausted` (canario de prod).
+    /// Par MetricsService: `.relaunchNetExhausted` (canario de prod).
     static func relaunchNetExhausted(net: String) {
         logger.error("CloudSignOut relaunchNet EXHAUSTED net=\(net, privacy: .public) — cover terminal sin presentar tras el cap del ciclo")
     }
@@ -447,7 +447,7 @@ enum CloudSyncBreadcrumb {
     /// GUARD de mount-mismatch (M1, crítico): el runtime intentó arrancar con el descriptor
     /// secundario activo pero el proceso montó el store del DUEÑO (ventana de entrada pre-relaunch)
     /// → bloqueado. Sin el guard, el drain pushearía la History del dueño a la cuenta entrante.
-    /// Par del canario TelemetryDeck `cloudSecondaryMountMismatchBlocked` (dedupeado por proceso).
+    /// Par del canario MetricsService `cloudSecondaryMountMismatchBlocked` (dedupeado por proceso).
     static func runtimeBlockedByMountMismatch() {
         logger.error("CloudSecondary runtime BLOCKED by mount-mismatch — descriptor active, owner store mounted (awaiting relaunch)")
     }
@@ -515,7 +515,7 @@ enum CloudSyncBreadcrumb {
     }
 
     /// El canje falló (`no-code` / `no-jwt` / `exchange` / `keychain`) → este sign-in queda sin token
-    /// revocable (best-effort; re-sign-in lo cura). Par del canario TelemetryDeck `siwaExchangeFailed`.
+    /// revocable (best-effort; re-sign-in lo cura). Par del canario MetricsService `siwaExchangeFailed`.
     static func siwaExchangeFailed(reason: String) {
         logger.notice("CloudSyncAuth siwaExchangeFailed reason=\(reason, privacy: .public)")
     }
@@ -1764,7 +1764,7 @@ final class CloudSyncEngine {
     private func recordIdentityGap(entityType: String, reason: String) {
         identityGapCount += 1
         CloudSyncBreadcrumb.identityGap(entityType: entityType, reason: reason)
-        // Canario TelemetryDeck (no-op en tests: `track` retorna si el servicio no está configurado).
+        // Canario MetricsService (no-op en tests: sin start() todo es no-op).
         MetricsService.cloudSyncIdentityGapObserved(entityType: entityType)
     }
 

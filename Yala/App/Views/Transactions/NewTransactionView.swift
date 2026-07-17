@@ -1502,7 +1502,6 @@ struct NewTransactionView: View {
 
     private func duplicateTransaction() {
         guard transactionToEdit != nil else { return }
-        TelemetryService.track(.transactionDuplicated, parameters: ["type": viewModel.transactionType.rawValue])
 
         // Animate form out
         dsWithAnimation(reduceMotion) {
@@ -1558,7 +1557,6 @@ struct NewTransactionView: View {
 
             modelContext.delete(transaction)
             try modelContext.save()
-            TelemetryService.track(.transactionDeleted, parameters: ["type": viewModel.transactionType.rawValue])
             WidgetDataCache.updateCache(context: modelContext)
             SessionState.shared.incrementDataVersion()
             dismiss()

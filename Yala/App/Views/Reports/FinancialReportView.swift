@@ -98,7 +98,6 @@ struct FinancialReportView: View {
             onReset: { cashFlowViewModel.resetPlan() }
         )
         .onAppear {
-            TelemetryService.trackOnce(.reportViewed, key: "session")
             recalculate()
             cashFlowViewModel.setContext(modelContext)
         }

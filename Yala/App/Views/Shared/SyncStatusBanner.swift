@@ -95,7 +95,6 @@ struct SyncStatusBannerHost: View {
         Group {
             if !sessionState.isWipingData {
                 SyncStatusBanner(status: service.status) {
-                    TelemetryService.track(.cloudkitIndicatorTapped)
                     onTap()
                 }
             }

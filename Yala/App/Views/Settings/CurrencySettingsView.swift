@@ -424,7 +424,6 @@ struct CurrencySettingsView: View {
 
                 // Only update AppPreferences AFTER successful migration
                 appPreferences.defaultCurrencyCode = newCurrency
-                TelemetryService.track(.currencyChanged, parameters: ["moneda": newCurrency.rawValue])
 
                 // Force refresh exchange rates
                 await exchangeRateService.forceUpdateToday(context: modelContext)

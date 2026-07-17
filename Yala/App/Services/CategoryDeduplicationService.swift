@@ -545,10 +545,6 @@ enum CategoryDeduplicationService {
 
             try context.save()
             SessionState.shared.incrementDataVersion()
-            TelemetryService.track(
-                .cloudkitBudgetCSVMirrorRebuilt,
-                parameters: ["count": String(touched)]
-            )
             #if DEBUG
             print("CategoryDeduplicationService: backfillBudgetCSVMirrorsFromM2M — rebuilt \(touched) budget CSV mirror(s)")
             #endif

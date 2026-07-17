@@ -11,7 +11,7 @@
 //  Diseño: un deadline por intent al primer hold; al vencer, reporta SOLO si
 //  el intent sigue en cola (drenado o dropeado en background = no-reporte).
 //  Una vez por intent por sesión. Dependencias inyectables para tests
-//  (el shared usa AppRouter + TelemetryService reales).
+//  (el shared usa AppRouter + MetricsService reales).
 //
 
 import Foundation
