@@ -91,8 +91,18 @@ npm run deploy:production    # wrangler deploy --env production
 | `POST` | `/attest/bind` | I6 (Modo Nube) |
 | `POST` | `/prefs/push` · `GET` `/prefs/pull` | I6 (Modo Nube) |
 | `POST` | `/v1/debug/push` | spike G0 (staging-only, ver abajo) |
+| `POST` | `/metrics` | ✅ telemetría propia (2026-07-17) |
 
 Privacidad: el Worker **no loguea bodies** (contexto financiero/audio/imagen); solo metadata operativa.
+
+### `POST /metrics` — telemetría propia mínima (sustituye TelemetryDeck)
+
+Ingestión PÚBLICA (molde `/config`: sin auth/attest) de 3 eventos: `ping` (activos/día), `register`
+(altas/día, `n`=local|cloud) y `canary` (diagnósticos del gate de Modo Nube). Escribe a **Workers
+Analytics Engine** (binding `METRICS`; datasets `yala_metrics_staging` / `yala_metrics`, retención 90
+días). Validación estricta (whitelist + regex + caps) como único anti-abuso; binding ausente → 200 y
+descarte logueado (el cliente no reintenta por config server-side). Queries de referencia y contrato
+del wire: `qa/cloud/README.md` § "Telemetría propia POST /metrics". Tests: `test/metrics.test.ts`.
 
 ## APNs (spike G0 — Grupos→backend)
 

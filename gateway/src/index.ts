@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Env } from "./env";
 import { handleConfig } from "./config";
+import { handleMetrics } from "./metrics";
 import { jsonError } from "./errors";
 import { handleAssert, handleChallenge, handleDevToken, handleRegister } from "./attest/routes";
 import { handleAudioTranscriptions, handleChatCompletions } from "./proxy/openai";
@@ -38,6 +39,9 @@ app.get("/healthz", (c) =>
 
 // --- Remote-config del cliente (DIFERIDOS #34): flags de rollout §j.1/§j.2, pública, sin bindings ---
 app.get("/config", handleConfig);
+
+// --- Telemetría propia mínima (2026-07-17, sustituye TelemetryDeck): ping/register/canary → Analytics Engine ---
+app.post("/metrics", handleMetrics);
 
 // --- App Attest (task #2) ---
 app.post("/v1/attest/challenge", handleChallenge);

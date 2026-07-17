@@ -16,7 +16,7 @@ interface ConfigBody {
   };
 }
 
-function getConfig(env: Record<string, string>): Promise<Response> {
+function getConfig(env: Record<string, string>): Response | Promise<Response> {
   return app.request("/config", { method: "GET" }, env);
 }
 

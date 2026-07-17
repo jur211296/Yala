@@ -65,6 +65,12 @@ id = "66bcbb46d628488d97a309f212df3e72"
 name = "RATE_LIMITER"
 class_name = "RateLimiter"
 
+# Telemetría propia mínima (POST /metrics, 2026-07-17): ping diario / registros / canarios.
+# Dataset SEPARADO por env (staging no contamina las series de prod). Retención AE: 90 días.
+[[analytics_engine_datasets]]
+binding = "METRICS"
+dataset = "yala_metrics_staging"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["RateLimiter"]
@@ -111,3 +117,7 @@ id = "af4bd87867f043f99db280a6ca30231d"
 [[env.production.durable_objects.bindings]]
 name = "RATE_LIMITER"
 class_name = "RateLimiter"
+
+[[env.production.analytics_engine_datasets]]
+binding = "METRICS"
+dataset = "yala_metrics"

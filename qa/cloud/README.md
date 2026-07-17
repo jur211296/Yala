@@ -1236,3 +1236,50 @@ compilado directo. Ídem: los tests que quieran la composición REAL deben llama
 **QA:** panel DEBUG (CloudSyncDebugView → card "Remote cfg"): snapshot + bucket + efectivos + toggle
 "Simular remote OFF" (key `cloudSync.debug.remoteFlagsForceOff`, solo DEV) + botón "Fetch /config
 ahora" (force, salta min-interval y URLCache).
+
+## Telemetría propia `POST /metrics` (2026-07-17 — sustituye TelemetryDeck)
+
+**Endpoint** público (sin auth/attest, molde `/config`) → **Workers Analytics Engine** (binding
+`METRICS`; dataset `yala_metrics_staging` en staging, `yala_metrics` en prod — **retención AE: 90
+días**; series más largas requieren export periódico, diferido D3). Wire v1:
+
+```json
+{"v":1,"install":"<sha256(bucketSeed) truncado 16 hex>","app":"2.0.5","events":[
+  {"e":"ping"},
+  {"e":"register","n":"local","d":"groupsOnly"},
+  {"e":"canary","n":"cloudSyncMerkleDivergence","d":"tx_items","x":3}]}
+```
+
+Eventos: `ping` (activos/día — el CLIENTE garantiza ≤1/día con guard local `metrics.lastPingDay`,
+día UTC), `register` (`n`=`local`|`cloud`; `d`=modo: full/groupsOnly/groupInvite/migration/bornCloud)
+y `canary` (los wrappers typed de `MetricsService` — el gate "canarios en cero" del Bloque C se lee
+AQUÍ). Validación estricta server-side (whitelist de eventos, `n` regex `[A-Za-z0-9_.-]{1,64}`,
+`d`≤128, batch cap 25, body cap 8KB, install hex 16-64) → 400 `yala_bad_input`; binding ausente →
+200 `accepted:0` (el cliente NO debe reintentar por config server-side). Mapeo AE por evento:
+`blobs [e, n, d, appVersion, install]` · `doubles [x]` · `indexes [install]`.
+
+**Privacidad:** `install` = SHA-256 truncado del `bucketSeed` local (UUID por instalación, carve-out
+`cloudSync.*`) — no reversible, no enlazable a cuenta; JAMÁS viaja userID/email/dato financiero.
+
+**Queries de referencia** (dashboard CF → Analytics Engine → SQL). ⚠️ AE **muestrea**: los counts
+correctos son `sum(_sample_interval)`, JAMÁS `count()` a secas. Validadas contra el dataset real en
+el deploy — ajustar si el SQL de AE difiere:
+
+```sql
+-- DAU (el guard client-side once-per-day hace que esto ≈ usuarios activos/día):
+SELECT toStartOfInterval(timestamp, INTERVAL '1' DAY) AS day, sum(_sample_interval) AS dau
+FROM yala_metrics WHERE blob1 = 'ping' GROUP BY day ORDER BY day DESC;
+
+-- Registros/día por tipo (blob2 = local|cloud, blob3 = modo):
+SELECT toStartOfInterval(timestamp, INTERVAL '1' DAY) AS day, blob2 AS kind, sum(_sample_interval) AS n
+FROM yala_metrics WHERE blob1 = 'register' GROUP BY day, kind ORDER BY day DESC;
+
+-- Canarios (GATE DE ENCENDIDO: cero filas = verde). blob4 = versión de app que lo emitió:
+SELECT blob2 AS canary, blob3 AS detail, blob4 AS app, sum(_sample_interval) AS n
+FROM yala_metrics WHERE blob1 = 'canary' GROUP BY canary, detail, app ORDER BY n DESC;
+```
+
+Residuales documentados: evento retenido en el spool offline del cliente se estampa el día del ENVÍO
+(distorsión solo offline multi-día); sin rate-limit por IP (D2 — validación estricta + AE barato);
+alerting = consulta manual del dashboard (D5, paridad con lo que había). Tests:
+`gateway/test/metrics.test.ts` (unit, sin red). Cliente iOS: `Yala/Services/Metrics/`.
