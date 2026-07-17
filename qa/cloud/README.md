@@ -913,6 +913,36 @@ plan: el mirror `.icloud` solo espeja el store personal `.private`).
 - **Tests:** `CloudSyncEngineTests` T0-T8 (stores on-disk, `.serialized`, contenido REAL del outbox;
   T8 = regresión del S1).
 
+**Caso hermano — token IN-DECODIFICABLE (DIFERIDOS #33, cerrado 2026-07-17):** el guard de arriba
+dispara ante NO-comparabilidad detectable por timestamp (token que decodifica pero excluye); el otro
+modo de fallo es el token que NO decodifica (o cuyo fetch por token LANZA — migración destructiva de
+schema). Antes ese caso hacía re-escaneo COMPLETO (`historyTokenExpired`): con purga de History
+activa habría re-emitido el corpus entero con HLC fresco (el reloj PERSISTIDO ya avanzó → el dedup
+`(syncID,hlc,op)` no absorbe; en multi-device además PISA por LWW writes ajenos más nuevos aún no
+pulleados). Fix: `HistoryTokenFallbackLogic` (tabla pura) + `fetchHistoryResolvingToken`/
+`executeBrokenTokenBranch` en el motor — re-escaneo ACOTADO a la ventana `> lastDrainedTxAt − 60s`
+(la MISMA ancla del guard) + re-anclaje a la última tx de la ventana. Semánticas: **(a)** sin ancla
+(cursor pre-schema) → full-rescan CONSERVADO (sin ancla no se puede acotar sin arriesgar pérdida);
+**(b)** el fetch acotado TAMBIÉN lanza → DEGRADA al full-rescan medido (abortar = stall = la clase
+inconvergible local-ahead de arriba); ventana VACÍA (History purgada bajo el ancla) → drain ocioso
+barato hasta que un write nuevo entre y sane. Breadcrumbs con rama:
+`historyTokenBrokenBoundedRescan(window:)` / `historyTokenBrokenFullRescan(reason: no-anchor |
+bounded-fetch-failed, txs:)` (los counts MIDEN la re-emisión — canario si el hazard ocurre igual) /
+`historyTokenBrokenReanchored`. Residuales: rewind de reloj > slack con token roto simultáneo (el
+fallback es load-bearing → los writes del gap se pierden de la captura hasta que el wall-clock
+re-pase el cutoff — misma improbabilidad que M1, citada en el doc-comment); la frontera del slack se
+re-emite con HLC fresco (LWW converge, mismo residual T3). El guard del Hallazgo 2 se SALTA con
+token roto (su fetch sería idéntico al de la rama acotada). **SERIO 1 del review adversarial (fix
+`translationAborted`):** los reanchor (el nuevo Y el gemelo del guard, que tenía el MISMO defecto
+latente) apuntan a la última tx de la ventana/unión CRUDA, calculada ANTES de traducir — si
+`clock.send` lanza a mitad (drift >5min, alcanzable con reloj persistido adelantado por
+snapshot/remap), re-anclar saltaría las txs externas entre el break y el final SIN emitirlas
+(invisibles para siempre: timestamp ≤ ancla nueva) = pérdida silenciosa. Con abort, AMBOS reanchor
+se suprimen y el paso 7 cae al avance normal (última tx CONSUMIDA = punto de retry del invariante
+de drift). Tests: `CloudSyncEngineTests` T9-T14 (T14 = el abort) + `HistoryTokenFallbackLogicTests`
+(tabla). El token corrupto real solo aparece en migraciones destructivas de schema — no fabricable
+en device on-demand: cobertura por tests + breadcrumbs como canario en Console.
+
 ### HALLAZGO 3 — zombies ni-sweep-ni-mirror-history: CERRADO como cubierto por canario
 
 El sweep NUNCA propaga vía `ckRecordName`: borra la fila viva local bajo `outboxSaveAuthor` y el MIRROR

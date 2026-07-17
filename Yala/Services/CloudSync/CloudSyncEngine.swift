@@ -37,8 +37,9 @@ import SwiftData
 /// Errores del cursor de captura. Nombrados (nunca silenciados) para el path §d.6.
 nonisolated enum CloudSyncCursorError: Error, Equatable {
     /// El token persistido no se pudo decodificar o el fetch por token falló (migración destructiva,
-    /// incompatibilidad de versión) → reconcile: en I3 se re-escanea el History completo (dedup lo
-    /// hace seguro); el reconcile real (§d.6) llega en I8.
+    /// incompatibilidad de versión). DIFERIDOS #33: desde el cierre, ese caso re-escanea ACOTADO por
+    /// `lastDrainedTxAt` (`HistoryTokenFallbackLogic`) en vez del History completo; el full-rescan
+    /// queda solo para cursor sin ancla (pre-schema) o fetch acotado que también lanza.
     case historyTokenExpired
 }
 
@@ -61,9 +62,28 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncIdentityGap \(entityType, privacy: .public) reason=\(reason, privacy: .public)")
     }
 
-    /// El token del cursor expiró/no decodificó → reconcile (re-escaneo completo en I3).
-    static func historyTokenExpired() {
-        logger.notice("CloudSync historyTokenExpired — reconcile (full rescan)")
+    /// DIFERIDOS #33: el token del cursor está ROTO (in-decodificable o su fetch por token lanzó) pero hay
+    /// ancla (`lastDrainedTxAt`) → re-escaneo ACOTADO a la ventana `> ancla − slack` en vez del full-rescan
+    /// (el corpus por debajo del cutoff NO se re-emite). `window` = txs en la ventana (0 = History purgada
+    /// por debajo del ancla — el token roto persiste y se cura con el primer write nuevo). Sin PII.
+    static func historyTokenBrokenBoundedRescan(window: Int) {
+        logger.notice("CloudSync historyTokenBrokenBoundedRescan window=\(window, privacy: .public) — token roto; re-escaneo acotado por lastDrainedTxAt")
+    }
+
+    /// DIFERIDOS #33: el token está ROTO y el drain degradó a re-escaneo COMPLETO — `reason` distingue la
+    /// rama: `no-anchor` (cursor pre-schema sin `lastDrainedTxAt`, semántica (a) — comportamiento pre-fix
+    /// conservado) o `bounded-fetch-failed` (semántica (b): el fetch acotado por timestamp TAMBIÉN lanzó;
+    /// degradar preserva la convergencia — abortar sería stall = divergencia local-ahead). `txs` MIDE el
+    /// tamaño de la re-emisión (el hazard de #33 ocurriendo pese al fix): en producción cloud, `reason=
+    /// bounded-fetch-failed` con `txs` alto = canario. Sin PII (solo counts).
+    static func historyTokenBrokenFullRescan(reason: String, txs: Int) {
+        logger.notice("CloudSync historyTokenBrokenFullRescan reason=\(reason, privacy: .public) txs=\(txs, privacy: .public) — token roto; full-rescan degradado")
+    }
+
+    /// DIFERIDOS #33: tras un re-escaneo acotado con ventana NO vacía, el token se re-ancló a la última tx
+    /// del mount actual. Par de recuperación de `historyTokenBrokenBoundedRescan`. Sin PII.
+    static func historyTokenBrokenReanchored() {
+        logger.notice("CloudSync historyTokenBrokenReanchored — token re-anclado tras re-escaneo acotado")
     }
 
     /// HALLAZGO 2 (corrida device reversa 2026-07-11): el guard de validación por timestamp detectó que el
@@ -1002,6 +1022,18 @@ final class CloudSyncEngine {
     /// `historyTokenRecovered`). Expuesto para tests.
     private(set) var historyTokenRecoveredCount = 0
 
+    /// DIFERIDOS #33: nº de re-escaneos ACOTADOS por token roto (par del breadcrumb
+    /// `historyTokenBrokenBoundedRescan`, incluye ventana vacía). Expuesto para tests.
+    private(set) var historyTokenBrokenBoundedCount = 0
+
+    /// DIFERIDOS #33: nº de full-rescans DEGRADADOS por token roto (par del breadcrumb
+    /// `historyTokenBrokenFullRescan` — reasons no-anchor / bounded-fetch-failed). Expuesto para tests.
+    private(set) var historyTokenBrokenFullRescanCount = 0
+
+    /// DIFERIDOS #33: nº de re-anclajes tras un re-escaneo acotado (par del breadcrumb
+    /// `historyTokenBrokenReanchored`). Expuesto para tests.
+    private(set) var historyTokenBrokenReanchoredCount = 0
+
     // MARK: Espejo del outbox (A1, §d.5)
 
     /// Espejo App Group del `SyncOutbox` (durabilidad ante lightweight migration). `nil` = mirroring
@@ -1053,6 +1085,14 @@ final class CloudSyncEngine {
     /// commit) → simula un crash: nada se persiste, el cursor NO avanza (D-5, atomicidad). SOLO tests.
     var _testThrowOnApplySave = false
 
+    /// DIFERIDOS #33 (T13): cuando `true`, el fetch por TOKEN del drain lanza — simula el token
+    /// decodable cuyo `fetchHistory(predicate: token >)` revienta (migración destructiva). SOLO tests.
+    var _testThrowOnTokenHistoryFetch = false
+
+    /// DIFERIDOS #33 (T12): cuando `true`, el fetch ACOTADO por timestamp del fallback lanza — fuerza
+    /// la semántica (b) (degradación a full-rescan). SOLO tests.
+    var _testThrowOnBoundedHistoryFetch = false
+
     /// DIFERIDOS #29 (SERIO 3): override de la fase de migración que consulta el guard de `emitIdentityRemap`
     /// (default `nil` → `MigrationPhaseStore.shared.currentPhase`, el SSOT real). SOLO para tests (simular una
     /// migración/reversa EN CURSO sin journal real).
@@ -1091,15 +1131,19 @@ final class CloudSyncEngine {
             //    durable — necesario para el lockstep de resumibilidad tras integrar remotos vía apply).
             let cursor = try loadOrCreateCursor(context)
             loadClock(from: cursor)
-            let token = decodeToken(cursor.historyTokenData)
+            let tokenState = decodeToken(cursor.historyTokenData)
 
             // 2) Barrido defensivo: asigna syncID a las filas vivas de los 6 tipos que aún no lo tengan
             //    (SIN autor especial → la próxima vuelta captura ese cambio), y construye los índices
             //    persistentID→modelo que usa la traducción. Save con autor por DEFECTO (no es outbox).
             let lookups = try sweepAndBuildLookups(context)
 
-            // 3) History posterior al token (o completo si nil / token expirado).
-            let tokenTxns = try fetchHistory(after: token, context: context)
+            // 3) History posterior al token — o, con token ROTO (in-decodificable / fetch que lanza),
+            //    el fallback ACOTADO por `lastDrainedTxAt` de DIFERIDOS #33 (rama decidida por
+            //    `HistoryTokenFallbackLogic`; ver doc-comment de `fetchHistoryResolvingToken`).
+            let fetchOutcome = try fetchHistoryResolvingToken(
+                tokenState, cursor: cursor, context: context)
+            let tokenTxns = fetchOutcome.txns
 
             // 3-bis) HALLAZGO 2 — guard de validación del token por TIMESTAMP con revalidación continua.
             //    Red redundante barata: si el token del cursor (acuñado en un mount previo) dejó de
@@ -1107,8 +1151,16 @@ final class CloudSyncEngine {
             //    UNIÓN de ambos fetches y re-ancla. `guard.txns` = tokenTxns en steady-state; la unión al
             //    recuperar. `guard.reanchor` != nil ⇒ recovery (se re-ancla SIEMPRE a la última tx de la
             //    unión en el paso 7). Ver doc-comment de `recoverIfHistoryTokenIncomparable`.
-            let tokenGuard = recoverIfHistoryTokenIncomparable(
-                cursor: cursor, tokenTxns: tokenTxns, context: context)
+            //    DIFERIDOS #33: con token ROTO el guard se SALTA — "comparabilidad" de un token que ni
+            //    decodifica no significa nada, y su fetch por timestamp sería idéntico al que la rama
+            //    acotada acaba de hacer (doble fetch inútil); el re-anclaje lo trae `fetchOutcome`.
+            let tokenGuard: TokenGuardResult
+            if fetchOutcome.tokenWasBroken {
+                tokenGuard = TokenGuardResult(txns: tokenTxns)
+            } else {
+                tokenGuard = recoverIfHistoryTokenIncomparable(
+                    cursor: cursor, tokenTxns: tokenTxns, context: context)
+            }
             if tokenGuard.validatedByCompare { historyTokenValidated = true }
             let txns = tokenGuard.txns
 
@@ -1127,6 +1179,11 @@ final class CloudSyncEngine {
             var rows: [PendingOutboxRow] = []
             var advancedToken: DefaultHistoryToken?
             var advancedTxAt: Date?
+            // SERIO 1 del review adversarial #33: si la traducción ABORTA a mitad (clock.send lanza),
+            // NINGÚN re-anclaje (ni el del guard ni el de token roto) puede saltar por encima de las
+            // txs externas no consumidas — el paso 7 los suprime y cae al avance normal (`advancedToken`
+            // = última tx consumida, el punto de retry seguro del invariante de drift).
+            var translationAborted = false
             for tx in txns {
                 // Anti-auto-captura (echo suppression): descartar los writes del propio motor. NO
                 // avanzan el high-water (si lo hicieran, cada avance escribiría el cursor → loop).
@@ -1150,6 +1207,7 @@ final class CloudSyncEngine {
                     #if DEBUG
                     print("CloudSyncEngine: clock drift/overflow al traducir tx \(tx.token): \(error)")
                     #endif
+                    translationAborted = true
                     break
                 }
                 rows.append(contentsOf: txRows)
@@ -1185,8 +1243,16 @@ final class CloudSyncEngine {
             //    (crash → ambos revierten juntos → replay determinista). HALLAZGO 2: `lastDrainedTxAt` se
             //    persiste ATÓMICAMENTE con el token (misma transacción) → el ancla comparable cross-mount
             //    nunca queda desincronizada del token.
+            //    SERIO 1 del review adversarial #33 (aplica a AMBOS re-anclajes — el gemelo del guard
+            //    tenía el mismo defecto latente): los reanchor apuntan a la última tx de la ventana/unión
+            //    CRUDA, calculada ANTES de traducir — con `translationAborted` (clock.send lanzó a mitad),
+            //    re-anclar saltaría las txs externas entre el break y el final SIN haberlas emitido →
+            //    quedarían con timestamp ≤ ancla nueva, invisibles para siempre (token-fetch, fallback Y
+            //    guard) = pérdida silenciosa. En abort se cae al avance normal (última tx CONSUMIDA — el
+            //    punto de retry del invariante de drift); si nada se consumió, no se guarda nada y el
+            //    próximo drain reintenta entero.
             if !_testSuppressTokenAdvance {
-                if let reanchor = tokenGuard.reanchor {
+                if let reanchor = tokenGuard.reanchor, !translationAborted {
                     // RECOVERY: el token era no-comparable cross-mount → re-anclar SIEMPRE a la última tx de
                     //    la UNIÓN, AUNQUE sea del motor (`author == outboxSaveAuthor`). Difiere del invariante
                     //    normal —que solo avanza con history EXTERNA— a propósito: para re-anclar basta un
@@ -1200,6 +1266,22 @@ final class CloudSyncEngine {
                     historyTokenValidated = true
                     historyTokenRecoveredCount += 1
                     CloudSyncBreadcrumb.historyTokenRecovered()
+                } else if let reanchor = fetchOutcome.brokenReanchor, !translationAborted {
+                    // DIFERIDOS #33: el token estaba ROTO y la rama acotada trajo ventana no vacía →
+                    //    re-anclar a la ÚLTIMA tx de la ventana (motor incluido — misma justificación
+                    //    que el reanchor del guard: para sanar basta un token del mount actual; el
+                    //    filtro de emisión del paso 5 es independiente). Precede a `advancedToken` a
+                    //    propósito: el avance normal solo apunta a la última tx EXTERNA — anclar más
+                    //    atrás dejaría txs del motor por delante que cada drain re-leería. Atomicidad
+                    //    token+ancla+reloj idéntica a las otras dos ramas.
+                    try saveWithAuthor(context, Self.outboxSaveAuthor) {
+                        cursor.historyTokenData = try encodeToken(reanchor.token)
+                        cursor.lastDrainedTxAt = reanchor.txAt
+                        cursor.clockLatestHLC = clock.latest?.description
+                    }
+                    historyTokenValidated = true
+                    historyTokenBrokenReanchoredCount += 1
+                    CloudSyncBreadcrumb.historyTokenBrokenReanchored()
                 } else if let advancedToken {
                     //    Avance normal: SOLO si se consumió history externa. Bundling seguro: todo `clock.send`
                     //    de esta vuelta ocurrió al traducir una tx externa que también fijó `advancedToken`.
@@ -1854,14 +1936,34 @@ final class CloudSyncEngine {
         try context.save()
     }
 
-    private func decodeToken(_ data: Data?) -> DefaultHistoryToken? {
-        guard let data else { return nil }
+    /// Resultado tri-estado del decode del token persistido (DIFERIDOS #33): distinguir `absent`
+    /// (bootstrap legítimo) de `broken` (la clase del hazard) es lo que permite acotar el fallback.
+    private enum TokenDecodeResult {
+        case absent
+        case valid(DefaultHistoryToken)
+        case broken
+
+        var logicState: HistoryTokenFallbackLogic.TokenState {
+            switch self {
+            case .absent: .absent
+            case .valid: .valid
+            case .broken: .broken
+            }
+        }
+    }
+
+    private func decodeToken(_ data: Data?) -> TokenDecodeResult {
+        guard let data else { return .absent }
         do {
-            return try JSONDecoder().decode(DefaultHistoryToken.self, from: data)
+            return .valid(try JSONDecoder().decode(DefaultHistoryToken.self, from: data))
         } catch {
-            // Token no decodificable → path expirado (reconcile completo en I3 = escaneo total).
-            CloudSyncBreadcrumb.historyTokenExpired()
-            return nil
+            // Token in-decodificable (migración destructiva de schema) → DIFERIDOS #33: la rama la
+            // decide `HistoryTokenFallbackLogic` (acotado por ancla en vez del full-rescan de I3);
+            // el breadcrumb con nombre de rama lo emite `executeBrokenTokenBranch`.
+            #if DEBUG
+            print("CloudSyncEngine: decodeToken falló: \(error)")
+            #endif
+            return .broken
         }
     }
 
@@ -1869,20 +1971,126 @@ final class CloudSyncEngine {
         try JSONEncoder().encode(token)
     }
 
-    private func fetchHistory(
-        after token: DefaultHistoryToken?, context: ModelContext
-    ) throws -> [DefaultHistoryTransaction] {
-        guard let token else {
-            return try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+    /// Resultado del paso 3 del drain: las transacciones a procesar + el estado del fallback de
+    /// token roto (DIFERIDOS #33) que el resto del drain consume (saltar el guard 3-bis; re-anclar
+    /// en el paso 7).
+    private struct HistoryFetchOutcome {
+        var txns: [DefaultHistoryTransaction]
+        /// El token estaba ROTO (in-decodificable o fetch por token que lanzó) → el guard del
+        /// Hallazgo 2 se salta (nada que validar) y, sin reanchor, el token roto persiste.
+        var tokenWasBroken = false
+        /// Rama acotada con ventana NO vacía: última tx de la ventana a la que el paso 7 re-ancla
+        /// el token (motor incluido — misma justificación que el reanchor del guard).
+        var brokenReanchor: (token: DefaultHistoryToken, txAt: Date)?
+    }
+
+    /// Paso 3 del drain (DIFERIDOS #33). Rama por `HistoryTokenFallbackLogic.decide`:
+    /// - token válido → fetch por token (normal); si LANZA (token incompatible tras migración
+    ///   destructiva) → re-decide con `.broken` — misma clase que in-decodificable.
+    /// - token ausente → escaneo completo LEGÍTIMO de bootstrap (comportamiento de siempre).
+    /// - token roto → `executeBrokenTokenBranch` (acotado por ancla / full-rescan medido).
+    private func fetchHistoryResolvingToken(
+        _ tokenState: TokenDecodeResult, cursor: SyncCursor, context: ModelContext
+    ) throws -> HistoryFetchOutcome {
+        let branch = HistoryTokenFallbackLogic.decide(
+            tokenState: tokenState.logicState,
+            lastDrainedTxAt: cursor.lastDrainedTxAt,
+            slack: Self.historyTokenSlack)
+        switch branch {
+        case .tokenFetch:
+            guard case .valid(let token) = tokenState else {
+                // Inalcanzable (`decide` solo devuelve .tokenFetch con .valid), defensivo.
+                return HistoryFetchOutcome(
+                    txns: try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()))
+            }
+            do {
+                if _testThrowOnTokenHistoryFetch { throw CloudSyncCursorError.historyTokenExpired }
+                return HistoryFetchOutcome(txns: try context.fetchHistory(
+                    HistoryDescriptor<DefaultHistoryTransaction>(
+                        predicate: #Predicate { $0.token > token })))
+            } catch {
+                #if DEBUG
+                print("CloudSyncEngine: fetch por token lanzó (\(error)) → fallback de token roto")
+                #endif
+                return try executeBrokenTokenBranch(
+                    HistoryTokenFallbackLogic.decide(
+                        tokenState: .broken,
+                        lastDrainedTxAt: cursor.lastDrainedTxAt,
+                        slack: Self.historyTokenSlack),
+                    context: context)
+            }
+        case .fullRescanBootstrap:
+            return HistoryFetchOutcome(
+                txns: try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()))
+        case .boundedRescan, .fullRescanNoAnchor:
+            return try executeBrokenTokenBranch(branch, context: context)
         }
-        do {
-            return try context.fetchHistory(
-                HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.token > token })
-            )
-        } catch {
-            // Fetch por token falló (token incompatible tras migración) → reconcile: escaneo completo.
-            CloudSyncBreadcrumb.historyTokenExpired()
-            return try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+    }
+
+    /// Ejecuta la rama de token ROTO (DIFERIDOS #33). Ver el doc-comment de la rama acotada en
+    /// `HistoryTokenFallbackLogic.Branch`; aquí las semánticas resueltas del cierre:
+    /// - **(acotada)** fetch por timestamp `> cutoff` (= ancla − slack): todo lo ≤ cutoff ya fue
+    ///   drenado (invariante del ancla) → NO se re-emite el corpus. La frontera del slack se re-lee y
+    ///   re-emite con HLC fresco → outbox redundante que el backend colapsa por LWW (coste acotado,
+    ///   mismo residual T3 del guard). Ventana NO vacía → `brokenReanchor` a su última tx (el paso 7
+    ///   persiste y emite el par `historyTokenBrokenReanchored`). Ventana VACÍA (History purgada por
+    ///   debajo del ancla) → sin reanchor: el token roto persiste y cada drain repite este fallback
+    ///   (un decode fallido + un fetch acotado vacío — barato) hasta que un write nuevo entre en la
+    ///   ventana y sane. Nota de orden: el reanchor usa `txns.last` en el ORDEN del fetch (orden de
+    ///   token/inserción, sin re-ordenar por timestamp como hace la unión del guard) — bajo reloj
+    ///   monótono coinciden; bajo rewind el `txAt` del re-ancla puede quedar por debajo del máximo
+    ///   visto, dirección SEGURA (ventana más ancha después → coste de re-lectura, no pérdida).
+    ///   **Residual REWIND (cita M1 del guard):** un ancla ADELANTADA al wall-clock
+    ///   (solo posible por rewind de reloj > slack durante la ventana del último drain) deja writes
+    ///   nuevos con `timestamp < cutoff` fuera de la ventana — con token roto este fallback es
+    ///   load-bearing (única fuente de captura) y esos writes del gap se pierden de la captura hasta
+    ///   que el wall-clock re-pase el cutoff (sana hacia adelante; el gap no se recupera). Misma
+    ///   improbabilidad que M1 y además exige el token roto SIMULTÁNEO; no se resuelve con wall-clock
+    ///   (`Date()`) — el guard lo descartó por diseño y se mantiene la coherencia.
+    /// - **(b — degradación)** el fetch acotado TAMBIÉN lanza → full-rescan MEDIDO en vez de abortar:
+    ///   abortar convertiría un fallo persistente del predicate-fetch en stall permanente del sync =
+    ///   divergencia local-ahead (la clase inconvergible del Hallazgo 2) = riesgo de pérdida de datos
+    ///   si el device muere; el daño del full-rescan es de COSTO y converge (LWW).
+    /// - **(a — sin ancla)** cursor pre-schema → full-rescan CONSERVADO (sin ancla no hay forma de
+    ///   acotar sin arriesgar pérdida de writes). Residual conservado: si la History no tiene NINGUNA
+    ///   tx externa, `advancedToken` queda nil → el token roto persiste → full-rescan repetido por
+    ///   drain (exactamente el comportamiento pre-#33; no se empeora ni se arregla).
+    private func executeBrokenTokenBranch(
+        _ branch: HistoryTokenFallbackLogic.Branch, context: ModelContext
+    ) throws -> HistoryFetchOutcome {
+        switch branch {
+        case .boundedRescan(let cutoff):
+            do {
+                if _testThrowOnBoundedHistoryFetch { throw CloudSyncCursorError.historyTokenExpired }
+                let txns = try context.fetchHistory(
+                    HistoryDescriptor<DefaultHistoryTransaction>(
+                        predicate: #Predicate { $0.timestamp > cutoff }))
+                historyTokenBrokenBoundedCount += 1
+                CloudSyncBreadcrumb.historyTokenBrokenBoundedRescan(window: txns.count)
+                let reanchor = txns.last.map { (token: $0.token, txAt: $0.timestamp) }
+                return HistoryFetchOutcome(
+                    txns: txns, tokenWasBroken: true, brokenReanchor: reanchor)
+            } catch {
+                // Semántica (b): degradar al full-rescan medido (ver doc-comment).
+                #if DEBUG
+                print("CloudSyncEngine: fetch acotado del fallback lanzó (\(error)) → full-rescan degradado")
+                #endif
+                let txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+                historyTokenBrokenFullRescanCount += 1
+                CloudSyncBreadcrumb.historyTokenBrokenFullRescan(
+                    reason: "bounded-fetch-failed", txs: txns.count)
+                return HistoryFetchOutcome(txns: txns, tokenWasBroken: true)
+            }
+        case .fullRescanNoAnchor:
+            let txns = try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>())
+            historyTokenBrokenFullRescanCount += 1
+            CloudSyncBreadcrumb.historyTokenBrokenFullRescan(reason: "no-anchor", txs: txns.count)
+            return HistoryFetchOutcome(txns: txns, tokenWasBroken: true)
+        case .tokenFetch, .fullRescanBootstrap:
+            // Inalcanzable (solo se invoca con ramas de token roto), defensivo.
+            return HistoryFetchOutcome(
+                txns: try context.fetchHistory(HistoryDescriptor<DefaultHistoryTransaction>()),
+                tokenWasBroken: true)
         }
     }
 

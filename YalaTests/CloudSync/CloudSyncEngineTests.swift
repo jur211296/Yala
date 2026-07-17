@@ -607,4 +607,264 @@ struct CloudSyncEngineTests {
         #expect(fresh.historyTokenRecoveredCount == 0)
         #expect(try outboxRows(context).count == outboxBefore)
     }
+
+    // MARK: - DIFERIDOS #33 — fallback ACOTADO ante token IN-DECODIFICABLE (T9-T13)
+
+    /// Sella el cursor con Data BASURA como token (in-decodificable — la clase del hazard #33) + un
+    /// `lastDrainedTxAt` dado. Autor del motor → el write del cursor no se re-captura.
+    private func sealCorruptToken(_ context: ModelContext, lastDrainedTxAt: Date?) throws {
+        let cursor = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
+        let prev = context.author
+        context.author = CloudSyncEngine.outboxSaveAuthor
+        cursor.historyTokenData = Data("garbage-token".utf8)
+        cursor.lastDrainedTxAt = lastDrainedTxAt
+        try context.save()
+        context.author = prev
+    }
+
+    /// Purga la History ENTERA (espeja `purgeHistoryOnce` con corte en distantFuture) — modela la
+    /// purga por debajo del ancla, el escenario real de la ventana vacía de T10.
+    private func purgeAllHistory(_ context: ModelContext) throws {
+        let cut = Date.distantFuture
+        try context.deleteHistory(
+            HistoryDescriptor<DefaultHistoryTransaction>(predicate: #Predicate { $0.timestamp < cut }))
+    }
+
+    /// T9 (regresión principal #33): token CORRUPTO + ancla válida → la rama ACOTADA recupera la fila
+    /// FX pendiente (columnas reales), re-ancla el token y NO corre el guard del Hallazgo 2. La
+    /// frontera del slack (la base ya drenada) se re-emite con HLC fresco — mismo residual que T3.
+    @Test func t9_corruptToken_boundedRescanRecoversAndReanchors() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        // Base drenada (crea cursor con token + ancla + reloj persistidos).
+        _ = makeTx(amount: 10, context: context)
+        try context.save()
+        CloudSyncEngine().drainOnce(context: context)
+        let baseRow = try #require(try outboxRows(context).first)
+        let baseSyncID = baseRow.syncID
+        let baseHLC = baseRow.hlc
+        let baseTxAt = try #require(allHistory(context).last?.timestamp)
+
+        // FX sin drenar + token CORRUPTO con ancla real.
+        let fx = try makeFX(context)
+        try context.save()
+        try sealCorruptToken(context, lastDrainedTxAt: baseTxAt)
+
+        let engine = CloudSyncEngine()
+        engine.drainOnce(context: context)
+
+        #expect(engine.historyTokenBrokenBoundedCount == 1)      // rama acotada
+        #expect(engine.historyTokenBrokenReanchoredCount == 1)   // re-anclado
+        #expect(engine.historyTokenBrokenFullRescanCount == 0)   // SIN full-rescan (el hazard acotado)
+        #expect(engine.historyTokenIncomparableCount == 0)       // el guard del Hallazgo 2 NO corrió
+        #expect(engine.historyTokenValidated)
+
+        // La FX viajó al outbox con columnas reales.
+        let fxOutbox = try fxRows(context)
+        #expect(fxOutbox.count == 1)
+        #expect(fxOutbox.first?.syncID == fx.syncID)
+        #expect(fxOutbox.first?.opRaw == SyncOutboxOp.upsert.rawValue)
+        #expect(fxOutbox.first?.fieldsJSON != "{}")
+
+        // Frontera del slack: la base se re-emite con HLC FRESCO (reloj persistido avanzó) — LWW converge.
+        let baseRowsAfter = try outboxRows(context).filter { $0.syncID == baseSyncID }
+        #expect(baseRowsAfter.count == 2)
+        #expect(Set(baseRowsAfter.map(\.hlc)).count == 2)
+        #expect(baseRowsAfter.contains { $0.hlc == baseHLC })
+
+        // Token sanado: el 2º drain de la misma instancia es no-op (sin filas nuevas, sin canarios nuevos).
+        let countAfterFirst = try outboxRows(context).count
+        engine.drainOnce(context: context)
+        #expect(try outboxRows(context).count == countAfterFirst)
+        #expect(engine.historyTokenBrokenBoundedCount == 1)
+    }
+
+    /// T10 (ventana vacía → cura): History PURGADA por debajo del ancla + token corrupto → window 0:
+    /// sin emisión, sin reanchor, el token roto persiste (drain ocioso barato); el primer write nuevo
+    /// entra en la ventana → el siguiente drain lo emite y re-ancla (auto-cura).
+    @Test func t10_corruptToken_emptyWindow_healsOnNextWrite() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        _ = makeTx(amount: 5, context: context)
+        try context.save()
+        CloudSyncEngine().drainOnce(context: context)
+        let baseTxAt = try #require(allHistory(context).last?.timestamp)
+        let outboxBefore = try outboxRows(context).count
+
+        // Sellar ANTES de purgar: el save del cursor del seal también es una tx de History (motor) —
+        // si quedara viva, caería en la ventana y el drain re-anclaría a ella de inmediato (correcto
+        // en producción, pero rompería la premisa "ventana vacía" de este test).
+        try sealCorruptToken(context, lastDrainedTxAt: baseTxAt)
+        try purgeAllHistory(context)
+
+        let engine = CloudSyncEngine()
+        engine.drainOnce(context: context)
+        #expect(engine.historyTokenBrokenBoundedCount == 1)      // rama acotada corrió (window 0)
+        #expect(engine.historyTokenBrokenReanchoredCount == 0)   // nada a lo que re-anclar
+        #expect(!engine.historyTokenValidated)                   // token sigue roto
+        #expect(try outboxRows(context).count == outboxBefore)   // sin emisión
+        let cursorMid = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
+        #expect(cursorMid.historyTokenData == Data("garbage-token".utf8))  // intacto
+
+        // Write nuevo (timestamp wall-clock > cutoff) → el siguiente drain emite + re-ancla.
+        _ = makeTx(amount: 6, context: context)
+        try context.save()
+        engine.drainOnce(context: context)
+        #expect(engine.historyTokenBrokenBoundedCount == 2)
+        #expect(engine.historyTokenBrokenReanchoredCount == 1)
+        #expect(engine.historyTokenValidated)
+        #expect(try outboxRows(context).count == outboxBefore + 1)
+        let cursorAfter = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
+        #expect(cursorAfter.historyTokenData != Data("garbage-token".utf8))  // re-anclado (decodable)
+    }
+
+    /// T11 (semántica a): token corrupto SIN ancla (cursor pre-schema) → full-rescan CONSERVADO con
+    /// breadcrumb propio: el corpus ya drenado se RE-emite con HLC fresco (el hazard, acotado solo al
+    /// caso sin ancla) y el avance normal del paso 7 sana el token.
+    @Test func t11_corruptTokenWithoutAnchor_fullRescanConserved() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        _ = makeTx(amount: 7, context: context)
+        try context.save()
+        CloudSyncEngine().drainOnce(context: context)
+        let baseRow = try #require(try outboxRows(context).first)
+        let baseSyncID = baseRow.syncID
+
+        _ = try makeFX(context)
+        try context.save()
+        try sealCorruptToken(context, lastDrainedTxAt: nil)
+
+        let engine = CloudSyncEngine()
+        engine.drainOnce(context: context)
+
+        #expect(engine.historyTokenBrokenFullRescanCount == 1)   // full-rescan (reason no-anchor)
+        #expect(engine.historyTokenBrokenBoundedCount == 0)
+        #expect(engine.historyTokenIncomparableCount == 0)       // guard saltado (token roto)
+        // El corpus se re-emitió (base ×2 con HLC fresco) + la FX ×1 — documenta el hazard conservado.
+        #expect(try outboxRows(context).filter { $0.syncID == baseSyncID }.count == 2)
+        #expect(try fxRows(context).count == 1)
+        // El avance NORMAL del paso 7 (txs externas consumidas) sanó el token.
+        let cursor = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
+        #expect(cursor.historyTokenData != nil)
+        #expect(cursor.historyTokenData != Data("garbage-token".utf8))
+        #expect(cursor.lastDrainedTxAt != nil)                   // el ancla se pobló (pre-schema curado)
+    }
+
+    /// T12 (semántica b): token corrupto + ancla + el fetch ACOTADO también lanza (seam) → DEGRADA al
+    /// full-rescan medido en vez de abortar el drain (la FX se recupera igual).
+    @Test func t12_corruptToken_boundedFetchThrows_degradesToFullRescan() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        _ = makeTx(amount: 8, context: context)
+        try context.save()
+        CloudSyncEngine().drainOnce(context: context)
+        let baseTxAt = try #require(allHistory(context).last?.timestamp)
+
+        _ = try makeFX(context)
+        try context.save()
+        try sealCorruptToken(context, lastDrainedTxAt: baseTxAt)
+
+        let engine = CloudSyncEngine()
+        engine._testThrowOnBoundedHistoryFetch = true
+        engine.drainOnce(context: context)
+
+        #expect(engine.historyTokenBrokenFullRescanCount == 1)   // degradado (reason bounded-fetch-failed)
+        #expect(engine.historyTokenBrokenBoundedCount == 0)      // la acotada no llegó a contar
+        #expect(engine.historyTokenBrokenReanchoredCount == 0)
+        #expect(try fxRows(context).count == 1)                  // el drain NO abortó: la FX se recuperó
+
+        // El avance NORMAL sanó el token en el MISMO drain (sin heal, cada drain repetiría el
+        // full-rescan re-emisor — el hazard en loop).
+        let cursor = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
+        #expect(cursor.historyTokenData != nil)
+        #expect(cursor.historyTokenData != Data("garbage-token".utf8))
+    }
+
+    /// T13 (fetch por token que LANZA con token VÁLIDO — el 2º punto del hazard #33): mismo camino
+    /// acotado que T9 (re-decide como roto → bounded + reanchor).
+    @Test func t13_validTokenFetchThrows_takesBoundedFallback() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        _ = makeTx(amount: 9, context: context)
+        try context.save()
+        CloudSyncEngine().drainOnce(context: context)  // cursor con token VÁLIDO + ancla
+
+        let fx = try makeFX(context)
+        try context.save()
+
+        let engine = CloudSyncEngine()
+        engine._testThrowOnTokenHistoryFetch = true
+        engine.drainOnce(context: context)
+
+        #expect(engine.historyTokenBrokenBoundedCount == 1)      // rama acotada (no full-rescan)
+        #expect(engine.historyTokenBrokenReanchoredCount == 1)
+        #expect(engine.historyTokenBrokenFullRescanCount == 0)
+        #expect(try fxRows(context).count == 1)
+        #expect(try fxRows(context).first?.syncID == fx.syncID)
+
+        // Seam OFF → el token re-anclado vuelve al camino normal sin filas nuevas.
+        engine._testThrowOnTokenHistoryFetch = false
+        let countAfterFirst = try outboxRows(context).count
+        engine.drainOnce(context: context)
+        #expect(try outboxRows(context).count == countAfterFirst)
+        #expect(engine.historyTokenBrokenBoundedCount == 1)
+    }
+
+    /// T14 (SERIO 1 del review adversarial #33): si la traducción ABORTA a mitad de ventana
+    /// (`clock.send` lanza por drift — reloj persistido adelantado > 5 min), el re-anclaje del token
+    /// roto se SUPRIME (re-anclar saltaría txs externas jamás emitidas = pérdida silenciosa). El token
+    /// queda roto y, saneado el reloj, el siguiente drain recupera TODO (nada se perdió).
+    @Test func t14_translationAborted_suppressesBrokenReanchor_noWriteLoss() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+
+        _ = makeTx(amount: 12, context: context)
+        try context.save()
+        CloudSyncEngine().drainOnce(context: context)
+        let baseTxAt = try #require(allHistory(context).last?.timestamp)
+        let outboxBefore = try outboxRows(context).count
+
+        // FX sin drenar + token corrupto + RELOJ PERSISTIDO adelantado 1h → drift > 5 min: el primer
+        // `clock.send` de la traducción lanza → abort en la frontera, sin filas ni avance.
+        let fx = try makeFX(context)
+        try context.save()
+        try sealCorruptToken(context, lastDrainedTxAt: baseTxAt)
+        var futureClock = HLCClock(nodeID: NodeID.generate())
+        let futureHLC = try futureClock.send(now: baseTxAt.addingTimeInterval(3600))
+        let cursorPre = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
+        let prevAuthor = context.author
+        context.author = CloudSyncEngine.outboxSaveAuthor
+        cursorPre.clockLatestHLC = futureHLC.description
+        try context.save()
+        context.author = prevAuthor
+
+        let engine = CloudSyncEngine()
+        engine.drainOnce(context: context)
+
+        #expect(engine.historyTokenBrokenBoundedCount == 1)      // la rama acotada corrió…
+        #expect(engine.historyTokenBrokenReanchoredCount == 0)   // …pero el reanchor se SUPRIMIÓ
+        #expect(try fxRows(context).isEmpty)                     // nada emitido (abort en la frontera)
+        let cursorMid = try #require(try context.fetch(FetchDescriptor<SyncCursor>()).first)
+        #expect(cursorMid.historyTokenData == Data("garbage-token".utf8))  // token intacto (retry)
+
+        // Reloj saneado → instancia fresca (el reloj en memoria de `engine` quedó contaminado por
+        // loadClock) recupera la FX completa: el abort NO perdió el write.
+        let prevAuthor2 = context.author
+        context.author = CloudSyncEngine.outboxSaveAuthor
+        cursorMid.clockLatestHLC = nil
+        try context.save()
+        context.author = prevAuthor2
+
+        let healed = CloudSyncEngine()
+        healed.drainOnce(context: context)
+        #expect(healed.historyTokenBrokenReanchoredCount == 1)   // ahora sí re-ancla
+        #expect(try fxRows(context).count == 1)                  // la FX se recuperó — sin pérdida
+        #expect(try fxRows(context).first?.syncID == fx.syncID)
+        #expect(try outboxRows(context).count > outboxBefore)
+    }
 }

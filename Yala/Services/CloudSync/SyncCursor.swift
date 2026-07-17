@@ -12,8 +12,9 @@
 //  El `historyTokenData` guarda un `DefaultHistoryToken` codificado (es `Codable`) vía `JSONEncoder`.
 //  El motor solo AVANZA el token tras persistir las filas del outbox correspondientes (crash-safety:
 //  ver `CloudSyncEngine`). Si el token se pierde/expira (migración destructiva, incompatibilidad),
-//  el decode/fetch falla → el motor entra al path `historyTokenExpired` (reconcile completo §d.6; en
-//  I3 = re-escaneo del History con dedup, el reconcile real llega en I8).
+//  el decode/fetch falla → el motor entra al fallback de token roto (DIFERIDOS #33,
+//  `HistoryTokenFallbackLogic`): re-escaneo ACOTADO por `lastDrainedTxAt` (full-rescan solo sin ancla
+//  o si el fetch acotado también lanza — el path `historyTokenExpired` de I3 quedó acotado).
 //
 //  ADITIVO EN I8: el `serverSeqCursor` del PULL (posición en la cola del backend) se añade como campo
 //  nuevo aquí — additive, no requiere tocar este contrato ahora.
@@ -70,6 +71,11 @@ final class SyncCursor {
     /// (residual documentado: un token YA roto en un cursor pre-schema no se auto-cura hasta que un drain
     /// puebla el campo; benigno hoy — 0 devices `.cloud` en producción, flags DARK). Additive (v2→v2
     /// lógico; el testigo A1 `schemaVersion` NO se bumpea: el campo trae default `nil`).
+    ///
+    /// DIFERIDOS #33: además de red del guard, el ancla es LOAD-BEARING para el fallback de token
+    /// ROTO (in-decodificable / fetch por token que lanza): acota el re-escaneo a la ventana
+    /// `> ancla − slack` en vez de re-emitir el corpus entero con HLC fresco (ver
+    /// `CloudSyncEngine.executeBrokenTokenBranch` y sus semánticas/residuales).
     ///
     /// 0b (viabilidad, plan): este campo NO exige deploy de schema CloudKit. `SyncCursor` vive SIEMPRE en
     /// `SwiftDataConfiguration.syncMetaConfiguration` con `cloudKitDatabase: .none` (metadata LOCAL por
