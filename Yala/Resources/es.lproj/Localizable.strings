@@ -4902,7 +4902,7 @@
 "groups.signin.title" = "Conecta tu cuenta";
 
 /* G4 sign-in body */
-"groups.signin.body" = "Para unirte al grupo necesitas una cuenta de Yala. Entra con tu Apple ID y sigue con tu invitación.";
+"groups.signin.body" = "Para unirte al grupo necesitas una cuenta de Yala. Entra con Apple o Google y sigue con tu invitación.";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "Esta será tu cuenta de Yala: si algún día llevas tus datos personales a la nube, usarás esta misma.";
@@ -4995,3 +4995,27 @@
 
 /* G6-3: progress banner while the owner's groups migrate to backend */
 "groups.migrated.migratingBanner" = "Moviendo tus grupos a la nube de Yala…";
+
+/* Google sign-in button label (brand guideline text next to the G logo) */
+"auth.googleButton" = "Continuar con Google";
+
+/* Existing-account chooser: Google sign-in card title */
+"welcome.existing.googleTitle" = "Entrar con Google";
+
+/* Existing-account chooser: Google sign-in card body */
+"welcome.existing.googleBody" = "Tu cuenta Yala en la nube, si la creaste con tu cuenta de Google.";
+
+/* Cloud sign-in intro subtitle when provider is Google */
+"welcome.cloud.subtitleGoogle" = "Usa la misma cuenta de Google con la que creaste tu cuenta de la nube.";
+
+/* Note under sign-in buttons: account is tied to the sign-in method */
+"welcome.cloud.providerNote" = "Entra con el mismo método que usaste al crear tu cuenta: tu cuenta de Yala queda ligada a él.";
+
+/* R9 provider mismatch screen title */
+"welcome.cloud.providerMismatchTitle" = "Esa cuenta usa otro método";
+
+/* R9 provider mismatch body; %@ = Apple/Google */
+"welcome.cloud.providerMismatchBody" = "Tu cuenta de Yala se creó con %@. Vuelve atrás y entra con ese método.";
+
+/* R9 provider mismatch body when known provider is unavailable */
+"welcome.cloud.providerMismatchBodyGeneric" = "Tu cuenta de Yala se creó con otro método de acceso. Vuelve atrás y entra con el que usaste la primera vez.";

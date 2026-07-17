@@ -37,10 +37,11 @@ struct WelcomeAccountChoiceLogicTests {
     // MARK: - "Ya tengo cuenta"
 
     @Test
-    func existingOptions_configured_showsBoth() {
+    func existingOptions_configured_showsAllThree() {
+        // Sesión 2 Google: Apple y Google comparten el MISMO gate (configured && !uitest).
         #expect(WelcomeAccountChoiceLogic.visibleExistingOptions(
             isConfigured: true, isUITest: false
-        ) == [.restoreICloud, .cloudSignIn])
+        ) == [.restoreICloud, .cloudSignIn, .googleSignIn])
     }
 
     @Test
@@ -53,6 +54,8 @@ struct WelcomeAccountChoiceLogicTests {
 
     @Test
     func existingOptions_uitest_onlyRestore() {
+        // Bypass uitest intacto (el opt-in `-uitest-cloud-chooser` pasa isUITest=false en
+        // el callsite — la lógica pura no cambia).
         #expect(WelcomeAccountChoiceLogic.visibleExistingOptions(
             isConfigured: true, isUITest: true
         ) == [.restoreICloud])

@@ -75,6 +75,30 @@ struct CloudAccountClientTests {
         #expect(await client.claim(jwt: "j", deviceID: "d", provider: "apple") == .success(.existingStable))
     }
 
+    @Test func claim_200existingStable_profileProviderDiffers_outcomeUnchanged() async {
+        // Red post-claim sub-first (sesión 2, H4): un `profile.provider` DISTINTO del enviado es
+        // identity-linking legítimo — solo breadcrumb; el `ClaimOutcome` NO cambia de shape.
+        let body = Data(#"{"state":"existing_stable","profile":{"id":"x","provider":"apple"}}"#.utf8)
+        let stub = AccountStubHTTP(status: 200, body: body)
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        #expect(await client.claim(jwt: "j", deviceID: "d", provider: "google") == .success(.existingStable))
+    }
+
+    @Test func claim_200withoutProfile_decodesAdditively() async {
+        // El decode de `profile` es ADITIVO: un 200 sin profile (created) sigue decodificando.
+        let stub = AccountStubHTTP(status: 200, body: Data(#"{"state":"created"}"#.utf8))
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        #expect(await client.claim(jwt: "j", deviceID: "d", provider: "google") == .success(.created))
+    }
+
+    @Test func claim_200profileWithoutProvider_decodesAdditively() async {
+        // profile presente pero sin campo provider → decode OK, sin breadcrumb.
+        let body = Data(#"{"state":"existing_stable","profile":{"id":"x"}}"#.utf8)
+        let stub = AccountStubHTTP(status: 200, body: body)
+        let client = CloudAccountClient(baseURL: base, urlSession: stub)
+        #expect(await client.claim(jwt: "j", deviceID: "d", provider: "google") == .success(.existingStable))
+    }
+
     @Test func claim_200claimingInProgress_success() async {
         let stub = AccountStubHTTP(status: 200, body: Data(#"{"state":"claiming_in_progress"}"#.utf8))
         let client = CloudAccountClient(baseURL: base, urlSession: stub)

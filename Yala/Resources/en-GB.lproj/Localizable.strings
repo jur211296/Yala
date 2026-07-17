@@ -4136,7 +4136,7 @@
 "groups.signin.title" = "Connect your account";
 
 /* G4 sign-in body */
-"groups.signin.body" = "To join the group you need a Yala account. Sign in with your Apple ID and carry on with your invitation.";
+"groups.signin.body" = "To join the group you need a Yala account. Sign in with Apple or Google and carry on with your invitation.";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "This will be your Yala account: if you ever move your personal data to the cloud, you'll use this same one.";
@@ -4229,3 +4229,27 @@
 
 /* G6-3: progress banner while the owner's groups migrate to backend */
 "groups.migrated.migratingBanner" = "Moving your groups to Yala's cloud…";
+
+/* Google sign-in button label (brand guideline text next to the G logo) */
+"auth.googleButton" = "Continue with Google";
+
+/* Existing-account chooser: Google sign-in card title */
+"welcome.existing.googleTitle" = "Sign in with Google";
+
+/* Existing-account chooser: Google sign-in card body */
+"welcome.existing.googleBody" = "Your Yala cloud account, if you created it with your Google account.";
+
+/* Cloud sign-in intro subtitle when provider is Google */
+"welcome.cloud.subtitleGoogle" = "Use the same Google account you used to create your cloud account.";
+
+/* Note under sign-in buttons: account is tied to the sign-in method */
+"welcome.cloud.providerNote" = "Sign in with the same method you used when you created your account — your Yala account is tied to it.";
+
+/* R9 provider mismatch screen title */
+"welcome.cloud.providerMismatchTitle" = "That account uses a different sign-in method";
+
+/* R9 provider mismatch body; %@ = Apple/Google */
+"welcome.cloud.providerMismatchBody" = "Your Yala account was created with %@. Go back and sign in with that method.";
+
+/* R9 provider mismatch body when known provider is unavailable */
+"welcome.cloud.providerMismatchBodyGeneric" = "Your Yala account was created with a different sign-in method. Go back and use the one you signed up with.";

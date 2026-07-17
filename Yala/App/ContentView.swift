@@ -21,6 +21,9 @@ struct ContentView: View {
     @State private var showWelcomeRestore: Bool = false
     // H4: re-entrada a cuenta del Modo Nube desde el Welcome (SIWA → exists → adopt).
     @State private var showWelcomeCloudSignIn: Bool = false
+    /// Provider elegido en el chooser para el cover de sign-in de nube (sesión 2 Google).
+    /// Cada card lo setea EXPLÍCITO antes de presentar (`.cloudSignIn` → `.apple`).
+    @State private var welcomeCloudProvider: CloudSignInProvider = .apple
     // H4 + fix carrera 2026-07-14: DUEÑO ÚNICO del cover de relaunch del sign-out
     // `.cloud`/secundario. ProfileView ya NO presenta (ante la fase cierra su sheet) —
     // dos anchors ante el mismo observable tumbaban ambas cadenas. La presentación se
@@ -372,6 +375,7 @@ struct ContentView: View {
             showWelcomeRestore: $showWelcomeRestore,
             showInviteRecovery: $showInviteRecovery,
             showWelcomeCloudSignIn: $showWelcomeCloudSignIn,
+            welcomeCloudProvider: $welcomeCloudProvider,
             prefilledOnboardingData: $prefilledOnboardingData,
             hasShownWelcomeChooser: $hasShownWelcomeChooser,
             hasCompletedOnboarding: $hasCompletedOnboarding,
@@ -1025,6 +1029,9 @@ private struct WelcomeFlowModifier: ViewModifier {
     @Binding var showWelcomeRestore: Bool
     @Binding var showInviteRecovery: Bool
     @Binding var showWelcomeCloudSignIn: Bool
+    /// Provider del cover de sign-in de nube (sesión 2): cada card del chooser lo setea
+    /// EXPLÍCITO antes de presentar — jamás se hereda el valor del intento anterior.
+    @Binding var welcomeCloudProvider: CloudSignInProvider
     @Binding var prefilledOnboardingData: ICloudAccountSummary?
     @Binding var hasShownWelcomeChooser: Bool
     @Binding var hasCompletedOnboarding: Bool
@@ -1090,6 +1097,11 @@ private struct WelcomeFlowModifier: ViewModifier {
                             showWelcomeFlow = false
                             showWelcomeRestore = true
                         case .cloudSignIn:
+                            welcomeCloudProvider = .apple  // EXPLÍCITO (jamás heredar el previo)
+                            showWelcomeFlow = false
+                            showWelcomeCloudSignIn = true
+                        case .googleSignIn:
+                            welcomeCloudProvider = .google
                             showWelcomeFlow = false
                             showWelcomeCloudSignIn = true
                         }
@@ -1111,6 +1123,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                 }
             ) {
                 WelcomeCloudSignInView(
+                    provider: welcomeCloudProvider,
                     hasLocalDataNow: hasLocalDataNow,
                     onAdoptStarted: {
                         // TEMPRANO (antes de conducir la máquina): cierra el hazard

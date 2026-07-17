@@ -4885,7 +4885,7 @@
 "groups.signin.title" = "アカウントを連携";
 
 /* G4 sign-in body */
-"groups.signin.body" = "グループに参加するにはYalaアカウントが必要です。Apple IDでサインインして、招待を続けましょう。";
+"groups.signin.body" = "グループに参加するにはYalaアカウントが必要です。AppleまたはGoogleでサインインして、招待を続けましょう。";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "これがあなたのYalaアカウントになります。いつか個人データをクラウドに移すときも、この同じアカウントを使います。";
@@ -4978,3 +4978,27 @@
 
 /* G6-3: progress banner while the owner's groups migrate to backend */
 "groups.migrated.migratingBanner" = "グループをYalaのクラウドに移動しています…";
+
+/* Google sign-in button label (brand guideline text next to the G logo) */
+"auth.googleButton" = "Googleで続ける";
+
+/* Existing-account chooser: Google sign-in card title */
+"welcome.existing.googleTitle" = "Googleでサインイン";
+
+/* Existing-account chooser: Google sign-in card body */
+"welcome.existing.googleBody" = "Googleアカウントで作成した場合の、クラウド上のYalaアカウントです。";
+
+/* Cloud sign-in intro subtitle when provider is Google */
+"welcome.cloud.subtitleGoogle" = "クラウドアカウントを作成したときと同じGoogleアカウントを使ってください。";
+
+/* Note under sign-in buttons: account is tied to the sign-in method */
+"welcome.cloud.providerNote" = "アカウントを作成したときと同じ方法でサインインしてください。Yalaアカウントはその方法に紐づいています。";
+
+/* R9 provider mismatch screen title */
+"welcome.cloud.providerMismatchTitle" = "このアカウントは別の方法を使っています";
+
+/* R9 provider mismatch body; %@ = Apple/Google */
+"welcome.cloud.providerMismatchBody" = "あなたのYalaアカウントは%@で作成されています。戻って、その方法でサインインしてください。";
+
+/* R9 provider mismatch body when known provider is unavailable */
+"welcome.cloud.providerMismatchBodyGeneric" = "あなたのYalaアカウントは別の方法で作成されています。戻って、最初に使った方法でサインインしてください。";

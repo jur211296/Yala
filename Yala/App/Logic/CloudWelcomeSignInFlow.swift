@@ -33,6 +33,10 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     case relaunchSecondary
     /// El Apple ID firmado no tiene cuenta Yala en la nube.
     case notFound
+    /// R9 (sesión 2 Google): sin cuenta para ESTE sub, pero el faro del device dice que la
+    /// cuenta nube se creó con OTRO método → "vuelve atrás y entra con ese método". La sesión
+    /// ya se soltó (signOut) y NO hubo claim — nada comprometido, back permitido.
+    case providerMismatch(knownProvider: String?)
     /// Fallo de red/sesión del `exists` o de la máquina.
     case error(retryable: Bool)
 }

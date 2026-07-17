@@ -30,7 +30,8 @@ extension XCUIApplication {
         fakeICloud: Bool = false,
         inviteOnboarding: Bool = false,
         joinPhase: String? = nil,
-        joinSoftTimeout: String? = nil
+        joinSoftTimeout: String? = nil,
+        extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
         if reset { args.append("-uitest-reset") }
@@ -65,6 +66,8 @@ extension XCUIApplication {
             args.append("-uitest-join-soft-timeout")
             args.append(joinSoftTimeout)
         }
+        // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
+        args.append(contentsOf: extraArguments)
         launchArguments = args
         launch()
         return self

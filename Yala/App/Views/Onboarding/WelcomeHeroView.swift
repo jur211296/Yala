@@ -312,6 +312,7 @@ struct WelcomeHeroView: View {
             ) {
                 handleEmpezar()
             }
+            .accessibilityIdentifier("welcome_hero_cta")
 
             Text(L10n.Welcome.Hero.trust)
                 .font(DS.Typography.caption)

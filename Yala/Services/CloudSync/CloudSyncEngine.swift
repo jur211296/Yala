@@ -507,6 +507,13 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAuth googlePairCaptureSkipped reason=\(reason, privacy: .public)")
     }
 
+    /// El claim devolvió `profile.provider` DISTINTO del provider de la sesión que claimeó.
+    /// Por H4 (GoTrue linkea identidades con mismo email al MISMO sub) esto es identity-linking
+    /// LEGÍTIMO — observabilidad pura: JAMÁS alerta ni canario. Sin PII (solo el nombre del provider).
+    static func claimProfileProviderDiffers(profileProvider: String) {
+        logger.notice("CloudSyncAuth claimProfileProviderDiffers profileProvider=\(profileProvider, privacy: .public)")
+    }
+
     /// Revoke saltado: no hay par custodiado (sesión previa al capture — población cero — o canje fallido).
     static func siwaRevokeSkippedNoToken() {
         logger.notice("CloudSyncAuth siwaRevokeSkippedNoToken")

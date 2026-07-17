@@ -4873,7 +4873,7 @@
 "groups.signin.title" = "Verbinde dein Konto";
 
 /* G4 sign-in body */
-"groups.signin.body" = "Um der Gruppe beizutreten, brauchst du ein Yala-Konto. Melde dich mit deiner Apple-ID an und mach mit deiner Einladung weiter.";
+"groups.signin.body" = "Um der Gruppe beizutreten, brauchst du ein Yala-Konto. Melde dich mit Apple oder Google an und mach mit deiner Einladung weiter.";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "Das wird dein Yala-Konto sein: Wenn du eines Tages deine persönlichen Daten in die Cloud bringst, nutzt du genau dieses.";
@@ -4966,3 +4966,27 @@
 
 /* G6-3: progress banner while the owner's groups migrate to backend */
 "groups.migrated.migratingBanner" = "Deine Gruppen ziehen in die Yala-Cloud um…";
+
+/* Google sign-in button label (brand guideline text next to the G logo) */
+"auth.googleButton" = "Weiter mit Google";
+
+/* Existing-account chooser: Google sign-in card title */
+"welcome.existing.googleTitle" = "Mit Google anmelden";
+
+/* Existing-account chooser: Google sign-in card body */
+"welcome.existing.googleBody" = "Dein Yala-Konto in der Cloud, wenn du es mit deinem Google-Konto erstellt hast.";
+
+/* Cloud sign-in intro subtitle when provider is Google */
+"welcome.cloud.subtitleGoogle" = "Verwende dasselbe Google-Konto, mit dem du dein Cloud-Konto erstellt hast.";
+
+/* Note under sign-in buttons: account is tied to the sign-in method */
+"welcome.cloud.providerNote" = "Melde dich mit derselben Methode an, mit der du dein Konto erstellt hast – dein Yala-Konto ist daran gebunden.";
+
+/* R9 provider mismatch screen title */
+"welcome.cloud.providerMismatchTitle" = "Dieses Konto nutzt eine andere Methode";
+
+/* R9 provider mismatch body; %@ = Apple/Google */
+"welcome.cloud.providerMismatchBody" = "Dein Yala-Konto wurde mit %@ erstellt. Geh zurück und melde dich mit dieser Methode an.";
+
+/* R9 provider mismatch body when known provider is unavailable */
+"welcome.cloud.providerMismatchBodyGeneric" = "Dein Yala-Konto wurde mit einer anderen Anmeldemethode erstellt. Geh zurück und nutze die Methode vom ersten Mal.";

@@ -10,6 +10,7 @@
 //
 
 import Foundation
+import GoogleSignIn
 import Security
 import Testing
 
@@ -142,6 +143,31 @@ struct CloudAuthServiceTests {
         let attrs = result as? [String: Any]
         let accessible = attrs?[kSecAttrAccessible as String] as? String
         #expect(accessible == (kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String))
+    }
+
+    // MARK: - isGoogleCancellation (sesión 2 — cancel tipado por NSError domain+code)
+
+    @Test func isGoogleCancellation_canceledNSError_true() {
+        // AJUSTE #6 del /review-plan: por domain+code cubre el enum bridgeado Y el NSError crudo.
+        let error = NSError(domain: kGIDSignInErrorDomain, code: GIDSignInError.canceled.rawValue)
+        #expect(CloudAuthService.isGoogleCancellation(error))
+    }
+
+    @Test func isGoogleCancellation_bridgedEnum_true() {
+        // El enum del SDK bridgea al mismo domain/code.
+        #expect(CloudAuthService.isGoogleCancellation(GIDSignInError(.canceled)))
+    }
+
+    @Test func isGoogleCancellation_otherCodeSameDomain_false() {
+        let error = NSError(domain: kGIDSignInErrorDomain, code: GIDSignInError.unknown.rawValue)
+        #expect(!CloudAuthService.isGoogleCancellation(error))
+    }
+
+    @Test func isGoogleCancellation_otherDomain_false() {
+        let error = NSError(domain: NSURLErrorDomain, code: GIDSignInError.canceled.rawValue)
+        #expect(!CloudAuthService.isGoogleCancellation(error))
+        #expect(!CloudAuthService.isGoogleCancellation(URLError(.cancelled)))
+        #expect(!CloudAuthService.isGoogleCancellation(CloudAuthError.cancelled))
     }
 
     // MARK: - Provider persistido (Google Sign-In sesión 1)

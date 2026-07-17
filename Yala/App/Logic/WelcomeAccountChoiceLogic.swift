@@ -22,10 +22,12 @@ nonisolated enum WelcomeAccountChoiceLogic {
         case cloudAccount
     }
 
-    /// Sub-opciones de "Ya tengo cuenta".
+    /// Sub-opciones de "Ya tengo cuenta". `cloudSignIn` = Apple; `googleSignIn` = Google
+    /// (sesión 2 — mismo gate: ambas solo con backend configurado y fuera de uitest).
     enum ExistingOption: Equatable, CaseIterable {
         case restoreICloud
         case cloudSignIn
+        case googleSignIn
     }
 
     static func visibleNewOptions(
@@ -43,7 +45,7 @@ nonisolated enum WelcomeAccountChoiceLogic {
     static func visibleExistingOptions(isConfigured: Bool, isUITest: Bool) -> [ExistingOption] {
         var options: [ExistingOption] = [.restoreICloud]
         if isConfigured && !isUITest {
-            options.append(.cloudSignIn)
+            options += [.cloudSignIn, .googleSignIn]
         }
         return options
     }

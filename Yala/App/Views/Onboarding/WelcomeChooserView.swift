@@ -95,6 +95,8 @@ struct WelcomeChooserView: View {
                             body: branch.body,
                             action: { handleSelect(branch) }
                         )
+                        // Identifier aditivo de navegación XCUI (sesión 2 Google).
+                        .accessibilityIdentifier("welcome_chooser_\(branch.rawValue)")
                     }
                 }
                 .padding(.horizontal, DS.Spacing.lg)

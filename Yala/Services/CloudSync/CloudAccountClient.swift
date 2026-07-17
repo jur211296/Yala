@@ -129,6 +129,14 @@ final class CloudAccountClient {
 
     private struct ClaimResponse: Decodable {
         let state: String?
+        /// ADITIVO (Google Sign-In sesión 2): perfil devuelto en `existing_stable`. Solo se
+        /// consume `provider` (red post-claim sub-first — breadcrumb, jamás alerta). `ClaimOutcome`
+        /// NO cambia de shape.
+        let profile: ClaimProfile?
+    }
+
+    private struct ClaimProfile: Decodable {
+        let provider: String?
     }
 
     private struct ExistsResponse: Decodable {
@@ -178,6 +186,14 @@ final class CloudAccountClient {
                 let state = Self.decodeState(rawState)
             else {
                 return .transient(detail: "HTTP 200 undecodable: \(Self.bodyString(data))")
+            }
+            // Red post-claim SUB-FIRST (sesión 2, H4): post-claim el sub es EL MISMO por
+            // construcción (claim JWT-scoped) ⇒ un `profile.provider` distinto es identity-linking
+            // LEGÍTIMO de GoTrue — solo breadcrumb (sin PII), JAMÁS alerta ni canario.
+            if let profileProvider = decoded.profile?.provider,
+               ProviderMismatchLogic.postClaimLinkedDifferentProvider(
+                   profileProvider: profileProvider, sessionProvider: provider) {
+                CloudSyncBreadcrumb.claimProfileProviderDiffers(profileProvider: profileProvider)
             }
             return .success(state)
         case 401:

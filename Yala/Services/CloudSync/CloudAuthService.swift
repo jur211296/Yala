@@ -108,6 +108,19 @@ enum CloudAuthError: Error, Equatable {
     case missingIdentityToken
     /// Un sign-in ya está en vuelo (los taps del panel son idempotentes por-flujo).
     case signInAlreadyInFlight
+    /// El usuario canceló el sheet de sign-in (Google) — la UI lo consume SIN alert (sesión 2;
+    /// el cancel de SIWA sigue llegando como `ASAuthorizationError` crudo, fuera de alcance).
+    case cancelled
+    /// No hay view controller presentador para el sheet de Google (antes `preconditionFailure` —
+    /// nota 5 post-implementación sesión 1: un throw permite a la UI degradar sin trap).
+    case presentationUnavailable
+}
+
+/// Provider de sign-in del Modo Nube. `rawValue` = string del wire (`profiles.provider` /
+/// body del claim / faro `CloudBeacon`).
+nonisolated enum CloudSignInProvider: String {
+    case apple
+    case google
 }
 
 @MainActor
@@ -260,6 +273,14 @@ final class CloudAuthService: NSObject {
         }
     }
 
+    /// Despacho por provider (sesión 2 — un solo call-site para las vistas parametrizadas).
+    func signIn(with provider: CloudSignInProvider) async throws {
+        switch provider {
+        case .apple: try await signInWithApple()
+        case .google: try await signInWithGoogle()
+        }
+    }
+
     // MARK: - Google Sign-In (sesión 1 del brief BRIEF-GOOGLE-SIGNIN-V1)
 
     /// Lanza el flujo de Google Sign-In (SDK GoogleSignIn-iOS ≥9 con nonce CUSTOM — patrón idéntico a
@@ -268,8 +289,8 @@ final class CloudAuthService: NSObject {
     /// vía `signInWithIdToken(provider: .google)`. El `accessToken` de Google acompaña SIEMPRE
     /// (GoTrue valida `at_hash` si viene en el id_token).
     ///
-    /// Cancel del usuario (`GIDSignInError.canceled`) → rethrow limpio; el caller decide el copy
-    /// (D2 del plan: un case `.cancelled` dedicado llega con la UI real de la sesión 2).
+    /// Cancel del usuario (`GIDSignInError.canceled`) → `CloudAuthError.cancelled` (sesión 2,
+    /// D2): la UI lo consume en silencio (sin alert ni breadcrumb — un cancel no es fallo).
     func signInWithGoogle() async throws {
         guard let client else { throw CloudAuthError.notConfigured }
         // Guard in-flight COMPARTIDO con SIWA: un sign-in Apple y uno Google jamás conviven.
@@ -282,9 +303,10 @@ final class CloudAuthService: NSObject {
         let rawNonce = Self.randomNonceString()
 
         // Un flujo de sign-in interactivo SIEMPRE corre con la app en foreground (hay un root VC) —
-        // misma premisa que el `presentationAnchor` de SIWA.
+        // misma premisa que el `presentationAnchor` de SIWA. throw (no trap): la UI degrada a su
+        // path de error normal (nota 5 post-implementación sesión 1).
         guard let presenter = Self.topPresentingViewController() else {
-            preconditionFailure("Google Sign-In requires a presenting view controller")
+            throw CloudAuthError.presentationUnavailable
         }
 
         let result: GIDSignInResult
@@ -299,6 +321,10 @@ final class CloudAuthService: NSObject {
                 nonce: Self.sha256Hex(rawNonce)
             )
         } catch {
+            // Cancel del usuario → tipado limpio, SIN breadcrumb (no es fallo).
+            if Self.isGoogleCancellation(error) {
+                throw CloudAuthError.cancelled
+            }
             CloudSyncBreadcrumb.authSignInFailed(reason: "google-authorization")
             throw error
         }
@@ -368,6 +394,15 @@ final class CloudAuthService: NSObject {
             CloudSyncBreadcrumb.googlePairCaptureSkipped(
                 reason: googleUserID == nil ? "no-google-user-id" : "no-sub")
         }
+    }
+
+    /// ¿Es el error el CANCEL del usuario en el sheet de Google? Por NSError domain+code (AJUSTE #6
+    /// del /review-plan: cubre tanto el enum `GIDSignInError` bridgeado como un NSError crudo del
+    /// SDK — y es fabricable en tests sin el flujo real).
+    nonisolated static func isGoogleCancellation(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        return nsError.domain == kGIDSignInErrorDomain
+            && nsError.code == GIDSignInError.canceled.rawValue
     }
 
     /// Root/topmost view controller del key window — presentador del sheet web de Google (mismo

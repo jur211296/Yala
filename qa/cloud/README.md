@@ -918,6 +918,32 @@ Apple Y Google. Config vigente:
   + par `(googleUserID, sub)` en `GoogleUserPairStore` (molde `SIWARefreshTokenStore`; consumidor =
   revoke de sesión 3) + `cloudauth.provider` como fuente del `provider` del claim.
 
+### Guard R9 SUB-FIRST (sesión 2 — UI + chooser, 2026-07-16)
+
+**H4 manda: GoTrue LINKEA identidades con el mismo email verificado al MISMO `sub`** (verificado en
+el WIRE de la sesión 1: el sign-in Google del owner aterrizó en su user Apple — identities
+apple+google, `profiles.provider` conserva `'apple'`). Consecuencia de diseño: **la señal de
+"firmaste con el método equivocado" es el SUB, JAMÁS el provider a secas** — comparar providers
+daría falso mismatch en todo linking legítimo.
+
+`ProviderMismatchLogic.decide` (pura, `Yala/App/Logic/ProviderMismatchLogic.swift`, tabla en
+`ProviderMismatchLogicTests`) corre SOLO dentro de la rama `.accountMissing` de
+`WelcomeCloudSignInView.runSignInFlow`, con el faro `CloudBeacon` como referencia. Reglas en orden:
+(1) `exists==true` ⇒ proceed SIEMPRE — protege la entrada secundaria M1 (el faro es del DUEÑO) y el
+linking H4; (2) sin faro ⇒ proceed (`.notFound` normal); (3) hash del faro == hash del sub de la
+sesión ⇒ proceed (cuenta borrada server-side, `.notFound` honesto); (4) mismo provider ⇒ proceed
+(la hipótesis "método equivocado" está muerta — el provider jamás dispara solo); (5) resto ⇒
+`.mismatch(knownProvider:)` → canario `cloudSignInProviderMismatch` (primer call-site real) +
+`signOut()` + **NO claim** + fase `.providerMismatch` ("vuelve atrás y entra con ese método").
+Con estas reglas `.mismatch` solo es alcanzable con `exists==false` ⇒ el flujo Apple existente
+(adopt/secundaria/blocked/notFound) queda byte-idéntico.
+
+**Red post-claim (también sub-first):** `CloudAccountClient.claim` decodifica `profile.provider`
+ADITIVO y, si difiere del provider de la sesión, emite SOLO el breadcrumb
+`claimProfileProviderDiffers` — post-claim el sub es EL MISMO por construcción (claim JWT-scoped)
+⇒ por H4 es identity-linking legítimo: JAMÁS alerta ni canario (el falso mismatch que el brief H4
+corrige). R9 real solo reproducible con Hide My Email (emails distintos ⇒ subs distintos).
+
 ## Proyecto Supabase de PRODUCCIÓN (DIFERIDOS #23 — creado 2026-07-11)
 
 Proyecto **`kefvaiymtgytemwbltlz`** (`yala-modo-nube-production`), organización dedicada

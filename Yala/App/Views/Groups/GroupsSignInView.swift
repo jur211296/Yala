@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Sign-in SOLO-GRUPOS (G4-invites A2, §16d): un invitado por link backend sin sesión Nube firma con
-//  Apple para poder unirse. Autentica (SIWA → JWT en `CloudAuthService`) y NADA MÁS — reglas duras:
+//  Apple o Google para poder unirse. Autentica (SIWA/Google → JWT en `CloudAuthService`) y NADA MÁS — reglas duras:
 //  NO `CloudMigrationController`, NO `startAdoptWithExistingSession`, NO `CrossAccountEntryGuardLogic`,
 //  NO toca `StorageMode` ni flags de onboarding de migración. La cuenta queda como sesión viva que
 //  `GroupsMembershipClient.tokenProvider` ya consume.
@@ -69,13 +69,23 @@ struct GroupsSignInView: View {
                             .controlSize(.large)
                             .accessibilityIdentifier("groups_signin_progress")
                     } else {
-                        GroupsAppleSignInButton(colorScheme: colorScheme) {
-                            DS.Haptic.selection()
-                            startSignIn()
+                        // Apple + Google con prominencia EQUIVALENTE (sesión 2; guideline 4.8).
+                        VStack(spacing: DS.Spacing.md) {
+                            GroupsAppleSignInButton(colorScheme: colorScheme) {
+                                DS.Haptic.selection()
+                                startSignIn(provider: .apple)
+                            }
+                            .frame(height: 50)
+                            .accessibilityIdentifier("groups_signin_button")
+
+                            GoogleSignInButton(variant: colorScheme == .dark ? .dark : .light) {
+                                DS.Haptic.selection()
+                                startSignIn(provider: .google)
+                            }
+                            .frame(height: 50)
+                            .accessibilityIdentifier("groups_signin_button_google")
                         }
-                        .frame(height: 50)
                         .padding(.horizontal, DS.Spacing.xl)
-                        .accessibilityIdentifier("groups_signin_button")
                     }
 
                     // Invariante R9: esta será LA cuenta si algún día migra lo personal.
@@ -112,22 +122,26 @@ struct GroupsSignInView: View {
         }
     }
 
-    /// SIWA y NADA MÁS (reglas duras §16d). Cancelación/fallo de Apple → volver al botón sin alarma
-    /// (el usuario re-tapea); el error visible solo tras un fallo real.
-    private func startSignIn() {
+    /// Sign-in y NADA MÁS (reglas duras §16d) — Apple o Google, mismo contrato. Cancelación/fallo
+    /// de Apple → volver al botón sin alarma (ASAuthorization no distingue); el cancel de Google
+    /// llega TIPADO (`.cancelled`) → botón de vuelta SIN mensaje de error; fallo real → error visible.
+    private func startSignIn(provider: CloudSignInProvider) {
         guard !isSigningIn else { return }
         isSigningIn = true
         signInFailed = false
         signInTask?.cancel()
         signInTask = Task { @MainActor in
             do {
-                try await CloudAuthService.shared.signInWithApple()
+                try await CloudAuthService.shared.signIn(with: provider)
                 guard !Task.isCancelled else { return }
                 isSigningIn = false
                 onAuthenticated()
+            } catch CloudAuthError.cancelled {
+                guard !Task.isCancelled else { return }
+                isSigningIn = false  // cancel silencioso: jamás signInFailed
             } catch {
                 #if DEBUG
-                print("GroupsSignInView: SIWA falló/cancelado: \(error)")
+                print("GroupsSignInView: sign-in \(provider.rawValue) falló/cancelado: \(error)")
                 #endif
                 guard !Task.isCancelled else { return }
                 isSigningIn = false

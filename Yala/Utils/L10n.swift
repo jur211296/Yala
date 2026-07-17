@@ -4626,6 +4626,14 @@ enum L10n {
         }
     }
 
+    // MARK: - Auth (sign-in compartido — botones de provider)
+
+    enum Auth {
+        /// "Continuar con Google" — texto del `GoogleSignInButton` (brand guideline: acompaña
+        /// SIEMPRE al logo G; compartido por Welcome y GroupsSignIn).
+        static var googleButton: String { ls("auth.googleButton", comment: "") }
+    }
+
     // MARK: - Welcome (Chooser pre-onboarding A4)
 
     enum Welcome {
@@ -4647,12 +4655,25 @@ enum L10n {
             static var restoreBody: String { ls("welcome.existing.restoreBody", comment: "") }
             static var cloudTitle: String { ls("welcome.existing.cloudTitle", comment: "") }
             static var cloudBody: String { ls("welcome.existing.cloudBody", comment: "") }
+            // Sesión 2: tercera card — sign-in con Google.
+            static var googleTitle: String { ls("welcome.existing.googleTitle", comment: "") }
+            static var googleBody: String { ls("welcome.existing.googleBody", comment: "") }
         }
 
         /// Pantalla de sign-in a cuenta del Modo Nube (H4).
         enum Cloud {
             static var title: String { ls("welcome.cloud.title", comment: "") }
             static var subtitle: String { ls("welcome.cloud.subtitle", comment: "") }
+            // Sesión 2 Google: subtitle del intro con provider .google + nota §13 (ambos
+            // providers) + pantalla R9 de provider-mismatch (sub-first, H4).
+            static var subtitleGoogle: String { ls("welcome.cloud.subtitleGoogle", comment: "") }
+            static var providerNote: String { ls("welcome.cloud.providerNote", comment: "") }
+            static var providerMismatchTitle: String { ls("welcome.cloud.providerMismatchTitle", comment: "") }
+            /// Body con el nombre VISIBLE del método conocido ("Apple"/"Google").
+            static func providerMismatchBody(_ providerName: String) -> String {
+                String(format: ls("welcome.cloud.providerMismatchBody", comment: ""), providerName)
+            }
+            static var providerMismatchBodyGeneric: String { ls("welcome.cloud.providerMismatchBodyGeneric", comment: "") }
             static var checking: String { ls("welcome.cloud.checking", comment: "") }
             static var adopting: String { ls("welcome.cloud.adopting", comment: "") }
             static var adoptingHint: String { ls("welcome.cloud.adoptingHint", comment: "") }

@@ -46,6 +46,12 @@ final class UITestHooks {
     /// con onboarding saltado y el tab Grupos seleccionado. Para testear el Perfil reducido.
     nonisolated static var forceGroupInvite: Bool { hasArg("-uitest-group-invite") }
 
+    /// `-uitest-cloud-chooser`: destapa las cards de sign-in cloud (Apple/Google) del
+    /// 2º nivel del Welcome bajo uitest — opt-in EXPLÍCITO del XCUITest del chooser
+    /// (sesión 2 Google). Sin él, uitest conserva el bypass a restore (byte-idéntico).
+    /// Solo NAVEGACIÓN determinista: el test jamás tapea el botón de sign-in real.
+    nonisolated static var forceCloudChooser: Bool { hasArg("-uitest-cloud-chooser") }
+
     /// `-uitest-fake-icloud`: fuerza `iCloudSyncService.isAccountAvailable = true` en el
     /// simulador (que NO tiene cuenta iCloud). Desbloquea los flujos cuyo único obstáculo
     /// es el guard de disponibilidad de cuenta —onboarding "Solo grupos", prompts de

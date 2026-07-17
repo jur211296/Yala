@@ -4883,7 +4883,7 @@
 "groups.signin.title" = "Collega il tuo account";
 
 /* G4 sign-in body */
-"groups.signin.body" = "Per unirti al gruppo ti serve un account Yala. Accedi con il tuo ID Apple e continua con il tuo invito.";
+"groups.signin.body" = "Per unirti al gruppo ti serve un account Yala. Accedi con Apple o Google e continua con il tuo invito.";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "Questo sarà il tuo account Yala: se un giorno porterai i tuoi dati personali nel cloud, userai proprio questo.";
@@ -4976,3 +4976,27 @@
 
 /* G6-3: progress banner while the owner's groups migrate to backend */
 "groups.migrated.migratingBanner" = "Spostamento dei tuoi gruppi nel cloud di Yala…";
+
+/* Google sign-in button label (brand guideline text next to the G logo) */
+"auth.googleButton" = "Continua con Google";
+
+/* Existing-account chooser: Google sign-in card title */
+"welcome.existing.googleTitle" = "Accedi con Google";
+
+/* Existing-account chooser: Google sign-in card body */
+"welcome.existing.googleBody" = "Il tuo account Yala nel cloud, se l'hai creato con il tuo account Google.";
+
+/* Cloud sign-in intro subtitle when provider is Google */
+"welcome.cloud.subtitleGoogle" = "Usa lo stesso account Google con cui hai creato il tuo account cloud.";
+
+/* Note under sign-in buttons: account is tied to the sign-in method */
+"welcome.cloud.providerNote" = "Accedi con lo stesso metodo che hai usato per creare il tuo account: il tuo account Yala è legato a quello.";
+
+/* R9 provider mismatch screen title */
+"welcome.cloud.providerMismatchTitle" = "Quell'account usa un altro metodo";
+
+/* R9 provider mismatch body; %@ = Apple/Google */
+"welcome.cloud.providerMismatchBody" = "Il tuo account Yala è stato creato con %@. Torna indietro e accedi con quel metodo.";
+
+/* R9 provider mismatch body when known provider is unavailable */
+"welcome.cloud.providerMismatchBodyGeneric" = "Il tuo account Yala è stato creato con un altro metodo di accesso. Torna indietro e usa quello della prima volta.";

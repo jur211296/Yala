@@ -19,6 +19,10 @@ import SwiftUI
 
 struct WelcomeCloudSignInView: View {
 
+    /// Provider del sign-in (sesión 2 Google): `.apple` conserva el flujo actual BYTE-IDÉNTICO
+    /// (mismo botón SIWA, mismo subtitle, mismos catches); `.google` monta el botón custom y
+    /// distingue cancel de fallo real. El chooser lo setea EXPLÍCITO por card.
+    let provider: CloudSignInProvider
     /// Corpus personal en el device, evaluado EN el momento de la decisión (S5: el
     /// mirror de iCloud puede estar re-importando en background durante el Welcome —
     /// un snapshot sería stale). Input del guard cross-cuenta F0-C.
@@ -80,7 +84,8 @@ struct WelcomeCloudSignInView: View {
     /// la dejaría colgada); `.relaunchSecondary` es terminal como `.relaunch`.
     private var canGoBack: Bool {
         switch phase {
-        case .intro, .notFound, .blockedForeignData, .error: true
+        // `.providerMismatch`: sesión ya soltada y sin claim — nada comprometido.
+        case .intro, .notFound, .blockedForeignData, .error, .providerMismatch: true
         case .checking, .adopting, .waitingLeader, .relaunch, .secondaryConfirm, .relaunchSecondary: false
         }
     }
@@ -109,6 +114,12 @@ struct WelcomeCloudSignInView: View {
                 icon: "person.crop.circle.badge.questionmark",
                 title: L10n.Welcome.Cloud.notFoundTitle,
                 body: L10n.Welcome.Cloud.notFoundBody)
+        case .providerMismatch(let knownProvider):
+            messageContent(
+                icon: "person.crop.circle.badge.exclamationmark",
+                title: L10n.Welcome.Cloud.providerMismatchTitle,
+                body: providerMismatchBody(knownProvider: knownProvider))
+                .accessibilityIdentifier("welcome_cloud_provider_mismatch")
         case .blockedForeignData:
             messageContent(
                 icon: "lock.shield",
@@ -138,20 +149,48 @@ struct WelcomeCloudSignInView: View {
                     .font(DS.Typography.title2)
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
-                Text(L10n.Welcome.Cloud.subtitle)
+                Text(provider == .google
+                    ? L10n.Welcome.Cloud.subtitleGoogle
+                    : L10n.Welcome.Cloud.subtitle)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.white.opacity(0.7))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.lg)
             }
-            AppleSignInButton {
-                DS.Haptic.selection()
-                showConsent = true
+            switch provider {
+            case .apple:
+                AppleSignInButton {
+                    DS.Haptic.selection()
+                    showConsent = true
+                }
+                .frame(height: 50)
+                .padding(.horizontal, DS.Spacing.xl)
+                .accessibilityIdentifier("welcome_cloud_signin_button")
+            case .google:
+                GoogleSignInButton(variant: .light) {
+                    DS.Haptic.selection()
+                    showConsent = true
+                }
+                .frame(height: 50)
+                .padding(.horizontal, DS.Spacing.xl)
+                .accessibilityIdentifier("welcome_cloud_signin_button_google")
             }
-            .frame(height: 50)
-            .padding(.horizontal, DS.Spacing.xl)
-            .accessibilityIdentifier("welcome_cloud_signin_button")
+            // Nota §13 del primer sign-in (AMBOS providers): la cuenta queda ligada al método.
+            Text(L10n.Welcome.Cloud.providerNote)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DS.Spacing.xl)
         }
+    }
+
+    /// Body del mismatch R9: con provider CONOCIDO interpola su nombre visible; nil o
+    /// desconocido → copy genérico (jamás interpolar un rawValue del wire en UI).
+    private func providerMismatchBody(knownProvider: String?) -> String {
+        if let name = ProviderMismatchLogic.displayName(forProvider: knownProvider) {
+            return L10n.Welcome.Cloud.providerMismatchBody(name)
+        }
+        return L10n.Welcome.Cloud.providerMismatchBodyGeneric
     }
 
     private func progressContent(_ text: String, hint: String?) -> some View {
@@ -301,13 +340,26 @@ struct WelcomeCloudSignInView: View {
         // Retry con sesión ya viva (falló solo el exists): no re-pedir Face ID.
         if !CloudAuthService.shared.hasSession {
             do {
-                try await CloudAuthService.shared.signInWithApple()
+                try await CloudAuthService.shared.signIn(with: provider)
+            } catch CloudAuthError.cancelled {
+                // Cancel EXPLÍCITO (Google) → volver al intro en silencio (el user re-tapea).
+                phase = .intro
+                return
             } catch {
                 #if DEBUG
-                print("WelcomeCloudSignInView: SIWA falló/cancelado: \(error)")
+                print("WelcomeCloudSignInView: sign-in \(provider.rawValue) falló/cancelado: \(error)")
                 #endif
-                // Cancelación o fallo de Apple → volver al intro sin alarma (el user re-tapea).
-                phase = .intro
+                switch provider {
+                case .apple:
+                    // BYTE-IDÉNTICO con hoy: ASAuthorization no distingue cancel de fallo →
+                    // volver al intro sin alarma.
+                    phase = .intro
+                case .google:
+                    // Google SÍ distingue (el cancel ya salió arriba): esto es fallo REAL
+                    // (red/SDK/exchange) → error visible con retry.
+                    phase = .error(retryable: true)
+                    track(outcome: "error")
+                }
                 return
             }
         }
@@ -321,10 +373,29 @@ struct WelcomeCloudSignInView: View {
 
         switch CloudWelcomeSignInFlow.route(await CloudAccountClient().exists(jwt: jwt)) {
         case .accountMissing:
-            // Sin claim no se creó NADA server-side; soltar la sesión (no dejar SIWA colgado).
+            // Guard R9 SUB-FIRST (sesión 2, H4): antes del `.notFound` engañoso, consultar el
+            // faro del device — si la cuenta nube de este Apple ID se creó con OTRO método y
+            // este sub NO la matchea, lo probable es "método equivocado", no "sin cuenta".
+            let beacon = CloudBeacon()
+            let verdict = ProviderMismatchLogic.decide(
+                accountExists: false,
+                beaconLinked: beacon.isCloudAccountLinked,
+                beaconAccountHash: beacon.accountHash,
+                beaconProvider: beacon.linkedProvider,
+                sessionSubHash: CloudBeacon.hash(userID),
+                sessionProvider: provider.rawValue)
+            // Sin claim no se creó NADA server-side; soltar la sesión SIEMPRE (no dejar el
+            // sign-in colgado) — también en mismatch (jamás dejar un sub huérfano vivo).
             await CloudAuthService.shared.signOut()
-            phase = .notFound
-            track(outcome: "notFound")
+            switch verdict {
+            case .mismatch(let knownProvider):
+                TelemetryService.cloudSignInProviderMismatch()
+                phase = .providerMismatch(knownProvider: knownProvider)
+                track(outcome: "providerMismatch")
+            case .proceed:
+                phase = .notFound
+                track(outcome: "notFound")
+            }
         case .failed(let retryable):
             phase = .error(retryable: retryable)
             track(outcome: "error")

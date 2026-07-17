@@ -64,6 +64,7 @@ struct WelcomeExistingChooserView: View {
         switch option {
         case .restoreICloud: L10n.Welcome.Existing.restoreTitle
         case .cloudSignIn: L10n.Welcome.Existing.cloudTitle
+        case .googleSignIn: L10n.Welcome.Existing.googleTitle
         }
     }
 
@@ -71,33 +72,61 @@ struct WelcomeExistingChooserView: View {
         switch option {
         case .restoreICloud: L10n.Welcome.Existing.restoreBody
         case .cloudSignIn: L10n.Welcome.Existing.cloudBody
+        case .googleSignIn: L10n.Welcome.Existing.googleBody
         }
     }
 
-    private func icon(for option: WelcomeAccountChoiceLogic.ExistingOption) -> (name: String, tint: Color) {
+    /// Icono por opción. Las de sistema van en círculo tintado 0.25 (como el chooser nivel 1);
+    /// la de Google es el logo "G" multicolor sobre círculo BLANCO sólido (brand guideline:
+    /// el logo exige fondo claro de contraste y JAMÁS se recolorea/template).
+    @ViewBuilder
+    private func iconView(for option: WelcomeAccountChoiceLogic.ExistingOption) -> some View {
         switch option {
-        case .restoreICloud: ("icloud.and.arrow.down", .neonCyan)
-        case .cloudSignIn: ("apple.logo", .white)
+        case .restoreICloud:
+            systemIconCircle(name: "icloud.and.arrow.down", tint: .neonCyan)
+        case .cloudSignIn:
+            systemIconCircle(name: "apple.logo", tint: .white)
+        case .googleSignIn:
+            ZStack {
+                Circle()
+                    .fill(.white)  // A11Y-DM: fondo de contraste OBLIGATORIO del logo G (brand guideline de Google, no adapta al tema)
+                    .frame(width: 48, height: 48)
+                Image("GoogleG")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
+            }
+        }
+    }
+
+    private func systemIconCircle(name: String, tint: Color) -> some View {
+        ZStack {
+            Circle()
+                .fill(tint.opacity(0.25))
+                .frame(width: 48, height: 48)
+            Image(systemName: name)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(tint)
+        }
+    }
+
+    private func accessibilityIdentifier(for option: WelcomeAccountChoiceLogic.ExistingOption) -> String {
+        switch option {
+        case .restoreICloud: "welcome_existing_restore"
+        case .cloudSignIn: "welcome_existing_cloud"
+        case .googleSignIn: "welcome_existing_google"
         }
     }
 
     /// Mismo shape visual que `WelcomeChooserView.chooserCard` (builder privado allá;
     /// réplica consciente para no refactorizar el chooser existente).
     private func optionCard(_ option: WelcomeAccountChoiceLogic.ExistingOption) -> some View {
-        let iconSpec = icon(for: option)
-        return Button {
+        Button {
             DS.Haptic.selection()
             onSelect(option)
         } label: {
             HStack(spacing: DS.Spacing.md) {
-                ZStack {
-                    Circle()
-                        .fill(iconSpec.tint.opacity(0.25))
-                        .frame(width: 48, height: 48)
-                    Image(systemName: iconSpec.name)
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(iconSpec.tint)
-                }
+                iconView(for: option)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(title(for: option))
@@ -127,7 +156,6 @@ struct WelcomeExistingChooserView: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title(for: option)). \(body(for: option))")
-        .accessibilityIdentifier(option == .restoreICloud
-            ? "welcome_existing_restore" : "welcome_existing_cloud")
+        .accessibilityIdentifier(accessibilityIdentifier(for: option))
     }
 }

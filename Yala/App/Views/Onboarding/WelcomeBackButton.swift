@@ -27,6 +27,7 @@ extension View {
                 .padding(.leading, DS.Spacing.sm)
                 .padding(.top, DS.Spacing.sm)
                 .accessibilityLabel(L10n.Welcome.Invite.back)
+                .accessibilityIdentifier("welcome_back_button")
             }
         }
     }

@@ -50,9 +50,12 @@ struct WelcomeFlowContainer: View {
     }
 
     private var visibleExistingOptions: [WelcomeAccountChoiceLogic.ExistingOption] {
+        // `-uitest-cloud-chooser` (opt-in EXPLÍCITO, sesión 2): destapa las cards cloud bajo
+        // uitest SOLO para el XCUITest del chooser — el resto de uitest queda byte-idéntico
+        // (bypass a restore intacto).
         WelcomeAccountChoiceLogic.visibleExistingOptions(
             isConfigured: CloudBackendConfig.isConfigured,
-            isUITest: SwiftDataConfiguration.isUITesting)
+            isUITest: SwiftDataConfiguration.isUITesting && !UITestHooks.forceCloudChooser)
     }
 
     var body: some View {

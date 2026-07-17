@@ -4874,7 +4874,7 @@
 "groups.signin.title" = "Connecte ton compte";
 
 /* G4 sign-in body */
-"groups.signin.body" = "Pour rejoindre le groupe, il te faut un compte Yala. Connecte-toi avec ton identifiant Apple et poursuis ton invitation.";
+"groups.signin.body" = "Pour rejoindre le groupe, il te faut un compte Yala. Connecte-toi avec Apple ou Google et poursuis ton invitation.";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "Ce sera ton compte Yala : si un jour tu déplaces tes données personnelles vers le cloud, tu utiliseras ce même compte.";
@@ -4967,3 +4967,27 @@
 
 /* G6-3: progress banner while the owner's groups migrate to backend */
 "groups.migrated.migratingBanner" = "Déplacement de tes groupes vers le cloud de Yala…";
+
+/* Google sign-in button label (brand guideline text next to the G logo) */
+"auth.googleButton" = "Continuer avec Google";
+
+/* Existing-account chooser: Google sign-in card title */
+"welcome.existing.googleTitle" = "Se connecter avec Google";
+
+/* Existing-account chooser: Google sign-in card body */
+"welcome.existing.googleBody" = "Ton compte Yala dans le cloud, si tu l'as créé avec ton compte Google.";
+
+/* Cloud sign-in intro subtitle when provider is Google */
+"welcome.cloud.subtitleGoogle" = "Utilise le même compte Google qu'à la création de ton compte cloud.";
+
+/* Note under sign-in buttons: account is tied to the sign-in method */
+"welcome.cloud.providerNote" = "Connecte-toi avec la même méthode qu'à la création de ton compte : ton compte Yala y est lié.";
+
+/* R9 provider mismatch screen title */
+"welcome.cloud.providerMismatchTitle" = "Ce compte utilise une autre méthode";
+
+/* R9 provider mismatch body; %@ = Apple/Google */
+"welcome.cloud.providerMismatchBody" = "Ton compte Yala a été créé avec %@. Reviens en arrière et connecte-toi avec cette méthode.";
+
+/* R9 provider mismatch body when known provider is unavailable */
+"welcome.cloud.providerMismatchBodyGeneric" = "Ton compte Yala a été créé avec une autre méthode de connexion. Reviens en arrière et utilise celle de la première fois.";

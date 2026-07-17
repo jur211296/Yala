@@ -4885,7 +4885,7 @@
 "groups.signin.title" = "Verbind je account";
 
 /* G4 sign-in body */
-"groups.signin.body" = "Om lid te worden van de groep heb je een Yala-account nodig. Log in met je Apple ID en ga verder met je uitnodiging.";
+"groups.signin.body" = "Om lid te worden van de groep heb je een Yala-account nodig. Log in met Apple of Google en ga verder met je uitnodiging.";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "Dit wordt jouw Yala-account: als je ooit je persoonlijke gegevens naar de cloud verplaatst, gebruik je ditzelfde account.";
@@ -4978,3 +4978,27 @@
 
 /* G6-3: progress banner while the owner's groups migrate to backend */
 "groups.migrated.migratingBanner" = "Je groepen worden verplaatst naar de Yala-cloud…";
+
+/* Google sign-in button label (brand guideline text next to the G logo) */
+"auth.googleButton" = "Doorgaan met Google";
+
+/* Existing-account chooser: Google sign-in card title */
+"welcome.existing.googleTitle" = "Inloggen met Google";
+
+/* Existing-account chooser: Google sign-in card body */
+"welcome.existing.googleBody" = "Je Yala-account in de cloud, als je het met je Google-account hebt gemaakt.";
+
+/* Cloud sign-in intro subtitle when provider is Google */
+"welcome.cloud.subtitleGoogle" = "Gebruik hetzelfde Google-account waarmee je je cloudaccount hebt gemaakt.";
+
+/* Note under sign-in buttons: account is tied to the sign-in method */
+"welcome.cloud.providerNote" = "Log in met dezelfde methode als waarmee je je account hebt gemaakt — je Yala-account is eraan gekoppeld.";
+
+/* R9 provider mismatch screen title */
+"welcome.cloud.providerMismatchTitle" = "Dat account gebruikt een andere methode";
+
+/* R9 provider mismatch body; %@ = Apple/Google */
+"welcome.cloud.providerMismatchBody" = "Je Yala-account is gemaakt met %@. Ga terug en log in met die methode.";
+
+/* R9 provider mismatch body when known provider is unavailable */
+"welcome.cloud.providerMismatchBodyGeneric" = "Je Yala-account is met een andere inlogmethode gemaakt. Ga terug en gebruik de methode van de eerste keer.";
