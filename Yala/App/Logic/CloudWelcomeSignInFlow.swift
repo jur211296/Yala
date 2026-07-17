@@ -85,3 +85,65 @@ nonisolated enum CloudWelcomeSignInFlow {
         }
     }
 }
+
+// MARK: - Auto-resume del adopt aparcado (H-2026-07-17-5)
+
+/// Detector PURO de "drive aparcado" para el poll de la pantalla de adopt del Welcome
+/// (H-2026-07-17-5: `startAdoptWithExistingSession()` retorna cuando el drive corta retomable
+/// —transient de red— y el poll solo OBSERVABA; sin botón Retomar aquí y con `rekickIfParked`
+/// disparando solo al volver a foreground, la pantalla quedaba clavada en "Conectando…").
+/// Molde `MigrationForegroundRekick`: tabla pura + tests. El drive del runner es SÍNCRONO dentro
+/// de las entradas públicas (`runGuarded`) ⇒ `isWorking == false` con fase `.adopting` significa
+/// que NADIE conduce — sostenido N ticks es una aparcada real, no una ventana entre awaits.
+/// La acotación a transicionales de adopt es estructural en el caller (el poll retorna en
+/// `.relaunch`/`.error`/`.waitingLeader`) y en el destino (`resumeIfNeeded` → `MigrationBootDecision`,
+/// que devuelve `.none` en terminales de fallo — contrato del boot: jamás auto-re-kick de rollbacks).
+nonisolated enum WelcomeAdoptAutoResume {
+
+    struct State: Equatable {
+        /// Ticks consecutivos del poll con la pantalla en `.adopting` y el controller ocioso.
+        var idleTicks = 0
+        /// Auto-resumes disparados desde el último AVANCE real de la máquina.
+        var attempts = 0
+        /// Autos agotados sin avance → la vista muestra el botón Retomar manual.
+        var showManualRetry = false
+    }
+
+    /// Poll de 1 s ⇒ ~4 s aparcada antes del primer auto-resume.
+    static let idleTicksBeforeResume = 4
+    /// Tras 3 autos sin avance deja de martillear la red (queda el botón manual + el
+    /// rekick de foreground); un avance real repone intentos frescos.
+    static let maxAutoAttempts = 3
+
+    /// Un tick del poll. `isAdopting` = fase de pantalla `.adopting` (transicional);
+    /// `isWorking` = el controller conduce AHORA (resume del boot/rekick en vuelo — jamás
+    /// disparar encima); `machineAdvanced` = la fase journaleada cambió desde el tick anterior.
+    static func tick(
+        isAdopting: Bool,
+        isWorking: Bool,
+        machineAdvanced: Bool,
+        state: State
+    ) -> (state: State, fireAutoResume: Bool) {
+        var next = state
+        if machineAdvanced {
+            // Avance real: un park posterior merece intentos frescos y el botón sobra.
+            next.attempts = 0
+            next.showManualRetry = false
+        }
+        guard isAdopting, !isWorking else {
+            // Drive en curso o fase no transicional: la racha ociosa se corta, los
+            // intentos se CONSERVAN (un resume en vuelo todavía no es avance).
+            next.idleTicks = 0
+            return (next, false)
+        }
+        next.idleTicks += 1
+        guard next.idleTicks >= idleTicksBeforeResume else { return (next, false) }
+        next.idleTicks = 0
+        if next.attempts < maxAutoAttempts {
+            next.attempts += 1
+            return (next, true)
+        }
+        next.showManualRetry = true
+        return (next, false)
+    }
+}

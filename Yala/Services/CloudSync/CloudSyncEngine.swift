@@ -639,6 +639,19 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration foregroundRekick phase=\(phase, privacy: .public) — re-kick del resume aparcado")
     }
 
+    /// H-2026-07-17-5: el poll de la pantalla de adopt del Welcome detectó el drive APARCADO
+    /// (fase transicional con el controller ocioso N ticks) y re-condujo solo por el camino del
+    /// boot (`resumeIfNeeded`). `attempt` = intento auto (1…max) desde el último avance; sin PII.
+    static func welcomeAdoptAutoResume(attempt: Int, phase: String) {
+        logger.notice("CloudSyncMigration welcomeAdoptAutoResume attempt=\(attempt, privacy: .public) phase=\(phase, privacy: .public) — auto-resume del adopt aparcado en Welcome")
+    }
+
+    /// H-2026-07-17-5: los autos se agotaron sin avance → el botón Retomar manual queda visible
+    /// (canario: si aparece seguido, el auto-resume no basta — investigar la causa del park).
+    static func welcomeAdoptAutoResumeExhausted(phase: String) {
+        logger.notice("CloudSyncMigration welcomeAdoptAutoResumeExhausted phase=\(phase, privacy: .public) — autos agotados, Retomar manual visible")
+    }
+
     /// w3: la captura de coordenadas CloudKit `(recordName, zoneName, ownerName)` terminó. Conteos
     /// tri-estado (captured/exportPending/noMetadata/failed). Sin PII (solo counts). Filas sin captura NO
     /// bloquean la fase (`assigningIdentity` es idempotente/re-ejecutable; una fila jamás exportada no

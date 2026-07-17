@@ -43,6 +43,11 @@ struct WelcomeCloudSignInView: View {
     /// Task del flujo/poll en vuelo — se cancela en onDisappear (el Task nace de un
     /// callback, NO de `.task`, así que el desmontaje no lo cancela solo).
     @State private var flowTask: Task<Void, Never>?
+    /// H-2026-07-17-5: detector de drive aparcado del poll (auto-resume + botón manual).
+    @State private var autoResumeState = WelcomeAdoptAutoResume.State()
+    /// Fase journaleada del tick anterior del poll — alimenta `machineAdvanced` (un avance
+    /// real repone intentos de auto-resume). `nil` = primer tick (jamás cuenta como avance).
+    @State private var lastObservedPhase: MigrationPhase?
 
     var body: some View {
         WelcomeFlowScreen { logoTopSpacing in
@@ -226,6 +231,27 @@ struct WelcomeCloudSignInView: View {
                 .foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, DS.Spacing.xl)
+            // #36 (H1): pre-espera de quiescencia en curso (hasta 300s) — estado honesto,
+            // misma key que la card de Almacenamiento. Leer la propiedad @Observable en
+            // body registra la dependencia.
+            if CloudMigrationController.shared?.resumeWaitingForImport == true {
+                Text(L10n.Storage.Progress.waitingImport)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .accessibilityIdentifier("welcome_cloud_adopt_waiting_import")
+            }
+            // H-2026-07-17-5: autos agotados sin avance → Retomar manual (el poll sigue
+            // vivo: un avance por otro camino —p.ej. rekick de foreground— lo oculta solo).
+            if autoResumeState.showManualRetry {
+                YalaPrimaryButton(L10n.Welcome.Cloud.retry) {
+                    launchFlow { await retryAdoptResume() }
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.top, DS.Spacing.sm)
+                .accessibilityIdentifier("welcome_cloud_adopt_retry")
+            }
         }
         .accessibilityIdentifier("welcome_cloud_adopting")
     }
@@ -417,6 +443,10 @@ struct WelcomeCloudSignInView: View {
             case .proceed:
                 onAdoptStarted()
                 phase = .adopting(fraction: 0)
+                // Detector de aparcada FRESCO por adopt (un retry tras `.error` no debe
+                // heredar attempts/showManualRetry del ciclo anterior).
+                autoResumeState = WelcomeAdoptAutoResume.State()
+                lastObservedPhase = nil
                 await CloudMigrationController.shared?.startAdoptWithExistingSession()
                 await pollAdoptProgress()
             }
@@ -443,6 +473,13 @@ struct WelcomeCloudSignInView: View {
 
     /// Deriva la fase de pantalla del uiState de la máquina cada segundo
     /// (molde del refresh de StorageSettingsView) hasta un estado terminal.
+    /// H-2026-07-17-5: además DETECTA el drive aparcado (transient a mitad de página →
+    /// `startAdoptWithExistingSession` retornó con el journal transicional) y re-conduce
+    /// solo por el MISMO camino del boot/rekick (`resumeIfNeeded`, guard de reentrada A2).
+    /// El `await` del auto-resume es ESTRUCTURADO dentro del task del poll: el cancel de
+    /// onDisappear le propaga igual que al sleep (sin Tasks huérfanos). Durante el drive
+    /// del resume el poll no tickea (UI congelada en la última fase) — paridad con el
+    /// drive inicial, y la pre-espera larga la cubre el hint `resumeWaitingForImport`.
     private func pollAdoptProgress() async {
         guard let controller = CloudMigrationController.shared else {
             phase = .error(retryable: true)
@@ -460,12 +497,61 @@ struct WelcomeCloudSignInView: View {
             default:
                 break
             }
+            await evaluateAutoResume(controller: controller, screenPhase: next)
             do {
                 try await Task.sleep(for: .seconds(1))
             } catch {
                 return  // task cancelada (view desmontada)
             }
         }
+    }
+
+    /// Un tick del detector de aparcada (lógica pura en `WelcomeAdoptAutoResume`).
+    private func evaluateAutoResume(
+        controller: CloudMigrationController,
+        screenPhase: CloudWelcomeSignInPhase
+    ) async {
+        let journaled = controller.journaledPhase
+        let advanced = lastObservedPhase != nil && lastObservedPhase != journaled
+        lastObservedPhase = journaled
+        var isAdopting = false
+        if case .adopting = screenPhase { isAdopting = true }
+        let (newState, fire) = WelcomeAdoptAutoResume.tick(
+            isAdopting: isAdopting,
+            isWorking: controller.isWorking,
+            machineAdvanced: advanced,
+            state: autoResumeState)
+        // Breadcrumb del agotamiento SOLO en la transición false→true (sin spam por tick).
+        if newState.showManualRetry && !autoResumeState.showManualRetry {
+            CloudSyncBreadcrumb.welcomeAdoptAutoResumeExhausted(phase: "\(journaled)")
+        }
+        autoResumeState = newState
+        guard fire else { return }
+        // Belt de paridad con `rekickIfParked`: jamás conducir con el wipe de sign-out armado.
+        guard !StorageModePersistence.isSignOutWipeArmed() else { return }
+        CloudSyncBreadcrumb.welcomeAdoptAutoResume(attempt: newState.attempts, phase: "\(journaled)")
+        await controller.resumeIfNeeded()
+    }
+
+    /// Retomar manual (autos agotados). Espejo de `retryLeaderPoll`: cancela el poll viejo
+    /// (via launchFlow), conduce y re-pollea. Con el journal normalizado a `notStarted` sin
+    /// efectos (`uiState == .idle`, adopt perdido antes del claim) `resumeIfNeeded` sería un
+    /// no-op perpetuo → re-arranca el adopt con la sesión aún viva (este camino nunca la soltó);
+    /// la decisión de RE-claimear queda detrás del gesto del usuario, jamás en el auto.
+    private func retryAdoptResume() async {
+        autoResumeState = WelcomeAdoptAutoResume.State()
+        lastObservedPhase = nil
+        guard let controller = CloudMigrationController.shared else {
+            phase = .error(retryable: true)
+            return
+        }
+        controller.refresh()
+        if case .idle = controller.uiState {
+            await controller.startAdoptWithExistingSession()
+        } else {
+            await controller.resumeIfNeeded()
+        }
+        await pollAdoptProgress()
     }
 
     private func retryLeaderPoll() async {
