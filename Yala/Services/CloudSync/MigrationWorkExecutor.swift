@@ -227,6 +227,12 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
                     state: claimState, branch: .migration,
                     beaconSaysCloudActivated: false, providerMatchesBeacon: true)
                 claimStore.record(action, forUserID: userID)
+                // KPI registros/día (alta nube): SOLO `created` = fila NUEVA server-side. One-shot
+                // persistido por userID dentro del servicio — el re-claim del MISMO líder colapsa a
+                // `created` (AccountClaimDecision) y una migración reanudada re-emitiría (doble conteo).
+                if claimState == .created {
+                    MetricsService.cloudRegistrationCompletedIfFirst(userID: userID, detail: "migration")
+                }
             } else {
                 // M1 del review: claim exitoso con userID nil (casi imposible — el claim usó la sesión).
                 // Sin estampado, el guard de identidad P6 dejaría al dueño en `.idle` post-cutover; ruido
@@ -500,7 +506,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
                 let rescued = results.filter { $0.status == .applied }.count
                 if rescued > 0 {
                     CloudSyncBreadcrumb.migrationLeaderOrphanReconciled(count: rescued)
-                    TelemetryService.cloudCutoverLeaderOrphanReconciled(count: rescued)
+                    MetricsService.cloudCutoverLeaderOrphanReconciled(count: rescued)
                 }
             }
             // `migration_progress('complete')` (líder) — SOLO tras el barrido (un kill entre ambos re-corre
@@ -1064,7 +1070,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // Paso 7: canario (espejo del par del líder). `identityAssigned` viaja en el breadcrumb (sin PII).
         if uploaded > 0 {
             CloudSyncBreadcrumb.adoptOrphanReconciled(count: uploaded, identityAssigned: identityAssigned)
-            TelemetryService.cloudAdoptOrphanReconciled(count: uploaded)
+            MetricsService.cloudAdoptOrphanReconciled(count: uploaded)
         }
         return .completed(uploaded: uploaded, identityAssigned: identityAssigned)
     }

@@ -93,7 +93,7 @@ enum SIWAExchangeCapture {
         guard let hook else { return }
         guard let code = code(from: codeData) else {
             CloudSyncBreadcrumb.siwaExchangeFailed(reason: "no-code")
-            TelemetryService.siwaExchangeFailed(reason: "no-code")
+            MetricsService.siwaExchangeFailed(reason: "no-code")
             return
         }
         hook(code, appleUserID)

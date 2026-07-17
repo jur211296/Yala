@@ -1765,7 +1765,7 @@ final class CloudSyncEngine {
         identityGapCount += 1
         CloudSyncBreadcrumb.identityGap(entityType: entityType, reason: reason)
         // Canario TelemetryDeck (no-op en tests: `track` retorna si el servicio no está configurado).
-        TelemetryService.cloudSyncIdentityGapObserved(entityType: entityType)
+        MetricsService.cloudSyncIdentityGapObserved(entityType: entityType)
     }
 
     // MARK: - Barrido defensivo + índices
@@ -1873,7 +1873,7 @@ final class CloudSyncEngine {
             _ = try clock.receive(remote: remote, now: now)
         } catch {
             CloudSyncBreadcrumb.clockReceiveRejected(reason: "\(error)")
-            TelemetryService.cloudSyncClockReceiveRejected(reason: "\(error)")
+            MetricsService.cloudSyncClockReceiveRejected(reason: "\(error)")
             #if DEBUG
             print("CloudSyncEngine: receiveRemoteClock falló para \(remote): \(error)")
             #endif
@@ -2204,7 +2204,7 @@ final class CloudSyncEngine {
         // o vaciado parcial → el modo de fallo que ni el Merkle ve.
         let divergence = entries.count - liveCount
         if divergence != 0 {
-            TelemetryService.cloudSyncOutboxMirrorDivergence(delta: divergence)
+            MetricsService.cloudSyncOutboxMirrorDivergence(delta: divergence)
         }
 
         // Seleccionar las entries faltantes (idempotente: guard "fila viva ya presente").
@@ -2241,7 +2241,7 @@ final class CloudSyncEngine {
             #endif
             return
         }
-        TelemetryService.cloudSyncOutboxMirrorRehydrated(count: missing.count)
+        MetricsService.cloudSyncOutboxMirrorRehydrated(count: missing.count)
     }
 
     /// HOOK I8e (2xx): purga la fila del outbox subida con éxito + borra su archivo espejo, y SOLO
@@ -2433,7 +2433,7 @@ final class CloudSyncEngine {
             #endif
             return
         }
-        for p in poison { TelemetryService.cloudSyncMutationRejected(reason: p.reason) }
+        for p in poison { MetricsService.cloudSyncMutationRejected(reason: p.reason) }
     }
 }
 

@@ -116,7 +116,7 @@ enum PendingJoinStore {
         var entries = load()
         let expired = entries.values.filter { now.timeIntervalSince($0.createdAt) >= ttl }
         if !expired.isEmpty {
-            for _ in expired { TelemetryService.track(.groupJoinIntentExpired) }
+            for _ in expired { MetricsService.canary(.groupJoinIntentExpired) }
             for entry in expired { entries.removeValue(forKey: entry.zoneName) }
             persist(entries)
         }

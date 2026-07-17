@@ -93,7 +93,7 @@ final class PushTokenRegistrar {
             switch error {
             case .serverRejected:
                 // Fallo de SERVIDOR (4xx ≠ 401) → canario. NO en offline transitorio ni 401 (sesión).
-                TelemetryService.track(.groupPushTokenRegisterFailed)
+                MetricsService.canary(.groupPushTokenRegisterFailed)
                 #if DEBUG
                 print("PushTokenRegistrar: register serverRejected: \(error)")
                 #endif

@@ -296,19 +296,14 @@ final class iCloudSyncService {
                 lastExportError = error
                 consecutiveFailures += 1
                 surfaceOrSuppress(error)
-                TelemetryService.track(.cloudkitExportFailed, parameters: [
-                    "code": String(error.code.rawValue),
-                    "retriable": String(isRetriable(error)),
-                ])
+                MetricsService.canary(.cloudkitExportFailed, detail: "code=\(error.code.rawValue)|retriable=\(isRetriable(error))")
             } else if let endDate {
                 let duration = lastSuccessfulExportDate.map { endDate.timeIntervalSince($0) } ?? 0
                 lastSuccessfulExportDate = endDate
                 consecutiveFailures = 0
                 pendingFailedTransition?.cancel()
                 promoteToIdleOrStalled()
-                TelemetryService.track(.cloudkitExportSucceeded, parameters: [
-                    "duration_bucket": durationBucket(duration),
-                ])
+                MetricsService.canary(.cloudkitExportSucceeded, detail: durationBucket(duration))
             } else {
                 setStatus(.syncing(kind: .exporting))
             }
@@ -411,9 +406,7 @@ final class iCloudSyncService {
                 lastError: lastExportError?.code
             ))
             if !wasAlreadyStalled {
-                TelemetryService.track(.cloudkitStalledDetected, parameters: [
-                    "days_bucket": daysBucket(days),
-                ])
+                MetricsService.canary(.cloudkitStalledDetected, detail: daysBucket(days))
             }
         } else {
             setStatus(.idle)

@@ -428,10 +428,8 @@ struct GroupInviteOnboardingView: View {
             }
         }
 
-        // 8. Track telemetry
-        TelemetryService.track(.onboardingCompleted, parameters: [
-            "mode": "groupInvite",
-        ])
+        // 8. KPI registros/día (alta local vía invitación de grupo)
+        MetricsService.localRegistrationCompleted(mode: "groupInvite")
     }
 
     private func detectCurrencyFromGroup() -> CurrencyCode? {

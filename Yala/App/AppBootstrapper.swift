@@ -109,9 +109,11 @@ final class AppBootstrapper {
         //      Idempotente vía sentinel; no toca SwiftData.
         cleanupBiometricKeychainIfNeeded()
 
-        // 0.5. Configure analytics (no-op if API key missing)
-        TelemetryService.configure()
-        TelemetryService.track(.appLaunched)
+        // 0.5. Telemetría propia mínima (sustituye TelemetryDeck): arranque + ping diario
+        //      (usuarios activos/día, dedup UTC client-side) + drain del spool de canarios.
+        //      Bajo `-uitest` start() es no-op (guard interno) — cero red en XCUITests.
+        MetricsService.start()
+        MetricsService.dailyActivePingIfNeeded()
 
         // 0.55. Track session for upsell frequency capping
         ProUpsellService.shared.incrementSessionCount()
@@ -541,6 +543,10 @@ final class AppBootstrapper {
             UserDefaults.standard.removeObject(forKey: CloudRemoteFlags.debugForceOffKey)
             #endif
             UserDefaults.standard.removeObject(forKey: CloudRemoteConfigStore.snapshotKey)
+            //  · Telemetría propia: spool/guard-del-día/one-shots de registro son keys `metrics.*`
+            //    pegajosas de `.standard` (misma clase que el snapshot de remote-config). El
+            //    servicio NO arranca bajo uitest, pero una corrida manual previa las deja.
+            MetricsService.resetLocalState()
         }
         // Estado Pro determinista según el launch arg, idempotente entre tests.
         // `devForceProTier` se persiste en UserDefaults (`dev.forceProTier`) y el wipe
@@ -1106,9 +1112,10 @@ final class AppBootstrapper {
         guard !SecondarySessionStore.isWipeArmed() else { return }
         if SecondarySessionStore.isActive() && !SwiftDataConfiguration.secondaryStoreMounted { return }
 
-        // Warm-start telemetry
+        // Warm start: ping diario (dedup por día UTC — solo el primero del día encola)
+        // + drain del spool de canarios pendientes (offline previo / kill).
         if hasSeenInitialActive {
-            TelemetryService.track(.appResumed)
+            MetricsService.dailyActivePingIfNeeded()
         } else {
             hasSeenInitialActive = true
         }
@@ -1464,21 +1471,10 @@ final class AppBootstrapper {
                 UserDefaults.standard.set(attempts + 1, forKey: attemptsKey)
             }
 
-            TelemetryService.track(
+            MetricsService.canary(
                 .appEntityShortcutIDsRegenerated,
-                parameters: [
-                    "accounts": "\(accountsRegen)",
-                    "subcategories": "\(subsRegen)",
-                    "tags": "\(tagsRegen)",
-                    "budgets": "\(budgets.count)",
-                    "txs": "\(txs.count)",
-                    "drafts": "\(drafts.count)",
-                    "favorites": "\(favorites.count)",
-                    "scheduled": "\(scheduled.count)",
-                    "waitedForSync": "\(waitedForSync)",
-                    "waitDuration_bucket": migrationWaitBucket(waitDuration),
-                    "sawRace": "\(sawRace)",
-                ]
+                detail: "acc=\(accountsRegen)|sub=\(subsRegen)|tag=\(tagsRegen)|wait=\(migrationWaitBucket(waitDuration))|race=\(sawRace)",
+                value: Double(accountsRegen + subsRegen + tagsRegen)
             )
 
             #if DEBUG
@@ -1594,7 +1590,7 @@ final class AppBootstrapper {
                 UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
                 GroupBackendInviteEntryHandler.persistIntent(
                     groupID: backendInvite.groupID, token: backendInvite.token)
-                TelemetryService.track(.groupJoinIntentPersisted)
+                MetricsService.canary(.groupJoinIntentPersisted)
                 #if DEBUG
                 print("AppBootstrapper: Deferring BACKEND invite (persisted) — not yet initialized")
                 #endif
@@ -1705,7 +1701,7 @@ final class AppBootstrapper {
                   isPresenting: isPresenting
               )
         else { return }
-        TelemetryService.inviteReEmittedFromStore()
+        MetricsService.inviteReEmittedFromStore()
         processInvite(shareURL: resolved.url, branded: resolved.branded)
     }
 

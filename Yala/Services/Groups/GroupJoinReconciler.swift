@@ -52,7 +52,7 @@ enum GroupJoinReconciler {
         // acceptShare es user-tap: residual documentado, no se gatea.
         if trigger != .acceptShare, !iCloudSyncService.shared.isImportQuiescent {
             logger.notice("JoinReconcile[\(trigger.rawValue, privacy: .public)]: deferred — import not quiescent (\(entries.count) intents)")
-            TelemetryService.track(.groupJoinIntentDeferred, parameters: ["reason": "importNotQuiescent"])
+            MetricsService.canary(.groupJoinIntentDeferred, detail: "importNotQuiescent")
             return
         }
 
@@ -81,12 +81,12 @@ enum GroupJoinReconciler {
 
             case .waitForGroup:
                 logger.notice("JoinReconcile[\(trigger.rawValue, privacy: .public)]: zone \(entry.zoneName, privacy: .public) not local yet — waiting")
-                TelemetryService.track(.groupJoinIntentDeferred, parameters: ["reason": "waitForGroup"])
+                MetricsService.canary(.groupJoinIntentDeferred, detail: "waitForGroup")
                 GroupJoinIntentTracker.shared.rehydrate(zoneName: entry.zoneName)
 
             case .waitForEngines:
                 logger.notice("JoinReconcile[\(trigger.rawValue, privacy: .public)]: engines not ready for \(entry.zoneName, privacy: .public)")
-                TelemetryService.track(.groupJoinIntentDeferred, parameters: ["reason": "enginesNotReady"])
+                MetricsService.canary(.groupJoinIntentDeferred, detail: "enginesNotReady")
 
             case .reconcile:
                 guard let group else { continue }
@@ -141,9 +141,7 @@ enum GroupJoinReconciler {
                 GroupJoinIntentTracker.shared.rehydrate(zoneName: entry.zoneName)
                 GroupJoinIntentTracker.shared.noteMemberResolved(zoneName: entry.zoneName, status: status)
             }
-            TelemetryService.track(.groupJoinIntentReconciled, parameters: [
-                "trigger": trigger.rawValue, "status": "backendMemberPresent",
-            ])
+            MetricsService.canary(.groupJoinIntentReconciled, detail: "\(trigger.rawValue)|backendMemberPresent")
             logger.notice("JoinReconcile[\(trigger.rawValue, privacy: .public)]: backend member present for \(entry.zoneName, privacy: .public) → intent cleared")
 
         case .presentSignIn, .presentConsent, .join:
@@ -223,10 +221,7 @@ enum GroupJoinReconciler {
             GroupJoinIntentTracker.shared.noteMemberResolved(
                 zoneName: entry.zoneName, status: member.memberStatus
             )
-            TelemetryService.track(.groupJoinIntentReconciled, parameters: [
-                "trigger": trigger.rawValue,
-                "status": member.memberStatus.rawValue
-            ])
+            MetricsService.canary(.groupJoinIntentReconciled, detail: "\(trigger.rawValue)|\(member.memberStatus.rawValue)")
             logger.notice("JoinReconcile[\(trigger.rawValue, privacy: .public)]: member ensured for zone \(entry.zoneName, privacy: .public) status=\(member.memberStatus.rawValue, privacy: .public)")
         } catch {
             // Intent NO se limpia → reintento en el próximo trigger.

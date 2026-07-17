@@ -215,7 +215,7 @@ final class CloudSyncRuntime {
             CloudSyncBreadcrumb.runtimeBlockedByMountMismatch()
             if !mountMismatchCanaryFired {
                 mountMismatchCanaryFired = true
-                TelemetryService.cloudSecondaryMountMismatchBlocked()
+                MetricsService.cloudSecondaryMountMismatchBlocked()
             }
             return false
         }
@@ -475,7 +475,7 @@ final class CloudSyncRuntime {
         case .transient:
             return .transient
         case .terminal:
-            TelemetryService.cloudSyncBlockedByAttestUnavailable(platform: "ios")
+            MetricsService.cloudSyncBlockedByAttestUnavailable(platform: "ios")
             CloudSyncBreadcrumb.runtimeStopped(reason: "attest-terminal")
             return .accountUnavailable  // stopUntilRelaunch (sin loop)
         }
@@ -494,7 +494,7 @@ final class CloudSyncRuntime {
             if case .blockedNeedsSignIn(let pending) = SessionExpiryPolicy.decide(
                 pending: buildable.count, canRenewSession: session.canRenewSession
             ) {
-                TelemetryService.cloudSyncBlockedByExpiredSession(pending: pending)
+                MetricsService.cloudSyncBlockedByExpiredSession(pending: pending)
                 CloudSyncBreadcrumb.runtimeStopped(reason: "session-expiry-preflight")
                 return .sessionExpired
             }
@@ -697,7 +697,7 @@ final class CloudSyncRuntime {
             #endif
             return
         }
-        for p in poison { TelemetryService.cloudSyncMutationRejected(reason: p.reason) }
+        for p in poison { MetricsService.cloudSyncMutationRejected(reason: p.reason) }
     }
 
     /// Fan-out: closure inyectado + Notification (AppBootstrapper lo cablea a la UI en el paso DARK).

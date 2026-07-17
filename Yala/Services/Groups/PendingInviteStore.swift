@@ -77,7 +77,7 @@ enum PendingInviteStore {
             return nil
         }
         if now.timeIntervalSince(entry.createdAt) >= ttl {
-            TelemetryService.invitePendingExpired()
+            MetricsService.invitePendingExpired()
             clear()
             return nil
         }

@@ -303,8 +303,7 @@ struct ContentView: View {
                         isFullyPrefilled: summary.isFullyPrefilled
                     )
                     RestoreBreadcrumb.destination(String(describing: destination))
-                    TelemetryService.track(.iCloudRestoreOutcome,
-                                           parameters: ["destination": String(describing: destination)])
+                    MetricsService.canary(.iCloudRestoreOutcome, detail: String(describing: destination))
                     switch destination {
                     case .groupsOnly:
                         // El usuario era "solo grupos": no forzar onboarding personal.
@@ -663,7 +662,7 @@ struct ContentView: View {
                     "groupSyncError"
                 ]
                 if surfacedBlockers.contains(blocker) {
-                    TelemetryService.routingReadinessBlocked(blocker: blocker)
+                    MetricsService.routingReadinessBlocked(blocker: blocker)
                 }
             }
         }
@@ -761,7 +760,7 @@ struct ContentView: View {
         showWelcomeFlow = false
         showWelcomeRestore = false
         showInviteRecovery = false
-        TelemetryService.routingWelcomeChainSuperseded(intentID: intentID)
+        MetricsService.routingWelcomeChainSuperseded(intentID: intentID)
     }
 
     /// Wait for AppBootstrapper to finish (StoreKit products, exchange rates, etc.)
@@ -1319,7 +1318,7 @@ fileprivate func runRelaunchNetVerifyLoop(
                 return
             case .exhausted:
                 CloudSyncBreadcrumb.relaunchNetExhausted(net: net)
-                TelemetryService.track(.relaunchNetExhausted, parameters: ["net": net])
+                MetricsService.canary(.relaunchNetExhausted, detail: net)
                 return
             case .retry:
                 // Cede un runloop y re-chequea antes de togglar: el onAppear del cover

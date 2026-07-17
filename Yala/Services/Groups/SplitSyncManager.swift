@@ -226,7 +226,7 @@ final class SplitSyncManager {
         }
         // Sin PII: JAMÁS loguear los recordNames.
         logger.notice("SplitSync identityBootGuard: MISMATCH — running account-switch cleanup")
-        TelemetryService.track(.groupsIdentityBootMismatch)
+        MetricsService.canary(.groupsIdentityBootMismatch)
         performAccountSwitchCleanup()
     }
 
@@ -340,9 +340,7 @@ final class SplitSyncManager {
         syncStatus = .idle
 
         logger.notice("SplitSync promoted to auto-sync — importSettled=\(importSettled, privacy: .public)")
-        TelemetryService.track(.cloudkitGroupSyncPromotedToAuto, parameters: [
-            "importSettled": String(importSettled)
-        ])
+        MetricsService.canary(.cloudkitGroupSyncPromotedToAuto, detail: "importSettled=\(importSettled)")
 
         // Re-apply any fetch events that were buffered during the export-only window BEFORE the
         // post-promotion fetch (older events first — preserves CloudKit event order). The store is
@@ -411,7 +409,7 @@ final class SplitSyncManager {
         }
 
         logger.notice("SplitSync recovered \(toRecover.count, privacy: .public) owned group zone(s) with no uploaded GroupMeta")
-        TelemetryService.track(.cloudkitGroupZoneRecovered, parameters: ["count": String(toRecover.count)])
+        MetricsService.canary(.cloudkitGroupZoneRecovered, value: Double(toRecover.count))
     }
 
     /// Re-enqueues a group's member/expense/share/settlement records to the private engine WITHOUT
@@ -510,7 +508,7 @@ final class SplitSyncManager {
 
         guard recovered > 0 else { return }
         logger.notice("SplitSync recovered \(recovered, privacy: .public) unsynced record(s) with no system fields")
-        TelemetryService.track(.cloudkitGroupRecordsRecovered, parameters: ["count": String(recovered)])
+        MetricsService.canary(.cloudkitGroupRecordsRecovered, value: Double(recovered))
     }
 
     /// Waits for the personal first import to settle, then PROMOTES the export-only engines to
@@ -574,14 +572,12 @@ final class SplitSyncManager {
                 // unblocks a user with no personal data (e.g. groups-only) whose empty store never sets
                 // `hasCompletedFirstImport`. No half-imported personal graph exists → the delegate save is safe.
                 logger.notice("SplitSync promoting (no personal import appeared within grace — empty store)")
-                TelemetryService.track(.cloudkitGroupSyncNoImportPromote)
+                MetricsService.canary(.cloudkitGroupSyncNoImportPromote)
             } else {
                 // Absolute hard cap reached while NOT settled+quiet — last-resort force so group sync never
                 // hangs export-only on a stuck `.syncing` import.
                 logger.warning("SplitSync gate HARD CAP \(Int(Self.hardCapSeconds))s — promoting to auto-sync while NOT quiescent (firstImport=\(firstImport, privacy: .public), isSyncing=\(iCloudSyncService.shared.status.isSyncing, privacy: .public))")
-                TelemetryService.track(.cloudkitGroupSyncGateHardCap, parameters: [
-                    "isSyncing": String(iCloudSyncService.shared.status.isSyncing)
-                ])
+                MetricsService.canary(.cloudkitGroupSyncGateHardCap, detail: "isSyncing=\(iCloudSyncService.shared.status.isSyncing)")
             }
         }
         enableAutoSync()
@@ -721,7 +717,7 @@ final class SplitSyncManager {
                 zoneName: zoneID.zoneName,
                 zoneOwnerName: zoneID.ownerName
             ))
-            TelemetryService.track(.groupJoinIntentPersisted)
+            MetricsService.canary(.groupJoinIntentPersisted)
             GroupJoinIntentTracker.shared.noteAcceptSucceeded(zoneName: zoneID.zoneName)
 
             // Force immediate fetch so the group appears quickly — but only once auto-sync is on.
@@ -818,7 +814,7 @@ final class SplitSyncManager {
             #if DEBUG
             logger.error("SplitSyncManager.group(for:): \(results.count) duplicate SplitGroups for zone \(zoneID)")
             #endif
-            TelemetryService.cloudkitDuplicateDetected(
+            MetricsService.cloudkitDuplicateDetected(
                 model: "SplitGroup",
                 count: results.count,
                 context: .runtimeFetch,
@@ -1003,7 +999,7 @@ final class SplitSyncManager {
             // DROP definitivo (pre-initialize / post-signOut) que antes era
             // invisible. Canario en telemetría: >0 en prod = incidente.
             logger.error("SplitSync markPendingChange DROPPED — engine nil, record \(recordID.recordName, privacy: .public) zone \(recordID.zoneID.zoneName, privacy: .public)")
-            TelemetryService.track(.cloudkitGroupEnqueueDroppedNoEngine, parameters: ["op": "save"])
+            MetricsService.canary(.cloudkitGroupEnqueueDroppedNoEngine, detail: "save")
             return
         }
         engine.state.add(pendingRecordZoneChanges: [.saveRecord(recordID)])
@@ -1013,7 +1009,7 @@ final class SplitSyncManager {
     func markPendingDeletion(for recordID: CKRecord.ID, in engine: CKSyncEngine?) {
         guard let engine else {
             logger.error("SplitSync markPendingDeletion DROPPED — engine nil, record \(recordID.recordName, privacy: .public) zone \(recordID.zoneID.zoneName, privacy: .public)")
-            TelemetryService.track(.cloudkitGroupEnqueueDroppedNoEngine, parameters: ["op": "delete"])
+            MetricsService.canary(.cloudkitGroupEnqueueDroppedNoEngine, detail: "delete")
             return
         }
         engine.state.add(pendingRecordZoneChanges: [.deleteRecord(recordID)])
@@ -1797,10 +1793,7 @@ final class SplitSyncManager {
                 // recoverUnsyncedRecordsIfNeeded re-enqueues it on the next launch (bounded retry).
                 // The telemetry event is the canary: >0 in prod means a schema/permissions incident.
                 logger.error("[\(engineName, privacy: .public)] Record save REJECTED (definitive): \(failure.record.recordType, privacy: .public) \(failure.record.recordID.recordName, privacy: .public) — CKError \(ckError.code.rawValue, privacy: .public) \(ckError.localizedDescription, privacy: .public)")
-                TelemetryService.track(.cloudkitGroupRecordSaveRejected, parameters: [
-                    "code": String(ckError.code.rawValue),
-                    "recordType": failure.record.recordType
-                ])
+                MetricsService.canary(.cloudkitGroupRecordSaveRejected, detail: "code=\(ckError.code.rawValue)|\(failure.record.recordType)")
 
             case .transient:
                 // Transport-level failures (network, rate limit, batch): CKSyncEngine retries these

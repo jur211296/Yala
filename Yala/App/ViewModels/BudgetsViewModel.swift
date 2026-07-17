@@ -537,14 +537,10 @@ final class BudgetsViewModel {
                 !(budget.subcategories ?? []).isEmpty
                 || !(budget.accounts ?? []).isEmpty
                 || !(budget.tags ?? []).isEmpty
-            TelemetryService.trackOnce(
+            MetricsService.canaryOnce(
                 .budgetFiltersAppearEmpty,
                 key: budget.id.uuidString,
-                parameters: [
-                    "budgetID": budget.id.uuidString,
-                    "periodType": budget.periodType,
-                    "hadM2MNotEmpty": String(hadM2MNotEmpty),
-                ]
+                detail: "\(budget.periodType)|hadM2M=\(hadM2MNotEmpty)"
             )
         }
 

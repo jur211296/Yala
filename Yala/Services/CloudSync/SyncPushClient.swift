@@ -228,7 +228,7 @@ final class SyncPushClient {
         // Sin sesión → no se puede subir. Breadcrumb + sessionExpired (los datos están a salvo local).
         guard let token = await tokenProvider(), !token.isEmpty else {
             CloudSyncBreadcrumb.pushBlockedNoSession(pending: rows.count)
-            TelemetryService.cloudSyncBlockedByExpiredSession(pending: rows.count)
+            MetricsService.cloudSyncBlockedByExpiredSession(pending: rows.count)
             return .sessionExpired(pending: rows.count)
         }
 
@@ -307,11 +307,11 @@ final class SyncPushClient {
             }
         case 401:
             CloudSyncBreadcrumb.pushBlockedNoSession(pending: totalPending)
-            TelemetryService.cloudSyncBlockedByExpiredSession(pending: totalPending)
+            MetricsService.cloudSyncBlockedByExpiredSession(pending: totalPending)
             return .sessionExpired(pending: totalPending)
         case 403:
             CloudSyncBreadcrumb.pushAccountUnavailable()
-            TelemetryService.cloudAccountUnavailable()
+            MetricsService.cloudAccountUnavailable()
             return .accountUnavailable
         case 409:
             // Enforcement del freeze de la reversa (§h.1): `reverse_frozen_at` estampado → el backend ya
@@ -319,7 +319,7 @@ final class SyncPushClient {
             // distinguirlo en diagnóstico). Un 409 SIN ese type conserva el trato previo (transient).
             if GatewayErrorEnvelope.isAccountReverting(data) {
                 CloudSyncBreadcrumb.pushAccountReverting()
-                TelemetryService.cloudAccountReverting()
+                MetricsService.cloudAccountReverting()
                 return .accountUnavailable
             }
             CloudSyncBreadcrumb.pushHTTP(status: http.statusCode)
@@ -392,7 +392,7 @@ final class SyncPushClient {
             print("SyncPushClient: guardar dead-letter falló: \(error)")
             #endif
         }
-        TelemetryService.cloudSyncMutationRejected(reason: reason)
+        MetricsService.cloudSyncMutationRejected(reason: reason)
     }
 
     // MARK: - Wire body (RawJSON crudo)

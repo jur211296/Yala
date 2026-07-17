@@ -389,7 +389,7 @@ struct WelcomeCloudSignInView: View {
             await CloudAuthService.shared.signOut()
             switch verdict {
             case .mismatch(let knownProvider):
-                TelemetryService.cloudSignInProviderMismatch()
+                MetricsService.cloudSignInProviderMismatch()
                 phase = .providerMismatch(knownProvider: knownProvider)
                 track(outcome: "providerMismatch")
             case .proceed:

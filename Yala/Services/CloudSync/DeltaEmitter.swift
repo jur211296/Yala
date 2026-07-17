@@ -81,7 +81,7 @@ enum DeltaEmitter {
             let present = groupColumns.filter { fields[$0] != nil }.count
             if present != groupColumns.count {
                 CloudSyncBreadcrumb.coherenceGroupPartial(entity: emission.table, group: group)
-                TelemetryService.cloudSyncCoherenceGroupPartial(entity: emission.table, group: group)
+                MetricsService.cloudSyncCoherenceGroupPartial(entity: emission.table, group: group)
             }
         }
 

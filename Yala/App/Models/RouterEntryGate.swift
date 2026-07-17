@@ -52,7 +52,7 @@ final class RouterEntryGate {
                 hasCompletedOnboarding: r.hasCompletedOnboarding,
                 isBootstrapInitialized: r.isBootstrapInitialized
             ) ?? "unknown"
-            TelemetryService.routingIntentDeferred(intentID: intent.id, reason: reason)
+            MetricsService.routingIntentDeferred(intentID: intent.id, reason: reason)
             #if DEBUG
             logger.debug("RouterEntryGate: defer \(intent.id, privacy: .public) — \(reason, privacy: .public)")
             #endif
@@ -87,7 +87,7 @@ final class RouterEntryGate {
         if !drops.isEmpty {
             AppRouter.shared.drop { drops.contains($0.id) }
             for dropped in drops {
-                TelemetryService.routingIntentSuperseded(droppedID: dropped, by: intent.id)
+                MetricsService.routingIntentSuperseded(droppedID: dropped, by: intent.id)
             }
         }
         // Monetization-driven supersession (e.g. trialExpired drops trialOffer).
@@ -95,7 +95,7 @@ final class RouterEntryGate {
         if !monetizationDrops.isEmpty {
             AppRouter.shared.drop { monetizationDrops.contains($0.id) }
             for dropped in monetizationDrops {
-                TelemetryService.routingIntentSuperseded(droppedID: dropped, by: intent.id)
+                MetricsService.routingIntentSuperseded(droppedID: dropped, by: intent.id)
             }
         }
 

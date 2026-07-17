@@ -148,7 +148,7 @@ enum GoogleTokenRevocation {
             // Rechazo del SDK o timeout — colapsados en un solo reason (la carrera no los distingue;
             // paridad con SIWA, que colapsa ambos en `revoke`).
             CloudSyncBreadcrumb.googleRevokeFailed(reason: "disconnect")
-            TelemetryService.googleRevokeFailed(reason: "disconnect")
+            MetricsService.googleRevokeFailed(reason: "disconnect")
         }
     }
 

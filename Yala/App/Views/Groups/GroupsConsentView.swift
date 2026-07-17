@@ -103,7 +103,7 @@ struct GroupsConsentView: View {
     /// Registra el consentimiento (persistencia GDPR C5 + telemetría R7).
     private func registerConsent() {
         GroupsConsentState.register()
-        TelemetryService.cloudConsentAccepted(path: "groups")
+        MetricsService.cloudConsentAccepted(path: "groups")
     }
 
     /// Los 4 puntos de §8, en orden.

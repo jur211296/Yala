@@ -198,7 +198,7 @@ enum TransferPairReconcileService {
                 #if DEBUG
                 print("TransferPairReconcile: cleared=\(toClearSet.count) paired=\(plan.pairings.count) collisions=\(plan.collisions.count)")
                 #endif
-                TelemetryService.cloudkitTransferOrphanRepaired(
+                MetricsService.cloudkitTransferOrphanRepaired(
                     orphansCleared: toClearSet.count,
                     pairedCount: plan.pairings.count
                 )
@@ -209,7 +209,7 @@ enum TransferPairReconcileService {
             }
         }
         for collision in plan.collisions {
-            TelemetryService.cloudkitTransferCollisionDetected(count: collision.count)
+            MetricsService.cloudkitTransferCollisionDetected(count: collision.count)
         }
         return plan
     }

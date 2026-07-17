@@ -160,7 +160,7 @@ enum CategoryDeduplicationService {
             print("SubcatDedup: Removed \(removedCount) duplicate seed subcategories across \(groups.count) groups — resynced CSV for \(affectedBudgets.count) budgets")
             #endif
             for group in groups {
-                TelemetryService.cloudkitDuplicateDetected(
+                MetricsService.cloudkitDuplicateDetected(
                     model: "Subcategory",
                     count: group.duplicates.count + 1,
                     context: .bootCleanup,
@@ -241,13 +241,13 @@ enum CategoryDeduplicationService {
         do {
             let accounts = try context.fetch(FetchDescriptor<Account>())
             for group in AccountTagDuplicateCountLogic.duplicateGroups(accounts, identity: AccountTagDuplicateCountLogic.accountIdentity) {
-                TelemetryService.cloudkitDuplicateDetected(
+                MetricsService.cloudkitDuplicateDetected(
                     model: "Account", count: group.count, context: .bootCleanup, keySuffix: group.identity
                 )
             }
             let tags = try context.fetch(FetchDescriptor<Tag>())
             for group in AccountTagDuplicateCountLogic.duplicateGroups(tags, identity: AccountTagDuplicateCountLogic.tagIdentity) {
-                TelemetryService.cloudkitDuplicateDetected(
+                MetricsService.cloudkitDuplicateDetected(
                     model: "Tag", count: group.count, context: .bootCleanup, keySuffix: group.identity
                 )
             }
@@ -445,7 +445,7 @@ enum CategoryDeduplicationService {
             // Telemetría por modelo (keySuffix distingue de la detección por contenido
             // de `reportPotentialAccountTagDuplicates`). El count cae tras el rollout.
             for (model, count) in [("Tag", collidedTags.count), ("Account", collidedAccounts.count), ("Subcategory", collidedSubs.count)] where count > 0 {
-                TelemetryService.cloudkitDuplicateDetected(model: model, count: count, context: .bootCleanup, keySuffix: "id-collision")
+                MetricsService.cloudkitDuplicateDetected(model: model, count: count, context: .bootCleanup, keySuffix: "id-collision")
             }
             #if DEBUG
             print("CategoryDeduplicationService: repairCollapsedIdentityUUIDs — tags=\(collidedTags.count) accounts=\(collidedAccounts.count) subs=\(collidedSubs.count)")

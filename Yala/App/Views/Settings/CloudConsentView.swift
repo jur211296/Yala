@@ -107,7 +107,7 @@ struct CloudConsentView: View {
         PreferenceSyncService.shared.set(
             int: CloudConsentText.version,
             forKey: PrefSyncKey.cloudConsentTextVersion.rawValue)
-        TelemetryService.cloudConsentAccepted(path: path.rawValue)
+        MetricsService.cloudConsentAccepted(path: path.rawValue)
     }
 
     /// Los 7 puntos de §k.6, en orden.

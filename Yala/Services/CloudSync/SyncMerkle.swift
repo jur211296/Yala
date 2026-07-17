@@ -336,7 +336,7 @@ extension CloudSyncEngine {
             if remote.entities[table]?.hash != localEntity.hashHex {
                 diverged.append(table)
                 CloudSyncBreadcrumb.merkleDivergence(entity: table)
-                TelemetryService.cloudSyncMerkleDivergence(entity: table)
+                MetricsService.cloudSyncMerkleDivergence(entity: table)
             }
         }
         // Root global SOLO sin cuarentena (con cuarentena hay filas server-side no materializables →
@@ -344,7 +344,7 @@ extension CloudSyncEngine {
         if diverged.isEmpty, quarantinedTables.isEmpty, remote.root != local.rootHex {
             diverged.append("root")
             CloudSyncBreadcrumb.merkleDivergence(entity: "root")
-            TelemetryService.cloudSyncMerkleDivergence(entity: "root")
+            MetricsService.cloudSyncMerkleDivergence(entity: "root")
         }
 
         if diverged.isEmpty {

@@ -649,9 +649,7 @@ final class GroupTransactionBridge {
                 #if DEBUG
                 print("GroupTransactionBridge: TX2 virtual lent falló: \(error)")
                 #endif
-                TelemetryService.track(.bridgeVirtualLentTxFailed, parameters: [
-                    "role": "loanToGroups"
-                ])
+                MetricsService.canary(.bridgeVirtualLentTxFailed, detail: "loanToGroups")
             }
         }
     }

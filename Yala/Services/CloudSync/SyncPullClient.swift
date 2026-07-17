@@ -134,7 +134,7 @@ final class SyncPullClient {
     func pull(since: Int64, limit: Int = 500) async -> PullOutcome {
         guard let token = await tokenProvider(), !token.isEmpty else {
             CloudSyncBreadcrumb.pullBlockedNoSession()
-            TelemetryService.cloudSyncBlockedByExpiredSession(pending: 0)
+            MetricsService.cloudSyncBlockedByExpiredSession(pending: 0)
             return .sessionExpired
         }
 
@@ -183,11 +183,11 @@ final class SyncPullClient {
             }
         case 401:
             CloudSyncBreadcrumb.pullBlockedNoSession()
-            TelemetryService.cloudSyncBlockedByExpiredSession(pending: 0)
+            MetricsService.cloudSyncBlockedByExpiredSession(pending: 0)
             return .sessionExpired
         case 403:
             CloudSyncBreadcrumb.pullAccountUnavailable()
-            TelemetryService.cloudAccountUnavailable()
+            MetricsService.cloudAccountUnavailable()
             return .accountUnavailable
         default:
             CloudSyncBreadcrumb.pullHTTP(status: http.statusCode)

@@ -139,7 +139,7 @@ final class AccountDeletionService {
             do {
                 try await deps.forgetGroupsUser()
             } catch {
-                TelemetryService.accountDeletionFailed(step: Step.groups.rawValue)
+                MetricsService.accountDeletionFailed(step: Step.groups.rawValue)
                 phase = .failed(step: .groups)
                 return
             }
@@ -153,7 +153,7 @@ final class AccountDeletionService {
         case .success:
             break
         case .sessionExpired, .transient:
-            TelemetryService.accountDeletionFailed(step: Step.delete.rawValue)
+            MetricsService.accountDeletionFailed(step: Step.delete.rawValue)
             phase = .failed(step: .delete)
             return
         }
@@ -176,16 +176,16 @@ final class AccountDeletionService {
         // 4c) Cierre LOCAL por modo, reusando la red terminal de CloudSessionSignOut.
         if deps.storageModeIsCloud() {
             await deps.closeLocalCloud()
-            TelemetryService.accountDeletionCompleted(step: "cloud")
+            MetricsService.accountDeletionCompleted(step: "cloud")
             phase = .awaitingRelaunch
         } else {
             if await deps.closeLocalGroupsOnly(context) {
-                TelemetryService.accountDeletionCompleted(step: "groupsOnly")
+                MetricsService.accountDeletionCompleted(step: "groupsOnly")
                 phase = .awaitingRelaunch
             } else {
                 // El borrado server-side YA ocurrió; la quiescencia local no llegó. Reintentable
                 // (forgetUser/delete/teardowns idempotentes); el cierre local se completa en el retry.
-                TelemetryService.accountDeletionFailed(step: Step.localClose.rawValue)
+                MetricsService.accountDeletionFailed(step: Step.localClose.rawValue)
                 phase = .failed(step: .localClose)
             }
         }

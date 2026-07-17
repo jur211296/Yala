@@ -1307,7 +1307,7 @@ final class GroupsSyncClient {
         row.rejectedReason = reason
         row.rejectedAt = now()
         GroupsSyncBreadcrumb.groupsPushDeadLettered(reason: reason)
-        TelemetryService.track(.groupPushRejected, parameters: ["reason": telemetryReason])
+        MetricsService.canary(.groupPushRejected, detail: telemetryReason)
     }
 
     /// Decodifica el `outcome` de cada resultado del push APARTE (el `SyncDeltaResult` local lo descarta),
@@ -1916,7 +1916,7 @@ extension GroupsSyncClient {
         }
 
         // UNA señal por corrida (params: count de grupos divergentes) — jamás por-grupo (evita PII y ruido).
-        TelemetryService.groupMerkleDivergence(groupCount: divergentGroups.count)
+        MetricsService.groupMerkleDivergence(groupCount: divergentGroups.count)
         GroupsSyncBreadcrumb.groupsMerkleDivergence(groups: divergentGroups.count)
 
         // Remediación UNA vez por sesión: reset del cursor de cada grupo divergente + un re-pull.

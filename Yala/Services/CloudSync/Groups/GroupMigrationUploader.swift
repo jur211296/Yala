@@ -113,7 +113,7 @@ final class GroupMigrationUploader {
         GroupMigrationProgress.shared.finish()
         if completed > 0 {
             GroupsSyncBreadcrumb.groupsMigrationCompleted(count: completed)
-            TelemetryService.track(.groupMigrationCompleted, parameters: ["count": String(completed)])
+            MetricsService.canary(.groupMigrationCompleted, value: Double(completed))
         }
     }
 
@@ -147,7 +147,7 @@ final class GroupMigrationUploader {
         guard let payload = buildPayload(for: group) else {
             logger.error("GroupsMigration: payload inválido para el grupo (skip) — sin owner válido / meta mala")
             GroupsSyncBreadcrumb.groupsMigrationFailed(step: "migrate:payload")
-            TelemetryService.track(.groupMigrationFailed, parameters: ["step": "migrate:payload"])
+            MetricsService.canary(.groupMigrationFailed, detail: "migrate:payload")
             return .transient
         }
         do {
@@ -189,7 +189,7 @@ final class GroupMigrationUploader {
         // Paso 5: push hasta outbox VIVO del grupo = 0.
         guard await pushUntilGroupDrained(groupID: groupID) else {
             GroupsSyncBreadcrumb.groupsMigrationFailed(step: "push")
-            TelemetryService.track(.groupMigrationFailed, parameters: ["step": "push"])
+            MetricsService.canary(.groupMigrationFailed, detail: "push")
             return .transient
         }
 
@@ -312,6 +312,6 @@ final class GroupMigrationUploader {
         logger.error("GroupsMigration: paso \(step, privacy: .public) falló: \(error.localizedDescription, privacy: .public)")
         #endif
         GroupsSyncBreadcrumb.groupsMigrationFailed(step: step)
-        TelemetryService.track(.groupMigrationFailed, parameters: ["step": step])
+        MetricsService.canary(.groupMigrationFailed, detail: step)
     }
 }

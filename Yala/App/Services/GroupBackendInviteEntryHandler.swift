@@ -72,7 +72,7 @@ enum GroupBackendInviteEntryHandler {
         UserDefaults.standard.set(true, forKey: AppPreferences.Keys.groupsBetaUnlocked)
         // 2. Persiste el intent ANTES de cualquier await.
         persistIntent(groupID: groupID, token: token)
-        TelemetryService.track(.groupJoinIntentPersisted)
+        MetricsService.canary(.groupJoinIntentPersisted)
         // 3-4. Decide y ejecuta.
         await drive(groupID: groupID, token: token, source: source)
     }
@@ -183,7 +183,7 @@ enum GroupBackendInviteEntryHandler {
             let result = try await joinProvider(token, displayName, legacyMemberKey)
             // C6: canario de rebind legacy (solo si se ENVIÓ legacyMemberKey y no matcheó).
             if legacyMemberKey != nil, !result.rebound {
-                TelemetryService.track(.groupLegacyRebindFailed)
+                MetricsService.canary(.groupLegacyRebindFailed)
             }
             handleJoinSuccess(groupID: groupID, result: result, source: source)
         } catch let error as GroupsRPCError {
@@ -202,9 +202,7 @@ enum GroupBackendInviteEntryHandler {
         if let status = SplitMemberStatus(rawValue: result.status) {
             GroupJoinIntentTracker.shared.noteMemberResolved(zoneName: groupID, status: status)
         }
-        TelemetryService.track(.groupJoinIntentReconciled, parameters: [
-            "trigger": source.rawValue, "status": result.status,
-        ])
+        MetricsService.canary(.groupJoinIntentReconciled, detail: "\(source.rawValue)|\(result.status)")
         logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: join OK for \(groupID, privacy: .public) status=\(result.status, privacy: .public) rebound=\(result.rebound, privacy: .public)")
         // Intent CONSERVADO: se limpia cuando el member local materialice (pull) vía el reconciler —
         // misma semántica actual (jamás "todo listo" sin member).
@@ -222,9 +220,7 @@ enum GroupBackendInviteEntryHandler {
             logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: transient join error for \(groupID, privacy: .public) → retry later")
         case .invalidInvite, .notAuthorized, .generic:
             // PERMANENTE: canario + limpiar intent + alerta localizada (cero silencios).
-            TelemetryService.track(.groupJoinFailed, parameters: [
-                "reason": GroupBackendAcceptErrorLogic.slug(for: error),
-            ])
+            MetricsService.canary(.groupJoinFailed, detail: GroupBackendAcceptErrorLogic.slug(for: error))
             PendingJoinStore.clear(zoneName: groupID)
             // Señala el fallo a la vista de onboarding (failedStep) en vez de dejarla en
             // joining/takingLong con el alert retenido detrás del cover; recoverable: false

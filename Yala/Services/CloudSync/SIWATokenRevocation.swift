@@ -175,7 +175,7 @@ enum SIWAExchangeSeam {
         switch result {
         case .noJwt:
             CloudSyncBreadcrumb.siwaExchangeFailed(reason: "no-jwt")
-            TelemetryService.siwaExchangeFailed(reason: "no-jwt")
+            MetricsService.siwaExchangeFailed(reason: "no-jwt")
             return
         case .failed:
             refreshToken = nil
@@ -185,7 +185,7 @@ enum SIWAExchangeSeam {
 
         guard let refreshToken else {
             CloudSyncBreadcrumb.siwaExchangeFailed(reason: "exchange")
-            TelemetryService.siwaExchangeFailed(reason: "exchange")
+            MetricsService.siwaExchangeFailed(reason: "exchange")
             return
         }
 
@@ -197,7 +197,7 @@ enum SIWAExchangeSeam {
             print("SIWAExchangeSeam: storePair falló: \(error)")
             #endif
             CloudSyncBreadcrumb.siwaExchangeFailed(reason: "keychain")
-            TelemetryService.siwaExchangeFailed(reason: "keychain")
+            MetricsService.siwaExchangeFailed(reason: "keychain")
         }
     }
 }
@@ -280,10 +280,10 @@ enum SIWATokenRevocation {
             CloudSyncBreadcrumb.siwaRevoked()
         case .noJwt:
             CloudSyncBreadcrumb.siwaRevokeFailed(reason: "no-jwt")
-            TelemetryService.siwaRevokeFailed(reason: "no-jwt")
+            MetricsService.siwaRevokeFailed(reason: "no-jwt")
         case .failed:
             CloudSyncBreadcrumb.siwaRevokeFailed(reason: "revoke")
-            TelemetryService.siwaRevokeFailed(reason: "revoke")
+            MetricsService.siwaRevokeFailed(reason: "revoke")
         }
     }
 

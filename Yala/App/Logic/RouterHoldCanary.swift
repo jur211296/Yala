@@ -38,7 +38,7 @@ final class RouterHoldCanary {
             AppRouter.shared.contains { $0.id == id }
         },
         report: @escaping @MainActor (_ blocker: String, _ consumer: String) -> Void = { blocker, consumer in
-            TelemetryService.routingDrainHoldSustained(blocker: blocker, consumer: consumer)
+            MetricsService.routingDrainHoldSustained(blocker: blocker, consumer: consumer)
         }
     ) {
         self.threshold = threshold

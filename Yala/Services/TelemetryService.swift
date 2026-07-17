@@ -222,17 +222,9 @@ enum AnalyticsEvent: String {
     case recordsDuplicateModeActivated = "Registros · Identificar duplicados"  // params: byAmount, byNote, bySubcategory, byDate
 }
 
-enum DuplicateDetectionContext: String {
-    case bootCleanup = "boot-cleanup"
-    case runtimeFetch = "runtime-fetch"
-    case syncApply = "sync-apply"
-    case uniquingFallback = "uniquing-fallback"
-}
-
-enum TransferReconcileContext: String {
-    case bootReconcile = "boot.transferReconcile"
-    case bootCollision = "boot.transferCollision"
-}
+// DuplicateDetectionContext / TransferReconcileContext se mudaron a
+// Services/Metrics/MetricsEvent.swift (C2 de la retirada de TelemetryDeck) —
+// los consumen los wrappers de canarios de MetricsService.
 
 // MARK: - Telemetry Service
 

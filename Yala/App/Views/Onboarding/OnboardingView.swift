@@ -1875,11 +1875,8 @@ struct OnboardingView: View {
             #endif
         }
 
-        TelemetryService.track(.onboardingCompleted, parameters: [
-            "mode": mode.rawValue,
-            "expensesOnly": String(expensesOnlyMode),
-            "usedSeedCategories": String(loadSeedCategories),
-        ])
+        // KPI registros/día (alta local — onboarding completo)
+        MetricsService.localRegistrationCompleted(mode: mode.rawValue)
 
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
@@ -1933,9 +1930,8 @@ struct OnboardingView: View {
             #endif
         }
 
-        TelemetryService.track(.onboardingCompleted, parameters: [
-            "mode": "groupsOnly",
-        ])
+        // KPI registros/día (alta local — modo solo-grupos)
+        MetricsService.localRegistrationCompleted(mode: "groupsOnly")
 
         UserDefaults.standard.set(true, forKey: AppPreferences.Keys.hasCompletedOnboarding)
         PreferenceSyncService.shared.signalOnboardingCompleted()
