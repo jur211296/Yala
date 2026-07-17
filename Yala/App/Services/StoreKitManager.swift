@@ -82,8 +82,10 @@ final class StoreKitManager {
 
     // MARK: - App Group
 
-    /// App Group identifier for sharing state with widgets
-    private let appGroupID = "group.com.yala.shared"
+    /// App Group identifier for sharing state with intents (QuickExpenseIntent Pro gate).
+    /// Debe ser el canónico entitled — un suite no-entitled crea un plist LOCAL al sandbox
+    /// que ningún lector ve (bug SiriNatural pro_required, roto desde b1e724a0).
+    private let appGroupID = SharedContainerService.appGroupIdentifier
 
     // MARK: - Private
 
@@ -309,7 +311,7 @@ final class StoreKitManager {
             #endif
             return
         }
-        defaults.set(isProUser, forKey: "isProUser")
+        defaults.set(isProUser, forKey: AppPreferences.Keys.isProUser)
         defaults.synchronize()
     }
 

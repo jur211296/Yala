@@ -104,9 +104,9 @@
         "F-WCS-07"
       ],
       "classification": "manual",
-      "coverage": "unit:YalaTests/SiriPendingStoreTests,YalaTests/SiriIntentContextCacheTests,YalaTests/SiriDraftServiceTests + manual (TestFlight 2.0.5 b2 2026-07-11: e2e device force-quit/warm/multi-TX — notificación inmediata + draft al abrir; Console SIGNAL SET siriNatural + SAVE/SAVED SiriDraftService, sin 134410)",
+      "coverage": "unit:YalaTests/SiriPendingStoreTests,YalaTests/SiriIntentContextCacheTests,YalaTests/SiriDraftServiceTests,YalaTests/StoreKitManagerAppGroupTests + manual (TestFlight 2.0.5 b2 2026-07-11: e2e device force-quit/warm/multi-TX — notificación inmediata + draft al abrir; Console SIGNAL SET siriNatural + SAVE/SAVED SiriDraftService, sin 134410. 2026-07-17 e81c5932: gate Pro del intent — writer/reader del App Group unificados al canónico, regresión cubierta por StoreKitManagerAppGroupTests)",
       "owner": "",
-      "lastVerified": "2026-07-11"
+      "lastVerified": "2026-07-17"
     },
     {
       "area": "apple-pay-automation",
