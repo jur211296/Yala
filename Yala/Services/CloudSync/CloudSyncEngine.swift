@@ -601,6 +601,24 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncMigration quiescenceTimeout — no procede (retomable)")
     }
 
+    /// #36 (H1): la pre-espera de quiescencia del resume arrancó (import no quiescente al boot/rekick) —
+    /// el controller pollea hasta 300s ANTES de tocar el runner; la card de Almacenamiento lo muestra.
+    static func migrationResumeAwaitingImport() {
+        logger.notice("CloudSyncMigration resumeAwaitingImport — pre-espera de quiescencia (tope 300s, estado visible)")
+    }
+
+    /// #36 (H1): la pre-espera venció el tope de 300s → el resume queda aparcado VISIBLE (card con
+    /// estado honesto + Retomar); lo reintentan el re-kick de foreground y el próximo boot.
+    static func migrationResumeDeferredAwaitingImport() {
+        logger.notice("CloudSyncMigration resumeDeferredAwaitingImport — tope 300s vencido, aparcado visible (foreground/boot reintentan)")
+    }
+
+    /// #36 (H1): el foreground re-kickeó una migración/reversa APARCADA (journal transicional o efectos
+    /// pendientes con el controller ocioso). `phase` = fase journaleada (sin PII).
+    static func migrationForegroundRekick(phase: String) {
+        logger.notice("CloudSyncMigration foregroundRekick phase=\(phase, privacy: .public) — re-kick del resume aparcado")
+    }
+
     /// w3: la captura de coordenadas CloudKit `(recordName, zoneName, ownerName)` terminó. Conteos
     /// tri-estado (captured/exportPending/noMetadata/failed). Sin PII (solo counts). Filas sin captura NO
     /// bloquean la fase (`assigningIdentity` es idempotente/re-ejecutable; una fila jamás exportada no
@@ -701,6 +719,12 @@ enum CloudSyncBreadcrumb {
     /// boot reintenta (LWW absorbe el re-enqueue). Sin PII (solo conteos).
     static func prefsCutoverDrained(count: Int, failures: Int) {
         logger.notice("CloudSyncMigration prefsCutoverDrained count=\(count, privacy: .public) failures=\(failures, privacy: .public)")
+    }
+
+    /// #37 (H3): la reversa retiró los sentinels del drenaje iKV→outbox al persistir `.icloud`
+    /// (`.persistICloudMode`) — una RE-migración futura vuelve a drenar. Sin PII (solo el conteo).
+    static func reversePrefsDrainSentinelCleared(count: Int) {
+        logger.notice("CloudSyncReverse prefsDrainSentinelCleared count=\(count, privacy: .public) — re-migración futura re-drena iKV")
     }
 
     // MARK: Reversa (I11-2, §h nube→CloudKit) — sin PII (solo fases, conteos, motivos de transporte)

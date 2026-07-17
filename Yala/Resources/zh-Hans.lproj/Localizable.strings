@@ -5002,3 +5002,6 @@
 
 /* R9 provider mismatch body when known provider is unavailable */
 "welcome.cloud.providerMismatchBodyGeneric" = "你的 Yala 账户是通过其他方式创建的。请返回并使用你第一次用的方式登录。";
+
+/* Caption on the storage progress card while migration resume waits for CloudKit import quiescence */
+"storage.progress.waitingImport" = "正在等待iCloud完成同步…";

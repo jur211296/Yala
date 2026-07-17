@@ -6231,6 +6231,7 @@ enum L10n {
             static var reverting: String { ls("storage.progress.reverting", comment: "") }
             static var resume: String { ls("storage.progress.resume", comment: "") }
             static var retry: String { ls("storage.progress.retry", comment: "") }
+            static var waitingImport: String { ls("storage.progress.waitingImport", comment: "") }
         }
 
         enum Relaunch {

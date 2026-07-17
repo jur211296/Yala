@@ -49,4 +49,21 @@ nonisolated enum PrefsCutoverDrain {
     ) -> [String] {
         allKeys.filter { presentInIKV.contains($0) && !pendingInOutbox.contains($0) }
     }
+
+    // MARK: - Sentinel (DIFERIDOS #37 — la reversa/el sign-out deben poder retirarlo)
+
+    /// Prefijo SSOT del sentinel "drenaje ya corrió" (`cloudSync.prefsCutoverDrained.<userID>`,
+    /// `UserDefaults.standard`). Lo estampa `PreferenceSyncService.drainiKVToOutboxOnceIfNeeded` y lo
+    /// retiran la REVERSA (`.persistICloudMode`, §h cuarteto de cierre) y el wipe del sign-out `.cloud`
+    /// (`performSignOutWipeIfArmed`) — sin ese retiro, una RE-migración de la misma instalación haría
+    /// skip del drenaje y las keys iKV de la época `.icloud` intermedia jamás llegarían a
+    /// `user_preferences` (H3 de la corrida device I14, 2026-07-12: `consent_keys=null` tras re-migrar).
+    static let sentinelPrefix = "cloudSync.prefsCutoverDrained."
+
+    /// Filtro puro: de `allKeys` (p.ej. `dictionaryRepresentation().keys`), las que son sentinels del
+    /// drenaje (CUALQUIER userID — tras volver a `.icloud` toda re-migración futura debe re-drenar, y
+    /// un sentinel de otro sub es basura inerte). El prefijo termina en "." → exige el separador.
+    static func sentinelKeys(in allKeys: [String]) -> [String] {
+        allKeys.filter { $0.hasPrefix(sentinelPrefix) }
+    }
 }

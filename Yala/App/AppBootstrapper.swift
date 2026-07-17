@@ -1113,6 +1113,15 @@ final class AppBootstrapper {
             Task { await CloudAuthService.shared.refreshCredentialStateIfNeeded() }
         }
 
+        // #36 (H1 corrida I14): re-kick de una migración/reversa APARCADA — el resume de boot era
+        // one-shot (quiescencia vencida o push transient a mitad de página → aparcada EN SILENCIO
+        // hasta tocar "Retomar"). Corre DESPUÉS de los freeze-guards de la cabecera (sign-out wipe /
+        // wipe secundario / ventana de entrada M1) y decide por pure-logic (`MigrationForegroundRekick`,
+        // no-op puro con fase estable). En prod placeholder `shared == nil` → no-op.
+        if CloudBackendConfig.isConfigured {
+            Task { await CloudMigrationController.shared?.rekickIfParked() }
+        }
+
         // Prefetch group changes on foreground resume (the group CKSyncEngines don't auto-fetch
         // without a handled push). Debounced + quiescence-gated inside syncNow. This pulls the data
         // down; a mounted Groups view refreshes it on its next appear / pull-to-refresh (the fetch

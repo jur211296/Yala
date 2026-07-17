@@ -68,4 +68,32 @@ struct PrefsCutoverDrainTests {
             pendingInOutbox: [])
         #expect(planned == ["z", "a", "m"], "orden estable = el de allKeys")
     }
+
+    // MARK: - Sentinels (#37 — la reversa/el sign-out los retiran por prefijo)
+
+    @Test func sentinelKeys_matchesAllUserIDs_ignoresForeignKeys() {
+        let keys = [
+            PrefsCutoverDrain.sentinelPrefix + "userA",
+            PrefsCutoverDrain.sentinelPrefix + "userB",
+            "cloudSync.otherKey",
+            "storageMode",
+            "defaultCurrencyCode",
+        ]
+        let matched = Set(PrefsCutoverDrain.sentinelKeys(in: keys))
+        #expect(matched == [
+            PrefsCutoverDrain.sentinelPrefix + "userA",
+            PrefsCutoverDrain.sentinelPrefix + "userB",
+        ], "solo sentinels del drenaje, CUALQUIER userID")
+    }
+
+    @Test func sentinelKeys_prefixRequiresSeparatorDot() {
+        // El prefijo termina en "." — una key que solo comparte la sub-cadena SIN el punto no matchea.
+        let impostor = "cloudSync.prefsCutoverDrainedX"
+        #expect(PrefsCutoverDrain.sentinelKeys(in: [impostor]).isEmpty)
+        #expect(PrefsCutoverDrain.sentinelPrefix.hasSuffix("."), "invariante del filtro por prefijo")
+    }
+
+    @Test func sentinelKeys_emptyInput_emptyOutput() {
+        #expect(PrefsCutoverDrain.sentinelKeys(in: []).isEmpty)
+    }
 }

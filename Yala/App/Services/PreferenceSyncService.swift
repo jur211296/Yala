@@ -246,7 +246,9 @@ final class PreferenceSyncService {
 
     // MARK: - Drenaje único iKV → outbox (CUTOVER S8, DIFERIDOS #30 — I10-wiring w8)
 
-    private static let ikvDrainSentinelPrefix = "cloudSync.prefsCutoverDrained."
+    /// SSOT del prefijo en `PrefsCutoverDrain.sentinelPrefix` (#37: la reversa y el sign-out wipe lo
+    /// retiran por prefijo — un literal duplicado aquí divergiría en silencio).
+    private static let ikvDrainSentinelPrefix = PrefsCutoverDrain.sentinelPrefix
 
     /// Drena UNA VEZ por userID el estado iKV → outbox de prefs, SOLO en el device LÍDER de la
     /// migración en su ventana post-relaunch (gate por fase journaleada — ver `PrefsCutoverDrain`, que

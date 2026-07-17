@@ -337,6 +337,16 @@ enum SwiftDataConfiguration {
 
         DataWipeService.resetForSignOutWipe()
 
+        // #37 (A3 del review): retirar los sentinels del drenaje iKV→outbox — `removeUserPreferenceKeys`
+        // EXCLUYE `cloudSync.*` a propósito (los gestiona este boot-hook en el orden kill-safe). Sin
+        // esto, un migrar → sign-out `.cloud` → borrado de cuenta → RE-migración como líder haría skip
+        // del drenaje (la misma clase de H3/reversa). Idempotente; el arm se desarma DESPUÉS.
+        for key in PrefsCutoverDrain.sentinelKeys(
+            in: Array(UserDefaults.standard.dictionaryRepresentation().keys)
+        ) {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+
         StorageModePersistence.clearSignOutWipeIncludesGroups()
         StorageModePersistence.clearSignOutWipeArm()
         CloudSyncBreadcrumb.signOutWipeExecuted()

@@ -4990,3 +4990,6 @@
 
 /* R9 provider mismatch body when known provider is unavailable */
 "welcome.cloud.providerMismatchBodyGeneric" = "Sua conta Yala foi criada com outro método de acesso. Volte e use o mesmo da primeira vez.";
+
+/* Caption on the storage progress card while migration resume waits for CloudKit import quiescence */
+"storage.progress.waitingImport" = "Aguardando o iCloud terminar de sincronizar…";

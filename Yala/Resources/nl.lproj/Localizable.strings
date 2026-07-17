@@ -5002,3 +5002,6 @@
 
 /* R9 provider mismatch body when known provider is unavailable */
 "welcome.cloud.providerMismatchBodyGeneric" = "Je Yala-account is met een andere inlogmethode gemaakt. Ga terug en gebruik de methode van de eerste keer.";
+
+/* Caption on the storage progress card while migration resume waits for CloudKit import quiescence */
+"storage.progress.waitingImport" = "Wachten tot iCloud klaar is met synchroniseren…";

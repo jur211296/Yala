@@ -164,6 +164,11 @@ final class CloudMigrationController {
     private(set) var pendingEffectCount = 0
     private(set) var isQuiescent = false
 
+    /// #36 (H1): el resume está esperando a que el import de CloudKit quede quiescente (pre-espera de
+    /// 300s), o venció el tope y quedó APARCADO VISIBLE. La card de Almacenamiento muestra el estado
+    /// honesto mientras sea `true`; lo limpia cualquier camino de éxito de la pre-espera.
+    private(set) var resumeWaitingForImport = false
+
     /// Banner S11 (D5): el runtime del dominio se detuvo por sesión expirada con cambios pendientes.
     private(set) var syncNeedsSignIn = false
     private(set) var pendingUploadCount = 0
@@ -332,11 +337,19 @@ final class CloudMigrationController {
         refresh()
     }
 
-    /// Retomar una migración/reversa journaleada (botón "Retomar" + el coordinator de boot).
+    /// Retomar una migración/reversa journaleada (botón "Retomar" + el coordinator de boot + el
+    /// re-kick de foreground, #36). Guard de reentrada a nivel controller (A2 del review): con la
+    /// pre-espera de 300s, un boot-resume y el rekick del primer `.active` podrían pre-esperar EN
+    /// PARALELO y el `defer` del primero re-habilitaría "Retomar" con el otro aún en vuelo.
     func resume() async {
+        guard !isWorking else { return }
         isWorking = true
         defer { isWorking = false }
         lastError = nil
+        guard await awaitImportQuiescenceForResume() else {
+            refresh()
+            return
+        }
         await runner.resume()
         refresh()
         startRuntimeIfStable()
@@ -351,11 +364,17 @@ final class CloudMigrationController {
         refresh()
     }
 
-    /// Sondear al líder (fase `waitingForLeader`).
+    /// Sondear al líder (fase `waitingForLeader`). Mismo guard de reentrada + pre-espera que `resume()`
+    /// (#36/A2 — el poll también termina en saves del journal gateados por quiescencia en el runner).
     func pollLeader() async {
+        guard !isWorking else { return }
         isWorking = true
         defer { isWorking = false }
         lastError = nil
+        guard await awaitImportQuiescenceForResume() else {
+            refresh()
+            return
+        }
         await runner.pollLeader()
         refresh()
         startRuntimeIfStable()
@@ -379,6 +398,57 @@ final class CloudMigrationController {
             refresh()
             startRuntimeIfStable()
         }
+    }
+
+    /// #36 (H1): pre-espera de quiescencia del import ANTES de tocar el runner — el gate interno del
+    /// runner (120s) se rendía EN SILENCIO y nada reintentaba (evidencia device: el backfill de ~1.2k
+    /// syncIDs post-kill tarda >120s → migración aparcada hasta tocar "Retomar"). Patrón
+    /// `awaitPersonalImportForBootSave`: poll 2s, tope 300s. Fast-path y éxito LIMPIAN
+    /// `resumeWaitingForImport` (A1 del review: un defer previo lo dejó en true — sin limpiarlo la
+    /// card diría "esperando iCloud" con la migración ya corriendo); tope vencido lo DEJA en true
+    /// (estado honesto visible) + breadcrumb. El gate del runner se conserva intacto como red
+    /// (jamás un save sin quiescencia).
+    private func awaitImportQuiescenceForResume() async -> Bool {
+        if iCloudSyncService.shared.isImportQuiescent {
+            resumeWaitingForImport = false
+            return true
+        }
+        CloudSyncBreadcrumb.migrationResumeAwaitingImport()
+        resumeWaitingForImport = true
+        var waited: TimeInterval = 0
+        let pollInterval: TimeInterval = 2
+        let hardCap: TimeInterval = 300
+        while waited < hardCap {
+            do {
+                try await Task.sleep(for: .seconds(pollInterval))
+            } catch {
+                #if DEBUG
+                print("CloudMigrationController: pre-espera de quiescencia cancelada: \(error)")
+                #endif
+                return false
+            }
+            waited += pollInterval
+            if iCloudSyncService.shared.isImportQuiescent {
+                resumeWaitingForImport = false
+                return true
+            }
+        }
+        CloudSyncBreadcrumb.migrationResumeDeferredAwaitingImport()
+        return false
+    }
+
+    /// #36 (H1): re-kick de foreground — si hay una migración/reversa APARCADA (journal transicional o
+    /// efectos pendientes, controller ocioso), re-conduce por el MISMO camino del boot. Cubre la
+    /// suspensión a mitad de página (push muere transient) y reintenta un defer previo de la
+    /// pre-espera. Belt de wipe armado (el freeze de `handleBecameActive` ya corta antes — defensa en
+    /// profundidad por si gana otro call-site).
+    func rekickIfParked() async {
+        guard !StorageModePersistence.isSignOutWipeArmed() else { return }
+        let (phase, hasPending) = readJournalDecisionInputs()
+        guard MigrationForegroundRekick.shouldRekick(
+            phase: phase, hasPendingEffects: hasPending, isWorking: isWorking) else { return }
+        CloudSyncBreadcrumb.migrationForegroundRekick(phase: "\(phase)")
+        await resumeIfNeeded()
     }
 
     /// Re-arranca el runtime del dominio si la fase ya es estable (post-resume). Idempotente

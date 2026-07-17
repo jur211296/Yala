@@ -568,6 +568,15 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
             // `.cloud`+mirror ON, o `.icloud`+armado, sería dual-write). Ambos en el mismo efecto.
             StorageModePersistence.write(.icloud, defaults: storageDefaults)
             storageDefaults.removeObject(forKey: Self.relaunchRequestedKey)
+            // #37 (H3 corrida I14): retirar los sentinels del drenaje iKV→outbox (TODOS los userIDs) al
+            // volver a `.icloud` — sin esto, una RE-migración de la misma instalación haría skip del
+            // drenaje y las keys iKV de la época intermedia (consent incluido) jamás llegarían a
+            // `user_preferences`. Efecto LOCAL del cuarteto (nunca depende de red/sesión), kill-safe por
+            // journal-then-execute e idempotente (segunda pasada = 0 keys).
+            let sentinels = PrefsCutoverDrain.sentinelKeys(
+                in: Array(storageDefaults.dictionaryRepresentation().keys))
+            for key in sentinels { storageDefaults.removeObject(forKey: key) }
+            CloudSyncBreadcrumb.reversePrefsDrainSentinelCleared(count: sentinels.count)
             CloudSyncBreadcrumb.reverseModePersisted()
 
         // D1 DIFERIDO (review I11-2): la higiene de sync-meta al entrar a `icloudActive`

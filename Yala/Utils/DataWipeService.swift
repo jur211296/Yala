@@ -275,6 +275,8 @@ final class DataWipeService {
     ///   de datos LEGACY: post-wipe no existen datos legacy que migrar.
     /// - keys `cloudSync.*` / storageMode / arms de wipe — infra del propio sign-out/wipe,
     ///   las gestiona StorageModePersistence en el orden kill-safe del boot. JAMÁS aquí.
+    ///   (El sentinel `cloudSync.prefsCutoverDrained.*` lo purga `performSignOutWipeIfArmed`
+    ///   tras este reset, #37 — no re-añadirlo aquí.)
     /// - `groupPrefs_*` y estado de Grupos — el dominio Grupos sobrevive el wipe por diseño
     ///   (store propio, CKSyncEngine); sus prefs se limpian en leaveGroup/deleteGroup.
     /// - override de idioma (App Group de LanguageManager) — preferencia del DEVICE

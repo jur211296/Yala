@@ -673,6 +673,28 @@ struct MigrationWorkExecutorTests {
         #expect(StorageModePersistence.isMirrorOffArmed(defaults) == false)
     }
 
+    @Test("execute(.persistICloudMode): retira los sentinels del drenaje iKV (#37) — TODOS los userIDs, keys ajenas intactas")
+    func execute_persistICloudMode_clearsDrainSentinels() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        let defaults = makeIsolatedDefaults(prefix: "mwe.icloud.sentinel")
+        defaults.set(true, forKey: PrefsCutoverDrain.sentinelPrefix + "userA")
+        defaults.set(true, forKey: PrefsCutoverDrain.sentinelPrefix + "userB")
+        defaults.set(true, forKey: "cloudSync.otherKey")   // ajena: jamás se toca
+        let executor = makeExecutor(context, CloudSyncEngine(), RoutingStub(), session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    storageDefaults: defaults)
+        try await executor.execute(.persistICloudMode)
+        #expect(defaults.object(forKey: PrefsCutoverDrain.sentinelPrefix + "userA") == nil,
+                "sentinel del userID A retirado — una re-migración vuelve a drenar")
+        #expect(defaults.object(forKey: PrefsCutoverDrain.sentinelPrefix + "userB") == nil,
+                "sentinel de OTRO userID también (basura inerte post-reversa)")
+        #expect(defaults.bool(forKey: "cloudSync.otherKey"), "key ajena al prefijo intacta")
+        // Idempotencia (kill-safe: el efecto puede re-ejecutarse en resume): segunda pasada no lanza.
+        try await executor.execute(.persistICloudMode)
+    }
+
     @Test("execute(.clearCloudBeacon): remueve las 4 keys del faro (simétrico a write)")
     func execute_clearBeacon_removesKeys() async throws {
         let dir = freshDir(); defer { cleanup(dir) }

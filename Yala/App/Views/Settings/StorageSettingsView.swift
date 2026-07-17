@@ -261,6 +261,15 @@ struct StorageSettingsView: View {
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
+            // #36 (H1): estado honesto mientras el resume espera la quiescencia del import (pre-espera
+            // 300s) o quedó aparcado tras vencer el tope — antes se aparcaba EN SILENCIO.
+            if controller.resumeWaitingForImport {
+                Text(L10n.Storage.Progress.waitingImport)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("storage_waiting_import_caption")
+            }
             Button {
                 Task { await controller.resume() }
             } label: {

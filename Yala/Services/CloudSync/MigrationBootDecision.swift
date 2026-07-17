@@ -79,3 +79,20 @@ nonisolated enum MigrationBootDecision {
         }
     }
 }
+
+// MARK: - Re-kick de foreground (#36, H1 corrida I14)
+
+/// ¿Hay una migración/reversa APARCADA que el foreground debe re-kickear? (#36: el resume de boot era
+/// one-shot — quiescencia vencida o un push transient a mitad de página dejaban la migración aparcada
+/// EN SILENCIO hasta que el usuario tocara "Retomar"). Reusa `MigrationBootDecision.decide` — mismo
+/// contrato del boot: transicionales/efectos pendientes → resume; `waitingForLeader` → pollLeader;
+/// terminales estables y de FALLO → nada (el usuario decide en la UI). `isWorking=true` (controller
+/// ya conduciendo, p.ej. la pre-espera del boot-resume en vuelo) → jamás re-kickear encima.
+/// `nonisolated`: lógica pura, testeable por tabla.
+nonisolated enum MigrationForegroundRekick {
+
+    static func shouldRekick(phase: MigrationPhase, hasPendingEffects: Bool, isWorking: Bool) -> Bool {
+        guard !isWorking else { return false }
+        return MigrationBootDecision.decide(phase: phase, hasPendingEffects: hasPendingEffects) != .none
+    }
+}

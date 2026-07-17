@@ -82,6 +82,59 @@ struct MigrationBootDecisionTests {
     }
 }
 
+// MARK: - #36: re-kick de foreground (H1 corrida I14)
+
+@Suite("DIFERIDOS #36 · MigrationForegroundRekick")
+struct MigrationForegroundRekickTests {
+
+    @Test("fases transicionales (ida y reversa) → re-kick")
+    func transitional_rekicks() {
+        let transitional: [MigrationPhase] = [
+            .dryRun, .claimingMigration, .assigningIdentity, .uploadingSnapshot, .verifying,
+            .cutover(.pending), .cutover(.mirrorOff),
+            .reverseClaimLeader, .reverseDrainAll, .reverseVerify, .reverseFreezeBackend,
+            .reverseMountMirror, .reverseReconcile(.deletingZombies), .reverseUpload,
+        ]
+        for phase in transitional {
+            #expect(MigrationForegroundRekick.shouldRekick(
+                phase: phase, hasPendingEffects: false, isWorking: false), "\(phase) debe re-kickear")
+        }
+    }
+
+    @Test("waitingForLeader → re-kick (rutea a pollLeader vía resumeIfNeeded)")
+    func waitingForLeader_rekicks() {
+        #expect(MigrationForegroundRekick.shouldRekick(
+            phase: .waitingForLeader, hasPendingEffects: false, isWorking: false))
+    }
+
+    @Test("terminales estables y de FALLO sin efectos → NO re-kick (mismo contrato del boot)")
+    func stableAndFailTerminals_noRekick() {
+        let terminal: [MigrationPhase] = [
+            .notStarted, .done, .icloudActive, .failedRollback, .reverseFailedRollback,
+        ]
+        for phase in terminal {
+            #expect(!MigrationForegroundRekick.shouldRekick(
+                phase: phase, hasPendingEffects: false, isWorking: false), "\(phase) NO debe re-kickear")
+        }
+    }
+
+    @Test("efecto pendiente FUERZA re-kick aunque la fase sea estable (adopt journaleado)")
+    func pendingEffects_forceRekick() {
+        #expect(MigrationForegroundRekick.shouldRekick(
+            phase: .notStarted, hasPendingEffects: true, isWorking: false))
+        #expect(MigrationForegroundRekick.shouldRekick(
+            phase: .done, hasPendingEffects: true, isWorking: false))
+    }
+
+    @Test("isWorking=true → JAMÁS re-kickear encima (pre-espera del boot en vuelo)")
+    func working_neverRekicks() {
+        #expect(!MigrationForegroundRekick.shouldRekick(
+            phase: .uploadingSnapshot, hasPendingEffects: false, isWorking: true))
+        #expect(!MigrationForegroundRekick.shouldRekick(
+            phase: .waitingForLeader, hasPendingEffects: true, isWorking: true))
+    }
+}
+
 // MARK: - P2: derivación del estado de UI
 
 @Suite("I14 · CloudMigrationUIStateDeriver (P2)")
