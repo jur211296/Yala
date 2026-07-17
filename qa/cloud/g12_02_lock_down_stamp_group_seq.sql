@@ -1,0 +1,34 @@
+-- g12_02_lock_down_stamp_group_seq (2026-07-16, higiene post-gate §12 Bloque A — WARN del security advisor):
+-- `public.stamp_group_seq()` (trigger function SECURITY DEFINER de los seq de grupos, creada por g1_01
+-- en staging / g1_01b en prod) conservaba el EXECUTE default a PUBLIC/anon/authenticated — a diferencia
+-- de su gemela del stack personal `stamp_server_seq`, que la migración i5_11_lock_down_function_execute
+-- dejó solo-service_role. El advisor de Supabase lo marca WARN en ambos entornos.
+--
+-- INOFENSIVO EN LA PRÁCTICA (por qué es solo higiene): Postgres RECHAZA invocar trigger functions fuera
+-- de contexto de trigger ("trigger functions can only be called as triggers"), así que un authenticated
+-- con EXECUTE no puede hacer nada con ella. Se cierra por paridad con i5_11 y para dejar el advisor limpio.
+--
+-- POR QUÉ LOS 5 TRIGGERS SIGUEN DISPARANDO tras el revoke: el privilegio EXECUTE sobre la trigger function
+-- se chequea al CREATE TRIGGER, no al dispararse — y los CREATE TRIGGER futuros corren como postgres
+-- (owner, lo retiene). Precedente EMPÍRICO: `stamp_server_seq` está solo-service_role desde i5_11 y sus
+-- 17 triggers siguen estampando server_seq en cada insert/update de usuarios authenticated vía PostgREST,
+-- en staging Y en prod (bootstrap_03 replicó el ACL). Este es exactamente el mismo caso.
+--
+-- PRE-FLIGHT (correr en CADA entorno ANTES de aplicar; molde de verificación del chip):
+--   select proname, proacl from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+--   where n.nspname = 'public' and proname in ('stamp_group_seq', 'stamp_server_seq');
+--   -- esperado PRE: stamp_group_seq con EXECUTE para PUBLIC/anon/authenticated — el WARN. En prod
+--   --   (2026-07-16) era el default MATERIALIZADO explícito {=X/postgres,postgres=X,anon=X,
+--   --   authenticated=X,service_role=X}; proacl NULL (default implícito) es el mismo caso.
+--   --               stamp_server_seq con {postgres=X/postgres,service_role=X/postgres} (el molde i5_11)
+--
+-- POST-CHECK (misma query): stamp_group_seq debe quedar IDÉNTICA a stamp_server_seq:
+--   {postgres=X/postgres,service_role=X/postgres}
+-- y el WARN del advisor sobre stamp_group_seq desaparece en la siguiente corrida de advisors.
+--
+-- La functiondef NO cambia (grants-only): md5(pg_get_functiondef) de stamp_group_seq queda intacto.
+-- Regla anti-drift: aplicar a AMBOS entornos (staging fostjbbwstyuunmmefuk y prod kefvaiymtgytemwbltlz)
+-- en el mismo cambio, o anotar el drift pendiente en qa/cloud/README.md.
+
+revoke all on function public.stamp_group_seq() from public, anon, authenticated;
+grant execute on function public.stamp_group_seq() to service_role;

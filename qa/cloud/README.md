@@ -332,6 +332,57 @@ sync_seq_counters: 1` → re-login 400 (usuario MUERTO) · prefs `[]` · `exists
 **Regla anti-drift:** re-aplicar a prod (`kefvaiymtgytemwbltlz`) en el mismo cambio o anotar drift
 pendiente — CON el assert de `rolbypassrls` contra prod ANTES de aplicar.
 
+## g12_02 — lockdown EXECUTE de `stamp_group_seq` (higiene advisor, molde i5_11) — APLICADA EN AMBOS ENVS ✅
+
+Migración `qa/cloud/g12_02_lock_down_stamp_group_seq.sql` (2026-07-16; cierra el WARN de higiene del
+security advisor anotado en el cierre del gate §12 Bloque A). `stamp_group_seq()` (trigger function
+SECURITY DEFINER de los seq de grupos, g1_01/g1_01b) conserva el EXECUTE default a PUBLIC/anon/
+authenticated — a diferencia de `stamp_server_seq`, que i5_11_lock_down_function_execute dejó
+solo-service_role. Inofensivo en la práctica (Postgres rechaza invocar trigger functions fuera de
+contexto de trigger), se cierra por paridad. Grants-only: la functiondef NO cambia (el md5 de paridad
+33/33 staging↔prod queda intacto). Los 5 triggers de grupos siguen disparando: EXECUTE se chequea al
+CREATE TRIGGER, no al fire — precedente empírico: los 17 triggers de `stamp_server_seq` estampan desde
+i5_11 en ambos envs con el ACL cerrado. Detalle completo en el header del `.sql`.
+
+**Aplicación (loop principal, MCP — el conector autoriza UNA org a la vez, re-conmutar para cubrir
+staging `fostjbbwstyuunmmefuk` Y prod `kefvaiymtgytemwbltlz`):**
+
+1. Pre-flight en el entorno: `select proname, proacl from pg_proc p join pg_namespace n on
+   n.oid = p.pronamespace where n.nspname='public' and proname in
+   ('stamp_group_seq','stamp_server_seq');` — esperado: `stamp_group_seq` CON EXECUTE para
+   PUBLIC/anon/authenticated (el WARN; en prod era el default MATERIALIZADO explícito
+   `{=X/postgres,postgres=X,anon=X,authenticated=X,service_role=X}`, no `NULL` — ambas formas son el
+   mismo caso y el revoke las cubre igual) y `stamp_server_seq` =
+   `{postgres=X/postgres,service_role=X/postgres}` (el molde). Si el pre-flight NO cuadra con esto,
+   PARAR y reconciliar contra esta sección antes de aplicar.
+2. Aplicar como migración `g12_02_lock_down_stamp_group_seq` con EXACTAMENTE los 2 statements del
+   `.sql` (sin el header de comentarios — así se aplicó en prod; el texto idéntico es lo que hace
+   matchear `md5(statements[1])` entre envs).
+3. Post-check (misma query): `stamp_group_seq` = `{postgres=X/postgres,service_role=X/postgres}`,
+   idéntica a `stamp_server_seq`. Advisors: el WARN desaparece.
+4. Smoke funcional: cualquier write de grupos (golden o push real) sigue estampando `server_seq`.
+
+```text
+md5 del archivo .sql completo (referencia del repo): 70c7baea436f89958766eebac4e7cd8a
+md5(statements[1]) del texto aplicado (los 2 statements): 5a8797bc95a9fe7bf4370011e270466b
+
+-- prod    (kefvaiymtgytemwbltlz): ✅ APLICADA 2026-07-16, versión 20260716223038;
+--   post-check proacl {postgres=X/postgres,service_role=X/postgres} (== stamp_server_seq);
+--   functiondef md5 de stamp_group_seq intacto (2039dd2982e31a02661c62cce28b1169, grants-only);
+--   advisors: el WARN de stamp_group_seq DESAPARECIDO (quedan solo los by-design).
+-- staging (fostjbbwstyuunmmefuk): ✅ APLICADA 2026-07-16, versión 20260716223824;
+--   md5(statements[1]) = 5a8797bc95a9fe7bf4370011e270466b (== prod, paridad byte-exacta);
+--   pre-flight idéntico al de prod (mismo default materializado explícito);
+--   post-check proacl {postgres=X/postgres,service_role=X/postgres} (== stamp_server_seq);
+--   functiondef md5 2039dd2982e31a02661c62cce28b1169 (== prod);
+--   advisors: el WARN de stamp_group_seq DESAPARECIDO (quedan los by-design + el WARN
+--   preexistente auth_leaked_password_protection, ajeno a grupos).
+```
+
+**Regla anti-drift:** SATISFECHA — aplicada en ambos envs el 2026-07-16 (misma sesión, conector
+re-conmutado prod→staging; orden atípico prod-primero porque el conector arrancó autorizado en la
+org de prod). El WARN de higiene anotado en el cierre del gate §12 Bloque A queda CERRADO.
+
 ## migrate_group (G6-1) — migración de grupos VIVOS de CloudKit al backend (§9 D7)
 
 Función NUEVA `qa/cloud/g6_01_migrate_group.sql` (`security definer`, `set search_path = public`, guard
@@ -913,8 +964,8 @@ grantado a authenticator) · proacl de los 2 RPCs de push = `{postgres, service_
 (21+8) TODAS con RLS, 96 policies (78+18), 22 triggers (17+5), 55 índices (40+15) — cuadre exacto ·
 security advisors: hallazgos = los by-design (RPCs SECURITY DEFINER expuestos a authenticated SON la
 API; deny-all de group_seq_counters) + 1 WARN de higiene en `stamp_group_seq` (EXECUTE default
-PUBLIC — inofensivo: Postgres rechaza invocar trigger functions directamente; chip aparte para
-lockdownearlo molde i5_11 en AMBOS envs).
+PUBLIC — inofensivo: Postgres rechaza invocar trigger functions directamente; CERRADO por g12_02:
+aplicada en AMBOS envs 2026-07-16, ver §g12_02 arriba — proacl verificado en vivo contra staging).
 
 **Paridad de funciones VERIFICADA byte-exacta (2026-07-11):** `md5(pg_get_functiondef)` idéntico
 staging↔prod en las 6 — apply_delta `7f8cb94d32f3976b6a9b0ade8f165b73`, apply_pref
